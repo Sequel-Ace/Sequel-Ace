@@ -83,6 +83,9 @@
 		17E641750EF01F80001BC333 /* SPKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641740EF01F80001BC333 /* SPKeychain.m */; };
 		98203642272CF04DBDC94A70 /* SPKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641740EF01F80001BC333 /* SPKeychain.m */; };
 		623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
+		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
+		0EFB3862D086C3F4C5716B85 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
+		7E75432072457939574AC25A /* SAKeychainDisabledTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */; };
 		221C83260BF298E6A8969456 /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
 		71F6E6D2037EB14ED8623A81 /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
 		17E641830EF01FA8001BC333 /* SPImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E6417F0EF01FA8001BC333 /* SPImageView.m */; };
@@ -923,6 +926,8 @@
 		17E641730EF01F80001BC333 /* SPKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPKeychain.h; sourceTree = "<group>"; };
 		17E641740EF01F80001BC333 /* SPKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPKeychain.m; sourceTree = "<group>"; };
 		11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainProviding.swift; sourceTree = "<group>"; };
+		4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainDisabled.swift; sourceTree = "<group>"; };
+		A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainDisabledTests.swift; sourceTree = "<group>"; };
 		17E6417E0EF01FA8001BC333 /* SPImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPImageView.h; sourceTree = "<group>"; };
 		17E6417F0EF01FA8001BC333 /* SPImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPImageView.m; sourceTree = "<group>"; };
 		17E641800EF01FA8001BC333 /* SPTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTextView.h; sourceTree = "<group>"; };
@@ -2318,6 +2323,7 @@
 				17E641730EF01F80001BC333 /* SPKeychain.h */,
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
 				11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */,
+				4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */,
 			);
 			path = Keychain;
 			sourceTree = "<group>";
@@ -2718,6 +2724,7 @@
 				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
 				01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */,
 				8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */,
+				A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */,
 				7D53166D77A40496B91F45A9 /* SAKeychainNamingCharacterizationTests.swift */,
 				5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */,
 				5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */,
@@ -3370,6 +3377,8 @@
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				9EF08F69717C447F6B39B6D0 /* SAKeychainStoreCharacterizationTests.swift in Sources */,
 				0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */,
+				0EFB3862D086C3F4C5716B85 /* SAKeychainDisabled.swift in Sources */,
+				7E75432072457939574AC25A /* SAKeychainDisabledTests.swift in Sources */,
 				158CE2B8B92310647A1BF0B4 /* SAKeychainNamingCharacterizationTests.swift in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				51BE68DD3017550E00AF389C /* SAImageRenderer.swift in Sources */,
@@ -3593,6 +3602,7 @@
 				51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
+				090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */,
 				623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
