@@ -472,10 +472,13 @@ deferred projects below.
 
 ## Deferred (own projects, not part of this burn-down)
 
-- **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place
-  migration of users' stored passwords. Highest risk item in the codebase;
-  needs its own design (and pairs with the NSConnection item below since the
-  tunnel assistant reads passwords).
+- **SPKeychain SecKeychain* API (~15)** — migrate the keychain *code* to
+  `SecItem*` in place; users' stored password records are retained as-is (the
+  design needs no record migration). Highest risk item in the codebase;
+  **now designed**: see `docs/development/keychain-secitem-migration-plan.md`
+  (characterize-first, stays on the file-based login keychain so no data
+  migration, retires the tunnel assistant's direct keychain read — which also
+  resolves the pairing with the NSConnection item below). Not started.
 - **NSConnection → NSXPCConnection** (SequelAceTunnelAssistant.m:117/168) —
   reworks the SSH-password IPC between app and helper tool. **Now designed and
   unblocked**: see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The

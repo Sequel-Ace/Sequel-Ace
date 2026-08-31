@@ -6,7 +6,9 @@
 > `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
 > in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
 > the SSH-tunnel IPC design in `docs/development/ssh-tunnel-xpc-migration-plan.md`
-> (not started), agent ground rules in `AGENTS.md`.
+> (not started), the keychain `SecItem*` design in
+> `docs/development/keychain-secitem-migration-plan.md` (design complete;
+> execution starting with its Steps 0-1), agent ground rules in `AGENTS.md`.
 
 ## State of the world (2026-08-24 revision)
 
@@ -685,9 +687,9 @@ all landed since.)
    highest-value target on the list.
 2. **Finish the warnings burn-down** — ✅ sweeps done. #2584 (532 -> 358) and
    #2586 (358 -> 162) have both landed. What remains is the *deferred* set,
-   which is project work rather than a sweep: SPKeychain `SecItem*`, the
-   NSConnection -> XPC migration, and the bundled OpenSSL rebuild. See the
-   warnings plan.
+   which is project work rather than a sweep: SPKeychain `SecItem*` (now
+   designed — `keychain-secitem-migration-plan.md`), the NSConnection -> XPC
+   migration, and the bundled OpenSSL rebuild. See the warnings plan.
 3. **SSH tunnel IPC: NSConnection -> NSXPCConnection** — now unblocked. The
    macOS 13.5 floor was adopted specifically so Step 4 (peer validation via
    `setConnectionCodeSigningRequirement:`) is a real security win rather than a
