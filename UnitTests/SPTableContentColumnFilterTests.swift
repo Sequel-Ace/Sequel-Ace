@@ -120,6 +120,26 @@ final class SPTableContentColumnFilterTests: XCTestCase {
     }
 }
 
+final class SARuleFilterPreviewFormatterTests: XCTestCase {
+
+    /// Verifies a usable clause is prefixed with WHERE.
+    func testClauseGetsWherePrefix() {
+        XCTAssertEqual(SARuleFilterPreviewFormatter.previewText(clause: "(`a` = '1') OR (`b` = '2')"), "WHERE (`a` = '1') OR (`b` = '2')")
+    }
+
+    /// Verifies empty input collapses to nil so the drop prompt returns.
+    func testEmptyClauseYieldsNil() {
+        XCTAssertNil(SARuleFilterPreviewFormatter.previewText(clause: nil))
+        XCTAssertNil(SARuleFilterPreviewFormatter.previewText(clause: ""))
+        XCTAssertNil(SARuleFilterPreviewFormatter.previewText(clause: "  \n "))
+    }
+
+    /// Verifies surrounding whitespace from the generator is trimmed.
+    func testClauseIsTrimmed() {
+        XCTAssertEqual(SARuleFilterPreviewFormatter.previewText(clause: " `a` = '1' "), "WHERE `a` = '1'")
+    }
+}
+
 final class SARuleFilterBottomBarLayoutTests: XCTestCase {
 
     /// Verifies rows sit above a fully reserved bottom bar (drop zone shown).

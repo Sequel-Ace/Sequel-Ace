@@ -262,6 +262,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)_invokeTarget:(id)aTarget action:(SEL)anAction withObject:(id)object;
 - (void)_invokeFilterTargetActionWithObject:(id)object;
 - (IBAction)_checkboxClicked:(id)sender;
+- (void)_updateFilterPreview;
 - (IBAction)_rootConjunctionPopUpChanged:(id)sender;
 - (void)_syncRootConjunctionPopUp;
 - (void)_updateCheckedStateUpwardsFromCompoundRow:(NSInteger)row;
@@ -728,6 +729,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
     [self _updateButtonStates];
+    [self _updateFilterPreview];
 }
 
 /**
@@ -893,6 +895,35 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 }
 
+/**
+ * Live-updates the WHERE preview while the user types in an argument field
+ * (the fields' delegate is this controller, see the ArgNode display value).
+ */
+- (void)controlTextDidChange:(NSNotification *)notification
+{
+	[self _updateFilterPreview];
+}
+
+/**
+ * Shows the WHERE clause the current rules would produce in the drop zone,
+ * or restores the drop prompt when there is nothing (or nothing valid) to
+ * preview. Called after every change that can alter the clause: row changes,
+ * checkbox toggles, popup selections, typing, and restores.
+ */
+- (void)_updateFilterPreview
+{
+	SPMainQSync(^{
+		if (!self->dropBox) return;
+		NSString *clause = nil;
+		if (![self isEmpty]) {
+			NSError *err = nil;
+			clause = [self sqlWhereExpressionWithBinary:NO error:&err];
+			if (err) clause = nil;
+		}
+		[self->dropBox setPreviewClause:clause];
+	});
+}
+
 - (IBAction)_menuItemInRuleEditorClicked:(id)sender
 {
 	if(!sender) return; // NSRuleEditor will throw on nil
@@ -960,6 +991,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self _doChangeToRuleEditorData:^{
 			[self->filterRuleEditor setCriteria:criteria andDisplayValues:displayValues forRowAtIndex:row];
 		}];
+
+		[self _updateFilterPreview];
 
 		// make the next possible object after the opnode the new next responder (since the previous one is gone now)
 		for (NSUInteger j = nodeIndex + 1; j < [displayValues count]; ++j) {
@@ -1124,6 +1157,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	// if a row has been added, we need to update the checkboxes to match again
 	[self _recalculateCheckboxStatesFromRow:-1];
+	[self _updateFilterPreview];
 
 	// if the user removed the last row in the editor by pressing "-" (and only then) we immediately want to trigger a filter reset.
 	// There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
@@ -1200,6 +1234,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// like the per-row enable checkbox this does not run the filter; the
 	// user confirms via Apply Filters (or Return in any argument field)
 	rootIsConjunction = ([rootConjunctionPopUp selectedTag] == 1);
+	[self _updateFilterPreview];
 }
 
 - (void)dealloc
@@ -1739,6 +1774,7 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 
 	//finally update all checkboxes
 	[self _recalculateCheckboxStatesFromRow:-1];
+	[self _updateFilterPreview];
 }
 
 - (NSMutableDictionary *)_restoreSerializedFilter:(NSDictionary *)serialized

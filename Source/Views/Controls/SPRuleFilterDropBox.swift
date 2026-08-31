@@ -8,6 +8,22 @@
 
 import Cocoa
 
+/// Builds the display text for the live WHERE-clause preview shown in the
+/// filter bar. Pure so it can be unit-tested: a usable clause is prefixed
+/// with `WHERE `, anything empty collapses to `nil` (the drop box then shows
+/// its normal prompt).
+@objc public final class SARuleFilterPreviewFormatter: NSObject {
+    /// - Parameter clause: The generated WHERE clause, if any.
+    /// - Returns: The label text, or `nil` when there is nothing to preview.
+    @objc(previewTextForClause:)
+    public static func previewText(clause: String?) -> String? {
+        guard let trimmed = clause?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return "WHERE " + trimmed
+    }
+}
+
 /// A permanently-visible drop zone rendered next to the rule editor in
 /// the Content tab. The view does two jobs:
 ///
@@ -29,8 +45,10 @@ import Cocoa
     /// mutation. Held weakly because the controller owns the view.
     @objc public weak var dropHandler: SPFilterRuleEditorDropHandler?
 
+    private static let promptText = NSLocalizedString("Drop a value here, or click to add a filter", comment: "content tab : rule filter : drop zone prompt")
+
     private let label: NSTextField = {
-        let l = NSTextField(labelWithString: NSLocalizedString("Drop a value here, or click to add a filter", comment: "content tab : rule filter : drop zone prompt"))
+        let l = NSTextField(labelWithString: SPRuleFilterDropBox.promptText)
         l.alignment = .center
         l.textColor = .secondaryLabelColor
         l.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -47,6 +65,38 @@ import Cocoa
         l.autoresizingMask = [.width, .minYMargin, .maxYMargin]
         return l
     }()
+
+    /// Shows a live preview of the WHERE clause the current rules produce, or
+    /// falls back to the drop prompt when there is nothing to preview. The
+    /// full clause goes into the tooltip since the label is a single line.
+    @objc(setPreviewClause:)
+    public func setPreviewClause(_ clause: String?) {
+        if let text = SARuleFilterPreviewFormatter.previewText(clause: clause) {
+            isShowingPreview = true
+            label.stringValue = text
+            // Left-aligned with tail truncation: the clause reads naturally
+            // from its start and only the far end is elided - a mid-string
+            // ellipsis tears the expression apart.
+            label.alignment = .left
+            label.lineBreakMode = .byTruncatingTail
+            // Full clause plus the interaction hint - the prompt is replaced
+            // by the preview, so the tooltip is the only place left for it.
+            toolTip = text + "\n\n" + SPRuleFilterDropBox.promptTooltip
+        } else {
+            isShowingPreview = false
+            label.stringValue = SPRuleFilterDropBox.promptText
+            label.alignment = .center
+            label.lineBreakMode = .byClipping
+            toolTip = SPRuleFilterDropBox.promptTooltip
+        }
+        needsLayout = true
+    }
+
+    /// Whether the label currently shows the WHERE preview (left-aligned,
+    /// full-width) instead of the centred drop prompt.
+    private var isShowingPreview = false
+
+    private static let promptTooltip = NSLocalizedString("Click to add a filter, ⌥-click to add an AND/OR group", comment: "content tab : rule filter : drop zone tooltip")
 
     private var isDragHovering: Bool = false {
         didSet {
@@ -68,7 +118,7 @@ import Cocoa
         wantsLayer = true
         addSubview(label)
         registerForDraggedTypes([Self.rowDropType])
-        toolTip = NSLocalizedString("Click to add a filter, ⌥-click to add an AND/OR group", comment: "content tab : rule filter : drop zone tooltip")
+        toolTip = SPRuleFilterDropBox.promptTooltip
     }
 
     /// Right-click offers the same "Add Filter" / "Add AND/OR Group" actions
@@ -81,13 +131,20 @@ import Cocoa
     override public func layout() {
         super.layout()
         let labelSize = label.intrinsicContentSize
-        // Center the label at its natural width, but clamp to the drop
+        let y = (bounds.height - labelSize.height) / 2.0
+        if isShowingPreview {
+            // The preview uses the full width with a small inset; the label
+            // itself tail-truncates when the clause is longer than the bar.
+            let inset: CGFloat = 10
+            label.frame = NSRect(x: inset, y: y, width: max(bounds.width - 2 * inset, 0), height: labelSize.height)
+            return
+        }
+        // Center the prompt at its natural width, but clamp to the drop
         // box's own bounds so a narrow container clips the text inside
         // the dashed border instead of letting it spill outside.
         // `byClipping` on the label prevents a mid-word ellipsis.
         let labelWidth = min(labelSize.width, bounds.width)
         let x = max((bounds.width - labelWidth) / 2.0, 0)
-        let y = (bounds.height - labelSize.height) / 2.0
         label.frame = NSRect(x: x, y: y, width: labelWidth, height: labelSize.height)
     }
 
