@@ -312,7 +312,14 @@ day and captures most of the security benefit.
 2. ~~**Can we require macOS 13?**~~ Answered: yes. The deployment target moved
    to 13.5 (`macos-13-minimum-plan.md`), so Step 4 is a real win, not a partial
    one.
-3. **Sequencing against the SPKeychain `SecItem` migration.** Both change how
-   the assistant gets passwords. Suggest this project goes first: it is smaller,
-   and it leaves the keychain work with a narrow, testable auth surface instead
-   of a DO proxy. Worth confirming rather than assuming.
+3. ~~**Sequencing against the SPKeychain `SecItem` migration.**~~ Answered by
+   that migration's Step 3 (see
+   `docs/development/keychain-secitem-migration-plan.md`): the assistant no
+   longer reads the keychain at all — `SPSSHTunnel` resolves keychain-backed
+   passwords app-side inside `getPasswordWithVerificationHash:`, and the
+   key-passphrase pre-prompt check moved into `getPasswordForQuery:`. The two
+   projects no longer depend on each other's order. For this plan that means:
+   the vended surface to narrow is one mode smaller, the manual matrix rows 2
+   and 3 now exercise the same DO/XPC ask-the-app path as row 1 (still worth
+   running — they cover the app-side keychain resolution), and
+   `SP_KEYCHAIN_ITEM_{NAME,ACCOUNT}` no longer exist in the environment.
