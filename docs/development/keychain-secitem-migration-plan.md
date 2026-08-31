@@ -351,7 +351,21 @@ pure, both targets — the store itself is app-target only):
      field-for-field (same mechanical-diff spirit as the C3
      `apply(to:)`/`_buildConnectionInfo` check — the risk is omission).
 
-### Step 5 — Flip the call sites, delete SPKeychain
+### Step 5 — Flip the call sites, delete SPKeychain — ✅ Done (manual matrix pending)
+
+Execution notes (2026-08-31): `SAKeychainAccess.make()` became the one
+construction point (now `@objc`, and it inherited the issue #2437 guard
+from SPKeychain's init); the five ObjC construction sites became
+`id<SAKeychainProviding> … = [SAKeychainAccess make]` with every message
+unchanged, since the protocol carries SPKeychain's exact selectors; the
+characterization suites now pin `SAKeychain` directly and the rerun
+subclasses + cross-compatibility matrix were deleted with their purpose
+served; `SPKeychain.h/.m` left the tree, the bridging header, and both
+targets. All ten SecKeychain* deprecation warnings are gone — the
+remaining warnings-plan floor is NSConnection (6) + the intentional Swift
+markers (4). **The manual verification matrix below has NOT been run yet**
+— it needs a live app session (and row 6 an SSH host) and must pass before
+this ships; the soak-one-release guidance stands.
 
 - Swap the ~8 constructing call sites (`SPConnectionController`,
   `SPDatabaseDocument`, `SPSSHTunnel`, `SAConnectionService`,
