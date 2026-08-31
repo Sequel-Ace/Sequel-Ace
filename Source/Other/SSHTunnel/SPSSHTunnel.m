@@ -31,7 +31,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPSSHTunnel.h"
-#import "SPKeychain.h"
 #import "SPThreadAdditions.h"
 #import "SPFileHandle.h"
 #import "SPAppController.h"
@@ -792,7 +791,7 @@ static unsigned short getRandomPort(void);
 	// readable by a second process. A missing item returns nil, which the
 	// assistant turns into its keychain-specific UI fallback prompt.
 	if (passwordInKeychain) {
-		SPKeychain *keychain = [[SPKeychain alloc] init];
+		id<SAKeychainProviding> keychain = [SAKeychainAccess make];
 		return [keychain getPasswordForName:keychainName account:keychainAccount];
 	}
 
@@ -871,7 +870,7 @@ static unsigned short getRandomPort(void);
 	// behavioural parity with that code.
 	NSString *storedKeyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
 	if (storedKeyName.length > 0) {
-		SPKeychain *keychain = [[SPKeychain alloc] init];
+		id<SAKeychainProviding> keychain = [SAKeychainAccess make];
 		if ([keychain passwordExistsForName:@"SSH" account:storedKeyName]) {
 			return [keychain getPasswordForName:@"SSH" account:storedKeyName];
 		}
@@ -954,7 +953,7 @@ static unsigned short getRandomPort(void);
 
 		// Add to keychain if appropriate
 		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSControlStateValueOn) {
-			SPKeychain *keychain = [[SPKeychain alloc] init];
+			id<SAKeychainProviding> keychain = [SAKeychainAccess make];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
 			
 		}
