@@ -3787,7 +3787,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	ruleEditorRect.size.height = MAX(topContainerGivenHeight - ruleEditorRect.origin.y, 0);
 
 	// Drop box spans the full width minus the button zone on the right
-	// (the AND/OR popup at x=514 width=62 plus Apply Filters / Add Filter
+	// (the AND/OR popup at x=458 width=118 plus Apply Filters / Add Filter
 	// at x=579 width=111 in the IB layout). Keeping it short-of-buttons
 	// avoids any overlap even when the rule editor grows to its full
 	// allotted height, and the padding on every side prevents the dashed
@@ -3795,7 +3795,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// below, or the window edges on the sides.
 	SPRuleFilterDropBox *dropBox = [ruleFilterController dropBoxView];
 	const CGFloat dropBoxLeftPadding = 10;
-	const CGFloat dropBoxRightReserve = 190;
+	const CGFloat dropBoxRightReserve = 250;
 	const CGFloat dropBoxBottomPadding = 7;
 	const CGFloat dropBoxTopPadding = 5;
 	// Also clamp the drop box height against the container's actual
@@ -3836,7 +3836,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification
 {
 	if(showFilterRuleEditor) {
-		[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:YES];
+		// Never animate row-driven height changes: one gesture (add row,
+		// add group, restore) can post several of these back to back, and
+		// overlapping animator groups on the same views intermittently leave
+		// the container mid-flight - visible as jumping or a clipped drop
+		// zone. The show/hide toggle keeps its animation via its own path.
+		[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:NO];
 	}
 }
 

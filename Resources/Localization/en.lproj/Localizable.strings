@@ -235,6 +235,9 @@
 /* Add trigger button label */
 "Add" = "Add";
 
+/* table Content : rule filter editor : AND/OR popup : combine with AND */
+"AND (all rows)" = "AND (all rows)";
+
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
 "AND" = "AND";
 
@@ -791,6 +794,9 @@
 
 /* content tab : rule filter : drop zone tooltip */
 "Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+
+/* table Content : rule filter editor : compound row : label after the AND/OR popup */
+"combines the rows in this group" = "combines the rows in this group";
 
 /* table Content : rule filter editor : AND/OR popup : tooltip */
 "Combine the top-level filter rows with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter rows with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
@@ -2018,6 +2024,9 @@
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
+/* table Content : rule filter editor : AND/OR popup : combine with OR */
+"OR (any row)" = "OR (any row)";
+
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
 "OR" = "OR";
 

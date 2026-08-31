@@ -456,6 +456,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if(type == RuleNodeTypeEnable) {
 			return 2;
 		}
+		// the AND/OR choice is followed by a static explainer label, so the
+		// popup clearly refers to the group's own rows (not its neighbours)
+		if(type == RuleNodeTypeString && [self _isConjunctionChoiceNode:(StringNode *)criterion]) {
+			return 1;
+		}
 	}
 	else if(rowType == NSRuleEditorRowTypeSimple) {
 		if(!criterion) {
@@ -513,6 +518,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				case 1: [node setValue:@"OR"]; break;
 			}
 			return node;
+		}
+		if(type == RuleNodeTypeString && [self _isConjunctionChoiceNode:(StringNode *)criterion]) {
+			return [SPRuleFilterController _conjunctionExplainerNode];
 		}
 	}
 	else if(rowType == NSRuleEditorRowTypeSimple) {
@@ -1071,6 +1079,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
     SPMainQSync(^{
         CGFloat wantsHeight = [self->filterRuleEditor rowHeight] * MAX([self->filterRuleEditor numberOfRows], 1);
+        // No-op resizes would still trigger a full container layout pass in
+        // SPTableContent - skip them, several notifications per gesture are normal.
+        if (wantsHeight == self->preferredHeight) return;
         [self setPreferredHeight:wantsHeight];
         [[NSNotificationCenter defaultCenter] postNotificationName:SPRuleFilterHeightChangedNotification object:self];
     });
@@ -1150,6 +1161,26 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
 	rootIsConjunction = isConjunction;
 	[self _syncRootConjunctionPopUp];
+}
+
+/**
+ * YES when the node is the AND/OR choice of a compound row (as opposed to the
+ * static explainer label that follows it, which is also a StringNode).
+ */
+- (BOOL)_isConjunctionChoiceNode:(StringNode *)node
+{
+	return [@"AND" isEqualToString:[node value]] || [@"OR" isEqualToString:[node value]];
+}
+
+/**
+ * The static label shown after a group row's AND/OR popup, clarifying that the
+ * choice combines the group's own rows.
+ */
++ (StringNode *)_conjunctionExplainerNode
+{
+	StringNode *node = [[StringNode alloc] init];
+	[node setValue:NSLocalizedString(@"combines the rows in this group", @"table Content : rule filter editor : compound row : label after the AND/OR popup")];
+	return node;
 }
 
 /**
@@ -1723,13 +1754,15 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 
 		StringNode *criterion = [[StringNode alloc] init];
 		[criterion setValue:([[serialized objectForKey:SerFilterGroupIsConjunction] boolValue] ? @"AND" : @"OR")];
+		StringNode *explainer = [SPRuleFilterController _conjunctionExplainerNode];
 		// those have to be mutable arrays for the rule editor to work
-		NSMutableArray *criteria = [NSMutableArray arrayWithArray:@[checkbox,criterion]];
+		NSMutableArray *criteria = [NSMutableArray arrayWithArray:@[checkbox,criterion,explainer]];
 		[obj setObject:criteria forKey:@"criteria"];
 
 		id checkDisplayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:checkbox inRow:-1];
 		id displayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:criterion inRow:-1];
-		NSMutableArray *displayValues = [NSMutableArray arrayWithArray:@[checkDisplayValue,displayValue]];
+		id explainerDisplayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:explainer inRow:-1];
+		NSMutableArray *displayValues = [NSMutableArray arrayWithArray:@[checkDisplayValue,displayValue,explainerDisplayValue]];
 		[obj setObject:displayValues forKey:@"displayValues"];
 
 		NSArray *children = [serialized objectForKey:SerFilterGroupChildren];
