@@ -269,6 +269,14 @@
     if (![self isValidName:name acount:account]) {
         return;
     }
+
+    // A nil password would reach strlen(NULL) below (and in the
+    // item-not-found fallback would delete the item with nothing to re-add),
+    // so reject it up front and leave the item untouched.
+    if (!password) {
+        NSLog(@"Keychain update rejected: nil password for name: %@ account: %@", name, account);
+        return;
+    }
 	OSStatus status;
 	SecKeychainItemRef itemRef;
 	SecKeychainAttribute attributes[2];

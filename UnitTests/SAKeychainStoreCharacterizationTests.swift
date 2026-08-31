@@ -186,6 +186,18 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
         XCTAssertFalse(store.passwordExists(name: oldName, account: "old@host/"))
     }
 
+    func testUpdateWithNilPasswordLeavesItemUntouched() {
+        // Fixed in Step 2 (defect 2): a nil password used to reach
+        // strlen(NULL). Now the update is rejected and the item is left
+        // exactly as it was.
+        let name = service("item"), account = "user@host/"
+        store.add(password: "pw-1", name: name, account: account)
+        store.updateItem(name: name, account: account,
+                         toName: service("renamed"), newAccount: "new@host/", password: nil)
+        XCTAssertEqual(store.password(name: name, account: account), "pw-1")
+        XCTAssertFalse(store.passwordExists(name: service("renamed"), account: "new@host/"))
+    }
+
     func testUpdateOntoExistingDestinationReplacesIt() {
         // The errSecDuplicateItem (-25299) branch: the existing destination
         // item is deleted and the update retried, so the source item wins.
