@@ -236,7 +236,21 @@ comment naming the Step 2 fix that will flip it):
   implementation, so Step 4 reruns the identical suite against `SAKeychain`
   for free.
 
-### Step 2 — Fix the confirmed defects in the ObjC implementation
+### Step 2 — Fix the confirmed defects in the ObjC implementation — ✅ Done
+
+Execution notes (2026-08-31): all four fixes landed as planned, one per
+commit, each with its characterization test flipped or added first. The
+three-arg update was deleted (its scramble-pinning test went with it); nil
+password now rejects with the item untouched; the header got the full
+`NS_ASSUME_NONNULL` wrap with every parameter/return explicitly `nullable`
+(protocol parity — annotating only init would have cascaded completeness
+warnings, the warnings plan's step 3 lesson); `SAKeychainAccess.make()` +
+`SAKeychainDisabled` replaced the Swift `init!` trap, and both
+`SAConnectionInfo+ConnectionString` call sites moved onto the factory and
+the protocol surface; the three alerts marshal through `SPMainQSync`
+(synchronous, preserving the legacy blocking behaviour). The null object
+mirrors nil-messaging semantics exactly — naming helpers return nil too —
+matching what ObjC callers already get from a nil SPKeychain.
 
 Smallest possible diffs, each with the Step 1 test flipped from
 pinned-buggy to correct:
