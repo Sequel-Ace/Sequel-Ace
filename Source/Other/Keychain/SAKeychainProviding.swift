@@ -73,9 +73,12 @@ import Foundation
     func updateItem(name: String?, account: String?, toName newName: String?, newAccount: String?, password: String?)
 
     /// `"Sequel Ace : <favoriteName> (<id as long long>)"`, or nil for a
-    /// nil/empty name or nil id.
+    /// nil/empty name or nil id. The id is `Any?` because the legacy method
+    /// took `(id)` and Objective-C call sites hand over the favorites
+    /// dictionary's NSNumber as often as a string — both are coerced through
+    /// `-longLongValue` semantics.
     @objc(nameForFavoriteName:id:)
-    func name(favoriteName: String?, id favoriteID: String?) -> String?
+    func name(favoriteName: String?, id favoriteID: Any?) -> String?
 
     /// `"<user>@<host>/<database>"` (nil database → empty), or nil for a
     /// nil/empty user or host.
@@ -83,9 +86,10 @@ import Foundation
     func account(user: String?, host: String?, database: String?) -> String?
 
     /// `"Sequel Ace SSHTunnel : <favoriteName> (<id as long long>)"`, or nil
-    /// for a nil/empty name or nil id.
+    /// for a nil/empty name or nil id. Same `Any?` id contract as
+    /// `name(favoriteName:id:)`.
     @objc(nameForSSHForFavoriteName:id:)
-    func sshName(favoriteName: String?, id favoriteID: String?) -> String?
+    func sshName(favoriteName: String?, id favoriteID: Any?) -> String?
 
     /// `"<user>@<host>"`, or nil for a nil/empty user or host.
     @objc(accountForSSHUser:sshHost:)

@@ -185,7 +185,7 @@ import Security
 
     // MARK: - Names and accounts
 
-    func name(favoriteName: String?, id favoriteID: String?) -> String? {
+    func name(favoriteName: String?, id favoriteID: Any?) -> String? {
         SAKeychainNaming.favoriteName(favoriteName, id: favoriteID)
     }
 
@@ -193,7 +193,7 @@ import Security
         SAKeychainNaming.account(user: user, host: host, database: database)
     }
 
-    func sshName(favoriteName: String?, id favoriteID: String?) -> String? {
+    func sshName(favoriteName: String?, id favoriteID: Any?) -> String? {
         SAKeychainNaming.sshFavoriteName(favoriteName, id: favoriteID)
     }
 

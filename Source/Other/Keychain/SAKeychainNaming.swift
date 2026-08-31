@@ -37,9 +37,11 @@ import Foundation
 /// `SAKeychainNamingCharacterizationTests` and must never drift. The rules,
 /// inherited from the retired SPKeychain:
 ///
-/// - ids are coerced through `NSString.longLongValue` (non-numeric → 0,
-///   numeric prefixes parsed as far as they go, 64-bit clamped) — "to
-///   support 64-bit > 32-bit keychain usage" per the original comment;
+/// - ids arrive as NSNumber (straight from the favorites dictionary) or as
+///   a string, and are coerced through `-longLongValue` semantics
+///   (non-numeric strings → 0, numeric prefixes parsed as far as they go,
+///   64-bit clamped) — "to support 64-bit > 32-bit keychain usage" per the
+///   original comment;
 /// - a nil or empty favorite name / user / host rejects the whole lookup
 ///   (nil result); a nil id likewise;
 /// - a nil database is an empty string (trailing slash kept).
@@ -48,9 +50,9 @@ import Foundation
 enum SAKeychainNaming {
 
     /// `"Sequel Ace : <favoriteName> (<id>)"`
-    static func favoriteName(_ favoriteName: String?, id favoriteID: String?) -> String? {
-        guard let favoriteName, !favoriteName.isEmpty, let favoriteID else { return nil }
-        return "Sequel Ace : \(favoriteName) (\((favoriteID as NSString).longLongValue))"
+    static func favoriteName(_ favoriteName: String?, id favoriteID: Any?) -> String? {
+        guard let favoriteName, !favoriteName.isEmpty, let idValue = longLongValue(of: favoriteID) else { return nil }
+        return "Sequel Ace : \(favoriteName) (\(idValue))"
     }
 
     /// `"<user>@<host>/<database>"`
@@ -60,14 +62,27 @@ enum SAKeychainNaming {
     }
 
     /// `"Sequel Ace SSHTunnel : <favoriteName> (<id>)"`
-    static func sshFavoriteName(_ favoriteName: String?, id favoriteID: String?) -> String? {
-        guard let favoriteName, !favoriteName.isEmpty, let favoriteID else { return nil }
-        return "Sequel Ace SSHTunnel : \(favoriteName) (\((favoriteID as NSString).longLongValue))"
+    static func sshFavoriteName(_ favoriteName: String?, id favoriteID: Any?) -> String? {
+        guard let favoriteName, !favoriteName.isEmpty, let idValue = longLongValue(of: favoriteID) else { return nil }
+        return "Sequel Ace SSHTunnel : \(favoriteName) (\(idValue))"
     }
 
     /// `"<user>@<host>"`
     static func sshAccount(user: String?, host: String?) -> String? {
         guard let user, !user.isEmpty, let host, !host.isEmpty else { return nil }
         return "\(user)@\(host)"
+    }
+
+    /// Legacy parity: the retired implementation called `-longLongValue` on
+    /// whatever object arrived — the favorites dictionary hands over
+    /// NSNumber, `.spf` state and the Swift call sites hand over strings.
+    /// Any other type refuses the lookup (where the legacy code would have
+    /// thrown unrecognized-selector; nothing passes such a type).
+    private static func longLongValue(of favoriteID: Any?) -> Int64? {
+        switch favoriteID {
+        case let number as NSNumber: return number.int64Value
+        case let string as String: return (string as NSString).longLongValue
+        default: return nil
+        }
     }
 }

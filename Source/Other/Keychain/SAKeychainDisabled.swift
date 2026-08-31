@@ -52,11 +52,11 @@ import Foundation
 
     func updateItem(name: String?, account: String?, toName newName: String?, newAccount: String?, password: String?) {}
 
-    func name(favoriteName: String?, id favoriteID: String?) -> String? { nil }
+    func name(favoriteName: String?, id favoriteID: Any?) -> String? { nil }
 
     func account(user: String?, host: String?, database: String?) -> String? { nil }
 
-    func sshName(favoriteName: String?, id favoriteID: String?) -> String? { nil }
+    func sshName(favoriteName: String?, id favoriteID: Any?) -> String? { nil }
 
     func sshAccount(user: String?, host: String?) -> String? { nil }
 }
