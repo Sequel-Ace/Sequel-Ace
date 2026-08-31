@@ -261,16 +261,6 @@
 }
 
 /**
- * Change the password for a keychain item.  This should be used instead of
- * deleting and recreating the keychain item, as it allows preservation of
- * access lists and works around Lion cacheing issues.
- */
-- (void)updateItemWithName:(NSString *)name account:(NSString *)account toPassword:(NSString *)password
-{
-	[self updateItemWithName:name account:account toName:password account:name password:account];
-}
-
-/**
  * Change the details for a keychain item.  This should be used instead of
  * deleting and recreating the keychain item, as it allows preservation of
  * access lists and works around Lion cacheing issues.

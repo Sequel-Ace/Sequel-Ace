@@ -200,30 +200,4 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
         XCTAssertFalse(store.passwordExists(name: source, account: "s@h/"))
     }
 
-    // MARK: - Three-argument update (pinned defect)
-
-    func testThreeArgumentUpdateScramblesItsArguments() {
-        // ⚠️ Defect 1 in the migration plan, pinned deliberately: the
-        // toPassword: variant forwards to the five-argument update in
-        // scrambled order — the item is renamed to the *password*, its
-        // account becomes the *name*, and the stored secret becomes the
-        // *account*. It has no production callers (all four call sites use
-        // the five-argument form); Step 2 deletes it. This test documents
-        // exactly what it would do to a caller and will be removed with the
-        // method.
-        let name = service("victim"), account = "user@host/"
-        // The "password" must be namespaced too — the scramble turns it into
-        // a service name, and the sweep must be able to delete that item.
-        let newPassword = service("scrambled destination")
-
-        store.add(password: "original-pw", name: name, account: account)
-        store.updateItem(name: name, account: account, toPassword: newPassword)
-
-        // The original item is gone…
-        XCTAssertFalse(store.passwordExists(name: name, account: account))
-        // …and what exists instead is an item whose service is the password
-        // argument, whose account is the old name, and whose secret is the
-        // old account string.
-        XCTAssertEqual(store.password(name: newPassword, account: name), account)
-    }
 }

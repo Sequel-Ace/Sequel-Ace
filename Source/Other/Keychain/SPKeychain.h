@@ -36,7 +36,6 @@
 - (NSString *)getPasswordForName:(NSString *)name account:(NSString *)account;
 - (void)deletePasswordForName:(NSString *)name account:(NSString *)account;
 - (BOOL)passwordExistsForName:(NSString *)name account:(NSString *)account;
-- (void)updateItemWithName:(NSString *)name account:(NSString *)account toPassword:(NSString *)password;
 - (void)updateItemWithName:(NSString *)name account:(NSString *)account toName:(NSString *)newName account:(NSString *)newAccount password:(NSString *)password;
 
 - (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId;
