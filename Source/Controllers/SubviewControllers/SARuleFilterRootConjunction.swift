@@ -52,15 +52,16 @@ import Foundation
 
     /// Builds the serialized root for the given top-level rows.
     ///
-    /// A single expression is returned as itself (its conjunction is
-    /// irrelevant, and this keeps the persisted shape of the common one-row
-    /// filter unchanged). Any other case – several rows, no rows, or a single
-    /// nested group – is wrapped in a group carrying the root conjunction.
-    /// Wrapping a lone nested group matters: without the wrapper,
-    /// `AND[(a OR b)]` would be indistinguishable from an OR root with two
-    /// rows, and `restorePlan(for:currentIsConjunction:)` would flatten it
-    /// into the popup, so a later append would produce `a OR b OR c` instead
-    /// of `(a OR b) AND c`.
+    /// A single expression under the default AND is returned as itself, which
+    /// keeps the persisted shape of the common one-row filter unchanged. Any
+    /// other case – several rows, no rows, a single nested group, or a single
+    /// expression with OR selected – is wrapped in the marked root group so
+    /// the popup choice survives a reload/restore. Wrapping a lone nested
+    /// group matters for a second reason: without the wrapper, `AND[(a OR b)]`
+    /// would be indistinguishable from an OR root with two rows, and
+    /// `restorePlan(for:currentIsConjunction:)` would flatten it into the
+    /// popup, so a later append would produce `a OR b OR c` instead of
+    /// `(a OR b) AND c`.
     ///
     /// - Parameters:
     ///   - items: Serialized top-level rows.
@@ -68,7 +69,7 @@ import Foundation
     /// - Returns: The serialized filter tree.
     @objc(serializedRootWithItems:isConjunction:)
     public static func serializedRoot(items: [[String: Any]], isConjunction: Bool) -> [String: Any] {
-        if items.count == 1 && !isGroup(items[0]) {
+        if items.count == 1 && !isGroup(items[0]) && isConjunction {
             return items[0]
         }
         return group(children: items, isConjunction: isConjunction, isRoot: true)
@@ -119,11 +120,15 @@ import Foundation
     /// - Returns: The serialized tree to restore.
     @objc(appendingRule:to:rootIsConjunction:)
     public static func appending(rule: [String: Any], to existing: [String: Any]?, rootIsConjunction: Bool) -> [String: Any] {
-        guard let existing, !SACellFilterMerge.isUntouchedStarter(filter: existing) else {
+        guard let existing, !isUntouchedStarterTree(existing) else {
             return rule
         }
         if isRootGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
-            var children = existing[childrenKey] as? [[String: Any]] ?? []
+            // Strip untouched starter children (the seeded empty row can sit
+            // inside the root when the popup was flipped before typing), so
+            // appending never produces "firstColumn = '' AND/OR dropped".
+            var children = (existing[childrenKey] as? [[String: Any]] ?? [])
+                .filter { !SACellFilterMerge.isUntouchedStarter(filter: $0) }
             children.append(rule)
             return group(children: children, isConjunction: rootIsConjunction, isRoot: true)
         }
@@ -186,6 +191,12 @@ import Foundation
     @objc(isUntouchedStarterTree:)
     public static func isUntouchedStarterTree(_ tree: [String: Any]?) -> Bool {
         guard let tree else { return false }
+        if isRootGroup(tree) {
+            // With OR selected, even a lone seeded row is wrapped in the root
+            // group – look through the wrapper.
+            let children = tree[childrenKey] as? [[String: Any]] ?? []
+            return !children.isEmpty && children.allSatisfy { SACellFilterMerge.isUntouchedStarter(filter: $0) }
+        }
         return SACellFilterMerge.isUntouchedStarter(filter: tree)
     }
 

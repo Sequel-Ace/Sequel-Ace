@@ -13,11 +13,26 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
     // MARK: - serializedRoot
 
-    /// Verifies a single top-level expression is serialized as itself, whatever the popup says.
-    func testSingleExpressionIsReturnedAsItself() {
+    /// Verifies a single top-level expression under AND is serialized as itself (unchanged legacy shape).
+    func testSingleExpressionUnderAndIsReturnedAsItself() {
         let rule = expression(column: "name", values: ["Alice"])
 
-        XCTAssertEqual(dictionary(SARuleFilterRootConjunction.serializedRoot(items: [rule], isConjunction: false)), dictionary(rule))
+        XCTAssertEqual(dictionary(SARuleFilterRootConjunction.serializedRoot(items: [rule], isConjunction: true)), dictionary(rule))
+    }
+
+    /// Verifies a single expression with OR selected is wrapped so the popup choice survives a restore.
+    func testSingleExpressionUnderOrIsWrappedInRootGroup() {
+        let rule = expression(column: "name", values: ["Alice"])
+
+        let root = SARuleFilterRootConjunction.serializedRoot(items: [rule], isConjunction: false)
+
+        XCTAssertEqual(root["isConjunction"] as? Bool, false)
+        XCTAssertEqual(root["rootGroup"] as? Bool, true)
+        XCTAssertEqual(children(of: root).map(dictionary), [dictionary(rule)])
+
+        let plan = SARuleFilterRootConjunction.restorePlan(for: root, currentIsConjunction: true)
+        XCTAssertFalse(plan.isConjunction, "the OR choice survives the round trip")
+        XCTAssertEqual(plan.items.map(dictionary), [dictionary(rule)])
     }
 
     /// Verifies a single top-level group is wrapped in the root group so the root conjunction is not lost.
@@ -282,10 +297,43 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: [""])))
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: ["1"])))
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", comparison: "IS NULL", values: [])), "zero-argument operators are real rules")
-        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [expression(column: "a", values: [""]), expression(column: "b", values: [""])], isConjunction: true)))
+        XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [expression(column: "a", values: [""])], isConjunction: false)), "an OR-wrapped seeded row is still just the starter")
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [expression(column: "a", values: [""]), expression(column: "b", values: ["1"])], isConjunction: true)))
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [], isConjunction: true)))
+    }
+
+    /// Verifies appending strips seeded starter rows hiding inside the root group.
+    func testAppendingReplacesStarterInsideOrRoot() {
+        let starter = expression(column: "a", values: [""])
+        let rule = expression(column: "b", values: ["2"])
+
+        XCTAssertEqual(dictionary(SARuleFilterRootConjunction.appending(rule: rule, to: rootGroup(children: [starter], isConjunction: false), rootIsConjunction: false)), dictionary(rule))
+
+        let mixed = SARuleFilterRootConjunction.appending(rule: rule, to: rootGroup(children: [starter, expression(column: "c", values: ["3"])], isConjunction: false), rootIsConjunction: false)
+        XCTAssertEqual(children(of: mixed).map { $0["column"] as? String }, ["c", "b"])
     }
 
     // MARK: - Controller round trip
+
+    /// Verifies the OR choice for a single-row filter survives serialize → setColumns-reset → restore.
+    func testControllerKeepsOrChoiceForSingleRowAcrossRestore() throws {
+        let controller = try makeController(columns: ["a", "b"])
+        restore(expression(column: "a", values: ["1"]), into: controller)
+        controller.setValue(false, forKey: "rootIsConjunction")
+
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+        XCTAssertEqual(saved["rootGroup"] as? Bool, true, "single row with OR is persisted wrapped")
+
+        // Simulate a table reload: setColumns resets the popup to AND, then the saved filter is restored.
+        controller.perform(NSSelectorFromString("setColumns:"), with: columnDefinitions(["a", "b"]))
+        XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true)
+        restore(saved, into: controller)
+
+        XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, false, "OR came back from the saved filter")
+        let kids = children(of: try XCTUnwrap(serializedFilter(of: controller)))
+        XCTAssertEqual(kids.count, 1)
+        XCTAssertEqual(kids.first?["column"] as? String, "a")
+    }
 
     /// Verifies an OR root survives restore → serialize through SPRuleFilterController and that the popup state drives serialization.
     func testControllerRoundTripsRootConjunction() throws {
