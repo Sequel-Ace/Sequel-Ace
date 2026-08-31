@@ -59,7 +59,7 @@ import Foundation
     /// the popup choice survives a reload/restore. Wrapping a lone nested
     /// group matters for a second reason: without the wrapper, `AND[(a OR b)]`
     /// would be indistinguishable from an OR root with two rows, and
-    /// `restorePlan(for:currentIsConjunction:)` would flatten it into the
+    /// `restorePlan(for:)` would flatten it into the
     /// popup, so a later append would produce `a OR b OR c` instead of
     /// `(a OR b) AND c`.
     ///
@@ -83,17 +83,18 @@ import Foundation
     /// AND group is unpacked as the old code did, anything else is kept as one
     /// nested compound row under an AND root – exactly what the old rule editor
     /// showed for it, so `(a OR b)` followed by an append still yields
-    /// `(a OR b) AND c`. A single expression keeps whatever conjunction is
-    /// currently selected, because a lone row carries no information about it.
+    /// `(a OR b) AND c`. A bare expression resets the popup to AND: it is
+    /// either the legacy one-row shape (implicit AND) or a freshly built
+    /// replacement such as a foreign-key navigation filter – with OR selected
+    /// the serializer always writes the marked wrapper, so a stale OR must not
+    /// leak into a tree that never carried one.
     ///
-    /// - Parameters:
-    ///   - serialized: The serialized filter tree.
-    ///   - currentIsConjunction: The conjunction currently shown in the popup.
+    /// - Parameter serialized: The serialized filter tree.
     /// - Returns: The plan describing what to restore.
-    @objc(restorePlanFor:currentIsConjunction:)
-    public static func restorePlan(for serialized: [String: Any], currentIsConjunction: Bool) -> SARuleFilterRootRestorePlan {
+    @objc(restorePlanFor:)
+    public static func restorePlan(for serialized: [String: Any]) -> SARuleFilterRootRestorePlan {
         guard isGroup(serialized) else {
-            return SARuleFilterRootRestorePlan(isConjunction: currentIsConjunction, items: [serialized])
+            return SARuleFilterRootRestorePlan(isConjunction: true, items: [serialized])
         }
         let children = serialized[childrenKey] as? [[String: Any]] ?? []
         if isRootGroup(serialized) {
@@ -179,6 +180,46 @@ import Foundation
         return group(children: [child], isConjunction: !rootIsConjunction, isRoot: false)
     }
 
+    /// Builds the whole tree for the "Add AND/OR Group" action.
+    ///
+    /// The result depends on what the editor already shows:
+    ///
+    /// * empty, or only the seeded starter row → one nested group holding the
+    ///   starter (the placeholder is replaced, the root keeps its conjunction);
+    /// * a single top-level row (expression or one nested group) → a nested
+    ///   group with the opposite conjunction is appended beside it, as before;
+    /// * **two or more top-level rows** → the existing rows are folded into one
+    ///   nested group keeping the current conjunction, the root flips to the
+    ///   opposite, and the starter becomes a plain second row. Rows built with
+    ///   OR therefore yield `(a OR b) AND new`, not `a OR b OR new` – adding a
+    ///   group means "combine everything so far with something new", which is
+    ///   what the popup + group UI suggests.
+    ///
+    /// Seeded starter rows hiding among real rows are dropped, so the result
+    /// never contains a stray `column = ''` condition.
+    ///
+    /// - Parameters:
+    ///   - starter: The serialized starter expression for the new group/row.
+    ///   - existing: The serialized tree currently shown, if any.
+    ///   - rootIsConjunction: The conjunction selected for the top level.
+    /// - Returns: The serialized tree to restore.
+    @objc(treeAddingGroupWithStarter:to:rootIsConjunction:)
+    public static func treeAddingGroup(starter: [String: Any], to existing: [String: Any]?, rootIsConjunction: Bool) -> [String: Any] {
+        guard let existing, !isUntouchedStarterTree(existing) else {
+            return group(children: [nestedGroup(child: starter, rootIsConjunction: rootIsConjunction)], isConjunction: rootIsConjunction, isRoot: true)
+        }
+        if isRootGroup(existing) {
+            let real = (existing[childrenKey] as? [[String: Any]] ?? [])
+                .filter { !SACellFilterMerge.isUntouchedStarter(filter: $0) }
+            if real.count >= 2 {
+                let wrapped = group(children: real, isConjunction: groupIsConjunction(existing), isRoot: false)
+                return group(children: [wrapped, starter], isConjunction: !groupIsConjunction(existing), isRoot: true)
+            }
+            return group(children: real + [nestedGroup(child: starter, rootIsConjunction: rootIsConjunction)], isConjunction: rootIsConjunction, isRoot: true)
+        }
+        return group(children: [existing, nestedGroup(child: starter, rootIsConjunction: rootIsConjunction)], isConjunction: rootIsConjunction, isRoot: true)
+    }
+
     /// Whether the whole tree is nothing but the untouched starter row the
     /// rule editor seeds when it is first shown (one expression whose
     /// arguments are all empty). Such a row would contribute `column = ''`
@@ -209,6 +250,27 @@ import Foundation
     /// Objective-C `boolValue` reading of the same key.
     private static func groupIsConjunction(_ filter: [String: Any]) -> Bool {
         return (filter[isConjunctionKey] as? NSNumber)?.boolValue ?? false
+    }
+
+    /// Extends the marked root group written by this type with one more rule,
+    /// keeping its conjunction and marker; seeded starter children are dropped.
+    /// Used by the cell-filter merge so "Filter by value" appends a row under
+    /// the current popup conjunction instead of forcing an AND wrapper around
+    /// an OR root.
+    ///
+    /// - Parameters:
+    ///   - tree: The serialized tree currently shown.
+    ///   - rule: The serialized expression to append.
+    /// - Returns: The extended root, the rule alone when only seeded rows were
+    ///   present, or `nil` when `tree` is not a marked root group (legacy
+    ///   shapes keep their existing merge behaviour).
+    @objc(extendingMarkedRoot:withRule:)
+    public static func extendingMarkedRoot(_ tree: [String: Any], withRule rule: [String: Any]) -> [String: Any]? {
+        guard isRootGroup(tree) else { return nil }
+        let real = (tree[childrenKey] as? [[String: Any]] ?? [])
+            .filter { !SACellFilterMerge.isUntouchedStarter(filter: $0) }
+        guard !real.isEmpty else { return rule }
+        return group(children: real + [rule], isConjunction: groupIsConjunction(tree), isRoot: true)
     }
 
     /// Whether the serialized group carries the root marker written by

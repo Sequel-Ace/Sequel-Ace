@@ -30,7 +30,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(root["rootGroup"] as? Bool, true)
         XCTAssertEqual(children(of: root).map(dictionary), [dictionary(rule)])
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: root, currentIsConjunction: true)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: root)
         XCTAssertFalse(plan.isConjunction, "the OR choice survives the round trip")
         XCTAssertEqual(plan.items.map(dictionary), [dictionary(rule)])
     }
@@ -52,7 +52,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let c = expression(column: "c", values: ["3"])
 
         let serialized = SARuleFilterRootConjunction.serializedRoot(items: [nested], isConjunction: true)
-        let plan = SARuleFilterRootConjunction.restorePlan(for: serialized, currentIsConjunction: true)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: serialized)
         XCTAssertTrue(plan.isConjunction)
         XCTAssertEqual(plan.items.map(dictionary), [dictionary(nested)])
 
@@ -96,7 +96,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let b = expression(column: "b", values: ["2"])
         let orRoot = rootGroup(children: [a, b], isConjunction: false)
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: orRoot, currentIsConjunction: true)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: orRoot)
 
         XCTAssertFalse(plan.isConjunction)
         XCTAssertEqual(plan.items.map(dictionary), [a, b].map(dictionary))
@@ -108,7 +108,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let b = expression(column: "b", values: ["2"])
         let legacyOrGroup = group(children: [a, b], isConjunction: false)
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: legacyOrGroup, currentIsConjunction: false)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: legacyOrGroup)
 
         XCTAssertTrue(plan.isConjunction, "legacy trees had an implicit AND root")
         XCTAssertEqual(plan.items.map(dictionary), [dictionary(legacyOrGroup)])
@@ -119,7 +119,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let a = expression(column: "a", values: ["1"])
         let b = expression(column: "b", values: ["2"])
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: group(children: [a, b], isConjunction: true), currentIsConjunction: false)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: group(children: [a, b], isConjunction: true))
 
         XCTAssertTrue(plan.isConjunction)
         XCTAssertEqual(plan.items.map(dictionary), [a, b].map(dictionary))
@@ -130,7 +130,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let legacyOrGroup = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
         let c = expression(column: "c", values: ["3"])
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: legacyOrGroup, currentIsConjunction: true)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: legacyOrGroup)
         let reserialized = SARuleFilterRootConjunction.serializedRoot(items: plan.items, isConjunction: plan.isConjunction)
         let appended = SARuleFilterRootConjunction.appending(rule: c, to: reserialized, rootIsConjunction: plan.isConjunction)
 
@@ -144,21 +144,48 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let nested = group(children: [expression(column: "b", values: ["2"]), expression(column: "c", values: ["3"])], isConjunction: false)
         let root = rootGroup(children: [a, nested], isConjunction: true)
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: root, currentIsConjunction: false)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: root)
 
         XCTAssertTrue(plan.isConjunction)
         XCTAssertEqual(plan.items.count, 2)
         XCTAssertEqual(plan.items[1]["filterClass"] as? String, "groupNode")
     }
 
-    /// Verifies a lone expression keeps whatever conjunction is currently selected.
-    func testRestorePlanKeepsCurrentConjunctionForSingleExpression() {
+    /// Verifies a bare expression resets the popup to AND – a replacement filter (e.g. foreign-key
+    /// navigation) must not inherit a stale OR, and the OR one-row shape is always written wrapped.
+    func testRestorePlanResetsToAndForBareExpression() {
         let rule = expression(column: "a", values: ["1"])
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: rule, currentIsConjunction: false)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: rule)
 
-        XCTAssertFalse(plan.isConjunction)
+        XCTAssertTrue(plan.isConjunction)
         XCTAssertEqual(plan.items.map(dictionary), [dictionary(rule)])
+    }
+
+    // MARK: - extendingMarkedRoot
+
+    /// Verifies only marked root groups are extended, keeping conjunction and marker.
+    func testExtendingMarkedRootKeepsConjunction() throws {
+        let a = expression(column: "a", values: ["1"])
+        let rule = expression(column: "c", values: ["3"])
+
+        XCTAssertNil(SARuleFilterRootConjunction.extendingMarkedRoot(a, withRule: rule))
+        XCTAssertNil(SARuleFilterRootConjunction.extendingMarkedRoot(group(children: [a], isConjunction: false), withRule: rule), "legacy groups keep the old merge path")
+
+        let extended = try XCTUnwrap(SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [a, expression(column: "b", values: ["2"])], isConjunction: false), withRule: rule))
+        XCTAssertEqual(extended["isConjunction"] as? Bool, false)
+        XCTAssertEqual(extended["rootGroup"] as? Bool, true)
+        XCTAssertEqual(children(of: extended).map { $0["column"] as? String }, ["a", "b", "c"])
+    }
+
+    /// Verifies seeded starter children are dropped, and a starter-only root collapses to the rule.
+    func testExtendingMarkedRootDropsSeededRows() {
+        let starter = expression(column: "a", values: [""])
+        let rule = expression(column: "c", values: ["3"])
+
+        XCTAssertEqual(SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [starter], isConjunction: false), withRule: rule).map(dictionary), dictionary(rule))
+        let mixed = SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [starter, expression(column: "b", values: ["2"])], isConjunction: false), withRule: rule)
+        XCTAssertEqual(mixed.map(children)?.map { $0["column"] as? String }, ["b", "c"])
     }
 
     // MARK: - appending
@@ -313,6 +340,76 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(children(of: mixed).map { $0["column"] as? String }, ["c", "b"])
     }
 
+    // MARK: - treeAddingGroup
+
+    /// Verifies an empty or seeded-only editor gets the nested group alone (root conjunction unchanged).
+    func testAddingGroupReplacesStarterOnlyEditor() {
+        let starter = expression(column: "a", values: [""])
+
+        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: starter, to: expression(column: "a", values: [""]), rootIsConjunction: true)
+
+        XCTAssertEqual(tree["isConjunction"] as? Bool, true)
+        let kids = children(of: tree)
+        XCTAssertEqual(kids.count, 1)
+        XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
+        XCTAssertEqual(children(of: kids.first ?? [:]).map(dictionary), [dictionary(starter)])
+    }
+
+    /// Verifies the reported case: two OR rows + add group folds them and flips the root – "(a OR b) AND new".
+    func testAddingGroupFoldsOrRowsUnderAndRoot() {
+        let a = expression(column: "PLZ", values: ["77694"])
+        let b = expression(column: "PLZ", values: ["40789"])
+        let starter = expression(column: "NAME46", values: [""])
+
+        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: starter, to: rootGroup(children: [a, b], isConjunction: false), rootIsConjunction: false)
+
+        XCTAssertEqual(tree["isConjunction"] as? Bool, true, "root flips to AND")
+        XCTAssertEqual(tree["rootGroup"] as? Bool, true)
+        let kids = children(of: tree)
+        XCTAssertEqual(kids.count, 2)
+        XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false, "the OR pair stays one nested group")
+        XCTAssertNil(kids.first?["rootGroup"])
+        XCTAssertEqual(children(of: kids.first ?? [:]).map(dictionary), [a, b].map(dictionary))
+        XCTAssertEqual(dictionary(kids.last ?? [:]), dictionary(starter))
+    }
+
+    /// Verifies the mirrored case: two AND rows + add group yields "(a AND b) OR new".
+    func testAddingGroupFoldsAndRowsUnderOrRoot() {
+        let a = expression(column: "a", values: ["1"])
+        let b = expression(column: "b", values: ["2"])
+
+        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: expression(column: "c", values: [""]), to: rootGroup(children: [a, b], isConjunction: true), rootIsConjunction: true)
+
+        XCTAssertEqual(tree["isConjunction"] as? Bool, false)
+        XCTAssertEqual(children(of: tree).first?["isConjunction"] as? Bool, true)
+    }
+
+    /// Verifies a seeded row hiding among the top-level rows is dropped while folding.
+    func testAddingGroupDropsSeededRowWhileFolding() {
+        let a = expression(column: "a", values: ["1"])
+        let b = expression(column: "b", values: ["2"])
+        let seeded = expression(column: "a", values: [""])
+
+        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: expression(column: "c", values: [""]), to: rootGroup(children: [seeded, a, b], isConjunction: false), rootIsConjunction: false)
+
+        XCTAssertEqual(children(of: children(of: tree).first ?? [:]).map(dictionary), [a, b].map(dictionary))
+    }
+
+    /// Verifies a single real row keeps the old behaviour: a nested group with the opposite conjunction is appended.
+    func testAddingGroupBesideSingleRowKeepsRoot() {
+        let a = expression(column: "a", values: ["1"])
+        let starter = expression(column: "b", values: [""])
+
+        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: starter, to: a, rootIsConjunction: true)
+
+        XCTAssertEqual(tree["isConjunction"] as? Bool, true, "root keeps AND")
+        let kids = children(of: tree)
+        XCTAssertEqual(kids.count, 2)
+        XCTAssertEqual(dictionary(kids.first ?? [:]), dictionary(a))
+        XCTAssertEqual(kids.last?["isConjunction"] as? Bool, false)
+        XCTAssertEqual(children(of: kids.last ?? [:]).map(dictionary), [dictionary(starter)])
+    }
+
     // MARK: - Controller round trip
 
     /// Verifies the OR choice for a single-row filter survives serialize → setColumns-reset → restore.
@@ -416,7 +513,24 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
     }
 
-    /// Verifies -addEmptyFilterGroup appends a visible group row (with the opposite conjunction) rather than flattening it into the popup.
+    /// Verifies the reported end-to-end case: two OR rows + add group + filled row give "(a OR b) AND c" through the controller.
+    func testControllerFoldsOrRowsWhenAddingGroup() throws {
+        let controller = try makeController(columns: ["PLZ", "NAME46"])
+        restore(rootGroup(children: [expression(column: "PLZ", values: ["77694"]), expression(column: "PLZ", values: ["40789"])], isConjunction: false), into: controller)
+        XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, false)
+
+        controller.perform(NSSelectorFromString("addEmptyFilterGroup"))
+
+        XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true, "root flipped to AND")
+        let serialized = try XCTUnwrap(serializedFilter(of: controller))
+        let kids = children(of: serialized)
+        XCTAssertEqual(kids.count, 2)
+        XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
+        XCTAssertEqual(children(of: kids.first ?? [:]).count, 2)
+        XCTAssertEqual(kids.last?["filterClass"] as? String, "expressionNode", "the new row sits at the top level")
+    }
+
+    /// Verifies -addEmptyFilterGroup beside a single row appends a visible group (with the opposite conjunction) and keeps the root.
     func testControllerAddsNestedGroupRow() throws {
         let controller = try makeController(columns: ["a", "b"])
         restore(expression(column: "a", values: ["1"]), into: controller)

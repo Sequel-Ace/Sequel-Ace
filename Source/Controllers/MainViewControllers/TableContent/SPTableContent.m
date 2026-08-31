@@ -3740,6 +3740,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate
 {
+	// Table loading calls this from its background task thread. Frames and
+	// animators may only be touched on main – off-main updates intermittently
+	// leave the container clipped after a table switch (rows visible, drop
+	// zone and button strip gone), so marshal the whole pass.
+	if (![NSThread isMainThread]) {
+		SPMainQSync(^{
+			[self updateFilterRuleEditorSize:requestedHeight animate:animate];
+		});
+		return;
+	}
+
 	NSRect contentAreaRect = [contentAreaContainer frame];
 	CGFloat availableHeight = contentAreaRect.size.height;
 	NSRect ruleEditorRect = [[[ruleFilterController view] enclosingScrollView] frame];

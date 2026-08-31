@@ -10,6 +10,39 @@ import XCTest
 
 final class SACellFilterMergeTests: XCTestCase {
 
+    /// Verifies a marked OR root (the AND/OR popup shape) is extended under OR instead of being AND-wrapped.
+    func testMarkedOrRootIsExtendedKeepingOr() {
+        let current: [String: Any] = [
+            "filterClass": "groupNode",
+            "isConjunction": false,
+            "rootGroup": true,
+            "children": [filter(column: "a", comparison: "=", values: ["1"]), filter(column: "b", comparison: "=", values: ["2"])],
+        ]
+        let newFilter = filter(column: "c", comparison: "=", values: ["3"])
+
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: current, newFilter: newFilter)
+
+        XCTAssertEqual(merged["isConjunction"] as? Bool, false, "the popup stays on OR")
+        XCTAssertEqual(merged["rootGroup"] as? Bool, true)
+        XCTAssertEqual((merged["children"] as? [[String: Any]])?.count, 3)
+    }
+
+    /// Verifies a marked AND root is extended in place as well (marker preserved).
+    func testMarkedAndRootIsExtendedKeepingMarker() {
+        let current: [String: Any] = [
+            "filterClass": "groupNode",
+            "isConjunction": true,
+            "rootGroup": true,
+            "children": [filter(column: "a", comparison: "=", values: ["1"]), filter(column: "b", comparison: "=", values: ["2"])],
+        ]
+
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: current, newFilter: filter(column: "c", comparison: "=", values: ["3"]))
+
+        XCTAssertEqual(merged["isConjunction"] as? Bool, true)
+        XCTAssertEqual(merged["rootGroup"] as? Bool, true)
+        XCTAssertEqual((merged["children"] as? [[String: Any]])?.count, 3)
+    }
+
     /// Verifies a missing current filter is replaced by the new cell filter.
     func testNilCurrentFilterUsesNewFilter() {
         let newFilter = filter(column: "name", comparison: "=", values: ["Alice"])

@@ -1087,17 +1087,27 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// several times, and not every post means the number of rows actually changed. SARuleFilterResizePolicy
 	// decides what to do; this method only carries it out (see the policy for the reasoning).
 	NSInteger newRowCount = [filterRuleEditor numberOfRows];
+	// The notification arrives on whatever thread mutated the rows (table
+	// loading clears/restores the model from its task thread). Cancelling and
+	// scheduling the deferred resize must happen on the main run loop, or the
+	// perform never fires and stale cancels hit the wrong thread.
 	switch([SARuleFilterResizePolicy actionForRowCount:newRowCount previousRowCount:previousRowCount]) {
 		case SARuleFilterResizeActionNone:
 			break;
-		case SARuleFilterResizeActionImmediate:
-			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
-			[self _resize];
+		case SARuleFilterResizeActionImmediate: {
+			SPMainQSync(^{
+				[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
+				[self _resize];
+			});
 			break;
-		case SARuleFilterResizeActionDeferred:
-			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
-			[self performSelector:@selector(_resize) withObject:nil afterDelay:[SARuleFilterResizePolicy deferredResizeDelay]];
+		}
+		case SARuleFilterResizeActionDeferred: {
+			SPMainQSync(^{
+				[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
+				[self performSelector:@selector(_resize) withObject:nil afterDelay:[SARuleFilterResizePolicy deferredResizeDelay]];
+			});
 			break;
+		}
 	}
 	[self _updateButtonStates];
 
@@ -1509,30 +1519,21 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// starter rule a fresh row would show (first column, "=", no value).
 	NSDictionary *starter = [self _makeSerializedRuleForColumn:[(ColumnNode *)[columns firstObject] name] value:@"" isNull:NO];
 	if (!starter) return;
-	NSDictionary *group = [SARuleFilterRootConjunction nestedGroupWithChild:starter rootIsConjunction:rootIsConjunction];
 
-	// Append to the model directly instead of round-tripping through
-	// -restoreSerializedFilters:, which would flatten a lone root group
-	// into the AND/OR popup – the user asked for a visible group here.
-	// If the editor only holds the untouched starter row it was seeded
-	// with, replace that row: left beside the group it would add
-	// "firstColumn = ''" to the query (same rule as -appendFilterForColumn:).
-	NSMutableDictionary *groupRow = [self _restoreSerializedFilter:group];
-	if (!groupRow) return;
-	BOOL replaceStarter = [SARuleFilterRootConjunction isUntouchedStarterTree:[self serializedFilter]];
-	[self _doChangeToRuleEditorData:^{
-		NSMutableArray *proxy = [self->_modelContainer mutableArrayValueForKey:@"model"];
-		if (replaceStarter) {
-			[proxy setArray:@[groupRow]];
-		}
-		else {
-			[proxy addObject:groupRow];
-		}
-	}];
-	[self _recalculateCheckboxStatesFromRow:-1];
+	// SARuleFilterRootConjunction decides the resulting tree: replace a lone
+	// seeded row, append a nested group beside a single row, or – with two or
+	// more rows – fold them into one group and flip the root so the action
+	// reads as "(a OR b) AND new" instead of "a OR b OR new".
+	NSDictionary *tree = [SARuleFilterRootConjunction treeAddingGroupWithStarter:starter
+	                                                                          to:[self serializedFilter]
+	                                                           rootIsConjunction:rootIsConjunction];
+	[self restoreSerializedFilters:tree];
 
-	// Focus the row inside the new group, like -addEmptyFilterRow does.
-	[self _focusOnFieldInSubtree:groupRow];
+	// Focus the freshly added last row, like -addEmptyFilterRow does.
+	NSArray *model = [_modelContainer model];
+	if ([model count] > 0) {
+		[self _focusOnFieldInSubtree:[model lastObject]];
+	}
 }
 
 - (void)addEmptyFilterRow
@@ -1689,7 +1690,7 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 	if(!serialized) return;
 
 	// a group at the root becomes the top-level rows plus the AND/OR popup, anything else is a single row
-	SARuleFilterRootRestorePlan *plan = [SARuleFilterRootConjunction restorePlanFor:serialized currentIsConjunction:rootIsConjunction];
+	SARuleFilterRootRestorePlan *plan = [SARuleFilterRootConjunction restorePlanFor:serialized];
 	[self setRootIsConjunction:[plan isConjunction]];
 
 	NSMutableArray *newModel = [[NSMutableArray alloc] init];
