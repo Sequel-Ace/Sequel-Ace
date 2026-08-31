@@ -31,14 +31,13 @@
 import Foundation
 
 /// The null object for keychain access while it is disabled
-/// (`LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` is set — issue #2437, where SPKeychain
-/// refuses to construct at all).
+/// (`LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` is set — issue #2437). Handed out by
+/// `SAKeychainAccess.make()`.
 ///
-/// Its behaviour deliberately mirrors what Objective-C callers already get
-/// from messaging the nil SPKeychain: every operation is a no-op, every
-/// lookup returns nil or false — the naming helpers included. Swift callers
-/// hold this instead of nil (previously the unannotated init imported as
-/// `init!` and the first use trapped — defect 3 in the migration plan).
+/// Every operation is a no-op, every lookup returns nil or false — the
+/// naming helpers included, deliberately mirroring what Objective-C callers
+/// historically got from messaging the retired SPKeychain's nil
+/// disabled-mode instance.
 @objc final class SAKeychainDisabled: NSObject, SAKeychainProviding {
 
     func add(password: String?, name: String?, account: String?) {}

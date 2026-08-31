@@ -35,10 +35,10 @@ import Foundation
 ///
 /// Owns the issue #2437 guard: while `LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` is
 /// set, keychain access is disabled wholesale and callers receive the
-/// `SAKeychainDisabled` null object — previously this guard was SPKeychain's
-/// nil-returning init, which gave Objective-C callers nil-messaging no-ops
-/// and trapped unguarded Swift callers. Callers always hold a working
-/// `SAKeychainProviding` now.
+/// `SAKeychainDisabled` null object — historically this guard was the
+/// retired SPKeychain's nil-returning init, which gave Objective-C callers
+/// nil-messaging no-ops and trapped unguarded Swift callers. Callers always
+/// hold a working `SAKeychainProviding` now.
 @objc final class SAKeychainAccess: NSObject {
 
     @objc static func make() -> SAKeychainProviding {

@@ -30,20 +30,18 @@
 
 import Foundation
 
-/// The keychain surface shared by the legacy `SPKeychain` (Objective-C,
-/// `SecKeychain*`) and its planned `SecItem*` replacement — see
+/// The keychain store surface — implemented by `SAKeychain` (SecItem*) and
+/// `SAKeychainDisabled`, constructed via `SAKeychainAccess.make()`. See
 /// `docs/development/keychain-secitem-migration-plan.md`.
 ///
-/// The selectors mirror `SPKeychain.h` exactly so the legacy class conforms
-/// without any change to its methods; the characterization suite is written
-/// against this protocol so the identical tests can later run against both
-/// implementations (the migration plan's cross-compatibility matrix).
+/// The selectors are the legacy SPKeychain's, unchanged: that class adopted
+/// this protocol untouched while the migration's cross-compatibility matrix
+/// proved the two implementations equivalent, and the Objective-C call
+/// sites still speak these exact selectors through the protocol today.
 ///
-/// Public rather than internal so it appears in every target's generated
-/// `sequel-ace-Swift.h` — `SPKeychain.m` compiles into the app, the
-/// SequelAceTunnelAssistant, and (for the characterization suite) the Unit
-/// Tests target, and only public declarations are emitted into the generated
-/// header for targets that have no Objective-C bridging header.
+/// Public rather than internal so it is emitted into a generated
+/// `sequel-ace-Swift.h` even for targets without an Objective-C bridging
+/// header (only public declarations are emitted there).
 @objc public protocol SAKeychainProviding {
 
     /// Adds a password with the item's label defaulting to `name`.

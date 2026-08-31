@@ -32,17 +32,17 @@ import AppKit
 import Foundation
 import Security
 
-/// The `SecItem*` implementation of the keychain store — SPKeychain's
-/// replacement (migration plan Step 4).
+/// The `SecItem*` implementation of the keychain store — the retired
+/// SPKeychain's replacement (migration plan Steps 4–5). Construct via
+/// `SAKeychainAccess.make()`, which owns the disabled-mode guard.
 ///
-/// It operates on the same physical store as the legacy `SecKeychain*` code:
-/// the file-based login keychain (`kSecUseDataProtectionKeychain` is
-/// deliberately never passed), so every existing user item is found, read,
-/// updated and deleted **in place** — no data migration. The semantics are
-/// pinned by `SAKeychainStoreCharacterizationTests`, which runs identically
-/// against this class and against SPKeychain, plus the cross-implementation
-/// matrix in `SAKeychainCrossCompatibilityTests` (legacy writes → this
-/// reads, and the reverse).
+/// It operates on the same physical store as the legacy `SecKeychain*` code
+/// did: the file-based login keychain (`kSecUseDataProtectionKeychain` is
+/// deliberately never passed), so every item a previous version stored is
+/// found, read, updated and deleted **in place** — no data migration. The
+/// semantics are pinned by `SAKeychainStoreCharacterizationTests`
+/// (characterized off the legacy implementation, and proven equivalent by
+/// the cross-implementation matrix while both implementations existed).
 ///
 /// Pinned behaviours worth naming: add is a silent no-op when the item
 /// already exists (callers branch through the update path); update recovers

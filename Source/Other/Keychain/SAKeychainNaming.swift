@@ -35,7 +35,7 @@ import Foundation
 /// These strings are persisted in every user's login keychain (and `.spf`
 /// documents carry them verbatim), so they are byte-pinned by
 /// `SAKeychainNamingCharacterizationTests` and must never drift. The rules,
-/// inherited from SPKeychain:
+/// inherited from the retired SPKeychain:
 ///
 /// - ids are coerced through `NSString.longLongValue` (non-numeric → 0,
 ///   numeric prefixes parsed as far as they go, 64-bit clamped) — "to
