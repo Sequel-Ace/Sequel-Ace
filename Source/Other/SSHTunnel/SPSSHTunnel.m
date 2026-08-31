@@ -782,8 +782,18 @@ static unsigned short getRandomPort(void);
  */
 - (NSString *)getPasswordWithVerificationHash:(NSString *)theHash
 {
-	if (passwordInKeychain) return nil;
 	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
+
+	// Keychain-backed connections resolve the password here, at ask time, on
+	// the app side of the channel: the assistant no longer reads the keychain
+	// itself (keychain migration plan, Step 3), so the secret never has to be
+	// readable by a second process. A missing item returns nil, which the
+	// assistant turns into its keychain-specific UI fallback prompt.
+	if (passwordInKeychain) {
+		SPKeychain *keychain = [[SPKeychain alloc] init];
+		return [keychain getPasswordForName:keychainName account:keychainAccount];
+	}
+
 	return password;
 }
 
@@ -849,8 +859,21 @@ static unsigned short getRandomPort(void);
 - (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
 {
 	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
-	
+
 	if (passwordPromptCancelled) return nil;
+
+	// SSH key passphrases: check the user's stored "SSH"/<key name> item on
+	// the app side before raising the UI prompt. This check lived in the
+	// assistant while it still read the keychain directly (keychain
+	// migration plan, Step 3); the exists-then-get shape is kept for exact
+	// behavioural parity with that code.
+	NSString *storedKeyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
+	if (storedKeyName.length > 0) {
+		SPKeychain *keychain = [[SPKeychain alloc] init];
+		if ([keychain passwordExistsForName:@"SSH" account:storedKeyName]) {
+			return [keychain getPasswordForName:@"SSH" account:storedKeyName];
+		}
+	}
 
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];
