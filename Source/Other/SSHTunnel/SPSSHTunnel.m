@@ -787,12 +787,10 @@ static unsigned short getRandomPort(void);
 
 	// Keychain-backed connections resolve the password here, at ask time, on
 	// the app side of the channel: the assistant no longer reads the keychain
-	// itself (keychain migration plan, Step 3), so the secret never has to be
-	// readable by a second process. A missing item returns nil, which the
-	// assistant turns into its keychain-specific UI fallback prompt.
+	// itself (keychain migration plan, Step 3). The lookup lives in
+	// SASSHTunnelSecretResolver (new logic in Swift, thin bridge here).
 	if (passwordInKeychain) {
-		id<SAKeychainProviding> keychain = [SAKeychainAccess make];
-		return [keychain getPasswordForName:keychainName account:keychainAccount];
+		return [SASSHTunnelSecretResolver passwordForKeychainName:keychainName account:keychainAccount];
 	}
 
 	return password;
@@ -866,15 +864,10 @@ static unsigned short getRandomPort(void);
 	// SSH key passphrases: check the user's stored "SSH"/<key name> item on
 	// the app side before raising the UI prompt. This check lived in the
 	// assistant while it still read the keychain directly (keychain
-	// migration plan, Step 3); the exists-then-get shape is kept for exact
-	// behavioural parity with that code.
-	NSString *storedKeyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
-	if (storedKeyName.length > 0) {
-		id<SAKeychainProviding> keychain = [SAKeychainAccess make];
-		if ([keychain passwordExistsForName:@"SSH" account:storedKeyName]) {
-			return [keychain getPasswordForName:@"SSH" account:storedKeyName];
-		}
-	}
+	// migration plan, Step 3); SASSHTunnelSecretResolver keeps its
+	// exists-then-get shape.
+	NSString *storedPassphrase = [SASSHTunnelSecretResolver storedPassphraseForQuery:theQuery];
+	if (storedPassphrase) return storedPassphrase;
 
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];

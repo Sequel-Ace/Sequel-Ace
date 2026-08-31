@@ -479,7 +479,7 @@ deferred projects below.
   with the NSConnection item below). SPKeychain is deleted; `SAKeychain`
   (SecItem*) replaced it behind `SAKeychainProviding`, proven by a
   cross-implementation test matrix. All 10 SecKeychain unique warning lines
-  are gone; the floor is now NSConnection (6) + the 4 intentional markers.
+  are gone; the floor is now NSConnection (5) + the 4 intentional markers.
 - **NSConnection → NSXPCConnection** (SequelAceTunnelAssistant.m:117/168) —
   reworks the SSH-password IPC between app and helper tool. **Now designed and
   unblocked**: see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The

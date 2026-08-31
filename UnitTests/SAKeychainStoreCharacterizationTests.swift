@@ -17,6 +17,7 @@
 //  modal NSAlerts, which would hang the runner.
 //
 
+import Security
 import XCTest
 
 final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTestCase {

@@ -25,8 +25,11 @@ import XCTest
 enum SAKeychainTestSupport {
 
     /// Every keychain item any test creates must carry this service prefix —
-    /// it is what the sweep matches on.
-    static let testServicePrefix = "Sequel Ace Test"
+    /// it is what the sweep matches on. The fixed random token makes the
+    /// namespace collision-proof: the sweep deletes every matching item
+    /// (aborted-run leftovers included), so the prefix must be one nothing
+    /// else could plausibly use.
+    static let testServicePrefix = "Sequel Ace Unit Test 8C41F2D6"
 
     /// Per-run token so concurrent/consecutive runs cannot see each other's
     /// items even before the sweep runs.
