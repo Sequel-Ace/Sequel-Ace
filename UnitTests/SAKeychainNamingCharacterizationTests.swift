@@ -15,7 +15,7 @@
 
 import XCTest
 
-final class SAKeychainNamingCharacterizationTests: SAKeychainCharacterizationTestCase {
+class SAKeychainNamingCharacterizationTests: SAKeychainCharacterizationTestCase {
 
     override var needsKeychainAccess: Bool { false }
 

@@ -284,6 +284,7 @@
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
 		517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */; };
+		F2910B3BFE2BCF3C6C0FCE43 /* SAKeychainSecItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB74AC095EC965C063246A92 /* SAKeychainSecItemTests.swift */; };
 		9EF08F69717C447F6B39B6D0 /* SAKeychainStoreCharacterizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */; };
 		0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */; };
 		158CE2B8B92310647A1BF0B4 /* SAKeychainNamingCharacterizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D53166D77A40496B91F45A9 /* SAKeychainNamingCharacterizationTests.swift */; };
@@ -1140,6 +1141,7 @@
 		51731E7B27DFB99A00D81B98 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionServiceTests.swift; sourceTree = "<group>"; };
+		AB74AC095EC965C063246A92 /* SAKeychainSecItemTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainSecItemTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainTestSupport.swift; sourceTree = "<group>"; };
 		7D53166D77A40496B91F45A9 /* SAKeychainNamingCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainNamingCharacterizationTests.swift; sourceTree = "<group>"; };
@@ -2731,6 +2733,7 @@
 				5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */,
 				5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */,
 				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
+				AB74AC095EC965C063246A92 /* SAKeychainSecItemTests.swift */,
 				01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */,
 				8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */,
 				A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */,
@@ -3384,6 +3387,7 @@
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
+				F2910B3BFE2BCF3C6C0FCE43 /* SAKeychainSecItemTests.swift in Sources */,
 				9EF08F69717C447F6B39B6D0 /* SAKeychainStoreCharacterizationTests.swift in Sources */,
 				0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */,
 				442DC8CE81CCD45D45F19DE7 /* SAKeychain.swift in Sources */,
