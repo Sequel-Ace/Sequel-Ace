@@ -29,18 +29,36 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ * Legacy SecKeychain*-backed keychain store; conforms to SAKeychainProviding
+ * (declared in the .m). Being migrated to SecItem* — see
+ * docs/development/keychain-secitem-migration-plan.md.
+ *
+ * The nullability below deliberately mirrors SAKeychainProviding: every
+ * argument tolerates nil (rejected internally), every lookup can return nil.
+ */
 @interface SPKeychain : NSObject
 
-- (void)addPassword:(NSString *)password forName:(NSString *)name account:(NSString *)account;
-- (void)addPassword:(NSString *)password forName:(NSString *)name account:(NSString *)account withLabel:(NSString *)label;
-- (NSString *)getPasswordForName:(NSString *)name account:(NSString *)account;
-- (void)deletePasswordForName:(NSString *)name account:(NSString *)account;
-- (BOOL)passwordExistsForName:(NSString *)name account:(NSString *)account;
-- (void)updateItemWithName:(NSString *)name account:(NSString *)account toName:(NSString *)newName account:(NSString *)newAccount password:(NSString *)password;
+/// Returns nil when keychain access is disabled via
+/// LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN (issue #2437). Swift callers should use
+/// SAKeychainAccess.make(), which substitutes the SAKeychainDisabled null
+/// object instead of handing out nil.
+- (nullable instancetype)init;
 
-- (NSString *)nameForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId;
-- (NSString *)accountForUser:(NSString *)user host:(NSString *)host database:(NSString *)database;
-- (NSString *)nameForSSHForFavoriteName:(NSString *)favoriteName id:(NSString *)favoriteId;
-- (NSString *)accountForSSHUser:(NSString *)SSHUser sshHost:(NSString *)SSHHost;
+- (void)addPassword:(nullable NSString *)password forName:(nullable NSString *)name account:(nullable NSString *)account;
+- (void)addPassword:(nullable NSString *)password forName:(nullable NSString *)name account:(nullable NSString *)account withLabel:(nullable NSString *)label;
+- (nullable NSString *)getPasswordForName:(nullable NSString *)name account:(nullable NSString *)account;
+- (void)deletePasswordForName:(nullable NSString *)name account:(nullable NSString *)account;
+- (BOOL)passwordExistsForName:(nullable NSString *)name account:(nullable NSString *)account;
+- (void)updateItemWithName:(nullable NSString *)name account:(nullable NSString *)account toName:(nullable NSString *)newName account:(nullable NSString *)newAccount password:(nullable NSString *)password;
+
+- (nullable NSString *)nameForFavoriteName:(nullable NSString *)favoriteName id:(nullable NSString *)favoriteId;
+- (nullable NSString *)accountForUser:(nullable NSString *)user host:(nullable NSString *)host database:(nullable NSString *)database;
+- (nullable NSString *)nameForSSHForFavoriteName:(nullable NSString *)favoriteName id:(nullable NSString *)favoriteId;
+- (nullable NSString *)accountForSSHUser:(nullable NSString *)SSHUser sshHost:(nullable NSString *)SSHHost;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -84,6 +84,7 @@
 		98203642272CF04DBDC94A70 /* SPKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641740EF01F80001BC333 /* SPKeychain.m */; };
 		623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
 		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
+		CD5AFDE14AA44B4AB444DD59 /* SAKeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4471240789125E4D4033602A /* SAKeychainAccess.swift */; };
 		0EFB3862D086C3F4C5716B85 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		7E75432072457939574AC25A /* SAKeychainDisabledTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */; };
 		221C83260BF298E6A8969456 /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
@@ -927,6 +928,7 @@
 		17E641740EF01F80001BC333 /* SPKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPKeychain.m; sourceTree = "<group>"; };
 		11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainProviding.swift; sourceTree = "<group>"; };
 		4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainDisabled.swift; sourceTree = "<group>"; };
+		4471240789125E4D4033602A /* SAKeychainAccess.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainAccess.swift; sourceTree = "<group>"; };
 		A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainDisabledTests.swift; sourceTree = "<group>"; };
 		17E6417E0EF01FA8001BC333 /* SPImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPImageView.h; sourceTree = "<group>"; };
 		17E6417F0EF01FA8001BC333 /* SPImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPImageView.m; sourceTree = "<group>"; };
@@ -2324,6 +2326,7 @@
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
 				11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */,
 				4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */,
+				4471240789125E4D4033602A /* SAKeychainAccess.swift */,
 			);
 			path = Keychain;
 			sourceTree = "<group>";
@@ -3602,6 +3605,7 @@
 				51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
+				CD5AFDE14AA44B4AB444DD59 /* SAKeychainAccess.swift in Sources */,
 				090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */,
 				623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
