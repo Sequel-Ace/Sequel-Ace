@@ -84,6 +84,8 @@
 		98203642272CF04DBDC94A70 /* SPKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641740EF01F80001BC333 /* SPKeychain.m */; };
 		623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
 		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
+		FA4FC2907FC19A9EA23B2465 /* SAKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE09C59624F6AC834DAD7675 /* SAKeychain.swift */; };
+		442DC8CE81CCD45D45F19DE7 /* SAKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE09C59624F6AC834DAD7675 /* SAKeychain.swift */; };
 		239009D40D234AB74434A7F3 /* SAKeychainNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */; };
 		6220954A97524B17D37B4D09 /* SAKeychainNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */; };
 		CD5AFDE14AA44B4AB444DD59 /* SAKeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4471240789125E4D4033602A /* SAKeychainAccess.swift */; };
@@ -928,6 +930,7 @@
 		17E641740EF01F80001BC333 /* SPKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPKeychain.m; sourceTree = "<group>"; };
 		11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainProviding.swift; sourceTree = "<group>"; };
 		4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainDisabled.swift; sourceTree = "<group>"; };
+		BE09C59624F6AC834DAD7675 /* SAKeychain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychain.swift; sourceTree = "<group>"; };
 		52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainNaming.swift; sourceTree = "<group>"; };
 		4471240789125E4D4033602A /* SAKeychainAccess.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainAccess.swift; sourceTree = "<group>"; };
 		A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainDisabledTests.swift; sourceTree = "<group>"; };
@@ -2327,6 +2330,7 @@
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
 				11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */,
 				4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */,
+				BE09C59624F6AC834DAD7675 /* SAKeychain.swift */,
 				52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */,
 				4471240789125E4D4033602A /* SAKeychainAccess.swift */,
 			);
@@ -3382,6 +3386,7 @@
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				9EF08F69717C447F6B39B6D0 /* SAKeychainStoreCharacterizationTests.swift in Sources */,
 				0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */,
+				442DC8CE81CCD45D45F19DE7 /* SAKeychain.swift in Sources */,
 				6220954A97524B17D37B4D09 /* SAKeychainNaming.swift in Sources */,
 				0EFB3862D086C3F4C5716B85 /* SAKeychainDisabled.swift in Sources */,
 				7E75432072457939574AC25A /* SAKeychainDisabledTests.swift in Sources */,
@@ -3606,6 +3611,7 @@
 				51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
+				FA4FC2907FC19A9EA23B2465 /* SAKeychain.swift in Sources */,
 				239009D40D234AB74434A7F3 /* SAKeychainNaming.swift in Sources */,
 				CD5AFDE14AA44B4AB444DD59 /* SAKeychainAccess.swift in Sources */,
 				090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */,
