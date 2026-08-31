@@ -472,8 +472,9 @@ deferred projects below.
 
 ## Deferred (own projects, not part of this burn-down)
 
-- **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place
-  migration of users' stored passwords. Highest risk item in the codebase;
+- **SPKeychain SecKeychain* API (~15)** — migrate the keychain *code* to
+  `SecItem*` in place; users' stored password records are retained as-is (the
+  design needs no record migration). Highest risk item in the codebase;
   **now designed**: see `docs/development/keychain-secitem-migration-plan.md`
   (characterize-first, stays on the file-based login keychain so no data
   migration, retires the tunnel assistant's direct keychain read — which also

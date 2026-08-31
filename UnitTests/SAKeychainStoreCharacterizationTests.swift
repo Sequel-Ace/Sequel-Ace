@@ -16,6 +16,7 @@
 //  modal NSAlerts, which would hang the runner (migration plan, defect 4).
 //
 
+import Security
 import XCTest
 
 final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTestCase {

@@ -11,7 +11,7 @@
 
 `Source/Other/Keychain/SPKeychain.m` (387 lines, unchanged in shape since the
 Sequel Pro era, one method already on `SecItem*`) is the sole owner of every
-saved MySQL and SSH password. It has **zero tests**. Its wire format — the
+saved MySQL and SSH password. It had **zero tests** before this plan's Step 1. Its wire format — the
 service/account strings under which items are stored — is persisted in users'
 login keychains, so any behavioural drift silently orphans passwords
 (issue #1253 shows how sensitive users are to exactly that failure mode), and
@@ -202,7 +202,7 @@ Decide and build the isolation strategy once, before any test exists:
 - The suite must also pass with `LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` **unset**
   — the init guard means these tests construct the store *after* asserting
   the env var is absent, and one dedicated test covers the guard itself.
-- These tests live in a new `UnitTests/SAKeychainStoreTests.swift` (naming
+- These tests live in a new `UnitTests/SAKeychainStoreCharacterizationTests.swift` (naming
   says what it is; "integration-ish" unit tests). Pure-logic tests (naming,
   validation) go in ordinary suites and never touch the keychain.
 
@@ -210,7 +210,9 @@ Decide and build the isolation strategy once, before any test exists:
 
 Pin `SPKeychain` exactly as it behaves, bugs and all (a characterization test
 asserts current behaviour; where the behaviour is a defect the test carries a
-comment naming the Step 2 fix that will flip it):
+comment naming the Step 2 fix that will flip it). Every *testable* defect is
+confirmed this way — the one crasher (nil password, defect 2) cannot be
+pinned as a passing test, so it is asserted post-fix in Step 2 instead:
 
 - **Naming helpers, byte-exact** (pure, no keychain): all four format
   strings, nil/empty rejection matrix, `longLongValue` coercion including the
