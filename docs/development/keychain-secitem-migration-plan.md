@@ -303,7 +303,21 @@ returned nil before verifying — strictly no looser).
 - Coordinate with the XPC branch if it is in flight; the diff is small either
   way, and whichever lands second rebases trivially.
 
-### Step 4 — `SAKeychain`: the Swift `SecItem*` implementation
+### Step 4 — `SAKeychain`: the Swift `SecItem*` implementation — ✅ Done
+
+Execution notes (2026-08-31): the parameterized suite paid for itself — all
+20 store characterization tests and 13 naming tests passed against
+`SAKeychain` on the first run, recovery branches and label quirk included,
+and the 8-test cross-compatibility matrix (legacy→Swift, Swift→legacy,
+cross-implementation add-refusal, field-for-field attribute shape including
+the full key-set diff) all passed. Deviations from the plan text, all
+deliberate: the `-25299` retry is iterative (one retry) rather than the
+legacy unbounded recursion; nil new name/account write empty attributes for
+exact parity with the legacy zero-length `SecKeychainAttribute`; the error
+alerts live inside `SAKeychain` behind a main-thread-sync helper rather
+than a callback (same two localized strings, reused keys); and the
+`LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` guard stays out of `SAKeychain` — it
+becomes `SAKeychainAccess.make()`'s job when Step 5 flips the factory.
 
 New `Source/Other/Keychain/SAKeychain.swift` (+ `SAKeychainNaming.swift`,
 pure, both targets — the store itself is app-target only):
