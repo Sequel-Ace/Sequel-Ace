@@ -9,13 +9,14 @@
 //  four keychain name/account format strings byte-exactly. These formats are
 //  the keychain wire format — they are persisted in every user's login
 //  keychain, and `.spf` documents store the resulting strings verbatim — so
-//  any drift silently orphans saved passwords. The SecItem* replacement must
-//  reproduce every assertion in this file unchanged.
+//  any drift silently orphans saved passwords. Characterized off the legacy
+//  SPKeychain in Step 1; SAKeychain (via SAKeychainNaming) reproduces every
+//  assertion unchanged.
 //
 
 import XCTest
 
-class SAKeychainNamingCharacterizationTests: SAKeychainCharacterizationTestCase {
+final class SAKeychainNamingCharacterizationTests: SAKeychainCharacterizationTestCase {
 
     override var needsKeychainAccess: Bool { false }
 
