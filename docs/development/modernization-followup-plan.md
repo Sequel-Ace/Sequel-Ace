@@ -7,8 +7,8 @@
 > in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
 > the SSH-tunnel IPC design in `docs/development/ssh-tunnel-xpc-migration-plan.md`
 > (not started), the keychain `SecItem*` design in
-> `docs/development/keychain-secitem-migration-plan.md` (not started), agent
-> ground rules in `AGENTS.md`.
+> `docs/development/keychain-secitem-migration-plan.md` (design complete;
+> execution starting with its Steps 0-1), agent ground rules in `AGENTS.md`.
 
 ## State of the world (2026-08-24 revision)
 
