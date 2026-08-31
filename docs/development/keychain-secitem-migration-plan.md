@@ -362,10 +362,34 @@ characterization suites now pin `SAKeychain` directly and the rerun
 subclasses + cross-compatibility matrix were deleted with their purpose
 served; `SPKeychain.h/.m` left the tree, the bridging header, and both
 targets. All ten SecKeychain* deprecation warnings are gone — the
-remaining warnings-plan floor is NSConnection (6) + the intentional Swift
-markers (4). **The manual verification matrix below has NOT been run yet**
-— it needs a live app session (and row 6 an SSH host) and must pass before
-this ships; the soak-one-release guidance stands.
+remaining warnings-plan floor is NSConnection (5 — one site was
+consolidated by the Step 3 assistant rewrite) + the intentional Swift
+markers (4).
+
+**Live-matrix results (2026-08-31, debug build against real favorites).**
+The first live run earned its keep immediately: the very first favorite
+selection **crashed** — `updateFavoriteSelection:` passes the favorites
+dictionary's NSNumber id into `nameForFavoriteName:id:`, whose legacy
+parameter was `(id)` + `-longLongValue` but which the protocol had narrowed
+to `String?`, so SAKeychain's generated thunk threw on the bridge. The
+characterization suite could not have caught it (it calls through Swift
+with strings — it cannot see what ObjC callers put in an `id`-typed slot).
+Fixed by widening the `favoriteID` parameters to `Any?` end to end with
+legacy `-longLongValue` coercion, plus the NSNumber tests Step 1 should
+have written. After the fix, verified end to end with **both** pre-migration
+favorites (items created by the released app, read in place by SAKeychain):
+
+- **Row 2 / row 6 (SSH)**: auto-connect through the intranet-EC2 SSH-tunnel
+  favorite — ssh established to the bastion with the key-file bookmark, and
+  two MySQL sessions authenticated through the tunnel with the keychain
+  password, under the Step 3 environment (no `SP_KEYCHAIN_ITEM_*` vars).
+- **Row 2 (TCP)**: auto-connect to the local intranet favorite — server-side
+  `information_schema.processlist` showed both sessions authenticated as the
+  favorite's user with its database selected.
+
+Rows 1/3/4/5/7 (favorite save / rename / password change / delete /
+import-export) and row 9 (downgrade) still need a hands-on pass before
+release; the soak-one-release guidance stands.
 
 - Swap the ~8 constructing call sites (`SPConnectionController`,
   `SPDatabaseDocument`, `SPSSHTunnel`, `SAConnectionService`,
