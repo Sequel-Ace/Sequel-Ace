@@ -34,6 +34,16 @@
 #import <Security/Security.h>
 #import <CoreFoundation/CoreFoundation.h>
 
+#import "sequel-ace-Swift.h"
+
+// SPKeychain is the legacy SecKeychain*-based implementation of the shared
+// keychain surface. Conforming to SAKeychainProviding lets the
+// characterization suite — and, once the SecItem* replacement exists, the
+// call sites — treat the two implementations interchangeably. See
+// docs/development/keychain-secitem-migration-plan.md.
+@interface SPKeychain () <SAKeychainProviding>
+@end
+
 @implementation SPKeychain
 
 - (instancetype)init

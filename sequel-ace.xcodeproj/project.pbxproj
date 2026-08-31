@@ -81,6 +81,10 @@
 		17E641650EF01F15001BC333 /* SPTablesList.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641610EF01F15001BC333 /* SPTablesList.m */; };
 		17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641690EF01F37001BC333 /* ImageAndTextCell.m */; };
 		17E641750EF01F80001BC333 /* SPKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641740EF01F80001BC333 /* SPKeychain.m */; };
+		98203642272CF04DBDC94A70 /* SPKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641740EF01F80001BC333 /* SPKeychain.m */; };
+		623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
+		221C83260BF298E6A8969456 /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
+		71F6E6D2037EB14ED8623A81 /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
 		17E641830EF01FA8001BC333 /* SPImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E6417F0EF01FA8001BC333 /* SPImageView.m */; };
 		17E641840EF01FA8001BC333 /* SPTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641810EF01FA8001BC333 /* SPTextView.m */; };
 		17E641D10EF02036001BC333 /* grabber-horizontal.png in Resources */ = {isa = PBXBuildFile; fileRef = 17E6419D0EF02036001BC333 /* grabber-horizontal.png */; };
@@ -915,6 +919,7 @@
 		17E641690EF01F37001BC333 /* ImageAndTextCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageAndTextCell.m; sourceTree = "<group>"; };
 		17E641730EF01F80001BC333 /* SPKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPKeychain.h; sourceTree = "<group>"; };
 		17E641740EF01F80001BC333 /* SPKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPKeychain.m; sourceTree = "<group>"; };
+		11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainProviding.swift; sourceTree = "<group>"; };
 		17E6417E0EF01FA8001BC333 /* SPImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPImageView.h; sourceTree = "<group>"; };
 		17E6417F0EF01FA8001BC333 /* SPImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPImageView.m; sourceTree = "<group>"; };
 		17E641800EF01FA8001BC333 /* SPTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTextView.h; sourceTree = "<group>"; };
@@ -2306,6 +2311,7 @@
 			children = (
 				17E641730EF01F80001BC333 /* SPKeychain.h */,
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
+				11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */,
 			);
 			path = Keychain;
 			sourceTree = "<group>";
@@ -3343,6 +3349,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				98203642272CF04DBDC94A70 /* SPKeychain.m in Sources */,
+				71F6E6D2037EB14ED8623A81 /* SAKeychainProviding.swift in Sources */,
 				B01E10DB2BF1A67138C32D0C /* SAFavoriteDuplicateMatcher.swift in Sources */,
 				1A9498C125517191000BC793 /* DateExtension.swift in Sources */,
 				1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */,
@@ -3532,6 +3540,7 @@
 				1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */,
 				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
 				58CDB3420FCE142500F8ACA3 /* SPKeychain.m in Sources */,
+				221C83260BF298E6A8969456 /* SAKeychainProviding.swift in Sources */,
 				584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3572,6 +3581,7 @@
 				51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
+				623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,
