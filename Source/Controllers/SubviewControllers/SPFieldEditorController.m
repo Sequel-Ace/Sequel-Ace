@@ -1299,11 +1299,16 @@ typedef enum {
 		// If it's too long, disallow the change but try
 		// to insert a text chunk partially to maxTextLength.
 		if ((NSUInteger)newLength > adjTextMaxTextLength) {
-			if ((adjTextMaxTextLength - textLength + [textView selectedRange].length) <= [replacementString characterCount]) {
+			// Signed on purpose: when the existing text already exceeds the maximum,
+			// the remaining capacity is negative — the unsigned arithmetic this
+			// replaces underflowed to a huge value and silently skipped the tooltip.
+			long long insertableLength = (long long)adjTextMaxTextLength - (long long)textLength + (long long)[textView selectedRange].length;
+
+			if (insertableLength <= [replacementString characterCount]) {
 
 				NSString *tooltip = nil;
 
-				if (adjTextMaxTextLength - textLength + [textView selectedRange].length) {
+				if (insertableLength > 0) {
 					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), adjTextMaxTextLength];
 				}
 				else {
@@ -1312,7 +1317,9 @@ typedef enum {
 
 				[SPTooltip showWithObject:tooltip];
 
-				[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)adjTextMaxTextLength - textLength +[textView selectedRange].length]]];
+				if (insertableLength > 0) {
+					[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)insertableLength]]];
+				}
 			}
 
 			adjTextMaxTextLength = originalMaxTextLength;

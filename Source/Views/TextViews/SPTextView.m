@@ -202,7 +202,11 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			BOOL canRetry = YES;
 		retry:
 			if(colorData && (color = [SAArchiving colorFromData:colorData])) {
+// The csItem table only lists void color setters, so no +1 object can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 				[self performSelector:item->m withObject:color];
+#pragma clang diagnostic pop
 			}
 			else if(canRetry) {
 				// #2963: previous versions of SP would accept invalid data (resulting in `nil`) and store it in prefs,

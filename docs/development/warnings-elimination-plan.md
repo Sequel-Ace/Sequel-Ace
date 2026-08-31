@@ -363,6 +363,113 @@ Verify by hand: drag rows from the query result and content views into TextEdit
 (with and without ⌘/⇧/⌥), a cell onto a rule-filter field, and a navigator item
 into the query editor.
 
+## Step 10 — Test-scheme residue sweep — ✅ Done
+
+Measured on the **"Unit Tests" scheme** (`xcodebuild build-for-testing`, fresh
+derived data): **165 → 104 raw occurrences, 119 → 60 unique lines**, zero new
+warnings (`comm` over normalized sorted logs). This scheme compiles the test
+sources the "Sequel Ace Debug" numbers above never saw, which is where most of
+this batch lived:
+
+- **SACellFilterRuleControllerStubs.m (46)** — the file's existing
+  `-Wincomplete-implementation`/`-Wprotocol` suppression only covered the third
+  of its three deliberately-partial stub classes; the pragma block now wraps
+  all three, plus `-Wobjc-autosynthesis-property-ivar-name-match` for the
+  stubs' autosynthesized properties next to the real classes' ivars.
+- **`performSelector` leak warnings (7, the full set)** — five are void
+  target/action- or setter-style invocations (keepalive ping,
+  pagination/filter-table actions, link cell, SPTextView's color-setter
+  table), where no +1 object can exist to leak. The other two are the
+  forwarding shims in SPMainThreadTrampoline, which forward *arbitrary*
+  selectors: the superclass path returns the value unchanged and the
+  trampolined path intentionally discards it, so selector ownership is the
+  caller's contract — the same contract as the NSObject `performSelector:`
+  API they override. Each site wrapped in the `-Warc-performSelector-leaks`
+  pragma per the SPRuleFilterController precedent, with a per-site
+  justification comment.
+- **SPFieldEditorController.m:1302 sign-compare** — the underflow flagged in
+  #2584: `adjTextMaxTextLength - textLength` is unsigned, so when the existing
+  text already exceeds the field maximum the remaining capacity underflowed
+  huge, silently skipping the too-long tooltip. Now computed in signed
+  `long long`; the truncated-insert append is additionally guarded to run only
+  for positive capacity (previously it appended an empty string at exactly 0,
+  and would have thrown had the underflow branch ever reached it).
+- **Unused-but-set test variables (3)** — `__unused` on perf-test loop locals.
+- **`-Wshadow` (2)** — the two inner `dispatch_async` re-resolutions of
+  `weakSelf` in SPConnectionController's Vault flow shadowed the outer
+  `strongSelf`; renamed to `mainSelf` (the deliberate re-resolve-after-hop
+  semantics are unchanged).
+
+Left alone, unchanged from the analysis above: Firebase's
+`-Wquoted-include-in-framework-header` (21, prebuilt third-party framework
+headers), SecKeychain (11) and NSConnection (6) deferred migrations, the
+intentional `#warning` markers (14), `preparedCellAtColumn:` ×2 (wants the
+view-based-tableview migration, not a cast), generated lexer unreachable-code
+(2), RegexKitLite (1, vendored), `selectionHighlightStyle = .sourceList` and
+the three intentional `legacyUnarchive`/`legacyArchivedData` markers.
+
+## Step 11 — Third-party / generated-code containment — ✅ Done
+
+Same basis as step 10 ("Unit Tests" scheme, clean `build-for-testing`, fresh
+derived data): **104 → 78 raw occurrences, 60 → 34 unique lines** — exactly the
+−26 predicted, zero new warnings. What remains is now *only* the deferred
+migrations and the intentional markers (see below).
+
+- **Firebase `-Wquoted-include-in-framework-header` (21)** — the prebuilt
+  FirebaseAnalytics xcframework's own headers, unfixable from here. Silenced
+  with per-file `-Wno-quoted-include-in-framework-header` on the only two TUs
+  that `@import` Firebase modules (SPAppController.m,
+  ReportExceptionApplication.m), set via the Xcode MCP. Deliberately *not* the
+  target-wide `CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO`, so the
+  check still guards our own framework headers. Verified the per-file flags do
+  reach the module builds on Xcode 26.
+- **`preparedCellAtColumn:row:` (2)** — containment, not migration: both
+  tables (SPCopyTable, SPFieldMapperController's field mapper) are still
+  cell-based, so the deprecated cell API is the only correct one until the
+  view-based rewrite their existing 2020 TODOs already call for. Pragma-wrapped
+  with a comment saying exactly that.
+- **Generated lexer `-Wunreachable-code` (2)** — the unreachable code is
+  flex's boilerplate in the generated `.yy.c`, so each `.l` prologue now
+  carries a file-scope `#pragma clang diagnostic ignored` (a scoped push/pop
+  can't reach generated code).
+- **RegexKitLite `-Wobjc-multiple-method-names` (1)** — vendored third-party,
+  patched in place per the step 7 precedent: the ambiguous `id` receiver is
+  inside an `isKindOfClass:[NSException class]` branch, so it now casts to
+  `NSException *` (also de-ambiguating `reason`/`userInfo` on the same line).
+
+The remaining 34 unique lines are the floor this plan predicted: SecKeychain
+(10) + NSConnection (6) deferred migrations, the intentional `#warning`
+markers (14), and the intentional Swift deprecation markers (4:
+`selectionHighlightStyle = .sourceList`, `legacyUnarchive`,
+`legacyArchivedData` ×2).
+
+## Step 12 — `#warning` markers → GitHub issues — ✅ Done
+
+Same basis as steps 10-11: **78 → 52 raw occurrences, 34 → 20 unique lines**.
+Every `#warning` in the codebase (15 sites — the build showed 14 because the
+`Querying & Preparation.m` one had the same normalized text as a sibling) is
+now a `// TODO (#issue):` comment pointing at a tracked Sequel-Ace issue:
+
+| Issue | Markers |
+|---|---|
+| #2603 cross-class ivar access via KVC | SPWindowAdditions:79, SPImageView:52/118 |
+| #2604 SPMySQLFramework encoding/dup conversion | Conversion.m:46, Querying & Preparation.m:130, SPMySQLResult.m:316 |
+| #2605 CSV EOL detection vs multibyte encodings | SPDataImport.m:934 |
+| #2606 SPDataImport cleanup (per-row UI, dup code, xib outlets) | SPDataImport.m:1170/1208/1222, SPDataImport.h:49 |
+| #2607 dedupe result-cell lookup with SPTableContent | SPCustomQuery.m:3875 |
+| #2608 collation menu rebuilt per cell-display | SPTableStructure.m:1997 |
+| #2609 exporter encoding audit (writeUTF8String / NSData decode) | SPExporter.h:156, SPSQLExporter.m:345 |
+
+The old markers' `#2978`/`#2700` references were **upstream sequel-pro issue
+numbers**, not Sequel-Ace ones (they resolve to unrelated PRs here); the new
+issues cite `sequelpro/sequelpro#2978` / `#2700` explicitly for history.
+
+Remaining after this step: **20 unique lines**, all of them the two deferred
+migrations — SecKeychain (10) and NSConnection (6) — plus the 4 intentional
+Swift deprecation markers (`selectionHighlightStyle = .sourceList`,
+`legacyUnarchive`, `legacyArchivedData` ×2). Zero is now gated purely on the
+deferred projects below.
+
 ## Deferred (own projects, not part of this burn-down)
 
 - **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place
@@ -382,10 +489,11 @@ into the query editor.
   message now reads "building for macOS-13.5", but the committed dylibs were
   not rebuilt. `build-libmysqlclient.sh` *was* updated to 13.5, so whenever the
   rebuild happens it will produce a consistent binary.
-- **Intentional markers, keep**: SAArchiving `legacyUnarchive` (by design),
-  `#warning` TODOs (collation-menu perf hog SPTableStructure:1994, duplicate
-  code SPDataImport:1167 / SPCustomQuery:3761, private-ivar note
-  SPImageView:50 (#2978)) — convert to GitHub issues if we want a clean zero.
+- **Intentional markers, keep**: SAArchiving `legacyUnarchive` /
+  `legacyArchivedData` (by design — the deprecation attribute *is* the
+  guard-rail) and `selectionHighlightStyle = .sourceList` (replacement changes
+  row metrics; wants a visual pass). The `#warning` TODOs were converted to
+  tracked issues in step 12.
 
 ## Expected trajectory
 

@@ -110,7 +110,11 @@
 - (void)_forwardPing
 {
     if ([timerTarget respondsToSelector:timerSelector]) {
+// The configured selector is a void keepalive action, so no +1 object can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
         [timerTarget performSelector:timerSelector];
+#pragma clang diagnostic pop
     }
 }
 

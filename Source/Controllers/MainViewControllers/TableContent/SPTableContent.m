@@ -5330,7 +5330,11 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 
 - (IBAction)paginationGoAction:(id)sender
 {
+// Target/action invocation: action methods return void, so nothing can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 	if(target && action) [target performSelector:action withObject:self];
+#pragma clang diagnostic pop
 }
 
 - (void)makeInputFirstResponder

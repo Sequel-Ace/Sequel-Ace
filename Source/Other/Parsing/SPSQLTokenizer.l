@@ -33,6 +33,10 @@
 #import "SPSQLTokenizer.h"
 #include "SPParserUtils.h"
 
+// File-scope on purpose: the unreachable code lives in flex's generated
+// boilerplate below this prologue, which cannot carry its own pragma.
+#pragma clang diagnostic ignored "-Wunreachable-code"
+
 size_t yyuoffset, yyuleng;
 
 //keep track of the current utf-8 character (not byte) offset and token length
