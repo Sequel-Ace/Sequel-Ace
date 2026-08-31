@@ -529,9 +529,11 @@ static unsigned short getRandomPort(void);
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
 		[taskEnvironment safeSetObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
 		if (passwordInKeychain) {
+			// The keychain item's name and account deliberately stay out of
+			// the environment: the assistant no longer reads the keychain —
+			// it asks getPasswordWithVerificationHash: over the connection,
+			// and the app resolves the item at ask time.
             [taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordUsesKeychain] stringValue] forKey:@"SP_PASSWORD_METHOD"];
-			[taskEnvironment safeSetObject:[keychainName stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
-			[taskEnvironment safeSetObject:[keychainAccount stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
 		} else if (password) {
 			[taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordAsksUI] stringValue] forKey:@"SP_PASSWORD_METHOD"];
 		} else {
