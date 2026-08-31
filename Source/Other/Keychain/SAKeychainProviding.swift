@@ -48,7 +48,8 @@ import Foundation
 
     /// Adds a password with the item's label defaulting to `name`.
     /// Silently does nothing when an item for (`name`, `account`) already
-    /// exists, or when any argument is nil/empty.
+    /// exists, when the name or account is nil/empty, or when the password
+    /// is nil — an *empty* password is stored (and round-trips as `""`).
     @objc(addPassword:forName:account:)
     func add(password: String?, name: String?, account: String?)
 
