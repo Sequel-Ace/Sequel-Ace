@@ -183,7 +183,9 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let starter = expression(column: "a", values: [""])
         let rule = expression(column: "c", values: ["3"])
 
-        XCTAssertEqual(SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [starter], isConjunction: false), withRule: rule).map(dictionary), dictionary(rule))
+        let replaced = SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [starter], isConjunction: false), withRule: rule)
+        XCTAssertEqual(replaced?["isConjunction"] as? Bool, false, "the OR wrapper survives")
+        XCTAssertEqual(replaced.map(children)?.map(dictionary), [dictionary(rule)])
         let mixed = SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [starter, expression(column: "b", values: ["2"])], isConjunction: false), withRule: rule)
         XCTAssertEqual(mixed.map(children)?.map { $0["column"] as? String }, ["b", "c"])
     }
@@ -329,12 +331,18 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [], isConjunction: true)))
     }
 
-    /// Verifies appending strips seeded starter rows hiding inside the root group.
+    /// Verifies appending strips seeded starter rows and keeps the OR wrapper when replacing the seeded row.
     func testAppendingReplacesStarterInsideOrRoot() {
         let starter = expression(column: "a", values: [""])
         let rule = expression(column: "b", values: ["2"])
 
-        XCTAssertEqual(dictionary(SARuleFilterRootConjunction.appending(rule: rule, to: rootGroup(children: [starter], isConjunction: false), rootIsConjunction: false)), dictionary(rule))
+        let replaced = SARuleFilterRootConjunction.appending(rule: rule, to: rootGroup(children: [starter], isConjunction: false), rootIsConjunction: false)
+        XCTAssertEqual(replaced["isConjunction"] as? Bool, false, "the OR choice survives replacing the seeded row")
+        XCTAssertEqual(replaced["rootGroup"] as? Bool, true)
+        XCTAssertEqual(children(of: replaced).map(dictionary), [dictionary(rule)])
+
+        // A bare starter (AND shape) is still replaced by the bare rule.
+        XCTAssertEqual(dictionary(SARuleFilterRootConjunction.appending(rule: rule, to: starter, rootIsConjunction: true)), dictionary(rule))
 
         let mixed = SARuleFilterRootConjunction.appending(rule: rule, to: rootGroup(children: [starter, expression(column: "c", values: ["3"])], isConjunction: false), rootIsConjunction: false)
         XCTAssertEqual(children(of: mixed).map { $0["column"] as? String }, ["c", "b"])

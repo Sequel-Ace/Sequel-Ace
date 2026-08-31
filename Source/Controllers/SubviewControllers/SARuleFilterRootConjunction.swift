@@ -122,6 +122,13 @@ import Foundation
     @objc(appendingRule:to:rootIsConjunction:)
     public static func appending(rule: [String: Any], to existing: [String: Any]?, rootIsConjunction: Bool) -> [String: Any] {
         guard let existing, !isUntouchedStarterTree(existing) else {
+            // Replacing the seeded row must not lose the popup choice: with OR
+            // selected the starter lives inside the marked wrapper, so put the
+            // replacement into the same wrapper instead of returning it bare
+            // (a bare expression restores as the default AND).
+            if let existing, isRootGroup(existing) {
+                return group(children: [rule], isConjunction: groupIsConjunction(existing), isRoot: true)
+            }
             return rule
         }
         if isRootGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
@@ -269,7 +276,8 @@ import Foundation
         guard isRootGroup(tree) else { return nil }
         let real = (tree[childrenKey] as? [[String: Any]] ?? [])
             .filter { !SACellFilterMerge.isUntouchedStarter(filter: $0) }
-        guard !real.isEmpty else { return rule }
+        // Even when only seeded rows were present, keep the marked wrapper so
+        // the popup choice (e.g. OR) survives the restore.
         return group(children: real + [rule], isConjunction: groupIsConjunction(tree), isRoot: true)
     }
 

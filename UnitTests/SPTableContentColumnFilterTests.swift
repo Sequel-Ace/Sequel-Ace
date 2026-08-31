@@ -120,6 +120,43 @@ final class SPTableContentColumnFilterTests: XCTestCase {
     }
 }
 
+final class SARuleFilterBottomBarLayoutTests: XCTestCase {
+
+    /// Verifies rows sit above a fully reserved bottom bar (drop zone shown).
+    func testRowsSitAboveTheDropZoneBar() {
+        let m = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: true, requestedHeight: 87, dropZoneHeight: 40, showDropZonePreference: true)
+        XCTAssertTrue(m.dropZoneVisible)
+        XCTAssertEqual(m.dropZoneReservedHeight, 40)
+        XCTAssertEqual(m.ruleEditorOriginY, 41)
+        XCTAssertEqual(m.containerRequestedHeight, 40 + 88)
+    }
+
+    /// Verifies the button bar stays reserved when the drop zone is hidden, so full-width rows never overlap it.
+    func testButtonBarReservedWithHiddenDropZone() {
+        let m = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: true, requestedHeight: 58, dropZoneHeight: 40, showDropZonePreference: false)
+        XCTAssertFalse(m.dropZoneVisible)
+        XCTAssertEqual(m.dropZoneReservedHeight, 31)
+        XCTAssertEqual(m.ruleEditorOriginY, 32)
+        XCTAssertEqual(m.containerRequestedHeight, 31 + 59)
+    }
+
+    /// Verifies an empty editor shows just the bar (with or without drop zone).
+    func testEmptyEditorShowsOnlyTheBar() {
+        let withZone = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: false, requestedHeight: 0, dropZoneHeight: 40, showDropZonePreference: true)
+        XCTAssertEqual(withZone.containerRequestedHeight, 40)
+        let withoutZone = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: false, requestedHeight: 0, dropZoneHeight: 40, showDropZonePreference: false)
+        XCTAssertEqual(withoutZone.containerRequestedHeight, 31)
+    }
+
+    /// Verifies a hidden editor reserves nothing.
+    func testHiddenEditorReservesNothing() {
+        let m = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: false, editorHasRows: true, requestedHeight: 87, dropZoneHeight: 40, showDropZonePreference: true)
+        XCTAssertFalse(m.dropZoneVisible)
+        XCTAssertEqual(m.dropZoneReservedHeight, 0)
+        XCTAssertEqual(m.containerRequestedHeight, 0)
+    }
+}
+
 final class SARuleFilterResizePolicyTests: XCTestCase {
 
     /// Verifies an unchanged row count schedules no resize at all.

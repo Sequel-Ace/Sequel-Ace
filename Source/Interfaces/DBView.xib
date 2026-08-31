@@ -1009,14 +1009,14 @@
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                 <subviews>
                                                                     <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="CIQ-tc-1Fn">
-                                                                        <rect key="frame" x="2" y="0.0" width="453" height="29"/>
+                                                                        <rect key="frame" x="2" y="0.0" width="691" height="29"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" copiesOnScroll="NO" id="kdv-Wp-s5h">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="453" height="29"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="691" height="29"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od" customClass="SPFilterRuleEditor" customModule="Sequel_Ace" customModuleProvider="target">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="453" height="29"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="691" height="29"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
                                                                                     <connections>
                                                                                         <action selector="_menuItemInRuleEditorClicked:" target="ki9-Po-bdr" id="mgx-03-h4w"/>
@@ -1031,7 +1031,7 @@
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
                                                                         <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="wlW-vM-FUZ">
-                                                                            <rect key="frame" x="435" y="2" width="16" height="25"/>
+                                                                            <rect key="frame" x="673" y="2" width="16" height="25"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
                                                                     </scrollView>

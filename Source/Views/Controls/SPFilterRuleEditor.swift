@@ -188,6 +188,10 @@ enum SARuleFilterContextMenu {
         )
     }
 
+    /// Height of the bottom bar when the drop zone is hidden: just enough for
+    /// the button row (Apply/Add Filter + AND/OR popup, 27 pt plus padding).
+    private static let buttonBarHeight: CGFloat = 31
+
     static func metrics(
         editorVisible: Bool,
         editorHasRows: Bool,
@@ -197,21 +201,20 @@ enum SARuleFilterContextMenu {
     ) -> SARuleFilterDropZoneLayoutMetrics {
         let effectiveEditorHasRows = editorVisible && editorHasRows
         let dropZoneVisible = editorVisible && showDropZonePreference
-        let reservedDropZoneHeight = dropZoneVisible ? max(dropZoneHeight, 0) : 0
-        let ruleEditorTopMargin: CGFloat = effectiveEditorHasRows ? 1 : 0
 
-        // With no rows, the drop zone is normally the only visible affordance.
-        // If the user hides it, retain the original 29-point editor/button row
-        // so the filter UI never becomes an enabled-but-inaccessible zero-height
-        // strip.
-        let shouldReserveRuleEditor = effectiveEditorHasRows || (editorVisible && !dropZoneVisible)
-        let ruleEditorHeight = shouldReserveRuleEditor ? max(requestedHeight, 29) + ruleEditorTopMargin : 0
+        // The bottom bar (drop zone, AND/OR popup, Apply/Add Filter buttons)
+        // is always reserved while the filter UI is visible: the rule editor
+        // rows span the full width above it and must never overlap it. With
+        // the drop zone hidden the bar shrinks to the plain button row.
+        let bottomBarHeight = editorVisible ? (dropZoneVisible ? max(dropZoneHeight, 0) : buttonBarHeight) : 0
+        let ruleEditorTopMargin: CGFloat = effectiveEditorHasRows ? 1 : 0
+        let ruleEditorHeight = effectiveEditorHasRows ? max(requestedHeight, 29) + ruleEditorTopMargin : 0
 
         return SARuleFilterDropZoneLayoutMetrics(
             dropZoneVisible: dropZoneVisible,
-            dropZoneReservedHeight: reservedDropZoneHeight,
-            ruleEditorOriginY: reservedDropZoneHeight + ruleEditorTopMargin,
-            containerRequestedHeight: editorVisible ? reservedDropZoneHeight + ruleEditorHeight : 0
+            dropZoneReservedHeight: bottomBarHeight,
+            ruleEditorOriginY: bottomBarHeight + ruleEditorTopMargin,
+            containerRequestedHeight: editorVisible ? bottomBarHeight + ruleEditorHeight : 0
         )
     }
 }

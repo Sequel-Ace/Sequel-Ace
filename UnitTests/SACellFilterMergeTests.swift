@@ -295,7 +295,9 @@ final class SARuleFilterDropZoneLayoutPolicyTests: XCTestCase {
         XCTAssertEqual(metrics.containerRequestedHeight, 113)
     }
 
-    func testHiddenDropZoneRestoresCompactPopulatedEditorLayout() {
+    func testHiddenDropZoneStillReservesTheButtonBar() {
+        // Since the rows span the full width, the button bar below them is
+        // always reserved - with the drop zone hidden it shrinks to 31 pt.
         let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
             editorVisible: true,
             editorHasRows: true,
@@ -305,9 +307,9 @@ final class SARuleFilterDropZoneLayoutPolicyTests: XCTestCase {
         )
 
         XCTAssertFalse(metrics.dropZoneVisible)
-        XCTAssertEqual(metrics.dropZoneReservedHeight, 0)
-        XCTAssertEqual(metrics.ruleEditorOriginY, 1)
-        XCTAssertEqual(metrics.containerRequestedHeight, 73)
+        XCTAssertEqual(metrics.dropZoneReservedHeight, 31)
+        XCTAssertEqual(metrics.ruleEditorOriginY, 32)
+        XCTAssertEqual(metrics.containerRequestedHeight, 104)
     }
 
     func testVisibleDropZoneOwnsEmptyEditorHeight() {
@@ -324,7 +326,9 @@ final class SARuleFilterDropZoneLayoutPolicyTests: XCTestCase {
         XCTAssertEqual(metrics.containerRequestedHeight, 40)
     }
 
-    func testEmptyEditorRetainsAddFilterRowWhenDropZoneIsHidden() {
+    func testEmptyEditorRetainsButtonBarWhenDropZoneIsHidden() {
+        // The Add Filter button lives in the always-reserved button bar, so
+        // an empty editor with a hidden drop zone is exactly that bar.
         let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
             editorVisible: true,
             editorHasRows: false,
@@ -334,8 +338,8 @@ final class SARuleFilterDropZoneLayoutPolicyTests: XCTestCase {
         )
 
         XCTAssertFalse(metrics.dropZoneVisible)
-        XCTAssertEqual(metrics.ruleEditorOriginY, 0)
-        XCTAssertEqual(metrics.containerRequestedHeight, 29)
+        XCTAssertEqual(metrics.ruleEditorOriginY, 31)
+        XCTAssertEqual(metrics.containerRequestedHeight, 31)
     }
 
     func testHiddenEditorCollapsesRegardlessOfDropZonePreference() {
