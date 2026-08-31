@@ -798,7 +798,7 @@ Gw
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="2aR-JM-Lbr">
                     <rect key="frame" x="180" y="41" width="456" height="22"/>
-                    <buttonCell key="cell" type="check" title="Share anonymized usage analytics with developers" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
+                    <buttonCell key="cell" type="check" title="Share usage analytics and crash reports with developers" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -1404,7 +1404,7 @@ Gw
                 </box>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nmG-Wb-i0O">
                     <rect key="frame" x="20" y="214" width="460" height="22"/>
-                    <buttonCell key="cell" type="check" title="Show alert when update is available" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="aXv-Nb-zHe">
+                    <buttonCell key="cell" type="check" title="Automatically check for updates" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="aXv-Nb-zHe">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>

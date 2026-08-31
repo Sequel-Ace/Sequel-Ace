@@ -676,3 +676,207 @@ extension AWSIAMAuthManager {
         }
     }
 }
+
+// MARK: - Region Picker
+
+/// Supplies the region picker with current catalog data before its first popup.
+@objc protocol SAAWSRegionComboBoxPreparationDelegate: AnyObject {
+    @objc(prepareAWSRegionComboBox:completion:)
+    func prepareAWSRegionComboBox(_ comboBox: SAAWSRegionComboBox, completion: @escaping () -> Void)
+}
+
+/// Defers the first popup until a user-initiated AWS region refresh completes.
+/// This keeps application startup network-free without presenting a stale popup.
+@objc final class SAAWSRegionComboBox: NSComboBox {
+    @objc weak var preparationDelegate: SAAWSRegionComboBoxPreparationDelegate?
+
+    private(set) var hasPreparedPopup = false
+    private(set) var shouldOpenPopupAfterPreparation = false
+    private var isPreparingPopup = false
+    private var interveningInputMonitor: Any?
+
+    private lazy var preparationIndicator: NSProgressIndicator = {
+        let indicator = NSProgressIndicator()
+        indicator.controlSize = .small
+        indicator.style = .spinning
+        indicator.isDisplayedWhenStopped = false
+        addSubview(indicator)
+        return indicator
+    }()
+
+    override func mouseDown(with event: NSEvent) {
+        guard shouldPreparePopup(for: event), preparePopupIfNeeded() else {
+            super.mouseDown(with: event)
+            return
+        }
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        if preparePopupIfNeeded() {
+            return true
+        }
+        return super.accessibilityPerformShowMenu()
+    }
+
+    /// Starts first-use preparation and reports whether the initiating popup should wait.
+    @objc(preparePopupIfNeeded)
+    func preparePopupIfNeeded() -> Bool {
+        guard !hasPreparedPopup else {
+            return false
+        }
+        guard !isPreparingPopup else {
+            return true
+        }
+        guard let preparationDelegate else {
+            return false
+        }
+
+        isPreparingPopup = true
+        shouldOpenPopupAfterPreparation = true
+        monitorForInterveningInput()
+        preparationIndicator.startAnimation(nil)
+        needsLayout = true
+
+        preparationDelegate.prepareAWSRegionComboBox(self) { [weak self] in
+            if Thread.isMainThread {
+                self?.finishPreparingPopup()
+            }
+            else {
+                DispatchQueue.main.async {
+                    self?.finishPreparingPopup()
+                }
+            }
+        }
+        return true
+    }
+
+    override func layout() {
+        super.layout()
+
+        let indicatorSize: CGFloat = 12
+        let inset: CGFloat = 7
+        let x: CGFloat
+        if userInterfaceLayoutDirection == .rightToLeft {
+            x = bounds.minX + inset
+        }
+        else {
+            x = bounds.maxX - inset - indicatorSize
+        }
+
+        preparationIndicator.frame = NSRect(
+            x: x,
+            y: bounds.midY - indicatorSize / 2,
+            width: indicatorSize,
+            height: indicatorSize
+        )
+    }
+
+    /// Cancels the delayed popup while allowing the catalog refresh to finish.
+    func cancelPendingPopupOpening() {
+        shouldOpenPopupAfterPreparation = false
+    }
+
+    func shouldPreparePopup(for event: NSEvent) -> Bool {
+        guard !hasPreparedPopup,
+              event.type == .leftMouseDown,
+              let cell else {
+            return false
+        }
+
+        let hit = cell.hitTest(for: event, in: bounds, of: self)
+        return hit.contains(.trackableArea) && !hit.contains(.editableTextArea)
+    }
+
+    private func monitorForInterveningInput() {
+        interveningInputMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]
+        ) { [weak self] event in
+            self?.cancelPendingPopupOpening()
+            return event
+        }
+    }
+
+    private func stopMonitoringInterveningInput() {
+        guard let interveningInputMonitor else {
+            return
+        }
+
+        NSEvent.removeMonitor(interveningInputMonitor)
+        self.interveningInputMonitor = nil
+    }
+
+    private func finishPreparingPopup() {
+        guard isPreparingPopup else {
+            return
+        }
+
+        let shouldOpenPopup = shouldOpenPopupAfterPreparation
+        isPreparingPopup = false
+        hasPreparedPopup = true
+        shouldOpenPopupAfterPreparation = false
+        stopMonitoringInterveningInput()
+        preparationIndicator.stopAnimation(nil)
+
+        guard shouldOpenPopup,
+              let window,
+              NSApp.isActive,
+              window.isKeyWindow,
+              !isHiddenOrHasHiddenAncestor,
+              isEnabled else {
+            return
+        }
+
+        let buttonX: CGFloat
+        if userInterfaceLayoutDirection == .rightToLeft {
+            buttonX = bounds.minX + 8
+        }
+        else {
+            buttonX = bounds.maxX - 8
+        }
+
+        let location = convert(NSPoint(x: buttonX, y: bounds.midY), to: nil)
+        let timestamp = ProcessInfo.processInfo.systemUptime
+        guard let mouseDown = NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: location,
+            modifierFlags: [],
+            timestamp: timestamp,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 1,
+            pressure: 1
+        ),
+        let mouseUp = NSEvent.mouseEvent(
+            with: .leftMouseUp,
+            location: location,
+            modifierFlags: [],
+            timestamp: timestamp + 0.01,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 1,
+            pressure: 0
+        ) else {
+            return
+        }
+
+        NSApp.postEvent(mouseUp, atStart: false)
+        NSApp.sendEvent(mouseDown)
+    }
+
+    deinit {
+        stopMonitoringInterveningInput()
+    }
+}
+
+/// Routes the combo box cell's accessibility menu action through first-use preparation.
+@objc final class SAAWSRegionComboBoxCell: NSComboBoxCell {
+    override func accessibilityPerformShowMenu() -> Bool {
+        if let comboBox = controlView as? SAAWSRegionComboBox,
+           comboBox.preparePopupIfNeeded() {
+            return true
+        }
+        return super.accessibilityPerformShowMenu()
+    }
+}

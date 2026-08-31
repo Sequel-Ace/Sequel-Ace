@@ -625,6 +625,30 @@
 /* Encoding autodetect menu item */
 "Autodetect" = "Autodetect";
 
+/* Preferences : General : Automatically check for updates checkbox */
+"Automatically check for updates" = "Automatically check for updates";
+
+/* analytics consent dialog message */
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+
+/* analytics consent deny button */
+"Don't Share" = "Don't Share";
+
+/* analytics consent dialog title */
+"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+
+/* analytics consent allow button */
+"Share Analytics" = "Share Analytics";
+
+/* analytics consent privacy policy button */
+"Privacy Policy…" = "Privacy Policy…";
+
+/* about window privacy policy link */
+"Privacy Policy" = "Privacy Policy";
+
+/* Preferences : General : analytics and crash reporting checkbox */
+"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+
 /* background label for color table (Prefs > Editor) */
 "Background" = "Background";
 
