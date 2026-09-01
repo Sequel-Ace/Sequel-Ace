@@ -214,6 +214,33 @@ final class SAConnectionProxyDisconnectTests: XCTestCase {
             false
         )
     }
+
+    func testExplicitDisconnectEndsPendingReconnectWithoutWaitingForTimeout() {
+        let connection = SPMySQLConnection()
+        connection.timeout = 5
+        let proxy = SAConnectionProxyDisconnectSpy()
+        let connectStarted = expectation(description: "proxy connect requested")
+        let reconnectFinished = expectation(description: "reconnect returned")
+        proxy.connectionAttemptPendingValue = true
+        proxy.onConnect = { connectStarted.fulfill() }
+        connection.setProxy(proxy)
+
+        let reconnectThread = Thread {
+            _ = connection.reconnect()
+            reconnectFinished.fulfill()
+        }
+        reconnectThread.start()
+        wait(for: [connectStarted], timeout: 2)
+
+        connection.disconnect()
+        wait(for: [reconnectFinished], timeout: 2)
+
+        XCTAssertGreaterThanOrEqual(proxy.disconnectCallCount, 1)
+        XCTAssertEqual(
+            connection.value(forKey: "proxyStateChangeNotificationsIgnored") as? Bool,
+            false
+        )
+    }
 }
 
 // MARK: - Connection Info Parameter Mapping Tests

@@ -1038,14 +1038,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 }
 
 /**
- * If the current reconnect thread was cancelled while holding the connection
- * lock, cancel any preserved proxy work, restore notifications, and unlock.
+ * If the current reconnect was cancelled by its thread or an explicit
+ * disconnect while holding the connection lock, cancel any preserved proxy
+ * work, restore notifications, and unlock.
  */
 - (BOOL)_abortCancelledReconnectWhileLocked
 {
-	if (![[NSThread currentThread] isCancelled]) return NO;
+	if (![[NSThread currentThread] isCancelled] && !userTriggeredDisconnect) return NO;
 
-	SPLog(@"reconnect thread cancelled; cleaning up proxy attempt");
+	SPLog(@"reconnect cancelled by thread or explicit disconnect; cleaning up proxy attempt");
 	[self _unlockConnection];
 	if (proxy) {
 		// Keep proxy callbacks suppressed until the pending attempt is cancelled,
