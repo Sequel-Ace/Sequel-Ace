@@ -1108,7 +1108,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (proxy) proxyStateChangeNotificationsIgnored = YES;
 
 		// Close the connection if it's active
-		[self _disconnect];
+		[self _disconnectPreservingProxyReconnect:YES];
 
 		// Lock the connection while waiting for network and proxy
 		[self _lockConnection];
@@ -1331,6 +1331,11 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (void)_disconnect
 {
+	[self _disconnectPreservingProxyReconnect:NO];
+}
+
+- (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect
+{
     SPLog(@"_disconnect");
 
 	// If state is connection lost, set state directly to disconnected.
@@ -1376,7 +1381,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If using a connection proxy, disconnect that too
 	if (proxy) {
-		[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
+		SEL disconnectSelector = preserveProxyReconnect && [proxy respondsToSelector:@selector(disconnectForReconnect)]
+			? @selector(disconnectForReconnect)
+			: @selector(disconnect);
+		[proxy performSelectorOnMainThread:disconnectSelector withObject:nil waitUntilDone:YES];
 	}
 }
 

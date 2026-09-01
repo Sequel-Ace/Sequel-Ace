@@ -59,6 +59,7 @@
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (void)_disconnect;
+- (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;
 - (void)_updateConnectionVariables;
 - (BOOL)_serverIsProxySQL;
 - (void)_restoreConnectionVariables;

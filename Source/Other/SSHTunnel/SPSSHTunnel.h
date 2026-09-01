@@ -106,6 +106,7 @@
 - (NSUInteger)localPort;
 - (NSUInteger)localPortFallback;
 - (void)connect;
+- (void)disconnectForReconnect;
 - (void)launchTask:(id)dummy;
 - (void)disconnect;
 - (void)standardErrorHandler:(NSNotification*)aNotification;

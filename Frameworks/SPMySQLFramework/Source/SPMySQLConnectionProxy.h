@@ -79,4 +79,10 @@ typedef enum {
  */
 - (BOOL)connectionAttemptPending;
 
+/**
+ * Disconnect the current proxy process as preparation for an immediate
+ * reconnect, preserving any request already queued behind proxy cleanup.
+ */
+- (void)disconnectForReconnect;
+
 @end

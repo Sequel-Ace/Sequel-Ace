@@ -60,6 +60,7 @@ static unsigned short getRandomPort(void);
 - (void)setLastError:(NSString *)msg;
 - (void)startConnectionAttempt;
 - (void)completeStandardErrorDrain;
+- (void)disconnectPreservingQueuedReconnect:(BOOL)preserveQueuedReconnect;
 
 @end
 
@@ -715,10 +716,25 @@ static unsigned short getRandomPort(void);
 - (void)disconnect
 {
     SPLog(@"ssh tunnel disconnect");
-	BOOL cancelledQueuedOrRunningAttempt = [standardErrorDrainCoordinator cancelPendingOrRunningAttempt];
+	[self disconnectPreservingQueuedReconnect:NO];
+}
+
+- (void)disconnectForReconnect
+{
+	SPLog(@"ssh tunnel disconnect for reconnect");
+	[self disconnectPreservingQueuedReconnect:YES];
+}
+
+- (void)disconnectPreservingQueuedReconnect:(BOOL)preserveQueuedReconnect
+{
+	BOOL cancelledQueuedOrRunningAttempt = preserveQueuedReconnect
+		? NO
+		: [standardErrorDrainCoordinator cancelPendingOrRunningAttempt];
 
     if (connectionState == SPMySQLProxyIdle){
-		if (cancelledQueuedOrRunningAttempt) {
+		if (preserveQueuedReconnect) {
+			SPLog(@"internal reconnect preserved the queued SSH attempt");
+		} else if (cancelledQueuedOrRunningAttempt) {
 			SPLog(@"disconnect cancelled a queued or not-yet-launched SSH attempt");
 		} else {
 			SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
