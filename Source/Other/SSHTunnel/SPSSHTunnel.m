@@ -54,6 +54,7 @@ static unsigned short getRandomPort(void);
 	// not re-emitted in every translation unit that reaches SPSSHTunnel.h via
 	// the bridging header. Used only in this file.
 	NSConnection *tunnelConnection;
+	BOOL standardErrorReachedEOF;
 }
 
 @property (atomic, readwrite) BOOL failureDiagnosticsReady;
@@ -286,6 +287,7 @@ static unsigned short getRandomPort(void);
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
+	standardErrorReachedEOF = NO;
 	self.failureDiagnosticsReady = NO;
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
@@ -617,6 +619,9 @@ static unsigned short getRandomPort(void);
 		@catch (NSException *e) {
 			connectionState = SPMySQLProxyLaunchFailed;
             SPLog(@"launchTask SSH Tunnel NSException, connectionState = SPMySQLProxyLaunchFailed");
+			// No child owns the pipe after a launch failure, so close the local
+			// writer to let the pending data-available read observe EOF.
+			[[standardError fileHandleForWriting] closeFile];
 
 			// Log the exception. Could be improved by showing a dedicated alert instead
 			[debugMessagesLock lock];
@@ -637,8 +642,11 @@ static unsigned short getRandomPort(void);
             SPLog(@"SSH Tunnel has unexpectedly closed");
 		}
 
-		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
-		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+		// Keep the run loop alive until the one-shot data-available notification
+		// chain has consumed stderr through the pipe's actual EOF.
+		while (!standardErrorReachedEOF) {
+			[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+		}
 
 		[[NSNotificationCenter defaultCenter] removeObserver:self
 		                                                name:NSFileHandleDataAvailableNotification
@@ -772,6 +780,8 @@ static unsigned short getRandomPort(void);
 	// read is the pipe's EOF signal and ends the chain.
 	if ([availableData length]) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
+	} else {
+		standardErrorReachedEOF = YES;
 	}
 }
 
