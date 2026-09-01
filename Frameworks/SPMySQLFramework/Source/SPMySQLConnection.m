@@ -1038,6 +1038,27 @@ asm(".desc ___crashreporter_info__, 0x10");
 }
 
 /**
+ * If the current reconnect thread was cancelled while holding the connection
+ * lock, cancel any preserved proxy work, restore notifications, and unlock.
+ */
+- (BOOL)_abortCancelledReconnectWhileLocked
+{
+	if (![[NSThread currentThread] isCancelled]) return NO;
+
+	SPLog(@"reconnect thread cancelled; cleaning up proxy attempt");
+	[self _unlockConnection];
+	if (proxy) {
+		// Keep proxy callbacks suppressed until the pending attempt is cancelled,
+		// then restore the state snapshot and normal notification handling.
+		[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
+		previousProxyState = [proxy state];
+	}
+	proxyStateChangeNotificationsIgnored = NO;
+	reconnectingThread = NULL;
+	return YES;
+}
+
+/**
  * Perform a reconnection task, either once-only or looping as requested.  If looping is
  * permitted and this method fails, it will ask how to proceed and loop depending on
  * the status, not returning control until either a connection has been established or
@@ -1116,13 +1137,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// If no network is present, wait for a short time for one to become available
 		[self _waitForNetworkConnectionWithTimeout:10];
 
-		if ([[NSThread currentThread] isCancelled]) {
-            SPLog(@"NSThread currentThread] isCancelled, returning");
-
-			[self _unlockConnection];
-			reconnectingThread = NULL;
-			return NO;
-		}
+		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
 		// If there is a proxy, attempt to reconnect it in blocking fashion
 		if (proxy) {
@@ -1139,6 +1154,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 				proxyWaitStart_t = _monotonicTime();
 				while ([proxy state] != SPMySQLProxyIdle) {
+					if ([self _abortCancelledReconnectWhileLocked]) return NO;
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
@@ -1151,6 +1167,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					}
 				}
 			}
+			if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
 			// Request that the proxy re-establishes its connection
             SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
@@ -1160,6 +1177,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// Wait while the proxy connects
 			proxyWaitStart_t = _monotonicTime();
 			while (1) {
+				if ([self _abortCancelledReconnectWhileLocked]) return NO;
 				loopIterationStart_t = _monotonicTime();
 				BOOL connectionAttemptPending = [proxy respondsToSelector:@selector(connectionAttemptPending)]
 					&& [proxy connectionAttemptPending];
@@ -1195,6 +1213,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
 				}
 			}
+			if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
 			// Having in theory performed the proxy connect, update state
 			previousProxyState = [proxy state];
@@ -1205,8 +1224,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _unlockConnection];
 
 		// If not using a proxy, or if the proxy successfully connected, trigger a connection
-		if (!proxy || [proxy state] == SPMySQLProxyConnected) {
+		if (![[NSThread currentThread] isCancelled] && (!proxy || [proxy state] == SPMySQLProxyConnected)) {
 			[self _connect];
+		} else if ([[NSThread currentThread] isCancelled] && proxy) {
+			[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
 		}
 
 		// If the reconnection succeeded, restore the connection state as appropriate

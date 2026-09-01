@@ -136,12 +136,26 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 }
 
 private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionProxy {
-    private(set) var disconnectCallCount = 0
+    private let stateLock = NSLock()
+    private var storedDisconnectCallCount = 0
+    var connectionAttemptPendingValue = false
+    var onConnect: (() -> Void)?
 
-    func connect() {}
+    var disconnectCallCount: Int {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedDisconnectCallCount
+    }
+
+    func connect() {
+        onConnect?()
+    }
 
     func disconnect() {
-        disconnectCallCount += 1
+        stateLock.lock()
+        storedDisconnectCallCount += 1
+        connectionAttemptPendingValue = false
+        stateLock.unlock()
     }
 
     func state() -> SPMySQLConnectionProxyState {
@@ -155,6 +169,12 @@ private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionP
     func setConnectionStateChange(_ selector: Selector!, delegate: Any!) -> Bool {
         true
     }
+
+    func connectionAttemptPending() -> Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return connectionAttemptPendingValue
+    }
 }
 
 final class SAConnectionProxyDisconnectTests: XCTestCase {
@@ -167,6 +187,32 @@ final class SAConnectionProxyDisconnectTests: XCTestCase {
         connection.disconnect()
 
         XCTAssertEqual(proxy.disconnectCallCount, 1)
+    }
+
+    func testCancelledReconnectCancelsPendingProxyAttemptAndRestoresNotifications() {
+        let connection = SPMySQLConnection()
+        let proxy = SAConnectionProxyDisconnectSpy()
+        let connectStarted = expectation(description: "proxy connect requested")
+        let reconnectFinished = expectation(description: "reconnect returned")
+        proxy.connectionAttemptPendingValue = true
+        proxy.onConnect = { connectStarted.fulfill() }
+        connection.setProxy(proxy)
+
+        let reconnectThread = Thread {
+            _ = connection.reconnect()
+            reconnectFinished.fulfill()
+        }
+        reconnectThread.start()
+        wait(for: [connectStarted], timeout: 2)
+
+        reconnectThread.cancel()
+        wait(for: [reconnectFinished], timeout: 2)
+
+        XCTAssertEqual(proxy.disconnectCallCount, 1)
+        XCTAssertEqual(
+            connection.value(forKey: "proxyStateChangeNotificationsIgnored") as? Bool,
+            false
+        )
     }
 }
 

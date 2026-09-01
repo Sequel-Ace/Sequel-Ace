@@ -74,11 +74,13 @@ import Foundation
     }
 
     static func sshFailure(_ failure: SASSHTunnelFailure) -> SAConnectionResult {
+        // Initial tunnel failures already carry OpenSSH output as their detail.
+        // sshDebugMessages is reserved for MySQL failures after a tunnel connects,
+        // where the controller uses it to classify a port-forwarding failure.
         return SAConnectionResult(
             errorTitle: NSLocalizedString("SSH connection failed!", comment: ""),
             errorMessage: failure.message,
             errorDetail: failure.errorDetail,
-            sshDebugMessages: failure.debugMessages,
             connectionType: .sshTunnel
         )
     }
