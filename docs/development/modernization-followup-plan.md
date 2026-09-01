@@ -1,6 +1,6 @@
 # Sequel Ace Modernization — Follow-up Plan
 
-> **Revised 2026-08-24.** Sibling tracks: the build-warning burn-down in
+> **Revised 2026-08-24; SSH tunnel IPC status updated 2026-09-01.** Sibling tracks: the build-warning burn-down in
 > `docs/development/warnings-elimination-plan.md` (steps 0-9 merged; the last
 > two reduction PRs are in review), the help-viewer rewrite in
 > `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
