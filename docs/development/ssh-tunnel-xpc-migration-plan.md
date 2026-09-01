@@ -155,9 +155,12 @@ the assistant's code-signing **identifier is `SequelAceTunnelAssistant`**, the
 product name, not its bundle identifier — it is a bare executable; and the
 Beta configuration's app identifier is `com.sequel-ace.sequel-ace-beta`, so
 neither side may hardcode the other's identifier. Validation is therefore
-expressed as *same team as me* (`certificate leaf[subject.OU]` from the
-process's own signing information) plus, on the app side, the fixed assistant
-identifier.
+**asymmetric**: the app requires *same team as me* **and** the fixed
+identifier `SequelAceTunnelAssistant`, so no other same-team process can ask
+it for a password; the assistant requires *same team as me* only, because the
+app's identifier varies by configuration — a same-team process that planted a
+socket could at most receive a request, never a secret. The team comes from
+each process's own signing information, never from a constant.
 
 ### Decision
 
@@ -197,7 +200,10 @@ merits either way.
 
 ## Step 1 — Narrow the vended surface (ships regardless of the spike) — ✅ Done
 
-Pure refactor, no IPC change, no behaviour change.
+Pure refactor of *what* is vended: no IPC or transport change. The one
+intentional behaviour change is teardown, which now dismisses a prompt the
+assistant is blocked on and answers "no"/nil instead of leaving it blocked
+(details below).
 
 Execution notes (2026-09-01):
 
@@ -225,6 +231,12 @@ Execution notes (2026-09-01):
   real failure reason still reaches `SAConnectionService` instead of being
   mistaken for a user cancel. Before this a tunnel torn down mid-prompt left
   the sheet up and the assistant blocked until ssh gave up.
+  Review (Codex, CodeRabbit) caught a race in the first cut: a prompt whose
+  worker had not yet reached the main thread had no dialog to dismiss, so the
+  cancellation was dropped and the sheet appeared after teardown. Teardown
+  now latches `promptTeardownRequested` when the answer lock is held with no
+  sheet up, and both workers consume the latch — or notice ssh is no longer
+  running — and answer without presenting.
 - 21 unit tests in `UnitTests/SASSHTunnelAuthServiceTests.swift` against a
   fake tunnel and an in-memory keychain: question forwarding, hash
   refusal (wrong/empty/nil) on both password calls, held vs keychain-mode
@@ -390,8 +402,8 @@ only when it is `public`.
 
 ## Verification
 
-There is no way to unit-test this end to end; the trigger is `ssh` deciding to
-exec `SSH_ASKPASS`. What each layer buys:
+The real path — `ssh` deciding to exec `SSH_ASKPASS` — cannot be unit-tested
+end to end; the channel underneath it can. What each layer buys:
 
 - **Unit-testable (new)**: `SASSHTunnelAuthService` against a fake tunnel — the
   hash comparison, the keychain-vs-UI branch, nil/cancel paths. None of this is
@@ -399,7 +411,7 @@ exec `SSH_ASKPASS`. What each layer buys:
   writing in Step 1 while the transport is still the old one.
 - **Integration-testable (new)**: the socket server and client are plain
   Swift, so the Unit Tests target can run both ends in-process over a socket
-  in its temporary directory and cover the wire contract end to end,
+  in its temporary directory and cover the wire contract end-to-end,
   including the refusal paths. (Launching the real assistant binary from the
   test runner is not possible: its `com.apple.security.inherit` sandbox
   needs a sandboxed parent.)
