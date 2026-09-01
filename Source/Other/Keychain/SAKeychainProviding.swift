@@ -75,13 +75,6 @@ import Foundation
     @objc(updateItemWithName:account:toName:account:password:)
     func updateItem(name: String?, account: String?, toName newName: String?, newAccount: String?, password: String?)
 
-    /// ⚠️ Characterized as defective (migration plan, defect 1): the legacy
-    /// implementation forwards its arguments to the five-argument variant in
-    /// scrambled order. Currently has no production callers; scheduled for
-    /// deletion in Step 2 of the migration plan.
-    @objc(updateItemWithName:account:toPassword:)
-    func updateItem(name: String?, account: String?, toPassword password: String?)
-
     /// `"Sequel Ace : <favoriteName> (<id as long long>)"`, or nil for a
     /// nil/empty name or nil id.
     @objc(nameForFavoriteName:id:)
