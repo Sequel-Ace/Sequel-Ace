@@ -88,10 +88,11 @@ later.
   (`Source/Other/Utility/SANotificationCenter.swift`), never the deprecated
   `NSUserNotification` API. The wider warning burn-down is tracked in
   `docs/development/warnings-elimination-plan.md`: its sweeps and the
-  SecKeychain migration are done, and the NSConnection item is executed per `docs/development/ssh-tunnel-xpc-migration-plan.md`: the SSH
-  tunnel talks to its askpass assistant over a UNIX socket in the container
-  with audit-token peer validation (the spike showed a sandboxed app cannot
-  vend `NSXPCListener` without launchd). `SPSSHTunnel` exposes
+  SecKeychain migration are done, and the NSConnection item is executed per
+  `docs/development/ssh-tunnel-xpc-migration-plan.md`: the SSH tunnel talks
+  to its askpass assistant over a UNIX socket in the container with
+  audit-token peer validation (the spike showed a sandboxed app cannot vend
+  `NSXPCListener` without launchd). `SPSSHTunnel` exposes
   `SASSHTunnelAuthService` and nothing else; the assistant is Swift
   (`main.swift` + `SASSHTunnelAskpass`), and its target has **no bridging
   header**, so only `public` Swift would reach an Objective-C file there.
