@@ -37,6 +37,7 @@
 
 @protocol SADatabaseDocumentProviding;
 @protocol SAConnectionDelegate;
+@protocol SAKeychainProviding;
 @class SAConnectionViewCoordinator;
 @class SAFavoritesListDataSource;
 @class SAConnectionService;
@@ -49,7 +50,6 @@
 	   SPFavoritesOutlineView,
        SPMySQLConnection,
 	   SPSplitView,
-	   SPKeychain,
 	   SPFavoriteNode,
 	   SPFavoriteTextFieldCell,
        SPColorSelectorView
@@ -66,7 +66,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	__weak id dbDocument;
 	SPMySQLConnection *mySQLConnection;
 
-	SPKeychain *keychain;
+	id<SAKeychainProviding> keychain;
 	NSSplitView *databaseConnectionView;
 
 	NSOpenPanel *keySelectionPanel;

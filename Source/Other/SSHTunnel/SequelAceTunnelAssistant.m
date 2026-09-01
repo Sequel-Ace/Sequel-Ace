@@ -30,7 +30,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "SPKeychain.h"
 #import "SPSSHTunnel.h"
 #import "SPConstants.h"
 #import "sequel-ace-Swift.h"
@@ -76,37 +75,16 @@ int main(int argc, const char *argv[])
 			return 0;
 		}
 
-		// Check whether we're being asked for a standard SSH password - if so, use the app-entered value.
+		// Check whether we're being asked for a standard SSH password - if so, request it from the app.
 		if (argument && [[argument lowercaseString] rangeOfString:@"password:"].location != NSNotFound ) {
+			NSInteger passwordMethod = [[environment objectForKey:@"SP_PASSWORD_METHOD"] integerValue];
 
-			// If the password method is set to use the keychain, use the supplied keychain name to
-			// request the password
-			if ([[environment objectForKey:@"SP_PASSWORD_METHOD"] integerValue] == SPSSHPasswordUsesKeychain) {
-				SPKeychain *keychain;
-				// think we can risk these stringByRemovingPercentEncoding rather than linking swift
-				NSString *keychainName = [[environment objectForKey:@"SP_KEYCHAIN_ITEM_NAME"] stringByRemovingPercentEncoding];
-				NSString *keychainAccount = [[environment objectForKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"] stringByRemovingPercentEncoding];
-
-				if (!keychainName || !keychainAccount) {
-					NSLog(@"SSH Tunnel: keychain authentication specified but insufficient internal details supplied");
-					return 1;
-				}
-
-				keychain = [[SPKeychain alloc] init];
-
-				if ([keychain passwordExistsForName:keychainName account:keychainAccount]) {
-					printf("%s\n", [[keychain getPasswordForName:keychainName account:keychainAccount] UTF8String]);
-					return 0;
-				}
-
-				// If retrieving the password failed, log an error and fall back to requesting from the GUI
-				NSLog(@"SSH Tunnel: specified keychain password not found");
-
-				argument = [NSString stringWithFormat:NSLocalizedString(@"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:", @"Prompt for SSH password when keychain fetch failed"), connectionName];
-			}
-
-			// If the password method is set to request the password from the tunnel instance, do so.
-			if ([[environment objectForKey:@"SP_PASSWORD_METHOD"] integerValue] == SPSSHPasswordAsksUI) {
+			// Both password methods ask the app over the connection: it
+			// either holds the password in memory (AsksUI) or resolves it
+			// from the keychain at ask time (UsesKeychain). This helper no
+			// longer reads the keychain itself — see the keychain migration
+			// plan, Step 3.
+			if (passwordMethod == SPSSHPasswordUsesKeychain || passwordMethod == SPSSHPasswordAsksUI) {
 				NSString *password;
 
 				if (!connectionName || !verificationHash) {
@@ -128,61 +106,23 @@ int main(int argc, const char *argv[])
 					return 0;
 				}
 
-				// If retrieving the password failed, log an error and fall back to requesting from the GUI
-				NSLog(@"SSH Tunnel: unable to successfully request password from Sequel Ace for internal authentication");
-
-				argument = [NSString stringWithFormat:NSLocalizedString(@"The SSH password could not be loaded; please enter the SSH password for %@:", @"Prompt for SSH password when direct fetch failed"), connectionName];
-			}
-		}
-
-
-		// Check whether we're being asked for a SSH key passphrase
-		if (argument && [[argument lowercaseString] rangeOfString:@"enter passphrase for"].location != NSNotFound ) {
-			NSString *passphrase;
-
-            NSString *keyName = [argument captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
-
-			if (keyName.length > 0) {
-
-                SPLog(@"keyName: %@", keyName);
-
-				// Check whether the passphrase is in the keychain, using standard OS X sshagent name and account
-				SPKeychain *keychain = [[SPKeychain alloc] init];
-
-				if ([keychain passwordExistsForName:@"SSH" account:keyName]) {
-					printf("%s\n", [[keychain getPasswordForName:@"SSH" account:keyName] UTF8String]);
-					return 0;
+				// If retrieving the password failed, log an error and fall
+				// back to requesting from the GUI, explaining per method.
+				if (passwordMethod == SPSSHPasswordUsesKeychain) {
+					NSLog(@"SSH Tunnel: specified keychain password not found");
+					argument = [NSString stringWithFormat:NSLocalizedString(@"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:", @"Prompt for SSH password when keychain fetch failed"), connectionName];
+				}
+				else {
+					NSLog(@"SSH Tunnel: unable to successfully request password from Sequel Ace for internal authentication");
+					argument = [NSString stringWithFormat:NSLocalizedString(@"The SSH password could not be loaded; please enter the SSH password for %@:", @"Prompt for SSH password when direct fetch failed"), connectionName];
 				}
 			}
-            else{
-                SPLog(@"key not found in [%@]", argument);
-            }
-
-			// Not found in the keychain - we need to ask the GUI.
-
-			if (!verificationHash) {
-				NSLog(@"SSH Tunnel: key passphrase authentication required but insufficient details supplied to connect to GUI");
-				return 1;
-			}
-
-			sequelProTunnel = (SPSSHTunnel *)[NSConnection rootProxyForConnectionWithRegisteredName:connectionName host:nil];
-
-			if (!sequelProTunnel) {
-				NSLog(@"SSH Tunnel: unable to connect to Sequel Ace to show SSH question");
-				return 1;
-			}
-			passphrase = [sequelProTunnel getPasswordForQuery:argument verificationHash:verificationHash];
-
-			if (!passphrase) {
-				return 1;
-			}
-
-			printf("%s\n", [passphrase UTF8String]);
-
-			return 0;
 		}
 
-		// SSH has some other question. Show that directly to the user. This is an attempt to support RSA SecurID
+		// Key passphrases, and any other question SSH asks, go to the app's
+		// GUI prompt via getPasswordForQuery: — the app checks the stored
+		// "SSH"/<key name> passphrase item before showing its prompt, which
+		// used to be this helper's keychain read. Also covers RSA SecurID.
 		if (argument) {
 			NSString *passphrase;
 

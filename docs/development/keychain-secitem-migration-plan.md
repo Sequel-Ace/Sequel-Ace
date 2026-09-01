@@ -274,7 +274,21 @@ pinned-buggy to correct:
 Ship this as its own PR and let it soak a release if the schedule allows —
 these fixes de-risk the rewrite regardless of when the rewrite lands.
 
-### Step 3 — Retire the tunnel assistant's direct keychain read
+### Step 3 — Retire the tunnel assistant's direct keychain read — ✅ Done
+
+Execution notes (2026-08-31): executed as three working-tree-at-every-commit
+commits — app-side serving first, assistant switch second, ACL deletion
+last. Refinements over the plan text: the password is resolved **at ask
+time** inside `getPasswordWithVerificationHash:` (the secret never enters
+the app-held state either, let alone the environment), `SP_PASSWORD_METHOD`
+*keeps* its UsesKeychain value so the assistant can still show its
+keychain-specific fallback prompt on a miss (only the item name/account env
+vars died), and the assistant's key-passphrase keychain check moved into
+`getPasswordForQuery:` (same regex, same exists-then-get shape) — which
+collapsed the assistant's passphrase branch into the generic GUI branch,
+its exact remaining body. The hash check now runs before the keychain
+branch in `getPasswordWithVerificationHash:` (previously keychain mode
+returned nil before verifying — strictly no looser).
 
 - `SPSSHTunnel`: in keychain mode, resolve the password via `SPKeychain` at
   connect time (app side, where the item's ACL already trusts the app) and
@@ -291,7 +305,21 @@ these fixes de-risk the rewrite regardless of when the rewrite lands.
 - Coordinate with the XPC branch if it is in flight; the diff is small either
   way, and whichever lands second rebases trivially.
 
-### Step 4 — `SAKeychain`: the Swift `SecItem*` implementation
+### Step 4 — `SAKeychain`: the Swift `SecItem*` implementation — ✅ Done
+
+Execution notes (2026-08-31): the parameterized suite paid for itself — all
+20 store characterization tests and 13 naming tests passed against
+`SAKeychain` on the first run, recovery branches and label quirk included,
+and the 8-test cross-compatibility matrix (legacy→Swift, Swift→legacy,
+cross-implementation add-refusal, field-for-field attribute shape including
+the full key-set diff) all passed. Deviations from the plan text, all
+deliberate: the `-25299` retry is iterative (one retry) rather than the
+legacy unbounded recursion; nil new name/account write empty attributes for
+exact parity with the legacy zero-length `SecKeychainAttribute`; the error
+alerts live inside `SAKeychain` behind a main-thread-sync helper rather
+than a callback (same two localized strings, reused keys); and the
+`LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` guard stays out of `SAKeychain` — it
+becomes `SAKeychainAccess.make()`'s job when Step 5 flips the factory.
 
 New `Source/Other/Keychain/SAKeychain.swift` (+ `SAKeychainNaming.swift`,
 pure, both targets — the store itself is app-target only):
@@ -325,7 +353,48 @@ pure, both targets — the store itself is app-target only):
      field-for-field (same mechanical-diff spirit as the C3
      `apply(to:)`/`_buildConnectionInfo` check — the risk is omission).
 
-### Step 5 — Flip the call sites, delete SPKeychain
+### Step 5 — Flip the call sites, delete SPKeychain — ✅ Done (manual matrix pending)
+
+Execution notes (2026-08-31): `SAKeychainAccess.make()` became the one
+construction point (now `@objc`, and it inherited the issue #2437 guard
+from SPKeychain's init); the five ObjC construction sites became
+`id<SAKeychainProviding> … = [SAKeychainAccess make]` with every message
+unchanged, since the protocol carries SPKeychain's exact selectors; the
+characterization suites now pin `SAKeychain` directly and the rerun
+subclasses + cross-compatibility matrix were deleted with their purpose
+served; `SPKeychain.h/.m` left the tree, the bridging header, and both
+targets. All ten SecKeychain* deprecation warnings are gone — the
+remaining warnings-plan floor is NSConnection (5 — one site was
+consolidated by the Step 3 assistant rewrite) + the intentional Swift
+markers (4).
+
+**Live-matrix results (2026-08-31, debug build against real favorites).**
+The first live run earned its keep immediately: the very first favorite
+selection **crashed** — `updateFavoriteSelection:` passes the favorites
+dictionary's NSNumber id into `nameForFavoriteName:id:`, whose legacy
+parameter was `(id)` + `-longLongValue` but which the protocol had narrowed
+to `String?`, so SAKeychain's generated thunk threw on the bridge. The
+characterization suite could not have caught it (it calls through Swift
+with strings — it cannot see what ObjC callers put in an `id`-typed slot).
+Fixed by widening the `favoriteID` parameters to `Any?` end to end with
+legacy `-longLongValue` coercion, plus the NSNumber tests Step 1 should
+have written. After the fix, verified end to end with **both** pre-migration
+favorites (items created by the released app, read in place by SAKeychain):
+
+- **Row 2 / row 6 (SSH)**: auto-connect through the intranet-EC2 SSH-tunnel
+  favorite — ssh established to the bastion with the key-file bookmark, and
+  two MySQL sessions authenticated through the tunnel with the keychain
+  password, under the Step 3 environment (no `SP_KEYCHAIN_ITEM_*` vars).
+- **Row 2 (TCP)**: auto-connect to the local intranet favorite — server-side
+  `information_schema.processlist` showed both sessions authenticated as the
+  favorite's user with its database selected.
+
+The remaining UI rows (favorite save / rename / password change / delete /
+import-export) were then verified hands-on by the maintainer against the
+same debug build (2026-08-31), covering most of the matrix. Anything not
+explicitly exercised — notably row 9, the downgrade check against the
+previous release — should get a look during the release soak; the
+soak-one-release guidance stands.
 
 - Swap the ~8 constructing call sites (`SPConnectionController`,
   `SPDatabaseDocument`, `SPSSHTunnel`, `SAConnectionService`,

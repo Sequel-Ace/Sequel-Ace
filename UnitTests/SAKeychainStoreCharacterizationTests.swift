@@ -5,15 +5,16 @@
 //  Created by the Sequel Ace team on August 31, 2026.
 //  Copyright (c) 2026 Sequel-Ace. All rights reserved.
 //
-//  Step 1 of docs/development/keychain-secitem-migration-plan.md: pin the
-//  legacy SPKeychain store behaviour exactly as it is — recovery branches,
-//  quirks and defects included. Where a pinned behaviour is a defect, the
-//  test says so and names the Step 2 fix that will flip it.
+//  The keychain store behaviour contract, characterized off the legacy
+//  SPKeychain in Step 1 of docs/development/keychain-secitem-migration-plan.md
+//  and now pinning SAKeychain, which replaced it in Step 5 — recovery
+//  branches and quirks included. Every assertion here held byte-for-byte
+//  against both implementations while both existed.
 //
 //  Every item is created under the SAKeychainTestSupport namespace against
 //  the real login keychain (see that file for the isolation story). The
-//  suite deliberately never drives SPKeychain's failure paths: those run
-//  modal NSAlerts, which would hang the runner (migration plan, defect 4).
+//  suite deliberately never drives the store's failure paths: those run
+//  modal NSAlerts, which would hang the runner.
 //
 
 import Security
@@ -83,8 +84,8 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
         XCTAssertEqual(attrs[kSecAttrAccount as String] as? String, account)
         // The three-argument add defaults the label to the name.
         XCTAssertEqual(attrs[kSecAttrLabel as String] as? String, name)
-        // kSecGenericItemAttr carries the literal "application password"
-        // (SPKeychain.m hardcodes the 20-byte string).
+        // kSecAttrGeneric carries the literal "application password" — the
+        // 20-byte value the legacy SecKeychain* code always stored.
         let generic = try XCTUnwrap(attrs[kSecAttrGeneric as String] as? Data)
         XCTAssertEqual(String(data: generic, encoding: .utf8), "application password")
     }
