@@ -930,7 +930,14 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	NSInteger row = [filterRuleEditor rowForDisplayValue:sender];
 
-	if(row == NSNotFound) return; // unknown display values
+	if(row == NSNotFound) {
+		// Not one of our menu items: NSRuleEditor sends its own action (with
+		// itself as sender) for criteria it handles natively - notably the
+		// AND/OR string popup of a compound row. The tree may have changed
+		// without a row-count change, so refresh the WHERE preview here.
+		[self _updateFilterPreview];
+		return;
+	}
 
 	RuleNode *criterion = [[(NSMenuItem *)sender representedObject] objectForKey:@"node"];
 
