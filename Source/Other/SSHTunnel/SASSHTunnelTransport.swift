@@ -34,9 +34,12 @@ import Foundation
 /// plan, Step 3). Selected once per tunnel from a hidden preference and
 /// handed to ssh in its environment, so a tunnel never changes transport
 /// mid-life and support can flip the default without a rebuild. The socket
-/// is the default since Step 5; the rollback to Distributed Objects is:
+/// is the default since Step 5; the rollback to Distributed Objects is one
+/// key in the running build's own defaults domain — the Beta configuration
+/// has its own bundle identifier, so the command differs per build:
 ///
-///     defaults write com.sequel-ace.sequel-ace SPSSHTunnelUseSocketTransport -bool NO
+///     defaults write com.sequel-ace.sequel-ace      SPSSHTunnelUseSocketTransport -bool NO   # release
+///     defaults write com.sequel-ace.sequel-ace-beta SPSSHTunnelUseSocketTransport -bool NO   # Beta
 ///
 /// App and Unit Tests targets.
 @objc enum SASSHTunnelTransport: Int {

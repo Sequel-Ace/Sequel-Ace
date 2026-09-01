@@ -487,7 +487,11 @@ remaining `NSConnection` warnings go to zero at this point — a side effect,
 not the goal.
 
 Execution notes, 5a (2026-09-01): `SASSHTunnelTransportSelection.defaultTransport`
-is `.socket`; the rollback is the same key written `NO`. The socket name
+is `.socket`; the rollback is the same key written `NO` — in the running
+build's own defaults domain, which Codex review pointed out differs for the
+Beta configuration (`com.sequel-ace.sequel-ace-beta`, not
+`com.sequel-ace.sequel-ace`), so support has two commands to hand out, one
+per build. The socket name
 shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 characters fit
 the container-tmp path; the stale sweep recognises both shapes. This is the
 release that soaks.
@@ -565,8 +569,11 @@ easily get wrong.
 ## Rollback
 
 The default from Step 3 is the rollback: support tells affected users to write
-one key and relaunch. Without it, a regression means a point release. This is the
-main reason for the flag — do not skip it to save time.
+one key and relaunch — `SPSSHTunnelUseSocketTransport -bool NO` in the
+build's defaults domain, `com.sequel-ace.sequel-ace` for release and
+`com.sequel-ace.sequel-ace-beta` for Beta. Without it, a regression means a
+point release. This is the main reason for the flag — do not skip it to save
+time.
 
 ## Effort
 
