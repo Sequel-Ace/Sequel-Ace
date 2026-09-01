@@ -141,6 +141,11 @@ static unsigned short getRandomPort(void);
 	return standardErrorDrainCoordinator.failureDiagnosticsReady;
 }
 
+- (BOOL)connectionAttemptPending
+{
+	return standardErrorDrainCoordinator.connectionAttemptPending;
+}
+
 /*
  * Sets the connection callback selector; a function to be called whenever the tunnel state changes.
  * The callback function will be called and passed this SSH Tunnel object..

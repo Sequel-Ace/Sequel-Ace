@@ -43,7 +43,7 @@ typedef enum {
 @protocol SPMySQLConnectionProxy <NSObject>
 
 /**
- * All the methods for this protocol are required.
+ * All the methods for this protocol are required unless marked optional.
  */
 
 /**
@@ -70,5 +70,13 @@ typedef enum {
  * Sets the method the proxy should call whenever the state of the connection changes.
  */
 - (BOOL)setConnectionStateChangeSelector:(SEL)theStateChangeSelector delegate:(id)theDelegate;
+
+@optional
+
+/**
+ * Whether a requested connection attempt is intentionally waiting to start.
+ * Time spent pending is excluded from the proxy connection timeout.
+ */
+- (BOOL)connectionAttemptPending;
 
 @end

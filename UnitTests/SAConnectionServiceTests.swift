@@ -86,12 +86,15 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(coordinator.requestAttempt(), .queued)
         XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertTrue(coordinator.connectionAttemptPending)
 
         XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
         XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertTrue(coordinator.connectionAttemptPending)
 
         XCTAssertTrue(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertFalse(coordinator.connectionAttemptPending)
         XCTAssertFalse(coordinator.failureDiagnosticsReady)
         XCTAssertEqual(coordinator.requestAttempt(), .ignored)
 

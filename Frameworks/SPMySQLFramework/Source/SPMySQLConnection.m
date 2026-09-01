@@ -1161,6 +1161,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 			proxyWaitStart_t = _monotonicTime();
 			while (1) {
 				loopIterationStart_t = _monotonicTime();
+				BOOL connectionAttemptPending = [proxy respondsToSelector:@selector(connectionAttemptPending)]
+					&& [proxy connectionAttemptPending];
 
                 SPLog(@"Wait while the proxy connects");
 
@@ -1187,8 +1189,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 					usleep((useconds_t)(250000 - (1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t))));
 				}
 
-				// Extend the connection timeout by any interface time
-				if ([proxy state] == SPMySQLProxyWaitingForAuth) {
+				// Extend the connection timeout by interface time and by time that
+				// the proxy intentionally spends waiting to start the requested attempt.
+				if ([proxy state] == SPMySQLProxyWaitingForAuth || connectionAttemptPending) {
 					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
 				}
 			}

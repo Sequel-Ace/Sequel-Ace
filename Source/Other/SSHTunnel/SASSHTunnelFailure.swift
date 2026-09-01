@@ -56,6 +56,12 @@ struct SASSHTunnelFailure {
         return phase == .ready || phase == .completing
     }
 
+    @objc var connectionAttemptPending: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return pendingAttempt
+    }
+
     /// Atomically starts an idle tunnel, coalesces requests made while failure
     /// diagnostics drain, and ignores duplicate requests while SSH is running.
     @objc func requestAttempt() -> SASSHAttemptRequestDisposition {
