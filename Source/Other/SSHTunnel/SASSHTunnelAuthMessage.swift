@@ -131,8 +131,7 @@ enum SASSHTunnelAuthWire {
         let object = try decodeObject(line)
         switch try kind(of: object) {
         case "answer":
-            guard let answer = object["answer"] as? Bool else { throw SASSHTunnelAuthWireError.missingField("answer") }
-            return .answer(answer)
+            return .answer(try bool("answer", in: object))
         case "secret":
             return .secret(try string("secret", in: object))
         case "refused":
@@ -150,7 +149,7 @@ enum SASSHTunnelAuthWire {
               let object = parsed as? [String: Any] else {
             throw SASSHTunnelAuthWireError.malformed
         }
-        guard let version = object["v"] as? Int else { throw SASSHTunnelAuthWireError.missingField("v") }
+        let version = try int("v", in: object)
         guard version == Self.version else { throw SASSHTunnelAuthWireError.unsupportedVersion(version) }
         return object
     }
@@ -162,5 +161,27 @@ enum SASSHTunnelAuthWire {
     private static func string(_ key: String, in object: [String: Any]) throws -> String {
         guard let value = object[key] as? String else { throw SASSHTunnelAuthWireError.missingField(key) }
         return value
+    }
+
+    // JSONSerialization hands back NSNumber for every scalar, and Swift's
+    // bridging happily reads 1 as true and true as 1. A mistyped field must
+    // fail, not coerce (Codex review on the wire format), so the underlying
+    // JSON type is checked: a Bool must be a JSON boolean, an Int a JSON
+    // integer.
+
+    private static func bool(_ key: String, in object: [String: Any]) throws -> Bool {
+        guard let number = object[key] as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else {
+            throw SASSHTunnelAuthWireError.missingField(key)
+        }
+        return number.boolValue
+    }
+
+    private static func int(_ key: String, in object: [String: Any]) throws -> Int {
+        guard let number = object[key] as? NSNumber,
+              CFGetTypeID(number) != CFBooleanGetTypeID(),
+              !CFNumberIsFloatType(number) else {
+            throw SASSHTunnelAuthWireError.missingField(key)
+        }
+        return number.intValue
     }
 }

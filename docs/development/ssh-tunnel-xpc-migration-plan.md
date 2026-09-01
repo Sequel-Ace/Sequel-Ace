@@ -303,8 +303,13 @@ the fixtures. `SASSHTunnelAuthService.handle(_:)` is the dispatch. 15 tests in
 message shapes, round trips, multi-line and non-ASCII text staying on one
 line, CR/LF tolerance, and the refusals (garbage, other versions, unknown
 kinds, missing or mistyped fields — including `"secret": null`, which is
-refused rather than read as empty). Nothing in the file is `public`: the
-assistant's Objective-C `main` never touches these types.
+refused rather than read as empty). Review (Codex) added the scalar-type
+rule: `JSONSerialization` returns `NSNumber` for every scalar and Swift's
+bridge reads `1` as `true` and `true` as `1`, so the decoder checks the
+underlying JSON type — a Bool must be a JSON boolean, `v` a JSON integer —
+and a numeric `answer` is refused rather than read as "yes". Nothing in the
+file is `public`: the assistant's Objective-C `main` never touches these
+types.
 
 ## Step 3 — Socket alongside DO, behind a default
 
