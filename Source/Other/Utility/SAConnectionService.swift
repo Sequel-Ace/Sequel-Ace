@@ -540,6 +540,9 @@ import Foundation
                     || state == SPMySQLProxyLaunchFailed
                     || state == SPMySQLProxyForwardingFailed {
             // SPMySQLProxyIdle covers auth failures, timeouts, permission denied, etc.
+            // SPSSHTunnel can report the terminal state before its background
+            // run loop has drained the final OpenSSH stderr notifications.
+            guard tunnel.failureDiagnosticsReady else { return }
             let failure = SASSHTunnelFailure(
                 message: tunnel.lastError() ?? "SSH tunnel failed",
                 debugMessages: tunnel.debugMessages() ?? ""

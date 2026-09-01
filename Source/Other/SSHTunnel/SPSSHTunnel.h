@@ -71,6 +71,7 @@
 	BOOL passwordInKeychain;
 	BOOL passwordPromptCancelled;
 	BOOL taskExitedUnexpectedly;
+	BOOL failureDiagnosticsReady;
 	
 	IBOutlet NSWindow *sshQuestionDialog;
 	IBOutlet NSTextField *sshQuestionText;
@@ -82,6 +83,8 @@
 
 @property (readonly) BOOL passwordPromptCancelled;
 @property (readonly) BOOL taskExitedUnexpectedly;
+/// True once the SSH task's pending stderr callbacks have been drained.
+@property (atomic, readonly) BOOL failureDiagnosticsReady;
 
 @property (readwrite, retain) IBOutlet NSTextField *sshQuestionText;
 @property (readwrite, retain) IBOutlet NSWindow *sshQuestionDialog;

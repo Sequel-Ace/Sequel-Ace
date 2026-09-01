@@ -56,6 +56,8 @@ static unsigned short getRandomPort(void);
 	NSConnection *tunnelConnection;
 }
 
+@property (atomic, readwrite) BOOL failureDiagnosticsReady;
+
 - (void)setLastError:(NSString *)msg;
 
 @end
@@ -64,6 +66,7 @@ static unsigned short getRandomPort(void);
 
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
+@synthesize failureDiagnosticsReady;
 @synthesize sshQuestionText, sshQuestionDialog, sshPasswordText, sshPasswordDialog, sshPasswordField;
 /*
  * Initialise with the supplied connection details.  Host, login and port should all be provided.
@@ -127,6 +130,7 @@ static unsigned short getRandomPort(void);
 		requestedResponse = NO;
 		passwordInKeychain = NO;
 		passwordPromptCancelled = NO;
+		self.failureDiagnosticsReady = YES;
 	}
 
 	return self;
@@ -282,6 +286,7 @@ static unsigned short getRandomPort(void);
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
+	self.failureDiagnosticsReady = NO;
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
 	                           target:self
@@ -319,8 +324,9 @@ static unsigned short getRandomPort(void);
 		// Enforce a parent window being present for dialogs
 		if (!parentWindow) {
 			connectionState = SPMySQLProxyIdle;
-			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
+			self.failureDiagnosticsReady = YES;
+			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
             SPLog(@"launchTask SSH Tunnel started without a parent window, returning");
 			return;
 		}
@@ -341,8 +347,9 @@ static unsigned short getRandomPort(void);
 			// Abort if no local free port could be allocated
 			if (!localPort || (useHostFallback && !localPortFallback)) {
 				connectionState = SPMySQLProxyIdle;
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
+				self.failureDiagnosticsReady = YES;
+				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 SPLog(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
 
 				return;
@@ -451,6 +458,7 @@ static unsigned short getRandomPort(void);
                 connectionState = SPMySQLProxyIdle;
                 taskExitedUnexpectedly = YES;
                 [self setLastError:alertMessage];
+				self.failureDiagnosticsReady = YES;
 
                 if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
@@ -621,22 +629,27 @@ static unsigned short getRandomPort(void);
 		// On tunnel close, clean up, ready for re-use if the delegate reconnects.
 		
 		
-		[[NSNotificationCenter defaultCenter] removeObserver:self
-		                                                name:NSFileHandleDataAvailableNotification
-		                                              object:nil];
-
 		// If the task closed unexpectedly, alert appropriately
 		if (connectionState != SPMySQLProxyIdle) {
 			connectionState = SPMySQLProxyIdle;
 			taskExitedUnexpectedly = YES;
 			[self setLastError:NSLocalizedString(@"The SSH Tunnel has unexpectedly closed.", @"SSH tunnel unexpectedly closed")];
             SPLog(@"SSH Tunnel has unexpectedly closed");
-
-			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 		}
 
 		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
 		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+
+		[[NSNotificationCenter defaultCenter] removeObserver:self
+		                                                name:NSFileHandleDataAvailableNotification
+		                                              object:nil];
+
+		// A stderr callback may have observed an intermediate state while draining,
+		// but an exited task is always idle. Notify once more only after the immutable
+		// diagnostics snapshot is safe to take.
+		connectionState = SPMySQLProxyIdle;
+		self.failureDiagnosticsReady = YES;
+		if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 
 		
 		
@@ -752,7 +765,7 @@ static unsigned short getRandomPort(void);
 		}
 	}
 
-	if (connectionState != SPMySQLProxyIdle) {
+	if (connectionState != SPMySQLProxyIdle && [task isRunning]) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
 }
