@@ -67,6 +67,15 @@ import OSLog
     }
 
     public func checkRelease(name: String, installedReleaseTag: String?, isUserInitiated: Bool) {
+        guard SAGitHubReleaseCheckPolicy.shouldCheck(
+            isUserInitiated: isUserInitiated,
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+            isAppStoreInstall: Bundle.main.isMASVersion
+        ) else {
+            Log.debug("Skipping unavailable GitHub release check")
+            return
+        }
+
         if name.isEmpty {
             Log.error("name not valid")
             return
@@ -118,6 +127,16 @@ import OSLog
         installedReleaseTag: String?,
         isUserInitiated: Bool
     ) {
+        guard SAGitHubReleaseCheckPolicy.shouldCheck(
+            isUserInitiated: isUserInitiated,
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+            isAppStoreInstall: Bundle.main.isMASVersion
+        ) else {
+            Log.debug("Stopping unavailable GitHub release pagination")
+            checkTracker.finish(checkID)
+            return
+        }
+
         AF.request(url) { urlRequest in
             urlRequest.timeoutInterval = 60
             self.Log.debug("urlRequest: \(urlRequest)")
@@ -133,6 +152,15 @@ import OSLog
                 if shouldFinishCheck {
                     checkTracker.finish(checkID)
                 }
+            }
+
+            guard SAGitHubReleaseCheckPolicy.shouldCheck(
+                isUserInitiated: isUserInitiated,
+                automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+                isAppStoreInstall: Bundle.main.isMASVersion
+            ) else {
+                Log.debug("Ignoring unavailable GitHub release check response")
+                return
             }
 
             switch response.result {
@@ -207,7 +235,8 @@ import OSLog
                     ) {
                         scheduleSettlingRetry(after: retryDelay,
                                              installedBuildName: installedBuildName,
-                                             installedReleaseTag: installedReleaseTag)
+                                             installedReleaseTag: installedReleaseTag,
+                                             isUserInitiated: isUserInitiated)
                         return
                     }
 
@@ -221,17 +250,27 @@ import OSLog
                     ) {
                         scheduleSettlingRetry(after: retryDelay,
                                              installedBuildName: installedBuildName,
-                                             installedReleaseTag: installedReleaseTag)
+                                             installedReleaseTag: installedReleaseTag,
+                                             isUserInitiated: isUserInitiated)
                         return
                     }
 
                     Log.debug("removing releases whose assets are still settling")
                     releasesArray.removeAll(where: { $0.isSettled(at: now) == false })
 
-                    Log.debug("releasesArray count: \(releasesArray.count)")
+                    let rolloutSeed = isUserInitiated
+                        ? nil
+                        : SAGitHubReleaseRolloutPolicy.installationSeed(in: .standard)
+                    Log.debug("applying phased rollout to the newest GitHub update")
+                    availableRelease = SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+                        in: releasesArray,
+                        at: now,
+                        installationSeed: rolloutSeed,
+                        isUserInitiated: isUserInitiated
+                    )
+                    releases = availableRelease.map { [$0] } ?? []
 
-                    releases = releasesArray
-                    availableRelease = releases.first
+                    Log.debug("releases count after rollout gate: \(releases.count)")
 
                     guard
                         let currentReleaseTmp = currentRelease
@@ -283,14 +322,20 @@ import OSLog
     private func scheduleSettlingRetry(
         after delay: TimeInterval,
         installedBuildName: String,
-        installedReleaseTag: String?
+        installedReleaseTag: String?,
+        isUserInitiated: Bool
     ) {
         Log.info("A newer GitHub release is still settling; retrying in \(delay) seconds")
-        let retry = DispatchWorkItem { [weak self] in
-            self?.checkRelease(name: installedBuildName,
-                               installedReleaseTag: installedReleaseTag,
-                               isUserInitiated: false)
+        let operation = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: installedBuildName,
+            installedReleaseTag: installedReleaseTag,
+            isUserInitiated: isUserInitiated
+        ) { [weak self] name, releaseTag, isUserInitiated in
+            self?.checkRelease(name: name,
+                               installedReleaseTag: releaseTag,
+                               isUserInitiated: isUserInitiated)
         }
+        let retry = DispatchWorkItem(block: operation)
         settlingRetry = retry
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: retry)
     }
@@ -309,6 +354,11 @@ import OSLog
 
     private func displayNewReleaseAvailableAlert(isUserInitiated: Bool) -> Bool {
         Log.debug("displayNewReleaseAvailableAlert")
+
+        guard Bundle.main.isMASVersion == false else {
+            Log.error("Refusing to present a GitHub update to an App Store install")
+            return false
+        }
 
         let prefs: UserDefaults = UserDefaults.standard
         var localURL: URL

@@ -48,9 +48,12 @@ import Security
 /// already exists (callers branch through the update path); update recovers
 /// from a missing source (`errSecItemNotFound` → fresh add under the new
 /// name) and from an occupied destination (`errSecDuplicateItem` → delete
-/// it, retry once); a rename leaves the item's label behind; and
-/// `SecItemUpdate` preserves an existing item's access list, which is what
-/// keeps legacy-created items working.
+/// it, retry once); a rename leaves the item's label behind; `SecItemUpdate`
+/// preserves an existing item's access list, which is what keeps
+/// legacy-created items working; and delete/update pin the single matched
+/// item via its persistent reference before acting — an unrestricted
+/// attribute query would hit every match across the keychain search list,
+/// where the legacy code's found item ref touched exactly one.
 @objc final class SAKeychain: NSObject, SAKeychainProviding {
 
     /// The literal the legacy code stored in `kSecGenericItemAttr` for every
@@ -106,12 +109,14 @@ import Security
 
     func deletePassword(name: String?, account: String?) {
         guard let name, let account, isValid(name: name, account: account) else { return }
-        guard passwordExists(name: name, account: account) else { return }
+        // A missing item is a silent no-op, exactly like the legacy
+        // find-then-delete; the persistent ref also pins the delete to the
+        // single matched item (see the class doc).
+        guard let ref = persistentRef(name: name, account: account) else { return }
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: name,
-            kSecAttrAccount as String: account,
+            kSecValuePersistentRef as String: ref,
         ]
         let status = SecItemDelete(query as CFDictionary)
         if status != errSecSuccess {
@@ -140,10 +145,40 @@ import Security
             return
         }
 
+        // The source item does not exist: try a safe delete, then a fresh
+        // add under the new name and account (the legacy -25300 branch).
+        // Resolving the persistent ref doubles as the existence check and
+        // pins the update to the single matched item (see the class doc).
+        guard let ref = persistentRef(name: name, account: account) else {
+            deletePassword(name: name, account: account)
+            add(password: password, name: newName, account: newAccount)
+            return
+        }
+
+        // SecItemUpdate silently ignores zero-length kSecValueData — it
+        // returns errSecSuccess and leaves the previous secret in place
+        // (probed on macOS 15; the legacy SecKeychainItemModifyAttributesAndData
+        // stored empty data correctly, and the characterization suite pins
+        // the empty round-trip). An update *to* an empty password therefore
+        // re-creates the item: carry the label (renames leave it behind),
+        // clear any occupied destination exactly like the duplicate branch
+        // below, delete the matched item, and add it back empty — SecItemAdd
+        // handles empty data fine. The re-created item gets a fresh default
+        // access list and creation date.
+        if password.isEmpty {
+            let carriedLabel = label(forPersistentRef: ref)
+            deletePassword(name: newName, account: newAccount)
+            SecItemDelete([
+                kSecClass as String: kSecClassGenericPassword,
+                kSecValuePersistentRef as String: ref,
+            ] as CFDictionary)
+            add(password: "", name: newName, account: newAccount, label: carriedLabel)
+            return
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: name,
-            kSecAttrAccount as String: account,
+            kSecValuePersistentRef as String: ref,
         ]
         // A nil new name/account writes an empty attribute, exactly as the
         // legacy zero-length SecKeychainAttribute did. The label is
@@ -156,14 +191,6 @@ import Security
         ]
 
         var status = SecItemUpdate(query as CFDictionary, changes as CFDictionary)
-
-        // The source item does not exist: try a safe delete, then a fresh
-        // add under the new name and account (the legacy -25300 branch).
-        if status == errSecItemNotFound {
-            deletePassword(name: name, account: account)
-            add(password: password, name: newName, account: newAccount)
-            return
-        }
 
         // The destination already exists: connection names carry a unique
         // id, so this indicates an earlier partial rename — delete the old
@@ -202,6 +229,37 @@ import Security
     }
 
     // MARK: - Helpers
+
+    /// The persistent reference of the single item the default search-list
+    /// lookup matches for (service, account) — the SecItem* stand-in for the
+    /// legacy SecKeychainFindGenericPassword item ref. Nil when no item
+    /// exists.
+    private func persistentRef(name: String, account: String) -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: name,
+            kSecAttrAccount as String: account,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecReturnPersistentRef as String: true,
+        ]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
+        return result as? Data
+    }
+
+    /// The label of the item behind a persistent reference (for carrying it
+    /// across the empty-password re-create in updateItem).
+    private func label(forPersistentRef ref: Data) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecValuePersistentRef as String: ref,
+            kSecReturnAttributes as String: true,
+        ]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let attrs = result as? [String: Any] else { return nil }
+        return attrs[kSecAttrLabel as String] as? String
+    }
 
     private func isValid(name: String, account: String) -> Bool {
         !name.isEmpty && !account.isEmpty
