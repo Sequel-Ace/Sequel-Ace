@@ -44,9 +44,9 @@ import Foundation
 
     typealias Handler = (SASSHTunnelAuthRequest) -> SASSHTunnelAuthResponse
 
-    /// Decides whether the accepted connection on `fd` may be served. Step 4
-    /// supplies the code-signing check; until then every peer is accepted,
-    /// which matches what Distributed Objects does today.
+    /// Decides whether the accepted connection on `fd` may be served. The
+    /// shipping policy is `SASSHTunnelPeerValidator.assistantPeerPolicy()`
+    /// (Step 4); tests inject their own.
     typealias PeerPolicy = (Int32) -> Bool
 
     enum Error: Swift.Error, Equatable {
@@ -108,9 +108,11 @@ import Foundation
         }
     }
 
-    /// Objective-C entry: serve a tunnel's `SASSHTunnelAuthService`.
+    /// Objective-C entry: serve a tunnel's `SASSHTunnelAuthService`, admitting
+    /// only a connecting process that is Apple-signed, of this app's team and
+    /// named as the tunnel assistant.
     @objc convenience init(service: SASSHTunnelAuthService) throws {
-        try self.init(handler: service.handle)
+        try self.init(handler: service.handle, peerPolicy: SASSHTunnelPeerValidator.assistantPeerPolicy())
     }
 
     init(directories: [String] = SASSHTunnelSocketServer.candidateDirectories(),
