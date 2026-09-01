@@ -155,6 +155,27 @@ import Security
             return
         }
 
+        // SecItemUpdate silently ignores zero-length kSecValueData — it
+        // returns errSecSuccess and leaves the previous secret in place
+        // (probed on macOS 15; the legacy SecKeychainItemModifyAttributesAndData
+        // stored empty data correctly, and the characterization suite pins
+        // the empty round-trip). An update *to* an empty password therefore
+        // re-creates the item: carry the label (renames leave it behind),
+        // clear any occupied destination exactly like the duplicate branch
+        // below, delete the matched item, and add it back empty — SecItemAdd
+        // handles empty data fine. The re-created item gets a fresh default
+        // access list and creation date.
+        if password.isEmpty {
+            let carriedLabel = label(forPersistentRef: ref)
+            deletePassword(name: newName, account: newAccount)
+            SecItemDelete([
+                kSecClass as String: kSecClassGenericPassword,
+                kSecValuePersistentRef as String: ref,
+            ] as CFDictionary)
+            add(password: "", name: newName, account: newAccount, label: carriedLabel)
+            return
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecValuePersistentRef as String: ref,
@@ -224,6 +245,20 @@ import Security
         var result: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
         return result as? Data
+    }
+
+    /// The label of the item behind a persistent reference (for carrying it
+    /// across the empty-password re-create in updateItem).
+    private func label(forPersistentRef ref: Data) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecValuePersistentRef as String: ref,
+            kSecReturnAttributes as String: true,
+        ]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let attrs = result as? [String: Any] else { return nil }
+        return attrs[kSecAttrLabel as String] as? String
     }
 
     private func isValid(name: String, account: String) -> Bool {
