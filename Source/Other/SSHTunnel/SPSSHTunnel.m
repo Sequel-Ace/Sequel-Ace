@@ -339,6 +339,13 @@ static unsigned short getRandomPort(void);
     
     SPLog(@"connection state = %i", connectionState);
 
+	if (standardErrorDrainCoordinator.attemptCancellationRequested) {
+		SPLog(@"launch task cancelled before SSH process setup");
+		connectionState = SPMySQLProxyIdle;
+		[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+		return;
+	}
+
     if (connectionState != SPMySQLProxyIdle){
         SPLog(@"launch task ssh connection state != SPMySQLProxyIdle, returning");
 		[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
@@ -647,6 +654,9 @@ static unsigned short getRandomPort(void);
 		@try {
 			// Launch and run the tunnel
 			[task SPlaunch]; //throws for invalid paths, missing +x permission
+			if (standardErrorDrainCoordinator.attemptCancellationRequested) {
+				[self abortTask];
+			}
 
 			// Listen for output
 			[task waitUntilExit]; // TODO: this leaks
@@ -705,9 +715,14 @@ static unsigned short getRandomPort(void);
 - (void)disconnect
 {
     SPLog(@"ssh tunnel disconnect");
+	BOOL cancelledQueuedOrRunningAttempt = [standardErrorDrainCoordinator cancelPendingOrRunningAttempt];
 
     if (connectionState == SPMySQLProxyIdle){
-        SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
+		if (cancelledQueuedOrRunningAttempt) {
+			SPLog(@"disconnect cancelled a queued or not-yet-launched SSH attempt");
+		} else {
+			SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
+		}
         return;
     }
 

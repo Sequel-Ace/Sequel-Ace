@@ -40,6 +40,7 @@ struct SASSHTunnelFailure {
     private var reachedEOF = false
     private var phase = Phase.ready
     private var pendingAttempt = false
+    private var cancellationRequested = false
 
     override convenience init() {
         self.init(timeout: Self.defaultTimeout)
@@ -62,6 +63,12 @@ struct SASSHTunnelFailure {
         return pendingAttempt
     }
 
+    @objc var attemptCancellationRequested: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return cancellationRequested
+    }
+
     /// Atomically starts an idle tunnel, coalesces requests made while failure
     /// diagnostics drain, and ignores duplicate requests while SSH is running.
     @objc func requestAttempt() -> SASSHAttemptRequestDisposition {
@@ -71,11 +78,13 @@ struct SASSHTunnelFailure {
         switch phase {
         case .ready:
             reachedEOF = false
+            cancellationRequested = false
             phase = .running
             return .start
         case .running:
             return .ignored
         case .draining, .completing:
+            guard !cancellationRequested else { return .ignored }
             pendingAttempt = true
             return .queued
         }
@@ -95,7 +104,22 @@ struct SASSHTunnelFailure {
         stateLock.lock()
         phase = .ready
         pendingAttempt = false
+        cancellationRequested = false
         stateLock.unlock()
+    }
+
+    /// Cancels either a request waiting behind cleanup or a running lifecycle.
+    /// The latter flag is checked before and immediately after SSH launches.
+    @objc func cancelPendingOrRunningAttempt() -> Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        if phase != .ready {
+            pendingAttempt = false
+            cancellationRequested = true
+            return true
+        }
+        return false
     }
 
     /// Returns whether the one-shot file-handle notification should be re-armed.
@@ -138,8 +162,10 @@ struct SASSHTunnelFailure {
         pendingAttempt = false
         if shouldStartPendingAttempt {
             reachedEOF = false
+            cancellationRequested = false
             phase = .running
         } else {
+            cancellationRequested = false
             phase = .ready
         }
         return shouldStartPendingAttempt

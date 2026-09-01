@@ -101,6 +101,37 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
         coordinator.finishWithoutStandardErrorPipe()
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
     }
+
+    func testQueuedAttemptCanBeCancelledBeforeReservation() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+
+        XCTAssertTrue(coordinator.cancelPendingOrRunningAttempt())
+        XCTAssertFalse(coordinator.connectionAttemptPending)
+        XCTAssertTrue(coordinator.attemptCancellationRequested)
+        XCTAssertEqual(coordinator.requestAttempt(), .ignored)
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertFalse(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+
+    func testReservedAttemptCancellationIsObservedBeforeLaunch() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.completeDrainNotificationAndReservePendingAttempt())
+
+        XCTAssertTrue(coordinator.cancelPendingOrRunningAttempt())
+        XCTAssertTrue(coordinator.attemptCancellationRequested)
+
+        coordinator.finishWithoutStandardErrorPipe()
+        XCTAssertFalse(coordinator.attemptCancellationRequested)
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
 }
 
 // MARK: - Connection Info Parameter Mapping Tests
