@@ -14,6 +14,7 @@
 		1A96314725B9CE6600BF2E91 /* SPMySQLArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A96314525B9CE6600BF2E91 /* SPMySQLArrayAdditions.m */; };
 		1A96314E25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A96314C25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m */; };
 		1A96314F25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A96314D25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */; };
 		507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1811BC0C64100104523 /* DataConversion_Tests.m */; };
 		507FF23B1BC0E8CA00104523 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* SPMySQL.framework */; };
 		507FF23D1BC157B500104523 /* SPMySQLStringAdditions_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */; };
@@ -129,6 +130,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAProxyReconnectCoordinator.swift; path = Source/SAProxyReconnectCoordinator.swift; sourceTree = "<group>"; };
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		0867D6A5FE840307C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		0EA5700AA759774A87FC447F /* SPMySQL.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; name = SPMySQL.modulemap; path = Source/SPMySQL.modulemap; sourceTree = "<group>"; };
@@ -346,6 +348,7 @@
 				386B159A6D535F0686530898 /* SADatabaseAssertion.swift */,
 				0EA5700AA759774A87FC447F /* SPMySQL.modulemap */,
 				1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */,
+				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
@@ -761,6 +764,7 @@
 				584F16A91752911200D150A6 /* SPMySQLStreamingResultStore.m in Sources */,
 				583C734E17B0778A0056B284 /* Data Conversion.m in Sources */,
 				D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */,
+				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

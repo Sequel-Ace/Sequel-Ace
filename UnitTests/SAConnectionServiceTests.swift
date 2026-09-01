@@ -137,9 +137,32 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 
 private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionProxy {
     private let stateLock = NSLock()
+    private var storedConnectCallCount = 0
     private var storedDisconnectCallCount = 0
-    var connectionAttemptPendingValue = false
-    var onConnect: (() -> Void)?
+    private var storedReconnectDisconnectCallCount = 0
+    private var storedConnectionAttemptPending = false
+    private var connectSuppressed = false
+    var suppressConnectAfterOrdinaryDisconnect = false
+    var onConnect: ((Int) -> Void)?
+
+    var connectionAttemptPendingValue: Bool {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return storedConnectionAttemptPending
+        }
+        set {
+            stateLock.lock()
+            storedConnectionAttemptPending = newValue
+            stateLock.unlock()
+        }
+    }
+
+    var connectCallCount: Int {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedConnectCallCount
+    }
 
     var disconnectCallCount: Int {
         stateLock.lock()
@@ -147,14 +170,39 @@ private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionP
         return storedDisconnectCallCount
     }
 
+    var reconnectDisconnectCallCount: Int {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedReconnectDisconnectCallCount
+    }
+
     func connect() {
-        onConnect?()
+        stateLock.lock()
+        storedConnectCallCount += 1
+        let connectCallCount = storedConnectCallCount
+        let shouldNotify = !connectSuppressed
+        let onConnect = onConnect
+        stateLock.unlock()
+
+        if shouldNotify {
+            onConnect?(connectCallCount)
+        }
     }
 
     func disconnect() {
         stateLock.lock()
         storedDisconnectCallCount += 1
-        connectionAttemptPendingValue = false
+        storedConnectionAttemptPending = false
+        if suppressConnectAfterOrdinaryDisconnect {
+            connectSuppressed = true
+        }
+        stateLock.unlock()
+    }
+
+    func disconnectForReconnect() {
+        stateLock.lock()
+        storedReconnectDisconnectCallCount += 1
+        storedConnectionAttemptPending = false
         stateLock.unlock()
     }
 
@@ -173,7 +221,7 @@ private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionP
     func connectionAttemptPending() -> Bool {
         stateLock.lock()
         defer { stateLock.unlock() }
-        return connectionAttemptPendingValue
+        return storedConnectionAttemptPending
     }
 }
 
@@ -195,7 +243,7 @@ final class SAConnectionProxyDisconnectTests: XCTestCase {
         let connectStarted = expectation(description: "proxy connect requested")
         let reconnectFinished = expectation(description: "reconnect returned")
         proxy.connectionAttemptPendingValue = true
-        proxy.onConnect = { connectStarted.fulfill() }
+        proxy.onConnect = { _ in connectStarted.fulfill() }
         connection.setProxy(proxy)
 
         let reconnectThread = Thread {
@@ -222,7 +270,7 @@ final class SAConnectionProxyDisconnectTests: XCTestCase {
         let connectStarted = expectation(description: "proxy connect requested")
         let reconnectFinished = expectation(description: "reconnect returned")
         proxy.connectionAttemptPendingValue = true
-        proxy.onConnect = { connectStarted.fulfill() }
+        proxy.onConnect = { _ in connectStarted.fulfill() }
         connection.setProxy(proxy)
 
         let reconnectThread = Thread {
@@ -240,6 +288,36 @@ final class SAConnectionProxyDisconnectTests: XCTestCase {
             connection.value(forKey: "proxyStateChangeNotificationsIgnored") as? Bool,
             false
         )
+    }
+
+    func testProxyTimeoutPreservesTheFollowingReconnectAttempt() {
+        let connection = SPMySQLConnection()
+        connection.timeout = 0
+        let proxy = SAConnectionProxyDisconnectSpy()
+        let secondConnectStarted = expectation(description: "second proxy connect launched")
+        let reconnectFinished = expectation(description: "reconnect returned")
+        proxy.suppressConnectAfterOrdinaryDisconnect = true
+        proxy.onConnect = { connectCallCount in
+            if connectCallCount == 2 {
+                proxy.connectionAttemptPendingValue = true
+                secondConnectStarted.fulfill()
+            }
+        }
+        connection.setProxy(proxy)
+
+        let reconnectThread = Thread {
+            _ = connection.reconnect()
+            reconnectFinished.fulfill()
+        }
+        reconnectThread.start()
+        wait(for: [secondConnectStarted], timeout: 4)
+
+        reconnectThread.cancel()
+        wait(for: [reconnectFinished], timeout: 2)
+
+        XCTAssertGreaterThanOrEqual(proxy.connectCallCount, 2)
+        XCTAssertGreaterThanOrEqual(proxy.reconnectDisconnectCallCount, 1)
+        XCTAssertGreaterThanOrEqual(proxy.disconnectCallCount, 1)
     }
 }
 
