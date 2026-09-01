@@ -9,6 +9,7 @@
 //
 
 import XCTest
+import SPMySQL
 
 // MARK: - SSH Tunnel Failure Tests
 
@@ -131,6 +132,41 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
         coordinator.finishWithoutStandardErrorPipe()
         XCTAssertFalse(coordinator.attemptCancellationRequested)
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+}
+
+private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionProxy {
+    private(set) var disconnectCallCount = 0
+
+    func connect() {}
+
+    func disconnect() {
+        disconnectCallCount += 1
+    }
+
+    func state() -> SPMySQLConnectionProxyState {
+        SPMySQLProxyIdle
+    }
+
+    func localPort() -> UInt {
+        0
+    }
+
+    func setConnectionStateChange(_ selector: Selector!, delegate: Any!) -> Bool {
+        true
+    }
+}
+
+final class SAConnectionProxyDisconnectTests: XCTestCase {
+
+    func testDisconnectReachesProxyWhenMySQLConnectionIsAlreadyInactive() {
+        let connection = SPMySQLConnection()
+        let proxy = SAConnectionProxyDisconnectSpy()
+        connection.setProxy(proxy)
+
+        connection.disconnect()
+
+        XCTAssertEqual(proxy.disconnectCallCount, 1)
     }
 }
 

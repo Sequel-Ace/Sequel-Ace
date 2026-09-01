@@ -1345,6 +1345,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Only continue if a connection is active
 	if (state != SPMySQLConnected && state != SPMySQLConnecting) {
+		// An explicit disconnect must still reach the proxy so it can cancel an
+		// SSH attempt queued behind cleanup. Internal reconnect teardown keeps
+		// the existing inactive-state behavior and preserves that queued attempt.
+		if (!preserveProxyReconnect && proxy) {
+			[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
+		}
 		return;
 	}
 
