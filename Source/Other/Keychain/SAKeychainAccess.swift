@@ -30,28 +30,24 @@
 
 import Foundation
 
-/// How Swift code obtains the keychain store.
+/// The one construction point for the keychain store, from Swift and
+/// Objective-C alike.
 ///
-/// SPKeychain's init returns nil while keychain access is disabled
-/// (`LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN`, issue #2437); before the header was
-/// annotated, that nil arrived through an `init!` import and trapped on
-/// first use. The factory makes the disabled mode a real object instead —
-/// callers always hold a working `SAKeychainProviding`.
-///
-/// App target only (it names SPKeychain, which the Unit Tests target cannot
-/// see — no bridging header there). Once the SecItem* implementation
-/// replaces SPKeychain (migration plan Step 5), this becomes its one
-/// construction point.
-enum SAKeychainAccess {
+/// Owns the issue #2437 guard: while `LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN` is
+/// set, keychain access is disabled wholesale and callers receive the
+/// `SAKeychainDisabled` null object — historically this guard was the
+/// retired SPKeychain's nil-returning init, which gave Objective-C callers
+/// nil-messaging no-ops and trapped unguarded Swift callers. Callers always
+/// hold a working `SAKeychainProviding` now.
+@objc final class SAKeychainAccess: NSObject {
 
-    static func make() -> SAKeychainProviding {
-        // The as? is a real runtime conformance check: SPKeychain adopts the
-        // protocol in a class extension inside its .m, which Swift cannot
-        // see statically (the header cannot import the generated Swift
-        // header that defines the protocol — that would be circular).
-        if let store = SPKeychain(), let typed = store as? SAKeychainProviding {
-            return typed
+    @objc static func make() -> SAKeychainProviding {
+        if ProcessInfo.processInfo.environment["LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN"] != nil {
+            NSLog("LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN is set. Disabling keychain access. See Issue #2437")
+            return SAKeychainDisabled()
         }
-        return SAKeychainDisabled()
+        return SAKeychain()
     }
+
+    private override init() {}
 }

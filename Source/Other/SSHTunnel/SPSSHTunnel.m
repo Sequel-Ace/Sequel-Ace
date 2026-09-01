@@ -31,7 +31,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPSSHTunnel.h"
-#import "SPKeychain.h"
 #import "SPThreadAdditions.h"
 #import "SPFileHandle.h"
 #import "SPAppController.h"
@@ -947,7 +946,7 @@ static unsigned short getRandomPort(void);
 
 		// Add to keychain if appropriate
 		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSControlStateValueOn) {
-			SPKeychain *keychain = [[SPKeychain alloc] init];
+			id<SAKeychainProviding> keychain = [SAKeychainAccess make];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
 			
 		}

@@ -8,9 +8,10 @@
 
 import XCTest
 
-/// The disabled-mode null object must mirror what Objective-C callers get
-/// from messaging a nil SPKeychain: no-ops, nils and false everywhere —
-/// never a crash, never a stored secret.
+/// The disabled-mode null object: no-ops, nils and false everywhere — never
+/// a crash, never a stored secret. (The semantics mirror what Objective-C
+/// callers historically got from messaging the retired SPKeychain's nil
+/// disabled-mode instance.)
 final class SAKeychainDisabledTests: XCTestCase {
 
     private let store: SAKeychainProviding = SAKeychainDisabled()
@@ -26,7 +27,7 @@ final class SAKeychainDisabledTests: XCTestCase {
         XCTAssertNil(store.password(name: "new", account: "new"))
     }
 
-    func testNamingHelpersReturnNilLikeAMessagedNilSPKeychain() {
+    func testNamingHelpersReturnNil() {
         XCTAssertNil(store.name(favoriteName: "F", id: "1"))
         XCTAssertNil(store.account(user: "u", host: "h", database: "d"))
         XCTAssertNil(store.sshName(favoriteName: "F", id: "1"))

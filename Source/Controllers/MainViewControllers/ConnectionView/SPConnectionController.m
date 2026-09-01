@@ -35,7 +35,6 @@
 #import "SPPreferenceController.h"
 #import "ImageAndTextCell.h"
 #import "RegexKitLite.h"
-#import "SPKeychain.h"
 #import <objc/runtime.h>
 #import "SPSSHTunnel.h"
 #import "SPFileHandle.h"
@@ -2189,7 +2188,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
 /**
  * Helper method to save SSH newPassword to keychain for a favorite.
- * Uses consistent keychain naming format via SPKeychain helper methods.
+ * Uses consistent keychain naming format via the keychain store's helper methods.
  */
 - (void)saveSSHPassword:(NSString *)newSSHPassword forFavorite:(NSDictionary *)favorite
 {
@@ -4707,7 +4706,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [connectionSplitView setMinSize:445.f ofSubviewAtIndex:1];
 
         // Set up a keychain instance and preferences reference, and create the initial favorites list
-        keychain = [[SPKeychain alloc] init];
+        keychain = [SAKeychainAccess make];
         prefs = [NSUserDefaults standardUserDefaults];
 
         bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];

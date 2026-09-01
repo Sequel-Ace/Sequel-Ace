@@ -353,7 +353,48 @@ pure, both targets — the store itself is app-target only):
      field-for-field (same mechanical-diff spirit as the C3
      `apply(to:)`/`_buildConnectionInfo` check — the risk is omission).
 
-### Step 5 — Flip the call sites, delete SPKeychain
+### Step 5 — Flip the call sites, delete SPKeychain — ✅ Done (manual matrix pending)
+
+Execution notes (2026-08-31): `SAKeychainAccess.make()` became the one
+construction point (now `@objc`, and it inherited the issue #2437 guard
+from SPKeychain's init); the five ObjC construction sites became
+`id<SAKeychainProviding> … = [SAKeychainAccess make]` with every message
+unchanged, since the protocol carries SPKeychain's exact selectors; the
+characterization suites now pin `SAKeychain` directly and the rerun
+subclasses + cross-compatibility matrix were deleted with their purpose
+served; `SPKeychain.h/.m` left the tree, the bridging header, and both
+targets. All ten SecKeychain* deprecation warnings are gone — the
+remaining warnings-plan floor is NSConnection (5 — one site was
+consolidated by the Step 3 assistant rewrite) + the intentional Swift
+markers (4).
+
+**Live-matrix results (2026-08-31, debug build against real favorites).**
+The first live run earned its keep immediately: the very first favorite
+selection **crashed** — `updateFavoriteSelection:` passes the favorites
+dictionary's NSNumber id into `nameForFavoriteName:id:`, whose legacy
+parameter was `(id)` + `-longLongValue` but which the protocol had narrowed
+to `String?`, so SAKeychain's generated thunk threw on the bridge. The
+characterization suite could not have caught it (it calls through Swift
+with strings — it cannot see what ObjC callers put in an `id`-typed slot).
+Fixed by widening the `favoriteID` parameters to `Any?` end to end with
+legacy `-longLongValue` coercion, plus the NSNumber tests Step 1 should
+have written. After the fix, verified end to end with **both** pre-migration
+favorites (items created by the released app, read in place by SAKeychain):
+
+- **Row 2 / row 6 (SSH)**: auto-connect through the intranet-EC2 SSH-tunnel
+  favorite — ssh established to the bastion with the key-file bookmark, and
+  two MySQL sessions authenticated through the tunnel with the keychain
+  password, under the Step 3 environment (no `SP_KEYCHAIN_ITEM_*` vars).
+- **Row 2 (TCP)**: auto-connect to the local intranet favorite — server-side
+  `information_schema.processlist` showed both sessions authenticated as the
+  favorite's user with its database selected.
+
+The remaining UI rows (favorite save / rename / password change / delete /
+import-export) were then verified hands-on by the maintainer against the
+same debug build (2026-08-31), covering most of the matrix. Anything not
+explicitly exercised — notably row 9, the downgrade check against the
+previous release — should get a look during the release soak; the
+soak-one-release guidance stands.
 
 - Swap the ~8 constructing call sites (`SPConnectionController`,
   `SPDatabaseDocument`, `SPSSHTunnel`, `SAConnectionService`,

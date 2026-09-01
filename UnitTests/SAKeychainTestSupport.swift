@@ -40,20 +40,10 @@ enum SAKeychainTestSupport {
         "\(testServicePrefix) \(runToken) : \(label)"
     }
 
-    /// The legacy SPKeychain, reached via the runtime because the Unit Tests
-    /// target has no Objective-C bridging header (see "Test-target ObjC
-    /// visibility — known sharp edge" in the modernization plan). SPKeychain
-    /// declares SAKeychainProviding conformance in its .m, so the cast is a
-    /// real runtime conformance check, not a bit-cast.
-    static func makeLegacyStore() -> SAKeychainProviding? {
-        guard let cls = NSClassFromString("SPKeychain") as? NSObject.Type else { return nil }
-        return cls.init() as? SAKeychainProviding
-    }
-
     /// True when the login keychain accepts a write + read-back + delete from
-    /// this process. Uses raw SecItem* calls (never SPKeychain) so a locked
-    /// keychain surfaces as a status code here rather than as SPKeychain's
-    /// modal error alert hanging the test runner.
+    /// this process. Uses raw SecItem* calls (never the store under test) so
+    /// a locked keychain surfaces as a status code here rather than as the
+    /// store's modal error alert hanging the test runner.
     static func probeKeychainUsable() -> Bool {
         let probeService = service("availability probe")
         let probeAccount = "probe@probe/probe"
@@ -82,7 +72,7 @@ enum SAKeychainTestSupport {
         return result as? [String: Any]
     }
 
-    /// Raw secret read, bypassing SPKeychain's C-string round-trip.
+    /// Raw secret read, independent of the store under test.
     static func passwordData(service: String, account: String) -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -127,11 +117,12 @@ enum SAKeychainTestSupport {
     }
 }
 
-/// Shared setup for suites that construct the legacy store: the env-guard and
-/// keychain-availability skips, the namespace sweep, and the store itself.
-/// Subclassed rather than parameterized so the identical characterization
-/// tests can later run against the SecItem* implementation by overriding
-/// `makeStore()` (the migration plan's cross-compatibility matrix).
+/// Shared setup for suites that construct the keychain store: the env-guard
+/// and keychain-availability skips, the namespace sweep, and the store
+/// itself. `makeStore()` stays overridable so the identical behaviour tests
+/// can run against any future alternative implementation, exactly as they
+/// ran against both SPKeychain and SAKeychain while the migration's
+/// cross-compatibility matrix was live (Steps 1–5 of the plan).
 class SAKeychainCharacterizationTestCase: XCTestCase {
 
     private static var probeResult: Bool?
@@ -143,7 +134,7 @@ class SAKeychainCharacterizationTestCase: XCTestCase {
     var needsKeychainAccess: Bool { true }
 
     func makeStore() -> SAKeychainProviding? {
-        SAKeychainTestSupport.makeLegacyStore()
+        SAKeychain()
     }
 
     override class func setUp() {
@@ -158,12 +149,10 @@ class SAKeychainCharacterizationTestCase: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        // SPKeychain's init returns nil under this env var (issue #2437), so
-        // no store can be constructed at all. The guard itself is
-        // characterized in the migration plan as defect 3 (the nil init is a
-        // trap for Swift callers) and gets a proper testable seam in Step 2;
-        // NSProcessInfo caches the environment, so flipping the variable
-        // in-process would not be deterministic enough to pin here.
+        // In production this env var makes SAKeychainAccess.make() hand out
+        // the SAKeychainDisabled null object (issue #2437) — keychain access
+        // is disabled wholesale, so exercising the real store here would not
+        // reflect the running configuration.
         if ProcessInfo.processInfo.environment["LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN"] != nil {
             throw XCTSkip("keychain access is disabled while LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN is set")
         }
