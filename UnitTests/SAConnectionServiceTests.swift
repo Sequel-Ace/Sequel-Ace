@@ -38,6 +38,41 @@ final class SASSHTunnelFailureTests: XCTestCase {
     }
 }
 
+final class SASSHStderrDrainCoordinatorTests: XCTestCase {
+
+    func testAttemptLifecycleControlsDiagnosticsReadiness() {
+        let coordinator = SASSHStderrDrainCoordinator()
+
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+
+        coordinator.beginAttempt()
+        XCTAssertFalse(coordinator.failureDiagnosticsReady)
+
+        coordinator.finishWithoutStandardErrorPipe()
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+
+    func testStandardErrorReadsRearmUntilEOF() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 1)
+        coordinator.beginAttempt()
+
+        XCTAssertTrue(coordinator.recordStandardErrorRead(byteCount: 128))
+        XCTAssertFalse(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.recordStandardErrorRead(byteCount: 0))
+
+        XCTAssertTrue(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+
+    func testDrainTimeoutStillMakesDiagnosticsReady() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        coordinator.beginAttempt()
+
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+}
+
 // MARK: - Connection Info Parameter Mapping Tests
 
 /// Tests connection parameter storage and the pure Swift mappings that

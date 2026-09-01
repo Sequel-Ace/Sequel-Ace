@@ -47,7 +47,6 @@
 #import <netinet/in.h>
 
 static unsigned short getRandomPort(void);
-static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 
 @interface SPSSHTunnel ()
 {
@@ -55,10 +54,8 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 	// not re-emitted in every translation unit that reaches SPSSHTunnel.h via
 	// the bridging header. Used only in this file.
 	NSConnection *tunnelConnection;
-	BOOL standardErrorReachedEOF;
+	SASSHStderrDrainCoordinator *standardErrorDrainCoordinator;
 }
-
-@property (atomic, readwrite) BOOL failureDiagnosticsReady;
 
 - (void)setLastError:(NSString *)msg;
 
@@ -68,7 +65,6 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
-@synthesize failureDiagnosticsReady;
 @synthesize sshQuestionText, sshQuestionDialog, sshPasswordText, sshPasswordDialog, sshPasswordField;
 /*
  * Initialise with the supplied connection details.  Host, login and port should all be provided.
@@ -97,6 +93,7 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 		debugMessages = [[NSMutableArray alloc] init];
 		debugMessagesLock = [[NSLock alloc] init];
 		answerAvailableLock = [[NSLock alloc] init];
+		standardErrorDrainCoordinator = [[SASSHStderrDrainCoordinator alloc] init];
 
 		// Enable connection muxing on 10.7+, but only if a preference is enabled; this is because
 		// muxing causes connection instability for a large number of users (see Issue #1457)
@@ -132,10 +129,14 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 		requestedResponse = NO;
 		passwordInKeychain = NO;
 		passwordPromptCancelled = NO;
-		self.failureDiagnosticsReady = YES;
 	}
 
 	return self;
+}
+
+- (BOOL)failureDiagnosticsReady
+{
+	return standardErrorDrainCoordinator.failureDiagnosticsReady;
 }
 
 /*
@@ -288,8 +289,7 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
-	standardErrorReachedEOF = NO;
-	self.failureDiagnosticsReady = NO;
+	[standardErrorDrainCoordinator beginAttempt];
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
 	                           target:self
@@ -328,7 +328,7 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 		if (!parentWindow) {
 			connectionState = SPMySQLProxyIdle;
 			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
-			self.failureDiagnosticsReady = YES;
+			[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
             SPLog(@"launchTask SSH Tunnel started without a parent window, returning");
 			return;
@@ -351,7 +351,7 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 			if (!localPort || (useHostFallback && !localPortFallback)) {
 				connectionState = SPMySQLProxyIdle;
 				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
-				self.failureDiagnosticsReady = YES;
+				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 SPLog(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
 
@@ -461,7 +461,7 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
                 connectionState = SPMySQLProxyIdle;
                 taskExitedUnexpectedly = YES;
                 [self setLastError:alertMessage];
-				self.failureDiagnosticsReady = YES;
+				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
 
                 if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
@@ -643,13 +643,7 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
             SPLog(@"SSH Tunnel has unexpectedly closed");
 		}
 
-		// Prefer the pipe's actual EOF, but do not let a custom SSH binary or a
-		// descendant that inherited stderr keep the connection attempt stuck.
-		NSDate *standardErrorDrainDeadline = [NSDate dateWithTimeIntervalSinceNow:SPSSHTunnelStderrDrainTimeout];
-		while (!standardErrorReachedEOF && [standardErrorDrainDeadline timeIntervalSinceNow] > 0) {
-			[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:standardErrorDrainDeadline];
-		}
-		if (!standardErrorReachedEOF) {
+		if (![standardErrorDrainCoordinator finishAfterStandardErrorDrain]) {
 			SPLog(@"Timed out waiting for SSH stderr EOF; using the diagnostics collected so far");
 		}
 
@@ -661,7 +655,6 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 		// but an exited task is always idle. Notify once more only after the immutable
 		// diagnostics snapshot is safe to take.
 		connectionState = SPMySQLProxyIdle;
-		self.failureDiagnosticsReady = YES;
 		if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 
 		
@@ -783,10 +776,8 @@ static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 	// NSFileHandle data-available notifications are one-shot. Keep re-arming
 	// after terminal-state detection so trailing stderr is consumed; an empty
 	// read is the pipe's EOF signal and ends the chain.
-	if ([availableData length]) {
+	if ([standardErrorDrainCoordinator recordStandardErrorReadWithByteCount:[availableData length]]) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
-	} else {
-		standardErrorReachedEOF = YES;
 	}
 }
 

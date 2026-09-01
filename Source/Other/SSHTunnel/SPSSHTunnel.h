@@ -71,7 +71,6 @@
 	BOOL passwordInKeychain;
 	BOOL passwordPromptCancelled;
 	BOOL taskExitedUnexpectedly;
-	BOOL failureDiagnosticsReady;
 	
 	IBOutlet NSWindow *sshQuestionDialog;
 	IBOutlet NSTextField *sshQuestionText;
