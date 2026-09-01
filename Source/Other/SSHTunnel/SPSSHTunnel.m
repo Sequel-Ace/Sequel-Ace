@@ -58,6 +58,8 @@ static unsigned short getRandomPort(void);
 }
 
 - (void)setLastError:(NSString *)msg;
+- (void)startConnectionAttempt;
+- (void)completeStandardErrorDrain;
 
 @end
 
@@ -278,12 +280,27 @@ static unsigned short getRandomPort(void);
 {
     SPLog(@"connect in ssh tunnel connection state = %i", connectionState);
 
-	localPort = 0;
-
-	if (connectionState != SPMySQLProxyIdle || ![standardErrorDrainCoordinator beginAttemptIfReady]){
-		SPLog(@"connect ssh connection is active or still draining diagnostics, returning");
+	if (connectionState != SPMySQLProxyIdle) {
+		SPLog(@"connect ssh connection is active, returning");
 		return;
 	}
+
+	SASSHAttemptRequestDisposition requestDisposition = [standardErrorDrainCoordinator requestAttempt];
+	if (requestDisposition == SASSHAttemptRequestDispositionQueued) {
+		SPLog(@"connect queued until SSH failure diagnostics finish draining");
+		return;
+	}
+	if (requestDisposition == SASSHAttemptRequestDispositionIgnored) {
+		SPLog(@"connect ssh connection attempt is already starting, returning");
+		return;
+	}
+
+	[self startConnectionAttempt];
+}
+
+- (void)startConnectionAttempt
+{
+	localPort = 0;
 
 	[debugMessagesLock lock];
 	[debugMessages removeAllObjects];
@@ -294,6 +311,18 @@ static unsigned short getRandomPort(void);
 	                           target:self
 	                         selector:@selector(launchTask:)
 	                           object:nil];
+}
+
+- (void)completeStandardErrorDrain
+{
+	// Keep the final failure snapshot ahead of any queued attempt, which clears
+	// the diagnostic buffer when it starts.
+	if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:YES];
+
+	if ([standardErrorDrainCoordinator completeDrainNotificationAndReservePendingAttempt]) {
+		SPLog(@"starting SSH connection request queued during diagnostics drain");
+		[self startConnectionAttempt];
+	}
 }
 
 /*
@@ -307,6 +336,7 @@ static unsigned short getRandomPort(void);
 
     if (connectionState != SPMySQLProxyIdle){
         SPLog(@"launch task ssh connection state != SPMySQLProxyIdle, returning");
+		[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
         return;
     }
 
@@ -325,9 +355,9 @@ static unsigned short getRandomPort(void);
 
 		// Enforce a parent window being present for dialogs
 		if (!parentWindow) {
-			connectionState = SPMySQLProxyIdle;
 			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
 			[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+			connectionState = SPMySQLProxyIdle;
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
             SPLog(@"launchTask SSH Tunnel started without a parent window, returning");
 			return;
@@ -348,9 +378,9 @@ static unsigned short getRandomPort(void);
 
 			// Abort if no local free port could be allocated
 			if (!localPort || (useHostFallback && !localPortFallback)) {
-				connectionState = SPMySQLProxyIdle;
 				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
 				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+				connectionState = SPMySQLProxyIdle;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 SPLog(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
 
@@ -457,10 +487,10 @@ static unsigned short getRandomPort(void);
             }
 
             if(alertMessage != nil) {
-                connectionState = SPMySQLProxyIdle;
                 taskExitedUnexpectedly = YES;
                 [self setLastError:alertMessage];
 				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+				connectionState = SPMySQLProxyIdle;
 
                 if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
@@ -633,6 +663,7 @@ static unsigned short getRandomPort(void);
 
 		// On tunnel close, clean up, ready for re-use if the delegate reconnects.
 		
+		[standardErrorDrainCoordinator beginStandardErrorDrain];
 		
 		// If the task closed unexpectedly, alert appropriately
 		if (connectionState != SPMySQLProxyIdle) {
@@ -654,7 +685,9 @@ static unsigned short getRandomPort(void);
 		// but an exited task is always idle. Notify once more only after the immutable
 		// diagnostics snapshot is safe to take.
 		connectionState = SPMySQLProxyIdle;
-		if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
+		[self performSelectorOnMainThread:@selector(completeStandardErrorDrain)
+		                       withObject:nil
+		                    waitUntilDone:NO];
 
 		
 		
@@ -743,17 +776,20 @@ static unsigned short getRandomPort(void);
 			// Terminal states are published once by launchTask: after stderr has
 			// drained, so automatic reconnects cannot start during cleanup.
 			if ([message rangeOfString:@"bind: Address already in use"].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?", @"SSH tunnel unable to bind to local port message")];
 			}
 
 			if ([message rangeOfString:@"closed by remote host." ].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.", @"SSH tunnel was closed by remote host message")];
 			}
 			if ([message rangeOfString:@"Permission denied (" ].location != NSNotFound || [message rangeOfString:@"No more authentication methods to try" ].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.", @"SSH tunnel authentication failed message")];
@@ -763,6 +799,7 @@ static unsigned short getRandomPort(void);
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.", @"SSH tunnel forwarding port connection refused message")];
 			}
 			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];

@@ -16,16 +16,30 @@ struct SASSHTunnelFailure {
     }
 }
 
+@objc enum SASSHAttemptRequestDisposition: Int {
+    case start
+    case queued
+    case ignored
+}
+
 /// Coordinates the stderr-drain boundary for an SSH failure. OpenSSH output is
 /// preferred through pipe EOF, with a bounded fallback for custom binaries or
 /// descendants that retain the inherited stderr writer.
 @objc final class SASSHStderrDrainCoordinator: NSObject {
+    private enum Phase {
+        case ready
+        case running
+        case draining
+        case completing
+    }
+
     private static let defaultTimeout: TimeInterval = 5
 
     private let timeout: TimeInterval
     private let stateLock = NSLock()
     private var reachedEOF = false
-    private var diagnosticsReady = true
+    private var phase = Phase.ready
+    private var pendingAttempt = false
 
     override convenience init() {
         self.init(timeout: Self.defaultTimeout)
@@ -39,26 +53,42 @@ struct SASSHTunnelFailure {
     @objc var failureDiagnosticsReady: Bool {
         stateLock.lock()
         defer { stateLock.unlock() }
-        return diagnosticsReady
+        return phase == .ready || phase == .completing
     }
 
-    /// Atomically begins an attempt only after the prior diagnostics lifecycle
-    /// has completed, preventing stale drain callbacks from reaching a new pipe.
-    @objc func beginAttemptIfReady() -> Bool {
+    /// Atomically starts an idle tunnel, coalesces requests made while failure
+    /// diagnostics drain, and ignores duplicate requests while SSH is running.
+    @objc func requestAttempt() -> SASSHAttemptRequestDisposition {
         stateLock.lock()
-        guard diagnosticsReady else {
-            stateLock.unlock()
-            return false
+        defer { stateLock.unlock() }
+
+        switch phase {
+        case .ready:
+            reachedEOF = false
+            phase = .running
+            return .start
+        case .running:
+            return .ignored
+        case .draining, .completing:
+            pendingAttempt = true
+            return .queued
         }
-        reachedEOF = false
-        diagnosticsReady = false
+    }
+
+    /// Marks the point after which an idle-state reconnect request must be
+    /// retained until the current stderr pipe is finished.
+    @objc func beginStandardErrorDrain() {
+        stateLock.lock()
+        if phase == .running {
+            phase = .draining
+        }
         stateLock.unlock()
-        return true
     }
 
     @objc func finishWithoutStandardErrorPipe() {
         stateLock.lock()
-        diagnosticsReady = true
+        phase = .ready
+        pendingAttempt = false
         stateLock.unlock()
     }
 
@@ -74,7 +104,8 @@ struct SASSHTunnelFailure {
     }
 
     /// Drains the current thread's run loop until stderr reaches EOF or the
-    /// bounded fallback expires. Returns whether EOF was observed.
+    /// bounded fallback expires. The coordinator remains in a completing phase
+    /// so a reconnect cannot clear diagnostics before the delegate snapshots them.
     @objc func finishAfterStandardErrorDrain() -> Bool {
         let deadline = Date(timeIntervalSinceNow: timeout)
 
@@ -83,10 +114,29 @@ struct SASSHTunnelFailure {
         }
 
         stateLock.lock()
-        diagnosticsReady = true
         let didReachEOF = reachedEOF
+        phase = .completing
         stateLock.unlock()
+
         return didReachEOF
+    }
+
+    /// Ends the snapshot boundary and atomically reserves a queued reconnect.
+    @objc func completeDrainNotificationAndReservePendingAttempt() -> Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        guard phase == .completing else { return false }
+
+        let shouldStartPendingAttempt = pendingAttempt
+        pendingAttempt = false
+        if shouldStartPendingAttempt {
+            reachedEOF = false
+            phase = .running
+        } else {
+            phase = .ready
+        }
+        return shouldStartPendingAttempt
     }
 
     private var hasReachedEOF: Bool {

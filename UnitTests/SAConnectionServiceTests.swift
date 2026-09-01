@@ -45,18 +45,19 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
 
-        XCTAssertTrue(coordinator.beginAttemptIfReady())
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
         XCTAssertFalse(coordinator.failureDiagnosticsReady)
-        XCTAssertFalse(coordinator.beginAttemptIfReady())
+        XCTAssertEqual(coordinator.requestAttempt(), .ignored)
 
         coordinator.finishWithoutStandardErrorPipe()
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
-        XCTAssertTrue(coordinator.beginAttemptIfReady())
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
     }
 
     func testStandardErrorReadsRearmUntilEOF() {
         let coordinator = SASSHStderrDrainCoordinator(timeout: 1)
-        XCTAssertTrue(coordinator.beginAttemptIfReady())
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
 
         XCTAssertTrue(coordinator.recordStandardErrorRead(byteCount: 128))
         XCTAssertFalse(coordinator.failureDiagnosticsReady)
@@ -64,13 +65,37 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(coordinator.finishAfterStandardErrorDrain())
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
     }
 
     func testDrainTimeoutStillMakesDiagnosticsReady() {
         let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
-        XCTAssertTrue(coordinator.beginAttemptIfReady())
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
 
         XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.completeDrainNotificationAndReservePendingAttempt())
+    }
+
+    func testAttemptRequestedDuringDrainIsReservedAndCoalesced() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+
+        XCTAssertTrue(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertFalse(coordinator.failureDiagnosticsReady)
+        XCTAssertEqual(coordinator.requestAttempt(), .ignored)
+
+        coordinator.finishWithoutStandardErrorPipe()
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
     }
 }
