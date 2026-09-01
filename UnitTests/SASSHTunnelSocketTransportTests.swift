@@ -145,6 +145,16 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         XCTAssertNotEqual(first.path, second.path)
     }
 
+    func testSocketNameShapeAndSweepRecognition() {
+        let name = SASSHTunnelSocketServer.socketFileName()
+        XCTAssertEqual(name.count, 15, "the path budget in the container tmp depends on this")
+        XCTAssertTrue(SASSHTunnelSocketServer.isOwnSocketName(name))
+        XCTAssertTrue(SASSHTunnelSocketServer.isOwnSocketName("ssh-deadbeef00.sock"), "pre-flip leftovers are still swept")
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("agent.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-zz.sock"))
+    }
+
     func testDirectoryThatCannotFitTheNameIsSkippedAndNoneIsAnError() {
         let tooLong = "/" + String(repeating: "a", count: 110)
         XCTAssertThrowsError(try SASSHTunnelSocketServer(directories: [tooLong], handler: Self.echo)) { error in

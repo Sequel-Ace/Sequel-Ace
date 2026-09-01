@@ -696,10 +696,12 @@ all landed since.)
    plan's fallback: a UNIX socket in the container with peer code-signing
    validation from the socket's audit token, both directions. Step 1
    (`SASSHTunnelAuthService` replaces `SPSSHTunnel` as the vended object,
-   with teardown failing pending prompts closed) is landed; Steps 2-5 follow
-   the revised design in `ssh-tunnel-xpc-migration-plan.md`. Highest blast
-   radius in the codebase — SSH connections break if it is wrong — so it stays
-   behind a flag with DO as the rollback.
+   with teardown failing pending prompts closed), the wire format (2), the
+   socket transport behind a preference (3), audit-token peer validation both
+   ways (4) and the default flip (5a) are stacked PRs #2618-#2622; deleting DO
+   (5b) is a draft that waits for a release of soak. Highest blast radius in
+   the codebase — SSH connections break if it is wrong — so DO stays as the
+   rollback (`SPSSHTunnelUseSocketTransport -bool NO`) until then.
 4. **Decide the PostgreSQL question rather than wait on it.** #2482 and #2493
    are drafts that have not moved since 2026-08-03, and Phase E has been gated
    on them. Meanwhile `SPTableContent.m` and `SPCustomQuery.m` grew 408 lines

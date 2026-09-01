@@ -458,13 +458,19 @@ Execution notes (2026-09-01):
   disabled) and is not. Check `codesign -dv` for the team before a live
   run; give test runs their own `-derivedDataPath`.
 
-## Step 5 — Flip the default, then delete DO
+## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) prepared
 
 Separate releases. Flip to the socket, let it soak, then remove the DO path,
 the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
 import, and replace `SequelAceTunnelAssistant.m` with `main.swift`. The
 remaining `NSConnection` warnings go to zero at this point — a side effect,
 not the goal.
+
+Execution notes, 5a (2026-09-01): `SASSHTunnelTransportSelection.defaultTransport`
+is `.socket`; the rollback is the same key written `NO`. The socket name
+shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 characters fit
+the container-tmp path; the stale sweep recognises both shapes. This is the
+release that soaks.
 
 Before DO can go, the socket must have somewhere to live for *every* user:
 today a container-tmp path over 103 bytes (user names past ~19 characters)

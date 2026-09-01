@@ -485,10 +485,10 @@ deferred projects below.
   see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The Step 0 spike
   (2026-09-01) showed a sandboxed app cannot vend `NSXPCListener` without
   launchd, so the project runs on the plan's fallback — a UNIX socket in the
-  container with audit-token peer validation both ways. Step 1 (the vended
-  surface narrowed to `SASSHTunnelAuthService`) is landed; the NSConnection
-  warnings themselves go at Step 5, after the socket transport has soaked a
-  release.
+  container with audit-token peer validation both ways. Steps 1-4 and the
+  default flip (5a) are landed as stacked PRs #2618-#2622; the NSConnection
+  warnings themselves go with Step 5b (delete DO), prepared as a draft to
+  merge after the socket transport has soaked a release.
 - **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs the app's
   target, install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
   SPMySQLFramework with the right deployment target; belongs to a dependency
