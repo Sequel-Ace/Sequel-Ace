@@ -704,12 +704,14 @@ static unsigned short getRandomPort(void);
  */
 - (void)standardErrorHandler:(NSNotification*)aNotification
 {
+	NSData *availableData;
 	NSString *notificationText;
 	NSEnumerator *enumerator;
 	NSArray *messages;
 	NSString *message;
 
-	notificationText = [[NSString alloc] initWithData:[[aNotification object] availableData] encoding:NSASCIIStringEncoding];
+	availableData = [[aNotification object] availableData];
+	notificationText = [[NSString alloc] initWithData:availableData encoding:NSASCIIStringEncoding];
 
 	if ([notificationText length]) {
 		messages = [notificationText componentsSeparatedByString:@"\n"];
@@ -765,7 +767,10 @@ static unsigned short getRandomPort(void);
 		}
 	}
 
-	if (connectionState != SPMySQLProxyIdle && [task isRunning]) {
+	// NSFileHandle data-available notifications are one-shot. Keep re-arming
+	// after terminal-state detection so trailing stderr is consumed; an empty
+	// read is the pipe's EOF signal and ends the chain.
+	if ([availableData length]) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
 }
