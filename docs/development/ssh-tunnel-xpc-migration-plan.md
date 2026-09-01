@@ -268,8 +268,8 @@ on a **signed, sandboxed** build, not a debug build:
 | # | Scenario |
 |---|---|
 | 1 | Password held in app (`SP_PASSWORD_METHOD` = AsksUI) |
-| 2 | Password in keychain (assistant never contacts the app) |
-| 3 | Key passphrase in keychain |
+| 2 | Password in keychain (app resolves the item at ask time and serves it over the channel) |
+| 3 | Key passphrase in keychain (app-side pre-prompt check in `getPasswordForQuery:`) |
 | 4 | Key passphrase prompted in UI |
 | 5 | Host-key mismatch yes/no |
 | 6 | Unrecognised prompt / SecurID fallback |
