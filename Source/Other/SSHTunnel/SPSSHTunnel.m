@@ -49,27 +49,19 @@ static unsigned short getRandomPort(void);
 
 @interface SPSSHTunnel () <SASSHTunnelAuthSource>
 {
-	// Private: kept out of the public header so the NSConnection deprecation is
-	// not re-emitted in every translation unit that reaches SPSSHTunnel.h via
-	// the bridging header. Used only in this file.
-	NSConnection *tunnelConnection;
-
-	// The object actually vended over the connection: only the three
-	// authentication methods the tunnel assistant needs are reachable through
-	// it (SSH tunnel IPC plan, Step 1). It holds this tunnel weakly and reads
-	// the state it needs through SASSHTunnelAuthSource.
+	// What the tunnel assistant can reach: only the three authentication calls
+	// (SSH tunnel IPC plan, Step 1). It holds this tunnel weakly and reads the
+	// state it needs through SASSHTunnelAuthSource.
 	SASSHTunnelAuthService *authService;
+
+	// The channel the assistant reaches it over: a per-tunnel UNIX socket in
+	// the app container, with peer validation (Steps 3-4). Its path goes to
+	// ssh in the environment.
+	SASSHTunnelSocketServer *socketServer;
 
 	// The prompt sheet currently running modally, if any. Main thread only.
 	// Lets teardown dismiss a prompt the assistant is blocked on.
 	NSWindow *activePromptDialog;
-
-	// Which channel this tunnel's assistant answers over (SSH tunnel IPC plan,
-	// Step 3): Distributed Objects above, or the UNIX-socket server below. Fixed
-	// for the tunnel's lifetime and handed to ssh in its environment, so a
-	// preference change cannot strand a running tunnel halfway.
-	SASSHTunnelTransport transport;
-	SASSHTunnelSocketServer *socketServer;
 }
 
 - (void)setLastError:(NSString *)msg;
@@ -114,33 +106,19 @@ static unsigned short getRandomPort(void);
 		// muxing causes connection instability for a large number of users (see Issue #1457)
 		connectionMuxingEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:SPSSHEnableMuxingPreference];
 
-		// Set up a connection for use by the tunnel process
+		// Per-tunnel identifiers handed to the assistant: the name is only used
+		// in its fallback prompt text now; the hash must be echoed back on every
+		// password request.
 		tunnelConnectionName = [[NSString alloc] initWithFormat:@"NKQ4HJ66PX.sequel-ace.SequelAce-%lu", (unsigned long)[[NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]] hash]];
 		tunnelConnectionVerifyHash = [[NSString alloc] initWithFormat:@"%lu", (unsigned long)[[NSString stringWithFormat:@"%f-seeded", [[NSDate date] timeIntervalSince1970]] hash]];
-		tunnelConnection = [NSConnection new];
-		
-		[tunnelConnection runInNewThread];
-		[tunnelConnection removeRunLoop:[NSRunLoop currentRunLoop]];
-		authService = [[SASSHTunnelAuthService alloc] initWithSource:self keychain:[SAKeychainAccess make]];
-		[tunnelConnection setRootObject:authService];
-		
-		
-		if (![tunnelConnection registerName:tunnelConnectionName]) {
-			NSLog(@"Could not start ssh connection. %@", tunnelConnectionName);
-			return nil;
-		}
 
-		// The socket transport, when selected, serves the same authService; a
-		// tunnel whose socket cannot be created falls back to DO for its
-		// lifetime rather than failing.
-		transport = [SASSHTunnelTransportSelection selectedTransport];
-		if (transport == SASSHTunnelTransportSocket) {
-			NSError *socketError = nil;
-			socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService error:&socketError];
-			if (!socketServer) {
-				NSLog(@"SSH tunnel: socket transport unavailable (%@); using Distributed Objects for this tunnel", socketError);
-				transport = SASSHTunnelTransportDistributedObjects;
-			}
+		// The channel the askpass assistant answers over (SSH tunnel IPC plan)
+		authService = [[SASSHTunnelAuthService alloc] initWithSource:self keychain:[SAKeychainAccess make]];
+		NSError *socketError = nil;
+		socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService error:&socketError];
+		if (!socketServer) {
+			NSLog(@"Could not start the SSH tunnel: its askpass socket could not be created (%@). The socket lives in the app container's temporary directory; a very long user name can push its path past the system's 104-byte limit.", socketError);
+			return nil;
 		}
 		
 		parentWindow = nil;
@@ -559,10 +537,7 @@ static unsigned short getRandomPort(void);
 		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
 		[taskEnvironment safeSetObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
-		[taskEnvironment safeSetObject:[SASSHTunnelTransportSelection environmentValueForTransport:transport] forKey:SASSHTunnelTransportSelection.transportEnvironmentKey];
-		if (socketServer) {
-			[taskEnvironment safeSetObject:socketServer.path forKey:SASSHTunnelTransportSelection.socketPathEnvironmentKey];
-		}
+		[taskEnvironment safeSetObject:socketServer.path forKey:SASSHTunnelSocketServer.pathEnvironmentKey];
 		if (passwordInKeychain) {
 			// The keychain item's name and account deliberately stay out of
 			// the environment: the assistant no longer reads the keychain —
@@ -819,31 +794,6 @@ static unsigned short getRandomPort(void);
 	return localPortFallback;
 }
 
-#pragma mark - Connection surface
-
-/*
- * The three methods the tunnel assistant may call over the connection. They
- * stay declared in the public header so the assistant can type its proxy, but
- * the object actually vended is authService (SSH tunnel IPC plan, Step 1): it
- * owns the verification-hash check, the keychain lookups and the cancelled-
- * prompt refusal, and calls back into the SASSHTunnelAuthSource methods below
- * for tunnel state and the blocking sheets.
- */
-- (NSString *)getPasswordWithVerificationHash:(NSString *)theHash
-{
-	return [authService getPasswordWithVerificationHash:theHash];
-}
-
-- (BOOL)getResponseForQuestion:(NSString *)theQuestion
-{
-	return [authService getResponseForQuestion:theQuestion];
-}
-
-- (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
-{
-	return [authService getPasswordForQuery:theQuery verificationHash:theHash];
-}
-
 #pragma mark - SASSHTunnelAuthSource
 
 - (NSString *)verificationHash
@@ -1072,7 +1022,6 @@ static unsigned short getRandomPort(void);
 	[self disconnect];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	
-	[tunnelConnection invalidate];
 	[socketServer close];
 	
 	[self setLastError:nil];

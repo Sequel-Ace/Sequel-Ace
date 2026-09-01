@@ -468,7 +468,9 @@ Remaining after this step: **20 unique lines**, all of them the two deferred
 migrations — SecKeychain (10) and NSConnection (6) — plus the 4 intentional
 Swift deprecation markers (`selectionHighlightStyle = .sourceList`,
 `legacyUnarchive`, `legacyArchivedData` ×2). Zero is now gated purely on the
-deferred projects below.
+deferred projects below. *(Both migrations have since executed; with the
+NSConnection Step 5b draft merged, the compiler-warning floor is the 4
+intentional markers.)*
 
 ## Deferred (own projects, not part of this burn-down)
 
@@ -480,15 +482,15 @@ deferred projects below.
   (SecItem*) replaced it behind `SAKeychainProviding`, proven by a
   cross-implementation test matrix. All 10 SecKeychain unique warning lines
   are gone; the floor is now NSConnection (5) + the 4 intentional markers.
-- **NSConnection → socket IPC** (SequelAceTunnelAssistant.m:117/168) —
-  reworks the SSH-password IPC between app and helper tool. **In execution**:
-  see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The Step 0 spike
+- **NSConnection → socket IPC** — ✅ **executed** (stacked PRs #2618-#2623,
+  the last one a draft that waits for a release of soak): see
+  `docs/development/ssh-tunnel-xpc-migration-plan.md`. The Step 0 spike
   (2026-09-01) showed a sandboxed app cannot vend `NSXPCListener` without
-  launchd, so the project runs on the plan's fallback — a UNIX socket in the
-  container with audit-token peer validation both ways. Steps 1-4 and the
-  default flip (5a) are landed as stacked PRs #2618-#2622; the NSConnection
-  warnings themselves go with Step 5b (delete DO), prepared as a draft to
-  merge after the socket transport has soaked a release.
+  launchd, so the project ran on the plan's fallback — a UNIX socket in the
+  container with audit-token peer validation both ways. Step 5b deletes DO
+  and the assistant's `.m`: the 5 `NSConnection` warning lines go to **0**,
+  leaving the floor at the 4 intentional markers plus the bundled-OpenSSL
+  linker warnings below.
 - **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs the app's
   target, install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
   SPMySQLFramework with the right deployment target; belongs to a dependency

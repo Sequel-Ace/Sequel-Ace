@@ -1,5 +1,5 @@
 //
-//  SASSHTunnelAssistantSocketMain.swift
+//  main.swift
 //  SequelAceTunnelAssistant
 //
 //  Created by the Sequel Ace team on September 1, 2026.
@@ -30,32 +30,8 @@
 
 import Foundation
 
-/// The assistant's entry point, called from `main.swift` (SSH tunnel IPC
-/// plan, Steps 3 and 5). Assistant target only.
-enum SASSHTunnelAssistantSocketMain {
-
-    /// Runs the askpass exchange and returns the process exit code, having
-    /// printed the answer (if any) to stdout for ssh.
-    static func run() -> Int32 {
-        let environment = ProcessInfo.processInfo.environment
-        let argument = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : nil
-
-        let outcome = SASSHTunnelAskpass.run(argument: argument, environment: environment) {
-            guard let path = environment[SASSHTunnelSocketIO.pathEnvironmentKey] else {
-                throw MissingSocketPath()
-            }
-            // Whatever answers at the socket must be Apple-signed and of this
-            // assistant's own team, or it is not the app (Step 4).
-            var client = SASSHTunnelSocketClient(path: path)
-            client.peerPolicy = SASSHTunnelPeerValidator.appPeerPolicy()
-            return { try client.send($0) }
-        }
-
-        if let output = outcome.output {
-            print(output)
-        }
-        return outcome.exitCode
-    }
-
-    private struct MissingSocketPath: Error {}
-}
+// The SSH_ASKPASS helper Sequel Ace hands to ssh. ssh execs it once per
+// prompt with the prompt text as its only argument; it asks the app over the
+// tunnel's socket, prints the answer for ssh, and exits — non-zero, with no
+// output, whenever it cannot get one (SSH tunnel IPC plan, Step 5).
+exit(SASSHTunnelAssistantSocketMain.run())

@@ -60,8 +60,10 @@ import Foundation
     /// The reply has no timeout: it waits for the user to answer a prompt.
     static let requestTimeout: Int = 10
 
-    /// The socket's path, handed to ssh as `SP_CONNECTION_SOCKET_PATH`.
+    /// The socket's path, handed to ssh under `pathEnvironmentKey`.
     @objc let path: String
+
+    @objc static let pathEnvironmentKey = SASSHTunnelSocketIO.pathEnvironmentKey
 
     private let listeningDescriptor: Int32
     private let handler: Handler

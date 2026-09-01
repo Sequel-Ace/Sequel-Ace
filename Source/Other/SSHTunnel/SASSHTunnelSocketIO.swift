@@ -43,19 +43,10 @@ enum SASSHTunnelSocketIO {
     /// Longest socket path (in UTF-8 bytes) that fits `sun_path`.
     static let maximumPathLength = 103
 
-    /// The environment keys the app uses to tell the assistant which channel
-    /// to use and where to find it. Keep in sync with the DO keys next to
-    /// them in `SPSSHTunnel.m`.
-    enum EnvironmentKey {
-        static let transport = "SP_CONNECTION_TRANSPORT"
-        static let socketPath = "SP_CONNECTION_SOCKET_PATH"
-    }
-
-    /// Environment values for `EnvironmentKey.transport`.
-    enum TransportValue {
-        static let distributedObjects = "distributedObjects"
-        static let socket = "socket"
-    }
+    /// The environment key the app uses to tell the assistant where its
+    /// tunnel's socket is, next to `SP_CONNECTION_NAME` / `SP_CONNECTION_VERIFY_HASH`
+    /// in `SPSSHTunnel.m`.
+    static let pathEnvironmentKey = "SP_CONNECTION_SOCKET_PATH"
 
     static func address(for path: String) throws -> sockaddr_un {
         let length = path.utf8.count

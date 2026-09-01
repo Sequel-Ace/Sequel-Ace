@@ -458,7 +458,7 @@ Execution notes (2026-09-01):
   disabled) and is not. Check `codesign -dv` for the team before a live
   run; give test runs their own `-derivedDataPath`.
 
-## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) prepared
+## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) ready, waits for soak
 
 Separate releases. Flip to the socket, let it soak, then remove the DO path,
 the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
@@ -472,13 +472,23 @@ shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 characters fit
 the container-tmp path; the stale sweep recognises both shapes. This is the
 release that soaks.
 
-Before DO can go, the socket must have somewhere to live for *every* user:
-today a container-tmp path over 103 bytes (user names past ~19 characters)
-falls back to DO. Give the server a second candidate directory that is short
-and sandbox-reachable — the per-user `DARWIN_USER_TEMP_DIR` (`/var/folders/…/T/`,
-~50 bytes) is the obvious one if the sandbox permits it for both processes;
-prove it the same way Step 0 did — and turn the fallback into a hard error
-with a clear log line.
+Execution notes, 5b (2026-09-01, draft PR, **do not merge until 5a has
+shipped and soaked**): `NSConnection` is gone from `SPSSHTunnel` — no
+`registerName:`, no root object, no `invalidate` — and the three DO-facing
+methods left the tunnel and its header; the socket server is created
+unconditionally and a tunnel whose socket cannot be created fails to
+initialise with a log line naming the cause (the container-tmp path budget:
+user names up to 26 characters fit; a second, shorter, sandbox-reachable
+directory was not found — under the sandbox every temp directory maps into
+the container). `SequelAceTunnelAssistant.m` is deleted and the tool is
+`main.swift` plus the five Swift files it already had; it no longer compiles
+`SPFunctions.m`, `NSNotificationCenterThreadingAdditions.m` or
+`StringRegexExtension.swift`, and no longer imports `SPSSHTunnel.h` or a
+generated Swift header — the dependency the plan wanted severed is severed.
+`SASSHTunnelTransport` and its preference are removed with the path they
+selected; `SP_CONNECTION_TRANSPORT` leaves the environment,
+`SP_CONNECTION_NAME` stays because the assistant's fallback prompt text uses
+it. `NSConnection` deprecation warnings: 5 → 0 on the Debug build.
 
 ## Swift or not
 
