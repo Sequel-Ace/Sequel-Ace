@@ -72,6 +72,7 @@ import Cocoa
     @objc(setPreviewClause:)
     public func setPreviewClause(_ clause: String?) {
         if let text = SARuleFilterPreviewFormatter.previewText(clause: clause) {
+            previewClause = clause?.trimmingCharacters(in: .whitespacesAndNewlines)
             isShowingPreview = true
             label.stringValue = text
             // Left-aligned with tail truncation: the clause reads naturally
@@ -83,6 +84,7 @@ import Cocoa
             // by the preview, so the tooltip is the only place left for it.
             toolTip = text + "\n\n" + SPRuleFilterDropBox.promptTooltip
         } else {
+            previewClause = nil
             isShowingPreview = false
             label.stringValue = SPRuleFilterDropBox.promptText
             label.alignment = .center
@@ -95,6 +97,18 @@ import Cocoa
     /// Whether the label currently shows the WHERE preview (left-aligned,
     /// full-width) instead of the centred drop prompt.
     private var isShowingPreview = false
+
+    /// The raw clause behind the current preview (no `WHERE ` prefix), kept
+    /// for the context menu's copy action.
+    private var previewClause: String?
+
+    /// Copies the previewed clause to the general pasteboard.
+    @objc private func copyPreviewClause(_ sender: Any?) {
+        guard let previewClause else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(previewClause, forType: .string)
+    }
 
     private static let promptTooltip = NSLocalizedString("Click to add a filter, ⌥-click to add an AND/OR group", comment: "content tab : rule filter : drop zone tooltip")
 
@@ -122,10 +136,22 @@ import Cocoa
     }
 
     /// Right-click offers the same "Add Filter" / "Add AND/OR Group" actions
-    /// as a plain click / ⌥-click, so the group feature is discoverable.
+    /// as a plain click / ⌥-click, so the group feature is discoverable –
+    /// plus "Copy WHERE Clause" while the preview is showing.
     override public func menu(for event: NSEvent) -> NSMenu? {
         guard let handler = dropHandler else { return super.menu(for: event) }
-        return SARuleFilterContextMenu.menu(for: handler)
+        let menu = SARuleFilterContextMenu.menu(for: handler)
+        if previewClause != nil {
+            menu.addItem(.separator())
+            let copyItem = NSMenuItem(
+                title: NSLocalizedString("Copy WHERE Clause", comment: "content tab : rule filter : drop zone context menu : copy the previewed WHERE clause"),
+                action: #selector(copyPreviewClause(_:)),
+                keyEquivalent: ""
+            )
+            copyItem.target = self
+            menu.addItem(copyItem)
+        }
+        return menu
     }
 
     override public func layout() {

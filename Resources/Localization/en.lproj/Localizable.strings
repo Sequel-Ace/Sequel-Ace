@@ -889,6 +889,9 @@
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
 
+/* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
+"Copy WHERE Clause" = "Copy WHERE Clause";
+
 /* Copy as RTF */
 "Copy as RTF" = "Copy as RTF";
 
