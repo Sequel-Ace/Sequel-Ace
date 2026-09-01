@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPKeychain.h"
+#import "SPFunctions.h"
 
 #import <Security/Security.h>
 #import <CoreFoundation/CoreFoundation.h>
@@ -137,12 +138,17 @@
 		if (status != noErr) {
 			NSLog(@"Error (%i) while trying to add password for name: %@ account: %@", (int)status, name, account);
 
-			NSAlert *alert = [[NSAlert alloc] init];
-			alert.alertStyle = NSAlertStyleCritical;
-			alert.messageText = NSLocalizedString(@"Error adding password to Keychain", @"error adding password to keychain message");
-			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error adding password to keychain informative message"), status];
-			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-			[alert runModal];
+			// The add/update paths run on background connection threads;
+			// AppKit alerts must be presented from the main thread. Sync, to
+			// preserve the legacy blocking behaviour of the inline runModal.
+			SPMainQSync(^{
+				NSAlert *alert = [[NSAlert alloc] init];
+				alert.alertStyle = NSAlertStyleCritical;
+				alert.messageText = NSLocalizedString(@"Error adding password to Keychain", @"error adding password to keychain message");
+				alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error adding password to keychain informative message"), status];
+				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+				[alert runModal];
+			});
 		}
 	}
 }
@@ -261,22 +267,20 @@
 }
 
 /**
- * Change the password for a keychain item.  This should be used instead of
- * deleting and recreating the keychain item, as it allows preservation of
- * access lists and works around Lion cacheing issues.
- */
-- (void)updateItemWithName:(NSString *)name account:(NSString *)account toPassword:(NSString *)password
-{
-	[self updateItemWithName:name account:account toName:password account:name password:account];
-}
-
-/**
  * Change the details for a keychain item.  This should be used instead of
  * deleting and recreating the keychain item, as it allows preservation of
  * access lists and works around Lion cacheing issues.
  */
 - (void)updateItemWithName:(NSString *)name account:(NSString *)account toName:(NSString *)newName account:(NSString *)newAccount password:(NSString *)password {
     if (![self isValidName:name acount:account]) {
+        return;
+    }
+
+    // A nil password would reach strlen(NULL) below (and in the
+    // item-not-found fallback would delete the item with nothing to re-add),
+    // so reject it up front and leave the item untouched.
+    if (!password) {
+        NSLog(@"Keychain update rejected: nil password for name: %@ account: %@", name, account);
         return;
     }
 	OSStatus status;
@@ -301,12 +305,15 @@
 
 		NSLog(@"Error (%i) while trying to find keychain item to edit for name: %@ account: %@", (int)status, name, account);
 
-		NSAlert *alert = [[NSAlert alloc] init];
-		alert.alertStyle = NSAlertStyleCritical;
-		alert.messageText = NSLocalizedString(@"Error retrieving Keychain item to edit", @"error finding keychain item to edit message");
-		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error finding keychain item to edit informative message"), status];
-		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-		[alert runModal];
+		// See the add-path note: alerts must present on the main thread.
+		SPMainQSync(^{
+			NSAlert *alert = [[NSAlert alloc] init];
+			alert.alertStyle = NSAlertStyleCritical;
+			alert.messageText = NSLocalizedString(@"Error retrieving Keychain item to edit", @"error finding keychain item to edit message");
+			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error finding keychain item to edit informative message"), status];
+			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+			[alert runModal];
+		});
 		return;
 	}
 
@@ -335,12 +342,15 @@
 
 		NSLog(@"Error (%i) while updating keychain item for name: %@ account: %@", (int)status, name, account);
 
-		NSAlert *alert = [[NSAlert alloc] init];
-		alert.alertStyle = NSAlertStyleCritical;
-		alert.messageText = NSLocalizedString(@"Error updating Keychain item", @"error updating keychain item message");
-		alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error updating keychain item informative message"), status];
-		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
-		[alert runModal];
+		// See the add-path note: alerts must present on the main thread.
+		SPMainQSync(^{
+			NSAlert *alert = [[NSAlert alloc] init];
+			alert.alertStyle = NSAlertStyleCritical;
+			alert.messageText = NSLocalizedString(@"Error updating Keychain item", @"error updating keychain item message");
+			alert.informativeText = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.", @"error updating keychain item informative message"), status];
+			[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+			[alert runModal];
+		});
 	}
 }
 

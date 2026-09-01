@@ -177,6 +177,19 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
         XCTAssertEqual(store.password(name: name, account: account), "pw-2")
     }
 
+    func testUpdateToEmptyPasswordStoresEmptyString() {
+        // Blank handling, both directions (review question on #2612): an
+        // *empty* password is legal everywhere — add stores it, update
+        // replaces the secret with zero bytes, and get round-trips "".
+        // Only a nil password is rejected (the Step 2 guard).
+        let name = service("item"), account = "user@host/"
+        store.add(password: "pw-1", name: name, account: account)
+        store.updateItem(name: name, account: account,
+                         toName: name, newAccount: account, password: "")
+        XCTAssertTrue(store.passwordExists(name: name, account: account))
+        XCTAssertEqual(store.password(name: name, account: account), "")
+    }
+
     func testUpdateOfMissingItemFallsBackToAdd() {
         // The errSecItemNotFound (-25300) branch: a safe delete, then a
         // fresh add under the *new* name and account.
@@ -185,6 +198,18 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
                          toName: newName, newAccount: "new@host/", password: "pw")
         XCTAssertEqual(store.password(name: newName, account: "new@host/"), "pw")
         XCTAssertFalse(store.passwordExists(name: oldName, account: "old@host/"))
+    }
+
+    func testUpdateWithNilPasswordLeavesItemUntouched() {
+        // Fixed in Step 2 (defect 2): a nil password used to reach
+        // strlen(NULL). Now the update is rejected and the item is left
+        // exactly as it was.
+        let name = service("item"), account = "user@host/"
+        store.add(password: "pw-1", name: name, account: account)
+        store.updateItem(name: name, account: account,
+                         toName: service("renamed"), newAccount: "new@host/", password: nil)
+        XCTAssertEqual(store.password(name: name, account: account), "pw-1")
+        XCTAssertFalse(store.passwordExists(name: service("renamed"), account: "new@host/"))
     }
 
     func testUpdateOntoExistingDestinationReplacesIt() {
@@ -201,30 +226,4 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
         XCTAssertFalse(store.passwordExists(name: source, account: "s@h/"))
     }
 
-    // MARK: - Three-argument update (pinned defect)
-
-    func testThreeArgumentUpdateScramblesItsArguments() {
-        // ⚠️ Defect 1 in the migration plan, pinned deliberately: the
-        // toPassword: variant forwards to the five-argument update in
-        // scrambled order — the item is renamed to the *password*, its
-        // account becomes the *name*, and the stored secret becomes the
-        // *account*. It has no production callers (all four call sites use
-        // the five-argument form); Step 2 deletes it. This test documents
-        // exactly what it would do to a caller and will be removed with the
-        // method.
-        let name = service("victim"), account = "user@host/"
-        // The "password" must be namespaced too — the scramble turns it into
-        // a service name, and the sweep must be able to delete that item.
-        let newPassword = service("scrambled destination")
-
-        store.add(password: "original-pw", name: name, account: account)
-        store.updateItem(name: name, account: account, toPassword: newPassword)
-
-        // The original item is gone…
-        XCTAssertFalse(store.passwordExists(name: name, account: account))
-        // …and what exists instead is an item whose service is the password
-        // argument, whose account is the old name, and whose secret is the
-        // old account string.
-        XCTAssertEqual(store.password(name: newPassword, account: name), account)
-    }
 }
