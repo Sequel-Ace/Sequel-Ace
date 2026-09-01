@@ -348,8 +348,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// Static XIB titles are not localized at load time in this app (see the
 	// Refresh title in SPConnectionController.m for the established
 	// workaround) - apply the catalog strings here so translations show up.
-	[[rootConjunctionPopUp itemWithTag:1] setTitle:NSLocalizedString(@"AND (all conditions)", @"table Content : rule filter editor : AND/OR popup : combine with AND")];
-	[[rootConjunctionPopUp itemWithTag:0] setTitle:NSLocalizedString(@"OR (any condition)", @"table Content : rule filter editor : AND/OR popup : combine with OR")];
+	[[[rootConjunctionPopUp menu] itemWithTag:1] setTitle:NSLocalizedString(@"AND (all conditions)", @"table Content : rule filter editor : AND/OR popup : combine with AND")];
+	[[[rootConjunctionPopUp menu] itemWithTag:0] setTitle:NSLocalizedString(@"OR (any condition)", @"table Content : rule filter editor : AND/OR popup : combine with OR")];
 	[self _syncRootConjunctionPopUp];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self
