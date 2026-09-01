@@ -19,7 +19,7 @@
 import Security
 import XCTest
 
-final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTestCase {
+class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTestCase {
 
     private func service(_ label: String, _ function: StaticString = #function) -> String {
         SAKeychainTestSupport.service("\(function) \(label)")
