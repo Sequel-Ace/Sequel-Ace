@@ -80,8 +80,6 @@
     }
     
 	OSStatus status;
-	SecTrustedApplicationRef sequelProRef, sequelProHelperRef;
-	SecAccessRef passwordAccessRef = NULL;
 	SecKeychainAttribute attributes[4];
 	SecKeychainAttributeList attList;
 
@@ -91,22 +89,12 @@
 	// Check if password already exists before adding
 	if (![self passwordExistsForName:name account:account]) {
 
-		// Create a trusted access list with two items - ourselves and the SSH pass app
-		NSString *helperPath = [[NSBundle mainBundle] pathForAuxiliaryExecutable:@"SequelAceTunnelAssistant"];
+		// New items rely on the default access list (the creating app).
+		// The explicit SecAccessCreate/SecTrustedApplication* list naming
+		// the SequelAceTunnelAssistant is gone with the assistant's direct
+		// keychain read: the helper now obtains passwords from the app over
+		// the connection, so no second process ever reads these items.
 
-		if ((SecTrustedApplicationCreateFromPath(NULL, &sequelProRef) == noErr) &&
-			(SecTrustedApplicationCreateFromPath([helperPath UTF8String], &sequelProHelperRef) == noErr)) {
-
-			NSArray *trustedApps = [NSArray arrayWithObjects:(__bridge id)sequelProRef, (__bridge id)sequelProHelperRef, nil];
-
-			status = SecAccessCreate((CFStringRef)name, (CFArrayRef)trustedApps, &passwordAccessRef);
-
-			if (status != noErr) {
-				NSLog(@"Error (%i) while trying to create access list for name: %@ account: %@", (int)status, name, account);
-				passwordAccessRef = NULL;
-			}
-		}
-		
 		// Set up the item attributes
 		attributes[0].tag = kSecGenericItemAttr;
 		attributes[0].data = "application password";
@@ -130,11 +118,9 @@
 			(UInt32)strlen([password UTF8String]),	// Length of password
 			[password UTF8String],					// Password data
 			NULL,									// Default keychain
-			passwordAccessRef,						// Access list for this keychain
+			NULL,									// Default access list (creating app only)
 			NULL);									// The item reference
 
-		if (passwordAccessRef) CFRelease(passwordAccessRef);
-		
 		if (status != noErr) {
 			NSLog(@"Error (%i) while trying to add password for name: %@ account: %@", (int)status, name, account);
 

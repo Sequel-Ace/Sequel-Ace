@@ -529,9 +529,11 @@ static unsigned short getRandomPort(void);
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
 		[taskEnvironment safeSetObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
 		if (passwordInKeychain) {
+			// The keychain item's name and account deliberately stay out of
+			// the environment: the assistant no longer reads the keychain —
+			// it asks getPasswordWithVerificationHash: over the connection,
+			// and the app resolves the item at ask time.
             [taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordUsesKeychain] stringValue] forKey:@"SP_PASSWORD_METHOD"];
-			[taskEnvironment safeSetObject:[keychainName stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
-			[taskEnvironment safeSetObject:[keychainAccount stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
 		} else if (password) {
 			[taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordAsksUI] stringValue] forKey:@"SP_PASSWORD_METHOD"];
 		} else {
@@ -782,8 +784,16 @@ static unsigned short getRandomPort(void);
  */
 - (NSString *)getPasswordWithVerificationHash:(NSString *)theHash
 {
-	if (passwordInKeychain) return nil;
 	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
+
+	// Keychain-backed connections resolve the password here, at ask time, on
+	// the app side of the channel: the assistant no longer reads the keychain
+	// itself (keychain migration plan, Step 3). The lookup lives in
+	// SASSHTunnelSecretResolver (new logic in Swift, thin bridge here).
+	if (passwordInKeychain) {
+		return [SASSHTunnelSecretResolver passwordForKeychainName:keychainName account:keychainAccount];
+	}
+
 	return password;
 }
 
@@ -849,8 +859,16 @@ static unsigned short getRandomPort(void);
 - (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
 {
 	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
-	
+
 	if (passwordPromptCancelled) return nil;
+
+	// SSH key passphrases: check the user's stored "SSH"/<key name> item on
+	// the app side before raising the UI prompt. This check lived in the
+	// assistant while it still read the keychain directly (keychain
+	// migration plan, Step 3); SASSHTunnelSecretResolver keeps its
+	// exists-then-get shape.
+	NSString *storedPassphrase = [SASSHTunnelSecretResolver storedPassphraseForQuery:theQuery];
+	if (storedPassphrase) return storedPassphrase;
 
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];

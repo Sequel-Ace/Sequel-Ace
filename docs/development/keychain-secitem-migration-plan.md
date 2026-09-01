@@ -274,7 +274,21 @@ pinned-buggy to correct:
 Ship this as its own PR and let it soak a release if the schedule allows —
 these fixes de-risk the rewrite regardless of when the rewrite lands.
 
-### Step 3 — Retire the tunnel assistant's direct keychain read
+### Step 3 — Retire the tunnel assistant's direct keychain read — ✅ Done
+
+Execution notes (2026-08-31): executed as three working-tree-at-every-commit
+commits — app-side serving first, assistant switch second, ACL deletion
+last. Refinements over the plan text: the password is resolved **at ask
+time** inside `getPasswordWithVerificationHash:` (the secret never enters
+the app-held state either, let alone the environment), `SP_PASSWORD_METHOD`
+*keeps* its UsesKeychain value so the assistant can still show its
+keychain-specific fallback prompt on a miss (only the item name/account env
+vars died), and the assistant's key-passphrase keychain check moved into
+`getPasswordForQuery:` (same regex, same exists-then-get shape) — which
+collapsed the assistant's passphrase branch into the generic GUI branch,
+its exact remaining body. The hash check now runs before the keychain
+branch in `getPasswordWithVerificationHash:` (previously keychain mode
+returned nil before verifying — strictly no looser).
 
 - `SPSSHTunnel`: in keychain mode, resolve the password via `SPKeychain` at
   connect time (app side, where the item's ACL already trusts the app) and
