@@ -122,6 +122,25 @@ final class SASSHTunnelAskpassTests: XCTestCase {
         XCTAssertEqual(channel.logs, ["SSH Tunnel: unable to connect to Sequel Ace for internal authentication"])
     }
 
+    func testPasswordTransportErrorFailsClosedWithoutTheFallback() {
+        // Only an explicit refusal may reach the GUI fallback; a broken channel
+        // must not open a second connection and possibly print a secret.
+        channel.respond = { request in
+            if case .password = request { throw Channel.Failure() }
+            return .secret("must-not-be-printed")
+        }
+        XCTAssertEqual(run("me@bastion's password: "), Outcome(output: nil, exitCode: 1))
+        XCTAssertEqual(channel.requests, [.password(verificationHash: "hash-1")])
+        XCTAssertEqual(channel.connectAttempts, 1)
+        XCTAssertTrue(channel.logs.last?.contains("unable to obtain the password") == true)
+    }
+
+    func testUnexpectedReplyKindToThePasswordRequestFailsClosed() {
+        channel.respond = { _ in .answer(true) }
+        XCTAssertEqual(run("me@bastion's password: "), Outcome(output: nil, exitCode: 1))
+        XCTAssertEqual(channel.requests.count, 1)
+    }
+
     func testHeldPasswordMissFallsBackToTheGUIPromptWithTheDirectMessage() {
         channel.respond = { request in
             if case .query(let text, _) = request { return .secret("typed:" + text) }

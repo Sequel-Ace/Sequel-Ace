@@ -62,10 +62,18 @@ static unsigned short getRandomPort(void);
 	// The prompt sheet currently running modally, if any. Main thread only.
 	// Lets teardown dismiss a prompt the assistant is blocked on.
 	NSWindow *activePromptDialog;
+
+	// Set by teardown when a prompt is in flight but not yet on screen, so the
+	// worker that would show it answers "no"/nil instead. Main thread only.
+	BOOL promptTeardownRequested;
+
+	// Prevents teardown from dispatching work that captures self from dealloc.
+	BOOL isDeallocating;
 }
 
 - (void)setLastError:(NSString *)msg;
 - (void)cancelPendingPrompt;
+- (BOOL)promptWasTornDownBeforeShowing;
 
 @end
 
@@ -291,6 +299,7 @@ static unsigned short getRandomPort(void);
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
+	promptTeardownRequested = NO;
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
 	                           target:self
@@ -852,6 +861,13 @@ static unsigned short getRandomPort(void);
 	NSSize questionTextSize;
 	NSRect windowFrameRect;
 
+	// Teardown got here first, or ssh is already gone: answer "no" unseen
+	if ([self promptWasTornDownBeforeShowing]) {
+		requestedResponse = NO;
+		[answerAvailableLock unlock];
+		return;
+	}
+
 	// set up the question window
 	[sshQuestionText setStringValue:theQuestion];
 	questionTextSize = [[sshQuestionText cell] cellSizeForBounds:NSMakeRect(0, 0, [sshQuestionText bounds].size.width, 500)];
@@ -912,6 +928,13 @@ static unsigned short getRandomPort(void);
 {
 	NSSize queryTextSize;
 	NSRect windowFrameRect;
+
+	// Teardown got here first, or ssh is already gone: refuse unseen
+	if ([self promptWasTornDownBeforeShowing]) {
+		requestedPassphrase = nil;
+		[answerAvailableLock unlock];
+		return;
+	}
 
 	// Work out whether a passphrase is being requested, extracting the key name
     NSString *keyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
@@ -981,27 +1004,56 @@ static unsigned short getRandomPort(void);
  * marking the prompt as cancelled by the user (so the real failure reason still
  * reaches the connection controller). Called on teardown so a tunnel that
  * disconnects mid-prompt does not leave the sheet up and the assistant blocked
- * until ssh times out (SSH tunnel IPC plan, Step 1). Safe from any thread; a
- * no-op when no prompt is showing.
+ * until ssh times out (SSH tunnel IPC plan, Step 1). Safe from any thread.
+ *
+ * Two states need handling, because the prompt's worker reaches the main thread
+ * some time after the request took answerAvailableLock there: a sheet already
+ * on screen is dismissed here; a prompt still on its way is latched so its
+ * worker answers without ever showing the sheet (see -promptWasTornDownBeforeShowing).
  */
 - (void)cancelPendingPrompt
 {
-	if (!activePromptDialog) return;
+	// No prompt can be in flight during dealloc: an in-flight prompt holds a
+	// strong reference to this tunnel through the auth service.
+	if (isDeallocating) return;
 
 	dispatch_async(dispatch_get_main_queue(), ^{
 		NSWindow *dialog = self->activePromptDialog;
-		if (!dialog) return;
+		if (dialog) {
+			self->activePromptDialog = nil;
+			self->requestedResponse = NO;
+			self->requestedPassphrase = nil;
+			[self->sshPasswordField setStringValue:@""];
 
-		self->activePromptDialog = nil;
-		self->requestedResponse = NO;
-		self->requestedPassphrase = nil;
-		[self->sshPasswordField setStringValue:@""];
+			[NSApp endSheet:dialog];
+			[dialog orderOut:nil];
+			[[NSApplication sharedApplication] abortModal];
+			[[self->answerAvailableLock onMainThread] unlock];
+			return;
+		}
 
-		[NSApp endSheet:dialog];
-		[dialog orderOut:nil];
-		[[NSApplication sharedApplication] abortModal];
-		[[self->answerAvailableLock onMainThread] unlock];
+		// No sheet yet. A prompt that has started holds answerAvailableLock (it
+		// is taken on this thread) while its worker waits for its turn here;
+		// nothing in flight means the lock is free.
+		if ([self->answerAvailableLock tryLock]) {
+			[self->answerAvailableLock unlock];
+			return;
+		}
+		self->promptTeardownRequested = YES;
 	});
+}
+
+/*
+ * Main thread, called by the prompt workers before they show anything. True
+ * when teardown asked for cancellation before this worker ran, or when ssh has
+ * already exited — either way nobody is waiting for the answer, so the sheet
+ * must not appear. Consumes the latch.
+ */
+- (BOOL)promptWasTornDownBeforeShowing
+{
+	BOOL tornDown = promptTeardownRequested || !(task && [task isRunning]);
+	promptTeardownRequested = NO;
+	return tornDown;
 }
 
 /*
@@ -1017,6 +1069,7 @@ static unsigned short getRandomPort(void);
 
 - (void)dealloc
 {
+	isDeallocating = YES;
 	delegate = nil;
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self disconnect];
