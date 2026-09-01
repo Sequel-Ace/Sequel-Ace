@@ -588,7 +588,19 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setBezelStyle:NSBezelStyleRegularSquare];
 			[check setBordered:NO];
 			[check setImagePosition:NSImageOnly];
-			[check sizeToFit];
+			// -sizeToFit on a freshly created NSButton is shockingly expensive
+			// on macOS 26 (the cell measures through a full SwiftUI view
+			// graph, ~hundreds of ms) and made every "+" click lag. The
+			// checkbox is image-only and identical for every row, so measure
+			// once and reuse the size. (Main thread only, like all of this.)
+			static NSSize checkboxSize = {0, 0};
+			if (NSEqualSizes(checkboxSize, NSZeroSize)) {
+				[check sizeToFit];
+				checkboxSize = [check frame].size;
+			}
+			else {
+				[check setFrameSize:checkboxSize];
+			}
 			[check setAllowsMixedState:[node allowsMixedState]];
 			[check setState:([node initialState] ? NSControlStateValueOn : NSControlStateValueOff)];
 			[check setTarget:self];
@@ -652,7 +664,17 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[textField setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 			[[textField cell] setWraps:NO];
 			[[textField cell] setScrollable:YES];
-			[textField sizeToFit];
+			// Same -sizeToFit trap as the checkbox above: measure the (always
+			// identical) single-line height once, then reuse it. The width is
+			// overridden below anyway.
+			static CGFloat argumentFieldHeight = 0;
+			if (argumentFieldHeight <= 0) {
+				[textField sizeToFit];
+				argumentFieldHeight = [textField frame].size.height;
+			}
+			else {
+				[textField setFrameSize:NSMakeSize([textField frame].size.width, argumentFieldHeight)];
+			}
 			[textField setTarget:self];
 			[textField setAction:@selector(_textFieldAction:)];
 			[textField setDelegate:self]; // see -control:textView:doCommandBySelector:
