@@ -155,9 +155,12 @@ the assistant's code-signing **identifier is `SequelAceTunnelAssistant`**, the
 product name, not its bundle identifier — it is a bare executable; and the
 Beta configuration's app identifier is `com.sequel-ace.sequel-ace-beta`, so
 neither side may hardcode the other's identifier. Validation is therefore
-expressed as *same team as me* (`certificate leaf[subject.OU]` from the
-process's own signing information) plus, on the app side, the fixed assistant
-identifier.
+**asymmetric**: the app requires *same team as me* **and** the fixed
+identifier `SequelAceTunnelAssistant`, so no other same-team process can ask
+it for a password; the assistant requires *same team as me* only, because the
+app's identifier varies by configuration — a same-team process that planted a
+socket could at most receive a request, never a secret. The team comes from
+each process's own signing information, never from a constant.
 
 ### Decision
 
@@ -197,7 +200,10 @@ merits either way.
 
 ## Step 1 — Narrow the vended surface (ships regardless of the spike) — ✅ Done
 
-Pure refactor, no IPC change, no behaviour change.
+Pure refactor of *what* is vended: no IPC or transport change. The one
+intentional behaviour change is teardown, which now dismisses a prompt the
+assistant is blocked on and answers "no"/nil instead of leaving it blocked
+(details below).
 
 Execution notes (2026-09-01):
 
@@ -225,6 +231,12 @@ Execution notes (2026-09-01):
   real failure reason still reaches `SAConnectionService` instead of being
   mistaken for a user cancel. Before this a tunnel torn down mid-prompt left
   the sheet up and the assistant blocked until ssh gave up.
+  Review (Codex, CodeRabbit) caught a race in the first cut: a prompt whose
+  worker had not yet reached the main thread had no dialog to dismiss, so the
+  cancellation was dropped and the sheet appeared after teardown. Teardown
+  now latches `promptTeardownRequested` when the answer lock is held with no
+  sheet up, and both workers consume the latch — or notice ssh is no longer
+  running — and answer without presenting.
 - 21 unit tests in `UnitTests/SASSHTunnelAuthServiceTests.swift` against a
   fake tunnel and an in-memory keychain: question forwarding, hash
   refusal (wrong/empty/nil) on both password calls, held vs keychain-mode
@@ -291,8 +303,13 @@ the fixtures. `SASSHTunnelAuthService.handle(_:)` is the dispatch. 15 tests in
 message shapes, round trips, multi-line and non-ASCII text staying on one
 line, CR/LF tolerance, and the refusals (garbage, other versions, unknown
 kinds, missing or mistyped fields — including `"secret": null`, which is
-refused rather than read as empty). Nothing in the file is `public`: the
-assistant's Objective-C `main` never touches these types.
+refused rather than read as empty). Review (Codex) added the scalar-type
+rule: `JSONSerialization` returns `NSNumber` for every scalar and Swift's
+bridge reads `1` as `true` and `true` as `1`, so the decoder checks the
+underlying JSON type — a Bool must be a JSON boolean, `v` a JSON integer —
+and a numeric `answer` is refused rather than read as "yes". Nothing in the
+file is `public`: the assistant's Objective-C `main` never touches these
+types.
 
 ## Step 3 — Socket alongside DO, behind a default — ✅ Done (default still DO)
 
@@ -351,8 +368,11 @@ Execution notes (2026-09-01):
 - Assistant side, three Swift files: `SASSHTunnelAskpass` (the decisions,
   pure, 20 tests mirroring every branch of the Objective-C `main` — including
   the keychain-miss and direct-miss fallback messages, `integerValue`'s
-  non-numeric-is-0 reading of `SP_PASSWORD_METHOD`, and that a question wins
-  over a prompt that merely contains "password:"), `SASSHTunnelSocketClient`
+  non-numeric-is-0 reading of `SP_PASSWORD_METHOD`, that a question wins
+  over a prompt that merely contains "password:", and — after Codex review —
+  that only an explicit `refused` reaches the GUI fallback: a channel error
+  on the password request is exit 1, never a second connection that might
+  print a secret), `SASSHTunnelSocketClient`
   (connect, send one line, read one line), and the `public`
   `SASSHTunnelAssistantSocketMain` entry the `.m` calls first thing. The DO
   path in the `.m` is byte-for-byte what it was; it is deleted in Step 5.
@@ -500,8 +520,8 @@ only when it is `public`.
 
 ## Verification
 
-There is no way to unit-test this end to end; the trigger is `ssh` deciding to
-exec `SSH_ASKPASS`. What each layer buys:
+The real path — `ssh` deciding to exec `SSH_ASKPASS` — cannot be unit-tested
+end to end; the channel underneath it can. What each layer buys:
 
 - **Unit-testable (new)**: `SASSHTunnelAuthService` against a fake tunnel — the
   hash comparison, the keychain-vs-UI branch, nil/cancel paths. None of this is
@@ -509,7 +529,7 @@ exec `SSH_ASKPASS`. What each layer buys:
   writing in Step 1 while the transport is still the old one.
 - **Integration-testable (new)**: the socket server and client are plain
   Swift, so the Unit Tests target can run both ends in-process over a socket
-  in its temporary directory and cover the wire contract end to end,
+  in its temporary directory and cover the wire contract end-to-end,
   including the refusal paths. (Launching the real assistant binary from the
   test runner is not possible: its `com.apple.security.inherit` sandbox
   needs a sandboxed parent.)
