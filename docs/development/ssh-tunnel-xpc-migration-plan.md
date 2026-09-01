@@ -368,8 +368,11 @@ Execution notes (2026-09-01):
 - Assistant side, three Swift files: `SASSHTunnelAskpass` (the decisions,
   pure, 20 tests mirroring every branch of the Objective-C `main` — including
   the keychain-miss and direct-miss fallback messages, `integerValue`'s
-  non-numeric-is-0 reading of `SP_PASSWORD_METHOD`, and that a question wins
-  over a prompt that merely contains "password:"), `SASSHTunnelSocketClient`
+  non-numeric-is-0 reading of `SP_PASSWORD_METHOD`, that a question wins
+  over a prompt that merely contains "password:", and — after Codex review —
+  that only an explicit `refused` reaches the GUI fallback: a channel error
+  on the password request is exit 1, never a second connection that might
+  print a secret), `SASSHTunnelSocketClient`
   (connect, send one line, read one line), and the `public`
   `SASSHTunnelAssistantSocketMain` entry the `.m` calls first thing. The DO
   path in the `.m` is byte-for-byte what it was; it is deleted in Step 5.

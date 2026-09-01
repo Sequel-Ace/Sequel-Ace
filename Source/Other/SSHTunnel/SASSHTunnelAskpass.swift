@@ -35,11 +35,12 @@ import Foundation
 /// therefore testable (SSH tunnel IPC plan, Step 3). Compiled into the
 /// assistant and the Unit Tests target.
 ///
-/// `connect` is called lazily, at most once per run, in exactly the places
-/// the Objective-C original resolved its proxy; a failure there is "unable
-/// to connect to Sequel Ace", exit 1. A transport error during the request
-/// is also exit 1: the assistant never prints an empty line for ssh to read
-/// as an empty password.
+/// `connect` is called lazily, in exactly the places the Objective-C
+/// original resolved its proxy (twice when a refused password falls back to
+/// the GUI prompt); a failure there is "unable to connect to Sequel Ace",
+/// exit 1. A transport error during any request is also exit 1 — only an
+/// explicit `refused` reaches the fallback — and the assistant never prints
+/// an empty line for ssh to read as an empty password.
 enum SASSHTunnelAskpass {
 
     struct Outcome: Equatable {
@@ -102,10 +103,26 @@ enum SASSHTunnelAskpass {
                     log("SSH Tunnel: unable to connect to Sequel Ace for internal authentication")
                     return Outcome(output: nil, exitCode: 1)
                 }
-                if case .secret(let password)? = try? transport(.password(verificationHash: verificationHash)) {
-                    return Outcome(output: password, exitCode: 0)
+                let response: SASSHTunnelAuthResponse
+                do {
+                    response = try transport(.password(verificationHash: verificationHash))
+                } catch {
+                    // A broken channel is not "no password": fail closed rather
+                    // than open a second connection for the GUI fallback.
+                    log("SSH Tunnel: unable to obtain the password from Sequel Ace (\(error))")
+                    return Outcome(output: nil, exitCode: 1)
                 }
-                // No password: explain per method and fall back to the GUI prompt.
+                switch response {
+                case .secret(let password):
+                    return Outcome(output: password, exitCode: 0)
+                case .refused:
+                    break
+                case .answer:
+                    log("SSH Tunnel: unexpected reply to the password request")
+                    return Outcome(output: nil, exitCode: 1)
+                }
+                // Explicitly refused — no password held or stored: explain per
+                // method and fall back to the GUI prompt.
                 if method == .usesKeychain {
                     log("SSH Tunnel: specified keychain password not found")
                     argument = String(format: NSLocalizedString("The SSH password could not be loaded from the keychain; please enter the SSH password for %@:", comment: "Prompt for SSH password when keychain fetch failed"), connectionName)
