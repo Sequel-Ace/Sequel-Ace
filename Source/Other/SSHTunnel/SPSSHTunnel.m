@@ -47,6 +47,7 @@
 #import <netinet/in.h>
 
 static unsigned short getRandomPort(void);
+static const NSTimeInterval SPSSHTunnelStderrDrainTimeout = 5.0;
 
 @interface SPSSHTunnel ()
 {
@@ -642,10 +643,14 @@ static unsigned short getRandomPort(void);
             SPLog(@"SSH Tunnel has unexpectedly closed");
 		}
 
-		// Keep the run loop alive until the one-shot data-available notification
-		// chain has consumed stderr through the pipe's actual EOF.
-		while (!standardErrorReachedEOF) {
-			[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+		// Prefer the pipe's actual EOF, but do not let a custom SSH binary or a
+		// descendant that inherited stderr keep the connection attempt stuck.
+		NSDate *standardErrorDrainDeadline = [NSDate dateWithTimeIntervalSinceNow:SPSSHTunnelStderrDrainTimeout];
+		while (!standardErrorReachedEOF && [standardErrorDrainDeadline timeIntervalSinceNow] > 0) {
+			[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:standardErrorDrainDeadline];
+		}
+		if (!standardErrorReachedEOF) {
+			SPLog(@"Timed out waiting for SSH stderr EOF; using the diagnostics collected so far");
 		}
 
 		[[NSNotificationCenter defaultCenter] removeObserver:self
