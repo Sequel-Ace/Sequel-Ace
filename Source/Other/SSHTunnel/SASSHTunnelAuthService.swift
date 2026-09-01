@@ -93,6 +93,22 @@ import Foundation
         return source.promptForPassword(forQuery: query)
     }
 
+    // MARK: - Wire dispatch
+
+    /// The socket transport's entry point: one request in, one response out,
+    /// mapped onto the three calls above. Transport-agnostic on purpose so
+    /// the server stays plumbing only (SSH tunnel IPC plan, Step 2).
+    func handle(_ request: SASSHTunnelAuthRequest) -> SASSHTunnelAuthResponse {
+        switch request {
+        case .question(let text):
+            return .answer(response(forQuestion: text))
+        case .password(let verificationHash):
+            return password(verificationHash: verificationHash).map { .secret($0) } ?? .refused
+        case .query(let text, let verificationHash):
+            return password(forQuery: text, verificationHash: verificationHash).map { .secret($0) } ?? .refused
+        }
+    }
+
     // MARK: - Stored passphrases
 
     /// The stored `"SSH"/<key name>` passphrase for an askpass query, or nil
