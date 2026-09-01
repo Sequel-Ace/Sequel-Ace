@@ -345,6 +345,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}];
 
 	[rootConjunctionPopUp setToolTip:NSLocalizedString(@"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.", @"table Content : rule filter editor : AND/OR popup : tooltip")];
+	// Static XIB titles are not localized at load time in this app (see the
+	// Refresh title in SPConnectionController.m for the established
+	// workaround) - apply the catalog strings here so translations show up.
+	[[rootConjunctionPopUp itemWithTag:1] setTitle:NSLocalizedString(@"AND (all conditions)", @"table Content : rule filter editor : AND/OR popup : combine with AND")];
+	[[rootConjunctionPopUp itemWithTag:0] setTitle:NSLocalizedString(@"OR (any condition)", @"table Content : rule filter editor : AND/OR popup : combine with OR")];
 	[self _syncRootConjunctionPopUp];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self
