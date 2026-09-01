@@ -739,25 +739,24 @@ static unsigned short getRandomPort(void);
 				connectionState = SPMySQLProxyWaitingForAuth;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
-			
+
+			// Terminal states are published once by launchTask: after stderr has
+			// drained, so automatic reconnects cannot start during cleanup.
 			if ([message rangeOfString:@"bind: Address already in use"].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?", @"SSH tunnel unable to bind to local port message")];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 
 			if ([message rangeOfString:@"closed by remote host." ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.", @"SSH tunnel was closed by remote host message")];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"Permission denied (" ].location != NSNotFound || [message rangeOfString:@"No more authentication methods to try" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.", @"SSH tunnel authentication failed message")];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"connect failed: Connection refused" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyForwardingFailed;
@@ -767,7 +766,6 @@ static unsigned short getRandomPort(void);
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 		}
 	}
