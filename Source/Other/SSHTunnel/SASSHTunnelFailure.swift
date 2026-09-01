@@ -42,11 +42,18 @@ struct SASSHTunnelFailure {
         return diagnosticsReady
     }
 
-    @objc func beginAttempt() {
+    /// Atomically begins an attempt only after the prior diagnostics lifecycle
+    /// has completed, preventing stale drain callbacks from reaching a new pipe.
+    @objc func beginAttemptIfReady() -> Bool {
         stateLock.lock()
+        guard diagnosticsReady else {
+            stateLock.unlock()
+            return false
+        }
         reachedEOF = false
         diagnosticsReady = false
         stateLock.unlock()
+        return true
     }
 
     @objc func finishWithoutStandardErrorPipe() {

@@ -45,16 +45,18 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
 
-        coordinator.beginAttempt()
+        XCTAssertTrue(coordinator.beginAttemptIfReady())
         XCTAssertFalse(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.beginAttemptIfReady())
 
         coordinator.finishWithoutStandardErrorPipe()
         XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertTrue(coordinator.beginAttemptIfReady())
     }
 
     func testStandardErrorReadsRearmUntilEOF() {
         let coordinator = SASSHStderrDrainCoordinator(timeout: 1)
-        coordinator.beginAttempt()
+        XCTAssertTrue(coordinator.beginAttemptIfReady())
 
         XCTAssertTrue(coordinator.recordStandardErrorRead(byteCount: 128))
         XCTAssertFalse(coordinator.failureDiagnosticsReady)
@@ -66,7 +68,7 @@ final class SASSHStderrDrainCoordinatorTests: XCTestCase {
 
     func testDrainTimeoutStillMakesDiagnosticsReady() {
         let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
-        coordinator.beginAttempt()
+        XCTAssertTrue(coordinator.beginAttemptIfReady())
 
         XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
         XCTAssertTrue(coordinator.failureDiagnosticsReady)

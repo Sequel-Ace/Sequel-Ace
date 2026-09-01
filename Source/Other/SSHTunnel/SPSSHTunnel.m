@@ -280,16 +280,15 @@ static unsigned short getRandomPort(void);
 
 	localPort = 0;
 
-    if (connectionState != SPMySQLProxyIdle){
-        SPLog(@"connect ssh connection state != SPMySQLProxyIdle, returning");
-        return;
-    }
+	if (connectionState != SPMySQLProxyIdle || ![standardErrorDrainCoordinator beginAttemptIfReady]){
+		SPLog(@"connect ssh connection is active or still draining diagnostics, returning");
+		return;
+	}
 
 	[debugMessagesLock lock];
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
-	[standardErrorDrainCoordinator beginAttempt];
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
 	                           target:self
