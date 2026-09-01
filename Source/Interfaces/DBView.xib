@@ -1038,13 +1038,13 @@
                                                                     <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RcP-op-Btn">
                                                                         <rect key="frame" x="458" y="4" width="118" height="22"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <popUpButtonCell key="cell" type="push" title="AND (all rows)" bezelStyle="rounded" alignment="left" controlSize="small" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="RcP-op-And" id="RcP-op-Cel">
+                                                                        <popUpButtonCell key="cell" type="push" title="AND (all conditions)" bezelStyle="rounded" alignment="left" controlSize="small" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="RcP-op-And" id="RcP-op-Cel">
                                                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="smallSystem"/>
                                                                             <menu key="menu" id="RcP-op-Mnu">
                                                                                 <items>
-                                                                                    <menuItem title="AND (all rows)" tag="1" state="on" id="RcP-op-And"/>
-                                                                                    <menuItem title="OR (any row)" id="RcP-op-Or1"/>
+                                                                                    <menuItem title="AND (all conditions)" tag="1" state="on" id="RcP-op-And"/>
+                                                                                    <menuItem title="OR (any condition)" id="RcP-op-Or1"/>
                                                                                 </items>
                                                                             </menu>
                                                                         </popUpButtonCell>

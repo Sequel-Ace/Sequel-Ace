@@ -86,6 +86,23 @@ enum SARuleFilterContextMenu {
     }
 }
 
+/// Presentation strings and checks for a group row's AND/OR choice, kept in
+/// Swift so the Objective-C rule-editor delegate only forwards to it.
+@objc public final class SARuleFilterConjunctionRowPresentation: NSObject {
+    /// The static label shown after a group row's AND/OR popup, clarifying
+    /// that the choice combines the group's own conditions.
+    @objc public static var explainerText: String {
+        return NSLocalizedString("combines the conditions in this group", comment: "table Content : rule filter editor : compound row : label after the AND/OR popup")
+    }
+
+    /// Whether the string is one of the two conjunction choices (as opposed
+    /// to the explainer label, which is also rendered from a plain string).
+    @objc(isConjunctionChoice:)
+    public static func isConjunctionChoice(_ value: String?) -> Bool {
+        return value == "AND" || value == "OR"
+    }
+}
+
 /// What `-[SPRuleFilterController ruleEditorRowsDidChange:]` should do about
 /// the container size after the rule editor reported a rows change.
 @objc public enum SARuleFilterResizeAction: Int {

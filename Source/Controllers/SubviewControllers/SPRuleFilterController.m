@@ -344,7 +344,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self->filterRuleEditor bind:@"rows" toObject:self->_modelContainer withKeyPath:@"model" options:nil];
 	}];
 
-	[rootConjunctionPopUp setToolTip:NSLocalizedString(@"Combine the top-level filter rows with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.", @"table Content : rule filter editor : AND/OR popup : tooltip")];
+	[rootConjunctionPopUp setToolTip:NSLocalizedString(@"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.", @"table Content : rule filter editor : AND/OR popup : tooltip")];
 	[self _syncRootConjunctionPopUp];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -1198,22 +1198,22 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 }
 
 /**
- * YES when the node is the AND/OR choice of a compound row (as opposed to the
- * static explainer label that follows it, which is also a StringNode).
+ * Trampoline into SARuleFilterConjunctionRowPresentation: YES when the node is
+ * the AND/OR choice of a compound row (as opposed to the explainer label).
  */
 - (BOOL)_isConjunctionChoiceNode:(StringNode *)node
 {
-	return [@"AND" isEqualToString:[node value]] || [@"OR" isEqualToString:[node value]];
+	return [SARuleFilterConjunctionRowPresentation isConjunctionChoice:[node value]];
 }
 
 /**
- * The static label shown after a group row's AND/OR popup, clarifying that the
- * choice combines the group's own rows.
+ * Trampoline into SARuleFilterConjunctionRowPresentation: the static label
+ * shown after a group row's AND/OR popup, wrapped in the rule-editor node type.
  */
 + (StringNode *)_conjunctionExplainerNode
 {
 	StringNode *node = [[StringNode alloc] init];
-	[node setValue:NSLocalizedString(@"combines the rows in this group", @"table Content : rule filter editor : compound row : label after the AND/OR popup")];
+	[node setValue:[SARuleFilterConjunctionRowPresentation explainerText]];
 	return node;
 }
 

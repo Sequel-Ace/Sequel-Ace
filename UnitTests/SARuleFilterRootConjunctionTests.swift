@@ -418,6 +418,72 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(children(of: kids.last ?? [:]).map(dictionary), [dictionary(starter)])
     }
 
+    // MARK: - Persisted-format compatibility (fixtures)
+
+    /// A verbatim `contentFilterV2` tree as pre-AND/OR-popup versions persisted it into `.spf`
+    /// session plists: a lone OR compound row, no `rootGroup` marker.
+    private static let legacyContentFilterV2Fixture = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>filterClass</key><string>groupNode</string>
+            <key>isConjunction</key><false/>
+            <key>children</key>
+            <array>
+                <dict>
+                    <key>filterClass</key><string>expressionNode</string>
+                    <key>column</key><string>PLZ</string>
+                    <key>filterComparison</key><string>=</string>
+                    <key>filterType</key><string>string</string>
+                    <key>filterValues</key><array><string>77694</string></array>
+                    <key>enabled</key><true/>
+                </dict>
+                <dict>
+                    <key>filterClass</key><string>expressionNode</string>
+                    <key>column</key><string>PLZ</string>
+                    <key>filterComparison</key><string>=</string>
+                    <key>filterType</key><string>string</string>
+                    <key>filterValues</key><array><string>40789</string></array>
+                    <key>enabled</key><true/>
+                </dict>
+            </array>
+        </dict>
+        </plist>
+        """
+
+    /// Verifies a legacy `.spf` fixture (persisted before the popup existed) decodes and keeps its
+    /// old meaning: one nested OR row under the implicit AND root – not a flattened OR root.
+    func testLegacyContentFilterV2FixtureKeepsItsMeaning() throws {
+        let data = try XCTUnwrap(Self.legacyContentFilterV2Fixture.data(using: .utf8))
+        let decoded = try XCTUnwrap(try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any])
+
+        let plan = SARuleFilterRootConjunction.restorePlan(for: decoded)
+
+        XCTAssertTrue(plan.isConjunction, "legacy trees restore under the implicit AND root")
+        XCTAssertEqual(plan.items.count, 1, "the OR group stays one nested row")
+        XCTAssertEqual(plan.items.first?["isConjunction"] as? Bool, false)
+        XCTAssertEqual(children(of: plan.items.first ?? [:]).count, 2)
+    }
+
+    /// Verifies the new wire format is a plain plist that legacy readers can decode: it round-trips
+    /// through PropertyListSerialization, and stripping the unknown `rootGroup` key (which old
+    /// readers ignore) leaves exactly the tree shape they always understood.
+    func testNewWireFormatStaysReadableByLegacyReaders() throws {
+        let root = SARuleFilterRootConjunction.serializedRoot(items: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+
+        let data = try PropertyListSerialization.data(fromPropertyList: root, format: .xml, options: 0)
+        var decoded = try XCTUnwrap(try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any])
+
+        XCTAssertEqual(decoded["rootGroup"] as? Bool, true, "the marker survives the plist round trip")
+        // A legacy reader only looks at filterClass/isConjunction/children and
+        // ignores the marker – the remaining tree is the shape it always knew.
+        decoded.removeValue(forKey: "rootGroup")
+        XCTAssertEqual(decoded["filterClass"] as? String, "groupNode")
+        XCTAssertEqual(decoded["isConjunction"] as? Bool, false)
+        XCTAssertEqual((decoded["children"] as? [[String: Any]])?.count, 2)
+    }
+
     // MARK: - Controller round trip
 
     /// Verifies the OR choice for a single-row filter survives serialize → setColumns-reset → restore.
