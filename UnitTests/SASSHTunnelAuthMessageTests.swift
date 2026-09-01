@@ -132,6 +132,24 @@ final class SASSHTunnelAuthMessageTests: XCTestCase {
         }
     }
 
+    func testNumbersAndBoolsDoNotCoerceIntoEachOther() {
+        // JSONSerialization returns NSNumber for both; `as? Bool` would read 1
+        // as true and `as? Int` would read true as 1. Mistyped means refused.
+        for payload in [#"{"answer":1,"kind":"answer","v":1}"#, #"{"answer":0,"kind":"answer","v":1}"#,
+                        #"{"answer":"true","kind":"answer","v":1}"#, #"{"answer":1.0,"kind":"answer","v":1}"#] {
+            XCTAssertThrowsError(try SASSHTunnelAuthWire.decodeResponse(line(payload)), payload) {
+                XCTAssertEqual($0 as? SASSHTunnelAuthWireError, .missingField("answer"), payload)
+            }
+        }
+        for payload in [#"{"kind":"refused","v":true}"#, #"{"kind":"refused","v":"1"}"#, #"{"kind":"refused","v":1.0}"#] {
+            XCTAssertThrowsError(try SASSHTunnelAuthWire.decodeResponse(line(payload)), payload) {
+                XCTAssertEqual($0 as? SASSHTunnelAuthWireError, .missingField("v"), payload)
+            }
+        }
+        XCTAssertEqual(try SASSHTunnelAuthWire.decodeResponse(line(#"{"answer":true,"kind":"answer","v":1}"#)), .answer(true))
+        XCTAssertEqual(try SASSHTunnelAuthWire.decodeResponse(line(#"{"answer":false,"kind":"answer","v":1}"#)), .answer(false))
+    }
+
     // MARK: - Dispatch onto the service
 
     func testServiceHandlesEachRequestKind() {
