@@ -177,6 +177,19 @@ final class SAKeychainStoreCharacterizationTests: SAKeychainCharacterizationTest
         XCTAssertEqual(store.password(name: name, account: account), "pw-2")
     }
 
+    func testUpdateToEmptyPasswordStoresEmptyString() {
+        // Blank handling, both directions (review question on #2612): an
+        // *empty* password is legal everywhere — add stores it, update
+        // replaces the secret with zero bytes, and get round-trips "".
+        // Only a nil password is rejected (the Step 2 guard).
+        let name = service("item"), account = "user@host/"
+        store.add(password: "pw-1", name: name, account: account)
+        store.updateItem(name: name, account: account,
+                         toName: name, newAccount: account, password: "")
+        XCTAssertTrue(store.passwordExists(name: name, account: account))
+        XCTAssertEqual(store.password(name: name, account: account), "")
+    }
+
     func testUpdateOfMissingItemFallsBackToAdd() {
         // The errSecItemNotFound (-25300) branch: a safe delete, then a
         // fresh add under the *new* name and account.
