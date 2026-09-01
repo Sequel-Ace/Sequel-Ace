@@ -89,8 +89,11 @@ later.
   `NSUserNotification` API. The wider warning burn-down (remaining: AppKit
   deprecation batch, Swift 6 readiness, old drag-API delegate methods, and
   the deferred SecKeychain/NSConnection projects) is tracked in
-  `docs/development/warnings-elimination-plan.md`. The NSConnection item now
-  has a design: `docs/development/ssh-tunnel-xpc-migration-plan.md`.
+  `docs/development/warnings-elimination-plan.md`. The NSConnection item is
+  in execution per `docs/development/ssh-tunnel-xpc-migration-plan.md` — on
+  a UNIX-socket transport, since the spike showed a sandboxed app cannot vend
+  `NSXPCListener` without launchd; `SPSSHTunnel` vends `SASSHTunnelAuthService`
+  and nothing else.
 
 ## Repo layout (abridged)
 
