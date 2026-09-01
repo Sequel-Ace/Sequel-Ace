@@ -8,6 +8,201 @@
 import XCTest
 
 final class SAGitHubReleaseTests: XCTestCase {
+    func testExistingAppStoreReceiptFailsClosedWithoutReadingIt() {
+        let receiptURL = URL(fileURLWithPath: "/unreadable/_MASReceipt/receipt")
+        var inspectedURL: URL?
+
+        XCTAssertTrue(SAAppStoreReceiptPolicy.isAppStoreInstall(
+            receiptURL: receiptURL,
+            receiptExists: { url in
+                inspectedURL = url
+                return true
+            }
+        ))
+        XCTAssertEqual(inspectedURL, receiptURL)
+    }
+
+    func testMissingAppStoreReceiptIsNotAnAppStoreInstall() {
+        var checkedForReceipt = false
+
+        XCTAssertFalse(SAAppStoreReceiptPolicy.isAppStoreInstall(
+            receiptURL: nil,
+            receiptExists: { _ in
+                checkedForReceipt = true
+                return true
+            }
+        ))
+        XCTAssertFalse(checkedForReceipt)
+    }
+
+    func testAutomaticAndRetryChecksRequirePreferenceWhileManualChecksDoNot() {
+        XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
+                                                              automaticChecksEnabled: false,
+                                                              isAppStoreInstall: false))
+        XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
+                                                             automaticChecksEnabled: true,
+                                                             isAppStoreInstall: false))
+        XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: true,
+                                                             automaticChecksEnabled: false,
+                                                             isAppStoreInstall: false))
+    }
+
+    func testAppStoreInstallNeverUsesGitHubUpdater() {
+        XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
+                                                              automaticChecksEnabled: true,
+                                                              isAppStoreInstall: true))
+        XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: true,
+                                                              automaticChecksEnabled: false,
+                                                              isAppStoreInstall: true))
+    }
+
+    func testAutomaticRolloutMatchesAppleSevenDayPercentages() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let oneDay: TimeInterval = 24 * 60 * 60
+
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.rolloutPercentage(
+            at: start.addingTimeInterval(-1),
+            startedAt: start
+        ), 0)
+        for (dayIndex, percentage) in [1, 2, 5, 10, 20, 50, 100].enumerated() {
+            XCTAssertEqual(SAGitHubReleaseRolloutPolicy.rolloutPercentage(
+                at: start.addingTimeInterval(Double(dayIndex) * oneDay),
+                startedAt: start
+            ), percentage)
+        }
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.rolloutPercentage(
+            at: start.addingTimeInterval(30 * oneDay),
+            startedAt: start
+        ), 100)
+    }
+
+    func testAutomaticRolloutUsesStableReleaseSpecificCohorts() {
+        let seed = "4C55C2A6-C1E3-42AB-BCB1-30F0A2B989C1"
+        let firstBucket = SAGitHubReleaseRolloutPolicy.cohortBucket(
+            installationSeed: seed,
+            releaseTag: "production/6.0.0-20112"
+        )
+
+        XCTAssertEqual(firstBucket, 4_032)
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.cohortBucket(
+            installationSeed: seed,
+            releaseTag: "production/6.0.0-20112"
+        ), 4_032)
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.cohortBucket(
+            installationSeed: seed,
+            releaseTag: "production/6.0.1-20113"
+        ), 6_416)
+        XCTAssertTrue((0..<10_000).contains(firstBucket))
+    }
+
+    func testManualChecksBypassPhasingButAutomaticChecksRespectCohort() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let releaseTag = "production/6.0.0-20112"
+        let earlySeed = "00000000-0000-4000-8000-000000000076"
+        let lateSeed = "00000000-0000-4000-8000-000000000000"
+
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start,
+            installationSeed: nil,
+            isUserInitiated: true
+        ))
+        XCTAssertFalse(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start,
+            installationSeed: earlySeed,
+            isUserInitiated: false
+        ))
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start.addingTimeInterval(6 * 24 * 60 * 60),
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+    }
+
+    func testNewestPhasedReleaseDoesNotFallBackToOlderRelease() throws {
+        let data = Data(
+            #"""
+            [
+              {
+                "tag_name": "production/5.5.0-20111",
+                "name": "5.5.0 (20111)",
+                "html_url": "https://example.com/older",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-08-01T00:00:00Z"
+              },
+              {
+                "tag_name": "production/6.0.0-20112",
+                "name": "6.0.0 (20112)",
+                "html_url": "https://example.com/newest",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-08-08T00:00:00Z"
+              }
+            ]
+            """#.utf8
+        )
+        let releases = try SAGitHubRelease.decodeList(from: data)
+        let newestRelease = try XCTUnwrap(releases.max())
+        let olderRelease = try XCTUnwrap(releases.min())
+        let rolloutStart = newestRelease.phasedRolloutStartedAt
+        let lateSeed = "00000000-0000-4000-8000-000000000000"
+
+        XCTAssertFalse(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: newestRelease.tagName,
+            rolloutStartedAt: rolloutStart,
+            at: rolloutStart,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: olderRelease.tagName,
+            rolloutStartedAt: olderRelease.phasedRolloutStartedAt,
+            at: rolloutStart,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertNil(SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+            in: releases,
+            at: rolloutStart,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+            in: releases,
+            at: rolloutStart,
+            installationSeed: nil,
+            isUserInitiated: true
+        ), newestRelease)
+    }
+
+    func testRolloutSeedPersistsLocally() throws {
+        let suiteName = "SAGitHubReleaseRolloutPolicyTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let firstSeed = SAGitHubReleaseRolloutPolicy.installationSeed(in: defaults)
+        let secondSeed = SAGitHubReleaseRolloutPolicy.installationSeed(in: defaults)
+
+        XCTAssertNotNil(UUID(uuidString: firstSeed))
+        XCTAssertEqual(firstSeed, secondSeed)
+        XCTAssertEqual(defaults.string(
+            forKey: SAGitHubReleaseRolloutPolicy.installationSeedPreferenceKey
+        ), firstSeed)
+    }
+
     func testDecodesAutomatedAndHistoricalReleases() throws {
         let data = Data(
             #"""
@@ -300,6 +495,10 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertNil(release.settlingTimeRemaining(at: newestAssetChange.addingTimeInterval(
             SAGitHubRelease.settlingInterval
         )))
+        XCTAssertEqual(
+            release.phasedRolloutStartedAt,
+            newestAssetChange.addingTimeInterval(SAGitHubRelease.settlingInterval)
+        )
     }
 
     func testSettlingPolicyRetriesOnlyForTheNewestCandidateUpdate() throws {
@@ -361,6 +560,31 @@ final class SAGitHubReleaseTests: XCTestCase {
             currentRelease: currentRelease,
             candidateReleases: [currentRelease]
         ))
+    }
+
+    func testSettlingRetryPreservesTheInitiatingCheckAuthorization() {
+        var receivedValues: [(name: String, tag: String?, isUserInitiated: Bool)] = []
+        let manualRetry = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: "5.5.0 (20111)",
+            installedReleaseTag: "production/5.5.0-20111",
+            isUserInitiated: true
+        ) { name, tag, isUserInitiated in
+            receivedValues.append((name, tag, isUserInitiated))
+        }
+        let automaticRetry = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: "5.5.0 (20111)",
+            installedReleaseTag: nil,
+            isUserInitiated: false
+        ) { name, tag, isUserInitiated in
+            receivedValues.append((name, tag, isUserInitiated))
+        }
+
+        manualRetry()
+        automaticRetry()
+
+        XCTAssertEqual(receivedValues.map { $0.name }, ["5.5.0 (20111)", "5.5.0 (20111)"])
+        XCTAssertEqual(receivedValues.map { $0.tag }, ["production/5.5.0-20111", nil])
+        XCTAssertEqual(receivedValues.map { $0.isUserInitiated }, [true, false])
     }
 
     func testUserInitiatedReleaseCheckTakesPriorityOverBackgroundChecks() throws {
