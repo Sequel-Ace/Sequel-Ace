@@ -2,12 +2,324 @@
 //  SAConnectionServiceTests.swift
 //  Unit Tests
 //
-//  Tests for the connection info → service parameter mapping.
+//  Tests for the connection service's pure Swift support types and
+//  connection info → service parameter mapping.
 //  SAConnectionResult and SAConnectionPreferences live in the app target
 //  (depend on SPMySQL), so they're tested via integration, not here.
 //
 
 import XCTest
+import SPMySQL
+
+// MARK: - SSH Tunnel Failure Tests
+
+final class SASSHTunnelFailureTests: XCTestCase {
+
+    func testSSHFailurePreservesTunnelDiagnostics() {
+        let debugMessages = """
+        debug1: Connecting to jump.local [192.168.1.8] port 22.
+        ssh: connect to host jump.local port 22: No route to host
+        """
+
+        let failure = SASSHTunnelFailure(
+            message: "The SSH Tunnel has unexpectedly closed.",
+            debugMessages: debugMessages
+        )
+
+        XCTAssertEqual(failure.message, "The SSH Tunnel has unexpectedly closed.")
+        XCTAssertEqual(failure.errorDetail, debugMessages)
+        XCTAssertEqual(failure.debugMessages, debugMessages)
+    }
+
+    func testSSHFailureOmitsEmptyTunnelDiagnosticsFromDetail() {
+        let failure = SASSHTunnelFailure(message: "Failed to create SSH tunnel", debugMessages: "")
+
+        XCTAssertNil(failure.errorDetail)
+        XCTAssertEqual(failure.debugMessages, "")
+    }
+}
+
+final class SASSHStderrDrainCoordinatorTests: XCTestCase {
+
+    func testAttemptLifecycleControlsDiagnosticsReadiness() {
+        let coordinator = SASSHStderrDrainCoordinator()
+
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        XCTAssertFalse(coordinator.failureDiagnosticsReady)
+        XCTAssertEqual(coordinator.requestAttempt(), .ignored)
+
+        coordinator.finishWithoutStandardErrorPipe()
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+    }
+
+    func testStandardErrorReadsRearmUntilEOF() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 1)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+
+        XCTAssertTrue(coordinator.recordStandardErrorRead(byteCount: 128))
+        XCTAssertFalse(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.recordStandardErrorRead(byteCount: 0))
+
+        XCTAssertTrue(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+
+    func testDrainTimeoutStillMakesDiagnosticsReady() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertFalse(coordinator.completeDrainNotificationAndReservePendingAttempt())
+    }
+
+    func testAttemptRequestedDuringDrainIsReservedAndCoalesced() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertTrue(coordinator.connectionAttemptPending)
+
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertTrue(coordinator.connectionAttemptPending)
+
+        XCTAssertTrue(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertFalse(coordinator.connectionAttemptPending)
+        XCTAssertFalse(coordinator.failureDiagnosticsReady)
+        XCTAssertEqual(coordinator.requestAttempt(), .ignored)
+
+        coordinator.finishWithoutStandardErrorPipe()
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+
+    func testQueuedAttemptCanBeCancelledBeforeReservation() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+
+        XCTAssertTrue(coordinator.cancelPendingOrRunningAttempt())
+        XCTAssertFalse(coordinator.connectionAttemptPending)
+        XCTAssertTrue(coordinator.attemptCancellationRequested)
+        XCTAssertEqual(coordinator.requestAttempt(), .ignored)
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertFalse(coordinator.completeDrainNotificationAndReservePendingAttempt())
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+
+    func testReservedAttemptCancellationIsObservedBeforeLaunch() {
+        let coordinator = SASSHStderrDrainCoordinator(timeout: 0)
+        XCTAssertEqual(coordinator.requestAttempt(), .start)
+        coordinator.beginStandardErrorDrain()
+        XCTAssertEqual(coordinator.requestAttempt(), .queued)
+        XCTAssertFalse(coordinator.finishAfterStandardErrorDrain())
+        XCTAssertTrue(coordinator.completeDrainNotificationAndReservePendingAttempt())
+
+        XCTAssertTrue(coordinator.cancelPendingOrRunningAttempt())
+        XCTAssertTrue(coordinator.attemptCancellationRequested)
+
+        coordinator.finishWithoutStandardErrorPipe()
+        XCTAssertFalse(coordinator.attemptCancellationRequested)
+        XCTAssertTrue(coordinator.failureDiagnosticsReady)
+    }
+}
+
+private final class SAConnectionProxyDisconnectSpy: NSObject, SPMySQLConnectionProxy {
+    private let stateLock = NSLock()
+    private var storedConnectCallCount = 0
+    private var storedDisconnectCallCount = 0
+    private var storedReconnectDisconnectCallCount = 0
+    private var storedConnectionAttemptPending = false
+    private var connectSuppressed = false
+    var suppressConnectAfterOrdinaryDisconnect = false
+    var onConnect: ((Int) -> Void)?
+
+    var connectionAttemptPendingValue: Bool {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return storedConnectionAttemptPending
+        }
+        set {
+            stateLock.lock()
+            storedConnectionAttemptPending = newValue
+            stateLock.unlock()
+        }
+    }
+
+    var connectCallCount: Int {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedConnectCallCount
+    }
+
+    var disconnectCallCount: Int {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedDisconnectCallCount
+    }
+
+    var reconnectDisconnectCallCount: Int {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedReconnectDisconnectCallCount
+    }
+
+    func connect() {
+        stateLock.lock()
+        storedConnectCallCount += 1
+        let connectCallCount = storedConnectCallCount
+        let shouldNotify = !connectSuppressed
+        let onConnect = onConnect
+        stateLock.unlock()
+
+        if shouldNotify {
+            onConnect?(connectCallCount)
+        }
+    }
+
+    func disconnect() {
+        stateLock.lock()
+        storedDisconnectCallCount += 1
+        storedConnectionAttemptPending = false
+        if suppressConnectAfterOrdinaryDisconnect {
+            connectSuppressed = true
+        }
+        stateLock.unlock()
+    }
+
+    func disconnectForReconnect() {
+        stateLock.lock()
+        storedReconnectDisconnectCallCount += 1
+        storedConnectionAttemptPending = false
+        stateLock.unlock()
+    }
+
+    func state() -> SPMySQLConnectionProxyState {
+        SPMySQLProxyIdle
+    }
+
+    func localPort() -> UInt {
+        0
+    }
+
+    func setConnectionStateChange(_ selector: Selector!, delegate: Any!) -> Bool {
+        true
+    }
+
+    func connectionAttemptPending() -> Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return storedConnectionAttemptPending
+    }
+}
+
+final class SAConnectionProxyDisconnectTests: XCTestCase {
+
+    func testDisconnectReachesProxyWhenMySQLConnectionIsAlreadyInactive() {
+        let connection = SPMySQLConnection()
+        let proxy = SAConnectionProxyDisconnectSpy()
+        connection.setProxy(proxy)
+
+        connection.disconnect()
+
+        XCTAssertEqual(proxy.disconnectCallCount, 1)
+    }
+
+    func testCancelledReconnectCancelsPendingProxyAttemptAndRestoresNotifications() {
+        let connection = SPMySQLConnection()
+        let proxy = SAConnectionProxyDisconnectSpy()
+        let connectStarted = expectation(description: "proxy connect requested")
+        let reconnectFinished = expectation(description: "reconnect returned")
+        proxy.connectionAttemptPendingValue = true
+        proxy.onConnect = { _ in connectStarted.fulfill() }
+        connection.setProxy(proxy)
+
+        let reconnectThread = Thread {
+            _ = connection.reconnect()
+            reconnectFinished.fulfill()
+        }
+        reconnectThread.start()
+        wait(for: [connectStarted], timeout: 2)
+
+        reconnectThread.cancel()
+        wait(for: [reconnectFinished], timeout: 2)
+
+        XCTAssertEqual(proxy.disconnectCallCount, 1)
+        XCTAssertEqual(
+            connection.value(forKey: "proxyStateChangeNotificationsIgnored") as? Bool,
+            false
+        )
+    }
+
+    func testExplicitDisconnectEndsPendingReconnectWithoutWaitingForTimeout() {
+        let connection = SPMySQLConnection()
+        connection.timeout = 5
+        let proxy = SAConnectionProxyDisconnectSpy()
+        let connectStarted = expectation(description: "proxy connect requested")
+        let reconnectFinished = expectation(description: "reconnect returned")
+        proxy.connectionAttemptPendingValue = true
+        proxy.onConnect = { _ in connectStarted.fulfill() }
+        connection.setProxy(proxy)
+
+        let reconnectThread = Thread {
+            _ = connection.reconnect()
+            reconnectFinished.fulfill()
+        }
+        reconnectThread.start()
+        wait(for: [connectStarted], timeout: 2)
+
+        connection.disconnect()
+        wait(for: [reconnectFinished], timeout: 2)
+
+        XCTAssertGreaterThanOrEqual(proxy.disconnectCallCount, 1)
+        XCTAssertEqual(
+            connection.value(forKey: "proxyStateChangeNotificationsIgnored") as? Bool,
+            false
+        )
+    }
+
+    func testProxyTimeoutPreservesTheFollowingReconnectAttempt() {
+        let connection = SPMySQLConnection()
+        connection.timeout = 0
+        let proxy = SAConnectionProxyDisconnectSpy()
+        let secondConnectStarted = expectation(description: "second proxy connect launched")
+        let reconnectFinished = expectation(description: "reconnect returned")
+        proxy.suppressConnectAfterOrdinaryDisconnect = true
+        proxy.onConnect = { connectCallCount in
+            if connectCallCount == 2 {
+                proxy.connectionAttemptPendingValue = true
+                secondConnectStarted.fulfill()
+            }
+        }
+        connection.setProxy(proxy)
+
+        let reconnectThread = Thread {
+            _ = connection.reconnect()
+            reconnectFinished.fulfill()
+        }
+        reconnectThread.start()
+        wait(for: [secondConnectStarted], timeout: 4)
+
+        reconnectThread.cancel()
+        wait(for: [reconnectFinished], timeout: 2)
+
+        XCTAssertGreaterThanOrEqual(proxy.connectCallCount, 2)
+        XCTAssertGreaterThanOrEqual(proxy.reconnectDisconnectCallCount, 1)
+        XCTAssertGreaterThanOrEqual(proxy.disconnectCallCount, 1)
+    }
+}
 
 // MARK: - Connection Info Parameter Mapping Tests
 

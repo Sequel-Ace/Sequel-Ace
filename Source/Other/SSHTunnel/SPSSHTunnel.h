@@ -82,6 +82,10 @@
 
 @property (readonly) BOOL passwordPromptCancelled;
 @property (readonly) BOOL taskExitedUnexpectedly;
+/// True once the SSH task's pending stderr callbacks have been drained.
+@property (atomic, readonly) BOOL failureDiagnosticsReady;
+/// True while a reconnect request is queued behind stderr cleanup.
+@property (atomic, readonly) BOOL connectionAttemptPending;
 
 @property (readwrite, retain) IBOutlet NSTextField *sshQuestionText;
 @property (readwrite, retain) IBOutlet NSWindow *sshQuestionDialog;
@@ -102,6 +106,7 @@
 - (NSUInteger)localPort;
 - (NSUInteger)localPortFallback;
 - (void)connect;
+- (void)disconnectForReconnect;
 - (void)launchTask:(id)dummy;
 - (void)disconnect;
 - (void)standardErrorHandler:(NSNotification*)aNotification;

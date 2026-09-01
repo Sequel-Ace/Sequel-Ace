@@ -581,7 +581,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *failTitle = result.errorTitle ?: NSLocalizedString(@"Unable to connect", @"connection failed title");
             // rawErrorMessage is populated for MySQL errors; errorMessage for SSH tunnel errors
             NSString *failMessage = (result.rawErrorMessage.length > 0) ? result.rawErrorMessage : (result.errorMessage ?: @"");
-            NSString *failDetail = nil;
+            NSString *failDetail = result.errorDetail;
 
             // Format detailed error based on connection type and error code
             if (result.sshDebugMessages.length > 0 && strongSelf->sshTunnel) {
