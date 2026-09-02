@@ -293,6 +293,9 @@
 		51AC3B7A304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		51AC3B7B304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		51AC3B80304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */; };
+		51AC6E6E3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */; };
+		51AC6E6F3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */; };
+		51AC6E743047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */; };
 		51B09FC92F7677AA003BAFFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */; };
 		51B09FD12F7677EB003BAFFF /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD02F7677EB003BAFFF /* FirebaseAnalyticsCore */; };
 		51B09FD32F7677EB003BAFFF /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD22F7677EB003BAFFF /* FirebaseCrashlytics */; };
@@ -1163,6 +1166,8 @@
 		51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthServiceTests.swift; sourceTree = "<group>"; };
 		51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthMessage.swift; sourceTree = "<group>"; };
 		51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthMessageTests.swift; sourceTree = "<group>"; };
+		51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinator.swift; sourceTree = "<group>"; };
+		51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfo.swift; sourceTree = "<group>"; };
 		51B09FDC2F767A4C003BAFFF /* SAConnectionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionDelegate.swift; sourceTree = "<group>"; };
@@ -2363,6 +2368,7 @@
 				58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */,
 				F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */,
 				51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */,
+				51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */,
 			);
 			name = "SSH Tunnel";
 			path = SSHTunnel;
@@ -2777,6 +2783,7 @@
 				51DD6924303C2F99004792F0 /* SAFavoriteDuplicateMatcherTests.swift */,
 				51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */,
 				51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */,
+				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3449,6 +3456,7 @@
 				1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */,
 				1ADEA5A324BF1C4800D2140B /* SPDateAdditionsTests.m in Sources */,
 				507FF1621BBF0D5000104523 /* SPTableCopyTest.m in Sources */,
+				51AC6E743047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift in Sources */,
 				1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */,
 				1AF0DA84259F631000961974 /* SPPointerArrayAdditionsTests.m in Sources */,
 				50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */,
@@ -3468,6 +3476,7 @@
 				1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
+				51AC6E6E3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */,
 				F3A4B8C191E14E7094C9A111 /* AWSCredentialsTests.swift in Sources */,
 				F3A4B8C191E14E7094C9A112 /* RDSIAMAuthenticationTests.swift in Sources */,
 				F3A4B8C191E14E7094C9A113 /* AWSDirectoryBookmarkManagerTests.swift in Sources */,
@@ -3729,6 +3738,7 @@
 				5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */,
 				5AF0C3020000000000000003 /* SAPHPSerializedValue.swift in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
+				51AC6E6F3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */,
 				5AF0C3030000000000000002 /* SPFieldEditorController+PHPSerialized.swift in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
