@@ -506,10 +506,15 @@ shipped and soaked**): `NSConnection` is gone from `SPSSHTunnel` — no
 `registerName:`, no root object, no `invalidate` — and the three DO-facing
 methods left the tunnel and its header; the socket server is created
 unconditionally and a tunnel whose socket cannot be created fails to
-initialise with a log line naming the cause (the container-tmp path budget:
-user names up to 26 characters fit; a second, shorter, sandbox-reachable
-directory was not found — under the sandbox every temp directory maps into
-the container). `SequelAceTunnelAssistant.m` is deleted and the tool is
+initialise with a log line naming the cause. **Long user names no longer
+matter** (Codex review of the draft flagged that the hard failure would
+have cost them SSH): when the full path overflows `sun_path`, both ends
+bind and connect *relative to the socket's directory* — the thread enters
+the directory for exactly that one syscall, serialized, and restores the
+working directory (`SASSHTunnelSocketIO.performSocketCall`); nothing in the
+app resolves relative paths. Proven in-process with a 120-byte directory:
+round trip, stale sweep and unlink all work there, and the working directory
+is left as found. `SequelAceTunnelAssistant.m` is deleted and the tool is
 `main.swift` plus the five Swift files it already had; it no longer compiles
 `SPFunctions.m`, `NSNotificationCenterThreadingAdditions.m` or
 `StringRegexExtension.swift`, and no longer imports `SPSSHTunnel.h` or a
