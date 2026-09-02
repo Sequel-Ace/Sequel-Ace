@@ -37,10 +37,12 @@
 #import "SPMySQLUtilities.h"
 #import "SPMySQLArrayAdditions.h"
 #import "SPMySQLMutableDictionaryAdditions.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @interface SPMySQLConnection ()
 
 @property (readwrite, copy) NSString *timeZoneIdentifier;
+@property (readonly, strong) SAProxyReconnectCoordinator *proxyReconnectCoordinator;
 
 @end
 
@@ -343,6 +345,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		// Start with no proxy
 		proxy = nil;
 		proxyStateChangeNotificationsIgnored = NO;
+		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -1038,6 +1041,30 @@ asm(".desc ___crashreporter_info__, 0x10");
 }
 
 /**
+ * If the current reconnect was cancelled by its thread or an explicit
+ * disconnect while holding the connection lock, cancel any preserved proxy
+ * work, restore notifications, and unlock.
+ */
+- (BOOL)_abortCancelledReconnectWhileLocked
+{
+	BOOL threadCancelled = [[NSThread currentThread] isCancelled];
+	if (![_proxyReconnectCoordinator shouldAbortReconnectWithThreadCancelled:threadCancelled
+	                                              userTriggeredDisconnect:userTriggeredDisconnect]) return NO;
+
+	SPLog(@"reconnect cancelled by thread or explicit disconnect; cleaning up proxy attempt");
+	[self _unlockConnection];
+	if (proxy) {
+		// Keep proxy callbacks suppressed until the pending attempt is cancelled,
+		// then restore the state snapshot and normal notification handling.
+		[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
+		previousProxyState = [proxy state];
+	}
+	proxyStateChangeNotificationsIgnored = NO;
+	reconnectingThread = NULL;
+	return YES;
+}
+
+/**
  * Perform a reconnection task, either once-only or looping as requested.  If looping is
  * permitted and this method fails, it will ask how to proceed and loop depending on
  * the status, not returning control until either a connection has been established or
@@ -1108,7 +1135,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (proxy) proxyStateChangeNotificationsIgnored = YES;
 
 		// Close the connection if it's active
-		[self _disconnect];
+		[self _disconnectPreservingProxyReconnect:YES];
 
 		// Lock the connection while waiting for network and proxy
 		[self _lockConnection];
@@ -1116,13 +1143,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// If no network is present, wait for a short time for one to become available
 		[self _waitForNetworkConnectionWithTimeout:10];
 
-		if ([[NSThread currentThread] isCancelled]) {
-            SPLog(@"NSThread currentThread] isCancelled, returning");
-
-			[self _unlockConnection];
-			reconnectingThread = NULL;
-			return NO;
-		}
+		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
 		// If there is a proxy, attempt to reconnect it in blocking fashion
 		if (proxy) {
@@ -1139,6 +1160,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 				proxyWaitStart_t = _monotonicTime();
 				while ([proxy state] != SPMySQLProxyIdle) {
+					if ([self _abortCancelledReconnectWhileLocked]) return NO;
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
@@ -1151,6 +1173,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					}
 				}
 			}
+			if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
 			// Request that the proxy re-establishes its connection
             SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
@@ -1160,7 +1183,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// Wait while the proxy connects
 			proxyWaitStart_t = _monotonicTime();
 			while (1) {
+				if ([self _abortCancelledReconnectWhileLocked]) return NO;
 				loopIterationStart_t = _monotonicTime();
+				BOOL connectionAttemptPending = [_proxyReconnectCoordinator connectionAttemptPendingForProxy:proxy];
 
                 SPLog(@"Wait while the proxy connects");
 
@@ -1175,7 +1200,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
 				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
-					[proxy disconnect];
+					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;
 				}
 
@@ -1187,11 +1212,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 					usleep((useconds_t)(250000 - (1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t))));
 				}
 
-				// Extend the connection timeout by any interface time
-				if ([proxy state] == SPMySQLProxyWaitingForAuth) {
+				// Extend the connection timeout by interface time and by time that
+				// the proxy intentionally spends waiting to start the requested attempt.
+				if ([_proxyReconnectCoordinator
+						shouldExcludeWaitTimeForAuthentication:([proxy state] == SPMySQLProxyWaitingForAuth)
+						connectionAttemptPending:connectionAttemptPending]) {
 					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
 				}
 			}
+			if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
 			// Having in theory performed the proxy connect, update state
 			previousProxyState = [proxy state];
@@ -1202,8 +1231,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _unlockConnection];
 
 		// If not using a proxy, or if the proxy successfully connected, trigger a connection
-		if (!proxy || [proxy state] == SPMySQLProxyConnected) {
+		if (![[NSThread currentThread] isCancelled] && (!proxy || [proxy state] == SPMySQLProxyConnected)) {
 			[self _connect];
+		} else if ([[NSThread currentThread] isCancelled] && proxy) {
+			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
 		}
 
 		// If the reconnection succeeded, restore the connection state as appropriate
@@ -1328,6 +1359,11 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (void)_disconnect
 {
+	[self _disconnectPreservingProxyReconnect:NO];
+}
+
+- (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect
+{
     SPLog(@"_disconnect");
 
 	// If state is connection lost, set state directly to disconnected.
@@ -1337,6 +1373,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Only continue if a connection is active
 	if (state != SPMySQLConnected && state != SPMySQLConnecting) {
+		// An explicit disconnect must still reach the proxy so it can cancel an
+		// SSH attempt queued behind cleanup. Internal reconnect teardown keeps
+		// the existing inactive-state behavior and preserves that queued attempt.
+		if (!preserveProxyReconnect && proxy) {
+			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
+		}
 		return;
 	}
 
@@ -1373,7 +1415,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If using a connection proxy, disconnect that too
 	if (proxy) {
-		[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
+		[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:preserveProxyReconnect];
 	}
 }
 
