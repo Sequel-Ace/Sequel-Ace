@@ -504,7 +504,7 @@ sweep recognises both name shapes, at their exact widths only. This is the
 release that soaks.
 
 Before DO can go, the socket must have somewhere to live for *every* user:
-today a container-tmp path over 103 bytes (user names past ~19 characters)
+today a container-tmp path over 103 bytes (user names past 26 UTF-8 bytes)
 falls back to DO. Give the server a second candidate directory that is short
 and sandbox-reachable — the per-user `DARWIN_USER_TEMP_DIR` (`/var/folders/…/T/`,
 ~50 bytes) is the obvious one if the sandbox permits it for both processes;
