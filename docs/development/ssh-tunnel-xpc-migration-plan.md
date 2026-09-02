@@ -234,9 +234,14 @@ Execution notes (2026-09-01):
   Review (Codex, CodeRabbit) caught a race in the first cut: a prompt whose
   worker had not yet reached the main thread had no dialog to dismiss, so the
   cancellation was dropped and the sheet appeared after teardown. Teardown
-  now latches `promptTeardownRequested` when the answer lock is held with no
-  sheet up, and both workers consume the latch — or notice ssh is no longer
-  running — and answer without presenting.
+  now latches a cancellation when the answer lock is held with no sheet up,
+  and both workers consume the latch — or notice ssh is no longer running —
+  and answer without presenting. A second review pass moved that state
+  machine out of the `.m` into `SASSHTunnelPromptCoordinator` (Swift, app +
+  Unit Tests, 10 tests covering both race orderings against a hand-pumped
+  main thread): the tunnel keeps the sheets, their modal sessions and the
+  answer ivars, and hands the coordinator a block that performs the
+  dismissal.
 - 21 unit tests in `UnitTests/SASSHTunnelAuthServiceTests.swift` against a
   fake tunnel and an in-memory keychain: question forwarding, hash
   refusal (wrong/empty/nil) on both password calls, held vs keychain-mode
