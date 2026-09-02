@@ -302,7 +302,17 @@ enum SARuleFilterContextMenu {
         }
         let value = plist[SPCellValuePasteboard.rowValueKey] as? String
         let isNull = (plist[SPCellValuePasteboard.rowValueKindKey] as? String) == SPCellValuePasteboard.rowValueKindNull
-        return handler.replaceFilter(at: row, forColumn: columnName, value: value, isNull: isNull)
+        // The handler addresses top-level (root) children, but `row` is the
+        // flat visible index, which also counts the subrows of nested groups
+        // - map it to the ordinal among top-level rows before handing over.
+        return handler.replaceFilter(at: topLevelOrdinal(forRow: row), forColumn: columnName, value: value, isNull: isNull)
+    }
+
+    /// The position of a top-level row among the top-level rows only - i.e.
+    /// the index of the corresponding root child in the serialized tree.
+    /// (`row` itself must be a top-level row.)
+    private func topLevelOrdinal(forRow row: Int) -> Int {
+        return (0..<row).reduce(0) { $0 + (parentRow(forRow: $1) == -1 ? 1 : 0) }
     }
 
     override public func concludeDragOperation(_ sender: NSDraggingInfo?) {
@@ -344,11 +354,12 @@ enum SARuleFilterContextMenu {
         let index = Int(floor(y / rowH))
         guard index >= 0, index < numberOfRows else { return nil }
         // Drop target must be a top-level simple rule: a compound
-        // (AND / OR) row can't be "replaced" with a single expression,
-        // and a nested subrow would require tree-walking the serialized
-        // filter to map the visible index to a child index. Both cases
-        // are rejected; the user can use the drop box to append a new
-        // rule instead.
+        // (AND / OR) row can't be "replaced" with a single expression, and
+        // a nested subrow belongs to its group, not to the root. Both are
+        // rejected; the user can use the drop box to append a new rule
+        // instead. A plain top-level row next to a nested group IS a valid
+        // target - performDragOperation maps the visible index to the root
+        // child ordinal for the handler.
         guard parentRow(forRow: index) == -1 else { return nil }
         guard rowType(forRow: index) == .simple else { return nil }
         return index

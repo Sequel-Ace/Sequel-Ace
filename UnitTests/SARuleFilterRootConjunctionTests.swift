@@ -294,13 +294,18 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 0, in: nestedOr, rootIsConjunction: true))
     }
 
-    /// Verifies nested groups cannot be addressed by row index.
-    func testReplacingRejectsNestedGroups() {
+    /// Verifies an expression beside a nested group can be replaced, while the group itself cannot.
+    func testReplacingBesideNestedGroup() {
         let a = expression(column: "a", values: ["1"])
         let nested = group(children: [expression(column: "b", values: ["2"])], isConjunction: false)
         let c = expression(column: "c", values: ["3"])
+        let tree = rootGroup(children: [a, nested], isConjunction: true)
 
-        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 0, in: rootGroup(children: [a, nested], isConjunction: true), rootIsConjunction: true))
+        let replaced = SARuleFilterRootConjunction.replacing(rule: c, atRow: 0, in: tree, rootIsConjunction: true)
+        XCTAssertEqual(replaced.map(children)?.first.map(dictionary), dictionary(c), "the expression child is replaceable")
+        XCTAssertEqual(replaced.map(children)?.last?["filterClass"] as? String, "groupNode", "the nested group stays untouched")
+
+        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 1, in: tree, rootIsConjunction: true), "the group itself cannot be replaced by a single rule")
     }
 
     // MARK: - nestedGroup

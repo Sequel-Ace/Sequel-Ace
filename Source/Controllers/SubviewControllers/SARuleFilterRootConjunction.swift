@@ -145,10 +145,10 @@ import Foundation
 
     /// Replaces the top-level row at `row` with a new rule.
     ///
-    /// Only a single expression (row 0) or a flat marked root group – one
-    /// whose children are all expressions – can be addressed by row index;
-    /// nested groups insert extra rule-editor rows for their own children and
-    /// break the 1:1 mapping, so they are rejected.
+    /// `row` addresses the root children (the caller maps visible rule-editor
+    /// rows to this ordinal). The target child must be an expression – a
+    /// nested group cannot be "replaced" by a single rule – but groups
+    /// elsewhere in the tree are fine.
     ///
     /// - Parameters:
     ///   - rule: The serialized expression to put at `row`.
@@ -165,7 +165,7 @@ import Foundation
         }
         if isRootGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
             var children = existing[childrenKey] as? [[String: Any]] ?? []
-            guard !children.contains(where: isGroup), row < children.count else {
+            guard row < children.count, !isGroup(children[row]) else {
                 return nil
             }
             children[row] = rule
