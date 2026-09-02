@@ -475,7 +475,9 @@
 		65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */; };
 		67D6D5054AF5FECC0EFE4EFF /* SASSHTunnelSocketIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */; };
 		6ABF364B03D0324617CFABCC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
+		6C5D707FD9947026F90C868A /* SASSHTunnelFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */; };
 		6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
+		6E60DF55568BE1B2F63D74E3 /* SASSHTunnelFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */; };
 		6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */; };
 		6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA9232734ABE200514FF1 /* SABundleRunner.m */; };
 		71F6E6D2037EB14ED8623A81 /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
@@ -1564,6 +1566,7 @@
 		F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManager.swift; sourceTree = "<group>"; };
 		F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManagerStub.swift; sourceTree = "<group>"; };
 		F7878B22CA20B0D814D30C42 /* SAQueryFavoriteStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAQueryFavoriteStore.swift; sourceTree = "<group>"; };
+		F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASSHTunnelFailure.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultClient.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultClientTests.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultOIDCHandler.swift; sourceTree = "<group>"; };
@@ -2379,6 +2382,7 @@
 				58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */,
 				51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */,
 				51AC3B7130475EAD00BCE2B9 /* SASSHTunnelAuthService.swift */,
+				F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */,
 				51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */,
 				51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */,
 				51AC3B893047621900BCE2B9 /* SASSHTunnelSocketServer.swift */,
@@ -3618,6 +3622,7 @@
 				302DF8917DC7950ACEC08BEB /* SAQueryFavoriteStoreTests.swift in Sources */,
 				5BA8A1F0564883162D4A80F2 /* SAUserManagerPrivilegeNormalizer.swift in Sources */,
 				4C74760160E21F5256343A70 /* SAUserManagerPrivilegeNormalizerTests.swift in Sources */,
+				6E60DF55568BE1B2F63D74E3 /* SASSHTunnelFailure.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3948,6 +3953,7 @@
 				8E9430236D26BB3D6FFCD99E /* SAQueryFavoriteSaveWindowController.swift in Sources */,
 				14F0CC5AC96DE9CCC0213237 /* SAUserManagerPrivilegeNormalizer.swift in Sources */,
 				A69CC1B9E445E5FCF1484A09 /* SAAnalyticsConsentPolicy+Firebase.swift in Sources */,
+				6C5D707FD9947026F90C868A /* SASSHTunnelFailure.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
