@@ -53,7 +53,10 @@ import Foundation
             guard let path = environment[SASSHTunnelSocketIO.EnvironmentKey.socketPath] else {
                 throw MissingSocketPath()
             }
-            let client = SASSHTunnelSocketClient(path: path)
+            // Whatever answers at the socket must be Apple-signed and of this
+            // assistant's own team, or it is not the app (Step 4).
+            var client = SASSHTunnelSocketClient(path: path)
+            client.peerPolicy = SASSHTunnelPeerValidator.appPeerPolicy()
             return { try client.send($0) }
         }
 

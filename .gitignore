@@ -29,3 +29,6 @@ prebuild.log
 /docs/_site
 vendor
 .claude/
+
+# LLVM coverage profiles written by instrumented test runs
+*.profraw

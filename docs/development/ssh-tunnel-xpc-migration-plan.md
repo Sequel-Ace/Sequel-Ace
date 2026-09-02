@@ -408,7 +408,7 @@ Execution notes (2026-09-01):
   dismissed from a script. The decisions behind all of these are unit-tested;
   the transport underneath them is the same one the password path proved.
 
-## Step 4 — Peer validation (the security win)
+## Step 4 — Peer validation (the security win) — ✅ Done
 
 Replace the environment shared-secret as the primary check, using exactly
 what the spike proved: `getsockopt(SOL_LOCAL, LOCAL_PEERTOKEN)` for the
@@ -434,6 +434,54 @@ which stays in place on every build anyway; it is free and narrows the window
 further. Verification must include the **negative** test in both directions,
 as the spike already did once: a wrong identity is rejected with
 `errSecCSReqFailed`.
+
+Execution notes (2026-09-01):
+
+- Landed as `SASSHTunnelPeerValidator` (all three targets). One change to
+  the table above: **team equality is read from the peer's signing
+  information** (`kSecCodeInfoTeamIdentifier`) rather than written as a
+  `certificate leaf[subject.OU]` clause, so the same check holds for
+  Developer ID, App Store and development certificates without knowing
+  which certificate the leaf is. The requirement passed to
+  `SecCodeCheckValidity` is `anchor apple generic`, plus
+  `identifier "SequelAceTunnelAssistant"` on the app side; the team then has
+  to equal the process's own. Both policies are built from
+  `SecCodeCopySelf`, never from constants. The app-side policy is the
+  default of `SASSHTunnelSocketServer`'s Objective-C initializer; the
+  assistant sets the client policy in `SASSHTunnelAssistantSocketMain`.
+- Order matters for what the log says: the signature requirement is
+  checked before the team, so a foreign Apple-signed binary is logged as
+  `requirementFailed(-67050)` and a same-identifier impostor from another
+  team as `teamMismatch`. A build with no team logs once ("relying on the
+  verification hash") and accepts — that line was seen for real when an
+  ad-hoc-signed build ran (see the hazard below).
+- 13 tests in `SASSHTunnelPeerValidatorTests`, against the one peer a test
+  can always reach — itself, over `socketpair(2)`: the audit token's pid
+  field is the peer, not-a-socket and bad-fd failures, signature pass/fail
+  by identifier, an unparseable requirement, team mismatch after a passing
+  signature, the accept-and-warn-once path, both shipping policies agreeing
+  with the explicit one for this process, and both rejection directions
+  seen through the real server and client. The test host (Xcode's `xctest`
+  agent) does not satisfy `anchor apple` on a beta Xcode and has no team, so
+  the tests drive the requirement base and the team explicitly; the shipping
+  base was proven on the signed binaries in Step 0 and again below.
+- **Live, signed and sandboxed build**, same Docker sshd + MySQL as Step 3:
+  with validation on, the assistant was admitted (`Accepted password`,
+  sessions through the tunnel), and an unrelated process (`python3`,
+  unsandboxed, same user) connecting to the live socket with a well-formed
+  request got **EOF and no reply**, the app logging `socket peer rejected:
+  noGuest(100001)` — `kPOSIXErrorBase + EPERM`: from inside the sandbox the
+  foreign process cannot even be resolved to guest code, which is a
+  rejection all the same. The assistant-validates-app direction is covered
+  by the same primitive in-process (client policy → nothing sent) and by the
+  Step 0 spike's negative case on the real binaries.
+- ⚠️ **Hazard for anyone re-running the live checks**: `xcodebuild test`
+  with `CODE_SIGNING_ALLOWED=NO` in the shared DerivedData rebuilds the app
+  product ad-hoc, and the next Debug build does not re-sign it. The app then
+  runs unsandboxed — real `$HOME`, `/var/folders` temp dir, no team — which
+  looks like a tunnel regression (a surprise host-key prompt, validation
+  disabled) and is not. Check `codesign -dv` for the team before a live
+  run; give test runs their own `-derivedDataPath`.
 
 ## Step 5 — Flip the default, then delete DO
 

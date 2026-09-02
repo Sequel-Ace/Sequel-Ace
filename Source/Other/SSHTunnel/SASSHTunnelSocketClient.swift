@@ -35,8 +35,9 @@ import Foundation
 /// Compiled into the assistant and the Unit Tests target.
 struct SASSHTunnelSocketClient {
 
-    /// Decides whether the connected socket's peer is the app. Step 4
-    /// supplies the code-signing check; until then every peer is accepted.
+    /// Decides whether the connected socket's peer is the app. The shipping
+    /// policy is `SASSHTunnelPeerValidator.appPeerPolicy()` (Step 4); tests
+    /// inject their own.
     typealias PeerPolicy = (Int32) -> Bool
 
     enum Error: Swift.Error, Equatable {
