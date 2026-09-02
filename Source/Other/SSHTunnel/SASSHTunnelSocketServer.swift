@@ -86,10 +86,12 @@ import Foundation
         "s-" + String((0..<4).map { _ in String(format: "%02x", Int.random(in: 0...255)) }.joined()) + ".sock"
     }
 
-    /// Our socket names, current shape and the pre-flip `ssh-` one, so a
-    /// sweep after an update still clears the older leftovers.
+    /// Our socket names — the current shape and the pre-flip `ssh-` one, so a
+    /// sweep after an update still clears the older leftovers — matched at
+    /// their exact widths, so nothing else that happens to look similar is
+    /// ever unlinked.
     static func isOwnSocketName(_ name: String) -> Bool {
-        name.range(of: "^(s|ssh)-[0-9a-f]+\\.sock$", options: .regularExpression) != nil
+        name.range(of: "^(s-[0-9a-f]{8}|ssh-[0-9a-f]{10})\\.sock$", options: .regularExpression) != nil
     }
 
     /// Removes sockets a previous app process left behind (a crash or a

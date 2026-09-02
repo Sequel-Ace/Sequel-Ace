@@ -359,10 +359,11 @@ Execution notes (2026-09-01):
   `SP_CONNECTION_SOCKET_PATH`. The DO connection is still registered for
   every tunnel, so a socket failure at init falls back with no gap. The
   socket file is `ssh-<10 hex>.sock`, mode 0600, in the container tmp: the
-  name is short because that directory already costs ~60 bytes plus the user
-  name against the 103-byte limit — with this naming a user name of up to 19
-  characters fits, and anything longer falls back to DO for now (see
-  Step 5's to-do). `SASSHTunnelSocketServer` also **sweeps stale sockets**
+  name is short because that directory already costs 62 bytes plus the user
+  name against the 103-byte limit — with that name a user name of up to 22
+  UTF-8 bytes fit (historical: Step 5a's shorter `s-<8 hex>.sock` raises it
+  to 26 bytes), and anything longer falls back to DO for now (see Step 5's
+  to-do). `SASSHTunnelSocketServer` also **sweeps stale sockets**
   when it starts: a killed app skips `close()`, and the first live run left
   its socket file behind until this was added. Stale means "refuses a
   connection", so live sockets are untouched.
@@ -497,8 +498,9 @@ build's own defaults domain, which Codex review pointed out differs for the
 Beta configuration (`com.sequel-ace.sequel-ace-beta`, not
 `com.sequel-ace.sequel-ace`), so support has two commands to hand out, one
 per build. The socket name
-shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 characters fit
-the container-tmp path; the stale sweep recognises both shapes. This is the
+shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 UTF-8 bytes fit
+the 103-byte `sun_path` after the 62-byte container-tmp prefix; the stale
+sweep recognises both name shapes, at their exact widths only. This is the
 release that soaks.
 
 Before DO can go, the socket must have somewhere to live for *every* user:
