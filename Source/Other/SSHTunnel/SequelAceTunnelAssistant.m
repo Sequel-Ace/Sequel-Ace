@@ -38,6 +38,13 @@
 int main(int argc, const char *argv[])
 {
 	@autoreleasepool {
+		// The socket transport (SSH tunnel IPC plan, Step 3) is handled entirely
+		// in Swift; everything below is the Distributed Objects path, kept
+		// verbatim until Step 5 deletes it.
+		if ([SASSHTunnelAssistantSocketMain isSelectedInEnvironment]) {
+			return [SASSHTunnelAssistantSocketMain run];
+		}
+
 		NSDictionary *environment = [[NSProcessInfo processInfo] environment];
 		NSString *argument = nil;
 		SPSSHTunnel *sequelProTunnel;

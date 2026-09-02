@@ -316,7 +316,7 @@ and a numeric `answer` is refused rather than read as "yes". Nothing in the
 file is `public`: the assistant's Objective-C `main` never touches these
 types.
 
-## Step 3 — Socket alongside DO, behind a default
+## Step 3 — Socket alongside DO, behind a default — ✅ Done (default still DO)
 
 Both transports built; a hidden `NSUserDefaults` key selects. Default to DO
 in the first release that contains the code, so it can be exercised by early
@@ -350,6 +350,63 @@ and is already per-launch. A tunnel therefore uses one transport for its
 whole life, and flipping the default cannot strand a running tunnel halfway.
 If the socket cannot be created (a `sun_path` over 104 bytes, say) the tunnel
 falls back to DO for that launch and logs it.
+
+Execution notes (2026-09-01):
+
+- Landed as described, with these specifics. The preference is a Bool,
+  `SPSSHTunnelUseSocketTransport` (absent → `SASSHTunnelTransportSelection.defaultTransport`,
+  which is DO for now); the app passes `SP_CONNECTION_TRANSPORT` and
+  `SP_CONNECTION_SOCKET_PATH`. The DO connection is still registered for
+  every tunnel, so a socket failure at init falls back with no gap. The
+  socket file is `ssh-<10 hex>.sock`, mode 0600, in the container tmp: the
+  name is short because that directory already costs ~60 bytes plus the user
+  name against the 103-byte limit — with this naming a user name of up to 19
+  characters fits, and anything longer falls back to DO for now (see
+  Step 5's to-do). `SASSHTunnelSocketServer` also **sweeps stale sockets**
+  when it starts: a killed app skips `close()`, and the first live run left
+  its socket file behind until this was added. Stale means "refuses a
+  connection", so live sockets are untouched.
+- The listen backlog is 32, not the obvious 5: macOS *refuses* rather than
+  queues a UNIX-socket connect beyond the backlog, which the concurrency test
+  hit at 12 parallel askpass launches. Accepted sockets are served on a
+  concurrent queue so one parked prompt never blocks another connection.
+- Assistant side, three Swift files: `SASSHTunnelAskpass` (the decisions,
+  pure, 20 tests mirroring every branch of the Objective-C `main` — including
+  the keychain-miss and direct-miss fallback messages, `integerValue`'s
+  non-numeric-is-0 reading of `SP_PASSWORD_METHOD`, that a question wins
+  over a prompt that merely contains "password:", and — after Codex review —
+  that only an explicit `refused` reaches the GUI fallback: a channel error
+  on the password request is exit 1, never a second connection that might
+  print a secret), `SASSHTunnelSocketClient`
+  (connect, send one line, read one line), and the `public`
+  `SASSHTunnelAssistantSocketMain` entry the `.m` calls first thing. The DO
+  path in the `.m` is byte-for-byte what it was; it is deleted in Step 5.
+- Tests: 14 in `SASSHTunnelSocketTransportTests` run both ends in-process —
+  every request kind, multi-line prompts, 12 concurrent connections, the
+  slow-prompt-does-not-block-others case, 0600 + unlink-on-close, distinct
+  paths, the stale sweep, and every refusal (server policy → EOF, client
+  policy → nothing sent, garbage/unsupported version → dropped and the server
+  keeps serving, malformed reply, missing socket, over-long path). 3 in
+  `SASSHTunnelTransportTests` for the preference. Full suite 1279 / 0
+  failures.
+- **Live verification, both transports**, against a Docker `openssh-server`
+  (password auth, `AllowTcpForwarding yes`) forwarding to a `mysql:8.4`
+  container, driven by an auto-connect `.spf` and the flag passed via
+  `open --args`: on the socket transport ssh authenticated (`Accepted
+  password` in sshd's log), held the `-L` forward, and the app's MySQL
+  sessions arrived through it; the socket file was present and 0600 during
+  the tunnel's life. Same result on DO with the flag off (no socket file).
+  Manual-matrix row 12 also fell out: with the assistant parked on a
+  passphrase prompt over the socket, killing the app made it exit at once
+  instead of hanging — EOF on the socket fails closed.
+- **Not verified live** (needs a hand on the UI or a real keychain
+  interaction): the passphrase prompt sheet, host-key yes/no, cancel at each
+  prompt, the keychain-miss fallback message, and a stored passphrase served
+  from the keychain — that last one was attempted (item added with
+  `security add-generic-password -T <app>`) and the app blocked on either the
+  keychain ACL prompt or its own sheet, which cannot be told apart or
+  dismissed from a script. The decisions behind all of these are unit-tested;
+  the transport underneath them is the same one the password path proved.
 
 ## Step 4 — Peer validation (the security win)
 
@@ -385,6 +442,14 @@ the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
 import, and replace `SequelAceTunnelAssistant.m` with `main.swift`. The
 remaining `NSConnection` warnings go to zero at this point — a side effect,
 not the goal.
+
+Before DO can go, the socket must have somewhere to live for *every* user:
+today a container-tmp path over 103 bytes (user names past ~19 characters)
+falls back to DO. Give the server a second candidate directory that is short
+and sandbox-reachable — the per-user `DARWIN_USER_TEMP_DIR` (`/var/folders/…/T/`,
+~50 bytes) is the obvious one if the sandbox permits it for both processes;
+prove it the same way Step 0 did — and turn the fallback into a hard error
+with a clear log line.
 
 ## Swift or not
 

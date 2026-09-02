@@ -65,6 +65,13 @@ static unsigned short getRandomPort(void);
 	// modal sessions and the answer ivars stay here; the state machine is Swift.
 	SASSHTunnelPromptCoordinator *promptCoordinator;
 
+	// Which channel this tunnel's assistant answers over (SSH tunnel IPC plan,
+	// Step 3): Distributed Objects above, or the UNIX-socket server below. Fixed
+	// for the tunnel's lifetime and handed to ssh in its environment, so a
+	// preference change cannot strand a running tunnel halfway.
+	SASSHTunnelTransport transport;
+	SASSHTunnelSocketServer *socketServer;
+
 	SASSHStderrDrainCoordinator *standardErrorDrainCoordinator;
 }
 
@@ -129,6 +136,19 @@ static unsigned short getRandomPort(void);
 		if (![tunnelConnection registerName:tunnelConnectionName]) {
 			NSLog(@"Could not start ssh connection. %@", tunnelConnectionName);
 			return nil;
+		}
+
+		// The socket transport, when selected, serves the same authService; a
+		// tunnel whose socket cannot be created falls back to DO for its
+		// lifetime rather than failing.
+		transport = [SASSHTunnelTransportSelection selectedTransport];
+		if (transport == SASSHTunnelTransportSocket) {
+			NSError *socketError = nil;
+			socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService error:&socketError];
+			if (!socketServer) {
+				NSLog(@"SSH tunnel: socket transport unavailable (%@); using Distributed Objects for this tunnel", socketError);
+				transport = SASSHTunnelTransportDistributedObjects;
+			}
 		}
 		
 		parentWindow = nil;
@@ -596,6 +616,10 @@ static unsigned short getRandomPort(void);
 		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
 		[taskEnvironment safeSetObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
+		[taskEnvironment safeSetObject:[SASSHTunnelTransportSelection environmentValueForTransport:transport] forKey:SASSHTunnelTransportSelection.transportEnvironmentKey];
+		if (socketServer) {
+			[taskEnvironment safeSetObject:socketServer.path forKey:SASSHTunnelTransportSelection.socketPathEnvironmentKey];
+		}
 		if (passwordInKeychain) {
 			// The keychain item's name and account deliberately stay out of
 			// the environment: the assistant no longer reads the keychain —
@@ -1164,6 +1188,7 @@ static unsigned short getRandomPort(void);
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	
 	[tunnelConnection invalidate];
+	[socketServer close];
 	
 	[self setLastError:nil];
 	

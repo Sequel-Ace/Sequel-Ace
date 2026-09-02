@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
+		F04AA77A50488C1B938879D7 /* SASSHTunnelAssistantSocketMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */; };
+		AC8C26C73E9B45F473139262 /* SASSHTunnelAskpass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */; };
+		45FF68FFB401A6EA11C6D134 /* SASSHTunnelSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */; };
+		67D6D5054AF5FECC0EFE4EFF /* SASSHTunnelSocketIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
+		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */; };
@@ -293,6 +297,17 @@
 		51AC3B7A304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		51AC3B7B304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		51AC3B80304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */; };
+		51AC3B84304761F800BCE2B9 /* SASSHTunnelSocketIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */; };
+		51AC3B85304761F800BCE2B9 /* SASSHTunnelSocketIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */; };
+		51AC3B8A3047621900BCE2B9 /* SASSHTunnelSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B893047621900BCE2B9 /* SASSHTunnelSocketServer.swift */; };
+		51AC3B8B3047621900BCE2B9 /* SASSHTunnelSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B893047621900BCE2B9 /* SASSHTunnelSocketServer.swift */; };
+		51AC3B8D3047622700BCE2B9 /* SASSHTunnelSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */; };
+		51AC3B903047623E00BCE2B9 /* SASSHTunnelAskpass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */; };
+		51AC3B963047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */; };
+		51AC3B973047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */; };
+		51AC3B993047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */; };
+		51AC3B9B304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */; };
+		51AC3B9D304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */; };
 		51AC6E6E3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */; };
 		51AC6E6F3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */; };
 		51AC6E743047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */; };
@@ -1166,6 +1181,15 @@
 		51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthServiceTests.swift; sourceTree = "<group>"; };
 		51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthMessage.swift; sourceTree = "<group>"; };
 		51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthMessageTests.swift; sourceTree = "<group>"; };
+		51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketIO.swift; sourceTree = "<group>"; };
+		51AC3B893047621900BCE2B9 /* SASSHTunnelSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketServer.swift; sourceTree = "<group>"; };
+		51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketClient.swift; sourceTree = "<group>"; };
+		51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAskpass.swift; sourceTree = "<group>"; };
+		51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAssistantSocketMain.swift; sourceTree = "<group>"; };
+		51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelTransport.swift; sourceTree = "<group>"; };
+		51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketTransportTests.swift; sourceTree = "<group>"; };
+		51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAskpassTests.swift; sourceTree = "<group>"; };
+		51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelTransportTests.swift; sourceTree = "<group>"; };
 		51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinator.swift; sourceTree = "<group>"; };
 		51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -2368,6 +2392,12 @@
 				58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */,
 				F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */,
 				51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */,
+				51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */,
+				51AC3B893047621900BCE2B9 /* SASSHTunnelSocketServer.swift */,
+				51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */,
+				51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */,
+				51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */,
+				51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */,
 				51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */,
 			);
 			name = "SSH Tunnel";
@@ -2783,6 +2813,9 @@
 				51DD6924303C2F99004792F0 /* SAFavoriteDuplicateMatcherTests.swift */,
 				51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */,
 				51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */,
+				51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */,
+				51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */,
+				51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */,
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 			);
 			name = Other;
@@ -3417,6 +3450,8 @@
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
+				51AC3B8D3047622700BCE2B9 /* SASSHTunnelSocketClient.swift in Sources */,
+				51AC3B8B3047621900BCE2B9 /* SASSHTunnelSocketServer.swift in Sources */,
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				9EF08F69717C447F6B39B6D0 /* SAKeychainStoreCharacterizationTests.swift in Sources */,
 				0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */,
@@ -3465,6 +3500,9 @@
 				1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */,
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
 				FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */,
+				51AC3B85304761F800BCE2B9 /* SASSHTunnelSocketIO.swift in Sources */,
+				51AC3B963047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */,
+				51AC3B9D304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				C2E7A3B52E5E1A1A00D22990 /* SPDatabaseData.m in Sources */,
 				C2E7A3B62E5E1B3A00D22990 /* NSAlertExtension.swift in Sources */,
@@ -3551,6 +3589,7 @@
 				5AF0C2000000000000000032 /* SAFavoriteItemTests.swift in Sources */,
 				51DD6925303C2F99004792F0 /* SAFavoriteDuplicateMatcherTests.swift in Sources */,
 				5147B00D2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
+				51AC3B903047623E00BCE2B9 /* SASSHTunnelAskpass.swift in Sources */,
 				5147B00F2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift in Sources */,
 				961210D2302E7233009A9A2A /* SAGitHubReleaseTests.swift in Sources */,
 				5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */,
@@ -3562,6 +3601,7 @@
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */,
+				51AC3B993047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 				51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */,
@@ -3572,6 +3612,7 @@
 				96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */,
 				11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */,
 				441E45F5DCF87A54D8FEC130 /* SADatabaseScopedValueCache.swift in Sources */,
+				51AC3B9B304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift in Sources */,
 				624E13DFBB2F343500B94705 /* SADatabaseScopedValueCacheTests.swift in Sources */,
 				0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */,
 				CACA94EDDD5F7ADE62E4CA71 /* SAMCPToolDefinitions.swift in Sources */,
@@ -3608,6 +3649,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F04AA77A50488C1B938879D7 /* SASSHTunnelAssistantSocketMain.swift in Sources */,
+				AC8C26C73E9B45F473139262 /* SASSHTunnelAskpass.swift in Sources */,
+				45FF68FFB401A6EA11C6D134 /* SASSHTunnelSocketClient.swift in Sources */,
+				67D6D5054AF5FECC0EFE4EFF /* SASSHTunnelSocketIO.swift in Sources */,
 				07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */,
 				17D41A8221700F8200B1888D /* SPFunctions.m in Sources */,
 				1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */,
@@ -3699,6 +3744,7 @@
 				BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */,
 				1A89558725D6E15D0060CE72 /* GitHub.swift in Sources */,
 				1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */,
+				51AC3B84304761F800BCE2B9 /* SASSHTunnelSocketIO.swift in Sources */,
 				F3A4B8C191E14E7094C9B011 /* AWSCredentials.swift in Sources */,
 				F3A4B8C191E14E7094C9B012 /* RDSIAMAuthentication.swift in Sources */,
 				F3A4B8C191E14E7094C9B013 /* AWSSTSClient.swift in Sources */,
@@ -3731,6 +3777,7 @@
 				5AF0C1000000000000000002 /* SAFavoritesListView.swift in Sources */,
 				5AF0C2000000000000000002 /* SAFavoriteItem.swift in Sources */,
 				5AF0C2000000000000000012 /* SAFavoriteItem+Tree.swift in Sources */,
+				51AC3B8A3047621900BCE2B9 /* SASSHTunnelSocketServer.swift in Sources */,
 				5AF0C2000000000000000022 /* SAFavoritesList.swift in Sources */,
 				5147B0072F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				5147B00C2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
@@ -3882,6 +3929,7 @@
 				5843E247162B555B00EAA6D1 /* SPThreadAdditions.m in Sources */,
 				58D2A6A716FBDEFF002EB401 /* SPComboPopupButton.m in Sources */,
 				65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */,
+				51AC3B973047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */,
 				501B1D181728A3DA0017C92E /* SPCharsetCollationHelper.m in Sources */,
 				50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */,
 				50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */,
