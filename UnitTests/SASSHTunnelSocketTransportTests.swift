@@ -23,8 +23,9 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
     }
 
     private func startServer(peerPolicy: @escaping SASSHTunnelSocketServer.PeerPolicy = { _ in true },
-                             handler: @escaping SASSHTunnelSocketServer.Handler) throws -> SASSHTunnelSocketServer {
-        let server = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()], handler: handler, peerPolicy: peerPolicy)
+                             handler: @escaping SASSHTunnelSocketServer.Handler,
+                             directories: [String] = [NSTemporaryDirectory()]) throws -> SASSHTunnelSocketServer {
+        let server = try SASSHTunnelSocketServer(directories: directories, handler: handler, peerPolicy: peerPolicy)
         servers.append(server)
         return server
     }
@@ -155,12 +156,45 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-zz.sock"))
     }
 
-    func testDirectoryThatCannotFitTheNameIsSkippedAndNoneIsAnError() {
-        let tooLong = "/" + String(repeating: "a", count: 110)
-        XCTAssertThrowsError(try SASSHTunnelSocketServer(directories: [tooLong], handler: Self.echo)) { error in
+    func testASocketPathBeyondSunPathIsReachedRelativeToItsDirectory() throws {
+        // A container tmp plus a long user name overflows sun_path; both ends
+        // must then bind/connect by file name from inside the directory, and
+        // leave the process's working directory as they found it.
+        let deep = NSTemporaryDirectory() + String(repeating: "d", count: 60) + "/" + String(repeating: "e", count: 60)
+        try FileManager.default.createDirectory(atPath: deep, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: deep) }
+        let cwdBefore = FileManager.default.currentDirectoryPath
+
+        let server = try startServer(handler: Self.echo, directories: [deep])
+        XCTAssertGreaterThan(server.path.utf8.count, SASSHTunnelSocketIO.maximumPathLength)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: server.path))
+        XCTAssertEqual(try SASSHTunnelSocketClient(path: server.path).send(.password(verificationHash: "deep")), .secret("pw-deep"))
+        XCTAssertEqual(FileManager.default.currentDirectoryPath, cwdBefore)
+
+        // The stale sweep and unlink-on-close work on the long path too.
+        let stale = deep + "/s-deadbeef.sock"
+        close(try rawListener(at: stale))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: stale))
+        try startServer(handler: Self.echo, directories: [deep]).close()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: stale))
+
+        server.close()
+        let deadline = Date().addingTimeInterval(3)
+        while FileManager.default.fileExists(atPath: server.path) && Date() < deadline { Thread.sleep(forTimeInterval: 0.02) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: server.path))
+    }
+
+    func testUnreachableDirectoriesAreErrors() {
+        XCTAssertThrowsError(try SASSHTunnelSocketServer(directories: [], handler: Self.echo)) { error in
             XCTAssertEqual(error as? SASSHTunnelSocketServer.Error, .noUsableDirectory)
         }
-        XCTAssertNoThrow(try SASSHTunnelSocketServer(directories: [tooLong, NSTemporaryDirectory()], handler: Self.echo).close())
+        XCTAssertThrowsError(try SASSHTunnelSocketServer(directories: ["/nonexistent/short"], handler: Self.echo)) { error in
+            XCTAssertEqual(error as? SASSHTunnelSocketServer.Error, .bindFailed(ENOENT))
+        }
+        let longMissing = "/nonexistent/" + String(repeating: "x", count: 100)
+        XCTAssertThrowsError(try SASSHTunnelSocketServer(directories: [longMissing], handler: Self.echo)) { error in
+            XCTAssertEqual(error as? SASSHTunnelSocketIO.Error, .directoryUnreachable(ENOENT))
+        }
     }
 
     // MARK: - Refusals
@@ -233,10 +267,11 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         }
     }
 
-    func testClientRefusesAPathThatCannotFitSunPath() {
+    func testClientRefusesASocketNameThatCannotFitSunPath() {
+        // Only the file name has to fit; the directory is entered instead.
         let tooLong = "/" + String(repeating: "b", count: 110)
         XCTAssertThrowsError(try SASSHTunnelSocketClient(path: tooLong).send(.question("q"))) { error in
-            XCTAssertEqual(error as? SASSHTunnelSocketIO.Error, .pathTooLong(111))
+            XCTAssertEqual(error as? SASSHTunnelSocketIO.Error, .pathTooLong(110))
         }
     }
 
@@ -255,14 +290,9 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
     }
 
     private func rawListener(at path: String) throws -> Int32 {
-        var address = try SASSHTunnelSocketIO.address(for: path)
         let fd = try XCTUnwrap(SASSHTunnelSocketIO.makeSocket())
-        let rc = withUnsafePointer(to: &address) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-            }
-        }
-        XCTAssertEqual(rc, 0, "bind errno \(errno)")
+        let bound = try SASSHTunnelSocketIO.performSocketCall(at: path) { Darwin.bind(fd, $0, $1) }
+        XCTAssertEqual(bound.result, 0, "bind errno \(bound.errno)")
         XCTAssertEqual(listen(fd, 2), 0)
         return fd
     }

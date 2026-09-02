@@ -36,12 +36,56 @@ import Foundation
 enum SASSHTunnelSocketIO {
 
     enum Error: Swift.Error, Equatable {
-        /// `sockaddr_un.sun_path` holds 104 bytes including the terminator.
+        /// `sockaddr_un.sun_path` holds 104 bytes including the terminator —
+        /// thrown only when a socket's *file name* alone cannot fit, since a
+        /// longer full path is reached relative to its directory instead.
         case pathTooLong(Int)
+        /// The socket's directory could not be entered for a relative bind
+        /// or connect.
+        case directoryUnreachable(Int32)
     }
 
-    /// Longest socket path (in UTF-8 bytes) that fits `sun_path`.
+    /// Longest socket path (in UTF-8 bytes) that fits `sun_path` directly.
     static let maximumPathLength = 103
+
+    /// The working directory is process-global; the relative-path route
+    /// below switches it for exactly one syscall, under this lock.
+    private static let workingDirectoryLock = NSLock()
+
+    /// Runs one bind/connect against the socket at `path`, returning the
+    /// call's result and its errno. A path that fits `sun_path` is used as
+    /// is. A longer one — the sandbox container's tmp already costs 62 bytes
+    /// plus the user name — is reached **relative to its directory**: the
+    /// thread enters the directory, makes the call by file name, and
+    /// restores the previous working directory before returning. Nothing in
+    /// the app resolves relative paths, and the switch is serialized, so this
+    /// is safe; it is what keeps SSH working for long user names now that the
+    /// old transport is gone (SSH tunnel IPC plan, Step 5).
+    static func performSocketCall(at path: String,
+                                  _ call: (UnsafePointer<sockaddr>, socklen_t) -> Int32) throws -> (result: Int32, errno: Int32) {
+        let length = socklen_t(MemoryLayout<sockaddr_un>.size)
+        if path.utf8.count <= maximumPathLength {
+            var address = try address(for: path)
+            return withUnsafePointer(to: &address) { pointer in
+                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { (call($0, length), Darwin.errno) }
+            }
+        }
+
+        let directory = (path as NSString).deletingLastPathComponent
+        var address = try address(for: (path as NSString).lastPathComponent)
+
+        workingDirectoryLock.lock()
+        defer { workingDirectoryLock.unlock() }
+
+        var previous = [CChar](repeating: 0, count: Int(PATH_MAX))
+        let restorable = getcwd(&previous, previous.count) != nil
+        guard chdir(directory) == 0 else { throw Error.directoryUnreachable(errno) }
+        defer { if restorable { _ = chdir(previous) } }
+
+        return withUnsafePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { (call($0, length), Darwin.errno) }
+        }
+    }
 
     /// The environment key the app uses to tell the assistant where its
     /// tunnel's socket is, next to `SP_CONNECTION_NAME` / `SP_CONNECTION_VERIFY_HASH`

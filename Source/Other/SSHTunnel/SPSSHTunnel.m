@@ -125,7 +125,7 @@ static unsigned short getRandomPort(void);
 		NSError *socketError = nil;
 		socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService error:&socketError];
 		if (!socketServer) {
-			NSLog(@"Could not start the SSH tunnel: its askpass socket could not be created (%@). The socket lives in the app container's temporary directory; a very long user name can push its path past the system's 104-byte limit.", socketError);
+			NSLog(@"Could not start the SSH tunnel: its askpass socket could not be created in the app container's temporary directory (%@).", socketError);
 			return nil;
 		}
 		
