@@ -503,7 +503,6 @@ the 103-byte `sun_path` after the 62-byte container-tmp prefix; the stale
 sweep recognises both name shapes, at their exact widths only. This is the
 release that soaks.
 
-<<<<<<< HEAD
 Execution notes, 5b (2026-09-01, draft PR, **do not merge until 5a has
 shipped and soaked**): `NSConnection` is gone from `SPSSHTunnel` — no
 `registerName:`, no root object, no `invalidate` — and the three DO-facing
@@ -526,12 +525,11 @@ generated Swift header — the dependency the plan wanted severed is severed.
 selected; `SP_CONNECTION_TRANSPORT` leaves the environment,
 `SP_CONNECTION_NAME` stays because the assistant's fallback prompt text uses
 it. `NSConnection` deprecation warnings: 5 → 0 on the Debug build.
-=======
+
 ~~Before DO can go, the socket must have somewhere to live for *every* user~~
 — resolved in 5b by the relative bind/connect described in its notes above;
 no second directory was needed (under the sandbox every temp directory maps
 into the container anyway).
->>>>>>> infra/ssh-ipc-step5a-flip-default
 
 ## Swift or not
 
