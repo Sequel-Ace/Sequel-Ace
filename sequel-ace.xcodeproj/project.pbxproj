@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
@@ -289,6 +290,9 @@
 		51AC3B6D30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */; };
 		51AC3B7230475EAD00BCE2B9 /* SASSHTunnelAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B7130475EAD00BCE2B9 /* SASSHTunnelAuthService.swift */; };
 		51AC3B7430475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */; };
+		51AC3B7A304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
+		51AC3B7B304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
+		51AC3B80304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */; };
 		51AC6E6E3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */; };
 		51AC6E6F3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */; };
 		51AC6E743047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */; };
@@ -1160,6 +1164,8 @@
 		51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthSource.swift; sourceTree = "<group>"; };
 		51AC3B7130475EAD00BCE2B9 /* SASSHTunnelAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthService.swift; sourceTree = "<group>"; };
 		51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthServiceTests.swift; sourceTree = "<group>"; };
+		51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthMessage.swift; sourceTree = "<group>"; };
+		51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAuthMessageTests.swift; sourceTree = "<group>"; };
 		51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinator.swift; sourceTree = "<group>"; };
 		51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -2361,6 +2367,7 @@
 				51AC3B7130475EAD00BCE2B9 /* SASSHTunnelAuthService.swift */,
 				58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */,
 				F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */,
+				51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */,
 				51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */,
 			);
 			name = "SSH Tunnel";
@@ -2775,6 +2782,7 @@
 				51BE68E13017552B00AF389C /* SAImageRendererTests.swift */,
 				51DD6924303C2F99004792F0 /* SAFavoriteDuplicateMatcherTests.swift */,
 				51AC3B7330475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift */,
+				51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */,
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 			);
 			name = Other;
@@ -3403,6 +3411,7 @@
 				71F6E6D2037EB14ED8623A81 /* SAKeychainProviding.swift in Sources */,
 				B01E10DB2BF1A67138C32D0C /* SAFavoriteDuplicateMatcher.swift in Sources */,
 				1A9498C125517191000BC793 /* DateExtension.swift in Sources */,
+				51AC3B7B304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */,
 				1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */,
 				50837F771E50E007004FAE8A /* SPJSONFormatter.m in Sources */,
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
@@ -3431,6 +3440,7 @@
 				1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */,
 				1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */,
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
+				51AC3B80304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift in Sources */,
 				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
 				51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */,
@@ -3598,6 +3608,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */,
 				17D41A8221700F8200B1888D /* SPFunctions.m in Sources */,
 				1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */,
 				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
@@ -3647,6 +3658,7 @@
 				623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
+				51AC3B7A304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */,
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,
 				1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */,
 				1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */,
