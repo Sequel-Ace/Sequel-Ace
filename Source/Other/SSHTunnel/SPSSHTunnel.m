@@ -47,16 +47,29 @@
 
 static unsigned short getRandomPort(void);
 
-@interface SPSSHTunnel ()
+@interface SPSSHTunnel () <SASSHTunnelAuthSource>
 {
 	// Private: kept out of the public header so the NSConnection deprecation is
 	// not re-emitted in every translation unit that reaches SPSSHTunnel.h via
 	// the bridging header. Used only in this file.
 	NSConnection *tunnelConnection;
+
+	// The object actually vended over the connection: only the three
+	// authentication methods the tunnel assistant needs are reachable through
+	// it (SSH tunnel IPC plan, Step 1). It holds this tunnel weakly and reads
+	// the state it needs through SASSHTunnelAuthSource.
+	SASSHTunnelAuthService *authService;
+
+	// Decides whether a prompt may be shown and fails an in-flight prompt
+	// closed on teardown (SSH tunnel IPC plan, Step 1). The sheets, their
+	// modal sessions and the answer ivars stay here; the state machine is Swift.
+	SASSHTunnelPromptCoordinator *promptCoordinator;
+
 	SASSHStderrDrainCoordinator *standardErrorDrainCoordinator;
 }
 
 - (void)setLastError:(NSString *)msg;
+- (void)cancelPendingPrompt;
 - (void)startConnectionAttempt;
 - (void)completeStandardErrorDrain;
 - (void)disconnectPreservingQueuedReconnect:(BOOL)preserveQueuedReconnect;
@@ -95,6 +108,7 @@ static unsigned short getRandomPort(void);
 		debugMessages = [[NSMutableArray alloc] init];
 		debugMessagesLock = [[NSLock alloc] init];
 		answerAvailableLock = [[NSLock alloc] init];
+		promptCoordinator = [[SASSHTunnelPromptCoordinator alloc] initWithAnswerLock:answerAvailableLock];
 		standardErrorDrainCoordinator = [[SASSHStderrDrainCoordinator alloc] init];
 
 		// Enable connection muxing on 10.7+, but only if a preference is enabled; this is because
@@ -108,7 +122,8 @@ static unsigned short getRandomPort(void);
 		
 		[tunnelConnection runInNewThread];
 		[tunnelConnection removeRunLoop:[NSRunLoop currentRunLoop]];
-		[tunnelConnection setRootObject:self];
+		authService = [[SASSHTunnelAuthService alloc] initWithSource:self keychain:[SAKeychainAccess make]];
+		[tunnelConnection setRootObject:authService];
 		
 		
 		if (![tunnelConnection registerName:tunnelConnectionName]) {
@@ -311,6 +326,7 @@ static unsigned short getRandomPort(void);
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
+	[promptCoordinator reset];
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
 	                           target:self
@@ -682,6 +698,10 @@ static unsigned short getRandomPort(void);
 		
 		[standardErrorDrainCoordinator beginStandardErrorDrain];
 		
+		// ssh is gone, so nobody is waiting for a prompt that may still be up;
+		// dismiss it before the diagnostics drain below, not after it
+		[self cancelPendingPrompt];
+
 		// If the task closed unexpectedly, alert appropriately
 		if (connectionState != SPMySQLProxyIdle) {
 			connectionState = SPMySQLProxyIdle;
@@ -732,6 +752,9 @@ static unsigned short getRandomPort(void);
 		? NO
 		: [standardErrorDrainCoordinator cancelPendingOrRunningAttempt];
 
+	// Fail any prompt the assistant is blocked on closed, whatever the state
+	[self cancelPendingPrompt];
+
     if (connectionState == SPMySQLProxyIdle){
 		if (preserveQueuedReconnect) {
 			SPLog(@"internal reconnect preserved the queued SSH attempt");
@@ -763,6 +786,7 @@ static unsigned short getRandomPort(void);
 -(void)abortTask
 {
     SPLog(@"Aborting task");
+    [self cancelPendingPrompt];
     if (task){
         if ([task isRunning]){
             SPLog(@"Task is running - calling terminate");
@@ -870,32 +894,64 @@ static unsigned short getRandomPort(void);
 	return localPortFallback;
 }
 
+#pragma mark - Connection surface
+
 /*
- * Method to request the password for the current connection, as used by SequelAceTunnelAssistant;
- * called with a verification hash to check against the stored hash, to provide basic security.  Note
- * that this is easily bypassed, but if bypassed the password can already easily be retrieved in the same way.
+ * The three methods the tunnel assistant may call over the connection. They
+ * stay declared in the public header so the assistant can type its proxy, but
+ * the object actually vended is authService (SSH tunnel IPC plan, Step 1): it
+ * owns the verification-hash check, the keychain lookups and the cancelled-
+ * prompt refusal, and calls back into the SASSHTunnelAuthSource methods below
+ * for tunnel state and the blocking sheets.
  */
 - (NSString *)getPasswordWithVerificationHash:(NSString *)theHash
 {
-	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
+	return [authService getPasswordWithVerificationHash:theHash];
+}
 
-	// Keychain-backed connections resolve the password here, at ask time, on
-	// the app side of the channel: the assistant no longer reads the keychain
-	// itself (keychain migration plan, Step 3). The lookup lives in
-	// SASSHTunnelSecretResolver (new logic in Swift, thin bridge here).
-	if (passwordInKeychain) {
-		return [SASSHTunnelSecretResolver passwordForKeychainName:keychainName account:keychainAccount];
-	}
+- (BOOL)getResponseForQuestion:(NSString *)theQuestion
+{
+	return [authService getResponseForQuestion:theQuestion];
+}
 
+- (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
+{
+	return [authService getPasswordForQuery:theQuery verificationHash:theHash];
+}
+
+#pragma mark - SASSHTunnelAuthSource
+
+- (NSString *)verificationHash
+{
+	return tunnelConnectionVerifyHash;
+}
+
+- (NSString *)heldPassword
+{
 	return password;
 }
 
+- (BOOL)usesKeychainPassword
+{
+	return passwordInKeychain;
+}
+
+- (NSString *)keychainItemName
+{
+	return keychainName;
+}
+
+- (NSString *)keychainItemAccount
+{
+	return keychainAccount;
+}
+
 /*
- * Method to allow an SSH tunnel to request the response to a question, returning the response as
- * a boolean.  This is used by the SSH_ASKPASS environment setting to deal with situations like
- * host key mismatches.
+ * Runs the yes/no question sheet and blocks the calling (connection) thread
+ * until it is answered, or until teardown dismisses it with "no". Used by the
+ * SSH_ASKPASS flow to deal with situations like host key mismatches.
  */
-- (BOOL)getResponseForQuestion:(NSString *)theQuestion
+- (BOOL)promptForResponseToQuestion:(NSString *)theQuestion
 {
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];
@@ -921,6 +977,13 @@ static unsigned short getRandomPort(void);
 	NSSize questionTextSize;
 	NSRect windowFrameRect;
 
+	// Teardown got here first, or ssh is already gone: answer "no" unseen
+	if (![promptCoordinator shouldPresentPromptWhileSSHRunning:(task != nil && [task isRunning])]) {
+		requestedResponse = NO;
+		[answerAvailableLock unlock];
+		return;
+	}
+
 	// set up the question window
 	[sshQuestionText setStringValue:theQuestion];
 	questionTextSize = [[sshQuestionText cell] cellSizeForBounds:NSMakeRect(0, 0, [sshQuestionText bounds].size.width, 500)];
@@ -929,6 +992,14 @@ static unsigned short getRandomPort(void);
 	[sshQuestionDialog setFrame:windowFrameRect display:NO];
 
 	//show the question window
+	[promptCoordinator promptDidPresentWithDismisser:^{
+		// Teardown: answer "no" without the user
+		self->requestedResponse = NO;
+		[NSApp endSheet:self->sshQuestionDialog];
+		[self->sshQuestionDialog orderOut:nil];
+		[[NSApplication sharedApplication] abortModal];
+		[[self->answerAvailableLock onMainThread] unlock];
+	}];
 	[parentWindow beginSheet:sshQuestionDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow:sshQuestionDialog];
 }
@@ -939,6 +1010,7 @@ static unsigned short getRandomPort(void);
 - (IBAction)closeSSHQuestionSheet:(id)sender
 {
 	requestedResponse = [sender tag] == 1 ? YES : NO;
+	[promptCoordinator promptDidClose];
 	[NSApp endSheet:sshQuestionDialog];
 	[sshQuestionDialog orderOut:nil];
 	[[NSApplication sharedApplication] abortModal];
@@ -946,23 +1018,12 @@ static unsigned short getRandomPort(void);
 }
 
 /*
- * Method to allow an SSH tunnel to request a password.  This is used by the program set by the
- * SSH_ASKPASS environment setting to request passphrases for SSH keys.
+ * Runs the password sheet and blocks the calling (connection) thread until it
+ * is answered, cancelled, or dismissed by teardown. Used by the SSH_ASKPASS
+ * flow for key passphrases and any other prompt ssh raises.
  */
-- (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
+- (NSString *)promptForPasswordForQuery:(NSString *)theQuery
 {
-	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
-
-	if (passwordPromptCancelled) return nil;
-
-	// SSH key passphrases: check the user's stored "SSH"/<key name> item on
-	// the app side before raising the UI prompt. This check lived in the
-	// assistant while it still read the keychain directly (keychain
-	// migration plan, Step 3); SASSHTunnelSecretResolver keeps its
-	// exists-then-get shape.
-	NSString *storedPassphrase = [SASSHTunnelSecretResolver storedPassphraseForQuery:theQuery];
-	if (storedPassphrase) return storedPassphrase;
-
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];
 
@@ -991,6 +1052,13 @@ static unsigned short getRandomPort(void);
 	NSSize queryTextSize;
 	NSRect windowFrameRect;
 
+	// Teardown got here first, or ssh is already gone: refuse unseen
+	if (![promptCoordinator shouldPresentPromptWhileSSHRunning:(task != nil && [task isRunning])]) {
+		requestedPassphrase = nil;
+		[answerAvailableLock unlock];
+		return;
+	}
+
 	// Work out whether a passphrase is being requested, extracting the key name
     NSString *keyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
 
@@ -1013,6 +1081,15 @@ static unsigned short getRandomPort(void);
 	windowFrameRect.size.height = ((queryTextSize.height < 40)?40:queryTextSize.height) + 140 + ([sshPasswordDialog isSheet]?0:22);
 	
 	[sshPasswordDialog setFrame:windowFrameRect display:NO];
+	[promptCoordinator promptDidPresentWithDismisser:^{
+		// Teardown: refuse without the user, and without marking a user cancel
+		self->requestedPassphrase = nil;
+		[self->sshPasswordField setStringValue:@""];
+		[NSApp endSheet:self->sshPasswordDialog];
+		[self->sshPasswordDialog orderOut:nil];
+		[[NSApplication sharedApplication] abortModal];
+		[[self->answerAvailableLock onMainThread] unlock];
+	}];
 	[parentWindow beginSheet:sshPasswordDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow: sshPasswordDialog];
 }
@@ -1023,6 +1100,7 @@ static unsigned short getRandomPort(void);
 - (IBAction)closeSSHPasswordSheet:(id)sender
 {
 	requestedResponse = [sender tag]==1 ? YES : NO;
+	[promptCoordinator promptDidClose];
 	
 	[NSApp endSheet:sshPasswordDialog];
 	[sshPasswordDialog orderOut:nil];
@@ -1052,6 +1130,21 @@ static unsigned short getRandomPort(void);
 }
 
 /*
+ * Fails any prompt the assistant is blocked on closed, without marking it as
+ * cancelled by the user (so the real failure reason still reaches the
+ * connection controller). Called on every teardown path so a tunnel that goes
+ * away mid-prompt does not leave a sheet up and the assistant blocked until ssh
+ * gives up (SSH tunnel IPC plan, Step 1). The decision — dismiss a presented
+ * sheet, or latch a prompt still on its way to the main thread — is
+ * SASSHTunnelPromptCoordinator's; the dismissal itself is the block handed over
+ * when the sheet was presented.
+ */
+- (void)cancelPendingPrompt
+{
+	[promptCoordinator cancelPendingPrompt];
+}
+
+/*
  * Escape spaces and special characters in path
  */
 - (NSString *)prepareFilePathForSshCommand:(NSString *)thePath
@@ -1064,6 +1157,7 @@ static unsigned short getRandomPort(void);
 
 - (void)dealloc
 {
+	[promptCoordinator invalidate];
 	delegate = nil;
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self disconnect];

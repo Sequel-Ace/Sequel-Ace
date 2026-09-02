@@ -1,8 +1,14 @@
 # SSH Tunnel IPC — NSConnection → NSXPCConnection Migration Plan
 
-> **Status 2026-08-24: unblocked, not started.** The macOS 13.5 floor this
-> plan asked for was merged as #2587, so Step 4 is a full peer-validation win
-> rather than a partial one. Next action is the Step 0 spike.
+> **Status 2026-09-01: spike run, Step 1 landed, transport decided.** The
+> Step 0 spike answered **no** for `NSXPCListener(machServiceName:)` under the
+> sandbox and **yes** for the fallback this plan named — a UNIX domain socket
+> in the container, with peer code-signing validation from the socket's audit
+> token in both directions. The project therefore continues on the fallback:
+> the title stays for link stability, but from Step 2 on "XPC" reads "the
+> socket transport". Details and the log evidence are under Step 0 below;
+> the revised Steps 2–5 follow it. Step 1 (narrow the vended surface) is
+> done and is the first PR.
 >
 > **Written 2026-08-24.** Picks up the "NSConnection → NSXPCConnection" item
 > deferred in `docs/development/warnings-elimination-plan.md` (§ Deferred).
@@ -103,6 +109,72 @@ sandbox, and a false positive here invalidates the whole design.
 
 Timebox: 1 day. Everything downstream branches on the answer.
 
+### Result (2026-09-01): XPC fails, the socket fallback passes
+
+Run on a signed, sandboxed Debug build (`com.apple.security.app-sandbox`,
+app group `NKQ4HJ66PX.sequel-ace`, team `NKQ4HJ66PX`), triggered from
+`applicationDidFinishLaunching` with `-SASSHTunnelXPCSpike YES`, with the
+assistant launched **both** as a direct `Process` child and as ssh's real
+`SSH_ASKPASS` grandchild (github.com's host-key question, answered "no").
+Spike code is on the local throwaway branch `spike/ssh-xpc-step0`.
+
+**Phase 1 — `NSXPCListener(machServiceName:)`, app-group-prefixed name, no
+launchd plist: fails.** `resume()` reports nothing, but the name is never
+registered — `launchctl print pid/<app>` lists no such endpoint — and both
+assistant launches fail the lookup identically:
+
+```text
+The connection to service named NKQ4HJ66PX.sequel-ace.SequelAce-spike-1346
+was invalidated: Connection init failed at lookup with error 3 - No such process.
+```
+
+That is `bootstrap_look_up` → `BOOTSTRAP_UNKNOWN_SERVICE`. libxpc's listener
+path is `bootstrap_check_in`, which only succeeds for launchd-declared
+services; there is no public API that turns a `bootstrap_register`ed port
+(what DO uses) into an XPC listener, and the endpoint-in-environment route is
+ruled out above. So the SDK comment is the whole truth: **a sandboxed app
+cannot vend NSXPC without launchd**, app group or not.
+
+**Phase 2 — UNIX domain socket in the sandbox container: passes, both
+launch paths, both directions of peer validation.** The socket lived at
+`<container>/Data/tmp/SASpike.sock` (80 bytes, under the 104-byte `sun_path`
+limit); the `com.apple.security.inherit` assistant reaches it as a direct
+child and as ssh's grandchild. Peer identity comes from
+`getsockopt(LOCAL_PEERTOKEN)` → `SecCodeCopyGuestWithAttributes(kSecGuestAttributeAudit)`
+→ `SecCodeCheckValidity`, and the negative case fails as it must:
+
+```text
+[app]       validate assistant identity:            validity=0      identifier=SequelAceTunnelAssistant team=NKQ4HJ66PX
+[app]       validate WRONG identity (expect failure): validity=-67050 identifier=SequelAceTunnelAssistant team=NKQ4HJ66PX
+[assistant] validate app identity:                  validity=0      identifier=com.sequel-ace.sequel-ace team=NKQ4HJ66PX
+[assistant] validate WRONG identity (expect failure): validity=-67050 identifier=com.sequel-ace.sequel-ace team=NKQ4HJ66PX
+```
+
+(`-67050` is `errSecCSReqFailed`.) Two facts recorded for the implementation:
+the assistant's code-signing **identifier is `SequelAceTunnelAssistant`**, the
+product name, not its bundle identifier — it is a bare executable; and the
+Beta configuration's app identifier is `com.sequel-ace.sequel-ace-beta`, so
+neither side may hardcode the other's identifier. Validation is therefore
+**asymmetric**: the app requires *same team as me* **and** the fixed
+identifier `SequelAceTunnelAssistant`, so no other same-team process can ask
+it for a password; the assistant requires *same team as me* only, because the
+app's identifier varies by configuration — a same-team process that planted a
+socket could at most receive a request, never a secret. The team comes from
+each process's own signing information, never from a constant.
+
+### Decision
+
+The plan's own rule was "if the spike fails, seriously consider not
+migrating at all". Measured against the three reasons at the top: reason 1
+(the exposed surface) is closed by Step 1 regardless; reason 2 (peer
+identity) the socket delivers **fully** — the audit-token check is the same
+primitive XPC uses internally, and unlike XPC it validates the *listener*
+just as easily; reason 3 (getting off DO) it delivers too. What it costs is a
+wire format to own and version, which for one request and one reply per
+askpass launch is small. The remaining Steps run on the socket. Everything
+else in this plan — flag-first rollout, both-direction validation, the
+manual matrix, the rollback default — is unchanged.
+
 ### Do not try: archiving the endpoint into an environment variable
 
 `NSXPCListenerEndpoint` conforms to `NSSecureCoding`, which makes it tempting to
@@ -126,9 +198,63 @@ narrow the DO root object to a small façade so `setRootObject:` stops exposing
 all of `SPSSHTunnel`. That is Step 1 below, which is worth landing on its own
 merits either way.
 
-## Step 1 — Narrow the vended surface (ships regardless of the spike)
+## Step 1 — Narrow the vended surface (ships regardless of the spike) — ✅ Done
 
-Pure refactor, no IPC change, no behaviour change.
+Pure refactor of *what* is vended: no IPC or transport change. The one
+intentional behaviour change is teardown, which now dismisses a prompt the
+assistant is blocked on and answers "no"/nil instead of leaving it blocked
+(details below).
+
+Execution notes (2026-09-01):
+
+- `SASSHTunnelAuthService` (Swift, app **and** Unit Tests targets) is the
+  root object now; `SPSSHTunnel` hands it — not itself — to
+  `setRootObject:`. It exposes exactly `getResponseForQuestion:`,
+  `getPasswordWithVerificationHash:` and `getPasswordForQuery:verificationHash:`
+  under the legacy selectors, so the assistant is untouched and still types
+  its proxy through `SPSSHTunnel.h`; the tunnel keeps those three as
+  one-line forwarders so that header stays honest.
+- The decisions moved with it: the hash comparison, keychain-versus-held
+  password branch, stored-passphrase lookup (folded in from
+  `SASSHTunnelSecretResolver`, now deleted) and the cancelled-prompt refusal.
+  The tunnel supplies state and the two blocking sheets through a new
+  `SASSHTunnelAuthSource` protocol (pure Foundation, so the service compiles
+  into the test target without seeing `SPSSHTunnel`). Parity note kept on
+  purpose: `getResponseForQuestion:` never checked the hash and still does
+  not — the answer is not a secret; Step 4 covers it with peer validation.
+- Lifetime, as this step demanded: the service holds the tunnel weakly and
+  every call fails closed (`NO`/nil) once it is gone. `SPSSHTunnel` tracks the
+  sheet it is running modally (`activePromptDialog`) and
+  `cancelPendingPrompt` — called from `disconnect`, `abortTask`, and the
+  ssh-exited path of `launchTask:` — dismisses it on the main thread,
+  answering "no"/nil **without** setting `passwordPromptCancelled`, so the
+  real failure reason still reaches `SAConnectionService` instead of being
+  mistaken for a user cancel. Before this a tunnel torn down mid-prompt left
+  the sheet up and the assistant blocked until ssh gave up.
+  Review (Codex, CodeRabbit) caught a race in the first cut: a prompt whose
+  worker had not yet reached the main thread had no dialog to dismiss, so the
+  cancellation was dropped and the sheet appeared after teardown. Teardown
+  now latches a cancellation when the answer lock is held with no sheet up,
+  and both workers consume the latch — or notice ssh is no longer running —
+  and answer without presenting. A second review pass moved that state
+  machine out of the `.m` into `SASSHTunnelPromptCoordinator` (Swift, app +
+  Unit Tests, 10 tests covering both race orderings against a hand-pumped
+  main thread): the tunnel keeps the sheets, their modal sessions and the
+  answer ivars, and hands the coordinator a block that performs the
+  dismissal.
+- 21 unit tests in `UnitTests/SASSHTunnelAuthServiceTests.swift` against a
+  fake tunnel and an in-memory keychain: question forwarding, hash
+  refusal (wrong/empty/nil) on both password calls, held vs keychain-mode
+  resolution and keychain miss, cancelled-prompt refusal, stored-passphrase
+  served without prompting, exists-but-nil falls through to the prompt,
+  non-passphrase queries never touch the keychain, key-name extraction
+  edge cases, and both lifetime rules (calls fail closed after release; the
+  service does not retain the tunnel).
+- Pre-existing quirk noticed, deliberately not changed here:
+  `requestedPassphrase` is never reset between prompts, so cancelling a
+  *second* passphrase prompt in one tunnel returns the first answer again
+  instead of registering the cancel. Worth its own fix once the transport
+  work is done.
 
 Introduce `SASSHTunnelAuthService` holding a weak `SPSSHTunnel` and implementing
 only the three methods. Change `setRootObject:self` to `setRootObject:` that
@@ -148,85 +274,100 @@ deterministically — `disconnect()` fails outstanding prompts closed (reply
 Cover cancellation and app termination during *both* prompt methods; a hang
 here means the user cannot connect and cannot cancel.
 
-## Step 2 — Shared protocol
+## Step 2 — Shared wire format
 
-New file compiled into **both** targets:
+The XPC version of this step was an `@objc` protocol; on a socket the
+contract is a message format instead. New file compiled into **all three**
+targets (app, assistant, Unit Tests), pure Foundation:
 
-```swift
-@objc public protocol SASSHTunnelAuthProtocol {
-    func response(forQuestion question: String,
-                  reply: @escaping (Bool) -> Void)
-    func password(verificationHash: String,
-                  reply: @escaping (String?) -> Void)
-    func password(forQuery query: String, verificationHash: String,
-                  reply: @escaping (String?) -> Void)
-}
-```
+- `SASSHTunnelAuthRequest` — one of `question(text)`,
+  `password(verificationHash)`, `query(text, verificationHash)` — and
+  `SASSHTunnelAuthResponse` — `answer(Bool)`, `secret(String?)`, `refused`.
+- One request and one response per connection, each a single JSON object
+  terminated by `\n`, carrying a `v` field (1). That is the askpass
+  lifecycle exactly: ssh execs the assistant once per prompt, it asks one
+  thing and exits. No framing state machine, no multiplexing.
+- `SASSHTunnelAuthService` gains `handle(_ request:) -> SASSHTunnelAuthResponse`,
+  a pure dispatch onto the three Step 1 methods, so the socket server is
+  transport only.
 
-XPC requires `@objc`, `void` returns and reply blocks. The assistant uses
-`synchronousRemoteObjectProxyWithErrorHandler:`, whose reply block runs before
-the call returns — preserving today's blocking semantics exactly.
+Unit tests pin the JSON both ways (a recorded fixture per message so the
+format cannot drift without a test changing), unknown-version rejection,
+and the dispatch.
 
-Both proxies need an error handler that fails **closed**: on any XPC error the
-assistant must exit non-zero rather than print an empty line, which ssh would
+Both ends must fail **closed**: on any transport or decoding error the
+assistant exits non-zero rather than print an empty line, which ssh would
 read as an empty password.
 
-## Step 3 — XPC alongside DO, behind a default
+## Step 3 — Socket alongside DO, behind a default
 
-Both transports built; a hidden `NSUserDefaults` key selects. Default to DO in
-the first release that contains the code, so it can be exercised by
-early adopters and support can flip it without a rebuild.
+Both transports built; a hidden `NSUserDefaults` key selects. Default to DO
+in the first release that contains the code, so it can be exercised by early
+adopters and support can flip it without a rebuild.
 
-App side: `SASSHTunnelAuthService` gains an `NSXPCListener` and an
-`NSXPCListenerDelegate`. Service name stays app-group prefixed and per-tunnel
-unique, as today.
+App side: `SASSHTunnelSocketServer` (Swift) owns a listening UNIX socket at
+`NSTemporaryDirectory()/SequelAce-ssh-<random>.sock` — the container's tmp,
+which the inherit-sandboxed assistant shares — mode 0600, per-tunnel, unlinked
+on teardown. Its accept loop runs on a private queue; each connection is
+read, validated (Step 4), dispatched to `SASSHTunnelAuthService.handle`,
+answered and closed. `SPSSHTunnel` creates it next to the `NSConnection`
+when the socket transport is selected.
 
-Assistant side: replace the three `rootProxyForConnectionWithRegisteredName:`
-call sites with an `NSXPCConnection`, and **drop the `SPSSHTunnel.h` import**.
+Assistant side: `SASSHTunnelSocketClient` (Swift) connects, validates the
+peer (Step 4), writes the request, reads the reply. The argument-sniffing
+decision logic — which prompt is this, which request to send, what to print,
+which fallback message on a keychain miss — moves to a pure, tested
+`SASSHTunnelAskpass` in Swift, compiled into the assistant **and** the Unit
+Tests target. `SequelAceTunnelAssistant.m` shrinks to `main` plus the DO
+shim, because `NSConnection` is unavailable from Swift; it goes with the DO
+path in Step 5, when `main.swift` replaces it (this plan's earlier "convert
+the assistant in Step 3" is therefore split: logic now, entry point then).
 
-**The assistant cannot read the default.** It is a separate short-lived process
-launched by ssh, so a `NSUserDefaults` key in the app decides nothing on its
-own. The app resolves the selection once, when it builds the ssh task, and
-passes it in that task's environment next to `SP_CONNECTION_VERIFY_HASH` — the
-channel that already exists and is already per-launch. A tunnel therefore uses
-one transport for its whole life, and flipping the default cannot strand a
-running tunnel halfway. Test that app and assistant agree for every launch,
-including the rollback direction.
+**The assistant cannot read the default.** It is a separate short-lived
+process launched by ssh, so a `NSUserDefaults` key in the app decides nothing
+on its own. The app resolves the selection once, when it builds the ssh
+task, and passes it in that task's environment next to
+`SP_CONNECTION_VERIFY_HASH` (`SP_CONNECTION_TRANSPORT`, plus
+`SP_CONNECTION_SOCKET_PATH` for the socket) — the channel that already exists
+and is already per-launch. A tunnel therefore uses one transport for its
+whole life, and flipping the default cannot strand a running tunnel halfway.
+If the socket cannot be created (a `sun_path` over 104 bytes, say) the tunnel
+falls back to DO for that launch and logs it.
 
 ## Step 4 — Peer validation (the security win)
 
-Replace the environment shared-secret as the primary check.
+Replace the environment shared-secret as the primary check, using exactly
+what the spike proved: `getsockopt(SOL_LOCAL, LOCAL_PEERTOKEN)` for the
+peer's audit token, `SecCodeCopyGuestWithAttributes` with
+`kSecGuestAttributeAudit`, then `SecCodeCheckValidity` against a requirement.
+The audit token is the same primitive XPC's own peer validation is built on,
+pid-race-free by construction, and it needs no availability gate on 13.5.
 
-`NSXPCListener.setConnectionCodeSigningRequirement:` (verified present in the
-26.0 SDK, `API_AVAILABLE(macos(13.0))`, and it works on `machServiceName` and
-anonymous listeners). Requirement along the lines of `anchor apple generic and
-certificate leaf[subject.OU] = "NKQ4HJ66PX" and identifier
-"<assistant identifier>"`.
+Requirements are built from each process's **own** signing information
+(`SecCodeCopySelf` → `kSecCodeInfoTeamIdentifier`), never hardcoded:
 
-This needs no availability gate: the deployment target moved to 13.5 in
-`macos-13-minimum-plan.md`, which was done specifically to unblock this step.
-On 12.0 there was no supported equivalent — `NSXPCConnection` exposes only
-`processIdentifier` and `effectiveUserIdentifier`, `auditToken` is not public
-API, and pid-based lookup is racy by construction — so the step would have
-degraded to keeping the environment hash as the only check.
+| Side | Requires of the peer |
+|---|---|
+| app (listener) | `anchor apple generic and certificate leaf[subject.OU] = "<own team>" and identifier "SequelAceTunnelAssistant"` |
+| assistant | `anchor apple generic and certificate leaf[subject.OU] = "<own team>"` |
 
-Keep the hash anyway; it is free and it narrows the window further.
-
-**Validate both directions.** `setConnectionCodeSigningRequirement:` on the
-listener authenticates the peer that connects — the assistant. It says nothing
-about who the assistant reached. The assistant should apply the mirror-image
-`NSXPCConnection.setCodeSigningRequirement:` (same 13.0 availability) naming the
-app's identifier, so a process that registered the service name first cannot
-impersonate the app. Either that, or write down precisely which sandbox
-bootstrap guarantee makes listener spoofing impossible — but do not leave it
-implied. Verification must include a **negative** test: a connection presenting
-the wrong signing identity is rejected, in both directions.
+**Validate both directions.** The listener authenticates the assistant; the
+assistant authenticates whatever answered at the socket path, so a process
+that planted a socket first cannot impersonate the app. A build with no
+team identifier (ad-hoc or unsigned local builds) cannot express the
+requirement; it logs and skips validation, keeping the environment hash —
+which stays in place on every build anyway; it is free and narrows the window
+further. Verification must include the **negative** test in both directions,
+as the spike already did once: a wrong identity is rejected with
+`errSecCSReqFailed`.
 
 ## Step 5 — Flip the default, then delete DO
 
-Separate releases. Flip to XPC, let it soak, then remove the DO path, the
-`NSConnection` ivar, and the assistant's `SPSSHTunnel.h` import. The remaining
-12 `NSConnection` warnings go to zero at this point — a side effect, not the goal.
+Separate releases. Flip to the socket, let it soak, then remove the DO path,
+the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
+import, and replace `SequelAceTunnelAssistant.m` with `main.swift`. The
+remaining `NSConnection` warnings go to zero at this point — a side effect,
+not the goal.
 
 ## Swift or not
 
@@ -245,21 +386,28 @@ impossible to bisect. Separate project.
 
 `SequelAceTunnelAssistant.m` → `main.swift` is in scope and worth doing: it is
 ~215 lines of straight-line argument sniffing, and top-level code in `main.swift`
-works fine for a tool target. Do it in Step 3, not before — a transport change
-and a language change in one commit is not bisectable either.
+works fine for a tool target. The logic moves to Swift in Step 3 (where it
+gains tests); the entry point itself only in Step 5, because `NSConnection`
+is unavailable from Swift and the DO shim has to live somewhere until DO is
+deleted. One practical note for the assistant target: it has no bridging
+header, so a Swift declaration reaches its generated `sequel-ace-Swift.h`
+only when it is `public`.
 
 ## Verification
 
-There is no way to unit-test this end to end; the trigger is `ssh` deciding to
-exec `SSH_ASKPASS`. What each layer buys:
+The real path — `ssh` deciding to exec `SSH_ASKPASS` — cannot be unit-tested
+end to end; the channel underneath it can. What each layer buys:
 
 - **Unit-testable (new)**: `SASSHTunnelAuthService` against a fake tunnel — the
   hash comparison, the keychain-vs-UI branch, nil/cancel paths. None of this is
   testable today because the logic sits on `SPSSHTunnel` behind DO. Worth
   writing in Step 1 while the transport is still the old one.
-- **Integration-testable (new)**: launch the real assistant binary against a
-  test listener with a canned service name and assert on its stdout/exit code.
-  Feasible once the protocol exists, and it covers the wire contract.
+- **Integration-testable (new)**: the socket server and client are plain
+  Swift, so the Unit Tests target can run both ends in-process over a socket
+  in its temporary directory and cover the wire contract end-to-end,
+  including the refusal paths. (Launching the real assistant binary from the
+  test runner is not possible: its `com.apple.security.inherit` sandbox
+  needs a sandboxed parent.)
 - **Manual only**: everything involving real ssh.
 
 Manual matrix — every row on **both** transports while Step 3 is in flight, and
@@ -308,7 +456,8 @@ day and captures most of the security benefit.
 
 ## Open questions
 
-1. **Does the spike pass?** Everything depends on it.
+1. ~~**Does the spike pass?**~~ Answered 2026-09-01: no for XPC, yes for the
+   socket fallback — see Step 0's result and the decision under it.
 2. ~~**Can we require macOS 13?**~~ Answered: yes. The deployment target moved
    to 13.5 (`macos-13-minimum-plan.md`), so Step 4 is a real win, not a partial
    one.

@@ -480,12 +480,15 @@ deferred projects below.
   (SecItem*) replaced it behind `SAKeychainProviding`, proven by a
   cross-implementation test matrix. All 10 SecKeychain unique warning lines
   are gone; the floor is now NSConnection (5) + the 4 intentional markers.
-- **NSConnection → NSXPCConnection** (SequelAceTunnelAssistant.m:117/168) —
-  reworks the SSH-password IPC between app and helper tool. **Now designed and
-  unblocked**: see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The
-  macOS 13.5 floor (#2587) was adopted for it, so peer validation via
-  `setConnectionCodeSigningRequirement:` needs no availability gate. Not
-  started; spike-first.
+- **NSConnection → socket IPC** (SequelAceTunnelAssistant.m:117/168) —
+  reworks the SSH-password IPC between app and helper tool. **In execution**:
+  see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The Step 0 spike
+  (2026-09-01) showed a sandboxed app cannot vend `NSXPCListener` without
+  launchd, so the project runs on the plan's fallback — a UNIX socket in the
+  container with audit-token peer validation both ways. Step 1 (the vended
+  surface narrowed to `SASSHTunnelAuthService`) is landed; the NSConnection
+  warnings themselves go at Step 5, after the socket transport has soaked a
+  release.
 - **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs the app's
   target, install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
   SPMySQLFramework with the right deployment target; belongs to a dependency
