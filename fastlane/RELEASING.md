@@ -564,10 +564,19 @@ Production workflow; Alpha artifact numbers are never included.
 - Normal: the protected Ruby reconciler derives the explicit candidate as
   `H + 1`. Fastlane lanes never calculate or increment it, and workflow inputs
   cannot override it.
-- Forward self-healing: if source or a prior failed RC is behind `H`, advance to
-  `H + 1`. The manifest records all source values, the highest exact Cloud run,
-  the expected target, actual consumed runs, and any unassigned gap made
-  permanently unusable by a later Cloud assignment or Production ASC build.
+- Declared source: `SAGitHubReleaseTag` is parsed as a release identity
+  (`channel/version/build/tag`) and must exactly agree with every source
+  version file. If that identity matches the requested release and `S == H +
+  1`, the workflow reuses the pre-incremented candidate without pretending a
+  no-op version-file rewrite was a release commit. If a deliberately declared
+  source is ahead of `H + 1`, the generated release PR records that identity
+  and converges its unconsumed version files to `H + 1`; App Store Connect and
+  Production Cloud remain authoritative, and no build-number gap is invented.
+- Forward self-healing: if App Store Connect or Production Cloud advances past
+  source, the workflow advances the prepared release to `H + 1`. The manifest
+  records the complete source identity, the highest exact Cloud run, the
+  expected target, actual consumed runs, and every externally consumed gap with
+  its durable Cloud or Production ASC evidence.
 - Result verification: the publisher finds the exact run by workflow, tag, and
   commit before comparing its assigned number with the canonical tag build. A
   match continues normally. A lower assigned number is a fatal regression and
@@ -609,10 +618,10 @@ Production workflow; Alpha artifact numbers are never included.
   workflow, exact tag, exact commit, and no later Production run. Any existing
   GitHub release, mismatched tag/run, App Store build ahead of source, or Cloud
   advancement beyond that one exact run aborts recovery.
-- Stop: source is ahead of `H + 1`, histories conflict, an exact tagged run is
-  assigned below its canonical build, the recovery chain is malformed, main
-  changes after the failed release commit, assets already exist, or the bounded
-  recovery limit is reached.
+- Stop: source is ahead of `H + 1` without an exact declared release identity,
+  histories conflict, an exact tagged run is assigned below its canonical
+  build, the recovery chain is malformed, main changes after the failed release
+  commit, assets already exist, or the bounded recovery limit is reached.
 
 After release-PR checks finish, the workflow performs the same reconciliation
 again immediately before merge or recovered tag creation. It first force/prune

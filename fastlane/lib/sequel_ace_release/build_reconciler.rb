@@ -21,11 +21,13 @@ module SequelAceRelease
     def reconcile(
       source_build:, highest_tag_build:, highest_asc_build:, cloud_runs:,
       source_tagged:, source_release_commit_sha: nil, expected_target_build: nil,
-      recover_release_tag: nil, production_workflow_id: nil
+      recover_release_tag: nil, production_workflow_id: nil,
+      prepared_source: false, source_release_identity: nil
     )
       source = positive_integer(source_build, "source build")
       tag = nonnegative_integer(highest_tag_build, "highest tag build")
       asc = nonnegative_integer(highest_asc_build, "highest App Store Connect build")
+      validate_prepared_source_identity!(source_release_identity, source) if prepared_source
       raise ValidationError, "canonical release tag build #{tag} is ahead of source build #{source}" if tag > source
 
       indexed_runs = index_runs(cloud_runs)
@@ -39,7 +41,8 @@ module SequelAceRelease
         asc: asc,
         highest_cloud_run: highest_cloud_run,
         consumed_baseline: consumed_baseline,
-        expected_next: expected_next
+        expected_next: expected_next,
+        source_release_identity: source_release_identity
       )
 
       if recover_release_tag
@@ -73,7 +76,27 @@ module SequelAceRelease
         ), expected_target_build)
       end
 
+      if source == expected_next && !source_tagged && prepared_source
+        return validate_expected_target!(Result.new(
+          target_build: source,
+          baseline: consumed_baseline,
+          reason: "preincremented_source",
+          skipped_runs: [],
+          production_build_evidence: evidence
+        ), expected_target_build)
+      end
+
       if source > expected_next
+        if prepared_source
+          return validate_expected_target!(Result.new(
+            target_build: expected_next,
+            baseline: consumed_baseline,
+            reason: "self_healed_prepared_source_ahead",
+            skipped_runs: [],
+            production_build_evidence: evidence
+          ), expected_target_build)
+        end
+
         raise ValidationError,
               "source build #{source} is ahead of API-derived Production build #{expected_next}; " \
               "the forward-only history cannot be reconciled"
@@ -165,7 +188,27 @@ module SequelAceRelease
       end
     end
 
-    def build_evidence(source:, tag:, asc:, highest_cloud_run:, consumed_baseline:, expected_next:)
+    def validate_prepared_source_identity!(identity, source)
+      unless identity.is_a?(Hash)
+        raise ValidationError, "prepared source reconciliation requires a release identity"
+      end
+
+      channel = identity["channel"]
+      version = identity["version"]
+      build = positive_integer(identity["build"], "prepared source identity build")
+      tag = identity["tag"]
+      Config.validate_channel!(channel)
+      Version.validate!(version)
+      expected_tag = "#{channel}/#{version}-#{build}"
+      unless tag == expected_tag
+        raise ValidationError, "prepared source identity tag does not match #{expected_tag}"
+      end
+      unless build == source
+        raise ValidationError, "prepared source identity build #{build} does not match source build #{source}"
+      end
+    end
+
+    def build_evidence(source:, tag:, asc:, highest_cloud_run:, consumed_baseline:, expected_next:, source_release_identity:)
       {
         "policy" => Approval::POLICY,
         "source_build" => source,
@@ -174,7 +217,8 @@ module SequelAceRelease
         "highest_cloud_build" => highest_cloud_run&.fetch("number") || 0,
         "highest_observed_build" => consumed_baseline,
         "expected_next_build" => expected_next,
-        "highest_cloud_run" => run_evidence(highest_cloud_run)
+        "highest_cloud_run" => run_evidence(highest_cloud_run),
+        "source_release_identity" => source_release_identity
       }.compact
     end
 

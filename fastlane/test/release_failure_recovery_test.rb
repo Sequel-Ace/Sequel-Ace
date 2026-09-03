@@ -244,8 +244,9 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     ).map { |path| { "status" => " M", "path" => path } }
     git.define_singleton_method(:changed_paths) { changed_paths }
     version_files = Object.new
-    version_files.define_singleton_method(:current) { { "version" => "5.3.2", "build" => 20_105 } }
-    version_files.define_singleton_method(:release_tag) { "production/5.3.2-20105" }
+    version_files.define_singleton_method(:release_identity) do
+      { "channel" => "production", "version" => "5.3.2", "build" => 20_105, "tag" => "production/5.3.2-20105" }
+    end
     github = Object.new
     github.define_singleton_method(:create_bot_commit) do |**_options|
       { "sha" => commit_sha, "verification" => { "verified" => true } }

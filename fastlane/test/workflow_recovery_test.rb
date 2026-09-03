@@ -301,6 +301,15 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_equal 2, workflow.scan("sa-release reconcile-build").length
     assert_includes workflow, '--workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}"'
     assert_includes workflow, '"production_build_evidence" => reconciliation.fetch("production_build_evidence")'
+
+    initial = workflow.split("- name: Reconcile the authoritative Production Cloud build", 2).fetch(1)
+                      .split("- name: Create the initial release manifest", 2).first
+    final = workflow.split("- name: Revalidate Production Cloud build immediately before merge or tag", 2).fetch(1)
+                    .split("- name: Recheck and merge the release PR", 2).first
+    [initial, final].each do |reconciliation|
+      assert_includes reconciliation, '--channel "${RELEASE_CHANNEL}"'
+      assert_includes reconciliation, '--target-version "${RELEASE_VERSION}"'
+    end
   end
 
   def test_a_higher_assigned_number_dispatches_only_a_validated_forward_recovery

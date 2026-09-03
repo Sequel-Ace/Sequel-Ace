@@ -87,6 +87,69 @@ class CliBuildReconciliationTest < Minitest::Test
     assert_includes error.string, "canonical release tag build 20106 is ahead of source build 20105"
   end
 
+  def test_reconcile_build_reuses_an_exact_declared_source_identity
+    identity = {
+      "channel" => "beta",
+      "version" => "6.0.0",
+      "build" => 20_111,
+      "tag" => "beta/6.0.0-20111"
+    }
+    git = Object.new
+    git.define_singleton_method(:tags) { |_pattern| [] }
+    git.define_singleton_method(:latest_commit_changing_all) { |_paths| nil }
+    files = Object.new
+    files.define_singleton_method(:release_identity) { identity }
+    output = StringIO.new
+    error = StringIO.new
+    cli = SequelAceRelease::CLI.new(out: output, err: error, env: {})
+
+    status = SequelAceRelease::VersionFiles.stub(:new, files) do
+      SequelAceRelease::GitRepository.stub(:new, git) do
+        cli.run([
+          "reconcile-build",
+          "--source-build", "20111",
+          "--channel", "beta",
+          "--target-version", "6.0.0",
+          "--highest-asc-build", "20110"
+        ])
+      end
+    end
+
+    assert_equal 0, status
+    result = JSON.parse(output.string)
+    assert_equal "preincremented_source", result.fetch("reason")
+    assert_equal identity, result.dig("production_build_evidence", "source_release_identity")
+    assert_empty error.string
+  end
+
+  def test_reconcile_build_rejects_a_source_build_that_disagrees_with_its_identity
+    identity = {
+      "channel" => "beta",
+      "version" => "6.0.0",
+      "build" => 20_111,
+      "tag" => "beta/6.0.0-20111"
+    }
+    files = Object.new
+    files.define_singleton_method(:release_identity) { identity }
+    output = StringIO.new
+    error = StringIO.new
+    cli = SequelAceRelease::CLI.new(out: output, err: error, env: {})
+
+    status = SequelAceRelease::VersionFiles.stub(:new, files) do
+      cli.run([
+        "reconcile-build",
+        "--source-build", "20112",
+        "--channel", "beta",
+        "--target-version", "6.0.0",
+        "--highest-asc-build", "20110"
+      ])
+    end
+
+    assert_equal 1, status
+    assert_includes error.string, "does not match the prepared source build"
+    assert_empty output.string
+  end
+
   def test_tag_only_recovery_validates_the_missing_release_and_enriches_its_cloud_run
     commit = "a" * 40
     tag = "production/5.4.0-20105"

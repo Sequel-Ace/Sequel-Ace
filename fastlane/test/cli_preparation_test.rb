@@ -6,8 +6,9 @@ class CLIPreparationTest < Minitest::Test
   def test_accepts_changelog_only_when_the_release_version_is_already_prepared
     cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
     files = Minitest::Mock.new
-    files.expect :current, { "version" => "6.0.0", "build" => 20_111 }
-    files.expect :release_tag, "beta/6.0.0-20111"
+    files.expect :release_identity, {
+      "channel" => "beta", "version" => "6.0.0", "build" => 20_111, "tag" => "beta/6.0.0-20111"
+    }
 
     SequelAceRelease::VersionFiles.stub(:new, files) do
       cli.send(
@@ -25,8 +26,9 @@ class CLIPreparationTest < Minitest::Test
   def test_rejects_changelog_only_when_the_release_version_is_not_prepared
     cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
     files = Minitest::Mock.new
-    files.expect :current, { "version" => "6.0.0", "build" => 20_111 }
-    files.expect :release_tag, "beta/6.0.0-20110"
+    files.expect :release_identity, {
+      "channel" => "beta", "version" => "6.0.0", "build" => 20_111, "tag" => "beta/6.0.0-20110"
+    }
 
     SequelAceRelease::VersionFiles.stub(:new, files) do
       error = assert_raises(SequelAceRelease::ValidationError) do
