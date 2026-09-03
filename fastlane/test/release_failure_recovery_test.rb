@@ -130,25 +130,28 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     assert_equal 3, client.version_reads
   end
 
-  def test_unsubmitted_failure_becomes_failed_and_can_explain_the_prerelease
+  def test_unsubmitted_failure_becomes_failed_and_is_not_finalizable
     result = recorder.record(
       manifest: manifest(state: "archived"),
       workflow_url: workflow_url
     )
 
     assert_equal "failed", result.manifest.to_h.fetch("state")
-    assert_equal false, result.preserve_release_body
+    assert_equal false, result.finalization_remains_eligible
+    assert_equal false, result.to_h.fetch("finalization_remains_eligible")
+    refute result.to_h.key?("preserve_release_body")
     assert_equal workflow_url, result.manifest.to_h.dig("failure", "workflow_url")
   end
 
-  def test_submitted_failure_preserves_state_and_the_immutable_release_body
+  def test_submitted_failure_preserves_the_finalizable_state
     existing = manifest(state: "submitted").with(
       "asc_ids" => { "version_id" => "version-id", "build_id" => "build-id" }
     )
     result = recorder.record(manifest: existing, workflow_url: workflow_url)
 
     assert_equal "submitted", result.manifest.to_h.fetch("state")
-    assert_equal true, result.preserve_release_body
+    assert_equal true, result.finalization_remains_eligible
+    assert_equal true, result.to_h.fetch("finalization_remains_eligible")
     assert_equal "version-id", result.manifest.to_h.dig("asc_ids", "version_id")
   end
 
@@ -159,7 +162,7 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     )
 
     assert_equal "finalizing", result.manifest.to_h.fetch("state")
-    assert_equal true, result.preserve_release_body
+    assert_equal true, result.finalization_remains_eligible
   end
 
   def test_archived_beta_failure_preserves_the_durable_artifact_checkpoint
@@ -169,7 +172,7 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     )
 
     assert_equal "archived", result.manifest.to_h.fetch("state")
-    assert_equal false, result.preserve_release_body
+    assert_equal false, result.finalization_remains_eligible
     assert_equal workflow_url, result.manifest.to_h.dig("failure", "workflow_url")
   end
 
@@ -187,7 +190,7 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     )
 
     assert_equal "submitted", result.manifest.to_h.fetch("state")
-    assert_equal true, result.preserve_release_body
+    assert_equal true, result.finalization_remains_eligible
     assert_equal true, result.submission_confirmed
     refute result.manifest.to_h.fetch("asc_ids").key?("reason")
   end

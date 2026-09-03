@@ -151,23 +151,6 @@ jobs:
             id: release.dig("author", "id"),
             created_at: release["created_at"]
           )
-          approved_body = release.fetch("body", "").to_s
-          loop do
-            pattern = SequelAceRelease::PublishHandoff::ALPHA_RECOVERY_SUFFIXES.find do |candidate|
-              approved_body.match?(candidate)
-            end
-            break unless pattern
-
-            approved_body = approved_body.sub(pattern, "")
-          end
-          unless Digest::SHA256.hexdigest(approved_body) == manifest.fetch("release_notes_sha256")
-            raise SequelAceRelease::ValidationError, "beta release notes do not match the archived approval"
-          end
-          approved_notes = SequelAceRelease::Notes.app_store_notes_from_github_body(approved_body)
-          archived_notes = File.read("retry-archive/app-store-notes.txt").strip
-          unless approved_notes == archived_notes
-            raise SequelAceRelease::ValidationError, "App Store notes do not match the approved GitHub release section"
-          end
           artifacts = manifest.fetch("artifact_names")
           raise SequelAceRelease::ValidationError, "beta manifest must name two artifacts" unless artifacts.length == 2
           production_asset = artifacts.fetch(0)
@@ -273,23 +256,6 @@ jobs:
             echo "- This runner is complete; Xcode Cloud completion checks will wake Release Artifact Publisher, with a gated schedule as recovery only."
           } >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Mint release mutation token for failure annotation
-        if: >-
-          (failure() || cancelled()) &&
-          steps.authorization.outputs.authorized == 'true' &&
-          steps.release.outputs.validated == 'true' &&
-          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
-        id: failure_release_token
-        continue-on-error: true
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: Sequel-Ace
-          repositories: Sequel-Ace
-          permission-contents: write
-          permission-workflows: write
-
       - name: Document transient Alpha retry failure without replacing the handoff
         if: >-
           (failure() || cancelled()) &&
@@ -297,31 +263,5 @@ jobs:
           steps.release.outputs.validated == 'true' &&
           (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         continue-on-error: true
-        env:
-          BETA_TAG: ${{ inputs.beta_tag }}
-          RELEASE_COMMIT: ${{ inputs.expected_commit }}
-          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          set -euo pipefail
-          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
-            echo "The durable failed-Alpha handoff was left unchanged; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
-            exit 0
-          fi
-          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
-          gh release view "${BETA_TAG}" --json body --jq .body > retry-failed-release-body.md
-          if ! grep -Fq "Workflow evidence: ${RUN_URL}" retry-failed-release-body.md; then
-            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
-              --tag "${BETA_TAG}" \
-              --target-sha "${RELEASE_COMMIT}" >/dev/null
-            {
-              echo
-              echo "Alpha-only recovery attempt stopped; the beta tag and existing artifacts were not replaced."
-              echo "Workflow evidence: ${RUN_URL}"
-            } >> retry-failed-release-body.md
-            gh release edit "${BETA_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file retry-failed-release-body.md
-            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
-              --tag "${BETA_TAG}" \
-              --target-sha "${RELEASE_COMMIT}" >/dev/null
-          fi
-          echo "The exact durable failed-Alpha handoff was left unchanged so a later authorized retry can reuse it." >> "${GITHUB_STEP_SUMMARY}"
+          echo "The exact durable failed-Alpha handoff was left unchanged; maintainer-edited GitHub release notes were left unchanged so a later authorized retry can reuse both." >> "${GITHUB_STEP_SUMMARY}"

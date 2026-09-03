@@ -65,6 +65,12 @@ class ForwardBuildRecoveryTest < Minitest::Test
     assert_equal "d" * 40, github.validated_target.fetch(:target_sha)
   end
 
+  def test_maintainer_edited_release_notes_do_not_block_forward_recovery
+    result = validator.validate(**arguments.merge(release_body: "Maintainer-edited notes"))
+
+    assert_equal 20_113, result.fetch("expected_recovery_build")
+  end
+
   def test_rejects_a_non_forward_mismatch
     changed = manifest.with(
       "failure" => manifest.to_h.fetch("failure").merge(

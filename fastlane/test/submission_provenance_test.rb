@@ -42,7 +42,16 @@ class SubmissionProvenanceTest < Minitest::Test
       raise "wrong target" unless target_sha == @commit
       raise "missing protected paths" if protected_paths.empty?
 
-      { "target_sha" => target_sha }
+      { "target_sha" => target_sha, "current_main_sha" => target_sha }
+    end
+
+    def file_content(ref:, path:)
+      raise "wrong target" unless ref == @commit
+
+      counts = SequelAceRelease::Config::PROJECT_FILES.fetch(path)
+      values = Array.new(counts.fetch(:current), "CURRENT_PROJECT_VERSION = 20109;")
+      values.concat(Array.new(counts.fetch(:dylib), "DYLIB_CURRENT_VERSION = 20109;"))
+      values.join("\n")
     end
   end
 

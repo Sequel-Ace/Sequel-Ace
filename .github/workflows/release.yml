@@ -833,23 +833,7 @@ jobs:
             ${reconcile_arguments[@]+"${reconcile_arguments[@]}"} \
             --output branch-cleanup.json
 
-      - name: Mint release mutation token for failure annotation
-        if: >-
-          (failure() || cancelled()) &&
-          steps.release_context.outputs.tag != '' &&
-          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
-        id: failure_release_token
-        continue-on-error: true
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: Sequel-Ace
-          repositories: Sequel-Ace
-          permission-contents: write
-          permission-workflows: write
-
-      - name: Preserve an explanatory failed prerelease
+      - name: Preserve failed release state without editing release notes
         if: >-
           (failure() || cancelled()) &&
           steps.release_context.outputs.tag != '' &&
@@ -859,57 +843,29 @@ jobs:
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
-          FAILED_TAG: ${{ steps.release_context.outputs.tag }}
-          RELEASE_COMMIT: ${{ steps.release_target.outputs.sha || steps.release_context.outputs.source_release_commit_sha }}
-          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          preserve_release_body=false
+          finalization_remains_eligible=false
           if [[ -f manifest.json && -d release-archive ]]; then
             bundle exec ruby fastlane/bin/sa-release record-failure \
               --manifest manifest.json \
               --workflow-url "${RUN_URL}" \
               --output failure-disposition.json
             cp manifest.json failure-disposition.json release-archive/
-            preserve_release_body="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("preserve_release_body")' failure-disposition.json)"
+            finalization_remains_eligible="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("finalization_remains_eligible")' failure-disposition.json)"
             if [[ -n "${ARCHIVE_REFERENCE}" ]]; then
               Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json || \
                 echo "Could not refresh the private archive with failure state." >&2
             fi
           fi
-          if [[ "${preserve_release_body}" == "true" ]]; then
+          if [[ "${finalization_remains_eligible}" == "true" ]]; then
             {
               echo "### Post-submission workflow failure"
               echo "- The exact App Store submission remains finalizable."
-              echo "- The checksum-protected GitHub release body was left unchanged."
+              echo "- Maintainer-edited GitHub release notes were left unchanged."
               echo "- Failure evidence: ${RUN_URL}"
             } >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
-          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
-            echo "Failure state was preserved without a GitHub release annotation because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
-            exit 0
-          fi
-          if [[ ! "${RELEASE_COMMIT}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
-            echo "Failure state was preserved without a GitHub release annotation because the exact release commit was unavailable." >> "${GITHUB_STEP_SUMMARY}"
-            exit 0
-          fi
-          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
-          if ! gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md; then
-            echo "No tag-backed prerelease exists to annotate."
-            exit 0
-          fi
-          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
-            --tag "${FAILED_TAG}" \
-            --target-sha "${RELEASE_COMMIT}" >/dev/null
-          {
-            echo
-            echo "---"
-            echo "Automated release processing stopped. The tag and prerelease are intentionally preserved."
-            echo "Workflow evidence: ${RUN_URL}"
-          } >> failed-release-body.md
-          gh release edit "${FAILED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
-          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
-            --tag "${FAILED_TAG}" \
-            --target-sha "${RELEASE_COMMIT}" >/dev/null
+          echo "Failure state was preserved in the private archive; maintainer-edited GitHub release notes were left unchanged." >> "${GITHUB_STEP_SUMMARY}"

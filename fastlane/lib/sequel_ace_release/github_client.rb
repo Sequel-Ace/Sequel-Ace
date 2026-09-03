@@ -510,7 +510,8 @@ module SequelAceRelease
           body: body,
           expected_author_login: expected_author_login,
           expected_author_id: expected_author_id,
-          created: false
+          created: false,
+          validate_body: false
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
         return validated
@@ -725,7 +726,8 @@ module SequelAceRelease
         body: body,
         expected_author_login: expected_author_login,
         expected_author_id: expected_author_id,
-        created: false
+        created: false,
+        validate_body: false
       )
     end
 
@@ -745,16 +747,16 @@ module SequelAceRelease
     end
 
     def validate_release_response!(
-      response, tag:, title:, body:, expected_author_login:, expected_author_id:, created:
+      response, tag:, title:, body:, expected_author_login:, expected_author_id:, created:, validate_body: true
     )
       expected = {
         "tag_name" => tag,
         "name" => title,
-        "body" => body,
         "draft" => false,
         "prerelease" => true,
         "author_login" => expected_author_login
       }
+      expected["body"] = body if validate_body
       expected["author_id"] = expected_author_id unless expected_author_id.nil?
       actual = expected.keys.to_h do |key|
         value = case key

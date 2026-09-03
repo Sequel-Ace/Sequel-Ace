@@ -1622,11 +1622,6 @@ module SequelAceRelease
     end
 
     def verify_release_assets!(release, manifest, github:)
-      actual_notes_sha = Digest::SHA256.hexdigest(release.fetch("body").to_s)
-      unless actual_notes_sha == manifest.fetch("release_notes_sha256")
-        raise IntegrityError, "GitHub release notes no longer match the archived manifest"
-      end
-
       validator = GitHubReleasePayload.new(
         release: release,
         expected_digests: release_asset_sha256s!(manifest)

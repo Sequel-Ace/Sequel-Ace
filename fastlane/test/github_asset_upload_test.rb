@@ -24,7 +24,16 @@ class GitHubAssetUploadTest < Minitest::Test
       raise "wrong release commit" unless target_sha == @release_commit
       raise "missing protected paths" if protected_paths.empty?
 
-      { "target_sha" => target_sha }
+      { "target_sha" => target_sha, "current_main_sha" => target_sha }
+    end
+
+    def file_content(ref:, path:)
+      raise "wrong release commit" unless ref == @release_commit
+
+      counts = SequelAceRelease::Config::PROJECT_FILES.fetch(path)
+      values = Array.new(counts.fetch(:current), "CURRENT_PROJECT_VERSION = 20109;")
+      values.concat(Array.new(counts.fetch(:dylib), "DYLIB_CURRENT_VERSION = 20109;"))
+      values.join("\n")
     end
 
     def upload_release_asset(**arguments)
