@@ -10,8 +10,10 @@ class VersionFilesTest < Minitest::Test
       files = SequelAceRelease::VersionFiles.new(root: root)
 
       assert_equal({ "version" => "5.3.1", "build" => 20_104 }, files.current)
+      assert_equal "production/5.3.1-20104", files.release_tag
       result = files.update!(version: "5.3.2", build: 20_105, channel: "beta")
       assert_equal({ "version" => "5.3.2", "build" => 20_105 }, files.current)
+      assert_equal "beta/5.3.2-20105", files.release_tag
       assert_includes root.join(SequelAceRelease::Config::APP_INFO_PLIST).read,
                       "<string>beta/5.3.2-20105</string>"
       assert_equal 20_104, result.dig("before", "build")

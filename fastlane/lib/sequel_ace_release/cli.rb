@@ -168,7 +168,12 @@ module SequelAceRelease
         env: { "RANGE_START" => options[:changelog_base_tag], "RANGE_END" => current_sha }
       )
       changed_paths = git.changed_paths
-      validate_preparation_paths!(changed_paths)
+      validate_preparation_paths!(
+        changed_paths,
+        version: options[:version],
+        build: options[:build],
+        channel: options[:channel]
+      )
       emit({
         "channel" => options[:channel],
         "head_sha" => current_sha,
@@ -300,7 +305,12 @@ module SequelAceRelease
         iteration: options[:iteration]
       )
       paths = git.changed_paths
-      validate_preparation_paths!(paths)
+      validate_preparation_paths!(
+        paths,
+        version: approval.payload.fetch("target_version"),
+        build: options[:build],
+        channel: approval.payload.fetch("channel")
+      )
       commit = github_client.create_bot_commit(
         base_sha: expected_sha,
         branch: naming.branch,
@@ -1404,7 +1414,7 @@ module SequelAceRelease
       raise OptionParser::MissingArgument, missing.join(", ") unless missing.empty?
     end
 
-    def validate_preparation_paths!(paths)
+    def validate_preparation_paths!(paths, version:, build:, channel:)
       allowed = release_paths
       renamed_or_copied = paths.select { |entry| entry.fetch("status").start_with?("R", "C") }
       unless renamed_or_copied.empty?
@@ -1415,8 +1425,16 @@ module SequelAceRelease
       unexpected = (changed + original).uniq - allowed
       raise ValidationError, "release preparation changed unauthorized paths: #{unexpected.join(', ')}" unless unexpected.empty?
       raise ValidationError, "release preparation did not update CHANGELOG.md" unless changed.include?("CHANGELOG.md")
-      missing = (Config::PROJECT_FILES.keys + Config::PLIST_FILES) - changed
-      raise ValidationError, "release preparation did not update required version files: #{missing.join(', ')}" unless missing.empty?
+
+      # A normal mainline commit may have already advanced the version files.
+      # In that case preparation legitimately changes only the changelog; verify
+      # the complete release state instead of requiring a no-op file rewrite.
+      expected = { "version" => version, "build" => Integer(build) }
+      expected_tag = "#{channel}/#{version}-#{build}"
+      prepared = VersionFiles.new
+      unless prepared.current == expected && prepared.release_tag == expected_tag
+        raise ValidationError, "release preparation did not converge on #{expected} and #{expected_tag}"
+      end
     end
 
     def release_paths

@@ -27,6 +27,10 @@ module SequelAceRelease
       { "version" => versions.first, "build" => Integer(builds.first) }
     end
 
+    def release_tag
+      read_plist_value(Config::APP_INFO_PLIST, Config::RELEASE_TAG_PLIST_KEY)
+    end
+
     def update!(version:, build:, channel:)
       Version.validate!(version)
       Config.validate_channel!(channel)
@@ -51,7 +55,7 @@ module SequelAceRelease
       after = current
       expected_after = { "version" => version, "build" => build_number }
       raise ValidationError, "version preparation did not converge on #{expected_after}" unless after == expected_after
-      unless read_plist_value(Config::APP_INFO_PLIST, Config::RELEASE_TAG_PLIST_KEY) == release_tag
+      unless self.release_tag == release_tag
         raise ValidationError, "release tag preparation did not converge on #{release_tag}"
       end
 
