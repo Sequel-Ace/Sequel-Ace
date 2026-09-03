@@ -26,9 +26,14 @@ final class SASSHTunnelTransportTests: XCTestCase {
         super.tearDown()
     }
 
-    func testAbsentPreferenceMeansTheDefaultWhichIsDistributedObjectsWhileTheSocketSoaks() {
+    func testAbsentPreferenceMeansTheDefaultWhichIsTheSocketSinceStep5() {
+        XCTAssertEqual(SASSHTunnelTransportSelection.selectedTransport(from: defaults), .socket)
+        XCTAssertEqual(SASSHTunnelTransportSelection.defaultTransport, .socket)
+    }
+
+    func testRollbackIsTheExplicitFalse() {
+        defaults.set(false, forKey: "SPSSHTunnelUseSocketTransport")
         XCTAssertEqual(SASSHTunnelTransportSelection.selectedTransport(from: defaults), .distributedObjects)
-        XCTAssertEqual(SASSHTunnelTransportSelection.defaultTransport, .distributedObjects)
     }
 
     func testPreferenceSelectsTheSocketOrDistributedObjects() {

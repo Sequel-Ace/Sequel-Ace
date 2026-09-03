@@ -80,9 +80,18 @@ import Foundation
     }
 
     /// The socket name is short on purpose: `sun_path` allows 103 bytes and
-    /// the container tmp already takes ~60 plus the user name.
+    /// the container tmp already takes 62 plus the user name, so every byte
+    /// here is a byte of user name that still fits (26 with this shape).
     static func socketFileName() -> String {
-        "ssh-" + String((0..<5).map { _ in String(format: "%02x", Int.random(in: 0...255)) }.joined()) + ".sock"
+        "s-" + String((0..<4).map { _ in String(format: "%02x", Int.random(in: 0...255)) }.joined()) + ".sock"
+    }
+
+    /// Our socket names — the current shape and the pre-flip `ssh-` one, so a
+    /// sweep after an update still clears the older leftovers — matched at
+    /// their exact widths, so nothing else that happens to look similar is
+    /// ever unlinked.
+    static func isOwnSocketName(_ name: String) -> Bool {
+        name.range(of: "^(s-[0-9a-f]{8}|ssh-[0-9a-f]{10})\\.sock$", options: .regularExpression) != nil
     }
 
     /// Removes sockets a previous app process left behind (a crash or a
@@ -91,7 +100,7 @@ import Foundation
     /// just sees one empty connection.
     static func sweepStaleSockets(in directory: String) {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
-        for name in names where name.hasPrefix("ssh-") && name.hasSuffix(".sock") {
+        for name in names where isOwnSocketName(name) {
             let candidate = (directory as NSString).appendingPathComponent(name)
             guard var address = try? SASSHTunnelSocketIO.address(for: candidate),
                   let fd = SASSHTunnelSocketIO.makeSocket() else { continue }

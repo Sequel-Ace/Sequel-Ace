@@ -145,6 +145,24 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         XCTAssertNotEqual(first.path, second.path)
     }
 
+    func testSocketNameShapeAndSweepRecognition() {
+        let name = SASSHTunnelSocketServer.socketFileName()
+        XCTAssertEqual(name.count, 15, "the path budget in the container tmp depends on this")
+        XCTAssertTrue(SASSHTunnelSocketServer.isOwnSocketName(name))
+        XCTAssertTrue(SASSHTunnelSocketServer.isOwnSocketName("ssh-deadbeef00.sock"), "pre-flip leftovers are still swept")
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("agent.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-zz.sock"))
+        // Exact widths only: neither shorter nor longer hex runs are ours.
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-1.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-deadbee.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("s-deadbeef0.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("ssh-deadbeef.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("ssh-deadbeef001.sock"))
+        XCTAssertTrue(SASSHTunnelSocketServer.isOwnSocketName("s-deadbeef.sock"))
+        XCTAssertFalse(SASSHTunnelSocketServer.isOwnSocketName("S-DEADBEEF.sock"), "lower-case hex, as generated")
+    }
+
     func testDirectoryThatCannotFitTheNameIsSkippedAndNoneIsAnError() {
         let tooLong = "/" + String(repeating: "a", count: 110)
         XCTAssertThrowsError(try SASSHTunnelSocketServer(directories: [tooLong], handler: Self.echo)) { error in

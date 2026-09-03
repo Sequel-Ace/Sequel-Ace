@@ -33,9 +33,13 @@ import Foundation
 /// Which channel a tunnel's askpass assistant answers over (SSH tunnel IPC
 /// plan, Step 3). Selected once per tunnel from a hidden preference and
 /// handed to ssh in its environment, so a tunnel never changes transport
-/// mid-life and support can flip the default without a rebuild:
+/// mid-life and support can flip the default without a rebuild. The socket
+/// is the default since Step 5; the rollback to Distributed Objects is one
+/// key in the running build's own defaults domain — the Beta configuration
+/// has its own bundle identifier, so the command differs per build:
 ///
-///     defaults write com.sequel-ace.sequel-ace SPSSHTunnelUseSocketTransport -bool YES
+///     defaults write com.sequel-ace.sequel-ace      SPSSHTunnelUseSocketTransport -bool NO   # release
+///     defaults write com.sequel-ace.sequel-ace-beta SPSSHTunnelUseSocketTransport -bool NO   # Beta
 ///
 /// App and Unit Tests targets.
 @objc enum SASSHTunnelTransport: Int {
@@ -56,9 +60,10 @@ import Foundation
     /// Hidden preference: a Bool. Absent means `defaultTransport`.
     static let defaultsKey = "SPSSHTunnelUseSocketTransport"
 
-    /// What a fresh install gets. Distributed Objects while the socket
-    /// transport soaks (Step 3); flipped in Step 5.
-    static let defaultTransport: SASSHTunnelTransport = .distributedObjects
+    /// What a fresh install gets: the socket transport (Step 5, first
+    /// release). Distributed Objects remains selectable as the rollback until
+    /// Step 5's second release deletes it.
+    static let defaultTransport: SASSHTunnelTransport = .socket
 
     @objc static let transportEnvironmentKey = SASSHTunnelSocketIO.EnvironmentKey.transport
     @objc static let socketPathEnvironmentKey = SASSHTunnelSocketIO.EnvironmentKey.socketPath

@@ -359,10 +359,11 @@ Execution notes (2026-09-01):
   `SP_CONNECTION_SOCKET_PATH`. The DO connection is still registered for
   every tunnel, so a socket failure at init falls back with no gap. The
   socket file is `ssh-<10 hex>.sock`, mode 0600, in the container tmp: the
-  name is short because that directory already costs ~60 bytes plus the user
-  name against the 103-byte limit — with this naming a user name of up to 19
-  characters fits, and anything longer falls back to DO for now (see
-  Step 5's to-do). `SASSHTunnelSocketServer` also **sweeps stale sockets**
+  name is short because that directory already costs 62 bytes plus the user
+  name against the 103-byte limit — with that name a user name of up to 22
+  UTF-8 bytes fit (historical: Step 5a's shorter `s-<8 hex>.sock` raises it
+  to 26 bytes), and anything longer falls back to DO for now (see Step 5's
+  to-do). `SASSHTunnelSocketServer` also **sweeps stale sockets**
   when it starts: a killed app skips `close()`, and the first live run left
   its socket file behind until this was added. Stale means "refuses a
   connection", so live sockets are untouched.
@@ -483,7 +484,7 @@ Execution notes (2026-09-01):
   disabled) and is not. Check `codesign -dv` for the team before a live
   run; give test runs their own `-derivedDataPath`.
 
-## Step 5 — Flip the default, then delete DO
+## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) prepared
 
 Separate releases. Flip to the socket, let it soak, then remove the DO path,
 the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
@@ -491,8 +492,19 @@ import, and replace `SequelAceTunnelAssistant.m` with `main.swift`. The
 remaining `NSConnection` warnings go to zero at this point — a side effect,
 not the goal.
 
+Execution notes, 5a (2026-09-01): `SASSHTunnelTransportSelection.defaultTransport`
+is `.socket`; the rollback is the same key written `NO` — in the running
+build's own defaults domain, which Codex review pointed out differs for the
+Beta configuration (`com.sequel-ace.sequel-ace-beta`, not
+`com.sequel-ace.sequel-ace`), so support has two commands to hand out, one
+per build. The socket name
+shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 UTF-8 bytes fit
+the 103-byte `sun_path` after the 62-byte container-tmp prefix; the stale
+sweep recognises both name shapes, at their exact widths only. This is the
+release that soaks.
+
 Before DO can go, the socket must have somewhere to live for *every* user:
-today a container-tmp path over 103 bytes (user names past ~19 characters)
+today a container-tmp path over 103 bytes (user names past 26 UTF-8 bytes)
 falls back to DO. Give the server a second candidate directory that is short
 and sandbox-reachable — the per-user `DARWIN_USER_TEMP_DIR` (`/var/folders/…/T/`,
 ~50 bytes) is the obvious one if the sandbox permits it for both processes;
@@ -564,8 +576,11 @@ easily get wrong.
 ## Rollback
 
 The default from Step 3 is the rollback: support tells affected users to write
-one key and relaunch. Without it, a regression means a point release. This is the
-main reason for the flag — do not skip it to save time.
+one key and relaunch — `SPSSHTunnelUseSocketTransport -bool NO` in the
+build's defaults domain, `com.sequel-ace.sequel-ace` for release and
+`com.sequel-ace.sequel-ace-beta` for Beta. Without it, a regression means a
+point release. This is the main reason for the flag — do not skip it to save
+time.
 
 ## Effort
 
