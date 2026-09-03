@@ -26,6 +26,16 @@ class ForwardBuildRecoveryTest < Minitest::Test
 
     def validate_release_target!(target_sha:, protected_paths:)
       @validated_target = { target_sha: target_sha, protected_paths: protected_paths }
+      { "target_sha" => target_sha, "current_main_sha" => target_sha }
+    end
+
+    def file_content(ref:, path:)
+      raise "unexpected ref" unless ref == "d" * 40
+
+      counts = SequelAceRelease::Config::PROJECT_FILES.fetch(path)
+      values = Array.new(counts.fetch(:current), "CURRENT_PROJECT_VERSION = 20109;")
+      values.concat(Array.new(counts.fetch(:dylib), "DYLIB_CURRENT_VERSION = 20109;"))
+      values.join("\n")
     end
 
     def release_by_tag(tag)

@@ -114,9 +114,10 @@ module SequelAceRelease
       commit = data.fetch("release_commit_sha")
       raise ValidationError, "failed release tag moved" unless @github.ref_sha("tags/#{tag}") == commit
 
-      @github.validate_release_target!(
+      PublishHandoff.validate_release_source!(
+        github: @github,
         target_sha: commit,
-        protected_paths: PublishHandoff::RELEASE_PATHS
+        canonical_build: data.fetch("canonical_build")
       )
       release = @github.release_by_tag(tag)
       unless release["tag_name"] == tag && release["draft"] == false && release["prerelease"] == true &&

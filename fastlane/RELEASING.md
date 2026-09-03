@@ -709,6 +709,12 @@ automatic RC recovery described above.
   `legacy_updater_v1`, it additionally validates every visible entry against the
   shipped decoder. A newly incompatible feed writes terminal integrity evidence
   and stops before the next Apple mutation.
+- The current-main guard rejects any later plist or changelog change. It treats
+  project-file registration separately: the tagged commit and current main must
+  each independently retain every configured `CURRENT_PROJECT_VERSION` and
+  `DYLIB_CURRENT_VERSION` value at the archived canonical build. This permits
+  unrelated Xcode file registration after a tag, but a missing, added, or
+  changed release build setting remains a hard stop.
 - Beta never creates a customer App Store version.
 - Production submission arms `SA_RELEASE_PENDING_FINALIZATION_TAG` only after
   the exact `submitted` archive is durable. The six-hour schedule does no

@@ -44,6 +44,33 @@ class VersionFilesTest < Minitest::Test
     end
   end
 
+  def test_validates_remote_project_build_evidence_without_requiring_byte_identical_projects
+    Dir.mktmpdir do |directory|
+      root = Pathname.new(directory)
+      create_fixture_tree(root)
+      contents = SequelAceRelease::Config::PROJECT_FILES.keys.to_h do |path|
+        [path, root.join(path).read + "// unrelated project registration\n"]
+      end
+
+      assert SequelAceRelease::VersionFiles.validate_project_build_settings!(
+        contents_by_path: contents,
+        expected_build: 20_104
+      )
+
+      path = SequelAceRelease::Config::PROJECT_FILES.keys.first
+      changed = contents.merge(
+        path => contents.fetch(path).sub("CURRENT_PROJECT_VERSION = 20104;", "CURRENT_PROJECT_VERSION = 20105;")
+      )
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::VersionFiles.validate_project_build_settings!(
+          contents_by_path: changed,
+          expected_build: 20_104
+        )
+      end
+      assert_includes error.message, "CURRENT_PROJECT_VERSION"
+    end
+  end
+
   def test_invalid_requested_build_has_a_specific_validation_error
     Dir.mktmpdir do |directory|
       root = Pathname.new(directory)

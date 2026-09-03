@@ -93,6 +93,23 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/main", transport.requests.first[:path]
   end
 
+  def test_reads_base64_file_content_at_an_immutable_commit
+    ref = "a" * 40
+    content = "CURRENT_PROJECT_VERSION = 20111;\n"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "type" => "file",
+        "encoding" => "base64",
+        "content" => "#{Base64.strict_encode64(content)}\n"
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    assert_equal content, client.file_content(ref: ref, path: "sequel-ace.xcodeproj/project.pbxproj")
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/contents/sequel-ace.xcodeproj/project.pbxproj?ref=#{ref}",
+                 transport.requests.first[:path]
+  end
+
   def test_reads_githubs_authoritative_latest_release
     transport = FakeTransport.new([
       http_response(body: { "id" => 100, "tag_name" => "production/5.3.2-20105" })

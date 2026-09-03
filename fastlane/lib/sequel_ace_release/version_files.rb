@@ -53,6 +53,36 @@ module SequelAceRelease
       identity
     end
 
+    def self.validate_project_build_settings!(contents_by_path:, expected_build:)
+      build = Integer(expected_build)
+      raise ValidationError, "expected project build must be positive" unless build.positive?
+      raise ValidationError, "project build evidence is malformed" unless contents_by_path.is_a?(Hash)
+
+      Config::PROJECT_FILES.each do |path, expected_counts|
+        content = contents_by_path[path]
+        raise ValidationError, "#{path} is missing project build evidence" unless content.is_a?(String)
+
+        validate_project_build_setting!(
+          content: content,
+          path: path,
+          key: "CURRENT_PROJECT_VERSION",
+          expected_count: expected_counts.fetch(:current),
+          expected_build: build
+        )
+        validate_project_build_setting!(
+          content: content,
+          path: path,
+          key: "DYLIB_CURRENT_VERSION",
+          expected_count: expected_counts.fetch(:dylib),
+          expected_build: build
+        )
+      end
+
+      true
+    rescue ArgumentError, TypeError
+      raise ValidationError, "expected project build must be an integer"
+    end
+
     def update!(version:, build:, channel:)
       Version.validate!(version)
       Config.validate_channel!(channel)
@@ -91,6 +121,13 @@ module SequelAceRelease
     end
 
     private
+
+    def self.validate_project_build_setting!(content:, path:, key:, expected_count:, expected_build:)
+      values = content.scan(/\b#{Regexp.escape(key)} = (\d+);/).flatten
+      unless values.length == expected_count && values.all? { |value| Integer(value) == expected_build }
+        raise ValidationError, "#{path} has unexpected #{key} release build settings"
+      end
+    end
 
     def read_plist_value(relative_path, key)
       content = read(relative_path)

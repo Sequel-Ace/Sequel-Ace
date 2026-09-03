@@ -5,6 +5,7 @@ require "digest"
 module SequelAceRelease
   class PublishHandoff
     RELEASE_PATHS = (Config::PROJECT_FILES.keys + Config::PLIST_FILES + ["CHANGELOG.md"]).freeze
+    STRICT_RELEASE_PATHS = (Config::PLIST_FILES + ["CHANGELOG.md"]).freeze
     ACTIONS_RUN_URL = %r{https://github\.com/Sequel-Ace/Sequel-Ace/actions/runs/[1-9]\d*(?:/attempts/[1-9]\d*)?}.freeze
     ALPHA_RECOVERY_SUFFIXES = [
       /\n---\nAutomated release artifact processing stopped\. The tag and prerelease are intentionally preserved\.\nWorkflow evidence: #{ACTIONS_RUN_URL}\n?\z/,
@@ -18,6 +19,24 @@ module SequelAceRelease
 
     def initialize(github:)
       @github = github
+    end
+
+    def self.validate_release_source!(github:, target_sha:, canonical_build:)
+      validation = github.validate_release_target!(
+        target_sha: target_sha,
+        protected_paths: STRICT_RELEASE_PATHS
+      )
+      [target_sha, validation.fetch("current_main_sha")].uniq.each do |ref|
+        contents = Config::PROJECT_FILES.keys.to_h do |path|
+          [path, github.file_content(ref: ref, path: path)]
+        end
+        VersionFiles.validate_project_build_settings!(
+          contents_by_path: contents,
+          expected_build: canonical_build
+        )
+      end
+
+      validation.merge("semantically_validated_project_paths" => Config::PROJECT_FILES.keys)
     end
 
     def validate(manifest:, tag:, app_store_notes:)
@@ -38,7 +57,11 @@ module SequelAceRelease
       release_commit = data.fetch("release_commit_sha")
       raise ValidationError, "release tag moved" unless @github.ref_sha("tags/#{tag}") == release_commit
 
-      @github.validate_release_target!(target_sha: release_commit, protected_paths: RELEASE_PATHS)
+      self.class.validate_release_source!(
+        github: @github,
+        target_sha: release_commit,
+        canonical_build: data.fetch("canonical_build")
+      )
 
       release = @github.release_by_tag(tag)
       raise ValidationError, "release tag identity changed" unless release["tag_name"] == tag
