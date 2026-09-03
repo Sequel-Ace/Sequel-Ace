@@ -4,6 +4,7 @@ module SequelAceRelease
   class VersionFiles
     VERSION_KEY = "CFBundleShortVersionString"
     BUILD_KEY = "CFBundleVersion"
+    RELEASE_TAG_PATTERN = /\A(production|beta)\/(\d+\.\d+\.\d+)-([1-9]\d*)\z/.freeze
 
     attr_reader :root
 
@@ -25,6 +26,31 @@ module SequelAceRelease
       end
 
       { "version" => versions.first, "build" => Integer(builds.first) }
+    end
+
+    def release_tag
+      read_plist_value(Config::APP_INFO_PLIST, Config::RELEASE_TAG_PLIST_KEY)
+    end
+
+    def release_identity
+      source = current
+      tag = release_tag
+      match = tag.match(RELEASE_TAG_PATTERN)
+      raise ValidationError, "release tag #{tag.inspect} is malformed" unless match
+
+      identity = {
+        "channel" => match[1],
+        "version" => match[2],
+        "build" => Integer(match[3]),
+        "tag" => tag
+      }
+      expected = source.slice("version", "build")
+      actual = identity.slice("version", "build")
+      unless actual == expected
+        raise ValidationError, "release tag #{tag.inspect} does not match source version #{expected}"
+      end
+
+      identity
     end
 
     def update!(version:, build:, channel:)
@@ -51,8 +77,14 @@ module SequelAceRelease
       after = current
       expected_after = { "version" => version, "build" => build_number }
       raise ValidationError, "version preparation did not converge on #{expected_after}" unless after == expected_after
-      unless read_plist_value(Config::APP_INFO_PLIST, Config::RELEASE_TAG_PLIST_KEY) == release_tag
-        raise ValidationError, "release tag preparation did not converge on #{release_tag}"
+      expected_identity = {
+        "channel" => channel,
+        "version" => version,
+        "build" => build_number,
+        "tag" => release_tag
+      }
+      unless release_identity == expected_identity
+        raise ValidationError, "release tag preparation did not converge on #{expected_identity}"
       end
 
       { "before" => before, "after" => after }

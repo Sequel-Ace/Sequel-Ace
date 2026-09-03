@@ -377,6 +377,8 @@ jobs:
             )
           fi
           bundle exec ruby fastlane/bin/sa-release reconcile-build \
+            --channel "${RELEASE_CHANNEL}" \
+            --target-version "${RELEASE_VERSION}" \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             "${recovery_args[@]}" \
             --output reconciliation.json
@@ -593,6 +595,8 @@ jobs:
           fi
           bundle exec ruby fastlane/bin/sa-release reconcile-build \
             --source-build "${source_build}" \
+            --channel "${RELEASE_CHANNEL}" \
+            --target-version "${RELEASE_VERSION}" \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             --expected-target-build "${{ steps.reconcile.outputs.build }}" \
             "${recovery_args[@]}" \

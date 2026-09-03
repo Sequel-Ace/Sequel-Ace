@@ -168,7 +168,12 @@ module SequelAceRelease
         env: { "RANGE_START" => options[:changelog_base_tag], "RANGE_END" => current_sha }
       )
       changed_paths = git.changed_paths
-      validate_preparation_paths!(changed_paths)
+      validate_preparation_paths!(
+        changed_paths,
+        version: options[:version],
+        build: options[:build],
+        channel: options[:channel]
+      )
       emit({
         "channel" => options[:channel],
         "head_sha" => current_sha,
@@ -186,6 +191,8 @@ module SequelAceRelease
       parser = OptionParser.new do |value|
         value.banner = "Usage: sa-release reconcile-build [options]"
         value.on("--source-build BUILD", Integer) { |item| options[:source_build] = item }
+        value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--target-version VERSION") { |item| options[:target_version] = item }
         value.on("--highest-tag-build BUILD", Integer) { |item| options[:highest_tag_build] = item }
         value.on("--highest-asc-build BUILD", Integer) { |item| options[:highest_asc_build] = item }
         value.on("--expected-target-build BUILD", Integer) { |item| options[:expected_target_build] = item }
@@ -198,8 +205,13 @@ module SequelAceRelease
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
+      release_intent = release_intent_for_reconciliation!(options)
       git = GitRepository.new
-      source_build = options[:source_build] || VersionFiles.new.current.fetch("build")
+      source_build = options[:source_build] || release_intent&.fetch("build") || VersionFiles.new.current.fetch("build")
+      if release_intent && source_build != release_intent.fetch("build")
+        raise ValidationError,
+              "requested source build #{source_build} does not match the prepared source build #{release_intent.fetch('build')}"
+      end
       canonical_tags = git.tags("production/*") + git.tags("beta/*")
       highest_tag = options[:highest_tag_build] || highest_build_from_tags(canonical_tags)
       asc_client = nil
@@ -229,7 +241,10 @@ module SequelAceRelease
         source_release_commit_sha: source_release_commit_sha,
         expected_target_build: options[:expected_target_build],
         recover_release_tag: recovery_tag,
-        production_workflow_id: options[:workflow_id]
+        production_workflow_id: options[:workflow_id],
+        prepared_source: release_intent && release_intent.fetch("channel") == options[:channel] &&
+          release_intent.fetch("version") == options[:target_version],
+        source_release_identity: release_intent
       )
       emit(result.to_h.merge("production_cloud_runs" => runs), options[:output])
     end
@@ -300,7 +315,12 @@ module SequelAceRelease
         iteration: options[:iteration]
       )
       paths = git.changed_paths
-      validate_preparation_paths!(paths)
+      validate_preparation_paths!(
+        paths,
+        version: approval.payload.fetch("target_version"),
+        build: options[:build],
+        channel: approval.payload.fetch("channel")
+      )
       commit = github_client.create_bot_commit(
         base_sha: expected_sha,
         branch: naming.branch,
@@ -1404,7 +1424,7 @@ module SequelAceRelease
       raise OptionParser::MissingArgument, missing.join(", ") unless missing.empty?
     end
 
-    def validate_preparation_paths!(paths)
+    def validate_preparation_paths!(paths, version:, build:, channel:)
       allowed = release_paths
       renamed_or_copied = paths.select { |entry| entry.fetch("status").start_with?("R", "C") }
       unless renamed_or_copied.empty?
@@ -1415,8 +1435,33 @@ module SequelAceRelease
       unexpected = (changed + original).uniq - allowed
       raise ValidationError, "release preparation changed unauthorized paths: #{unexpected.join(', ')}" unless unexpected.empty?
       raise ValidationError, "release preparation did not update CHANGELOG.md" unless changed.include?("CHANGELOG.md")
-      missing = (Config::PROJECT_FILES.keys + Config::PLIST_FILES) - changed
-      raise ValidationError, "release preparation did not update required version files: #{missing.join(', ')}" unless missing.empty?
+
+      # A normal mainline commit may have already advanced the version files.
+      # In that case preparation legitimately changes only the changelog; verify
+      # the complete release state instead of requiring a no-op file rewrite.
+      expected = {
+        "channel" => channel,
+        "version" => version,
+        "build" => Integer(build),
+        "tag" => "#{channel}/#{version}-#{build}"
+      }
+      prepared = VersionFiles.new
+      unless prepared.release_identity == expected
+        raise ValidationError, "release preparation did not converge on #{expected}"
+      end
+    end
+
+    def release_intent_for_reconciliation!(options)
+      channel = options[:channel]
+      version = options[:target_version]
+      return nil if channel.nil? && version.nil?
+      if channel.to_s.empty? || version.to_s.empty?
+        raise ValidationError, "build reconciliation requires both channel and target version"
+      end
+
+      Config.validate_channel!(channel)
+      Version.validate!(version)
+      VersionFiles.new.release_identity
     end
 
     def release_paths

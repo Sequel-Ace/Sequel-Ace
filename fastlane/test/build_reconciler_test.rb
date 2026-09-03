@@ -83,11 +83,78 @@ class BuildReconcilerTest < Minitest::Test
     assert_includes error.message, "ahead of API-derived"
   end
 
-  def test_resume_after_merge_requires_an_exact_release_commit
+  def test_preincremented_unreleased_source_uses_the_derived_build_without_recovery
+    result = reconcile(
+      source_build: 20_105,
+      source_tagged: false,
+      cloud_runs: [cloud_run(20_104)]
+    )
+
+    assert_equal "normal_increment", result.reason
+    assert_equal 20_105, result.target_build
+    assert_nil result.source_release_commit_sha
+    assert_empty result.skipped_runs
+  end
+
+  def test_declared_preincremented_source_is_reused_with_auditable_identity
+    identity = {
+      "channel" => "beta",
+      "version" => "6.0.0",
+      "build" => 20_105,
+      "tag" => "beta/6.0.0-20105"
+    }
+    result = reconcile(
+      source_build: 20_105,
+      source_tagged: false,
+      prepared_source: true,
+      source_release_identity: identity,
+      cloud_runs: [cloud_run(20_104)]
+    )
+
+    assert_equal "preincremented_source", result.reason
+    assert_equal 20_105, result.target_build
+    assert_equal identity, result.production_build_evidence.fetch("source_release_identity")
+    assert_empty result.skipped_runs
+  end
+
+  def test_declared_source_ahead_of_external_build_state_converges_on_the_api_candidate
+    identity = {
+      "channel" => "beta",
+      "version" => "6.0.0",
+      "build" => 20_107,
+      "tag" => "beta/6.0.0-20107"
+    }
+    result = reconcile(
+      source_build: 20_107,
+      source_tagged: false,
+      prepared_source: true,
+      source_release_identity: identity,
+      cloud_runs: [cloud_run(20_104)]
+    )
+
+    assert_equal "self_healed_prepared_source_ahead", result.reason
+    assert_equal 20_105, result.target_build
+    assert_equal identity, result.production_build_evidence.fetch("source_release_identity")
+    assert_empty result.skipped_runs
+  end
+
+  def test_declared_source_identity_must_match_the_source_build
     error = assert_raises(SequelAceRelease::ValidationError) do
-      reconcile(source_build: 20_105, source_tagged: false, cloud_runs: [cloud_run(20_104)])
+      reconcile(
+        source_build: 20_105,
+        source_tagged: false,
+        prepared_source: true,
+        source_release_identity: {
+          "channel" => "beta",
+          "version" => "6.0.0",
+          "build" => 20_106,
+          "tag" => "beta/6.0.0-20106"
+        },
+        cloud_runs: [cloud_run(20_104)]
+      )
     end
-    assert_includes error.message, "exact release preparation commit"
+
+    assert_includes error.message, "does not match source build"
   end
 
   def test_release_tag_cannot_be_ahead_of_source

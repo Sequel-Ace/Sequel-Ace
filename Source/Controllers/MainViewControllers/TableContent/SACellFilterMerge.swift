@@ -32,6 +32,13 @@ import Foundation
             return newFilter
         }
 
+        // A marked root group (the shape the AND/OR popup writes) is extended
+        // under its own conjunction, so "Filter by value" on an OR root yields
+        // "a OR b OR cell" instead of flipping the popup to AND.
+        if let extended = SARuleFilterRootConjunction.extendingMarkedRoot(currentFilter, withRule: newFilter) {
+            return extended
+        }
+
         if isConjunctionGroup(filter: currentFilter), let children = currentFilter["children"] as? [[String: Any]] {
             // Strip placeholder children (empty starter or value-empty half-touched rows) before appending
             var realChildren = children.filter { !isEmpty(filter: $0) && !isUntouchedStarter(filter: $0) }

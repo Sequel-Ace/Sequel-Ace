@@ -243,6 +243,10 @@ class ReleaseFailureRecoveryTest < Minitest::Test
       ["CHANGELOG.md"]
     ).map { |path| { "status" => " M", "path" => path } }
     git.define_singleton_method(:changed_paths) { changed_paths }
+    version_files = Object.new
+    version_files.define_singleton_method(:release_identity) do
+      { "channel" => "production", "version" => "5.3.2", "build" => 20_105, "tag" => "production/5.3.2-20105" }
+    end
     github = Object.new
     github.define_singleton_method(:create_bot_commit) do |**_options|
       { "sha" => commit_sha, "verification" => { "verified" => true } }
@@ -259,16 +263,18 @@ class ReleaseFailureRecoveryTest < Minitest::Test
       File.write(body_path, "## App Store Release Notes\n\nA focused release note.\n")
       cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
 
-      status = SequelAceRelease::GitRepository.stub(:new, git) do
-        cli.stub(:github_client, github) do
-          cli.run([
-            "github-prepare-pr",
-            "--approval", approval_path,
-            "--approval-sha", release_approval.sha256,
-            "--build", "20105",
-            "--release-body", body_path,
-            "--output", output_path
-          ])
+      status = SequelAceRelease::VersionFiles.stub(:new, version_files) do
+        SequelAceRelease::GitRepository.stub(:new, git) do
+          cli.stub(:github_client, github) do
+            cli.run([
+              "github-prepare-pr",
+              "--approval", approval_path,
+              "--approval-sha", release_approval.sha256,
+              "--build", "20105",
+              "--release-body", body_path,
+              "--output", output_path
+            ])
+          end
         end
       end
 
