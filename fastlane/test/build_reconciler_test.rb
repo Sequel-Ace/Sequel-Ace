@@ -83,11 +83,17 @@ class BuildReconcilerTest < Minitest::Test
     assert_includes error.message, "ahead of API-derived"
   end
 
-  def test_resume_after_merge_requires_an_exact_release_commit
-    error = assert_raises(SequelAceRelease::ValidationError) do
-      reconcile(source_build: 20_105, source_tagged: false, cloud_runs: [cloud_run(20_104)])
-    end
-    assert_includes error.message, "exact release preparation commit"
+  def test_preincremented_unreleased_source_uses_the_derived_build_without_recovery
+    result = reconcile(
+      source_build: 20_105,
+      source_tagged: false,
+      cloud_runs: [cloud_run(20_104)]
+    )
+
+    assert_equal "normal_increment", result.reason
+    assert_equal 20_105, result.target_build
+    assert_nil result.source_release_commit_sha
+    assert_empty result.skipped_runs
   end
 
   def test_release_tag_cannot_be_ahead_of_source

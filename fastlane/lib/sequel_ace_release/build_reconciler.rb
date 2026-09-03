@@ -56,8 +56,8 @@ module SequelAceRelease
         ), expected_target_build)
       end
 
-      if source == expected_next && !source_tagged
-        release_commit = validate_commit_sha!(source_release_commit_sha)
+      if source == expected_next && !source_tagged && Config.valid_git_sha?(source_release_commit_sha)
+        release_commit = source_release_commit_sha.downcase
         return validate_expected_target!(Result.new(
           target_build: source,
           baseline: consumed_baseline,
@@ -86,11 +86,7 @@ module SequelAceRelease
         indexed_runs: indexed_runs,
         highest_asc_build: asc
       )
-      reason = if expected_next == local_baseline + 1
-                 "normal_increment"
-               else
-                 "self_healed_forward_jump"
-               end
+      reason = skipped.empty? ? "normal_increment" : "self_healed_forward_jump"
 
       validate_expected_target!(Result.new(
         target_build: expected_next,
