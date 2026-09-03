@@ -32,6 +32,38 @@ import Cocoa
     /// Used when the user clicks the drop box instead of dropping onto it.
     @objc(addEmptyFilterRow)
     func addEmptyFilterRow()
+
+    /// Append a nested AND/OR group holding one empty filter row – the
+    /// discoverable equivalent of ⌥-clicking a row's "+" button.
+    /// Used by the context menus and by ⌥-clicking the drop box.
+    @objc(addEmptyFilterGroup)
+    func addEmptyFilterGroup()
+}
+
+/// Context menu shared by the rule editor and its drop box. It exists to
+/// surface the nested-group feature: `NSRuleEditor` only offers it via
+/// ⌥-click on a row's "+" button, which nobody discovers on their own.
+enum SARuleFilterContextMenu {
+    /// Builds a fresh menu whose items send `addEmptyFilterRow` /
+    /// `addEmptyFilterGroup` to `handler` (held weakly by the menu items).
+    static func menu(for handler: SPFilterRuleEditorDropHandler) -> NSMenu {
+        let menu = NSMenu()
+        let addFilter = NSMenuItem(
+            title: NSLocalizedString("Add Filter", comment: "table Content : rule filter editor : context menu : add filter row"),
+            action: #selector(SPFilterRuleEditorDropHandler.addEmptyFilterRow),
+            keyEquivalent: ""
+        )
+        addFilter.target = handler
+        menu.addItem(addFilter)
+        let addGroup = NSMenuItem(
+            title: NSLocalizedString("Add AND/OR Group", comment: "table Content : rule filter editor : context menu : add nested AND/OR group"),
+            action: #selector(SPFilterRuleEditorDropHandler.addEmptyFilterGroup),
+            keyEquivalent: ""
+        )
+        addGroup.target = handler
+        menu.addItem(addGroup)
+        return menu
+    }
 }
 
 /// Keeps the rule editor's visibility setter free of model mutations when it
@@ -51,6 +83,23 @@ import Cocoa
         editorIsEmpty: Bool
     ) -> Bool {
         return (!visibilityWasApplied || !wasVisible || tableChanged) && willBeVisible && editorIsEmpty
+    }
+}
+
+/// Presentation strings and checks for a group row's AND/OR choice, kept in
+/// Swift so the Objective-C rule-editor delegate only forwards to it.
+@objc public final class SARuleFilterConjunctionRowPresentation: NSObject {
+    /// The static label shown after a group row's AND/OR popup, clarifying
+    /// that the choice combines the group's own conditions.
+    @objc public static var explainerText: String {
+        return NSLocalizedString("combines the conditions in this group", comment: "table Content : rule filter editor : compound row : label after the AND/OR popup")
+    }
+
+    /// Whether the string is one of the two conjunction choices (as opposed
+    /// to the explainer label, which is also rendered from a plain string).
+    @objc(isConjunctionChoice:)
+    public static func isConjunctionChoice(_ value: String?) -> Bool {
+        return value == "AND" || value == "OR"
     }
 }
 
@@ -156,6 +205,10 @@ import Cocoa
         )
     }
 
+    /// Height of the bottom bar when the drop zone is hidden: just enough for
+    /// the button row (Apply/Add Filter + AND/OR popup, 27 pt plus padding).
+    private static let buttonBarHeight: CGFloat = 31
+
     static func metrics(
         editorVisible: Bool,
         editorHasRows: Bool,
@@ -165,21 +218,20 @@ import Cocoa
     ) -> SARuleFilterDropZoneLayoutMetrics {
         let effectiveEditorHasRows = editorVisible && editorHasRows
         let dropZoneVisible = editorVisible && showDropZonePreference
-        let reservedDropZoneHeight = dropZoneVisible ? max(dropZoneHeight, 0) : 0
-        let ruleEditorTopMargin: CGFloat = effectiveEditorHasRows ? 1 : 0
 
-        // With no rows, the drop zone is normally the only visible affordance.
-        // If the user hides it, retain the original 29-point editor/button row
-        // so the filter UI never becomes an enabled-but-inaccessible zero-height
-        // strip.
-        let shouldReserveRuleEditor = effectiveEditorHasRows || (editorVisible && !dropZoneVisible)
-        let ruleEditorHeight = shouldReserveRuleEditor ? max(requestedHeight, 29) + ruleEditorTopMargin : 0
+        // The bottom bar (drop zone, AND/OR popup, Apply/Add Filter buttons)
+        // is always reserved while the filter UI is visible: the rule editor
+        // rows span the full width above it and must never overlap it. With
+        // the drop zone hidden the bar shrinks to the plain button row.
+        let bottomBarHeight = editorVisible ? (dropZoneVisible ? max(dropZoneHeight, 0) : buttonBarHeight) : 0
+        let ruleEditorTopMargin: CGFloat = effectiveEditorHasRows ? 1 : 0
+        let ruleEditorHeight = effectiveEditorHasRows ? max(requestedHeight, 29) + ruleEditorTopMargin : 0
 
         return SARuleFilterDropZoneLayoutMetrics(
             dropZoneVisible: dropZoneVisible,
-            dropZoneReservedHeight: reservedDropZoneHeight,
-            ruleEditorOriginY: reservedDropZoneHeight + ruleEditorTopMargin,
-            containerRequestedHeight: editorVisible ? reservedDropZoneHeight + ruleEditorHeight : 0
+            dropZoneReservedHeight: bottomBarHeight,
+            ruleEditorOriginY: bottomBarHeight + ruleEditorTopMargin,
+            containerRequestedHeight: editorVisible ? bottomBarHeight + ruleEditorHeight : 0
         )
     }
 }
@@ -211,6 +263,16 @@ import Cocoa
         registerForDraggedTypes([Self.rowDropType])
     }
 
+    /// Right-click on a row's background (the controls inside a row keep
+    /// their own menus) offers the same add-row / add-group actions as the
+    /// drop box, so the nested-group feature is reachable without ⌥-click.
+    override public func menu(for event: NSEvent) -> NSMenu? {
+        guard let handler = self.delegate as? SPFilterRuleEditorDropHandler else {
+            return super.menu(for: event)
+        }
+        return SARuleFilterContextMenu.menu(for: handler)
+    }
+
     override public func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         return dragOperation(for: sender)
     }
@@ -240,7 +302,17 @@ import Cocoa
         }
         let value = plist[SPCellValuePasteboard.rowValueKey] as? String
         let isNull = (plist[SPCellValuePasteboard.rowValueKindKey] as? String) == SPCellValuePasteboard.rowValueKindNull
-        return handler.replaceFilter(at: row, forColumn: columnName, value: value, isNull: isNull)
+        // The handler addresses top-level (root) children, but `row` is the
+        // flat visible index, which also counts the subrows of nested groups
+        // - map it to the ordinal among top-level rows before handing over.
+        return handler.replaceFilter(at: topLevelOrdinal(forRow: row), forColumn: columnName, value: value, isNull: isNull)
+    }
+
+    /// The position of a top-level row among the top-level rows only - i.e.
+    /// the index of the corresponding root child in the serialized tree.
+    /// (`row` itself must be a top-level row.)
+    private func topLevelOrdinal(forRow row: Int) -> Int {
+        return (0..<row).reduce(0) { $0 + (parentRow(forRow: $1) == -1 ? 1 : 0) }
     }
 
     override public func concludeDragOperation(_ sender: NSDraggingInfo?) {
@@ -282,11 +354,12 @@ import Cocoa
         let index = Int(floor(y / rowH))
         guard index >= 0, index < numberOfRows else { return nil }
         // Drop target must be a top-level simple rule: a compound
-        // (AND / OR) row can't be "replaced" with a single expression,
-        // and a nested subrow would require tree-walking the serialized
-        // filter to map the visible index to a child index. Both cases
-        // are rejected; the user can use the drop box to append a new
-        // rule instead.
+        // (AND / OR) row can't be "replaced" with a single expression, and
+        // a nested subrow belongs to its group, not to the root. Both are
+        // rejected; the user can use the drop box to append a new rule
+        // instead. A plain top-level row next to a nested group IS a valid
+        // target - performDragOperation maps the visible index to the root
+        // child ordinal for the handler.
         guard parentRow(forRow: index) == -1 else { return nil }
         guard rowType(forRow: index) == .simple else { return nil }
         return index
