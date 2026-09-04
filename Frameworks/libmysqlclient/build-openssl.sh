@@ -23,6 +23,11 @@
 # Usage:  Frameworks/libmysqlclient/build-openssl.sh
 # Env:    OPENSSL_BUILD_DIR   scratch directory (default: <this dir>/build/openssl)
 #
+# Besides the bundled pair, the script leaves a complete per-architecture
+# OpenSSL tree at $OPENSSL_BUILD_DIR/sdk-<arch> (headers, libraries and the
+# openssl program) for build-libmysqlclient.sh to link the MySQL client and
+# its plugins against.
+#
 # Bumping OpenSSL: change OPENSSL_VERSION *and* OPENSSL_SHA256 together. The
 # checksum is the one published next to the tarball at
 # https://github.com/openssl/openssl/releases/tag/openssl-<version>.
@@ -67,6 +72,10 @@ openssldir_for() {
 
 export CC=/usr/bin/clang
 export MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
+# OpenSSL embeds a build timestamp in libcrypto unless SOURCE_DATE_EPOCH is
+# set; with it the pair is byte-for-byte reproducible for a given toolchain,
+# so a re-run does not show up as a spurious binary change in git.
+export SOURCE_DATE_EPOCH=0
 ncpu="$(sysctl -n hw.ncpu)"
 
 mkdir -p "$work_dir"
@@ -103,20 +112,50 @@ for arch in "${ARCHS[@]}"; do
             --openssldir="$openssldir" \
             --libdir=lib \
             shared no-ssl3 no-ssl3-method no-zlib no-tests \
-            "-mmacosx-version-min=$DEPLOYMENT_TARGET" > "$work_dir/configure-$arch.log" 2>&1
+            "-mmacosx-version-min=$DEPLOYMENT_TARGET" \
+            -Wl,-headerpad_max_install_names > "$work_dir/configure-$arch.log" 2>&1
         echo "***** building $arch *****"
-        make -j "$ncpu" build_libs > "$work_dir/build-$arch.log" 2>&1
-        # install_dev = headers + libraries only (no apps, no docs, no engines
-        # or providers, which the bundle does not ship). DESTDIR keeps the
+        # build_sw / install_sw = libraries, headers and the openssl program
+        # (no docs, no engines or providers, which the bundle does not ship).
+        # The program is not bundled either, but build-libmysqlclient.sh
+        # points MySQL's WITH_SSL at this tree and MySQL's Apple build copies
+        # <prefix>/bin/openssl unconditionally. DESTDIR keeps the
         # Homebrew-shaped prefix out of the real filesystem.
-        make install_dev DESTDIR="$dest" > "$work_dir/install-$arch.log" 2>&1
+        make -j "$ncpu" build_sw > "$work_dir/build-$arch.log" 2>&1
+        make install_sw DESTDIR="$dest" > "$work_dir/install-$arch.log" 2>&1
     )
-    for lib in libssl.3.dylib libcrypto.3.dylib; do
-        if [ ! -f "$dest$prefix/lib/$lib" ]; then
-            echo "❌ $arch build did not produce $lib (see $work_dir/*-$arch.log)"
+    for f in lib/libssl.3.dylib lib/libcrypto.3.dylib bin/openssl include/openssl/ssl.h; do
+        if [ ! -f "$dest$prefix/$f" ]; then
+            echo "❌ $arch build did not produce $f (see $work_dir/*-$arch.log)"
             exit 1
         fi
     done
+    # The installed dylibs carry the Homebrew-shaped prefix as their install
+    # name. Anything linked against this tree would record that path and, at
+    # run time, either fail to load or — worse — silently pick up a real
+    # Homebrew copy: MySQL's build runs its own freshly linked helper
+    # programs, which is exactly that situation. Point the ids at this tree
+    # instead; build-libmysqlclient.sh rewrites the final references to
+    # @loader_path anyway.
+    # (OpenSSL installs these read-only, which install_name_tool cannot edit;
+    # -headerpad_max_install_names above leaves room for the longer names.)
+    chmod u+w "$dest$prefix/lib/libcrypto.3.dylib" "$dest$prefix/lib/libssl.3.dylib" "$dest$prefix/bin/openssl"
+    for lib in libcrypto.3.dylib libssl.3.dylib; do
+        install_name_tool -id "$dest$prefix/lib/$lib" "$dest$prefix/lib/$lib"
+    done
+    install_name_tool -change "$prefix/lib/libcrypto.3.dylib" "$dest$prefix/lib/libcrypto.3.dylib" "$dest$prefix/lib/libssl.3.dylib"
+    install_name_tool -change "$prefix/lib/libcrypto.3.dylib" "$dest$prefix/lib/libcrypto.3.dylib" "$dest$prefix/bin/openssl"
+    install_name_tool -change "$prefix/lib/libssl.3.dylib" "$dest$prefix/lib/libssl.3.dylib" "$dest$prefix/bin/openssl"
+    codesign --force --sign - "$dest$prefix/lib/libcrypto.3.dylib" "$dest$prefix/lib/libssl.3.dylib" "$dest$prefix/bin/openssl"
+    for f in lib/libssl.3.dylib bin/openssl; do
+        if otool -L "$dest$prefix/$f" | awk 'NR > 1 { print $1 }' | grep -qE '^/(opt/homebrew|usr/local)/'; then
+            echo "❌ $dest$prefix/$f still references a Homebrew path"
+            exit 1
+        fi
+    done
+    # Stable per-architecture entry point for build-libmysqlclient.sh, so it
+    # does not need to know the Homebrew-shaped prefix.
+    ln -sfn "$dest$prefix" "$work_dir/sdk-$arch"
 done
 
 universal="$work_dir/universal"
