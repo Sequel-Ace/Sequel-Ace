@@ -536,13 +536,60 @@ deferred projects below.
     connection with `useSSL` to a `mysql:8.4` container started with
     `--require-secure-transport=ON`, which shows the session as `SSL/TLS` in
     `performance_schema.threads`.
-  - Not touched: `libmysqlclient.24.dylib` (minos 12.0, loads fine on 13.5,
-    links the OpenSSL pair by compatibility version 3.0.0 so the 3.5 ABI is a
-    drop-in) and the `mysqlplugins/*.so` auth plugins, which still link
-    OpenSSL by absolute Homebrew paths (`/opt/homebrew/opt/openssl@3/lib/…`) —
-    a pre-existing problem for the OCI / LDAP SASL / WebAuthn plugins on a
-    machine without Homebrew, and part of the next full libmysqlclient
-    rebuild.
+  - Follow-up, executed the same day as its own stack of PRs: the full
+    libmysqlclient rebuild without Homebrew (see the next bullet). Until it
+    merges, `libmysqlclient.24.dylib` is the 8.4.4 build (minos 12.0, loads
+    fine on 13.5, links the OpenSSL pair by compatibility version 3.0.0 so the
+    3.5 ABI is a drop-in).
+- **Bundled MySQL client rebuilt from source, no Homebrew** — ✅ **executed
+  2026-09-04** (stacked on the OpenSSL PR: recipe, then binaries, then
+  plugins). `libmysqlclient.24.dylib`, its public headers and the three
+  client auth plugins are MySQL **8.4.11** built for arm64 + x86_64 with a
+  13.5 minimum by the rewritten `Frameworks/libmysqlclient/build-libmysqlclient.sh`
+  (documented in `Frameworks/libmysqlclient/README.md`).
+  - The old recipe pulled ten packages from Homebrew (two installs, one per
+    architecture, plus Rosetta) and copied Homebrew's OpenSSL into the bundle.
+    The new one needs none of it: every dependency is bundled in the MySQL
+    tarball, in the SDK (SASL), built by `build-openssl.sh`, or — for CMake —
+    the official Kitware universal binary, downloaded and checksummed into the
+    scratch directory. Bison turned out to be unnecessary: the client-only
+    build never runs the parser. `CMAKE_IGNORE_PREFIX_PATH` keeps CMake's
+    `find_*` away from `/opt/homebrew` and `/usr/local` even though they are on
+    `PATH`, and the script refuses to copy anything that links a path outside
+    `@loader_path`, `/usr/lib` or `/System/Library`.
+  - ⚠️ **A Homebrew dependency can hide at build time, not just in the
+    output.** MySQL links helper programs and *runs* them during the build;
+    they resolve OpenSSL through the install name baked into the tree they
+    were linked against. With the Homebrew-shaped prefix `build-openssl.sh`
+    uses for `OPENSSLDIR` parity, the arm64 helpers silently loaded the real
+    Homebrew 3.6.3 (the x86_64 ones aborted, which is how it was noticed).
+    `build-openssl.sh` now rewrites the ids in its per-architecture tree to
+    absolute build-tree paths (linked with `-headerpad_max_install_names` so
+    they fit) and fails if any Homebrew path survives.
+  - ⚠️ **Cross-compiling x86_64 on arm64:** CMake derives
+    `CMAKE_SYSTEM_PROCESSOR` from the host, so MySQL's `APPLE_ARM` stays on
+    for the x86_64 slice and the bundled zstd omits its x86_64 assembly while
+    the C code still references it. That slice is built with
+    `ZSTD_DISABLE_ASM` (the C fallback; only InnoDB, server-only, reads
+    `APPLE_ARM` otherwise). The helper programs run under Rosetta.
+  - Headers: 8.4.11 dropped `my_alloc.h`, `typelib.h`, `mysqlx_*.h` and
+    `mysql/psi/*` from the public client set; nothing in SPMySQL includes
+    them. The script diffs the arm64 and x86_64 header trees and ships one
+    copy only if they are identical.
+  - Plugins: the three `.so` files are now universal (one directory instead
+    of `arm64/` + `x86_64/`), reference the OpenSSL pair as
+    `@loader_path/../lib*.dylib` — the shape of `Versions/A/PlugIns` that
+    #2590 made the plugin load path — and ship with the bundled
+    `libfido2.1.dylib` the WebAuthn plugin loads, which the previous build
+    referenced but never included. Verified with `dlopen` on both
+    architectures in that layout; the previous WebAuthn plugin fails the same
+    test (missing libfido2) and the previous OCI plugin loads only because
+    this machine has Homebrew OpenSSL. Packaging them into the framework is
+    still the #2590 follow-up.
+  - `SOURCE_DATE_EPOCH` is set in `build-openssl.sh`, so its pair is now
+    byte-for-byte reproducible on the same toolchain; the MySQL build is not
+    (it embeds nothing date-based that was checked, but this was not
+    verified).
 - **Intentional markers, keep**: SAArchiving `legacyUnarchive` /
   `legacyArchivedData` (by design — the deprecation attribute *is* the
   guard-rail) and `selectionHighlightStyle = .sourceList` (replacement changes
