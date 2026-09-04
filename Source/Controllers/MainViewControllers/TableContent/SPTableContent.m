@@ -102,10 +102,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
-@interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation>
+@interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation, SPComboBoxCellDelegate>
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
+@property (strong, nonatomic) SAComboBoxSelectionTracker *comboBoxSelectionTracker;
 
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
@@ -143,6 +144,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		tableValues       = [[SPDataStorage alloc] init];
 		dataColumns       = [[NSMutableArray alloc] init];
 		oldRow            = [[NSMutableArray alloc] init];
+		_comboBoxSelectionTracker = [[SAComboBoxSelectionTracker alloc] init];
 
 		tableRowsCount         = 0;
 		previousTableRowsCount = 0;
@@ -768,6 +770,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     if ([typegroup isEqualToString:@"enum"]) {
         cell = [[SPComboBoxCell alloc] initTextCell:@""];
+        [cell setSpDelegate:tc];
         [cell setButtonBordered:NO];
         [cell setBezeled:NO];
         [cell setDrawsBackground:NO];
@@ -837,6 +840,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void) clearTableValues
 {
+	[_comboBoxSelectionTracker tableDataWillReload];
 	if ([NSThread isMainThread]) {
 		[recordViewController clear];
 	} else {
@@ -861,6 +865,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	// If no table is selected, return
 	if (!selectedTable) return;
+	[_comboBoxSelectionTracker tableDataWillReload];
 
 	NSMutableString *queryString;
 	NSString *queryStringBeforeLimit = nil;
@@ -1120,6 +1125,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	tableLoadTargetRowCount = targetRowCount;
 
 	// Update the data storage, updating the current store if appropriate
+	// Invalidate again at the mutation boundary. This covers a popup opened after a load started but before
+	// the streaming result replaced an existing store with another result of the same dimensions.
+	[_comboBoxSelectionTracker tableDataWillReload];
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	[tableValues setDataStorage:theResultStore updatingExisting:!![tableValues count]];
@@ -4121,6 +4129,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 #pragma mark -
+#pragma mark Combo box delegate methods
+
+- (void)comboBoxCell:(SPComboBoxCell *)cell willPopUpWindow:(NSWindow *)window
+{
+	[_comboBoxSelectionTracker comboBoxWillOpen];
+}
+
+- (void)comboBoxCellSelectionDidChange:(SPComboBoxCell *)cell
+{
+	[_comboBoxSelectionTracker comboBoxSelectionDidChange:[cell objectValueOfSelectedItem]];
+}
+
+#pragma mark -
 #pragma mark TableView datasource methods
 
 - (NSInteger)numberOfRowsInTableView:(SPCopyTable *)tableView
@@ -4207,12 +4228,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if (tableView == tableContentView) {
 		NSInteger columnIndex = [[tableColumn identifier] integerValue];
 		BOOL fieldEditorRequired = [tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL];
+		NSCell *dataCell = tableColumn.dataCell;
+		BOOL popupSelectionIsCurrent = NO;
+		if ([dataCell isKindOfClass:[NSComboBoxCell class]]) {
+			popupSelectionIsCurrent = [_comboBoxSelectionTracker consumeCurrentSelectionMatching:object];
+		} else {
+			[_comboBoxSelectionTracker discardPendingSelection];
+		}
 		id storedValue = nil;
 		id displayValue = nil;
-		if (fieldEditorRequired && [tableColumn.dataCell isKindOfClass:[NSComboBoxCell class]]) {
+		if (fieldEditorRequired && popupSelectionIsCurrent) {
 			NSInteger visibleColumnIndex = [tableContentView columnWithIdentifier:[tableColumn identifier]];
-			// A field-editor handoff can finish after the table has reloaded. The old path returned before
-			// touching storage, so preserve that safety while inspecting changed combo-box callbacks.
+			// The authenticated popup selection can still finish after its row has disappeared. Preserve the
+			// old handoff path's bounds safety before comparing against the current snapshot.
 			if (isWorking || rowIndex < 0 || columnIndex < 0 || visibleColumnIndex < 0
 				|| (NSUInteger)rowIndex >= [tableValues count]
 				|| (NSUInteger)columnIndex >= [tableValues columnCount]) {
@@ -4225,10 +4253,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// one inline action that must still commit. Compare its proposed value with both full stored and display
 		// representations so long strings, NULL placeholders, and formatter-backed values remain unchanged.
 		if ([SAFieldEditorCommitPolicy shouldIgnoreInlineCommitWithFieldEditorRequired:fieldEditorRequired
-		                                                                          cell:tableColumn.dataCell
+		                                                                          cell:dataCell
 		                                                                proposedValue:object
 		                                                                    storedValue:storedValue
-		                                                                   displayValue:displayValue]) {
+		                                                                   displayValue:displayValue
+		                                                        popupSelectionIsCurrent:popupSelectionIsCurrent]) {
 			return;
 		}
 

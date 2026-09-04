@@ -15,7 +15,19 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: "published" as NSString,
             storedValue: "draft" as NSString,
-            displayValue: "draft" as NSString
+            displayValue: "draft" as NSString,
+            popupSelectionIsCurrent: true
+        ))
+    }
+
+    func testChangedComboValueWithoutCurrentPopupSelectionIsIgnored() {
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: "published" as NSString,
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString,
+            popupSelectionIsCurrent: false
         ))
     }
 
@@ -25,7 +37,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: "draft" as NSString,
             storedValue: "draft" as NSString,
-            displayValue: "draft" as NSString
+            displayValue: "draft" as NSString,
+            popupSelectionIsCurrent: true
         ))
     }
 
@@ -38,7 +51,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: value,
             storedValue: value,
-            displayValue: truncatedPreview
+            displayValue: truncatedPreview,
+            popupSelectionIsCurrent: true
         ))
     }
 
@@ -48,7 +62,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: "NULL" as NSString,
             storedValue: NSNull(),
-            displayValue: "NULL" as NSString
+            displayValue: "NULL" as NSString,
+            popupSelectionIsCurrent: true
         ))
     }
 
@@ -58,7 +73,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: "formatted" as NSString,
             storedValue: Data([0x01, 0x02]) as NSData,
-            displayValue: "formatted" as NSString
+            displayValue: "formatted" as NSString,
+            popupSelectionIsCurrent: true
         ))
     }
 
@@ -70,7 +86,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: value,
             storedValue: value,
-            displayValue: "formatted" as NSString
+            displayValue: "formatted" as NSString,
+            popupSelectionIsCurrent: true
         ))
     }
 
@@ -80,7 +97,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSTextFieldCell(textCell: ""),
             proposedValue: "edited" as NSString,
             storedValue: "draft" as NSString,
-            displayValue: "draft" as NSString
+            displayValue: "draft" as NSString,
+            popupSelectionIsCurrent: false
         ))
     }
 
@@ -90,7 +108,27 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             cell: NSTextFieldCell(textCell: ""),
             proposedValue: "draft" as NSString,
             storedValue: "draft" as NSString,
-            displayValue: "draft" as NSString
+            displayValue: "draft" as NSString,
+            popupSelectionIsCurrent: false
         ))
+    }
+
+    func testCurrentPopupSelectionCanOnlyBeConsumedOnce() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen()
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+
+        XCTAssertTrue(tracker.consumeCurrentSelection(matching: "published" as NSString))
+        XCTAssertFalse(tracker.consumeCurrentSelection(matching: "published" as NSString))
+    }
+
+    func testReloadInvalidatesPopupSelectionWhenDimensionsCouldStayTheSame() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen()
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+
+        tracker.tableDataWillReload()
+
+        XCTAssertFalse(tracker.consumeCurrentSelection(matching: "published" as NSString))
     }
 }
