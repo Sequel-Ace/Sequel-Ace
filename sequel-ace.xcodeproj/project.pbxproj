@@ -265,6 +265,9 @@
 		5147B0022F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */; };
 		5147B0032F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */; };
 		5147B0052F8C000100C4C14A /* SAWindowTitleBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */; };
+		5147B1022F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */; };
+		5147B1032F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */; };
+		5147B1052F8C000100C4C14A /* SAWindowTitlebarTintTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */; };
 		5147B0072F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */; };
 		5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */; };
 		5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */; };
@@ -1173,6 +1176,8 @@
 		5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManagerTests.swift; sourceTree = "<group>"; };
 		5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilder.swift; sourceTree = "<group>"; };
 		5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilderTests.swift; sourceTree = "<group>"; };
+		5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitlebarTint.swift; sourceTree = "<group>"; };
+		5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitlebarTintTests.swift; sourceTree = "<group>"; };
 		5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcher.swift; sourceTree = "<group>"; };
 		5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcherTests.swift; sourceTree = "<group>"; };
 		5147B00B2F8C000300C4C14A /* SAConnectionDetailsValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionDetailsValidator.swift; sourceTree = "<group>"; };
@@ -2071,6 +2076,7 @@
 				5132930925F586A900D803AD /* NotificationToken.swift */,
 				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
 				5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */,
+				5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */,
 				5132930A25F586A900D803AD /* TabManager.swift */,
 			);
 			path = Window;
@@ -2842,6 +2848,7 @@
 				5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */,
 				5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */,
 				5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */,
+				5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */,
 				5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */,
 				5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */,
 				5AF0C2000000000000000031 /* SAFavoriteItemTests.swift */,
@@ -3628,6 +3635,8 @@
 				CF0000172F8C000600C4C14A /* SPRuleFilterController.m in Sources */,
 				5147B0032F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
 				5147B0052F8C000100C4C14A /* SAWindowTitleBuilderTests.swift in Sources */,
+				5147B1032F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */,
+				5147B1052F8C000100C4C14A /* SAWindowTitlebarTintTests.swift in Sources */,
 				0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */,
 				5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */,
@@ -3896,6 +3905,7 @@
 				5146E0502F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
 				5AF0C3000000000000000002 /* SATaskController.swift in Sources */,
 				5147B0022F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
+				5147B1022F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
 				51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */,

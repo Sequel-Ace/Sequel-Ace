@@ -116,29 +116,20 @@ private extension SPWindowController {
         }
     }
 
-    /// Paint the whole window top - title bar, unified toolbar and the native tab
-    /// bar - in the favourite colour of the connection this tab holds (#1856).
-    /// `titlebarAppearsTransparent` drops the title bar's own background so the
-    /// window background shows through the entire strip. Every tab is its own
-    /// `NSWindow`, so the colour follows whichever tab is selected without any
-    /// extra bookkeeping.
+    /// Paint the whole window top - title bar, unified toolbar and the native
+    /// tab bar - in the favourite colour of the connection this tab holds, or
+    /// restore the stock title bar when there is no colour (#1856).
     ///
-    /// A `nil` colour restores the stock title bar: leaving the title bar
-    /// transparent over `windowBackgroundColor` would render it flat and
-    /// non-standard rather than undoing the tint.
+    /// `SAWindowTitlebarTint` decides what the chrome should look like; this
+    /// only applies it. Every tab is its own `NSWindow`, so the colour follows
+    /// whichever tab is selected without any extra bookkeeping.
     func applyTitlebarTint(_ color: NSColor?) {
         guard let window = window else { return }
 
-        guard let color = color else {
-            window.titlebarAppearsTransparent = false
-            window.backgroundColor = .windowBackgroundColor
-            window.titlebarSeparatorStyle = .automatic
-            return
-        }
-
-        window.titlebarAppearsTransparent = true
-        window.backgroundColor = color
-        window.titlebarSeparatorStyle = .none
+        let tint = SAWindowTitlebarTint(favoriteColor: color)
+        window.titlebarAppearsTransparent = tint.titlebarAppearsTransparent
+        window.backgroundColor = tint.backgroundColor
+        window.titlebarSeparatorStyle = tint.separatorStyle
     }
 }
 
