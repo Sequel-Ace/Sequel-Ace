@@ -5,6 +5,7 @@
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
 //
 
+import AppKit
 import XCTest
 
 final class SAFieldEditorCommitPolicyTests: XCTestCase {
