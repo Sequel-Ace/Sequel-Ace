@@ -211,8 +211,12 @@ lipo -create -output "$TARGET_BUILD_DIR/libssl.3.dylib" \
 echo "***** Fixing DYLIB Paths *****"
 cd "$TARGET_BUILD_DIR" || { echo "❌ Could not enter target build directory: $TARGET_BUILD_DIR. Aborting build process."; exit 1; }
 install_name_tool -id "libmysqlclient.24.dylib" libmysqlclient.24.dylib
-install_name_tool -id "libcrypto.3.dylib" libcrypto.3.dylib
-install_name_tool -id "libssl.3.dylib" libssl.3.dylib
+# The OpenSSL pair copied here comes from Homebrew and is built for the host macOS, not
+# for the deployment target; build-openssl.sh (same directory) produces the pinned pair
+# and is the recipe the bundled libssl/libcrypto are made with. Both are re-exported by
+# SPMySQL, so their ids must be the @loader_path form SPMySQL records for them.
+install_name_tool -id "@loader_path/libcrypto.3.dylib" libcrypto.3.dylib
+install_name_tool -id "@loader_path/libssl.3.dylib" libssl.3.dylib
 # install_name_tool -id "libprotobuf-lite.24.4.0.dylib" libprotobuf-lite.24.4.0.dylib
 # install_name_tool -id "libprotobuf.24.4.0.dylib" libprotobuf.24.4.0.dylib
 # install_name_tool -id "libfido2.1.15.0.dylib" libfido2.1.15.0.dylib

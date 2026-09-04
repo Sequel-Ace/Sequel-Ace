@@ -1,8 +1,10 @@
 # Sequel Ace Modernization — Follow-up Plan
 
-> **Revised 2026-08-24; SSH tunnel IPC status updated 2026-09-01.** Sibling tracks: the build-warning burn-down in
-> `docs/development/warnings-elimination-plan.md` (steps 0-9 merged; the last
-> two reduction PRs are in review), the help-viewer rewrite in
+> **Revised 2026-08-24; SSH tunnel IPC status updated 2026-09-01; warnings
+> status updated 2026-09-04.** Sibling tracks: the build-warning burn-down in
+> `docs/development/warnings-elimination-plan.md` (all sweeps merged; the
+> bundled OpenSSL was rebuilt for 13.5 on 2026-09-04, and of the deferred set
+> only the NSConnection deletion, #2623, is still open), the help-viewer rewrite in
 > `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
 > in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
 > the SSH-tunnel IPC design in `docs/development/ssh-tunnel-xpc-migration-plan.md`
@@ -686,10 +688,11 @@ all landed since.)
    done while the code is young. This is the file that regressed; it is the
    highest-value target on the list.
 2. **Finish the warnings burn-down** — ✅ sweeps done. #2584 (532 -> 358) and
-   #2586 (358 -> 162) have both landed. What remains is the *deferred* set,
-   which is project work rather than a sweep: SPKeychain `SecItem*` (now
-   designed — `keychain-secitem-migration-plan.md`), the NSConnection -> XPC
-   migration, and the bundled OpenSSL rebuild. See the warnings plan.
+   #2586 (358 -> 162) have both landed. Of the *deferred* set, SPKeychain
+   `SecItem*` is merged (#2611-#2615) and the bundled OpenSSL was rebuilt from
+   source for the 13.5 floor on 2026-09-04 (`build-openssl.sh`; all four
+   OpenSSL linker warnings gone). Only the NSConnection warnings remain, and
+   they go with item 3's step 5b. See the warnings plan.
 3. **SSH tunnel IPC: NSConnection -> socket transport** — 🟡 in execution.
    The Step 0 spike (2026-09-01) ruled XPC out — a sandboxed app cannot vend
    `NSXPCListener(machServiceName:)` without a launchd plist — and proved the
