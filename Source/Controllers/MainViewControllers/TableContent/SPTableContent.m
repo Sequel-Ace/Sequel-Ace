@@ -547,6 +547,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		maxNumRowsIsEstimate = YES;
 	}
 
+	// Column identifiers are storage indexes. Rebuilding the model invalidates
+	// deferred edits even if a following data query fails and leaves rows intact.
+	[_comboBoxSelectionTracker tableColumnModelWillChange];
+
 	// Reset data column store
 	[dataColumns removeAllObjects];
 

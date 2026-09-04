@@ -277,6 +277,21 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         XCTAssertEqual(selectionState(from: tracker, matching: "published" as NSString), .notTracked)
     }
 
+    func testColumnModelRebuildDiscardsDeferredPopupSelection() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
+        tracker.tableDataReloadWillBegin()
+
+        XCTAssertEqual(selectionState(from: tracker, matching: "published" as NSString), .deferred)
+        tracker.tableColumnModelWillChange()
+
+        XCTAssertFalse(tracker.tableDataReloadDidFinish())
+        XCTAssertNil(tracker.takeDeferredEditIfReady())
+        XCTAssertEqual(selectionState(from: tracker, matching: "published" as NSString), .notTracked)
+    }
+
     func testReloadBeginningBeforeDeferredRetryKeepsSelectionQueued() {
         let tracker = SAComboBoxSelectionTracker()
         tracker.comboBoxWillOpen(with: "draft" as NSString)

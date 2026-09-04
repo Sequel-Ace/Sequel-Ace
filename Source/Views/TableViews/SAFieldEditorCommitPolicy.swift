@@ -45,6 +45,14 @@ import AppKit
     private var deferredEdit: SADeferredComboBoxEdit?
 
     @objc func tableDataWillChange() {
+        advanceTableGeneration()
+    }
+
+    @objc func tableColumnModelWillChange() {
+        advanceTableGeneration()
+    }
+
+    private func advanceTableGeneration() {
         lock.lock()
         defer { lock.unlock() }
 
