@@ -1,16 +1,9 @@
 # frozen_string_literal: true
 
-require "digest"
-
 module SequelAceRelease
   class PublishHandoff
     RELEASE_PATHS = (Config::PROJECT_FILES.keys + Config::PLIST_FILES + ["CHANGELOG.md"]).freeze
-    ACTIONS_RUN_URL = %r{https://github\.com/Sequel-Ace/Sequel-Ace/actions/runs/[1-9]\d*(?:/attempts/[1-9]\d*)?}.freeze
-    ALPHA_RECOVERY_SUFFIXES = [
-      /\n---\nAutomated release artifact processing stopped\. The tag and prerelease are intentionally preserved\.\nWorkflow evidence: #{ACTIONS_RUN_URL}\n?\z/,
-      /\nAutomated release processing stopped\. The tag and prerelease are intentionally preserved\.\nWorkflow evidence: #{ACTIONS_RUN_URL}\n?\z/,
-      /\nAlpha-only recovery attempt stopped; the beta tag and existing artifacts were not replaced\.\nWorkflow evidence: #{ACTIONS_RUN_URL}\n?\z/
-    ].freeze
+    STRICT_RELEASE_PATHS = (Config::PLIST_FILES + ["CHANGELOG.md"]).freeze
     ELIGIBLE_STATES = {
       "production" => %w[cloud_running artifacts_verified archived],
       "beta" => %w[cloud_running artifacts_verified]
@@ -20,7 +13,29 @@ module SequelAceRelease
       @github = github
     end
 
+    def self.validate_release_source!(github:, target_sha:, canonical_build:)
+      validation = github.validate_release_target!(
+        target_sha: target_sha,
+        protected_paths: STRICT_RELEASE_PATHS
+      )
+      [target_sha, validation.fetch("current_main_sha")].uniq.each do |ref|
+        contents = Config::PROJECT_FILES.keys.to_h do |path|
+          [path, github.file_content(ref: ref, path: path)]
+        end
+        VersionFiles.validate_project_build_settings!(
+          contents_by_path: contents,
+          expected_build: canonical_build
+        )
+      end
+
+      validation.merge("semantically_validated_project_paths" => Config::PROJECT_FILES.keys)
+    end
+
     def validate(manifest:, tag:, app_store_notes:)
+      # Release notes are maintainer-owned editorial content and intentionally
+      # remain mutable throughout publication. The notes file is retained as a
+      # compatibility input for callers and as the independently approved App
+      # Store metadata; GitHub body edits neither rewrite nor invalidate it.
       data = manifest.to_h
       raise ValidationError, "archive tag does not match the candidate" unless data.fetch("tag") == tag
 
@@ -38,7 +53,11 @@ module SequelAceRelease
       release_commit = data.fetch("release_commit_sha")
       raise ValidationError, "release tag moved" unless @github.ref_sha("tags/#{tag}") == release_commit
 
-      @github.validate_release_target!(target_sha: release_commit, protected_paths: RELEASE_PATHS)
+      self.class.validate_release_source!(
+        github: @github,
+        target_sha: release_commit,
+        canonical_build: data.fetch("canonical_build")
+      )
 
       release = @github.release_by_tag(tag)
       raise ValidationError, "release tag identity changed" unless release["tag_name"] == tag
@@ -83,21 +102,8 @@ module SequelAceRelease
         GitHubReleasePayload.new(release: release, expected_digests: expected_digests).validate
       end
 
-      release_body = release.fetch("body", "").to_s
       alpha_recovery = validate_alpha_recovery!(data)
-      approved_body = alpha_recovery ? strip_alpha_recovery_annotations(release_body) : release_body
-      body_sha = Digest::SHA256.hexdigest(approved_body)
-      body_changed = body_sha != data.fetch("release_notes_sha256")
       eligible = ELIGIBLE_STATES.fetch(data.fetch("channel")).include?(state)
-      if eligible && body_changed
-        raise ValidationError, "GitHub release notes no longer match the archived manifest"
-      end
-      if eligible
-        approved_notes = Notes.app_store_notes_from_github_body(approved_body)
-        unless approved_notes == app_store_notes.to_s.strip
-          raise ValidationError, "App Store notes do not match the approved GitHub release section"
-        end
-      end
 
       {
         "eligible" => eligible,
@@ -112,7 +118,8 @@ module SequelAceRelease
         "release_commit_sha" => release_commit,
         "artifact_names" => expected_assets,
         "cloud_build_ids" => data.fetch("cloud_build_ids"),
-        "alpha_recovery" => alpha_recovery
+        "alpha_recovery" => alpha_recovery,
+        "release_notes_mutable" => true
       }
     end
 
@@ -163,21 +170,6 @@ module SequelAceRelease
       end
 
       true
-    end
-
-    def strip_alpha_recovery_annotations(body)
-      stripped = body.dup
-      removed = false
-      loop do
-        pattern = ALPHA_RECOVERY_SUFFIXES.find { |candidate| stripped.match?(candidate) }
-        break unless pattern
-
-        stripped = stripped.sub(pattern, "")
-        removed = true
-      end
-      return stripped if removed
-
-      body
     end
 
     def verify_asset_digests!(manifest:, assets:, expected_names:)

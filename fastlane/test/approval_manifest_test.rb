@@ -191,7 +191,7 @@ class ApprovalManifestTest < Minitest::Test
     assert_equal legacy, SequelAceRelease::Manifest.new(legacy).to_h
   end
 
-  def test_finalization_integrity_requires_the_archived_body_and_asset_checksum
+  def test_finalization_integrity_ignores_mutable_body_but_requires_asset_checksum
     body = "## App Store Release Notes\n\nA focused release note.\n"
     digest = "d" * 64
     manifest = {
@@ -215,6 +215,8 @@ class ApprovalManifestTest < Minitest::Test
 
     assert cli.send(:verify_release_assets!, release, manifest, github: github)
     release["body"] = "changed"
+    assert cli.send(:verify_release_assets!, release, manifest, github: github)
+    release.fetch("assets").first["digest"] = "sha256:#{'e' * 64}"
     assert_raises(SequelAceRelease::ValidationError) do
       cli.send(:verify_release_assets!, release, manifest, github: github)
     end

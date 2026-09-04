@@ -62,7 +62,6 @@
 #import "SPFavoriteTextFieldCell.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPFavoriteColorSupport.h"
-#import "SPKeychain.h"
 // Data-source protocol + constants for SAHelpViewerWindowController.swift.
 #import "SPHelpViewerClient.h"
 // Base class + protocol for the Swift preference pane SPMCPPreferencePane.swift.

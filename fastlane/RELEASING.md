@@ -45,6 +45,12 @@ or creates a GitHub release.
   workflow still waits for the exact release commit's `Run Tests`,
   `Release Tool Tests`, and every other observed check to finish acceptably.
 - A failed tag or prerelease is preserved. Never delete, move, or reuse it.
+- After prerelease creation, the GitHub release body is maintainer-owned
+  editorial content. Jason and Kaspik may edit it at any time without another
+  release approval and without blocking artifact publication, recovery, App
+  Store submission, or finalization. Automation never rewrites the body after
+  creation; the separately approved private `app-store-notes.txt` remains the
+  App Store metadata source.
 - New GitHub releases are created by `Jason-Morcos` while the protected
   repository-only credential validates successfully, for compatibility with
   installed Sequel Ace versions affected by [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555).
@@ -330,13 +336,15 @@ mutation to the approved target if the tag disappears between validation and
 the request. GitHub requires Contents write plus Workflows write when that
 target's workflow files differ from current `main`; the workflow mints a fresh,
 narrow token for this one mutation. The same narrowly scoped token pattern is
-used for later release-body updates and finalization. See GitHub's
+used for finalization. See GitHub's
 [Create a release](https://docs.github.com/en/rest/releases/releases#create-a-release)
 and [Update a release](https://docs.github.com/en/rest/releases/releases#update-a-release)
 permission and `target_commitish` rules.
 Prerelease creation is idempotent: an existing release is reused only when its
-tag, title, body, draft flag, and prerelease flag exactly match the approved
-release. The direct-commit tag ref is revalidated immediately before and after
+tag, title, draft flag, prerelease flag, author identity, and target commit
+match the approved release. A newly created release must return the exact
+approved initial body, but later maintainer edits are intentionally ignored on
+reuse. The direct-commit tag ref is revalidated immediately before and after
 both prerelease creation and reuse so a moved tag cannot be accepted. If
 explicit tag creation succeeds but GitHub has no release behind
 that tag, a newly approved `mode=resume` plan against the exact release commit
@@ -386,10 +394,11 @@ so failure handling never allocates a Mac. A higher assignment may dispatch the
 bounded forward-only RC recovery described below; a lower assignment is
 terminal.
 
-Every asynchronous continuation requires an authorized stable publisher identity,
-proves that the tagged commit remains on current `main` with no intervening
-release-file changes, and binds the private App Store notes to the fixed App
-Store section of the approved GitHub body. Archived continuations also compare
+Every asynchronous continuation requires an authorized stable publisher identity
+and proves that the tagged commit remains on current `main` with no intervening
+release-file changes. The private App Store notes remain bound to the original
+approval and are not re-derived from the mutable GitHub release body. Archived
+continuations also compare
 every live GitHub asset digest with the verifier-produced SHA-256 in the
 private manifest and, under `legacy_updater_v1`, require every field and type
 needed by the shipped decoder plus its exact enum-constrained author, uploader,
@@ -537,14 +546,17 @@ finalized Production release tag that is an ancestor of that beta, so a later
 beta cannot replace the version section with only its incremental changes.
 
 The approval hash includes the resolved commits behind both the release-note
-comparison tag and cumulative changelog base tag, the complete generated GitHub
-release-body digest, and the
+comparison tag and cumulative changelog base tag, the complete generated
+initial GitHub release-body digest, and the
 `highest-observed-production-build-plus-one-forward-only-v1` policy. Changing
-the frozen main SHA, App Store notes, generated GitHub body, either base tag or
-its resolved commit, channel, semantic version, or build policy requires a new
-plan and approval. The RC/beta iteration is runtime naming state rather than an
-approved product input, so an authenticated forward recovery can create RC 2
-without weakening or regenerating the original approval.
+the frozen main SHA, App Store notes, generated initial GitHub body, either base
+tag or its resolved commit, channel, semantic version, or build policy requires
+a new plan and approval before the prerelease is created. Once created, edits
+to the live GitHub body require no workflow input or additional approval and do
+not change the separately approved App Store notes. The RC/beta iteration is
+runtime naming state rather than an approved product input, so an authenticated
+forward recovery can create RC 2 without weakening or regenerating the original
+approval.
 
 After Jason confirms the intended PR set is merged and approves the plan, use
 the private Codex skill to dispatch `.github/workflows/release.yml` with the
@@ -564,10 +576,19 @@ Production workflow; Alpha artifact numbers are never included.
 - Normal: the protected Ruby reconciler derives the explicit candidate as
   `H + 1`. Fastlane lanes never calculate or increment it, and workflow inputs
   cannot override it.
-- Forward self-healing: if source or a prior failed RC is behind `H`, advance to
-  `H + 1`. The manifest records all source values, the highest exact Cloud run,
-  the expected target, actual consumed runs, and any unassigned gap made
-  permanently unusable by a later Cloud assignment or Production ASC build.
+- Declared source: `SAGitHubReleaseTag` is parsed as a release identity
+  (`channel/version/build/tag`) and must exactly agree with every source
+  version file. If that identity matches the requested release and `S == H +
+  1`, the workflow reuses the pre-incremented candidate without pretending a
+  no-op version-file rewrite was a release commit. If a deliberately declared
+  source is ahead of `H + 1`, the generated release PR records that identity
+  and converges its unconsumed version files to `H + 1`; App Store Connect and
+  Production Cloud remain authoritative, and no build-number gap is invented.
+- Forward self-healing: if App Store Connect or Production Cloud advances past
+  source, the workflow advances the prepared release to `H + 1`. The manifest
+  records the complete source identity, the highest exact Cloud run, the
+  expected target, actual consumed runs, and every externally consumed gap with
+  its durable Cloud or Production ASC evidence.
 - Result verification: the publisher finds the exact run by workflow, tag, and
   commit before comparing its assigned number with the canonical tag build. A
   match continues normally. A lower assigned number is a fatal regression and
@@ -576,8 +597,9 @@ Production workflow; Alpha artifact numbers are never included.
   immutable.
 - Automatic RC recovery: after durable failure evidence is archived, a
   short-lived Ubuntu job revalidates the failed tag, release-App author, empty
-  asset set, unchanged release commit at current `main`, immutable body/notes,
-  original approval hash, and `assigned > expected`. Only then may the job's
+  asset set, unchanged release commit at current `main`, original approval hash,
+  and `assigned > expected`. The mutable GitHub body is not an authorization
+  input. Only then may the job's
   narrowly scoped `GITHUB_TOKEN` (`actions: write`) dispatch `Release` in
   `mode=resume`. GitHub documents that
   [`workflow_dispatch` triggered by `GITHUB_TOKEN` creates a new run](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs).
@@ -609,10 +631,10 @@ Production workflow; Alpha artifact numbers are never included.
   workflow, exact tag, exact commit, and no later Production run. Any existing
   GitHub release, mismatched tag/run, App Store build ahead of source, or Cloud
   advancement beyond that one exact run aborts recovery.
-- Stop: source is ahead of `H + 1`, histories conflict, an exact tagged run is
-  assigned below its canonical build, the recovery chain is malformed, main
-  changes after the failed release commit, assets already exist, or the bounded
-  recovery limit is reached.
+- Stop: source is ahead of `H + 1` without an exact declared release identity,
+  histories conflict, an exact tagged run is assigned below its canonical
+  build, the recovery chain is malformed, main changes after the failed release
+  commit, assets already exist, or the bounded recovery limit is reached.
 
 After release-PR checks finish, the workflow performs the same reconciliation
 again immediately before merge or recovered tag creation. It first force/prune
@@ -631,9 +653,10 @@ in the private handoff, and exits without waiting. The artifact publisher later
 requires both exact runs and both artifacts to verify without advancing source,
 tag, or canonical build. If the retry workflow itself fails after validation,
 it leaves the last exact failed-Alpha archive untouched so a later authorized
-retry can reuse it; it may append only the constrained, idempotent explanatory
-suffix accepted by the handoff validator. If that unarchived retry itself later
-fails, the next authorized attempt can select its exact newer failed run while
+retry can reuse it, and records its explanation only in the Actions summary.
+It never edits the maintainer-owned GitHub release body. If that unarchived
+retry itself later fails, the next authorized attempt can select its exact
+newer failed run while
 preserving the older durable run as predecessor evidence. The successful
 handoff records both IDs after independently validating the selected run's
 workflow, tag, commit, and terminal failure. A failed Production build consumes
@@ -672,13 +695,11 @@ automatic RC recovery described above.
   path, while lower remains terminal. Architecture, signing, notarization,
   stapling, Gatekeeper, bundle metadata,
   or launch verification failures are also terminal. Network, runner, download,
-  upload, registry, and API failures leave the remote manifest and release body
-  unchanged and leave the exact wake tag armed so the next Xcode event or short
-  recovery check can retry it.
-- Optional GitHub failure/recovery annotations verify that the remote tag names
-  the exact archived release commit both before and after the edit, require the
-  tag to exist, and send that commit as their target. An absent or moved tag
-  therefore fails closed instead of being recreated from current `main`.
+  upload, registry, and API failures leave the remote manifest unchanged and
+  leave the exact wake tag armed so the next Xcode event or short recovery
+  check can retry it. Automated failure and recovery reporting is kept in the
+  private archive and Actions summaries; it never edits the GitHub release
+  body.
 - The complete Cloud artifacts, dSYMs, zips, checksums, notes, and redacted
   manifest are pushed to the private GHCR OCI archive and pulled back for
   checksum verification using GitHub's
@@ -694,12 +715,20 @@ automatic RC recovery described above.
   the first 09:00 America/Los_Angeles instant at least 72 hours away.
 - Immediately before every App Store metadata, build-selection, or review
   mutation, submission revalidates the live GitHub tag, authorized-publisher
-  non-draft prerelease, immutable body, exact public asset digests, and
-  current-main ancestry against the private archived manifest. Every guard also
+  non-draft prerelease, exact public asset digests, and current-main ancestry
+  against the private archived manifest. The independently approved archived
+  App Store notes remain the metadata input; the mutable GitHub body is not a
+  gate. Every guard also
   requires the exact release and assets to match in the anonymous feed; for
   `legacy_updater_v1`, it additionally validates every visible entry against the
   shipped decoder. A newly incompatible feed writes terminal integrity evidence
   and stops before the next Apple mutation.
+- The current-main guard rejects any later plist or changelog change. It treats
+  project-file registration separately: the tagged commit and current main must
+  each independently retain every configured `CURRENT_PROJECT_VERSION` and
+  `DYLIB_CURRENT_VERSION` value at the archived canonical build. This permits
+  unrelated Xcode file registration after a tag, but a missing, added, or
+  changed release build setting remains a hard stop.
 - Beta never creates a customer App Store version.
 - Production submission arms `SA_RELEASE_PENDING_FINALIZATION_TAG` only after
   the exact `submitted` archive is durable. The six-hour schedule does no
@@ -745,12 +774,13 @@ automatic RC recovery described above.
   `prerelease: false`, and `make_latest: true`, even when the title and
   prerelease flag already look final. It then re-reads both the exact release
   and GitHub's latest release and fails unless both identify the expected final
-  release with its body and assets unchanged.
+  release with its identity and assets unchanged. Finalization does not send a
+  release-body field, so maintainer edits are preserved.
 - Finalization also resolves the current production tag and requires it to
   equal the archived release commit; a moved or recreated tag cannot become
   latest.
 - A failure after App Store submission preserves `submitted` or `live` state
-  and never edits the checksum-protected GitHub release body. If submission had
+  and never edits the maintainer-owned GitHub release body. If submission had
   an ambiguous response, Ubuntu recovery reads back the exact ASC version and
   build before changing durable state. The finalizer also accepts the last
   durable `archived` manifest so a failed post-submission GHCR refresh can
@@ -769,7 +799,7 @@ automatic RC recovery described above.
 - The same exact branch/PR and prerelease recovery steps run for a GitHub
   cancellation, preventing an operator cancel from stranding generated state.
 - Once Alpha-only recovery has verified and archived both beta artifacts, a
-  later release-body or handoff failure records its workflow evidence without
+  later artifact-handoff failure records its workflow evidence without
   downgrading the durable `archived` manifest to `failed`.
 
 ## Feasibility gate

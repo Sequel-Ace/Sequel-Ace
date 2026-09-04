@@ -1,3 +1,73 @@
+## [6.0.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.0+%28*%29%22&expanded=true)
+
+### Added
+- Add a preference to hide the filter drop zone ([91b1725b2](https://github.com/Sequel-Ace/Sequel-Ace/commit/91b1725b2ad6e46b2db82340f37f8103a64cca40), [#2577](https://github.com/Sequel-Ace/Sequel-Ace/pull/2577))
+- Add editable Record View ([1e83fc659](https://github.com/Sequel-Ace/Sequel-Ace/commit/1e83fc659e0d8368871fef69e929ea76bf779d2c), [#2520](https://github.com/Sequel-Ace/Sequel-Ace/pull/2520))
+
+### Fixed
+- Prevent opt-out startup service requests ([719f4613c](https://github.com/Sequel-Ace/Sequel-Ace/commit/719f4613c15336877998f3a4ca51112682011dba), [#2591](https://github.com/Sequel-Ace/Sequel-Ace/pull/2591))
+- Fix the flaky pid-file race in the command runner test ([606050681](https://github.com/Sequel-Ace/Sequel-Ace/commit/6060506819b3dd9e70fcf7a1f963958c255a834f), [#2570](https://github.com/Sequel-Ace/Sequel-Ace/pull/2570))
+
+### Changed
+- Reconcile declared release source state ([ecb67eba3](https://github.com/Sequel-Ace/Sequel-Ace/commit/ecb67eba3cab6e9ef224284d565a51d1368db928))
+- Accept pre-incremented release version files ([082b4e0f5](https://github.com/Sequel-Ace/Sequel-Ace/commit/082b4e0f5582910991fa701fe28082c153b7aaf9))
+- Treat pre-incremented release sources as new releases ([c7d46150b](https://github.com/Sequel-Ace/Sequel-Ace/commit/c7d46150b2023227e4306ea20f44a450f05a3df2))
+- SSH tunnel IPC migration step 5a: the socket transport becomes the default ([64ab4341f](https://github.com/Sequel-Ace/Sequel-Ace/commit/64ab4341ff2e5253c52f3bd324c72f08b36ccf1e), [#2622](https://github.com/Sequel-Ace/Sequel-Ace/pull/2622))
+- SSH tunnel IPC migration step 4: peer validation from the socket's audit token ([434d800c8](https://github.com/Sequel-Ace/Sequel-Ace/commit/434d800c820068f61a6300d478aca2faf6abc17c), [#2621](https://github.com/Sequel-Ace/Sequel-Ace/pull/2621))
+- SSH tunnel IPC migration step 3: the socket transport, behind a default ([192a9c055](https://github.com/Sequel-Ace/Sequel-Ace/commit/192a9c055d23a7a5ee85414573d76d42e5870cfb), [#2620](https://github.com/Sequel-Ace/Sequel-Ace/pull/2620))
+- SSH tunnel IPC migration step 2: the shared wire format ([ac359da1f](https://github.com/Sequel-Ace/Sequel-Ace/commit/ac359da1fa7c5cc9cb860400938dd3f240f21c7e), [#2619](https://github.com/Sequel-Ace/Sequel-Ace/pull/2619))
+- SSH tunnel IPC migration steps 0-1: spike verdict, narrow the vended surface ([d4d8a45dc](https://github.com/Sequel-Ace/Sequel-Ace/commit/d4d8a45dc28135c1f43c9ba113f2b845d90a314b), [#2618](https://github.com/Sequel-Ace/Sequel-Ace/pull/2618))
+- Preserve SSH tunnel failure diagnostics ([3b6a0bc03](https://github.com/Sequel-Ace/Sequel-Ace/commit/3b6a0bc03f091afae414f1fcefd5b6da0bbac817), [#2617](https://github.com/Sequel-Ace/Sequel-Ace/pull/2617))
+- Keychain SecItem migration step 5: flip the callers, delete SPKeychain ([2ed17c3ce](https://github.com/Sequel-Ace/Sequel-Ace/commit/2ed17c3cee78c4087e4710989288e1d51378fb36), [#2615](https://github.com/Sequel-Ace/Sequel-Ace/pull/2615))
+- Keychain SecItem migration step 4: SAKeychain, proven against the legacy store ([1a090284c](https://github.com/Sequel-Ace/Sequel-Ace/commit/1a090284c9c38da34409a3dccf72c2ea00f72dbc), [#2614](https://github.com/Sequel-Ace/Sequel-Ace/pull/2614))
+- Keychain SecItem migration step 3: retire the tunnel assistant's keychain read ([922de375e](https://github.com/Sequel-Ace/Sequel-Ace/commit/922de375e161aa73f518956205c7abaff825bd3b), [#2613](https://github.com/Sequel-Ace/Sequel-Ace/pull/2613))
+- Keychain SecItem migration step 2: fix the confirmed defects ([e2acad20d](https://github.com/Sequel-Ace/Sequel-Ace/commit/e2acad20de9b05a70de819f4e63b51cdc62da77b), [#2612](https://github.com/Sequel-Ace/Sequel-Ace/pull/2612))
+- Keychain SecItem migration steps 0-1: design plan + characterization suite ([45b51225b](https://github.com/Sequel-Ace/Sequel-Ace/commit/45b51225b7c8934e391c7f4e8ca2f5e82e019af9), [#2611](https://github.com/Sequel-Ace/Sequel-Ace/pull/2611))
+- Cut test-scheme clean-build warnings from 104 to 78 occurrences ([501681e42](https://github.com/Sequel-Ace/Sequel-Ace/commit/501681e42ed2de13b00a3678d68d10d8b46c9073), [#2602](https://github.com/Sequel-Ace/Sequel-Ace/pull/2602))
+- Make "+"/"-" in the content filter respond immediately ([8b9d4e729](https://github.com/Sequel-Ace/Sequel-Ace/commit/8b9d4e7292aebb5c604770cf64b610600f14c561), [#2601](https://github.com/Sequel-Ace/Sequel-Ace/pull/2601))
+- Cut test-scheme clean-build warnings from 165 to 104 occurrences ([1155cea6d](https://github.com/Sequel-Ace/Sequel-Ace/commit/1155cea6d7f64cf854be679aa06663380c14e966), [#2598](https://github.com/Sequel-Ace/Sequel-Ace/pull/2598))
+- Use DELETE HISTORY for MariaDB privilege grants ([615fa3f31](https://github.com/Sequel-Ace/Sequel-Ace/commit/615fa3f310e179a01abd745d22dcc7b6ff2e6f15), [#2592](https://github.com/Sequel-Ace/Sequel-Ace/pull/2592))
+- Bound utf8strlen reads to lexer token bytes ([635188379](https://github.com/Sequel-Ace/Sequel-Ace/commit/6351883795280f143ffd4c62662ca7035a7ca0ef), [#2593](https://github.com/Sequel-Ace/Sequel-Ace/pull/2593))
+- Mark the landed warning sweeps as landed in the warnings plan too ([e28cd80ec](https://github.com/Sequel-Ace/Sequel-Ace/commit/e28cd80ec7eb49060e87845232ea8b8be90d9df9))
+- Refresh the development plans against main after the macOS 13.5 merge ([0e72b88d9](https://github.com/Sequel-Ace/Sequel-Ace/commit/0e72b88d90f074241521422bae45000381c1fa07), [#2597](https://github.com/Sequel-Ace/Sequel-Ace/pull/2597))
+- Fit completion popup to its columns ([56e256610](https://github.com/Sequel-Ace/Sequel-Ace/commit/56e256610c018060276496996888557c2522f59d), [#2594](https://github.com/Sequel-Ace/Sequel-Ace/pull/2594))
+- Restore the main window frame across window close and reopen ([aca656f0e](https://github.com/Sequel-Ace/Sequel-Ace/commit/aca656f0e65c31da035e704e2dd61948fff06c4c), [#2588](https://github.com/Sequel-Ace/Sequel-Ace/pull/2588))
+- Replace an existing query favorite ([2e9d278c7](https://github.com/Sequel-Ace/Sequel-Ace/commit/2e9d278c702778121d4654da1971698f12928487), [#2595](https://github.com/Sequel-Ace/Sequel-Ace/pull/2595))
+- Cut clean-build warnings from 358 to 162 occurrences ([50cd15907](https://github.com/Sequel-Ace/Sequel-Ace/commit/50cd15907d3bd4683855c7b3da55fd204aa3f536), [#2586](https://github.com/Sequel-Ace/Sequel-Ace/pull/2586))
+- Cut clean-build warnings from 532 to 358 occurrences ([fd87e154b](https://github.com/Sequel-Ace/Sequel-Ace/commit/fd87e154b65e8e1666445bccd66fc9735608c688), [#2584](https://github.com/Sequel-Ace/Sequel-Ace/pull/2584))
+- MCP run_query tool schema: declare items for the params array ([3f4c90b6a](https://github.com/Sequel-Ace/Sequel-Ace/commit/3f4c90b6ad33e7469b6e7318355d72f2495b69fd), [#2582](https://github.com/Sequel-Ace/Sequel-Ace/pull/2582))
+- Tie NSUserDefaults KVO observer lifetimes to their owning objects ([0791cbbf7](https://github.com/Sequel-Ace/Sequel-Ace/commit/0791cbbf7f4df13b966b0629ae6349093074f237), [#2589](https://github.com/Sequel-Ace/Sequel-Ace/pull/2589))
+- Extract favorite duplicate detection into SAFavoriteDuplicateMatcher ([2456c730a](https://github.com/Sequel-Ace/Sequel-Ace/commit/2456c730a9ca416f8e8064daa21ac6b59cf71c37), [#2583](https://github.com/Sequel-Ace/Sequel-Ace/pull/2583))
+- Point libmysqlclient at the bundled plugin directory ([5618bbf0d](https://github.com/Sequel-Ace/Sequel-Ace/commit/5618bbf0db2bbe194cead497de65b3405618b954), [#2590](https://github.com/Sequel-Ace/Sequel-Ace/pull/2590))
+- Adopt Apple's SwiftUI invalidation guidance (view boundaries, closure bindings) ([12aa1eee4](https://github.com/Sequel-Ace/Sequel-Ace/commit/12aa1eee4c98fe31d7ac196ee7acdc97689c066f), [#2581](https://github.com/Sequel-Ace/Sequel-Ace/pull/2581))
+- Host the SwiftUI connection screen in the standalone window (C3) ([bc94e7629](https://github.com/Sequel-Ace/Sequel-Ace/commit/bc94e76294dc98dafe7b9236f4d0f222155e7d5b), [#2572](https://github.com/Sequel-Ace/Sequel-Ace/pull/2572))
+- Validate SSL files for SSH tunnel connections ([a6c8a827d](https://github.com/Sequel-Ace/Sequel-Ace/commit/a6c8a827ddad0464d20383e41c741b08cb5deb87), [#2571](https://github.com/Sequel-Ace/Sequel-Ace/pull/2571))
+- Extend the SwiftUI connection form to every connection type (C2b) ([ec7241f40](https://github.com/Sequel-Ace/Sequel-Ace/commit/ec7241f40bf6ad03b7388a2690570a7ba02b5ee0), [#2569](https://github.com/Sequel-Ace/Sequel-Ace/pull/2569))
+- Migrate the drag-out payloads off the deprecated write API (step 9b, part 2) ([abb61152b](https://github.com/Sequel-Ace/Sequel-Ace/commit/abb61152bbff04d3b32f6caa9ff5deee31afc87a), [#2568](https://github.com/Sequel-Ace/Sequel-Ace/pull/2568))
+- Authenticate release wake-state JWTs as Bearer tokens ([060d3315a](https://github.com/Sequel-Ace/Sequel-Ace/commit/060d3315a9ae96a96316a66eacd1a5531d220ce1), [#2576](https://github.com/Sequel-Ace/Sequel-Ace/pull/2576))
+- Copy selected column values from result tables ([73812bb2f](https://github.com/Sequel-Ace/Sequel-Ace/commit/73812bb2f2a13de2cafcc9122c6ce76aeaf49e71), [#2564](https://github.com/Sequel-Ace/Sequel-Ace/pull/2564))
+- Ignore superseded prereleases in release overlap guard ([939ffc6ce](https://github.com/Sequel-Ace/Sequel-Ace/commit/939ffc6cebfd6d7c562860555503aad520ee4f23), [#2574](https://github.com/Sequel-Ace/Sequel-Ace/pull/2574))
+- Ship the Xcode MCP server and document the windowless workflow ([f9c0e04be](https://github.com/Sequel-Ace/Sequel-Ace/commit/f9c0e04be05f45d33b6c28b456e93e4bb5179a53), [#2566](https://github.com/Sequel-Ace/Sequel-Ace/pull/2566))
+- Migrate the internal drag reorders off the deprecated write API (step 9b, part 1) ([190215b77](https://github.com/Sequel-Ace/Sequel-Ace/commit/190215b7759ddc9a2162dc53ff03dbce3f0dbffd), [#2562](https://github.com/Sequel-Ace/Sequel-Ace/pull/2562))
+- Restrict the favorites search shortcut to plain ⌘F ([d49d70d30](https://github.com/Sequel-Ace/Sequel-Ace/commit/d49d70d30d8d667d9df3e40830c09ba5e828d586), [#2565](https://github.com/Sequel-Ace/Sequel-Ace/pull/2565))
+- Adopt the formal AppKit validation/editing protocols (step 9a) ([cf58101cc](https://github.com/Sequel-Ace/Sequel-Ace/commit/cf58101cc6740c4f848da7dc1b8f3946660a99b1), [#2561](https://github.com/Sequel-Ace/Sequel-Ace/pull/2561))
+- Validate GitHub release payload compatibility ([77b5cbab6](https://github.com/Sequel-Ace/Sequel-Ace/commit/77b5cbab64f22fe8c3834d52f467467fae0c4831), [#2560](https://github.com/Sequel-Ace/Sequel-Ace/pull/2560))
+- Swift 6 readiness: remove captured-var mutation in concurrent code ([851580c1b](https://github.com/Sequel-Ace/Sequel-Ace/commit/851580c1bad9d4f5440a730663a9968ff373913f), [#2559](https://github.com/Sequel-Ace/Sequel-Ace/pull/2559))
+- Make GitHub release checks resilient ([1e27279c7](https://github.com/Sequel-Ace/Sequel-Ace/commit/1e27279c722506229b726093688b5a6c8bc6b880), [#2556](https://github.com/Sequel-Ace/Sequel-Ace/pull/2556))
+- Preserve compatible GitHub release publisher identity ([da667a72b](https://github.com/Sequel-Ace/Sequel-Ace/commit/da667a72bc603e7e04e8613ba10cd0b7c2bc7566), [#2557](https://github.com/Sequel-Ace/Sequel-Ace/pull/2557))
+- Derive release builds from Apple state ([bf7496216](https://github.com/Sequel-Ace/Sequel-Ace/commit/bf74962168ffb291f2e46aacf89ccb3c1df015d9), [#2554](https://github.com/Sequel-Ace/Sequel-Ace/pull/2554))
+- Rewrite the MySQL help viewer on WKWebView ([c6e3bf636](https://github.com/Sequel-Ace/Sequel-Ace/commit/c6e3bf636f94506882af2bcdfff13c3e684f029d), [#2542](https://github.com/Sequel-Ace/Sequel-Ace/pull/2542))
+- Authenticate asynchronous release publisher source ([34799b57f](https://github.com/Sequel-Ace/Sequel-Ace/commit/34799b57f3c1d83a57be8e5624d0f47842c8365d), [#2553](https://github.com/Sequel-Ace/Sequel-Ace/pull/2553))
+- Authorize exact-target GitHub release mutations ([d28ff28d7](https://github.com/Sequel-Ace/Sequel-Ace/commit/d28ff28d7a16dc085f7800508ff33e2269a0894a), [#2552](https://github.com/Sequel-Ace/Sequel-Ace/pull/2552))
+- Handle already-deleted release branches ([ec1af6450](https://github.com/Sequel-Ace/Sequel-Ace/commit/ec1af645050e613752fa99a508471853b2ac4d60), [#2551](https://github.com/Sequel-Ace/Sequel-Ace/pull/2551))
+
+### Removed
+- Drop macOS 12 support, require macOS 13.5 (Ventura), bump to 6.0.0 ([3763d5247](https://github.com/Sequel-Ace/Sequel-Ace/commit/3763d5247fc14863c1f5ac943fc887c4c27c4e35), [#2587](https://github.com/Sequel-Ace/Sequel-Ace/pull/2587))
+- Remove deleted RC1 publisher exception ([f4da8f951](https://github.com/Sequel-Ace/Sequel-Ace/commit/f4da8f951ebb1dcbe652254f21429f1379aa13bf), [#2558](https://github.com/Sequel-Ace/Sequel-Ace/pull/2558))
+
+### Infra
+- Document English localization catalog requirement ([89f79b94a](https://github.com/Sequel-Ace/Sequel-Ace/commit/89f79b94aa77e258ec50a984ba31990c6a520382), [#2596](https://github.com/Sequel-Ace/Sequel-Ace/pull/2596))
+
 ## [5.5.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.5.0+%28*%29%22&expanded=true)
 
 ### Added

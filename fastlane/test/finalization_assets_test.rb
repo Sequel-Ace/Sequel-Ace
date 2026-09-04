@@ -9,8 +9,14 @@ class FinalizationAssetsTest < Minitest::Test
     @digest = "a" * 64
   end
 
-  def test_exact_release_body_asset_set_and_archived_checksum_pass
+  def test_exact_release_asset_set_and_archived_checksum_pass
     value = release
+    assert @cli.send(:verify_release_assets!, value, manifest, github: public_feed_client(value))
+  end
+
+  def test_maintainer_edited_release_body_does_not_block_asset_verification
+    value = release.merge("body" => "Maintainer-edited notes without the generated section structure.")
+
     assert @cli.send(:verify_release_assets!, value, manifest, github: public_feed_client(value))
   end
 

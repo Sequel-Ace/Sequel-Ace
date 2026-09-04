@@ -23,12 +23,24 @@ command -v oras >/dev/null 2>&1 || {
 
 script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
+oras_with_registry_config() {
+  if [[ -n "${GHCR_REGISTRY_CONFIG:-}" ]]; then
+    [[ "${GHCR_REGISTRY_CONFIG}" == /* && ! -L "${GHCR_REGISTRY_CONFIG}" ]] || {
+      echo "GHCR_REGISTRY_CONFIG must be an absolute non-symlink path" >&2
+      exit 65
+    }
+    oras "$@" --registry-config "${GHCR_REGISTRY_CONFIG}"
+  else
+    oras "$@"
+  fi
+}
+
 login() {
   [[ -n "${GHCR_TOKEN:-}" && -n "${GHCR_USERNAME:-}" ]] || {
     echo "GHCR_TOKEN and GHCR_USERNAME are required" >&2
     exit 78
   }
-  printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io --username "${GHCR_USERNAME}" --password-stdin >/dev/null
+  printf '%s' "${GHCR_TOKEN}" | oras_with_registry_config login ghcr.io --username "${GHCR_USERNAME}" --password-stdin >/dev/null
 }
 
 validate_archive_tree() {
@@ -152,13 +164,13 @@ case "${mode}" in
     manifest_sha="$(/usr/bin/shasum -a 256 "${manifest_file}" | /usr/bin/awk '{print $1}')"
     (
       cd "${temporary_directory}"
-      oras push "${reference}" \
+      oras_with_registry_config push "${reference}" \
         "sequel-ace-release-archive.tar.gz:application/vnd.sequel-ace.release.archive.v1+tar+gzip" \
         "manifest.json:application/vnd.sequel-ace.release.manifest.v1+json" >/dev/null
     )
     verification_directory="${temporary_directory}/verification"
     mkdir -p "${verification_directory}"
-    oras pull "${reference}" --output "${verification_directory}" >/dev/null
+    oras_with_registry_config pull "${reference}" --output "${verification_directory}" >/dev/null
     pulled_archive="${verification_directory}/$(basename "${archive_file}")"
     pulled_manifest="${verification_directory}/manifest.json"
     [[ -f "${pulled_archive}" && -f "${pulled_manifest}" ]] || {
@@ -195,7 +207,7 @@ case "${mode}" in
       exit 65
     }
     login
-    oras pull "${reference}" --output "${directory}" >/dev/null
+    oras_with_registry_config pull "${reference}" --output "${directory}" >/dev/null
     pulled_manifest="${directory}/manifest.json"
     pulled_archive="${directory}/sequel-ace-release-archive.tar.gz"
     pulled_layers=0

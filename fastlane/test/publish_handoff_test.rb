@@ -37,6 +37,16 @@ class PublishHandoffTest < Minitest::Test
 
       { "target_sha" => arguments.fetch(:target_sha), "current_main_sha" => arguments.fetch(:target_sha) }
     end
+
+    def file_content(ref:, path:)
+      raise "unexpected ref" unless ref == @ref_sha
+
+      counts = SequelAceRelease::Config::PROJECT_FILES.fetch(path)
+      build = @release.fetch("name")[/\((\d+)\)/, 1] || "20109"
+      values = Array.new(counts.fetch(:current), "CURRENT_PROJECT_VERSION = #{build};")
+      values.concat(Array.new(counts.fetch(:dylib), "DYLIB_CURRENT_VERSION = #{build};"))
+      values.join("\n")
+    end
   end
 
   def test_production_handoff_is_eligible_before_artifacts_and_before_submission
@@ -107,13 +117,14 @@ class PublishHandoffTest < Minitest::Test
     assert_includes error.message, "unexpected artifacts"
   end
 
-  def test_rejects_changed_release_notes_during_a_normal_handoff
+  def test_accepts_changed_release_notes_during_a_normal_handoff
     manifest = release_manifest
     changed = release_for(manifest).merge("body" => "changed")
 
-    error = assert_raises(SequelAceRelease::ValidationError) { validate(manifest, release: changed) }
+    result = validate(manifest, release: changed)
 
-    assert_includes error.message, "release notes"
+    assert result.fetch("eligible")
+    assert result.fetch("release_notes_mutable")
   end
 
   def test_rejects_a_release_with_unauthorized_publisher_provenance
@@ -165,32 +176,31 @@ class PublishHandoffTest < Minitest::Test
 
     assert_equal "d" * 40, github.target_arguments.fetch(:target_sha)
     assert_includes github.target_arguments.fetch(:protected_paths), "CHANGELOG.md"
-    assert_includes github.target_arguments.fetch(:protected_paths), "sequel-ace.xcodeproj/project.pbxproj"
+    refute_includes github.target_arguments.fetch(:protected_paths), "sequel-ace.xcodeproj/project.pbxproj"
   end
 
-  def test_rejects_app_store_notes_that_do_not_match_the_approved_body_section
+  def test_archived_app_store_notes_do_not_constrain_the_mutable_github_body
     manifest = release_manifest
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
-      validate(manifest, release: release_for(manifest), app_store_notes: "Different notes")
-    end
+    result = validate(manifest, release: release_for(manifest), app_store_notes: "Different notes")
 
-    assert_includes error.message, "App Store notes"
+    assert result.fetch("eligible")
+    assert result.fetch("release_notes_mutable")
   end
 
-  def test_rejects_a_malformed_or_duplicated_app_store_notes_section
+  def test_github_body_structure_is_not_an_artifact_handoff_gate
     manifest = release_manifest
     malformed = release_for(manifest).merge(
       "body" => "#{BODY}#{BODY}",
     )
-    manifest = manifest.with("release_notes_sha256" => Digest::SHA256.hexdigest(malformed.fetch("body")))
 
-    error = assert_raises(SequelAceRelease::ValidationError) { validate(manifest, release: malformed) }
+    result = validate(manifest, release: malformed)
 
-    assert_includes error.message, "one canonical"
+    assert result.fetch("eligible")
+    assert result.fetch("release_notes_mutable")
   end
 
-  def test_alpha_recovery_allows_only_a_known_failure_suffix
+  def test_alpha_recovery_accepts_a_legacy_failure_annotation
     manifest = release_manifest(channel: "beta")
     manifest = with_alpha_retry(manifest)
     annotated = release_for(manifest).merge(
@@ -204,13 +214,15 @@ class PublishHandoffTest < Minitest::Test
     assert_equal true, result.fetch("alpha_recovery")
   end
 
-  def test_alpha_recovery_rejects_an_arbitrary_body_change
+  def test_alpha_recovery_accepts_an_arbitrary_body_change
     manifest = with_alpha_retry(release_manifest(channel: "beta"))
     annotated = release_for(manifest).merge("body" => "#{BODY}\nUnapproved annotation.\n")
 
-    error = assert_raises(SequelAceRelease::ValidationError) { validate(manifest, release: annotated) }
+    result = validate(manifest, release: annotated)
 
-    assert_includes error.message, "release notes"
+    assert result.fetch("eligible")
+    assert result.fetch("alpha_recovery")
+    assert result.fetch("release_notes_mutable")
   end
 
   def test_alpha_recovery_requires_structured_evidence_bound_to_the_release

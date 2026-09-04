@@ -235,8 +235,20 @@
 /* Add trigger button label */
 "Add" = "Add";
 
+/* table Content : rule filter editor : AND/OR popup : combine with AND */
+"AND (all conditions)" = "AND (all conditions)";
+
+/* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
+"AND" = "AND";
+
+/* table Content : rule filter editor : context menu : add nested AND/OR group */
+"Add AND/OR Group" = "Add AND/OR Group";
+
 /* menu item to add db */
 "Add Database..." = "Add Database...";
+
+/* table Content : rule filter editor : context menu : add filter row */
+"Add Filter" = "Add Filter";
 
 /* Add Host */
 "Add Host" = "Add Host";
@@ -613,6 +625,30 @@
 /* Encoding autodetect menu item */
 "Autodetect" = "Autodetect";
 
+/* Preferences : General : Automatically check for updates checkbox */
+"Automatically check for updates" = "Automatically check for updates";
+
+/* analytics consent dialog message */
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+
+/* analytics consent deny button */
+"Don't Share" = "Don't Share";
+
+/* analytics consent dialog title */
+"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+
+/* analytics consent allow button */
+"Share Analytics" = "Share Analytics";
+
+/* analytics consent privacy policy button */
+"Privacy Policy…" = "Privacy Policy…";
+
+/* about window privacy policy link */
+"Privacy Policy" = "Privacy Policy";
+
+/* Preferences : General : analytics and crash reporting checkbox */
+"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+
 /* background label for color table (Prefs > Editor) */
 "Background" = "Background";
 
@@ -780,6 +816,15 @@
 /* collation connection: %@ */
 "collation connection: %@" = "collation connection: %@";
 
+/* content tab : rule filter : drop zone tooltip */
+"Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+
+/* table Content : rule filter editor : compound row : label after the AND/OR popup */
+"combines the conditions in this group" = "combines the conditions in this group";
+
+/* table Content : rule filter editor : AND/OR popup : tooltip */
+"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
+
 /* comment label */
 "Comment" = "Comment";
 
@@ -843,6 +888,9 @@
 
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
+
+/* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
+"Copy WHERE Clause" = "Copy WHERE Clause";
 
 /* Copy as RTF */
 "Copy as RTF" = "Copy as RTF";
@@ -2003,6 +2051,12 @@
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
+/* table Content : rule filter editor : AND/OR popup : combine with OR */
+"OR (any condition)" = "OR (any condition)";
+
+/* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
+"OR" = "OR";
+
 "OK" = "OK";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */

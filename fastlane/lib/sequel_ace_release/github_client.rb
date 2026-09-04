@@ -200,6 +200,34 @@ module SequelAceRelease
       value.fetch("object").fetch("sha")
     end
 
+    def file_content(ref:, path:)
+      validate_commit_sha!(ref, "repository file ref")
+      segments = path.to_s.split("/")
+      unless !segments.empty? && segments.all? { |segment| !segment.empty? && segment != "." && segment != ".." }
+        raise ValidationError, "repository file path is malformed"
+      end
+
+      encoded_path = segments.map { |segment| URI.encode_www_form_component(segment).tr("+", "%20") }.join("/")
+      response = request!(
+        "GET",
+        "/repos/#{@repository}/contents/#{encoded_path}?ref=#{URI.encode_www_form_component(ref)}"
+      )
+      unless response.is_a?(Hash) && response["type"] == "file" && response["encoding"] == "base64" &&
+             response["content"].is_a?(String)
+        raise ValidationError, "GitHub returned malformed repository file evidence"
+      end
+
+      encoded = response.fetch("content").delete("\r\n")
+      decoded = Base64.strict_decode64(encoded)
+      unless Base64.strict_encode64(decoded) == encoded
+        raise ValidationError, "GitHub returned malformed repository file evidence"
+      end
+
+      decoded
+    rescue ArgumentError
+      raise ValidationError, "GitHub returned malformed repository file evidence"
+    end
+
     def new_contributors(pr_numbers)
       numbers = Array(pr_numbers).map { |number| Integer(number) }.uniq
       by_login = numbers.each_with_object({}) do |number, result|
@@ -482,7 +510,8 @@ module SequelAceRelease
           body: body,
           expected_author_login: expected_author_login,
           expected_author_id: expected_author_id,
-          created: false
+          created: false,
+          validate_body: false
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
         return validated
@@ -697,7 +726,8 @@ module SequelAceRelease
         body: body,
         expected_author_login: expected_author_login,
         expected_author_id: expected_author_id,
-        created: false
+        created: false,
+        validate_body: false
       )
     end
 
@@ -717,16 +747,16 @@ module SequelAceRelease
     end
 
     def validate_release_response!(
-      response, tag:, title:, body:, expected_author_login:, expected_author_id:, created:
+      response, tag:, title:, body:, expected_author_login:, expected_author_id:, created:, validate_body: true
     )
       expected = {
         "tag_name" => tag,
         "name" => title,
-        "body" => body,
         "draft" => false,
         "prerelease" => true,
         "author_login" => expected_author_login
       }
+      expected["body"] = body if validate_body
       expected["author_id"] = expected_author_id unless expected_author_id.nil?
       actual = expected.keys.to_h do |key|
         value = case key

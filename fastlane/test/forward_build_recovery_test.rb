@@ -26,6 +26,16 @@ class ForwardBuildRecoveryTest < Minitest::Test
 
     def validate_release_target!(target_sha:, protected_paths:)
       @validated_target = { target_sha: target_sha, protected_paths: protected_paths }
+      { "target_sha" => target_sha, "current_main_sha" => target_sha }
+    end
+
+    def file_content(ref:, path:)
+      raise "unexpected ref" unless ref == "d" * 40
+
+      counts = SequelAceRelease::Config::PROJECT_FILES.fetch(path)
+      values = Array.new(counts.fetch(:current), "CURRENT_PROJECT_VERSION = 20109;")
+      values.concat(Array.new(counts.fetch(:dylib), "DYLIB_CURRENT_VERSION = 20109;"))
+      values.join("\n")
     end
 
     def release_by_tag(tag)
@@ -53,6 +63,12 @@ class ForwardBuildRecoveryTest < Minitest::Test
     assert_equal 20_113, result.fetch("expected_recovery_build")
     assert_equal 1, result.fetch("count")
     assert_equal "d" * 40, github.validated_target.fetch(:target_sha)
+  end
+
+  def test_maintainer_edited_release_notes_do_not_block_forward_recovery
+    result = validator.validate(**arguments.merge(release_body: "Maintainer-edited notes"))
+
+    assert_equal 20_113, result.fetch("expected_recovery_build")
   end
 
   def test_rejects_a_non_forward_mismatch

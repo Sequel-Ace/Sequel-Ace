@@ -1998,7 +1998,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	column = [fieldMapperTableView editedColumn];
 
 	// TODO: jcs - using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
+	// Containment, not migration: this table is still cell-based, so the
+	// deprecated cell API is the only correct one until the view-based rewrite.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	BOOL isCellComplex = ([[fieldMapperTableView preparedCellAtColumn:column row:row] isKindOfClass:[NSComboBoxCell class]]) ? YES : NO;
+#pragma clang diagnostic pop
 
 	// Trap tab key
 	// -- for handling of blob fields and to check if it's editable look at [[self delegate] control:textShouldBeginEditing:]

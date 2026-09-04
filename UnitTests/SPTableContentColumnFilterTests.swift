@@ -120,6 +120,63 @@ final class SPTableContentColumnFilterTests: XCTestCase {
     }
 }
 
+final class SARuleFilterPreviewFormatterTests: XCTestCase {
+
+    /// Verifies a usable clause is prefixed with WHERE.
+    func testClauseGetsWherePrefix() {
+        XCTAssertEqual(SARuleFilterPreviewFormatter.previewText(clause: "(`a` = '1') OR (`b` = '2')"), "WHERE (`a` = '1') OR (`b` = '2')")
+    }
+
+    /// Verifies empty input collapses to nil so the drop prompt returns.
+    func testEmptyClauseYieldsNil() {
+        XCTAssertNil(SARuleFilterPreviewFormatter.previewText(clause: nil))
+        XCTAssertNil(SARuleFilterPreviewFormatter.previewText(clause: ""))
+        XCTAssertNil(SARuleFilterPreviewFormatter.previewText(clause: "  \n "))
+    }
+
+    /// Verifies surrounding whitespace from the generator is trimmed.
+    func testClauseIsTrimmed() {
+        XCTAssertEqual(SARuleFilterPreviewFormatter.previewText(clause: " `a` = '1' "), "WHERE `a` = '1'")
+    }
+}
+
+final class SARuleFilterBottomBarLayoutTests: XCTestCase {
+
+    /// Verifies rows sit above a fully reserved bottom bar (drop zone shown).
+    func testRowsSitAboveTheDropZoneBar() {
+        let m = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: true, requestedHeight: 87, dropZoneHeight: 40, showDropZonePreference: true)
+        XCTAssertTrue(m.dropZoneVisible)
+        XCTAssertEqual(m.dropZoneReservedHeight, 40)
+        XCTAssertEqual(m.ruleEditorOriginY, 41)
+        XCTAssertEqual(m.containerRequestedHeight, 40 + 88)
+    }
+
+    /// Verifies the button bar stays reserved when the drop zone is hidden, so full-width rows never overlap it.
+    func testButtonBarReservedWithHiddenDropZone() {
+        let m = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: true, requestedHeight: 58, dropZoneHeight: 40, showDropZonePreference: false)
+        XCTAssertFalse(m.dropZoneVisible)
+        XCTAssertEqual(m.dropZoneReservedHeight, 31)
+        XCTAssertEqual(m.ruleEditorOriginY, 32)
+        XCTAssertEqual(m.containerRequestedHeight, 31 + 59)
+    }
+
+    /// Verifies an empty editor shows just the bar (with or without drop zone).
+    func testEmptyEditorShowsOnlyTheBar() {
+        let withZone = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: false, requestedHeight: 0, dropZoneHeight: 40, showDropZonePreference: true)
+        XCTAssertEqual(withZone.containerRequestedHeight, 40)
+        let withoutZone = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: true, editorHasRows: false, requestedHeight: 0, dropZoneHeight: 40, showDropZonePreference: false)
+        XCTAssertEqual(withoutZone.containerRequestedHeight, 31)
+    }
+
+    /// Verifies a hidden editor reserves nothing.
+    func testHiddenEditorReservesNothing() {
+        let m = SARuleFilterDropZoneLayoutPolicy.metrics(editorVisible: false, editorHasRows: true, requestedHeight: 87, dropZoneHeight: 40, showDropZonePreference: true)
+        XCTAssertFalse(m.dropZoneVisible)
+        XCTAssertEqual(m.dropZoneReservedHeight, 0)
+        XCTAssertEqual(m.containerRequestedHeight, 0)
+    }
+}
+
 final class SARuleFilterResizePolicyTests: XCTestCase {
 
     /// Verifies an unchanged row count schedules no resize at all.

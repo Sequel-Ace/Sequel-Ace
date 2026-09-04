@@ -1,12 +1,14 @@
 # Sequel Ace Modernization — Follow-up Plan
 
-> **Revised 2026-08-24.** Sibling tracks: the build-warning burn-down in
+> **Revised 2026-08-24; SSH tunnel IPC status updated 2026-09-01.** Sibling tracks: the build-warning burn-down in
 > `docs/development/warnings-elimination-plan.md` (steps 0-9 merged; the last
 > two reduction PRs are in review), the help-viewer rewrite in
 > `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
 > in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
 > the SSH-tunnel IPC design in `docs/development/ssh-tunnel-xpc-migration-plan.md`
-> (not started), agent ground rules in `AGENTS.md`.
+> (not started), the keychain `SecItem*` migration in
+> `docs/development/keychain-secitem-migration-plan.md` (executed; release
+> soak pending), agent ground rules in `AGENTS.md`.
 
 ## State of the world (2026-08-24 revision)
 
@@ -685,17 +687,21 @@ all landed since.)
    highest-value target on the list.
 2. **Finish the warnings burn-down** — ✅ sweeps done. #2584 (532 -> 358) and
    #2586 (358 -> 162) have both landed. What remains is the *deferred* set,
-   which is project work rather than a sweep: SPKeychain `SecItem*`, the
-   NSConnection -> XPC migration, and the bundled OpenSSL rebuild. See the
-   warnings plan.
-3. **SSH tunnel IPC: NSConnection -> NSXPCConnection** — now unblocked. The
-   macOS 13.5 floor was adopted specifically so Step 4 (peer validation via
-   `setConnectionCodeSigningRequirement:`) is a real security win rather than a
-   partial one. Design is written up in `ssh-tunnel-xpc-migration-plan.md`,
-   including a spike (Step 0) that decides the whole approach and a Step 1
-   (narrow the vended surface) that is worth landing on its own merits either
-   way. Highest blast radius in the codebase — SSH connections break if it is
-   wrong — so it stays spike-first and behind a flag.
+   which is project work rather than a sweep: SPKeychain `SecItem*` (now
+   designed — `keychain-secitem-migration-plan.md`), the NSConnection -> XPC
+   migration, and the bundled OpenSSL rebuild. See the warnings plan.
+3. **SSH tunnel IPC: NSConnection -> socket transport** — 🟡 in execution.
+   The Step 0 spike (2026-09-01) ruled XPC out — a sandboxed app cannot vend
+   `NSXPCListener(machServiceName:)` without a launchd plist — and proved the
+   plan's fallback: a UNIX socket in the container with peer code-signing
+   validation from the socket's audit token, both directions. Step 1
+   (`SASSHTunnelAuthService` replaces `SPSSHTunnel` as the vended object,
+   with teardown failing pending prompts closed), the wire format (2), the
+   socket transport behind a preference (3), audit-token peer validation both
+   ways (4) and the default flip (5a) are stacked PRs #2618-#2622; deleting DO
+   (5b) is a draft that waits for a release of soak. Highest blast radius in
+   the codebase — SSH connections break if it is wrong — so DO stays as the
+   rollback (`SPSSHTunnelUseSocketTransport -bool NO`) until then.
 4. **Decide the PostgreSQL question rather than wait on it.** #2482 and #2493
    are drafts that have not moved since 2026-08-03, and Phase E has been gated
    on them. Meanwhile `SPTableContent.m` and `SPCustomQuery.m` grew 408 lines

@@ -10,8 +10,18 @@ class VersionFilesTest < Minitest::Test
       files = SequelAceRelease::VersionFiles.new(root: root)
 
       assert_equal({ "version" => "5.3.1", "build" => 20_104 }, files.current)
+      assert_equal "production/5.3.1-20104", files.release_tag
+      assert_equal(
+        { "channel" => "production", "version" => "5.3.1", "build" => 20_104, "tag" => "production/5.3.1-20104" },
+        files.release_identity
+      )
       result = files.update!(version: "5.3.2", build: 20_105, channel: "beta")
       assert_equal({ "version" => "5.3.2", "build" => 20_105 }, files.current)
+      assert_equal "beta/5.3.2-20105", files.release_tag
+      assert_equal(
+        { "channel" => "beta", "version" => "5.3.2", "build" => 20_105, "tag" => "beta/5.3.2-20105" },
+        files.release_identity
+      )
       assert_includes root.join(SequelAceRelease::Config::APP_INFO_PLIST).read,
                       "<string>beta/5.3.2-20105</string>"
       assert_equal 20_104, result.dig("before", "build")
@@ -34,6 +44,33 @@ class VersionFilesTest < Minitest::Test
     end
   end
 
+  def test_validates_remote_project_build_evidence_without_requiring_byte_identical_projects
+    Dir.mktmpdir do |directory|
+      root = Pathname.new(directory)
+      create_fixture_tree(root)
+      contents = SequelAceRelease::Config::PROJECT_FILES.keys.to_h do |path|
+        [path, root.join(path).read + "// unrelated project registration\n"]
+      end
+
+      assert SequelAceRelease::VersionFiles.validate_project_build_settings!(
+        contents_by_path: contents,
+        expected_build: 20_104
+      )
+
+      path = SequelAceRelease::Config::PROJECT_FILES.keys.first
+      changed = contents.merge(
+        path => contents.fetch(path).sub("CURRENT_PROJECT_VERSION = 20104;", "CURRENT_PROJECT_VERSION = 20105;")
+      )
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::VersionFiles.validate_project_build_settings!(
+          contents_by_path: changed,
+          expected_build: 20_104
+        )
+      end
+      assert_includes error.message, "CURRENT_PROJECT_VERSION"
+    end
+  end
+
   def test_invalid_requested_build_has_a_specific_validation_error
     Dir.mktmpdir do |directory|
       root = Pathname.new(directory)
@@ -45,6 +82,20 @@ class VersionFilesTest < Minitest::Test
         )
       end
       assert_equal "build must be an integer", error.message
+    end
+  end
+
+  def test_rejects_a_release_tag_that_disagrees_with_the_source_version
+    Dir.mktmpdir do |directory|
+      root = Pathname.new(directory)
+      create_fixture_tree(root)
+      info = root.join(SequelAceRelease::Config::APP_INFO_PLIST)
+      info.write(info.read.sub("production/5.3.1-20104", "production/5.3.2-20104"))
+
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::VersionFiles.new(root: root).release_identity
+      end
+      assert_includes error.message, "does not match source version"
     end
   end
 

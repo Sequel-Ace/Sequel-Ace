@@ -7,11 +7,11 @@ module SequelAceRelease
     SUBMISSION_FIELDS = %w[
       version_id build_id app_store_state scheduled_release_at phased_release_state
     ].freeze
-    Result = Struct.new(:manifest, :preserve_release_body, :submission_confirmed, keyword_init: true) do
+    Result = Struct.new(:manifest, :finalization_remains_eligible, :submission_confirmed, keyword_init: true) do
       def to_h
         {
           "state" => manifest.to_h.fetch("state"),
-          "preserve_release_body" => preserve_release_body,
+          "finalization_remains_eligible" => finalization_remains_eligible,
           "submission_confirmed" => submission_confirmed,
           "failure" => manifest.to_h.fetch("failure")
         }
@@ -42,7 +42,7 @@ module SequelAceRelease
 
       Result.new(
         manifest: updated,
-        preserve_release_body: FINALIZABLE_STATES.include?(target_state),
+        finalization_remains_eligible: FINALIZABLE_STATES.include?(target_state),
         submission_confirmed: !submission.nil?
       )
     end

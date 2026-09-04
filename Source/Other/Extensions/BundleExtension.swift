@@ -35,18 +35,15 @@ import Foundation
     }
 
     public var isMASVersion: Bool {
-        // macOS App Store and TestFlight builds both carry a readable app receipt.
-        guard
-            let receiptURL: URL = appStoreReceiptURL
-        else {
-            return false
-        }
-
-        do {
-            let _: Data = try Data(contentsOf: receiptURL)
-            return true
-        } catch {
-            return false
+        // App Store and TestFlight builds carry a receipt. Treat an existing
+        // but unreadable receipt as App Store-originated so the GitHub updater
+        // fails closed instead of offering an incompatible direct download.
+        SAAppStoreReceiptPolicy.isAppStoreInstall(receiptURL: appStoreReceiptURL) { receiptURL in
+            var isDirectory = ObjCBool(false)
+            return FileManager.default.fileExists(
+                atPath: receiptURL.path,
+                isDirectory: &isDirectory
+            ) && !isDirectory.boolValue
         }
     }
 

@@ -408,18 +408,87 @@ view-based-tableview migration, not a cast), generated lexer unreachable-code
 (2), RegexKitLite (1, vendored), `selectionHighlightStyle = .sourceList` and
 the three intentional `legacyUnarchive`/`legacyArchivedData` markers.
 
+## Step 11 — Third-party / generated-code containment — ✅ Done
+
+Same basis as step 10 ("Unit Tests" scheme, clean `build-for-testing`, fresh
+derived data): **104 → 78 raw occurrences, 60 → 34 unique lines** — exactly the
+−26 predicted, zero new warnings. What remains is now *only* the deferred
+migrations and the intentional markers (see below).
+
+- **Firebase `-Wquoted-include-in-framework-header` (21)** — the prebuilt
+  FirebaseAnalytics xcframework's own headers, unfixable from here. Silenced
+  with per-file `-Wno-quoted-include-in-framework-header` on the only two TUs
+  that `@import` Firebase modules (SPAppController.m,
+  ReportExceptionApplication.m), set via the Xcode MCP. Deliberately *not* the
+  target-wide `CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO`, so the
+  check still guards our own framework headers. Verified the per-file flags do
+  reach the module builds on Xcode 26.
+- **`preparedCellAtColumn:row:` (2)** — containment, not migration: both
+  tables (SPCopyTable, SPFieldMapperController's field mapper) are still
+  cell-based, so the deprecated cell API is the only correct one until the
+  view-based rewrite their existing 2020 TODOs already call for. Pragma-wrapped
+  with a comment saying exactly that.
+- **Generated lexer `-Wunreachable-code` (2)** — the unreachable code is
+  flex's boilerplate in the generated `.yy.c`, so each `.l` prologue now
+  carries a file-scope `#pragma clang diagnostic ignored` (a scoped push/pop
+  can't reach generated code).
+- **RegexKitLite `-Wobjc-multiple-method-names` (1)** — vendored third-party,
+  patched in place per the step 7 precedent: the ambiguous `id` receiver is
+  inside an `isKindOfClass:[NSException class]` branch, so it now casts to
+  `NSException *` (also de-ambiguating `reason`/`userInfo` on the same line).
+
+The remaining 34 unique lines are the floor this plan predicted: SecKeychain
+(10) + NSConnection (6) deferred migrations, the intentional `#warning`
+markers (14), and the intentional Swift deprecation markers (4:
+`selectionHighlightStyle = .sourceList`, `legacyUnarchive`,
+`legacyArchivedData` ×2).
+
+## Step 12 — `#warning` markers → GitHub issues — ✅ Done
+
+Same basis as steps 10-11: **78 → 52 raw occurrences, 34 → 20 unique lines**.
+Every `#warning` in the codebase (15 sites — the build showed 14 because the
+`Querying & Preparation.m` one had the same normalized text as a sibling) is
+now a `// TODO (#issue):` comment pointing at a tracked Sequel-Ace issue:
+
+| Issue | Markers |
+|---|---|
+| #2603 cross-class ivar access via KVC | SPWindowAdditions:79, SPImageView:52/118 |
+| #2604 SPMySQLFramework encoding/dup conversion | Conversion.m:46, Querying & Preparation.m:130, SPMySQLResult.m:316 |
+| #2605 CSV EOL detection vs multibyte encodings | SPDataImport.m:934 |
+| #2606 SPDataImport cleanup (per-row UI, dup code, xib outlets) | SPDataImport.m:1170/1208/1222, SPDataImport.h:49 |
+| #2607 dedupe result-cell lookup with SPTableContent | SPCustomQuery.m:3875 |
+| #2608 collation menu rebuilt per cell-display | SPTableStructure.m:1997 |
+| #2609 exporter encoding audit (writeUTF8String / NSData decode) | SPExporter.h:156, SPSQLExporter.m:345 |
+
+The old markers' `#2978`/`#2700` references were **upstream sequel-pro issue
+numbers**, not Sequel-Ace ones (they resolve to unrelated PRs here); the new
+issues cite `sequelpro/sequelpro#2978` / `#2700` explicitly for history.
+
+Remaining after this step: **20 unique lines**, all of them the two deferred
+migrations — SecKeychain (10) and NSConnection (6) — plus the 4 intentional
+Swift deprecation markers (`selectionHighlightStyle = .sourceList`,
+`legacyUnarchive`, `legacyArchivedData` ×2). Zero is now gated purely on the
+deferred projects below.
+
 ## Deferred (own projects, not part of this burn-down)
 
-- **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place
-  migration of users' stored passwords. Highest risk item in the codebase;
-  needs its own design (and pairs with the NSConnection item below since the
-  tunnel assistant reads passwords).
-- **NSConnection → NSXPCConnection** (SequelAceTunnelAssistant.m:117/168) —
-  reworks the SSH-password IPC between app and helper tool. **Now designed and
-  unblocked**: see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The
-  macOS 13.5 floor (#2587) was adopted for it, so peer validation via
-  `setConnectionCodeSigningRequirement:` needs no availability gate. Not
-  started; spike-first.
+- **SPKeychain SecKeychain* API** — ✅ **executed**: see
+  `docs/development/keychain-secitem-migration-plan.md` (characterize-first,
+  stayed on the file-based login keychain so no data migration, retired the
+  tunnel assistant's direct keychain read — which also resolved the pairing
+  with the NSConnection item below). SPKeychain is deleted; `SAKeychain`
+  (SecItem*) replaced it behind `SAKeychainProviding`, proven by a
+  cross-implementation test matrix. All 10 SecKeychain unique warning lines
+  are gone; the floor is now NSConnection (5) + the 4 intentional markers.
+- **NSConnection → socket IPC** (SequelAceTunnelAssistant.m:117/168) —
+  reworks the SSH-password IPC between app and helper tool. **In execution**:
+  see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The Step 0 spike
+  (2026-09-01) showed a sandboxed app cannot vend `NSXPCListener` without
+  launchd, so the project runs on the plan's fallback — a UNIX socket in the
+  container with audit-token peer validation both ways. Steps 1-4 and the
+  default flip (5a) are landed as stacked PRs #2618-#2622; the NSConnection
+  warnings themselves go with Step 5b (delete DO), prepared as a draft to
+  merge after the socket transport has soaked a release.
 - **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs the app's
   target, install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
   SPMySQLFramework with the right deployment target; belongs to a dependency
@@ -427,10 +496,11 @@ the three intentional `legacyUnarchive`/`legacyArchivedData` markers.
   message now reads "building for macOS-13.5", but the committed dylibs were
   not rebuilt. `build-libmysqlclient.sh` *was* updated to 13.5, so whenever the
   rebuild happens it will produce a consistent binary.
-- **Intentional markers, keep**: SAArchiving `legacyUnarchive` (by design),
-  `#warning` TODOs (collation-menu perf hog SPTableStructure:1994, duplicate
-  code SPDataImport:1167 / SPCustomQuery:3761, private-ivar note
-  SPImageView:50 (#2978)) — convert to GitHub issues if we want a clean zero.
+- **Intentional markers, keep**: SAArchiving `legacyUnarchive` /
+  `legacyArchivedData` (by design — the deprecation attribute *is* the
+  guard-rail) and `selectionHighlightStyle = .sourceList` (replacement changes
+  row metrics; wants a visual pass). The `#warning` TODOs were converted to
+  tracked issues in step 12.
 
 ## Expected trajectory
 

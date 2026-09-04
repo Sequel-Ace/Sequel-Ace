@@ -93,6 +93,23 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/main", transport.requests.first[:path]
   end
 
+  def test_reads_base64_file_content_at_an_immutable_commit
+    ref = "a" * 40
+    content = "CURRENT_PROJECT_VERSION = 20111;\n"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "type" => "file",
+        "encoding" => "base64",
+        "content" => "#{Base64.strict_encode64(content)}\n"
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    assert_equal content, client.file_content(ref: ref, path: "sequel-ace.xcodeproj/project.pbxproj")
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/contents/sequel-ace.xcodeproj/project.pbxproj?ref=#{ref}",
+                 transport.requests.first[:path]
+  end
+
   def test_reads_githubs_authoritative_latest_release
     transport = FakeTransport.new([
       http_response(body: { "id" => 100, "tag_name" => "production/5.3.2-20105" })
@@ -441,7 +458,7 @@ class GitHubClientTest < Minitest::Test
       "id" => 100,
       "tag_name" => tag,
       "name" => "5.4.0",
-      "body" => "Notes",
+      "body" => "Maintainer-edited notes while the create response was ambiguous",
       "draft" => false,
       "prerelease" => true,
       "author" => user_author
@@ -460,6 +477,7 @@ class GitHubClientTest < Minitest::Test
     release = create_or_validate_release(client, tag: tag, target_sha: target_sha)
 
     assert_equal false, release.fetch("created")
+    assert_equal "Maintainer-edited notes while the create response was ambiguous", release.fetch("body")
     assert_equal ["GET", "GET", "GET", "POST", "GET", "GET", "GET"], transport.requests.map { |request| request.fetch(:method) }
   end
 
@@ -494,7 +512,7 @@ class GitHubClientTest < Minitest::Test
     assert_equal ["GET", "GET", "GET", "POST", "GET", "GET", "GET"], transport.requests.map { |request| request.fetch(:method) }
   end
 
-  def test_rejects_an_existing_release_with_different_approved_content
+  def test_reuses_an_existing_release_with_maintainer_edited_notes
     target_sha = "a" * 40
     tag = "production/5.4.0-20105"
     transport = FakeTransport.new([
@@ -507,16 +525,16 @@ class GitHubClientTest < Minitest::Test
         "draft" => false,
         "prerelease" => true,
         "author" => user_author
-      })
+      }),
+      http_response(body: release_tag_response(tag, target_sha))
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
-    error = assert_raises(SequelAceRelease::IntegrityError) do
-      create_or_validate_release(client, tag: tag, target_sha: target_sha)
-    end
+    release = create_or_validate_release(client, tag: tag, target_sha: target_sha)
 
-    assert_includes error.message, "exact approved prerelease"
-    assert_equal 2, transport.requests.length
+    assert_equal false, release.fetch("created")
+    assert_equal "Different notes", release.fetch("body")
+    assert_equal 3, transport.requests.length
   end
 
   def test_rejects_a_release_when_its_tag_moves_during_reuse

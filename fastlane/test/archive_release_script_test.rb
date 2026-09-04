@@ -69,6 +69,30 @@ class ArchiveReleaseScriptTest < Minitest::Test
     end
   end
 
+  def test_pull_uses_an_explicit_temporary_registry_config_for_login_and_pull
+    Dir.mktmpdir do |directory|
+      remote = File.join(directory, "remote")
+      destination = File.join(directory, "destination")
+      registry_config = File.join(directory, "oras", "registry.json")
+      arguments_file = File.join(directory, "arguments.txt")
+      FileUtils.mkdir_p([remote, File.dirname(registry_config)])
+      build_remote_archive(remote)
+
+      _stdout, stderr, status = run_pull(
+        remote: remote,
+        destination: destination,
+        extra_environment: {
+          "GHCR_REGISTRY_CONFIG" => registry_config,
+          "ORAS_ARGUMENTS_FILE" => arguments_file
+        }
+      )
+
+      assert status.success?, stderr
+      registry_configs = File.readlines(arguments_file, chomp: true)
+      assert_equal [registry_config, registry_config], registry_configs
+    end
+  end
+
   def test_pull_rejects_parent_traversal_before_tar_can_touch_the_parent
     Dir.mktmpdir do |directory|
       remote = File.join(directory, "remote")
@@ -306,7 +330,7 @@ class ArchiveReleaseScriptTest < Minitest::Test
     { name: name, typeflag: "2", data: "", linkname: target, mode: 0o777 }
   end
 
-  def run_pull(remote:, destination:)
+  def run_pull(remote:, destination:, extra_environment: {})
     binary_directory = File.join(File.dirname(remote), "bin")
     FileUtils.mkdir_p(binary_directory)
     fake_oras = File.join(binary_directory, "oras")
@@ -320,7 +344,7 @@ class ArchiveReleaseScriptTest < Minitest::Test
         "GHCR_USERNAME" => "test-user",
         "ORAS_REMOTE_DIRECTORY" => remote,
         "ORAS_ARGUMENTS_FILE" => File.join(File.dirname(remote), "arguments.txt")
-      },
+      }.merge(extra_environment),
       "/bin/bash",
       repo_path("Scripts/archive-release-to-ghcr.sh"),
       "pull",
@@ -337,6 +361,14 @@ class ArchiveReleaseScriptTest < Minitest::Test
       shift
       case "${command_name}" in
         login)
+          while [[ "$#" -gt 0 ]]; do
+            if [[ "${1}" == "--registry-config" ]]; then
+              printf '%s\n' "${2}" >> "${ORAS_ARGUMENTS_FILE}"
+              shift 2
+            else
+              shift
+            fi
+          done
           cat >/dev/null
           ;;
         push)
@@ -358,6 +390,9 @@ class ArchiveReleaseScriptTest < Minitest::Test
           while [[ "$#" -gt 0 ]]; do
             if [[ "${1}" == "--output" ]]; then
               output="${2}"
+              shift 2
+            elif [[ "${1}" == "--registry-config" ]]; then
+              printf '%s\n' "${2}" >> "${ORAS_ARGUMENTS_FILE}"
               shift 2
             else
               shift

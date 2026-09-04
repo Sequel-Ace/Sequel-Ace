@@ -31,7 +31,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPSSHTunnel.h"
-#import "SPKeychain.h"
 #import "SPThreadAdditions.h"
 #import "SPFileHandle.h"
 #import "SPAppController.h"
@@ -48,15 +47,39 @@
 
 static unsigned short getRandomPort(void);
 
-@interface SPSSHTunnel ()
+@interface SPSSHTunnel () <SASSHTunnelAuthSource>
 {
 	// Private: kept out of the public header so the NSConnection deprecation is
 	// not re-emitted in every translation unit that reaches SPSSHTunnel.h via
 	// the bridging header. Used only in this file.
 	NSConnection *tunnelConnection;
+
+	// The object actually vended over the connection: only the three
+	// authentication methods the tunnel assistant needs are reachable through
+	// it (SSH tunnel IPC plan, Step 1). It holds this tunnel weakly and reads
+	// the state it needs through SASSHTunnelAuthSource.
+	SASSHTunnelAuthService *authService;
+
+	// Decides whether a prompt may be shown and fails an in-flight prompt
+	// closed on teardown (SSH tunnel IPC plan, Step 1). The sheets, their
+	// modal sessions and the answer ivars stay here; the state machine is Swift.
+	SASSHTunnelPromptCoordinator *promptCoordinator;
+
+	// Which channel this tunnel's assistant answers over (SSH tunnel IPC plan,
+	// Step 3): Distributed Objects above, or the UNIX-socket server below. Fixed
+	// for the tunnel's lifetime and handed to ssh in its environment, so a
+	// preference change cannot strand a running tunnel halfway.
+	SASSHTunnelTransport transport;
+	SASSHTunnelSocketServer *socketServer;
+
+	SASSHStderrDrainCoordinator *standardErrorDrainCoordinator;
 }
 
 - (void)setLastError:(NSString *)msg;
+- (void)cancelPendingPrompt;
+- (void)startConnectionAttempt;
+- (void)completeStandardErrorDrain;
+- (void)disconnectPreservingQueuedReconnect:(BOOL)preserveQueuedReconnect;
 
 @end
 
@@ -92,6 +115,8 @@ static unsigned short getRandomPort(void);
 		debugMessages = [[NSMutableArray alloc] init];
 		debugMessagesLock = [[NSLock alloc] init];
 		answerAvailableLock = [[NSLock alloc] init];
+		promptCoordinator = [[SASSHTunnelPromptCoordinator alloc] initWithAnswerLock:answerAvailableLock];
+		standardErrorDrainCoordinator = [[SASSHStderrDrainCoordinator alloc] init];
 
 		// Enable connection muxing on 10.7+, but only if a preference is enabled; this is because
 		// muxing causes connection instability for a large number of users (see Issue #1457)
@@ -104,12 +129,26 @@ static unsigned short getRandomPort(void);
 		
 		[tunnelConnection runInNewThread];
 		[tunnelConnection removeRunLoop:[NSRunLoop currentRunLoop]];
-		[tunnelConnection setRootObject:self];
+		authService = [[SASSHTunnelAuthService alloc] initWithSource:self keychain:[SAKeychainAccess make]];
+		[tunnelConnection setRootObject:authService];
 		
 		
 		if (![tunnelConnection registerName:tunnelConnectionName]) {
 			NSLog(@"Could not start ssh connection. %@", tunnelConnectionName);
 			return nil;
+		}
+
+		// The socket transport, when selected, serves the same authService; a
+		// tunnel whose socket cannot be created falls back to DO for its
+		// lifetime rather than failing.
+		transport = [SASSHTunnelTransportSelection selectedTransport];
+		if (transport == SASSHTunnelTransportSocket) {
+			NSError *socketError = nil;
+			socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService error:&socketError];
+			if (!socketServer) {
+				NSLog(@"SSH tunnel: socket transport unavailable (%@); using Distributed Objects for this tunnel", socketError);
+				transport = SASSHTunnelTransportDistributedObjects;
+			}
 		}
 		
 		parentWindow = nil;
@@ -130,6 +169,16 @@ static unsigned short getRandomPort(void);
 	}
 
 	return self;
+}
+
+- (BOOL)failureDiagnosticsReady
+{
+	return standardErrorDrainCoordinator.failureDiagnosticsReady;
+}
+
+- (BOOL)connectionAttemptPending
+{
+	return standardErrorDrainCoordinator.connectionAttemptPending;
 }
 
 /*
@@ -271,22 +320,50 @@ static unsigned short getRandomPort(void);
 {
     SPLog(@"connect in ssh tunnel connection state = %i", connectionState);
 
-	localPort = 0;
+	if (connectionState != SPMySQLProxyIdle) {
+		SPLog(@"connect ssh connection is active, returning");
+		return;
+	}
 
-    if (connectionState != SPMySQLProxyIdle){
-        SPLog(@"connect ssh connection state != SPMySQLProxyIdle, returning");
-        return;
-    }
+	SASSHAttemptRequestDisposition requestDisposition = [standardErrorDrainCoordinator requestAttempt];
+	if (requestDisposition == SASSHAttemptRequestDispositionQueued) {
+		SPLog(@"connect queued until SSH failure diagnostics finish draining");
+		return;
+	}
+	if (requestDisposition == SASSHAttemptRequestDispositionIgnored) {
+		SPLog(@"connect ssh connection attempt is already starting, returning");
+		return;
+	}
+
+	[self startConnectionAttempt];
+}
+
+- (void)startConnectionAttempt
+{
+	localPort = 0;
 
 	[debugMessagesLock lock];
 	[debugMessages removeAllObjects];
 	[debugMessagesLock unlock];
 	taskExitedUnexpectedly = NO;
+	[promptCoordinator reset];
 
 	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
 	                           target:self
 	                         selector:@selector(launchTask:)
 	                           object:nil];
+}
+
+- (void)completeStandardErrorDrain
+{
+	// Keep the final failure snapshot ahead of any queued attempt, which clears
+	// the diagnostic buffer when it starts.
+	if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:YES];
+
+	if ([standardErrorDrainCoordinator completeDrainNotificationAndReservePendingAttempt]) {
+		SPLog(@"starting SSH connection request queued during diagnostics drain");
+		[self startConnectionAttempt];
+	}
 }
 
 /*
@@ -298,8 +375,16 @@ static unsigned short getRandomPort(void);
     
     SPLog(@"connection state = %i", connectionState);
 
+	if (standardErrorDrainCoordinator.attemptCancellationRequested) {
+		SPLog(@"launch task cancelled before SSH process setup");
+		connectionState = SPMySQLProxyIdle;
+		[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+		return;
+	}
+
     if (connectionState != SPMySQLProxyIdle){
         SPLog(@"launch task ssh connection state != SPMySQLProxyIdle, returning");
+		[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
         return;
     }
 
@@ -318,9 +403,10 @@ static unsigned short getRandomPort(void);
 
 		// Enforce a parent window being present for dialogs
 		if (!parentWindow) {
+			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
+			[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
 			connectionState = SPMySQLProxyIdle;
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
-			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
             SPLog(@"launchTask SSH Tunnel started without a parent window, returning");
 			return;
 		}
@@ -340,9 +426,10 @@ static unsigned short getRandomPort(void);
 
 			// Abort if no local free port could be allocated
 			if (!localPort || (useHostFallback && !localPortFallback)) {
+				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
+				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
 				connectionState = SPMySQLProxyIdle;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
-				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
                 SPLog(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
 
 				return;
@@ -448,9 +535,10 @@ static unsigned short getRandomPort(void);
             }
 
             if(alertMessage != nil) {
-                connectionState = SPMySQLProxyIdle;
                 taskExitedUnexpectedly = YES;
                 [self setLastError:alertMessage];
+				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+				connectionState = SPMySQLProxyIdle;
 
                 if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
                 // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
@@ -528,10 +616,16 @@ static unsigned short getRandomPort(void);
 		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
 		[taskEnvironment safeSetObject:tunnelConnectionVerifyHash forKey:@"SP_CONNECTION_VERIFY_HASH"];
+		[taskEnvironment safeSetObject:[SASSHTunnelTransportSelection environmentValueForTransport:transport] forKey:SASSHTunnelTransportSelection.transportEnvironmentKey];
+		if (socketServer) {
+			[taskEnvironment safeSetObject:socketServer.path forKey:SASSHTunnelTransportSelection.socketPathEnvironmentKey];
+		}
 		if (passwordInKeychain) {
+			// The keychain item's name and account deliberately stay out of
+			// the environment: the assistant no longer reads the keychain —
+			// it asks getPasswordWithVerificationHash: over the connection,
+			// and the app resolves the item at ask time.
             [taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordUsesKeychain] stringValue] forKey:@"SP_PASSWORD_METHOD"];
-			[taskEnvironment safeSetObject:[keychainName stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_NAME"];
-			[taskEnvironment safeSetObject:[keychainAccount stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] forKey:@"SP_KEYCHAIN_ITEM_ACCOUNT"];
 		} else if (password) {
 			[taskEnvironment safeSetObject:[[NSNumber numberWithInteger:SPSSHPasswordAsksUI] stringValue] forKey:@"SP_PASSWORD_METHOD"];
 		} else {
@@ -602,6 +696,9 @@ static unsigned short getRandomPort(void);
 		@try {
 			// Launch and run the tunnel
 			[task SPlaunch]; //throws for invalid paths, missing +x permission
+			if (standardErrorDrainCoordinator.attemptCancellationRequested) {
+				[self abortTask];
+			}
 
 			// Listen for output
 			[task waitUntilExit]; // TODO: this leaks
@@ -609,6 +706,9 @@ static unsigned short getRandomPort(void);
 		@catch (NSException *e) {
 			connectionState = SPMySQLProxyLaunchFailed;
             SPLog(@"launchTask SSH Tunnel NSException, connectionState = SPMySQLProxyLaunchFailed");
+			// No child owns the pipe after a launch failure, so close the local
+			// writer to let the pending data-available read observe EOF.
+			[[standardError fileHandleForWriting] closeFile];
 
 			// Log the exception. Could be improved by showing a dedicated alert instead
 			[debugMessagesLock lock];
@@ -620,10 +720,11 @@ static unsigned short getRandomPort(void);
 
 		// On tunnel close, clean up, ready for re-use if the delegate reconnects.
 		
+		[standardErrorDrainCoordinator beginStandardErrorDrain];
 		
-		[[NSNotificationCenter defaultCenter] removeObserver:self
-		                                                name:NSFileHandleDataAvailableNotification
-		                                              object:nil];
+		// ssh is gone, so nobody is waiting for a prompt that may still be up;
+		// dismiss it before the diagnostics drain below, not after it
+		[self cancelPendingPrompt];
 
 		// If the task closed unexpectedly, alert appropriately
 		if (connectionState != SPMySQLProxyIdle) {
@@ -631,12 +732,23 @@ static unsigned short getRandomPort(void);
 			taskExitedUnexpectedly = YES;
 			[self setLastError:NSLocalizedString(@"The SSH Tunnel has unexpectedly closed.", @"SSH tunnel unexpectedly closed")];
             SPLog(@"SSH Tunnel has unexpectedly closed");
-
-			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 		}
 
-		// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
-		[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+		if (![standardErrorDrainCoordinator finishAfterStandardErrorDrain]) {
+			SPLog(@"Timed out waiting for SSH stderr EOF; using the diagnostics collected so far");
+		}
+
+		[[NSNotificationCenter defaultCenter] removeObserver:self
+		                                                name:NSFileHandleDataAvailableNotification
+		                                              object:nil];
+
+		// A stderr callback may have observed an intermediate state while draining,
+		// but an exited task is always idle. Notify once more only after the immutable
+		// diagnostics snapshot is safe to take.
+		connectionState = SPMySQLProxyIdle;
+		[self performSelectorOnMainThread:@selector(completeStandardErrorDrain)
+		                       withObject:nil
+		                    waitUntilDone:NO];
 
 		
 		
@@ -649,9 +761,32 @@ static unsigned short getRandomPort(void);
 - (void)disconnect
 {
     SPLog(@"ssh tunnel disconnect");
+	[self disconnectPreservingQueuedReconnect:NO];
+}
+
+- (void)disconnectForReconnect
+{
+	SPLog(@"ssh tunnel disconnect for reconnect");
+	[self disconnectPreservingQueuedReconnect:YES];
+}
+
+- (void)disconnectPreservingQueuedReconnect:(BOOL)preserveQueuedReconnect
+{
+	BOOL cancelledQueuedOrRunningAttempt = preserveQueuedReconnect
+		? NO
+		: [standardErrorDrainCoordinator cancelPendingOrRunningAttempt];
+
+	// Fail any prompt the assistant is blocked on closed, whatever the state
+	[self cancelPendingPrompt];
 
     if (connectionState == SPMySQLProxyIdle){
-        SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
+		if (preserveQueuedReconnect) {
+			SPLog(@"internal reconnect preserved the queued SSH attempt");
+		} else if (cancelledQueuedOrRunningAttempt) {
+			SPLog(@"disconnect cancelled a queued or not-yet-launched SSH attempt");
+		} else {
+			SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
+		}
         return;
     }
 
@@ -675,6 +810,7 @@ static unsigned short getRandomPort(void);
 -(void)abortTask
 {
     SPLog(@"Aborting task");
+    [self cancelPendingPrompt];
     if (task){
         if ([task isRunning]){
             SPLog(@"Task is running - calling terminate");
@@ -691,12 +827,14 @@ static unsigned short getRandomPort(void);
  */
 - (void)standardErrorHandler:(NSNotification*)aNotification
 {
+	NSData *availableData;
 	NSString *notificationText;
 	NSEnumerator *enumerator;
 	NSArray *messages;
 	NSString *message;
 
-	notificationText = [[NSString alloc] initWithData:[[aNotification object] availableData] encoding:NSASCIIStringEncoding];
+	availableData = [[aNotification object] availableData];
+	notificationText = [[NSString alloc] initWithData:availableData encoding:NSASCIIStringEncoding];
 
 	if ([notificationText length]) {
 		messages = [notificationText componentsSeparatedByString:@"\n"];
@@ -719,40 +857,45 @@ static unsigned short getRandomPort(void);
 				connectionState = SPMySQLProxyWaitingForAuth;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
-			
+
+			// Terminal states are published once by launchTask: after stderr has
+			// drained, so automatic reconnects cannot start during cleanup.
 			if ([message rangeOfString:@"bind: Address already in use"].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?", @"SSH tunnel unable to bind to local port message")];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 
 			if ([message rangeOfString:@"closed by remote host." ].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.", @"SSH tunnel was closed by remote host message")];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"Permission denied (" ].location != NSNotFound || [message rangeOfString:@"No more authentication methods to try" ].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.", @"SSH tunnel authentication failed message")];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"connect failed: Connection refused" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyForwardingFailed;
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.", @"SSH tunnel forwarding port connection refused message")];
 			}
 			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound) {
+				[standardErrorDrainCoordinator beginStandardErrorDrain];
 				connectionState = SPMySQLProxyIdle;
                 [self abortTask];
 				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 		}
 	}
 
-	if (connectionState != SPMySQLProxyIdle) {
+	// NSFileHandle data-available notifications are one-shot. Keep re-arming
+	// after terminal-state detection so trailing stderr is consumed; an empty
+	// read is the pipe's EOF signal and ends the chain.
+	if ([standardErrorDrainCoordinator recordStandardErrorReadWithByteCount:[availableData length]]) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
 }
@@ -775,24 +918,64 @@ static unsigned short getRandomPort(void);
 	return localPortFallback;
 }
 
+#pragma mark - Connection surface
+
 /*
- * Method to request the password for the current connection, as used by SequelAceTunnelAssistant;
- * called with a verification hash to check against the stored hash, to provide basic security.  Note
- * that this is easily bypassed, but if bypassed the password can already easily be retrieved in the same way.
+ * The three methods the tunnel assistant may call over the connection. They
+ * stay declared in the public header so the assistant can type its proxy, but
+ * the object actually vended is authService (SSH tunnel IPC plan, Step 1): it
+ * owns the verification-hash check, the keychain lookups and the cancelled-
+ * prompt refusal, and calls back into the SASSHTunnelAuthSource methods below
+ * for tunnel state and the blocking sheets.
  */
 - (NSString *)getPasswordWithVerificationHash:(NSString *)theHash
 {
-	if (passwordInKeychain) return nil;
-	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
+	return [authService getPasswordWithVerificationHash:theHash];
+}
+
+- (BOOL)getResponseForQuestion:(NSString *)theQuestion
+{
+	return [authService getResponseForQuestion:theQuestion];
+}
+
+- (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
+{
+	return [authService getPasswordForQuery:theQuery verificationHash:theHash];
+}
+
+#pragma mark - SASSHTunnelAuthSource
+
+- (NSString *)verificationHash
+{
+	return tunnelConnectionVerifyHash;
+}
+
+- (NSString *)heldPassword
+{
 	return password;
 }
 
+- (BOOL)usesKeychainPassword
+{
+	return passwordInKeychain;
+}
+
+- (NSString *)keychainItemName
+{
+	return keychainName;
+}
+
+- (NSString *)keychainItemAccount
+{
+	return keychainAccount;
+}
+
 /*
- * Method to allow an SSH tunnel to request the response to a question, returning the response as
- * a boolean.  This is used by the SSH_ASKPASS environment setting to deal with situations like
- * host key mismatches.
+ * Runs the yes/no question sheet and blocks the calling (connection) thread
+ * until it is answered, or until teardown dismisses it with "no". Used by the
+ * SSH_ASKPASS flow to deal with situations like host key mismatches.
  */
-- (BOOL)getResponseForQuestion:(NSString *)theQuestion
+- (BOOL)promptForResponseToQuestion:(NSString *)theQuestion
 {
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];
@@ -818,6 +1001,13 @@ static unsigned short getRandomPort(void);
 	NSSize questionTextSize;
 	NSRect windowFrameRect;
 
+	// Teardown got here first, or ssh is already gone: answer "no" unseen
+	if (![promptCoordinator shouldPresentPromptWhileSSHRunning:(task != nil && [task isRunning])]) {
+		requestedResponse = NO;
+		[answerAvailableLock unlock];
+		return;
+	}
+
 	// set up the question window
 	[sshQuestionText setStringValue:theQuestion];
 	questionTextSize = [[sshQuestionText cell] cellSizeForBounds:NSMakeRect(0, 0, [sshQuestionText bounds].size.width, 500)];
@@ -826,6 +1016,14 @@ static unsigned short getRandomPort(void);
 	[sshQuestionDialog setFrame:windowFrameRect display:NO];
 
 	//show the question window
+	[promptCoordinator promptDidPresentWithDismisser:^{
+		// Teardown: answer "no" without the user
+		self->requestedResponse = NO;
+		[NSApp endSheet:self->sshQuestionDialog];
+		[self->sshQuestionDialog orderOut:nil];
+		[[NSApplication sharedApplication] abortModal];
+		[[self->answerAvailableLock onMainThread] unlock];
+	}];
 	[parentWindow beginSheet:sshQuestionDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow:sshQuestionDialog];
 }
@@ -836,6 +1034,7 @@ static unsigned short getRandomPort(void);
 - (IBAction)closeSSHQuestionSheet:(id)sender
 {
 	requestedResponse = [sender tag] == 1 ? YES : NO;
+	[promptCoordinator promptDidClose];
 	[NSApp endSheet:sshQuestionDialog];
 	[sshQuestionDialog orderOut:nil];
 	[[NSApplication sharedApplication] abortModal];
@@ -843,15 +1042,12 @@ static unsigned short getRandomPort(void);
 }
 
 /*
- * Method to allow an SSH tunnel to request a password.  This is used by the program set by the
- * SSH_ASKPASS environment setting to request passphrases for SSH keys.
+ * Runs the password sheet and blocks the calling (connection) thread until it
+ * is answered, cancelled, or dismissed by teardown. Used by the SSH_ASKPASS
+ * flow for key passphrases and any other prompt ssh raises.
  */
-- (NSString *)getPasswordForQuery:(NSString *)theQuery verificationHash:(NSString *)theHash
+- (NSString *)promptForPasswordForQuery:(NSString *)theQuery
 {
-	if (![theHash isEqualToString:tunnelConnectionVerifyHash]) return nil;
-	
-	if (passwordPromptCancelled) return nil;
-
 	// Lock the answer available lock
 	[[answerAvailableLock onMainThread] lock];
 
@@ -880,6 +1076,13 @@ static unsigned short getRandomPort(void);
 	NSSize queryTextSize;
 	NSRect windowFrameRect;
 
+	// Teardown got here first, or ssh is already gone: refuse unseen
+	if (![promptCoordinator shouldPresentPromptWhileSSHRunning:(task != nil && [task isRunning])]) {
+		requestedPassphrase = nil;
+		[answerAvailableLock unlock];
+		return;
+	}
+
 	// Work out whether a passphrase is being requested, extracting the key name
     NSString *keyName = [theQuery captureGroupForRegex:@"^\\s*Enter passphrase for key \\'(.*)\\':\\s*$"];
 
@@ -902,6 +1105,15 @@ static unsigned short getRandomPort(void);
 	windowFrameRect.size.height = ((queryTextSize.height < 40)?40:queryTextSize.height) + 140 + ([sshPasswordDialog isSheet]?0:22);
 	
 	[sshPasswordDialog setFrame:windowFrameRect display:NO];
+	[promptCoordinator promptDidPresentWithDismisser:^{
+		// Teardown: refuse without the user, and without marking a user cancel
+		self->requestedPassphrase = nil;
+		[self->sshPasswordField setStringValue:@""];
+		[NSApp endSheet:self->sshPasswordDialog];
+		[self->sshPasswordDialog orderOut:nil];
+		[[NSApplication sharedApplication] abortModal];
+		[[self->answerAvailableLock onMainThread] unlock];
+	}];
 	[parentWindow beginSheet:sshPasswordDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow: sshPasswordDialog];
 }
@@ -912,6 +1124,7 @@ static unsigned short getRandomPort(void);
 - (IBAction)closeSSHPasswordSheet:(id)sender
 {
 	requestedResponse = [sender tag]==1 ? YES : NO;
+	[promptCoordinator promptDidClose];
 	
 	[NSApp endSheet:sshPasswordDialog];
 	[sshPasswordDialog orderOut:nil];
@@ -929,7 +1142,7 @@ static unsigned short getRandomPort(void);
 
 		// Add to keychain if appropriate
 		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSControlStateValueOn) {
-			SPKeychain *keychain = [[SPKeychain alloc] init];
+			id<SAKeychainProviding> keychain = [SAKeychainAccess make];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
 			
 		}
@@ -938,6 +1151,21 @@ static unsigned short getRandomPort(void);
 	if (!requestedPassphrase) passwordPromptCancelled = YES;
 
 	[[answerAvailableLock onMainThread] unlock];
+}
+
+/*
+ * Fails any prompt the assistant is blocked on closed, without marking it as
+ * cancelled by the user (so the real failure reason still reaches the
+ * connection controller). Called on every teardown path so a tunnel that goes
+ * away mid-prompt does not leave a sheet up and the assistant blocked until ssh
+ * gives up (SSH tunnel IPC plan, Step 1). The decision — dismiss a presented
+ * sheet, or latch a prompt still on its way to the main thread — is
+ * SASSHTunnelPromptCoordinator's; the dismissal itself is the block handed over
+ * when the sheet was presented.
+ */
+- (void)cancelPendingPrompt
+{
+	[promptCoordinator cancelPendingPrompt];
 }
 
 /*
@@ -953,12 +1181,14 @@ static unsigned short getRandomPort(void);
 
 - (void)dealloc
 {
+	[promptCoordinator invalidate];
 	delegate = nil;
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self disconnect];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 	
 	[tunnelConnection invalidate];
+	[socketServer close];
 	
 	[self setLastError:nil];
 	

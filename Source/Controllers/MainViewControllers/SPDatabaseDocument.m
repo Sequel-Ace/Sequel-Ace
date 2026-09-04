@@ -35,7 +35,6 @@
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
 #import "SPFileHandle.h"
-#import "SPKeychain.h"
 #import "SPTableContent.h"
 #import "SPCustomQuery.h"
 #import "SPDataImport.h"
@@ -3713,7 +3712,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     NSDictionary *connection = nil;
     NSInteger connectionType = -1;
-    SPKeychain *keychain = nil;
+    id<SAKeychainProviding> keychain = nil;
 
     // If this document already has a connection, don't proceed.
     if (mySQLConnection) return NO;
@@ -3722,7 +3721,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     connection = [NSDictionary dictionaryWithDictionary:[stateDetails objectForKey:@"connection"]];
     if (!connection) return NO;
 
-    if ([connection objectForKey:@"kcid"]) keychain = [[SPKeychain alloc] init];
+    if ([connection objectForKey:@"kcid"]) keychain = [SAKeychainAccess make];
 
     [self updateWindowTitle:self];
 

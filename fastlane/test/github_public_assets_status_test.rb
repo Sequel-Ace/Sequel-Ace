@@ -38,7 +38,16 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       raise "wrong release target" unless target_sha == "d" * 40
       raise "missing protected paths" if protected_paths.empty?
 
-      { "target_sha" => target_sha }
+      { "target_sha" => target_sha, "current_main_sha" => target_sha }
+    end
+
+    def file_content(ref:, path:)
+      raise "wrong release commit" unless ref == "d" * 40
+
+      counts = SequelAceRelease::Config::PROJECT_FILES.fetch(path)
+      values = Array.new(counts.fetch(:current), "CURRENT_PROJECT_VERSION = 20109;")
+      values.concat(Array.new(counts.fetch(:dylib), "DYLIB_CURRENT_VERSION = 20109;"))
+      values.join("\n")
     end
   end
 
@@ -63,6 +72,18 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       assert_equal ["Sequel-Ace-5.4.0.zip"], status.fetch("verified_assets")
       assert_equal 1, status.fetch("release_feed_entries_verified")
       assert_equal 1, client.public_feed_reads
+    end
+  end
+
+  def test_maintainer_edited_body_does_not_block_handoff_or_artifact_status
+    with_handoff(assets: [asset], body: "Free-form maintainer release notes.") do |manifest, notes, _marker, output, client|
+      assert_equal 0, run_handoff_cli(manifest: manifest, notes: notes, output: output, client: client)
+      handoff = JSON.parse(File.read(output))
+      assert_equal true, handoff.fetch("eligible")
+      assert_equal true, handoff.fetch("release_notes_mutable")
+
+      assert_equal 0, run_cli(manifest: manifest, notes: notes, output: output, client: client)
+      assert_equal true, JSON.parse(File.read(output)).fetch("ready")
     end
   end
 
@@ -216,7 +237,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
   end
 
   def with_handoff(
-    assets:, state: "artifacts_verified", author: legacy_github_user,
+    assets:, state: "artifacts_verified", author: legacy_github_user, body: BODY,
     created_at: "2026-08-13T00:00:00Z"
   )
     Dir.mktmpdir do |directory|
@@ -254,7 +275,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
         id: 370_232_757,
         tag: naming.tag,
         title: naming.title,
-        body: BODY,
+        body: body,
         author: author,
         assets: assets,
         created_at: created_at

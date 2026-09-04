@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "digest"
-
 module SequelAceRelease
   class ForwardBuildRecovery
     MAX_AUTOMATIC_RECOVERIES = 3
@@ -89,14 +87,9 @@ module SequelAceRelease
       unless Config.valid_git_sha?(current_sha) && data["release_commit_sha"] == current_sha.downcase
         raise ValidationError, "automatic recovery requires main to remain at the failed release commit"
       end
-      unless Digest::SHA256.hexdigest(release_body) == data["release_notes_sha256"] &&
-             data["release_notes_sha256"] == approval.payload.fetch("release_notes_sha256")
-        raise ValidationError, "recovery release body does not match the immutable approval"
-      end
-      approved_notes = Notes.app_store_notes_from_github_body(release_body)
-      unless approved_notes == approval.payload.fetch("app_store_notes")
-        raise ValidationError, "recovery App Store notes do not match the immutable approval"
-      end
+      # release_body is retained as a compatibility input for archived recovery
+      # callers. GitHub release notes are maintainer-owned mutable content and
+      # are deliberately not an authorization or integrity boundary.
 
       naming = ReleaseNaming.new(
         channel: data.fetch("channel"),
@@ -114,9 +107,10 @@ module SequelAceRelease
       commit = data.fetch("release_commit_sha")
       raise ValidationError, "failed release tag moved" unless @github.ref_sha("tags/#{tag}") == commit
 
-      @github.validate_release_target!(
+      PublishHandoff.validate_release_source!(
+        github: @github,
         target_sha: commit,
-        protected_paths: PublishHandoff::RELEASE_PATHS
+        canonical_build: data.fetch("canonical_build")
       )
       release = @github.release_by_tag(tag)
       unless release["tag_name"] == tag && release["draft"] == false && release["prerelease"] == true &&

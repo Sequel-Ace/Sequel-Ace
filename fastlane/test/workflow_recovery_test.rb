@@ -44,16 +44,11 @@ class WorkflowRecoveryTest < Minitest::Test
       ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
       ".github/workflows/release.yml:Mint exact-target release tag token" => release_mutation_permissions,
       ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
-      ".github/workflows/release.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
-      ".github/workflows/release_alpha_retry.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_feasibility.yml:Mint a fresh release App token for the GitHub probe" => cleanup_permissions,
       ".github/workflows/release_feasibility.yml:Refresh release App token for probe cleanup" => cleanup_permissions,
       ".github/workflows/release_finalize.yml:Mint exact-target release mutation token" => release_mutation_permissions,
-      ".github/workflows/release_publish.yml:Mint release mutation token for Cloud failure annotation" => release_mutation_permissions,
-      ".github/workflows/release_publish.yml:Mint exact-target public asset token" => [["permission-contents", "write"]],
-      ".github/workflows/release_publish.yml:Mint release mutation token for Alpha recovery annotation" => release_mutation_permissions,
-      ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions
+      ".github/workflows/release_publish.yml:Mint exact-target public asset token" => [["permission-contents", "write"]]
     }
     observed_steps = []
 
@@ -89,50 +84,19 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_equal expected_permissions.keys.sort, observed_steps.sort
   end
 
-  def test_optional_release_annotations_cannot_block_durable_state
+  def test_automated_recovery_never_edits_maintainer_release_notes
     release = File.read(repo_path(".github/workflows/release.yml"))
-    release_token = release.split("- name: Mint release mutation token for failure annotation", 2).fetch(1)
-                           .split("- name: Preserve an explanatory failed prerelease", 2).first
-    release_failure = release.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1)
-    assert_includes release_token, "continue-on-error: true"
-    assert_includes release_failure, '[[ -z "${RELEASE_MUTATION_TOKEN}" ]]'
-    assert_operator release_failure.index("archive-release-to-ghcr.sh push"), :<,
-                    release_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
-
     alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
-    alpha_token = alpha.split("- name: Mint release mutation token for failure annotation", 2).fetch(1)
-                       .split("- name: Document transient Alpha retry failure", 2).first
-    alpha_failure = alpha.split("- name: Document transient Alpha retry failure", 2).fetch(1)
-    assert_includes alpha_token, "continue-on-error: true"
-    assert_includes alpha_failure, '[[ -z "${RELEASE_MUTATION_TOKEN}" ]]'
-
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    cloud_token = publisher.split("- name: Mint release mutation token for Cloud failure annotation", 2).fetch(1)
-                           .split("- name: Authenticate and preserve the failed Cloud handoff", 2).first
-    cloud_failure = publisher.split("- name: Authenticate and preserve the failed Cloud handoff", 2).fetch(1)
-                             .split("  publish:", 2).first
-    assert_includes cloud_token, "continue-on-error: true"
-    assert_operator cloud_failure.index("archive-release-to-ghcr.sh push"), :<,
-                    cloud_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
-    assert_includes cloud_failure, "the optional GitHub annotation failed and will not block forward recovery"
-    assert_operator cloud_failure.index("archive-release-to-ghcr.sh push"), :<,
-                    cloud_failure.index("if ! (")
-
-    alpha_archive = publisher.index("- name: Refresh the private archive with submission evidence")
-    alpha_token_index = publisher.index("- name: Mint release mutation token for Alpha recovery annotation")
-    alpha_token = publisher[alpha_token_index...publisher.index("- name: Append successful Alpha recovery evidence")]
-    alpha_annotation = publisher.split("- name: Append successful Alpha recovery evidence", 2).fetch(1)
-    assert_operator alpha_archive, :<, alpha_token_index
-    assert_includes alpha_token, "continue-on-error: true"
-    assert_includes alpha_annotation, '[[ -z "${RELEASE_MUTATION_TOKEN}" ]]'
-
-    terminal_token = publisher.split("- name: Mint release mutation token for terminal failure annotation", 2).fetch(1)
-                              .split("- name: Preserve terminal artifact-verification failure", 2).first
-    terminal_failure = publisher.split("- name: Preserve terminal artifact-verification failure", 2).fetch(1)
-                                .split("- name: Preserve retryable state", 2).first
-    assert_includes terminal_token, "continue-on-error: true"
-    assert_operator terminal_failure.index("archive-release-to-ghcr.sh push"), :<,
-                    terminal_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
+    [release, alpha, publisher].each do |workflow|
+      refute_includes workflow, "gh release edit"
+      refute_includes workflow, "--notes-file"
+      refute_includes workflow, "failure_release_token"
+    end
+    assert_includes release, "maintainer-edited GitHub release notes were left unchanged"
+    assert_includes alpha, "maintainer-edited GitHub release notes were left unchanged"
+    assert_includes publisher, "maintainer-edited GitHub release notes were left unchanged"
+    assert_includes publisher, "archive-release-to-ghcr.sh push"
 
     exact_create_token = release.split("- name: Mint exact-target release tag token", 2).fetch(1)
                                 .split("- name: Select the initial GitHub release publisher", 2).first
@@ -223,46 +187,16 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes adapter, "Unsupported release wake-state variable"
   end
 
-  def test_optional_release_annotations_cannot_recreate_a_missing_tag_from_main
-    expected_targets = {
-      "release.yml" => {
-        events: [[:verify, "FAILED_TAG"], [:edit, "FAILED_TAG"], [:verify, "FAILED_TAG"]],
-        source: 'RELEASE_COMMIT: ${{ steps.release_target.outputs.sha || steps.release_context.outputs.source_release_commit_sha }}'
-      },
-      "release_alpha_retry.yml" => {
-        events: [[:verify, "BETA_TAG"], [:edit, "BETA_TAG"], [:verify, "BETA_TAG"]],
-        source: 'RELEASE_COMMIT: ${{ inputs.expected_commit }}'
-      },
-      "release_publish.yml" => {
-        events: [
-          [:verify, "EXPECTED_TAG"], [:edit, "EXPECTED_TAG"], [:verify, "EXPECTED_TAG"],
-          [:verify, "BETA_TAG"], [:edit, "BETA_TAG"], [:verify, "BETA_TAG"],
-          [:verify, "FAILED_TAG"], [:edit, "FAILED_TAG"], [:verify, "FAILED_TAG"]
-        ],
-        source: 'RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}'
-      }
-    }
+  def test_release_workflows_keep_failure_evidence_out_of_the_mutable_body
+    workflows = %w[release.yml release_alpha_retry.yml release_publish.yml].map do |filename|
+      File.read(repo_path(".github/workflows/#{filename}"))
+    end
 
-    expected_targets.each do |filename, expected|
-      workflow = File.read(repo_path(".github/workflows/#{filename}"))
-      lines = workflow.lines
-      edits = workflow.lines.grep(/gh release edit/)
-      expected_edits = expected.fetch(:events).count { |event| event.first == :edit }
-
-      assert_equal expected_edits, edits.length
-      assert_equal Array.new(expected_edits, '--verify-tag --target "${RELEASE_COMMIT}"'),
-                   edits.map { |line| line[/--verify-tag --target "\$\{RELEASE_COMMIT\}"/] }
-      assert_equal expected_edits, workflow.scan(expected.fetch(:source)).length
-      mutation_events = lines.each_with_index.filter_map do |line, index|
-        if line.include?("github-verify-release-tag")
-          tag = lines.fetch(index + 1)[/--tag "\$\{([A-Z_]+)\}"/, 1]
-          assert_equal '--target-sha "${RELEASE_COMMIT}" >/dev/null', lines.fetch(index + 2).strip
-          [:verify, tag]
-        elsif line.include?("gh release edit")
-          [:edit, line[/gh release edit "\$\{([A-Z_]+)\}"/, 1]]
-        end
-      end
-      assert_equal expected.fetch(:events), mutation_events
+    workflows.each do |workflow|
+      refute_includes workflow, "Workflow evidence: ${RUN_URL}"
+      refute_includes workflow, "failed-release-body.md"
+      refute_includes workflow, "recovered-release-body.md"
+      refute_includes workflow, "retry-failed-release-body.md"
     end
   end
 
@@ -301,6 +235,15 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_equal 2, workflow.scan("sa-release reconcile-build").length
     assert_includes workflow, '--workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}"'
     assert_includes workflow, '"production_build_evidence" => reconciliation.fetch("production_build_evidence")'
+
+    initial = workflow.split("- name: Reconcile the authoritative Production Cloud build", 2).fetch(1)
+                      .split("- name: Create the initial release manifest", 2).first
+    final = workflow.split("- name: Revalidate Production Cloud build immediately before merge or tag", 2).fetch(1)
+                    .split("- name: Recheck and merge the release PR", 2).first
+    [initial, final].each do |reconciliation|
+      assert_includes reconciliation, '--channel "${RELEASE_CHANNEL}"'
+      assert_includes reconciliation, '--target-version "${RELEASE_VERSION}"'
+    end
   end
 
   def test_a_higher_assigned_number_dispatches_only_a_validated_forward_recovery
@@ -350,7 +293,7 @@ class WorkflowRecoveryTest < Minitest::Test
     release = File.read(repo_path(".github/workflows/release.yml"))
     cleanup_token = release[/\s+if: .*\n\s+id: cleanup_app_token/, 0]
     cleanup_step = release.split("- name: Reconcile a failed release branch", 2).fetch(1).lines.first(2).join
-    prerelease_step = release.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1)
+    prerelease_step = release.split("- name: Preserve failed release state without editing release notes", 2).fetch(1)
                              .split("continue-on-error:", 2).first
     alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
     alpha_step = alpha.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1)
@@ -1416,10 +1359,10 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes failure_step, "archive-release-to-ghcr.sh push"
     refute_includes failure_step, "GHCR_TOKEN"
     assert_includes failure_step, "exact durable failed-Alpha handoff was left unchanged"
-    assert_includes failure_step, 'grep -Fq "Workflow evidence: ${RUN_URL}"'
+    assert_includes failure_step, "maintainer-edited GitHub release notes were left unchanged"
   end
 
-  def test_alpha_failure_annotation_requires_authorization_and_archive_validation
+  def test_alpha_failure_preservation_requires_authorization_and_archive_validation
     workflow = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
     authorization = workflow.split("- name: Enforce narrow Alpha-retry authorization", 2).fetch(1)
                             .split("- name: Mint repository-scoped release App token", 2).first
@@ -1433,6 +1376,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes validation, 'file.puts("validated=true")'
     assert_operator validation.index("archive_ref ="), :<, validation.index('file.puts("validated=true")')
     assert_operator validation.index("naming.public_artifacts"), :<, validation.index('file.puts("validated=true")')
+    refute_includes validation, 'release["body"]'
+    refute_includes validation, "release_notes_sha256"
+    refute_includes validation, "app-store-notes.txt"
     assert_includes failure_header, "steps.authorization.outputs.authorized == 'true'"
     assert_includes failure_header, "steps.release.outputs.validated == 'true'"
   end
