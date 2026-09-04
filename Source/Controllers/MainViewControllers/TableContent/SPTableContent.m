@@ -4133,12 +4133,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)comboBoxCell:(SPComboBoxCell *)cell willPopUpWindow:(NSWindow *)window
 {
-	[_comboBoxSelectionTracker comboBoxWillOpen];
+	[_comboBoxSelectionTracker comboBoxWillOpenWithValue:[cell objectValue]];
 }
 
 - (void)comboBoxCellSelectionDidChange:(SPComboBoxCell *)cell
 {
 	[_comboBoxSelectionTracker comboBoxSelectionDidChange:[cell objectValueOfSelectedItem]];
+}
+
+- (void)comboBoxCellDidDismissPopUp:(SPComboBoxCell *)cell
+{
+	[_comboBoxSelectionTracker comboBoxDidCloseWithValue:[cell objectValue]];
 }
 
 #pragma mark -

@@ -20,6 +20,8 @@ import AppKit
     private let lock = NSLock()
     private var dataGeneration: UInt = 0
     private var popupGeneration: UInt?
+    private var openingValue: NSObject?
+    private var hasOpeningValue = false
     private var pendingSelection: NSObject?
     private var hasPendingSelection = false
 
@@ -32,11 +34,14 @@ import AppKit
         dataGeneration &+= 1
     }
 
-    @objc func comboBoxWillOpen() {
+    @objc(comboBoxWillOpenWithValue:)
+    func comboBoxWillOpen(with value: NSObject?) {
         lock.lock()
         defer { lock.unlock() }
 
         popupGeneration = dataGeneration
+        openingValue = value
+        hasOpeningValue = true
         pendingSelection = nil
         hasPendingSelection = false
     }
@@ -53,6 +58,24 @@ import AppKit
         hasPendingSelection = true
     }
 
+    @objc(comboBoxDidCloseWithValue:)
+    func comboBoxDidClose(with value: NSObject?) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        // Selection-change notifications describe the highlighted popup row,
+        // even when Escape later restores the opening value. Retain provenance
+        // only when a changed candidate became the cell's final object value.
+        guard popupGeneration != nil,
+              hasOpeningValue,
+              hasPendingSelection,
+              valuesMatch(pendingSelection, value),
+              !valuesMatch(openingValue, pendingSelection) else {
+            clearPendingSelection()
+            return
+        }
+    }
+
     @objc(consumeSelectionMatching:)
     func consumeSelection(matching proposedValue: NSObject?) -> SAComboBoxSelectionState {
         lock.lock()
@@ -67,10 +90,7 @@ import AppKit
         guard popupGeneration == dataGeneration else {
             return .invalidated
         }
-        guard let pendingSelection else {
-            return proposedValue == nil ? .current : .notTracked
-        }
-        return pendingSelection.isEqual(proposedValue) ? .current : .notTracked
+        return valuesMatch(pendingSelection, proposedValue) ? .current : .notTracked
     }
 
     @objc func discardPendingSelection() {
@@ -81,8 +101,17 @@ import AppKit
 
     private func clearPendingSelection() {
         popupGeneration = nil
+        openingValue = nil
+        hasOpeningValue = false
         pendingSelection = nil
         hasPendingSelection = false
+    }
+
+    private func valuesMatch(_ lhs: NSObject?, _ rhs: NSObject?) -> Bool {
+        guard let lhs else {
+            return rhs == nil
+        }
+        return lhs.isEqual(rhs)
     }
 }
 

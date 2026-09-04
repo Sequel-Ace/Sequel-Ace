@@ -115,9 +115,10 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
     func testInvalidatedPopupSelectionIsIgnoredWhenFieldEditorIsNotRequired() {
         let tracker = SAComboBoxSelectionTracker()
-        tracker.comboBoxWillOpen()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
         tracker.comboBoxSelectionDidChange("published" as NSString)
         tracker.tableDataWillReload()
+        tracker.comboBoxDidClose(with: "published" as NSString)
 
         XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
@@ -129,10 +130,12 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         ))
     }
 
-    func testReloadAfterCancelledPopupDoesNotInvalidateNextInlineEdit() {
+    func testReloadAfterCancelledHighlightedSelectionDoesNotInvalidateNextInlineEdit() {
         let tracker = SAComboBoxSelectionTracker()
-        tracker.comboBoxWillOpen()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
+        tracker.comboBoxSelectionDidChange("published" as NSString)
         tracker.tableDataWillReload()
+        tracker.comboBoxDidClose(with: "draft" as NSString)
 
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
@@ -157,8 +160,9 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
     func testCurrentPopupSelectionCanOnlyBeConsumedOnce() {
         let tracker = SAComboBoxSelectionTracker()
-        tracker.comboBoxWillOpen()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
         tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
 
         XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .current)
         XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .notTracked)
@@ -166,8 +170,9 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
     func testReloadInvalidatesPopupSelectionWhenDimensionsCouldStayTheSame() {
         let tracker = SAComboBoxSelectionTracker()
-        tracker.comboBoxWillOpen()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
         tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
 
         tracker.tableDataWillReload()
 
