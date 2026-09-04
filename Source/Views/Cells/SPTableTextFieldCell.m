@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTableTextFieldCell.h"
+#import "sequel-ace-Swift.h"
 
 @implementation SPTableTextFieldCell
 
@@ -38,7 +39,7 @@
 - (id) initWithCoder:(NSCoder *)coder
 {
 	if (self = [super initWithCoder:coder]) {
-		noteButton = [[NSCell alloc] init];
+		noteButton = [[NSTextFieldCell alloc] initTextCell:@""];
 		[noteButton setTitle:@""];
 		[noteButton setBordered:NO];
 		[noteButton setAlignment:NSTextAlignmentRight];
@@ -65,41 +66,13 @@
 }
 
 /**
- * Implements nicer cell truncating by appending '...' to the table name, before asking super to draw it.
+ * Draw the name and optional comment in separate, non-overlapping rectangles.
  */
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
-{			
-	// Construct and get the sub text attributed string
-	NSAttributedString *string = [self attributedStringValue];
-
-	NSUInteger i;
-	CGFloat maxWidth = cellFrame.size.width;
-	CGFloat stringWidth = [string size].width;
-
-	// Set a right padding
-	maxWidth -= 5;
-
-	if (maxWidth < stringWidth) {
-		for (i = 0; i <= [string length]; i++) {
-			if (([[string attributedSubstringFromRange:NSMakeRange(0, i)] size].width >= maxWidth) && (i >= 3)) {
-				string = [[NSMutableAttributedString alloc] initWithString:[[[string attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[string attributesAtIndex:0 effectiveRange:NULL]];
-				break;
-			}
-		}
-	}
-
-	[self setAttributedStringValue:string];
-	[super drawInteriorWithFrame:cellFrame inView:controlView];
-
-	
-	// Set up new rects
-	
-	if (noteButton != nil)
-	{
-		NSRect linkRect = NSMakeRect(cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
-		[noteButton drawInteriorWithFrame:linkRect inView:controlView];
-	}
-	
+{
+	[SATableListCellRenderer drawNameCell:self commentCell:noteButton frame:cellFrame inView:controlView drawName:^(NSRect nameFrame) {
+		[super drawInteriorWithFrame:nameFrame inView:controlView];
+	}];
 }
 
 - (void)setNote:(NSString *)lableText

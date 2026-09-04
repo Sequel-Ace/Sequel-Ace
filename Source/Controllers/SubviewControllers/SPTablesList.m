@@ -1911,6 +1911,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)tableView:(NSTableView *)aTableView  willDisplayCell:(SPTableTextFieldCell
  *)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
+	// Cells are reused for tables without comments and for group headings.
+	[aCell setNote:@""];
+
 	if (rowIndex > 0 && rowIndex < (NSInteger)[filteredTableTypes count] && [[aTableColumn identifier] isEqualToString:@"tables"]) {
 
 		id item = [filteredTables safeObjectAtIndex:rowIndex];
@@ -1954,7 +1957,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	} 
 	else {
-		[aCell setNote:@""];
 		[aCell setImage:nil];
 		[aCell setIndentationLevel:0];
 	}
