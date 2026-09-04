@@ -60,8 +60,10 @@ import Foundation
     /// The reply has no timeout: it waits for the user to answer a prompt.
     static let requestTimeout: Int = 10
 
-    /// The socket's path, handed to ssh as `SP_CONNECTION_SOCKET_PATH`.
+    /// The socket's path, handed to ssh under `pathEnvironmentKey`.
     @objc let path: String
+
+    @objc static let pathEnvironmentKey = SASSHTunnelSocketIO.pathEnvironmentKey
 
     private let listeningDescriptor: Int32
     private let handler: Handler
@@ -80,8 +82,9 @@ import Foundation
     }
 
     /// The socket name is short on purpose: `sun_path` allows 103 bytes and
-    /// the container tmp already takes 62 plus the user name, so every byte
-    /// here is a byte of user name that still fits (26 with this shape).
+    /// the container tmp already takes 62 plus the user name; up to a 26-byte
+    /// user name the full path fits, beyond that the socket is reached
+    /// relative to its directory (see `SASSHTunnelSocketIO.performSocketCall`).
     static func socketFileName() -> String {
         "s-" + String((0..<4).map { _ in String(format: "%02x", Int.random(in: 0...255)) }.joined()) + ".sock"
     }
@@ -102,16 +105,10 @@ import Foundation
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
         for name in names where isOwnSocketName(name) {
             let candidate = (directory as NSString).appendingPathComponent(name)
-            guard var address = try? SASSHTunnelSocketIO.address(for: candidate),
-                  let fd = SASSHTunnelSocketIO.makeSocket() else { continue }
-            let connected = withUnsafePointer(to: &address) { pointer in
-                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                    Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-                }
-            }
-            let code = errno
+            guard let fd = SASSHTunnelSocketIO.makeSocket() else { continue }
+            let outcome = try? SASSHTunnelSocketIO.performSocketCall(at: candidate) { Darwin.connect(fd, $0, $1) }
             Darwin.close(fd)
-            if connected != 0 && code == ECONNREFUSED {
+            if let outcome, outcome.result != 0, outcome.errno == ECONNREFUSED {
                 unlink(candidate)
             }
         }
@@ -130,31 +127,25 @@ import Foundation
         self.handler = handler
         self.peerPolicy = peerPolicy
 
-        // Pick the first directory whose path leaves room for the name.
-        var chosen: (String, sockaddr_un)?
-        for directory in directories {
-            let base = directory.hasSuffix("/") ? directory : directory + "/"
-            let candidate = base + Self.socketFileName()
-            if let address = try? SASSHTunnelSocketIO.address(for: candidate) {
-                chosen = (candidate, address)
-                break
-            }
-        }
-        guard let (path, address) = chosen else { throw Error.noUsableDirectory }
+        // The first directory offered; a long path is fine, the bind below
+        // goes relative to the directory when the full path does not fit.
+        guard let directory = directories.first else { throw Error.noUsableDirectory }
+        let base = directory.hasSuffix("/") ? directory : directory + "/"
+        let path = base + Self.socketFileName()
         self.path = path
-        Self.sweepStaleSockets(in: (path as NSString).deletingLastPathComponent)
+        Self.sweepStaleSockets(in: directory)
 
         guard let fd = SASSHTunnelSocketIO.makeSocket() else { throw Error.socketFailed(errno) }
-        var boundAddress = address
-        let bound = withUnsafePointer(to: &boundAddress) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-            }
-        }
-        guard bound == 0 else {
-            let code = errno
+        let bound: (result: Int32, errno: Int32)
+        do {
+            bound = try SASSHTunnelSocketIO.performSocketCall(at: path) { Darwin.bind(fd, $0, $1) }
+        } catch {
             Darwin.close(fd)
-            throw Error.bindFailed(code)
+            throw error
+        }
+        guard bound.result == 0 else {
+            Darwin.close(fd)
+            throw Error.bindFailed(bound.errno)
         }
         // Belt and braces: the container is private already, the socket
         // file is owner-only regardless of umask.

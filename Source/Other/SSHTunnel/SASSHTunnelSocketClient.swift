@@ -56,16 +56,11 @@ struct SASSHTunnelSocketClient {
     var peerPolicy: PeerPolicy = { _ in true }
 
     func send(_ request: SASSHTunnelAuthRequest) throws -> SASSHTunnelAuthResponse {
-        var address = try SASSHTunnelSocketIO.address(for: path)
         guard let fd = SASSHTunnelSocketIO.makeSocket() else { throw Error.socketFailed(errno) }
         defer { Darwin.close(fd) }
 
-        let connected = withUnsafePointer(to: &address) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-            }
-        }
-        guard connected == 0 else { throw Error.connectFailed(errno) }
+        let connected = try SASSHTunnelSocketIO.performSocketCall(at: path) { Darwin.connect(fd, $0, $1) }
+        guard connected.result == 0 else { throw Error.connectFailed(connected.errno) }
         guard peerPolicy(fd) else { throw Error.peerRejected }
 
         guard SASSHTunnelSocketIO.writeAll(fd, SASSHTunnelAuthWire.encode(request)) else {

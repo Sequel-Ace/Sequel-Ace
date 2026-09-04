@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
+		19047C4FB0230766C9AD7958 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BAC3047688D00BCE2B9 /* main.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
+		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
 		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
 		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
@@ -71,7 +72,6 @@
 		17D3C66E128AD4710047709F /* SPFavoritesController.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D3C66D128AD4710047709F /* SPFavoritesController.m */; };
 		17D3C671128AD8160047709F /* SPSingleton.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D3C670128AD8160047709F /* SPSingleton.m */; };
 		17D3C6D3128B1C900047709F /* SPFavoritesOutlineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D3C6D2128B1C900047709F /* SPFavoritesOutlineView.m */; };
-		17D41A8221700F8200B1888D /* SPFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1111BBCC57600104523 /* SPFunctions.m */; };
 		17D5B49E1553059F00EF3BB3 /* SPViewCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 17D5B49D1553059F00EF3BB3 /* SPViewCopy.m */; };
 		17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1798F19715501838004B0AB8 /* SPMutableArrayAdditions.m */; };
 		17DD52B7115071D0007D8950 /* SPPrintTemplate.html in Resources */ = {isa = PBXBuildFile; fileRef = 17DD52B6115071D0007D8950 /* SPPrintTemplate.html */; };
@@ -119,7 +119,6 @@
 		1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */; };
 		1A445DAA25BACBE5004E9A77 /* naughty_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1A445DA925BACBE5004E9A77 /* naughty_strings.txt */; };
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
-		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4DC22D25DECEA000DA4FE1 /* ProgressWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */; };
 		1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A56463D14569A0B56EE8BAC /* SPPillAttachmentCell.m */; };
@@ -301,11 +300,8 @@
 		51AC3B8B3047621900BCE2B9 /* SASSHTunnelSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B893047621900BCE2B9 /* SASSHTunnelSocketServer.swift */; };
 		51AC3B8D3047622700BCE2B9 /* SASSHTunnelSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */; };
 		51AC3B903047623E00BCE2B9 /* SASSHTunnelAskpass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */; };
-		51AC3B963047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */; };
-		51AC3B973047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */; };
 		51AC3B993047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */; };
 		51AC3B9B304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */; };
-		51AC3B9D304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */; };
 		51AC3BA33047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
 		51AC3BA43047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
 		51AC3BA93047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA83047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift */; };
@@ -431,7 +427,6 @@
 		584D878B15140FEB00F24774 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		584D87921514101E00F24774 /* SPDatabaseStructure.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D87911514101E00F24774 /* SPDatabaseStructure.m */; };
 		584D88A91515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D88A81515034200F24774 /* NSNotificationCenterThreadingAdditions.m */; };
-		584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D88A81515034200F24774 /* NSNotificationCenterThreadingAdditions.m */; };
 		584D899D15162CBE00F24774 /* SPDataBase64EncodingAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D899C15162CBE00F24774 /* SPDataBase64EncodingAdditions.m */; };
 		586F457E0FDB280100B428D7 /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
 		5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 5870868310FA3E9C00D58E1C /* SPDataStorage.m */; };
@@ -445,7 +440,6 @@
 		58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 58C56EF40F438E120035701E /* SPDataCellFormatter.m */; };
 		58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */; };
 		58CDB3400FCE13EF00F8ACA3 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5EAC0FC0EC87FF900CC579C /* Security.framework */; };
-		58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */; };
 		58D2A6A716FBDEFF002EB401 /* SPComboPopupButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A6A616FBDEFF002EB401 /* SPComboPopupButton.m */; };
 		58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2E227101222670063EF1D /* SPTextAndLinkCell.m */; };
 		58D2E22E101222870063EF1D /* link-arrow-clicked.png in Resources */ = {isa = PBXBuildFile; fileRef = 58D2E22B101222870063EF1D /* link-arrow-clicked.png */; };
@@ -1196,12 +1190,11 @@
 		51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketClient.swift; sourceTree = "<group>"; };
 		51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAskpass.swift; sourceTree = "<group>"; };
 		51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAssistantSocketMain.swift; sourceTree = "<group>"; };
-		51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelTransport.swift; sourceTree = "<group>"; };
 		51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketTransportTests.swift; sourceTree = "<group>"; };
 		51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAskpassTests.swift; sourceTree = "<group>"; };
-		51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelTransportTests.swift; sourceTree = "<group>"; };
 		51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPeerValidator.swift; sourceTree = "<group>"; };
 		51AC3BA83047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPeerValidatorTests.swift; sourceTree = "<group>"; };
+		51AC3BAC3047688D00BCE2B9 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinator.swift; sourceTree = "<group>"; };
 		51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -1353,7 +1346,6 @@
 		58C56EF40F438E120035701E /* SPDataCellFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDataCellFormatter.m; sourceTree = "<group>"; };
 		58CDB32E0FCE138D00F8ACA3 /* SPSSHTunnel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPSSHTunnel.h; sourceTree = "<group>"; };
 		58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPSSHTunnel.m; sourceTree = "<group>"; };
-		58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SequelAceTunnelAssistant.m; sourceTree = "<group>"; };
 		58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SequelAceTunnelAssistant; sourceTree = BUILT_PRODUCTS_DIR; };
 		58D2A6A516FBDEFF002EB401 /* SPComboPopupButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPComboPopupButton.h; sourceTree = "<group>"; };
 		58D2A6A616FBDEFF002EB401 /* SPComboPopupButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPComboPopupButton.m; sourceTree = "<group>"; };
@@ -2407,7 +2399,6 @@
 				58CDB32F0FCE138D00F8ACA3 /* SPSSHTunnel.m */,
 				51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */,
 				51AC3B7130475EAD00BCE2B9 /* SASSHTunnelAuthService.swift */,
-				58CDB3310FCE139C00F8ACA3 /* SequelAceTunnelAssistant.m */,
 				F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */,
 				51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */,
 				51AC3B83304761F800BCE2B9 /* SASSHTunnelSocketIO.swift */,
@@ -2415,8 +2406,8 @@
 				51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */,
 				51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */,
 				51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */,
-				51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */,
 				51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */,
+				51AC3BAC3047688D00BCE2B9 /* main.swift */,
 				51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */,
 			);
 			name = "SSH Tunnel";
@@ -2836,7 +2827,6 @@
 				51AC3B7F304760FD00BCE2B9 /* SASSHTunnelAuthMessageTests.swift */,
 				51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */,
 				51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */,
-				51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */,
 				51AC3BA83047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift */,
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 			);
@@ -3523,8 +3513,6 @@
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
 				FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */,
 				51AC3B85304761F800BCE2B9 /* SASSHTunnelSocketIO.swift in Sources */,
-				51AC3B963047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */,
-				51AC3B9D304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				C2E7A3B52E5E1A1A00D22990 /* SPDatabaseData.m in Sources */,
 				C2E7A3B62E5E1B3A00D22990 /* NSAlertExtension.swift in Sources */,
@@ -3677,16 +3665,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				19047C4FB0230766C9AD7958 /* main.swift in Sources */,
 				063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */,
 				F04AA77A50488C1B938879D7 /* SASSHTunnelAssistantSocketMain.swift in Sources */,
 				AC8C26C73E9B45F473139262 /* SASSHTunnelAskpass.swift in Sources */,
 				45FF68FFB401A6EA11C6D134 /* SASSHTunnelSocketClient.swift in Sources */,
 				67D6D5054AF5FECC0EFE4EFF /* SASSHTunnelSocketIO.swift in Sources */,
 				07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */,
-				17D41A8221700F8200B1888D /* SPFunctions.m in Sources */,
-				1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */,
-				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
-				584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3960,7 +3945,6 @@
 				5843E247162B555B00EAA6D1 /* SPThreadAdditions.m in Sources */,
 				58D2A6A716FBDEFF002EB401 /* SPComboPopupButton.m in Sources */,
 				65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */,
-				51AC3B973047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */,
 				501B1D181728A3DA0017C92E /* SPCharsetCollationHelper.m in Sources */,
 				50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */,
 				50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */,

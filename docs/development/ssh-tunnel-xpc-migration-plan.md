@@ -484,7 +484,7 @@ Execution notes (2026-09-01):
   disabled) and is not. Check `codesign -dv` for the team before a live
   run; give test runs their own `-derivedDataPath`.
 
-## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) prepared
+## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) ready, waits for soak
 
 Separate releases. Flip to the socket, let it soak, then remove the DO path,
 the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
@@ -503,13 +503,33 @@ the 103-byte `sun_path` after the 62-byte container-tmp prefix; the stale
 sweep recognises both name shapes, at their exact widths only. This is the
 release that soaks.
 
-Before DO can go, the socket must have somewhere to live for *every* user:
-today a container-tmp path over 103 bytes (user names past 26 UTF-8 bytes)
-falls back to DO. Give the server a second candidate directory that is short
-and sandbox-reachable — the per-user `DARWIN_USER_TEMP_DIR` (`/var/folders/…/T/`,
-~50 bytes) is the obvious one if the sandbox permits it for both processes;
-prove it the same way Step 0 did — and turn the fallback into a hard error
-with a clear log line.
+Execution notes, 5b (2026-09-01, draft PR, **do not merge until 5a has
+shipped and soaked**): `NSConnection` is gone from `SPSSHTunnel` — no
+`registerName:`, no root object, no `invalidate` — and the three DO-facing
+methods left the tunnel and its header; the socket server is created
+unconditionally and a tunnel whose socket cannot be created fails to
+initialise with a log line naming the cause. **Long user names no longer
+matter** (Codex review of the draft flagged that the hard failure would
+have cost them SSH): when the full path overflows `sun_path`, both ends
+bind and connect *relative to the socket's directory* — the thread enters
+the directory for exactly that one syscall, serialized, and restores the
+working directory (`SASSHTunnelSocketIO.performSocketCall`); nothing in the
+app resolves relative paths. Proven in-process with a 120-byte directory:
+round trip, stale sweep and unlink all work there, and the working directory
+is left as found. `SequelAceTunnelAssistant.m` is deleted and the tool is
+`main.swift` plus the five Swift files it already had; it no longer compiles
+`SPFunctions.m`, `NSNotificationCenterThreadingAdditions.m` or
+`StringRegexExtension.swift`, and no longer imports `SPSSHTunnel.h` or a
+generated Swift header — the dependency the plan wanted severed is severed.
+`SASSHTunnelTransport` and its preference are removed with the path they
+selected; `SP_CONNECTION_TRANSPORT` leaves the environment,
+`SP_CONNECTION_NAME` stays because the assistant's fallback prompt text uses
+it. `NSConnection` deprecation warnings: 5 → 0 on the Debug build.
+
+~~Before DO can go, the socket must have somewhere to live for *every* user~~
+— resolved in 5b by the relative bind/connect described in its notes above;
+no second directory was needed (under the sandbox every temp directory maps
+into the container anyway).
 
 ## Swift or not
 
