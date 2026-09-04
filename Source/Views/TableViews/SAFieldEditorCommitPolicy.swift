@@ -10,7 +10,24 @@ import AppKit
 @objc enum SAComboBoxSelectionState: Int {
     case notTracked
     case current
+    case deferred
     case invalidated
+}
+
+/// The table coordinates AppKit supplied for a popup selection whose reload
+/// outcome is not known yet. The tracker releases this only while the same
+/// table snapshot is still current.
+@objc final class SADeferredComboBoxEdit: NSObject {
+
+    @objc let proposedValue: NSObject?
+    @objc let tableColumn: NSTableColumn
+    @objc let row: Int
+
+    init(proposedValue: NSObject?, tableColumn: NSTableColumn, row: Int) {
+        self.proposedValue = proposedValue
+        self.tableColumn = tableColumn
+        self.row = row
+    }
 }
 
 /// Authenticates combo-box callbacks against the table snapshot in which the
@@ -25,6 +42,7 @@ import AppKit
     private var hasOpeningValue = false
     private var pendingSelection: NSObject?
     private var hasPendingSelection = false
+    private var deferredEdit: SADeferredComboBoxEdit?
 
     @objc func tableDataWillChange() {
         lock.lock()
@@ -41,13 +59,23 @@ import AppKit
         reloadsInProgress += 1
     }
 
-    @objc func tableDataReloadDidFinish() {
+    /// Returns whether a deferred edit may now be retried. The caller still
+    /// obtains it through `takeDeferredEditIfReady()` so a reload beginning
+    /// before the main-thread retry keeps the edit deferred.
+    @objc func tableDataReloadDidFinish() -> Bool {
         lock.lock()
         defer { lock.unlock() }
         guard reloadsInProgress > 0 else {
-            return
+            return false
         }
         reloadsInProgress -= 1
+        if reloadsInProgress == 0,
+           deferredEdit != nil,
+           popupGeneration != dataGeneration {
+            clearPendingSelection()
+            return false
+        }
+        return reloadsInProgress == 0 && deferredEdit != nil
     }
 
     @objc(comboBoxWillOpenWithValue:)
@@ -55,11 +83,10 @@ import AppKit
         lock.lock()
         defer { lock.unlock() }
 
+        clearPendingSelection()
         popupGeneration = dataGeneration
         openingValue = value
         hasOpeningValue = true
-        pendingSelection = nil
-        hasPendingSelection = false
     }
 
     @objc(comboBoxSelectionDidChange:)
@@ -92,25 +119,59 @@ import AppKit
         }
     }
 
-    @objc(consumeSelectionMatching:)
-    func consumeSelection(matching proposedValue: NSObject?) -> SAComboBoxSelectionState {
+    @objc(consumeSelectionMatching:tableColumn:row:)
+    func consumeSelection(
+        matching proposedValue: NSObject?,
+        tableColumn: NSTableColumn,
+        row: Int
+    ) -> SAComboBoxSelectionState {
         lock.lock()
-        defer {
-            clearPendingSelection()
-            lock.unlock()
-        }
+        defer { lock.unlock() }
 
         guard let popupGeneration, hasPendingSelection else {
             return .notTracked
         }
-        // Never write while a reload could still replace the indexed row.
-        guard reloadsInProgress == 0 else {
+        guard popupGeneration == dataGeneration else {
+            clearPendingSelection()
             return .invalidated
+        }
+        guard valuesMatch(pendingSelection, proposedValue) else {
+            clearPendingSelection()
+            return reloadsInProgress == 0 ? .notTracked : .invalidated
+        }
+
+        // AppKit does not repeat this callback if an in-flight reload later
+        // fails. Retain both its authenticated value and coordinates until the
+        // reload either changes the snapshot or finishes unchanged.
+        guard reloadsInProgress == 0 else {
+            deferredEdit = SADeferredComboBoxEdit(
+                proposedValue: proposedValue,
+                tableColumn: tableColumn,
+                row: row
+            )
+            return .deferred
+        }
+
+        clearPendingSelection()
+        return .current
+    }
+
+    /// Atomically takes a deferred edit only after every overlapping reload
+    /// has finished and only if no table-data mutation has occurred.
+    @objc func takeDeferredEditIfReady() -> SADeferredComboBoxEdit? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard reloadsInProgress == 0, let deferredEdit else {
+            return nil
         }
         guard popupGeneration == dataGeneration else {
-            return .invalidated
+            clearPendingSelection()
+            return nil
         }
-        return valuesMatch(pendingSelection, proposedValue) ? .current : .notTracked
+
+        self.deferredEdit = nil
+        return deferredEdit
     }
 
     @objc func discardPendingSelection() {
@@ -125,6 +186,7 @@ import AppKit
         hasOpeningValue = false
         pendingSelection = nil
         hasPendingSelection = false
+        deferredEdit = nil
     }
 
     private func valuesMatch(_ lhs: NSObject?, _ rhs: NSObject?) -> Bool {
@@ -148,7 +210,7 @@ import AppKit
         displayValue: NSObject?,
         popupSelectionState: SAComboBoxSelectionState
     ) -> Bool {
-        if popupSelectionState == .invalidated {
+        if popupSelectionState == .deferred || popupSelectionState == .invalidated {
             return true
         }
         guard fieldEditorRequired else {

@@ -122,6 +122,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (NSInteger)_recordViewSelectedRow;
 - (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex;
+- (void)_tableDataReloadDidFinish;
+- (void)_resumeDeferredComboBoxEdit;
 
 #pragma mark - SPTableContentDataSource_Private_API
 
@@ -1113,7 +1115,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         }
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
-	[_comboBoxSelectionTracker tableDataReloadDidFinish];
+	[self _tableDataReloadDidFinish];
 }
 
 /**
@@ -1361,6 +1363,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (IBAction)reloadTable:(id)sender
 {
+	// Reserve the reload before detaching its worker so popup callbacks cannot
+	// slip through between a schema-mismatch load and its queued full reload.
+	[_comboBoxSelectionTracker tableDataReloadWillBegin];
 	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Reloading data...", @"Reloading data task description")];
 
 	if ([NSThread isMainThread]) {
@@ -1390,7 +1395,32 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		[tableDocumentInstance endTask];
+		[self _tableDataReloadDidFinish];
 	}
+}
+
+- (void)_tableDataReloadDidFinish
+{
+	if (![_comboBoxSelectionTracker tableDataReloadDidFinish]) return;
+
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self _resumeDeferredComboBoxEdit];
+	});
+}
+
+- (void)_resumeDeferredComboBoxEdit
+{
+	// An enclosing document task can outlive its data query. Its end
+	// notification calls this method again once table editing is safe.
+	if (isWorking) return;
+
+	SADeferredComboBoxEdit *edit = [_comboBoxSelectionTracker takeDeferredEditIfReady];
+	if (!edit) return;
+
+	[self tableView:tableContentView
+	  setObjectValue:edit.proposedValue
+	  forTableColumn:edit.tableColumn
+	  row:edit.row];
 }
 
 /**
@@ -3992,6 +4022,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
 	isWorking = NO;
+	[self _resumeDeferredComboBoxEdit];
 
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent])
@@ -4025,6 +4056,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         if (tableDocumentInstance == document) {
             // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
             [self clearTableLoadTimer];
+            [_comboBoxSelectionTracker discardPendingSelection];
         }
     }
 }
@@ -4238,7 +4270,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		NSCell *dataCell = tableColumn.dataCell;
 		SAComboBoxSelectionState popupSelectionState = SAComboBoxSelectionStateNotTracked;
 		if ([dataCell isKindOfClass:[NSComboBoxCell class]]) {
-			popupSelectionState = [_comboBoxSelectionTracker consumeSelectionMatching:object];
+			popupSelectionState = [_comboBoxSelectionTracker consumeSelectionMatching:object
+			                                                               tableColumn:tableColumn
+			                                                                       row:rowIndex];
 		} else {
 			[_comboBoxSelectionTracker discardPendingSelection];
 		}
