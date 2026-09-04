@@ -54,6 +54,21 @@ import SnapKit
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
 
+    /// Opaque backing for the content area. The tinted title bar (see
+    /// `applyTitlebarTint`) is painted by the window's own background, which also
+    /// shows through anywhere the document view doesn't draw - split view gaps,
+    /// the frame or two before subviews catch up with a live resize. This keeps
+    /// the connection colour in the window top instead of leaking below it.
+    /// `NSBox` resolves its fill colour at draw time, so it follows light/dark.
+    private lazy var contentBackground: NSBox = {
+        let box = NSBox()
+        box.boxType = .custom
+        box.titlePosition = .noTitle
+        box.borderWidth = 0
+        box.fillColor = .windowBackgroundColor
+        return box
+    }()
+
     deinit {
         print("Deinit called")
     }
@@ -82,12 +97,43 @@ private extension SPWindowController {
     func setupAppearance() {
         databaseDocument.updateWindowTitle(self)
 
+        if let contentView = window?.contentView {
+            contentBackground.frame = contentView.bounds
+            contentBackground.autoresizingMask = [.width, .height]
+            contentView.addSubview(contentBackground)
+        }
+
         window?.contentView?.addSubview(databaseDocument.databaseView())
         databaseDocument.databaseView().frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
 
         if #available(macOS 10.13, *) {
             window?.tab.accessoryView = tabAccessoryView
         }
+    }
+
+    /// Paint the whole window top - title bar, unified toolbar and the native tab
+    /// bar - in the favourite colour of the connection this tab holds (#1856).
+    /// `titlebarAppearsTransparent` drops the title bar's own background so the
+    /// window background shows through the entire strip. Every tab is its own
+    /// `NSWindow`, so the colour follows whichever tab is selected without any
+    /// extra bookkeeping.
+    ///
+    /// A `nil` colour restores the stock title bar: leaving the title bar
+    /// transparent over `windowBackgroundColor` would render it flat and
+    /// non-standard rather than undoing the tint.
+    func applyTitlebarTint(_ color: NSColor?) {
+        guard let window = window else { return }
+
+        guard let color = color else {
+            window.titlebarAppearsTransparent = false
+            window.backgroundColor = .windowBackgroundColor
+            window.titlebarSeparatorStyle = .automatic
+            return
+        }
+
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = color
+        window.titlebarSeparatorStyle = .none
     }
 }
 
@@ -105,6 +151,7 @@ private extension SPWindowController {
 
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
         tabAccessoryView.update(color: color, isSSL: isSSL)
+        applyTitlebarTint(color)
     }
 }
 
