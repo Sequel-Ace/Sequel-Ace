@@ -779,10 +779,7 @@
 - (void)importCSVFile:(NSString *)filename
 {
 	SPFileHandle *csvFileHandle;
-	NSMutableData *csvDataBuffer;
-	const unsigned char *csvDataBufferBytes;
-	NSData *csvLineTerminatorData;
-	const unsigned char *csvLineTerminatorBytes;
+	SACSVImportStreamDecoder *csvDecoder;
 	NSData *fileChunk;
 	NSString *csvString;
 	SPCSVParser *csvParser;
@@ -799,10 +796,6 @@
 	NSUInteger fileTotalLength = 0;
 	BOOL fileIsCompressed;
 	NSInteger rowsImported = 0;
-	NSInteger dataBufferLength = 0;
-	NSInteger dataBufferPosition = 0;
-	NSInteger dataBufferLastQueryEndPosition = 0;
-	NSInteger csvLineTerminatorLength = 0;
 	NSUInteger i;
 	BOOL allDataRead = NO;
 	BOOL insertBaseStringHasEntries;
@@ -892,11 +885,10 @@
 		[csvParser setNullReplacementString:[self->prefs objectForKey:SPNullValue]];
 	});
 
-	csvLineTerminatorData = [[csvParser lineTerminatorString] dataUsingEncoding:csvEncoding];
-	csvLineTerminatorBytes = [csvLineTerminatorData bytes];
-	csvLineTerminatorLength = [csvLineTerminatorData length];
+	// The decoder splits the raw byte stream at line terminators that fall on character
+	// boundaries, so chunk reads never hand the parser a string cut mid-character.
+	csvDecoder = [[SACSVImportStreamDecoder alloc] initWithEncoding:csvEncoding lineTerminator:[csvParser lineTerminatorString]];
 
-	csvDataBuffer = [[NSMutableData alloc] init];
 	while (1) {
 		if (progressCancelled) break;
 
@@ -917,81 +909,34 @@
 		// If no data returned, end of file - set a marker to ensure full processing
 		if (!fileChunk || ![fileChunk length]) {
 			allDataRead = YES;
-
-		// Otherwise add the data to the read/parse buffer
-		} else {
-			[csvDataBuffer appendData:fileChunk];
+			fileChunk = [NSData data];
 		}
 
-		// Step through the data buffer, identifying line endings to parse the data with
-		csvDataBufferBytes = [csvDataBuffer bytes];
-		dataBufferLength = [csvDataBuffer length];
-		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
-			BOOL atLineEnding = NO;
-			BOOL atPartialLineEnding = NO;
-			NSInteger segmentEndPosition = dataBufferPosition;
-
-			// TODO (#2605): this EOL detection logic will break for multibyte encodings (like UTF16)
-			if (csvLineTerminatorLength && dataBufferPosition < dataBufferLength) {
-				NSInteger remainingBytes = dataBufferLength - dataBufferPosition;
-				NSInteger bytesToCompare = MIN(remainingBytes, csvLineTerminatorLength);
-
-				if (!memcmp(csvDataBufferBytes + dataBufferPosition, csvLineTerminatorBytes, bytesToCompare)) {
-					if (remainingBytes >= csvLineTerminatorLength) {
-						atLineEnding = YES;
-						segmentEndPosition = dataBufferPosition + csvLineTerminatorLength;
-					} else if (!allDataRead) {
-						atPartialLineEnding = YES;
-					}
+		// Hand the bytes to the decoder.  It returns the text of every line that is now
+		// complete (or everything left once all data has been read) and holds back the
+		// remainder until the next chunk completes it.
+		NSError *decodeError = nil;
+		csvString = [csvDecoder textByAppendingData:fileChunk endOfInput:allDataRead error:&decodeError];
+		if (!csvString) {
+			[self _closeAndStopProgressSheet];
+			SPMainQSync(^{
+				NSString *displayEncoding;
+				if (![self->importEncodingPopup indexOfSelectedItem]) {
+					displayEncoding = [NSString stringWithFormat:@"%@ - %@", [self->importEncodingPopup titleOfSelectedItem], [NSString localizedNameOfStringEncoding:csvEncoding]];
+				} else {
+					displayEncoding = [NSString localizedNameOfStringEncoding:csvEncoding];
 				}
-			}
-
-			if (atPartialLineEnding) {
-				break;
-			}
-
-			if (atLineEnding || (allDataRead && dataBufferPosition >= dataBufferLength)) {
-				if (!atLineEnding) {
-					segmentEndPosition = dataBufferLength;
-				}
-
-				// Try to generate a NSString with the resulting data
-				csvString = [[NSString alloc] initWithData:[csvDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, segmentEndPosition - dataBufferLastQueryEndPosition)] encoding:csvEncoding];
-				if (!csvString) {
-					[self _closeAndStopProgressSheet];
-					SPMainQSync(^{
-						NSString *displayEncoding;
-						if (![self->importEncodingPopup indexOfSelectedItem]) {
-							displayEncoding = [NSString stringWithFormat:@"%@ - %@", [self->importEncodingPopup titleOfSelectedItem], [NSString localizedNameOfStringEncoding:csvEncoding]];
-						} else {
-							displayEncoding = [NSString localizedNameOfStringEncoding:csvEncoding];
-						}
-						[NSAlert createWarningAlertWithTitle:SP_FILE_READ_ERROR_STRING message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported.", @"CSV encoding read error"), displayEncoding, (long)rowsImported] callback:nil];
-					});
-					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
-					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
-						[fileManager removeItemAtPath:filename error:nil];
-					return;
-				}
-
-				// Add the NSString segment to the CSV parser and release it
-				[csvParser appendString:csvString];
-
-				if (allDataRead && !atLineEnding) {
-					dataBufferLastQueryEndPosition = dataBufferLength;
-					break;
-				}
-
-				dataBufferLastQueryEndPosition = segmentEndPosition;
-				dataBufferPosition = segmentEndPosition - 1;
-			}
+				[NSAlert createWarningAlertWithTitle:SP_FILE_READ_ERROR_STRING message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported.", @"CSV encoding read error"), displayEncoding, (long)rowsImported] callback:nil];
+			});
+			[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
+			if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
+				[fileManager removeItemAtPath:filename error:nil];
+			return;
 		}
 
-		// Trim the data buffer if part of it was used
-		if (dataBufferLastQueryEndPosition) {
-			[csvDataBuffer setData:[csvDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, dataBufferLength - dataBufferLastQueryEndPosition)]];
-			dataBufferPosition -= dataBufferLastQueryEndPosition;
-			dataBufferLastQueryEndPosition = 0;
+		// Add the decoded text to the CSV parser
+		if ([csvString length]) {
+			[csvParser appendString:csvString];
 		}
 
 		// Extract and process any full CSV rows found so far.  Also trigger processing if all
