@@ -9,24 +9,27 @@ import XCTest
 
 final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
-    func testPopupSelectionIsCommittedWhenFieldEditorIsPreferred() {
+    func testChangedValueIsCommittedWhenFieldEditorIsPreferred() {
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: true,
-            cell: NSComboBoxCell(textCell: "")
+            proposedValue: "published" as NSString,
+            currentValue: "draft" as NSString
         ))
     }
 
-    func testTextCommitIsIgnoredDuringFieldEditorHandoff() {
+    func testUnchangedValueIsIgnoredDuringFieldEditorHandoff() {
         XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: true,
-            cell: NSTextFieldCell(textCell: "")
+            proposedValue: "draft" as NSString,
+            currentValue: "draft" as NSString
         ))
     }
 
-    func testInlineCommitIsAcceptedWhenFieldEditorIsNotRequired() {
+    func testUnchangedValueIsAcceptedWhenFieldEditorIsNotRequired() {
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
-            cell: NSTextFieldCell(textCell: "")
+            proposedValue: "draft" as NSString,
+            currentValue: "draft" as NSString
         ))
     }
 }

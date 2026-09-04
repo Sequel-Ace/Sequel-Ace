@@ -4206,10 +4206,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	if (tableView == tableContentView) {
 		NSInteger columnIndex = [[tableColumn identifier] integerValue];
-		// Ignore the unchanged value sent while inline text editing redirects to a sheet. Popup cells send the
-		// user's real selection through this callback even when sheet editing is enabled, so retain those commits.
+		id currentObject = [self tableView:tableContentView objectValueForTableColumn:tableColumn row:rowIndex];
+		// Ignore the unchanged value sent while inline editing redirects to a sheet. Popup selections send their
+		// changed value through the same callback even when sheet editing is enabled, so retain those commits.
 		BOOL fieldEditorRequired = [tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL];
-		if ([SAFieldEditorCommitPolicy shouldIgnoreInlineCommitWithFieldEditorRequired:fieldEditorRequired cell:tableColumn.dataCell]) {
+		if ([SAFieldEditorCommitPolicy shouldIgnoreInlineCommitWithFieldEditorRequired:fieldEditorRequired
+		                                                                proposedValue:object
+		                                                                 currentValue:currentObject]) {
 			return;
 		}
 
