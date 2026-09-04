@@ -31,13 +31,14 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
     func testLongUnchangedComboValueIsIgnoredDuringFieldEditorHandoff() {
         let value = String(repeating: "a", count: 151) as NSString
+        let truncatedPreview = String(repeating: "a", count: 150) as NSString
 
         XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: true,
             cell: NSComboBoxCell(textCell: ""),
             proposedValue: value,
             storedValue: value,
-            displayValue: value
+            displayValue: truncatedPreview
         ))
     }
 
@@ -51,7 +52,17 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         ))
     }
 
-    func testFormatterObjectValueIsIgnoredDuringFieldEditorHandoff() {
+    func testFormatterDisplayValueIsIgnoredDuringFieldEditorHandoff() {
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: "formatted" as NSString,
+            storedValue: Data([0x01, 0x02]) as NSData,
+            displayValue: "formatted" as NSString
+        ))
+    }
+
+    func testFormatterRawObjectValueIsIgnoredDuringFieldEditorHandoff() {
         let value = Data([0x01, 0x02]) as NSData
 
         XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(

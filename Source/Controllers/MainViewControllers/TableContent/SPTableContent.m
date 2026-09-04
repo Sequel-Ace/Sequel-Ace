@@ -4210,8 +4210,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		id storedValue = nil;
 		id displayValue = nil;
 		if (fieldEditorRequired && [tableColumn.dataCell isKindOfClass:[NSComboBoxCell class]]) {
-			storedValue = [tableValues cellDataAtRow:rowIndex column:columnIndex];
 			NSInteger visibleColumnIndex = [tableContentView columnWithIdentifier:[tableColumn identifier]];
+			// A field-editor handoff can finish after the table has reloaded. The old path returned before
+			// touching storage, so preserve that safety while inspecting changed combo-box callbacks.
+			if (isWorking || rowIndex < 0 || columnIndex < 0 || visibleColumnIndex < 0
+				|| (NSUInteger)rowIndex >= [tableValues count]
+				|| (NSUInteger)columnIndex >= [tableValues columnCount]) {
+				return;
+			}
+			storedValue = [tableValues cellDataAtRow:(NSUInteger)rowIndex column:(NSUInteger)columnIndex];
 			displayValue = [tableContentView displayStringForRow:rowIndex column:visibleColumnIndex];
 		}
 		// Ignore callbacks produced while inline editing redirects to a sheet. A changed popup selection is the
