@@ -191,10 +191,12 @@ fi
 otool -L libssl.3.dylib libcrypto.3.dylib
 
 echo "***** copying to $lib_dir *****"
-# Copy to a temporary name and rename, so a build reading the directory at
-# the same time never sees a half-written dylib.
+# Copy to a unique temporary name and rename, so a build reading the
+# directory — or another publisher — at the same time never sees a
+# half-written dylib.
 for lib in libcrypto.3.dylib libssl.3.dylib; do
-    cp "$lib" "$lib_dir/.$lib.tmp"
-    mv -f "$lib_dir/.$lib.tmp" "$lib_dir/$lib"
+    staged="$(mktemp "$lib_dir/.$lib.XXXXXX")"
+    cp "$lib" "$staged"
+    mv -f "$staged" "$lib_dir/$lib"
 done
 echo "***** done *****"
