@@ -94,6 +94,11 @@ private extension SPWindowController {
         window?.setFrameUsingName(Self.frameAutosaveName)
     }
 
+    /// Put the document's view into the window and hook up the tab accessory.
+    ///
+    /// The opaque `contentBackground` goes in first so it sits *below* the
+    /// document view: it is the backstop for the tinted window background (see
+    /// `applyTitlebarTint`), not part of the document's own chrome.
     func setupAppearance() {
         databaseDocument.updateWindowTitle(self)
 
@@ -149,6 +154,12 @@ private extension SPWindowController {
         tabAccessoryView.setTitle(title: tabTitle)
     }
 
+    /// Reflect the connection this tab holds in the window chrome: the colour
+    /// line on the tab accessory, the SSL padlock, and the title bar tint.
+    ///
+    /// The single funnel for all three, called from
+    /// `-[SPDatabaseDocument updateWindowTitle:]`. A `nil` colour means "no
+    /// favourite colour, or not connected" and clears the line and the tint.
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
         tabAccessoryView.update(color: color, isSSL: isSSL)
         applyTitlebarTint(color)
