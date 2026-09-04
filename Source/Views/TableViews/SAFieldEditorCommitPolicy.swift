@@ -19,19 +19,35 @@ import AppKit
 
     private let lock = NSLock()
     private var dataGeneration: UInt = 0
+    private var reloadsInProgress = 0
     private var popupGeneration: UInt?
     private var openingValue: NSObject?
     private var hasOpeningValue = false
     private var pendingSelection: NSObject?
     private var hasPendingSelection = false
 
-    @objc func tableDataWillReload() {
+    @objc func tableDataWillChange() {
         lock.lock()
         defer { lock.unlock() }
 
-        // Retain the popup generation until its callback is consumed so an
-        // invalidated popup remains distinguishable from ordinary inline input.
         dataGeneration &+= 1
+    }
+
+    @objc func tableDataReloadWillBegin() {
+        lock.lock()
+        defer { lock.unlock() }
+        // A query can fail without changing the current snapshot. Block popup
+        // callbacks while its outcome is unknown without advancing the revision.
+        reloadsInProgress += 1
+    }
+
+    @objc func tableDataReloadDidFinish() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard reloadsInProgress > 0 else {
+            return
+        }
+        reloadsInProgress -= 1
     }
 
     @objc(comboBoxWillOpenWithValue:)
@@ -86,6 +102,10 @@ import AppKit
 
         guard let popupGeneration, hasPendingSelection else {
             return .notTracked
+        }
+        // Never write while a reload could still replace the indexed row.
+        guard reloadsInProgress == 0 else {
+            return .invalidated
         }
         guard popupGeneration == dataGeneration else {
             return .invalidated

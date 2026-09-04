@@ -840,7 +840,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void) clearTableValues
 {
-	[_comboBoxSelectionTracker tableDataWillReload];
+	[_comboBoxSelectionTracker tableDataWillChange];
 	if ([NSThread isMainThread]) {
 		[recordViewController clear];
 	} else {
@@ -865,7 +865,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	// If no table is selected, return
 	if (!selectedTable) return;
-	[_comboBoxSelectionTracker tableDataWillReload];
+	// Conservatively block popup commits until this load either mutates the snapshot or finishes unchanged.
+	[_comboBoxSelectionTracker tableDataReloadWillBegin];
 
 	NSMutableString *queryString;
 	NSString *queryStringBeforeLimit = nil;
@@ -1112,6 +1113,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         }
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
+	[_comboBoxSelectionTracker tableDataReloadDidFinish];
 }
 
 /**
@@ -1125,9 +1127,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	tableLoadTargetRowCount = targetRowCount;
 
 	// Update the data storage, updating the current store if appropriate
-	// Invalidate again at the mutation boundary. This covers a popup opened after a load started but before
+	// Invalidate at the mutation boundary. This covers a popup opened after a load started but before
 	// the streaming result replaced an existing store with another result of the same dimensions.
-	[_comboBoxSelectionTracker tableDataWillReload];
+	[_comboBoxSelectionTracker tableDataWillChange];
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	[tableValues setDataStorage:theResultStore updatingExisting:!![tableValues count]];

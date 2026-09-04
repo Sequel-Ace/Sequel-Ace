@@ -117,8 +117,10 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         let tracker = SAComboBoxSelectionTracker()
         tracker.comboBoxWillOpen(with: "draft" as NSString)
         tracker.comboBoxSelectionDidChange("published" as NSString)
-        tracker.tableDataWillReload()
+        tracker.tableDataReloadWillBegin()
+        tracker.tableDataWillChange()
         tracker.comboBoxDidClose(with: "published" as NSString)
+        tracker.tableDataReloadDidFinish()
 
         XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
@@ -134,8 +136,10 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         let tracker = SAComboBoxSelectionTracker()
         tracker.comboBoxWillOpen(with: "draft" as NSString)
         tracker.comboBoxSelectionDidChange("published" as NSString)
-        tracker.tableDataWillReload()
+        tracker.tableDataReloadWillBegin()
+        tracker.tableDataWillChange()
         tracker.comboBoxDidClose(with: "draft" as NSString)
+        tracker.tableDataReloadDidFinish()
 
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
@@ -174,8 +178,54 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         tracker.comboBoxSelectionDidChange("published" as NSString)
         tracker.comboBoxDidClose(with: "published" as NSString)
 
-        tracker.tableDataWillReload()
+        tracker.tableDataReloadWillBegin()
+        tracker.tableDataWillChange()
+        tracker.tableDataReloadDidFinish()
 
         XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .invalidated)
+    }
+
+    func testReloadWithoutDataMutationKeepsPopupSelectionCurrent() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
+
+        tracker.tableDataReloadWillBegin()
+        tracker.tableDataReloadDidFinish()
+
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .current)
+    }
+
+    func testPendingReloadConservativelyInvalidatesPopupSelection() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
+
+        tracker.tableDataReloadWillBegin()
+
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .invalidated)
+        tracker.tableDataReloadDidFinish()
+    }
+
+    func testNestedReloadsRemainPendingUntilEveryLoadFinishes() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.tableDataReloadWillBegin()
+        tracker.tableDataReloadWillBegin()
+        tracker.tableDataReloadDidFinish()
+
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
+
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .invalidated)
+        tracker.tableDataReloadDidFinish()
+
+        tracker.comboBoxWillOpen(with: "draft" as NSString)
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.comboBoxDidClose(with: "published" as NSString)
+
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .current)
     }
 }
