@@ -4206,9 +4206,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	if (tableView == tableContentView) {
 		NSInteger columnIndex = [[tableColumn identifier] integerValue];
-		// If the current cell should have been edited in a sheet, do nothing - field closing will have already
-		// updated the field.
-		if ([tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL]) {
+		// Ignore the unchanged value sent while inline text editing redirects to a sheet. Popup cells send the
+		// user's real selection through this callback even when sheet editing is enabled, so retain those commits.
+		BOOL fieldEditorRequired = [tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL];
+		if ([SAFieldEditorCommitPolicy shouldIgnoreInlineCommitWithFieldEditorRequired:fieldEditorRequired cell:tableColumn.dataCell]) {
 			return;
 		}
 
