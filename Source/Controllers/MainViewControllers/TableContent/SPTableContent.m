@@ -4206,13 +4206,22 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	if (tableView == tableContentView) {
 		NSInteger columnIndex = [[tableColumn identifier] integerValue];
-		id currentObject = [self tableView:tableContentView objectValueForTableColumn:tableColumn row:rowIndex];
-		// Ignore the unchanged value sent while inline editing redirects to a sheet. Popup selections send their
-		// changed value through the same callback even when sheet editing is enabled, so retain those commits.
 		BOOL fieldEditorRequired = [tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL];
+		id storedValue = nil;
+		id displayValue = nil;
+		if (fieldEditorRequired && [tableColumn.dataCell isKindOfClass:[NSComboBoxCell class]]) {
+			storedValue = [tableValues cellDataAtRow:rowIndex column:columnIndex];
+			NSInteger visibleColumnIndex = [tableContentView columnWithIdentifier:[tableColumn identifier]];
+			displayValue = [tableContentView displayStringForRow:rowIndex column:visibleColumnIndex];
+		}
+		// Ignore callbacks produced while inline editing redirects to a sheet. A changed popup selection is the
+		// one inline action that must still commit. Compare its proposed value with both full stored and display
+		// representations so long strings, NULL placeholders, and formatter-backed values remain unchanged.
 		if ([SAFieldEditorCommitPolicy shouldIgnoreInlineCommitWithFieldEditorRequired:fieldEditorRequired
+		                                                                          cell:tableColumn.dataCell
 		                                                                proposedValue:object
-		                                                                 currentValue:currentObject]) {
+		                                                                    storedValue:storedValue
+		                                                                   displayValue:displayValue]) {
 			return;
 		}
 

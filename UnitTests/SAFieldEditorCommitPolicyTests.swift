@@ -9,27 +9,77 @@ import XCTest
 
 final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
-    func testChangedValueIsCommittedWhenFieldEditorIsPreferred() {
+    func testChangedComboValueIsCommittedWhenFieldEditorIsPreferred() {
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
             proposedValue: "published" as NSString,
-            currentValue: "draft" as NSString
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString
         ))
     }
 
-    func testUnchangedValueIsIgnoredDuringFieldEditorHandoff() {
+    func testUnchangedComboValueIsIgnoredDuringFieldEditorHandoff() {
         XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
             proposedValue: "draft" as NSString,
-            currentValue: "draft" as NSString
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString
+        ))
+    }
+
+    func testLongUnchangedComboValueIsIgnoredDuringFieldEditorHandoff() {
+        let value = String(repeating: "a", count: 151) as NSString
+
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: value,
+            storedValue: value,
+            displayValue: value
+        ))
+    }
+
+    func testNullDisplayValueIsIgnoredDuringFieldEditorHandoff() {
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: "NULL" as NSString,
+            storedValue: NSNull(),
+            displayValue: "NULL" as NSString
+        ))
+    }
+
+    func testFormatterObjectValueIsIgnoredDuringFieldEditorHandoff() {
+        let value = Data([0x01, 0x02]) as NSData
+
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: true,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: value,
+            storedValue: value,
+            displayValue: "formatted" as NSString
+        ))
+    }
+
+    func testChangedTextValueIsIgnoredDuringFieldEditorHandoff() {
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: true,
+            cell: NSTextFieldCell(textCell: ""),
+            proposedValue: "edited" as NSString,
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString
         ))
     }
 
     func testUnchangedValueIsAcceptedWhenFieldEditorIsNotRequired() {
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
+            cell: NSTextFieldCell(textCell: ""),
             proposedValue: "draft" as NSString,
-            currentValue: "draft" as NSString
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString
         ))
     }
 }
