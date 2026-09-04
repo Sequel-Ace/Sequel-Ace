@@ -308,11 +308,13 @@ otool -L libmysqlclient.24.dylib plugin/*.so plugin/libfido2.1.dylib
 
 # --- Copy into the framework ----------------------------------------------
 echo "***** copying to $client_dir *****"
-# Copy to a temporary name and rename, so a build reading the directory at
-# the same time never sees a half-written dylib. (rsync already writes each
-# header to a temporary file and renames it.)
-cp libmysqlclient.24.dylib "$client_dir/lib/.libmysqlclient.24.dylib.tmp"
-mv -f "$client_dir/lib/.libmysqlclient.24.dylib.tmp" "$client_dir/lib/libmysqlclient.24.dylib"
+# Copy to a unique temporary name and rename, so a build reading the
+# directory — or another publisher — at the same time never sees a
+# half-written dylib. (rsync already writes each header to a temporary file
+# and renames it.)
+staged="$(mktemp "$client_dir/lib/.libmysqlclient.24.dylib.XXXXXX")"
+cp libmysqlclient.24.dylib "$staged"
+mv -f "$staged" "$client_dir/lib/libmysqlclient.24.dylib"
 rsync -a --delete "$work_dir/install-arm64/include/" "$client_dir/include/"
 rm -rf "$client_dir/lib/mysqlplugins"
 mkdir -p "$client_dir/lib/mysqlplugins"
