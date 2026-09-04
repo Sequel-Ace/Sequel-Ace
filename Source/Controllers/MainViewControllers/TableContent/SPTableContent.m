@@ -4229,15 +4229,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		NSInteger columnIndex = [[tableColumn identifier] integerValue];
 		BOOL fieldEditorRequired = [tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL];
 		NSCell *dataCell = tableColumn.dataCell;
-		BOOL popupSelectionIsCurrent = NO;
+		SAComboBoxSelectionState popupSelectionState = SAComboBoxSelectionStateNotTracked;
 		if ([dataCell isKindOfClass:[NSComboBoxCell class]]) {
-			popupSelectionIsCurrent = [_comboBoxSelectionTracker consumeCurrentSelectionMatching:object];
+			popupSelectionState = [_comboBoxSelectionTracker consumeSelectionMatching:object];
 		} else {
 			[_comboBoxSelectionTracker discardPendingSelection];
 		}
 		id storedValue = nil;
 		id displayValue = nil;
-		if (fieldEditorRequired && popupSelectionIsCurrent) {
+		if (fieldEditorRequired && popupSelectionState == SAComboBoxSelectionStateCurrent) {
 			NSInteger visibleColumnIndex = [tableContentView columnWithIdentifier:[tableColumn identifier]];
 			// The authenticated popup selection can still finish after its row has disappeared. Preserve the
 			// old handoff path's bounds safety before comparing against the current snapshot.
@@ -4257,7 +4257,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		                                                                proposedValue:object
 		                                                                    storedValue:storedValue
 		                                                                   displayValue:displayValue
-		                                                        popupSelectionIsCurrent:popupSelectionIsCurrent]) {
+		                                                           popupSelectionState:popupSelectionState]) {
 			return;
 		}
 

@@ -16,7 +16,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "published" as NSString,
             storedValue: "draft" as NSString,
             displayValue: "draft" as NSString,
-            popupSelectionIsCurrent: true
+            popupSelectionState: .current
         ))
     }
 
@@ -27,7 +27,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "published" as NSString,
             storedValue: "draft" as NSString,
             displayValue: "draft" as NSString,
-            popupSelectionIsCurrent: false
+            popupSelectionState: .notTracked
         ))
     }
 
@@ -38,7 +38,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "draft" as NSString,
             storedValue: "draft" as NSString,
             displayValue: "draft" as NSString,
-            popupSelectionIsCurrent: true
+            popupSelectionState: .current
         ))
     }
 
@@ -52,7 +52,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: value,
             storedValue: value,
             displayValue: truncatedPreview,
-            popupSelectionIsCurrent: true
+            popupSelectionState: .current
         ))
     }
 
@@ -63,7 +63,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "NULL" as NSString,
             storedValue: NSNull(),
             displayValue: "NULL" as NSString,
-            popupSelectionIsCurrent: true
+            popupSelectionState: .current
         ))
     }
 
@@ -74,7 +74,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "formatted" as NSString,
             storedValue: Data([0x01, 0x02]) as NSData,
             displayValue: "formatted" as NSString,
-            popupSelectionIsCurrent: true
+            popupSelectionState: .current
         ))
     }
 
@@ -87,7 +87,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: value,
             storedValue: value,
             displayValue: "formatted" as NSString,
-            popupSelectionIsCurrent: true
+            popupSelectionState: .current
         ))
     }
 
@@ -98,7 +98,7 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "edited" as NSString,
             storedValue: "draft" as NSString,
             displayValue: "draft" as NSString,
-            popupSelectionIsCurrent: false
+            popupSelectionState: .notTracked
         ))
     }
 
@@ -109,7 +109,34 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             proposedValue: "draft" as NSString,
             storedValue: "draft" as NSString,
             displayValue: "draft" as NSString,
-            popupSelectionIsCurrent: false
+            popupSelectionState: .notTracked
+        ))
+    }
+
+    func testInvalidatedPopupSelectionIsIgnoredWhenFieldEditorIsNotRequired() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen()
+        tracker.comboBoxSelectionDidChange("published" as NSString)
+        tracker.tableDataWillReload()
+
+        XCTAssertTrue(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: false,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: "published" as NSString,
+            storedValue: "replacement-row" as NSString,
+            displayValue: "replacement-row" as NSString,
+            popupSelectionState: tracker.consumeSelection(matching: "published" as NSString)
+        ))
+    }
+
+    func testUntrackedComboValueIsAcceptedWhenFieldEditorIsNotRequired() {
+        XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: false,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: "published" as NSString,
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString,
+            popupSelectionState: .notTracked
         ))
     }
 
@@ -118,8 +145,8 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         tracker.comboBoxWillOpen()
         tracker.comboBoxSelectionDidChange("published" as NSString)
 
-        XCTAssertTrue(tracker.consumeCurrentSelection(matching: "published" as NSString))
-        XCTAssertFalse(tracker.consumeCurrentSelection(matching: "published" as NSString))
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .current)
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .notTracked)
     }
 
     func testReloadInvalidatesPopupSelectionWhenDimensionsCouldStayTheSame() {
@@ -129,6 +156,6 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
 
         tracker.tableDataWillReload()
 
-        XCTAssertFalse(tracker.consumeCurrentSelection(matching: "published" as NSString))
+        XCTAssertEqual(tracker.consumeSelection(matching: "published" as NSString), .invalidated)
     }
 }

@@ -7,6 +7,12 @@
 
 import AppKit
 
+@objc enum SAComboBoxSelectionState: Int {
+    case notTracked
+    case current
+    case invalidated
+}
+
 /// Authenticates combo-box callbacks against the table snapshot in which the
 /// popup selection occurred. AppKit otherwise supplies only row/column indexes.
 @objc final class SAComboBoxSelectionTracker: NSObject {
@@ -21,8 +27,9 @@ import AppKit
         lock.lock()
         defer { lock.unlock() }
 
+        // Retain the popup generation until its callback is consumed so an
+        // invalidated popup remains distinguishable from ordinary inline input.
         dataGeneration &+= 1
-        clearPendingSelection()
     }
 
     @objc func comboBoxWillOpen() {
@@ -39,22 +46,34 @@ import AppKit
         lock.lock()
         defer { lock.unlock() }
 
-        guard popupGeneration != nil else { return }
+        guard popupGeneration != nil else {
+            return
+        }
         pendingSelection = value
         hasPendingSelection = true
     }
 
-    @objc(consumeCurrentSelectionMatching:)
-    func consumeCurrentSelection(matching proposedValue: NSObject?) -> Bool {
+    @objc(consumeSelectionMatching:)
+    func consumeSelection(matching proposedValue: NSObject?) -> SAComboBoxSelectionState {
         lock.lock()
         defer {
             clearPendingSelection()
             lock.unlock()
         }
 
-        guard hasPendingSelection, popupGeneration == dataGeneration else { return false }
-        guard let pendingSelection else { return proposedValue == nil }
-        return pendingSelection.isEqual(proposedValue)
+        guard let popupGeneration else {
+            return .notTracked
+        }
+        guard popupGeneration == dataGeneration else {
+            return .invalidated
+        }
+        guard hasPendingSelection else {
+            return .notTracked
+        }
+        guard let pendingSelection else {
+            return proposedValue == nil ? .current : .notTracked
+        }
+        return pendingSelection.isEqual(proposedValue) ? .current : .notTracked
     }
 
     @objc func discardPendingSelection() {
@@ -74,20 +93,29 @@ import AppKit
 
     /// Inline editing is aborted before the field editor sheet opens. Ignore
     /// callbacks from that handoff unless a combo box supplied a changed value.
-    @objc(shouldIgnoreInlineCommitWithFieldEditorRequired:cell:proposedValue:storedValue:displayValue:popupSelectionIsCurrent:)
+    @objc(shouldIgnoreInlineCommitWithFieldEditorRequired:cell:proposedValue:storedValue:displayValue:popupSelectionState:)
     static func shouldIgnoreInlineCommit(
         fieldEditorRequired: Bool,
         cell: NSCell,
         proposedValue: NSObject?,
         storedValue: NSObject?,
         displayValue: NSObject?,
-        popupSelectionIsCurrent: Bool
+        popupSelectionState: SAComboBoxSelectionState
     ) -> Bool {
-        guard fieldEditorRequired else { return false }
-        guard cell is NSComboBoxCell, popupSelectionIsCurrent else { return true }
+        if popupSelectionState == .invalidated {
+            return true
+        }
+        guard fieldEditorRequired else {
+            return false
+        }
+        guard cell is NSComboBoxCell, popupSelectionState == .current else {
+            return true
+        }
 
         let proposedValueMatches: (NSObject?) -> Bool = { currentValue in
-            guard let proposedValue else { return currentValue == nil }
+            guard let proposedValue else {
+                return currentValue == nil
+            }
             return proposedValue.isEqual(currentValue)
         }
         return proposedValueMatches(storedValue) || proposedValueMatches(displayValue)
