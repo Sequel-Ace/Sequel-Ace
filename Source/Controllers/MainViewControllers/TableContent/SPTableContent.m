@@ -492,6 +492,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		newTableName = [tableDetails objectForKey:@"name"];
 	}
 	BOOL tableChanged = ![selectedTable isEqualToString:newTableName];
+	// Column identifiers are storage indexes. Start the generation boundary
+	// before UI teardown can end editing and emit a callback from the old model.
+	[_comboBoxSelectionTracker tableColumnModelWillChange];
 
 	// Ensure the pagination view hides itself if visible, after a tiny delay for smoothness
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
@@ -546,10 +549,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		maxNumRowsIsEstimate = YES;
 	}
-
-	// Column identifiers are storage indexes. Rebuilding the model invalidates
-	// deferred edits even if a following data query fails and leaves rows intact.
-	[_comboBoxSelectionTracker tableColumnModelWillChange];
 
 	// Reset data column store
 	[dataColumns removeAllObjects];
