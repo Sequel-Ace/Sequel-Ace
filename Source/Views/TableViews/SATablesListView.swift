@@ -29,6 +29,7 @@ import AppKit
     // reload while the search settles.
     private var pendingSelection: (row: Int, entry: SARowEntry)?
     private var pendingSelectionTimer: Timer?
+    private let selectionLoad = SATypeAheadSelectionLoad<SPDatabaseDocument>()
 
     // A window can stop being key without replacing its first responder (for
     // example when the user switches windows or applications). Observe that
@@ -268,6 +269,7 @@ import AppKit
 
     private func cancelTypeAhead() {
         cancelDeferredRowCommand()
+        selectionLoad.cancel()
         typeAhead.reset()
         discardComposition()
         suspendPendingCommit()
@@ -300,6 +302,7 @@ import AppKit
         guard let endedDocument = notification.object as? SPDatabaseDocument else {
             return
         }
+        selectionLoad.didFinish(endedDocument)
 
         let retriesPendingSelection = endedDocument === pendingSelectionRetryDocument
         let replaysRowCommand = endedDocument === deferredRowCommandDocument
@@ -486,6 +489,10 @@ import AppKit
 
     @discardableResult
     private func commitPendingSelection() -> SPDatabaseDocument? {
+        selectionLoad.resolve(committingSelection: { selectPendingMatch() }, isWorking: { $0.isWorking() })
+    }
+
+    private func selectPendingMatch() -> SPDatabaseDocument? {
         guard let pending = pendingSelection else {
             return nil
         }
