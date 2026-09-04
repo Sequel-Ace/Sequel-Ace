@@ -45,9 +45,14 @@ struct SASSHTunnelSocketClient {
         case connectFailed(Int32)
         /// The listener did not pass `peerPolicy`; nothing was sent.
         case peerRejected
+        /// The request could not be written for a reason other than the app
+        /// having closed the connection (that is `noReply`).
         case sendFailed(Int32)
         /// The app closed without answering — it refused the connection or
-        /// could not read the request. Fail closed.
+        /// could not read the request. Fail closed. Whether the close lands
+        /// before the request is written (the write fails with EPIPE) or
+        /// after it (the read sees EOF) is a race the app's refusal cannot
+        /// control, so both surface here.
         case noReply
         case malformedReply(SASSHTunnelAuthWireError)
     }
@@ -69,7 +74,9 @@ struct SASSHTunnelSocketClient {
         guard peerPolicy(fd) else { throw Error.peerRejected }
 
         guard SASSHTunnelSocketIO.writeAll(fd, SASSHTunnelAuthWire.encode(request)) else {
-            throw Error.sendFailed(errno)
+            let code = errno
+            if code == EPIPE || code == ECONNRESET { throw Error.noReply }
+            throw Error.sendFailed(code)
         }
         // The reply has no timeout: the app may be waiting on the user.
         guard let line = SASSHTunnelSocketIO.readLine(fd) else { throw Error.noReply }
