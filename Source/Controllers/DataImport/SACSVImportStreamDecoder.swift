@@ -37,6 +37,10 @@ import Foundation
     private var scanPosition = 0
     private var hasResolvedPreamble = false
 
+    /// - Parameters:
+    ///   - encoding: The `NSStringEncoding` the file is to be read with.
+    ///   - lineTerminator: The line terminator the CSV parser is configured
+    ///     with; it is encoded in the same encoding to find line boundaries.
     @objc init(encoding: UInt, lineTerminator: String) {
         let encoding = String.Encoding(rawValue: encoding)
         requestedEncoding = encoding
@@ -126,10 +130,13 @@ import Foundation
 
     // MARK: - Byte order and BOM handling
 
-    /// Bytes needed at the start of the stream before the byte order can be
-    /// settled. Zero for encodings whose terminator bytes never depend on it.
+    /// Bytes needed at the start of the stream before a BOM can be recognised
+    /// and, for the Unicode encodings, the byte order settled. Zero for
+    /// encodings that carry no BOM.
     private var preambleLength: Int {
         switch requestedEncoding {
+        case .utf8:
+            return 3
         case .utf16, .utf16BigEndian, .utf16LittleEndian:
             return 2
         case .utf32, .utf32BigEndian, .utf32LittleEndian:
@@ -154,13 +161,20 @@ import Foundation
         terminatorBytes = lineTerminator.data(using: encoding).map { [UInt8]($0) } ?? []
     }
 
+    /// Returns the concrete encoding to decode with and the length of the BOM
+    /// to drop from the start of `data`. UTF-8 is stripped explicitly rather
+    /// than relying on Foundation to do so, since only the byte-order-agnostic
+    /// UTF-16/UTF-32 encodings are documented to consume their BOM.
     private static func byteOrder(for encoding: String.Encoding, leading data: Data) -> (String.Encoding, bomLength: Int) {
+        let utf8BOM: [UInt8] = [0xEF, 0xBB, 0xBF]
         let utf16LittleEndianBOM: [UInt8] = [0xFF, 0xFE]
         let utf16BigEndianBOM: [UInt8] = [0xFE, 0xFF]
         let utf32LittleEndianBOM: [UInt8] = [0xFF, 0xFE, 0x00, 0x00]
         let utf32BigEndianBOM: [UInt8] = [0x00, 0x00, 0xFE, 0xFF]
 
         switch encoding {
+        case .utf8:
+            return (encoding, data.starts(with: utf8BOM) ? 3 : 0)
         case .utf16:
             if data.starts(with: utf16LittleEndianBOM) { return (.utf16LittleEndian, 2) }
             if data.starts(with: utf16BigEndianBOM) { return (.utf16BigEndian, 2) }
@@ -182,6 +196,8 @@ import Foundation
         }
     }
 
+    /// The scan stride: a terminator can only start on a code unit boundary,
+    /// so fixed-width encodings are stepped by their unit size.
     private static func codeUnitWidth(for encoding: String.Encoding) -> Int {
         switch encoding {
         case .utf16, .utf16BigEndian, .utf16LittleEndian:

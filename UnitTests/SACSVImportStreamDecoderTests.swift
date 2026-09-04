@@ -62,6 +62,22 @@ final class SACSVImportStreamDecoderTests: XCTestCase {
         XCTAssertEqual(try feed(decoder, [data]), ["id,name\n", "1,x"])
     }
 
+    func testUTF8ByteOrderMarkSplitAcrossChunksIsHeldAndConsumed() throws {
+        let decoder = makeDecoder(.utf8)
+        let data = Data([0xEF, 0xBB, 0xBF]) + bytes("id\n1", .utf8)
+
+        XCTAssertEqual(try decoder.text(byAppending: data.prefix(2), endOfInput: false), "")
+        XCTAssertEqual(try decoder.text(byAppending: data.dropFirst(2), endOfInput: false), "id\n")
+        XCTAssertEqual(try decoder.text(byAppending: Data(), endOfInput: true), "1")
+    }
+
+    func testShortUTF8InputWithoutTerminatorIsReturnedAtEndOfInput() throws {
+        let decoder = makeDecoder(.utf8)
+
+        XCTAssertEqual(try decoder.text(byAppending: bytes("ab", .utf8), endOfInput: false), "")
+        XCTAssertEqual(try decoder.text(byAppending: Data(), endOfInput: true), "ab")
+    }
+
     func testUndecodableBytesThrow() {
         let decoder = makeDecoder(.utf8)
 
