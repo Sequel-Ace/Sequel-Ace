@@ -38,6 +38,7 @@
 - (void)comboBoxCell:(SPComboBoxCell *)cell willPopUpWindow:(NSWindow *)win;
 - (void)comboBoxCell:(SPComboBoxCell *)cell willDismissWindow:(NSWindow *)win;
 - (void)comboBoxCellSelectionDidChange:(SPComboBoxCell *)cell;
+- (void)comboBoxCellDidDismissPopUp:(SPComboBoxCell *)cell;
 
 @end
 
