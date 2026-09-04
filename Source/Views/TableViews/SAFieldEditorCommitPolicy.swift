@@ -61,14 +61,11 @@ import AppKit
             lock.unlock()
         }
 
-        guard let popupGeneration else {
+        guard let popupGeneration, hasPendingSelection else {
             return .notTracked
         }
         guard popupGeneration == dataGeneration else {
             return .invalidated
-        }
-        guard hasPendingSelection else {
-            return .notTracked
         }
         guard let pendingSelection else {
             return proposedValue == nil ? .current : .notTracked

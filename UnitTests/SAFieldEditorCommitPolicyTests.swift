@@ -129,6 +129,21 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
         ))
     }
 
+    func testReloadAfterCancelledPopupDoesNotInvalidateNextInlineEdit() {
+        let tracker = SAComboBoxSelectionTracker()
+        tracker.comboBoxWillOpen()
+        tracker.tableDataWillReload()
+
+        XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
+            fieldEditorRequired: false,
+            cell: NSComboBoxCell(textCell: ""),
+            proposedValue: "published" as NSString,
+            storedValue: "draft" as NSString,
+            displayValue: "draft" as NSString,
+            popupSelectionState: tracker.consumeSelection(matching: "published" as NSString)
+        ))
+    }
+
     func testUntrackedComboValueIsAcceptedWhenFieldEditorIsNotRequired() {
         XCTAssertFalse(SAFieldEditorCommitPolicy.shouldIgnoreInlineCommit(
             fieldEditorRequired: false,
