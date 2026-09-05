@@ -134,7 +134,9 @@ private extension SPWindowController {
     /// only applies it. Every tab is its own `NSWindow`, so the colour follows
     /// whichever tab is selected without any extra bookkeeping.
     func applyTitlebarTint(_ color: NSColor?) {
-        guard let window = window else { return }
+        guard let window = window else {
+            return
+        }
 
         let tint = SAWindowTitlebarTint(
             favoriteColor: color,
@@ -145,7 +147,9 @@ private extension SPWindowController {
         // and the redraw it triggers - unless the chrome actually differs.
         guard window.titlebarAppearsTransparent != tint.titlebarAppearsTransparent
                 || window.backgroundColor != tint.backgroundColor
-                || window.titlebarSeparatorStyle != tint.separatorStyle else { return }
+                || window.titlebarSeparatorStyle != tint.separatorStyle else {
+            return
+        }
 
         window.titlebarAppearsTransparent = tint.titlebarAppearsTransparent
         window.backgroundColor = tint.backgroundColor
@@ -161,7 +165,9 @@ private extension SPWindowController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self = self else { return }
+            guard let self = self else {
+                return
+            }
             self.applyTitlebarTint(self.favoriteColor)
         }
     }
