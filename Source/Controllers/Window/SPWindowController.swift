@@ -49,7 +49,17 @@ import SnapKit
 
         setupFramePersistence()
         setupAppearance()
+        observeTitlebarTintPreference()
     }
+
+    /// The favourite colour of the connection in this tab, or `nil` when it has
+    /// none or the tab is not connected. Kept so the title bar can be repainted
+    /// when the preference is toggled, without waiting for a title update.
+    private var favoriteColor: NSColor?
+
+    /// Holds the preference observer for the window's lifetime; the token
+    /// unregisters it on deinit.
+    private var titlebarTintSubscription: NotificationToken?
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
@@ -126,10 +136,34 @@ private extension SPWindowController {
     func applyTitlebarTint(_ color: NSColor?) {
         guard let window = window else { return }
 
-        let tint = SAWindowTitlebarTint(favoriteColor: color)
+        let tint = SAWindowTitlebarTint(
+            favoriteColor: color,
+            isEnabled: UserDefaults.standard.bool(forKey: SPDisplayConnectionColorInTitlebar)
+        )
+
+        // Every defaults change wakes the observer below, so skip the work -
+        // and the redraw it triggers - unless the chrome actually differs.
+        guard window.titlebarAppearsTransparent != tint.titlebarAppearsTransparent
+                || window.backgroundColor != tint.backgroundColor
+                || window.titlebarSeparatorStyle != tint.separatorStyle else { return }
+
         window.titlebarAppearsTransparent = tint.titlebarAppearsTransparent
         window.backgroundColor = tint.backgroundColor
         window.titlebarSeparatorStyle = tint.separatorStyle
+    }
+
+    /// Repaint the title bar when the preference is toggled, so turning the
+    /// colour on or off reaches open windows immediately rather than at the
+    /// next title update.
+    func observeTitlebarTintPreference() {
+        titlebarTintSubscription = NotificationCenter.default.observe(
+            name: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.applyTitlebarTint(self.favoriteColor)
+        }
     }
 }
 
@@ -152,6 +186,7 @@ private extension SPWindowController {
     /// `-[SPDatabaseDocument updateWindowTitle:]`. A `nil` colour means "no
     /// favourite colour, or not connected" and clears the line and the tint.
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
+        favoriteColor = color
         tabAccessoryView.update(color: color, isSSL: isSSL)
         applyTitlebarTint(color)
     }

@@ -310,6 +310,7 @@ extern NSString *SPDefaultEncoding;
 extern NSString *SPDisplayTableViewVerticalGridlines;
 extern NSString *SPDisplayTableViewColumnTypes;
 extern NSString *SPDisplayCommentsInTablesList;
+extern NSString *SPDisplayConnectionColorInTitlebar;
 extern NSString *SPCustomQueryMaxHistoryItems;
 extern NSString *SPAppearance;
 

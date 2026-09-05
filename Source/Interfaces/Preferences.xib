@@ -639,9 +639,9 @@ Gw
                     </textFieldCell>
                 </textField>
                 <box boxType="custom" borderType="none" cornerRadius="4" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="7J9-Yp-qMZ">
-                    <rect key="frame" x="0.0" y="114" width="656" height="41"/>
+                    <rect key="frame" x="0.0" y="83" width="656" height="72"/>
                     <view key="contentView" id="8QO-1r-5jB">
-                        <rect key="frame" x="0.0" y="0.0" width="656" height="41"/>
+                        <rect key="frame" x="0.0" y="0.0" width="656" height="72"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="m2t-AW-wZp">
@@ -703,6 +703,19 @@ Gw
                                     </binding>
                                 </connections>
                             </popUpButton>
+                            <button toolTip="Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SAt-Tb-Cl1">
+                                <rect key="frame" x="180" y="9" width="456" height="22"/>
+                                <buttonCell key="cell" type="check" title="Color the title bar with the connection color" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="SAt-Tb-Cl2">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <binding destination="117" name="value" keyPath="values.DisplayConnectionColorInTitlebar" id="SAt-Tb-Cl3"/>
+                                </connections>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="SAt-Tb-Cl6"/>
+                                </constraints>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="m2t-AW-wZp" secondAttribute="trailing" constant="20" id="5va-08-JI4"/>
@@ -712,12 +725,17 @@ Gw
                             <constraint firstItem="A54-fI-5jD" firstAttribute="centerY" secondItem="zSn-Pq-u9O" secondAttribute="centerY" id="RSy-6K-GNB"/>
                             <constraint firstItem="m2t-AW-wZp" firstAttribute="top" secondItem="8QO-1r-5jB" secondAttribute="top" id="cjR-xY-u0O"/>
                             <constraint firstItem="YpU-KB-oKj" firstAttribute="leading" secondItem="zSn-Pq-u9O" secondAttribute="trailing" constant="10" id="jbv-tQ-cWP"/>
-                            <constraint firstAttribute="bottom" secondItem="YpU-KB-oKj" secondAttribute="bottom" constant="9" id="k6U-6l-mIv"/>
+                            <constraint firstAttribute="bottom" secondItem="SAt-Tb-Cl1" secondAttribute="bottom" constant="9" id="k6U-6l-mIv"/>
+                            <constraint firstItem="SAt-Tb-Cl1" firstAttribute="top" secondItem="YpU-KB-oKj" secondAttribute="bottom" constant="9" id="SAt-Tb-Cl4"/>
+                            <constraint firstItem="SAt-Tb-Cl1" firstAttribute="leading" secondItem="YpU-KB-oKj" secondAttribute="leading" id="SAt-Tb-Cl5"/>
                             <constraint firstItem="YpU-KB-oKj" firstAttribute="top" secondItem="m2t-AW-wZp" secondAttribute="bottom" constant="9" id="qvF-s5-WKM"/>
                             <constraint firstAttribute="trailing" secondItem="A54-fI-5jD" secondAttribute="trailing" constant="20" id="wZU-Cc-BI5"/>
                             <constraint firstItem="zSn-Pq-u9O" firstAttribute="leading" secondItem="8QO-1r-5jB" secondAttribute="leading" constant="20" id="wsp-nB-hpQ"/>
                         </constraints>
                     </view>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="72" id="SAt-Tb-Cl8"/>
+                    </constraints>
                 </box>
                 <box boxType="custom" borderType="none" cornerRadius="4" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="F3U-SQ-W2d">
                     <rect key="frame" x="0.0" y="83" width="656" height="31"/>
@@ -906,6 +924,7 @@ Gw
                 <constraint firstItem="569" firstAttribute="trailing" secondItem="XRZ-IQ-R00" secondAttribute="trailing" id="WCa-as-XxN"/>
                 <constraint firstItem="1420" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="WiS-oj-FT3"/>
                 <constraint firstItem="2aR-JM-Lbr" firstAttribute="top" secondItem="XAX-zM-z61" secondAttribute="bottom" constant="9" id="XYl-mN-TCg"/>
+                <constraint firstItem="KJh-ax-qjk" firstAttribute="top" secondItem="2aR-JM-Lbr" secondAttribute="bottom" constant="9" id="SAt-Tb-Cl7"/>
                 <constraint firstItem="957" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="ZaW-If-0qM"/>
                 <constraint firstItem="582" firstAttribute="trailing" secondItem="569" secondAttribute="trailing" id="aCS-ZA-klL"/>
                 <constraint firstItem="2aR-JM-Lbr" firstAttribute="centerY" secondItem="gcQ-a7-Kqd" secondAttribute="centerY" id="awJ-f0-Gff"/>

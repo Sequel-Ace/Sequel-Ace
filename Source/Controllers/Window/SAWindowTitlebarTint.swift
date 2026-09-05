@@ -37,11 +37,17 @@ struct SAWindowTitlebarTint {
     /// a stray line across a coloured strip, so a tinted window drops it.
     let separatorStyle: NSTitlebarSeparatorStyle
 
-    /// Derive the chrome for a connection's favourite colour, or the stock
-    /// title bar when `favoriteColor` is `nil` - meaning the connection has no
-    /// favourite colour, or the document is not connected.
-    init(favoriteColor: NSColor?) {
-        if let favoriteColor = favoriteColor {
+    /// Derive the chrome for a connection's favourite colour.
+    ///
+    /// - Parameters:
+    ///   - favoriteColor: the connection's favourite colour, or `nil` when it
+    ///     has none or the document is not connected.
+    ///   - isEnabled: the user's `DisplayConnectionColorInTitlebar` preference.
+    ///     Off is the default, and always yields the stock title bar - a window
+    ///     then looks exactly as it did before the preference existed, however
+    ///     the connection is coloured.
+    init(favoriteColor: NSColor?, isEnabled: Bool) {
+        if isEnabled, let favoriteColor = favoriteColor {
             backgroundColor = favoriteColor
             titlebarAppearsTransparent = true
             separatorStyle = .none
