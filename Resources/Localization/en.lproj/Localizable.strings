@@ -819,6 +819,12 @@
 /* content tab : rule filter : drop zone tooltip */
 "Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
 
+/* general preferences : appearance : checkbox that colors the window title bar with the connected favorite's color */
+"Color the title bar with the connection color" = "Color the title bar with the connection color";
+
+/* general preferences : appearance : tooltip for the title bar color checkbox */
+"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance.";
+
 /* table Content : rule filter editor : compound row : label after the AND/OR popup */
 "combines the conditions in this group" = "combines the conditions in this group";
 
