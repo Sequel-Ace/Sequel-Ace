@@ -11,6 +11,10 @@ included by several targets.
 > the sweep phase is complete and what remains is the deferred project set
 > (SPKeychain `SecItem*`, NSConnection → XPC, bundled OpenSSL).
 >
+> **Status 2026-09-04.** Of that deferred set, SPKeychain is done (#2611-#2615),
+> the bundled OpenSSL has been rebuilt for the 13.5 floor (see Deferred below),
+> and the NSConnection warnings go with SSH-tunnel step 5b (#2623, draft).
+>
 > The measurement below predates those two merges: taken on `main` at
 > `3763d5247`, **"Unit Tests" scheme**, fresh derived data. Re-baseline with
 > the same command before claiming any post-sweep delta:
@@ -490,12 +494,55 @@ deferred projects below.
   warnings themselves go with Step 5b (delete DO), prepared as a draft to
   merge after the socket transport has soaked a release.
 - **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs the app's
-  target, install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
-  SPMySQLFramework with the right deployment target; belongs to a dependency
-  refresh. **Unchanged by #2587**: the deployment target moved to 13.5 and the
-  message now reads "building for macOS-13.5", but the committed dylibs were
-  not rebuilt. `build-libmysqlclient.sh` *was* updated to 13.5, so whenever the
-  rebuild happens it will produce a consistent binary.
+  target, install-name mismatch) — ✅ **executed 2026-09-04.** Both dylibs are
+  now OpenSSL 3.5.8 (the LTS line; 3.4 reaches end of life in October 2026)
+  compiled from the release tarball for arm64 + x86_64 with a 13.5 minimum by
+  the new `Frameworks/libmysqlclient/build-openssl.sh`. All four `ld` warnings
+  are gone from a clean "Sequel Ace Debug" build with no new ones: 20 → 16 raw
+  `warning:` lines, `comm` over the normalized logs showing exactly those four
+  removed. Measure with the dylibs in their committed state — while they are
+  merely modified in the working tree, the framework's post-build script adds
+  six transient `install_name_tool` lines of its own (see below).
+  - ⚠️ **The plan's diagnosis was half right.** Updating
+    `build-libmysqlclient.sh` to 13.5 could never have fixed the "built for
+    newer version" pair, because that script does not build OpenSSL at all: it
+    copies Homebrew's `openssl@3` bottle into the bundle, and bottles are
+    compiled for the *host* macOS (the shipped 3.4.1 was arm64 minos 15.0 /
+    x86_64 minos 14.0). Only a source build can pin the deployment target,
+    which is what the new script does; it mirrors the Homebrew formula's
+    configure flags (`no-ssl3 no-ssl3-method no-zlib`) and per-architecture
+    `--prefix` / `--openssldir` so the version and the floor are the only
+    intended differences.
+  - The **install-name mismatch** pair was self-inflicted: SPMySQL re-exports
+    both dylibs and records them as `@loader_path/lib*.dylib`, while the
+    framework's post-build script (and `build-libmysqlclient.sh`) reset each
+    dylib's own id to the bare `libssl.3.dylib`. ld compares the two for
+    re-exported libraries. Both scripts now set the `@loader_path` form, which
+    is also what `build-openssl.sh` emits.
+  - The dylibs are ad-hoc signed on purpose. dyld refuses an unsigned arm64
+    dylib ("missing code signature"), which crashed the app and the SPMySQL
+    test bundle under `CODE_SIGNING_ALLOWED=NO` before the signing step was
+    added; Xcode re-signs on copy when signing is enabled. The earlier
+    "Apple Development" re-sign in the framework's post-build script fails
+    with an ambiguous identity on the current machine, so the committed
+    binaries no longer carry a developer signature — the release build signs
+    them with the Developer ID regardless.
+  - ⚠️ That post-build script copies the bundled dylibs back into the repo on
+    every build while `git diff` reports a modified `.dylib`. Running several
+    `xcodebuild`s at once in that state corrupted `libmysqlclient.24.dylib`
+    mid-copy ("fat file truncated or malformed" from `strip`); run builds one
+    at a time until the dylibs are committed.
+  - Verified beyond the build: SPMySQL and app unit tests, and a live TCP/IP
+    connection with `useSSL` to a `mysql:8.4` container started with
+    `--require-secure-transport=ON`, which shows the session as `SSL/TLS` in
+    `performance_schema.threads`.
+  - Not touched: `libmysqlclient.24.dylib` (minos 12.0, loads fine on 13.5,
+    links the OpenSSL pair by compatibility version 3.0.0 so the 3.5 ABI is a
+    drop-in) and the `mysqlplugins/*.so` auth plugins, which still link
+    OpenSSL by absolute Homebrew paths (`/opt/homebrew/opt/openssl@3/lib/…`) —
+    a pre-existing problem for the OCI / LDAP SASL / WebAuthn plugins on a
+    machine without Homebrew, and part of the next full libmysqlclient
+    rebuild.
 - **Intentional markers, keep**: SAArchiving `legacyUnarchive` /
   `legacyArchivedData` (by design — the deprecation attribute *is* the
   guard-rail) and `selectionHighlightStyle = .sourceList` (replacement changes
@@ -516,6 +563,7 @@ deferred projects below.
 | 9b part 1 (internal reorders + dead split-view method) | **125 (measured, clean build)** |
 | 9b part 2 (3 drag-out payloads) | **128 -> 125 (-3); own basis, see below** |
 | #2587 (macOS 13.5 floor + 6.0.0) | **no change** — sets identical before/after |
+| bundled OpenSSL rebuilt for 13.5 (2026-09-04) | **20 -> 16 (-4); own basis: "Sequel Ace Debug", clean, raw `warning:` lines** |
 
 ⚠️ The 9b-part-2 row is a *delta*, not a level, because it could not be made
 comparable to the rows above it. Measured with `xcodebuild -scheme "Sequel Ace
