@@ -182,6 +182,32 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         XCTAssertEqual(handled, 0)
     }
 
+    func testPeerClosingBeforeTheRequestIsWrittenIsAlsoNoReply() throws {
+        // The app rejects a peer without reading, so its close races the
+        // assistant's write: either the write lands and the read sees EOF, or
+        // the write itself fails with EPIPE. Both are the app closing without
+        // an answer and must surface the same way. The client's policy hook
+        // runs between connect and write, so parking it until the listener
+        // has closed makes the losing side of the race deterministic.
+        let path = NSTemporaryDirectory() + "sa-test-\(UUID().uuidString.prefix(8)).sock"
+        let listener = try rawListener(at: path)
+        defer { close(listener); unlink(path) }
+        let peerClosed = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            let connection = accept(listener, nil, nil)
+            if connection >= 0 { close(connection) }
+            peerClosed.signal()
+        }
+        var client = SASSHTunnelSocketClient(path: path)
+        client.peerPolicy = { _ in
+            XCTAssertEqual(peerClosed.wait(timeout: .now() + 5), .success, "the listener never closed the connection")
+            return true
+        }
+        XCTAssertThrowsError(try client.send(.question("q"))) { error in
+            XCTAssertEqual(error as? SASSHTunnelSocketClient.Error, .noReply)
+        }
+    }
+
     func testClientRejectingThePeerSendsNothing() throws {
         var handled = 0
         let server = try startServer { request in handled += 1; return Self.echo(request) }
