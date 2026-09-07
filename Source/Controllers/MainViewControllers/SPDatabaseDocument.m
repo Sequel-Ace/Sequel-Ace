@@ -3170,9 +3170,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
 
-    if (state == SAWindowConnectionStateConnected) {
-        [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
-    }
+    // Always update, so that a window which is no longer connected drops the
+    // favourite colour again. A nil colour clears both the tab line and the
+    // title bar tint (#1856); leaving the tint behind would keep a window that
+    // is back on the connection view looking like a live production session.
+    NSColor *favoriteColor = (state == SAWindowConnectionStateConnected)
+        ? [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]]
+        : nil;
+
+    [self.parentWindowController updateWindowAccessoryWithColor:favoriteColor isSSL:[self.connectionController isConnectedViaSSL]];
 }
 
 #pragma mark -
