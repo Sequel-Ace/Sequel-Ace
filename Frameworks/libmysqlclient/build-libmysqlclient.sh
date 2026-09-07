@@ -45,6 +45,10 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 client_dir="$script_dir/../SPMySQLFramework/MySQL Client Libraries"
 work_dir="${MYSQL_BUILD_DIR:-$script_dir/build/mysql}"
 openssl_dir="${OPENSSL_BUILD_DIR:-$script_dir/build/openssl}"
+# Both scripts cd around; a relative override must not move with them.
+mkdir -p "$work_dir" "$openssl_dir"
+work_dir="$(cd "$work_dir" && pwd)"
+openssl_dir="$(cd "$openssl_dir" && pwd)"
 mysql_tarball="mysql-$MYSQL_VERSION.tar.gz"
 mysql_url="https://cdn.mysql.com/Downloads/MySQL-${MYSQL_VERSION%.*}/$mysql_tarball"
 cmake_tarball="cmake-$CMAKE_VERSION-macos-universal.tar.gz"
@@ -76,21 +80,49 @@ verify_sha256() {
 mkdir -p "$work_dir/downloads" "$work_dir/toolchain"
 echo "***** MySQL $MYSQL_VERSION -> ${ARCHS[*]}, macOS $DEPLOYMENT_TARGET, work dir $work_dir *****"
 
+# MySQL builds helper programs for the target architecture and runs them
+# during the build; the x86_64 ones need Rosetta on an arm64 host. Fail here
+# rather than half-way through that slice.
+case " ${ARCHS[*]} " in *" x86_64 "*)
+    if [ "$(uname -m)" = "arm64" ] && ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+        echo "❌ Building the x86_64 slice on Apple silicon runs MySQL's x86_64 helper programs under Rosetta 2, which is not installed."
+        echo "   Install it with: softwareupdate --install-rosetta --agree-to-license"
+        exit 1
+    fi
+    ;;
+esac
+
 # --- OpenSSL: the pair built by build-openssl.sh --------------------------
+# An existing tree is only reused if its stamp matches what build-openssl.sh
+# currently pins and its libraries carry this deployment target; otherwise a
+# leftover from an older OpenSSL or floor would be linked in silently.
+expected_openssl="$(sed -n 's/^OPENSSL_VERSION="\(.*\)"$/\1/p' "$script_dir/build-openssl.sh")"
+if [ -z "$expected_openssl" ]; then
+    echo "❌ Could not read OPENSSL_VERSION from $script_dir/build-openssl.sh"
+    exit 1
+fi
+openssl_tree_current() {
+    local arch="$1" sdk="$openssl_dir/sdk-$arch" f minos
+    for f in bin/openssl lib/libssl.3.dylib lib/libcrypto.3.dylib include/openssl/ssl.h .sequel-ace-recipe; do
+        [ -e "$sdk/$f" ] || return 1
+    done
+    [ "$(cat "$sdk/.sequel-ace-recipe")" = "$(printf 'openssl=%s\nmacos=%s' "$expected_openssl" "$DEPLOYMENT_TARGET")" ] || return 1
+    minos="$(otool -arch "$arch" -l "$sdk/lib/libcrypto.3.dylib" | awk '/LC_BUILD_VERSION/ { in_cmd = 1 } in_cmd && /minos/ { print $2; exit }')"
+    [ "$minos" = "$DEPLOYMENT_TARGET" ] || return 1
+    return 0
+}
 for arch in "${ARCHS[@]}"; do
-    if [ ! -x "$openssl_dir/sdk-$arch/bin/openssl" ]; then
-        echo "***** OpenSSL tree for $arch missing, running build-openssl.sh *****"
+    if ! openssl_tree_current "$arch"; then
+        echo "***** OpenSSL $expected_openssl / macOS $DEPLOYMENT_TARGET tree for $arch missing or stale, running build-openssl.sh *****"
         OPENSSL_BUILD_DIR="$openssl_dir" "$script_dir/build-openssl.sh"
         break
     fi
 done
 for arch in "${ARCHS[@]}"; do
-    for f in bin/openssl lib/libssl.3.dylib lib/libcrypto.3.dylib include/openssl/ssl.h; do
-        if [ ! -e "$openssl_dir/sdk-$arch/$f" ]; then
-            echo "❌ $openssl_dir/sdk-$arch/$f is missing; run build-openssl.sh"
-            exit 1
-        fi
-    done
+    if ! openssl_tree_current "$arch"; then
+        echo "❌ $openssl_dir/sdk-$arch is still not a current OpenSSL $expected_openssl / macOS $DEPLOYMENT_TARGET tree after build-openssl.sh"
+        exit 1
+    fi
 done
 
 # --- CMake: the official universal binary ---------------------------------

@@ -44,6 +44,9 @@ ARCHS=(arm64 x86_64)
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 lib_dir="$script_dir/../SPMySQLFramework/MySQL Client Libraries/lib"
 work_dir="${OPENSSL_BUILD_DIR:-$script_dir/build/openssl}"
+# The script cd's around; a relative override must not move with it.
+mkdir -p "$work_dir"
+work_dir="$(cd "$work_dir" && pwd)"
 tarball="openssl-$OPENSSL_VERSION.tar.gz"
 tarball_url="https://github.com/openssl/openssl/releases/download/openssl-$OPENSSL_VERSION/$tarball"
 
@@ -154,8 +157,12 @@ for arch in "${ARCHS[@]}"; do
         fi
     done
     # Stable per-architecture entry point for build-libmysqlclient.sh, so it
-    # does not need to know the Homebrew-shaped prefix.
+    # does not need to know the Homebrew-shaped prefix. The stamp records what
+    # the tree was built from, so that script can tell a stale tree (older
+    # OpenSSL, different floor) from a current one instead of trusting that
+    # the directory exists.
     ln -sfn "$dest$prefix" "$work_dir/sdk-$arch"
+    printf 'openssl=%s\nmacos=%s\n' "$OPENSSL_VERSION" "$DEPLOYMENT_TARGET" > "$dest$prefix/.sequel-ace-recipe"
 done
 
 universal="$work_dir/universal"

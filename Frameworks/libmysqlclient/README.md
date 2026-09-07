@@ -34,8 +34,11 @@ Frameworks/libmysqlclient/build-libmysqlclient.sh # the client, headers, plugins
 ```
 
 `build-libmysqlclient.sh` runs `build-openssl.sh` itself when the OpenSSL
-tree it links against is missing, so the second command alone rebuilds
-everything. Both write to `build/` next to the scripts (git-ignored) unless
+tree it links against is missing or stale (a stamp records the OpenSSL
+version and floor it was built with, and the libraries' minimum OS is
+checked), so the second command alone rebuilds everything. On Apple
+silicon it also requires Rosetta 2 (`softwareupdate --install-rosetta`)
+and says so up front. Both write to `build/` next to the scripts (git-ignored) unless
 `OPENSSL_BUILD_DIR` / `MYSQL_BUILD_DIR` say otherwise, and both copy their
 output into `SPMySQLFramework/MySQL Client Libraries` only after every check
 passes. The `libmysqlclient.xcodeproj` target is a wrapper that runs the
