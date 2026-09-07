@@ -63,6 +63,9 @@ not wired up yet (see #2590); the built plugins are kept in
 
 `SPMySQL.framework`'s post-build script re-copies the dylibs from the built
 framework back into `MySQL Client Libraries/lib` on every build as long as
-`git diff` reports one of them modified. Run `xcodebuild` invocations one at
-a time in that state: two builds copying at once have corrupted
-`libmysqlclient.24.dylib` mid-write.
+`git diff` reports one of them modified. Every publisher (that script and
+both recipes) stages through a unique temporary file and renames it into
+place, so a concurrent reader always sees a complete file. What remains is
+last-writer-wins: two builds publishing at once leave whichever finished
+last, so still run `xcodebuild` invocations one at a time in that state if
+it matters which build's copy ends up in the tree.

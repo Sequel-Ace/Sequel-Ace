@@ -247,6 +247,17 @@ for plugin_path in "$work_dir/install-arm64/lib/plugin/"*.so; do
     done
     lipo -create -output "plugin/$plugin" "${slices[@]}"
 done
+# The loop above walks the arm64 set; a plugin that only the other
+# architectures produced would otherwise go missing silently.
+for arch in "${ARCHS[@]}"; do
+    for plugin_path in "$work_dir/install-$arch/lib/plugin/"*.so; do
+        plugin="$(basename "$plugin_path")"
+        if [ ! -f "plugin/$plugin" ]; then
+            echo "❌ $plugin was built for $arch but not for arm64"
+            exit 1
+        fi
+    done
+done
 # The WebAuthn plugin loads the bundled libfido2 as @loader_path/libfido2.1.dylib,
 # so the library ships next to the plugins. (lib/libfido2.1.dylib is the real
 # file; the other libfido2 names in lib/ are symlinks to it.)
