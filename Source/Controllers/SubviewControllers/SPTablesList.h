@@ -161,6 +161,7 @@
 - (nonnull NSArray *)selectedTableTypes;
 - (nullable NSString *)tableName;
 - (SPTableType)tableType;
+- (SPTableType)tableTypeAtRow:(NSInteger)rowIndex NS_SWIFT_NAME(tableType(atRow:));
 - (nonnull NSArray *)tables;
 - (nonnull NSArray *)pinnedTables;
 - (nonnull NSArray *)tableTypes;

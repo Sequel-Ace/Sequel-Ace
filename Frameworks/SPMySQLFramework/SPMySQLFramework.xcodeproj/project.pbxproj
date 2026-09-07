@@ -78,14 +78,11 @@
 		9615D15E2D4C26DD0095F55A /* libssl.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9615D15C2D4C26DD0095F55A /* libssl.3.dylib */; };
 		9615D15F2D4C26F80095F55A /* libcrypto.3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9615D3922D4D7DA00095F55A /* libssl.3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9615D15C2D4C26DD0095F55A /* libssl.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		9615D84D2D5EDF530095F55A /* psi_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8362D5EDF530095F55A /* psi_base.h */; };
-		9615D84E2D5EDF530095F55A /* psi_memory.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8372D5EDF530095F55A /* psi_memory.h */; };
 		9615D84F2D5EDF530095F55A /* client_plugin.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8392D5EDF530095F55A /* client_plugin.h */; };
 		9615D8502D5EDF530095F55A /* plugin_auth_common.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83A2D5EDF530095F55A /* plugin_auth_common.h */; };
 		9615D8512D5EDF530095F55A /* udf_registration_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83B2D5EDF530095F55A /* udf_registration_types.h */; };
 		9615D8522D5EDF530095F55A /* errmsg.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83D2D5EDF530095F55A /* errmsg.h */; };
 		9615D8532D5EDF530095F55A /* field_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83E2D5EDF530095F55A /* field_types.h */; };
-		9615D8542D5EDF530095F55A /* my_alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83F2D5EDF530095F55A /* my_alloc.h */; };
 		9615D8552D5EDF530095F55A /* my_command.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8402D5EDF530095F55A /* my_command.h */; };
 		9615D8562D5EDF530095F55A /* my_compress.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8412D5EDF530095F55A /* my_compress.h */; };
 		9615D8572D5EDF530095F55A /* my_list.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8422D5EDF530095F55A /* my_list.h */; };
@@ -94,10 +91,6 @@
 		9615D85A2D5EDF530095F55A /* mysql_time.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8452D5EDF530095F55A /* mysql_time.h */; };
 		9615D85B2D5EDF530095F55A /* mysql_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8462D5EDF530095F55A /* mysql_version.h */; };
 		9615D85C2D5EDF530095F55A /* mysqld_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8472D5EDF530095F55A /* mysqld_error.h */; };
-		9615D85D2D5EDF530095F55A /* mysqlx_ername.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8482D5EDF530095F55A /* mysqlx_ername.h */; };
-		9615D85E2D5EDF530095F55A /* mysqlx_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8492D5EDF530095F55A /* mysqlx_error.h */; };
-		9615D85F2D5EDF530095F55A /* mysqlx_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D84A2D5EDF530095F55A /* mysqlx_version.h */; };
-		9615D8602D5EDF530095F55A /* typelib.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D84B2D5EDF530095F55A /* typelib.h */; };
 		96A5DDB32D63C8AE0079105E /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 96A5DDB22D63C89A0079105E /* libc++.tbd */; };
 		A296B829FB2005B17DB7EA5E /* SADatabaseAssertionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */; };
 		D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386B159A6D535F0686530898 /* SADatabaseAssertion.swift */; };
@@ -210,14 +203,11 @@
 		9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libmysqlclient.24.dylib; sourceTree = "<group>"; };
 		9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libcrypto.3.dylib; sourceTree = "<group>"; };
 		9615D15C2D4C26DD0095F55A /* libssl.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libssl.3.dylib; sourceTree = "<group>"; };
-		9615D8362D5EDF530095F55A /* psi_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = psi_base.h; sourceTree = "<group>"; };
-		9615D8372D5EDF530095F55A /* psi_memory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = psi_memory.h; sourceTree = "<group>"; };
 		9615D8392D5EDF530095F55A /* client_plugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = client_plugin.h; sourceTree = "<group>"; };
 		9615D83A2D5EDF530095F55A /* plugin_auth_common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = plugin_auth_common.h; sourceTree = "<group>"; };
 		9615D83B2D5EDF530095F55A /* udf_registration_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = udf_registration_types.h; sourceTree = "<group>"; };
 		9615D83D2D5EDF530095F55A /* errmsg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = errmsg.h; sourceTree = "<group>"; };
 		9615D83E2D5EDF530095F55A /* field_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = field_types.h; sourceTree = "<group>"; };
-		9615D83F2D5EDF530095F55A /* my_alloc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_alloc.h; sourceTree = "<group>"; };
 		9615D8402D5EDF530095F55A /* my_command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_command.h; sourceTree = "<group>"; };
 		9615D8412D5EDF530095F55A /* my_compress.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_compress.h; sourceTree = "<group>"; };
 		9615D8422D5EDF530095F55A /* my_list.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_list.h; sourceTree = "<group>"; };
@@ -226,10 +216,6 @@
 		9615D8452D5EDF530095F55A /* mysql_time.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_time.h; sourceTree = "<group>"; };
 		9615D8462D5EDF530095F55A /* mysql_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_version.h; sourceTree = "<group>"; };
 		9615D8472D5EDF530095F55A /* mysqld_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
-		9615D8482D5EDF530095F55A /* mysqlx_ername.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_ername.h; sourceTree = "<group>"; };
-		9615D8492D5EDF530095F55A /* mysqlx_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_error.h; sourceTree = "<group>"; };
-		9615D84A2D5EDF530095F55A /* mysqlx_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_version.h; sourceTree = "<group>"; };
-		9615D84B2D5EDF530095F55A /* typelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = typelib.h; sourceTree = "<group>"; };
 		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLGeometryDataTests.m; sourceTree = "<group>"; };
@@ -476,8 +462,6 @@
 		9615D8382D5EDF530095F55A /* psi */ = {
 			isa = PBXGroup;
 			children = (
-				9615D8362D5EDF530095F55A /* psi_base.h */,
-				9615D8372D5EDF530095F55A /* psi_memory.h */,
 			);
 			path = psi;
 			sourceTree = "<group>";
@@ -499,7 +483,6 @@
 				9615D83C2D5EDF530095F55A /* mysql */,
 				9615D83D2D5EDF530095F55A /* errmsg.h */,
 				9615D83E2D5EDF530095F55A /* field_types.h */,
-				9615D83F2D5EDF530095F55A /* my_alloc.h */,
 				9615D8402D5EDF530095F55A /* my_command.h */,
 				9615D8412D5EDF530095F55A /* my_compress.h */,
 				9615D8422D5EDF530095F55A /* my_list.h */,
@@ -508,10 +491,6 @@
 				9615D8452D5EDF530095F55A /* mysql_time.h */,
 				9615D8462D5EDF530095F55A /* mysql_version.h */,
 				9615D8472D5EDF530095F55A /* mysqld_error.h */,
-				9615D8482D5EDF530095F55A /* mysqlx_ername.h */,
-				9615D8492D5EDF530095F55A /* mysqlx_error.h */,
-				9615D84A2D5EDF530095F55A /* mysqlx_version.h */,
-				9615D84B2D5EDF530095F55A /* typelib.h */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -535,14 +514,11 @@
 				584294E414CB8002000F8438 /* SPMySQLConstants.h in Headers */,
 				1A96314625B9CE6600BF2E91 /* SPMySQLArrayAdditions.h in Headers */,
 				584294F614CB8002000F8438 /* Querying & Preparation.h in Headers */,
-				9615D84D2D5EDF530095F55A /* psi_base.h in Headers */,
-				9615D84E2D5EDF530095F55A /* psi_memory.h in Headers */,
 				9615D84F2D5EDF530095F55A /* client_plugin.h in Headers */,
 				9615D8502D5EDF530095F55A /* plugin_auth_common.h in Headers */,
 				9615D8512D5EDF530095F55A /* udf_registration_types.h in Headers */,
 				9615D8522D5EDF530095F55A /* errmsg.h in Headers */,
 				9615D8532D5EDF530095F55A /* field_types.h in Headers */,
-				9615D8542D5EDF530095F55A /* my_alloc.h in Headers */,
 				9615D8552D5EDF530095F55A /* my_command.h in Headers */,
 				9615D8562D5EDF530095F55A /* my_compress.h in Headers */,
 				9615D8572D5EDF530095F55A /* my_list.h in Headers */,
@@ -551,10 +527,6 @@
 				9615D85A2D5EDF530095F55A /* mysql_time.h in Headers */,
 				9615D85B2D5EDF530095F55A /* mysql_version.h in Headers */,
 				9615D85C2D5EDF530095F55A /* mysqld_error.h in Headers */,
-				9615D85D2D5EDF530095F55A /* mysqlx_ername.h in Headers */,
-				9615D85E2D5EDF530095F55A /* mysqlx_error.h in Headers */,
-				9615D85F2D5EDF530095F55A /* mysqlx_version.h in Headers */,
-				9615D8602D5EDF530095F55A /* typelib.h in Headers */,
 				584294F014CB8002000F8438 /* Ping & KeepAlive.h in Headers */,
 				584294FA14CB8002000F8438 /* Encoding.h in Headers */,
 				58C7C1E414DB6E4C00436315 /* SPMySQLFastStreamingResult.h in Headers */,
@@ -718,7 +690,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#!/usr/bin/env bash\n\n# always need to do this\n# Make it so the SPMySQL executable can find the dylibs it was compiled with\necho \"running install_name_tool\"\npwd\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/Current\" || exit 1;\npwd\notool -L SPMySQL\n\nCRYPTO=$(otool -L SPMySQL | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\nCRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  # remove leading whitespace characters\nCRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\"   # remove trailing whitespace characters\necho \"CRYPTO: $CRYPTO\"\necho \"Setting @loader_path/libcrypto.3.dylib in SPMySQL\"\ninstall_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib SPMySQL\notool -L SPMySQL\n\nSSL=$(otool -L SPMySQL | grep libssl.3.dylib | cut -d' ' -f1 | head -1)\nSSL=\"${SSL#\"${SSL%%[![:space:]]*}\"}\"  \nSSL=\"${SSL%\"${SSL##*[![:space:]]}\"}\"  \necho \"SSL: $SSL\"\necho \"Setting @loader_path/libssl.3.dylib in SPMySQL\"\ninstall_name_tool -change \"$SSL\" @loader_path/libssl.3.dylib SPMySQL\notool -L SPMySQL\n\nMSL=$(otool -L SPMySQL | grep libmysqlclient.24.dylib | cut -d' ' -f1 | head -1)\nMSL=\"${MSL#\"${MSL%%[![:space:]]*}\"}\"  \nMSL=\"${MSL%\"${MSL##*[![:space:]]}\"}\"  \necho \"MSL: $MSL\"\necho \"Setting @loader_path/libmysqlclient.24.dylib in SPMySQL\"\ninstall_name_tool -change \"$MSL\" @loader_path/libmysqlclient.24.dylib SPMySQL\notool -L SPMySQL\n\necho \"checking for new dylibs\"\ncd \"$SRCROOT\" || exit 1;\npwd\n\nNEW_LIBS=$(git diff --name-only --diff-filter=ACM -- *.dylib)\n\nif  [ -z \"$NEW_LIBS\" ]; then\n     echo \"no new dylibs, stopping\"\n     exit 0;\n fi\n\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/A\" || exit 1;\necho \"Setting libcrypto.3.dylib in libcrypto.3.dylib\"\ninstall_name_tool -id \"libcrypto.3.dylib\" libcrypto.3.dylib\ninstall_name_tool -id \"libssl.3.dylib\" libssl.3.dylib\ninstall_name_tool -id \"libmysqlclient.24.dylib\" libmysqlclient.24.dylib\n\nwhile true; do\n    CRYPTO=$(otool -L libssl.3.dylib | grep -v \"@loader_path\" | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\n    CRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  \n    CRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\"     \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$CRYPTO\" ]]; then\n        break\n    fi\n\n    echo \"CRYPTO: $CRYPTO\"\n    echo \"Setting @loader_path/libcrypto.3.dylib in libssl.3.dylib (replacing $CRYPTO)\"\n    install_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib libssl.3.dylib\ndone;\n\notool -L lib*\n\nwhile true; do\n    SSL=$(otool -L libmysqlclient.24.dylib | grep -v \"@loader_path\" | grep libssl.3.dylib | cut -d' ' -f1 | head -1)\n    SSL=\"${SSL#\"${SSL%%[![:space:]]*}\"}\"  \n    SSL=\"${SSL%\"${SSL##*[![:space:]]}\"}\"   \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$SSL\" ]]; then\n        break\n    fi\n\n    echo \"Setting @loader_path/libssl.3.dylib in libmysqlclient.24.dylib (replacing $SSL)\"\n    install_name_tool -change \"$SSL\" @loader_path/libssl.3.dylib libmysqlclient.24.dylib\ndone;\n\nwhile true; do\n    CRYPTO=$(otool -L libmysqlclient.24.dylib | grep -v \"@loader_path\" | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\n    CRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  \n    CRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\" \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$CRYPTO\" ]]; then\n        break\n    fi\n\n    echo \"Setting @loader_path/libcrypto.3.dylib in libmysqlclient.24.dylib (replacing $CRYPTO)\"\n    install_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib libmysqlclient.24.dylib  \ndone\n\n# no need for exit, if there are no new libs, we've already exited.\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/Current\" || exit 1;\n\necho \"Codesigning libcrypto.3.dylib, libssl.3.dylib, and libmysqlclient.24.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libcrypto.3.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libssl.3.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libmysqlclient.24.dylib\"\n\necho \"Copying libcrypto.3.dylib, libssl.3.dylib, and libmysqlclient.24.dylib to $SRCROOT/MySQL Client Libraries/lib\"\ncp libcrypto.3.dylib \"$SRCROOT/MySQL Client Libraries/lib\" || exit 1;\ncp libssl.3.dylib \"$SRCROOT/MySQL Client Libraries/lib\" || exit 1;\ncp libmysqlclient.24.dylib \"$SRCROOT/MySQL Client Libraries/lib\" || exit 1;\n";
+			shellScript = "#!/usr/bin/env bash\n\n# always need to do this\n# Make it so the SPMySQL executable can find the dylibs it was compiled with\necho \"running install_name_tool\"\npwd\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/Current\" || exit 1;\npwd\notool -L SPMySQL\n\nCRYPTO=$(otool -L SPMySQL | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\nCRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  # remove leading whitespace characters\nCRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\"   # remove trailing whitespace characters\necho \"CRYPTO: $CRYPTO\"\necho \"Setting @loader_path/libcrypto.3.dylib in SPMySQL\"\ninstall_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib SPMySQL\notool -L SPMySQL\n\nSSL=$(otool -L SPMySQL | grep libssl.3.dylib | cut -d' ' -f1 | head -1)\nSSL=\"${SSL#\"${SSL%%[![:space:]]*}\"}\"  \nSSL=\"${SSL%\"${SSL##*[![:space:]]}\"}\"  \necho \"SSL: $SSL\"\necho \"Setting @loader_path/libssl.3.dylib in SPMySQL\"\ninstall_name_tool -change \"$SSL\" @loader_path/libssl.3.dylib SPMySQL\notool -L SPMySQL\n\nMSL=$(otool -L SPMySQL | grep libmysqlclient.24.dylib | cut -d' ' -f1 | head -1)\nMSL=\"${MSL#\"${MSL%%[![:space:]]*}\"}\"  \nMSL=\"${MSL%\"${MSL##*[![:space:]]}\"}\"  \necho \"MSL: $MSL\"\necho \"Setting @loader_path/libmysqlclient.24.dylib in SPMySQL\"\ninstall_name_tool -change \"$MSL\" @loader_path/libmysqlclient.24.dylib SPMySQL\notool -L SPMySQL\n\necho \"checking for new dylibs\"\ncd \"$SRCROOT\" || exit 1;\npwd\n\nNEW_LIBS=$(git diff --name-only --diff-filter=ACM -- *.dylib)\n\nif  [ -z \"$NEW_LIBS\" ]; then\n     echo \"no new dylibs, stopping\"\n     exit 0;\n fi\n\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/A\" || exit 1;\necho \"Setting libcrypto.3.dylib in libcrypto.3.dylib\"\n# libssl/libcrypto are re-exported by SPMySQL, and ld warns when a re-exported library's own\n# install name differs from the @loader_path one recorded in SPMySQL above, so the ids must match.\ninstall_name_tool -id \"@loader_path/libcrypto.3.dylib\" libcrypto.3.dylib\ninstall_name_tool -id \"@loader_path/libssl.3.dylib\" libssl.3.dylib\ninstall_name_tool -id \"@loader_path/libmysqlclient.24.dylib\" libmysqlclient.24.dylib\n\nwhile true; do\n    CRYPTO=$(otool -L libssl.3.dylib | grep -v \"@loader_path\" | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\n    CRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  \n    CRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\"     \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$CRYPTO\" ]]; then\n        break\n    fi\n\n    echo \"CRYPTO: $CRYPTO\"\n    echo \"Setting @loader_path/libcrypto.3.dylib in libssl.3.dylib (replacing $CRYPTO)\"\n    install_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib libssl.3.dylib\ndone;\n\notool -L lib*\n\nwhile true; do\n    SSL=$(otool -L libmysqlclient.24.dylib | grep -v \"@loader_path\" | grep libssl.3.dylib | cut -d' ' -f1 | head -1)\n    SSL=\"${SSL#\"${SSL%%[![:space:]]*}\"}\"  \n    SSL=\"${SSL%\"${SSL##*[![:space:]]}\"}\"   \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$SSL\" ]]; then\n        break\n    fi\n\n    echo \"Setting @loader_path/libssl.3.dylib in libmysqlclient.24.dylib (replacing $SSL)\"\n    install_name_tool -change \"$SSL\" @loader_path/libssl.3.dylib libmysqlclient.24.dylib\ndone;\n\nwhile true; do\n    CRYPTO=$(otool -L libmysqlclient.24.dylib | grep -v \"@loader_path\" | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\n    CRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  \n    CRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\" \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$CRYPTO\" ]]; then\n        break\n    fi\n\n    echo \"Setting @loader_path/libcrypto.3.dylib in libmysqlclient.24.dylib (replacing $CRYPTO)\"\n    install_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib libmysqlclient.24.dylib  \ndone\n\n# no need for exit, if there are no new libs, we've already exited.\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/Current\" || exit 1;\n\necho \"Codesigning libcrypto.3.dylib, libssl.3.dylib, and libmysqlclient.24.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libcrypto.3.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libssl.3.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libmysqlclient.24.dylib\"\n\necho \"Copying libcrypto.3.dylib, libssl.3.dylib, and libmysqlclient.24.dylib to $SRCROOT/MySQL Client Libraries/lib\"\n# Publish each dylib atomically (copy to a unique temporary name, then rename): another build may\n# be reading this directory or publishing at the same time, and a plain cp exposes a half-written file.\nfor lib in libcrypto.3.dylib libssl.3.dylib libmysqlclient.24.dylib; do\n    staged=$(mktemp \"$SRCROOT/MySQL Client Libraries/lib/.$lib.XXXXXX\") || exit 1;\n    cp \"$lib\" \"$staged\" || exit 1;\n    mv -f \"$staged\" \"$SRCROOT/MySQL Client Libraries/lib/$lib\" || exit 1;\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
