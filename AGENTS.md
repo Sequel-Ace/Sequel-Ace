@@ -92,9 +92,13 @@ later.
   the `NSConnection` lines in `SPSSHTunnel.m` / `SequelAceTunnelAssistant.m`
   (they go with SSH-tunnel step 5b, #2623) and four intentional deprecation
   markers (`legacyUnarchive` / `legacyArchivedData` in `SAArchiving`, the
-  `.sourceList` highlight style). Measure with a clean
-  `xcodebuild build-for-testing -scheme "Unit Tests"` on fresh derived data
-  and compare like with like — the "Sequel Ace Debug" scheme compiles less.
+  `.sourceList` highlight style). As of 2026-09-07 a clean build also shows
+  ten untracked residue lines listed in the modernization plan's state
+  section; they are not part of the floor, just not yet swept. Measure with a
+  clean `xcodebuild build-for-testing -scheme "Unit Tests"` on fresh derived
+  data, count every `warning:` line (xib, linker and asset warnings carry no
+  `file:line:col`), and compare like with like — the "Sequel Ace Debug"
+  scheme compiles less.
   Two findings from the burn-down that will bite again:
   - Modern pasteboard APIs (`NSPasteboardItem`, `NSPasteboardWriting`)
     **silently drop data for non-UTI type names** — AppKit logs "not a valid

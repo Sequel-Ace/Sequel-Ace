@@ -39,13 +39,18 @@ revision date, not carried forward from the previous pass.
     framework's `PlugIns` directory is still the #2590 follow-up (and will
     need the USB device entitlement for FIDO keys).
   - **The warnings burn-down is complete** (413 in July → a floor) and its
-    plan retired. Measured on this revision with the "Unit Tests" scheme: 14
-    unique diagnostics — the 5 `NSConnection` lines that go with 5b, the 4
-    intentional markers, and 10 untracked residue lines that arrived after the
-    plan's last measurement (three xib `NSUnarchiveFromData` binding
-    transformers, five test-file warnings from September PRs, the
-    `REFERENCED_DYNAMICALLY` crash-reporter flag in `SPMySQLConnection.m`, a
-    1-bit `dummy-small.png`). One small sweep if anyone wants zero.
+    plan retired. Measured on this revision with a clean "Unit Tests"
+    `build-for-testing`: **19 distinct diagnostics** (35 raw lines) — the
+    accepted floor of 9 (the 5 `NSConnection` lines that go with 5b, the 4
+    intentional markers) plus **10 untracked residue lines** that arrived
+    after the retired plan's last measurement: three xib
+    `NSUnarchiveFromData` binding transformers, five test-file warnings from
+    September PRs, the `REFERENCED_DYNAMICALLY` crash-reporter flag in
+    `SPMySQLConnection.m`, and a 1-bit `dummy-small.png`. (The retired plan's
+    `file:line:col` grep reports 14 of the 19, because xib, linker and asset
+    warnings carry no column.) The residue is not part of the accepted floor;
+    a fresh build that shows more than these 19 has regressed. One small
+    sweep removes the 10.
 - **Earlier modernization arcs** (NSArchiver -> keyed archiving, WebView ->
   WKWebView for printing and the help viewer, NSUserNotification ->
   SANotificationCenter, the keyed-archiver initializer migration with the spf
@@ -713,8 +718,9 @@ what is actually next.
    the old step 1; only worth doing to keep the floor at the four markers.
 4. **Decide the PostgreSQL question rather than wait on it.** #2482 and #2493
    are drafts that have not moved since 2026-08-03, and Phase E has been gated
-   on them. Meanwhile `SPTableContent.m` and `SPCustomQuery.m` grew 408 lines
-   in a fortnight. Either the abstraction is going to land — in which case
+   on them. Meanwhile `SPTableContent.m` has grown 437 lines since June (+113
+   in the last fortnight alone) and `SPCustomQuery.m` sits above 4k. Either
+   the abstraction is going to land — in which case
    Phase E extractions should target `id<SPDatabaseConnection>` — or it is not,
    and Phase E should start against `SPMySQLConnection` with the seams drawn so
    an abstraction can slot in later. Continuing to wait is the one option that
