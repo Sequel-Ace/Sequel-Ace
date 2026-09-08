@@ -750,7 +750,9 @@ what is actually next.
    - Help viewer (#2542): the manual checklist against a live MySQL/MariaDB
      server was never run — TOC, term search, internal and external link
      routing, back/forward, find-in-page, selection context menu, dark/light
-     re-theme, auto-help from the query editor, close-disables-auto-help.
+     re-theme, auto-help from the query editor, close-disables-auto-help,
+     and reopening the window after closing it (the window-controller
+     lifecycle, separate from the close notification).
    - Keychain (`keychain-secitem-migration-plan.md` open question 1): keychain
      errors still surface as modal alerts marshalled to the main thread, a
      hostile choice from a background connect flow; decide between keeping
@@ -759,4 +761,4 @@ what is actually next.
      flows were verified only through their unit-tested decisions, never
      live — the passphrase sheet, host-key yes/no, cancel at each prompt, the
      keychain-miss fallback message, and a stored passphrase served from the
-     keychain. Worth one hand-on pass before 5b removes the DO rollback.
+     keychain. Worth one hands-on pass before 5b removes the DO rollback.
