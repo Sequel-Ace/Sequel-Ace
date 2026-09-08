@@ -567,19 +567,24 @@
                                     [sqlString appendString:[connection escapeAndQuoteData:object]];
                                 }
                                 else {
-                                    NSString *data = [[NSString alloc] initWithData:object encoding:[self exportOutputEncoding]];
+                                    // Raw bytes arrive in the connection encoding (utf8mb4, set above), which is
+                                    // independent of the file's output encoding. Text with a binary collation decodes
+                                    // and is written as a string; anything that is not valid in that encoding (real
+                                    // BLOB / VARBINARY content) keeps every byte through the hex form instead of a
+                                    // lossy re-decode.
+                                    NSString *data = [[NSString alloc] initWithData:object encoding:[connection stringEncoding]];
 
                                     if (data == nil) {
-                                    // warning This can corrupt data! Check if this case ever happens and if so, export as hex-string
-                                      data = [[NSString alloc] initWithData:object encoding:NSASCIIStringEncoding];
+                                        [sqlString appendString:[connection escapeAndQuoteData:object]];
                                     }
-                                  
-                                    NSString *fieldTypeGroup = [fieldDetails objectForKey:@"typegrouping"];
-                                  	if ([fieldTypeGroup isEqualToString:@"textdata"] || [fieldTypeGroup isEqualToString:@"string"]) {
-                                      [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
-                                    } else {
-                                      // it's possible that the fieldType could eq to blob
-                                      [sqlString appendFormat:@"'%@'", data];
+                                    else {
+                                        NSString *fieldTypeGroup = [fieldDetails objectForKey:@"typegrouping"];
+                                        if ([fieldTypeGroup isEqualToString:@"textdata"] || [fieldTypeGroup isEqualToString:@"string"]) {
+                                            [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
+                                        } else {
+                                            // it's possible that the fieldType could eq to blob
+                                            [sqlString appendFormat:@"'%@'", data];
+                                        }
                                     }
                                 }
                             }
