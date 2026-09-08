@@ -39,16 +39,19 @@ final class SAExportOutputEncodingTests: XCTestCase {
         XCTAssertEqual(encoding(.dot, connection: latin1), utf8)
     }
 
-    // MARK: - CSV and XML follow the connection
+    // MARK: - XML declares encoding="utf-8" in its prolog, so the body is UTF-8 (#2637)
+
+    func testXMLIsUTF8RegardlessOfConnection() {
+        XCTAssertEqual(encoding(.xml, connection: utf8), utf8)
+        XCTAssertEqual(encoding(.xml, connection: latin1), utf8)
+        XCTAssertEqual(encoding(.xml, connection: shiftJIS), utf8)
+    }
+
+    // MARK: - CSV has no declaration and follows the connection
 
     func testCSVFollowsTheConnectionEncoding() {
         XCTAssertEqual(encoding(.csv, connection: utf8), utf8)
         XCTAssertEqual(encoding(.csv, connection: latin1), latin1)
         XCTAssertEqual(encoding(.csv, connection: shiftJIS), shiftJIS)
-    }
-
-    func testXMLFollowsTheConnectionEncoding() {
-        XCTAssertEqual(encoding(.xml, connection: utf8), utf8)
-        XCTAssertEqual(encoding(.xml, connection: latin1), latin1)
     }
 }
