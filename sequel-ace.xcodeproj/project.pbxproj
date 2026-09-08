@@ -293,6 +293,9 @@
 		51974D07304B23B400C5D23D /* SACSVImportStreamDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51974D06304B23B400C5D23D /* SACSVImportStreamDecoder.swift */; };
 		9C34DCDAAFC52D3EF15C0B2B /* SACSVImportStreamDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51974D06304B23B400C5D23D /* SACSVImportStreamDecoder.swift */; };
 		51974D0C304B23DA00C5D23D /* SACSVImportStreamDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51974D0B304B23DA00C5D23D /* SACSVImportStreamDecoderTests.swift */; };
+		519788CC30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */; };
+		519788CD30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */; };
+		519788D130502FC700C5D23D /* SAExportOutputEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
 		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
@@ -1204,6 +1207,8 @@
 		5193502E2567D2FB001272B5 /* CollectionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtension.swift; sourceTree = "<group>"; };
 		51974D06304B23B400C5D23D /* SACSVImportStreamDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACSVImportStreamDecoder.swift; sourceTree = "<group>"; };
 		51974D0B304B23DA00C5D23D /* SACSVImportStreamDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACSVImportStreamDecoderTests.swift; sourceTree = "<group>"; };
+		519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAExportOutputEncoding.swift; sourceTree = "<group>"; };
+		519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAExportOutputEncodingTests.swift; sourceTree = "<group>"; };
 		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
@@ -2607,6 +2612,7 @@
 				582F02301370B52600B30621 /* SPExportFileNameTokenObject.m */,
 				17F90E451210B41100274C98 /* Model */,
 				173C836C11AAD24300B8B084 /* Exporters */,
+				519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */,
 			);
 			name = "Data Export";
 			path = DataExport;
@@ -2769,6 +2775,7 @@
 				93E86B9CAE3B927AC789893E /* SAFieldEditorCommitPolicyTests.swift */,
 				51974D0B304B23DA00C5D23D /* SACSVImportStreamDecoderTests.swift */,
 				0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */,
+				519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */,
 			);
 			name = "Unit Tests";
 			path = UnitTests;
@@ -3666,6 +3673,8 @@
 				51AC3BA93047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift in Sources */,
 				5147B0172F8D000100C4C14A /* SPCSVParser.m in Sources */,
 				5147B0182F8D000100C4C14A /* SPNotLoaded.m in Sources */,
+				519788D130502FC700C5D23D /* SAExportOutputEncodingTests.swift in Sources */,
+				519788CD30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */,
@@ -3985,6 +3994,7 @@
 				583CA21512EC8B2200C9E763 /* SPWindow.m in Sources */,
 				1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */,
 				582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */,
+				519788CC30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */,
 				500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */,
 				584D878B15140FEB00F24774 /* SPObjectAdditions.m in Sources */,
 				584D87921514101E00F24774 /* SPDatabaseStructure.m in Sources */,
