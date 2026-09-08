@@ -104,9 +104,10 @@ Key deliverables:
 
 ## Current codebase pain points
 
-Measured on `main` at `d118414a5` (2026-09-07) with `wc -l`. The earlier
-columns are the previous revisions, so each delta is about two weeks of
-feature work.
+Measured on `main` at `d118414a5` (2026-09-07) with `wc -l`. The June column
+is the post-decoupling baseline, roughly six weeks before Aug 11; the three
+later columns are two weeks apart, so only those deltas read as a fortnight
+of feature work.
 
 | File | Jun 2026 | Aug 11 | Aug 24 | **Sep 7** | Problem |
 |------|------|------|------|------|---------|
