@@ -578,13 +578,9 @@
                                         [sqlString appendString:[connection escapeAndQuoteData:object]];
                                     }
                                     else {
-                                        NSString *fieldTypeGroup = [fieldDetails objectForKey:@"typegrouping"];
-                                        if ([fieldTypeGroup isEqualToString:@"textdata"] || [fieldTypeGroup isEqualToString:@"string"]) {
-                                            [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
-                                        } else {
-                                            // it's possible that the fieldType could eq to blob
-                                            [sqlString appendFormat:@"'%@'", data];
-                                        }
+                                        // Whatever the column type, the decoded value is a string literal
+                                        // in the dump and has to be escaped like one.
+                                        [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
                                     }
                                 }
                             }
