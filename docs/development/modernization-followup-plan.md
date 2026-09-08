@@ -1,73 +1,85 @@
 # Sequel Ace Modernization — Follow-up Plan
 
-> **Revised 2026-08-24; SSH tunnel IPC status updated 2026-09-01; warnings
-> status updated 2026-09-04.** Sibling tracks: the build-warning burn-down in
-> `docs/development/warnings-elimination-plan.md` (all sweeps merged; the
-> bundled OpenSSL and the whole MySQL client were rebuilt from source for 13.5
-> without Homebrew on 2026-09-04, and of the deferred set only the
-> NSConnection deletion, #2623, is still open), the help-viewer rewrite in
+> **Revised 2026-09-07.** Sibling tracks: the help-viewer rewrite in
 > `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
 > in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
-> the SSH-tunnel IPC design in `docs/development/ssh-tunnel-xpc-migration-plan.md`
-> (not started), the keychain `SecItem*` migration in
-> `docs/development/keychain-secitem-migration-plan.md` (executed; release
-> soak pending), agent ground rules in `AGENTS.md`.
+> the SSH-tunnel IPC migration in `docs/development/ssh-tunnel-xpc-migration-plan.md`
+> (steps 0-5a merged; 5b, #2623, merges with the next release), the keychain
+> `SecItem*` migration in `docs/development/keychain-secitem-migration-plan.md`
+> (executed, merged as #2611-#2615), agent ground rules in `AGENTS.md`. The
+> build-warning burn-down plan was retired on 2026-09-07 once complete; its
+> floor and the two findings worth keeping now live in `AGENTS.md`.
 
-## State of the world (2026-08-24 revision)
+## State of the world (2026-09-07 revision)
 
-Everything in this section was re-derived from `main` at `3763d5247` on the
+Everything in this section was re-derived from `main` at `d118414a5` on the
 revision date, not carried forward from the previous pass.
 
 - **Phases A1-A4, B3, C1a/C1b, C2a/C2b, C3, D1-D3**: done as detailed below.
   The SwiftUI connection screen is no longer scaffolding — see the C3 note.
-- **The platform floor moved to macOS 13.5 and the app is now 6.0.0**
-  (#2587, merged 2026-08-24). What that changed for this plan:
-  - `SAGroupedFormStyle`, both `SARecordView` macOS 12 fallbacks and the
-    `SAPrintUtility` 13.3 fallbacks are gone — the second, untested
-    print-background rendering path with them.
-  - **`@Observable` is still blocked.** It needs macOS 14, so the
-    invalidation-granularity work below stays parked; 13.5 did not move it.
-    Availability gates in this codebase should now name **13.6 or later** or
-    they are dead code (`AGENTS.md`).
-  - It unblocked Step 4 of the SSH-tunnel XPC plan, which was the actual reason
-    for the bump: `-[NSXPCListener setConnectionCodeSigningRequirement:]` is
-    13+ and had no supported equivalent on 12.
-- **Modernization arcs completed** (see warnings plan for details):
-  NSArchiver -> keyed archiving (SAArchiving, all call sites), WebView ->
-  WKWebView for bundle output, all print flows (SAPrintUtility +
-  SAHTMLPrintRenderer + SAPrintAccessoryController) *and* the MySQL help viewer
-  (SAHelpViewer*) — no legacy WebKit left, NSUserNotification ->
-  SANotificationCenter, keyed-archiver initializer migration (spf wire format
-  pinned by SAKeyedArchiveCompatTests), AppKit deprecation batch 3,
-  SPDatabaseDocument.h nullability audit, Swift 6 concurrency readiness
-  (step 8), the AppKit validation/editing protocols and both drag-API
-  migrations (steps 9a/9b).
+- **Platform floor macOS 13.5, app 6.0.0** (#2587). **`@Observable` is still
+  blocked** (needs macOS 14), so the invalidation-granularity work stays
+  parked; availability gates should name **13.6 or later** or they are dead
+  code (`AGENTS.md`).
+- **Infrastructure arcs completed since the August revision:**
+  - Keychain `SecItem*` migration (#2611-#2615): `SPKeychain` deleted,
+    `SAKeychain` behind `SAKeychainProviding`, proven by a cross-implementation
+    test matrix.
+  - SSH tunnel IPC on a UNIX socket with audit-token peer validation
+    (#2618-#2622): steps 0-5a merged, the socket transport is the default.
+    Step 5b (delete Distributed Objects, #2623) merges with the next release
+    after the transport has soaked; #2630 fixed the peer-close race its tests
+    exposed in CI.
+  - Bundled OpenSSL 3.5.8 rebuilt from source for the 13.5 floor (#2626), then
+    the whole MySQL client — libmysqlclient 8.4.11, its headers, the three
+    client auth plugins as universal modules plus the libfido2 the WebAuthn
+    plugin loads — rebuilt without Homebrew (#2627-#2629). Recipes, the
+    no-Homebrew rule and the framework copy-back caveat:
+    `Frameworks/libmysqlclient/README.md`. Packaging the plugins into the
+    framework's `PlugIns` directory is still the #2590 follow-up (and will
+    need the USB device entitlement for FIDO keys).
+  - **The warnings burn-down is complete** (413 in July → a floor) and its
+    plan retired. Measured on this revision with the "Unit Tests" scheme: 14
+    unique diagnostics — the 5 `NSConnection` lines that go with 5b, the 4
+    intentional markers, and 10 untracked residue lines that arrived after the
+    plan's last measurement (three xib `NSUnarchiveFromData` binding
+    transformers, five test-file warnings from September PRs, the
+    `REFERENCED_DYNAMICALLY` crash-reporter flag in `SPMySQLConnection.m`, a
+    1-bit `dummy-small.png`). One small sweep if anyone wants zero.
+- **Earlier modernization arcs** (NSArchiver -> keyed archiving, WebView ->
+  WKWebView for printing and the help viewer, NSUserNotification ->
+  SANotificationCenter, the keyed-archiver initializer migration with the spf
+  wire format pinned by tests, AppKit deprecation batches, the
+  SPDatabaseDocument.h nullability audit, Swift 6 concurrency readiness, the
+  AppKit validation/editing protocols and both drag-API migrations) are
+  unchanged from the August revision.
 - **Community/parallel work**: MCP server (SPMCPServer + HTTP + pref pane),
   Vault auth (`SAVault*` + VaultAuthManager), AWS IAM/SSO, cell-filter suite
-  (`SACellFilter*`), SAHelpViewerOnlineURLBuilder (+tests), connection-string
-  import + duplicate detection, PHP-serialized field editor support, editable
-  Record View (`SARecordView`), column-value copy in result tables.
-- **C3 is real.** `SAConnectionWindowController` is 755 lines (was 221) and
-  hosts `SAFavoritesList` + `SAConnectionFormView` over `SAConnectionService`;
-  the "New Connection Window" menu item is enabled and runs the SwiftUI screen
-  beside the XIB flow. Still with the AppKit form: keychain password
-  auto-fill, favorites CRUD, and the Vault role-list fetch.
-- **Swift/ObjC balance**: 125 Swift files / 28.4k lines against 143 `.m` files
-  / 94.0k lines under `Source/` (excluding `ThirdParty/`) — roughly 23% Swift
-  by line count. Useful as a trend line; re-measure with
+  (`SACellFilter*`), connection-string import + duplicate detection,
+  PHP-serialized field editor support, editable Record View (`SARecordView`),
+  column-value copy in result tables; since August also type-ahead search in
+  the tables list (#2512), AND/OR groups in the content filter (#2600/#2601),
+  replaceable query favorites (#2595), CSV import split on character
+  boundaries (#2632) and the ENUM popup edit fixes.
+- **C3 is real.** `SAConnectionWindowController` is 754 lines and hosts
+  `SAFavoritesList` + `SAConnectionFormView` over `SAConnectionService`; the
+  "New Connection Window" menu item runs the SwiftUI screen beside the XIB
+  flow. Still with the AppKit form: keychain password auto-fill, favorites
+  CRUD, and the Vault role-list fetch.
+- **Swift/ObjC balance**: 158 Swift files / 34.4k lines against 142 `.m` files
+  / 93.9k lines under `Source/` (excluding `ThirdParty/`) — **26.8% Swift** by
+  line count, up from 23% in August. Re-measure with
   `find Source -name "*.swift" -not -path "*ThirdParty*" -exec cat {} + | wc -l`.
 - **PostgreSQL abstraction is stalled, not pending.** #2482 (Rust FFI driver)
-  and #2493 (Swift abstraction) are both still **drafts**, last touched
-  2026-08-03. Phase E is gated on them (see Recommended order), so that gate
-  has not moved in three weeks — worth an explicit decision rather than
-  continued waiting.
-- **⚠️ SPConnectionController.m is 5,431 lines** (was 3,755 after the
-  decoupling branch, 5,426 at the previous revision): the connection-string
-  import, duplicate detection, Vault and AWS features landed as new ObjC
-  directly in the controller, outpacing extraction. The AGENTS.md Swift-only
-  rule postdates most of that code, and the #2491 keychain-handoff regression
-  is evidence of the integration risk here. **First slice of the fix is in
-  review**: #2583 extracts duplicate detection into `SAFavoriteDuplicateMatcher`.
+  and #2493 (Swift abstraction) are both still **drafts**, untouched since
+  2026-08-03 — five weeks now. Phase E is gated on them (see Recommended
+  order); the gate has not moved and nobody has decided.
+- **⚠️ SPConnectionController.m is 5,345 lines** — 86 lighter than August
+  after #2583 moved duplicate detection into `SAFavoriteDuplicateMatcher`, but
+  the rest of the connection-string import, Vault and AWS ObjC is still in the
+  controller. The AGENTS.md Swift-only rule postdates most of that code, and
+  the #2491 keychain-handoff regression is evidence of the integration risk.
+  Still the highest-value target on the list.
 
 ## What's been done (decoupling branch)
 
@@ -87,23 +99,24 @@ Key deliverables:
 
 ## Current codebase pain points
 
-Measured on `main` at `3763d5247` (2026-08-24) with `wc -l`. The middle column
-is the 2026-08-11 revision, so the delta is two weeks of feature work.
+Measured on `main` at `d118414a5` (2026-09-07) with `wc -l`. The earlier
+columns are the previous revisions, so each delta is about two weeks of
+feature work.
 
-| File | Jun 2026 | Aug 11 | **Aug 24** | Problem |
-|------|------|------|------|---------|
-| SPDatabaseDocument.m | 6,592 | 6,349 | **6,369** | God object; roughly flat, still the biggest |
-| SPConnectionController.m | 3,755 | 5,426 | **5,431** | REGRESSED: import/Vault/AWS ObjC landed here. #2583 starts the clawback |
-| SPTableContent.m | 5,027 | 5,145 | **5,351** | +206 in two weeks — fastest-growing file in the app |
-| SPCustomQuery.m | 3,870 | 3,904 | **4,106** | +202 in two weeks; crossed 4k |
-| SPExportController.m | 3,952 | 3,958 | **3,959** | Export logic tightly coupled to UI |
-| SPTextView.m | 3,865 | 3,878 | **3,879** | SQL text view with autocompletion |
+| File | Jun 2026 | Aug 11 | Aug 24 | **Sep 7** | Problem |
+|------|------|------|------|------|---------|
+| SPDatabaseDocument.m | 6,592 | 6,349 | 6,369 | **6,385** | God object; flat, still the biggest |
+| SPTableContent.m | 5,027 | 5,145 | 5,351 | **5,464** | +113 in two weeks — still the fastest-growing file |
+| SPConnectionController.m | 3,755 | 5,426 | 5,431 | **5,345** | −86: #2583 started the clawback; import/Vault/AWS ObjC still here |
+| SPCustomQuery.m | 3,870 | 3,904 | 4,106 | **4,069** | −37; the ENUM popup fixes moved logic out |
+| SPExportController.m | 3,952 | 3,958 | 3,959 | **3,959** | Export logic tightly coupled to UI |
+| SPTextView.m | 3,865 | 3,878 | 3,879 | **3,883** | SQL text view with autocompletion |
 
 Read the trend, not the absolute numbers: decomposition (A1-A4, D1-D3) is
-holding `SPDatabaseDocument.m` roughly flat against continuous feature work,
-which is the win. The two Phase E files are now the ones actually accelerating
-— together +408 lines in a fortnight — which strengthens the case for not
-leaving Phase E indefinitely parked behind a stalled draft.
+holding `SPDatabaseDocument.m` flat against continuous feature work, and the
+connection controller has stopped growing now that its first extraction
+landed. `SPTableContent.m` is the one file still accelerating, which keeps the
+case for not leaving Phase E parked behind a stalled draft.
 
 ## Follow-up work (prioritized)
 
@@ -674,11 +687,11 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 - Extract query execution into a service
 - Create protocols for table data source/delegate
 
-## Recommended order (2026-08-24 revision)
+## Recommended order (2026-09-07 revision)
 
-Items 1-3 of the previous revision are done; the list below is what is actually
-next. (#2583, #2584 and #2586, in review when this revision was drafted, have
-all landed since.)
+The infrastructure items of the previous revision (warnings burn-down,
+keychain, dylib rebuilds, SSH IPC through 5a) are done; the list below is
+what is actually next.
 
 1. **SPConnectionController re-containment** — 🟡 first slice landed.
    #2583 (merged) extracts connection-import duplicate detection into
@@ -688,27 +701,16 @@ all landed since.)
    naming from the shadow-rename pass) is the same shape of work and is best
    done while the code is young. This is the file that regressed; it is the
    highest-value target on the list.
-2. **Finish the warnings burn-down** — ✅ sweeps done. #2584 (532 -> 358) and
-   #2586 (358 -> 162) have both landed. Of the *deferred* set, SPKeychain
-   `SecItem*` is merged (#2611-#2615), the bundled OpenSSL was rebuilt from
-   source for the 13.5 floor on 2026-09-04 (`build-openssl.sh`; all four
-   OpenSSL linker warnings gone), and the MySQL client, headers and auth
-   plugins followed the same day as MySQL 8.4.11 built without Homebrew
-   (`build-libmysqlclient.sh`, `Frameworks/libmysqlclient/README.md`). Only
-   the NSConnection warnings remain, and they go with item 3's step 5b. See
-   the warnings plan.
-3. **SSH tunnel IPC: NSConnection -> socket transport** — 🟡 in execution.
-   The Step 0 spike (2026-09-01) ruled XPC out — a sandboxed app cannot vend
-   `NSXPCListener(machServiceName:)` without a launchd plist — and proved the
-   plan's fallback: a UNIX socket in the container with peer code-signing
-   validation from the socket's audit token, both directions. Step 1
-   (`SASSHTunnelAuthService` replaces `SPSSHTunnel` as the vended object,
-   with teardown failing pending prompts closed), the wire format (2), the
-   socket transport behind a preference (3), audit-token peer validation both
-   ways (4) and the default flip (5a) are stacked PRs #2618-#2622; deleting DO
-   (5b) is a draft that waits for a release of soak. Highest blast radius in
-   the codebase — SSH connections break if it is wrong — so DO stays as the
-   rollback (`SPSSHTunnelUseSocketTransport -bool NO`) until then.
+2. **SSH tunnel IPC, step 5b** — ✅ steps 0-5a merged (#2618-#2622), the
+   socket transport is the default. Deleting Distributed Objects (#2623)
+   merges with the next release once the transport has soaked; until then DO
+   stays as the rollback (`SPSSHTunnelUseSocketTransport -bool NO`). That
+   merge also removes the last five accepted build warnings.
+3. **Warnings residue** (optional, small) — the ten untracked lines listed in
+   the state section: three xib binding transformers to
+   `NSSecureUnarchiveFromData`, five test-file nits, the crash-reporter
+   `REFERENCED_DYNAMICALLY` flag, one 1-bit PNG. One `#infra` PR the size of
+   the old step 1; only worth doing to keep the floor at the four markers.
 4. **Decide the PostgreSQL question rather than wait on it.** #2482 and #2493
    are drafts that have not moved since 2026-08-03, and Phase E has been gated
    on them. Meanwhile `SPTableContent.m` and `SPCustomQuery.m` grew 408 lines

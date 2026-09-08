@@ -3,14 +3,14 @@
 > **✅ Executed. Merged 2026-08-24 as #2587** (`3763d5247`), together with the
 > 6.0.0 major version bump. Kept as the record of what was changed and why —
 > read it as history, not as a proposal. The one deliberate omission,
-> rebuilding the bundled dylibs, is still outstanding and lives in
-> `warnings-elimination-plan.md` § Deferred.
+> rebuilding the bundled dylibs, was done on 2026-09-04 (#2626-#2629; recipes
+> in `Frameworks/libmysqlclient/README.md`).
 >
 > **Written 2026-08-24.** Answers the open question in
 > `docs/development/ssh-tunnel-xpc-migration-plan.md` § Step 4 ("Decision
 > needed: is bumping the deployment target to 13.0 acceptable?") and unblocks
-> two items parked in `modernization-followup-plan.md`. Siblings:
-> `warnings-elimination-plan.md`.
+> two items parked in `modernization-followup-plan.md`. Sibling: the warnings
+> burn-down plan (retired 2026-09-07 once complete).
 
 ## Scope in one line
 
@@ -247,9 +247,9 @@ changelog is regenerated then and must not be hand-edited here.
 - **Rebuilding the bundled dylibs.** The 11 → 12 bump rebuilt libmysqlclient /
   libssl / libcrypto in the same commit. It is not required here: a dylib with a
   12.0 minimum loads fine on 13. The existing linker warning (libssl.3/libcrypto
-  built for macOS 15 against a 12 target, plus the install-name mismatch, see
-  `warnings-elimination-plan.md` § Deferred) is **not fixed by this bump** and
-  stays with the dependency refresh where it belongs.
+  built for macOS 15 against a 12 target, plus the install-name mismatch) is
+  **not fixed by this bump** and stays with the dependency refresh where it
+  belongs — done since, as #2626-#2629.
 - **CI.** `ci_pr_tests.yml` already runs on `macos-26` with Xcode 26.6, and
   `ci_scripts/ci_post_clone.sh` is a no-op stub. Nothing to change.
 - **SPM dependencies.** Firebase 12.11, Alamofire 5.9, SnapKit 5.6, FMDB 2.7.9

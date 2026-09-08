@@ -11,7 +11,8 @@
 > done and is the first PR.
 >
 > **Written 2026-08-24.** Picks up the "NSConnection → NSXPCConnection" item
-> deferred in `docs/development/warnings-elimination-plan.md` (§ Deferred).
+> deferred by the warnings burn-down plan (retired 2026-09-07 once complete;
+> the NSConnection lines are the last item it left open, and go with step 5b).
 > Pairs with the deferred SPKeychain `SecItem` migration — both touch how the
 > tunnel assistant obtains passwords. Sibling: `modernization-followup-plan.md`.
 
