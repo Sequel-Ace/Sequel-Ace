@@ -1876,11 +1876,6 @@ set_input:
 #pragma mark - SPExportFileUtilitiesPrivateAPI
 
 /**
- * Writes the CSV file header to the supplied export file.
- *
- * @param file The export file to write the header to.
- */
-/**
  * The encoding the exporters write their files in. SQL and DOT dumps are always UTF-8 (they switch
  * the connection to utf8mb4 and, for SQL, declare it in the file); CSV and XML follow the connection
  * encoding. The decision itself lives in SAExportOutputEncoding so it can be unit tested.
@@ -1900,6 +1895,11 @@ set_input:
 	return [SAExportOutputEncoding outputEncodingForFormat:format connectionEncoding:[connection stringEncoding]];
 }
 
+/**
+ * Writes the CSV file header to the supplied export file.
+ *
+ * @param file The export file to write the header to.
+ */
 - (void)writeCSVHeaderToExportFile:(SPExportFile *)file
 {
 	NSMutableString *lineEnding = [NSMutableString stringWithString:[exportCSVLinesTerminatedField stringValue]];
