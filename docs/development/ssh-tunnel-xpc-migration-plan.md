@@ -605,7 +605,7 @@ day and captures most of the security benefit.
 1. ~~**Does the spike pass?**~~ Answered 2026-09-01: no for XPC, yes for the
    socket fallback — see Step 0's result and the decision under it.
 2. ~~**Can we require macOS 13?**~~ Answered: yes. The deployment target moved
-   to 13.5 (`macos-13-minimum-plan.md`), so Step 4 is a real win, not a partial
+   to 13.5 (#2587), so Step 4 is a real win, not a partial
    one.
 3. ~~**Sequencing against the SPKeychain `SecItem` migration.**~~ Answered by
    that migration's Step 3 (see

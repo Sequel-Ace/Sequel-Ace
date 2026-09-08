@@ -1,14 +1,18 @@
 # Sequel Ace Modernization — Follow-up Plan
 
-> **Revised 2026-09-07.** Sibling tracks: the help-viewer rewrite in
-> `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
-> in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
-> the SSH-tunnel IPC migration in `docs/development/ssh-tunnel-xpc-migration-plan.md`
-> (steps 0-5a merged; 5b, #2623, merges with the next release), the keychain
-> `SecItem*` migration in `docs/development/keychain-secitem-migration-plan.md`
-> (executed, merged as #2611-#2615), agent ground rules in `AGENTS.md`. The
-> build-warning burn-down plan was retired on 2026-09-07 once complete; its
-> floor and the two findings worth keeping now live in `AGENTS.md`.
+> **Revised 2026-09-07.** Sibling documents: the SSH-tunnel IPC migration in
+> `docs/development/ssh-tunnel-xpc-migration-plan.md` (steps 0-5a merged; 5b,
+> #2623, merges with the next release; stays as the design record of the
+> socket transport) and the keychain `SecItem*` migration in
+> `docs/development/keychain-secitem-migration-plan.md` (executed, merged as
+> #2611-#2615; stays as the design record of `SAKeychain`), plus agent ground
+> rules in `AGENTS.md`. Three executed plans were retired on 2026-09-07 once
+> their content had nowhere left to point: the warnings burn-down (its floor
+> and two lasting findings moved to `AGENTS.md`), the help-viewer WKWebView
+> rewrite (#2542; its findings live as comments in `SAWebView` and
+> `SAHelpViewerModel`, pinned by tests) and the macOS 13.5 floor (#2587; its
+> availability-gate rule is in `AGENTS.md`). Their remaining loose ends are
+> item 9 of the recommended order.
 
 ## State of the world (2026-09-07 revision)
 
@@ -741,3 +745,18 @@ what is actually next.
 8. **Invalidation granularity** — parked until the deployment target reaches
    macOS 14 for `@Observable`. 13.5 did not unlock it. `SATimeZonePicker`
    remains the pattern for any genuinely expensive section in the meantime.
+9. **Loose ends inherited from retired plans** — none blocks anything; pick
+   up when near the code.
+   - Help viewer (#2542): the manual checklist against a live MySQL/MariaDB
+     server was never run — TOC, term search, internal and external link
+     routing, back/forward, find-in-page, selection context menu, dark/light
+     re-theme, auto-help from the query editor, close-disables-auto-help.
+   - Keychain (`keychain-secitem-migration-plan.md` open question 1): keychain
+     errors still surface as modal alerts marshalled to the main thread, a
+     hostile choice from a background connect flow; decide between keeping
+     them and a log-plus-non-modal notice.
+   - SSH tunnel (`ssh-tunnel-xpc-migration-plan.md` § Step 4): five prompt
+     flows were verified only through their unit-tested decisions, never
+     live — the passphrase sheet, host-key yes/no, cancel at each prompt, the
+     keychain-miss fallback message, and a stored passphrase served from the
+     keychain. Worth one hand-on pass before 5b removes the DO rollback.
