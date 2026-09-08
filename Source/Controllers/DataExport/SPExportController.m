@@ -1698,7 +1698,7 @@ set_input:
 		[exporter setConnection:connection];
 		[exporter setDatabaseName:databaseName];
 		[exporter setServerSupport:[self serverSupport]];
-		[exporter setExportOutputEncoding:[connection stringEncoding]];
+		[exporter setExportOutputEncoding:[self outputEncodingForCurrentExportType]];
 		[exporter setExportMaxProgress:(NSInteger)[exportProgressIndicator bounds].size.width];
 		[exporter setExportUsingLowMemoryBlockingStreaming:([exportProcessLowMemoryButton state] == NSControlStateValueOn)];
 		[exporter setExportOutputCompressionFormat:(SPFileCompressionFormat)[exportOutputCompressionFormatPopupButton indexOfSelectedItem]];
@@ -1874,6 +1874,26 @@ set_input:
 }
 
 #pragma mark - SPExportFileUtilitiesPrivateAPI
+
+/**
+ * The encoding the exporters write their files in. SQL and DOT dumps are always UTF-8 (they switch
+ * the connection to utf8mb4 and, for SQL, declare it in the file); CSV and XML follow the connection
+ * encoding. The decision itself lives in SAExportOutputEncoding so it can be unit tested.
+ */
+- (NSStringEncoding)outputEncodingForCurrentExportType
+{
+	SAExportOutputFormat format;
+
+	switch (exportType) {
+		case SPSQLExport: format = SAExportOutputFormatSql; break;
+		case SPXMLExport: format = SAExportOutputFormatXml; break;
+		case SPDotExport: format = SAExportOutputFormatDot; break;
+		case SPCSVExport:
+		default:          format = SAExportOutputFormatCsv; break;
+	}
+
+	return [SAExportOutputEncoding outputEncodingForFormat:format connectionEncoding:[connection stringEncoding]];
+}
 
 /**
  * Writes the CSV file header to the supplied export file.
