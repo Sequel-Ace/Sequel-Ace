@@ -3819,7 +3819,8 @@ set_input:
 				string = [NSString stringWithFormat:@"</%@>\n", [self.exportDatabaseName HTMLEscapeString]];
 			}
 
-			[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[connection stringEncoding]]];
+			// The closing tag has to match the body and the prolog, not the connection
+			[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[exporter exportOutputEncoding]]];
 			[[exporter exportOutputFile] close];
 		}
 
@@ -3840,7 +3841,8 @@ set_input:
 			string = [NSString stringWithFormat:@"</%@>\n", [self.exportDatabaseName HTMLEscapeString]];
 		}
 
-		[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[connection stringEncoding]]];
+		// The closing tag has to match the body and the prolog, not the connection
+		[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[exporter exportOutputEncoding]]];
 		[[exporter exportOutputFile] close];
 
 		[self exportEnded];
