@@ -31,7 +31,9 @@
 @class SPDatabaseDocument;
 @class SPSplitView;
 
-@interface SPContentFilterManager : NSWindowController <NSOpenSavePanelDelegate>
+#import "SPTextView.h"
+
+@interface SPContentFilterManager : NSWindowController <NSOpenSavePanelDelegate, SPTextViewDelegate>
 {
 	NSUserDefaults *prefs;
 	
@@ -60,6 +62,8 @@
 	
 	NSString *filterType;
 }
+
+@property (readonly, strong) SPDatabaseDocument *tableDocumentInstance;
 
 - (instancetype)initWithDatabaseDocument:(SPDatabaseDocument *)document forFilterType:(NSString *)compareType;
 

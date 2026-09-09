@@ -131,6 +131,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 // ivars instead of letting clang autosynthesize fresh `_name` ivars that xib
 // outlets wouldn't reach.
 @synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize tablesListInstance = tablesListInstance;
 @synthesize textView = textView;
 @synthesize currentQueryRange = currentQueryRange;
 @synthesize sortColumn = sortColumn;

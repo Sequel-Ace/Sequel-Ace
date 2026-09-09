@@ -28,12 +28,13 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SPTextView;
 @class SPDatabaseDocument;
 @class SPCustomQuery;
 @class SPSplitView;
 
-@interface SPQueryFavoriteManager : NSWindowController <NSOpenSavePanelDelegate>
+#import "SPTextView.h"
+
+@interface SPQueryFavoriteManager : NSWindowController <NSOpenSavePanelDelegate, SPTextViewDelegate>
 {
 	NSUserDefaults *prefs;
 	NSURL *delegatesFileURL;
@@ -53,6 +54,8 @@
 
 	BOOL isTableCellEditing;
 }
+
+@property (readonly, strong) SPDatabaseDocument *tableDocumentInstance;
 
 - (instancetype)initWithDelegate:(SPCustomQuery *)managerDelegate;
 

@@ -54,6 +54,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 @implementation SPContentFilterManager
 
+@synthesize tableDocumentInstance = tableDocumentInstance;
+
 /**
  * Initialize the manager with the supplied document
  */

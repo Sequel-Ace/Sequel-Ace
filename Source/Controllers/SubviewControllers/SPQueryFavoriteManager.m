@@ -57,6 +57,8 @@
 
 @implementation SPQueryFavoriteManager
 
+@synthesize tableDocumentInstance = tableDocumentInstance;
+
 /**
  * Initialize the manager with the supplied delegate.
  */

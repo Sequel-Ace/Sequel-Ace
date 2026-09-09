@@ -71,6 +71,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 @implementation SPExtendedTableInfo
 
 @synthesize connection;
+@synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize tablesListInstance = tablesListInstance;
 
 /**
  * Upon awakening bind the create syntax text view's background colour.

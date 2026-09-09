@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseContentViewDelegate.h"
+#import "SPTextView.h"
 
 #define SP_SAVE_ALL_FAVORTITE_MENUITEM_TAG       100001
 #define SP_SAVE_SELECTION_FAVORTITE_MENUITEM_TAG 100000
@@ -45,14 +46,13 @@
 @class SPFieldEditorController;
 @class SPMySQLConnection;
 @class SPMySQLStreamingResultStore;
-@class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SARecordViewController;
 
 @class SPBracketHighlighter;
 
-@interface SPCustomQuery : NSObject <NSTableViewDataSource, NSWindowDelegate, NSTableViewDelegate, SPDatabaseContentViewDelegate>
+@interface SPCustomQuery : NSObject <NSTableViewDataSource, NSWindowDelegate, NSTableViewDelegate, SPDatabaseContentViewDelegate, SPTextViewDelegate>
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
@@ -168,6 +168,7 @@
 
 // Exposed for Swift extensions (see SPCustomQuery+Explain.swift)
 @property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
+@property (readonly, strong) SPTablesList *tablesListInstance;
 @property (readonly, strong) SPTextView *textView;
 @property (readonly) NSRange currentQueryRange;
 @property (readwrite, strong) NSTableColumn *sortColumn;

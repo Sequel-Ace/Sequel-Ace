@@ -35,7 +35,9 @@
 @class SPMySQLConnection;
 @class SPDatabaseDocument;
 
-@interface SPExtendedTableInfo : NSObject
+#import "SPTextView.h"
+
+@interface SPExtendedTableInfo : NSObject <SPTextViewDelegate>
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
@@ -69,6 +71,8 @@
 }
 
 @property (readwrite, strong) SPMySQLConnection *connection;
+@property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
+@property (readonly, strong) SPTablesList *tablesListInstance;
 
 // IBAction methods
 - (IBAction)reloadTable:(id)sender;
