@@ -30,8 +30,9 @@
 
 #import <Quartz/Quartz.h> // QuickLookUI
 
+#import "SPImageView.h"
+
 @class SABaseFormatter;
-@class SPImageView;
 
 //This is an informal protocol
 @protocol _QLPreviewPanelController
@@ -52,7 +53,7 @@
  * This class offers a sheet for editing different kind of data such as text, blobs (including images) as 
  * editSheet and bit fields as bitSheet. 
  */
-@interface SPFieldEditorController : NSWindowController <NSComboBoxDataSource, QLPreviewPanelDataSource, QLPreviewPanelDelegate, _QLPreviewPanelController>
+@interface SPFieldEditorController : NSWindowController <NSComboBoxDataSource, QLPreviewPanelDataSource, QLPreviewPanelDelegate, _QLPreviewPanelController, SPImageViewDelegate>
 {
 	IBOutlet id editSheetProgressBar;
 	IBOutlet id editSheetSegmentControl;

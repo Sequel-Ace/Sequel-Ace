@@ -359,19 +359,38 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Go backward or forward in the history depending on the menu item selected.
  */
 - (void)backForwardInHistory:(id)sender {
+    switch ([sender tag]) {
+        case 0: // Go backward
+            [self goBackInHistory];
+            break;
+        case 1: // Go forward
+            [self goForwardInHistory];
+            break;
+    }
+}
+
+/**
+ * Go back one step in the table history, after ending any editing and saving as required.
+ */
+- (void)goBackInHistory {
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
     }
 
-    switch ([sender tag]) {
-        case 0: // Go backward
-            [spHistoryControllerInstance goBackInHistory];
-            break;
-        case 1: // Go forward
-            [spHistoryControllerInstance goForwardInHistory];
-            break;
+    [spHistoryControllerInstance goBackInHistory];
+}
+
+/**
+ * Go forward one step in the table history, after ending any editing and saving as required.
+ */
+- (void)goForwardInHistory {
+    // Ensure history navigation is permitted - trigger end editing and any required saves
+    if (![self couldCommitCurrentViewActions]) {
+        return;
     }
+
+    [spHistoryControllerInstance goForwardInHistory];
 }
 
 #pragma mark -
