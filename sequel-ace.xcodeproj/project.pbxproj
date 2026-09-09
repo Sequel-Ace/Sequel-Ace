@@ -89,6 +89,7 @@
 		17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641690EF01F37001BC333 /* ImageAndTextCell.m */; };
 		17E641830EF01FA8001BC333 /* SPImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E6417F0EF01FA8001BC333 /* SPImageView.m */; };
 		17E641840EF01FA8001BC333 /* SPTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E641810EF01FA8001BC333 /* SPTextView.m */; };
+		32F9E22AF3964434B1429591 /* SATextViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB59B1CBC3F48418228E1EC /* SATextViewDelegate.swift */; };
 		17E641D10EF02036001BC333 /* grabber-horizontal.png in Resources */ = {isa = PBXBuildFile; fileRef = 17E6419D0EF02036001BC333 /* grabber-horizontal.png */; };
 		17E641D20EF02036001BC333 /* grabber-vertical.png in Resources */ = {isa = PBXBuildFile; fileRef = 17E6419E0EF02036001BC333 /* grabber-vertical.png */; };
 		17E641F20EF02036001BC333 /* toolbar-switch-to-structure.png in Resources */ = {isa = PBXBuildFile; fileRef = 17E641BE0EF02036001BC333 /* toolbar-switch-to-structure.png */; };
@@ -992,6 +993,7 @@
 		17E6417F0EF01FA8001BC333 /* SPImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPImageView.m; sourceTree = "<group>"; };
 		17E641800EF01FA8001BC333 /* SPTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTextView.h; sourceTree = "<group>"; };
 		17E641810EF01FA8001BC333 /* SPTextView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTextView.m; sourceTree = "<group>"; };
+		1FB59B1CBC3F48418228E1EC /* SATextViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATextViewDelegate.swift; sourceTree = "<group>"; };
 		17E6419D0EF02036001BC333 /* grabber-horizontal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "grabber-horizontal.png"; sourceTree = "<group>"; };
 		17E6419E0EF02036001BC333 /* grabber-vertical.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "grabber-vertical.png"; sourceTree = "<group>"; };
 		17E641BE0EF02036001BC333 /* toolbar-switch-to-structure.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-structure.png"; sourceTree = "<group>"; };
@@ -2244,6 +2246,7 @@
 			children = (
 				17E641800EF01FA8001BC333 /* SPTextView.h */,
 				17E641810EF01FA8001BC333 /* SPTextView.m */,
+				1FB59B1CBC3F48418228E1EC /* SATextViewDelegate.swift */,
 				BC1847E80FE6EC8400094BFB /* SPEditSheetTextView.h */,
 				BC1847E90FE6EC8400094BFB /* SPEditSheetTextView.m */,
 				BC1944CE1297291800A236CD /* SPBundleCommandTextView.h */,
@@ -3790,6 +3793,7 @@
 				623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
+				32F9E22AF3964434B1429591 /* SATextViewDelegate.swift in Sources */,
 				51AC3B7A304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift in Sources */,
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,
 				1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */,

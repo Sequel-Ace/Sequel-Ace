@@ -28,13 +28,12 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+@class SPTextView;
 @class SPDatabaseDocument;
 @class SPCustomQuery;
 @class SPSplitView;
 
-#import "SPTextView.h"
-
-@interface SPQueryFavoriteManager : NSWindowController <NSOpenSavePanelDelegate, SPTextViewDelegate>
+@interface SPQueryFavoriteManager : NSWindowController <NSOpenSavePanelDelegate>
 {
 	NSUserDefaults *prefs;
 	NSURL *delegatesFileURL;

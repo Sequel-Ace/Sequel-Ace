@@ -39,17 +39,6 @@
 @class SPCopyTable;
 @class NoodleLineNumberView;
 
-/**
- * A text view delegate can hand the view the document and tables list the text is
- * edited against. Both are optional; a view whose delegate provides neither still
- * works, it just has no structure data to offer for completion and printing.
- */
-@protocol SPTextViewDelegate <NSTextViewDelegate>
-@optional
-- (SPDatabaseDocument *)tableDocumentInstance;
-- (SPTablesList *)tablesListInstance;
-@end
-
 typedef struct {
 	NSInteger location; // snippet location
 	NSInteger length;   // snippet length

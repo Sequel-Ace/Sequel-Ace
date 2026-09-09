@@ -31,9 +31,7 @@
 @class SPDatabaseDocument;
 @class SPSplitView;
 
-#import "SPTextView.h"
-
-@interface SPContentFilterManager : NSWindowController <NSOpenSavePanelDelegate, SPTextViewDelegate>
+@interface SPContentFilterManager : NSWindowController <NSOpenSavePanelDelegate>
 {
 	NSUserDefaults *prefs;
 	

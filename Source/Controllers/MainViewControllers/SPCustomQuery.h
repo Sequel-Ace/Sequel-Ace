@@ -30,7 +30,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseContentViewDelegate.h"
-#import "SPTextView.h"
 
 #define SP_SAVE_ALL_FAVORTITE_MENUITEM_TAG       100001
 #define SP_SAVE_SELECTION_FAVORTITE_MENUITEM_TAG 100000
@@ -46,13 +45,14 @@
 @class SPFieldEditorController;
 @class SPMySQLConnection;
 @class SPMySQLStreamingResultStore;
+@class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SARecordViewController;
 
 @class SPBracketHighlighter;
 
-@interface SPCustomQuery : NSObject <NSTableViewDataSource, NSWindowDelegate, NSTableViewDelegate, SPDatabaseContentViewDelegate, SPTextViewDelegate>
+@interface SPCustomQuery : NSObject <NSTableViewDataSource, NSWindowDelegate, NSTableViewDelegate, SPDatabaseContentViewDelegate>
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;

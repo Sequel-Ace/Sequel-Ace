@@ -35,9 +35,7 @@
 @class SPMySQLConnection;
 @class SPDatabaseDocument;
 
-#import "SPTextView.h"
-
-@interface SPExtendedTableInfo : NSObject <SPTextViewDelegate>
+@interface SPExtendedTableInfo : NSObject
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;

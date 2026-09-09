@@ -102,33 +102,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 @implementation SPTextView
 
-#pragma mark -
-#pragma mark Delegate accessors
-
-/**
- * The document the delegate works against, or nil if the delegate provides none.
- */
-- (SPDatabaseDocument *)delegateDocument
-{
-	id<SPTextViewDelegate> textDelegate = (id<SPTextViewDelegate>)[self delegate];
-
-	if (![textDelegate respondsToSelector:@selector(tableDocumentInstance)]) return nil;
-
-	return [textDelegate tableDocumentInstance];
-}
-
-/**
- * The tables list the delegate works against, or nil if the delegate provides none.
- */
-- (SPTablesList *)delegateTablesList
-{
-	id<SPTextViewDelegate> textDelegate = (id<SPTextViewDelegate>)[self delegate];
-
-	if (![textDelegate respondsToSelector:@selector(tablesListInstance)]) return nil;
-
-	return [textDelegate tablesListInstance];
-}
-
 @synthesize queryHiliteColor;
 @synthesize queryEditorBackgroundColor;
 @synthesize commentColor;
