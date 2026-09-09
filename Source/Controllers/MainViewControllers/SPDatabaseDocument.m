@@ -373,6 +373,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Go back one step in the table history, after ending any editing and saving as required.
  */
 - (void)goBackInHistory {
+    // Nothing to navigate to - leave any in-progress editing alone
+    if (![spHistoryControllerInstance countPrevious]) {
+        return;
+    }
+
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
@@ -385,6 +390,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Go forward one step in the table history, after ending any editing and saving as required.
  */
 - (void)goForwardInHistory {
+    // Nothing to navigate to - leave any in-progress editing alone
+    if (![spHistoryControllerInstance countForward]) {
+        return;
+    }
+
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
