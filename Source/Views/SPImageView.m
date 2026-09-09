@@ -41,23 +41,12 @@
  */
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
 {
-	id<SPImageViewDelegate> delegateForUse = nil;
-
-	// If the delegate or the delegate's content instance doesn't implement processUpdatedImageData:,
-	// return the super's implementation
-	if (delegate) {
-		if ([delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
-			delegateForUse = delegate;
-		}
-		// TODO (#2603): private ivar accessed from outside via KVC (upstream sequelpro#2978)
-		else if ( [delegate valueForKey:@"tableContentInstance"]
-					&& [[delegate valueForKey:@"tableContentInstance"] respondsToSelector:@selector(processUpdatedImageData:)] ) {
-			delegateForUse = [delegate valueForKey:@"tableContentInstance"];
-		}
-	}
-	if (!delegateForUse) {
+	// If the delegate doesn't implement processUpdatedImageData:, return the super's implementation
+	if (![delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
 		return [super performDragOperation:sender];
 	}
+
+	id<SPImageViewDelegate> delegateForUse = delegate;
 
 	// If a filename is available, attempt to read it and pass it to the delegate
 	NSArray *droppedFileURLs = [[sender draggingPasteboard] readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
@@ -106,23 +95,8 @@
 
 - (void)paste:(id)sender
 {
-	// [super paste:sender];
-	id<SPImageViewDelegate> delegateForUse = nil;
-
-	// If the delegate or the delegate's content instance doesn't implement processUpdatedImageData:,
-	// return the super's implementation
-	if (delegate) {
-		if ([delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
-			delegateForUse = delegate;
-		}
-		// TODO (#2603): private ivar accessed from outside via KVC (upstream sequelpro#2978)
-		else if ( [delegate valueForKey:@"tableContentInstance"]
-					&& [[delegate valueForKey:@"tableContentInstance"] respondsToSelector:@selector(processUpdatedImageData:)] ) {
-			delegateForUse = [delegate valueForKey:@"tableContentInstance"];
-		}
-	}
-	if (delegateForUse) {
-		[delegateForUse processPasteImageData];
+	if ([delegate respondsToSelector:@selector(processPasteImageData)]) {
+		[delegate processPasteImageData];
 	}
 }
 
