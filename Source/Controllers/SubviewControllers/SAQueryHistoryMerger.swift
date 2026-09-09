@@ -21,7 +21,7 @@ import Foundation
 @objc public final class SAQueryHistoryMerger: NSObject {
     /// - Parameters:
     ///   - newEntries: The entries to add, most recent intent first.
-    ///   - existing: The stored history, oldest first. Sourced from plists a
+    ///   - existing: The stored history, newest first. Sourced from plists a
     ///     user can hand-edit (preferences, .spf session files), so elements
     ///     are accepted as `Any` and anything that is not a string is dropped
     ///     rather than trapping in the ObjC-to-Swift array bridge.

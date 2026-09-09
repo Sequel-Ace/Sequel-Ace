@@ -1015,9 +1015,24 @@ static SPQueryController *sharedQueryController = nil;
 		// The prefs array may never have been written - the old
 		// addItemsWithTitles:nil was a no-op, the Swift bridge would trap.
 		BOOL useSQLiteHistory = (_SQLiteHistoryManager.migratedPrefsToDB == YES);
-		NSArray *existingHistory = useSQLiteHistory
-			? _SQLiteHistoryManager.queryHist.allValues
-			: ([prefs objectForKey:SPQueryHistory] ?: @[]);
+		NSArray *existingHistory;
+		if (useSQLiteHistory) {
+			// allKeys specifies no order - sort newest first (highest id),
+			// the same ordering the history menu uses, so the merger trims
+			// the actual oldest entries at the limit. NSNumber compare: keeps
+			// the full Int64 width of the row ids.
+			NSArray *sortedKeys = [_SQLiteHistoryManager.queryHist.allKeys sortedArrayUsingComparator:^NSComparisonResult(NSNumber *key1, NSNumber *key2) {
+				return [key2 compare:key1];
+			}];
+			NSMutableArray *sortedValues = [NSMutableArray arrayWithCapacity:sortedKeys.count];
+			for (NSNumber *key in sortedKeys) {
+				[sortedValues addObject:[_SQLiteHistoryManager.queryHist objectForKey:key]];
+			}
+			existingHistory = sortedValues;
+		}
+		else {
+			existingHistory = [prefs objectForKey:SPQueryHistory] ?: @[];
+		}
 		NSArray *merged = [SAQueryHistoryMerger mergedHistoryWithNewEntries:@[history]
 		                                                           existing:existingHistory
 		                                                              limit:maxHistoryItems];
