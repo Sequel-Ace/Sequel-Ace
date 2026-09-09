@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D10000002F8C000600C4C14A /* SAAppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000022F8C000600C4C14A /* SAAppearancePreference.swift */; };
+		D10000012F8C000600C4C14A /* SAAppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000022F8C000600C4C14A /* SAAppearancePreference.swift */; };
+		D10000032F8C000600C4C14A /* SATooltipDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000052F8C000600C4C14A /* SATooltipDismissal.swift */; };
+		D10000042F8C000600C4C14A /* SATooltipDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000052F8C000600C4C14A /* SATooltipDismissal.swift */; };
+		D10000062F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */; };
+		D10000072F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */; };
+		D10000092F8C000600C4C14A /* SAProfilingFollowupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000102F8C000600C4C14A /* SAProfilingFollowupTests.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
 		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
@@ -850,6 +857,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D10000022F8C000600C4C14A /* SAAppearancePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAppearancePreference.swift; sourceTree = "<group>"; };
+		D10000052F8C000600C4C14A /* SATooltipDismissal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATooltipDismissal.swift; sourceTree = "<group>"; };
+		D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAQueryHistoryMerger.swift; sourceTree = "<group>"; };
+		D10000102F8C000600C4C14A /* SAProfilingFollowupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAProfilingFollowupTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		0830448F21CA14E21CB9D255 /* SACompletionWindowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACompletionWindowLayout.swift; sourceTree = "<group>"; };
@@ -1947,6 +1958,7 @@
 				50A9F8B019EAD4B90053E571 /* SPGotoDatabaseController.m */,
 				506CE92F1A311C6C0039F736 /* SPRuleFilterController.h */,
 				506CE9301A311C6C0039F736 /* SPRuleFilterController.m */,
+				D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */,
 				CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */,
 				9BE76A3D5C9830E2F7738770 /* SPFilterTableController.m */,
 				9BE76F9BF9BDA2921CDD05AF /* SPFilterTableController.h */,
@@ -2365,6 +2377,7 @@
 				17D3C670128AD8160047709F /* SPSingleton.m */,
 				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
 				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
+				D10000052F8C000600C4C14A /* SATooltipDismissal.swift */,
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
 				5AF0C3020000000000000002 /* SAPHPSerializedValue.swift */,
 				51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */,
@@ -2805,6 +2818,7 @@
 				5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */,
 				2617B1FEDA3776DCA242666C /* SAMarkedTextInputState.swift */,
 				1AA5B97BE9E063395AB12888 /* SAAnalyticsConsentPolicy.swift */,
+				D10000022F8C000600C4C14A /* SAAppearancePreference.swift */,
 				F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */,
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
 			);
@@ -2840,6 +2854,7 @@
 				CF0000162F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m */,
 				CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */,
 				CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */,
+				D10000102F8C000600C4C14A /* SAProfilingFollowupTests.swift */,
 				CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */,
 				CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */,
 				AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */,
@@ -3633,6 +3648,10 @@
 				C3A2875D9BB7411F87F05EA3 /* SPCustomQuerySQLClassifierTests.swift in Sources */,
 				CF0000052F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
 				CF00000D2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */,
+				D10000012F8C000600C4C14A /* SAAppearancePreference.swift in Sources */,
+				D10000042F8C000600C4C14A /* SATooltipDismissal.swift in Sources */,
+				D10000072F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */,
+				D10000092F8C000600C4C14A /* SAProfilingFollowupTests.swift in Sources */,
 				CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
 				CF0000122F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
@@ -3760,6 +3779,9 @@
 				CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
 				51BE68DC3017550E00AF389C /* SAImageRenderer.swift in Sources */,
 				CF00000B2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */,
+				D10000002F8C000600C4C14A /* SAAppearancePreference.swift in Sources */,
+				D10000032F8C000600C4C14A /* SATooltipDismissal.swift in Sources */,
+				D10000062F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */,
 				CF0000302F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
 				CF00000E2F8C000600C4C14A /* SACellFilterAction.swift in Sources */,
 				CF0000102F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
