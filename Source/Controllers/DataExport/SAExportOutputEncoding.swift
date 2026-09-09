@@ -26,9 +26,10 @@ import Foundation
 ///   here used to leave the DROP/LOCK statements and comments in one encoding and the rest of
 ///   the dump in UTF-8 (#2609).
 /// - DOT files are UTF-8 as well; the exporter switches the connection the same way.
+/// - XML files declare `encoding="utf-8"` in their prolog, so the body is UTF-8 too (#2637).
+///   The XML exporter does not switch the connection: cells that arrive as raw bytes are decoded
+///   with the connection encoding and re-encoded on the way out.
 /// - CSV has no way to declare an encoding and follows the connection encoding.
-/// - XML follows the connection encoding for now; its header claims UTF-8, which is a separate
-///   fix (#2637).
 @objc final class SAExportOutputEncoding: NSObject {
 
     private static let utf8 = String.Encoding.utf8.rawValue
@@ -40,9 +41,9 @@ import Foundation
     @objc(outputEncodingForFormat:connectionEncoding:)
     static func outputEncoding(for format: SAExportOutputFormat, connectionEncoding: UInt) -> UInt {
         switch format {
-        case .sql, .dot:
+        case .sql, .dot, .xml:
             return utf8
-        case .csv, .xml:
+        case .csv:
             return connectionEncoding
         }
     }

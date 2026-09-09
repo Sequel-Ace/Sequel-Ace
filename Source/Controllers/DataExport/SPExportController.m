@@ -1877,8 +1877,9 @@ set_input:
 
 /**
  * The encoding the exporters write their files in. SQL and DOT dumps are always UTF-8 (they switch
- * the connection to utf8mb4 and, for SQL, declare it in the file); CSV and XML follow the connection
- * encoding. The decision itself lives in SAExportOutputEncoding so it can be unit tested.
+ * the connection to utf8mb4 and, for SQL, declare it in the file), XML is UTF-8 because its prolog
+ * says so, and CSV follows the connection encoding. The decision itself lives in
+ * SAExportOutputEncoding so it can be unit tested.
  */
 - (NSStringEncoding)outputEncodingForCurrentExportType
 {
@@ -3818,7 +3819,8 @@ set_input:
 				string = [NSString stringWithFormat:@"</%@>\n", [self.exportDatabaseName HTMLEscapeString]];
 			}
 
-			[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[connection stringEncoding]]];
+			// The closing tag has to match the body and the prolog, not the connection
+			[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[exporter exportOutputEncoding]]];
 			[[exporter exportOutputFile] close];
 		}
 
@@ -3839,7 +3841,8 @@ set_input:
 			string = [NSString stringWithFormat:@"</%@>\n", [self.exportDatabaseName HTMLEscapeString]];
 		}
 
-		[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[connection stringEncoding]]];
+		// The closing tag has to match the body and the prolog, not the connection
+		[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[exporter exportOutputEncoding]]];
 		[[exporter exportOutputFile] close];
 
 		[self exportEnded];
