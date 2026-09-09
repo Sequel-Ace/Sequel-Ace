@@ -93,45 +93,48 @@
 
 
 - (void)testOldvsNewDateFormat {
-	
+
+	// Format one instant on both sides, so the clock cannot tick between the two calls
+	NSDate *now = [NSDate date];
+
 	NSString *str1 = [NSString stringWithFormat:@"%@%@",
 									SPImportClipboardTempFileNamePrefix,
-									[[NSDate  date] descriptionWithCalendarFormat:@"%H%M%S"
+									[now descriptionWithCalendarFormat:@"%H%M%S"
 											timeZone:nil
 											locale:[[NSUserDefaults standardUserDefaults] dictionaryRepresentation]]];
 
 	
 	NSString *str3 = [NSString stringWithFormat:@"%@%@",
 									SPImportClipboardTempFileNamePrefix,
-									[[NSDate date] stringWithFormat:@"HHmmss"
+									[now stringWithFormat:@"HHmmss"
 																	locale:[NSLocale autoupdatingCurrentLocale]
 														   timeZone:[NSTimeZone localTimeZone]]];
 	
 	
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [[NSDate date] descriptionWithCalendarFormat:@"%Y-%m-%d" timeZone:nil locale:nil];
-	str3 = [[NSDate date] stringWithFormat:@"yyyy-MM-dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [now descriptionWithCalendarFormat:@"%Y-%m-%d" timeZone:nil locale:nil];
+	str3 = [now stringWithFormat:@"yyyy-MM-dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [[NSDate date] descriptionWithCalendarFormat:@"%Y" timeZone:nil locale:nil];
-	str3 = [[NSDate date] stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [now descriptionWithCalendarFormat:@"%Y" timeZone:nil locale:nil];
+	str3 = [now stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [[NSDate date] descriptionWithCalendarFormat:@"%m" timeZone:nil locale:nil];
-	str3 = [[NSDate date] stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [now descriptionWithCalendarFormat:@"%m" timeZone:nil locale:nil];
+	str3 = [now stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [[NSDate date] descriptionWithCalendarFormat:@"%d" timeZone:nil locale:nil];
-	str3 = [[NSDate date] stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [now descriptionWithCalendarFormat:@"%d" timeZone:nil locale:nil];
+	str3 = [now stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [[NSDate date] descriptionWithCalendarFormat:@"%H:%M:%S" timeZone:nil locale:nil];
-	str3 = [[NSDate date] stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [now descriptionWithCalendarFormat:@"%H:%M:%S" timeZone:nil locale:nil];
+	str3 = [now stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
