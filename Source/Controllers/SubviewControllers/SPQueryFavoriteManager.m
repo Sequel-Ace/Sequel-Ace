@@ -34,6 +34,7 @@
 #import "SPEncodingPopupAccessory.h"
 #import "SPQueryController.h"
 #import "SPDatabaseDocument.h"
+#import "SPCustomQuery.h"
 #import "SPConnectionController.h"
 #import "RegexKitLite.h"
 #import "SPTextView.h"
@@ -59,7 +60,7 @@
 /**
  * Initialize the manager with the supplied delegate.
  */
-- (instancetype)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(SPCustomQuery *)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"QueryFavoriteManager"])) {
 
@@ -72,7 +73,7 @@
 			NSLog(@"Query Favorite Manager was called without a delegate.");
 			return nil;
 		}
-		tableDocumentInstance = [managerDelegate valueForKeyPath:@"tableDocumentInstance"];
+		tableDocumentInstance = [managerDelegate tableDocumentInstance];
 		delegatesFileURL = [tableDocumentInstance fileURL];
 	}
 	
