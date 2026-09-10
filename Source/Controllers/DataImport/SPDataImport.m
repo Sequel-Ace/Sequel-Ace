@@ -67,6 +67,7 @@
 @implementation SPDataImport
 
 @synthesize fileManager;
+@synthesize tablesListInstance;
 
 #pragma mark -
 #pragma mark Initialisation

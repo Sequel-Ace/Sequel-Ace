@@ -86,6 +86,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark Initialisation
 
 @synthesize _SQLitePinnedTableManager;
+@synthesize databaseDataInstance;
 
 - (instancetype)init
 {
