@@ -155,10 +155,16 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 - (BOOL)isCellEditingMode
 {
-	return ([[self delegate] isKindOfClass:[SPCustomQuery class]] 
-		|| ([[self delegate] isKindOfClass:[SPTableContent class]] 
-				&& [(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] 
-				&& [(SPTablesList*)([(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"]) tableType] == SPTableTypeView));
+	id delegate = [self delegate];
+
+	if ([delegate isKindOfClass:[SPCustomQuery class]]) return YES;
+
+	if ([delegate isKindOfClass:[SPTableContent class]]) {
+		SPTablesList *tablesList = [(SPTableContent *)delegate tablesListInstance];
+		return tablesList && [tablesList tableType] == SPTableTypeView;
+	}
+
+	return NO;
 }
 
 /**
