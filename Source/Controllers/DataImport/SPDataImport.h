@@ -115,6 +115,7 @@ typedef enum {
 	NSMutableIndexSet *nullableNumericFieldsMapIndex;
 }
 
+@property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
 @property (readonly, strong) SPTablesList *tablesListInstance;
 
 // IBAction methods

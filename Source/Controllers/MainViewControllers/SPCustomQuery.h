@@ -168,6 +168,7 @@
 
 // Exposed for Swift extensions (see SPCustomQuery+Explain.swift)
 @property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
+@property (readonly, strong) SPTablesList *tablesListInstance;
 @property (readonly, strong) SPTextView *textView;
 @property (readonly) NSRange currentQueryRange;
 @property (readwrite, strong) NSTableColumn *sortColumn;
