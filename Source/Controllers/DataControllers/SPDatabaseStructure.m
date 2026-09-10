@@ -248,15 +248,16 @@
 		}
 
 		// Retrieve the tables and views for this database from SPTablesList
+		SPTablesList *tablesList = [self.delegate tablesListInstance];
 		NSMutableArray *tablesAndViews = [NSMutableArray array];
-		for (id aTable in [[self.delegate valueForKeyPath:@"tablesListInstance"] allTableNames]) {
+		for (id aTable in [tablesList allTableNames]) {
 			NSDictionary *aTableDict = [NSDictionary dictionaryWithObjectsAndKeys:
 				aTable, @"name",
 				@(SPTableTypeTable), @"type",
 					nil];
 			[tablesAndViews addObject:aTableDict];
 		}
-		for (id aView in [[self.delegate valueForKeyPath:@"tablesListInstance"] allViewNames]) {
+		for (id aView in [tablesList allViewNames]) {
 			NSDictionary *aViewDict = [NSDictionary dictionaryWithObjectsAndKeys:
 				aView, @"name",
 				@(SPTableTypeView), @"type",

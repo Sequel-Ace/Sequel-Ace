@@ -30,6 +30,7 @@
 
 @class SPTextView;
 @class SPDatabaseDocument;
+@class SPCustomQuery;
 @class SPSplitView;
 
 @interface SPQueryFavoriteManager : NSWindowController <NSOpenSavePanelDelegate>
@@ -53,7 +54,7 @@
 	BOOL isTableCellEditing;
 }
 
-- (instancetype)initWithDelegate:(id)managerDelegate;
+- (instancetype)initWithDelegate:(SPCustomQuery *)managerDelegate;
 
 // Accessors
 - (NSMutableArray *)queryFavoritesForFileURL:(NSURL *)fileURL;

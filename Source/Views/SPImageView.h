@@ -38,7 +38,7 @@
 
 @interface SPImageView : NSImageView 
 {
-	IBOutlet id delegate;
+	IBOutlet id<SPImageViewDelegate> delegate;
 }
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender;

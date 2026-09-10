@@ -115,6 +115,8 @@ typedef enum {
 	NSMutableIndexSet *nullableNumericFieldsMapIndex;
 }
 
+@property (readonly, strong) SPTablesList *tablesListInstance;
+
 // IBAction methods
 - (IBAction)closeSheet:(id)sender;
 - (IBAction)cancelProgressBar:(id)sender;

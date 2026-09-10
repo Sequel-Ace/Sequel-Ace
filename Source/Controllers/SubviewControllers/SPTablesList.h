@@ -133,6 +133,8 @@
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }
 
+@property (readonly, strong, nullable) SPDatabaseData *databaseDataInstance;
+
 // IBAction methods
 - (IBAction)updateTables:(nullable id)sender;
 - (IBAction)addTable:(nullable id)sender;

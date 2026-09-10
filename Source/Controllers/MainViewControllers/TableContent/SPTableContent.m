@@ -133,6 +133,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @implementation SPTableContent
 
+@synthesize tablesListInstance;
+
 #pragma mark -
 
 - (instancetype)init
