@@ -228,7 +228,8 @@
  */
 - (NSRect)drawTitle:(NSAttributedString *)title withFrame:(NSRect)frame inView:(NSView *)controlView
 {
-	frame.size.width -= 1;
+	[self setLineBreakMode:NSLineBreakByClipping];
+    frame.size.width = NSMaxX([controlView bounds]) - [(SPComboPopupButton *)controlView lineOffset] - frame.origin.x - 1;
 	return [super drawTitle:title withFrame:frame inView:controlView];
 }
 
