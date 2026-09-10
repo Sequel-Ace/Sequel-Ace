@@ -53,7 +53,7 @@
 
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 
-@interface SPDataImport ()
+@interface SPDataImport () <SATextViewDelegate>
 
 - (void)_startBackgroundImportTaskForFilename:(NSString *)filename;
 - (void)_importBackgroundProcess:(NSDictionary *)userInfo;
@@ -67,6 +67,7 @@
 @implementation SPDataImport
 
 @synthesize fileManager;
+@synthesize tableDocumentInstance = tableDocumentInstance;
 @synthesize tablesListInstance;
 
 #pragma mark -
