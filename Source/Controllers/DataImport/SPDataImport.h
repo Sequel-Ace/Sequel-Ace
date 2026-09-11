@@ -109,7 +109,8 @@ typedef enum {
 
 	NSUserDefaults *prefs;
 
-	BOOL progressCancelled;
+	// Written by the Cancel button on the main thread and read by the import thread.
+	_Atomic(BOOL) progressCancelled;
 	SAImportProgressReporter *importProgressReporter;
 	BOOL mainNibLoaded;
 
