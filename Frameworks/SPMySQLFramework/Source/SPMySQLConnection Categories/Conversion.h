@@ -33,7 +33,6 @@
 
 @interface SPMySQLConnection (Conversion)
 
-+ (const char *)_cStringForString:(NSString *)aString usingEncoding:(NSStringEncoding)anEncoding returningLengthAs:(NSUInteger *)cStringLengthPointer;
 + (NSString *)_stringForCString:(const char *)cString usingEncoding:(NSStringEncoding)encoding;
 
 - (NSString *)_stringForCString:(const char *)cString;

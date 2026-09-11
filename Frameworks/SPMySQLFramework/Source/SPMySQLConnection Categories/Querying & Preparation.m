@@ -695,12 +695,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
 
-		// Convert to a C string
-		NSUInteger killQueryCStringLength;
-		const char *killQueryCString = [SPMySQLConnection _cStringForString:killQuery usingEncoding:aStringEncoding returningLengthAs:&killQueryCStringLength];
+		// Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
+		// an explicit length, so no terminator is appended (see the main query path).
+		NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
 
 		// Run the query
-		int killQueryStatus = mysql_real_query(killerConnection, killQueryCString, killQueryCStringLength);
+		int killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
 
 		// Close the temporary connection
 		mysql_close(killerConnection);
