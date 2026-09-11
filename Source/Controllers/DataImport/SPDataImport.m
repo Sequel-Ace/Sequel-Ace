@@ -1143,7 +1143,8 @@
 						                            fileHandle:csvFileHandle];
 					}
 				} else {
-					rowsImported += csvRowsThisQuery;
+					// The update loop above already counted its rows one by one.
+					if (!importMethodIsUpdate) rowsImported += csvRowsThisQuery;
 					[self _updateProgressForBytesProcessed:[[parsePositions objectAtIndex:csvRowsThisQuery-1] unsignedIntegerValue]
 					                            totalBytes:fileTotalLength
 					                            fileHandle:csvFileHandle];
