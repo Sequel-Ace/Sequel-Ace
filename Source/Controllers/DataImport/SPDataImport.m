@@ -1691,16 +1691,22 @@
  * Pushes the import's position to the progress sheet through the import's
  * SAImportProgressReporter, which throttles the updates. The push is
  * asynchronous so the import thread never waits on the main thread.
+ *
+ * Each import creates its own reporter, so the reporter doubles as the
+ * import's identity: an update queued by an earlier import is dropped once a
+ * later import has replaced the reporter and reset the sheet.
  */
 - (void)_updateProgressForBytesProcessed:(NSUInteger)bytesProcessed totalBytes:(NSUInteger)totalBytes fileHandle:(SPFileHandle *)fileHandle
 {
-	SAImportProgressUpdate *update = [importProgressReporter updateForBytesProcessed:bytesProcessed
-	                                                                       totalBytes:totalBytes
-	                                                                     isCompressed:([fileHandle compressionFormat] != SPNoCompression)
-	                                                              compressedBytesRead:[fileHandle realDataReadLength]];
+	SAImportProgressReporter *reporter = importProgressReporter;
+	SAImportProgressUpdate *update = [reporter updateForBytesProcessed:bytesProcessed
+	                                                        totalBytes:totalBytes
+	                                                      isCompressed:([fileHandle compressionFormat] != SPNoCompression)
+	                                               compressedBytesRead:[fileHandle realDataReadLength]];
 	if (!update) return;
 
 	dispatch_async(dispatch_get_main_queue(), ^{
+		if (self->importProgressReporter != reporter) return;
 		[self->singleProgressBar setDoubleValue:update.barValue];
 		[self->singleProgressText setStringValue:update.text];
 	});
