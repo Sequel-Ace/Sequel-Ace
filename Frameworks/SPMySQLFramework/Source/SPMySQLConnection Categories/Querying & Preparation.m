@@ -127,8 +127,17 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// any nul characters contained in the string.
 	NSData *escapedData;
 	if (includeQuotes) {
-		// TODO (#2604): this code assumes that the encoding cData is in is still ASCII-compatible,
-		// which may not be the case (e.g. for UTF16, EBCDIC)
+		// The quotes are written as single raw bytes, which relies on the connection
+		// encoding being ASCII-compatible.  That always holds: the server refuses ucs2,
+		// utf16, utf16le and utf32 as client character sets (SET NAMES fails, so
+		// stringEncoding is never updated to them), and every other charset MySQL
+		// offers is a superset of ASCII.  Assert the invariant rather than pay for a
+		// per-call conversion of the quote character.
+		NSAssert(stringEncoding != NSUTF16StringEncoding && stringEncoding != NSUTF16BigEndianStringEncoding
+		         && stringEncoding != NSUTF16LittleEndianStringEncoding && stringEncoding != NSUTF32StringEncoding
+		         && stringEncoding != NSUTF32BigEndianStringEncoding && stringEncoding != NSUTF32LittleEndianStringEncoding,
+		         @"escapeString: quoting requires an ASCII-compatible connection encoding");
+
 		// Add quotes if requested
 		escBuffer[0] = '\'';
 		escBuffer[escapedLength+1] = '\'';
@@ -695,12 +704,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
 
-		// Convert to a C string
-		NSUInteger killQueryCStringLength;
-		const char *killQueryCString = [SPMySQLConnection _cStringForString:killQuery usingEncoding:aStringEncoding returningLengthAs:&killQueryCStringLength];
+		// Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
+		// an explicit length, so no terminator is appended (see the main query path).
+		NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
 
 		// Run the query
-		int killQueryStatus = mysql_real_query(killerConnection, killQueryCString, killQueryCStringLength);
+		int killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
 
 		// Close the temporary connection
 		mysql_close(killerConnection);

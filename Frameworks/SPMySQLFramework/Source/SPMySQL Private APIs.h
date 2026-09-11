@@ -110,7 +110,6 @@
 @interface SPMySQLResult (Private_API)
 
 - (NSString *)_stringWithBytes:(const void *)bytes length:(NSUInteger)length;
-- (NSString *)_lossyStringWithBytes:(const void *)bytes length:(NSUInteger)length wasLossy:(BOOL *)outLossy;
 - (void)_setQueryExecutionTime:(double)theExecutionTime;
 
 @end
