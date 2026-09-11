@@ -37,6 +37,7 @@
 @class SPTableData;
 @class SPTableStructure;
 @class SPTablesList;
+@class SAImportProgressReporter;
 
 typedef enum {
 	SPFieldMapperInProgress = 1,
@@ -109,7 +110,7 @@ typedef enum {
 	NSUserDefaults *prefs;
 
 	BOOL progressCancelled;
-	CFAbsoluteTime importProgressLastUpdate;
+	SAImportProgressReporter *importProgressReporter;
 	BOOL mainNibLoaded;
 
 	NSMutableArray *geometryFields;
