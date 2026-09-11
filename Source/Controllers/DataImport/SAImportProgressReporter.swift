@@ -22,6 +22,9 @@ import Foundation
 
 /// Throttles and formats the progress an import pushes to its sheet.
 ///
+/// Byte counts use the app's binary `ByteCountFormatter.string(byteSize:)`
+/// extension, the same formatter the importer used before this type existed.
+///
 /// The importer calls `update(...)` after every row or statement; the reporter
 /// answers with an update at most once per `minimumInterval` and `nil` the rest
 /// of the time. Elapsed time is measured on a monotonic clock so a wall-clock
@@ -70,12 +73,12 @@ import Foundation
         }
         lastUpdateTime = now
 
-        let processedText = ByteCountFormatter.string(fromByteCount: Int64(bytesProcessed), countStyle: .file)
+        let processedText = ByteCountFormatter.string(byteSize: Int64(bytesProcessed)) as String
         if isCompressed {
             return SAImportProgressUpdate(barValue: Double(compressedBytesRead),
                                           text: String(format: unknownTotalFormat, processedText))
         }
-        let totalText = ByteCountFormatter.string(fromByteCount: Int64(totalBytes), countStyle: .file)
+        let totalText = ByteCountFormatter.string(byteSize: Int64(totalBytes)) as String
         return SAImportProgressUpdate(barValue: Double(bytesProcessed),
                                       text: String(format: knownTotalFormat, processedText, totalText))
     }

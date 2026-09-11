@@ -18,8 +18,9 @@ final class SAImportProgressReporterTests: XCTestCase {
                                  clock: { self.now })
     }
 
+    /// The app's binary byte formatter, which the importer has always used for progress text.
     private func bytes(_ count: UInt) -> String {
-        ByteCountFormatter.string(fromByteCount: Int64(count), countStyle: .file)
+        ByteCountFormatter.string(byteSize: Int64(count)) as String
     }
 
     // MARK: - Formatting
@@ -36,6 +37,16 @@ final class SAImportProgressReporterTests: XCTestCase {
 
         XCTAssertEqual(update?.barValue, 300)
         XCTAssertEqual(update?.text, "Imported \(bytes(2_500)) of test data")
+    }
+
+    func testByteCountsKeepTheImporterBinaryUnits() {
+        let update = makeReporter().update(bytesProcessed: 1_048_576, totalBytes: 3 * 1_073_741_824, isCompressed: false, compressedBytesRead: 0)
+
+        // The exact digits depend on the locale's decimal separator; the units do not.
+        let words = update?.text.split(separator: " ").map(String.init) ?? []
+        XCTAssertTrue(words.contains("MiB"), update?.text ?? "nil")
+        XCTAssertTrue(words.contains("GiB"), update?.text ?? "nil")
+        XCTAssertFalse(words.contains("MB"), update?.text ?? "nil")
     }
 
     // MARK: - Throttling
