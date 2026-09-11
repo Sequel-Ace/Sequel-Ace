@@ -58,6 +58,7 @@
 - (void)_startBackgroundImportTaskForFilename:(NSString *)filename;
 - (void)_importBackgroundProcess:(NSDictionary *)userInfo;
 - (void)_closeAndStopProgressSheet;
+- (void)_updateProgressForBytesProcessed:(NSUInteger)bytesProcessed totalBytes:(NSUInteger)totalBytes fileHandle:(SPFileHandle *)fileHandle unknownTotalFormat:(NSString *)unknownTotalFormat;
 - (NSString *)_getLineEndingForFile:(NSString *)filePath;
 
 @property (readwrite, strong) NSFileManager *fileManager;
@@ -373,7 +374,6 @@
 	NSInteger dataBufferLength = 0;
 	NSInteger dataBufferPosition = 0;
 	NSInteger dataBufferLastQueryEndPosition = 0;
-	BOOL fileIsCompressed;
 	BOOL allDataRead = NO;
 	BOOL ignoreSQLErrors = ([[importSQLErrorHandlingPopup onMainThread] selectedTag] == SPSQLImportIgnoreErrors);
 	BOOL ignoreCharsetError = NO;
@@ -389,12 +389,12 @@
 			[fileManager removeItemAtPath:filename error:nil];
 		return;
 	}
-	fileIsCompressed = ([sqlFileHandle compressionFormat] != SPNoCompression);
 
 	// Grab the file length
 	fileTotalLength = (NSUInteger)[[[fileManager attributesOfItemAtPath:filename error:NULL] objectForKey:NSFileSize] longLongValue];
 	if (!fileTotalLength) fileTotalLength = 1;
 
+	importProgressLastUpdate = 0;
 	SPMainQSync(^{
 		// Reset progress interface
 		[self->errorsView setString:@""];
@@ -669,16 +669,10 @@
                 SPLog(@"Import time taken: %@, for %ld queries", [NSString stringWithFormat:@"%.3f", interval], (long)queriesPerformed);
 #endif
                 // Update the progress bar
-                if (fileIsCompressed) {
-                    [[singleProgressBar onMainThread] setDoubleValue:[sqlFileHandle realDataReadLength]];
-                    [[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of SQL", @"SQL import progress text where total size is unknown"),
-                                                                       [NSByteCountFormatter stringWithByteSize:fileProcessedLength]]];
-                } else {
-                    [[singleProgressBar onMainThread] setDoubleValue:fileProcessedLength];
-                    [[singleProgressText onMainThread] setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"),
-                                                                       [NSByteCountFormatter stringWithByteSize:fileProcessedLength],
-                                                                       [NSByteCountFormatter stringWithByteSize:fileTotalLength]]];
-                }
+                [self _updateProgressForBytesProcessed:fileProcessedLength
+                                            totalBytes:fileTotalLength
+                                            fileHandle:sqlFileHandle
+                                    unknownTotalFormat:NSLocalizedString(@"Imported %@ of SQL", @"SQL import progress text where total size is unknown")];
             }
 
             // If all the data has been read, break out of the processing loop
@@ -796,7 +790,6 @@
 	NSUInteger csvRowsPerQuery = 1000;
 	NSUInteger csvRowsThisQuery;
 	NSUInteger fileTotalLength = 0;
-	BOOL fileIsCompressed;
 	NSInteger rowsImported = 0;
 	NSUInteger i;
 	BOOL allDataRead = NO;
@@ -826,9 +819,9 @@
 	// Grab the file length and status
 	fileTotalLength = (NSUInteger)[[[fileManager attributesOfItemAtPath:filename error:NULL] objectForKey:NSFileSize] longLongValue];
 	if (!fileTotalLength) fileTotalLength = 1;
-	fileIsCompressed = ([csvFileHandle compressionFormat] != SPNoCompression);
 
 	// Reset progress interface
+	importProgressLastUpdate = 0;
 	SPMainQSync(^{
 		[self->errorsView setString:@""];
 		[self->singleProgressTitle setStringValue:NSLocalizedString(@"Importing CSV", @"text showing that the application is importing CSV")];
@@ -1114,16 +1107,10 @@
 
 						rowsImported++;
 						csvRowsThisQuery++;
-						// TODO (#2606): updating the UI for every single row is likely a performance killer (even without synchronization)
-						SPMainQSync(^{
-							if (fileIsCompressed) {
-								[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
-                                [self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSByteCountFormatter stringWithByteSize:[[parsePositions objectAtIndex:i] longValue]]]];
-							} else {
-								[self->singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:i] doubleValue]];
-                                [self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"CSV import progress text"), [NSByteCountFormatter stringWithByteSize:[[parsePositions objectAtIndex:i] longValue]], [NSByteCountFormatter stringWithByteSize:fileTotalLength]]];
-							}
-						});
+						[self _updateProgressForBytesProcessed:[[parsePositions objectAtIndex:i] unsignedIntegerValue]
+						                            totalBytes:fileTotalLength
+						                            fileHandle:csvFileHandle
+						                    unknownTotalFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown")];
 					}
 				}
 
@@ -1152,30 +1139,18 @@
 								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:databaseName];
 							}
 						}
-						// TODO (#2606): duplicate progress-update code (see above)
 						rowsImported++;
-						SPMainQSync(^{
-							if (fileIsCompressed) {
-								[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
-                                [self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSByteCountFormatter stringWithByteSize:[[parsePositions objectAtIndex:i] longValue]]]];
-							} else {
-								[self->singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:i] doubleValue]];
-                                [self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"), [NSByteCountFormatter stringWithByteSize:[[parsePositions objectAtIndex:i] longValue]], [NSByteCountFormatter stringWithByteSize:fileTotalLength]]];
-							}
-						});
+						[self _updateProgressForBytesProcessed:[[parsePositions objectAtIndex:i] unsignedIntegerValue]
+						                            totalBytes:fileTotalLength
+						                            fileHandle:csvFileHandle
+						                    unknownTotalFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown")];
 					}
 				} else {
 					rowsImported += csvRowsThisQuery;
-					// TODO (#2606): duplicate progress-update code (see above)
-					SPMainQSync(^{
-						if (fileIsCompressed) {
-							[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
-                            [self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown"), [NSByteCountFormatter stringWithByteSize:[[parsePositions objectAtIndex:csvRowsThisQuery-1] longValue]]]];
-						} else {
-							[self->singleProgressBar setDoubleValue:[[parsePositions objectAtIndex:csvRowsThisQuery-1] doubleValue]];
-                            [self->singleProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"SQL import progress text"), [NSByteCountFormatter stringWithByteSize:[[parsePositions objectAtIndex:csvRowsThisQuery-1] longValue]], [NSByteCountFormatter stringWithByteSize:fileTotalLength]]];
-						}
-					});
+					[self _updateProgressForBytesProcessed:[[parsePositions objectAtIndex:csvRowsThisQuery-1] unsignedIntegerValue]
+					                            totalBytes:fileTotalLength
+					                            fileHandle:csvFileHandle
+					                    unknownTotalFormat:NSLocalizedString(@"Imported %@ of CSV data", @"CSV import progress text where total size is unknown")];
 				}
 
 				// Update the arrays
@@ -1713,6 +1688,38 @@
 		[self->singleProgressSheet orderOut:nil];
 		[self->singleProgressBar stopAnimation:self];
 		[self->singleProgressBar setMaxValue:100];
+	});
+}
+
+/**
+ * Pushes the import's position to the progress sheet, at most ten times a second and
+ * without blocking the import thread on the main thread.
+ *
+ * bytesProcessed is the position in the decompressed data and totalBytes the file's
+ * size on disk. For a compressed file the bar tracks the handle's compressed read
+ * position against the on-disk size, and the text uses unknownTotalFormat, which
+ * takes the decompressed position as its only argument.
+ */
+- (void)_updateProgressForBytesProcessed:(NSUInteger)bytesProcessed totalBytes:(NSUInteger)totalBytes fileHandle:(SPFileHandle *)fileHandle unknownTotalFormat:(NSString *)unknownTotalFormat
+{
+	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+	if (now - importProgressLastUpdate < 0.1) return;
+	importProgressLastUpdate = now;
+
+	BOOL fileIsCompressed = ([fileHandle compressionFormat] != SPNoCompression);
+	double barValue = fileIsCompressed ? [fileHandle realDataReadLength] : bytesProcessed;
+	NSString *text;
+	if (fileIsCompressed) {
+		text = [NSString stringWithFormat:unknownTotalFormat, [NSByteCountFormatter stringWithByteSize:bytesProcessed]];
+	} else {
+		text = [NSString stringWithFormat:NSLocalizedString(@"Imported %@ of %@", @"import progress text"),
+		        [NSByteCountFormatter stringWithByteSize:bytesProcessed],
+		        [NSByteCountFormatter stringWithByteSize:totalBytes]];
+	}
+
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self->singleProgressBar setDoubleValue:barValue];
+		[self->singleProgressText setStringValue:text];
 	});
 }
 
