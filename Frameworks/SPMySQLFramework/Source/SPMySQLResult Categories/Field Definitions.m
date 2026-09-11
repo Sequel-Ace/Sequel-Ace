@@ -361,7 +361,7 @@ const SPMySQLResultCharset SPMySQLCharsetMap[] =
 		
 		// Record the column name, or alias if one is being used
 		if (mysqlField.name) {
-			[eachField setObject:[self _lossyStringWithBytes:mysqlField.name length:mysqlField.name_length wasLossy:NULL] forKey:@"name"];
+			[eachField setObject:[self _stringWithBytes:mysqlField.name length:mysqlField.name_length] forKey:@"name"];
 		}
 		
 		// Record the original column name if using an alias

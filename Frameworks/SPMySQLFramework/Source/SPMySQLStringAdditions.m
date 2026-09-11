@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPMySQLStringAdditions.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation NSString (SPMySQLStringAdditions)
 
@@ -53,17 +54,20 @@
 }
 
 /**
- * Returns the string for the bytes according to the encoding, decode in ASCII if failed
+ * Byte-to-string conversion for cell values; see SAByteStringDecoder.
  */
 + (NSString *) stringForDataBytes:(const void *)dataBytes length:(NSUInteger)dataLength encoding:(NSStringEncoding)aStringEncoding
 {
-	NSString *string = [[NSString alloc] initWithBytes:dataBytes length:dataLength encoding:aStringEncoding];
+	return [SAByteStringDecoder stringForDataBytes:dataBytes length:dataLength encoding:aStringEncoding];
+}
 
-	if (string == nil) {
-		return [[NSString alloc] initWithBytes:dataBytes length:dataLength encoding:NSASCIIStringEncoding];
-	}
-
-	return string;
+/**
+ * Byte-to-string conversion for identifiers the server may have truncated
+ * mid-character; see SAByteStringDecoder.
+ */
++ (NSString *) stringForIdentifierBytes:(const void *)identifierBytes length:(NSUInteger)identifierLength encoding:(NSStringEncoding)aStringEncoding
+{
+	return [SAByteStringDecoder stringForIdentifierBytes:identifierBytes length:identifierLength encoding:aStringEncoding];
 }
 
 @end
