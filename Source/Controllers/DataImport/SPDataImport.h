@@ -37,6 +37,7 @@
 @class SPTableData;
 @class SPTableStructure;
 @class SPTablesList;
+@class SAImportProgressReporter;
 
 typedef enum {
 	SPFieldMapperInProgress = 1,
@@ -46,13 +47,25 @@ typedef enum {
 
 @interface SPDataImport : NSObject <NSOpenSavePanelDelegate>
 {
-	// TODO (#2606): outlets belong to multiple xib files, so each xib load overwrites part of this set
+	// Wired by DBView.xib, which instantiates this object.
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPTableStructure *tableSourceInstance;
 	IBOutlet SPTableData *tableDataInstance;
 	IBOutlet SPCustomQuery *customQueryInstance;
 
+	IBOutlet NSWindow *errorsSheet;
+	IBOutlet NSTextView *errorsView;
+
+	IBOutlet NSPanel *singleProgressSheet;
+	IBOutlet NSProgressIndicator *singleProgressBar;
+	IBOutlet NSTextField *singleProgressTitle;
+	IBOutlet NSTextField *singleProgressText;
+
+	// Wired by ImportAccessory.xib, which awakeFromNib loads with this object as its owner.
+	// The two sets are disjoint, so neither load touches the other's outlets, but this
+	// object still doubles as the accessory view's controller.
+	// TODO (#2606): move the accessory view into its own controller
 	IBOutlet id importView;
 	IBOutlet id importTabView;
 	IBOutlet NSButton *importFieldNamesSwitch;
@@ -70,14 +83,6 @@ typedef enum {
 	IBOutlet id importFromClipboardAccessoryView;
 	
 	IBOutlet NSTextView *importFromClipboardTextView;
-	
-	IBOutlet NSWindow *errorsSheet;
-	IBOutlet NSTextView *errorsView;
-
-	IBOutlet NSPanel *singleProgressSheet;
-	IBOutlet NSProgressIndicator *singleProgressBar;
-	IBOutlet NSTextField *singleProgressTitle;
-	IBOutlet NSTextField *singleProgressText;
 
 	SPMySQLConnection *mySQLConnection;
 
@@ -104,7 +109,9 @@ typedef enum {
 
 	NSUserDefaults *prefs;
 
-	BOOL progressCancelled;
+	// Written by the Cancel button on the main thread and read by the import thread.
+	_Atomic(BOOL) progressCancelled;
+	SAImportProgressReporter *importProgressReporter;
 	BOOL mainNibLoaded;
 
 	NSMutableArray *geometryFields;
