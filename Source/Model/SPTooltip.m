@@ -74,7 +74,8 @@ static CGFloat slow_in_out (CGFloat t)
 @interface SPTooltip ()
 
 - (void)setContent:(NSString *)content withOptions:(NSDictionary *)displayOptions;
-- (void)runUntilUserActivity;
+- (void)beginDismissalMonitoring;
+- (void)detachDismissalMonitor;
 - (void)stopAnimation:(id)sender;
 - (void)sizeToContent;
 + (NSPoint)caretPosition;
@@ -83,6 +84,10 @@ static CGFloat slow_in_out (CGFloat t)
 
 @property (nonatomic, assign) BOOL gotHeight;
 @property (nonatomic, assign) BOOL gotWidth;
+
+/// Watches for the user activity that dismisses the visible tooltip;
+/// replaces the former nested event loop (see SATooltipDismissalMonitor).
+@property (nonatomic, strong) SATooltipDismissalMonitor *dismissalMonitor;
 
 @end
 
@@ -150,8 +155,31 @@ static CGFloat slow_in_out (CGFloat t)
 - (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions
 {
 
+	// A new tooltip reuses the shared window - tear down whatever remains of
+	// the previous one. Three states are possible here: it is visible and
+	// watched (detach the monitor without closing, the fresh content takes
+	// over), it is fading out (finish that close instantly: the event that
+	// closed it is forwarded to the app - the removed nested loop did the
+	// same via sendEvent: - and may request this new tooltip right away, e.g.
+	// a bundle bound to a key equivalent; a later animationTick would other-
+	// wise see the incremented counter, hide the window and nil out the fresh
+	// contentView, leaving an invisible tooltip whose monitor swallows the
+	// next trigger's close), or its WebView is still loading and the monitor
+	// was never armed. None of these ever reach the decrement in
+	// animationTick, so reset the counter outright instead of trying to
+	// balance the individual cases (the removed nested loop achieved this by
+	// breaking on spTooltipCounter > 1 and ordering the old tooltip out).
+	if (self.dismissalMonitor) {
+		[self detachDismissalMonitor];
+	}
+	else if (animationTimer) {
+		[super orderOut:self];
+		[self stopAnimation:self];
+	}
+	spTooltipCounter = 0;
+
 	spTooltipCounter++;
-	
+
 	self.gotWidth = NO;
 	self.gotHeight = NO;
 	
@@ -248,7 +276,7 @@ static CGFloat slow_in_out (CGFloat t)
 		[self setFrameTopLeftPoint:point];
 		[self sizeToContent];
 		[self orderFront:self];
-		[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+		[self beginDismissalMonitoring];
 	}
 	else {
 		[self setContent:(NSString*)content withOptions:displayOptions];
@@ -283,18 +311,36 @@ static CGFloat slow_in_out (CGFloat t)
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation {
+	// A late callback from a WebView that a newer show already replaced must
+	// not touch the shared window (guards all three delegate methods).
+	if (webView != wkWebView) return;
 	SPLog(@"didFinishNavigation FINISHING LOAD");
-	
+
 	[self sizeToContent];
 	[self orderFront:self];
-	[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
-	
+	[self beginDismissalMonitoring];
+
 }
+/**
+ * A failed load leaves nothing to show - close the shared window. Without
+ * this, a tooltip that replaced a visible one would keep an empty
+ * status-level window on screen with no dismissal monitor attached
+ * (didFinishNavigation, which arms the monitor, never fires on failure).
+ */
 - (void)webView:(WKWebView *)webView didFailNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	if (webView != wkWebView) return;
 	SPLog(@"didFailNavigation. error is: %@", error);
+	// A navigation superseded by one the page itself started (possible in
+	// HTML tooltips with JavaScript enabled) reports NSURLErrorCancelled -
+	// the replacement is still loading, so there is nothing to close.
+	if ([error.domain isEqualToString:NSURLErrorDomain] && error.code == NSURLErrorCancelled) return;
+	[self orderOut:self];
 }
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	if (webView != wkWebView) return;
 	SPLog(@"didFailProvisionalNavigation. error is: %@", error);
+	if ([error.domain isEqualToString:NSURLErrorDomain] && error.code == NSURLErrorCancelled) return;
+	[self orderOut:self];
 }
 
 - (void)dealloc
@@ -452,61 +498,36 @@ static CGFloat slow_in_out (CGFloat t)
 // ==================
 // = Event handling =
 // ==================
-- (BOOL)shouldCloseForMousePosition:(NSPoint)aPoint
+
+/**
+ * Starts the Swift dismissal monitor: it closes the tooltip on key presses,
+ * clicks, scrolling, mouse movement past a small threshold, when the key
+ * window resigns or the app deactivates - the same triggers the removed
+ * nested `nextEventMatchingMask:` loop reacted to, but without pumping the
+ * application's events itself (which delayed normal event delivery for as
+ * long as a tooltip was visible).
+ */
+- (void)beginDismissalMonitoring
 {
-	CGFloat ignorePeriod = 0.05f;
-	if(-[didOpenAtDate timeIntervalSinceNow] < ignorePeriod)
-		return NO;
-
-	if(NSEqualPoints(mousePositionWhenOpened, NSZeroPoint))
-	{
-		mousePositionWhenOpened = aPoint;
-		return NO;
-	}
-
-	NSPoint p = mousePositionWhenOpened;
-	CGFloat deltaX = p.x - aPoint.x;
-	CGFloat deltaY = p.y - aPoint.y;
-	CGFloat dist = sqrt(deltaX * deltaX + deltaY * deltaY);
-
-	CGFloat moveThreshold = 10;
-	return dist > moveThreshold;
+	[self detachDismissalMonitor];
+	__weak SPTooltip *weakSelf = self;
+	self.dismissalMonitor = [[SATooltipDismissalMonitor alloc] initWithKeyWindow:[NSApp keyWindow] onClose:^{
+		SPTooltip *tooltip = weakSelf;
+		if (!tooltip) return;
+		[tooltip detachDismissalMonitor];
+		[tooltip orderOut:tooltip];
+	}];
 }
 
-- (void)runUntilUserActivity
+/**
+ * Stops the dismissal monitor (idempotent) and lets go of it - the single
+ * teardown spot shared by replacement, close and the monitor's own close
+ * callback.
+ */
+- (void)detachDismissalMonitor
 {
-	[self setValue:[NSDate date] forKey:@"didOpenAtDate"];
-	mousePositionWhenOpened = NSZeroPoint;
-
-	NSWindow* appKeyWindow = [NSApp keyWindow];
-	BOOL didAcceptMouseMovedEvents = [appKeyWindow acceptsMouseMovedEvents];
-	[appKeyWindow setAcceptsMouseMovedEvents:YES];
-	NSEvent* event = nil;
-	NSInteger eventType;
-	while((event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantFuture] inMode:NSDefaultRunLoopMode dequeue:YES]))
-	{
-		eventType = [event type];
-		if(eventType == NSEventTypeKeyDown || eventType == NSEventTypeLeftMouseDown || eventType == NSEventTypeRightMouseDown || eventType == NSEventTypeOtherMouseDown || eventType == NSEventTypeScrollWheel)
-			break;
-
-		if(eventType == NSEventTypeMouseMoved && [self shouldCloseForMousePosition:[NSEvent mouseLocation]])
-			break;
-
-		if(appKeyWindow != [NSApp keyWindow] || ![NSApp isActive])
-			break;
-		
-		if(spTooltipCounter > 1)
-			break;
-		[NSApp sendEvent:event];
-
-	}
-
-	[appKeyWindow setAcceptsMouseMovedEvents:didAcceptMouseMovedEvents];
-
-	[self orderOut:self];
-
-	// If we still have an event, pass it on to the app to ensure all actions are performed
-	if (event) [NSApp sendEvent:event];
+	[self.dismissalMonitor stop];
+	self.dismissalMonitor = nil;
 }
 
 // =============
@@ -514,6 +535,9 @@ static CGFloat slow_in_out (CGFloat t)
 // =============
 - (void)orderOut:(id)sender
 {
+	// stop watching for dismissal activity, no matter who closes us
+	[self detachDismissalMonitor];
+
 	// must set this to nil here
 	// otherwise subsequent tootips do not display
 	self.contentView = nil;

@@ -37,13 +37,7 @@
 	NSTimer*		animationTimer;
 	NSDate*			animationStart;
 
-	// ignore mouse moves for the next second
-	NSDate*			didOpenAtDate;
-	
-	NSPoint			mousePositionWhenOpened;
-	
 	NSString* 		SPTooltipPreferencesIdentifier;
-	
 }
 
 @property (nonatomic, class, readonly, strong) SPTooltip *sharedInstance;

@@ -988,7 +988,7 @@ static SPQueryController *sharedQueryController = nil;
 
 - (void)addHistory:(NSString *)history forFileURL:(NSURL *)fileURL
 {
-	NSUInteger maxHistoryItems = [[prefs objectForKey:SPCustomQueryMaxHistoryItems] integerValue];
+	NSInteger maxHistoryItems = [[prefs objectForKey:SPCustomQueryMaxHistoryItems] integerValue];
 
     NSString *fileURLStr = [fileURL absoluteString];
 
@@ -997,52 +997,50 @@ static SPQueryController *sharedQueryController = nil;
 	// Save each history item due to its document source
 	if (fileURLStr != nil && [historyContainer safeObjectForKey:fileURLStr]) {
 
-		// Remove all duplicates by using a NSPopUpButton
-		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
-
-        SPLog(@"uniquifier = %@\nAdding: %@", uniquifier.debugDescription, [historyContainer safeObjectForKey:fileURLStr]);
-
-        // add current history
-		[uniquifier addItemsWithTitles:[historyContainer safeObjectForKey:fileURLStr]];
-
-        // add new history
-        NSArray *histArr = [_SQLiteHistoryManager normalizeQueryHistoryWithArrayToNormalise:@[history]];
-        for(NSString *str in histArr){
-            [uniquifier insertItemWithTitle:str atIndex:0];
-        }
-
-		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)
-		{
-			[uniquifier removeItemAtIndex:[uniquifier numberOfItems]-1];
-		}
-
-		[self replaceHistoryByArray:[uniquifier itemTitles] forFileURL:fileURL];
+		// Merge into the stored history; SAQueryHistoryMerger replicates the
+		// de-duplication the old hidden NSPopUpButton performed, without
+		// allocating a control (and logging its debug description) per save.
+		NSArray *newEntries = [_SQLiteHistoryManager normalizeQueryHistoryWithArrayToNormalise:@[history]];
+		NSArray *merged = [SAQueryHistoryMerger mergedHistoryWithNewEntries:newEntries
+		                                                           existing:[historyContainer safeObjectForKey:fileURLStr]
+		                                                              limit:maxHistoryItems];
+		[self replaceHistoryByArray:merged forFileURL:fileURL];
 	}
 
 	// Save history items coming from each Untitled document in the global Preferences successively
 	// regardingless of the source document.
 	if (![fileURL isFileURL]) {
 
-		// Remove all duplicates by using a NSPopUpButton
-		NSPopUpButton *uniquifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0,0,0,0) pullsDown:YES];
-		if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
-			[uniquifier addItemsWithTitles:_SQLiteHistoryManager.queryHist.allValues];
+		// Same merge for the global history of Untitled documents.
+		// The prefs array may never have been written - the old
+		// addItemsWithTitles:nil was a no-op, the Swift bridge would trap.
+		BOOL useSQLiteHistory = (_SQLiteHistoryManager.migratedPrefsToDB == YES);
+		NSArray *existingHistory;
+		if (useSQLiteHistory) {
+			// allKeys specifies no order - sort newest first (highest id),
+			// the same ordering the history menu uses, so the merger trims
+			// the actual oldest entries at the limit. NSNumber compare: keeps
+			// the full Int64 width of the row ids.
+			NSArray *sortedKeys = [_SQLiteHistoryManager.queryHist.allKeys sortedArrayUsingComparator:^NSComparisonResult(NSNumber *key1, NSNumber *key2) {
+				return [key2 compare:key1];
+			}];
+			NSMutableArray *sortedValues = [NSMutableArray arrayWithCapacity:sortedKeys.count];
+			for (NSNumber *key in sortedKeys) {
+				[sortedValues addObject:[_SQLiteHistoryManager.queryHist objectForKey:key]];
+			}
+			existingHistory = sortedValues;
+		}
+		else {
+			existingHistory = [prefs objectForKey:SPQueryHistory] ?: @[];
+		}
+		NSArray *merged = [SAQueryHistoryMerger mergedHistoryWithNewEntries:@[history]
+		                                                           existing:existingHistory
+		                                                              limit:maxHistoryItems];
+		if(useSQLiteHistory){
+			[_SQLiteHistoryManager updateQueryHistoryWithNewHist:merged];
 		}
 		else{
-			[uniquifier addItemsWithTitles:[prefs objectForKey:SPQueryHistory]];
-		}
-		[uniquifier insertItemWithTitle:history atIndex:0];
-
-		while ((NSUInteger)[uniquifier numberOfItems] > maxHistoryItems)
-		{
-			[uniquifier removeItemAtIndex:[uniquifier numberOfItems] - 1];
-		}
-
-		if(_SQLiteHistoryManager.migratedPrefsToDB == YES){
-			[_SQLiteHistoryManager updateQueryHistoryWithNewHist:[uniquifier itemTitles]];
-		}
-		else{
-			[prefs setObject:[uniquifier itemTitles] forKey:SPQueryHistory];
+			[prefs setObject:merged forKey:SPQueryHistory];
 		}
 	}
 }
