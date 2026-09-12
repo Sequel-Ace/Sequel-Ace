@@ -271,6 +271,42 @@
 		</dict>
 		<dict>
 			<key>MenuLabel</key>
+			<string>length =</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>SuppressLeadingFieldPlaceholder</key>
+			<true/>
+			<key>Tooltip</key>
+			<string>CHAR_LENGTH(field) = [arg]</string>
+			<key>Clause</key>
+			<string>CHAR_LENGTH($CURRENT_FIELD) = ${}</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>length &gt;</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>SuppressLeadingFieldPlaceholder</key>
+			<true/>
+			<key>Tooltip</key>
+			<string>CHAR_LENGTH(field) &gt; [arg]</string>
+			<key>Clause</key>
+			<string>CHAR_LENGTH($CURRENT_FIELD) &gt; ${}</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>length &lt;</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>SuppressLeadingFieldPlaceholder</key>
+			<true/>
+			<key>Tooltip</key>
+			<string>CHAR_LENGTH(field) &lt; [arg]</string>
+			<key>Clause</key>
+			<string>CHAR_LENGTH($CURRENT_FIELD) &lt; ${}</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
 			<string>= (Hex String)</string>
 			<key>NumberOfArguments</key>
 			<integer>1</integer>
