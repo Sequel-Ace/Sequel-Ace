@@ -17,6 +17,9 @@
 		0F2381A80270EFDE50D73890 /* SAParserUtilsTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD5C55FC47FCBFA6D183688 /* SAParserUtilsTestSupport.swift */; };
 		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
 		10E61D41B1CA258A66686820 /* SAAsyncResultBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */; };
+		C3CC038CEF7E1E23F9448349 /* SAJSONValueDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A471CEAAB050FAB47FBF8503 /* SAJSONValueDetector.swift */; };
+		D2DB930F73CAAFB441CE1D69 /* SAJSONValueDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A471CEAAB050FAB47FBF8503 /* SAJSONValueDetector.swift */; };
+		C17EF61E834C16119E11D39D /* SAJSONValueDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6AC6EFCE36C119AA1E0174D /* SAJSONValueDetectorTests.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1196D9FED5B52DE6CD6B0C76 /* SASSHTunnelAuthSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
@@ -1502,6 +1505,8 @@
 		AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifier.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifierTests.swift; sourceTree = "<group>"; };
 		AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAAsyncResultBox.swift; sourceTree = "<group>"; };
+		A471CEAAB050FAB47FBF8503 /* SAJSONValueDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAJSONValueDetector.swift; sourceTree = "<group>"; };
+		C6AC6EFCE36C119AA1E0174D /* SAJSONValueDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAJSONValueDetectorTests.swift; sourceTree = "<group>"; };
 		B51D6B9D114C310C0074704E /* toolbar-switch-to-table-triggers.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-triggers.png"; sourceTree = "<group>"; };
 		B52460D30F8EF92300171639 /* SPArrayAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPArrayAdditions.h; sourceTree = "<group>"; };
 		B52460D40F8EF92300171639 /* SPArrayAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPArrayAdditions.m; sourceTree = "<group>"; };
@@ -2828,6 +2833,7 @@
 				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
 				CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */,
+				C6AC6EFCE36C119AA1E0174D /* SAJSONValueDetectorTests.swift */,
 				5147B0152F8D000100C4C14A /* SPCSVParserTests.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
@@ -3016,6 +3022,7 @@
 				503B02C91AE82C5E0060CAB1 /* SPTableFilterParser.m */,
 				73F70A941E4E547500636550 /* SPJSONFormatter.h */,
 				73F70A951E4E547500636550 /* SPJSONFormatter.m */,
+				A471CEAAB050FAB47FBF8503 /* SAJSONValueDetector.swift */,
 			);
 			path = Parsing;
 			sourceTree = "<group>";
@@ -3708,6 +3715,8 @@
 				81B906DAF9B997FA30469210 /* SAHelpViewerModel.swift in Sources */,
 				60111925195F940E7252B376 /* SAHelpViewerModelTests.swift in Sources */,
 				10E61D41B1CA258A66686820 /* SAAsyncResultBox.swift in Sources */,
+				D2DB930F73CAAFB441CE1D69 /* SAJSONValueDetector.swift in Sources */,
+				C17EF61E834C16119E11D39D /* SAJSONValueDetectorTests.swift in Sources */,
 				8BE925D095CAA6341924C92F /* SAAsyncResultBoxTests.swift in Sources */,
 				2A0129AA121A225FB6CCA2AA /* SAKeyboardShortcut.swift in Sources */,
 				190CAC547AADBBBB8BB28750 /* SAKeyboardShortcutTests.swift in Sources */,
@@ -4064,6 +4073,7 @@
 				56B8282C3F2B2EAD9499D12F /* SAHelpViewerView.swift in Sources */,
 				B0595D7939BDBEBD29E0E617 /* SAHelpViewerWindowController.swift in Sources */,
 				9FAB1CF8AFD6A6D9D3F89171 /* SAAsyncResultBox.swift in Sources */,
+				C3CC038CEF7E1E23F9448349 /* SAJSONValueDetector.swift in Sources */,
 				16C621C7049FAECBAC96972E /* SAKeyboardShortcut.swift in Sources */,
 				410065F67228AD394D48A156 /* SADragPasteboard.swift in Sources */,
 				2E69A3914D17A0971CD68A09 /* SATypeAheadMatcher.swift in Sources */,

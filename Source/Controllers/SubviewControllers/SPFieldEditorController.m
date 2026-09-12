@@ -427,6 +427,11 @@ typedef enum {
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
 			[self refreshPHPSerializedEditorAvailability];
 			[self performSelector:@selector(openPHPSerializedEditorIfCurrentTextIsStructured) withObject:nil afterDelay:0.15];
+
+			// Only when no image was decoded, since that keeps its own segment selected.
+			if (image == nil) {
+				[self selectJsonSegmentIfValueIsJSON:stringValue];
+			}
 		}
 
 		editSheetWillBeInitialized = NO;
@@ -1486,6 +1491,22 @@ typedef enum {
 		[self showJsonText:hidden];
 		[self showImage:hidden];
 	}
+}
+
+/**
+ * Selects the JSON segment when the value is a JSON object or array.
+ *
+ * `_isJSON` only covers columns declared with MySQL's JSON type. JSON is just as often kept in a
+ * text column - MariaDB's `longtext ... CHECK (json_valid(<column>))`, for example - and those had
+ * to be switched to the JSON segment by hand on every open.
+ */
+- (void)selectJsonSegmentIfValueIsJSON:(NSString *)value {
+	if (![SAJSONValueDetector isJSONContainer:value]) {
+		return;
+	}
+
+	[editSheetSegmentControl setSelectedSegment:JsonSegment];
+	[self segmentControllerChanged:editSheetSegmentControl];
 }
 
 - (void)showJsonText:(BOOL)show {
