@@ -50,4 +50,16 @@ import Foundation
         }
         return list
     }
+
+    /// Orders a row-id-keyed history - the shape `SQLiteHistoryManager.queryHist`
+    /// exposes - newest first (highest row id first), which is the order
+    /// `merged(newEntries:existing:limit:)` expects for `existing`. A dictionary
+    /// has no defined order, so without this the limit would trim arbitrary
+    /// entries. Row ids compare at their full `Int64` width.
+    /// - Parameter history: Query texts keyed by their SQLite row id.
+    /// - Returns: The query texts, newest first.
+    @objc(newestFirstHistoryFromRowKeyedHistory:)
+    public static func newestFirst(rowKeyedHistory history: [Int64: String]) -> [String] {
+        history.sorted { $0.key > $1.key }.map(\.value)
+    }
 }

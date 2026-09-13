@@ -130,4 +130,25 @@ final class SAQueryHistoryMergerTests: XCTestCase {
         let merged = SAQueryHistoryMerger.merged(newEntries: ["SELECT 2;"], existing: ["", "SELECT 1;", ""], limit: 3)
         XCTAssertEqual(merged, ["SELECT 2;", "", "SELECT 1;"])
     }
+
+    /// Verifies a row-id-keyed history comes back newest (highest id) first,
+    /// and an empty history stays empty.
+    func testRowKeyedHistoryIsOrderedNewestFirst() {
+        XCTAssertEqual(SAQueryHistoryMerger.newestFirst(rowKeyedHistory: [3: "c", 1: "a", 2: "b"]), ["c", "b", "a"])
+        XCTAssertEqual(SAQueryHistoryMerger.newestFirst(rowKeyedHistory: [:]), [])
+    }
+
+    /// Verifies row ids beyond the 32-bit range still order correctly - SQLite
+    /// row ids are Int64, and a narrowing comparison would sort them as oldest.
+    func testRowKeyedHistoryComparesFullInt64Width() {
+        let history: [Int64: String] = [2_147_483_647: "older", 2_147_483_648: "newer"]
+        XCTAssertEqual(SAQueryHistoryMerger.newestFirst(rowKeyedHistory: history), ["newer", "older"])
+    }
+
+    /// Verifies the ordered snapshot feeds the merger so the limit trims the
+    /// actual oldest entry.
+    func testOrderedSnapshotLetsTheLimitTrimTheOldestEntry() {
+        let existing = SAQueryHistoryMerger.newestFirst(rowKeyedHistory: [10: "old", 20: "new"])
+        XCTAssertEqual(SAQueryHistoryMerger.merged(newEntries: ["fresh"], existing: existing, limit: 2), ["fresh", "new"])
+    }
 }
