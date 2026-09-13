@@ -35,6 +35,7 @@
 #import "SPQueryController.h"
 #import "SPTooltip.h"
 #import "SPTablesList.h"
+#import "SPExtendedTableInfo.h"
 #import "SPNavigatorController.h"
 #import "RegexKitLite.h"
 #import "SPAppController.h"
@@ -472,7 +473,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			if(!aDbName) {
 
 				// Try to suggest only items which are uniquely valid for the parsed string
-				NSArray *uniqueSchema = [[SPNavigatorController sharedNavigatorController] getUniqueDbIdentifierFor:[aTableName lowercaseString] andConnection:[[(NSObject*)[self delegate] valueForKeyPath:@"tableDocumentInstance"] connectionID]  ignoreFields:YES];
+				NSArray *uniqueSchema = [[SPNavigatorController sharedNavigatorController] getUniqueDbIdentifierFor:[aTableName lowercaseString] andConnection:[[self delegateDocument] connectionID] ignoreFields:YES];
 				NSInteger uniqueSchemaKind = [[uniqueSchema objectAtIndex:0] intValue];
 
 				// If no db name but table name check if table name is a valid name in the current selected db
@@ -1206,8 +1207,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	// If Extended Table Info tab is active delegate the print call to the SPDatabaseDocument
 	// if the user doesn't select anything in self
-	if([[[[self delegate] class] description] isEqualToString:@"SPExtendedTableInfo"] && ![self selectedRange].length) {
-		[[(NSObject*)[self delegate] valueForKeyPath:@"tableDocumentInstance"] printDocument:sender];
+	if([[self delegate] isKindOfClass:[SPExtendedTableInfo class]] && ![self selectedRange].length) {
+		[[self delegateDocument] printDocument];
 		return;
 	}
 
@@ -1620,7 +1621,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// 		}
 		// 	}
 		// } else {
-		arr = [NSArray arrayWithArray:[[(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] allTableAndViewNames]];
+		arr = [NSArray arrayWithArray:[[self delegateTablesList] allTableAndViewNames]];
 		if(arr == nil) {
 			arr = @[];
 		}
@@ -1629,13 +1630,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// }
 	}
 	else if([kind isEqualToString:@"$SP_ASLIST_ALL_DATABASES"]) {
-		arr = [NSArray arrayWithArray:[[(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] allDatabaseNames]];
+		arr = [NSArray arrayWithArray:[[self delegateTablesList] allDatabaseNames]];
 		if(arr == nil) {
 			arr = @[];
 		}
 		for(id w in arr)
 			[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:w, @"display", @"database-small", @"image", @"", @"isRef", nil]];
-		arr = [NSArray arrayWithArray:[[(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] allSystemDatabaseNames]];
+		arr = [NSArray arrayWithArray:[[self delegateTablesList] allSystemDatabaseNames]];
 		if(arr == nil) {
 			arr = @[];
 		}

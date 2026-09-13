@@ -69,6 +69,8 @@
 }
 
 @property (readwrite, strong) SPMySQLConnection *connection;
+@property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
+@property (readonly, strong) SPTablesList *tablesListInstance;
 
 // IBAction methods
 - (IBAction)reloadTable:(id)sender;

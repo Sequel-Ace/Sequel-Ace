@@ -54,6 +54,8 @@
 	BOOL isTableCellEditing;
 }
 
+@property (readonly, strong) SPDatabaseDocument *tableDocumentInstance;
+
 - (instancetype)initWithDelegate:(SPCustomQuery *)managerDelegate;
 
 // Accessors

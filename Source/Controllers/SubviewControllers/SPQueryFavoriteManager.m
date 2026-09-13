@@ -49,13 +49,15 @@
 
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
-@interface SPQueryFavoriteManager () <NSMenuItemValidation, NSControlTextEditingDelegate>
+@interface SPQueryFavoriteManager () <NSMenuItemValidation, NSControlTextEditingDelegate, SATextViewDelegate>
 
 - (void)_initWithNoSelection;
 
 @end
 
 @implementation SPQueryFavoriteManager
+
+@synthesize tableDocumentInstance = tableDocumentInstance;
 
 /**
  * Initialize the manager with the supplied delegate.
