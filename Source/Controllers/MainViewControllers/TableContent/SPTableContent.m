@@ -4826,6 +4826,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// moved before the drag started.
 	NSString *cellValue = nil;
 	NSString *cellColumnName = nil;
+	NSString *cellTypeGrouping = nil;
 	BOOL cellIsNull = NO;
 	NSInteger clickedRow = [tableContentView mouseDownRow];
 	NSInteger clickedCol = [tableContentView mouseDownColumn];
@@ -4837,15 +4838,21 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// storage index, same mapping SPCopyTable uses) so the drop
 		// target gets the original schema column name the rule
 		// editor looks up against.
+		NSArray *columnIdentifiers = [[tableContentView tableColumns] valueForKey:@"identifier"];
 		cellColumnName = [SADragPasteboard columnNameForClickedColumn:clickedCol
-		                                                  identifiers:[[tableContentView tableColumns] valueForKey:@"identifier"]
+		                                                  identifiers:columnIdentifiers
 		                                                  columnNames:[dataColumns valueForKey:@"name"]];
+		// Same storage-index lookup for the type grouping, so a BIT value can
+		// be published in the form the filter compares.
+		cellTypeGrouping = [SADragPasteboard columnNameForClickedColumn:clickedCol
+		                                                    identifiers:columnIdentifiers
+		                                                    columnNames:[dataColumns valueForKey:@"typegrouping"]];
 	}
 
 	// Dropped onto the rule editor, the plist alone is enough to synthesize a
 	// fully-populated filter rule (column + default operator + value); a nil
 	// payload means the cell did not resolve and must not be advertised.
-	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull];
+	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull typeGrouping:cellTypeGrouping];
 	if (rowPayload) {
 		[SADragPasteboard attachPropertyList:rowPayload forType:[SPCellValuePasteboard pasteboardRowTypeRaw] toPasteboard:pboard];
 	}

@@ -180,6 +180,49 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(descriptors.map(\.values), [[], []])
         XCTAssertEqual(descriptors.map(\.isNull), [true, true])
     }
+
+    /// Verifies BIT cells filter by the decimal value MySQL compares, not by the
+    /// displayed bit string (which MySQL would read as a decimal number).
+    func testBitDescriptorsCarryDecimalValue() throws {
+        let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
+            columnName: "flags",
+            typeGrouping: "bit",
+            value: "00000101",
+            isNull: false
+        )
+
+        let valueDescriptors = descriptors.filter { !$0.values.isEmpty }
+        XCTAssertFalse(valueDescriptors.isEmpty)
+        XCTAssertTrue(valueDescriptors.allSatisfy { $0.values == ["5"] })
+        XCTAssertEqual(try XCTUnwrap(descriptors.first).operatorName, "=")
+        XCTAssertFalse(descriptors.contains { $0.isNull })
+    }
+
+    /// Verifies a full 64-bit BIT value converts without overflow.
+    func testBitDescriptorsConvertFullWidthValues() throws {
+        let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
+            columnName: "flags",
+            typeGrouping: "bit",
+            value: String(repeating: "1", count: 64),
+            isNull: false
+        )
+
+        XCTAssertEqual(try XCTUnwrap(descriptors.first).values, ["18446744073709551615"])
+    }
+
+    /// Verifies BIT cells whose display value is not a bit string only offer
+    /// NULL operators instead of filtering by a misread value.
+    func testBitDescriptorsWithoutBitStringOnlyOfferNullOperators() {
+        let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
+            columnName: "flags",
+            typeGrouping: "bit",
+            value: "(not loaded)",
+            isNull: false
+        )
+
+        XCTAssertEqual(descriptors.map(\.title), ["IS NULL", "IS NOT NULL"])
+        XCTAssertEqual(descriptors.map(\.values), [[], []])
+    }
 }
 
 final class SACellValueCopyMenuBuilderTests: XCTestCase {
@@ -346,5 +389,27 @@ final class SACellValueCopyMenuBuilderTests: XCTestCase {
             value: "102", typeGrouping: "bit", fieldType: "BIT(3)",
             quoteString: { _ in nil }, quoteData: { _ in nil }
         ))
+    }
+
+    /// Verifies the unquoted literal used by "Copy as SQL INSERT" keeps numbers
+    /// verbatim but writes BIT values as binary literals, also when only the
+    /// declared type identifies the column as BIT.
+    func testUnquotedSQLLiteralWritesBitValuesAsBinaryLiterals() {
+        XCTAssertEqual(SPFieldTypeClassifier.unquotedSQLLiteral(for: "00000101", fieldTypeGroup: "bit", fieldType: "BIT(8)"), "b'00000101'")
+        XCTAssertEqual(SPFieldTypeClassifier.unquotedSQLLiteral(for: "1", fieldTypeGroup: nil, fieldType: "bit(1)"), "b'1'")
+        XCTAssertEqual(SPFieldTypeClassifier.unquotedSQLLiteral(for: "101", fieldTypeGroup: "string", fieldType: "BIT(8)"), "b'101'")
+        XCTAssertEqual(SPFieldTypeClassifier.unquotedSQLLiteral(for: "101", fieldTypeGroup: "integer", fieldType: "INT"), "101")
+        XCTAssertEqual(SPFieldTypeClassifier.unquotedSQLLiteral(for: NSNumber(value: 42), fieldTypeGroup: nil, fieldType: "BIGINT UNSIGNED"), "42")
+        XCTAssertNil(SPFieldTypeClassifier.unquotedSQLLiteral(for: "102", fieldTypeGroup: "bit", fieldType: "BIT(3)"))
+    }
+
+    /// Verifies BIT display strings convert to their decimal value and that
+    /// anything that is not a bit string fitting into 64 bits is rejected.
+    func testDecimalStringForBitString() {
+        XCTAssertEqual(SPFieldTypeClassifier.decimalString(forBitString: "00000101"), "5")
+        XCTAssertEqual(SPFieldTypeClassifier.decimalString(forBitString: "0"), "0")
+        XCTAssertNil(SPFieldTypeClassifier.decimalString(forBitString: ""))
+        XCTAssertNil(SPFieldTypeClassifier.decimalString(forBitString: "12"))
+        XCTAssertNil(SPFieldTypeClassifier.decimalString(forBitString: String(repeating: "1", count: 65)))
     }
 }
