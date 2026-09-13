@@ -412,4 +412,15 @@ final class SACellValueCopyMenuBuilderTests: XCTestCase {
         XCTAssertNil(SPFieldTypeClassifier.decimalString(forBitString: "12"))
         XCTAssertNil(SPFieldTypeClassifier.decimalString(forBitString: String(repeating: "1", count: 65)))
     }
+
+    /// Verifies following a foreign key converts a BIT value for a BIT target
+    /// column and leaves every other value untouched - including numbers whose
+    /// digits happen to be 0 and 1, NULL, and values that are not bit strings.
+    func testFilterValueConvertsOnlyBitStringsForBitTargets() {
+        XCTAssertEqual(SPFieldTypeClassifier.filterValue(for: "00000101", targetTypeGrouping: "bit") as? String, "5")
+        XCTAssertEqual(SPFieldTypeClassifier.filterValue(for: "00000101", targetTypeGrouping: "integer") as? String, "00000101")
+        XCTAssertEqual(SPFieldTypeClassifier.filterValue(for: NSNumber(value: 10), targetTypeGrouping: "bit") as? NSNumber, NSNumber(value: 10))
+        XCTAssertTrue(SPFieldTypeClassifier.filterValue(for: NSNull(), targetTypeGrouping: "bit") is NSNull)
+        XCTAssertEqual(SPFieldTypeClassifier.filterValue(for: "(not loaded)", targetTypeGrouping: "bit") as? String, "(not loaded)")
+    }
 }

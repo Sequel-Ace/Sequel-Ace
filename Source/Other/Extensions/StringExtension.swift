@@ -600,6 +600,25 @@ public class SPProcessListRowSerializer: NSObject {
         return String(number)
     }
 
+    /// Returns the value a rule filter needs for a raw cell value compared
+    /// against a column of the given type grouping, as used when following a
+    /// foreign key: a `BIT` value (a string of `0`/`1` digits) becomes its
+    /// decimal value, every other value is returned unchanged.
+    ///
+    /// - Parameters:
+    ///   - value: The raw cell value of the source column.
+    ///   - targetTypeGrouping: Sequel Ace type grouping of the filtered column.
+    /// - Returns: The value to filter by.
+    @objc(filterValueForValue:targetTypeGrouping:)
+    public class func filterValue(for value: Any?, targetTypeGrouping: String?) -> Any? {
+        guard isBitField(fieldTypeGroup: targetTypeGrouping, fieldType: nil),
+              let bits = value as? String,
+              let decimal = decimalString(forBitString: bits) else {
+            return value
+        }
+        return decimal
+    }
+
     /// Returns the value as a non-empty string of `0`/`1` digits, or `nil`.
     private class func validatedBitString(from value: Any) -> String? {
         let bits = String(describing: value)

@@ -2612,12 +2612,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *refTableName = [refDictionary objectForKey:@"table"];
 			NSString *refDatabaseName = [refDictionary objectForKey:@"database"];
 			BOOL targetColumnIsBinary = NO;
+			NSString *targetTypeGrouping = nil;
 
 			NSDictionary *refTableInfo = [self->tableDataInstance informationForTable:refTableName fromDatabase:refDatabaseName];
 			if (refTableInfo) {
 				for (NSDictionary *col in [refTableInfo objectForKey:@"columns"]) {
 					if ([[col objectForKey:@"name"] isEqualToString:refColumnName]) {
-						targetColumnIsBinary = [[col objectForKey:@"typegrouping"] isEqualToString:@"binary"];
+						targetTypeGrouping = [col objectForKey:@"typegrouping"];
+						targetColumnIsBinary = [targetTypeGrouping isEqualToString:@"binary"];
 						break;
 					}
 				}
@@ -2667,6 +2669,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					}
 				}
 			}
+
+			// A BIT target compares the decimal value, not the displayed bit string
+			targetFilterValue = [SPFieldTypeClassifier filterValueForValue:targetFilterValue targetTypeGrouping:targetTypeGrouping];
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
