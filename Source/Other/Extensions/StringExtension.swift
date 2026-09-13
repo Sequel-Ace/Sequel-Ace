@@ -518,6 +518,14 @@ public class SPProcessListRowSerializer: NSObject {
         "FIXED"
     ]
 
+    /// Returns whether values of a column go into SQL unquoted - numeric types
+    /// and `BIT` - judged by the type grouping or, when that is missing or
+    /// wrong, by the declared field type.
+    ///
+    /// - Parameters:
+    ///   - fieldTypeGroup: Sequel Ace type grouping of the column.
+    ///   - fieldType: Declared column type, e.g. `INT(10) UNSIGNED`.
+    /// - Returns: `true` when the value must not be wrapped in quotes.
     @objc(shouldBeUnquotedWithFieldTypeGroup:fieldType:)
     public class func shouldBeUnquoted(fieldTypeGroup: String?, fieldType: String?) -> Bool {
         if let normalizedGroup = fieldTypeGroup?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
@@ -525,15 +533,111 @@ public class SPProcessListRowSerializer: NSObject {
             return true
         }
 
-        guard let fieldType else { return false }
+        guard let typeToken = baseTypeToken(of: fieldType) else { return false }
+
+        return unquotedFieldTypes.contains(typeToken)
+    }
+
+    /// Returns whether a column holds MySQL `BIT` values, judged by the type
+    /// grouping or, when that is missing or wrong, by the declared field type.
+    ///
+    /// - Parameters:
+    ///   - fieldTypeGroup: Sequel Ace type grouping of the column.
+    ///   - fieldType: Declared column type, e.g. `BIT(8)`.
+    /// - Returns: `true` for `BIT` columns.
+    @objc(isBitFieldWithFieldTypeGroup:fieldType:)
+    public class func isBitField(fieldTypeGroup: String?, fieldType: String?) -> Bool {
+        if fieldTypeGroup?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == FieldTypeGroup.bit.rawValue {
+            return true
+        }
+        return baseTypeToken(of: fieldType) == "BIT"
+    }
+
+    /// Returns the SQL literal for a value of a column that
+    /// `shouldBeUnquoted(fieldTypeGroup:fieldType:)` classifies as unquoted.
+    ///
+    /// SPMySQL delivers `BIT` values as strings of `0`/`1` digits. Written
+    /// verbatim, MySQL would read `00000101` back as the decimal number 101,
+    /// so `BIT` values become binary literals (`b'00000101'`); every other
+    /// value is written verbatim.
+    ///
+    /// - Parameters:
+    ///   - value: The cell value.
+    ///   - fieldTypeGroup: Sequel Ace type grouping of the column.
+    ///   - fieldType: Declared column type.
+    /// - Returns: The literal, or `nil` for a `BIT` value that is not a bit string.
+    @objc(unquotedSQLLiteralForValue:fieldTypeGroup:fieldType:)
+    public class func unquotedSQLLiteral(for value: Any, fieldTypeGroup: String?, fieldType: String?) -> String? {
+        if isBitField(fieldTypeGroup: fieldTypeGroup, fieldType: fieldType) {
+            return bitLiteral(for: value)
+        }
+        return String(describing: value)
+    }
+
+    /// Formats a `BIT` cell value as a MySQL binary literal (`b'0101'`).
+    ///
+    /// - Parameter value: The cell value, a string of `0`/`1` digits.
+    /// - Returns: The literal, or `nil` when the value is not a bit string.
+    @objc(bitLiteralForValue:)
+    public class func bitLiteral(for value: Any) -> String? {
+        guard let bits = validatedBitString(from: value) else { return nil }
+        return "b'\(bits)'"
+    }
+
+    /// Converts a `BIT` display value into its decimal value, the argument the
+    /// `bit` filter definitions compare via `CAST('<value>' AS DECIMAL(65,30))` -
+    /// passing the display string would compare with 101 for `00000101`.
+    ///
+    /// - Parameter bitString: Display value of the cell, a string of `0`/`1` digits.
+    /// - Returns: The decimal string, or `nil` when the value is not a bit
+    ///   string or does not fit into 64 bits.
+    @objc(decimalStringForBitString:)
+    public class func decimalString(forBitString bitString: String) -> String? {
+        guard let bits = validatedBitString(from: bitString),
+              let number = UInt64(bits, radix: 2) else {
+            return nil
+        }
+        return String(number)
+    }
+
+    /// Returns the value a rule filter needs for a raw cell value compared
+    /// against a column of the given type grouping, as used when following a
+    /// foreign key: a `BIT` value (a string of `0`/`1` digits) becomes its
+    /// decimal value, every other value is returned unchanged.
+    ///
+    /// - Parameters:
+    ///   - value: The raw cell value of the source column.
+    ///   - targetTypeGrouping: Sequel Ace type grouping of the filtered column.
+    /// - Returns: The value to filter by.
+    @objc(filterValueForValue:targetTypeGrouping:)
+    public class func filterValue(for value: Any?, targetTypeGrouping: String?) -> Any? {
+        guard isBitField(fieldTypeGroup: targetTypeGrouping, fieldType: nil),
+              let bits = value as? String,
+              let decimal = decimalString(forBitString: bits) else {
+            return value
+        }
+        return decimal
+    }
+
+    /// Returns the value as a non-empty string of `0`/`1` digits, or `nil`.
+    private class func validatedBitString(from value: Any) -> String? {
+        let bits = String(describing: value)
+        guard !bits.isEmpty, bits.allSatisfy({ $0 == "0" || $0 == "1" }) else { return nil }
+        return bits
+    }
+
+    /// Returns the upper-cased base type of a declared column type
+    /// (`int(10) unsigned` becomes `INT`), or `nil` when there is none.
+    private class func baseTypeToken(of fieldType: String?) -> String? {
+        guard let fieldType else { return nil }
 
         let normalizedFieldType = fieldType.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedFieldType.isEmpty else { return false }
+        guard !normalizedFieldType.isEmpty else { return nil }
 
         let baseType = normalizedFieldType.split(separator: "(", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
-        guard let typeToken = baseType.split(whereSeparator: \.isWhitespace).first else { return false }
+        guard let typeToken = baseType.split(whereSeparator: \.isWhitespace).first else { return nil }
 
-        return unquotedFieldTypes.contains(typeToken.uppercased())
+        return typeToken.uppercased()
     }
 }
 

@@ -132,6 +132,15 @@ import AppKit
         current.contains(clickedRow) ? current : IndexSet(integer: clickedRow)
     }
 
+    /// Returns the SQL literal for one result value, as "Copy Values as SQL" writes it.
+    ///
+    /// - Parameters:
+    ///   - value: The cell value.
+    ///   - typeGrouping: Sequel Ace type grouping of the column.
+    ///   - fieldType: Declared column type.
+    ///   - quoteString: Escapes and quotes a string for the current connection.
+    ///   - quoteData: Escapes and quotes binary data for the current connection.
+    /// - Returns: The literal, or `nil` when the value cannot be represented.
     @nonobjc public static func sqlLiteral(
         value: Any,
         typeGrouping: String?,
@@ -140,13 +149,8 @@ import AppKit
         quoteData: (Data) -> String?
     ) -> String? {
         if value is NSNull { return "NULL" }
-        if typeGrouping?.lowercased() == "bit" || fieldType?.lowercased().hasPrefix("bit") == true {
-            let bits = String(describing: value)
-            guard !bits.isEmpty, bits.allSatisfy({ $0 == "0" || $0 == "1" }) else { return nil }
-            return "b'\(bits)'"
-        }
         if SPFieldTypeClassifier.shouldBeUnquoted(fieldTypeGroup: typeGrouping, fieldType: fieldType) {
-            return String(describing: value)
+            return SPFieldTypeClassifier.unquotedSQLLiteral(for: value, fieldTypeGroup: typeGrouping, fieldType: fieldType)
         }
 
         if let data = value as? Data {
@@ -273,6 +277,12 @@ import AppKit
     /// value-bearing empty-string rules serialize with `filterValues: [""]`,
     /// the same shape the rule editor uses for half-touched placeholder rows.
     ///
+    /// `BIT` cells display as `0`/`1` digit strings, but the `bit` filter
+    /// definitions compare `CAST('<value>' AS DECIMAL(65,30))`, so their
+    /// argument is the decimal value (`00000101` filters by `5`, not by 101).
+    /// A `BIT` display value that is not a bit string can only be filtered by
+    /// NULL-ness.
+    ///
     /// - Parameters:
     ///   - columnName: Schema column name to filter.
     ///   - typeGrouping: Sequel Ace type grouping from `SPTableDataColumnDefinition`.
@@ -294,7 +304,16 @@ import AppKit
         // for these cases so the cell-filter feature never produces non-persistent rules.
         // `SPCopyTable.displayStringForRow` may return nil for stale or out-of-range
         // cells (see SPCopyTable.h:112-115), which would otherwise fall through here.
-        let effectiveIsNull = isNull || value == nil || value?.isEmpty == true
+        var effectiveIsNull = isNull || value == nil || value?.isEmpty == true
+        var argument = value
+
+        if !effectiveIsNull, SPFieldTypeClassifier.isBitField(fieldTypeGroup: typeGrouping, fieldType: nil) {
+            if let value, let decimal = SPFieldTypeClassifier.decimalString(forBitString: value) {
+                argument = decimal
+            } else {
+                effectiveIsNull = true
+            }
+        }
 
         let operators = SACellFilterOperator.operators(for: typeGrouping, cellIsNull: effectiveIsNull)
         guard !operators.isEmpty else {
@@ -306,7 +325,7 @@ import AppKit
                 title: op.menuTitle,
                 columnName: columnName,
                 operatorName: op.serializedName,
-                values: op.valueCount == 0 ? [] : [value ?? ""],
+                values: op.valueCount == 0 ? [] : [argument ?? ""],
                 isNull: effectiveIsNull
             )
         }

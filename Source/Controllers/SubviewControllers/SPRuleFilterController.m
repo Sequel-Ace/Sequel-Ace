@@ -328,10 +328,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			NSBeep();
 		}
 		else {
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"number"] count]] forKey:@"number"];
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"date"] count]] forKey:@"date"];
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"string"] count]] forKey:@"string"];
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"spatial"] count]] forKey:@"spatial"];
+			for (NSString *group in [SACellFilterOperator filterDefinitionGroups]) {
+				[numberOfDefaultFilters setObject:@([[contentFilters objectForKey:group] count]) forKey:group];
+			}
 		}
 	}
 	return self;
@@ -1303,53 +1302,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	NSMutableArray *compareItems = [NSMutableArray array];
 	
-	NSString *compareType;
-	
-	if ( [fieldTypeGrouping isEqualToString:@"date"] ) {
-		compareType = @"date";
-
-		/*
-		 if ([fieldType isEqualToString:@"timestamp"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc]
-		 initWithDateFormat:@"%Y-%m-%d %H:%M:%S" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"datetime"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%Y-%m-%d %H:%M:%S" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"date"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%Y-%m-%d" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"time"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%H:%M:%S" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"year"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%Y" allowNaturalLanguage:YES]];
-		 }
-		 */
-
-		// TODO: A bug in the framework previously meant enum fields had to be treated as string fields for the purposes
-		// of comparison - this can now be split out to support additional comparison fucntionality if desired.
-	} 
-	else if ([fieldTypeGrouping isEqualToString:@"string"]   || [fieldTypeGrouping isEqualToString:@"binary"]
-		|| [fieldTypeGrouping isEqualToString:@"textdata"] || [fieldTypeGrouping isEqualToString:@"blobdata"]
-		|| [fieldTypeGrouping isEqualToString:@"enum"]) {
-
-		compareType = @"string";
-		// [argumentField setFormatter:nil];
-
-	} 
-	else if ([fieldTypeGrouping isEqualToString:@"bit"] || [fieldTypeGrouping isEqualToString:@"integer"]
-		|| [fieldTypeGrouping isEqualToString:@"float"]) {
-		compareType = @"number";
-		// [argumentField setFormatter:numberFormatter];
-
-	} 
-	else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-		compareType = @"spatial";
-
-	} 
-	else  {
-		compareType = @"";
+	// compareType is the saved filterType and the user-defined filter key;
+	// definitionGroup holds the built-in definitions (differs only for BIT).
+	NSString *compareType = [SACellFilterOperator ruleFilterGroupForTypeGrouping:fieldTypeGrouping];
+	NSString *definitionGroup = [SACellFilterOperator filterDefinitionGroupForTypeGrouping:fieldTypeGrouping];
+	if (![compareType length]) {
 		NSBeep();
 		NSLog(@"ERROR: unknown type for comparision: in %@", fieldTypeGrouping);
 	}
@@ -1359,10 +1316,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// [compareField addItemWithTitle:@"IS NOT NULL"];
 
 	// Remove user-defined filters first
-	if([numberOfDefaultFilters objectForKey:compareType]) {
-		NSUInteger cycles = [[contentFilters objectForKey:compareType] count] - [[numberOfDefaultFilters objectForKey:compareType] integerValue];
+	if([numberOfDefaultFilters objectForKey:definitionGroup]) {
+		NSUInteger cycles = [[contentFilters objectForKey:definitionGroup] count] - [[numberOfDefaultFilters objectForKey:definitionGroup] integerValue];
 		while(cycles > 0) {
-			[[contentFilters objectForKey:compareType] removeLastObject];
+			[[contentFilters objectForKey:definitionGroup] removeLastObject];
 			cycles--;
 		}
 	}
@@ -1371,22 +1328,22 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	// Load global user-defined content filters
 	if([prefs objectForKey:SPContentFilters]
-		&& [contentFilters objectForKey:compareType]
+		&& [contentFilters objectForKey:definitionGroup]
 		&& [[prefs objectForKey:SPContentFilters] objectForKey:compareType])
 	{
-		[[contentFilters objectForKey:compareType] addObjectsFromArray:[[prefs objectForKey:SPContentFilters] objectForKey:compareType]];
+		[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[[prefs objectForKey:SPContentFilters] objectForKey:compareType]];
 	}
 
 	// Load doc-based user-defined content filters
 	if([[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]]) {
 		id filters = [[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]];
 		if([filters objectForKey:compareType])
-			[[contentFilters objectForKey:compareType] addObjectsFromArray:[filters objectForKey:compareType]];
+			[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[filters objectForKey:compareType]];
 	}
 
 	NSUInteger i = 0;
-	if([contentFilters objectForKey:compareType]) {
-		for (id filter in [contentFilters objectForKey:compareType]) {
+	if([contentFilters objectForKey:definitionGroup]) {
+		for (id filter in [contentFilters objectForKey:definitionGroup]) {
 			// Create the tooltip
 			NSString *tooltip;
 			if ([filter objectForKey:@"Tooltip"])
