@@ -675,10 +675,16 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                     // Check column type and insert the data accordingly
                     switch (colType) {
 
-                        // Convert numeric types to unquoted strings
-                        case 0:
-                            [rowValues safeAddObject:[cellData description]];
+                        // Numeric types unquoted, BIT values as binary literals
+                        case 0: {
+                            NSString *unquotedLiteral = [SPFieldTypeClassifier unquotedSQLLiteralForValue:cellData fieldTypeGroup:fieldTypeGroup fieldType:fieldType];
+                            if (!unquotedLiteral) {
+                                NSBeep();
+                                return nil;
+                            }
+                            [rowValues safeAddObject:unquotedLiteral];
                             break;
+                        }
 
                         // Quote string, text and blob types appropriately
                         case 1:

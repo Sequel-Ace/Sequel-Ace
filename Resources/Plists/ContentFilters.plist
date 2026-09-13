@@ -2,6 +2,111 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>bit</key>
+	<array>
+		<dict>
+			<key>MenuLabel</key>
+			<string>=</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>= CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>≠</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>!= CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>&gt;</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>&gt; CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>&lt;</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>&lt; CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>≥</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>&gt;= CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>≤</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>&lt;= CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>IN</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>IN (${})</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>NOT IN __ OR NULL</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>SuppressLeadingFieldPlaceholder</key>
+			<true/>
+			<key>Clause</key>
+			<string>($CURRENT_FIELD NOT IN (${}) OR $CURRENT_FIELD IS NULL)</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>LIKE</string>
+			<key>NumberOfArguments</key>
+			<integer>1</integer>
+			<key>Clause</key>
+			<string>LIKE &apos;${}&apos;</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>BETWEEN</string>
+			<key>NumberOfArguments</key>
+			<integer>2</integer>
+			<key>ConjunctionLabels</key>
+			<array>
+				<string>AND</string>
+			</array>
+			<key>Clause</key>
+			<string>BETWEEN CAST(&apos;${}&apos; AS DECIMAL(65,30)) AND CAST(&apos;${}&apos; AS DECIMAL(65,30))</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>IS NULL</string>
+			<key>NumberOfArguments</key>
+			<integer>0</integer>
+			<key>Clause</key>
+			<string>IS NULL</string>
+		</dict>
+		<dict>
+			<key>MenuLabel</key>
+			<string>IS NOT NULL</string>
+			<key>NumberOfArguments</key>
+			<integer>0</integer>
+			<key>Clause</key>
+			<string>IS NOT NULL</string>
+		</dict>
+	</array>
 	<key>number</key>
 	<array>
 		<dict>
