@@ -585,7 +585,8 @@ jobs:
             echo "Approved cumulative changelog base tag moved while release checks ran." >&2
             exit 1
           }
-          source_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("current_source").fetch("build")' release-plan.json)"
+          # Preparation has advanced the worktree's release identity. Let the
+          # reconciler read that identity instead of the original plan's build.
           recovery_args=()
           if [[ "${RELEASE_MODE}" == "resume" ]]; then
             recovery_args+=(
@@ -594,7 +595,6 @@ jobs:
             )
           fi
           bundle exec ruby fastlane/bin/sa-release reconcile-build \
-            --source-build "${source_build}" \
             --channel "${RELEASE_CHANNEL}" \
             --target-version "${RELEASE_VERSION}" \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
