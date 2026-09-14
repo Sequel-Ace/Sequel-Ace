@@ -146,7 +146,7 @@ enum SPCustomQuerySQLClassifier {
             if character == "#" {
                 result.append(" ")
                 index += 1
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -158,7 +158,7 @@ enum SPCustomQuerySQLClassifier {
                (index + 2 == characters.count || isMySQLCommentWhitespace(characters[index + 2])) {
                 result.append(" ")
                 index += 2
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -233,6 +233,15 @@ enum SPCustomQuerySQLClassifier {
 
     private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
         character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
+    }
+
+    /// Whether a character ends a `#` or `-- ` comment. MySQL ends them at a
+    /// line feed only; a lone carriage return stays part of the comment. Swift
+    /// folds "\r\n" into a single `Character`, so a comparison with "\n" alone
+    /// never matches a CRLF line ending and the comment would swallow the rest
+    /// of the batch, hiding e.g. a `USE` or `DELETE` that the server executes.
+    static func endsLineComment(_ character: Character) -> Bool {
+        character == "\n" || character == "\r\n"
     }
 
     private static func isASCIIDigit(_ character: Character) -> Bool {

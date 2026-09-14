@@ -77,6 +77,35 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
     }
 
+    /// Swift folds "\r\n" into a single Character, which a comparison with "\n"
+    /// never matches: a `#` or `--` comment in CRLF text then swallowed the rest
+    /// of the batch, hiding statements the server executes.
+    func testLineCommentsEndAtCRLFLineEndings() {
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\r\nFROM t"),
+            "SELECT 1  \r\nFROM t"
+        )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 # c\r\nFROM t"),
+            "SELECT 1  \r\nFROM t"
+        )
+        // MySQL ends a line comment at a line feed only; a lone carriage
+        // return stays part of the comment.
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\rFROM t"),
+            "SELECT 1  "
+        )
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nDELETE FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nSELECT 1"))
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "-- selected\r\nUSE new_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new_db"
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "# rebuild\r\nDROP DATABASE old_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true)
+        )
+    }
+
     func testUnknownExecutableCommentGatesAlwaysRequireWarning() {
         // On current servers the future-gated SELECT is ignored, so the DELETE
         // is the real leading statement. Preserving only the comment body would

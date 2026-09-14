@@ -556,7 +556,7 @@ final class SADatabaseAssertion: NSObject {
             if character == "#" {
                 result.append(" ")
                 index += 1
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -569,7 +569,7 @@ final class SADatabaseAssertion: NSObject {
                 || characters[index + 2].unicodeScalars.allSatisfy({ $0.value <= 0x20 })) {
                 result.append(" ")
                 index += 2
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -632,6 +632,15 @@ final class SADatabaseAssertion: NSObject {
         }
 
         return result
+    }
+
+    /// Whether a character ends a `#` or `-- ` comment. MySQL ends them at a
+    /// line feed only; a lone carriage return stays part of the comment. Swift
+    /// folds "\r\n" into a single `Character`, so a comparison with "\n" alone
+    /// never matches a CRLF line ending and the comment would swallow the rest
+    /// of the query, hiding a `USE` or `DROP DATABASE` that the server executes.
+    private static func endsLineComment(_ character: Character) -> Bool {
+        character == "\n" || character == "\r\n"
     }
 
     private static func shouldPreserveExecutableComment(

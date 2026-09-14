@@ -151,7 +151,7 @@ enum SPMCPReadOnlyGuard {
             // `FROM/**/t` -> `FROMt`), which matters because the stripped SQL is also
             // what run_query executes for capped reads.
             if c == "#" {                                        // # comment to end of line
-                while i < n && chars[i] != "\n" { i += 1 }
+                while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { i += 1 }
                 out.append(" ")
                 continue
             }
@@ -159,7 +159,7 @@ enum SPMCPReadOnlyGuard {
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
                 if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
-                    while i < n && chars[i] != "\n" { i += 1 }
+                    while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { i += 1 }
                     out.append(" ")
                     continue
                 }

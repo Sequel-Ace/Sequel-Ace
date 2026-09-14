@@ -379,6 +379,34 @@ final class SADatabaseAssertionTests: XCTestCase {
         )
     }
 
+    /// Swift folds "\r\n" into a single Character, which a comparison with "\n"
+    /// never matches: a `#` or `--` comment in CRLF text then swallowed the
+    /// `USE` or `DROP DATABASE` behind it, and the tracked database diverged
+    /// from the server's.
+    func testLineCommentsEndAtCRLFLineEndings() {
+        XCTAssertTrue(queryMayChangeDatabaseContext("-- comment\r\nUSE target"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("# comment\r\nDROP DATABASE target"))
+        XCTAssertFalse(queryMayChangeDatabaseContext("-- USE target\r\nSELECT 1"))
+        XCTAssertEqual(
+            SADatabaseAssertion.stripSQLComments(
+                "SELECT 1 -- c\r\nFROM t",
+                serverVersion: 80_046,
+                serverIsMariaDB: false
+            ),
+            "SELECT 1  \r\nFROM t"
+        )
+        // MySQL ends a line comment at a line feed only; a lone carriage
+        // return stays part of the comment.
+        XCTAssertEqual(
+            SADatabaseAssertion.stripSQLComments(
+                "SELECT 1 # c\rFROM t",
+                serverVersion: 80_046,
+                serverIsMariaDB: false
+            ),
+            "SELECT 1  "
+        )
+    }
+
     func testExecutableCommentVersionAndVendorGatesAreRespected() {
         XCTAssertFalse(queryMayChangeDatabaseContext("/*!99999 USE target */"))
         XCTAssertFalse(queryMayChangeDatabaseContext("/*M!80000 USE target */"))

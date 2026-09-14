@@ -631,13 +631,13 @@ extension SPAppController: SPMCPDataSource {
             }
             // Comments are copied verbatim; a `?` inside one is not a placeholder.
             if c == "#" {                                        // # to end of line
-                while i < n && chars[i] != "\n" { out.append(chars[i]); i += 1 }
+                while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
                 continue
             }
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {    // -- (needs whitespace/EOL after)
                 let next = i + 2 < n ? chars[i + 2] : " "
                 if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
-                    while i < n && chars[i] != "\n" { out.append(chars[i]); i += 1 }
+                    while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
                     continue
                 }
             }

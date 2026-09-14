@@ -187,6 +187,8 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT a FROM t UNION SELECT b FROM u",
             "/* leading comment */ SELECT 1",
             "-- a comment\nSELECT 1",
+            "-- a comment\r\nSELECT 1",
+            "# a comment\r\nSHOW TABLES",
             "SELECT COUNT(*) FROM t WHERE name = 'Bob'",
         ], "read")
     }
@@ -258,6 +260,9 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "/* x */ DELETE FROM t",
             "-- c\nUPDATE t SET x = 1",
             "# c\nDROP TABLE t",
+            "-- c\r\nUPDATE t SET x = 1",
+            "# c\r\nDROP TABLE t",
+            "SELECT 1 -- c\r\n; DROP TABLE t",
             "/* multi\nline */ INSERT INTO t VALUES (1)",
         ], "comment-hidden")
     }
@@ -331,6 +336,11 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
     func testCommentStripInsertsWhitespace() {
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1/* */AS x"), "SELECT 1 AS x")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT * FROM/**/t"), "SELECT * FROM t")
+        // A line comment ends at a CRLF line ending too (Swift folds "\r\n" into
+        // one Character, which "\n" alone never matches); a lone CR does not end
+        // it, as in MySQL.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 -- c\r\nFROM t"), "SELECT 1  \r\nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 # c\rFROM t"), "SELECT 1  ")
         // Still caught: INTO/**/OUTFILE -> INTO OUTFILE keeps the keyword intact.
         XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
         // Still allowed: a comment between other tokens is just whitespace.
