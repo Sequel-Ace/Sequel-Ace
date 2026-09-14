@@ -350,6 +350,9 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "EXPLAIN ANALYZE FORMAT=JSON INTO @plan FOR DATABASE app DELETE FROM t",
             "EXPLAIN ANALYZE FOR SCHEMA `my db` DELETE FROM t",
             "EXPLAIN ANALYZE INTO @'plan result' UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET x = 1",
+            "EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id",
         ], "explain-analyze-write")
     }
 

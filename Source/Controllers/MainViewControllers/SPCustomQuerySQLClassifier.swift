@@ -299,11 +299,77 @@ enum SPCustomQuerySQLClassifier {
         return !mutatingExplainAnalyzeStatements.contains(tokens[index])
     }
 
+    /// Splits an EXPLAIN statement into tokens the way the server does: a
+    /// quoted operand - `` `my db` ``, `'plan result'`, `@'plan\' result'` -
+    /// is one token however much whitespace it contains (a doubled quote and,
+    /// outside backticks, a backslash escape stay inside it), `=` is a token
+    /// of its own, and a word ends at whitespace, `=` or a quote, so
+    /// `` `app`UPDATE `` is two tokens. An unterminated quote consumes the rest.
     private static func sqlTokens(from upper: String) -> [String] {
-        upper
-            .replacingOccurrences(of: "=", with: " = ")
-            .split(whereSeparator: { $0.isWhitespace })
-            .map(String.init)
+        let characters = Array(upper)
+        var tokens: [String] = []
+        var index = 0
+
+        func isQuote(_ character: Character) -> Bool {
+            character == "'" || character == "\"" || character == "`"
+        }
+
+        while index < characters.count {
+            let character = characters[index]
+
+            if character.isWhitespace {
+                index += 1
+                continue
+            }
+            if character == "=" {
+                tokens.append("=")
+                index += 1
+                continue
+            }
+
+            let startsQuotedVariable = character == "@" && index + 1 < characters.count && isQuote(characters[index + 1])
+            if isQuote(character) || startsQuotedVariable {
+                var token = ""
+                if startsQuotedVariable {
+                    token.append(character)
+                    index += 1
+                }
+                let quote = characters[index]
+                token.append(quote)
+                index += 1
+                while index < characters.count {
+                    let next = characters[index]
+                    token.append(next)
+                    index += 1
+                    if next == "\\", quote != "`", index < characters.count {
+                        token.append(characters[index])
+                        index += 1
+                    } else if next == quote {
+                        if index < characters.count, characters[index] == quote {
+                            token.append(characters[index])
+                            index += 1
+                        } else {
+                            break
+                        }
+                    }
+                }
+                tokens.append(token)
+                continue
+            }
+
+            var word = ""
+            while index < characters.count {
+                let next = characters[index]
+                if next.isWhitespace || next == "=" || isQuote(next) {
+                    break
+                }
+                word.append(next)
+                index += 1
+            }
+            tokens.append(word)
+        }
+
+        return tokens
     }
 
     private static func skipExplainModifiers(in tokens: [String], from index: inout Int) {
@@ -325,9 +391,9 @@ enum SPCustomQuerySQLClassifier {
                     index += 1
                 }
             case "INTO":
-                // `INTO @var` stores the plan in a user variable; skip the variable too.
-                index += 1
-                skipModifierOperand(in: tokens, from: &index)
+                // `INTO @var` stores the plan in a user variable; the variable is
+                // one token even when quoted, so skip both.
+                index += min(2, tokens.count - index)
             case "FOR":
                 // Only `FOR SCHEMA name` / `FOR DATABASE name` are modifiers;
                 // `FOR CONNECTION id` is the explained subject itself.
@@ -335,48 +401,11 @@ enum SPCustomQuerySQLClassifier {
                       tokens[index + 1] == "SCHEMA" || tokens[index + 1] == "DATABASE" else {
                     return
                 }
-                index += 2
-                skipModifierOperand(in: tokens, from: &index)
+                index += min(3, tokens.count - index)
             default:
                 return
             }
         }
-    }
-
-    /// Skips one modifier operand (a user variable or a schema name). A quoted
-    /// operand - `@'plan result'`, `` `my db` `` - may contain whitespace or `=`,
-    /// which `sqlTokens` splits on, so all tokens up to the closing quote belong
-    /// to it; stopping inside the name would let a name fragment stand in for
-    /// the statement and hide a mutating verb. An unterminated quote consumes
-    /// the rest, which leaves no statement and keeps the conservative answer.
-    private static func skipModifierOperand(in tokens: [String], from index: inout Int) {
-        guard index < tokens.count else { return }
-        var operand = Substring(tokens[index])
-        index += 1
-        if operand.hasPrefix("@") {
-            operand = operand.dropFirst()
-        }
-        guard let quote = operand.first, quote == "`" || quote == "'" || quote == "\"" else {
-            return
-        }
-        if closesQuotedOperand(operand.dropFirst(), quote: quote) {
-            return
-        }
-        while index < tokens.count {
-            let token = tokens[index]
-            index += 1
-            if closesQuotedOperand(Substring(token), quote: quote) {
-                return
-            }
-        }
-    }
-
-    /// Whether a token ends a quoted operand: it must end with an odd number of
-    /// the quote character, because a doubled quote is an escaped quote inside
-    /// the name.
-    private static func closesQuotedOperand(_ token: Substring, quote: Character) -> Bool {
-        let trailingQuotes = token.reversed().prefix { $0 == quote }.count
-        return trailingQuotes % 2 == 1
     }
 }
 

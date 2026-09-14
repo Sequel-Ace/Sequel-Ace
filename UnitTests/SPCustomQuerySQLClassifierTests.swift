@@ -70,6 +70,14 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `a`` b` DELETE FROM t"))
         // An unterminated quote swallows the rest: no statement, so no free pass.
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db DELETE FROM t"))
+        // The statement may follow the closing quote without whitespace, a
+        // backslash escapes a quote inside a quoted variable name, and a
+        // quoted schema with whitespace precedes a multi-table DELETE.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan\\\" result\" DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`SELECT 1"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' SELECT * FROM t"))
         // Reads behind the same modifiers stay safe; plain EXPLAIN never
