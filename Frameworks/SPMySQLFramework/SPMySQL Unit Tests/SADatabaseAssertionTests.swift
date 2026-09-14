@@ -385,6 +385,7 @@ final class SADatabaseAssertionTests: XCTestCase {
     /// from the server's.
     func testLineCommentsEndAtCRLFLineEndings() {
         XCTAssertTrue(queryMayChangeDatabaseContext("-- comment\r\nUSE target"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("--\r\nUSE target"))
         XCTAssertTrue(queryMayChangeDatabaseContext("# comment\r\nDROP DATABASE target"))
         XCTAssertFalse(queryMayChangeDatabaseContext("-- USE target\r\nSELECT 1"))
         XCTAssertEqual(

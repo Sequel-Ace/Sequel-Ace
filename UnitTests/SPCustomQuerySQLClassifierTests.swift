@@ -89,6 +89,11 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 # c\r\nFROM t"),
             "SELECT 1  \r\nFROM t"
         )
+        // A bare `--` directly followed by CRLF starts a comment too.
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("--\r\nSELECT 1"),
+            " \r\nSELECT 1"
+        )
         // MySQL ends a line comment at a line feed only; a lone carriage
         // return stays part of the comment.
         XCTAssertEqual(

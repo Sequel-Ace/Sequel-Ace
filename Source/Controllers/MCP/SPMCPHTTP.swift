@@ -158,7 +158,8 @@ enum SPMCPReadOnlyGuard {
             // -- comment: the second dash must be followed by whitespace/control or EOL
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
+                if i + 2 >= n || next == " " || next == "\t" || next == "\r"
+                    || SPCustomQuerySQLClassifier.endsLineComment(next) {
                     while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { i += 1 }
                     out.append(" ")
                     continue

@@ -188,6 +188,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "/* leading comment */ SELECT 1",
             "-- a comment\nSELECT 1",
             "-- a comment\r\nSELECT 1",
+            "--\r\nSELECT 1",
             "# a comment\r\nSHOW TABLES",
             "SELECT COUNT(*) FROM t WHERE name = 'Bob'",
         ], "read")
@@ -341,6 +342,10 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         // it, as in MySQL.
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 -- c\r\nFROM t"), "SELECT 1  \r\nFROM t")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 # c\rFROM t"), "SELECT 1  ")
+        // A bare `--` directly followed by CRLF starts a comment as well: the
+        // stripped query must keep its SELECT prefix so run_query caps it.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("--\r\nSELECT 1"), " \r\nSELECT 1")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\r\nFROM t"), "SELECT 1  \r\nFROM t")
         // Still caught: INTO/**/OUTFILE -> INTO OUTFILE keeps the keyword intact.
         XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
         // Still allowed: a comment between other tokens is just whitespace.
