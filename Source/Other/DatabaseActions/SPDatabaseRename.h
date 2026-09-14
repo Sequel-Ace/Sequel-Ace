@@ -43,6 +43,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *failureDescription;
 
 /**
+ * Whether the last rename changed anything on the server before it stopped:
+ * the target database exists and objects may have moved into it, so the
+ * databases and tables shown need refreshing even though the rename failed.
+ */
+@property (nonatomic, readonly) BOOL changedServer;
+
+/**
  * This method renames an existing database.
  *
  * @param sourceDatabase information tuple about the source database

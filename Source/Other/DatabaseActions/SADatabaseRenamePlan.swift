@@ -246,14 +246,22 @@ import Foundation
     @objc public let statement: String?
     /// Why it could not be rewritten, phrased to follow "Moving view 'x' failed:".
     @objc public let failureReason: String?
+    /// The names, unquoted, of the objects the definition reads from that
+    /// live in the source database - references qualified with it and
+    /// unqualified ones, in the order they appear - so the views can be
+    /// created after the views they select from. Aliases and CTE names in
+    /// object position may be among them; they match no view and do no harm.
+    @objc public let referencedObjects: [String]
 
-    init(statement: String) {
+    init(statement: String, referencedObjects: [String]) {
         self.statement = statement
+        self.referencedObjects = referencedObjects
         failureReason = nil
     }
 
     init(failureReason: String) {
         statement = nil
+        referencedObjects = []
         self.failureReason = failureReason
     }
 }
@@ -290,6 +298,7 @@ import Foundation
     }
 
     private let sourceDatabase: String
+    private let serverLoweredSource: String?
     private let quotedTarget: String
     private let caseInsensitiveNames: Bool
 
@@ -300,11 +309,23 @@ import Foundation
     ///   - targetDatabase: The database they are recreated in.
     ///   - caseInsensitiveNames: Whether the server compares database names
     ///     without regard to case (`lower_case_table_names` 1 or 2).
-    @objc(initWithSourceDatabase:targetDatabase:caseInsensitiveNames:)
-    public init(sourceDatabase: String, targetDatabase: String, caseInsensitiveNames: Bool) {
+    ///   - serverLoweredSource: The source's name as the server folds it
+    ///     (`SELECT LOWER(…)`), which is how it prints the name where it
+    ///     folds case; the server also folds letters beyond ASCII, so this
+    ///     form is the reference and the client's ASCII folding only an
+    ///     approximation for when it could not be read.
+    @objc(initWithSourceDatabase:targetDatabase:caseInsensitiveNames:serverLoweredSource:)
+    public init(sourceDatabase: String, targetDatabase: String, caseInsensitiveNames: Bool, serverLoweredSource: String?) {
         self.sourceDatabase = sourceDatabase
+        self.serverLoweredSource = serverLoweredSource
         quotedTarget = Self.backtickQuoted(targetDatabase)
         self.caseInsensitiveNames = caseInsensitiveNames
+    }
+
+    /// Creates a rewriter without the server-folded form of the source.
+    @objc(initWithSourceDatabase:targetDatabase:caseInsensitiveNames:)
+    public convenience init(sourceDatabase: String, targetDatabase: String, caseInsensitiveNames: Bool) {
+        self.init(sourceDatabase: sourceDatabase, targetDatabase: targetDatabase, caseInsensitiveNames: caseInsensitiveNames, serverLoweredSource: nil)
     }
 
     /// Rewrites one view definition.
@@ -323,6 +344,7 @@ import Foundation
         var expectingAlias = false
         var awaitingViewName = false
         var viewClauseRewritten = false
+        var referencedObjects: [String] = []
         var previous: Token?
 
         for token in Self.tokens(of: statement) {
@@ -404,6 +426,9 @@ import Foundation
                     // `db`.`object` after FROM/JOIN/comma: the first part is the database
                     if parts.count == 2, isSourceDatabase(parts[0]) {
                         rewritten[0] = quotedTarget
+                        referencedObjects.append(Self.unquoted(parts[1]))
+                    } else if parts.count == 1 {
+                        referencedObjects.append(Self.unquoted(parts[0]))
                     }
                     expectingAlias = true
                 } else if context == .objectReferences {
@@ -420,7 +445,7 @@ import Foundation
         guard viewClauseRewritten else {
             return SADatabaseRenameViewRewrite(failureReason: NSLocalizedString("its definition returned by SHOW CREATE VIEW has no VIEW clause.", comment: "rename database: why a view was not recreated"))
         }
-        return SADatabaseRenameViewRewrite(statement: output)
+        return SADatabaseRenameViewRewrite(statement: output, referencedObjects: referencedObjects)
     }
 
     /// Keywords after which dotted names are column references again.
@@ -480,15 +505,36 @@ import Foundation
     }
 
     /// Whether a backticked identifier names the source database, compared
-    /// the way the server compares database names.
+    /// the way the server compares database names: byte for byte, or - where
+    /// the server folds case - equal to the source's server-folded form or
+    /// to it under ASCII folding.
     private func isSourceDatabase(_ quotedIdentifier: String) -> Bool {
+        let name = Self.unquoted(quotedIdentifier)
+        if name.utf8.elementsEqual(sourceDatabase.utf8) {
+            return true
+        }
+        guard caseInsensitiveNames else { return false }
+        if let serverLoweredSource, name.utf8.elementsEqual(serverLoweredSource.utf8) {
+            return true
+        }
+        return Self.asciiLowercased(Array(name.utf8)) == Self.asciiLowercased(Array(sourceDatabase.utf8))
+    }
+
+    /// The bytes of a name with the ASCII letters folded to lower case - an
+    /// approximation of the folding the server applies to database and
+    /// table names under `lower_case_table_names`, for when the server's own
+    /// folded form is not at hand. Unicode case folding is not applied on
+    /// purpose: it would merge names the server keeps apart (`ẞ` and `ß`,
+    /// say), and a merged name could hide a view from the rename.
+    static func asciiLowercased(_ bytes: [UInt8]) -> [UInt8] {
+        bytes.map { (0x41...0x5A).contains($0) ? $0 + 0x20 : $0 }
+    }
+
+    /// The name inside a backticked identifier, with doubled backticks undone.
+    private static func unquoted(_ quotedIdentifier: String) -> String {
         // scalars, not Characters: a combining mark after the opening backtick
         // would otherwise be dropped together with it
-        let name = String(String.UnicodeScalarView(quotedIdentifier.unicodeScalars.dropFirst().dropLast())).replacingOccurrences(of: "``", with: "`")
-        if caseInsensitiveNames {
-            return name.lowercased().utf8.elementsEqual(sourceDatabase.lowercased().utf8)
-        }
-        return name.utf8.elementsEqual(sourceDatabase.utf8)
+        String(String.UnicodeScalarView(quotedIdentifier.unicodeScalars.dropFirst().dropLast())).replacingOccurrences(of: "``", with: "`")
     }
 
     static func backtickQuoted(_ name: String) -> String {
@@ -643,12 +689,13 @@ import Foundation
     }
 }
 
-/// Orders the recreation of views so that a view is created after the views
-/// it selects from. `information_schema` lists views alphabetically, and a
+/// Retries the recreation of views that failed while others succeeded: a
 /// `CREATE VIEW` that reads from a view not yet present in the target fails,
-/// so failed views are retried after the others. A pass in which no view
-/// could be created means the remaining failures are real, and the first of
-/// them is reported.
+/// so failed views are retried after the others. The views arrive here
+/// already ordered by their references (see `SADatabaseRenameExecutor`), so
+/// a retry is only needed for a dependency the rewriter could not see. A
+/// pass in which no view could be created means the remaining failures are
+/// real, and the first of them is reported.
 @objc public final class SADatabaseRenameViewQueue: NSObject {
 
     private var pending: [String]
@@ -738,6 +785,11 @@ import Foundation
     private let run: Run
     private let quote: Quote
 
+    /// Whether the last rename changed anything on the server: the target
+    /// database exists, and tables or views may have moved into it. The
+    /// caller refreshes what it shows when a rename stopped after this point.
+    @objc public private(set) var changedServer = false
+
     /// Creates an executor. The connection is expected to transport
     /// statements and results in UTF-8 (`SPDatabaseRename` switches it to
     /// utf8mb4 for the duration of the rename), so that view definitions
@@ -768,6 +820,7 @@ import Foundation
     /// - Returns: `nil` on success, otherwise the explanation for the user.
     @objc(renameDatabase:to:encoding:collation:)
     public func rename(_ source: String, to target: String, encoding: String?, collation: String?) -> String? {
+        changedServer = false
         let quotedSource = SADatabaseRenameViewRewriter.backtickQuoted(source)
         let quotedTarget = SADatabaseRenameViewRewriter.backtickQuoted(target)
         let schema = quote(source)
@@ -794,14 +847,26 @@ import Foundation
             return []
         }
         let tableRows = rows("SELECT TABLE_NAME, TABLE_TYPE FROM information_schema.TABLES WHERE TABLE_SCHEMA = \(schema) ORDER BY TABLE_NAME")
-        let routineRows = routineRowsForInspection(schema: schema, inspectionError: &inspectionError)
+        // Read first: where the server folds the case of names (1 or 2), it
+        // stores them folded in mysql.proc and mysql.event and prints them
+        // folded, so the queries below must fold too - and the server's own
+        // folded forms of source and target are the reference for that,
+        // since the server also folds letters beyond ASCII.
+        let lowerCaseTableNames = Int(Self.text(rows("SELECT @@lower_case_table_names").first?.first) ?? "") ?? 0
+        let caseInsensitiveNames = lowerCaseTableNames != 0
+        var serverLoweredSource: String?
+        var serverLoweredTarget: String?
+        if caseInsensitiveNames, inspectionError == nil, let lowered = run("SELECT LOWER(\(schema)), LOWER(\(quote(target)))").rows?.first, lowered.count >= 2 {
+            serverLoweredSource = Self.text(lowered[0])
+            serverLoweredTarget = Self.text(lowered[1])
+        }
+        let routineRows = routineRowsForInspection(schema: schema, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         // both forms list the database first and the event's name second
         let eventRows = rows(
             "SHOW EVENTS FROM \(quotedSource)",
-            fallback: "SELECT db, name FROM mysql.event WHERE db = \(schema) ORDER BY name"
+            fallback: "SELECT db, name FROM mysql.event WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name"
         ).map { Array($0.dropFirst()) }
         let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = \(schema) ORDER BY TRIGGER_NAME")
-        let lowerCaseTableNames = Int(Self.text(rows("SELECT @@lower_case_table_names").first?.first) ?? "") ?? 0
         let viewRows = rows("SELECT TABLE_NAME, CHARACTER_SET_CLIENT, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS WHERE TABLE_SCHEMA = \(schema) ORDER BY TABLE_NAME")
 
         let plan = SADatabaseRenamePlan(sourceDatabase: source, targetDatabase: target, lowerCaseTableNames: lowerCaseTableNames, tableRows: tableRows, routineRows: routineRows, eventRows: eventRows, triggerRows: triggerRows)
@@ -839,14 +904,14 @@ import Foundation
         }
 
         // Everything the views need is read before anything moves: the
-        // session's settings and every definition. The session's sql_mode
-        // and identifier quoting are switched for the reading and the
-        // replaying (ANSI_QUOTES would print double-quoted identifiers,
-        // NO_BACKSLASH_ESCAPES would misread the printed escapes; without
-        // quoting SHOW CREATE VIEW prints bare names) and restored on every
-        // way out. The definitions are kept by the bytes of the view's name:
-        // the server keeps names apart that Swift's String would fold (NFC
-        // and NFD `café`).
+        // session's settings and every definition, already rewritten for the
+        // target. The session's sql_mode and identifier quoting are switched
+        // for the reading and the replaying (ANSI_QUOTES would print
+        // double-quoted identifiers, NO_BACKSLASH_ESCAPES would misread the
+        // printed escapes; without quoting SHOW CREATE VIEW prints bare
+        // names) and restored on every way out. The definitions are kept by
+        // the bytes of the view's name: the server keeps names apart that
+        // Swift's String would fold (NFC and NFD `café`).
         var settings: [(set: String, restore: String)] = []
         func restoreSettings() {
             if !settings.isEmpty {
@@ -855,6 +920,7 @@ import Foundation
         }
         var session: SessionSettings?
         var definitions: [[UInt8]: ViewDefinition] = [:]
+        let rewriter = SADatabaseRenameViewRewriter(sourceDatabase: source, targetDatabase: target, caseInsensitiveNames: plan.caseInsensitiveNames, serverLoweredSource: serverLoweredSource)
         if !plan.views.isEmpty {
             let sessionResult = run("SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create")
             guard let current = SessionSettings(row: sessionResult.rows?.first) else {
@@ -891,7 +957,13 @@ import Foundation
                     plan.recordUnsupportedDefinition(ofView: view)
                     return plan.failureDescription
                 }
-                definitions[Array(view.utf8)] = ViewDefinition(statement: statement, collation: row.count > 3 ? Self.text(row[3]) : nil)
+                let rewrite = rewriter.rewriteCreateStatement(statement, forView: view)
+                guard let rewritten = rewrite.statement else {
+                    restoreSettings()
+                    plan.recordInspectionFailure(rewrite.failureReason)
+                    return plan.failureDescription
+                }
+                definitions[Array(view.utf8)] = ViewDefinition(statement: rewritten, references: rewrite.referencedObjects, collation: row.count > 3 ? Self.text(row[3]) : nil)
             }
         }
 
@@ -900,6 +972,7 @@ import Foundation
             plan.recordCreateFailure(error)
             return plan.failureDescription
         }
+        changedServer = true
 
         for table in plan.tables {
             let quotedTable = SADatabaseRenameViewRewriter.backtickQuoted(table)
@@ -922,8 +995,9 @@ import Foundation
         }
 
         if let session {
-            let rewriter = SADatabaseRenameViewRewriter(sourceDatabase: source, targetDatabase: target, caseInsensitiveNames: plan.caseInsensitiveNames)
-            let queue = SADatabaseRenameViewQueue(views: plan.views)
+            // a view is created after the views it selects from; the queue
+            // still retries for a dependency the rewriter could not see
+            let queue = SADatabaseRenameViewQueue(views: Self.orderedByReferences(plan.views, definitions: definitions, caseInsensitiveNames: plan.caseInsensitiveNames))
 
             // MariaDB prints references to the view's own database without
             // the database name when that database is the connection's
@@ -937,7 +1011,7 @@ import Foundation
             defaultDatabaseSwitched = true
 
             while let view = queue.next {
-                let outcome = recreate(view, definition: definitions[Array(view.utf8)], rewriter: rewriter, session: session)
+                let outcome = recreate(view, definition: definitions[Array(view.utf8)], session: session)
                 queue.record(view, created: outcome == nil, reason: outcome)
             }
 
@@ -950,9 +1024,9 @@ import Foundation
             let expectedMode = Self.sqlMode(forViewDefinitions: session.sqlMode)
             let check = run("SELECT DATABASE(), @@sql_mode").rows?.first ?? []
             let selected = check.count >= 2 ? Self.text(check[0]) ?? "" : ""
-            let targetSelected = plan.caseInsensitiveNames
-                ? selected.lowercased().utf8.elementsEqual(target.lowercased().utf8)
-                : selected.utf8.elementsEqual(target.utf8)
+            let targetSelected = selected.utf8.elementsEqual(target.utf8)
+                || (plan.caseInsensitiveNames && serverLoweredTarget != nil && selected.utf8.elementsEqual(serverLoweredTarget!.utf8))
+                || (plan.caseInsensitiveNames && SADatabaseRenameViewRewriter.asciiLowercased(Array(selected.utf8)) == SADatabaseRenameViewRewriter.asciiLowercased(Array(target.utf8)))
             let sessionIntact = check.count >= 2 && targetSelected && Self.text(check[1]) == expectedMode
             restoreSettings()
             if let stuckView = queue.stuckView {
@@ -987,15 +1061,17 @@ import Foundation
     /// read first: it lists everything, where it exists (MariaDB, MySQL up to
     /// 5.7 - even a data directory never run through mysql_upgrade) and is
     /// readable. Where it is not, `information_schema.ROUTINES` is trusted
-    /// only for an account whose privileges make the server show every
-    /// routine of the database - global SELECT or SHOW_ROUTINE, or EXECUTE,
-    /// ALTER ROUTINE or CREATE ROUTINE granted globally or on the database
-    /// (a grant on a database pattern counts, as the server matches it with
-    /// LIKE); privileges that come through a role are not seen here, so such
-    /// an account is refused. Anything else fails closed.
-    private func routineRowsForInspection(schema: String, inspectionError: inout String?) -> [[Any]] {
+    /// only for an account whose global privileges provably cover every
+    /// routine: SHOW_ROUTINE (a dynamic privilege, which cannot be partially
+    /// revoked) or SELECT - the latter not on a MySQL 8 with partial revokes
+    /// on, where a global SELECT may exclude this very database while
+    /// USER_PRIVILEGES still lists it. Schema-level grants are not consulted
+    /// at all: an exact grant shadows a matching wildcard grant, and neither
+    /// says which routines the server shows. Privileges that come through a
+    /// role are not seen here either. Anything else fails closed.
+    private func routineRowsForInspection(schema: String, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [[Any]] {
         guard inspectionError == nil else { return [] }
-        if let rows = run("SELECT name, type FROM mysql.proc WHERE db = \(schema) ORDER BY name").rows {
+        if let rows = run("SELECT name, type FROM mysql.proc WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name").rows {
             return rows
         }
         // the account as the privilege tables spell it, 'user'@'host'; the
@@ -1003,12 +1079,13 @@ import Foundation
         let host = "SUBSTRING_INDEX(CURRENT_USER(), '@', -1)"
         let user = "SUBSTRING(CURRENT_USER(), 1, CHAR_LENGTH(CURRENT_USER()) - CHAR_LENGTH(\(host)) - 1)"
         let grantee = "CONCAT('''', \(user), '''@''', \(host), '''')"
-        let privileges = run(
-            "SELECT (SELECT COUNT(*) FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE', 'EXECUTE', 'ALTER ROUTINE', 'CREATE ROUTINE'))"
-                + " + (SELECT COUNT(*) FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE = \(grantee) AND \(schema) LIKE TABLE_SCHEMA AND PRIVILEGE_TYPE IN ('EXECUTE', 'ALTER ROUTINE', 'CREATE ROUTINE'))"
-        )
-        guard let count = Int(Self.text(privileges.rows?.first?.first) ?? ""), count > 0 else {
-            inspectionError = NSLocalizedString("this account cannot list the database's routines completely (it needs SELECT on mysql.proc, global SELECT or SHOW_ROUTINE, or EXECUTE, ALTER ROUTINE or CREATE ROUTINE on the database, granted directly).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
+        let granted = Set((run("SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE')").rows ?? [])
+            .compactMap { Self.text($0.first)?.uppercased() })
+        // a server without the variable (MariaDB, MySQL up to 5.7) has no partial revokes
+        let partialRevokes = Self.text(run("SELECT @@partial_revokes").rows?.first?.first)?.uppercased()
+        let partialRevokesOn = partialRevokes == "ON" || partialRevokes == "1"
+        guard granted.contains("SHOW_ROUTINE") || (granted.contains("SELECT") && !partialRevokesOn) else {
+            inspectionError = NSLocalizedString("this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
             return []
         }
         let routines = run("SELECT ROUTINE_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = \(schema) ORDER BY ROUTINE_NAME")
@@ -1019,11 +1096,63 @@ import Foundation
         return rows
     }
 
-    /// One view's definition as `SHOW CREATE VIEW` printed it, with the
-    /// collation it was created under.
+    /// The condition matching a schema-name column of the `mysql` tables
+    /// against the source. With `lower_case_table_names` 1 or 2 the server
+    /// stores database names folded to lower case in those binary-collated
+    /// columns, so an exact comparison would find nothing - and routines or
+    /// events it did not find would be dropped with the source; the server
+    /// folds both sides then.
+    private static func schemaMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
+        caseInsensitiveNames ? "LOWER(\(column)) = LOWER(\(schema))" : "\(column) = \(schema)"
+    }
+
+    /// One view's definition, rewritten for the target, with the source
+    /// objects it reads from and the collation it was created under.
     private struct ViewDefinition {
         let statement: String
+        let references: [String]
         let collation: String?
+    }
+
+    /// The views in an order that creates every view after the views it
+    /// selects from, keeping `information_schema`'s order otherwise. Every
+    /// view is kept by the exact bytes of its name, so no entry of the
+    /// inventory can vanish behind another; only the lookup of a reference
+    /// folds ASCII case where the server folds the case of names, and an
+    /// exact match wins. A reference that names no view, or that closes a
+    /// cycle, is left to the queue's retry.
+    private static func orderedByReferences(_ views: [String], definitions: [[UInt8]: ViewDefinition], caseInsensitiveNames: Bool) -> [String] {
+        let exact = Dictionary(views.map { (Array($0.utf8), $0) }, uniquingKeysWith: { first, _ in first })
+        let folded = caseInsensitiveNames
+            ? Dictionary(views.map { (SADatabaseRenameViewRewriter.asciiLowercased(Array($0.utf8)), $0) }, uniquingKeysWith: { first, _ in first })
+            : [:]
+        func referencedView(_ reference: String) -> String? {
+            let bytes = Array(reference.utf8)
+            return exact[bytes] ?? folded[SADatabaseRenameViewRewriter.asciiLowercased(bytes)]
+        }
+
+        var ordered: [String] = []
+        var done: Set<[UInt8]> = []
+        var visiting: Set<[UInt8]> = []
+
+        func visit(_ view: String) {
+            let viewKey = Array(view.utf8)
+            guard !done.contains(viewKey), !visiting.contains(viewKey) else { return }
+            visiting.insert(viewKey)
+            for reference in definitions[viewKey]?.references ?? [] {
+                if let referenced = referencedView(reference) {
+                    visit(referenced)
+                }
+            }
+            visiting.remove(viewKey)
+            done.insert(viewKey)
+            ordered.append(view)
+        }
+
+        for view in views {
+            visit(view)
+        }
+        return ordered
     }
 
     /// The text of a result value: a string as it is, a number as the server
@@ -1130,20 +1259,16 @@ import Foundation
     /// afterwards. `character_set_client` is left alone on purpose: it tells
     /// the server how to read the bytes the connection sends, and those are
     /// UTF-8.
-    private func recreate(_ view: String, definition: ViewDefinition?, rewriter: SADatabaseRenameViewRewriter, session: SessionSettings) -> String? {
+    private func recreate(_ view: String, definition: ViewDefinition?, session: SessionSettings) -> String? {
         guard let definition else {
             return SADatabaseRenamePlan.unknownReason
-        }
-        let rewrite = rewriter.rewriteCreateStatement(definition.statement, forView: view)
-        guard let statement = rewrite.statement else {
-            return rewrite.failureReason
         }
 
         let viewCollation = (definition.collation != nil && definition.collation != session.collation) ? definition.collation : nil
         if let viewCollation, let error = run("SET collation_connection = \(quote(viewCollation))").error {
             return error
         }
-        let created = run(statement)
+        let created = run(definition.statement)
         if viewCollation != nil {
             _ = run("SET collation_connection = \(quote(session.collation))")
         }

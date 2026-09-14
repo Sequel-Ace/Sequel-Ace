@@ -563,7 +563,7 @@
 "the selected account" = "the selected account";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, global SELECT or SHOW_ROUTINE, or EXECUTE, ALTER ROUTINE or CREATE ROUTINE on the database, granted directly)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, global SELECT or SHOW_ROUTINE, or EXECUTE, ALTER ROUTINE or CREATE ROUTINE on the database, granted directly).";
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";

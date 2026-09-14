@@ -5013,6 +5013,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename failureDescription]];
         }
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:message callback:nil];
+        // A rename that stopped after the target was created leaves objects
+        // split across the two databases: show them where they are now.
+        if ([dbActionRename changedServer]) {
+            [self setDatabases];
+            [tablesListInstance updateTables:self];
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
     }
 }
 

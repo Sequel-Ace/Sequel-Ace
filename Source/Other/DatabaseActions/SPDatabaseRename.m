@@ -37,6 +37,7 @@
 @interface SPDatabaseRename ()
 
 @property (nonatomic, copy, readwrite, nullable) NSString *failureDescription;
+@property (nonatomic, readwrite) BOOL changedServer;
 
 @end
 
@@ -55,6 +56,7 @@
     SPLog(@"renameDatabaseFrom: %@, to: %@", sourceDatabaseName, targetDatabase);
 
     self.failureDescription = nil;
+    self.changedServer = NO;
 
 	// Check, whether the source database exists and the target database doesn't
 	BOOL sourceExists = [[connection databases] containsObject:sourceDatabaseName];
@@ -115,6 +117,7 @@
                                                     to:targetDatabase
                                               encoding:[sourceDatabase defaultEncoding]
                                              collation:[sourceDatabase defaultCollation]];
+    self.changedServer = [executor changedServer];
     if (encodingChanged) {
         [renameConnection restoreStoredEncoding];
         if ([originalCollation isKindOfClass:[NSString class]]) {
