@@ -603,68 +603,11 @@ extension SPAppController: SPMCPDataSource {
 
     /// Substitutes each unquoted ? in `sql` with the next param as an escaped SQL
     /// literal. Returns (nil, error) if the placeholder and param counts differ.
-    /// Quote- and comment-aware: a `?` inside a string literal or a comment is NOT a
-    /// placeholder and is copied verbatim, so a `?` parked in a comment cannot turn
-    /// param data into executable SQL (it just fails the placeholder/param count check).
+    /// The quote- and comment-aware scan lives in `SPMCPReadOnlyGuard.bindPlaceholders`
+    /// so it is covered by the read-only guard tests; only the literal rendering
+    /// needs the connection.
     private func mcpBindParams(_ params: [Any], intoSQL sql: String, connection conn: SPMySQLConnection) -> (String?, String?) {
-        var out = ""
-        var pIndex = 0
-        var quote: Character?
-        let chars: [Character] = Array(sql)
-        let n = chars.count
-        var i = 0
-        while i < n {
-            let c = chars[i]
-            if let q = quote {
-                out.append(c)
-                if c == "\\" && q != "`" {                       // backslash escape in a string literal
-                    if i + 1 < n { out.append(chars[i + 1]); i += 1 }
-                } else if c == q {
-                    if i + 1 < n && chars[i + 1] == q {           // doubled-quote escape
-                        out.append(q); i += 1
-                    } else {
-                        quote = nil
-                    }
-                }
-                i += 1
-                continue
-            }
-            // Comments are copied verbatim; a `?` inside one is not a placeholder.
-            if c == "#" {                                        // # to end of line
-                while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
-                continue
-            }
-            if c == "-" && i + 1 < n && chars[i + 1] == "-" {    // -- (needs whitespace/EOL after)
-                let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\r"
-                    || SPCustomQuerySQLClassifier.endsLineComment(next) {
-                    while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
-                    continue
-                }
-            }
-            if c == "/" && i + 1 < n && chars[i + 1] == "*" {    // /* ... */ block comment
-                out.append("/"); out.append("*"); i += 2
-                while i < n {
-                    if i + 1 < n && chars[i] == "*" && chars[i + 1] == "/" {
-                        out.append("*"); out.append("/"); i += 2; break
-                    }
-                    out.append(chars[i]); i += 1
-                }
-                continue
-            }
-            if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
-            if c == "?" {
-                if pIndex >= params.count { return (nil, "More ? placeholders than params provided") }
-                out.append(mcpSQLLiteral(for: params[pIndex], connection: conn))
-                pIndex += 1
-                i += 1
-                continue
-            }
-            out.append(c)
-            i += 1
-        }
-        if pIndex != params.count { return (nil, "More params than ? placeholders provided") }
-        return (out, nil)
+        SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { self.mcpSQLLiteral(for: $0, connection: conn) }
     }
 
     private func mcpSQLLiteral(for value: Any, connection conn: SPMySQLConnection) -> String {

@@ -262,6 +262,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "-- c\nUPDATE t SET x = 1",
             "# c\nDROP TABLE t",
             "-- c\r\nUPDATE t SET x = 1",
+            "--\r\nDELETE FROM t",
             "# c\r\nDROP TABLE t",
             "SELECT 1 -- c\r\n; DROP TABLE t",
             "/* multi\nline */ INSERT INTO t VALUES (1)",
@@ -350,6 +351,23 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
         // Still allowed: a comment between other tokens is just whitespace.
         XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly("SELECT/**/1 AS a"))
+    }
+
+    // The placeholder binder scans comments itself: a `?` inside a comment is
+    // copied verbatim and never bound, while a live `?` behind a comment is bound
+    // whether the comment ends with LF or CRLF.
+    func testPlaceholderBindingSkipsCommentsAcrossLineEndings() {
+        func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
+            SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
+        }
+
+        XCTAssertEqual(bind("SELECT ? -- ?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("SELECT ? -- ?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\r\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("--\r\nSELECT ? # ?\r\nFROM t WHERE y = ?", ["a", "b"]).0, "--\r\nSELECT <a> # ?\r\nFROM t WHERE y = <b>")
+        XCTAssertEqual(bind("SELECT '?' /* ? */ FROM t WHERE x = ?", [3]).0, "SELECT '?' /* ? */ FROM t WHERE x = <3>")
+        // A commented `?` must not absorb a param: the counts then disagree.
+        XCTAssertNotNil(bind("SELECT ? -- ?\r\nFROM t", [1, 2]).1)
+        XCTAssertNotNil(bind("SELECT ?, ?", [1]).1)
     }
 
     func testExplainAnalyzeWriteRejected() {
