@@ -631,7 +631,10 @@ typedef enum {
         NSString *editTVString = [editTVtextStorage string];
 
 		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
-			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVString characterCount] - (NSUInteger)maxLength)];
+			// The limit counts code points; the selection is in UTF-16 units and
+			// must start between code points, not inside a surrogate pair.
+			NSUInteger keptLength = (NSUInteger)[editTVString utf16LengthOfFirstCodePoints:(NSInteger)maxLength];
+			[editTextView setSelectedRange:NSMakeRange(keptLength, [editTVString length] - keptLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxLength]];
 
@@ -1318,7 +1321,7 @@ typedef enum {
 				[SPTooltip showWithObject:tooltip];
 
 				if (insertableLength > 0) {
-					[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)insertableLength]]];
+					[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString prefixOfCodePoints:(NSInteger)insertableLength]]];
 				}
 			}
 

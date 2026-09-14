@@ -252,6 +252,24 @@ public class SPProcessListRowSerializer: NSObject {
     }
 }
 
+/// What a length-limited table cell does with the text an edit would leave
+/// in it. `SPDataCellFormatter` asks for it while a value is typed or pasted,
+/// then shows the matching tooltip and applies the cut; the limit is the
+/// column's length in code points, as MySQL counts it.
+@objc public enum SATextLimitDecision: Int {
+    /// No length rule applies - no limit is set, or the text is the NULL
+    /// placeholder itself. Accept it without the formatter's other checks.
+    case exempt
+    /// The text fits the limit. Accept it, subject to the formatter's other
+    /// checks (a BIT column's 0/1 rule).
+    case withinLimit
+    /// One code point too many, most likely typed. Refuse the change.
+    case refuse
+    /// Further over the limit, most likely pasted. Accept the text cut to the
+    /// limit with `prefix(codePoints:)`.
+    case truncate
+}
+
 @objc extension NSString {
     //Special space-character used to separate the column name and column type
     @objc static let columnHeaderSplittingSpace: String = " "
@@ -274,8 +292,71 @@ public class SPProcessListRowSerializer: NSObject {
 	}
 
 
+    /// The number of characters as MySQL counts them against a column's
+    /// length: Unicode code points, not the grapheme clusters Swift's `count`
+    /// yields. A flag or family emoji and a decomposed `é` are one grapheme
+    /// but several code points, and a `VARCHAR(n)` column holds `n` of the
+    /// latter.
     public func characterCount() -> Int {
-        return (self as String).count;
+        return (self as String).unicodeScalars.count
+    }
+
+    /// The UTF-16 length of the prefix that holds the first `count` code
+    /// points - where the surplus of an over-long text starts, as an
+    /// `NSRange` location. Counting the limit in UTF-16 units instead would
+    /// land inside a surrogate pair.
+    ///
+    /// - Parameter count: The number of code points to keep.
+    /// - Returns: The UTF-16 length of that prefix, or the whole length when
+    ///   the string has no more code points than that.
+    @objc(utf16LengthOfFirstCodePoints:)
+    public func utf16Length(ofFirstCodePoints count: Int) -> Int {
+        guard count >= 0 else { return 0 }
+        return (self as String).unicodeScalars.prefix(count).reduce(0) { $0 + UTF16.width($1) }
+    }
+
+    /// The prefix holding the first `count` code points, cut between code
+    /// points so no surrogate pair is split into U+FFFD.
+    ///
+    /// - Parameter count: The number of code points to keep.
+    @objc(prefixOfCodePoints:)
+    public func prefix(codePoints count: Int) -> NSString {
+        return substring(to: utf16Length(ofFirstCodePoints: count)) as NSString
+    }
+
+    /// Decides how a table cell limited to `limit` code points treats this
+    /// text, the text an edit would leave in it.
+    ///
+    /// A text one code point over the limit is refused as a typo, unless it is
+    /// part of the NULL placeholder, so NULL can still be typed into a short
+    /// column. A text further over the limit is cut to it, but only when it is
+    /// also longer than the placeholder. The placeholder is compared as the
+    /// formatter always did: literally for the whole text, with
+    /// `range(of:)` for a part of it.
+    ///
+    /// - Parameters:
+    ///   - limit: The column's length in code points; 0 means no limit.
+    ///   - nullValue: The NULL placeholder the user types, if any.
+    /// - Returns: `.exempt` without a limit or for the placeholder itself,
+    ///   `.refuse`, `.truncate` or `.withinLimit` otherwise.
+    @objc(textLimitDecisionForLimit:nullValue:)
+    public func textLimitDecision(limit: Int, nullValue: String?) -> SATextLimitDecision {
+        if limit == 0 || (nullValue.map { isEqual(to: $0) } ?? false) {
+            return .exempt
+        }
+
+        let count = characterCount()
+        let isPartOfNullValue = nullValue.map { ($0 as NSString).range(of: self as String).location != NSNotFound } ?? false
+        if count == limit + 1 && !isPartOfNullValue {
+            return .refuse
+        }
+
+        let nullValueLength = nullValue.map { ($0 as NSString).length } ?? 0
+        if count > limit && length > nullValueLength {
+            return .truncate
+        }
+
+        return .withinLimit
     }
 
     /// Return a string that does not end with the specfied suffix.

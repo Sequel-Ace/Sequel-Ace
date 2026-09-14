@@ -112,22 +112,23 @@
     // SPNullValue = @"NULL"
     NSString *nullValue = [[NSUserDefaults standardUserDefaults] objectForKey:SPNullValue];
 
-	// No limit set or partialString is NULL value string allow editing
-    if (textLimit == 0 || [partialString isEqualToString:nullValue]){
-		return YES;
-    }
-
-	// A single character over the length of the string - likely typed.  Prevent the change - JCS - Unless it's NULL
-	if ((NSInteger)[partialString characterCount] == textLimit + 1 && [nullValue contains:partialString] == NO) {
-		[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld.", @"Maximum text length is set to %ld."), (long)textLimit]];
-		return NO;
-	}
-
-	// If the string is considerably longer than the limit, likely pasted.  Accept but truncate. - JCS - Unless it's NULL
-	if ((NSInteger)[partialString characterCount] > textLimit && partialString.length > nullValue.length) {
-		[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld. Inserted text was truncated.", @"Maximum text length is set to %ld. Inserted text was truncated."), (long)textLimit]];
-		*newString = [NSString stringWithString:[partialString substringToIndex:textLimit]];
-		return NO;
+	// The length rules are decided in Swift (SATextLimitDecision); this shows
+	// their tooltip and applies the cut.
+	switch ([partialString textLimitDecisionForLimit:textLimit nullValue:nullValue]) {
+		case SATextLimitDecisionExempt:
+			// No limit set or partialString is NULL value string allow editing
+			return YES;
+		case SATextLimitDecisionRefuse:
+			// A single character over the length of the string - likely typed.  Prevent the change - JCS - Unless it's NULL
+			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld.", @"Maximum text length is set to %ld."), (long)textLimit]];
+			return NO;
+		case SATextLimitDecisionTruncate:
+			// If the string is considerably longer than the limit, likely pasted.  Accept but truncate. - JCS - Unless it's NULL
+			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld. Inserted text was truncated.", @"Maximum text length is set to %ld. Inserted text was truncated."), (long)textLimit]];
+			*newString = [NSString stringWithString:[partialString prefixOfCodePoints:textLimit]];
+			return NO;
+		case SATextLimitDecisionWithinLimit:
+			break;
 	}
 
 	// Check for BIT fields whether 1 or 0 are typed

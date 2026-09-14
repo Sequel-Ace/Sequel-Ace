@@ -805,11 +805,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         [cell setAlignment:NSTextAlignmentRight];
     }
 
-    // Set field length limit if field is a varchar to match varchar length
-    if ([typegroup isEqualToString:@"string"] || [typegroup isEqualToString:@"bit"]) {
-        [[cell formatter] setTextLimit:[colDefs[@"length"] integerValue]];
-    }
-
     // Set the line break mode and an NSFormatter subclass which displays line breaks nicely
     [cell setLineBreakMode:NSLineBreakByTruncatingTail];
     [cell setFont:tableFont];
@@ -821,6 +816,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         // default formatter
         [cell setFormatter:[SPDataCellFormatter new]];
         [[cell formatter] setFieldType:colDefs[@"type"]];
+    }
+
+    // Set field length limit if field is a varchar to match varchar length.
+    // Only once the formatter is in place: set before it, the limit went to
+    // the cell's nil formatter and was lost. A display format override (UUID)
+    // validates its own text and takes no limit. BIT columns get none either:
+    // a limit also switches on the formatter's 0/1-only check, which refuses
+    // "N", "NU" and "NUL" on the way to typing NULL, and these cells never had
+    // a working limit.
+    if ([typegroup isEqualToString:@"string"] && [[cell formatter] isKindOfClass:[SPDataCellFormatter class]]) {
+        [(SPDataCellFormatter *)[cell formatter] setTextLimit:[colDefs[@"length"] integerValue]];
     }
 
     if ([typegroup isEqualToString:@"binary"]) {

@@ -506,9 +506,7 @@
 #pragma mark Private API
 
 - (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate {
-	// Convert our string date from the result to an NSDate
-	NSDate *updateDate = [NSDateFormatter.naturalLanguageFormatter dateFromString:mysqlDate];
-	return [NSDateFormatter.shortStyleFormatter stringFromDate:updateDate];
+	return [NSDateFormatter mysqlDateTimeString:mysqlDate dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterShortStyle];
 }
 
 #pragma mark -
