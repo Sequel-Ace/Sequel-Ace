@@ -487,7 +487,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertTrue(inspection.contains("SELECT name, type FROM mysql.proc WHERE LOWER(db) = LOWER('shop') ORDER BY name"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT LOWER('shop'), LOWER('store')"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SHOW EVENTS FROM `shop`"), inspection.joined(separator: "\n"))
-        XCTAssertTrue(inspection.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ORDER BY Db, User, Host"), inspection.joined(separator: "\n"))
+        XCTAssertTrue(inspection.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ESCAPE '\\' ORDER BY Db, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE LOWER(Db) = LOWER('shop') ORDER BY Table_name, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT Table_name, User, Host FROM mysql.columns_priv WHERE LOWER(Db) = LOWER('shop') ORDER BY Table_name, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertEqual(Array(server.statements.dropFirst(11)), [
@@ -946,6 +946,15 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertTrue(restrictedDescription.contains("(`shop`.* for 'app'@'%', partial revoke on `shop`.* for 'reader'@'%', partial revoke on `shop`.* for 'auditor'@'localhost')"), restrictedDescription)
         XCTAssertTrue(restricted.statements.contains("SELECT User, Host FROM mysql.user WHERE JSON_SEARCH(User_attributes, 'one', 'shop', '!', '$.Restrictions[*].Database') IS NOT NULL ORDER BY User, Host"), restricted.statements.joined(separator: "\n"))
         XCTAssertTrue(onlyInspected(restricted), restricted.statements.joined(separator: "\n"))
+        // with partial revokes on, `_` and `%` in a database grant are literal
+        // characters, so the grant is compared for equality instead of as a pattern
+        XCTAssertTrue(restricted.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER(Db) = LOWER('shop') ORDER BY Db, User, Host"), restricted.statements.joined(separator: "\n"))
+
+        let literal = makeServer(lowerCaseTableNames: "0")
+        literal.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
+        XCTAssertNil(literal.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(literal.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE Db = 'shop' ORDER BY Db, User, Host"), literal.statements.joined(separator: "\n"))
+        XCTAssertFalse(literal.statements.contains { $0.contains("LIKE Db") }, literal.statements.joined(separator: "\n"))
 
         let unrestricted = makeServer()
         unrestricted.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
@@ -983,7 +992,11 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         pattern.respond(to: databasePriv, rows: [["shop%", "app", "%"]])
         let patternDescription = try XCTUnwrap(pattern.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(patternDescription.contains("(`shop%`.* for 'app'@'%')"), patternDescription)
-        XCTAssertTrue(pattern.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ORDER BY Db, User, Host"), pattern.statements.joined(separator: "\n"))
+        // the backslash is named as the escape character (the connection quotes
+        // it for the session's sql_mode; the fake server just wraps it), so a
+        // grant written `shop\_1` covers `shop_1` alone under every sql_mode -
+        // only the statement's text can be checked here
+        XCTAssertTrue(pattern.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ESCAPE '\\' ORDER BY Db, User, Host"), pattern.statements.joined(separator: "\n"))
         XCTAssertTrue(onlyInspected(pattern), pattern.statements.joined(separator: "\n"))
 
         let columns = makeServer()
@@ -1002,7 +1015,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         viaSchema.fail(tablesPriv, with: "SELECT command denied to user for table 'tables_priv'")
         viaSchema.respond(to: privilegesQuery, rows: [["SELECT"]])
         viaSchema.respond(to: partialRevokesQuery, rows: [["partial_revokes", "OFF"]])
-        viaSchema.respond(to: "SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE LOWER('shop') LIKE LOWER(TABLE_SCHEMA) ORDER BY TABLE_SCHEMA, GRANTEE", rows: [["shop%", "'app'@'%'"]])
+        viaSchema.respond(to: "SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE LOWER('shop') LIKE LOWER(TABLE_SCHEMA) ESCAPE '\\' ORDER BY TABLE_SCHEMA, GRANTEE", rows: [["shop%", "'app'@'%'"]])
         viaSchema.respond(to: "SELECT TABLE_NAME, GRANTEE FROM information_schema.TABLE_PRIVILEGES WHERE LOWER(TABLE_SCHEMA) = LOWER('shop')", rows: [["orders", "'app'@'%'"]])
         let schemaDescription = try XCTUnwrap(viaSchema.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(schemaDescription.contains("(`shop%`.* for 'app'@'%', `orders` for 'app'@'%')"), schemaDescription)
@@ -1024,7 +1037,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         // a server that keeps the case of names is matched exactly
         let exact = makeServer(lowerCaseTableNames: "0")
         XCTAssertNil(exact.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertTrue(exact.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE 'shop' LIKE Db ORDER BY Db, User, Host"), exact.statements.joined(separator: "\n"))
+        XCTAssertTrue(exact.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE 'shop' LIKE Db ESCAPE '\\' ORDER BY Db, User, Host"), exact.statements.joined(separator: "\n"))
         XCTAssertTrue(exact.statements.contains("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE Db = 'shop' ORDER BY Table_name, User, Host"), exact.statements.joined(separator: "\n"))
     }
 

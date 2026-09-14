@@ -140,6 +140,9 @@
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
 
+/* rename database refused because @@collation_connection could not be read before switching the connection to UTF-8 */
+"The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed." = "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.";
+
 /* rename database refused because the source holds triggers, routines or events; %@ lists them */
 "The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "The database contains objects that Rename Database cannot move: %@. Nothing was changed.";
 

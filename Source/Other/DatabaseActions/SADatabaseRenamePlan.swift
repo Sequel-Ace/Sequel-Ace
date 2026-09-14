@@ -1140,7 +1140,9 @@ import Foundation
     /// in, which show every account's grants only to a global SELECT that no
     /// partial revoke limits. Anything else fails closed. A grant on a
     /// database names a pattern (`shop%` covers `shop`), so the source is
-    /// matched against it with `LIKE`, the way the server does.
+    /// matched against it with `LIKE`, the way the server does - exactly
+    /// where partial revokes are on, since the server reads the grant
+    /// literally then.
     ///
     /// A partial revoke (MySQL 8 with `partial_revokes` on: `REVOKE SELECT
     /// ON shop.*` from an account holding a global SELECT) is the reverse
@@ -1155,9 +1157,18 @@ import Foundation
         guard inspectionError == nil else { return [] }
         let unlistable = NSLocalizedString("this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
         let schema = quote(source)
-        let patternMatch = Self.schemaPatternMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        // with partial revokes on, `_` and `%` in a database grant are
+        // literal characters, not wildcards; the setting, read once, is
+        // needed for the restrictions below anyway
+        let literalGrants: Bool
+        if case .on = partialRevokesForInspection() {
+            literalGrants = true
+        } else {
+            literalGrants = false
+        }
+        let databaseMatch = databaseGrantMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants)
         let match = Self.schemaMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
-        let databases = run("SELECT Db, User, Host FROM mysql.db WHERE \(patternMatch) ORDER BY Db, User, Host")
+        let databases = run("SELECT Db, User, Host FROM mysql.db WHERE \(databaseMatch) ORDER BY Db, User, Host")
         let tables = run("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE \(match) ORDER BY Table_name, User, Host")
         let columns = run("SELECT Table_name, User, Host FROM mysql.columns_priv WHERE \(match) ORDER BY Table_name, User, Host")
         if let databaseRows = databases.rows, let tableRows = tables.rows, let columnRows = columns.rows {
@@ -1202,8 +1213,8 @@ import Foundation
             inspectionError = reason
             return []
         }
-        let schemaPatternMatch = Self.schemaPatternMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
-        let schemas = run("SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE \(schemaPatternMatch) ORDER BY TABLE_SCHEMA, GRANTEE")
+        let schemaGrantMatch = databaseGrantMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants)
+        let schemas = run("SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE \(schemaGrantMatch) ORDER BY TABLE_SCHEMA, GRANTEE")
         guard let schemaRows = schemas.rows else {
             inspectionError = schemas.error
             return []
@@ -1349,12 +1360,23 @@ import Foundation
         caseInsensitiveNames ? "LOWER(\(column)) = LOWER(\(schema))" : "\(column) = \(schema)"
     }
 
-    /// The condition under which the grant pattern in a schema-name column
-    /// (`mysql.db`, `SCHEMA_PRIVILEGES`) covers the source: the source is
-    /// the value, the column the `LIKE` pattern, as the server applies such
-    /// grants; both are folded where the server folds the case of names.
-    private static func schemaPatternMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
-        caseInsensitiveNames ? "LOWER(\(schema)) LIKE LOWER(\(column))" : "\(schema) LIKE \(column)"
+    /// The condition under which a database grant in a schema-name column
+    /// (`mysql.db`, `SCHEMA_PRIVILEGES`) covers the source. A grant names a
+    /// `LIKE` pattern, so the source is the value and the column the
+    /// pattern, as the server applies such grants; both are folded where
+    /// the server folds the case of names. Grant patterns escape a literal
+    /// `_` or `%` with a backslash, and `LIKE` has no default escape
+    /// character under `NO_BACKSLASH_ESCAPES`, so the backslash is named -
+    /// quoted by the connection, which knows the mode (`'\\'`, or `'\'`
+    /// under that mode). With partial revokes on the server reads `_` and
+    /// `%` in database grants literally; `literal` compares for equality
+    /// then.
+    private func databaseGrantMatch(column: String, schema: String, caseInsensitiveNames: Bool, literal: Bool) -> String {
+        if literal {
+            return Self.schemaMatch(column: column, schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        }
+        let escape = "ESCAPE \(quote("\\"))"
+        return caseInsensitiveNames ? "LOWER(\(schema)) LIKE LOWER(\(column)) \(escape)" : "\(schema) LIKE \(column) \(escape)"
     }
 
     /// One view's definition, rewritten for the target, with the source

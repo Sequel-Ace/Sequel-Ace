@@ -78,11 +78,19 @@
     NSString *originalCollation = nil;
     if (![[renameConnection encoding] isEqualToString:@"utf8mb4"] || [renameConnection encodingUsesLatin1Transport]) {
         // SET NAMES replaces the session's collation with the character set's
-        // default on the way in and out; keep the one the session had.
+        // default on the way in and out; keep the one the session had. Without
+        // it the restore would leave the connection on that default, so a
+        // collation that cannot be read stops the rename before anything is
+        // switched.
         SPMySQLResult *collationResult = [renameConnection queryString:@"SELECT @@collation_connection"];
         if (![renameConnection queryErrored]) {
             [collationResult setReturnDataAsStrings:YES];
             originalCollation = [[collationResult getRowAsArray] firstObject];
+        }
+        if (![originalCollation isKindOfClass:[NSString class]]) {
+            self.failureDescription = NSLocalizedString(@"The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.", @"rename database refused because @@collation_connection could not be read before switching the connection to UTF-8");
+            SPLog(@"rename refused: %@", self.failureDescription);
+            return NO;
         }
         [renameConnection storeEncodingForRestoration];
         encodingChanged = [renameConnection setEncoding:@"utf8mb4"] || [renameConnection setEncoding:@"utf8"];
