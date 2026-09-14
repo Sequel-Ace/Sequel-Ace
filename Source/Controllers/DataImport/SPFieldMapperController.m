@@ -67,7 +67,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 #pragma mark -
 #pragma mark Initialisation
 
-- (instancetype)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(SPDataImport *)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"DataMigrationDialog"])) {
 
@@ -104,8 +104,8 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 		prefs = [NSUserDefaults standardUserDefaults];
 
-		tablesListInstance = [theDelegate valueForKeyPath:@"tablesListInstance"];
-		databaseDataInstance = [tablesListInstance valueForKeyPath:@"databaseDataInstance"];
+		tablesListInstance = [managerDelegate tablesListInstance];
+		databaseDataInstance = [tablesListInstance databaseDataInstance];
 
 		if(![prefs objectForKey:SPLastImportIntoNewTableType])
 			[prefs setObject:@"Default" forKey:SPLastImportIntoNewTableType];

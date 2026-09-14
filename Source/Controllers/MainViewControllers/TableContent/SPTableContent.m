@@ -133,6 +133,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @implementation SPTableContent
 
+@synthesize tablesListInstance;
+
 #pragma mark -
 
 - (instancetype)init
@@ -2610,12 +2612,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *refTableName = [refDictionary objectForKey:@"table"];
 			NSString *refDatabaseName = [refDictionary objectForKey:@"database"];
 			BOOL targetColumnIsBinary = NO;
+			NSString *targetTypeGrouping = nil;
 
 			NSDictionary *refTableInfo = [self->tableDataInstance informationForTable:refTableName fromDatabase:refDatabaseName];
 			if (refTableInfo) {
 				for (NSDictionary *col in [refTableInfo objectForKey:@"columns"]) {
 					if ([[col objectForKey:@"name"] isEqualToString:refColumnName]) {
-						targetColumnIsBinary = [[col objectForKey:@"typegrouping"] isEqualToString:@"binary"];
+						targetTypeGrouping = [col objectForKey:@"typegrouping"];
+						targetColumnIsBinary = [targetTypeGrouping isEqualToString:@"binary"];
 						break;
 					}
 				}
@@ -2665,6 +2669,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					}
 				}
 			}
+
+			// A BIT target compares the decimal value, not the displayed bit string
+			targetFilterValue = [SPFieldTypeClassifier filterValueForValue:targetFilterValue targetTypeGrouping:targetTypeGrouping];
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -4824,6 +4831,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// moved before the drag started.
 	NSString *cellValue = nil;
 	NSString *cellColumnName = nil;
+	NSString *cellTypeGrouping = nil;
 	BOOL cellIsNull = NO;
 	NSInteger clickedRow = [tableContentView mouseDownRow];
 	NSInteger clickedCol = [tableContentView mouseDownColumn];
@@ -4835,15 +4843,21 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// storage index, same mapping SPCopyTable uses) so the drop
 		// target gets the original schema column name the rule
 		// editor looks up against.
+		NSArray *columnIdentifiers = [[tableContentView tableColumns] valueForKey:@"identifier"];
 		cellColumnName = [SADragPasteboard columnNameForClickedColumn:clickedCol
-		                                                  identifiers:[[tableContentView tableColumns] valueForKey:@"identifier"]
+		                                                  identifiers:columnIdentifiers
 		                                                  columnNames:[dataColumns valueForKey:@"name"]];
+		// Same storage-index lookup for the type grouping, so a BIT value can
+		// be published in the form the filter compares.
+		cellTypeGrouping = [SADragPasteboard columnNameForClickedColumn:clickedCol
+		                                                    identifiers:columnIdentifiers
+		                                                    columnNames:[dataColumns valueForKey:@"typegrouping"]];
 	}
 
 	// Dropped onto the rule editor, the plist alone is enough to synthesize a
 	// fully-populated filter rule (column + default operator + value); a nil
 	// payload means the cell did not resolve and must not be advertised.
-	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull];
+	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull typeGrouping:cellTypeGrouping];
 	if (rowPayload) {
 		[SADragPasteboard attachPropertyList:rowPayload forType:[SPCellValuePasteboard pasteboardRowTypeRaw] toPasteboard:pboard];
 	}

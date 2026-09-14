@@ -359,19 +359,48 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Go backward or forward in the history depending on the menu item selected.
  */
 - (void)backForwardInHistory:(id)sender {
+    switch ([sender tag]) {
+        case 0: // Go backward
+            [self goBackInHistory];
+            break;
+        case 1: // Go forward
+            [self goForwardInHistory];
+            break;
+    }
+}
+
+/**
+ * Go back one step in the table history, after ending any editing and saving as required.
+ */
+- (void)goBackInHistory {
+    // Nothing to navigate to - leave any in-progress editing alone
+    if (![spHistoryControllerInstance countPrevious]) {
+        return;
+    }
+
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
     }
 
-    switch ([sender tag]) {
-        case 0: // Go backward
-            [spHistoryControllerInstance goBackInHistory];
-            break;
-        case 1: // Go forward
-            [spHistoryControllerInstance goForwardInHistory];
-            break;
+    [spHistoryControllerInstance goBackInHistory];
+}
+
+/**
+ * Go forward one step in the table history, after ending any editing and saving as required.
+ */
+- (void)goForwardInHistory {
+    // Nothing to navigate to - leave any in-progress editing alone
+    if (![spHistoryControllerInstance countForward]) {
+        return;
     }
+
+    // Ensure history navigation is permitted - trigger end editing and any required saves
+    if (![self couldCommitCurrentViewActions]) {
+        return;
+    }
+
+    [spHistoryControllerInstance goForwardInHistory];
 }
 
 #pragma mark -
@@ -3170,9 +3199,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
 
-    if (state == SAWindowConnectionStateConnected) {
-        [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
-    }
+    // Always update, so that a window which is no longer connected drops the
+    // favourite colour again. A nil colour clears both the tab line and the
+    // title bar tint (#1856); leaving the tint behind would keep a window that
+    // is back on the connection view looking like a live production session.
+    NSColor *favoriteColor = (state == SAWindowConnectionStateConnected)
+        ? [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]]
+        : nil;
+
+    [self.parentWindowController updateWindowAccessoryWithColor:favoriteColor isSSL:[self.connectionController isConnectedViaSSL]];
 }
 
 #pragma mark -

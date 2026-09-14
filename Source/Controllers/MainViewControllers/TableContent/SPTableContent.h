@@ -169,6 +169,8 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
     IBOutlet NSButton *toggleRuleFilterButton;
 }
 
+@property (readonly, strong) SPTablesList *tablesListInstance;
+
 - (void)setFieldEditorSelectedRange:(NSRange)aRange;
 - (NSRange)fieldEditorSelectedRange;
 

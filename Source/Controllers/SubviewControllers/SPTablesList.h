@@ -133,6 +133,8 @@
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }
 
+@property (readonly, strong, nullable) SPDatabaseData *databaseDataInstance;
+
 // IBAction methods
 - (IBAction)updateTables:(nullable id)sender;
 - (IBAction)addTable:(nullable id)sender;
@@ -161,6 +163,7 @@
 - (nonnull NSArray *)selectedTableTypes;
 - (nullable NSString *)tableName;
 - (SPTableType)tableType;
+- (SPTableType)tableTypeAtRow:(NSInteger)rowIndex NS_SWIFT_NAME(tableType(atRow:));
 - (nonnull NSArray *)tables;
 - (nonnull NSArray *)pinnedTables;
 - (nonnull NSArray *)tableTypes;

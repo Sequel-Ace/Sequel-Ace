@@ -49,10 +49,12 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
-@interface SPContentFilterManager () <NSMenuItemValidation, NSControlTextEditingDelegate>
+@interface SPContentFilterManager () <NSMenuItemValidation, NSControlTextEditingDelegate, SATextViewDelegate>
 @end
 
 @implementation SPContentFilterManager
+
+@synthesize tableDocumentInstance = tableDocumentInstance;
 
 /**
  * Initialize the manager with the supplied document

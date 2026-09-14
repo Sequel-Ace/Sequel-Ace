@@ -116,6 +116,7 @@ NSString *SPApplicationPromptOnQuit              = @"ApplicationPromptOnQuit";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
 NSString *SPDisplayTableViewColumnTypes          = @"DisplayTableViewColumnTypes";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
+NSString *SPDisplayConnectionColorInTitlebar     = @"DisplayConnectionColorInTitlebar";
 NSString *SPCustomQueryMaxHistoryItems           = @"CustomQueryMaxHistoryItems";
 NSString *SPCustomQuerySaveHistoryIndividually   = @"CustomQuerySaveHistoryIndividually";
 NSString *SPSaveApplicationUsageAnalytics        = @"SaveApplicationUsageAnalytics";

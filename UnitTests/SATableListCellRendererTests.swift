@@ -48,6 +48,19 @@ final class SATableListCellRendererTests: XCTestCase {
         }
     }
 
+    func testFittingNameIsNotTailTruncatedWhenCommentIsPresent() {
+        let name = makeName("activity_template_d")
+        let comment = RecordingCommentCell(textCell: "Workflow campaign dimension")
+        var nameWasTruncated = true
+
+        render(name: name, comment: comment, width: 260) { nameFrame in
+            nameWasTruncated = !name.expansionFrame(withFrame: nameFrame, in: NSView()).isEmpty
+        }
+
+        XCTAssertFalse(nameWasTruncated)
+        XCTAssertNotNil(comment.drawnFrame)
+    }
+
     func testEmptyCommentIsNotDrawn() {
         let comment = RecordingCommentCell(textCell: "")
         render(name: makeName("customers"), comment: comment)

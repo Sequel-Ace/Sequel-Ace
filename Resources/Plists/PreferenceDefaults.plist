@@ -133,6 +133,8 @@
 	<false/>
 	<key>DisplayTableViewColumnTypes</key>
 	<true/>
+	<key>DisplayConnectionColorInTitlebar</key>
+	<false/>
 	<key>EditInSheetEnabled</key>
 	<false/>
 	<key>FavoriteColorList</key>

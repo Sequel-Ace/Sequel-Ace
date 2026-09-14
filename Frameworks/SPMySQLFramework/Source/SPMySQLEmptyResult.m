@@ -114,12 +114,7 @@
 {
 }
 
-- (id)_stringWithBytes:(const void *)bytes length:(NSUInteger)length
-{
-	return nil;
-}
-
-- (NSString *)_lossyStringWithBytes:(const void *)bytes length:(NSUInteger)length wasLossy:(BOOL *)outLossy
+- (NSString *)_stringWithBytes:(const void *)bytes length:(NSUInteger)length
 {
 	return nil;
 }
