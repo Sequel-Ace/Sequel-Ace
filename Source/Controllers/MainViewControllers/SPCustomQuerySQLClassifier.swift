@@ -326,7 +326,8 @@ enum SPCustomQuerySQLClassifier {
                 }
             case "INTO":
                 // `INTO @var` stores the plan in a user variable; skip the variable too.
-                index += min(2, tokens.count - index)
+                index += 1
+                skipModifierOperand(in: tokens, from: &index)
             case "FOR":
                 // Only `FOR SCHEMA name` / `FOR DATABASE name` are modifiers;
                 // `FOR CONNECTION id` is the explained subject itself.
@@ -334,11 +335,48 @@ enum SPCustomQuerySQLClassifier {
                       tokens[index + 1] == "SCHEMA" || tokens[index + 1] == "DATABASE" else {
                     return
                 }
-                index += min(3, tokens.count - index)
+                index += 2
+                skipModifierOperand(in: tokens, from: &index)
             default:
                 return
             }
         }
+    }
+
+    /// Skips one modifier operand (a user variable or a schema name). A quoted
+    /// operand - `@'plan result'`, `` `my db` `` - may contain whitespace or `=`,
+    /// which `sqlTokens` splits on, so all tokens up to the closing quote belong
+    /// to it; stopping inside the name would let a name fragment stand in for
+    /// the statement and hide a mutating verb. An unterminated quote consumes
+    /// the rest, which leaves no statement and keeps the conservative answer.
+    private static func skipModifierOperand(in tokens: [String], from index: inout Int) {
+        guard index < tokens.count else { return }
+        var operand = Substring(tokens[index])
+        index += 1
+        if operand.hasPrefix("@") {
+            operand = operand.dropFirst()
+        }
+        guard let quote = operand.first, quote == "`" || quote == "'" || quote == "\"" else {
+            return
+        }
+        if closesQuotedOperand(operand.dropFirst(), quote: quote) {
+            return
+        }
+        while index < tokens.count {
+            let token = tokens[index]
+            index += 1
+            if closesQuotedOperand(Substring(token), quote: quote) {
+                return
+            }
+        }
+    }
+
+    /// Whether a token ends a quoted operand: it must end with an odd number of
+    /// the quote character, because a doubled quote is an escaped quote inside
+    /// the name.
+    private static func closesQuotedOperand(_ token: Substring, quote: Character) -> Bool {
+        let trailingQuotes = token.reversed().prefix { $0 == quote }.count
+        return trailingQuotes % 2 == 1
     }
 }
 

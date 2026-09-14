@@ -60,6 +60,18 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         // Truncated modifiers leave no statement to judge: stay conservative.
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO"))
+        // Quoted operands may contain whitespace (or `=`), which the tokenizer
+        // splits on; a fragment of the name must not stand in for the statement.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan = result\" FOR SCHEMA `my db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @`plan result` INSERT INTO t VALUES (1)"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `it``s db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `a`` b` DELETE FROM t"))
+        // An unterminated quote swallows the rest: no statement, so no free pass.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db DELETE FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' SELECT * FROM t"))
         // Reads behind the same modifiers stay safe; plain EXPLAIN never
         // executes, and `FOR CONNECTION` is the explained subject itself.
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app SELECT * FROM t"))
