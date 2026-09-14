@@ -372,10 +372,26 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT 'a\\' AS b, 'c -- d', 1; DROP TABLE t",
             "SELECT 'a\\' AS b, 'c /* d', 1; DROP TABLE t */"
         ], "backslash-reading")
+        // Each reading is judged on its own: with escapes the last quote closes
+        // the variable, without them the `#` comments it out - a read either way.
         assertAllowed([
             "SELECT 'a\\\\b' # comment",
-            "SELECT 'a\\\\b', 'c' /* comment */ FROM t"
+            "SELECT 'a\\\\b', 'c' /* comment */ FROM t",
+            "EXPLAIN ANALYZE INTO @'x\\' # suffix'\nSELECT 1"
         ], "backslash-reading")
+    }
+
+    // A combining mark right after a quote must not hide the quote: Swift would
+    // merge the two into one Character, the server reads bytes.
+    func testCombiningMarksDoNotHideQuotes() {
+        assertRejected([
+            "SELECT '\u{301}' AS a, 'c # d', 1; DROP TABLE t",
+            "EXPLAIN ANALYZE FOR SCHEMA `\u{301}app`UPDATE `t` SET x = 1",
+            "EXPLAIN ANALYZE INTO @'\u{301}x' # comment\nUPDATE t SET x = 1"
+        ], "combining-mark")
+        assertAllowed([
+            "SELECT '\u{301}' AS a FROM t"
+        ], "combining-mark")
     }
 
     func testEmptyOrSeparatorOnlyRejected() {

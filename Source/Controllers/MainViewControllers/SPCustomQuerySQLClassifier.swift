@@ -71,10 +71,17 @@ enum SPCustomQuerySQLClassifier {
         }
     }
 
-    private static func isQuerySafeWithoutDestructiveWarning(
+    /// Judges the query under one reading of backslashes - for callers that
+    /// have already stripped or split the text under that reading and must
+    /// not mix it with the other one.
+    ///
+    /// - Parameter backslashEscapes: Whether a backslash escapes the next
+    ///   character inside `'…'` and `"…"`; `false` is the
+    ///   `NO_BACKSLASH_ESCAPES` reading.
+    static func isQuerySafeWithoutDestructiveWarning(
         _ query: String,
-        serverVersion: Int?,
-        serverIsMariaDB: Bool,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false,
         backslashEscapes: Bool
     ) -> Bool {
         let strippingResult = stripSQLCommentsWithMetadata(
@@ -137,25 +144,27 @@ enum SPCustomQuerySQLClassifier {
         serverIsMariaDB: Bool = false,
         backslashEscapes: Bool = true
     ) -> CommentStrippingResult {
-        let characters: [Character] = source.map { $0 }
+        // Scalars, not Characters: a combining mark right after a quote would
+        // otherwise merge with it into one Character and hide the delimiter.
+        let characters = Array(source.unicodeScalars)
         var result = ""
         var hasIndeterminateExecutableComment = false
         var index = 0
-        var quote: Character?
+        var quote: Unicode.Scalar?
 
         while index < characters.count {
             let character = characters[index]
 
             if let activeQuote = quote {
-                result.append(character)
+                result.unicodeScalars.append(character)
 
                 if character == "\\", backslashEscapes, activeQuote != "`", index + 1 < characters.count {
                     index += 1
-                    result.append(characters[index])
+                    result.unicodeScalars.append(characters[index])
                 } else if character == activeQuote {
                     if index + 1 < characters.count, characters[index + 1] == activeQuote {
                         index += 1
-                        result.append(characters[index])
+                        result.unicodeScalars.append(characters[index])
                     } else {
                         quote = nil
                     }
@@ -167,7 +176,7 @@ enum SPCustomQuerySQLClassifier {
 
             if character == "'" || character == "\"" || character == "`" {
                 quote = character
-                result.append(character)
+                result.unicodeScalars.append(character)
                 index += 1
                 continue
             }
@@ -221,7 +230,7 @@ enum SPCustomQuerySQLClassifier {
                     }
                     let hasVersionGate = contentStart > versionStart
                     let requiredVersion = hasVersionGate
-                        ? Int(String(characters[versionStart..<contentStart]))
+                        ? Int(String(String.UnicodeScalarView(characters[versionStart..<contentStart])))
                         : nil
                     if serverVersion == nil,
                        hasVersionGate || (isMariaDBOnlyComment && !serverIsMariaDB) {
@@ -235,7 +244,7 @@ enum SPCustomQuerySQLClassifier {
                         serverIsMariaDB: serverIsMariaDB
                     ), contentStart < contentEnd {
                         let nestedResult = stripSQLCommentsWithMetadata(
-                            String(characters[contentStart..<contentEnd]),
+                            String(String.UnicodeScalarView(characters[contentStart..<contentEnd])),
                             serverVersion: serverVersion,
                             serverIsMariaDB: serverIsMariaDB,
                             backslashEscapes: backslashEscapes
@@ -251,7 +260,7 @@ enum SPCustomQuerySQLClassifier {
                 continue
             }
 
-            result.append(character)
+            result.unicodeScalars.append(character)
             index += 1
         }
 
@@ -261,12 +270,12 @@ enum SPCustomQuerySQLClassifier {
         )
     }
 
-    private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
-        character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
+    private static func isMySQLCommentWhitespace(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value <= 0x20
     }
 
-    private static func isASCIIDigit(_ character: Character) -> Bool {
-        character.unicodeScalars.count == 1 && character.unicodeScalars.allSatisfy { (48...57).contains($0.value) }
+    private static func isASCIIDigit(_ scalar: Unicode.Scalar) -> Bool {
+        (48...57).contains(scalar.value)
     }
 
     private static func shouldPreserveExecutableComment(
@@ -337,7 +346,9 @@ enum SPCustomQuerySQLClassifier {
     /// outside backticks, a backslash escape stay inside it), `=` is a token
     /// of its own, and a word ends at whitespace, `=`, a quote or a following
     /// `@`, so `` `app`UPDATE `` and `INTO@plan` are two tokens each. An
-    /// unterminated quote consumes the rest.
+    /// unterminated quote consumes the rest. It works on Unicode scalars, not
+    /// Characters: a combining mark right after a quote would otherwise merge
+    /// with it into one Character and hide the delimiter.
     ///
     /// - Parameters:
     ///   - upper: The upper-cased statement.
@@ -345,18 +356,18 @@ enum SPCustomQuerySQLClassifier {
     ///     inside `'…'` and `"…"`; `false` reads the statement the way a
     ///     connection with `NO_BACKSLASH_ESCAPES` does.
     private static func sqlTokens(from upper: String, backslashEscapes: Bool = true) -> [String] {
-        let characters = Array(upper)
+        let characters = Array(upper.unicodeScalars)
         var tokens: [String] = []
         var index = 0
 
-        func isQuote(_ character: Character) -> Bool {
+        func isQuote(_ character: Unicode.Scalar) -> Bool {
             character == "'" || character == "\"" || character == "`"
         }
 
         while index < characters.count {
             let character = characters[index]
 
-            if character.isWhitespace {
+            if character.properties.isWhitespace {
                 index += 1
                 continue
             }
@@ -370,22 +381,22 @@ enum SPCustomQuerySQLClassifier {
             if isQuote(character) || startsQuotedVariable {
                 var token = ""
                 if startsQuotedVariable {
-                    token.append(character)
+                    token.unicodeScalars.append(character)
                     index += 1
                 }
                 let quote = characters[index]
-                token.append(quote)
+                token.unicodeScalars.append(quote)
                 index += 1
                 while index < characters.count {
                     let next = characters[index]
-                    token.append(next)
+                    token.unicodeScalars.append(next)
                     index += 1
                     if next == "\\", backslashEscapes, quote != "`", index < characters.count {
-                        token.append(characters[index])
+                        token.unicodeScalars.append(characters[index])
                         index += 1
                     } else if next == quote {
                         if index < characters.count, characters[index] == quote {
-                            token.append(characters[index])
+                            token.unicodeScalars.append(characters[index])
                             index += 1
                         } else {
                             break
@@ -404,7 +415,7 @@ enum SPCustomQuerySQLClassifier {
             var wordHasNonAt = false
             while index < characters.count {
                 let next = characters[index]
-                if next.isWhitespace || next == "=" || isQuote(next) {
+                if next.properties.isWhitespace || next == "=" || isQuote(next) {
                     break
                 }
                 if next == "@" {
@@ -414,7 +425,7 @@ enum SPCustomQuerySQLClassifier {
                 } else {
                     wordHasNonAt = true
                 }
-                word.append(next)
+                word.unicodeScalars.append(next)
                 index += 1
             }
             tokens.append(word)

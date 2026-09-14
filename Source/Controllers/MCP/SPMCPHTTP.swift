@@ -95,8 +95,10 @@ enum SPMCPReadOnlyGuard {
         if upper.contains("OUTFILE") || upper.contains("DUMPFILE") || upper.contains("LOAD_FILE") { return false }
 
         // Leading keyword must be a known read. isQuerySafeWithoutDestructiveWarning
-        // also rejects `EXPLAIN ANALYZE <write>`, which MySQL would execute.
-        return SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(core)
+        // also rejects `EXPLAIN ANALYZE <write>`, which MySQL would execute. The
+        // text was stripped under one reading of backslashes, so it is judged
+        // under that same reading; mixing the two would reject valid reads.
+        return SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(core, backslashEscapes: backslashEscapes)
     }
 
     /// `true` if running `EXPLAIN <sql>` would execute the statement rather than just
@@ -143,31 +145,34 @@ enum SPMCPReadOnlyGuard {
     /// which a request could exploit to hide OUTFILE/LOAD_FILE/`;` from the
     /// read-only checks. (`/*! ... */` executable comments are rejected before this.)
     ///
+    /// Works on Unicode scalars, not Characters: a combining mark right after a
+    /// quote would otherwise merge with it into one Character and hide the delimiter.
+    ///
     /// - Parameter backslashEscapes: Whether a backslash escapes the next character
     ///   inside '...'/"..."; `false` reads the SQL the way a connection with
     ///   `NO_BACKSLASH_ESCAPES` does, where the quote after a backslash closes the string.
     static func stripCommentsQuoteAware(_ sql: String, backslashEscapes: Bool = true) -> String {
         var out = ""
-        let chars: [Character] = Array(sql)
+        let chars = Array(sql.unicodeScalars)
         let n = chars.count
         var i = 0
-        var quote: Character?
+        var quote: Unicode.Scalar?
         while i < n {
             let c = chars[i]
             if let q = quote {
-                out.append(c)
+                out.unicodeScalars.append(c)
                 if c == "\\" && backslashEscapes && q != "`" {   // backslash escape in '...'/"..."
-                    if i + 1 < n { out.append(chars[i + 1]); i += 2; continue }
+                    if i + 1 < n { out.unicodeScalars.append(chars[i + 1]); i += 2; continue }
                 } else if c == q {
                     if i + 1 < n && chars[i + 1] == q {          // doubled-quote escape ('' "" ``)
-                        out.append(q); i += 2; continue
+                        out.unicodeScalars.append(q); i += 2; continue
                     }
                     quote = nil
                 }
                 i += 1
                 continue
             }
-            if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
+            if c == "'" || c == "\"" || c == "`" { quote = c; out.unicodeScalars.append(c); i += 1; continue }
             // Replace each comment with a single space: MySQL treats a comment as
             // whitespace, so dropping it outright would merge adjacent tokens (e.g.
             // `FROM/**/t` -> `FROMt`), which matters because the stripped SQL is also
@@ -193,7 +198,7 @@ enum SPMCPReadOnlyGuard {
                 out.append(" ")
                 continue
             }
-            out.append(c)
+            out.unicodeScalars.append(c)
             i += 1
         }
         return out
