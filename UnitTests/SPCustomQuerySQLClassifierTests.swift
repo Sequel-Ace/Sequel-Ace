@@ -77,6 +77,13 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET c = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan\\\" result\" DELETE FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id"))
+        // The classifier cannot know whether NO_BACKSLASH_ESCAPES is set. Read
+        // that way, the quote after the backslash closes the operand and the
+        // write runs, so it warns; an operand closed the same way under both
+        // readings stays safe.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA \"x\\\" DELETE FROM t WHERE c=\"v\""))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`SELECT 1"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' SELECT * FROM t"))

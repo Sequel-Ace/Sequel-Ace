@@ -353,6 +353,8 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET x = 1",
             "EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET x = 1",
             "EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id",
+            // Under NO_BACKSLASH_ESCAPES the quote after the backslash closes the variable.
+            "EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET x='v'",
         ], "explain-analyze-write")
     }
 

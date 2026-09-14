@@ -275,7 +275,18 @@ enum SPCustomQuerySQLClassifier {
     }
 
     private static func isExplainAliasSafeWithoutWarning(_ upper: String, alias: String) -> Bool {
-        let tokens = sqlTokens(from: upper)
+        // The classifier does not know the connection's sql_mode. Under
+        // NO_BACKSLASH_ESCAPES a backslash inside a quoted operand is a plain
+        // character and the quote after it closes the operand; otherwise the
+        // quote is escaped. Read the statement both ways and require the
+        // warning when either way runs a write.
+        let backslashReadings = upper.contains("\\") ? [true, false] : [true]
+        return backslashReadings.allSatisfy { backslashEscapes in
+            isExplainAliasSafeWithoutWarning(tokens: sqlTokens(from: upper, backslashEscapes: backslashEscapes), alias: alias)
+        }
+    }
+
+    private static func isExplainAliasSafeWithoutWarning(tokens: [String], alias: String) -> Bool {
         guard tokens.first == alias else { return false }
 
         var index = 1
@@ -305,7 +316,13 @@ enum SPCustomQuerySQLClassifier {
     /// outside backticks, a backslash escape stay inside it), `=` is a token
     /// of its own, and a word ends at whitespace, `=` or a quote, so
     /// `` `app`UPDATE `` is two tokens. An unterminated quote consumes the rest.
-    private static func sqlTokens(from upper: String) -> [String] {
+    ///
+    /// - Parameters:
+    ///   - upper: The upper-cased statement.
+    ///   - backslashEscapes: Whether a backslash escapes the next character
+    ///     inside `'…'` and `"…"`; `false` reads the statement the way a
+    ///     connection with `NO_BACKSLASH_ESCAPES` does.
+    private static func sqlTokens(from upper: String, backslashEscapes: Bool = true) -> [String] {
         let characters = Array(upper)
         var tokens: [String] = []
         var index = 0
@@ -341,7 +358,7 @@ enum SPCustomQuerySQLClassifier {
                     let next = characters[index]
                     token.append(next)
                     index += 1
-                    if next == "\\", quote != "`", index < characters.count {
+                    if next == "\\", backslashEscapes, quote != "`", index < characters.count {
                         token.append(characters[index])
                         index += 1
                     } else if next == quote {
