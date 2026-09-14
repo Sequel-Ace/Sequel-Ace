@@ -251,9 +251,10 @@
                 BOOL dataIsNULL = NO;
                 id data = [xmlRow safeObjectAtIndex:i];
 
-                // Retrieve the contents of this tag
+                // Retrieve the contents of this tag. Raw bytes came from the server in the connection
+                // encoding; the file itself is written in the output encoding (UTF-8, as the prolog declares).
                 if ([data isKindOfClass:[NSData class]]) {
-                    dataConversionString = [[NSString alloc] initWithData:data encoding:[self exportOutputEncoding]];
+                    dataConversionString = [[NSString alloc] initWithData:data encoding:[connection stringEncoding]];
 
                     if (dataConversionString == nil) {
                         dataConversionString = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];

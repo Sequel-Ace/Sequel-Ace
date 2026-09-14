@@ -86,6 +86,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark Initialisation
 
 @synthesize _SQLitePinnedTableManager;
+@synthesize databaseDataInstance;
 
 - (instancetype)init
 {
@@ -1429,6 +1430,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (NSArray *)tableTypes
 {
 	return tableTypes;
+}
+
+/**
+ * Returns the object type for a row in the currently displayed table list.
+ */
+- (SPTableType)tableTypeAtRow:(NSInteger)rowIndex
+{
+	if (rowIndex < 0 || rowIndex >= (NSInteger)[filteredTableTypes count]) return SPTableTypeNone;
+
+	return (SPTableType)[[filteredTableTypes objectAtIndex:(NSUInteger)rowIndex] integerValue];
 }
 
 /**

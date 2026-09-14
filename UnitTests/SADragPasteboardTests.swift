@@ -429,6 +429,26 @@ final class SADragPasteboardTests: XCTestCase {
         XCTAssertEqual(payload?[SPCellValuePasteboard.rowValueKindKey], SPCellValuePasteboard.rowValueKindString)
     }
 
+    /// A BIT cell is published with its decimal value - the form the filter
+    /// compares - instead of the displayed bit string, which MySQL would read
+    /// as a decimal number.
+    func testBitCellPayloadCarriesDecimalValue() {
+        let payload = SPCellValuePasteboard.rowPayload(columnName: "flags", value: "00000101", isNull: false, typeGrouping: "bit")
+
+        XCTAssertEqual(payload?[SPCellValuePasteboard.rowValueKey], "5")
+        XCTAssertEqual(payload?[SPCellValuePasteboard.rowValueKindKey], SPCellValuePasteboard.rowValueKindString)
+    }
+
+    /// A BIT display value that is not a bit string does not count as a
+    /// resolved cell, while a NULL BIT cell still qualifies.
+    func testBitCellPayloadIsRefusedWithoutABitString() {
+        XCTAssertNil(SPCellValuePasteboard.rowPayload(columnName: "flags", value: "(not loaded)", isNull: false, typeGrouping: "bit"))
+        XCTAssertNil(SPCellValuePasteboard.rowPayload(columnName: "flags", value: "", isNull: false, typeGrouping: "bit"))
+
+        let nullPayload = SPCellValuePasteboard.rowPayload(columnName: "flags", value: nil, isNull: true, typeGrouping: "bit")
+        XCTAssertEqual(nullPayload?[SPCellValuePasteboard.rowValueKindKey], SPCellValuePasteboard.rowValueKindNull)
+    }
+
     /// The payload must survive the pasteboard as a plist, which means every
     /// value has to be a property-list type.
     func testCellPayloadIsPropertyListEncodable() throws {

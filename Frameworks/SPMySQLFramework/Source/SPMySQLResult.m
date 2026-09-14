@@ -30,6 +30,7 @@
 
 #import "SPMySQLResult.h"
 #import "SPMySQL Private APIs.h"
+#import "SPMySQLStringAdditions.h"
 #include <stdlib.h>
 
 static id NSNullPointer;
@@ -303,46 +304,14 @@ static id NSNullPointer;
 @implementation SPMySQLResult (Private_API)
 
 /**
- * Support internal string conversions which take a supplied byte sequence and length
- * and convert them to an NSString using the instance encoding.  Will preserve nul
- * characters within the string.
+ * Convert a byte sequence and length from the result set's metadata - column, alias,
+ * table and database names - to an NSString using the instance encoding.  Preserves nul
+ * characters and never returns nil; see +[NSString stringForIdentifierBytes:length:encoding:]
+ * for how names the server truncated mid-character are handled.
  */
-- (id)_stringWithBytes:(const void *)bytes length:(NSUInteger)length
+- (NSString *)_stringWithBytes:(const void *)bytes length:(NSUInteger)length
 {
-    NSString *str = [[NSString alloc] initWithBytes:bytes length:length encoding:stringEncoding];
-    
-    return (str == nil) ? @"" : str;
-}
-// TODO (#2604): duplicate code with Data Conversion.m stringForDataBytes:length:encoding: (↑, ↓)
-- (NSString *)_lossyStringWithBytes:(const void *)bytes length:(NSUInteger)length wasLossy:(BOOL *)outLossy
-{
-	if(!bytes || !length) return @""; //to match -[NSString initWithBytes:length:encoding:]
-	
-	//mysql protocol limits column names to 256 bytes.
-	//with inline columns and multibyte charsets this can result in a character
-	//being split in half at which the method above will fail.
-	//Let's first try removing stuff from the end to create something valid.
-	NSUInteger removed = 0;
-	do {
-		NSString *res = [self _stringWithBytes:bytes length:(length-removed)];
-		if(res) {
-			if(outLossy) *outLossy = (removed != 0);
-			return (removed? [NSString stringWithFormat:@"%@…",res] : res);
-		}
-		removed++;
-	} while(removed <= 10 && removed < length); // 10 is arbitrary
-	
-	//if that fails, ascii should accept all values from 0-255 as input
-	NSString *ascii = [[NSString alloc] initWithBytes:bytes length:length encoding:NSASCIIStringEncoding];
-	if(ascii){
-		if(outLossy) *outLossy = YES;
-		return ascii;
-	}
-	
-	//if even that failed we lose.
-	NSDictionary *info = @{ @"data": [NSData dataWithBytes:bytes length:length] };
-	NSString *reason = [NSString stringWithFormat:@"Failed to convert byte sequence %@ to string (encoding = %lu)",[info objectForKey:@"data"],stringEncoding];
-	@throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:info];
+	return [NSString stringForIdentifierBytes:bytes length:length encoding:stringEncoding];
 }
 
 /**

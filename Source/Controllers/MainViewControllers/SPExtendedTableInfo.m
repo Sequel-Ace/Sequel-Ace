@@ -60,7 +60,7 @@ static NSString *SPMySQLUpdateTimeField       = @"Update_time";
 static NSString *SPMySQLCollationField        = @"Collation";
 static NSString *SPMySQLCommentField          = @"Comment";
 
-@interface SPExtendedTableInfo ()
+@interface SPExtendedTableInfo () <SATextViewDelegate>
 
 - (void)_updateDisplayedInfo:(NSNotification *)aNotification;
 - (void)_changeCurrentTableTypeFrom:(NSString *)currentType to:(NSString *)newType;
@@ -71,6 +71,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 @implementation SPExtendedTableInfo
 
 @synthesize connection;
+@synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize tablesListInstance = tablesListInstance;
 
 /**
  * Upon awakening bind the create syntax text view's background colour.

@@ -123,13 +123,6 @@
     }
 }
 
-- (void)writeUTF8String:(NSString *)input
-{
-    if([self exportOutputFile].fileHandleError == nil){
-        [[self exportOutputFile] writeData:[input dataUsingEncoding:NSUTF8StringEncoding]];
-    }
-}
-
 /**
  * Get rid of the export data.
  */

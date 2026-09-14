@@ -2,8 +2,9 @@
 
 > **Drafted 2026-08-30.** This is the design the warnings plan deferred to
 > ("SPKeychain SecKeychain* API — highest risk item in the codebase; needs its
-> own design"). Siblings: `warnings-elimination-plan.md` (this project owns 10
-> of its remaining 20 warning lines), `ssh-tunnel-xpc-migration-plan.md` (open
+> own design"). Siblings: the warnings burn-down plan (retired 2026-09-07 once
+> complete; this project owned 10 of its last 20 warning lines),
+> `ssh-tunnel-xpc-migration-plan.md` (open
 > question 3 there asks for the sequencing decision made here),
 > `modernization-followup-plan.md`, ground rules in `AGENTS.md`.
 
