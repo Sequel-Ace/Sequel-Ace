@@ -353,9 +353,27 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET x = 1",
             "EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET x = 1",
             "EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id",
-            // Under NO_BACKSLASH_ESCAPES the quote after the backslash closes the variable.
+            // Under NO_BACKSLASH_ESCAPES the quote after the backslash closes the
+            // variable, also when a comment follows it.
             "EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET x='v'",
+            "EXPLAIN ANALYZE INTO @'x\\' # comment\nUPDATE t SET x='v'"
         ], "explain-analyze-write")
+    }
+
+    // The guard cannot know whether the connection runs with NO_BACKSLASH_ESCAPES,
+    // where the quote after a backslash closes the string. Read that way, the `#`
+    // below sits inside a literal and the `; DROP` behind it is a second statement,
+    // which the backslash reading would have stripped as a comment.
+    func testBackslashesAreReadBothWays() {
+        assertRejected([
+            "SELECT 'a\\' AS b, 'c # d', 1; DROP TABLE t",
+            "SELECT 'a\\' AS b, 'c -- d', 1; DROP TABLE t",
+            "SELECT 'a\\' AS b, 'c /* d', 1; DROP TABLE t */"
+        ], "backslash-reading")
+        assertAllowed([
+            "SELECT 'a\\\\b' # comment",
+            "SELECT 'a\\\\b', 'c' /* comment */ FROM t"
+        ], "backslash-reading")
     }
 
     func testEmptyOrSeparatorOnlyRejected() {

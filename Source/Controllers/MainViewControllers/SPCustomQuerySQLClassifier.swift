@@ -54,10 +54,34 @@ enum SPCustomQuerySQLClassifier {
     ) -> Bool {
         guard let query = query, !query.isEmpty else { return false }
 
+        // The classifier does not know the connection's sql_mode. Under
+        // NO_BACKSLASH_ESCAPES a backslash inside a string is a plain
+        // character and the quote after it closes the string, which changes
+        // where comments and quoted operands end; otherwise the quote is
+        // escaped. Read the query both ways and require the warning when
+        // either way runs something unsafe.
+        let backslashReadings = query.contains("\\") ? [true, false] : [true]
+        return backslashReadings.allSatisfy { backslashEscapes in
+            isQuerySafeWithoutDestructiveWarning(
+                query,
+                serverVersion: serverVersion,
+                serverIsMariaDB: serverIsMariaDB,
+                backslashEscapes: backslashEscapes
+            )
+        }
+    }
+
+    private static func isQuerySafeWithoutDestructiveWarning(
+        _ query: String,
+        serverVersion: Int?,
+        serverIsMariaDB: Bool,
+        backslashEscapes: Bool
+    ) -> Bool {
         let strippingResult = stripSQLCommentsWithMetadata(
             query,
             serverVersion: serverVersion,
-            serverIsMariaDB: serverIsMariaDB
+            serverIsMariaDB: serverIsMariaDB,
+            backslashEscapes: backslashEscapes
         )
         // Both the executed and ignored forms must be safe. When the active
         // form is unknown, require the destructive-query confirmation.
@@ -77,7 +101,7 @@ enum SPCustomQuerySQLClassifier {
 
         for explainAlias in ["EXPLAIN", "DESCRIBE", "DESC"] {
             if hasLeadingSQLKeyword(explainAlias, in: upper) {
-                return isExplainAliasSafeWithoutWarning(upper, alias: explainAlias)
+                return isExplainAliasSafeWithoutWarning(upper, alias: explainAlias, backslashEscapes: backslashEscapes)
             }
         }
 
@@ -103,10 +127,15 @@ enum SPCustomQuerySQLClassifier {
         ).sql
     }
 
+    /// - Parameter backslashEscapes: Whether a backslash escapes the next
+    ///   character inside `'…'` and `"…"`; `false` reads the source the way a
+    ///   connection with `NO_BACKSLASH_ESCAPES` does, where the quote after a
+    ///   backslash closes the string.
     private static func stripSQLCommentsWithMetadata(
         _ source: String,
         serverVersion: Int? = nil,
-        serverIsMariaDB: Bool = false
+        serverIsMariaDB: Bool = false,
+        backslashEscapes: Bool = true
     ) -> CommentStrippingResult {
         let characters: [Character] = source.map { $0 }
         var result = ""
@@ -120,7 +149,7 @@ enum SPCustomQuerySQLClassifier {
             if let activeQuote = quote {
                 result.append(character)
 
-                if character == "\\", activeQuote != "`", index + 1 < characters.count {
+                if character == "\\", backslashEscapes, activeQuote != "`", index + 1 < characters.count {
                     index += 1
                     result.append(characters[index])
                 } else if character == activeQuote {
@@ -208,7 +237,8 @@ enum SPCustomQuerySQLClassifier {
                         let nestedResult = stripSQLCommentsWithMetadata(
                             String(characters[contentStart..<contentEnd]),
                             serverVersion: serverVersion,
-                            serverIsMariaDB: serverIsMariaDB
+                            serverIsMariaDB: serverIsMariaDB,
+                            backslashEscapes: backslashEscapes
                         )
                         result.append(nestedResult.sql)
                         hasIndeterminateExecutableComment = hasIndeterminateExecutableComment
@@ -274,19 +304,10 @@ enum SPCustomQuerySQLClassifier {
         return !identifierSet.contains(upper.unicodeScalars[scalarIndex])
     }
 
-    private static func isExplainAliasSafeWithoutWarning(_ upper: String, alias: String) -> Bool {
-        // The classifier does not know the connection's sql_mode. Under
-        // NO_BACKSLASH_ESCAPES a backslash inside a quoted operand is a plain
-        // character and the quote after it closes the operand; otherwise the
-        // quote is escaped. Read the statement both ways and require the
-        // warning when either way runs a write.
-        let backslashReadings = upper.contains("\\") ? [true, false] : [true]
-        return backslashReadings.allSatisfy { backslashEscapes in
-            isExplainAliasSafeWithoutWarning(tokens: sqlTokens(from: upper, backslashEscapes: backslashEscapes), alias: alias)
-        }
-    }
-
-    private static func isExplainAliasSafeWithoutWarning(tokens: [String], alias: String) -> Bool {
+    /// Judges an EXPLAIN-family statement under one reading of backslashes;
+    /// the caller combines the readings.
+    private static func isExplainAliasSafeWithoutWarning(_ upper: String, alias: String, backslashEscapes: Bool) -> Bool {
+        let tokens = sqlTokens(from: upper, backslashEscapes: backslashEscapes)
         guard tokens.first == alias else { return false }
 
         var index = 1

@@ -60,12 +60,23 @@ enum SPMCPReadOnlyGuard {
         // comment strip would hide a write or statement separator from the checks below.
         if hasExecutableComment(sql) { return false }
 
+        // The guard does not know the connection's sql_mode. Under
+        // NO_BACKSLASH_ESCAPES the quote after a backslash closes a string, which
+        // moves the string boundaries and with them where a comment starts; a `#`
+        // read as a comment here could then be literal text on the server, and
+        // the `; DROP …` behind it would be stripped instead of rejected. Read
+        // the statement both ways and allow it only when both readings pass.
+        let backslashReadings = sql.contains("\\") ? [true, false] : [true]
+        return backslashReadings.allSatisfy { isReadOnly(sql, backslashEscapes: $0) }
+    }
+
+    private static func isReadOnly(_ sql: String, backslashEscapes: Bool) -> Bool {
         // Strip comments first so they cannot hide a statement separator or verb.
         // Use a quote-aware stripper: a quote-unaware one treats a `#` or `--` inside
         // a string literal as a comment and drops the rest of the line, which would
         // hide a trailing OUTFILE / `;` / LOAD_FILE from the checks below while the
         // raw SQL still runs (e.g. `SELECT '#' INTO OUTFILE '/tmp/x'`).
-        let stripped = stripCommentsQuoteAware(sql)
+        let stripped = stripCommentsQuoteAware(sql, backslashEscapes: backslashEscapes)
 
         var core = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
         while core.hasSuffix(";") {
@@ -95,7 +106,14 @@ enum SPMCPReadOnlyGuard {
     /// comment is also treated as unsafe.
     static func explainWouldExecute(_ sql: String) -> Bool {
         if hasExecutableComment(sql) { return true }
-        let stripped = stripCommentsQuoteAware(sql)
+        // As in isReadOnly, the statement is read with and without backslash
+        // escapes; it counts as executing when either reading says so.
+        let backslashReadings = sql.contains("\\") ? [true, false] : [true]
+        return backslashReadings.contains { explainWouldExecute(sql, backslashEscapes: $0) }
+    }
+
+    private static func explainWouldExecute(_ sql: String, backslashEscapes: Bool) -> Bool {
+        let stripped = stripCommentsQuoteAware(sql, backslashEscapes: backslashEscapes)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         // The statement body starts at one of these keywords; ANALYZE/FORMAT before
         // it are EXPLAIN modifiers.
@@ -124,7 +142,11 @@ enum SPMCPReadOnlyGuard {
     /// would treat such a marker as a real comment and drop everything after it,
     /// which a request could exploit to hide OUTFILE/LOAD_FILE/`;` from the
     /// read-only checks. (`/*! ... */` executable comments are rejected before this.)
-    static func stripCommentsQuoteAware(_ sql: String) -> String {
+    ///
+    /// - Parameter backslashEscapes: Whether a backslash escapes the next character
+    ///   inside '...'/"..."; `false` reads the SQL the way a connection with
+    ///   `NO_BACKSLASH_ESCAPES` does, where the quote after a backslash closes the string.
+    static func stripCommentsQuoteAware(_ sql: String, backslashEscapes: Bool = true) -> String {
         var out = ""
         let chars: [Character] = Array(sql)
         let n = chars.count
@@ -134,7 +156,7 @@ enum SPMCPReadOnlyGuard {
             let c = chars[i]
             if let q = quote {
                 out.append(c)
-                if c == "\\" && q != "`" {                       // backslash escape in '...'/"..."
+                if c == "\\" && backslashEscapes && q != "`" {   // backslash escape in '...'/"..."
                     if i + 1 < n { out.append(chars[i + 1]); i += 2; continue }
                 } else if c == q {
                     if i + 1 < n && chars[i + 1] == q {          // doubled-quote escape ('' "" ``)
