@@ -30,10 +30,17 @@
 
 #import "SPDatabaseAction.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * The SPDatabaseRename class povides functionality to rename a database.
  */
 @interface SPDatabaseRename : SPDatabaseAction
+
+/**
+ * Why the last rename stopped, for the user, or nil when it succeeded.
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *failureDescription;
 
 /**
  * This method renames an existing database.
@@ -46,3 +53,5 @@
 - (BOOL)renameDatabaseFrom:(SPCreateDatabaseInfo *)sourceDatabase to:(NSString *)targetDatabase;
 
 @end
+
+NS_ASSUME_NONNULL_END

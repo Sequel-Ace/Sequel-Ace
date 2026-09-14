@@ -125,6 +125,30 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
+"Creating the database '%@' failed: %@" = "Creating the database '%@' failed: %@";
+
+/* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
+"Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%@', but dropping '%@' failed: %@";
+
+/* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
+"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped.";
+
+/* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
+"Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%@' failed: %@ Nothing was changed.";
+
+/* rename database refused because the connection could not be switched to a UTF-8 character set */
+"The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
+
+/* rename database refused because the source holds triggers, routines or events; %@ lists them */
+"The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "The database contains objects that Rename Database cannot move: %@. Nothing was changed.";
+
+/* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
+"The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
+
+/* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
 
@@ -463,6 +487,12 @@
 /* fallback privilege operation description */
 "change" = "change";
 
+/* rename database: a scheduled event, by name; listed among the objects that block the rename */
+"event '%@'" = "event '%@'";
+
+/* rename database: a stored function, by name; listed among the objects that block the rename */
+"function '%@'" = "function '%@'";
+
 /* grant privilege operation */
 "grant" = "grant";
 
@@ -471,6 +501,12 @@
 
 /* allow nonexistent definer privilege checkbox title */
 "Nonexistent Definer" = "Nonexistent Definer";
+
+/* rename database: why a view was not recreated */
+"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
+
+/* rename database: a stored procedure, by name; listed among the objects that block the rename */
+"procedure '%@'" = "procedure '%@'";
 
 /* revoke privilege operation */
 "revoke" = "revoke";
@@ -516,6 +552,12 @@
 
 /* show create routine privilege checkbox title */
 "Show Create Routine" = "Show Create Routine";
+
+/* rename database: a table, by name */
+"table '%@'" = "table '%@'";
+
+/* rename database: why the views are not trusted and the source is kept */
+"the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
 
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
@@ -2873,6 +2915,15 @@
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.";
+
+/* rename database: a trigger, by name and table; listed among the objects that block the rename */
+"trigger '%@' on table '%@'" = "trigger '%@' on table '%@'";
+
+/* rename database: the server reported no error message */
+"unknown error" = "unknown error";
+
+/* rename database: a view, by name */
+"view '%@'" = "view '%@'";
 
 "‘%@’ Bundle contains legacy components" = "‘%@’ Bundle contains legacy components";
 

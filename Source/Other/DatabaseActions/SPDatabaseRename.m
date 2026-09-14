@@ -29,26 +29,24 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseRename.h"
-#import "SPTableCopy.h"
-#import "SPViewCopy.h"
-#import "SPTablesList.h"
 #import "SPCreateDatabaseInfo.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseRename ()
 
-- (BOOL)_dropDatabase:(NSString *)database;
-
-- (BOOL)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
-- (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
+@property (nonatomic, copy, readwrite, nullable) NSString *failureDescription;
 
 @end
 
 @implementation SPDatabaseRename
 
 /**
- * Note that this doesn't currently support moving any non-table objects (i.e. views, proc, functions, events, etc).
+ * Hands the rename to SADatabaseRenameExecutor, which inspects the source,
+ * refuses databases holding triggers, routines or events, moves the tables,
+ * recreates the views and drops the source only when everything moved. This
+ * method only runs the statements it is given and reports the outcome.
  */
 - (BOOL)renameDatabaseFrom:(SPCreateDatabaseInfo *)sourceDatabase to:(NSString *)targetDatabase
 {
@@ -56,99 +54,79 @@
 
     SPLog(@"renameDatabaseFrom: %@, to: %@", sourceDatabaseName, targetDatabase);
 
+    self.failureDescription = nil;
+
 	// Check, whether the source database exists and the target database doesn't
 	BOOL sourceExists = [[connection databases] containsObject:sourceDatabaseName];
 	BOOL targetExists = [[connection databases] containsObject:targetDatabase];
-
-    BOOL success = NO;
-    BOOL success2 = NO;
-    BOOL success3 = NO;
 
     if (!sourceExists || targetExists){
         SPLog(@"!sourceExists || targetExists");
         return NO;
     }
 
-	NSArray *tables = [tablesList allTableNames];
+    SPMySQLConnection *renameConnection = connection;
 
-    success = [self createDatabase:targetDatabase
-                      withEncoding:[sourceDatabase defaultEncoding]
-                         collation:[sourceDatabase defaultCollation]];
-
-    if(success == YES){
-        SPLog(@"createDatabase SUCCESS, calling move tables");
-        success2 = [self _moveTables:tables fromDatabase:sourceDatabaseName toDatabase:targetDatabase];
-        if(success2 == NO){
-            SPLog(@"_moveTables FAILED: %@", [connection lastErrorMessage]);
+    // View definitions travel through the connection's encoding on the way
+    // in and out; on a latin1 connection every character outside latin1
+    // would arrive as '?' and be written back that way. Read and replay them
+    // through utf8mb4 (utf8 on servers without it) and restore the encoding
+    // afterwards.
+    BOOL encodingChanged = NO;
+    NSString *originalCollation = nil;
+    if (![[renameConnection encoding] isEqualToString:@"utf8mb4"] || [renameConnection encodingUsesLatin1Transport]) {
+        // SET NAMES replaces the session's collation with the character set's
+        // default on the way in and out; keep the one the session had.
+        SPMySQLResult *collationResult = [renameConnection queryString:@"SELECT @@collation_connection"];
+        if (![renameConnection queryErrored]) {
+            [collationResult setReturnDataAsStrings:YES];
+            originalCollation = [[collationResult getRowAsArray] firstObject];
         }
-        else{
-            SPLog(@"_moveTables SUCCESS, calling _dropDatabase");
-            success3 = [self _dropDatabase:sourceDatabaseName];
-            if(success3 == NO){
-                SPLog(@"_dropDatabase FAILED: %@", [connection lastErrorMessage]);
-            }
-            else{
-                SPLog(@"_dropDatabase SUCCESS");
-            }
+        [renameConnection storeEncodingForRestoration];
+        encodingChanged = [renameConnection setEncoding:@"utf8mb4"] || [renameConnection setEncoding:@"utf8"];
+        if (!encodingChanged) {
+            // Without UTF-8 transport a view definition could arrive and go
+            // back with characters replaced; better not to start at all.
+            [renameConnection restoreStoredEncoding];
+            self.failureDescription = NSLocalizedString(@"The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.", @"rename database refused because the connection could not be switched to a UTF-8 character set");
+            SPLog(@"rename refused: %@", self.failureDescription);
+            return NO;
+        }
+        [renameConnection setEncodingUsesLatin1Transport:NO];
+    }
+
+    SADatabaseRenameExecutor *executor = [[SADatabaseRenameExecutor alloc] initWithRun:^SADatabaseRenameStatementResult *(NSString *statement) {
+        SPMySQLResult *result = [renameConnection queryString:statement];
+        if ([renameConnection queryErrored]) {
+            return [[SADatabaseRenameStatementResult alloc] initWithError:[renameConnection lastErrorMessage]];
+        }
+        [result setReturnDataAsStrings:YES];
+        NSMutableArray *rows = [NSMutableArray array];
+        NSArray *row;
+        while ((row = [result getRowAsArray]) != nil) {
+            [rows addObject:row];
+        }
+        return [[SADatabaseRenameStatementResult alloc] initWithRows:rows];
+    } quote:^NSString *(NSString *value) {
+        return [renameConnection escapeAndQuoteString:value];
+    }];
+
+    self.failureDescription = [executor renameDatabase:sourceDatabaseName
+                                                    to:targetDatabase
+                                              encoding:[sourceDatabase defaultEncoding]
+                                             collation:[sourceDatabase defaultCollation]];
+    if (encodingChanged) {
+        [renameConnection restoreStoredEncoding];
+        if ([originalCollation isKindOfClass:[NSString class]]) {
+            [renameConnection queryString:[NSString stringWithFormat:@"SET collation_connection = %@", [renameConnection escapeAndQuoteString:originalCollation]]];
         }
     }
-    else{
-        SPLog(@"createDatabase FAILED: %@", [connection lastErrorMessage]);
+    if (self.failureDescription) {
+        SPLog(@"rename failed: %@", self.failureDescription);
+        return NO;
     }
 
-    BOOL ret = success && success2 && success3;
-
-    SPLog(@"ret code: %hhd", ret);
-
-	return ret;
-}
-
-#pragma mark -
-#pragma mark Private API
-
-/**
- * This method drops a database.
- *
- * @param NSString databaseName name of the database to drop
- * @return BOOL YES on success, otherwise NO
- */
-- (BOOL)_dropDatabase:(NSString *)database 
-{
-    SPLog(@"_dropDatabase: %@", database);
-
-	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [database backtickQuotedString]]];	
-	
-	return ![connection queryErrored];
-}
-
-- (BOOL)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
-{
-    SPLog(@"_moveTables from : %@, to: %@", sourceDatabase, targetDatabase);
-
-    BOOL success = YES;
-
-	SPTableCopy *dbActionTableCopy = [[SPTableCopy alloc] init];
-	
-	[dbActionTableCopy setConnection:connection];
-	
-	for (NSString *table in tables) 
-	{
-        success = [dbActionTableCopy moveTable:table from:sourceDatabase to:targetDatabase];
-	}
-
-    return success;
-}
-
-- (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
-{
-	SPViewCopy *dbActionViewCopy = [[SPViewCopy alloc] init];
-	
-	[dbActionViewCopy setConnection:connection];
-	
-	for (NSString *view in views) 
-	{
-		[dbActionViewCopy moveView:view from:sourceDatabase to:targetDatabase];
-	}
+    return YES;
 }
 
 @end

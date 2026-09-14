@@ -859,13 +859,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
-    // We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
-    // so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
-    if ([tablesListInstance hasNonTableObjects]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Database Rename Unsupported", @"databsse rename unsupported message") message:[NSString stringWithFormat:NSLocalizedString(@"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.", @"databsse rename unsupported informative message"), selectedDatabase] callback:nil];
-        return;
-    }
-
+    // Tables and views are moved; SPDatabaseRename refuses a database holding
+    // triggers, routines or events with a message naming them.
     [databaseRenameNameField setStringValue:selectedDatabase];
     [renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
@@ -5013,7 +5008,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
     }
     else {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
+        NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName];
+        if ([dbActionRename failureDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename failureDescription]];
+        }
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:message callback:nil];
     }
 }
 
