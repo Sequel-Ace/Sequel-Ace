@@ -143,7 +143,7 @@ final class SATooltipLifecycleTests: XCTestCase {
         let current = NSObject()
         XCTAssertTrue(SATooltipLifecycle.isCurrent(webView: current, currentWebView: current))
         XCTAssertFalse(SATooltipLifecycle.isCurrent(webView: NSObject(), currentWebView: current))
-        XCTAssertFalse(SATooltipLifecycle.isCurrent(webView: current, currentWebView: nil), "closing cleared the content view")
+        XCTAssertFalse(SATooltipLifecycle.isCurrent(webView: current, currentWebView: nil), "closing forgets the web view, so late callbacks of a closed tooltip are ignored")
     }
 
     /// Verifies a superseded navigation keeps the tooltip while real load failures close it.

@@ -225,7 +225,9 @@ import AppKit
     /// this). Such stale work must not touch the shared window: applying the
     /// old measurement and ordering the window front would show the new,
     /// still loading content, whose own measurement then runs in a visible,
-    /// screen-sized window.
+    /// screen-sized window. Closing the tooltip clears the current web view, so
+    /// late callbacks of a closed tooltip are ignored as well and cannot order
+    /// it front again.
     ///
     /// - Parameters:
     ///   - webView: The web view the callback or measurement belongs to.

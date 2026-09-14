@@ -486,6 +486,8 @@ static CGFloat slow_in_out (CGFloat t)
 	// must set this to nil here
 	// otherwise subsequent tootips do not display
 	self.contentView = nil;
+	// late navigation callbacks of the closed tooltip must not show it again
+	wkWebView = nil;
 	
 	if(![self isVisible] || animationTimer)
 		return;
