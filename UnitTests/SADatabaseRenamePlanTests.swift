@@ -116,9 +116,9 @@ final class SADatabaseRenamePlanTests: XCTestCase {
     /// rename, naming at most five of them.
     func testObjectPrivilegesRefuseTheRename() throws {
         let plan = makePlan()
-        plan.recordObjectPrivileges(["`shop%`.* for 'app'@'%'", "`orders` for 'app'@'%'"])
+        plan.recordObjectPrivileges(["`shop%`.* for 'app'@'%'", "`orders` for 'app'@'%'", "partial revoke on `shop`.* for 'reader'@'%'"])
         XCTAssertFalse(plan.canStart)
-        XCTAssertEqual(try XCTUnwrap(plan.failureDescription), "The database has privileges granted on it, its tables or its views (`shop%`.* for 'app'@'%', `orders` for 'app'@'%'), which Rename Database cannot move. Nothing was changed.")
+        XCTAssertEqual(try XCTUnwrap(plan.failureDescription), "The database has privileges granted on it, its tables or its views, or partially revoked on it (`shop%`.* for 'app'@'%', `orders` for 'app'@'%', partial revoke on `shop`.* for 'reader'@'%'), which Rename Database cannot move. Nothing was changed.")
 
         let many = makePlan()
         many.recordObjectPrivileges((1...6).map { "`t\($0)` for 'u'@'%'" })
@@ -430,6 +430,8 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     private let privilegesQuery = "SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES"
 
+    private let partialRevokesQuery = "SHOW VARIABLES LIKE 'partial_revokes'"
+
     /// `HEX()` of a definition body, as information_schema.VIEWS would print it.
     private func hex(_ text: String) -> String {
         text.utf8.map { String(format: "%02X", $0) }.joined()
@@ -458,7 +460,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     /// Whether the server saw nothing but the inspection queries.
     private func onlyInspected(_ server: FakeServer) -> Bool {
-        server.statements.allSatisfy { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }
+        server.statements.allSatisfy { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") || $0.hasPrefix("SHOW VARIABLES ") }
     }
 
     /// Verifies the whole sequence: the source is read from information_schema,
@@ -475,9 +477,12 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let server = makeServer()
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: "utf8mb4", collation: "utf8mb4_general_ci"))
 
-        let inspection = server.statements.prefix(10)
-        XCTAssertEqual(inspection.count, 10)
-        XCTAssertTrue(inspection.allSatisfy { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }, inspection.joined(separator: "\n"))
+        let inspection = server.statements.prefix(11)
+        XCTAssertEqual(inspection.count, 11)
+        XCTAssertTrue(inspection.allSatisfy { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") || $0.hasPrefix("SHOW VARIABLES ") }, inspection.joined(separator: "\n"))
+        // a server without partial revokes is not asked for restrictions
+        XCTAssertTrue(inspection.contains(partialRevokesQuery), inspection.joined(separator: "\n"))
+        XCTAssertFalse(server.statements.contains { $0.contains("mysql.user") }, server.statements.joined(separator: "\n"))
         XCTAssertEqual(inspection.filter { $0.contains("information_schema.") && $0.contains("_SCHEMA = 'shop'") }.count, 3, inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT name, type FROM mysql.proc WHERE LOWER(db) = LOWER('shop') ORDER BY name"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT LOWER('shop'), LOWER('store')"), inspection.joined(separator: "\n"))
@@ -485,7 +490,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertTrue(inspection.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ORDER BY Db, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE LOWER(Db) = LOWER('shop') ORDER BY Table_name, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT Table_name, User, Host FROM mysql.columns_priv WHERE LOWER(Db) = LOWER('shop') ORDER BY Table_name, User, Host"), inspection.joined(separator: "\n"))
-        XCTAssertEqual(Array(server.statements.dropFirst(10)), [
+        XCTAssertEqual(Array(server.statements.dropFirst(11)), [
             sessionQuery,
             "SET sql_mode = 'STRICT_TRANS_TABLES'",
             "SHOW CREATE VIEW `shop`.`totals`",
@@ -756,7 +761,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
     func testCreatesWithoutDefaultsAndSkipsViewHandlingWithoutViews() {
         let server = makeServer(tables: [["a", "BASE TABLE"], ["b", "BASE TABLE"]])
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: ""))
-        XCTAssertEqual(Array(server.statements.dropFirst(10)), [
+        XCTAssertEqual(Array(server.statements.dropFirst(11)), [
             "CREATE DATABASE `store`",
             "RENAME TABLE `shop`.`a` TO `store`.`a`",
             "RENAME TABLE `shop`.`b` TO `store`.`b`",
@@ -830,7 +835,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let mysql8 = makeServer()
         mysql8.fail("SELECT name, type FROM mysql.proc", with: "Table 'mysql.proc' doesn't exist")
         mysql8.respond(to: privilegesQuery, rows: [["SHOW_ROUTINE"]])
-        mysql8.respond(to: "SELECT @@partial_revokes", rows: [["ON"]])
+        mysql8.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
         mysql8.respond(to: "SELECT ROUTINE_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'shop'", rows: [["cleanup", "PROCEDURE"]])
         let refused = try XCTUnwrap(mysql8.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(refused.contains("procedure 'cleanup'"), refused)
@@ -844,9 +849,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             select.fail("SELECT name, type FROM mysql.proc", with: "Table 'mysql.proc' doesn't exist")
             select.respond(to: privilegesQuery, rows: [["SELECT"]])
             if let partialRevokes {
-                select.respond(to: "SELECT @@partial_revokes", rows: [[partialRevokes]])
+                select.respond(to: partialRevokesQuery, rows: [["partial_revokes", partialRevokes]])
             } else {
-                select.fail("SELECT @@partial_revokes", with: "Unknown system variable 'partial_revokes'")
+                select.respond(to: partialRevokesQuery, rows: [])
             }
             let outcome = select.executor.rename("shop", to: "store", encoding: nil, collation: nil)
             XCTAssertEqual(outcome == nil, expected, "partial_revokes = \(partialRevokes ?? "unknown"): \(outcome ?? "renamed")")
@@ -854,22 +859,27 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         }
 
         // only "unknown variable" means no partial revokes; any other failure
-        // leaves the setting unknown, and a global SELECT is not trusted then -
-        // SHOW_ROUTINE needs no such setting
+        // leaves the setting unknown, and a global SELECT is not trusted then
         let broken = makeServer()
         broken.fail("SELECT name, type FROM mysql.proc", with: "Table 'mysql.proc' doesn't exist")
         broken.respond(to: privilegesQuery, rows: [["SELECT"]])
-        broken.fail("SELECT @@partial_revokes", with: "Lost connection to MySQL server during query")
+        broken.fail(partialRevokesQuery, with: "Lost connection to MySQL server during query")
         let lost = try XCTUnwrap(broken.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(lost.contains("Reading the objects of the database 'shop' failed: Lost connection to MySQL server during query Nothing was changed."), lost)
         XCTAssertTrue(onlyInspected(broken), broken.statements.joined(separator: "\n"))
 
+        // SHOW_ROUTINE lists the routines without that setting; the partial
+        // revokes themselves, checked with the grants, still need it, and the
+        // setting is read once
         let routineViewer = makeServer()
         routineViewer.fail("SELECT name, type FROM mysql.proc", with: "Table 'mysql.proc' doesn't exist")
         routineViewer.respond(to: privilegesQuery, rows: [["SHOW_ROUTINE"]])
-        routineViewer.fail("SELECT @@partial_revokes", with: "Access denied")
-        XCTAssertNil(routineViewer.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(routineViewer.statements.last, "DROP DATABASE `shop`")
+        routineViewer.fail(partialRevokesQuery, with: "Access denied")
+        let unknown = try XCTUnwrap(routineViewer.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(routineViewer.statements.contains { $0.hasPrefix("SELECT ROUTINE_NAME") }, routineViewer.statements.joined(separator: "\n"))
+        XCTAssertTrue(unknown.contains("Reading the objects of the database 'shop' failed: Access denied Nothing was changed."), unknown)
+        XCTAssertEqual(routineViewer.statements.filter { $0 == partialRevokesQuery }.count, 1)
+        XCTAssertTrue(onlyInspected(routineViewer), routineViewer.statements.joined(separator: "\n"))
 
         // EXECUTE on the database alone says nothing about which routines the server shows
         let schemaGrant = makeServer()
@@ -899,7 +909,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertNil(exact.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(exact.statements.contains("SELECT name, type FROM mysql.proc WHERE db = 'shop' ORDER BY name"), exact.statements.joined(separator: "\n"))
         XCTAssertFalse(exact.statements.contains { $0.hasPrefix("SELECT LOWER(") }, exact.statements.joined(separator: "\n"))
-        XCTAssertEqual(exact.statements.prefix(9).filter { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }.count, 9)
+        XCTAssertEqual(exact.statements.prefix(10).filter { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") || $0.hasPrefix("SHOW VARIABLES ") }.count, 10)
     }
 
     /// Verifies privileges granted on the source database or its tables or
@@ -920,8 +930,53 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         granted.respond(to: databasePriv, rows: [["shop", "app", "%"]])
         granted.respond(to: tablesPriv, rows: [["orders", "app", "%"], ["orders", "app", "%"], ["customer_totals", "reader", "localhost"]])
         let description = try XCTUnwrap(granted.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertTrue(description.contains("The database has privileges granted on it, its tables or its views (`shop`.* for 'app'@'%', `orders` for 'app'@'%', `customer_totals` for 'reader'@'localhost'), which Rename Database cannot move. Nothing was changed."), description)
+        XCTAssertTrue(description.contains("The database has privileges granted on it, its tables or its views, or partially revoked on it (`shop`.* for 'app'@'%', `orders` for 'app'@'%', `customer_totals` for 'reader'@'localhost'), which Rename Database cannot move. Nothing was changed."), description)
         XCTAssertTrue(onlyInspected(granted), granted.statements.joined(separator: "\n"))
+
+        // with partial revokes on, a restriction for the source - kept in
+        // mysql.user's JSON attributes, nowhere in information_schema - refuses
+        // as well, listed after the grants; the source is searched as an
+        // exactly matching LIKE pattern
+        let restrictionsQuery = "SELECT User, Host FROM mysql.user"
+        let restricted = makeServer()
+        restricted.respond(to: databasePriv, rows: [["shop", "app", "%"]])
+        restricted.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
+        restricted.respond(to: restrictionsQuery, rows: [["reader", "%"], ["reader", "%"], ["auditor", "localhost"]])
+        let restrictedDescription = try XCTUnwrap(restricted.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(restrictedDescription.contains("(`shop`.* for 'app'@'%', partial revoke on `shop`.* for 'reader'@'%', partial revoke on `shop`.* for 'auditor'@'localhost')"), restrictedDescription)
+        XCTAssertTrue(restricted.statements.contains("SELECT User, Host FROM mysql.user WHERE JSON_SEARCH(User_attributes, 'one', 'shop', '!', '$.Restrictions[*].Database') IS NOT NULL ORDER BY User, Host"), restricted.statements.joined(separator: "\n"))
+        XCTAssertTrue(onlyInspected(restricted), restricted.statements.joined(separator: "\n"))
+
+        let unrestricted = makeServer()
+        unrestricted.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
+        XCTAssertNil(unrestricted.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(unrestricted.statements.contains { $0.hasPrefix(restrictionsQuery) }, unrestricted.statements.joined(separator: "\n"))
+        XCTAssertEqual(unrestricted.statements.last, "DROP DATABASE `shop`")
+
+        let unreadableUser = makeServer()
+        unreadableUser.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
+        unreadableUser.fail(restrictionsQuery, with: "SELECT command denied to user for table 'user'")
+        let unreadableReason = try XCTUnwrap(unreadableUser.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(unreadableReason.contains("Reading the objects of the database 'shop' failed: this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT). Nothing was changed."), unreadableReason)
+        XCTAssertTrue(onlyInspected(unreadableUser), unreadableUser.statements.joined(separator: "\n"))
+
+        // off, or a server without the setting: no restrictions, nothing asked
+        let off = makeServer()
+        off.respond(to: partialRevokesQuery, rows: [["partial_revokes", "OFF"]])
+        XCTAssertNil(off.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertFalse(off.statements.contains { $0.contains("mysql.user") }, off.statements.joined(separator: "\n"))
+
+        // where the server folds case, its own folded form of the source is searched too
+        let foldedSource = makeServer()
+        foldedSource.responses.removeAll { $0.matches("SELECT LOWER('shop'), LOWER('store')") }
+        foldedSource.respond(to: "SELECT LOWER('shop'), LOWER('store')", rows: [["ſhop", "store"]])
+        foldedSource.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
+        XCTAssertNil(foldedSource.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(foldedSource.statements.contains("SELECT User, Host FROM mysql.user WHERE JSON_SEARCH(User_attributes, 'one', 'shop', '!', '$.Restrictions[*].Database') IS NOT NULL OR JSON_SEARCH(User_attributes, 'one', 'ſhop', '!', '$.Restrictions[*].Database') IS NOT NULL ORDER BY User, Host"), foldedSource.statements.joined(separator: "\n"))
+
+        XCTAssertEqual(SADatabaseRenameExecutor.likePattern(matchingExactly: "my_shop"), "my!_shop")
+        XCTAssertEqual(SADatabaseRenameExecutor.likePattern(matchingExactly: "100%!"), "100!%!!")
+        XCTAssertEqual(SADatabaseRenameExecutor.likePattern(matchingExactly: "shop"), "shop")
 
         // a grant on the database names a pattern; the source is the value it is matched against
         let pattern = makeServer()
@@ -946,7 +1001,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let viaSchema = makeServer()
         viaSchema.fail(tablesPriv, with: "SELECT command denied to user for table 'tables_priv'")
         viaSchema.respond(to: privilegesQuery, rows: [["SELECT"]])
-        viaSchema.respond(to: "SELECT @@partial_revokes", rows: [["OFF"]])
+        viaSchema.respond(to: partialRevokesQuery, rows: [["partial_revokes", "OFF"]])
         viaSchema.respond(to: "SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE LOWER('shop') LIKE LOWER(TABLE_SCHEMA) ORDER BY TABLE_SCHEMA, GRANTEE", rows: [["shop%", "'app'@'%'"]])
         viaSchema.respond(to: "SELECT TABLE_NAME, GRANTEE FROM information_schema.TABLE_PRIVILEGES WHERE LOWER(TABLE_SCHEMA) = LOWER('shop')", rows: [["orders", "'app'@'%'"]])
         let schemaDescription = try XCTUnwrap(viaSchema.executor.rename("shop", to: "store", encoding: nil, collation: nil))
@@ -960,9 +1015,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             let refused = makeServer()
             refused.fail(unreadable, with: "SELECT command denied to user for table 'db'")
             refused.respond(to: privilegesQuery, rows: privileges)
-            refused.respond(to: "SELECT @@partial_revokes", rows: [["ON"]])
+            refused.respond(to: partialRevokesQuery, rows: [["partial_revokes", "ON"]])
             let reason = try XCTUnwrap(refused.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-            XCTAssertTrue(reason.contains("Reading the objects of the database 'shop' failed: this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db and mysql.tables_priv, or global SELECT). Nothing was changed."), reason)
+            XCTAssertTrue(reason.contains("Reading the objects of the database 'shop' failed: this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT). Nothing was changed."), reason)
             XCTAssertFalse(refused.statements.contains { $0.contains("information_schema.SCHEMA_PRIVILEGES") || $0.contains("information_schema.TABLE_PRIVILEGES") }, refused.statements.joined(separator: "\n"))
         }
 

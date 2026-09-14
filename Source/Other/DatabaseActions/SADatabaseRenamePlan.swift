@@ -207,7 +207,7 @@ import Foundation
         if !objectPrivileges.isEmpty {
             let shown = objectPrivileges.prefix(5) + (objectPrivileges.count > 5 ? ["…"] : [])
             return String(
-                format: NSLocalizedString("The database has privileges granted on it, its tables or its views (%@), which Rename Database cannot move. Nothing was changed.", comment: "rename database refused because GRANTs on the source database or its tables or views would be lost; %@ lists them as `db`.* or `table` for 'user'@'host'"),
+                format: NSLocalizedString("The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed.", comment: "rename database refused because GRANTs on the source database or its tables or views, or a partial revoke for the database, would be lost; %@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host'"),
                 shown.joined(separator: ", ")
             )
         }
@@ -841,6 +841,7 @@ import Foundation
     public func rename(_ source: String, to target: String, encoding: String?, collation: String?) -> String? {
         changedServer = false
         globalVisibility = nil
+        partialRevokes = nil
         let quotedSource = SADatabaseRenameViewRewriter.backtickQuoted(source)
         let quotedTarget = SADatabaseRenameViewRewriter.backtickQuoted(target)
         let schema = quote(source)
@@ -887,7 +888,7 @@ import Foundation
             fallback: "SELECT db, name FROM mysql.event WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name"
         ).map { Array($0.dropFirst()) }
         let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = \(schema) ORDER BY TRIGGER_NAME")
-        let objectPrivileges = objectPrivilegeDescriptions(schema: schema, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
+        let objectPrivileges = objectPrivilegeDescriptions(source: source, serverLoweredSource: serverLoweredSource, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         let viewRows = rows("SELECT TABLE_NAME, CHARACTER_SET_CLIENT, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS WHERE TABLE_SCHEMA = \(schema) ORDER BY TABLE_NAME")
 
         let plan = SADatabaseRenamePlan(sourceDatabase: source, targetDatabase: target, lowerCaseTableNames: lowerCaseTableNames, tableRows: tableRows, routineRows: routineRows, eventRows: eventRows, triggerRows: triggerRows)
@@ -1125,9 +1126,10 @@ import Foundation
     }
 
     /// The privileges granted on the source database, its tables and views,
-    /// each as `` `pattern`.* for 'user'@'host' `` or `` `table` for
-    /// 'user'@'host' ``, or an empty list with `inspectionError` set when
-    /// they cannot be listed completely.
+    /// and the partial revokes for the database, each as `` `pattern`.* for
+    /// 'user'@'host' ``, `` `table` for 'user'@'host' `` or `` partial revoke
+    /// on `db`.* for 'user'@'host' ``, or an empty list with
+    /// `inspectionError` set when they cannot be listed completely.
     ///
     /// A grant on the database stays with the old name, `RENAME TABLE` does
     /// not carry grants on tables across databases and a recreated view has
@@ -1139,8 +1141,20 @@ import Foundation
     /// partial revoke limits. Anything else fails closed. A grant on a
     /// database names a pattern (`shop%` covers `shop`), so the source is
     /// matched against it with `LIKE`, the way the server does.
-    private func objectPrivilegeDescriptions(schema: String, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
+    ///
+    /// A partial revoke (MySQL 8 with `partial_revokes` on: `REVOKE SELECT
+    /// ON shop.*` from an account holding a global SELECT) is the reverse
+    /// case: the restriction stays with the old name and the global
+    /// privilege then covers the renamed database. Restrictions live in the
+    /// JSON of `mysql.user.User_attributes` only - no `information_schema`
+    /// view shows them - so that is searched for the source's name, as
+    /// given and as the server folds it. A server without partial revokes
+    /// has none; one whose setting or `mysql.user` cannot be read fails
+    /// closed.
+    private func objectPrivilegeDescriptions(source: String, serverLoweredSource: String?, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
         guard inspectionError == nil else { return [] }
+        let unlistable = NSLocalizedString("this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
+        let schema = quote(source)
         let patternMatch = Self.schemaPatternMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         let match = Self.schemaMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         let databases = run("SELECT Db, User, Host FROM mysql.db WHERE \(patternMatch) ORDER BY Db, User, Host")
@@ -1149,14 +1163,42 @@ import Foundation
         if let databaseRows = databases.rows, let tableRows = tables.rows, let columnRows = columns.rows {
             let onDatabase = Self.grantDescriptions(databaseRows) { row in
                 guard row.count >= 3, let pattern = Self.text(row[0]), let user = Self.text(row[1]), let host = Self.text(row[2]) else { return nil }
-                return "`\(pattern)`.* for '\(user)'@'\(host)'"
+                return Self.databaseGrantDescription(pattern: pattern, grantee: "'\(user)'@'\(host)'")
             }
-            return onDatabase + Self.grantDescriptions(tableRows + columnRows) { row in
+            let onObjects = Self.grantDescriptions(tableRows + columnRows) { row in
                 guard row.count >= 3, let table = Self.text(row[0]), let user = Self.text(row[1]), let host = Self.text(row[2]) else { return nil }
-                return "`\(table)` for '\(user)'@'\(host)'"
+                return Self.objectGrantDescription(object: table, grantee: "'\(user)'@'\(host)'")
             }
+            var restrictions: [String] = []
+            switch partialRevokesForInspection() {
+            case .off:
+                break
+            case .unknown(let error):
+                inspectionError = error
+                return []
+            case .on:
+                // JSON_SEARCH compares exactly, so both forms of the name are
+                // searched where the server folds case; its search string is
+                // a LIKE pattern, hence the escaping
+                var names = [source]
+                if let serverLoweredSource, !serverLoweredSource.utf8.elementsEqual(source.utf8) {
+                    names.append(serverLoweredSource)
+                }
+                let restrictionMatch = names
+                    .map { "JSON_SEARCH(User_attributes, 'one', \(quote(Self.likePattern(matchingExactly: $0))), '!', '$.Restrictions[*].Database') IS NOT NULL" }
+                    .joined(separator: " OR ")
+                guard let restrictedRows = run("SELECT User, Host FROM mysql.user WHERE \(restrictionMatch) ORDER BY User, Host").rows else {
+                    inspectionError = unlistable
+                    return []
+                }
+                restrictions = Self.grantDescriptions(restrictedRows) { row in
+                    guard row.count >= 2, let user = Self.text(row[0]), let host = Self.text(row[1]) else { return nil }
+                    return Self.restrictionDescription(database: source, grantee: "'\(user)'@'\(host)'")
+                }
+            }
+            return onDatabase + onObjects + restrictions
         }
-        if let reason = Self.reasonGlobalSelectDoesNotCoverEverything(globalVisibilityForInspection(), otherwise: NSLocalizedString("this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db and mysql.tables_priv, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")) {
+        if let reason = Self.reasonGlobalSelectDoesNotCoverEverything(globalVisibilityForInspection(), otherwise: unlistable) {
             inspectionError = reason
             return []
         }
@@ -1178,11 +1220,11 @@ import Foundation
         }
         let onDatabase = Self.grantDescriptions(schemaRows) { row in
             guard row.count >= 2, let pattern = Self.text(row[0]), let grantee = Self.text(row[1]) else { return nil }
-            return "`\(pattern)`.* for \(grantee)"
+            return Self.databaseGrantDescription(pattern: pattern, grantee: grantee)
         }
         return onDatabase + Self.grantDescriptions(rows) { row in
             guard row.count >= 2, let table = Self.text(row[0]), let grantee = Self.text(row[1]) else { return nil }
-            return "`\(table)` for \(grantee)"
+            return Self.objectGrantDescription(object: table, grantee: grantee)
         }
     }
 
@@ -1190,6 +1232,37 @@ import Foundation
     private static func grantDescriptions(_ rows: [[Any]], describe: ([Any]) -> String?) -> [String] {
         var seen: Set<[UInt8]> = []
         return rows.compactMap(describe).filter { seen.insert(Array($0.utf8)).inserted }
+    }
+
+    /// One grant on a database, for the refusal: `pattern` is the grant's
+    /// database pattern, `grantee` the account as `'user'@'host'`.
+    private static func databaseGrantDescription(pattern: String, grantee: String) -> String {
+        String(format: NSLocalizedString("`%@`.* for %@", comment: "rename database: one privilege granted on a database, listed in the refusal; %1$@ the grant's database pattern, %2$@ the account as 'user'@'host'"), pattern, grantee)
+    }
+
+    /// One grant on a table, view or column, for the refusal: `object` is
+    /// the table or view, `grantee` the account as `'user'@'host'`.
+    private static func objectGrantDescription(object: String, grantee: String) -> String {
+        String(format: NSLocalizedString("`%@` for %@", comment: "rename database: one privilege granted on a table, view or column, listed in the refusal; %1$@ the table or view, %2$@ the account as 'user'@'host'"), object, grantee)
+    }
+
+    /// One partial revoke for the database, for the refusal: `grantee` is
+    /// the restricted account as `'user'@'host'`.
+    private static func restrictionDescription(database: String, grantee: String) -> String {
+        String(format: NSLocalizedString("partial revoke on `%@`.* for %@", comment: "rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host'"), database, grantee)
+    }
+
+    /// `name` as a `LIKE` pattern that matches exactly that name, with `!`
+    /// as the escape character: `%`, `_` and `!` in the name are escaped.
+    static func likePattern(matchingExactly name: String) -> String {
+        var pattern = ""
+        for scalar in name.unicodeScalars {
+            if scalar == "%" || scalar == "_" || scalar == "!" {
+                pattern.unicodeScalars.append("!")
+            }
+            pattern.unicodeScalars.append(scalar)
+        }
+        return pattern
     }
 
     /// The account's global privileges that decide what `information_schema`
@@ -1219,20 +1292,35 @@ import Foundation
         let grantee = "CONCAT('''', \(user), '''@''', \(host), '''')"
         let privileges = Set((run("SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE')").rows ?? [])
             .compactMap { Self.text($0.first)?.uppercased() })
-        // Only a server that does not know the variable (MariaDB, MySQL up
-        // to 5.7) has no partial revokes; any other failure leaves the
-        // setting unknown, and a global SELECT cannot be trusted then.
-        let revokes = run("SELECT @@partial_revokes")
-        let partialRevokes: GlobalVisibility.PartialRevokes
-        if let error = revokes.error {
-            partialRevokes = error.contains("Unknown system variable") ? .off : .unknown(error)
-        } else {
-            let value = Self.text(revokes.rows?.first?.first)?.uppercased()
-            partialRevokes = (value == "ON" || value == "1") ? .on : .off
-        }
-        let visibility = GlobalVisibility(privileges: privileges, partialRevokes: partialRevokes)
+        let visibility = GlobalVisibility(privileges: privileges, partialRevokes: partialRevokesForInspection())
         globalVisibility = visibility
         return visibility
+    }
+
+    private var partialRevokes: GlobalVisibility.PartialRevokes?
+
+    /// The server's partial-revoke setting, read once per rename. A server
+    /// that does not know the variable (MariaDB, MySQL up to 5.7) has no
+    /// partial revokes; a failure leaves the setting unknown, and neither a
+    /// global SELECT nor the absence of restrictions can be trusted then.
+    private func partialRevokesForInspection() -> GlobalVisibility.PartialRevokes {
+        if let partialRevokes {
+            return partialRevokes
+        }
+        // SHOW VARIABLES lists nothing for a variable the server does not
+        // know, where `SELECT @@partial_revokes` would fail with a message
+        // in the server's language - error texts are localised
+        let revokes = run("SHOW VARIABLES LIKE 'partial_revokes'")
+        let setting: GlobalVisibility.PartialRevokes
+        if let error = revokes.error {
+            setting = .unknown(error)
+        } else {
+            let row = revokes.rows?.first ?? []
+            let value = row.count >= 2 ? Self.text(row[1])?.uppercased() : nil
+            setting = (value == "ON" || value == "1") ? .on : .off
+        }
+        partialRevokes = setting
+        return setting
     }
 
     /// Why a global SELECT does not let the account see every row of an
