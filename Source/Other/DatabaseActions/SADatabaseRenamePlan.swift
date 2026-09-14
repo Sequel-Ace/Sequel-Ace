@@ -43,6 +43,7 @@ import Foundation
     private var inspectionFailureReason: String?
     private var unsupportedCharacterSet: (characterSet: String, view: String)?
     private var unsupportedDefinitionView: String?
+    private var objectPrivileges: [String] = []
     private var createFailureReason: String?
     private var failedObject: String?
     private var failedObjectReason: String?
@@ -129,10 +130,21 @@ import Foundation
         unsupportedDefinitionView = view
     }
 
+    /// Records privileges granted on the source's tables or views. Such
+    /// grants stay behind: `RENAME TABLE` does not carry them across
+    /// databases and a recreated view has none, so the rename is refused.
+    ///
+    /// - Parameter descriptions: One entry per grant, as `` `table` for
+    ///   'user'@'host' ``.
+    @objc(recordObjectPrivileges:)
+    public func recordObjectPrivileges(_ descriptions: [String]) {
+        objectPrivileges = descriptions
+    }
+
     /// Whether the rename may start: the source was inspected and holds
     /// nothing the rename cannot move.
     @objc public var canStart: Bool {
-        inspectionFailureReason == nil && unsupportedObjects.isEmpty && unsupportedCharacterSet == nil && unsupportedDefinitionView == nil
+        inspectionFailureReason == nil && unsupportedObjects.isEmpty && unsupportedCharacterSet == nil && unsupportedDefinitionView == nil && objectPrivileges.isEmpty
     }
 
     /// Records that creating the target database failed.
@@ -190,6 +202,13 @@ import Foundation
             return String(
                 format: NSLocalizedString("The database contains objects that Rename Database cannot move: %@. Nothing was changed.", comment: "rename database refused because the source holds triggers, routines or events; %@ lists them"),
                 unsupportedObjects.joined(separator: ", ")
+            )
+        }
+        if !objectPrivileges.isEmpty {
+            let shown = objectPrivileges.prefix(5) + (objectPrivileges.count > 5 ? ["…"] : [])
+            return String(
+                format: NSLocalizedString("The database has privileges granted on its tables or views (%@), which Rename Database cannot move. Nothing was changed.", comment: "rename database refused because GRANTs on the source's tables or views would be lost; %@ lists them as `table` for 'user'@'host'"),
+                shown.joined(separator: ", ")
             )
         }
         if let unsupportedCharacterSet {
@@ -821,6 +840,7 @@ import Foundation
     @objc(renameDatabase:to:encoding:collation:)
     public func rename(_ source: String, to target: String, encoding: String?, collation: String?) -> String? {
         changedServer = false
+        globalVisibility = nil
         let quotedSource = SADatabaseRenameViewRewriter.backtickQuoted(source)
         let quotedTarget = SADatabaseRenameViewRewriter.backtickQuoted(target)
         let schema = quote(source)
@@ -867,12 +887,14 @@ import Foundation
             fallback: "SELECT db, name FROM mysql.event WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name"
         ).map { Array($0.dropFirst()) }
         let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = \(schema) ORDER BY TRIGGER_NAME")
+        let objectPrivileges = objectPrivilegeDescriptions(schema: schema, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         let viewRows = rows("SELECT TABLE_NAME, CHARACTER_SET_CLIENT, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS WHERE TABLE_SCHEMA = \(schema) ORDER BY TABLE_NAME")
 
         let plan = SADatabaseRenamePlan(sourceDatabase: source, targetDatabase: target, lowerCaseTableNames: lowerCaseTableNames, tableRows: tableRows, routineRows: routineRows, eventRows: eventRows, triggerRows: triggerRows)
         if let inspectionError {
             plan.recordInspectionFailure(inspectionError)
         }
+        plan.recordObjectPrivileges(objectPrivileges)
         // A view's definition travels through the connection's UTF-8
         // transport, in and out, so it must be UTF-8 to arrive unchanged:
         // the view must have been written through UTF-8 (the client's
@@ -1011,7 +1033,7 @@ import Foundation
             defaultDatabaseSwitched = true
 
             while let view = queue.next {
-                let outcome = recreate(view, definition: definitions[Array(view.utf8)], session: session)
+                let outcome = recreate(view, definition: definitions[Array(view.utf8)], quotedTarget: quotedTarget, session: session)
                 queue.record(view, created: outcome == nil, reason: outcome)
             }
 
@@ -1074,18 +1096,10 @@ import Foundation
         if let rows = run("SELECT name, type FROM mysql.proc WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name").rows {
             return rows
         }
-        // the account as the privilege tables spell it, 'user'@'host'; the
-        // user name may itself contain '@', the host follows the last one
-        let host = "SUBSTRING_INDEX(CURRENT_USER(), '@', -1)"
-        let user = "SUBSTRING(CURRENT_USER(), 1, CHAR_LENGTH(CURRENT_USER()) - CHAR_LENGTH(\(host)) - 1)"
-        let grantee = "CONCAT('''', \(user), '''@''', \(host), '''')"
-        let granted = Set((run("SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE')").rows ?? [])
-            .compactMap { Self.text($0.first)?.uppercased() })
-        // a server without the variable (MariaDB, MySQL up to 5.7) has no partial revokes
-        let partialRevokes = Self.text(run("SELECT @@partial_revokes").rows?.first?.first)?.uppercased()
-        let partialRevokesOn = partialRevokes == "ON" || partialRevokes == "1"
-        guard granted.contains("SHOW_ROUTINE") || (granted.contains("SELECT") && !partialRevokesOn) else {
-            inspectionError = NSLocalizedString("this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
+        let visibility = globalVisibilityForInspection()
+        if !visibility.privileges.contains("SHOW_ROUTINE"),
+           let reason = Self.reasonGlobalSelectDoesNotCoverEverything(visibility, otherwise: NSLocalizedString("this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")) {
+            inspectionError = reason
             return []
         }
         let routines = run("SELECT ROUTINE_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = \(schema) ORDER BY ROUTINE_NAME")
@@ -1094,6 +1108,113 @@ import Foundation
             return []
         }
         return rows
+    }
+
+    /// The privileges granted on the source's tables and views, each as
+    /// `` `table` for 'user'@'host' ``, or an empty list with
+    /// `inspectionError` set when they cannot be listed completely.
+    ///
+    /// `RENAME TABLE` does not carry such grants across databases and a
+    /// recreated view has none, so a database holding any is refused. They
+    /// are read from `mysql.tables_priv` and `mysql.columns_priv`, which
+    /// list every grant where readable; otherwise `information_schema`'s
+    /// `TABLE_PRIVILEGES` and `COLUMN_PRIVILEGES` stand in, which show every
+    /// account's grants only to a global SELECT that no partial revoke
+    /// limits. Anything else fails closed.
+    private func objectPrivilegeDescriptions(schema: String, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
+        guard inspectionError == nil else { return [] }
+        let match = Self.schemaMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        let tables = run("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE \(match) ORDER BY Table_name, User, Host")
+        let columns = run("SELECT Table_name, User, Host FROM mysql.columns_priv WHERE \(match) ORDER BY Table_name, User, Host")
+        if let tableRows = tables.rows, let columnRows = columns.rows {
+            return Self.grantDescriptions(tableRows + columnRows) { row in
+                guard row.count >= 3, let table = Self.text(row[0]), let user = Self.text(row[1]), let host = Self.text(row[2]) else { return nil }
+                return "`\(table)` for '\(user)'@'\(host)'"
+            }
+        }
+        if let reason = Self.reasonGlobalSelectDoesNotCoverEverything(globalVisibilityForInspection(), otherwise: NSLocalizedString("this account cannot list the privileges granted on the database's tables and views (it needs SELECT on mysql.tables_priv, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")) {
+            inspectionError = reason
+            return []
+        }
+        let schemaMatch = Self.schemaMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        var rows: [[Any]] = []
+        for view in ["TABLE_PRIVILEGES", "COLUMN_PRIVILEGES"] {
+            let result = run("SELECT TABLE_NAME, GRANTEE FROM information_schema.\(view) WHERE \(schemaMatch) ORDER BY TABLE_NAME, GRANTEE")
+            guard let found = result.rows else {
+                inspectionError = result.error
+                return []
+            }
+            rows += found
+        }
+        return Self.grantDescriptions(rows) { row in
+            guard row.count >= 2, let table = Self.text(row[0]), let grantee = Self.text(row[1]) else { return nil }
+            return "`\(table)` for \(grantee)"
+        }
+    }
+
+    /// The distinct descriptions of grant rows, in the order they were listed.
+    private static func grantDescriptions(_ rows: [[Any]], describe: ([Any]) -> String?) -> [String] {
+        var seen: Set<[UInt8]> = []
+        return rows.compactMap(describe).filter { seen.insert(Array($0.utf8)).inserted }
+    }
+
+    /// The account's global privileges that decide what `information_schema`
+    /// shows of other accounts' objects, with the server's partial-revoke
+    /// setting, read once per rename.
+    private struct GlobalVisibility {
+        enum PartialRevokes {
+            case off
+            case on
+            /// the setting could not be read; the server's message
+            case unknown(String)
+        }
+        let privileges: Set<String>
+        let partialRevokes: PartialRevokes
+    }
+
+    private var globalVisibility: GlobalVisibility?
+
+    private func globalVisibilityForInspection() -> GlobalVisibility {
+        if let globalVisibility {
+            return globalVisibility
+        }
+        // the account as the privilege tables spell it, 'user'@'host'; the
+        // user name may itself contain '@', the host follows the last one
+        let host = "SUBSTRING_INDEX(CURRENT_USER(), '@', -1)"
+        let user = "SUBSTRING(CURRENT_USER(), 1, CHAR_LENGTH(CURRENT_USER()) - CHAR_LENGTH(\(host)) - 1)"
+        let grantee = "CONCAT('''', \(user), '''@''', \(host), '''')"
+        let privileges = Set((run("SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE')").rows ?? [])
+            .compactMap { Self.text($0.first)?.uppercased() })
+        // Only a server that does not know the variable (MariaDB, MySQL up
+        // to 5.7) has no partial revokes; any other failure leaves the
+        // setting unknown, and a global SELECT cannot be trusted then.
+        let revokes = run("SELECT @@partial_revokes")
+        let partialRevokes: GlobalVisibility.PartialRevokes
+        if let error = revokes.error {
+            partialRevokes = error.contains("Unknown system variable") ? .off : .unknown(error)
+        } else {
+            let value = Self.text(revokes.rows?.first?.first)?.uppercased()
+            partialRevokes = (value == "ON" || value == "1") ? .on : .off
+        }
+        let visibility = GlobalVisibility(privileges: privileges, partialRevokes: partialRevokes)
+        globalVisibility = visibility
+        return visibility
+    }
+
+    /// Why a global SELECT does not let the account see every row of an
+    /// `information_schema` privilege view - `reason` when it is missing or
+    /// partial revokes may limit it, the server's message when that could
+    /// not be read - or `nil` when it does.
+    private static func reasonGlobalSelectDoesNotCoverEverything(_ visibility: GlobalVisibility, otherwise reason: String) -> String? {
+        guard visibility.privileges.contains("SELECT") else { return reason }
+        switch visibility.partialRevokes {
+        case .off:
+            return nil
+        case .on:
+            return reason
+        case .unknown(let error):
+            return error
+        }
     }
 
     /// The condition matching a schema-name column of the `mysql` tables
@@ -1259,7 +1380,13 @@ import Foundation
     /// afterwards. `character_set_client` is left alone on purpose: it tells
     /// the server how to read the bytes the connection sends, and those are
     /// UTF-8.
-    private func recreate(_ view: String, definition: ViewDefinition?, session: SessionSettings) -> String? {
+    ///
+    /// A created view is opened once before it counts: the server checks the
+    /// creator's privileges when it runs `CREATE VIEW`, but the definer's -
+    /// on the moved objects - when the view is opened, so a `SQL SECURITY
+    /// DEFINER` view can be created and still be unusable. One that cannot
+    /// be opened is dropped again and reported like a failed `CREATE`.
+    private func recreate(_ view: String, definition: ViewDefinition?, quotedTarget: String, session: SessionSettings) -> String? {
         guard let definition else {
             return SADatabaseRenamePlan.unknownReason
         }
@@ -1272,6 +1399,15 @@ import Foundation
         if viewCollation != nil {
             _ = run("SET collation_connection = \(quote(session.collation))")
         }
-        return created.error
+        if let error = created.error {
+            return error
+        }
+
+        let qualifiedView = "\(quotedTarget).\(SADatabaseRenameViewRewriter.backtickQuoted(view))"
+        if let error = run("SELECT 1 FROM \(qualifiedView) LIMIT 0").error {
+            _ = run("DROP VIEW \(qualifiedView)")
+            return error
+        }
+        return nil
     }
 }
