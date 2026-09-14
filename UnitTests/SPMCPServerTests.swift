@@ -356,7 +356,9 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             // Under NO_BACKSLASH_ESCAPES the quote after the backslash closes the
             // variable, also when a comment follows it.
             "EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET x='v'",
-            "EXPLAIN ANALYZE INTO @'x\\' # comment\nUPDATE t SET x='v'"
+            "EXPLAIN ANALYZE INTO @'x\\' # comment\nUPDATE t SET x='v'",
+            // No whitespace is needed between INTO and the variable.
+            "EXPLAIN ANALYZE INTO@plan UPDATE t SET x = 1"
         ], "explain-analyze-write")
     }
 

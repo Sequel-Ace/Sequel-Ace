@@ -90,6 +90,11 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA \"x\\\" /* comment */ INSERT INTO t VALUES (\"v\")"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' /* comment */ SELECT * FROM t WHERE c = '#'"))
+        // The server needs no whitespace between INTO and the variable.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@plan UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@'plan result' DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=JSON INTO@plan FOR SCHEMA app INSERT INTO t VALUES (1)"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@plan SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`SELECT 1"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' SELECT * FROM t"))

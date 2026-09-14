@@ -335,8 +335,9 @@ enum SPCustomQuerySQLClassifier {
     /// quoted operand - `` `my db` ``, `'plan result'`, `@'plan\' result'` -
     /// is one token however much whitespace it contains (a doubled quote and,
     /// outside backticks, a backslash escape stay inside it), `=` is a token
-    /// of its own, and a word ends at whitespace, `=` or a quote, so
-    /// `` `app`UPDATE `` is two tokens. An unterminated quote consumes the rest.
+    /// of its own, and a word ends at whitespace, `=`, a quote or a following
+    /// `@`, so `` `app`UPDATE `` and `INTO@plan` are two tokens each. An
+    /// unterminated quote consumes the rest.
     ///
     /// - Parameters:
     ///   - upper: The upper-cased statement.
@@ -395,11 +396,23 @@ enum SPCustomQuerySQLClassifier {
                 continue
             }
 
+            // A word ends at whitespace, `=`, a quote or the `@` of a variable
+            // that follows it without whitespace (`INTO@plan` is `INTO`,
+            // `@PLAN` to the server); a leading run of `@` (`@@sql_mode`)
+            // belongs to the word.
             var word = ""
+            var wordHasNonAt = false
             while index < characters.count {
                 let next = characters[index]
                 if next.isWhitespace || next == "=" || isQuote(next) {
                     break
+                }
+                if next == "@" {
+                    if wordHasNonAt {
+                        break
+                    }
+                } else {
+                    wordHasNonAt = true
                 }
                 word.append(next)
                 index += 1
