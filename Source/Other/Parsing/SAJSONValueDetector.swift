@@ -1,3 +1,10 @@
+//  SAJSONValueDetector.swift
+//  Sequel Ace
+//
+//  Detects JSON values stored in columns that are not declared with MySQL's JSON
+//  type (issue #2514).
+//
+
 import Foundation
 
 /// Decides whether a field value should be presented on the field editor's JSON segment.
