@@ -235,8 +235,20 @@
 /* Add trigger button label */
 "Add" = "Hinzufügen";
 
+/* table Content : rule filter editor : AND/OR popup : combine with AND */
+"AND (all conditions)" = "AND (alle Bedingungen)";
+
+/* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
+"AND" = "AND";
+
+/* table Content : rule filter editor : context menu : add nested AND/OR group */
+"Add AND/OR Group" = "AND/OR-Gruppe hinzufügen";
+
 /* menu item to add db */
 "Add Database..." = "Datenbank hinzufügen …";
+
+/* table Content : rule filter editor : context menu : add filter row */
+"Add Filter" = "Filter hinzufügen";
 
 /* Add Host */
 "Add Host" = "Host hinzufügen";
@@ -440,28 +452,28 @@
 "ALL PRIVILEGES" = "ALL PRIVILEGES";
 
 /* privilege operation all databases scope */
-"all databases" = "all databases";
+"all databases" = "allen Datenbanken";
 
 /* privilege operation error message */
-"Could not %@ %@ on %@ for %@.\n\nMySQL said: %@" = "Could not %1$@ %2$@ on %3$@ for %4$@.\n\nMySQL said: %5$@";
+"Could not %@ %@ on %@ for %@.\n\nMySQL said: %@" = "Fehler beim %1$@ von %2$@ auf %3$@ für %4$@.\n\nMySQL Ergebnis: %5$@";
 
 /* privilege operation database scope */
-"database \"%@\"" = "database \"%@\"";
+"database \"%@\"" = "der Datenbank \"%@\"";
 
 /* fallback privilege operation description */
-"change" = "change";
+"change" = "Ändern";
 
 /* grant privilege operation */
-"grant" = "grant";
+"grant" = "Gewähren";
 
 /* mariadb show create routine grant error explanation */
-"\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables." = "\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables.";
+"\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables." = "\n\nDieser MariaDB-Server unterstützt SHOW CREATE ROUTINE, aber das verbundene Konto durfte dieses Recht nicht gewähren oder entziehen. Das kann nach einem MariaDB-Upgrade passieren, solange das neue Recht einem administrativen Konto noch nicht wieder hinzugefügt wurde. Prüfen Sie SHOW GRANTS FOR CURRENT_USER() und gewähren Sie dem Konto anschließend SHOW CREATE ROUTINE WITH GRANT OPTION, oder reparieren Sie die Grant-Tabellen des Servers.";
 
 /* allow nonexistent definer privilege checkbox title */
 "Nonexistent Definer" = "Nonexistent Definer";
 
 /* revoke privilege operation */
-"revoke" = "revoke";
+"revoke" = "Entziehen";
 
 /* binlog admin privilege checkbox title */
 "Binlog Admin" = "Binlog Admin";
@@ -506,10 +518,10 @@
 "Show Create Routine" = "Show Create Routine";
 
 /* fallback privilege operation account description */
-"the selected account" = "the selected account";
+"the selected account" = "das ausgewählte Konto";
 
 /* fallback privileges operation description */
-"the selected privileges" = "the selected privileges";
+"the selected privileges" = "den ausgewählten Zugriffsrechten";
 
 /* mysql resource limits unsupported message */
 "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Ressourcenlimits werden für Ihre MySQL-Version nicht unterstützt. Alle von Ihnen angegebenen Ressourcenlimits wurden verworfen und nicht gespeichert. MySQL sagte: %@";
@@ -613,6 +625,30 @@
 /* Encoding autodetect menu item */
 "Autodetect" = "Automatische Erkennung";
 
+/* Preferences : General : Automatically check for updates checkbox */
+"Automatically check for updates" = "Automatisch nach Updates suchen";
+
+/* analytics consent dialog message */
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Darf Sequel Ace eine Installationskennung der App, die App-Version, Angaben zu macOS und Gerät, die ungefähre Region, Nutzungsstatistiken sowie Absturz- und Diagnoseberichte an Google Firebase senden?\n\nDie Entwickler nutzen diese Daten, um die Nutzung von Funktionen zu verstehen und Probleme zu diagnostizieren. Sie werden weder für Werbung verwendet noch dazu, Sie über Apps oder Websites anderer Unternehmen hinweg zu verfolgen. Die Erfassung beginnt erst, wenn Sie „Statistiken teilen“ wählen, und Sie können Ihre Entscheidung jederzeit in den Einstellungen ändern.";
+
+/* analytics consent deny button */
+"Don't Share" = "Nicht teilen";
+
+/* analytics consent dialog title */
+"Help Improve Sequel Ace" = "Helfen Sie mit, Sequel Ace zu verbessern";
+
+/* analytics consent allow button */
+"Share Analytics" = "Statistiken teilen";
+
+/* analytics consent privacy policy button */
+"Privacy Policy…" = "Datenschutzerklärung…";
+
+/* about window privacy policy link */
+"Privacy Policy" = "Datenschutzerklärung";
+
+/* Preferences : General : analytics and crash reporting checkbox */
+"Share usage analytics and crash reports with developers" = "Nutzungsstatistiken und Absturzberichte mit den Entwicklern teilen";
+
 /* background label for color table (Prefs > Editor) */
 "Background" = "Hintergrund";
 
@@ -694,7 +730,7 @@
 "Are you sure you want to quit the app?" = "Möchten Sie die App wirklich beenden?";
 
 /* character set client: %@ */
-"character set client: %@" = "Zeichensatz des Client: % @";
+"character set client: %@" = "Zeichensatz des Clients: %@";
 
 /* CHECK one or more tables - result title */
 "Check %@" = "Prüfung %@";
@@ -751,7 +787,7 @@
 "Clear Global History" = "Globales Protokoll leeren";
 
 /* clear history for %@ menu title */
-"Clear History for %@" = "Protokoll leeren?";
+"Clear History for %@" = "Protokoll für %@ leeren";
 
 /* clear history message */
 "Clear History?" = "Protokoll leeren?";
@@ -779,6 +815,21 @@
 
 /* collation connection: %@ */
 "collation connection: %@" = "Kollation Verbindung: %@";
+
+/* content tab : rule filter : drop zone tooltip */
+"Click to add a filter, ⌥-click to add an AND/OR group" = "Klicken, um einen Filter hinzuzufügen; ⌥-Klick fügt eine AND/OR-Gruppe hinzu";
+
+/* general preferences : appearance : checkbox that colors the window title bar with the connected favorite's color */
+"Color the title bar with the connection color" = "Titelleiste in der Verbindungsfarbe einfärben";
+
+/* general preferences : appearance : tooltip for the title bar color checkbox */
+"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Färbt Titelleiste, Symbolleiste und Reiter-Leiste in der Farbe des Verbindungsfavoriten, sodass sich eine Produktivverbindung auf einen Blick von einer Entwicklungsverbindung unterscheiden lässt.";
+
+/* table Content : rule filter editor : compound row : label after the AND/OR popup */
+"combines the conditions in this group" = "verknüpft die Bedingungen dieser Gruppe";
+
+/* table Content : rule filter editor : AND/OR popup : tooltip */
+"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Verknüpft die Filterbedingungen der obersten Ebene mit AND oder OR. Halten Sie ⌥ gedrückt, während Sie auf die +-Taste einer Zeile klicken, um eine verschachtelte AND/OR-Gruppe hinzuzufügen.";
 
 /* comment label */
 "Comment" = "Kommentar";
@@ -814,7 +865,7 @@
 "Connection data file couldn't be read." = "Verbindungsdaten konnten nicht gelesen werden.";
 
 /* message error while reading connection data file and suggesting to save it under a differnet name */
-"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "Die Verbindungsdatendatei \"%\" konnte nicht gelesen werden. Versuchen Sie, das Dokument unter einem anderen Namen zu speichern.";
+"Connection data file %@ couldn't be read. Please try to save the document under a different name." = "Die Verbindungsdatendatei %@ konnte nicht gelesen werden. Versuchen Sie, das Dokument unter einem anderen Namen zu speichern.";
 
 /* connection failed title */
 "Connection failed!" = "Verbindung fehlgeschlagen!";
@@ -843,6 +894,9 @@
 
 /* continue to print message */
 "Continue to print?" = "Druck fortsetzen?";
+
+/* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
+"Copy WHERE Clause" = "WHERE-Klausel kopieren";
 
 /* Copy as RTF */
 "Copy as RTF" = "Als RTF kopieren";
@@ -962,7 +1016,7 @@
 "Create syntaxes for selected items" = "Syntaxen für ausgewählte Items erzeugen";
 
 /* Table Info Section : table create options */
-"create_options: %@" = "create_options: % @";
+"create_options: %@" = "create_options: %@";
 
 /* created: %@
  Table Info Section : time+date table was created at */
@@ -1048,7 +1102,7 @@
 "default_value" = "Standardwert";
 
 /* definer label (Navigator) */
-"Definer" = "Bezeichner: %@";
+"Definer" = "Definer";
 
 /* definer: %@ */
 "definer: %@" = "Bezeichner: %@";
@@ -1164,6 +1218,9 @@
 /* shutdown server : confirmation dialog : title */
 "Do you really want to shutdown the server?" = "Soll der Server wirklich abgeschaltet werden?";
 
+/* Document query favorite scope */
+"Document" = "Dokument";
+
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "DTD-Bezeichner";
 
@@ -1222,22 +1279,25 @@
 "en" = "de";
 
 /* encoding label (Navigator) */
-"Encoding" = "Die %driver Datenbank muss eine %encoding Kodierung verwenden, um mit Drupal zu funktionieren. Erstellen Sie die Datenbank mit %encoding Kodierung neu. Siehe <a href=\"INSTALL.pgsql.txt\">INSTALL.pgsql.txt</a> für mehr Details.";
+"Encoding" = "Codierung";
 
 /* Table Info Section : $1 = table charset */
-"encoding: %1$@" = "Codierung: %1 @";
+"encoding: %1$@" = "Codierung: %1$@";
 
 /* Table Info Section : $1 = table charset, $2 = table collation */
-"encoding: %1$@ (%2$@)" = "Codierung: %1 - (%2)";
+"encoding: %1$@ (%2$@)" = "Codierung: %1$@ (%2$@)";
 
 /* Table Info Section : Table Engine */
-"engine: %@" = "Suchmaschine";
+"engine: %@" = "Engine: %@";
+
+/* Missing query favorite name alert message */
+"Enter a query name or choose a favorite to replace." = "Geben Sie einen Namen für die Query ein oder wählen Sie einen Favoriten, der ersetzt werden soll.";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "Verbindungsdetails unten eingeben oder aus den Favoriten wählen";
 
 /* SSH key password prompt */
-"Enter your password for the SSH key\n\"%@\"" = "Geben Sie Ihr Kennwort für den SSH-Schlüssel ein. @";
+"Enter your password for the SSH key\n\"%@\"" = "Geben Sie Ihr Kennwort für den SSH-Schlüssel ein\n\"%@\"";
 
 /* Bundle Editor : Fallback Input source dropdown : 'entire content' item
  Bundle Editor : Scope=Field : Input source dropdown: 'entire content' item */
@@ -1359,7 +1419,7 @@
 /* Bundle Editor : Trash-Bundle(s)-Error : error dialog title
  error while moving %@ to trash
  Open Files : Bundle : Already-Installed : Delete-Old-Error : Could not delete old bundle before installing new version. */
-"Error while moving %@ to Trash." = "Fehler beim Verschieben von %- in den Papierkorb.";
+"Error while moving %@ to Trash." = "Fehler beim Verschieben von %@ in den Papierkorb.";
 
 /* error while optimizing selected items message */
 "Error while optimizing selected items" = "Optimierung der gewählten Items fehlgeschlagen";
@@ -1380,7 +1440,7 @@
 "Error while saving the Bundle." = "Bundle konnte nicht gespeichert werden.";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
-"Error while saving %@." = "Bundle konnte nicht gespeichert werden.";
+"Error while saving %@." = "Fehler beim Speichern von %@.";
 
 /* Errors title */
 "Errors" = "Fehler";
@@ -1429,6 +1489,12 @@
 
 /* export filename favorite name token */
 "Favorite" = "Favorit";
+
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "Favorit geändert";
+
+/* Query favorite replacement picker accessibility label */
+"Favorite to replace" = "Zu ersetzender Favorit";
 
 /* favorites label */
 "Favorites" = "Favoriten";
@@ -1548,8 +1614,7 @@
 "General Preferences" = "Allgemeine Präferenzen";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
-"General Scope\ncommands will run application-wide" = "Allgemeiner Bereich
-Befehle werden anwendungsweit ausgeführt";
+"General Scope\ncommands will run application-wide" = "Allgemeiner Bereich\nBefehle werden anwendungsweit ausgeführt";
 
 /* generating print document status message */
 "Generating print document..." = "Druckdokument wird erzeugt…";
@@ -1558,7 +1623,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Generation Time" = "Verarbeitungszeit";
 
 /* connection view : get server public key checkbox */
-"Get Public Key" = "Get Public Key";
+"Get Public Key" = "Public Key abrufen";
 
 /* Content Filter Manager : Filter Entry List: 'Global' Header
  Query Favorites : List : Section Heading : global query favorites */
@@ -1574,7 +1639,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Gzip compression" = "Gzip Komprimierung";
 
 /* MySQL Help Viewer : Results list : Page title */
-"Help topics for %@" = "Hilfethemen anzeigen";
+"Help topics for %@" = "Hilfethemen für %@";
 
 /* hide console */
 "Hide Console" = "Konsole verbergen";
@@ -1727,7 +1792,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Is Nullable" = "Kann NULL sein";
 
 /* is updatable: %@ */
-"is updatable: %@" = "Neuere Version vorhanden: % @";
+"is updatable: %@" = "aktualisierbar: %@";
 
 /* items */
 "items" = "Items";
@@ -1846,7 +1911,7 @@ Befehle werden anwendungsweit ausgeführt";
 "MySQL connecting..." = "Verbinde MySQL ...";
 
 /* mysql 8.4 invalid auto increment title */
-"AUTO_INCREMENT is unavailable" = "AUTO_INCREMENT is unavailable";
+"AUTO_INCREMENT is unavailable" = "AUTO_INCREMENT nicht verfügbar";
 
 /* mysql error message */
 "MySQL Error" = "MySQL Fehler";
@@ -1864,10 +1929,10 @@ Befehle werden anwendungsweit ausgeführt";
 "MySQL Help – Categories" = "MySQL Hilfe – Kategorien";
 
 /* mysql 8.4 invalid auto increment message */
-"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server." = "MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server.";
+"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server." = "MySQL 8.4 und neuer unterstützen AUTO_INCREMENT nur für Integer-Spalten. Der Spaltentyp %@ kann AUTO_INCREMENT auf diesem Server nicht verwenden.";
 
 /* mysql 8.4 invalid relation message */
-"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column." = "MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.";
+"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column." = "MySQL 8.4 und neuer verlangen, dass ein Fremdschlüssel auf einen vollständigen Unique- oder Primärschlüssel verweist. Fügen Sie %1$@.%2$@ einen einspaltigen Unique-Schlüssel hinzu oder wählen Sie eine andere referenzierte Spalte.";
 
 /* mysql said message */
 "MySQL said:" = "MySQL Ergebnis:";
@@ -1982,6 +2047,12 @@ Befehle werden anwendungsweit ausgeführt";
 /* numeric label for color table (Prefs > Editor) */
 "Numeric" = "Numerisch";
 
+/* table Content : rule filter editor : AND/OR popup : combine with OR */
+"OR (any condition)" = "OR (eine der Bedingungen)";
+
+/* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
+"OR" = "OR";
+
 /* Bundle Editor : Copy-Command-Error : OK button
  Bundle Editor : Save-and-Close-Error : OK button
  Bundle Editor : Save-Bundle-Error : OK button
@@ -2043,7 +2114,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Open View in New Window" = "Ansicht in neuem Fenster öffnen";
 
 /* menu item open %@ in new window */
-"Open %@ in New Window" = "In neuem Fenster öffnen";
+"Open %@ in New Window" = "%@ in neuem Fenster öffnen";
 
 /* OPTIMIZE one or more tables - result title */
 "Optimize %@" = "%@ optimieren";
@@ -2062,6 +2133,9 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* optional placeholder string */
 "optional" = "optional";
+
+/* Query favorite replacement picker label */
+"Or replace an existing favorite:" = "Oder einen vorhandenen Favoriten ersetzen:";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Die Verarbeitung des übergebenen Parameters schlug fehl. Nur Zeichenketten oder Arrays (mit 2 Elementen) sind zulässig.";
@@ -2103,7 +2177,7 @@ Befehle werden anwendungsweit ausgeführt";
 "PROCS & FUNCS" = "PROZ. & FUNKT.";
 
 /* toolbar item label for switching to the Run Query tab */
-"Query" = "Query";
+"Query" = "Abfrage";
 
 /* query background label for color table (Prefs > Editor) */
 "Query Background" = "Query Hintergrund";
@@ -2123,6 +2197,9 @@ Befehle werden anwendungsweit ausgeführt";
 /* query logging currently disabled label
  query logging disabled label */
 "Query logging is currently disabled" = "Query Protokollierung derzeit abgeschaltet";
+
+/* Query favorite save sheet name label */
+"Query Name:" = "Name der Query:";
 
 /* query result print heading */
 "Query Result" = "Query Ergebnis";
@@ -2194,7 +2271,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Remote Error" = "Remote-Fehler";
 
 /* mysql 8.4 invalid relation title */
-"Referenced column needs a unique key" = "Referenced column needs a unique key";
+"Referenced column needs a unique key" = "Referenzierte Spalte benötigt einen Unique-Schlüssel";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
@@ -2279,7 +2356,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Eine geordnete Sammlung von Koordinaten, wobei aufeinander folgende Punkte durch eine Gerade verbunden werden.";
 
 /* connection view : get server public key help */
-"Request the server RSA public key for caching_sha2_password over non-SSL connections." = "Request the server RSA public key for caching_sha2_password over non-SSL connections.";
+"Request the server RSA public key for caching_sha2_password over non-SSL connections." = "Fordert den RSA-Public-Key des Servers für caching_sha2_password über Verbindungen ohne SSL an.";
 
 /* required placeholder string */
 "required" = "erforderlich";
@@ -2389,11 +2466,17 @@ Befehle werden anwendungsweit ausgeführt";
 /* Save Current Query to Favorites */
 "Save Current Query to Favorites" = "Aktuelle Query als Favorit speichern";
 
+/* Query favorite save sheet global checkbox */
+"Save globally" = "Global speichern";
+
 /* save page as menu item title */
 "Save Page As…" = "Seite speichern als …";
 
 /* Save Queries… */
 "Save Queries…" = "Abfragen speichern…";
+
+/* Query favorite save sheet title */
+"Save Query Favorite" = "Query als Favorit speichern";
 
 /* Save Query… */
 "Save Query…" = "Query speichern…";
@@ -2423,7 +2506,7 @@ Befehle werden anwendungsweit ausgeführt";
 "selected items" = "Ausgewählte Items";
 
 /* invalid auto increment fallback field type */
-"selected" = "selected";
+"selected" = "der ausgewählten Spalte";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "Ausgewählte Zeilen (CSV)";
@@ -2503,7 +2586,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Show Detail" = "Detail anzeigen";
 
 /* MySQL Help Viewer : Results list : Link tooltip */
-"Show MySQL help for %@" = "MySQL-Hilfe für % anzeigen @";
+"Show MySQL help for %@" = "MySQL-Hilfe für %@ anzeigen";
 
 /* show navigator */
 "Show Navigator" = "Navigator anzeigen";
@@ -2527,7 +2610,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Shutdown failed!" = "Shutdown fehlgeschlagen!";
 
 /* range of integer types */
-"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signiert: %1 - bis %2 - nicht signiert: %3- bis %4$ @";
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ bis %2$@\nUnsigned: %3$@ bis %4$@";
 
 /* Table Info Section : table size on disk */
 "size: %@" = "Größe: %@";
@@ -2680,7 +2763,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Switch to the User Manager tab" = "Zum Reiter „Benutzer Verwaltung“ wechseln";
 
 /* description for table syntax copied notification */
-"Syntax for %@ table copied" = "Syntax für die Tabelle \"%\" kopiert";
+"Syntax for %@ table copied" = "Syntax für Tabelle %@ kopiert";
 
 /* table */
 "table" = "Tabelle";
@@ -2692,13 +2775,13 @@ Befehle werden anwendungsweit ausgeführt";
 "Table" = "Tabelle";
 
 /* export label showing that the app is fetching data for a specific table */
-"Table %lu of %lu (%@): Fetching data..." = "Tabelle %1$lu von %2$lu (%3) : Abrufen von Daten...";
+"Table %lu of %lu (%@): Fetching data..." = "Tabelle %1$lu von %2$lu (%3$@): Daten werden abgerufen …";
 
 /* export label showing app is fetching relations data for a specific table */
-"Table %lu of %lu (%@): Fetching relations data..." = "Tabelle %1$lu von %2$lu (%3) : Abrufen von Relationen …";
+"Table %lu of %lu (%@): Fetching relations data..." = "Tabelle %1$lu von %2$lu (%3$@): Relationsdaten werden abgerufen …";
 
 /* export label showing app if writing data for a specific table */
-"Table %lu of %lu (%@): Writing data..." = "Tabelle %1$lu von %2$lu (%3) : Daten schreiben...";
+"Table %lu of %lu (%@): Writing data..." = "Tabelle %1$lu von %2$lu (%3$@): Daten werden geschrieben …";
 
 /* Bundle Editor : Scope=Data-Table : Trigger dropdown : 'table changed' item
  Bundle Editor : Scope=General : Trigger dropdown : 'table changed' item */
@@ -2708,7 +2791,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Table checksum" = "Tabellenprüfsumme";
 
 /* table checksum: %@ */
-"Table checksum: %@" = "Tabelle Prüfsumme: % @";
+"Table checksum: %@" = "Tabellenprüfsumme: %@";
 
 /* table content print heading */
 "Table Content" = "Tabellen-Inhalte";
@@ -2753,7 +2836,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Table Triggers" = "Tabellen-Trigger";
 
 /* Add Relation sheet title, showing table name */
-"Table: %@" = "Tabelle: % @";
+"Table: %@" = "Tabelle: %@";
 
 /* tables preference pane name */
 "Tables" = "Tabellen";
@@ -2786,20 +2869,20 @@ Befehle werden anwendungsweit ausgeführt";
 "Thanks for updating Sequel Ace!" = "Vielen Dank für die Aktualisierung von Sequel Ace!";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@’ already exists." = "Das Bundle '%' ist bereits vorhanden.";
+"The Bundle ‘%@’ already exists." = "Das Bundle ‘%@’ ist bereits vorhanden.";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
-"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "Das Bundle '%' hat keine UUID, die zum Identifizieren installierter Bundles erforderlich ist.";
+"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "Das Bundle ‘%@’ hat keine UUID, die zum Identifizieren installierter Bundles erforderlich ist.";
 
-"‘%@’ Bundle contains legacy components" = "'%'-Bundle enthält ältere Komponenten";
+"‘%@’ Bundle contains legacy components" = "Bundle ‘%@’ enthält veraltete Komponenten";
 
-"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In diesen Dateien:'n'n%'n'n'nMöchten Sie das Paket trotzdem installieren?";
+"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "In diesen Dateien:\n\n%@\n\nMöchten Sie das Bundle trotzdem installieren?";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file %@ contains ‘%@’ data." = "Die ausgewählte Datei \"%1\" enthält '%2''-Daten.";
+"The chosen file %@ contains ‘%@’ data." = "Die ausgewählte Datei “%1$@” enthält ‘%2$@’-Daten.";
 
 /* the color theme ‘%@’ already exists. */
-"The color theme ‘%@’ already exists." = "Das Farbthema '%' ist bereits vorhanden.";
+"The color theme ‘%@’ already exists." = "Das Farbthema ‘%@’ ist bereits vorhanden.";
 
 /* the connection is busy. please wait and try again tooltip */
 "The connection is busy. Please wait and try again." = "Die Verbindung ist ausgelastet. Versuchen Sie es nach kurzer Wartezeit erneut.";
@@ -2835,13 +2918,13 @@ Befehle werden anwendungsweit ausgeführt";
 "The following error occurred during the import process:\n\n%@" = "Beim Import ist der folgende Fehler aufgetreten:\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
-"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "Die Fremdschlüsselbeziehung '%1' ist abhängig vom Index '%2''. Diese Beziehung muss entfernt werden, bevor der Index gelöscht werden kann. Diese Aktion kann nicht rückgängig gemacht werden.";
+"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "Die Fremdschlüsselbeziehung '%1$@' hängt vom Index '%2$@' ab. Diese Beziehung muss entfernt werden, bevor der Index gelöscht werden kann.\n\nMöchten Sie die Beziehung und den Index wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
 
 /* table list change alert message */
 "The list of tables has changed" = "Die Liste der Tabellen hat sich geändert.";
 
 /* message when trying to rename a table/view/proc/etc to an already used name */
-"The name '%@' is already used." = "Der Name '%' wird bereits verwendet.";
+"The name '%@' is already used." = "Der Name '%@' wird bereits verwendet.";
 
 /* table list change alert informative message */
 "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Die Anzahl der Tabellen in dieser Datenbank hat sich seit dem Öffnen des Exportdialogs geändert. Es gibt jetzt %lu zusätzliche Tabellen, die höchstwahrscheinlich von einer externen Anwendung hinzugefügt werden.";
@@ -2850,31 +2933,37 @@ Befehle werden anwendungsweit ausgeführt";
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "Die Zeile wurde nicht in die MySQL-Datenbank geschrieben. Sie haben wahrscheinlich nichts geändert. .";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Die ausgewählten Exporteinstellungen wurden mit version %1$ld gespeichert, aber es können nur Einstellungen mit den folgenden Versionen importiert werden: %2.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Die ausgewählten Exporteinstellungen wurden mit Version %1$ld gespeichert, aber es können nur Einstellungen mit den folgenden Versionen importiert werden: %2$@.\n\nSpeichern Sie die Einstellungen entweder abwärtskompatibel oder aktualisieren Sie Ihre Version von Sequel Ace.";
+
+/* Query favorite replacement explanation */
+"The selected favorite keeps its name and location." = "Der ausgewählte Favorit behält seinen Namen und seinen Speicherort.";
+
+/* Stale query favorite replacement alert message */
+"The selected favorite was changed or removed in another window. Choose it again before saving." = "Der ausgewählte Favorit wurde in einem anderen Fenster geändert oder entfernt. Wählen Sie ihn vor dem Speichern erneut aus.";
 
 /* export : import settings : spf content type error description */
-"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Die ausgewählte Datei enthält Daten vom Typ \"%1\", aber die Eingabe \"%2\" wird benötigt. Wählen Sie eine andere Datei aus.";
+"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Die ausgewählte Datei enthält Daten vom Typ “%1$@”, benötigt wird aber der Typ “%2$@”. Bitte wählen Sie eine andere Datei.";
 
 /* export : import settings : file error description */
 "The selected file is either not a valid SPF file or severely corrupted." = "Die ausgewählte Datei ist entweder keine gültige SPF-Datei oder stark beschädigt.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Die ausgewählte Beziehung konnte nicht gelöscht werden. @";
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Die ausgewählte Beziehung konnte nicht gelöscht werden.\n\nMySQL Ergebnis: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Der ausgewählte Trigger konnte nicht gelöscht werden. @";
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Der ausgewählte Trigger konnte nicht gelöscht werden.\n\nMySQL Ergebnis: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Der kleinste Ganzzahltyp benötigt 1 Byte Speicherplatz. M ist die optionale Anzeigebreite und hat keinen Einfluss auf den möglichen Wertebereich.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Die Socketdatei wurde an keinem gemeinsamen Speicherort gefunden. Geben Sie bitte den richtigen Socketspeicherort an. . . @";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Die Socket-Datei wurde an keinem üblichen Speicherort gefunden. Bitte geben Sie den richtigen Socket-Pfad an.\n\nMySQL Ergebnis: %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "Die angegebene Beziehung konnte nicht erstellt werden. . . @";
+"The specified relation could not be created.\n\nMySQL said: %@" = "Die angegebene Beziehung konnte nicht erstellt werden.\n\nMySQL Ergebnis: %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Der angegebene Trigger konnte nicht erstellt werden. @";
+"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Der angegebene Trigger konnte nicht erstellt werden.\n\nMySQL Ergebnis: %@";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "Die SQL-Datei verwendet utf8mb4-Codierung, aber Ihre MySQL-Version unterstützt nur die begrenzte utf8-Untermenge. Sie können den Import fortsetzen, aber alle Nicht-BMP-Zeichen in der SQL-Datei (z. B. einige typografische und wissenschaftliche Sonderzeichen, archaische CJK-Logogramme, Emojis) gehen unwiederbringlich verloren!";
@@ -2883,10 +2972,10 @@ Befehle werden anwendungsweit ausgeführt";
 "The SQL file you selected could not be found or read." = "Die ausgewählte SQL-Datei konnte nicht gefunden oder gelesen werden.";
 
 /* Prompt for SSH password when keychain fetch failed */
-"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "Das SSH-Kennwort konnte nicht aus dem Schlüsselbund geladen werden. Geben Sie bitte das SSH-Kennwort für %' ein:";
+"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "Das SSH-Kennwort konnte nicht aus dem Schlüsselbund geladen werden. Bitte geben Sie das SSH-Kennwort für %@ ein:";
 
 /* Prompt for SSH password when direct fetch failed */
-"The SSH password could not be loaded; please enter the SSH password for %@:" = "Das SSH-Kennwort konnte nicht geladen werden. Geben Sie bitte das SSH-Kennwort für %' ein:";
+"The SSH password could not be loaded; please enter the SSH password for %@:" = "Das SSH-Kennwort konnte nicht geladen werden. Bitte geben Sie das SSH-Kennwort für %@ ein:";
 
 /* SSH tunnel authentication failed message */
 "The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "Der SSH-Tunnel konnte sich nicht beim Remotehost authentifizieren. Bitte überprüfen Sie Ihr Passwort und stellen Sie sicher, dass Sie noch Zugriff haben.";
@@ -2904,24 +2993,24 @@ Befehle werden anwendungsweit ausgeführt";
 "The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "Der SSH-Tunnel konnte nicht an den lokalen Port gebunden werden. Dieser Fehler kann auftreten, wenn Sie bereits über eine SSH-Verbindung mit demselben Server verfügen und in Ihrer SSH-Konfiguration eine Einstellung \"LocalForward\" verwenden.";
 
 /* SSH tunnel failed or timed out message */
-"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "Der SSH-Tunnel konnte keine Verbindung mit dem Host %1 herstellen, oder die Anforderung wurde zeitimiert %2$ld.";
+"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "Der SSH-Tunnel konnte keine Verbindung zum Host %1$@ herstellen, oder die Anfrage hat das Zeitlimit überschritten.\n\nVergewissern Sie sich, dass die Adresse korrekt ist und dass Sie die nötigen Berechtigungen haben, oder versuchen Sie, die Zeitüberschreitung der Verbindung zu erhöhen (derzeit %2$ld Sekunden).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Die Tabellendaten konnten vermutlich aufgrund der verwendeten Filterklausel nicht geladen werden. Nn-MySQL Sagte: % @";
+"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Die Tabellendaten konnten vermutlich aufgrund der verwendeten Filterklausel nicht geladen werden.\n\nMySQL Ergebnis: %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "Die Tabellendaten konnten nicht geladen werden. @";
+"The table data couldn't be loaded.\n\nMySQL said: %@" = "Die Tabellendaten konnten nicht geladen werden.\n\nMySQL Ergebnis: %@";
 
 /* Export folder not writable explanatory text */
-"The target export folder is not writable.  Please select a new export location and try again." = "%lu der Export-Dateien wurden nicht erzeugt, weil der Zielordner schreibgeschützt ist. Der Export sollte mit einem anderen Zielordner wiederholt werden.";
+"The target export folder is not writable.  Please select a new export location and try again." = "Der Zielordner für den Export ist nicht beschreibbar. Bitte wählen Sie einen anderen Exportort und versuchen Sie es erneut.";
 
 /* Export folder not chosen by user explanatory text */
 "No directory selected.  Please select a new export location and try again." = "Es wurde kein Verzeichnis ausgewählt.  Wählen Sie einen neuen Exportspeicherort aus, und versuchen Sie es erneut.";
 "No directory selected." = "Es wurde kein Verzeichnis ausgewählt.";
-"Please select a new export location and try again." = "%lu der Export-Dateien wurden nicht erzeugt, weil der Zielordner schreibgeschützt ist. Der Export sollte mit einem anderen Zielordner wiederholt werden.";
+"Please select a new export location and try again." = "Bitte wählen Sie einen anderen Exportort und versuchen Sie es erneut.";
 
 /* Export folder missing explanatory text */
-"The target export folder no longer exists.  Please select a new export location and try again." = "%lu der Export-Dateien wurden nicht erzeugt, weil der Zielordner nicht gefunden wurde. Der Export sollte mit einem anderen Zielordner wiederholt werden.";
+"The target export folder no longer exists.  Please select a new export location and try again." = "Der Zielordner für den Export existiert nicht mehr. Bitte wählen Sie einen anderen Exportort und versuchen Sie es erneut.";
 
 /* theme name label */
 "Theme Name:" = "Design Name:";
@@ -2939,10 +3028,10 @@ Befehle werden anwendungsweit ausgeführt";
 "There were no errors." = "Es gab keine Fehler.";
 
 /* delete field and foreign key informative message */
-"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Dieses Feld ist Teil einer Fremdschlüsselbeziehung mit der Tabelle '%'. Diese Beziehung muss entfernt werden, bevor das Feld gelöscht werden kann. Diese Aktion kann nicht rückgängig gemacht werden.";
+"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Dieses Feld ist Teil einer Fremdschlüsselbeziehung mit der Tabelle '%@'. Diese Beziehung muss entfernt werden, bevor das Feld gelöscht werden kann.\n\nMöchten Sie die Beziehung und das Feld wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Dieser Index kann nicht gelöscht werden, da er von einer vorhandenen Fremdschlüsselbeziehung verwendet wird. @";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Dieser Index kann nicht gelöscht werden, da er von einer vorhandenen Fremdschlüsselbeziehung verwendet wird.\n\nBitte entfernen Sie die Beziehung, bevor Sie diesen Index löschen.\n\nMySQL Ergebnis: %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Dies ist ein Alias für BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
@@ -2963,22 +3052,22 @@ Befehle werden anwendungsweit ausgeführt";
 "This is an alias for TINYINT(1)." = "Dies ist ein Alias für TINYINT(1).";
 
 /* Table Structure : Collation dropdown : database marker tooltip */
-"This is the default collation of database %@." = "Dies ist die Standardsortierung der Datenbank \"%\" .";
+"This is the default collation of database %@." = "Dies ist die Standardsortierung der Datenbank %@.";
 
 /* Table Structure : Collation dropdown : default marker tooltip */
-"This is the default collation of encoding %@." = "Dies ist die Standardsortierung der Codierung \"%\" .";
+"This is the default collation of encoding %@." = "Dies ist die Standardsortierung der Codierung %@.";
 
 /* Table Structure : Collation dropdown : table marker tooltip */
-"This is the default collation of table %@." = "Dies ist die Standardsortierung der Tabelle \"%\" .";
+"This is the default collation of table %@." = "Dies ist die Standardsortierung der Tabelle %@.";
 
 /* Table Structure : Collation dropdown : server marker tooltip */
 "This is the default collation of this server." = "Dies ist die Standardsortierung dieses Servers.";
 
 /* Table Structure : Encoding dropdown : database marker tooltip */
-"This is the default encoding of database %@." = "Dies ist die Standardcodierung der Datenbank %.";
+"This is the default encoding of database %@." = "Dies ist die Standardcodierung der Datenbank %@.";
 
 /* Table Structure : Encoding dropdown : table marker tooltip */
-"This is the default encoding of table %@." = "Dies ist die Standardcodierung der Tabelle \"%\" .";
+"This is the default encoding of table %@." = "Dies ist die Standardcodierung der Tabelle %@.";
 
 /* Table Structure : Encoding dropdown : server marker tooltip */
 "This is the default encoding of this server." = "Dies ist die Standardcodierung dieses Servers.";
@@ -3002,7 +3091,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Triggers" = "Auslöser";
 
 /* triggers for table label */
-"Triggers for table: %@" = "Auslöser für Tabelle: % @";
+"Triggers for table: %@" = "Trigger für Tabelle: %@";
 
 /* truncate button */
 "Truncate" = "Leeren";
@@ -3101,7 +3190,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Unable to repair table" = "Tabelle kann nicht repariert werden";
 
 /* message of panel when connection to db failed after selecting from popupbutton */
-"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Die Datenbank kann nicht ausgewählt werden.";
+"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Die Datenbank %@ konnte nicht ausgewählt werden.\nBitte prüfen Sie, ob Sie die nötigen Berechtigungen zum Anzeigen der Datenbank haben und ob die Datenbank noch existiert.";
 
 /* Unable to write row error */
 "Unable to write row" = "Zeile kann nicht geschrieben werden";
@@ -3131,16 +3220,16 @@ Befehle werden anwendungsweit ausgeführt";
 "Untitled %ld" = "Ohne Titel %ld";
 
 /* range for mediumblob type */
-"Up to %@ bytes (16 MiB)" = "Bis zu %-Bytes (16 MiB)";
+"Up to %@ bytes (16 MiB)" = "Bis zu %@ Bytes (16 MiB)";
 
 /* range for longblob type */
-"Up to %@ bytes (4 GiB)" = "Bis zu %-Bytes (4 GiB)";
+"Up to %@ bytes (4 GiB)" = "Bis zu %@ Bytes (4 GiB)";
 
 /* range for mediumtext type */
-"Up to %@ characters (16 MiB)" = "Bis zu %-Zeichen (16 MiB)";
+"Up to %@ characters (16 MiB)" = "Bis zu %@ Zeichen (16 MiB)";
 
 /* range for enum type */
-"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Bis zu %1- verschiedene Member (<%2- in der Praxis)";
+"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Bis zu %1$@ verschiedene Elemente (<%2$@ in der Praxis)\n1-2 Bytes Speicherbedarf";
 
 /* range for tinyblob type */
 "Up to 255 bytes" = "Bis zu 255 Bytes";
@@ -3152,13 +3241,13 @@ Befehle werden anwendungsweit ausgeführt";
 "Update" = "Aktualisieren";
 
 /* updated: %@ */
-"updated: %@" = "Aktualisiert";
+"updated: %@" = "aktualisiert: %@";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Fehler beim Aktualisieren des Feldinhalts. Der Feldursprung konnte nicht eindeutig identifiziert werden (%1$ld Übereinstimmungen). Es ist sehr wahrscheinlich, dass beim Bearbeiten dieses Feldes der Tabelle '%2' geändert wurde.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Fehler beim Aktualisieren des Feldinhalts. Der Feldursprung konnte nicht eindeutig identifiziert werden (%1$ld Übereinstimmungen). Es ist sehr wahrscheinlich, dass während der Bearbeitung dieses Feldes die Tabelle `%2$@` geändert wurde.";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Fehler beim Aktualisieren des Feldinhalts. Der Feldursprung konnte nicht eindeutig identifiziert werden (%1$ld Übereinstimmungen). Es ist sehr wahrscheinlich, dass beim Bearbeiten dieses Feldes die Tabelle '%2' von einem anderen Benutzer geändert wurde.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Fehler beim Aktualisieren des Feldinhalts. Der Feldursprung konnte nicht eindeutig identifiziert werden (%1$ld Übereinstimmungen). Es ist sehr wahrscheinlich, dass während der Bearbeitung dieses Feldes die Tabelle `%2$@` von einem anderen Benutzer geändert wurde.";
 
 /* updating field task description */
 "Updating field data..." = "Felddaten werden aktualisiert...";
@@ -3170,7 +3259,7 @@ Befehle werden anwendungsweit ausgeführt";
 "URL scheme command was terminated by user" = "DER Befehl URL Scheme wurde vom Benutzer beendet";
 
 /* URL scheme command %@ unsupported */
-"URL scheme command %@ unsupported" = "URL-Schemabefehl %, nicht unterstützt";
+"URL scheme command %@ unsupported" = "URL-Schema-Befehl %@ nicht unterstützt";
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Verwenden 127.0.0.1";
@@ -3272,22 +3361,22 @@ Befehle werden anwendungsweit ausgeführt";
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Sie haben angefordert, dass die Verbindung mit SSL hergestellt werden soll, aber MySQL hat die Verbindung ohne SSL hergestellt. oder es wurden nicht genügend Details angegeben, um eine SSL-Verbindung herzustellen.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
-"‘%@’ based favorites" = "Favoriten auf '%'-Basis";
+"‘%@’ based favorites" = "Favoriten der Datei ‘%@’";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
-"‘%@’ Fields Content Filters" = "Inhaltsfilter für '%'-Felder";
+"‘%@’ Fields Content Filters" = "Inhaltsfilter für ‘%@’-Felder";
 
 /* Export file already exists message */
 "%@ already exists. Do you want to replace it?" = "%@ bereits vorhanden. Ersetzen?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
-"%@ Bundle" = "%@ Bundle";
+"%@ Bundle" = "Bundle „%@“";
 
 /* Export file creation error title */
 "%@ could not be created" = "%@ konnte nicht angelegt werden";
 
 /* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%- konnte nicht analysiert werden. Sie können die Spalteneinrichtung bearbeiten, aber die Spalte wird nicht in der Inhaltsansicht angezeigt. Bitte melden Sie dieses Problem dem Sequel Ace-Team über den Menüpunkt Hilfe.";
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ konnte nicht ausgewertet werden. Sie können die Spaltenkonfiguration bearbeiten, aber die Spalte wird nicht in der Inhaltsansicht angezeigt. Bitte melden Sie dieses Problem dem Sequel-Ace-Team über das Menü „Hilfe“.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
 "%@ is not a valid client certificate file." = "%@ enthält kein gültiges Benutzer-Zertifikat.";
@@ -3302,7 +3391,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Stale Bookmarks" = "Veraltete Lesezeichen";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "App Sandbox Info";
+"App Sandbox Info" = "Infos zur App-Sandbox";
 
 /* error while selecting file title */
 "File Selection Error" = "Fehler bei Dateiauswahl";
@@ -3326,19 +3415,19 @@ Befehle werden anwendungsweit ausgeführt";
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "Einige „sichere Lesezeichen“ sind veraltet:\n\n%@\n\nSoll der Zugriff jetzt erneut angefordert werden?";
 
 /* single stale bookmark alert message */
-"Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it." = "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it.";
+"Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it." = "Sequel Ace hat 1 veraltetes sicheres Lesezeichen gefunden. Sie können den Start jetzt fortsetzen oder die Datei-Einstellungen öffnen, um es zu erneuern oder zu widerrufen.";
 
 /* multiple stale bookmarks alert message */
-"Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them." = "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them.";
+"Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them." = "Sequel Ace hat %d veraltete sichere Lesezeichen gefunden. Sie können den Start jetzt fortsetzen oder die Datei-Einstellungen öffnen, um sie zu erneuern oder zu widerrufen.";
 
 /* Question to user to see if they would like to request access to missing bookmarks */
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "Es fehlen sichere Lesezeichen:\n\n%@\n\nSoll der Zugriff jetzt angefordert werden?";
 
 /* single missing bookmark alert message */
-"Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences." = "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences.";
+"Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences." = "Sequel Ace hat 1 fehlendes sicheres Lesezeichen gefunden. Sie können den Zugriff jetzt anfordern oder abbrechen und es später in den Datei-Einstellungen aktualisieren.";
 
 /* multiple missing bookmarks alert message */
-"Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences." = "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences.";
+"Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences." = "Sequel Ace hat %d fehlende sichere Lesezeichen gefunden. Sie können den Zugriff jetzt anfordern oder abbrechen und sie später in den Datei-Einstellungen aktualisieren.";
 
 /* known hosts advance menu item title */
 "Use known hosts from ssh config (ADVANCED)" = "Bekannte Hosts aus der SSH Konfiguration verwenden (FORTGESCHRITTEN)";
@@ -3347,10 +3436,10 @@ Befehle werden anwendungsweit ausgeführt";
 "Yes" = "Ja";
 
 /* open files preferences button */
-"Open Files Preferences" = "Open Files Preferences";
+"Open Files Preferences" = "Datei-Einstellungen öffnen";
 
 /* request access button */
-"Request Access" = "Request Access";
+"Request Access" = "Zugriff anfordern";
 
 /* Shown to remind users of their stale bookmarks */
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "Ihre veralteten „sicheren Lesezeichen“:<br /><br />%@<br />";
@@ -3551,511 +3640,556 @@ Befehle werden anwendungsweit ausgeführt";
 "Filter by Selected Value" = "Nach ausgewähltem Wert filtern";
 
 /* MCP pref: enable checkbox */
-"Enable MCP Server (localhost only)" = "Enable MCP Server (localhost only)";
+"Enable MCP Server (localhost only)" = "MCP-Server aktivieren (nur localhost)";
 
 /* MCP pref: port label */
 "Port:" = "Port:";
 
 /* MCP pref: port hint */
-"Default: 8765. Any unprivileged port (1024–65535) may be used." = "Default: 8765. Any unprivileged port (1024–65535) may be used.";
+"Default: 8765. Any unprivileged port (1024–65535) may be used." = "Standard: 8765. Jeder unprivilegierte Port (1024–65535) kann verwendet werden.";
 
 /* MCP pref: choose button */
-"Choose…" = "Choose…";
+"Choose…" = "Auswählen…";
 
 /* MCP preference pane name */
-"MCP Server" = "MCP Server";
+"MCP Server" = "MCP-Server";
 
 /* MCP preference pane tooltip */
-"MCP Server Preferences" = "MCP Server Preferences";
+"MCP Server Preferences" = "MCP-Server-Einstellungen";
 
 /* MCP pref: invalid port alert */
-"Invalid Port" = "Invalid Port";
+"Invalid Port" = "Ungültiger Port";
 
 /* MCP pref: port range */
-"Port must be between %ld and %ld." = "Port must be between %ld and %ld.";
+"Port must be between %ld and %ld." = "Der Port muss zwischen %1$ld und %2$ld liegen.";
 
 /* MCP pref: open panel prompt */
-"Choose" = "Choose";
+"Choose" = "Auswählen";
 
 /* MCP pref: open panel message */
-"Choose the default folder for MCP query exports." = "Choose the default folder for MCP query exports.";
+"Choose the default folder for MCP query exports." = "Wählen Sie den Standardordner für MCP-Abfrageexporte.";
 
 /* MCP pref: status disabled */
-"MCP server is disabled." = "MCP server is disabled.";
+"MCP server is disabled." = "MCP-Server ist deaktiviert.";
 
 /* MCP pref: status running */
-"MCP server is running on http://127.0.0.1:%ld/mcp" = "MCP server is running on http://127.0.0.1:%ld/mcp";
+"MCP server is running on http://127.0.0.1:%ld/mcp" = "MCP-Server läuft unter http://127.0.0.1:%ld/mcp";
 
 /* MCP pref: status stopped */
-"MCP server is not running." = "MCP server is not running.";
+"MCP server is not running." = "MCP-Server läuft nicht.";
 
 /* MCP start error title */
-"MCP Server Error" = "MCP Server Error";
+"MCP Server Error" = "MCP-Server-Fehler";
 
 /* MCP start error message */
-"The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server." = "The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server.";
+"The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server." = "Der MCP-Server konnte auf Port %1$ld nicht gestartet werden: %2$@\n\nSie können den Port unter Einstellungen > MCP-Server ändern.";
 
 /* MCP pref: read-only checkbox */
-"Read-only mode (reject queries that modify data)" = "Read-only mode (reject queries that modify data)";
+"Read-only mode (reject queries that modify data)" = "Nur-Lese-Modus (Abfragen ablehnen, die Daten ändern)";
 
 /* MCP pref: server row label */
 "Server:" = "Server:";
 
 /* MCP pref: export row label */
-"Export folder:" = "Export folder:";
+"Export folder:" = "Exportordner:";
 
 /* MCP pref: endpoint row label */
-"Endpoint:" = "Endpoint:";
+"Endpoint:" = "Endpunkt:";
 
 /* MCP pref: copy endpoint button */
-"Copy" = "Copy";
+"Copy" = "Kopieren";
+
+/* MCP pref: endpoint hint */
+"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "Fügen Sie diese URL in einem beliebigen MCP-Client (Claude, Cursor, Cline, VS Code) hinzu. Dies ist der Streamable-HTTP-Endpunkt; Clients, die nur SSE unterstützen, verwenden /sse statt /mcp.";
 
 /* MCP pref: endpoint hint */
 "Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others)." = "Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others).";
 
 /* AWS console sign-in (aws login) error: profile is missing login_session configuration */
-"The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
+"The profile is not configured for AWS console sign-in" = "Das Profil ist nicht für die AWS-Konsolenanmeldung konfiguriert";
 
 /* AWS console sign-in (aws login) error: no cached session on disk */
-"No cached AWS console sign-in session was found. Run `aws login` and try again." = "No cached AWS console sign-in session was found. Run `aws login` and try again.";
+"No cached AWS console sign-in session was found. Run `aws login` and try again." = "Es wurde keine zwischengespeicherte AWS-Konsolenanmeldung gefunden. Führen Sie `aws login` aus und versuchen Sie es erneut.";
 
 /* AWS console sign-in (aws login) error: cached credentials have expired */
-"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect.";
+"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "Die zwischengespeicherten Zugangsdaten der AWS-Konsolenanmeldung sind abgelaufen. Sie werden etwa alle 15 Minuten erneuert. Führen Sie `aws login` aus und verbinden Sie sich erneut.";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
-"The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
+"The cached AWS console sign-in session could not be read" = "Die zwischengespeicherte AWS-Konsolenanmeldung konnte nicht gelesen werden";
 
 /* AWS IAM Identity Center (aws sso login) error: profile is missing SSO configuration */
-"The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
+"The profile is not configured for AWS IAM Identity Center" = "Das Profil ist nicht für AWS IAM Identity Center konfiguriert";
 
 /* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
-"No cached AWS SSO session was found. Run `aws sso login` and try again." = "No cached AWS SSO session was found. Run `aws sso login` and try again.";
+"No cached AWS SSO session was found. Run `aws sso login` and try again." = "Es wurde keine zwischengespeicherte AWS-SSO-Sitzung gefunden. Führen Sie `aws sso login` aus und versuchen Sie es erneut.";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The cached AWS SSO token has expired. Run `aws sso login` and reconnect." = "The cached AWS SSO token has expired. Run `aws sso login` and reconnect.";
+"The cached AWS SSO token has expired. Run `aws sso login` and reconnect." = "Das zwischengespeicherte AWS-SSO-Token ist abgelaufen. Führen Sie `aws sso login` aus und verbinden Sie sich erneut.";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
-"Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
+"Network request to AWS IAM Identity Center failed" = "Netzwerkanfrage an AWS IAM Identity Center fehlgeschlagen";
 
 /* AWS IAM Identity Center (aws sso login) error: response could not be parsed */
-"Invalid response from AWS IAM Identity Center" = "Invalid response from AWS IAM Identity Center";
+"Invalid response from AWS IAM Identity Center" = "Ungültige Antwort von AWS IAM Identity Center";
 
 /* AWS IAM Identity Center (aws sso login) error: portal denied the request */
-"Access denied by AWS IAM Identity Center" = "Access denied by AWS IAM Identity Center";
+"Access denied by AWS IAM Identity Center" = "Zugriff von AWS IAM Identity Center verweigert";
 
 /* AWS IAM Identity Center (aws sso login) error: portal request timed out */
-"AWS IAM Identity Center request timed out" = "AWS IAM Identity Center request timed out";
+"AWS IAM Identity Center request timed out" = "Zeitüberschreitung bei der Anfrage an AWS IAM Identity Center";
 
 /* Import prompt */
-"\nWould you like to import from clipboard or choose a file?" = "\nWould you like to import from clipboard or choose a file?";
+"\nWould you like to import from clipboard or choose a file?" = "\nMöchten Sie aus der Zwischenablage importieren oder eine Datei auswählen?";
 
 /* show optimized field type fallback estimate message */
-"%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version." = "%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version.";
+"%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version." = "%@\n\nGeschätzt anhand der aktuellen Spaltenwerte, da PROCEDURE ANALYSE() in dieser Serverversion nicht verfügbar ist.";
 
 /* Multiple duplicates found */
-"%ld duplicate connections found. Choose an action for each:" = "%ld duplicate connections found. Choose an action for each:";
+"%ld duplicate connections found. Choose an action for each:" = "%ld doppelte Verbindungen gefunden. Wählen Sie für jede eine Aktion:";
 
 /* 1 duplicate found */
-"1 duplicate connection found. Choose an action for each:" = "1 duplicate connection found. Choose an action for each:";
+"1 duplicate connection found. Choose an action for each:" = "1 doppelte Verbindung gefunden. Wählen Sie eine Aktion:";
 
 /* Duplicate connection prompt */
-"A connection with the same details already exists:\n\n%@\n\nChoose an action:" = "A connection with the same details already exists:\n\n%@\n\nChoose an action:";
+"A connection with the same details already exists:\n\n%@\n\nChoose an action:" = "Eine Verbindung mit denselben Angaben existiert bereits:\n\n%@\n\nWählen Sie eine Aktion:";
 
 /* STS error */
-"Access denied by AWS STS" = "Access denied by AWS STS";
+"Access denied by AWS STS" = "Zugriff von AWS STS verweigert";
 
 /* Action header */
-"Action" = "Action";
+"Action" = "Aktion";
 
 /* PHP serialized editor add child button */
-"Add Child" = "Add Child";
+"Add Child" = "Untereintrag hinzufügen";
 
 /* Allowed query parameters are */
-"Allowed query parameters are" = "Allowed query parameters are";
+"Allowed query parameters are" = "Erlaubte Query-Parameter sind";
 
 /* show optimized field type fallback query error message */
-"An error occurred while estimating an optimized field type.\n\nMySQL said: %@" = "An error occurred while estimating an optimized field type.\n\nMySQL said: %@";
+"An error occurred while estimating an optimized field type.\n\nMySQL said: %@" = "Beim Schätzen eines optimierten Feldtyps ist ein Fehler aufgetreten.\n\nMySQL Ergebnis: %@";
 
 /* an error occurred while fetching the optimized field type.\n\nMySQL said: %@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said: %@" = "An error occurred while fetching the optimized field type.\n\nMySQL said: %@";
+"An error occurred while fetching the optimized field type.\n\nMySQL said: %@" = "Beim Abrufen des optimierten Feldtyps ist ein Fehler aufgetreten.\n\nMySQL Ergebnis: %@";
 
 /* PHP serialized editor apply button */
-"Apply to Field" = "Apply to Field";
+"Apply to Field" = "Auf Feld anwenden";
 
 /* PHP serialized editor array type */
 "Array" = "Array";
 
 /* MFA authenticate button */
-"Authenticate" = "Authenticate";
+"Authenticate" = "Authentifizieren";
 
 /* AWS authorization failed alert title */
-"Authorization Failed" = "Authorization Failed";
+"Authorization Failed" = "Autorisierung fehlgeschlagen";
 
 /* AWS directory authorize button */
-"Authorize" = "Authorize";
+"Authorize" = "Autorisieren";
 
 /* AWS authorization required save message */
-"Authorize access to your ~/.aws directory before saving an AWS IAM favorite." = "Authorize access to your ~/.aws directory before saving an AWS IAM favorite.";
+"Authorize access to your ~/.aws directory before saving an AWS IAM favorite." = "Autorisieren Sie den Zugriff auf Ihr Verzeichnis ~/.aws, bevor Sie einen AWS-IAM-Favoriten speichern.";
 
 /* AWS authorization required message */
-"Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite." = "Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite.";
+"Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite." = "Autorisieren Sie den Zugriff auf Ihr Verzeichnis ~/.aws, bevor Sie einen AWS-IAM-Favoriten testen oder sich damit verbinden.";
 
 /* AWS authorization required title */
-"AWS Authorization Required" = "AWS Authorization Required";
+"AWS Authorization Required" = "AWS-Autorisierung erforderlich";
 
 /* IAM auth error */
-"AWS credentials are invalid" = "AWS credentials are invalid";
+"AWS credentials are invalid" = "AWS-Zugangsdaten sind ungültig";
 
 /* AWS credentials error */
-"AWS credentials are missing required fields (access key ID or secret access key)" = "AWS credentials are missing required fields (access key ID or secret access key)";
+"AWS credentials are missing required fields (access key ID or secret access key)" = "Den AWS-Zugangsdaten fehlen erforderliche Felder (Access Key ID oder Secret Access Key)";
 
 /* IAM auth error */
-"AWS credentials not found" = "AWS credentials not found";
+"AWS credentials not found" = "AWS-Zugangsdaten nicht gefunden";
 
 /* AWS IAM auth failed title */
-"AWS IAM Authentication Failed" = "AWS IAM Authentication Failed";
+"AWS IAM Authentication Failed" = "AWS-IAM-Authentifizierung fehlgeschlagen";
 
 /* MFA dialog title */
-"AWS MFA Authentication Required" = "AWS MFA Authentication Required";
+"AWS MFA Authentication Required" = "AWS-MFA-Authentifizierung erforderlich";
 
 /* AWS credentials error */
-"AWS profile not found" = "AWS profile not found";
+"AWS profile not found" = "AWS-Profil nicht gefunden";
 
 /* PHP serialized editor boolean type */
 "Boolean" = "Boolean";
 
 /* PHP serialized editor boolean validation error */
-"Boolean values must be true/false or 1/0." = "Boolean values must be true/false or 1/0.";
+"Boolean values must be true/false or 1/0." = "Boolesche Werte müssen true/false oder 1/0 sein.";
 
 /* SSH config file error alert title */
-"Cannot Access SSH Config File" = "Cannot Access SSH Config File";
+"Cannot Access SSH Config File" = "Kein Zugriff auf die SSH-Konfigurationsdatei";
 
 /* PHP serialized editor reference add validation error */
-"Cannot add entries while PHP references are present." = "Cannot add entries while PHP references are present.";
+"Cannot add entries while PHP references are present." = "Solange PHP-Referenzen vorhanden sind, können keine Einträge hinzugefügt werden.";
 
 /* PHP serialized editor reference structure validation error */
-"Cannot change serialized structure while PHP references are present." = "Cannot change serialized structure while PHP references are present.";
+"Cannot change serialized structure while PHP references are present." = "Solange PHP-Referenzen vorhanden sind, kann die serialisierte Struktur nicht geändert werden.";
 
 /* PHP serialized editor reference delete validation error */
-"Cannot delete entries while PHP references are present." = "Cannot delete entries while PHP references are present.";
+"Cannot delete entries while PHP references are present." = "Solange PHP-Referenzen vorhanden sind, können keine Einträge gelöscht werden.";
 
 /* Choose file button */
-"Choose File..." = "Choose File...";
+"Choose File..." = "Datei auswählen …";
 
 /* Standalone connection window title */
-"Connect to Server" = "Connect to Server";
+"Connect to Server" = "Mit Server verbinden";
 
 /* message when database selection fails */
-"Connected but unable to select database '%@'." = "Connected but unable to select database '%@'.";
+"Connected but unable to select database '%@'." = "Verbunden, aber die Datenbank '%@' konnte nicht ausgewählt werden.";
 
 /* Connection header */
-"Connection" = "Connection";
+"Connection" = "Verbindung";
 
 /* Connection string copied without password */
-"Connection string copied to clipboard (password not included)" = "Connection string copied to clipboard (password not included)";
+"Connection string copied to clipboard (password not included)" = "Verbindungszeichenfolge in die Zwischenablage kopiert (ohne Passwort)";
 
 /* Connection string with password copied */
-"Connection string with password copied to clipboard" = "Connection string with password copied to clipboard";
+"Connection string with password copied to clipboard" = "Verbindungszeichenfolge mit Passwort in die Zwischenablage kopiert";
 
 /* Copy connection string */
-"Copy Connection String" = "Copy Connection String";
+"Copy Connection String" = "Verbindungszeichenfolge kopieren";
 
 /* Copy with password button */
-"Copy With Password" = "Copy With Password";
+"Copy With Password" = "Mit Passwort kopieren";
 
 /* Copy without password button */
-"Copy Without Password" = "Copy Without Password";
+"Copy Without Password" = "Ohne Passwort kopieren";
 
 /* message shown when local network privacy settings deep link fails */
-"Couldn't open the Local Network privacy settings automatically.\n\nIn macOS, open System Settings > Privacy & Security > Local Network and enable Sequel Ace." = "Couldn't open the Local Network privacy settings automatically.\n\nIn macOS, open System Settings > Privacy & Security > Local Network and enable Sequel Ace.";
+"Couldn't open the Local Network privacy settings automatically.\n\nIn macOS, open System Settings > Privacy & Security > Local Network and enable Sequel Ace." = "Die Datenschutzeinstellungen für das lokale Netzwerk konnten nicht automatisch geöffnet werden.\n\nÖffnen Sie in macOS Systemeinstellungen > Datenschutz & Sicherheit > Lokales Netzwerk und aktivieren Sie Sequel Ace.";
 
 /* Create new action */
-"Create New" = "Create New";
+"Create New" = "Neu anlegen";
 
 /* content tab : rule filter : drop zone prompt */
-"Drop a value here, or click to add a filter" = "Drop a value here, or click to add a filter";
+"Drop a value here, or click to add a filter" = "Wert hierher ziehen oder klicken, um einen Filter hinzuzufügen";
 
 /* Duplicate connection found */
-"Duplicate Connection Found" = "Duplicate Connection Found";
+"Duplicate Connection Found" = "Doppelte Verbindung gefunden";
 
 /* Duplicate connections found */
-"Duplicate Connections Found" = "Duplicate Connections Found";
+"Duplicate Connections Found" = "Doppelte Verbindungen gefunden";
 
 /* PHP serialized data editor menu item */
-"Edit PHP Serialized Data as Tree" = "Edit PHP Serialized Data as Tree";
+"Edit PHP Serialized Data as Tree" = "PHP-serialisierte Daten als Baum bearbeiten";
 
 /* AWS IAM empty token error */
-"Empty authentication token returned" = "Empty authentication token returned";
+"Empty authentication token returned" = "Leeres Authentifizierungstoken zurückgegeben";
 
 /* Error parsing connection string */
-"Error parsing connection string" = "Error parsing connection string";
+"Error parsing connection string" = "Fehler beim Auswerten der Verbindungszeichenfolge";
 
 /* estimating optimized field type task status message */
-"Estimating optimized field type..." = "Estimating optimized field type...";
+"Estimating optimized field type..." = "Optimierter Feldtyp wird geschätzt …";
 
 /* PHP serialized editor expected byte error */
-"Expected '%c'." = "Expected '%c'.";
+"Expected '%c'." = "'%c' erwartet.";
 
 /* PHP serialized editor expected delimiter error */
-"Expected delimiter '%c'." = "Expected delimiter '%c'.";
+"Expected delimiter '%c'." = "Trennzeichen '%c' erwartet.";
 
 /* IAM auth error */
-"Failed to access keychain" = "Failed to access keychain";
+"Failed to access keychain" = "Zugriff auf den Schlüsselbund fehlgeschlagen";
 
 /* AWS credentials error */
-"Failed to access the AWS credentials directory" = "Failed to access the AWS credentials directory";
+"Failed to access the AWS credentials directory" = "Zugriff auf das Verzeichnis mit den AWS-Zugangsdaten fehlgeschlagen";
 
 /* IAM auth error */
-"Failed to assume IAM role" = "Failed to assume IAM role";
+"Failed to assume IAM role" = "IAM-Rolle konnte nicht übernommen werden";
 
 /* AWS authorization failed alert message */
-"Failed to create a secure bookmark for the AWS directory. Please try again." = "Failed to create a secure bookmark for the AWS directory. Please try again.";
+"Failed to create a secure bookmark for the AWS directory. Please try again." = "Für das AWS-Verzeichnis konnte kein sicheres Lesezeichen erstellt werden. Bitte versuchen Sie es erneut.";
 
 /* IAM auth error */
-"Failed to generate IAM authentication token" = "Failed to generate IAM authentication token";
+"Failed to generate IAM authentication token" = "IAM-Authentifizierungstoken konnte nicht erzeugt werden";
 
 /* AWS credentials error */
-"Failed to read AWS credentials file" = "Failed to read AWS credentials file";
+"Failed to read AWS credentials file" = "Die Datei mit den AWS-Zugangsdaten konnte nicht gelesen werden";
 
 /* PHP serialized editor float type */
 "Float" = "Float";
 
 /* PHP serialized editor float validation error */
-"Float values cannot be empty." = "Float values cannot be empty.";
+"Float values cannot be empty." = "Float-Werte dürfen nicht leer sein.";
 
 /* PHP serialized editor float validation error */
-"Float values must be a valid number, INF, -INF, or NAN." = "Float values must be a valid number, INF, -INF, or NAN.";
+"Float values must be a valid number, INF, -INF, or NAN." = "Float-Werte müssen eine gültige Zahl, INF, -INF oder NAN sein.";
 
 /* Found connection string label */
-"Found connection string in clipboard:" = "Found connection string in clipboard:";
+"Found connection string in clipboard:" = "Verbindungszeichenfolge in der Zwischenablage gefunden:";
 
 /* Import connection string prompt */
-"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?" = "Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?";
+"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?" = "Verbindungszeichenfolge in der Zwischenablage gefunden:\n\n%@\n\nMöchten Sie aus der Zwischenablage importieren oder eine Datei auswählen?";
 
 /* placeholder when AWS IAM auth is enabled */
-"Generated from AWS IAM profile" = "Generated from AWS IAM profile";
+"Generated from AWS IAM profile" = "Wird aus dem AWS-IAM-Profil erzeugt";
 
 /* SSH config file error alert - Go to network settings button */
-"Go to Network Settings" = "Go to Network Settings";
+"Go to Network Settings" = "Zu den Netzwerkeinstellungen";
 
 /* Fallback password hide button title */
-"Hide" = "Hide";
+"Hide" = "Verbergen";
 
 /* Hide password tooltip */
-"Hide password" = "Hide password";
+"Hide password" = "Passwort verbergen";
 
 /* Import from clipboard button */
-"Import from Clipboard" = "Import from Clipboard";
+"Import from Clipboard" = "Aus Zwischenablage importieren";
 
 /* Import from clipboard or file */
-"Import from Clipboard or File?" = "Import from Clipboard or File?";
+"Import from Clipboard or File?" = "Aus Zwischenablage oder Datei importieren?";
 
 /* PHP serialized editor integer type */
 "Integer" = "Integer";
 
 /* PHP serialized editor integer validation error */
-"Integer values may only contain digits and an optional leading minus sign." = "Integer values may only contain digits and an optional leading minus sign.";
+"Integer values may only contain digits and an optional leading minus sign." = "Integer-Werte dürfen nur Ziffern und optional ein führendes Minuszeichen enthalten.";
 
 /* AWS credentials error */
-"Invalid AWS credentials" = "Invalid AWS credentials";
+"Invalid AWS credentials" = "Ungültige AWS-Zugangsdaten";
 
 /* Invalid AWS directory alert title */
-"Invalid AWS Directory" = "Invalid AWS Directory";
+"Invalid AWS Directory" = "Ungültiges AWS-Verzeichnis";
 
 /* Invalid connection string */
-"Invalid Connection String" = "Invalid Connection String";
+"Invalid Connection String" = "Ungültige Verbindungszeichenfolge";
 
 /* Invalid MFA code title */
-"Invalid MFA Code" = "Invalid MFA Code";
+"Invalid MFA Code" = "Ungültiger MFA-Code";
 
 /* RDS IAM auth error */
-"Invalid parameters for IAM authentication" = "Invalid parameters for IAM authentication";
+"Invalid parameters for IAM authentication" = "Ungültige Parameter für die IAM-Authentifizierung";
 
 /* STS error */
-"Invalid parameters for STS request" = "Invalid parameters for STS request";
+"Invalid parameters for STS request" = "Ungültige Parameter für die STS-Anfrage";
 
 /* PHP serialized editor invalid boolean error */
-"Invalid PHP boolean value." = "Invalid PHP boolean value.";
+"Invalid PHP boolean value." = "Ungültiger PHP-Boolean-Wert.";
 
 /* PHP serialized editor invalid float error */
-"Invalid PHP float value." = "Invalid PHP float value.";
+"Invalid PHP float value." = "Ungültiger PHP-Float-Wert.";
 
 /* PHP serialized editor invalid integer error */
-"Invalid PHP integer value." = "Invalid PHP integer value.";
+"Invalid PHP integer value." = "Ungültiger PHP-Integer-Wert.";
 
 /* Invalid query parameters given */
-"Invalid query parameters given" = "Invalid query parameters given";
+"Invalid query parameters given" = "Ungültige Query-Parameter angegeben";
 
 /* STS error */
-"Invalid response from STS" = "Invalid response from STS";
+"Invalid response from STS" = "Ungültige Antwort von STS";
 
 /* PHP serialized editor invalid count error */
-"Invalid serialized length or count." = "Invalid serialized length or count.";
+"Invalid serialized length or count." = "Ungültige serialisierte Länge oder Anzahl.";
 
 /* charset fallback warning title */
-"Limited Character Set Metadata" = "Limited Character Set Metadata";
+"Limited Character Set Metadata" = "Eingeschränkte Zeichensatz-Metadaten";
 
 /* title for local network privacy alert */
-"Local Network Access is Required" = "Local Network Access is Required";
+"Local Network Access is Required" = "Zugriff auf das lokale Netzwerk erforderlich";
 
 /* IAM auth error */
-"MFA authentication was cancelled" = "MFA authentication was cancelled";
+"MFA authentication was cancelled" = "MFA-Authentifizierung wurde abgebrochen";
 
 /* STS error */
-"MFA token code is required" = "MFA token code is required";
+"MFA token code is required" = "MFA-Tokencode ist erforderlich";
 
 /* Redacted connection string fallback */
-"mysql://[connection string with password hidden]" = "mysql://[connection string with password hidden]";
+"mysql://[connection string with password hidden]" = "mysql://[Verbindungszeichenfolge mit verborgenem Passwort]";
 
 /* STS error */
-"Network request failed" = "Network request failed";
+"Network request failed" = "Netzwerkanfrage fehlgeschlagen";
 
 /* Menu item for standalone connection window */
-"New Connection Window" = "New Connection Window";
+"New Connection Window" = "Neues Verbindungsfenster";
 
 /* show optimized field type fallback unsupported field type */
-"No fallback estimate is currently available for %@ columns." = "No fallback estimate is currently available for %@ columns.";
+"No fallback estimate is currently available for %@ columns." = "Für %@-Spalten ist derzeit keine Ersatzschätzung verfügbar.";
 
 /* show optimized field type fallback no values */
-"No non-NULL values were found in this column, so no fallback estimate could be produced." = "No non-NULL values were found in this column, so no fallback estimate could be produced.";
+"No non-NULL values were found in this column, so no fallback estimate could be produced." = "In dieser Spalte wurden keine Nicht-NULL-Werte gefunden, daher konnte keine Ersatzschätzung erstellt werden.";
 
 /* show optimized field type fallback failed because field metadata is unavailable */
-"No optimized field type could be estimated for this column." = "No optimized field type could be estimated for this column.";
+"No optimized field type could be estimated for this column." = "Für diese Spalte konnte kein optimierter Feldtyp geschätzt werden.";
 
 /* PHP serialized editor empty input error */
-"No serialized data was provided." = "No serialized data was provided.";
+"No serialized data was provided." = "Es wurden keine serialisierten Daten übergeben.";
 
 /* PHP serialized editor null type */
 "Null" = "Null";
 
 /* open apple release notes button */
-"Open Apple Release Notes" = "Open Apple Release Notes";
+"Open Apple Release Notes" = "Apple-Versionshinweise öffnen";
 
 /* button title to open local network privacy settings */
-"Open Local Network Settings" = "Open Local Network Settings";
+"Open Local Network Settings" = "Einstellungen für lokales Netzwerk öffnen";
 
 /* connection view : name field placeholder */
-"Optional Name" = "Optional Name";
+"Optional Name" = "Optionaler Name";
 
 /* PHP serialized editor invalid key error */
-"PHP array keys must be integers or strings." = "PHP array keys must be integers or strings.";
+"PHP array keys must be integers or strings." = "PHP-Array-Schlüssel müssen Integer oder Strings sein.";
 
 /* PHP serialized editor invalid property error */
-"PHP object property names must be integers or strings." = "PHP object property names must be integers or strings.";
+"PHP object property names must be integers or strings." = "Namen von PHP-Objekteigenschaften müssen Integer oder Strings sein.";
 
 /* PHP serialized editor sheet title */
-"PHP Serialized Data" = "PHP Serialized Data";
+"PHP Serialized Data" = "PHP-serialisierte Daten";
 
 /* PHP serialized editor maximum nesting depth error */
-"PHP serialized data exceeds the maximum supported nesting depth." = "PHP serialized data exceeds the maximum supported nesting depth.";
+"PHP serialized data exceeds the maximum supported nesting depth." = "Die PHP-serialisierten Daten überschreiten die maximal unterstützte Verschachtelungstiefe.";
 
 /* connection authentication failure message */
-"Please check your username and password and try again." = "Please check your username and password and try again.";
+"Please check your username and password and try again." = "Bitte überprüfen Sie Benutzername und Passwort und versuchen Sie es erneut.";
 
 /* Invalid MFA code message */
-"Please enter a valid 6-digit MFA code." = "Please enter a valid 6-digit MFA code.";
+"Please enter a valid 6-digit MFA code." = "Bitte geben Sie einen gültigen 6-stelligen MFA-Code ein.";
 
 /* Invalid AWS directory alert message */
-"Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files." = "Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files.";
+"Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files." = "Bitte wählen Sie das Verzeichnis .aws in Ihrem Benutzerordner (normalerweise ~/.aws). Dieses Verzeichnis sollte Ihre AWS-Zugangsdaten- und/oder Konfigurationsdateien enthalten.";
 
 /* MFA dialog message */
-"Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:" = "Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:";
+"Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:" = "Profil: %1$@\nMFA-Gerät: %2$@\n\nGeben Sie den 6-stelligen MFA-Code aus Ihrer Authenticator-App ein:";
 
 /* removed macos runtime warning title */
-"Removed macOS Runtime" = "Removed macOS Runtime";
+"Removed macOS Runtime" = "Entfernte macOS-Laufzeitumgebung";
 
 /* SSH config file error alert - Reset to default button */
-"Reset to Default & Continue" = "Reset to Default & Continue";
+"Reset to Default & Continue" = "Auf Standard zurücksetzen & fortfahren";
 
 /* PHP serialized editor container inspector text */
-"Select a scalar value to edit it. Arrays and objects can be expanded in the tree." = "Select a scalar value to edit it. Arrays and objects can be expanded in the tree.";
+"Select a scalar value to edit it. Arrays and objects can be expanded in the tree." = "Wählen Sie einen skalaren Wert aus, um ihn zu bearbeiten. Arrays und Objekte können im Baum aufgeklappt werden.";
 
 /* AWS directory selection message */
-"Select your .aws directory to enable AWS IAM authentication" = "Select your .aws directory to enable AWS IAM authentication";
+"Select your .aws directory to enable AWS IAM authentication" = "Wählen Sie Ihr Verzeichnis .aws aus, um die AWS-IAM-Authentifizierung zu aktivieren";
 
 /* informative text for local network privacy alert (direct) */
-"Sequel Ace could not reach the database host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again." = "Sequel Ace could not reach the database host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.";
+"Sequel Ace could not reach the database host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again." = "Sequel Ace konnte den Datenbank-Host in Ihrem lokalen Netzwerk nicht erreichen. Unter macOS 15 (Sequoia) und neuer bedeutet das oft, dass der Zugriff auf das lokale Netzwerk für Sequel Ace deaktiviert ist.\n\nÖffnen Sie Systemeinstellungen > Datenschutz & Sicherheit > Lokales Netzwerk, aktivieren Sie Sequel Ace und versuchen Sie dann erneut, eine Verbindung herzustellen.";
 
 /* informative text for local network privacy alert (ssh) */
-"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again." = "Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.";
+"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again." = "Sequel Ace konnte den SSH-Host in Ihrem lokalen Netzwerk nicht erreichen. Unter macOS 15 (Sequoia) und neuer bedeutet das oft, dass der Zugriff auf das lokale Netzwerk für Sequel Ace deaktiviert ist.\n\nÖffnen Sie Systemeinstellungen > Datenschutz & Sicherheit > Lokales Netzwerk, aktivieren Sie Sequel Ace und versuchen Sie dann erneut, eine Verbindung herzustellen.";
 
 /* SSH config file error alert message */
-"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default." = "Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.";
+"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default." = "Sequel Ace hat keine Berechtigung, die konfigurierte SSH-Konfigurationsdatei unter '%@' zu lesen.\n\nDies kann an Sandbox-Einschränkungen liegen. Sie können im Reiter „Netzwerk“ der Einstellungen eine andere SSH-Konfigurationsdatei festlegen, im Reiter „Dateien“ der Einstellungen den Zugriff auf die vorhandene Datei korrigieren oder den Pfad auf den Standard von Sequel Ace zurücksetzen.";
 
 /* PHP serialized editor input encoding error */
-"Serialized data cannot be encoded using the field encoding." = "Serialized data cannot be encoded using the field encoding.";
+"Serialized data cannot be encoded using the field encoding." = "Die serialisierten Daten können nicht mit der Feldkodierung kodiert werden.";
 
 /* PHP serialized editor output encoding error */
-"Serialized data contains characters that cannot be encoded using the field encoding." = "Serialized data contains characters that cannot be encoded using the field encoding.";
+"Serialized data contains characters that cannot be encoded using the field encoding." = "Die serialisierten Daten enthalten Zeichen, die sich nicht mit der Feldkodierung kodieren lassen.";
 
 /* PHP serialized editor count overflow error */
-"Serialized length or count is too large." = "Serialized length or count is too large.";
+"Serialized length or count is too large." = "Serialisierte Länge oder Anzahl ist zu groß.";
 
 /* PHP serialized editor string decoding error */
-"Serialized string could not be decoded as text." = "Serialized string could not be decoded as text.";
+"Serialized string could not be decoded as text." = "Serialisierter String konnte nicht als Text dekodiert werden.";
 
 /* Fallback password reveal button title */
-"Show" = "Show";
+"Show" = "Anzeigen";
 
 /* Show password checkbox */
-"Show password" = "Show password";
+"Show password" = "Passwort anzeigen";
 
 /* Skip action */
-"Skip" = "Skip";
+"Skip" = "Überspringen";
 
 /* PHP serialized editor string type */
 "String" = "String";
 
 /* PHP serialized editor string length error */
-"String length exceeds available serialized data." = "String length exceeds available serialized data.";
+"String length exceeds available serialized data." = "Die String-Länge überschreitet die verfügbaren serialisierten Daten.";
 
 /* STS error */
-"STS request timed out" = "STS request timed out";
+"STS request timed out" = "Zeitüberschreitung bei der STS-Anfrage";
 
 /* The connection string is not valid */
-"The connection string is not valid." = "The connection string is not valid.";
+"The connection string is not valid." = "Die Verbindungszeichenfolge ist ungültig.";
 
 /* PHP serialized editor invalid tooltip */
-"The current field does not contain valid PHP serialized data." = "The current field does not contain valid PHP serialized data.";
+"The current field does not contain valid PHP serialized data." = "Das aktuelle Feld enthält keine gültigen PHP-serialisierten Daten.";
 
 /* charset fallback warning message */
-"The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list." = "The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list.";
+"The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list." = "Der Server hat keine Zeichensatz-Metadaten geliefert. Sequel Ace verwendet stattdessen eine UTF-8-kompatible Ersatzliste von Zeichensätzen.";
 
 /* removed macos runtime warning message */
-"This Bundle attempted to run “%@”, but that runtime is not available on this macOS version.\n\nApple deprecated and removed built-in scripting runtimes from macOS updates.\n\nSource materials:\n• %@\n• %@\n\nPlease update the Bundle to use an available runtime or command." = "This Bundle attempted to run “%@”, but that runtime is not available on this macOS version.\n\nApple deprecated and removed built-in scripting runtimes from macOS updates.\n\nSource materials:\n• %@\n• %@\n\nPlease update the Bundle to use an available runtime or command.";
+"This Bundle attempted to run “%@”, but that runtime is not available on this macOS version.\n\nApple deprecated and removed built-in scripting runtimes from macOS updates.\n\nSource materials:\n• %@\n• %@\n\nPlease update the Bundle to use an available runtime or command." = "Dieses Bundle hat versucht, „%1$@“ auszuführen, aber diese Laufzeitumgebung ist in dieser macOS-Version nicht verfügbar.\n\nApple hat die integrierten Skript-Laufzeitumgebungen als veraltet markiert und aus macOS-Updates entfernt.\n\nQuellen:\n• %2$@\n• %3$@\n\nBitte aktualisieren Sie das Bundle, damit es eine verfügbare Laufzeitumgebung oder einen verfügbaren Befehl verwendet.";
 
 /* connection failed title */
-"Unable to connect" = "Unable to connect";
+"Unable to connect" = "Verbindung nicht möglich";
 
 /* Unable to get database collations for given encoding */
-"Unable to get database collations for given encoding" = "Unable to get database collations for given encoding";
+"Unable to get database collations for given encoding" = "Die Datenbank-Kollationen für die angegebene Codierung konnten nicht ermittelt werden";
 
 /* title when local network privacy settings deep link fails */
-"Unable to Open System Settings" = "Unable to Open System Settings";
+"Unable to Open System Settings" = "Systemeinstellungen können nicht geöffnet werden";
 
 /* PHP serialized editor parse error */
-"Unable to parse PHP serialized data." = "Unable to parse PHP serialized data.";
+"Unable to parse PHP serialized data." = "PHP-serialisierte Daten konnten nicht ausgewertet werden.";
 
 /* show optimized field type fallback missing integer stats */
-"Unable to read enough numeric statistics to estimate an optimized integer type." = "Unable to read enough numeric statistics to estimate an optimized integer type.";
+"Unable to read enough numeric statistics to estimate an optimized integer type." = "Es konnten nicht genügend numerische Statistiken gelesen werden, um einen optimierten Integer-Typ zu schätzen.";
 
 /* PHP serialized editor output error */
-"Unable to serialize PHP data." = "Unable to serialize PHP data.";
+"Unable to serialize PHP data." = "PHP-Daten konnten nicht serialisiert werden.";
 
 /* PHP serialized editor end of input error */
-"Unexpected end of serialized data." = "Unexpected end of serialized data.";
+"Unexpected end of serialized data." = "Unerwartetes Ende der serialisierten Daten.";
 
 /* PHP serialized editor trailing input error */
-"Unexpected trailing characters after serialized value." = "Unexpected trailing characters after serialized value.";
+"Unexpected trailing characters after serialized value." = "Unerwartete Zeichen nach dem serialisierten Wert.";
 
 /* PHP serialized editor unsupported type error */
-"Unsupported PHP serialized type '%c'." = "Unsupported PHP serialized type '%c'.";
+"Unsupported PHP serialized type '%c'." = "Nicht unterstützter PHP-Serialisierungstyp '%c'.";
 
 /* PHP serialized editor update selected button */
-"Update Selected" = "Update Selected";
+"Update Selected" = "Auswahl aktualisieren";
 
 /* PHP serialized editor value column */
-"Value" = "Value";
+"Value" = "Wert";
 
 /* Copy connection string password warning */
-"Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel.";
+"Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Möchten Sie das Passwort in die Verbindungszeichenfolge aufnehmen?\n\n⚠️ WARNUNG: Passwörter im Klartext weiterzugeben (Slack, E-Mail usw.) ist ein Sicherheitsrisiko!\n\nNehmen Sie das Passwort nur auf, wenn Sie es über einen sicheren Kanal weitergeben.";
+
+/* Vault roles refresh button title */
+"Refresh" = "Aktualisieren";
+
+/* vault role refresh in progress title */
+"Vault role refresh in progress" = "Vault-Rollen werden aktualisiert";
+
+/* vault role refresh in progress message */
+"Wait for the Vault role list to finish loading before connecting." = "Warten Sie, bis die Liste der Vault-Rollen vollständig geladen ist, bevor Sie eine Verbindung herstellen.";
+
+/* vault creds path required connect message */
+"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "Zum Verbinden wird ein Vault-Pfad zu den Zugangsdaten benötigt. Füllen Sie Mount und Rolle aus oder fügen Sie einen vollständigen Pfad in das Feld „Rolle“ ein.";
+
+/* vault creds path required save message */
+"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "Zum Speichern eines Vault-Favoriten wird ein Vault-Pfad zu den Zugangsdaten benötigt. Füllen Sie Mount und Rolle aus oder fügen Sie einen vollständigen Pfad in das Feld „Rolle“ ein.";
+
+/* Vault roles refresh – missing mount */
+"Enter a Vault mount first" = "Geben Sie zuerst einen Vault-Mount ein";
+
+/* Vault roles refresh – missing mount detail */
+"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "Die Rollenliste wird aus <mount>/roles gelesen. Füllen Sie das Feld „Vault-Mount“ aus und aktualisieren Sie dann.";
+
+/* Vault roles refresh – login confirm */
+"Sign in to Vault?" = "Bei Vault anmelden?";
+
+/* Vault roles refresh – login confirm detail */
+"Listing roles requires authenticating to Vault, which will open your web browser." = "Um die Rollen aufzulisten, ist eine Anmeldung bei Vault erforderlich. Dazu wird Ihr Webbrowser geöffnet.";
+
+/* Vault roles refresh – empty */
+"No Vault roles found" = "Keine Vault-Rollen gefunden";
+
+/* Vault roles refresh – empty detail */
+"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "Für diesen Mount wurden keine Datenbankrollen zurückgegeben. Prüfen Sie den Vault-Mount-Pfad und ob Ihr Token Rollen auflisten darf, oder geben Sie die Rolle manuell ein.";
+
+/* Vault roles refresh – failure */
+"Could not load Vault roles" = "Vault-Rollen konnten nicht geladen werden";
+
+/* Vault roles refresh – failure detail */
+"Unknown error. You can still type the role manually." = "Unbekannter Fehler. Sie können die Rolle weiterhin manuell eingeben.";
+
+/* Vault OIDC login already in progress */
+"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Eine andere Vault-Anmeldung läuft bereits. Schließen Sie diese ab oder brechen Sie sie ab (auch in anderen Fenstern) und versuchen Sie es erneut.";
