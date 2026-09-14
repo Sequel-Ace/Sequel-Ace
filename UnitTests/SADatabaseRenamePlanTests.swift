@@ -422,7 +422,8 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let inspection = server.statements.prefix(6)
         XCTAssertEqual(inspection.count, 6)
         XCTAssertTrue(inspection.allSatisfy { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }, inspection.joined(separator: "\n"))
-        XCTAssertEqual(inspection.filter { $0.contains("information_schema.") && $0.contains("_SCHEMA = 'shop'") }.count, 4, inspection.joined(separator: "\n"))
+        XCTAssertEqual(inspection.filter { $0.contains("information_schema.") && $0.contains("_SCHEMA = 'shop'") }.count, 3, inspection.joined(separator: "\n"))
+        XCTAssertTrue(inspection.contains("SELECT name, type FROM mysql.proc WHERE db = 'shop' ORDER BY name"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SHOW EVENTS FROM `shop`"), inspection.joined(separator: "\n"))
         XCTAssertEqual(Array(server.statements.dropFirst(6)), [
             sessionQuery,
@@ -657,16 +658,27 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
     }
 
     /// Verifies a failed information_schema query stops the inspection and
-    /// the rename, so no object can be dropped unseen, and that the reason
-    /// shown is the one the server gave for the view, not for the fallback.
+    /// the rename, so no object can be dropped unseen: an account that can
+    /// read neither mysql.proc nor, for want of a global SELECT or
+    /// SHOW_ROUTINE privilege, every routine through information_schema is
+    /// refused with that reason, and a failing information_schema query with
+    /// the server's message.
     func testInspectionFailureStopsBeforeAnythingChanges() throws {
         let server = makeServer()
-        server.fail("SELECT ROUTINE_NAME", with: "SELECT command denied")
         server.fail("SELECT name, type FROM mysql.proc", with: "SELECT command denied to user for table 'proc'")
+        server.respond(to: "SELECT (SELECT COUNT(*) FROM information_schema.USER_PRIVILEGES", rows: [["0"]])
         let description = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertTrue(description.contains("Reading the objects of the database 'shop' failed: SELECT command denied Nothing"), description)
+        XCTAssertTrue(description.contains("Reading the objects of the database 'shop' failed: this account cannot list the database's routines completely"), description)
         XCTAssertTrue(onlyInspected(server), server.statements.joined(separator: "\n"))
-        XCTAssertTrue(server.statements.contains("SELECT name, type FROM mysql.proc WHERE db = 'shop' ORDER BY name"), server.statements.joined(separator: "\n"))
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("SELECT ROUTINE_NAME") }, "information_schema.ROUTINES is not trusted without the privilege")
+
+        let denied = makeServer()
+        denied.fail("SELECT name, type FROM mysql.proc", with: "SELECT command denied to user for table 'proc'")
+        denied.respond(to: "SELECT (SELECT COUNT(*) FROM information_schema.USER_PRIVILEGES", rows: [["1"]])
+        denied.fail("SELECT ROUTINE_NAME", with: "SELECT command denied")
+        let reason = try XCTUnwrap(denied.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(reason.contains("Reading the objects of the database 'shop' failed: SELECT command denied Nothing"), reason)
+        XCTAssertTrue(onlyInspected(denied), denied.statements.joined(separator: "\n"))
     }
 
     /// Verifies events are listed with SHOW EVENTS, which a user without the
@@ -689,23 +701,32 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertTrue(onlyInspected(denied), denied.statements.joined(separator: "\n"))
     }
 
-    /// Verifies the routines and events of a server whose mysql.proc and
-    /// mysql.event were never upgraded (the server refuses to use them) are
-    /// read from those tables directly, so such a server neither blocks the
-    /// rename nor loses a routine unseen.
-    func testRoutinesAndEventsFallBackToTheMySQLTables() throws {
-        let upgradeError = "Column count of mysql.proc is wrong. Expected 21, found 20. Please use mysql_upgrade to fix this error"
-        let blocked = makeServer()
-        blocked.fail("SELECT ROUTINE_NAME", with: upgradeError)
-        blocked.respond(to: "SELECT name, type FROM mysql.proc WHERE db = 'shop'", rows: [["cleanup", "PROCEDURE"]])
-        blocked.fail("SHOW EVENTS FROM `shop`", with: "Column count of mysql.event is wrong")
-        blocked.respond(to: "SELECT db, name FROM mysql.event WHERE db = 'shop'", rows: [["shop", "nightly"]])
-        let description = try XCTUnwrap(blocked.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+    /// Verifies routines come from mysql.proc where it exists - which lists
+    /// every routine, also on a MariaDB whose data directory was never run
+    /// through mysql_upgrade - and from information_schema.ROUTINES only on
+    /// a server without that table (MySQL 8) for an account whose privilege
+    /// makes the server show every routine; events of an un-upgraded server
+    /// come from mysql.event. Such a server neither blocks the rename nor
+    /// loses a routine unseen.
+    func testRoutinesComeFromMySQLProcOrACompleteInformationSchema() throws {
+        let mysql8 = makeServer()
+        mysql8.fail("SELECT name, type FROM mysql.proc", with: "Table 'mysql.proc' doesn't exist")
+        mysql8.respond(to: "SELECT (SELECT COUNT(*) FROM information_schema.USER_PRIVILEGES", rows: [["1"]])
+        mysql8.respond(to: "SELECT ROUTINE_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'shop'", rows: [["cleanup", "PROCEDURE"]])
+        let refused = try XCTUnwrap(mysql8.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(refused.contains("procedure 'cleanup'"), refused)
+        XCTAssertTrue(onlyInspected(mysql8), mysql8.statements.joined(separator: "\n"))
+
+        let mariadb = makeServer()
+        mariadb.respond(to: "SELECT name, type FROM mysql.proc WHERE db = 'shop'", rows: [["cleanup", "PROCEDURE"]])
+        mariadb.fail("SHOW EVENTS FROM `shop`", with: "Column count of mysql.event is wrong")
+        mariadb.respond(to: "SELECT db, name FROM mysql.event WHERE db = 'shop'", rows: [["shop", "nightly"]])
+        let description = try XCTUnwrap(mariadb.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(description.contains("procedure 'cleanup', event 'nightly'"), description)
-        XCTAssertTrue(onlyInspected(blocked), blocked.statements.joined(separator: "\n"))
+        XCTAssertTrue(onlyInspected(mariadb), mariadb.statements.joined(separator: "\n"))
+        XCTAssertFalse(mariadb.statements.contains { $0.hasPrefix("SELECT ROUTINE_NAME") || $0.hasPrefix("SELECT (SELECT COUNT(*) FROM information_schema.USER_PRIVILEGES") }, "mysql.proc is authoritative where it can be read")
 
         let clean = makeServer()
-        clean.fail("SELECT ROUTINE_NAME", with: upgradeError)
         clean.respond(to: "SELECT name, type FROM mysql.proc WHERE db = 'shop'", rows: [])
         XCTAssertNil(clean.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertEqual(clean.statements.last, "DROP DATABASE `shop`")

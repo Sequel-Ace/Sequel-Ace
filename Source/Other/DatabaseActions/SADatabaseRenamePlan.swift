@@ -775,11 +775,11 @@ import Foundation
         // The plan needs the source's objects from the server; a failed query
         // leaves the picture incomplete and stops the rename. Events are read
         // with SHOW EVENTS, which fails without the EVENT privilege where
-        // information_schema.EVENTS would quietly list nothing. The routine
-        // view and SHOW EVENTS go through the server's routine cache, which a
-        // MariaDB data directory that was never run through mysql_upgrade
-        // refuses ("Column count of mysql.proc is wrong"); the underlying
-        // tables still list the objects, so they are read directly then.
+        // information_schema.EVENTS would quietly list nothing. SHOW EVENTS
+        // goes through the server's routine cache, which a MariaDB data
+        // directory that was never run through mysql_upgrade refuses
+        // ("Column count of mysql.event is wrong"); the underlying table still
+        // lists the events, so it is read directly then.
         var inspectionError: String?
         func rows(_ statement: String, fallback: String? = nil) -> [[Any]] {
             guard inspectionError == nil else { return [] }
@@ -794,10 +794,7 @@ import Foundation
             return []
         }
         let tableRows = rows("SELECT TABLE_NAME, TABLE_TYPE FROM information_schema.TABLES WHERE TABLE_SCHEMA = \(schema) ORDER BY TABLE_NAME")
-        let routineRows = rows(
-            "SELECT ROUTINE_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = \(schema) ORDER BY ROUTINE_NAME",
-            fallback: "SELECT name, type FROM mysql.proc WHERE db = \(schema) ORDER BY name"
-        )
+        let routineRows = routineRowsForInspection(schema: schema, inspectionError: &inspectionError)
         // both forms list the database first and the event's name second
         let eventRows = rows(
             "SHOW EVENTS FROM \(quotedSource)",
@@ -979,6 +976,47 @@ import Foundation
             restoreDefaultDatabase()
         }
         return plan.failureDescription
+    }
+
+    /// The routines of the source database as `name, type` rows, or an empty
+    /// list with `inspectionError` set when they cannot be listed completely.
+    ///
+    /// `information_schema.ROUTINES` quietly leaves out every routine the
+    /// account has no privilege on, and a routine the plan never sees is
+    /// dropped with the source. So the table behind it, `mysql.proc`, is
+    /// read first: it lists everything, where it exists (MariaDB, MySQL up to
+    /// 5.7 - even a data directory never run through mysql_upgrade) and is
+    /// readable. Where it is not, `information_schema.ROUTINES` is trusted
+    /// only for an account whose privileges make the server show every
+    /// routine of the database - global SELECT or SHOW_ROUTINE, or EXECUTE,
+    /// ALTER ROUTINE or CREATE ROUTINE granted globally or on the database
+    /// (a grant on a database pattern counts, as the server matches it with
+    /// LIKE); privileges that come through a role are not seen here, so such
+    /// an account is refused. Anything else fails closed.
+    private func routineRowsForInspection(schema: String, inspectionError: inout String?) -> [[Any]] {
+        guard inspectionError == nil else { return [] }
+        if let rows = run("SELECT name, type FROM mysql.proc WHERE db = \(schema) ORDER BY name").rows {
+            return rows
+        }
+        // the account as the privilege tables spell it, 'user'@'host'; the
+        // user name may itself contain '@', the host follows the last one
+        let host = "SUBSTRING_INDEX(CURRENT_USER(), '@', -1)"
+        let user = "SUBSTRING(CURRENT_USER(), 1, CHAR_LENGTH(CURRENT_USER()) - CHAR_LENGTH(\(host)) - 1)"
+        let grantee = "CONCAT('''', \(user), '''@''', \(host), '''')"
+        let privileges = run(
+            "SELECT (SELECT COUNT(*) FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE', 'EXECUTE', 'ALTER ROUTINE', 'CREATE ROUTINE'))"
+                + " + (SELECT COUNT(*) FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE = \(grantee) AND \(schema) LIKE TABLE_SCHEMA AND PRIVILEGE_TYPE IN ('EXECUTE', 'ALTER ROUTINE', 'CREATE ROUTINE'))"
+        )
+        guard let count = Int(Self.text(privileges.rows?.first?.first) ?? ""), count > 0 else {
+            inspectionError = NSLocalizedString("this account cannot list the database's routines completely (it needs SELECT on mysql.proc, global SELECT or SHOW_ROUTINE, or EXECUTE, ALTER ROUTINE or CREATE ROUTINE on the database, granted directly).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
+            return []
+        }
+        let routines = run("SELECT ROUTINE_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = \(schema) ORDER BY ROUTINE_NAME")
+        guard let rows = routines.rows else {
+            inspectionError = routines.error
+            return []
+        }
+        return rows
     }
 
     /// One view's definition as `SHOW CREATE VIEW` printed it, with the

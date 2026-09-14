@@ -126,16 +126,16 @@
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
-"Creating the database '%@' failed: %@" = "Creating the database '%@' failed: %@";
+"Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
 
 /* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
-"Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%@', but dropping '%@' failed: %@";
+"Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%1$@', but dropping '%2$@' failed: %3$@";
 
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
-"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped.";
+"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
 
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
-"Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%@' failed: %@ Nothing was changed.";
+"Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
 
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
@@ -147,7 +147,7 @@
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
 
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
-"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
@@ -561,6 +561,9 @@
 
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
+
+/* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, global SELECT or SHOW_ROUTINE, or EXECUTE, ALTER ROUTINE or CREATE ROUTINE on the database, granted directly)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, global SELECT or SHOW_ROUTINE, or EXECUTE, ALTER ROUTINE or CREATE ROUTINE on the database, granted directly).";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";
@@ -2917,7 +2920,7 @@
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.";
 
 /* rename database: a trigger, by name and table; listed among the objects that block the rename */
-"trigger '%@' on table '%@'" = "trigger '%@' on table '%@'";
+"trigger '%@' on table '%@'" = "trigger '%1$@' on table '%2$@'";
 
 /* rename database: the server reported no error message */
 "unknown error" = "unknown error";
