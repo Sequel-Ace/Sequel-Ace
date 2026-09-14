@@ -143,8 +143,8 @@
 /* rename database refused because the source holds triggers, routines or events; %@ lists them */
 "The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "The database contains objects that Rename Database cannot move: %@. Nothing was changed.";
 
-/* rename database refused because GRANTs on the source's tables or views would be lost; %@ lists them as `table` for 'user'@'host' */
-"The database has privileges granted on its tables or views (%@), which Rename Database cannot move. Nothing was changed." = "The database has privileges granted on its tables or views (%@), which Rename Database cannot move. Nothing was changed.";
+/* rename database refused because GRANTs on the source database or its tables or views would be lost; %@ lists them as `db`.* or `table` for 'user'@'host' */
+"The database has privileges granted on it, its tables or its views (%@), which Rename Database cannot move. Nothing was changed." = "The database has privileges granted on it, its tables or its views (%@), which Rename Database cannot move. Nothing was changed.";
 
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
@@ -569,7 +569,7 @@
 "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the privileges granted on the database's tables and views (it needs SELECT on mysql.tables_priv, or global SELECT)." = "this account cannot list the privileges granted on the database's tables and views (it needs SELECT on mysql.tables_priv, or global SELECT).";
+"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db and mysql.tables_priv, or global SELECT)." = "this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db and mysql.tables_priv, or global SELECT).";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";

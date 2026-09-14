@@ -207,7 +207,7 @@ import Foundation
         if !objectPrivileges.isEmpty {
             let shown = objectPrivileges.prefix(5) + (objectPrivileges.count > 5 ? ["…"] : [])
             return String(
-                format: NSLocalizedString("The database has privileges granted on its tables or views (%@), which Rename Database cannot move. Nothing was changed.", comment: "rename database refused because GRANTs on the source's tables or views would be lost; %@ lists them as `table` for 'user'@'host'"),
+                format: NSLocalizedString("The database has privileges granted on it, its tables or its views (%@), which Rename Database cannot move. Nothing was changed.", comment: "rename database refused because GRANTs on the source database or its tables or views would be lost; %@ lists them as `db`.* or `table` for 'user'@'host'"),
                 shown.joined(separator: ", ")
             )
         }
@@ -935,16 +935,19 @@ import Foundation
         // the bytes of the view's name: the server keeps names apart that
         // Swift's String would fold (NFC and NFD `café`).
         var settings: [(set: String, restore: String)] = []
+        // the session's collation, once a view has been created under another
+        var collationToRestore: String?
         func restoreSettings() {
-            if !settings.isEmpty {
-                _ = run("SET " + settings.map(\.restore).joined(separator: ", "))
+            let restores = settings.map(\.restore) + (collationToRestore.map { ["collation_connection = \(quote($0))"] } ?? [])
+            if !restores.isEmpty {
+                _ = run("SET " + restores.joined(separator: ", "))
             }
         }
         var session: SessionSettings?
         var definitions: [[UInt8]: ViewDefinition] = [:]
         let rewriter = SADatabaseRenameViewRewriter(sourceDatabase: source, targetDatabase: target, caseInsensitiveNames: plan.caseInsensitiveNames, serverLoweredSource: serverLoweredSource)
         if !plan.views.isEmpty {
-            let sessionResult = run("SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create")
+            let sessionResult = run("SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create, CONNECTION_ID()")
             guard let current = SessionSettings(row: sessionResult.rows?.first) else {
                 plan.recordInspectionFailure(sessionResult.error)
                 return plan.failureDescription
@@ -1032,30 +1035,41 @@ import Foundation
             }
             defaultDatabaseSwitched = true
 
+            // each view sets the collation it needs; the session's comes
+            // back once, with the other settings, after the last one
+            collationToRestore = session.collation
             while let view = queue.next {
                 let outcome = recreate(view, definition: definitions[Array(view.utf8)], quotedTarget: quotedTarget, session: session)
                 queue.record(view, created: outcome == nil, reason: outcome)
             }
-
-            // A connection that was re-established meanwhile came back with
-            // the framework's own idea of the default database and without
-            // the settings above, so a view may have been created against
-            // the source, or under another sql_mode. Then the source stays.
-            // the name comes back the way the server keeps it: lowercased where
-            // it folds case (lower_case_table_names = 1), as given otherwise
-            let expectedMode = Self.sqlMode(forViewDefinitions: session.sqlMode)
-            let check = run("SELECT DATABASE(), @@sql_mode").rows?.first ?? []
-            let selected = check.count >= 2 ? Self.text(check[0]) ?? "" : ""
-            let targetSelected = selected.utf8.elementsEqual(target.utf8)
-                || (plan.caseInsensitiveNames && serverLoweredTarget != nil && selected.utf8.elementsEqual(serverLoweredTarget!.utf8))
-                || (plan.caseInsensitiveNames && SADatabaseRenameViewRewriter.asciiLowercased(Array(selected.utf8)) == SADatabaseRenameViewRewriter.asciiLowercased(Array(target.utf8)))
-            let sessionIntact = check.count >= 2 && targetSelected && Self.text(check[1]) == expectedMode
             restoreSettings()
             if let stuckView = queue.stuckView {
                 restoreDefaultDatabase()
                 _ = plan.recordMove(of: stuckView, kind: .view, succeeded: false, reason: queue.stuckReason)
                 return plan.failureDescription
             }
+
+            // The session is checked before the source may be dropped. A
+            // connection that was re-established meanwhile is another
+            // server session: the framework brings it back on its own idea
+            // of the default database and with the server's default
+            // sql_mode, so a view may have been created against the source
+            // or under another sql_mode or collation - and since the
+            // framework re-selects the database and the restore above
+            // resets the settings, neither would show; CONNECTION_ID() does.
+            // A restore that did not take (the server refused it, say) would
+            // leave the session as the views needed it. Either way the
+            // source stays. The name comes back the way the server keeps
+            // it: lowercased where it folds case (lower_case_table_names =
+            // 1), as given otherwise.
+            let check = run("SELECT DATABASE(), @@sql_mode, @@collation_connection, CONNECTION_ID()").rows?.first ?? []
+            let selected = check.count >= 4 ? Self.text(check[0]) ?? "" : ""
+            let targetSelected = selected.utf8.elementsEqual(target.utf8)
+                || (plan.caseInsensitiveNames && serverLoweredTarget != nil && selected.utf8.elementsEqual(serverLoweredTarget!.utf8))
+                || (plan.caseInsensitiveNames && SADatabaseRenameViewRewriter.asciiLowercased(Array(selected.utf8)) == SADatabaseRenameViewRewriter.asciiLowercased(Array(target.utf8)))
+            let sessionIntact = check.count >= 4 && targetSelected
+                && Self.text(check[1]) == session.sqlMode && Self.text(check[2]) == session.collation
+                && Self.text(check[3]) == session.connectionID
             if !sessionIntact {
                 restoreDefaultDatabase()
                 _ = plan.recordMove(of: plan.views[plan.views.count - 1], kind: .view, succeeded: false, reason: NSLocalizedString("the connection was re-established while the views were recreated, so they may still point at the old database.", comment: "rename database: why the views are not trusted and the source is kept"))
@@ -1110,30 +1124,46 @@ import Foundation
         return rows
     }
 
-    /// The privileges granted on the source's tables and views, each as
-    /// `` `table` for 'user'@'host' ``, or an empty list with
-    /// `inspectionError` set when they cannot be listed completely.
+    /// The privileges granted on the source database, its tables and views,
+    /// each as `` `pattern`.* for 'user'@'host' `` or `` `table` for
+    /// 'user'@'host' ``, or an empty list with `inspectionError` set when
+    /// they cannot be listed completely.
     ///
-    /// `RENAME TABLE` does not carry such grants across databases and a
-    /// recreated view has none, so a database holding any is refused. They
-    /// are read from `mysql.tables_priv` and `mysql.columns_priv`, which
-    /// list every grant where readable; otherwise `information_schema`'s
-    /// `TABLE_PRIVILEGES` and `COLUMN_PRIVILEGES` stand in, which show every
-    /// account's grants only to a global SELECT that no partial revoke
-    /// limits. Anything else fails closed.
+    /// A grant on the database stays with the old name, `RENAME TABLE` does
+    /// not carry grants on tables across databases and a recreated view has
+    /// none, so a database holding any is refused. They are read from
+    /// `mysql.db`, `mysql.tables_priv` and `mysql.columns_priv`, which list
+    /// every grant where readable; otherwise `information_schema`'s
+    /// `SCHEMA_PRIVILEGES`, `TABLE_PRIVILEGES` and `COLUMN_PRIVILEGES` stand
+    /// in, which show every account's grants only to a global SELECT that no
+    /// partial revoke limits. Anything else fails closed. A grant on a
+    /// database names a pattern (`shop%` covers `shop`), so the source is
+    /// matched against it with `LIKE`, the way the server does.
     private func objectPrivilegeDescriptions(schema: String, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
         guard inspectionError == nil else { return [] }
+        let patternMatch = Self.schemaPatternMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         let match = Self.schemaMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        let databases = run("SELECT Db, User, Host FROM mysql.db WHERE \(patternMatch) ORDER BY Db, User, Host")
         let tables = run("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE \(match) ORDER BY Table_name, User, Host")
         let columns = run("SELECT Table_name, User, Host FROM mysql.columns_priv WHERE \(match) ORDER BY Table_name, User, Host")
-        if let tableRows = tables.rows, let columnRows = columns.rows {
-            return Self.grantDescriptions(tableRows + columnRows) { row in
+        if let databaseRows = databases.rows, let tableRows = tables.rows, let columnRows = columns.rows {
+            let onDatabase = Self.grantDescriptions(databaseRows) { row in
+                guard row.count >= 3, let pattern = Self.text(row[0]), let user = Self.text(row[1]), let host = Self.text(row[2]) else { return nil }
+                return "`\(pattern)`.* for '\(user)'@'\(host)'"
+            }
+            return onDatabase + Self.grantDescriptions(tableRows + columnRows) { row in
                 guard row.count >= 3, let table = Self.text(row[0]), let user = Self.text(row[1]), let host = Self.text(row[2]) else { return nil }
                 return "`\(table)` for '\(user)'@'\(host)'"
             }
         }
-        if let reason = Self.reasonGlobalSelectDoesNotCoverEverything(globalVisibilityForInspection(), otherwise: NSLocalizedString("this account cannot list the privileges granted on the database's tables and views (it needs SELECT on mysql.tables_priv, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")) {
+        if let reason = Self.reasonGlobalSelectDoesNotCoverEverything(globalVisibilityForInspection(), otherwise: NSLocalizedString("this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db and mysql.tables_priv, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")) {
             inspectionError = reason
+            return []
+        }
+        let schemaPatternMatch = Self.schemaPatternMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        let schemas = run("SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE \(schemaPatternMatch) ORDER BY TABLE_SCHEMA, GRANTEE")
+        guard let schemaRows = schemas.rows else {
+            inspectionError = schemas.error
             return []
         }
         let schemaMatch = Self.schemaMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
@@ -1146,7 +1176,11 @@ import Foundation
             }
             rows += found
         }
-        return Self.grantDescriptions(rows) { row in
+        let onDatabase = Self.grantDescriptions(schemaRows) { row in
+            guard row.count >= 2, let pattern = Self.text(row[0]), let grantee = Self.text(row[1]) else { return nil }
+            return "`\(pattern)`.* for \(grantee)"
+        }
+        return onDatabase + Self.grantDescriptions(rows) { row in
             guard row.count >= 2, let table = Self.text(row[0]), let grantee = Self.text(row[1]) else { return nil }
             return "`\(table)` for \(grantee)"
         }
@@ -1227,6 +1261,14 @@ import Foundation
         caseInsensitiveNames ? "LOWER(\(column)) = LOWER(\(schema))" : "\(column) = \(schema)"
     }
 
+    /// The condition under which the grant pattern in a schema-name column
+    /// (`mysql.db`, `SCHEMA_PRIVILEGES`) covers the source: the source is
+    /// the value, the column the `LIKE` pattern, as the server applies such
+    /// grants; both are folded where the server folds the case of names.
+    private static func schemaPatternMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
+        caseInsensitiveNames ? "LOWER(\(schema)) LIKE LOWER(\(column))" : "\(schema) LIKE \(column)"
+    }
+
     /// One view's definition, rewritten for the target, with the source
     /// objects it reads from and the collation it was created under.
     private struct ViewDefinition {
@@ -1292,22 +1334,26 @@ import Foundation
     }
 
     /// The session variables that decide how the server prints and reads a
-    /// view definition, as they were before the views are recreated.
+    /// view definition, as they were before the views are recreated, and
+    /// the server's id of the session they were read on.
     private struct SessionSettings {
         let sqlMode: String
         let collation: String
         let quoteShowCreate: String
+        /// `CONNECTION_ID()`: another value later means a re-established connection
+        let connectionID: String
 
-        /// Fails unless the row holds all three values.
+        /// Fails unless the row holds all four values.
         init?(row: [Any]?) {
-            guard let row, row.count >= 3,
+            guard let row, row.count >= 4,
                   let sqlMode = SADatabaseRenameExecutor.text(row[0]), let collation = SADatabaseRenameExecutor.text(row[1]),
-                  let quoteShowCreate = SADatabaseRenameExecutor.text(row[2]) else {
+                  let quoteShowCreate = SADatabaseRenameExecutor.text(row[2]), let connectionID = SADatabaseRenameExecutor.text(row[3]) else {
                 return nil
             }
             self.sqlMode = sqlMode
             self.collation = collation
             self.quoteShowCreate = quoteShowCreate
+            self.connectionID = connectionID
         }
     }
 
@@ -1376,10 +1422,13 @@ import Foundation
     /// through another character set were refused up front). The statement
     /// runs under the `collation_connection` the view was created with,
     /// which `SHOW CREATE VIEW` reports, so string comparisons in its
-    /// definition keep their semantics; the session's collation is restored
-    /// afterwards. `character_set_client` is left alone on purpose: it tells
-    /// the server how to read the bytes the connection sends, and those are
-    /// UTF-8.
+    /// definition keep their semantics. That collation is set before every
+    /// view, the session's own included: what the connection is on after the
+    /// view before is never assumed, and a `SET` the server refuses fails
+    /// the view instead of leaving it under the previous one. The caller
+    /// restores the session's collation once after the last view.
+    /// `character_set_client` is left alone on purpose: it tells the server
+    /// how to read the bytes the connection sends, and those are UTF-8.
     ///
     /// A created view is opened once before it counts: the server checks the
     /// creator's privileges when it runs `CREATE VIEW`, but the definer's -
@@ -1391,15 +1440,10 @@ import Foundation
             return SADatabaseRenamePlan.unknownReason
         }
 
-        let viewCollation = (definition.collation != nil && definition.collation != session.collation) ? definition.collation : nil
-        if let viewCollation, let error = run("SET collation_connection = \(quote(viewCollation))").error {
+        if let error = run("SET collation_connection = \(quote(definition.collation ?? session.collation))").error {
             return error
         }
-        let created = run(definition.statement)
-        if viewCollation != nil {
-            _ = run("SET collation_connection = \(quote(session.collation))")
-        }
-        if let error = created.error {
+        if let error = run(definition.statement).error {
             return error
         }
 

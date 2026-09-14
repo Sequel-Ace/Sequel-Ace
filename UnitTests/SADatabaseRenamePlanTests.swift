@@ -112,13 +112,13 @@ final class SADatabaseRenamePlanTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(definition.failureDescription), "The definition of the view 'order_totals' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.")
     }
 
-    /// Verifies privileges granted on the source's objects refuse the rename,
-    /// naming at most five of them.
+    /// Verifies privileges granted on the source or its objects refuse the
+    /// rename, naming at most five of them.
     func testObjectPrivilegesRefuseTheRename() throws {
         let plan = makePlan()
-        plan.recordObjectPrivileges(["`orders` for 'app'@'%'"])
+        plan.recordObjectPrivileges(["`shop%`.* for 'app'@'%'", "`orders` for 'app'@'%'"])
         XCTAssertFalse(plan.canStart)
-        XCTAssertEqual(try XCTUnwrap(plan.failureDescription), "The database has privileges granted on its tables or views (`orders` for 'app'@'%'), which Rename Database cannot move. Nothing was changed.")
+        XCTAssertEqual(try XCTUnwrap(plan.failureDescription), "The database has privileges granted on it, its tables or its views (`shop%`.* for 'app'@'%', `orders` for 'app'@'%'), which Rename Database cannot move. Nothing was changed.")
 
         let many = makePlan()
         many.recordObjectPrivileges((1...6).map { "`t\($0)` for 'u'@'%'" })
@@ -422,7 +422,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     private let showCreateViewPrefix = "SHOW CREATE VIEW `shop`."
 
-    private let sessionQuery = "SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create"
+    private let sessionQuery = "SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create, CONNECTION_ID()"
+
+    private let checkQuery = "SELECT DATABASE(), @@sql_mode, @@collation_connection, CONNECTION_ID()"
 
     private let viewsQuery = "SELECT TABLE_NAME, CHARACTER_SET_CLIENT, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS WHERE TABLE_SCHEMA = 'shop'"
 
@@ -442,9 +444,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         // the server's own folded forms of source and target, asked for where it folds case
         server.respond(to: "SELECT LOWER('shop'), LOWER('store')", rows: [["shop", "store"]])
         server.respond(to: viewsQuery, rows: tables.filter { ($0[1] as? String)?.uppercased() == "VIEW" }.map { [$0[0], viewCharacterSet, hex("select 1 AS `n`")] })
-        server.respond(to: sessionQuery, rows: [[sqlMode, collation, quoteShowCreate]])
-        // the session as the executor left it: the target selected, the parsing modes off
-        server.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["store", SADatabaseRenameExecutor.sqlMode(forViewDefinitions: sqlMode)]])
+        server.respond(to: sessionQuery, rows: [[sqlMode, collation, quoteShowCreate, "42"]])
+        // the session as the executor leaves it: the target selected, the settings restored, the same connection
+        server.respond(to: checkQuery, rows: [["store", sqlMode, collation, "42"]])
         server.respond(to: showCreateViewPrefix + "`totals`", rows: [["totals", totalsDefinition, viewCharacterSet, viewCollation]])
         return server
     }
@@ -465,23 +467,25 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
     /// defaults, every table renamed, every view recreated in the target as
     /// the default database, under the session's sql_mode minus the modes
     /// that misread the printed definition and under the collation the view
-    /// was created with (all restored), then the source dropped. The client
+    /// was created with (all restored together after the last view), then
+    /// the source dropped once the session proves restored. The client
     /// character set is never changed - it describes the connection's own
     /// encoding, not the view's.
     func testRenamesTablesRecreatesViewsAndDropsTheSource() {
         let server = makeServer()
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: "utf8mb4", collation: "utf8mb4_general_ci"))
 
-        let inspection = server.statements.prefix(9)
-        XCTAssertEqual(inspection.count, 9)
+        let inspection = server.statements.prefix(10)
+        XCTAssertEqual(inspection.count, 10)
         XCTAssertTrue(inspection.allSatisfy { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }, inspection.joined(separator: "\n"))
         XCTAssertEqual(inspection.filter { $0.contains("information_schema.") && $0.contains("_SCHEMA = 'shop'") }.count, 3, inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT name, type FROM mysql.proc WHERE LOWER(db) = LOWER('shop') ORDER BY name"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT LOWER('shop'), LOWER('store')"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SHOW EVENTS FROM `shop`"), inspection.joined(separator: "\n"))
+        XCTAssertTrue(inspection.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ORDER BY Db, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE LOWER(Db) = LOWER('shop') ORDER BY Table_name, User, Host"), inspection.joined(separator: "\n"))
         XCTAssertTrue(inspection.contains("SELECT Table_name, User, Host FROM mysql.columns_priv WHERE LOWER(Db) = LOWER('shop') ORDER BY Table_name, User, Host"), inspection.joined(separator: "\n"))
-        XCTAssertEqual(Array(server.statements.dropFirst(9)), [
+        XCTAssertEqual(Array(server.statements.dropFirst(10)), [
             sessionQuery,
             "SET sql_mode = 'STRICT_TRANS_TABLES'",
             "SHOW CREATE VIEW `shop`.`totals`",
@@ -490,44 +494,71 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             "USE `store`",
             "SET collation_connection = 'utf8mb4_general_ci'",
             "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `store`.`totals` AS select sum(`store`.`orders`.`total`) AS `t` from `store`.`orders`",
-            "SET collation_connection = 'utf8mb4_0900_ai_ci'",
             "SELECT 1 FROM `store`.`totals` LIMIT 0",
-            "SELECT DATABASE(), @@sql_mode",
-            "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'",
+            "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', collation_connection = 'utf8mb4_0900_ai_ci'",
+            checkQuery,
             "DROP DATABASE `shop`"
         ])
         XCTAssertFalse(server.statements.contains { $0.hasPrefix("SET ") && $0.contains("character_set_client") })
     }
 
     /// Verifies the source is kept when the session turns out not to be the
-    /// one set up for the views - a connection re-established meanwhile
-    /// comes back on the framework's default database and without the
-    /// sql_mode - since a view may then have been created against the source.
+    /// one set up for the views - a connection re-established meanwhile is
+    /// another server session (CONNECTION_ID), which the framework brings
+    /// back on its own default database with the server's default sql_mode,
+    /// and a restore the server refused leaves sql_mode or the collation as
+    /// the views needed them - since a view may then have been created
+    /// against the source or the connection is not what the caller expects.
     func testSourceIsKeptWhenTheSessionWasReestablished() throws {
         let server = makeServer()
-        server.responses.removeAll { $0.matches("SELECT DATABASE(), @@sql_mode") }
-        server.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["shop", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES"]])
+        server.responses.removeAll { $0.matches(checkQuery) }
+        server.respond(to: checkQuery, rows: [["shop", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "42"]])
         let description = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(description.contains("Moving view 'totals' failed: the connection was re-established while the views were recreated, so they may still point at the old database. The objects moved so far are in 'store'; 'shop' was not dropped."), description)
         XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP") })
         XCTAssertEqual(server.statements.last, "USE `shop`")
 
+        // a reconnect that ends up on the target with the settings restored
+        // (the framework re-selects the database, the restore resets the
+        // rest) still shows as another connection
+        let reconnected = makeServer()
+        reconnected.responses.removeAll { $0.matches(checkQuery) }
+        reconnected.respond(to: checkQuery, rows: [["store", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "43"]])
+        let reason = try XCTUnwrap(reconnected.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(reason.contains("Moving view 'totals' failed: the connection was re-established while the views were recreated, so they may still point at the old database."), reason)
+        XCTAssertFalse(reconnected.statements.contains { $0.hasPrefix("DROP") }, reconnected.statements.joined(separator: "\n"))
+        XCTAssertEqual(reconnected.statements.last, "USE `shop`")
+
         let intact = makeServer()
-        intact.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["store", "STRICT_TRANS_TABLES"]])
+        intact.responses.removeAll { $0.matches(checkQuery) }
+        intact.respond(to: checkQuery, rows: [["store", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "42"]])
         XCTAssertNil(intact.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertEqual(intact.statements.last, "DROP DATABASE `shop`")
+
+        // the restore is checked as well: sql_mode or collation still as
+        // set for the views means it did not take
+        for unrestored in [["store", "STRICT_TRANS_TABLES", "utf8mb4_0900_ai_ci", "42"], ["store", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_general_ci", "42"]] {
+            let refused = makeServer()
+            refused.fail("SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', collation_connection = 'utf8mb4_0900_ai_ci'", with: "Unknown collation")
+            refused.responses.removeAll { $0.matches(checkQuery) }
+            refused.respond(to: checkQuery, rows: [unrestored])
+            let reason = try XCTUnwrap(refused.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+            XCTAssertTrue(reason.contains("the connection was re-established while the views were recreated"), reason)
+            XCTAssertFalse(refused.statements.contains { $0.hasPrefix("DROP") }, refused.statements.joined(separator: "\n"))
+            XCTAssertEqual(refused.statements.last, "USE `shop`")
+        }
 
         // a server that folds case (lower_case_table_names = 1) reports the
         // selected database lowercased; one that keeps case must match exactly
         let folded = makeServer(lowerCaseTableNames: "1")
-        folded.responses.removeAll { $0.matches("SELECT DATABASE(), @@sql_mode") }
-        folded.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["mixedname", "STRICT_TRANS_TABLES"]])
+        folded.responses.removeAll { $0.matches(checkQuery) }
+        folded.respond(to: checkQuery, rows: [["mixedname", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "42"]])
         XCTAssertNil(folded.executor.rename("shop", to: "MixedName", encoding: nil, collation: nil))
         XCTAssertEqual(folded.statements.last, "DROP DATABASE `shop`")
 
         let exact = makeServer(lowerCaseTableNames: "0")
-        exact.responses.removeAll { $0.matches("SELECT DATABASE(), @@sql_mode") }
-        exact.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["mixedname", "STRICT_TRANS_TABLES"]])
+        exact.responses.removeAll { $0.matches(checkQuery) }
+        exact.respond(to: checkQuery, rows: [["mixedname", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "42"]])
         XCTAssertNotNil(exact.executor.rename("shop", to: "MixedName", encoding: nil, collation: nil))
         XCTAssertFalse(exact.statements.contains { $0.hasPrefix("DROP") })
 
@@ -535,8 +566,8 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         // the target, read up front, is accepted as the selected database
         let accented = makeServer(lowerCaseTableNames: "2")
         accented.respond(to: "SELECT LOWER('shop'), LOWER('\u{00C0}bc')", rows: [["shop", "\u{00E0}bc"]])
-        accented.responses.removeAll { $0.matches("SELECT DATABASE(), @@sql_mode") }
-        accented.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["\u{00E0}bc", "STRICT_TRANS_TABLES"]])
+        accented.responses.removeAll { $0.matches(checkQuery) }
+        accented.respond(to: checkQuery, rows: [["\u{00E0}bc", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "42"]])
         XCTAssertNil(accented.executor.rename("shop", to: "\u{00C0}bc", encoding: nil, collation: nil))
         XCTAssertEqual(accented.statements.last, "DROP DATABASE `shop`")
     }
@@ -623,9 +654,16 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
         let incomplete = makeServer()
         incomplete.responses.removeAll { $0.matches(sessionQuery) }
-        incomplete.respond(to: sessionQuery, rows: [["STRICT_TRANS_TABLES", NSNull(), "1"]])
+        incomplete.respond(to: sessionQuery, rows: [["STRICT_TRANS_TABLES", NSNull(), "1", "42"]])
         XCTAssertNotNil(incomplete.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertFalse(incomplete.statements.contains(where: untouched))
+
+        // the connection id is required as well: without it a reconnect could not be told
+        let unidentified = makeServer()
+        unidentified.responses.removeAll { $0.matches(sessionQuery) }
+        unidentified.respond(to: sessionQuery, rows: [["STRICT_TRANS_TABLES", "utf8mb4_0900_ai_ci", "1"]])
+        XCTAssertNotNil(unidentified.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertFalse(unidentified.statements.contains(where: untouched))
 
         let unsettable = makeServer(quoteShowCreate: "0")
         unsettable.fail("SET sql_mode = 'STRICT_TRANS_TABLES', sql_quote_show_create = 1", with: "Variable 'sql_quote_show_create' is read only")
@@ -647,37 +685,50 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertTrue(onlyInspected(latin1), latin1.statements.joined(separator: "\n"))
 
         let utf8mb3 = makeServer(viewCharacterSet: "utf8mb3", viewCollation: "utf8mb3_general_ci")
-        utf8mb3.responses.removeAll { $0.matches("SELECT DATABASE(), @@sql_mode") }
-        utf8mb3.respond(to: "SELECT DATABASE(), @@sql_mode", rows: [["目标", "STRICT_TRANS_TABLES"]])
+        utf8mb3.responses.removeAll { $0.matches(checkQuery) }
+        utf8mb3.respond(to: checkQuery, rows: [["目标", "STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "utf8mb4_0900_ai_ci", "42"]])
         XCTAssertNil(utf8mb3.executor.rename("shop", to: "目标", encoding: nil, collation: nil))
         XCTAssertTrue(utf8mb3.statements.contains("SET collation_connection = 'utf8mb3_general_ci'"), utf8mb3.statements.joined(separator: "\n"))
         XCTAssertEqual(utf8mb3.statements.last, "DROP DATABASE `shop`")
     }
 
-    /// Verifies neither sql_mode nor collation is set when the session
-    /// already parses the printed definition as the server prints it and
-    /// uses the view's collation.
-    func testSessionIsLeftAloneWhenItAlreadyMatches() {
+    /// Verifies sql_mode is left alone when the session already parses the
+    /// printed definition as the server prints it, while the collation is
+    /// set before every view even when it is the session's own - what the
+    /// connection is on is never assumed - and restored once after the last.
+    func testCollationIsSetForEveryViewWhileAMatchingSQLModeIsLeftAlone() throws {
         let server = makeServer(sqlMode: "STRICT_TRANS_TABLES", collation: "utf8mb4_general_ci")
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertFalse(server.statements.contains { $0.hasPrefix("SET sql_mode") || $0.hasPrefix("SET collation_connection") }, server.statements.joined(separator: "\n"))
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("SET sql_mode") }, server.statements.joined(separator: "\n"))
+        XCTAssertEqual(server.statements.filter { $0.hasPrefix("SET ") }, ["SET collation_connection = 'utf8mb4_general_ci'", "SET collation_connection = 'utf8mb4_general_ci'"], server.statements.joined(separator: "\n"))
+        let create = try XCTUnwrap(server.statements.firstIndex { $0.hasPrefix("CREATE ALGORITHM") })
+        XCTAssertEqual(server.statements[create - 1], "SET collation_connection = 'utf8mb4_general_ci'")
+        XCTAssertEqual(server.statements.suffix(3), ["SET collation_connection = 'utf8mb4_general_ci'", checkQuery, "DROP DATABASE `shop`"])
+
+        // a SET the server refuses fails the view instead of creating it under another collation
+        let refused = makeServer()
+        refused.fail("SET collation_connection = 'utf8mb4_general_ci'", with: "Unknown collation: 'utf8mb4_general_ci'")
+        let description = try XCTUnwrap(refused.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(description.contains("Moving view 'totals' failed: Unknown collation: 'utf8mb4_general_ci'"), description)
+        XCTAssertFalse(refused.statements.contains { $0.hasPrefix("CREATE ALGORITHM") || $0.hasPrefix("DROP") }, refused.statements.joined(separator: "\n"))
+        XCTAssertEqual(refused.statements.last, "USE `shop`")
     }
 
     /// Verifies identifier quoting is switched on before the first SHOW
     /// CREATE VIEW when the session has it off, together with the sql_mode,
-    /// and both are switched back after the last view - also when a view
-    /// could not be recreated, in which case the default database returns
-    /// to the source as well.
+    /// and both are switched back after the last view in one statement with
+    /// the session's collation - also when a view could not be recreated, in
+    /// which case the default database returns to the source as well.
     func testIdentifierQuotingIsForcedForShowCreateViewAndRestored() {
         let server = makeServer(quoteShowCreate: "0")
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertEqual(statements(of: server, from: sessionQuery).prefix(3).map { $0 }, [sessionQuery, "SET sql_mode = 'STRICT_TRANS_TABLES', sql_quote_show_create = 1", "SHOW CREATE VIEW `shop`.`totals`"])
-        XCTAssertEqual(server.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0", "DROP DATABASE `shop`"])
+        XCTAssertEqual(server.statements.suffix(3), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", checkQuery, "DROP DATABASE `shop`"])
 
         let failing = makeServer(quoteShowCreate: "0")
         failing.fail("CREATE ALGORITHM", with: "Access denied")
         XCTAssertNotNil(failing.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(failing.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0", "USE `shop`"])
+        XCTAssertEqual(failing.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", "USE `shop`"])
     }
 
     /// Verifies the three UTF-8 character sets, in any case, are the ones a
@@ -705,7 +756,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
     func testCreatesWithoutDefaultsAndSkipsViewHandlingWithoutViews() {
         let server = makeServer(tables: [["a", "BASE TABLE"], ["b", "BASE TABLE"]])
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: ""))
-        XCTAssertEqual(Array(server.statements.dropFirst(9)), [
+        XCTAssertEqual(Array(server.statements.dropFirst(10)), [
             "CREATE DATABASE `store`",
             "RENAME TABLE `shop`.`a` TO `store`.`a`",
             "RENAME TABLE `shop`.`b` TO `store`.`b`",
@@ -784,7 +835,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let refused = try XCTUnwrap(mysql8.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(refused.contains("procedure 'cleanup'"), refused)
         XCTAssertTrue(onlyInspected(mysql8), mysql8.statements.joined(separator: "\n"))
-        XCTAssertFalse(mysql8.statements.contains { $0.contains("SCHEMA_PRIVILEGES") }, "schema-level grants are not consulted")
+        XCTAssertFalse(mysql8.statements.contains { $0.contains("SCHEMA_PRIVILEGES") }, "schema-level grants say nothing about which routines the server shows")
 
         // a global SELECT counts unless partial revokes are on; a server
         // without the variable (MariaDB, MySQL up to 5.7) has none
@@ -848,24 +899,37 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertNil(exact.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(exact.statements.contains("SELECT name, type FROM mysql.proc WHERE db = 'shop' ORDER BY name"), exact.statements.joined(separator: "\n"))
         XCTAssertFalse(exact.statements.contains { $0.hasPrefix("SELECT LOWER(") }, exact.statements.joined(separator: "\n"))
-        XCTAssertEqual(exact.statements.prefix(8).filter { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }.count, 8)
+        XCTAssertEqual(exact.statements.prefix(9).filter { $0.hasPrefix("SELECT ") || $0.hasPrefix("SHOW EVENTS ") }.count, 9)
     }
 
-    /// Verifies privileges granted on the source's tables or views - which
-    /// neither RENAME TABLE nor a recreated view carries along - refuse the
-    /// rename before anything moves, naming table and account (five at most);
-    /// they come from mysql.tables_priv and mysql.columns_priv, or from
-    /// information_schema for a global SELECT that no partial revoke limits,
-    /// and anything else refuses the rename as well.
+    /// Verifies privileges granted on the source database or its tables or
+    /// views - a database grant stays with the old name, and neither RENAME
+    /// TABLE nor a recreated view carries a table grant along - refuse the
+    /// rename before anything moves, naming grant and account (five at
+    /// most); they come from mysql.db (whose Db column is a pattern the
+    /// source is matched against, as the server does), mysql.tables_priv and
+    /// mysql.columns_priv, or from information_schema for a global SELECT
+    /// that no partial revoke limits, and anything else refuses the rename
+    /// as well.
     func testPrivilegesGrantedOnTablesOrViewsRefuseTheRename() throws {
+        let databasePriv = "SELECT Db, User, Host FROM mysql.db"
         let tablesPriv = "SELECT Table_name, User, Host FROM mysql.tables_priv"
         let columnsPriv = "SELECT Table_name, User, Host FROM mysql.columns_priv"
 
         let granted = makeServer()
+        granted.respond(to: databasePriv, rows: [["shop", "app", "%"]])
         granted.respond(to: tablesPriv, rows: [["orders", "app", "%"], ["orders", "app", "%"], ["customer_totals", "reader", "localhost"]])
         let description = try XCTUnwrap(granted.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertTrue(description.contains("The database has privileges granted on its tables or views (`orders` for 'app'@'%', `customer_totals` for 'reader'@'localhost'), which Rename Database cannot move. Nothing was changed."), description)
+        XCTAssertTrue(description.contains("The database has privileges granted on it, its tables or its views (`shop`.* for 'app'@'%', `orders` for 'app'@'%', `customer_totals` for 'reader'@'localhost'), which Rename Database cannot move. Nothing was changed."), description)
         XCTAssertTrue(onlyInspected(granted), granted.statements.joined(separator: "\n"))
+
+        // a grant on the database names a pattern; the source is the value it is matched against
+        let pattern = makeServer()
+        pattern.respond(to: databasePriv, rows: [["shop%", "app", "%"]])
+        let patternDescription = try XCTUnwrap(pattern.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(patternDescription.contains("(`shop%`.* for 'app'@'%')"), patternDescription)
+        XCTAssertTrue(pattern.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE LOWER('shop') LIKE LOWER(Db) ORDER BY Db, User, Host"), pattern.statements.joined(separator: "\n"))
+        XCTAssertTrue(onlyInspected(pattern), pattern.statements.joined(separator: "\n"))
 
         let columns = makeServer()
         columns.respond(to: columnsPriv, rows: [["orders", "reader", "localhost"]])
@@ -883,25 +947,29 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         viaSchema.fail(tablesPriv, with: "SELECT command denied to user for table 'tables_priv'")
         viaSchema.respond(to: privilegesQuery, rows: [["SELECT"]])
         viaSchema.respond(to: "SELECT @@partial_revokes", rows: [["OFF"]])
+        viaSchema.respond(to: "SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE LOWER('shop') LIKE LOWER(TABLE_SCHEMA) ORDER BY TABLE_SCHEMA, GRANTEE", rows: [["shop%", "'app'@'%'"]])
         viaSchema.respond(to: "SELECT TABLE_NAME, GRANTEE FROM information_schema.TABLE_PRIVILEGES WHERE LOWER(TABLE_SCHEMA) = LOWER('shop')", rows: [["orders", "'app'@'%'"]])
         let schemaDescription = try XCTUnwrap(viaSchema.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertTrue(schemaDescription.contains("(`orders` for 'app'@'%')"), schemaDescription)
+        XCTAssertTrue(schemaDescription.contains("(`shop%`.* for 'app'@'%', `orders` for 'app'@'%')"), schemaDescription)
         XCTAssertTrue(viaSchema.statements.contains { $0.hasPrefix("SELECT TABLE_NAME, GRANTEE FROM information_schema.COLUMN_PRIVILEGES") }, viaSchema.statements.joined(separator: "\n"))
 
-        // SHOW_ROUTINE says nothing about grants; a partial revoke may hide them from a global SELECT
-        for privileges in [[["SHOW_ROUTINE"]], [["SELECT"]]] {
+        // mysql.db alone being unreadable takes the same way, and without a
+        // global SELECT refuses; SHOW_ROUTINE says nothing about grants, and a
+        // partial revoke may hide them from a global SELECT
+        for (unreadable, privileges) in [(databasePriv, [["SELECT"]]), (tablesPriv, [["SHOW_ROUTINE"]]), (tablesPriv, [["SELECT"]])] {
             let refused = makeServer()
-            refused.fail(tablesPriv, with: "SELECT command denied to user for table 'tables_priv'")
+            refused.fail(unreadable, with: "SELECT command denied to user for table 'db'")
             refused.respond(to: privilegesQuery, rows: privileges)
             refused.respond(to: "SELECT @@partial_revokes", rows: [["ON"]])
             let reason = try XCTUnwrap(refused.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-            XCTAssertTrue(reason.contains("Reading the objects of the database 'shop' failed: this account cannot list the privileges granted on the database's tables and views (it needs SELECT on mysql.tables_priv, or global SELECT). Nothing was changed."), reason)
-            XCTAssertFalse(refused.statements.contains { $0.contains("information_schema.TABLE_PRIVILEGES") }, refused.statements.joined(separator: "\n"))
+            XCTAssertTrue(reason.contains("Reading the objects of the database 'shop' failed: this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db and mysql.tables_priv, or global SELECT). Nothing was changed."), reason)
+            XCTAssertFalse(refused.statements.contains { $0.contains("information_schema.SCHEMA_PRIVILEGES") || $0.contains("information_schema.TABLE_PRIVILEGES") }, refused.statements.joined(separator: "\n"))
         }
 
         // a server that keeps the case of names is matched exactly
         let exact = makeServer(lowerCaseTableNames: "0")
         XCTAssertNil(exact.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(exact.statements.contains("SELECT Db, User, Host FROM mysql.db WHERE 'shop' LIKE Db ORDER BY Db, User, Host"), exact.statements.joined(separator: "\n"))
         XCTAssertTrue(exact.statements.contains("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE Db = 'shop' ORDER BY Table_name, User, Host"), exact.statements.joined(separator: "\n"))
     }
 
@@ -932,9 +1000,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertEqual(server.statements.last, "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'")
     }
 
-    /// Verifies the session's collation and sql_mode are restored even when
-    /// the CREATE VIEW fails, the default database returns to the source, and
-    /// the failure is reported with the server's message.
+    /// Verifies the session's collation and sql_mode are restored together
+    /// even when the CREATE VIEW fails, the default database returns to the
+    /// source, and the failure is reported with the server's message.
     func testSessionIsRestoredAfterFailedCreateView() throws {
         let server = makeServer()
         server.fail("CREATE ALGORITHM", with: "Access denied for CREATE VIEW")
@@ -943,8 +1011,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertEqual(server.statements.filter { $0.hasPrefix("SET ") }, [
             "SET sql_mode = 'STRICT_TRANS_TABLES'",
             "SET collation_connection = 'utf8mb4_general_ci'",
-            "SET collation_connection = 'utf8mb4_0900_ai_ci'",
-            "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'"
+            "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', collation_connection = 'utf8mb4_0900_ai_ci'"
         ])
         XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP") })
         XCTAssertEqual(server.statements.last, "USE `shop`")
