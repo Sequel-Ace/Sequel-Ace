@@ -72,17 +72,15 @@
 {
 	if (![[self delegate] isKindOfClass:[SPWindowController class]]) return;
 
-	id frontDoc = [(SPWindowController *)[self delegate] databaseDocument];
+	SPDatabaseDocument *frontDoc = [(SPWindowController *)[self delegate] databaseDocument];
 
-	if (frontDoc && [frontDoc isKindOfClass:[SPDatabaseDocument class]] && [frontDoc valueForKeyPath:@"spHistoryControllerInstance"] && ![frontDoc isWorking])
-	{
-		// TODO (#2603): private ivar accessed from outside via KVC (upstream sequelpro#2978)
-		if ([event deltaX] == -1.0f) {
-			[[frontDoc valueForKeyPath:@"spHistoryControllerInstance"] valueForKey:@"goForwardInHistory"];
-		}
-		else if ([event deltaX] == 1.0f) {
-			[[frontDoc valueForKeyPath:@"spHistoryControllerInstance"] valueForKey:@"goBackInHistory"];
-		}
+	if (!frontDoc || [frontDoc isWorking]) return;
+
+	if ([event deltaX] == -1.0f) {
+		[frontDoc goForwardInHistory];
+	}
+	else if ([event deltaX] == 1.0f) {
+		[frontDoc goBackInHistory];
 	}
 }
 

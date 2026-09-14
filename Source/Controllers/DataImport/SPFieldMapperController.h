@@ -31,6 +31,8 @@
 @class SPTextView;
 @class SPTableView;
 @class SPTablesList;
+@class SPDataImport;
+@class SPDatabaseData;
 @class SPMySQLConnection;
 
 @interface SPFieldMapperController : NSWindowController <NSTokenFieldCellDelegate, NSMenuDelegate>
@@ -96,7 +98,7 @@
 	id theDelegate;
 	id customQueryInstance;
 	id fieldMappingImportArray;
-	id databaseDataInstance;
+	SPDatabaseData *databaseDataInstance;
 	SPTablesList *tablesListInstance;
 
 	NSMutableArray *fieldMappingArray;
@@ -149,7 +151,7 @@
 @property (copy) NSString* sourcePath;
 @property (copy) NSString *databaseName;
 
-- (instancetype)initWithDelegate:(id)managerDelegate;
+- (instancetype)initWithDelegate:(SPDataImport *)managerDelegate;
 
 - (void)setConnection:(SPMySQLConnection *)theConnection;
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview;

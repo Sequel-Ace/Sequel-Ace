@@ -107,14 +107,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
         [fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
 
-        //Handle Appearance on macOS 10.14+
-        if (@available(macOS 10.14, *)) {
-            //Switch Appearance on Application startup (prevent Appearance blink)
-            [self switchAppearance];
+        //Apply the appearance preference on startup (prevents an appearance blink);
+        //the former @available(macOS 10.14) wrapper was dead code, target is 13.5+
+        [self switchAppearance];
 
-            //Register an observer to switch Appearance at runtime
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
-        }
+        //Register an observer to re-apply it when defaults change at runtime
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
         [NSApp setDelegate:self];
     }
     return self;
@@ -146,21 +144,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 /**
- * Called when need to switch application appearance - on startup and when userDefaults changed
+ * Applies the appearance preference - on startup and when userDefaults change.
+ * NSUserDefaultsDidChangeNotification fires for every defaults write anywhere
+ * in the app, so SAAppearancePreference caches the applied selection and only
+ * pushes real changes to NSApp. (The former @available(10.14) check was dead
+ * code - the deployment target is 13.5.)
  */
 - (void)switchAppearance {
     SPMainQSync(^{
-        if (@available(macOS 10.14, *)) {
-            NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
-
-            if (appearance == 1) {
-                NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-            } else if (appearance == 2) {
-                NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-            } else {
-                NSApp.appearance = nil;
-            }
-        }
+        [SAAppearancePreference applyIfChanged];
     });
 }
 

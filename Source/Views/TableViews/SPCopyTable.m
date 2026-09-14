@@ -155,10 +155,16 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 - (BOOL)isCellEditingMode
 {
-	return ([[self delegate] isKindOfClass:[SPCustomQuery class]] 
-		|| ([[self delegate] isKindOfClass:[SPTableContent class]] 
-				&& [(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] 
-				&& [(SPTablesList*)([(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"]) tableType] == SPTableTypeView));
+	id delegate = [self delegate];
+
+	if ([delegate isKindOfClass:[SPCustomQuery class]]) return YES;
+
+	if ([delegate isKindOfClass:[SPTableContent class]]) {
+		SPTablesList *tablesList = [(SPTableContent *)delegate tablesListInstance];
+		return tablesList && [tablesList tableType] == SPTableTypeView;
+	}
+
+	return NO;
 }
 
 /**
@@ -669,10 +675,16 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                     // Check column type and insert the data accordingly
                     switch (colType) {
 
-                        // Convert numeric types to unquoted strings
-                        case 0:
-                            [rowValues safeAddObject:[cellData description]];
+                        // Numeric types unquoted, BIT values as binary literals
+                        case 0: {
+                            NSString *unquotedLiteral = [SPFieldTypeClassifier unquotedSQLLiteralForValue:cellData fieldTypeGroup:fieldTypeGroup fieldType:fieldType];
+                            if (!unquotedLiteral) {
+                                NSBeep();
+                                return nil;
+                            }
+                            [rowValues safeAddObject:unquotedLiteral];
                             break;
+                        }
 
                         // Quote string, text and blob types appropriately
                         case 1:

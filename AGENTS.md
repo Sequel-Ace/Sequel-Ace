@@ -86,13 +86,33 @@ later.
   the cross-version wire format, don't "upgrade" it without a migration plan.
 - **User notifications:** post via `SANotificationCenter`
   (`Source/Other/Utility/SANotificationCenter.swift`), never the deprecated
-  `NSUserNotification` API. The wider warning burn-down is tracked in
-  `docs/development/warnings-elimination-plan.md`: its sweeps and the
-  SecKeychain migration are done, and the NSConnection item is in execution
-  per `docs/development/ssh-tunnel-xpc-migration-plan.md` — on a UNIX-socket
-  transport, since the spike showed a sandboxed app cannot vend
-  `NSXPCListener` without launchd; `SPSSHTunnel` vends
-  `SASSHTunnelAuthService` and nothing else.
+  `NSUserNotification` API.
+- **Build warnings:** the 2026 burn-down (413 → a floor) is complete and its
+  plan retired. Keep the build at that floor: the only accepted warnings are
+  the `NSConnection` lines in `SPSSHTunnel.m` / `SequelAceTunnelAssistant.m`
+  (they go with SSH-tunnel step 5b, #2623) and four intentional deprecation
+  markers (`legacyUnarchive` / `legacyArchivedData` in `SAArchiving`, the
+  `.sourceList` highlight style). As of 2026-09-07 a clean build also shows
+  ten untracked residue lines listed in the modernization plan's state
+  section; they are not part of the floor, just not yet swept. Measure with a
+  clean `xcodebuild build-for-testing -scheme "Unit Tests"` on fresh derived
+  data, count every `warning:` line (xib, linker and asset warnings carry no
+  `file:line:col`), and compare like with like — the "Sequel Ace Debug"
+  scheme compiles less.
+  Two findings from the burn-down that will bite again:
+  - Modern pasteboard APIs (`NSPasteboardItem`, `NSPasteboardWriting`)
+    **silently drop data for non-UTI type names** — AppKit logs "not a valid
+    UTI string", the item carries nothing, `writeObjects:` still returns YES.
+    Use the UTI-form types owned by `SADragPasteboard`.
+  - The bundled dylibs (OpenSSL, libmysqlclient, auth plugins) are built from
+    source with no Homebrew by the recipes in `Frameworks/libmysqlclient/`;
+    read its `README.md` before touching them, including the note on the
+    framework's copy-back script.
+- **SSH tunnel IPC:** the app and the tunnel assistant talk over a UNIX socket
+  with audit-token peer validation (`docs/development/ssh-tunnel-xpc-migration-plan.md`;
+  the spike showed a sandboxed app cannot vend `NSXPCListener` without
+  launchd). `SPSSHTunnel` vends `SASSHTunnelAuthService` and nothing else;
+  Distributed Objects remains only as the rollback until #2623 deletes it.
 
 ## Repo layout (abridged)
 
@@ -107,12 +127,12 @@ later.
   roadmap: what's done (with rationale), what's next, and known sharp edges.
   Read it before starting refactoring work.
 
-Biggest legacy files (2026-08-24): `SPDatabaseDocument.m` (~6.4k lines, god
-object being decomposed), `SPConnectionController.m` (~5.4k — *growing*, new
-connection features keep landing here as ObjC; see the modernization plan),
-`SPTableContent.m` (~5.4k), `SPCustomQuery.m` (~4.1k), `SPExportController.m`
-(~4.0k), `SPTextView.m` (~3.9k). Roughly 23% of `Source/` is Swift by line
-count.
+Biggest legacy files (2026-09-07): `SPDatabaseDocument.m` (~6.4k lines, god
+object being decomposed), `SPTableContent.m` (~5.5k — the fastest-growing
+file), `SPConnectionController.m` (~5.3k — connection features landed here as
+ObjC; the clawback has started, see the modernization plan),
+`SPCustomQuery.m` (~4.1k), `SPExportController.m` (~4.0k), `SPTextView.m`
+(~3.9k). Roughly 27% of `Source/` is Swift by line count.
 
 ## Building and testing
 
