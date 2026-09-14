@@ -650,6 +650,7 @@
 		CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000042F8C000600C4C14A /* SACellFilterOperator.swift */; };
 		CF0000052F8C000600C4C14A /* SACellFilterOperator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000042F8C000600C4C14A /* SACellFilterOperator.swift */; };
 		CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */; };
+		5A1E0F1C2F9A000100C4C14A /* SAContentFilterLengthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1E0F1D2F9A000100C4C14A /* SAContentFilterLengthTests.swift */; };
 		CF0000082F8C000600C4C14A /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		CF0000092F8C000600C4C14A /* SACellFilterMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */; };
 		CF00000B2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF00000C2F8C000600C4C14A /* SACellFilterMerge.swift */; };
@@ -1595,6 +1596,7 @@
 		CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorTests.swift; sourceTree = "<group>"; };
 		CF0000042F8C000600C4C14A /* SACellFilterOperator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperator.swift; sourceTree = "<group>"; };
 		CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorRoundTripTests.swift; sourceTree = "<group>"; };
+		5A1E0F1D2F9A000100C4C14A /* SAContentFilterLengthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAContentFilterLengthTests.swift; sourceTree = "<group>"; };
 		CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterMergeTests.swift; sourceTree = "<group>"; };
 		CF00000C2F8C000600C4C14A /* SACellFilterMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterMerge.swift; sourceTree = "<group>"; };
 		CF00000F2F8C000600C4C14A /* SACellFilterAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterAction.swift; sourceTree = "<group>"; };
@@ -2847,6 +2849,7 @@
 				CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */,
 				CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */,
 				CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */,
+				5A1E0F1D2F9A000100C4C14A /* SAContentFilterLengthTests.swift */,
 				CF0000162F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m */,
 				CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */,
 				CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */,
@@ -3652,6 +3655,7 @@
 				51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */,
 				CF0000262F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift in Sources */,
 				CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */,
+				5A1E0F1C2F9A000100C4C14A /* SAContentFilterLengthTests.swift in Sources */,
 				CF0000152F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m in Sources */,
 				CF0000212F8C000600C4C14A /* SACellFilterRuleControllerStubs.m in Sources */,
 				CF0000092F8C000600C4C14A /* SACellFilterMergeTests.swift in Sources */,
