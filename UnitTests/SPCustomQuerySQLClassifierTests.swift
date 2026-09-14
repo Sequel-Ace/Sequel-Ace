@@ -47,6 +47,28 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze delete from t where id = 1"))
     }
 
+    /// MySQL 8.3+ accepts `INTO @var` and `FOR SCHEMA|DATABASE name` between
+    /// `EXPLAIN ANALYZE` and the statement; the statement behind them still
+    /// runs, so the modifiers must not hide a mutating verb.
+    func testExplainAnalyzeModifiersDoNotHideMutatingStatements() {
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app DELETE FROM t WHERE id = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR DATABASE app UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @plan UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=JSON INTO @plan FOR SCHEMA app DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE FOR SCHEMA app INSERT INTO t VALUES (1)"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze for schema app delete from t"))
+        // Truncated modifiers leave no statement to judge: stay conservative.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO"))
+        // Reads behind the same modifiers stay safe; plain EXPLAIN never
+        // executes, and `FOR CONNECTION` is the explained subject itself.
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @plan SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR SCHEMA app UPDATE t SET c = 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN INTO @plan FORMAT=JSON DELETE FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR CONNECTION 5"))
+    }
+
     func testExplainAliasesUseTheSameAnalyzeSafetyRule() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESCRIBE ANALYZE DELETE FROM t WHERE id = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE UPDATE t SET c = 1"))

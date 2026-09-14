@@ -182,6 +182,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "DESC users",
             "EXPLAIN SELECT * FROM t",
             "EXPLAIN ANALYZE SELECT * FROM t",
+            "EXPLAIN ANALYZE FOR SCHEMA app SELECT * FROM t",
             "EXPLAIN FORMAT=JSON SELECT * FROM t",
             "(SELECT * FROM t)",
             "SELECT a FROM t UNION SELECT b FROM u",
@@ -343,6 +344,10 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "EXPLAIN ANALYZE UPDATE t SET x = 1",
             "EXPLAIN ANALYZE DELETE FROM t",
             "EXPLAIN ANALYZE INSERT INTO t VALUES (1)",
+            // MySQL 8.3+ modifiers between EXPLAIN ANALYZE and the statement.
+            "EXPLAIN ANALYZE FOR SCHEMA app DELETE FROM t",
+            "EXPLAIN ANALYZE INTO @plan UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE FORMAT=JSON INTO @plan FOR DATABASE app DELETE FROM t",
         ], "explain-analyze-write")
     }
 

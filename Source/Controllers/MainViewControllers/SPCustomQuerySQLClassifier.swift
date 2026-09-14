@@ -309,7 +309,9 @@ enum SPCustomQuerySQLClassifier {
     private static func skipExplainModifiers(in tokens: [String], from index: inout Int) {
         // `sqlTokens` already wraps every `=` with whitespace, so `FORMAT=JSON`
         // is always tokenized as `[FORMAT, =, JSON]`. The `FORMAT` case below
-        // handles both `FORMAT JSON` and `FORMAT = JSON`.
+        // handles both `FORMAT JSON` and `FORMAT = JSON`. MySQL 8.3 added
+        // `INTO @var` and `FOR SCHEMA|DATABASE name`, which may also sit
+        // between `EXPLAIN ANALYZE` and the statement it executes.
         while index < tokens.count {
             switch tokens[index] {
             case "EXTENDED", "PARTITIONS":
@@ -322,6 +324,17 @@ enum SPCustomQuerySQLClassifier {
                 if index < tokens.count {
                     index += 1
                 }
+            case "INTO":
+                // `INTO @var` stores the plan in a user variable; skip the variable too.
+                index += min(2, tokens.count - index)
+            case "FOR":
+                // Only `FOR SCHEMA name` / `FOR DATABASE name` are modifiers;
+                // `FOR CONNECTION id` is the explained subject itself.
+                guard index + 1 < tokens.count,
+                      tokens[index + 1] == "SCHEMA" || tokens[index + 1] == "DATABASE" else {
+                    return
+                }
+                index += min(3, tokens.count - index)
             default:
                 return
             }
