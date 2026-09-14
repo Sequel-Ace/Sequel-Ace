@@ -24,6 +24,12 @@ final class SAJSONValueDetectorTests: XCTestCase {
         XCTAssertTrue(SAJSONValueDetector.isJSONContainer("\n  {\n    \"a\" : 1\n  }\n"))
     }
 
+    /// Verifies a leading byte order mark does not prevent detection, as JSONSerialization accepts it.
+    func testDetectsJSONWithLeadingByteOrderMark() {
+        XCTAssertTrue(SAJSONValueDetector.isJSONContainer("\u{FEFF}{\"a\":1}"))
+        XCTAssertTrue(SAJSONValueDetector.isJSONContainer("\u{FEFF}[1,2]"))
+    }
+
     /// Verifies containers nested inside containers are detected.
     func testDetectsNestedContainers() {
         XCTAssertTrue(SAJSONValueDetector.isJSONContainer(#"{"rows":[{"id":1},{"id":2}],"total":2}"#))

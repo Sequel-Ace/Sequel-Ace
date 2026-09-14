@@ -18,8 +18,9 @@ import Foundation
     @objc static func isJSONContainer(_ value: String?) -> Bool {
         guard let value = value, !value.isEmpty, value.utf8.count <= maximumDetectableByteCount else { return false }
 
-        // Cheap rejection before parsing: JSON containers can only start with these.
-        guard let firstCharacter = value.first(where: { !$0.isWhitespace }),
+        // Cheap rejection before parsing: JSON containers can only start with these. A byte order mark
+        // is skipped too, since JSONSerialization accepts one ahead of the container.
+        guard let firstCharacter = value.first(where: { !$0.isWhitespace && $0 != "\u{FEFF}" }),
               firstCharacter == "{" || firstCharacter == "[" else { return false }
 
         guard let data = value.data(using: .utf8) else { return false }

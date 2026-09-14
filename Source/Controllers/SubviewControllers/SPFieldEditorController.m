@@ -1505,6 +1505,12 @@ typedef enum {
 		return;
 	}
 
+	// The JSON segment reads raw data as UTF-8 whatever the connection encoding is, so data that only
+	// decodes to this value in another encoding (latin1 with an é, say) would show "Invalid JSON" there.
+	if ([sheetEditData isKindOfClass:[NSData class]] && ![value isEqualToString:[[NSString alloc] initWithData:sheetEditData encoding:NSUTF8StringEncoding]]) {
+		return;
+	}
+
 	[editSheetSegmentControl setSelectedSegment:JsonSegment];
 	[self segmentControllerChanged:editSheetSegmentControl];
 }
