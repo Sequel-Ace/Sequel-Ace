@@ -231,7 +231,11 @@ enum SPCustomQuerySQLClassifier {
         )
     }
 
-    private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
+    /// Whether a character may follow `--` for it to start a comment: MySQL's
+    /// lexer requires a space or control character there (tab, newline, CRLF,
+    /// form feed, vertical tab …). Shared with the MCP strippers so every
+    /// scanner recognises the same comment starts.
+    static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
         character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
     }
 

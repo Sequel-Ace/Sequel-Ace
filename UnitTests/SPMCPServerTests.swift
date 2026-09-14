@@ -189,6 +189,8 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "-- a comment\nSELECT 1",
             "-- a comment\r\nSELECT 1",
             "--\r\nSELECT 1",
+            "--\u{0C}form feed\nSELECT 1",
+            "--\u{0B}vertical tab\nSELECT 1",
             "# a comment\r\nSHOW TABLES",
             "SELECT COUNT(*) FROM t WHERE name = 'Bob'",
         ], "read")
@@ -347,6 +349,10 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         // stripped query must keep its SELECT prefix so run_query caps it.
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("--\r\nSELECT 1"), " \r\nSELECT 1")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\r\nFROM t"), "SELECT 1  \r\nFROM t")
+        // MySQL accepts any control character after `--`, e.g. a form feed;
+        // `--x` is not a comment.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\u{0C}c\nFROM t"), "SELECT 1  \nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --x\nFROM t"), "SELECT 1 --x\nFROM t")
         // Still caught: INTO/**/OUTFILE -> INTO OUTFILE keeps the keyword intact.
         XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
         // Still allowed: a comment between other tokens is just whitespace.
@@ -363,6 +369,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
 
         XCTAssertEqual(bind("SELECT ? -- ?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\nFROM t WHERE x = <2>")
         XCTAssertEqual(bind("SELECT ? -- ?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\r\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("SELECT ? --\u{0C}?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> --\u{0C}?\nFROM t WHERE x = <2>")
         XCTAssertEqual(bind("--\r\nSELECT ? # ?\r\nFROM t WHERE y = ?", ["a", "b"]).0, "--\r\nSELECT <a> # ?\r\nFROM t WHERE y = <b>")
         XCTAssertEqual(bind("SELECT '?' /* ? */ FROM t WHERE x = ?", [3]).0, "SELECT '?' /* ? */ FROM t WHERE x = <3>")
         // A commented `?` must not absorb a param: the counts then disagree.
