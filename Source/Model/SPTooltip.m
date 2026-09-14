@@ -79,17 +79,12 @@ static CGFloat slow_in_out (CGFloat t)
 + (void)setDisplayOptions:(NSDictionary *)aDict;
 - (void)initMeWithOptions:(NSDictionary *)displayOptions;
 
-@property (nonatomic, assign) BOOL gotHeight;
-@property (nonatomic, assign) BOOL gotWidth;
-
 /// Replacement, fade and dismissal decisions for the shared tooltip window.
 @property (nonatomic, strong) SATooltipLifecycle *lifecycle;
 
 @end
 
 @implementation SPTooltip
-
-@synthesize gotHeight, gotWidth;
 
 + (instancetype)sharedInstance {
 	static SPTooltip *sharedInstance = nil;
@@ -158,9 +153,6 @@ static CGFloat slow_in_out (CGFloat t)
 		[self stopAnimation:self];
 	}
 
-	self.gotWidth = NO;
-	self.gotHeight = NO;
-	
 	[self initMeWithOptions:displayOptions];
 	[self setFrameTopLeftPoint:point];
 
@@ -398,45 +390,40 @@ static CGFloat slow_in_out (CGFloat t)
 	// is contentView a webView calculate actual rendered size via JavaScript
 	if([[[[self contentView] class] description] isEqualToString:@"WKWebView"]) {
 		WKWebView *measuredWebView = wkWebView;
+		SATooltipMeasurement *measurement = [[SATooltipMeasurement alloc] initWithWebView:measuredWebView];
 		// The webview is set to a large initial size and then sized down to fit the content
 		[self setContentSize:NSMakeSize(screenFrame.size.width - screenFrame.size.width / 3.0f , screenFrame.size.height)];
 
-		NSInteger __block height = 21;
-		NSInteger __block width = 400;
-		
-		[self->wkWebView evaluateJavaScript:@"document.body.offsetHeight + document.body.offsetTop;" completionHandler:^(id _Nullable height2, NSError * _Nullable error) {
+		[measuredWebView evaluateJavaScript:@"document.body.offsetHeight + document.body.offsetTop;" completionHandler:^(id _Nullable height2, NSError * _Nullable error) {
 			SPLog(@"height2: %@", height2);
 			if (error) SPLog(@"error: %@", error.localizedDescription);
-			
-			height = [height2 integerValue];
-			self->gotHeight = YES;
-			
+
+			[measurement recordHeight:[height2 integerValue]];
+
 		}];
-		[self->wkWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
+		[measuredWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
 			SPLog(@"width2: %@", width2);
 			if (error) SPLog(@"error: %@", error.localizedDescription);
 
             // Add 1 because sometimes document.body.offsetWidth value is not sufficient or the frame of WKWebView does not match the body. I don't know exactly where the truth is.
             // 1 seems to be enougth in my case.
-			width = [width2 integerValue] + 1;
-			self->gotWidth = YES;
+			[measurement recordWidth:[width2 integerValue] + 1];
 		}];
-		
-		// wait until we have both height and width
-		if (gotHeight == NO || gotWidth == NO) {
+
+		// wait until we have both height and width, or a newer tooltip replaced the web view
+		if ([measurement shouldKeepWaitingForCurrentWebView:wkWebView]) {
 
 			[NSThread detachNewThreadSelector:@selector(runInBackground:) toTarget:self withObject:nil];
 
-			while (gotHeight == NO || gotWidth == NO) {
+			while ([measurement shouldKeepWaitingForCurrentWebView:wkWebView]) {
 				SPLog(@"waiting");
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
 			}
 		}
 
-		// the nested wait may have let a newer tooltip replace the web view
-		if (![SATooltipLifecycle isCurrentWebView:measuredWebView currentWebView:wkWebView]) return;
+		if (![measurement appliesToCurrentWebView:wkWebView]) return;
 
-		[wkWebView setFrameSize:NSMakeSize(width, height)];
+		[wkWebView setFrameSize:NSMakeSize(measurement.width, measurement.height)];
 
 		frame = [self frameRectForContentRect:[wkWebView frame]];
 	} else {

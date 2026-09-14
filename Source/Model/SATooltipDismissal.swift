@@ -251,3 +251,76 @@ import AppKit
         return !(nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled)
     }
 }
+
+/// The size measurement of one tooltip web view. `SPTooltip` asks the page for
+/// its height and width via JavaScript and waits for both answers in a nested
+/// run loop. Keeping that state per web view means late answers from a web
+/// view that a newer tooltip replaced can neither complete the newer
+/// measurement early (leaving it at the fallback size) nor keep an older wait
+/// spinning for an answer that will never arrive.
+@objc public final class SATooltipMeasurement: NSObject {
+    private weak var webView: AnyObject?
+    private var hasHeight = false
+    private var hasWidth = false
+
+    /// The content height reported by the page; the fallback until it answered.
+    @objc public private(set) var height = 21
+    /// The content width reported by the page; the fallback until it answered.
+    @objc public private(set) var width = 400
+
+    /// Creates the measurement for one web view.
+    ///
+    /// - Parameter webView: The web view whose content is measured.
+    @objc(initWithWebView:)
+    public init(webView: AnyObject) {
+        self.webView = webView
+        super.init()
+    }
+
+    /// Records the content height reported by the page.
+    ///
+    /// - Parameter height: The reported height.
+    @objc(recordHeight:)
+    public func recordHeight(_ height: Int) {
+        self.height = height
+        hasHeight = true
+    }
+
+    /// Records the content width reported by the page.
+    ///
+    /// - Parameter width: The reported width.
+    @objc(recordWidth:)
+    public func recordWidth(_ width: Int) {
+        self.width = width
+        hasWidth = true
+    }
+
+    /// Whether both dimensions have been reported.
+    @objc public var isComplete: Bool {
+        hasHeight && hasWidth
+    }
+
+    /// Whether the measurement belongs to the web view currently showing the
+    /// tooltip, so its result may be applied to the shared window.
+    ///
+    /// - Parameter currentWebView: The web view currently showing the tooltip.
+    /// - Returns: `false` once a newer tooltip replaced the measured web view
+    ///   or the web view is gone.
+    @objc(appliesToCurrentWebView:)
+    public func applies(toCurrentWebView currentWebView: AnyObject?) -> Bool {
+        guard let webView else {
+            return false
+        }
+        return webView === currentWebView
+    }
+
+    /// Whether the nested wait has to continue: an answer is still missing and
+    /// no newer tooltip replaced the measured web view.
+    ///
+    /// - Parameter currentWebView: The web view currently showing the tooltip.
+    /// - Returns: `true` while the caller must keep running the run loop.
+    @objc(shouldKeepWaitingForCurrentWebView:)
+    public func shouldKeepWaiting(currentWebView: AnyObject?) -> Bool {
+        !isComplete && applies(toCurrentWebView: currentWebView)
+    }
+}

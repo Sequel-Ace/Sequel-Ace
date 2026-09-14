@@ -154,6 +154,71 @@ final class SATooltipLifecycleTests: XCTestCase {
     }
 }
 
+final class SATooltipMeasurementTests: XCTestCase {
+
+    /// Verifies the former fallback size is kept until the page answers and
+    /// the wait ends only once both dimensions arrived.
+    func testWaitEndsOnlyWithBothDimensions() {
+        let webView = NSObject()
+        let measurement = SATooltipMeasurement(webView: webView)
+        XCTAssertEqual(measurement.height, 21)
+        XCTAssertEqual(measurement.width, 400)
+        XCTAssertTrue(measurement.shouldKeepWaiting(currentWebView: webView))
+
+        measurement.recordHeight(120)
+        XCTAssertFalse(measurement.isComplete)
+        XCTAssertTrue(measurement.shouldKeepWaiting(currentWebView: webView))
+
+        measurement.recordWidth(301)
+        XCTAssertTrue(measurement.isComplete)
+        XCTAssertFalse(measurement.shouldKeepWaiting(currentWebView: webView))
+        XCTAssertTrue(measurement.applies(toCurrentWebView: webView))
+        XCTAssertEqual(measurement.height, 120)
+        XCTAssertEqual(measurement.width, 301)
+    }
+
+    /// Verifies late answers for a replaced web view cannot complete the newer
+    /// measurement, which would leave the new tooltip at the fallback size.
+    func testStaleAnswersDoNotCompleteANewerMeasurement() {
+        let replacedWebView = NSObject()
+        let currentWebView = NSObject()
+        let staleMeasurement = SATooltipMeasurement(webView: replacedWebView)
+        let currentMeasurement = SATooltipMeasurement(webView: currentWebView)
+
+        staleMeasurement.recordHeight(10)
+        staleMeasurement.recordWidth(10)
+
+        XCTAssertFalse(currentMeasurement.isComplete)
+        XCTAssertTrue(currentMeasurement.shouldKeepWaiting(currentWebView: currentWebView))
+        XCTAssertFalse(staleMeasurement.applies(toCurrentWebView: currentWebView))
+    }
+
+    /// Verifies replacing the web view ends the wait even with an answer still
+    /// missing - e.g. by an image tooltip that never measures via JavaScript -
+    /// and discards the result.
+    func testReplacementEndsTheWaitWithAnAnswerMissing() {
+        let measuredWebView = NSObject()
+        let measurement = SATooltipMeasurement(webView: measuredWebView)
+        measurement.recordHeight(10)
+
+        let replacement = NSObject()
+        XCTAssertFalse(measurement.shouldKeepWaiting(currentWebView: replacement))
+        XCTAssertFalse(measurement.applies(toCurrentWebView: replacement))
+    }
+
+    /// Verifies a measurement whose web view is gone never applies, not even
+    /// against a missing current web view.
+    func testReleasedWebViewNeverApplies() {
+        var measurement: SATooltipMeasurement?
+        autoreleasepool {
+            let webView = NSObject()
+            measurement = SATooltipMeasurement(webView: webView)
+        }
+        XCTAssertFalse(measurement?.applies(toCurrentWebView: nil) ?? true)
+        XCTAssertFalse(measurement?.shouldKeepWaiting(currentWebView: nil) ?? true)
+    }
+}
+
 final class SAQueryHistoryMergerTests: XCTestCase {
 
     /// Verifies a new entry lands at the front of the stored history.
