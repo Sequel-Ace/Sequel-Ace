@@ -17,7 +17,7 @@ import OSLog
 
     private static let sqliteTableName = "ColumnDisplayOverrides"
     /// The store's file name; the app-only `sharedInstance` in
-    /// SQLiteManagers+SharedStore.swift places it in the application-support folder.
+    /// SASQLiteSharedStoreLocation.swift places it in the application-support folder.
     static let dbFileName = "ColumnDisplayOverrides.db"
     static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "DisplayFormatManager")
 
@@ -25,9 +25,10 @@ import OSLog
     private let queue: FMDatabaseQueue?
 
     /// Opens or creates the store at `databasePath`. A `nil` path, a file
-    /// that cannot be opened or a schema that cannot be created leaves the
-    /// manager without a store. The app uses `sharedInstance`, declared in
-    /// the app-target-only SQLiteManagers+SharedStore.swift.
+    /// that cannot be opened, a schema that cannot be created or a table
+    /// without the columns the manager reads leaves the manager without a
+    /// store. The app uses `sharedInstance`, declared in
+    /// the app-target-only SASQLiteSharedStoreLocation.swift.
     init(databasePath: String?) {
         queue = databasePath.flatMap { Self.openStore(at: $0) }
         super.init()
@@ -185,6 +186,7 @@ import OSLog
                 let initialVersion = try loadCurrentSchemaVersion(db)
                 let finalVersion = try builder(db, initialVersion)
                 try finalizeSchemaVersion(db, initialVersion, finalVersion)
+                try verifyTable(db)
                 usable = true
             }
             catch {
@@ -205,6 +207,15 @@ import OSLog
         rs.close()
 
         return version
+    }
+
+    /// Succeeds only when the table exists with every column the manager
+    /// reads. A file whose schema version says the table was created, but
+    /// whose table is missing or different, is not used: its formats could
+    /// not be read, while writes might still land in it.
+    private static func verifyTable(_ db: FMDatabase) throws {
+        let rs = try db.executeQuery("SELECT id, hostName, databaseName, tableName, columnName, format FROM \(sqliteTableName) LIMIT 0")
+        rs.close()
     }
 
     private static func finalizeSchemaVersion(_ db: FMDatabase, _ initialVersion: Int, _ finalVersion: Int) throws {

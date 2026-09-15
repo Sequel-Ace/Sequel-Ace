@@ -7,6 +7,7 @@
 //  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
 //
 
+import FMDB
 import XCTest
 
 // MARK: - SQLiteDisplayFormatManager
@@ -92,6 +93,24 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
 
         manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
         XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
+    }
+}
+
+extension SQLiteDisplayFormatManagerTests {
+    func testStoreWhoseTableCannotBeReadIsNotUsed() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        // Schema version 1, so the table is not created again, but it lacks the id column the queries order by;
+        // an insert would still succeed, so a store kept like this would take formats it can never read back.
+        try makeSQLiteFile(at: path, statements: [
+            "CREATE TABLE ColumnDisplayOverrides (hostName TEXT NOT NULL, databaseName TEXT NOT NULL, tableName TEXT NOT NULL, columnName TEXT NOT NULL, format TEXT NOT NULL)",
+            "PRAGMA user_version = 1",
+        ])
+
+        let manager = SQLiteDisplayFormatManager(databasePath: path)
+        XCTAssertFalse(manager.isPersistent)
+        manager.replaceOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", colName: "id", format: "UUID")
+        XCTAssertNil(manager.displayOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", columnName: "id"))
+        XCTAssertEqual(try rowCount(inSQLiteFile: path, table: "ColumnDisplayOverrides"), 0)
     }
 }
 
@@ -269,7 +288,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
 
         // Setting a default notifies its observers on the setting thread, and the app's observer waits for
         // the main thread; an observer that reaches the manager must not find its lock taken.
-        let observer = DefaultsObserver { _ = manager.getPinnedTables(hostName: "conn-1", databaseName: "db") }
+        let observer = SADefaultsObserver { _ = manager.getPinnedTables(hostName: "conn-1", databaseName: "db") }
         let key = SQLitePinnedTableManager.migratedPinnedTablesKey
         prefs.addObserver(observer, forKeyPath: key, options: [.new], context: nil)
 
@@ -287,6 +306,26 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         prefs.removeObserver(observer, forKeyPath: key)
         XCTAssertGreaterThan(observer.callCount, 0, "the observer never ran")
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
+    }
+
+    func testStoreThatOpensButCannotBeReadKeepsPinsInMemory() throws {
+        // Schema version 1, so preparing the store succeeds, but the table lacks the id column the first read
+        // orders by; an insert would still work, so a store kept after that read would take rows it never loaded.
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (hostName TEXT NOT NULL, databaseName TEXT NOT NULL, pinnedTableName TEXT NOT NULL, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES ('legacy.host', 'db', 'orders')",
+            "PRAGMA user_version = 1",
+        ])
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertFalse(manager.isPersistent)
+        XCTAssertEqual(manager.getPinnedTables(hostName: "legacy.host", databaseName: "db"), [])
+
+        manager.pinTable(hostName: "conn-1", databaseName: "db", tableToPin: "users")
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["users"])
+        manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
+        XCTAssertNil(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey))
+        XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 1, "only the row that was there before")
     }
 
     func testLegacyMigrationWaitsUntilTheStoreCanBeRead() {
@@ -377,7 +416,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
 
 /// A key-value observer of a user default that runs a block on the thread
 /// that changed the default, as the app's defaults observer does.
-private final class DefaultsObserver: NSObject {
+private final class SADefaultsObserver: NSObject {
     private let lock = NSLock()
     private let onChange: () -> Void
     private var enabled = true
@@ -406,4 +445,31 @@ private final class DefaultsObserver: NSObject {
         onChange()
         lock.withLock { calls += 1 }
     }
+}
+
+/// Creates an SQLite file at `path` and runs `statements` in it.
+private func makeSQLiteFile(at path: String, statements: [String]) throws {
+    let db = FMDatabase(path: path)
+    guard db.open() else {
+        throw db.lastError()
+    }
+    defer { db.close() }
+    for statement in statements {
+        try db.executeUpdate(statement, values: nil)
+    }
+}
+
+/// The number of rows in `table` of the SQLite file at `path`.
+private func rowCount(inSQLiteFile path: String, table: String) throws -> Int {
+    let db = FMDatabase(path: path)
+    guard db.open() else {
+        throw db.lastError()
+    }
+    defer { db.close() }
+    let rs = try db.executeQuery("SELECT COUNT(*) FROM \(table)", values: nil)
+    defer { rs.close() }
+    guard rs.next() else {
+        return -1
+    }
+    return Int(rs.int(forColumnIndex: 0))
 }

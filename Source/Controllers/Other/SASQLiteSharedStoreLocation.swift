@@ -1,5 +1,5 @@
 //
-//  SQLiteManagers+SharedStore.swift
+//  SASQLiteSharedStoreLocation.swift
 //  Sequel Ace
 //
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
@@ -20,7 +20,7 @@ import OSLog
 extension SQLiteDisplayFormatManager {
     /// The shared store in the application-support folder.
     @objc static let sharedInstance = SQLiteDisplayFormatManager(
-        databasePath: SQLiteSharedStoreLocation.path(forFileName: dbFileName, log: log, consequence: "Column display formats are not persisted.")
+        databasePath: SASQLiteSharedStoreLocation.path(forFileName: dbFileName, log: log, consequence: "Column display formats are not persisted.")
     )
 }
 
@@ -28,13 +28,13 @@ extension SQLitePinnedTableManager {
     /// The shared store in the application-support folder, with the migration
     /// record in the standard user defaults.
     @objc static let sharedInstance = SQLitePinnedTableManager(
-        databasePath: SQLiteSharedStoreLocation.path(forFileName: dbFileName, log: log, consequence: "Pinned tables are not persisted."),
+        databasePath: SASQLiteSharedStoreLocation.path(forFileName: dbFileName, log: log, consequence: "Pinned tables are not persisted."),
         prefs: UserDefaults.standard
     )
 }
 
 /// Where the shared SQLite stores live.
-private enum SQLiteSharedStoreLocation {
+private enum SASQLiteSharedStoreLocation {
     /// The path of `fileName` in the application-support data folder.
     ///
     /// - Parameters:

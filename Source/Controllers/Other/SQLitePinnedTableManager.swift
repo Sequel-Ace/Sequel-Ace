@@ -20,7 +20,7 @@ import OSLog
 
     static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "pinnedTablesDatabase")
     /// The store's file name; the app-only `sharedInstance` in
-    /// SQLiteManagers+SharedStore.swift places it in the application-support folder.
+    /// SASQLiteSharedStoreLocation.swift places it in the application-support folder.
     static let dbFileName = "pinnedTables.db"
 
     /// The user-defaults key of the SQLite trace switch. A literal, so the
@@ -60,10 +60,11 @@ import OSLog
     private static let sqliteConstraint = 19
 
     /// Opens or creates the store at `databasePath` and loads the pins it
-    /// holds. A `nil` path, a file that cannot be opened or a schema that
-    /// cannot be created leaves the manager without a store. The app uses
+    /// holds. A `nil` path, a file that cannot be opened, a schema that
+    /// cannot be created or pins that cannot be read leave the manager
+    /// without a store. The app uses
     /// `sharedInstance`, declared in the app-target-only
-    /// SQLiteManagers+SharedStore.swift.
+    /// SASQLiteSharedStoreLocation.swift.
     ///
     /// - Parameters:
     ///   - databasePath: Where the SQLite file lives.
@@ -73,8 +74,12 @@ import OSLog
         self.prefs = prefs
         self.traceExecution = traceExecution
         migratedLegacyPinnedTableTokens = Set(prefs.stringArray(forKey: Self.migratedPinnedTablesKey) ?? [])
-        queue = databasePath.flatMap { Self.openStore(at: $0, traceExecution: traceExecution) }
-        let storedPins = queue.flatMap { Self.loadPinnedTablesHistory(from: $0, traceExecution: traceExecution) }
+        let openedQueue = databasePath.flatMap { Self.openStore(at: $0, traceExecution: traceExecution) }
+        let storedPins = openedQueue.flatMap { Self.loadPinnedTablesHistory(from: $0, traceExecution: traceExecution) }
+        // A store that opened but could not be read is not used: its pins are
+        // unknown, so writing to it would add rows next to ones this session
+        // never loaded. loadPinnedTablesHistory has closed it already.
+        queue = storedPins == nil ? nil : openedQueue
         storeWasLoaded = storedPins != nil
         pinnedTablesDatabaseDictionary = storedPins ?? [:]
         super.init()
