@@ -43,11 +43,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *failureDescription;
 
 /**
- * Set when the connection's character set, transport mode or collation could
- * not be restored after the last rename, whether it succeeded or not: the user
- * should reconnect before running further queries. nil otherwise.
+ * Set when the connection's character set, transport mode, collation or SQL
+ * mode could not be restored after the last rename, whether it succeeded or
+ * not; it says whether the connection was re-established or the user has to
+ * reconnect. nil otherwise.
  */
 @property (nonatomic, copy, readonly, nullable) NSString *warningDescription;
+
+/**
+ * Whether the connection may be queried after the last rename: NO only when
+ * its settings could not be restored and re-establishing it failed too, so
+ * nothing should be refreshed from it.
+ */
+@property (nonatomic, readonly) BOOL connectionUsable;
 
 /**
  * Whether the last rename changed anything on the server before it stopped:

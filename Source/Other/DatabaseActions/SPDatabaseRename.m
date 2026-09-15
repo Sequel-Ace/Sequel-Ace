@@ -39,6 +39,7 @@
 @property (nonatomic, copy, readwrite, nullable) NSString *failureDescription;
 @property (nonatomic, copy, readwrite, nullable) NSString *warningDescription;
 @property (nonatomic, readwrite) BOOL changedServer;
+@property (nonatomic, readwrite) BOOL connectionUsable;
 
 @end
 
@@ -60,6 +61,7 @@
     self.failureDescription = nil;
     self.warningDescription = nil;
     self.changedServer = NO;
+    self.connectionUsable = YES;
 
 	// Check, whether the source database exists and the target database doesn't
 	BOOL sourceExists = [[connection databases] containsObject:sourceDatabaseName];
@@ -94,10 +96,14 @@
         return [renameConnection encodingUsesLatin1Transport];
     } setEncoding:^BOOL(NSString *encoding) {
         return [renameConnection setEncoding:encoding];
+    } setLatin1Transport:^BOOL(BOOL useLatin1Transport) {
+        return [renameConnection setEncodingUsesLatin1Transport:useLatin1Transport];
     } storeEncodingForRestoration:^{
         [renameConnection storeEncodingForRestoration];
     } restoreStoredEncoding:^{
         [renameConnection restoreStoredEncoding];
+    } reconnect:^BOOL{
+        return [renameConnection reconnect];
     }];
 
     self.failureDescription = [session renameDatabase:sourceDatabaseName
@@ -106,6 +112,7 @@
                                             collation:[sourceDatabase defaultCollation]];
     self.changedServer = [session changedServer];
     self.warningDescription = [session warningDescription];
+    self.connectionUsable = [session connectionUsable];
     if (self.warningDescription) {
         SPLog(@"rename warning: %@", self.warningDescription);
     }

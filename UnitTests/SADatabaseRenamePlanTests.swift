@@ -440,6 +440,8 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     private let checkQuery = "SELECT DATABASE(), @@sql_mode, @@collation_connection, CONNECTION_ID()"
 
+    private let restoreCheckQuery = "SELECT @@sql_mode, @@sql_quote_show_create, @@collation_connection"
+
     private let viewsQuery = "SELECT TABLE_NAME, CHARACTER_SET_CLIENT, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS WHERE TABLE_SCHEMA = 'shop'"
 
     private let privilegesQuery = "SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES"
@@ -465,6 +467,8 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         server.respond(to: "SELECT LOWER('shop'), LOWER('store')", rows: [["shop", "store"]])
         server.respond(to: viewsQuery, rows: tables.filter { ($0[1] as? String)?.uppercased() == "VIEW" }.map { [$0[0], viewCharacterSet, hex("select 1 AS `n`")] })
         server.respond(to: sessionQuery, rows: [[sqlMode, collation, quoteShowCreate, "42"]])
+        // the settings read back after they were restored
+        server.respond(to: restoreCheckQuery, rows: [[sqlMode, quoteShowCreate, collation]])
         // the session as the executor leaves it: the target selected, the settings restored, the same connection
         server.respond(to: checkQuery, rows: [["store", sqlMode, collation, "42"]])
         server.respond(to: showCreateViewPrefix + "`totals`", rows: [["totals", totalsDefinition, viewCharacterSet, viewCollation]])
@@ -526,6 +530,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `store`.`totals` AS select sum(`store`.`orders`.`total`) AS `t` from `store`.`orders`",
             "SELECT 1 FROM `store`.`totals` LIMIT 0",
             "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', collation_connection = 'utf8mb4_0900_ai_ci'",
+            restoreCheckQuery,
             checkQuery,
             "DROP DATABASE `shop`"
         ])
@@ -623,7 +628,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let reason = try XCTUnwrap(introducer.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(reason.contains("The definition of the view 'totals' holds a string outside UTF-8"), reason)
         XCTAssertFalse(introducer.statements.contains { $0.hasPrefix("CREATE DATABASE") || $0.hasPrefix("RENAME") || $0.hasPrefix("DROP") }, introducer.statements.joined(separator: "\n"))
-        XCTAssertEqual(introducer.statements.last, "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'")
+        XCTAssertEqual(introducer.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'", restoreCheckQuery])
 
         let numbers = makeServer()
         numbers.responses.removeAll { $0.matches("SELECT @@lower_case_table_names") }
@@ -700,7 +705,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         unsettable.fail("SET sql_mode = 'STRICT_TRANS_TABLES', sql_quote_show_create = 1", with: "Variable 'sql_quote_show_create' is read only")
         let reason = try XCTUnwrap(unsettable.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(reason.contains("Reading the objects of the database 'shop' failed: Variable 'sql_quote_show_create' is read only"), reason)
-        XCTAssertEqual(unsettable.statements.last, "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0", "the assignments before the failing one are undone")
+        XCTAssertEqual(unsettable.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0", restoreCheckQuery], "the assignments before the failing one are undone")
         XCTAssertFalse(unsettable.statements.contains(where: untouched))
     }
 
@@ -735,7 +740,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertEqual(server.statements.filter { $0.hasPrefix("SET ") }, ["SET collation_connection = 'utf8mb4_general_ci'", "SET collation_connection = 'utf8mb4_general_ci'"], server.statements.joined(separator: "\n"))
         let create = try XCTUnwrap(server.statements.firstIndex { $0.hasPrefix("CREATE ALGORITHM") })
         XCTAssertEqual(server.statements[create - 1], "SET collation_connection = 'utf8mb4_general_ci'")
-        XCTAssertEqual(server.statements.suffix(3), ["SET collation_connection = 'utf8mb4_general_ci'", checkQuery, "DROP DATABASE `shop`"])
+        XCTAssertEqual(server.statements.suffix(4), ["SET collation_connection = 'utf8mb4_general_ci'", restoreCheckQuery, checkQuery, "DROP DATABASE `shop`"])
 
         // a SET the server refuses fails the view instead of creating it under another collation
         let refused = makeServer()
@@ -755,12 +760,12 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let server = makeServer(quoteShowCreate: "0")
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertEqual(statements(of: server, from: sessionQuery).prefix(3).map { $0 }, [sessionQuery, "SET sql_mode = 'STRICT_TRANS_TABLES', sql_quote_show_create = 1", "SHOW CREATE VIEW `shop`.`totals`"])
-        XCTAssertEqual(server.statements.suffix(3), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", checkQuery, "DROP DATABASE `shop`"])
+        XCTAssertEqual(server.statements.suffix(4), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", restoreCheckQuery, checkQuery, "DROP DATABASE `shop`"])
 
         let failing = makeServer(quoteShowCreate: "0")
         failing.fail("CREATE ALGORITHM", with: "Access denied")
         XCTAssertNotNil(failing.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(failing.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", "USE `shop`"])
+        XCTAssertEqual(failing.statements.suffix(3), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", restoreCheckQuery, "USE `shop`"])
     }
 
     /// Verifies the three UTF-8 character sets, in any case, are the ones a
@@ -1215,7 +1220,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let description = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(description.contains("Reading the objects of the database 'shop' failed: SHOW VIEW command denied Nothing was changed."), description)
         XCTAssertFalse(server.statements.contains { $0.hasPrefix("CREATE DATABASE") || $0.hasPrefix("RENAME") || $0.hasPrefix("DROP") })
-        XCTAssertEqual(server.statements.last, "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'")
+        XCTAssertEqual(server.statements.suffix(2), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'", restoreCheckQuery])
     }
 
     /// Verifies the session's collation and sql_mode are restored together
@@ -1233,6 +1238,72 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         ])
         XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP") })
         XCTAssertEqual(server.statements.last, "USE `shop`")
+    }
+
+    /// Verifies the settings changed for the views are read back after every
+    /// restore - on the early ways out too, where no later check runs - and
+    /// that a restore the server refuses or does not show is tried once more
+    /// and then reported, while one it shows keeps the report clear.
+    func testSessionSettingsRestoreIsVerifiedOnEveryWayOut() throws {
+        let restore = "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'"
+        let readBack = restoreCheckQuery
+
+        // a failed SHOW CREATE VIEW whose restoring SET is refused
+        let refused = makeServer()
+        refused.responses.removeAll { $0.matches(showCreateViewPrefix + "`totals`") }
+        refused.fail(showCreateViewPrefix, with: "SHOW VIEW command denied")
+        refused.fail(restore, with: "Lost connection to MySQL server during query")
+        let refusedExecutor = refused.executor
+        XCTAssertNotNil(refusedExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(refusedExecutor.sessionSettingsNotRestored)
+        XCTAssertEqual(refused.statements.filter { $0 == restore }.count, 2, refused.statements.joined(separator: "\n"))
+        XCTAssertFalse(refused.statements.contains(restoreCheckQuery))
+
+        // a failed CREATE DATABASE whose restore the server does not show
+        let unshown = makeServer()
+        unshown.fail("CREATE DATABASE", with: "Access denied")
+        unshown.responses.insert(({ $0 == readBack }, SADatabaseRenameStatementResult(rows: [["STRICT_TRANS_TABLES", "1", "utf8mb4_0900_ai_ci"]])), at: 0)
+        let unshownExecutor = unshown.executor
+        XCTAssertNotNil(unshownExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(unshownExecutor.sessionSettingsNotRestored)
+        XCTAssertEqual(unshown.statements.filter { $0 == restoreCheckQuery }.count, 2, unshown.statements.joined(separator: "\n"))
+
+        // identifier quoting that stays on after the restore counts as well
+        let quoting = makeServer(quoteShowCreate: "0")
+        quoting.responses.removeAll { $0.matches(showCreateViewPrefix + "`totals`") }
+        quoting.fail(showCreateViewPrefix, with: "SHOW VIEW command denied")
+        quoting.responses.insert(({ $0 == readBack }, SADatabaseRenameStatementResult(rows: [["STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES", "1", "utf8mb4_0900_ai_ci"]])), at: 0)
+        let quotingExecutor = quoting.executor
+        XCTAssertNotNil(quotingExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(quotingExecutor.sessionSettingsNotRestored)
+
+        // a failed table move and a failed USE with the restore shown
+        let table = makeServer(tables: [["a", "BASE TABLE"], ["b", "BASE TABLE"], ["totals", "VIEW"]])
+        table.fail("RENAME TABLE `shop`.`b`", with: "Access denied")
+        let tableExecutor = table.executor
+        XCTAssertNotNil(tableExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertFalse(tableExecutor.sessionSettingsNotRestored)
+        XCTAssertEqual(table.statements.suffix(2), [restore, restoreCheckQuery])
+
+        let use = makeServer()
+        use.fail("USE `store`", with: "Access denied")
+        let useExecutor = use.executor
+        XCTAssertNotNil(useExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertFalse(useExecutor.sessionSettingsNotRestored)
+        XCTAssertEqual(use.statements.suffix(2), [restore, restoreCheckQuery])
+
+        // a complete rename, and one without settings to restore
+        let done = makeServer()
+        let doneExecutor = done.executor
+        XCTAssertNil(doneExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertFalse(doneExecutor.sessionSettingsNotRestored)
+
+        let tablesOnly = makeServer(tables: [["orders", "BASE TABLE"]])
+        tablesOnly.fail("CREATE DATABASE", with: "Access denied")
+        let tablesOnlyExecutor = tablesOnly.executor
+        XCTAssertNotNil(tablesOnlyExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertFalse(tablesOnlyExecutor.sessionSettingsNotRestored)
+        XCTAssertFalse(tablesOnly.statements.contains(restoreCheckQuery))
     }
 
     /// Verifies a view selecting from a view listed after it is created after
@@ -1411,17 +1482,23 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     /// A stand-in for the connection's encoding state in front of a
     /// FakeServer: `SET NAMES` works for `acceptedEncodings` (and ends latin1
-    /// transport), and the restore puts back what was stored unless
-    /// `restoreWorks` is off.
+    /// transport), the restore puts back what was stored unless
+    /// `restoreWorks` is off, and a reconnect - which keeps the encoding the
+    /// connection last recorded, as the framework does - works unless
+    /// `reconnectWorks` is off.
     private final class FakeConnection {
         let server: FakeServer
         var encoding: String
         var usesLatin1Transport: Bool
         var acceptedEncodings: Set<String> = ["utf8mb4", "utf8"]
         var restoreWorks = true
+        var reconnectWorks = true
         private var stored: (encoding: String, usesLatin1Transport: Bool)?
         private(set) var restoreCount = 0
+        private(set) var reconnectCount = 0
+        private(set) var statementCountAtReconnect: Int?
         private(set) var setEncodingCalls: [String] = []
+        private(set) var setLatin1TransportCalls: [Bool] = []
 
         init(server: FakeServer, encoding: String, usesLatin1Transport: Bool = false) {
             self.server = server
@@ -1442,6 +1519,11 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
                     self.usesLatin1Transport = false
                     return true
                 },
+                setLatin1Transport: { [unowned self] flag in
+                    self.setLatin1TransportCalls.append(flag)
+                    self.usesLatin1Transport = flag
+                    return true
+                },
                 storeEncodingForRestoration: { [unowned self] in
                     self.stored = (self.encoding, self.usesLatin1Transport)
                 },
@@ -1450,6 +1532,11 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
                     guard self.restoreWorks, let stored = self.stored else { return }
                     self.encoding = stored.encoding
                     self.usesLatin1Transport = stored.usesLatin1Transport
+                },
+                reconnect: { [unowned self] in
+                    self.reconnectCount += 1
+                    self.statementCountAtReconnect = self.server.statements.count
+                    return self.reconnectWorks
                 })
         }
     }
@@ -1458,7 +1545,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     private let restoredSettingsQuery = "SELECT @@character_set_client, @@character_set_connection, @@character_set_results, @@collation_connection"
 
-    private let restoreWarning = "The connection's character set or collation could not be restored after Rename Database; reconnect before running further queries."
+    private let reestablishedWarning = "The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established."
+
+    private let unusableWarning = "The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries."
 
     /// A latin1 connection whose session collation is latin1_swedish_ci and
     /// whose server reports `restored` once the settings are put back.
@@ -1466,7 +1555,9 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let server = makeServer()
         server.respond(to: collationQuery, rows: [["latin1_swedish_ci"]])
         server.respond(to: restoredSettingsQuery, rows: [restored])
-        return FakeConnection(server: server, encoding: "latin1")
+        let connection = FakeConnection(server: server, encoding: "latin1")
+        connection.acceptedEncodings.insert("latin1")
+        return connection
     }
 
     /// A utf8mb4 connection whose session collation is utf8mb4_bin and whose
@@ -1491,6 +1582,8 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertNil(session.warningDescription)
         XCTAssertEqual(connection.setEncodingCalls, [])
         XCTAssertEqual(connection.restoreCount, 0)
+        XCTAssertEqual(connection.reconnectCount, 0)
+        XCTAssertTrue(session.connectionUsable)
         XCTAssertEqual(connection.server.statements.first, collationQuery)
         XCTAssertEqual(Array(connection.server.statements.suffix(2)), [
             "SET collation_connection = 'utf8mb4_bin'",
@@ -1498,17 +1591,21 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         ])
     }
 
-    /// On a utf8mb4 connection a collation left on a view's collation - the
-    /// executor's own restore failed - is retried once and then warned about.
+    /// On a utf8mb4 connection a collation left on a view's collation is
+    /// retried once; then the connection is re-established and switched back
+    /// to utf8mb4, which a new session's default collation matches.
     func testSessionOnUTF8MB4WarnsWhenTheCollationStaysChanged() {
         let connection = makeUTF8MB4Connection(restored: ["utf8mb4", "utf8mb4", "utf8mb4", "utf8mb4_general_ci"])
         let session = connection.makeSession()
 
         _ = session.rename("shop", to: "store", encoding: nil, collation: nil)
-        XCTAssertEqual(session.warningDescription, restoreWarning)
+        XCTAssertEqual(session.warningDescription, reestablishedWarning)
+        XCTAssertTrue(session.connectionUsable)
         XCTAssertEqual(connection.restoreCount, 0)
-        XCTAssertEqual(connection.server.statements.filter { $0 == "SET collation_connection = 'utf8mb4_bin'" }.count, 2)
-        XCTAssertEqual(connection.server.statements.filter { $0 == restoredSettingsQuery }.count, 2)
+        XCTAssertEqual(connection.reconnectCount, 1)
+        XCTAssertEqual(connection.setEncodingCalls, ["utf8mb4"])
+        XCTAssertEqual(connection.server.statements.filter { $0 == "SET collation_connection = 'utf8mb4_bin'" }.count, 3)
+        XCTAssertEqual(connection.server.statements.filter { $0 == restoredSettingsQuery }.count, 3)
 
         let unreadable = FakeConnection(server: makeServer(), encoding: "utf8mb4")
         unreadable.server.fail(collationQuery, with: "Lost connection to MySQL server during query")
@@ -1530,6 +1627,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertEqual(connection.setEncodingCalls, ["utf8mb4"])
         XCTAssertEqual(connection.restoreCount, 1)
         XCTAssertEqual(connection.encoding, "latin1")
+        XCTAssertEqual(connection.reconnectCount, 0)
         XCTAssertEqual(connection.server.statements.first, collationQuery)
         XCTAssertEqual(Array(connection.server.statements.suffix(2)), [
             "SET collation_connection = 'latin1_swedish_ci'",
@@ -1553,41 +1651,123 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
     }
 
     /// A restore that does not take - the connection stays on utf8mb4 - is
-    /// tried once more; the rename itself still succeeded, and the user is
-    /// told to reconnect.
+    /// tried once more; then the connection is re-established and switched
+    /// back to latin1 before anything else is sent. The rename itself still
+    /// succeeded. When re-establishing fails, nothing more is sent and the
+    /// connection is not to be queried.
     func testSessionWarnsWhenTheRestoreDoesNotTake() {
         let connection = makeLatin1Connection()
         connection.restoreWorks = false
         let session = connection.makeSession()
 
         XCTAssertNil(session.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(session.warningDescription, restoreWarning)
+        XCTAssertEqual(session.warningDescription, reestablishedWarning)
+        XCTAssertTrue(session.connectionUsable)
         XCTAssertEqual(connection.restoreCount, 2)
-        XCTAssertEqual(connection.server.statements.filter { $0 == "SET collation_connection = 'latin1_swedish_ci'" }.count, 2)
+        XCTAssertEqual(connection.reconnectCount, 1)
+        XCTAssertEqual(connection.setEncodingCalls, ["utf8mb4", "latin1"])
+        XCTAssertEqual(connection.encoding, "latin1")
+        let reconnectedAt = try? XCTUnwrap(connection.statementCountAtReconnect)
+        XCTAssertEqual(Array(connection.server.statements.dropFirst(reconnectedAt ?? 0)), [
+            "SET collation_connection = 'latin1_swedish_ci'",
+            restoredSettingsQuery
+        ])
+
+        let lost = makeLatin1Connection()
+        lost.restoreWorks = false
+        lost.reconnectWorks = false
+        let lostSession = lost.makeSession()
+        XCTAssertNil(lostSession.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(lostSession.warningDescription, unusableWarning)
+        XCTAssertFalse(lostSession.connectionUsable)
+        XCTAssertEqual(lost.server.statements.count, lost.statementCountAtReconnect)
+        XCTAssertEqual(lost.setEncodingCalls, ["utf8mb4"])
     }
 
     /// The server is the reference: another collation than the session had,
     /// another client character set, or a refused `SET` all count as not
-    /// restored.
+    /// restored and re-establish the connection; one whose client character
+    /// set still disagrees afterwards is not to be queried.
     func testSessionWarnsWhenTheServerDisagrees() {
         let collation = makeLatin1Connection(restored: ["latin1", "latin1", "latin1", "latin1_general_ci"])
         let collationSession = collation.makeSession()
         XCTAssertNil(collationSession.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(collationSession.warningDescription, restoreWarning)
+        XCTAssertEqual(collationSession.warningDescription, reestablishedWarning)
+        XCTAssertTrue(collationSession.connectionUsable)
         XCTAssertEqual(collation.restoreCount, 2)
-        XCTAssertEqual(collation.server.statements.filter { $0 == restoredSettingsQuery }.count, 2)
+        XCTAssertEqual(collation.reconnectCount, 1)
+        XCTAssertEqual(collation.server.statements.filter { $0 == restoredSettingsQuery }.count, 3)
 
         let client = makeLatin1Connection(restored: ["utf8mb4", "latin1", "latin1", "latin1_swedish_ci"])
         let clientSession = client.makeSession()
         XCTAssertNil(clientSession.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(clientSession.warningDescription, restoreWarning)
+        XCTAssertEqual(clientSession.warningDescription, unusableWarning)
+        XCTAssertFalse(clientSession.connectionUsable)
 
         let refused = makeLatin1Connection()
         refused.server.responses.insert(({ $0 == "SET collation_connection = 'latin1_swedish_ci'" }, SADatabaseRenameStatementResult(error: "Lost connection to MySQL server during query")), at: 0)
         let refusedSession = refused.makeSession()
         XCTAssertNil(refusedSession.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(refusedSession.warningDescription, restoreWarning)
-        XCTAssertFalse(refused.server.statements.contains(restoredSettingsQuery))
+        XCTAssertEqual(refusedSession.warningDescription, reestablishedWarning)
+        XCTAssertTrue(refusedSession.connectionUsable)
+        XCTAssertEqual(refused.server.statements.filter { $0 == restoredSettingsQuery }.count, 1)
+    }
+
+    /// Settings the executor could not put back - its restoring SET was
+    /// refused on an early way out - re-establish the connection even when
+    /// character set and collation are back, since sql_mode or quoting may
+    /// not be. A connection that cannot be re-established is not sent
+    /// anything more.
+    func testSessionReconnectsWhenTheExecutorCouldNotRestoreItsSettings() throws {
+        func makeConnection() -> FakeConnection {
+            let connection = makeUTF8MB4Connection()
+            connection.server.responses.removeAll { $0.matches(showCreateViewPrefix + "`totals`") }
+            connection.server.fail(showCreateViewPrefix, with: "SHOW VIEW command denied")
+            connection.server.fail("SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES'", with: "Lost connection to MySQL server during query")
+            return connection
+        }
+
+        let connection = makeConnection()
+        let session = connection.makeSession()
+        let failure = try XCTUnwrap(session.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(failure.contains("SHOW VIEW command denied"), failure)
+        XCTAssertFalse(session.changedServer)
+        XCTAssertEqual(session.warningDescription, reestablishedWarning)
+        XCTAssertTrue(session.connectionUsable)
+        XCTAssertEqual(connection.reconnectCount, 1)
+        XCTAssertEqual(connection.setEncodingCalls, ["utf8mb4"])
+        let reconnectedAt = try XCTUnwrap(connection.statementCountAtReconnect)
+        XCTAssertEqual(Array(connection.server.statements.dropFirst(reconnectedAt)), [
+            "SET collation_connection = 'utf8mb4_bin'",
+            restoredSettingsQuery
+        ])
+
+        let lost = makeConnection()
+        lost.reconnectWorks = false
+        let lostSession = lost.makeSession()
+        XCTAssertNotNil(lostSession.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(lostSession.warningDescription, unusableWarning)
+        XCTAssertFalse(lostSession.connectionUsable)
+        XCTAssertEqual(lost.server.statements.count, lost.statementCountAtReconnect)
+        XCTAssertEqual(lost.setEncodingCalls, [])
+    }
+
+    /// Latin1 transport is switched on again after re-establishing a
+    /// connection that used it.
+    func testSessionReappliesLatin1TransportAfterReconnecting() {
+        let server = makeServer()
+        server.respond(to: collationQuery, rows: [["utf8mb3_general_ci"]])
+        server.respond(to: restoredSettingsQuery, rows: [["latin1", "utf8mb3", "latin1", "utf8mb3_general_ci"]])
+        let connection = FakeConnection(server: server, encoding: "utf8", usesLatin1Transport: true)
+        connection.restoreWorks = false
+        let session = connection.makeSession()
+
+        XCTAssertNil(session.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(session.warningDescription, reestablishedWarning)
+        XCTAssertTrue(session.connectionUsable)
+        XCTAssertEqual(connection.setLatin1TransportCalls, [true])
+        XCTAssertTrue(connection.usesLatin1Transport)
+        XCTAssertEqual(connection.encoding, "utf8")
     }
 
     /// A collation that cannot be read stops the rename before anything is
@@ -1626,11 +1806,16 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertNil(session.warningDescription)
         XCTAssertFalse(session.changedServer)
 
+        XCTAssertEqual(connection.reconnectCount, 0)
+
+        // the restore does not show and latin1 cannot be selected after re-establishing either
         let broken = makeLatin1Connection(restored: ["latin1", "latin1", "latin1", "latin1_general_ci"])
         broken.acceptedEncodings = []
         let brokenSession = broken.makeSession()
         XCTAssertEqual(brokenSession.rename("shop", to: "store", encoding: nil, collation: nil), refusal)
-        XCTAssertEqual(brokenSession.warningDescription, restoreWarning)
+        XCTAssertEqual(brokenSession.warningDescription, unusableWarning)
+        XCTAssertFalse(brokenSession.connectionUsable)
+        XCTAssertEqual(broken.reconnectCount, 1)
     }
 
     /// Character set and collation names match across the utf8 spellings.

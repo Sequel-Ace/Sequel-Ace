@@ -875,6 +875,13 @@ import Foundation
     /// caller refreshes what it shows when a rename stopped after this point.
     @objc public private(set) var changedServer = false
 
+    /// Whether the session settings the last rename changed for the views -
+    /// sql_mode, identifier quoting, collation - could not be shown to be
+    /// restored: the restoring `SET` failed or the server reported other
+    /// values afterwards, whichever way the rename ended. The caller then
+    /// re-establishes the connection.
+    @objc public private(set) var sessionSettingsNotRestored = false
+
     /// Creates an executor. The connection is expected to transport
     /// statements and results in UTF-8 (`SADatabaseRenameConnectionSession`
     /// switches it to utf8mb4 for the duration of the rename), so that view definitions
@@ -906,6 +913,7 @@ import Foundation
     @objc(renameDatabase:to:encoding:collation:)
     public func rename(_ source: String, to target: String, encoding: String?, collation: String?) -> String? {
         changedServer = false
+        sessionSettingsNotRestored = false
         globalVisibility = nil
         partialRevokes = nil
         let quotedSource = SADatabaseRenameViewRewriter.backtickQuoted(source)
@@ -1020,13 +1028,23 @@ import Foundation
         var settings: [(set: String, restore: String)] = []
         // the session's collation, once a view has been created under another
         var collationToRestore: String?
+        var session: SessionSettings?
+        // Every way out after the settings changed comes through here, and
+        // the restore is read back: a refused or lost SET would otherwise
+        // leave the connection on the views' sql_mode, quoting or collation,
+        // and on the early ways out no later check would notice. It is tried
+        // twice, then reported through `sessionSettingsNotRestored`.
         func restoreSettings() {
             let restores = settings.map(\.restore) + (collationToRestore.map { ["collation_connection = \(quote($0))"] } ?? [])
-            if !restores.isEmpty {
-                _ = run("SET " + restores.joined(separator: ", "))
+            guard !restores.isEmpty, let session else { return }
+            for _ in 0..<2 {
+                if run("SET " + restores.joined(separator: ", ")).error == nil,
+                   Self.settings(run("SELECT @@sql_mode, @@sql_quote_show_create, @@collation_connection").rows?.first, match: session) {
+                    return
+                }
             }
+            sessionSettingsNotRestored = true
         }
-        var session: SessionSettings?
         var definitions: [[UInt8]: ViewDefinition] = [:]
         let rewriter = SADatabaseRenameViewRewriter(sourceDatabase: source, targetDatabase: target, caseInsensitiveNames: plan.caseInsensitiveNames, serverLoweredSource: serverLoweredSource)
         if !plan.views.isEmpty {
@@ -1587,6 +1605,15 @@ import Foundation
         }
     }
 
+    /// Whether a read-back row of `@@sql_mode, @@sql_quote_show_create,
+    /// @@collation_connection` shows the session's own values again.
+    private static func settings(_ row: [Any]?, match session: SessionSettings) -> Bool {
+        guard let row, row.count >= 3 else { return false }
+        return text(row[0]) == session.sqlMode
+            && text(row[1]) == session.quoteShowCreate
+            && text(row[2]) == session.collation
+    }
+
     /// The bytes a hex string (as `HEX()` prints them) stands for, or `nil`
     /// when it is not one.
     static func bytes(fromHex hex: String) -> [UInt8]? {
@@ -1695,11 +1722,18 @@ import Foundation
 /// arrive as '?' and be written back that way, so the executor needs UTF-8
 /// transport. The session's collation is put back on every connection,
 /// switched or not, since recreating views changes it too. The restore is
-/// verified against the server: a restore that
-/// fails - after a dropped connection, say - would otherwise leave every
-/// later query on the wrong character set, transport mode or collation
-/// without anyone noticing. It is tried twice; when the connection still
-/// does not match, `warningDescription` tells the user to reconnect.
+/// verified against the server, and so is the executor's restore of the
+/// settings it changed for the views (sql_mode, identifier quoting): a
+/// restore that fails - after a dropped connection, say - would otherwise
+/// leave every later query on the wrong character set, transport mode,
+/// collation or sql_mode without anyone noticing, with client and server
+/// possibly disagreeing on how text is encoded. The session's own restore is
+/// tried twice. When the connection still does not match, it is
+/// re-established - a new server session starts from the server's defaults -
+/// and switched back to the original character set before anything else is
+/// sent; `warningDescription` says what happened and `connectionUsable`
+/// whether the connection may be queried, so the caller refreshes its lists
+/// only then.
 ///
 /// The closures only reach the connection, so the whole sequence is
 /// testable without a server.
@@ -1708,24 +1742,37 @@ import Foundation
     public typealias Encoding = () -> String
     public typealias UsesLatin1Transport = () -> Bool
     public typealias SetEncoding = (String) -> Bool
+    public typealias SetLatin1Transport = (Bool) -> Bool
     public typealias ConnectionAction = () -> Void
+    public typealias Reconnect = () -> Bool
 
     private let run: SADatabaseRenameExecutor.Run
     private let quote: SADatabaseRenameExecutor.Quote
     private let connectionEncoding: Encoding
     private let connectionUsesLatin1Transport: UsesLatin1Transport
     private let setConnectionEncoding: SetEncoding
+    private let setConnectionLatin1Transport: SetLatin1Transport
     private let storeEncodingForRestoration: ConnectionAction
     private let restoreStoredEncoding: ConnectionAction
+    private let reconnect: Reconnect
+
+    /// Whether the executor of the last rename put its session settings back.
+    private var executorSettingsRestored = true
 
     /// Whether the last rename changed anything on the server; see
     /// `SADatabaseRenameExecutor.changedServer`.
     @objc public private(set) var changedServer = false
 
-    /// Set when the connection's character set, transport mode or collation
-    /// could not be put back after the last rename, successful or not: the
-    /// user should reconnect before running further queries. `nil` otherwise.
+    /// Set when the connection's character set, transport mode, collation or
+    /// sql_mode could not be put back after the last rename, successful or
+    /// not: it says whether the connection was re-established or whether the
+    /// user has to reconnect. `nil` otherwise.
     @objc public private(set) var warningDescription: String?
+
+    /// Whether the connection may be queried after the last rename: `false`
+    /// only when its settings could not be put back and re-establishing it
+    /// failed as well, so the caller must not refresh anything from it.
+    @objc public private(set) var connectionUsable = true
 
     /// The connection's settings before the switch to UTF-8.
     private struct OriginalSettings {
@@ -1744,24 +1791,32 @@ import Foundation
     ///   - usesLatin1Transport: Whether the connection uses latin1 transport.
     ///   - setEncoding: Switches the connection to a character set (`SET
     ///     NAMES`, which also ends latin1 transport); whether that worked.
+    ///   - setLatin1Transport: Switches latin1 transport on or off; whether
+    ///     that worked.
     ///   - storeEncodingForRestoration: Remembers the connection's character
     ///     set and transport mode.
     ///   - restoreStoredEncoding: Switches back to the remembered ones.
-    @objc(initWithRun:quote:encoding:usesLatin1Transport:setEncoding:storeEncodingForRestoration:restoreStoredEncoding:)
+    ///   - reconnect: Re-establishes the connection; whether it is connected
+    ///     again.
+    @objc(initWithRun:quote:encoding:usesLatin1Transport:setEncoding:setLatin1Transport:storeEncodingForRestoration:restoreStoredEncoding:reconnect:)
     public init(run: @escaping SADatabaseRenameExecutor.Run,
                 quote: @escaping SADatabaseRenameExecutor.Quote,
                 encoding: @escaping Encoding,
                 usesLatin1Transport: @escaping UsesLatin1Transport,
                 setEncoding: @escaping SetEncoding,
+                setLatin1Transport: @escaping SetLatin1Transport,
                 storeEncodingForRestoration: @escaping ConnectionAction,
-                restoreStoredEncoding: @escaping ConnectionAction) {
+                restoreStoredEncoding: @escaping ConnectionAction,
+                reconnect: @escaping Reconnect) {
         self.run = run
         self.quote = quote
         connectionEncoding = encoding
         connectionUsesLatin1Transport = usesLatin1Transport
         setConnectionEncoding = setEncoding
+        setConnectionLatin1Transport = setLatin1Transport
         self.storeEncodingForRestoration = storeEncodingForRestoration
         self.restoreStoredEncoding = restoreStoredEncoding
+        self.reconnect = reconnect
     }
 
     /// Renames `source` to `target` with `SADatabaseRenameExecutor`, on UTF-8
@@ -1777,6 +1832,8 @@ import Foundation
     public func rename(_ source: String, to target: String, encoding: String?, collation: String?) -> String? {
         changedServer = false
         warningDescription = nil
+        connectionUsable = true
+        executorSettingsRestored = true
 
         let originalEncoding = connectionEncoding()
         let originalLatin1Transport = connectionUsesLatin1Transport()
@@ -1795,7 +1852,7 @@ import Foundation
 
         guard switchesEncoding else {
             let failure = runExecutor(source, to: target, encoding: encoding, collation: collation)
-            restore(original, restoresEncoding: false)
+            finish(original, restored: restore(original, restoresEncoding: false))
             return failure
         }
 
@@ -1804,12 +1861,12 @@ import Foundation
         guard setConnectionEncoding("utf8mb4") || setConnectionEncoding("utf8") else {
             // Without UTF-8 transport a view definition could arrive and go
             // back with characters replaced; better not to start at all.
-            restore(original, restoresEncoding: true)
+            finish(original, restored: restore(original, restoresEncoding: true))
             return NSLocalizedString("The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.", comment: "rename database refused because the connection could not be switched to a UTF-8 character set")
         }
 
         let failure = runExecutor(source, to: target, encoding: encoding, collation: collation)
-        restore(original, restoresEncoding: true)
+        finish(original, restored: restore(original, restoresEncoding: true))
         return failure
     }
 
@@ -1817,34 +1874,69 @@ import Foundation
         let executor = SADatabaseRenameExecutor(run: run, quote: quote)
         let failure = executor.rename(source, to: target, encoding: encoding, collation: collation)
         changedServer = executor.changedServer
+        executorSettingsRestored = !executor.sessionSettingsNotRestored
         return failure
     }
 
     /// Switches the connection back to its original character set, transport
     /// mode and collation and checks the result against the server, trying a
-    /// second time before it gives up and sets `warningDescription`.
+    /// second time before it gives up.
     ///
     /// - Parameter restoresEncoding: Whether this session stored and switched
     ///   the encoding. Without that the stored encoding may be another
     ///   caller's leftover and is not touched; only the collation is set.
-    private func restore(_ original: OriginalSettings, restoresEncoding: Bool) {
+    /// - Returns: Whether the connection is back on `original`.
+    private func restore(_ original: OriginalSettings, restoresEncoding: Bool) -> Bool {
         for _ in 0..<2 {
             if restoresEncoding {
                 restoreStoredEncoding()
             }
-            if run("SET collation_connection = \(quote(original.collation))").rows != nil, isRestored(original) {
-                return
+            if run("SET collation_connection = \(quote(original.collation))").rows != nil, isRestored(original, exactCollation: true) {
+                return true
             }
         }
-        warningDescription = NSLocalizedString("The connection's character set or collation could not be restored after Rename Database; reconnect before running further queries.", comment: "rename database: the connection's character set, latin1 transport mode or collation could not be put back after the rename (or after refusing it); shown as a warning after a successful rename or appended to the failure")
+        return false
+    }
+
+    /// Re-establishes the connection when its settings - the session's own or
+    /// the executor's - could not be put back, before the caller sends
+    /// anything else, and sets `warningDescription` and `connectionUsable`.
+    private func finish(_ original: OriginalSettings, restored: Bool) {
+        guard !(restored && executorSettingsRestored) else {
+            return
+        }
+        if reconnect(), reapply(original) {
+            warningDescription = NSLocalizedString("The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established.", comment: "rename database: the connection's character set, latin1 transport mode, collation or sql_mode could not be put back after the rename (or after refusing it), so it was reconnected; shown as a warning after a successful rename or appended to the failure")
+        } else {
+            connectionUsable = false
+            warningDescription = NSLocalizedString("The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries.", comment: "rename database: the connection's settings could not be put back after the rename (or after refusing it) and reconnecting failed too; shown as a warning after a successful rename or appended to the failure")
+        }
+    }
+
+    /// Switches a re-established connection back to the original character
+    /// set and transport mode - the framework reconnects with the encoding it
+    /// recorded last, which can be the temporary UTF-8 one - and tries the
+    /// original collation, which a new server session does not keep.
+    ///
+    /// - Returns: Whether client and server then agree on the character sets.
+    private func reapply(_ original: OriginalSettings) -> Bool {
+        guard setConnectionEncoding(original.encoding) else {
+            return false
+        }
+        if original.usesLatin1Transport, !setConnectionLatin1Transport(true) {
+            return false
+        }
+        // the character set's default collation, which a refusal leaves, still matches it
+        _ = run("SET collation_connection = \(quote(original.collation))")
+        return isRestored(original, exactCollation: false)
     }
 
     /// Whether the connection and the server agree it is back on `original`:
     /// the connection's own character set and transport mode, the client and
     /// result character sets the server uses for it (latin1 under latin1
-    /// transport), and the collation, which must also belong to the
-    /// connection character set the server reports.
-    private func isRestored(_ original: OriginalSettings) -> Bool {
+    /// transport), and a collation that belongs to the connection character
+    /// set the server reports - the original one when `exactCollation`.
+    private func isRestored(_ original: OriginalSettings, exactCollation: Bool) -> Bool {
         guard connectionEncoding() == original.encoding, connectionUsesLatin1Transport() == original.usesLatin1Transport else {
             return false
         }
@@ -1855,7 +1947,7 @@ import Foundation
             return false
         }
         let transported = original.usesLatin1Transport ? "latin1" : original.encoding
-        return collation == original.collation
+        return (!exactCollation || collation == original.collation)
             && Self.isSameCharacterSet(client, transported)
             && Self.isSameCharacterSet(results, transported)
             && Self.collation(collation, belongsTo: connection)
