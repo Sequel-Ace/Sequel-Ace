@@ -1506,7 +1506,14 @@ import Foundation
                 inspectionError = unlistable
                 return []
             }
-            if !rewriter.isSource(schemaName: viewSchema), rewriter.definitionReferencesSource(String(decoding: bytes, as: UTF8.self)) {
+            // A definition that is not UTF-8 (a view created through another
+            // character set) cannot be searched reliably: a lossy decode would
+            // hide a non-ASCII source name, so such a view fails closed.
+            guard let definition = String(bytes: bytes, encoding: .utf8) else {
+                inspectionError = unlistable
+                return []
+            }
+            if !rewriter.isSource(schemaName: viewSchema), rewriter.definitionReferencesSource(definition) {
                 record(viewSchema, view)
             }
         }

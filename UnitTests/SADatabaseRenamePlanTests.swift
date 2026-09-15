@@ -1101,6 +1101,13 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertEqual(hidden.executor.rename("shop", to: "store", encoding: nil, collation: nil), unlistable)
         XCTAssertTrue(onlyInspected(hidden), hidden.statements.joined(separator: "\n"))
 
+        // a definition that is not UTF-8 (latin1 "café" as E9) cannot be searched and fails closed
+        let latin1 = makeServer()
+        latin1.respond(to: viewTableUsageProbe, rows: [])
+        latin1.respond(to: externalViewsQuery, rows: [["reporting", "proxy", "73656C656374202A2066726F6D20606361E9602E607460"]])
+        XCTAssertEqual(latin1.executor.rename("shop", to: "store", encoding: nil, collation: nil), unlistable)
+        XCTAssertTrue(onlyInspected(latin1), latin1.statements.joined(separator: "\n"))
+
         // a global SELECT that partial revokes may limit, or none at all, proves nothing
         for (privileges, partialRevokes) in [([["SELECT"], ["SHOW VIEW"]], "ON"), ([["SHOW VIEW"]], "OFF")] as [([[Any]], String)] {
             let limited = makeServer()
