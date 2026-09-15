@@ -211,7 +211,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20111</string>
+	<string>20112</string>
 	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
 	<false/>
 	<key>FirebaseCrashlyticsCollectionEnabled</key>
@@ -225,7 +225,7 @@
 	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE</key>
 	<false/>
 	<key>SAGitHubReleaseTag</key>
-	<string>beta/6.0.0-20111</string>
+	<string>beta/6.0.0-20112</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>

@@ -61,8 +61,6 @@
 #import "sequel-ace-Swift.h"
 #include <tgmath.h>
 
-static NSInteger spTooltipCounter = 0;
-
 static CGFloat slow_in_out (CGFloat t)
 {
 	if(t < 1.0f)
@@ -74,21 +72,19 @@ static CGFloat slow_in_out (CGFloat t)
 @interface SPTooltip ()
 
 - (void)setContent:(NSString *)content withOptions:(NSDictionary *)displayOptions;
-- (void)runUntilUserActivity;
+- (void)beginDismissalMonitoring;
 - (void)stopAnimation:(id)sender;
 - (void)sizeToContent;
 + (NSPoint)caretPosition;
 + (void)setDisplayOptions:(NSDictionary *)aDict;
 - (void)initMeWithOptions:(NSDictionary *)displayOptions;
 
-@property (nonatomic, assign) BOOL gotHeight;
-@property (nonatomic, assign) BOOL gotWidth;
+/// Replacement, fade and dismissal decisions for the shared tooltip window.
+@property (nonatomic, strong) SATooltipLifecycle *lifecycle;
 
 @end
 
 @implementation SPTooltip
-
-@synthesize gotHeight, gotWidth;
 
 + (instancetype)sharedInstance {
 	static SPTooltip *sharedInstance = nil;
@@ -107,7 +103,7 @@ static CGFloat slow_in_out (CGFloat t)
 					styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO]))
 	{
 		
-		// some setup?
+		_lifecycle = [[SATooltipLifecycle alloc] init];
 		
 	}
 	return self;
@@ -150,11 +146,13 @@ static CGFloat slow_in_out (CGFloat t)
 - (void)showWithObject:(id)content atLocation:(NSPoint)point ofType:(NSString *)type displayOptions:(NSDictionary *)displayOptions
 {
 
-	spTooltipCounter++;
-	
-	self.gotWidth = NO;
-	self.gotHeight = NO;
-	
+	// A new tooltip reuses the shared window; SATooltipLifecycle decides what
+	// is left to tear down of the previous one.
+	if ([self.lifecycle prepareForNewTooltipWhileVisible:[self isVisible] fading:(animationTimer != nil)]) {
+		[super orderOut:self];
+		[self stopAnimation:self];
+	}
+
 	[self initMeWithOptions:displayOptions];
 	[self setFrameTopLeftPoint:point];
 
@@ -248,7 +246,7 @@ static CGFloat slow_in_out (CGFloat t)
 		[self setFrameTopLeftPoint:point];
 		[self sizeToContent];
 		[self orderFront:self];
-		[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
+		[self beginDismissalMonitoring];
 	}
 	else {
 		[self setContent:(NSString*)content withOptions:displayOptions];
@@ -283,18 +281,29 @@ static CGFloat slow_in_out (CGFloat t)
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation {
+	if (![SATooltipLifecycle isCurrentWebView:webView currentWebView:wkWebView]) return;
 	SPLog(@"didFinishNavigation FINISHING LOAD");
-	
+
 	[self sizeToContent];
+	// a newer tooltip may have taken over while the measurement was waiting
+	if (![SATooltipLifecycle isCurrentWebView:webView currentWebView:wkWebView]) return;
 	[self orderFront:self];
-	[self performSelector:@selector(runUntilUserActivity) withObject:nil afterDelay:0];
-	
+	[self beginDismissalMonitoring];
+
 }
+/**
+ * A failed load leaves nothing to show - close the shared window, unless
+ * SATooltipLifecycle recognises the failure as a superseded navigation.
+ */
 - (void)webView:(WKWebView *)webView didFailNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	if (![SATooltipLifecycle isCurrentWebView:webView currentWebView:wkWebView]) return;
 	SPLog(@"didFailNavigation. error is: %@", error);
+	if ([SATooltipLifecycle shouldCloseAfterNavigationFailure:error]) [self orderOut:self];
 }
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation withError:(NSError *)error {
+	if (![SATooltipLifecycle isCurrentWebView:webView currentWebView:wkWebView]) return;
 	SPLog(@"didFailProvisionalNavigation. error is: %@", error);
+	if ([SATooltipLifecycle shouldCloseAfterNavigationFailure:error]) [self orderOut:self];
 }
 
 - (void)dealloc
@@ -380,42 +389,41 @@ static CGFloat slow_in_out (CGFloat t)
 
 	// is contentView a webView calculate actual rendered size via JavaScript
 	if([[[[self contentView] class] description] isEqualToString:@"WKWebView"]) {
+		WKWebView *measuredWebView = wkWebView;
+		SATooltipMeasurement *measurement = [[SATooltipMeasurement alloc] initWithWebView:measuredWebView];
 		// The webview is set to a large initial size and then sized down to fit the content
 		[self setContentSize:NSMakeSize(screenFrame.size.width - screenFrame.size.width / 3.0f , screenFrame.size.height)];
 
-		NSInteger __block height = 21;
-		NSInteger __block width = 400;
-		
-		[self->wkWebView evaluateJavaScript:@"document.body.offsetHeight + document.body.offsetTop;" completionHandler:^(id _Nullable height2, NSError * _Nullable error) {
+		[measuredWebView evaluateJavaScript:@"document.body.offsetHeight + document.body.offsetTop;" completionHandler:^(id _Nullable height2, NSError * _Nullable error) {
 			SPLog(@"height2: %@", height2);
 			if (error) SPLog(@"error: %@", error.localizedDescription);
-			
-			height = [height2 integerValue];
-			self->gotHeight = YES;
-			
+
+			[measurement recordHeight:[height2 integerValue]];
+
 		}];
-		[self->wkWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
+		[measuredWebView evaluateJavaScript:@"document.body.offsetWidth + document.body.offsetLeft;" completionHandler:^(id _Nullable width2, NSError * _Nullable error) {
 			SPLog(@"width2: %@", width2);
 			if (error) SPLog(@"error: %@", error.localizedDescription);
 
             // Add 1 because sometimes document.body.offsetWidth value is not sufficient or the frame of WKWebView does not match the body. I don't know exactly where the truth is.
             // 1 seems to be enougth in my case.
-			width = [width2 integerValue] + 1;
-			self->gotWidth = YES;
+			[measurement recordWidth:[width2 integerValue] + 1];
 		}];
-		
-		// wait until we have both height and width
-		if (gotHeight == NO || gotWidth == NO) {
+
+		// wait until we have both height and width, or a newer tooltip replaced the web view
+		if ([measurement shouldKeepWaitingForCurrentWebView:wkWebView]) {
 
 			[NSThread detachNewThreadSelector:@selector(runInBackground:) toTarget:self withObject:nil];
 
-			while (gotHeight == NO || gotWidth == NO) {
+			while ([measurement shouldKeepWaitingForCurrentWebView:wkWebView]) {
 				SPLog(@"waiting");
 				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
 			}
 		}
-			
-		[wkWebView setFrameSize:NSMakeSize(width, height)];
+
+		if (![measurement appliesToCurrentWebView:wkWebView]) return;
+
+		[wkWebView setFrameSize:NSMakeSize(measurement.width, measurement.height)];
 
 		frame = [self frameRectForContentRect:[wkWebView frame]];
 	} else {
@@ -452,61 +460,19 @@ static CGFloat slow_in_out (CGFloat t)
 // ==================
 // = Event handling =
 // ==================
-- (BOOL)shouldCloseForMousePosition:(NSPoint)aPoint
+
+/**
+ * Starts the Swift dismissal monitor through SATooltipLifecycle: it closes
+ * the tooltip on key presses, clicks, scrolling, mouse movement past a small
+ * threshold, when the key window resigns or the app deactivates.
+ */
+- (void)beginDismissalMonitoring
 {
-	CGFloat ignorePeriod = 0.05f;
-	if(-[didOpenAtDate timeIntervalSinceNow] < ignorePeriod)
-		return NO;
-
-	if(NSEqualPoints(mousePositionWhenOpened, NSZeroPoint))
-	{
-		mousePositionWhenOpened = aPoint;
-		return NO;
-	}
-
-	NSPoint p = mousePositionWhenOpened;
-	CGFloat deltaX = p.x - aPoint.x;
-	CGFloat deltaY = p.y - aPoint.y;
-	CGFloat dist = sqrt(deltaX * deltaX + deltaY * deltaY);
-
-	CGFloat moveThreshold = 10;
-	return dist > moveThreshold;
-}
-
-- (void)runUntilUserActivity
-{
-	[self setValue:[NSDate date] forKey:@"didOpenAtDate"];
-	mousePositionWhenOpened = NSZeroPoint;
-
-	NSWindow* appKeyWindow = [NSApp keyWindow];
-	BOOL didAcceptMouseMovedEvents = [appKeyWindow acceptsMouseMovedEvents];
-	[appKeyWindow setAcceptsMouseMovedEvents:YES];
-	NSEvent* event = nil;
-	NSInteger eventType;
-	while((event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantFuture] inMode:NSDefaultRunLoopMode dequeue:YES]))
-	{
-		eventType = [event type];
-		if(eventType == NSEventTypeKeyDown || eventType == NSEventTypeLeftMouseDown || eventType == NSEventTypeRightMouseDown || eventType == NSEventTypeOtherMouseDown || eventType == NSEventTypeScrollWheel)
-			break;
-
-		if(eventType == NSEventTypeMouseMoved && [self shouldCloseForMousePosition:[NSEvent mouseLocation]])
-			break;
-
-		if(appKeyWindow != [NSApp keyWindow] || ![NSApp isActive])
-			break;
-		
-		if(spTooltipCounter > 1)
-			break;
-		[NSApp sendEvent:event];
-
-	}
-
-	[appKeyWindow setAcceptsMouseMovedEvents:didAcceptMouseMovedEvents];
-
-	[self orderOut:self];
-
-	// If we still have an event, pass it on to the app to ensure all actions are performed
-	if (event) [NSApp sendEvent:event];
+	__weak SPTooltip *weakSelf = self;
+	[self.lifecycle beginDismissalMonitoringWithKeyWindow:[NSApp keyWindow] onClose:^{
+		SPTooltip *tooltip = weakSelf;
+		[tooltip orderOut:tooltip];
+	}];
 }
 
 // =============
@@ -514,9 +480,14 @@ static CGFloat slow_in_out (CGFloat t)
 // =============
 - (void)orderOut:(id)sender
 {
+	// stop watching for dismissal activity, no matter who closes us
+	[self.lifecycle detachDismissalMonitor];
+
 	// must set this to nil here
 	// otherwise subsequent tootips do not display
 	self.contentView = nil;
+	// late navigation callbacks of the closed tooltip must not show it again
+	wkWebView = nil;
 	
 	if(![self isVisible] || animationTimer)
 		return;
@@ -530,7 +501,7 @@ static CGFloat slow_in_out (CGFloat t)
 {
 	CGFloat alpha = 0.97f * (1.0f - 40*slow_in_out(-2.2f * (float)[animationStart timeIntervalSinceNow]));
 
-	if(alpha > 0.0f && spTooltipCounter==1)
+	if([self.lifecycle fadeMayContinueWithAlpha:alpha])
 	{
 		[self setAlphaValue:alpha];
 	}
@@ -539,8 +510,7 @@ static CGFloat slow_in_out (CGFloat t)
 		[super orderOut:self];
 		[self stopAnimation:self];
 		[self close];
-		spTooltipCounter--;
-		if(spTooltipCounter < 0) spTooltipCounter = 0;
+		[self.lifecycle tooltipDidClose];
 	}
 }
 

@@ -121,7 +121,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)_updateRecordView;
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (NSInteger)_recordViewSelectedRow;
-- (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex;
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID;
 - (void)_tableDataReloadDidFinish;
 - (void)_resumeDeferredComboBoxEdit;
 
@@ -240,30 +240,30 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [recordViewController setShowHandler:^{
         [weakSelf _updateRecordView];
     }];
-    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldIndex) {
+    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
         SPTableContent *strongSelf = weakSelf;
         if (!strongSelf) return NO;
 
         NSInteger row = [strongSelf _recordViewSelectedRow];
-        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
         if (row < 0 || !column) return NO;
 
         if (![strongSelf tableView:strongSelf->tableContentView shouldEditTableColumn:column row:row]) return NO;
         if ([strongSelf->tablesListInstance tableType] != SPTableTypeView) return YES;
         NSInteger columnIndex = [strongSelf->tableContentView columnWithIdentifier:[column identifier]];
         return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
-    } validate:^NSString *(NSInteger fieldIndex, NSString *value) {
+    } validate:^NSString *(NSInteger fieldID, NSString *value) {
         SPTableContent *strongSelf = weakSelf;
         if (!strongSelf) return nil;
 
-        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
         return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
-    } commit:^BOOL(NSInteger fieldIndex, NSString *value) {
+    } commit:^BOOL(NSInteger fieldID, NSString *value) {
         SPTableContent *strongSelf = weakSelf;
         if (!strongSelf) return NO;
 
         NSInteger row = [strongSelf _recordViewSelectedRow];
-        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
         if (row < 0 || !column) return NO;
 
         NSInteger columnIndex = [[column identifier] integerValue];
@@ -287,7 +287,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         [strongSelf tableView:strongSelf->tableContentView setObjectValue:objectValue forTableColumn:column row:row];
         strongSelf.suppressRecordViewTaskRefresh = NO;
         [strongSelf->tableContentView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:row]
-                                                 columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)fieldIndex]];
+                                                 columnIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [[strongSelf->tableContentView tableColumns] count])]];
         return NO;
     }];
 
@@ -2612,12 +2612,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *refTableName = [refDictionary objectForKey:@"table"];
 			NSString *refDatabaseName = [refDictionary objectForKey:@"database"];
 			BOOL targetColumnIsBinary = NO;
+			NSString *targetTypeGrouping = nil;
 
 			NSDictionary *refTableInfo = [self->tableDataInstance informationForTable:refTableName fromDatabase:refDatabaseName];
 			if (refTableInfo) {
 				for (NSDictionary *col in [refTableInfo objectForKey:@"columns"]) {
 					if ([[col objectForKey:@"name"] isEqualToString:refColumnName]) {
-						targetColumnIsBinary = [[col objectForKey:@"typegrouping"] isEqualToString:@"binary"];
+						targetTypeGrouping = [col objectForKey:@"typegrouping"];
+						targetColumnIsBinary = [targetTypeGrouping isEqualToString:@"binary"];
 						break;
 					}
 				}
@@ -2667,6 +2669,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					}
 				}
 			}
+
+			// A BIT target compares the decimal value, not the displayed bit string
+			targetFilterValue = [SPFieldTypeClassifier filterValueForValue:targetFilterValue targetTypeGrouping:targetTypeGrouping];
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -4220,7 +4225,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			if (!value) return @"...";
 		}
 		else {
-			if ([tableView editedColumn] == (NSInteger)columnIndex && [tableView editedRow] == rowIndex) {
+			if ([SACellFilterColumnIdentifier storageIndexForVisibleColumn:[tableView editedColumn] inTableView:tableView] == (NSInteger)columnIndex && [tableView editedRow] == rowIndex) {
 				value = [self _contentValueForTableColumn:columnIndex row:rowIndex asPreview:NO];
 			}
 			else {
@@ -4250,7 +4255,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 
 			// Unless we're editing, always retrieve the short string representation, truncating the value where necessary
-			if ([tableView editedColumn] == (NSInteger)columnIndex || [tableView editedRow] == rowIndex) {
+			if ([SACellFilterColumnIdentifier storageIndexForVisibleColumn:[tableView editedColumn] inTableView:tableView] == (NSInteger)columnIndex || [tableView editedRow] == rowIndex) {
 				return [value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
 			} else {
 				return [value shortStringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
@@ -4397,10 +4402,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	return selectedRow;
 }
 
-- (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID
 {
-	if (fieldIndex < 0) return nil;
-	return [[tableContentView tableColumns] safeObjectAtIndex:(NSUInteger)fieldIndex];
+	if (fieldID < 0) return nil;
+	return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:tableContentView];
 }
 
 - (void)_updateRecordView
@@ -4438,7 +4443,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		NSDictionary *columnDefinition = [dataColumns safeObjectAtIndex:columnIndex];
 		id value = [self _contentValueForTableColumn:columnIndex row:selectedRow asPreview:NO];
 		[fields addObject:@{
-			@"id": @(fieldIndex),
+			@"id": @(storageIndex),
 			@"name": columnDefinition[@"name"] ?: [[tableColumn headerCell] stringValue] ?: @"",
 			@"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
 		}];
@@ -4602,6 +4607,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
+ * Refreshes the record view so its field order follows columns moved by dragging.
+ */
+- (void)tableViewColumnDidMove:(NSNotification *)notification
+{
+	if ([notification object] != tableContentView) return;
+	[self _updateRecordView];
+}
+
+/**
  * Saves the new column size in the preferences.
  */
 - (void)tableViewColumnDidResize:(NSNotification *)notification
@@ -4674,7 +4688,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			NSArray *tempRow = [tempResult getRowAsArray];
 
-			[tableValues replaceObjectInRow:rowIndex column:[[tableContentView tableColumns] indexOfObject:tableColumn] withObject:[tempRow objectAtIndex:0]];
+			[tableValues replaceObjectInRow:rowIndex column:[[tableColumn identifier] integerValue] withObject:[tempRow objectAtIndex:0]];
 			[tableContentView reloadData];
 			[self _updateRecordView];
 		}
@@ -4698,7 +4712,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// Check for Views if field is editable
 			if ([tablesListInstance tableType] == SPTableTypeView) {
-				NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[tableColumn identifier] integerValue]];
+				NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[tableContentView columnWithIdentifier:[tableColumn identifier]]];
 				isFieldEditable = [[editStatus objectAtIndex:0] integerValue] == 1;
 			}
 
@@ -4826,6 +4840,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// moved before the drag started.
 	NSString *cellValue = nil;
 	NSString *cellColumnName = nil;
+	NSString *cellTypeGrouping = nil;
 	BOOL cellIsNull = NO;
 	NSInteger clickedRow = [tableContentView mouseDownRow];
 	NSInteger clickedCol = [tableContentView mouseDownColumn];
@@ -4837,15 +4852,21 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// storage index, same mapping SPCopyTable uses) so the drop
 		// target gets the original schema column name the rule
 		// editor looks up against.
+		NSArray *columnIdentifiers = [[tableContentView tableColumns] valueForKey:@"identifier"];
 		cellColumnName = [SADragPasteboard columnNameForClickedColumn:clickedCol
-		                                                  identifiers:[[tableContentView tableColumns] valueForKey:@"identifier"]
+		                                                  identifiers:columnIdentifiers
 		                                                  columnNames:[dataColumns valueForKey:@"name"]];
+		// Same storage-index lookup for the type grouping, so a BIT value can
+		// be published in the form the filter compares.
+		cellTypeGrouping = [SADragPasteboard columnNameForClickedColumn:clickedCol
+		                                                    identifiers:columnIdentifiers
+		                                                    columnNames:[dataColumns valueForKey:@"typegrouping"]];
 	}
 
 	// Dropped onto the rule editor, the plist alone is enough to synthesize a
 	// fully-populated filter rule (column + default operator + value); a nil
 	// payload means the cell did not resolve and must not be advertised.
-	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull];
+	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull typeGrouping:cellTypeGrouping];
 	if (rowPayload) {
 		[SADragPasteboard attachPropertyList:rowPayload forType:[SPCellValuePasteboard pasteboardRowTypeRaw] toPasteboard:pboard];
 	}
@@ -5061,8 +5082,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Validate hex input
 	// We do this here because the textfield will still be selected with the pending changes if we bail out here
 	if(control == tableContentView) {
-      NSInteger columnIndex = [tableContentView editedColumn];
-      NSTableColumn *col = tableContentView.tableColumns[columnIndex];
+      NSInteger visibleColumn = [tableContentView editedColumn];
+      NSTableColumn *col = tableContentView.tableColumns[visibleColumn];
+      NSInteger columnIndex = [SACellFilterColumnIdentifier storageIndexForVisibleColumn:visibleColumn inTableView:tableContentView];
 
       if ([[col.dataCell formatter] isKindOfClass:[SABaseFormatter class]]) {
           return [[col.dataCell formatter] getObjectValue:nil forString:editor.string errorDescription:nil];
@@ -5109,7 +5131,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// or bypass if numberOfPossibleUpdateRows == 1
 	if ([tableContentView isCellEditingMode]) {
 
-		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[[[tableContentView tableColumns] safeObjectAtIndex: column] identifier] integerValue]];
+		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:column];
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 		
 		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
@@ -5145,7 +5167,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	// Open the field editor sheet if required
-	if ([tableContentView shouldUseFieldEditorForRow:row column:column checkWithLock:NULL])
+	if ([tableContentView shouldUseFieldEditorForRow:row column:[SACellFilterColumnIdentifier storageIndexForVisibleColumn:column inTableView:tableContentView] checkWithLock:NULL])
 	{
 		[tableContentView setFieldEditorSelectedRange:[aFieldEditor selectedRange]];
 
@@ -5390,6 +5412,7 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 	[self _buildTableColumns:preservedColumnWidths withFont:tableFont filterTerms:columnFilterTerms];
 
 	[tableContentView reloadData];
+	[self _updateRecordView];
 }
 
 #pragma mark -

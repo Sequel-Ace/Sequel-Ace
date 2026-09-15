@@ -35,39 +35,6 @@
 @implementation SPMySQLConnection (Conversion)
 
 /**
- * Converts an NSString to a null-terminated C string, using the supplied encoding.
- * Uses lossy conversion, so if a string cannot be entirely converted using
- * the current encoding, a representation will be returned rather than null.
- * The returned cString will correctly preserve any nul characters within the string,
- * which prevents the use of faster functions like [NSString cStringUsingEncoding:].
- * Pass in the third parameter to receive the length of the converted string (INCLUDING
- * the terminating \0 character), or pass in NULL if you do not want this information.
- */
-// TODO (#2604): this method doesn't make sense — its only addition over
-// [str dataUsingEncoding:allowLossyConversion:] is the terminating NUL byte,
-// but the "string" can already contain NUL bytes, so it's not a valid c string anyway.
-+ (const char *)_cStringForString:(NSString *)aString usingEncoding:(NSStringEncoding)anEncoding returningLengthAs:(NSUInteger *)cStringLengthPointer
-{
-	// Don't try and convert nil strings
-	if (!aString) return NULL;
-
-	// Perform a lossy conversion, using NSData to do the hard work
-	NSData *convertedData = [aString dataUsingEncoding:anEncoding allowLossyConversion:YES];
-	NSUInteger convertedDataLength = [convertedData length];
-
-	// Take the converted data - not null-terminated - and copy it to a null-terminated buffer
-	char *cStringBytes = malloc(convertedDataLength + 1);
-	memcpy(cStringBytes, [convertedData bytes], convertedDataLength);
-	cStringBytes[convertedDataLength] = '\0';
-
-	if (cStringLengthPointer) *cStringLengthPointer = convertedDataLength+1;
-
-	// Ensure the memory is autoreleased when needed, and return.
-	[NSData dataWithBytesNoCopy:cStringBytes length:convertedDataLength+1 freeWhenDone:YES]; 	
-	return cStringBytes;
-}
-
-/**
  * Converts a C string to an NSString using the current connection encoding.
  * This method *will not* correctly preserve nul characters within c strings; instead
  * the first nul character within the string will be treated as the line ending. This
