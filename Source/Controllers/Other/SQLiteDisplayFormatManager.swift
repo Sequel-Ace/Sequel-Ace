@@ -15,31 +15,19 @@ import OSLog
 @objc final class SQLiteDisplayFormatManager: NSObject {
     typealias SchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) throws -> Int
 
-    @objc static let sharedInstance = SQLiteDisplayFormatManager()
-
     private static let sqliteTableName = "ColumnDisplayOverrides"
-    private static let dbFileName = "ColumnDisplayOverrides.db"
-    private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "DisplayFormatManager")
+    /// The store's file name; the app-only `sharedInstance` in
+    /// SQLiteManagers+SharedStore.swift places it in the application-support folder.
+    static let dbFileName = "ColumnDisplayOverrides.db"
+    static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "DisplayFormatManager")
 
     /// The store, or `nil` when it turned out to be unusable.
     private let queue: FMDatabaseQueue?
 
-    /// The shared store in the application-support folder.
-    override convenience init() {
-        var databasePath: String?
-        do {
-            let appSupportPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
-            databasePath = "\(appSupportPath)/\(Self.dbFileName)"
-        }
-        catch {
-            Self.log.error("No location for \(Self.dbFileName): \(error.localizedDescription). Column display formats are not persisted.")
-        }
-        self.init(databasePath: databasePath)
-    }
-
     /// Opens or creates the store at `databasePath`. A `nil` path, a file
     /// that cannot be opened or a schema that cannot be created leaves the
-    /// manager without a store.
+    /// manager without a store. The app uses `sharedInstance`, declared in
+    /// the app-target-only SQLiteManagers+SharedStore.swift.
     init(databasePath: String?) {
         queue = databasePath.flatMap { Self.openStore(at: $0) }
         super.init()

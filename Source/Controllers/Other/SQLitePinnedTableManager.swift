@@ -18,10 +18,18 @@ import OSLog
 /// running session but are not persisted; the app never terminates over it.
 @objc final class SQLitePinnedTableManager: NSObject {
 
-    @objc static let sharedInstance = SQLitePinnedTableManager()
+    static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "pinnedTablesDatabase")
+    /// The store's file name; the app-only `sharedInstance` in
+    /// SQLiteManagers+SharedStore.swift places it in the application-support folder.
+    static let dbFileName = "pinnedTables.db"
 
-    private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "pinnedTablesDatabase")
-    private static let dbFileName = "pinnedTables.db"
+    /// The user-defaults key of the SQLite trace switch. A literal, so the
+    /// Unit Tests target compiles this file without the Objective-C
+    /// constants; keep in sync with `SPTraceSQLiteExecutions` in SPConstants.m.
+    static let traceSQLiteExecutionsKey = "SPTraceSQLiteExecutions"
+    /// The user-defaults key of the completed legacy migrations; keep in sync
+    /// with `SPMigratedPinnedTablesToConnectionIDs` in SPConstants.m.
+    static let migratedPinnedTablesKey = "SPMigratedPinnedTablesToConnectionIDs"
 
     /// The store, or `nil` when it turned out to be unusable.
     private let queue: FMDatabaseQueue?
@@ -43,36 +51,28 @@ import OSLog
     /// but are never written to the user defaults, so a later launch still
     /// retries them.
     private var sessionOnlyMigratedTokens: Set<String> = []
+    /// Counts the changes to `migratedLegacyPinnedTableTokens`, so a writer of
+    /// the migration record can tell whether a newer record exists.
+    private var recordGeneration = 0
 
     /// SQLite's primary result code for a violated constraint; a pin another
     /// manager on the same file stored already fails with it.
     private static let sqliteConstraint = 19
 
-    /// The shared store in the application-support folder, with the
-    /// migration record in the standard user defaults.
-    private override convenience init() {
-        var databasePath: String?
-        do {
-            let dataPath = try FileManager.default.applicationSupportDirectory(forSubDirectory: SPDataSupportFolder)
-            databasePath = dataPath + "/" + Self.dbFileName
-        } catch {
-            Self.log.error("Could not get path to applicationSupportDirectory. Error: \(error.localizedDescription). Pinned tables are not persisted.")
-        }
-        self.init(databasePath: databasePath, prefs: UserDefaults.standard)
-    }
-
     /// Opens or creates the store at `databasePath` and loads the pins it
     /// holds. A `nil` path, a file that cannot be opened or a schema that
-    /// cannot be created leaves the manager without a store.
+    /// cannot be created leaves the manager without a store. The app uses
+    /// `sharedInstance`, declared in the app-target-only
+    /// SQLiteManagers+SharedStore.swift.
     ///
     /// - Parameters:
     ///   - databasePath: Where the SQLite file lives.
     ///   - prefs: Where the record of completed legacy migrations is kept.
     init(databasePath: String?, prefs: UserDefaults) {
-        let traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
+        let traceExecution = prefs.bool(forKey: Self.traceSQLiteExecutionsKey)
         self.prefs = prefs
         self.traceExecution = traceExecution
-        migratedLegacyPinnedTableTokens = Set(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs) ?? [])
+        migratedLegacyPinnedTableTokens = Set(prefs.stringArray(forKey: Self.migratedPinnedTablesKey) ?? [])
         queue = databasePath.flatMap { Self.openStore(at: $0, traceExecution: traceExecution) }
         let storedPins = queue.flatMap { Self.loadPinnedTablesHistory(from: $0, traceExecution: traceExecution) }
         storeWasLoaded = storedPins != nil
@@ -228,7 +228,7 @@ import OSLog
             return
         }
 
-        let completedTokens: [String]? = stateLock.withLock {
+        let record: MigrationRecord? = stateLock.withLock {
             guard migratedLegacyPinnedTableTokens.contains(migrationToken) == false,
                   sessionOnlyMigratedTokens.contains(migrationToken) == false else {
                 return nil
@@ -253,12 +253,47 @@ import OSLog
                 return nil
             }
             migratedLegacyPinnedTableTokens.insert(migrationToken)
-            return migratedLegacyPinnedTableTokens.sorted()
+            recordGeneration += 1
+            return MigrationRecord(generation: recordGeneration, tokens: migratedLegacyPinnedTableTokens.sorted())
         }
-        guard let completedTokens else {
+        guard let record else {
             return
         }
-        prefs.set(completedTokens, forKey: SPMigratedPinnedTablesToConnectionIDs)
+        persistMigrationRecord(record)
+    }
+
+    /// The completed migrations as of one change to them.
+    private struct MigrationRecord {
+        let generation: Int
+        let tokens: [String]
+    }
+
+    /// Writes the completed migrations to the user defaults.
+    ///
+    /// The write happens without `stateLock`: setting a default notifies its
+    /// observers synchronously on this thread, and the app's observer
+    /// (`SPAppController`'s `defaultsChanged:`) waits for the main thread, which
+    /// may itself be waiting for the lock. Two migrations finishing at the same
+    /// time may therefore write in either order, and an older record written
+    /// last would drop a token, letting the next launch migrate again and bring
+    /// back a pin the user removed. So a writer that finds a newer record once
+    /// its write is done writes that one as well: the last write always holds
+    /// every completed migration.
+    private func persistMigrationRecord(_ record: MigrationRecord) {
+        var current = record
+        while true {
+            prefs.set(current.tokens, forKey: Self.migratedPinnedTablesKey)
+            let newer: MigrationRecord? = stateLock.withLock {
+                guard recordGeneration > current.generation else {
+                    return nil
+                }
+                return MigrationRecord(generation: recordGeneration, tokens: migratedLegacyPinnedTableTokens.sorted())
+            }
+            guard let newer else {
+                return
+            }
+            current = newer
+        }
     }
 
     @objc func unpinTable(hostName: String, databaseName: String, tableToUnpin: String) {

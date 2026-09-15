@@ -224,7 +224,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["users", "orders"])
         XCTAssertEqual(manager.getPinnedTables(hostName: "legacy.host", databaseName: "db"), ["orders", "users"])
         let token = PinnedTableMigrationPlanner.migrationToken(legacyHostName: "legacy.host", connectionIdentifier: "conn-1", databaseName: "db")
-        XCTAssertEqual(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs), [token].compactMap { $0 })
+        XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey), [token].compactMap { $0 })
 
         // The tuple is done: a pin removed afterwards does not come back.
         manager.unpinTable(hostName: "conn-1", databaseName: "db", tableToUnpin: "orders")
@@ -240,7 +240,53 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         manager.pinTable(hostName: "legacy.host", databaseName: "db2", tableToPin: "logs")
         manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db2")
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db2"), ["logs"])
-        XCTAssertEqual(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs)?.count, 2)
+        XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 2)
+    }
+
+    func testConcurrentMigrationsRecordEveryTuple() {
+        let databases = (0..<32).map { "db\($0)" }
+        let seeding = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        for database in databases {
+            seeding.pinTable(hostName: "legacy.host", databaseName: database, tableToPin: "orders")
+        }
+
+        // Several documents migrate different databases at once; every finished tuple must reach the record.
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        DispatchQueue.concurrentPerform(iterations: databases.count) { index in
+            manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: databases[index])
+        }
+
+        let expected = Set(databases.compactMap {
+            PinnedTableMigrationPlanner.migrationToken(legacyHostName: "legacy.host", connectionIdentifier: "conn-1", databaseName: $0)
+        })
+        XCTAssertEqual(expected.count, databases.count)
+        XCTAssertEqual(Set(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey) ?? []), expected)
+    }
+
+    func testRecordingAMigrationDoesNotHoldTheLockWhileDefaultsObserversRun() {
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        manager.pinTable(hostName: "legacy.host", databaseName: "db", tableToPin: "orders")
+
+        // Setting a default notifies its observers on the setting thread, and the app's observer waits for
+        // the main thread; an observer that reaches the manager must not find its lock taken.
+        let observer = DefaultsObserver { _ = manager.getPinnedTables(hostName: "conn-1", databaseName: "db") }
+        let key = SQLitePinnedTableManager.migratedPinnedTablesKey
+        prefs.addObserver(observer, forKeyPath: key, options: [.new], context: nil)
+
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
+            finished.signal()
+        }
+        guard finished.wait(timeout: .now() + 5) == .success else {
+            // Leave the stuck thread alone; only keep the observer from blocking tearDown as well.
+            observer.isEnabled = false
+            XCTFail("recording the migration deadlocked against a defaults observer")
+            return
+        }
+        prefs.removeObserver(observer, forKeyPath: key)
+        XCTAssertGreaterThan(observer.callCount, 0, "the observer never ran")
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
     }
 
     func testLegacyMigrationWaitsUntilTheStoreCanBeRead() {
@@ -252,13 +298,13 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertFalse(withoutStore.isPersistent)
         withoutStore.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
         XCTAssertEqual(withoutStore.getPinnedTables(hostName: "conn-1", databaseName: "db"), [])
-        XCTAssertNil(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs))
+        XCTAssertNil(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey))
 
         // The next launch with the store back migrates and records the tuple.
         let recovered = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
         recovered.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
         XCTAssertEqual(recovered.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
-        XCTAssertEqual(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs)?.count, 1)
+        XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1)
     }
 
     func testLegacyMigrationWaitsWhileTheStoreRejectsWrites() throws {
@@ -271,20 +317,20 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertTrue(readOnly.isPersistent)
         readOnly.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
         XCTAssertEqual(readOnly.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
-        XCTAssertNil(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs))
+        XCTAssertNil(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey))
         // Unpinning in that session sticks: refreshing the table list migrates again, which must not restore the
         // pin, and still does not claim success.
         readOnly.unpinTable(hostName: "conn-1", databaseName: "db", tableToUnpin: "orders")
         readOnly.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
         XCTAssertEqual(readOnly.getPinnedTables(hostName: "conn-1", databaseName: "db"), [])
-        XCTAssertNil(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs))
+        XCTAssertNil(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey))
 
         // The next launch that can write moves the pin into the store and records the tuple.
         try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: storePath)
         let writable = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
         writable.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
         XCTAssertEqual(writable.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
-        XCTAssertEqual(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs)?.count, 1)
+        XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1)
         XCTAssertEqual(SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
     }
 
@@ -300,7 +346,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: storePath)
         manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db2")
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db2"), ["logs"])
-        XCTAssertEqual(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs)?.count, 1)
+        XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1)
 
         // Unpinning the migrated table survives a relaunch: the migration does not run again.
         manager.unpinTable(hostName: "conn-1", databaseName: "db2", tableToUnpin: "logs")
@@ -323,8 +369,41 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         first.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
         second.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
 
-        XCTAssertEqual(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs)?.count, 1)
-        XCTAssertEqual(secondPrefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs)?.count, 1, "a row that is already there is not a rejected write")
+        XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1)
+        XCTAssertEqual(secondPrefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1, "a row that is already there is not a rejected write")
         XCTAssertEqual(SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
+    }
+}
+
+/// A key-value observer of a user default that runs a block on the thread
+/// that changed the default, as the app's defaults observer does.
+private final class DefaultsObserver: NSObject {
+    private let lock = NSLock()
+    private let onChange: () -> Void
+    private var enabled = true
+    private var calls = 0
+
+    init(onChange: @escaping () -> Void) {
+        self.onChange = onChange
+        super.init()
+    }
+
+    /// Whether a change still runs the block.
+    var isEnabled: Bool {
+        get { lock.withLock { enabled } }
+        set { lock.withLock { enabled = newValue } }
+    }
+
+    /// How often the block ran.
+    var callCount: Int {
+        lock.withLock { calls }
+    }
+
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
+        guard isEnabled else {
+            return
+        }
+        onChange()
+        lock.withLock { calls += 1 }
     }
 }
