@@ -10,9 +10,11 @@ import Foundation
     static let REGEX_PAIRS = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
     static let REGEX_VALID_CHARS = try! NSRegularExpression(pattern: "[^0-9a-f\\-]", options: .caseInsensitive)
 
+    /// The localized error for a value that contains characters a UUID cannot hold.
     static func invalidCharactersInUuid(in str: String) -> NSString {
         return String(format: NSLocalizedString("Invalid UUID Character in: %@", comment: "Invalid UUID Character"), str) as NSString
     }
+    /// The localized error for a value that is not a complete UUID.
     static func invalidUuid(_ str: String) -> NSString {
         return String(format: NSLocalizedString("Invalid UUID: %@", comment: "Invalid UUID"), str) as NSString
     }
@@ -20,11 +22,13 @@ import Foundation
     var nullStr: String? { self.userDefaults.string(forKey: "NullValue") }
     let userDefaults: UserDefaults
 
+    /// Creates a formatter that reads the NULL placeholder from the standard user defaults.
     @objc override init() {
         self.userDefaults = UserDefaults.standard
         super.init()
     }
 
+    /// Creates a formatter from an archive, reading the NULL placeholder from the standard user defaults.
     required init?(coder: NSCoder) {
         self.userDefaults = UserDefaults.standard
         super.init(coder: coder)
@@ -44,6 +48,7 @@ import Foundation
 
     // MARK: - Formatter Overrides
 
+    /// The hyphenated UUID text for a 16-byte value, or `nil` for anything else.
     override func string(for obj: Any?) -> String? {
         guard let data = obj as? Data else {
             return nil
@@ -52,6 +57,7 @@ import Foundation
         return convertToUuidString(data)
     }
 
+    /// Turns edited text into the value to store: `NSNull` for an empty field or the NULL placeholder, 16 bytes for a complete UUID, and `false` with an error for anything else.
     override func getObjectValue(_ obj: AutoreleasingUnsafeMutablePointer<AnyObject?>?,
                                  for string: String,
                                  errorDescription error: AutoreleasingUnsafeMutablePointer<NSString?>?) -> Bool {
@@ -74,6 +80,7 @@ import Foundation
         return true
     }
 
+    /// Accepts partial text while it only holds characters a UUID can be typed with.
     override func isPartialStringValid(_ partialString: String, newEditingString
                                        newString: AutoreleasingUnsafeMutablePointer<NSString?>?,
                                        errorDescription error: AutoreleasingUnsafeMutablePointer<NSString?>?) -> Bool {
@@ -85,6 +92,7 @@ import Foundation
         return true
     }
 
+    /// Accepts an edit while it is part of the NULL placeholder or a UUID of at most 32 hex digits.
     override func isPartialStringValid(_ partialStringPtr: AutoreleasingUnsafeMutablePointer<NSString>,
                                        proposedSelectedRange proposedSelRangePtr: NSRangePointer?,
                                        originalString origString: String,
@@ -111,6 +119,7 @@ import Foundation
 
     // MARK: - Helper Methods
 
+    /// Whether `s` could still become the NULL placeholder while it is being typed.
     func isPartialMatchForNullValue(_ s: String) -> Bool {
         if let nul = self.nullStr, nul.contains(s) {
             // not valid characters but user could be trying null the value out.
@@ -119,6 +128,7 @@ import Foundation
         return false
     }
 
+    /// Whether `s` is exactly the NULL placeholder.
     func isNullValue(_ s: String) -> Bool {
         if let NUL = self.nullStr, NUL == s {
             // not valid characters but user could be trying null the value out.
@@ -162,6 +172,7 @@ import Foundation
         return data
     }
 
+    /// `s` without hyphens and surrounding whitespace.
     func removeHyphens(_ s: String) -> String {
         if s.contains("-") {
             return s.replacingOccurrences(of: "-", with: "").trimmedString
@@ -171,6 +182,7 @@ import Foundation
     }
 
     // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Strings/Articles/formatSpecifiers.html
+    /// The hyphenated, upper-case UUID text for 16 bytes, or `nil` for any other length.
     func convertToUuidString(_ data: Data) -> String? {
         guard data.count == 16 else {
             return nil
