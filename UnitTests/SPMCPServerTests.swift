@@ -378,6 +378,26 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         XCTAssertNotNil(bind("SELECT ?, ?", [1]).1)
     }
 
+    // The binder walks Unicode scalars, so a combining mark after an opening
+    // quote does not hide it, and it refuses placeholders whose position
+    // depends on NO_BACKSLASH_ESCAPES instead of guessing the reading.
+    func testPlaceholderBindingUsesScalarsAndBothBackslashReadings() {
+        func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
+            SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
+        }
+
+        // `'` + U+0301 is one Character but two scalars: the `?` stays inside the literal.
+        XCTAssertNotNil(bind("SELECT '\u{301}?'", [1]).1)
+        XCTAssertEqual(bind("SELECT '\u{301}?' WHERE x = ?", [1]).0, "SELECT '\u{301}?' WHERE x = <1>")
+        // The quote after the backslash escapes or closes the literal depending on the mode.
+        XCTAssertNotNil(bind("SELECT 'a\\' , ?", [1]).1)
+        XCTAssertNotNil(bind("SELECT 'a\\', ? -- '", [1]).1)
+        // Backslashes that do not change where a literal ends stay bindable.
+        XCTAssertEqual(bind("SELECT 'a\\\\b', ?", [1]).0, "SELECT 'a\\\\b', <1>")
+        XCTAssertEqual(bind("SELECT `a\\`, ?", [1]).0, "SELECT `a\\`, <1>")
+        XCTAssertEqual(bind("SELECT 'it''s', ?", [1]).0, "SELECT 'it''s', <1>")
+    }
+
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([

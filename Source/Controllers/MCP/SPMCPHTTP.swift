@@ -210,65 +210,89 @@ enum SPMCPReadOnlyGuard {
     /// inside a string literal or a comment is not a placeholder and is copied
     /// verbatim, so a `?` parked in a comment cannot turn param data into
     /// executable SQL (it just fails the placeholder/param count check).
-    /// Returns `(nil, message)` when the placeholder and param counts differ.
+    ///
+    /// The scan walks Unicode scalars, as `stripCommentsQuoteAware` does, so a
+    /// combining mark right after a quote cannot hide the delimiter. Whether a
+    /// backslash escapes the next character depends on the connection's
+    /// `NO_BACKSLASH_ESCAPES`, which the binder does not know, so the
+    /// placeholders are found under both readings; a query in which the two
+    /// disagree is refused instead of being bound in a way the server may read
+    /// differently.
+    /// Returns `(nil, message)` when the placeholder and param counts differ or
+    /// the placeholders depend on the backslash reading.
     static func bindPlaceholders(in sql: String, params: [Any], literal: (Any) -> String) -> (String?, String?) {
-        var out = ""
-        var pIndex = 0
-        var quote: Character?
-        let chars: [Character] = Array(sql)
-        let n = chars.count
+        let scalars = Array(sql.unicodeScalars)
+        let placeholders = placeholderOffsets(in: scalars, backslashEscapes: true)
+        guard placeholders == placeholderOffsets(in: scalars, backslashEscapes: false) else {
+            return (nil, "The ? placeholders depend on whether a backslash escapes a quote (NO_BACKSLASH_ESCAPES); write the string literals without backslash escapes")
+        }
+        if placeholders.count > params.count { return (nil, "More ? placeholders than params provided") }
+        if placeholders.count < params.count { return (nil, "More params than ? placeholders provided") }
+        var out = String.UnicodeScalarView()
+        var copied = 0
+        for (offset, param) in zip(placeholders, params) {
+            out.append(contentsOf: scalars[copied..<offset])
+            out.append(contentsOf: literal(param).unicodeScalars)
+            copied = offset + 1
+        }
+        out.append(contentsOf: scalars[copied...])
+        return (String(out), nil)
+    }
+
+    /// The positions of the `?` placeholders in a query: outside string
+    /// literals, quoted identifiers and comments.
+    ///
+    /// - Parameters:
+    ///   - scalars: The query's Unicode scalars.
+    ///   - backslashEscapes: Whether a backslash escapes the next character in
+    ///     a `'…'` or `"…"` literal, as it does unless NO_BACKSLASH_ESCAPES is set.
+    /// - Returns: The scalar offsets of the placeholders, in order.
+    private static func placeholderOffsets(in scalars: [Unicode.Scalar], backslashEscapes: Bool) -> [Int] {
+        var offsets: [Int] = []
+        var quote: Unicode.Scalar?
+        let n = scalars.count
         var i = 0
         while i < n {
-            let c = chars[i]
+            let c = scalars[i]
             if let q = quote {
-                out.append(c)
-                if c == "\\" && q != "`" {                       // backslash escape in a string literal
-                    if i + 1 < n { out.append(chars[i + 1]); i += 1 }
-                } else if c == q {
-                    if i + 1 < n && chars[i + 1] == q {           // doubled-quote escape
-                        out.append(q); i += 1
-                    } else {
-                        quote = nil
-                    }
-                }
-                i += 1
-                continue
-            }
-            // Comments are copied verbatim; a `?` inside one is not a placeholder.
-            if c == "#" {                                        // # to end of line
-                while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
-                continue
-            }
-            if c == "-" && i + 1 < n && chars[i + 1] == "-" {    // -- (needs whitespace/EOL after)
-                let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(next) {
-                    while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
+                if c == "\\" && backslashEscapes && q != "`" {    // backslash escape in a string literal
+                    i += 2
                     continue
                 }
-            }
-            if c == "/" && i + 1 < n && chars[i + 1] == "*" {    // /* ... */ block comment
-                out.append("/"); out.append("*"); i += 2
-                while i < n {
-                    if i + 1 < n && chars[i] == "*" && chars[i + 1] == "/" {
-                        out.append("*"); out.append("/"); i += 2; break
+                if c == q {
+                    if i + 1 < n && scalars[i + 1] == q {          // doubled-quote escape
+                        i += 2
+                        continue
                     }
-                    out.append(chars[i]); i += 1
+                    quote = nil
                 }
-                continue
-            }
-            if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
-            if c == "?" {
-                if pIndex >= params.count { return (nil, "More ? placeholders than params provided") }
-                out.append(literal(params[pIndex]))
-                pIndex += 1
                 i += 1
                 continue
             }
-            out.append(c)
+            // A `?` inside a comment is not a placeholder.
+            if c == "#" {                                         // # to end of line
+                while i < n && !SASQLCommentSyntax.endsLineComment(scalars[i]) { i += 1 }
+                continue
+            }
+            if c == "-" && i + 1 < n && scalars[i + 1] == "-"
+                && (i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(scalars[i + 2])) {   // -- (needs whitespace/EOL after)
+                while i < n && !SASQLCommentSyntax.endsLineComment(scalars[i]) { i += 1 }
+                continue
+            }
+            if c == "/" && i + 1 < n && scalars[i + 1] == "*" {   // /* ... */ block comment
+                i += 2
+                while i < n && !(scalars[i] == "*" && i + 1 < n && scalars[i + 1] == "/") { i += 1 }
+                i += 2
+                continue
+            }
+            if c == "'" || c == "\"" || c == "`" {
+                quote = c
+            } else if c == "?" {
+                offsets.append(i)
+            }
             i += 1
         }
-        if pIndex != params.count { return (nil, "More params than ? placeholders provided") }
-        return (out, nil)
+        return offsets
     }
 }
 
