@@ -240,7 +240,7 @@ import OSLog
             return
         }
 
-        let record: MigrationRecord? = stateLock.withLock {
+        let record: SAMigrationRecord? = stateLock.withLock {
             guard migratedLegacyPinnedTableTokens.contains(migrationToken) == false,
                   sessionOnlyMigratedTokens.contains(migrationToken) == false else {
                 return nil
@@ -266,7 +266,7 @@ import OSLog
             }
             migratedLegacyPinnedTableTokens.insert(migrationToken)
             recordGeneration += 1
-            return MigrationRecord(generation: recordGeneration, tokens: migratedLegacyPinnedTableTokens.sorted())
+            return SAMigrationRecord(generation: recordGeneration, tokens: migratedLegacyPinnedTableTokens.sorted())
         }
         guard let record else {
             return
@@ -275,7 +275,7 @@ import OSLog
     }
 
     /// The completed migrations as of one change to them.
-    private struct MigrationRecord {
+    private struct SAMigrationRecord {
         let generation: Int
         let tokens: [String]
     }
@@ -291,15 +291,15 @@ import OSLog
     /// back a pin the user removed. So a writer that finds a newer record once
     /// its write is done writes that one as well: the last write always holds
     /// every completed migration.
-    private func persistMigrationRecord(_ record: MigrationRecord) {
+    private func persistMigrationRecord(_ record: SAMigrationRecord) {
         var current = record
         while true {
             prefs.set(current.tokens, forKey: Self.migratedPinnedTablesKey)
-            let newer: MigrationRecord? = stateLock.withLock {
+            let newer: SAMigrationRecord? = stateLock.withLock {
                 guard recordGeneration > current.generation else {
                     return nil
                 }
-                return MigrationRecord(generation: recordGeneration, tokens: migratedLegacyPinnedTableTokens.sorted())
+                return SAMigrationRecord(generation: recordGeneration, tokens: migratedLegacyPinnedTableTokens.sorted())
             }
             guard let newer else {
                 return

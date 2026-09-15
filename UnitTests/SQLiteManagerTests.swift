@@ -14,14 +14,14 @@ import XCTest
 
 /// The display-format store must survive a folder it cannot write to and a
 /// file it cannot read: formats are then not persisted, nothing crashes.
-final class SQLiteDisplayFormatManagerTests: XCTestCase {
+final class SASQLiteDisplayFormatManagerTests: XCTestCase {
     private var directory: URL!
 
     /// Creates an empty temporary directory for the test's store.
     override func setUpWithError() throws {
         try super.setUpWithError()
         directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SQLiteDisplayFormatManagerTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("SASQLiteDisplayFormatManagerTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
@@ -105,7 +105,7 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
     }
 }
 
-extension SQLiteDisplayFormatManagerTests {
+extension SASQLiteDisplayFormatManagerTests {
     /// Verifies that a store whose table lacks a column the queries read is not used and
     /// receives no rows.
     func testStoreWhoseTableCannotBeReadIsNotUsed() throws {
@@ -129,7 +129,7 @@ extension SQLiteDisplayFormatManagerTests {
 
 /// Pins must stay consistent when several threads pin, unpin and migrate at
 /// once, and must keep working in memory when the store is unusable.
-final class SQLitePinnedTableManagerTests: XCTestCase {
+final class SASQLitePinnedTableManagerTests: XCTestCase {
     private var directory: URL!
     private var prefsSuiteName: String!
     private var prefs: UserDefaults!
@@ -139,9 +139,9 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SQLitePinnedTableManagerTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("SASQLitePinnedTableManagerTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        prefsSuiteName = "SQLitePinnedTableManagerTests-\(UUID().uuidString)"
+        prefsSuiteName = "SASQLitePinnedTableManagerTests-\(UUID().uuidString)"
         prefs = try XCTUnwrap(UserDefaults(suiteName: prefsSuiteName))
     }
 
@@ -438,7 +438,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
 
         // Two managers read the store before either migrates; the second one's insert hits the unique constraint.
         let first = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
-        let secondPrefsName = "SQLitePinnedTableManagerTests-second-\(UUID().uuidString)"
+        let secondPrefsName = "SASQLitePinnedTableManagerTests-second-\(UUID().uuidString)"
         let secondPrefs = try XCTUnwrap(UserDefaults(suiteName: secondPrefsName))
         defer { secondPrefs.removePersistentDomain(forName: secondPrefsName) }
         let second = SQLitePinnedTableManager(databasePath: storePath, prefs: secondPrefs)
