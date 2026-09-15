@@ -259,6 +259,8 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "stacked")
     }
 
+    /// Verifies that writes placed behind block, `--` or `#` comments, with LF or
+    /// CRLF line endings, are rejected by the read-only guard.
     func testCommentHiddenWritesRejected() {
         assertRejected([
             "/* x */ DELETE FROM t",
@@ -364,6 +366,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
     // copied verbatim and never bound, while a live `?` behind a comment is bound
     // whether the comment ends with LF or CRLF.
     func testPlaceholderBindingSkipsCommentsAcrossLineEndings() {
+        /// Binds `params` into `sql`, rendering each value as `<value>`; returns the bound SQL or an error.
         func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
             SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
         }
@@ -382,6 +385,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
     // quote does not hide it, and it refuses placeholders whose position
     // depends on NO_BACKSLASH_ESCAPES instead of guessing the reading.
     func testPlaceholderBindingUsesScalarsAndBothBackslashReadings() {
+        /// Binds `params` into `sql`, rendering each value as `<value>`; returns the bound SQL or an error.
         func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
             SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
         }
@@ -398,6 +402,9 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         XCTAssertEqual(bind("SELECT 'it''s', ?", [1]).0, "SELECT 'it''s', <1>")
     }
 
+    /// Verifies that EXPLAIN ANALYZE over a write is rejected, including behind
+    /// the MySQL 8.3+ `FOR SCHEMA`/`FOR DATABASE`, `INTO @var` and `FORMAT`
+    /// modifiers.
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([

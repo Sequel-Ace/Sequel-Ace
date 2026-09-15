@@ -537,6 +537,9 @@ final class SADatabaseAssertion: NSObject {
         return nil
     }
 
+    /// Cheap pre-check before comment stripping: returns true when the query
+    /// starts, after leading whitespace, with a comment or with the keyword
+    /// `USE` or `DROP`, so it might select or drop a database.
     static func queryCouldChangeDatabaseContext(_ query: String) -> Bool {
         guard let start = query.firstIndex(where: { !$0.isWhitespace }) else {
             return false

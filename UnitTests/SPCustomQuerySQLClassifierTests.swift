@@ -117,6 +117,9 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE UPDATE t SET c = 1"))
     }
 
+    /// Verifies that comments are treated as whitespace when classifying a
+    /// query, that quoted comment markers are kept, that executable comments
+    /// are unwrapped, and that keywords only match on whole-word boundaries.
     func testCommentsAreIgnoredButKeywordBoundariesRemainStrict() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/* c */ EXPLAIN /* c */ ANALYZE /* c */ DELETE FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAINER ANALYZE DELETE FROM t"))
@@ -177,6 +180,9 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
     }
 
+    /// Verifies that executable comments with a version gate the server cannot
+    /// be matched against always require the destructive-query warning, since
+    /// either reading of the batch could be the one the server executes.
     func testUnknownExecutableCommentGatesAlwaysRequireWarning() {
         // On current servers the future-gated SELECT is ignored, so the DELETE
         // is the real leading statement. Preserving only the comment body would

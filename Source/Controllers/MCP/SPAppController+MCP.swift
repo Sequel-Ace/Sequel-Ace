@@ -581,6 +581,7 @@ extension SPAppController: SPMCPDataSource {
         guard let re = try? NSRegularExpression(pattern: pattern) else { return nil }
         let ns = sql as NSString
         guard let m = re.firstMatch(in: sql, range: NSRange(location: 0, length: ns.length)) else { return nil }
+        /// Returns the text of capture group `i`, or nil if the group did not participate in the match.
         func group(_ i: Int) -> String? {
             let r = m.range(at: i)
             return r.location == NSNotFound ? nil : ns.substring(with: r)
@@ -610,6 +611,9 @@ extension SPAppController: SPMCPDataSource {
         SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { self.mcpSQLLiteral(for: $0, connection: conn) }
     }
 
+    /// Renders a bound parameter as an SQL literal: `NULL` for NSNull, the plain
+    /// string value for numbers, and a connection-escaped quoted string for
+    /// strings and any other value (via its description).
     private func mcpSQLLiteral(for value: Any, connection conn: SPMySQLConnection) -> String {
         if value is NSNull { return "NULL" }
         if let num = value as? NSNumber { return num.stringValue }

@@ -273,6 +273,7 @@ enum SPCustomQuerySQLClassifier {
         )
     }
 
+    /// Returns true if the scalar is one of the ASCII digits `0` through `9`.
     private static func isASCIIDigit(_ scalar: Unicode.Scalar) -> Bool {
         (48...57).contains(scalar.value)
     }
