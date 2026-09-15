@@ -270,6 +270,68 @@ public class SPProcessListRowSerializer: NSObject {
     case truncate
 }
 
+/// What the field editor sheet does with an edit to its text, which is
+/// limited to a column's length in code points, as MySQL counts it.
+/// `SPFieldEditorController` asks for it before a typed or pasted change is
+/// made and applies it.
+@objcMembers public final class SAFieldEditorEditLimit: NSObject {
+    /// Whether the edit can go ahead as it is.
+    public let allowsEdit: Bool
+
+    /// The start of the inserted text that still fits, to put in place of the
+    /// replaced range instead of the whole insertion. `nil` when the edit is
+    /// allowed or when nothing more fits.
+    public let fittingInsertion: String?
+
+    private init(allowsEdit: Bool, fittingInsertion: String?) {
+        self.allowsEdit = allowsEdit
+        self.fittingInsertion = fittingInsertion
+        super.init()
+    }
+
+    /// Decides how the sheet treats replacing `range` of `text` with
+    /// `replacement` when the text may hold `limit` code points.
+    ///
+    /// Every length is counted in code points: the text, the part of it the
+    /// edit replaces and the insertion. `range` is an `NSRange` in UTF-16
+    /// units and only locates the replaced part; subtracting its length from
+    /// code point counts would let a paste over selected emoji through
+    /// uncut.
+    ///
+    /// A FLOAT value's decimal point does not count against the limit: when
+    /// the text already holds one, the edit may end one code point over the
+    /// limit, and a cut insertion keeps one code point more.
+    ///
+    /// - Parameters:
+    ///   - text: The sheet's text before the edit.
+    ///   - range: The range of `text` the edit replaces, in UTF-16 units.
+    ///   - replacement: The text the edit inserts.
+    ///   - limit: The column's length in code points; greater than 0.
+    ///   - ignoringDecimalPoint: Whether `text` is a FLOAT value holding a
+    ///     decimal point.
+    /// - Returns: An allowed edit, or a refused one with the part of
+    ///   `replacement` that still fits, if any.
+    @objc(evaluateEditOfText:replacingRange:withString:limit:ignoringDecimalPoint:)
+    public static func evaluate(text: NSString, replacing range: NSRange, with replacement: NSString, limit: Int, ignoringDecimalPoint: Bool) -> SAFieldEditorEditLimit {
+        let location = min(max(range.location, 0), text.length)
+        let length = min(max(range.length, 0), text.length - location)
+        let replacedCount = (text.substring(with: NSRange(location: location, length: length)) as NSString).characterCount()
+        let keptCount = text.characterCount() - replacedCount
+        let newLength = keptCount + replacement.characterCount()
+
+        let decimalPoint = ignoringDecimalPoint ? 1 : 0
+        guard newLength > limit + decimalPoint else {
+            return SAFieldEditorEditLimit(allowsEdit: true, fittingInsertion: nil)
+        }
+
+        let insertableCount = limit + decimalPoint - keptCount
+        guard insertableCount > 0 else {
+            return SAFieldEditorEditLimit(allowsEdit: false, fittingInsertion: nil)
+        }
+        return SAFieldEditorEditLimit(allowsEdit: false, fittingInsertion: replacement.prefix(codePoints: insertableCount) as String)
+    }
+}
+
 @objc extension NSString {
     //Special space-character used to separate the column name and column type
     @objc static let columnHeaderSplittingSpace: String = " "

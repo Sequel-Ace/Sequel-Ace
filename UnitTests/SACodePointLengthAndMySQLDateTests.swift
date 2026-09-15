@@ -124,6 +124,74 @@ final class SATextLimitDecisionTests: XCTestCase {
     }
 }
 
+/// The length rules of the field editor sheet, decided by
+/// `SAFieldEditorEditLimit.evaluate(text:replacing:with:limit:ignoringDecimalPoint:)`
+/// and applied by `SPFieldEditorController`.
+final class SAFieldEditorEditLimitTests: XCTestCase {
+
+    private func emoji(_ count: Int) -> String {
+        return String(repeating: "\u{1F642}", count: count)
+    }
+
+    private func evaluate(_ text: String, replacing range: NSRange, with replacement: String, limit: Int, ignoringDecimalPoint: Bool = false) -> SAFieldEditorEditLimit {
+        return SAFieldEditorEditLimit.evaluate(text: text as NSString, replacing: range, with: replacement as NSString, limit: limit, ignoringDecimalPoint: ignoringDecimalPoint)
+    }
+
+    /// Verifies five emoji pasted over three selected ones keep three: the
+    /// selection is six UTF-16 units but three code points, so the paste is
+    /// not waved through as shortening the text.
+    func testPasteOverSelectedEmojiIsCutToTheLimit() {
+        let text = emoji(3)
+        let result = evaluate(text, replacing: NSRange(location: 0, length: (text as NSString).length), with: emoji(5), limit: 3)
+
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertEqual(result.fittingInsertion, emoji(3))
+    }
+
+    /// Verifies a paste at the end keeps only what fits behind the text.
+    func testPasteAtTheEndKeepsWhatFits() {
+        let text = "ab"
+        let result = evaluate(text, replacing: NSRange(location: 2, length: 0), with: emoji(3), limit: 3)
+
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertEqual(result.fittingInsertion, emoji(1))
+    }
+
+    /// Verifies replacing an emoji in the middle frees one code point, not
+    /// the two UTF-16 units it occupies.
+    func testReplacingAnEmojiInTheMiddleFreesOneCodePoint() {
+        let text = "a\u{1F642}b"
+        let result = evaluate(text, replacing: NSRange(location: 1, length: 2), with: "xyz", limit: 3)
+
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertEqual(result.fittingInsertion, "x")
+    }
+
+    /// Verifies nothing is inserted into a full text, and an edit that fits
+    /// goes ahead.
+    func testAFullTextTakesNothingAndAFittingEditIsAllowed() {
+        let full = evaluate("abc", replacing: NSRange(location: 3, length: 0), with: "d", limit: 3)
+        XCTAssertFalse(full.allowsEdit)
+        XCTAssertNil(full.fittingInsertion)
+
+        let fitting = evaluate("a", replacing: NSRange(location: 0, length: 1), with: emoji(3), limit: 3)
+        XCTAssertTrue(fitting.allowsEdit)
+        XCTAssertNil(fitting.fittingInsertion)
+    }
+
+    /// Verifies a FLOAT value's decimal point does not count: one code point
+    /// over the limit is allowed, and a cut keeps one more.
+    func testAFloatDecimalPointDoesNotCount() {
+        XCTAssertTrue(evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "3", limit: 3, ignoringDecimalPoint: true).allowsEdit)
+
+        let cut = evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "345", limit: 3, ignoringDecimalPoint: true)
+        XCTAssertFalse(cut.allowsEdit)
+        XCTAssertEqual(cut.fittingInsertion, "3")
+
+        XCTAssertFalse(evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "3", limit: 3).allowsEdit)
+    }
+}
+
 final class SAMySQLDateTimeTests: XCTestCase {
 
     private func expected(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int, dateStyle: DateFormatter.Style, timeStyle: DateFormatter.Style) -> String {
