@@ -141,10 +141,14 @@ final class SATextLimitDecisionTests: XCTestCase {
 /// and applied by `SPFieldEditorController`.
 final class SAFieldEditorEditLimitTests: XCTestCase {
 
+    /// A run of `count` slightly smiling faces - one code point each, but two
+    /// UTF-16 units, which is what these tests turn on.
     private func emoji(_ count: Int) -> String {
         return String(repeating: "\u{1F642}", count: count)
     }
 
+    /// Asks the decision under test about an edit, taking Swift strings and
+    /// defaulting to a column type that gets no decimal point allowance.
     private func evaluate(_ text: String, replacing range: NSRange, with replacement: String, limit: Int, fieldType: String? = "VARCHAR") -> SAFieldEditorEditLimit {
         return SAFieldEditorEditLimit.evaluate(text: text as NSString, replacing: range, with: replacement as NSString, limit: limit, fieldType: fieldType)
     }
@@ -234,6 +238,9 @@ final class SAFieldEditorEditLimitTests: XCTestCase {
 
 final class SAMySQLDateTimeTests: XCTestCase {
 
+    /// The text a `DateFormatter` with these styles prints for the given UTC
+    /// instant, so an expectation follows the machine's locale instead of
+    /// pinning one locale's wording.
     private func expected(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int, dateStyle: DateFormatter.Style, timeStyle: DateFormatter.Style) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

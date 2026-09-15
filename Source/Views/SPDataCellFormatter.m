@@ -107,6 +107,16 @@
 	return mutableString;
 }
 
+/**
+ * Decide what an edit in progress may leave in the cell: first the column's length
+ * rules, then the 0/1 rule of a BIT column. Both report to the user with a tooltip.
+ *
+ * @param partialString The text the edit would leave in the cell
+ * @param newString Set to the text cut to the column's length when a paste overshoots it
+ * @param error Unused; the rules show a tooltip instead of an error message
+ * @return YES when the text is taken as it stands, NO when the edit is refused or
+ *         replaced by the string returned in newString
+ */
 - (BOOL)isPartialStringValid:(NSString *)partialString newEditingString:(NSString **)newString errorDescription:(NSString **)error
 {
     // SPNullValue = @"NULL"

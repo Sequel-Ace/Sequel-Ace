@@ -52,6 +52,10 @@ extension String {
 		return String(self.dropLast(suffix.count))
 	}
 
+	/// Whether the string starts with the specified prefix
+	/// - Parameters:
+	///   - prefix: the prefix to look for at the start of the string
+	///   - caseSensitive: false to compare both strings lowercased
 	func hasPrefix(_ prefix: String, caseSensitive: Bool = true) -> Bool {
 		switch caseSensitive {
 			case true:
@@ -61,6 +65,10 @@ extension String {
 		}
 	}
 
+	/// Whether the string ends with the specified suffix
+	/// - Parameters:
+	///   - suffix: the suffix to look for at the end of the string
+	///   - caseSensitive: false to compare both strings lowercased
 	func hasSuffix(_ suffix: String, caseSensitive: Bool = true) -> Bool {
 		switch caseSensitive {
 			case true:
@@ -70,6 +78,8 @@ extension String {
 		}
 	}
 
+    /// The string's lines, split on every line break Unicode recognises and
+    /// with the breaks themselves dropped.
     func separatedIntoLines() -> [String] {
         var lines: [String] = []
         let wholeString = self.startIndex..<self.endIndex
@@ -82,6 +92,7 @@ extension String {
         return lines
     }
 
+    /// The string split on every semicolon, with the empty parts dropped.
     func separatedIntoLinesByCharset() -> [String] {
 
         var semiChar = CharacterSet()
@@ -92,6 +103,12 @@ extension String {
         return lines
     }
 
+    /// The string taken as a format string, with the arguments substituted.
+    ///
+    /// Int, Float, Double, Int64 and String arguments are described first, so
+    /// that a placeholder is filled whichever of them is passed; an argument
+    /// of any other type becomes "(null)".
+    /// - Parameter arguments: the values to substitute into the format
     func format(_ arguments: CVarArg...) -> String {
             let args = arguments.map {
                 if let arg = $0 as? Int { return String(arg) }
@@ -215,6 +232,14 @@ public class SPProcessListRowSerializer: NSObject {
         case progress = "Progress"
     }
 
+    /// One row of the process list as a single line of text, its columns
+    /// separated by spaces.
+    ///
+    /// - Parameters:
+    ///   - process: One row of `SHOW PROCESSLIST`.
+    ///   - includeProgress: Whether to append the Progress column, which is
+    ///     left off when the row carries no value for it.
+    /// - Returns: The row's values joined by single spaces.
     @objc(serializedProcessRow:includeProgress:)
     public class func serializedProcessRow(_ process: NSDictionary, includeProgress: Bool) -> String {
         let typedProcess = process as? [AnyHashable: Any] ?? [:]
@@ -240,6 +265,13 @@ public class SPProcessListRowSerializer: NSObject {
         return rowValues.joined(separator: " ")
     }
 
+    /// The text one column of a process list row serializes to.
+    ///
+    /// - Parameters:
+    ///   - key: The `SHOW PROCESSLIST` column to read.
+    ///   - process: One row of the process list.
+    /// - Returns: The value described as a string, or an empty string when the
+    ///   row carries no such column or holds `NSNull` for it.
     private class func processValue(
         for key: ProcessListColumnKey,
         in process: [AnyHashable: Any]
@@ -283,6 +315,14 @@ public class SPProcessListRowSerializer: NSObject {
     /// allowed or when nothing more fits.
     public let fittingInsertion: String?
 
+    /// Creates a decision. Only
+    /// `evaluate(text:replacing:with:limit:fieldType:)` makes these; callers
+    /// read the two properties.
+    ///
+    /// - Parameters:
+    ///   - allowsEdit: Whether the edit can go ahead as it is.
+    ///   - fittingInsertion: The start of the insertion that still fits, or
+    ///     `nil` when the edit is allowed or nothing more fits.
     private init(allowsEdit: Bool, fittingInsertion: String?) {
         self.allowsEdit = allowsEdit
         self.fittingInsertion = fittingInsertion
@@ -325,6 +365,9 @@ public class SPProcessListRowSerializer: NSObject {
 
         let isFloat = fieldType?.uppercased() == "FLOAT"
         let keptHoldsPoint = keptText.range(of: ".").location != NSNotFound
+        /// The number of code points the FLOAT decimal point adds to `limit`
+        /// for an edit inserting `insertion`: 1 when the text the edit leaves
+        /// behind would hold a point, 0 for every other column type.
         func decimalPointAllowance(inserting insertion: NSString) -> Int {
             guard isFloat else { return 0 }
             return keptHoldsPoint || insertion.range(of: ".").location != NSNotFound ? 1 : 0
@@ -359,10 +402,19 @@ public class SPProcessListRowSerializer: NSObject {
         return "\(columnName)\(columnHeaderSplittingSpace)\(columnType)"
     }
 
+    /// The bytes of `data` as an uppercase hexadecimal string. The `NSString`
+    /// counterpart of `String.rawByteString(_:)`, for Objective-C callers.
+    ///
+    /// - Parameter data: The bytes to describe.
     static func rawByteString(data: NSData) -> NSString {
         return String.rawByteString(data as Data) as NSString
     }
 
+	/// A copy of this string without `prefix` at its start, or the string
+	/// itself when it does not start with it. The `NSString` counterpart of
+	/// `String.dropPrefix(_:)`, for Objective-C callers.
+	///
+	/// - Parameter prefix: The prefix to trim from the start of the string.
 	public func dropPrefix(prefix: NSString) -> NSString {
 		return (self as String).dropPrefix(prefix as String) as NSString
 	}

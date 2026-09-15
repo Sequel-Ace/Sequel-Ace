@@ -351,11 +351,21 @@
 #pragma mark -
 #pragma mark TableView datasource methods
 
+/**
+ * The number of rows the table information pane or the activities pane holds.
+ */
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
 {
 	return (tableView == infoTable) ? [info count] : [activities count];
 }
 
+/**
+ * The value of one row, setting up the cell that row is drawn with.
+ *
+ * The table information pane hands out the strings it collected. In the activities
+ * pane row 0 carries the pane's header, and every other row an activity cell showing
+ * the activity's name and, for a bash command, its scope and start time.
+ */
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (tableView == infoTable) {
@@ -400,11 +410,18 @@
 	}
 }
 
+/**
+ * Give the header row more height than the rows beneath it.
+ */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
 	return (row == 0 ? 25 : [tableView rowHeight]);
 }
 
+/**
+ * Let only the header row be selected in the table information pane, since its rows
+ * are read-only; the activities pane allows every row.
+ */
 - (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)rowIndex
 {
 	if (rowIndex == 0) return YES;
@@ -419,6 +436,10 @@
 	return NO;
 }
 
+/**
+ * Take a click on a header row as the switch between the table information and the
+ * activities pane, and never begin an edit.
+ */
 - (BOOL)tableView:(NSTableView *)tableView shouldEditTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (rowIndex > 0) return NO;
@@ -440,6 +461,11 @@
 	return NO;
 }
 
+/**
+ * The tooltip for a row of the activities pane: "Cancel" while the pointer is over the
+ * cancel button at the row's right-hand edge, otherwise the activity's name. Rows of
+ * the table information pane and the header row get none.
+ */
 - (NSString *)tableView:(NSTableView *)tableView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex mouseLocation:(NSPoint)mouseLocation
 {
 	if (tableView == activitiesTable) {
@@ -458,12 +484,20 @@
 	return nil;
 }
 
+/**
+ * Draw the top row of either pane as a group row.
+ */
 - (BOOL)tableView:(NSTableView *)tableView isGroupRow:(NSInteger)row
 {
 	// This makes the top row (TABLE INFORMATION/ACTIVITIES) have the diff styling
 	return row == 0;
 }
 
+/**
+ * Give the table information rows their property icon before they are drawn.
+ *
+ * The header row, the other columns and the activities table are left plain.
+ */
 - (void)tableView:(NSTableView *)tableView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (tableView == infoTable) {
@@ -481,6 +515,9 @@
 
 #pragma mark -
 
+/**
+ * Stop listening for the notifications this controller subscribed to.
+ */
 - (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 }

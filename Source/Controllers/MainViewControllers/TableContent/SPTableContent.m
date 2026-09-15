@@ -661,10 +661,30 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 }
 
+/**
+ * Rebuild the content view's columns, showing every column of the table.
+ *
+ * @param savedColumnWidths The widths of a reloaded table's columns, keyed by header string
+ * @param font The font the table's cells are drawn in
+ */
 - (void)_buildTableColumns:(NSMutableDictionary *)savedColumnWidths withFont:(NSFont *)font {
     [self _buildTableColumns:savedColumnWidths withFont:font filterTerms:nil];
 }
 
+/**
+ * Rebuild the content view's columns from the current table's column definitions.
+ *
+ * Each column gets a header cell showing its name - with its type appended when that
+ * preference is set - a tooltip describing the definition and a data cell matching the
+ * column's type. Its width comes from savedColumnWidths, or else from the width stored
+ * for the table in SQLite. Finally the sort indicator is put back on the column that was
+ * sorted before, or sorting is cleared when that column is no longer shown.
+ *
+ * @param savedColumnWidths The widths of a reloaded table's columns, keyed by header string
+ * @param font The font the table's cells are drawn in; the header font is derived from it
+ * @param filterTerms Lowercase terms that limit the table to the columns whose name contains
+ *                    one of them, or nil to show every column
+ */
 - (void)_buildTableColumns:(NSMutableDictionary *)savedColumnWidths withFont:(NSFont *)font filterTerms:(NSArray *)filterTerms {
     NSString *nullValue = [prefs objectForKey:SPNullValue];
     BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
