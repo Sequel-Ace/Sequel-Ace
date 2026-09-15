@@ -54,10 +54,41 @@ enum SPCustomQuerySQLClassifier {
     ) -> Bool {
         guard let query = query, !query.isEmpty else { return false }
 
+        // The classifier does not know the connection's sql_mode. Under
+        // NO_BACKSLASH_ESCAPES a backslash inside a string is a plain
+        // character and the quote after it closes the string, which changes
+        // where comments and quoted operands end; otherwise the quote is
+        // escaped. Read the query both ways and require the warning when
+        // either way runs something unsafe.
+        let backslashReadings = query.contains("\\") ? [true, false] : [true]
+        return backslashReadings.allSatisfy { backslashEscapes in
+            isQuerySafeWithoutDestructiveWarning(
+                query,
+                serverVersion: serverVersion,
+                serverIsMariaDB: serverIsMariaDB,
+                backslashEscapes: backslashEscapes
+            )
+        }
+    }
+
+    /// Judges the query under one reading of backslashes - for callers that
+    /// have already stripped or split the text under that reading and must
+    /// not mix it with the other one.
+    ///
+    /// - Parameter backslashEscapes: Whether a backslash escapes the next
+    ///   character inside `'…'` and `"…"`; `false` is the
+    ///   `NO_BACKSLASH_ESCAPES` reading.
+    static func isQuerySafeWithoutDestructiveWarning(
+        _ query: String,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false,
+        backslashEscapes: Bool
+    ) -> Bool {
         let strippingResult = stripSQLCommentsWithMetadata(
             query,
             serverVersion: serverVersion,
-            serverIsMariaDB: serverIsMariaDB
+            serverIsMariaDB: serverIsMariaDB,
+            backslashEscapes: backslashEscapes
         )
         // Both the executed and ignored forms must be safe. When the active
         // form is unknown, require the destructive-query confirmation.
@@ -77,7 +108,7 @@ enum SPCustomQuerySQLClassifier {
 
         for explainAlias in ["EXPLAIN", "DESCRIBE", "DESC"] {
             if hasLeadingSQLKeyword(explainAlias, in: upper) {
-                return isExplainAliasSafeWithoutWarning(upper, alias: explainAlias)
+                return isExplainAliasSafeWithoutWarning(upper, alias: explainAlias, backslashEscapes: backslashEscapes)
             }
         }
 
@@ -103,30 +134,37 @@ enum SPCustomQuerySQLClassifier {
         ).sql
     }
 
+    /// - Parameter backslashEscapes: Whether a backslash escapes the next
+    ///   character inside `'…'` and `"…"`; `false` reads the source the way a
+    ///   connection with `NO_BACKSLASH_ESCAPES` does, where the quote after a
+    ///   backslash closes the string.
     private static func stripSQLCommentsWithMetadata(
         _ source: String,
         serverVersion: Int? = nil,
-        serverIsMariaDB: Bool = false
+        serverIsMariaDB: Bool = false,
+        backslashEscapes: Bool = true
     ) -> CommentStrippingResult {
-        let characters: [Character] = source.map { $0 }
+        // Scalars, not Characters: a combining mark right after a quote would
+        // otherwise merge with it into one Character and hide the delimiter.
+        let characters = Array(source.unicodeScalars)
         var result = ""
         var hasIndeterminateExecutableComment = false
         var index = 0
-        var quote: Character?
+        var quote: Unicode.Scalar?
 
         while index < characters.count {
             let character = characters[index]
 
             if let activeQuote = quote {
-                result.append(character)
+                result.unicodeScalars.append(character)
 
-                if character == "\\", activeQuote != "`", index + 1 < characters.count {
+                if character == "\\", backslashEscapes, activeQuote != "`", index + 1 < characters.count {
                     index += 1
-                    result.append(characters[index])
+                    result.unicodeScalars.append(characters[index])
                 } else if character == activeQuote {
                     if index + 1 < characters.count, characters[index + 1] == activeQuote {
                         index += 1
-                        result.append(characters[index])
+                        result.unicodeScalars.append(characters[index])
                     } else {
                         quote = nil
                     }
@@ -138,7 +176,7 @@ enum SPCustomQuerySQLClassifier {
 
             if character == "'" || character == "\"" || character == "`" {
                 quote = character
-                result.append(character)
+                result.unicodeScalars.append(character)
                 index += 1
                 continue
             }
@@ -192,7 +230,7 @@ enum SPCustomQuerySQLClassifier {
                     }
                     let hasVersionGate = contentStart > versionStart
                     let requiredVersion = hasVersionGate
-                        ? Int(String(characters[versionStart..<contentStart]))
+                        ? Int(String(String.UnicodeScalarView(characters[versionStart..<contentStart])))
                         : nil
                     if serverVersion == nil,
                        hasVersionGate || (isMariaDBOnlyComment && !serverIsMariaDB) {
@@ -206,9 +244,10 @@ enum SPCustomQuerySQLClassifier {
                         serverIsMariaDB: serverIsMariaDB
                     ), contentStart < contentEnd {
                         let nestedResult = stripSQLCommentsWithMetadata(
-                            String(characters[contentStart..<contentEnd]),
+                            String(String.UnicodeScalarView(characters[contentStart..<contentEnd])),
                             serverVersion: serverVersion,
-                            serverIsMariaDB: serverIsMariaDB
+                            serverIsMariaDB: serverIsMariaDB,
+                            backslashEscapes: backslashEscapes
                         )
                         result.append(nestedResult.sql)
                         hasIndeterminateExecutableComment = hasIndeterminateExecutableComment
@@ -221,7 +260,7 @@ enum SPCustomQuerySQLClassifier {
                 continue
             }
 
-            result.append(character)
+            result.unicodeScalars.append(character)
             index += 1
         }
 
@@ -231,25 +270,38 @@ enum SPCustomQuerySQLClassifier {
         )
     }
 
-    /// Whether a character may follow `--` for it to start a comment: MySQL's
-    /// lexer requires a space or control character there (tab, newline, CRLF,
-    /// form feed, vertical tab …). Shared with the MCP strippers so every
-    /// scanner recognises the same comment starts.
+    /// Whether a scalar may follow `--` for it to start a comment: MySQL's lexer
+    /// requires a space or control character there (tab, newline, carriage
+    /// return, form feed, vertical tab …). Shared with the MCP strippers so
+    /// every scanner recognises the same comment starts.
+    static func isMySQLCommentWhitespace(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value <= 0x20
+    }
+
+    /// `Character` form of `isMySQLCommentWhitespace(_:)` for the scanners
+    /// that walk Characters (the MCP placeholder binder); "\r\n" qualifies.
     static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
         character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
     }
 
-    /// Whether a character ends a `#` or `-- ` comment. MySQL ends them at a
-    /// line feed only; a lone carriage return stays part of the comment. Swift
-    /// folds "\r\n" into a single `Character`, so a comparison with "\n" alone
-    /// never matches a CRLF line ending and the comment would swallow the rest
-    /// of the batch, hiding e.g. a `USE` or `DELETE` that the server executes.
+    /// Whether a scalar ends a `#` or `-- ` comment. MySQL ends them at a line
+    /// feed only; a lone carriage return stays part of the comment. In a CRLF
+    /// line ending the carriage return and the line feed are separate scalars,
+    /// so the line feed ends the comment.
+    static func endsLineComment(_ scalar: Unicode.Scalar) -> Bool {
+        scalar == "\n"
+    }
+
+    /// `Character` form of `endsLineComment(_:)`. Swift folds "\r\n" into a
+    /// single `Character`, so a comparison with "\n" alone never matches a
+    /// CRLF line ending and the comment would swallow the rest of the batch,
+    /// hiding e.g. a `USE` or `DELETE` that the server executes.
     static func endsLineComment(_ character: Character) -> Bool {
         character == "\n" || character == "\r\n"
     }
 
-    private static func isASCIIDigit(_ character: Character) -> Bool {
-        character.unicodeScalars.count == 1 && character.unicodeScalars.allSatisfy { (48...57).contains($0.value) }
+    private static func isASCIIDigit(_ scalar: Unicode.Scalar) -> Bool {
+        (48...57).contains(scalar.value)
     }
 
     private static func shouldPreserveExecutableComment(
@@ -287,8 +339,10 @@ enum SPCustomQuerySQLClassifier {
         return !identifierSet.contains(upper.unicodeScalars[scalarIndex])
     }
 
-    private static func isExplainAliasSafeWithoutWarning(_ upper: String, alias: String) -> Bool {
-        let tokens = sqlTokens(from: upper)
+    /// Judges an EXPLAIN-family statement under one reading of backslashes;
+    /// the caller combines the readings.
+    private static func isExplainAliasSafeWithoutWarning(_ upper: String, alias: String, backslashEscapes: Bool) -> Bool {
+        let tokens = sqlTokens(from: upper, backslashEscapes: backslashEscapes)
         guard tokens.first == alias else { return false }
 
         var index = 1
@@ -312,17 +366,106 @@ enum SPCustomQuerySQLClassifier {
         return !mutatingExplainAnalyzeStatements.contains(tokens[index])
     }
 
-    private static func sqlTokens(from upper: String) -> [String] {
-        upper
-            .replacingOccurrences(of: "=", with: " = ")
-            .split(whereSeparator: { $0.isWhitespace })
-            .map(String.init)
+    /// Splits an EXPLAIN statement into tokens the way the server does: a
+    /// quoted operand - `` `my db` ``, `'plan result'`, `@'plan\' result'` -
+    /// is one token however much whitespace it contains (a doubled quote and,
+    /// outside backticks, a backslash escape stay inside it), `=` is a token
+    /// of its own, and a word ends at whitespace, `=`, a quote or a following
+    /// `@`, so `` `app`UPDATE `` and `INTO@plan` are two tokens each. An
+    /// unterminated quote consumes the rest. It works on Unicode scalars, not
+    /// Characters: a combining mark right after a quote would otherwise merge
+    /// with it into one Character and hide the delimiter.
+    ///
+    /// - Parameters:
+    ///   - upper: The upper-cased statement.
+    ///   - backslashEscapes: Whether a backslash escapes the next character
+    ///     inside `'…'` and `"…"`; `false` reads the statement the way a
+    ///     connection with `NO_BACKSLASH_ESCAPES` does.
+    private static func sqlTokens(from upper: String, backslashEscapes: Bool = true) -> [String] {
+        let characters = Array(upper.unicodeScalars)
+        var tokens: [String] = []
+        var index = 0
+
+        func isQuote(_ character: Unicode.Scalar) -> Bool {
+            character == "'" || character == "\"" || character == "`"
+        }
+
+        while index < characters.count {
+            let character = characters[index]
+
+            if character.properties.isWhitespace {
+                index += 1
+                continue
+            }
+            if character == "=" {
+                tokens.append("=")
+                index += 1
+                continue
+            }
+
+            let startsQuotedVariable = character == "@" && index + 1 < characters.count && isQuote(characters[index + 1])
+            if isQuote(character) || startsQuotedVariable {
+                var token = ""
+                if startsQuotedVariable {
+                    token.unicodeScalars.append(character)
+                    index += 1
+                }
+                let quote = characters[index]
+                token.unicodeScalars.append(quote)
+                index += 1
+                while index < characters.count {
+                    let next = characters[index]
+                    token.unicodeScalars.append(next)
+                    index += 1
+                    if next == "\\", backslashEscapes, quote != "`", index < characters.count {
+                        token.unicodeScalars.append(characters[index])
+                        index += 1
+                    } else if next == quote {
+                        if index < characters.count, characters[index] == quote {
+                            token.unicodeScalars.append(characters[index])
+                            index += 1
+                        } else {
+                            break
+                        }
+                    }
+                }
+                tokens.append(token)
+                continue
+            }
+
+            // A word ends at whitespace, `=`, a quote or the `@` of a variable
+            // that follows it without whitespace (`INTO@plan` is `INTO`,
+            // `@PLAN` to the server); a leading run of `@` (`@@sql_mode`)
+            // belongs to the word.
+            var word = ""
+            var wordHasNonAt = false
+            while index < characters.count {
+                let next = characters[index]
+                if next.properties.isWhitespace || next == "=" || isQuote(next) {
+                    break
+                }
+                if next == "@" {
+                    if wordHasNonAt {
+                        break
+                    }
+                } else {
+                    wordHasNonAt = true
+                }
+                word.unicodeScalars.append(next)
+                index += 1
+            }
+            tokens.append(word)
+        }
+
+        return tokens
     }
 
     private static func skipExplainModifiers(in tokens: [String], from index: inout Int) {
         // `sqlTokens` already wraps every `=` with whitespace, so `FORMAT=JSON`
         // is always tokenized as `[FORMAT, =, JSON]`. The `FORMAT` case below
-        // handles both `FORMAT JSON` and `FORMAT = JSON`.
+        // handles both `FORMAT JSON` and `FORMAT = JSON`. MySQL 8.3 added
+        // `INTO @var` and `FOR SCHEMA|DATABASE name`, which may also sit
+        // between `EXPLAIN ANALYZE` and the statement it executes.
         while index < tokens.count {
             switch tokens[index] {
             case "EXTENDED", "PARTITIONS":
@@ -335,6 +478,18 @@ enum SPCustomQuerySQLClassifier {
                 if index < tokens.count {
                     index += 1
                 }
+            case "INTO":
+                // `INTO @var` stores the plan in a user variable; the variable is
+                // one token even when quoted, so skip both.
+                index += min(2, tokens.count - index)
+            case "FOR":
+                // Only `FOR SCHEMA name` / `FOR DATABASE name` are modifiers;
+                // `FOR CONNECTION id` is the explained subject itself.
+                guard index + 1 < tokens.count,
+                      tokens[index + 1] == "SCHEMA" || tokens[index + 1] == "DATABASE" else {
+                    return
+                }
+                index += min(3, tokens.count - index)
             default:
                 return
             }

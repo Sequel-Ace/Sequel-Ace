@@ -82,6 +82,143 @@ final class SATooltipDismissalPolicyTests: XCTestCase {
     }
 }
 
+final class SATooltipLifecycleTests: XCTestCase {
+
+    /// Verifies a new tooltip hides whatever is still on screen - a visible or
+    /// a fading tooltip - so the new content is never measured in a visible,
+    /// screen-sized window, and that the previous monitor is detached.
+    func testReplacementHidesAVisibleOrFadingTooltip() {
+        let lifecycle = SATooltipLifecycle()
+        XCTAssertFalse(lifecycle.prepareForNewTooltip(isVisible: false, isFading: false), "nothing on screen")
+        XCTAssertTrue(lifecycle.prepareForNewTooltip(isVisible: false, isFading: true), "a running fade-out must end now")
+
+        lifecycle.beginDismissalMonitoring(keyWindow: nil) {}
+        XCTAssertTrue(lifecycle.isMonitoring)
+        XCTAssertTrue(lifecycle.prepareForNewTooltip(isVisible: true, isFading: false), "a visible tooltip is hidden before the new content is measured")
+        XCTAssertFalse(lifecycle.isMonitoring, "the previous monitor is detached")
+        XCTAssertTrue(lifecycle.prepareForNewTooltip(isVisible: true, isFading: true))
+    }
+
+    /// Verifies starting a new monitor replaces the previous one and detaching is idempotent.
+    func testMonitoringReplacesAndDetachesIdempotently() {
+        let lifecycle = SATooltipLifecycle()
+        lifecycle.beginDismissalMonitoring(keyWindow: nil) {}
+        lifecycle.beginDismissalMonitoring(keyWindow: nil) {}
+        XCTAssertTrue(lifecycle.isMonitoring)
+
+        lifecycle.detachDismissalMonitor()
+        lifecycle.detachDismissalMonitor()
+        XCTAssertFalse(lifecycle.isMonitoring)
+    }
+
+    /// Verifies a fade continues only while partly visible and not superseded,
+    /// and that closing never drives the count below zero.
+    func testFadeContinuesOnlyForTheSingleVisibleTooltip() {
+        let lifecycle = SATooltipLifecycle()
+        _ = lifecycle.prepareForNewTooltip(isVisible: false, isFading: false)
+        XCTAssertTrue(lifecycle.fadeMayContinue(alpha: 0.5))
+        XCTAssertFalse(lifecycle.fadeMayContinue(alpha: 0))
+
+        lifecycle.tooltipDidClose()
+        XCTAssertFalse(lifecycle.fadeMayContinue(alpha: 0.5), "no tooltip left to fade")
+        lifecycle.tooltipDidClose()
+
+        _ = lifecycle.prepareForNewTooltip(isVisible: false, isFading: false)
+        XCTAssertTrue(lifecycle.fadeMayContinue(alpha: 0.5), "a new tooltip fades again after extra closes")
+    }
+
+    /// Verifies repeated replacements reset the count instead of accumulating
+    /// it - an accumulated count would skip every later fade-out.
+    func testRepeatedReplacementsDoNotAccumulate() {
+        let lifecycle = SATooltipLifecycle()
+        for _ in 0..<5 {
+            _ = lifecycle.prepareForNewTooltip(isVisible: false, isFading: false)
+        }
+        XCTAssertTrue(lifecycle.fadeMayContinue(alpha: 0.5))
+    }
+
+    /// Verifies only work for the web view currently showing the tooltip
+    /// applies - stale callbacks and measurements of replaced web views do not.
+    func testWorkForReplacedWebViewsIsIgnored() {
+        let current = NSObject()
+        XCTAssertTrue(SATooltipLifecycle.isCurrent(webView: current, currentWebView: current))
+        XCTAssertFalse(SATooltipLifecycle.isCurrent(webView: NSObject(), currentWebView: current))
+        XCTAssertFalse(SATooltipLifecycle.isCurrent(webView: current, currentWebView: nil), "closing forgets the web view, so late callbacks of a closed tooltip are ignored")
+    }
+
+    /// Verifies a superseded navigation keeps the tooltip while real load failures close it.
+    func testOnlyNonCancellationFailuresClose() {
+        XCTAssertFalse(SATooltipLifecycle.shouldCloseAfterNavigationFailure(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)))
+        XCTAssertTrue(SATooltipLifecycle.shouldCloseAfterNavigationFailure(NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)))
+        XCTAssertTrue(SATooltipLifecycle.shouldCloseAfterNavigationFailure(NSError(domain: "WebKitErrorDomain", code: NSURLErrorCancelled)))
+    }
+}
+
+final class SATooltipMeasurementTests: XCTestCase {
+
+    /// Verifies the former fallback size is kept until the page answers and
+    /// the wait ends only once both dimensions arrived.
+    func testWaitEndsOnlyWithBothDimensions() {
+        let webView = NSObject()
+        let measurement = SATooltipMeasurement(webView: webView)
+        XCTAssertEqual(measurement.height, 21)
+        XCTAssertEqual(measurement.width, 400)
+        XCTAssertTrue(measurement.shouldKeepWaiting(currentWebView: webView))
+
+        measurement.recordHeight(120)
+        XCTAssertFalse(measurement.isComplete)
+        XCTAssertTrue(measurement.shouldKeepWaiting(currentWebView: webView))
+
+        measurement.recordWidth(301)
+        XCTAssertTrue(measurement.isComplete)
+        XCTAssertFalse(measurement.shouldKeepWaiting(currentWebView: webView))
+        XCTAssertTrue(measurement.applies(toCurrentWebView: webView))
+        XCTAssertEqual(measurement.height, 120)
+        XCTAssertEqual(measurement.width, 301)
+    }
+
+    /// Verifies late answers for a replaced web view cannot complete the newer
+    /// measurement, which would leave the new tooltip at the fallback size.
+    func testStaleAnswersDoNotCompleteANewerMeasurement() {
+        let replacedWebView = NSObject()
+        let currentWebView = NSObject()
+        let staleMeasurement = SATooltipMeasurement(webView: replacedWebView)
+        let currentMeasurement = SATooltipMeasurement(webView: currentWebView)
+
+        staleMeasurement.recordHeight(10)
+        staleMeasurement.recordWidth(10)
+
+        XCTAssertFalse(currentMeasurement.isComplete)
+        XCTAssertTrue(currentMeasurement.shouldKeepWaiting(currentWebView: currentWebView))
+        XCTAssertFalse(staleMeasurement.applies(toCurrentWebView: currentWebView))
+    }
+
+    /// Verifies replacing the web view ends the wait even with an answer still
+    /// missing - e.g. by an image tooltip that never measures via JavaScript -
+    /// and discards the result.
+    func testReplacementEndsTheWaitWithAnAnswerMissing() {
+        let measuredWebView = NSObject()
+        let measurement = SATooltipMeasurement(webView: measuredWebView)
+        measurement.recordHeight(10)
+
+        let replacement = NSObject()
+        XCTAssertFalse(measurement.shouldKeepWaiting(currentWebView: replacement))
+        XCTAssertFalse(measurement.applies(toCurrentWebView: replacement))
+    }
+
+    /// Verifies a measurement whose web view is gone never applies, not even
+    /// against a missing current web view.
+    func testReleasedWebViewNeverApplies() {
+        var measurement: SATooltipMeasurement?
+        autoreleasepool {
+            let webView = NSObject()
+            measurement = SATooltipMeasurement(webView: webView)
+        }
+        XCTAssertFalse(measurement?.applies(toCurrentWebView: nil) ?? true)
+        XCTAssertFalse(measurement?.shouldKeepWaiting(currentWebView: nil) ?? true)
+    }
+}
+
 final class SAQueryHistoryMergerTests: XCTestCase {
 
     /// Verifies a new entry lands at the front of the stored history.

@@ -47,6 +47,71 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze delete from t where id = 1"))
     }
 
+    /// MySQL 8.3+ accepts `INTO @var` and `FOR SCHEMA|DATABASE name` between
+    /// `EXPLAIN ANALYZE` and the statement; the statement behind them still
+    /// runs, so the modifiers must not hide a mutating verb.
+    func testExplainAnalyzeModifiersDoNotHideMutatingStatements() {
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app DELETE FROM t WHERE id = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR DATABASE app UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @plan UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=JSON INTO @plan FOR SCHEMA app DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE FOR SCHEMA app INSERT INTO t VALUES (1)"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze for schema app delete from t"))
+        // Truncated modifiers leave no statement to judge: stay conservative.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO"))
+        // Quoted operands may contain whitespace (or `=`), which the tokenizer
+        // splits on; a fragment of the name must not stand in for the statement.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan = result\" FOR SCHEMA `my db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @`plan result` INSERT INTO t VALUES (1)"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `it``s db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `a`` b` DELETE FROM t"))
+        // An unterminated quote swallows the rest: no statement, so no free pass.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db DELETE FROM t"))
+        // The statement may follow the closing quote without whitespace, a
+        // backslash escapes a quote inside a quoted variable name, and a
+        // quoted schema with whitespace precedes a multi-table DELETE.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan\\\" result\" DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id"))
+        // The classifier cannot know whether NO_BACKSLASH_ESCAPES is set. Read
+        // that way, the quote after the backslash closes the operand and the
+        // write runs, so it warns; an operand closed the same way under both
+        // readings stays safe.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA \"x\\\" DELETE FROM t WHERE c=\"v\""))
+        // The same holds for comment stripping: read without backslash
+        // escapes, the comment after the closed operand hides the write.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' # comment\nUPDATE t SET c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' -- comment\nDELETE FROM t WHERE c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA \"x\\\" /* comment */ INSERT INTO t VALUES (\"v\")"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' /* comment */ SELECT * FROM t WHERE c = '#'"))
+        // A combining mark right after a quote must not hide the quote (Swift
+        // would merge the two into one Character); the server reads bytes.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `\u{301}app`UPDATE `t` SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'\u{301}x' # comment\nUPDATE t SET c = 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'\u{301}x' SELECT * FROM t"))
+        // The server needs no whitespace between INTO and the variable.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@plan UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@'plan result' DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=JSON INTO@plan FOR SCHEMA app INSERT INTO t VALUES (1)"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@plan SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`SELECT 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' SELECT * FROM t"))
+        // Reads behind the same modifiers stay safe; plain EXPLAIN never
+        // executes, and `FOR CONNECTION` is the explained subject itself.
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @plan SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR SCHEMA app UPDATE t SET c = 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN INTO @plan FORMAT=JSON DELETE FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR CONNECTION 5"))
+    }
+
     func testExplainAliasesUseTheSameAnalyzeSafetyRule() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESCRIBE ANALYZE DELETE FROM t WHERE id = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE UPDATE t SET c = 1"))
@@ -77,22 +142,23 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
     }
 
-    /// Swift folds "\r\n" into a single Character, which a comparison with "\n"
-    /// never matches: a `#` or `--` comment in CRLF text then swallowed the rest
-    /// of the batch, hiding statements the server executes.
+    /// A `#` or `--` comment in CRLF text must end at the line feed; otherwise
+    /// it swallows the rest of the batch, hiding statements the server
+    /// executes. The carriage return before the line feed belongs to the
+    /// comment, as in MySQL.
     func testLineCommentsEndAtCRLFLineEndings() {
         XCTAssertEqual(
             SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\r\nFROM t"),
-            "SELECT 1  \r\nFROM t"
+            "SELECT 1  \nFROM t"
         )
         XCTAssertEqual(
             SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 # c\r\nFROM t"),
-            "SELECT 1  \r\nFROM t"
+            "SELECT 1  \nFROM t"
         )
         // A bare `--` directly followed by CRLF starts a comment too.
         XCTAssertEqual(
             SPCustomQuerySQLClassifier.stripSQLComments("--\r\nSELECT 1"),
-            " \r\nSELECT 1"
+            " \nSELECT 1"
         )
         // MySQL ends a line comment at a line feed only; a lone carriage
         // return stays part of the comment.

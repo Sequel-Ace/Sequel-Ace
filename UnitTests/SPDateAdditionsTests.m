@@ -92,49 +92,61 @@
 }
 
 
+// The two formatters disagree on the seconds digit when the instant has a
+// fractional part in the last half millisecond of a second: NSDateFormatter
+// (behind -stringWithFormat:locale:timeZone:) rounds to the nearest
+// millisecond, so x.9995 s and later format as the next second, while the
+// legacy -descriptionWithCalendarFormat:timeZone:locale: truncates and still
+// prints x. Measured on macOS 26 with an instant at x.9994 s (both print x)
+// and x.9995 s (legacy x, NSDateFormatter x+1). Formatting [NSDate date]
+// therefore failed on CI whenever the test happened to run inside that
+// window, so the test formats a fixed whole-second instant instead; the
+// wall clock no longer takes part.
 - (void)testOldvsNewDateFormat {
 
-	// Format one instant on both sides, so the clock cannot tick between the two calls
-	NSDate *now = [NSDate date];
+	// 2020-07-15 13:54:47 UTC, chosen with no fractional second so both
+	// formatters see the same integral second; formatted in the local zone
+	// by both calls below, so the zone itself does not matter.
+	NSDate *instant = [NSDate dateWithTimeIntervalSince1970:1594821287];
 
 	NSString *str1 = [NSString stringWithFormat:@"%@%@",
 									SPImportClipboardTempFileNamePrefix,
-									[now descriptionWithCalendarFormat:@"%H%M%S"
+									[instant descriptionWithCalendarFormat:@"%H%M%S"
 											timeZone:nil
 											locale:[[NSUserDefaults standardUserDefaults] dictionaryRepresentation]]];
 
 	
 	NSString *str3 = [NSString stringWithFormat:@"%@%@",
 									SPImportClipboardTempFileNamePrefix,
-									[now stringWithFormat:@"HHmmss"
+									[instant stringWithFormat:@"HHmmss"
 																	locale:[NSLocale autoupdatingCurrentLocale]
 														   timeZone:[NSTimeZone localTimeZone]]];
 	
 	
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [now descriptionWithCalendarFormat:@"%Y-%m-%d" timeZone:nil locale:nil];
-	str3 = [now stringWithFormat:@"yyyy-MM-dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [instant descriptionWithCalendarFormat:@"%Y-%m-%d" timeZone:nil locale:nil];
+	str3 = [instant stringWithFormat:@"yyyy-MM-dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [now descriptionWithCalendarFormat:@"%Y" timeZone:nil locale:nil];
-	str3 = [now stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [instant descriptionWithCalendarFormat:@"%Y" timeZone:nil locale:nil];
+	str3 = [instant stringWithFormat:@"yyyy" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [now descriptionWithCalendarFormat:@"%m" timeZone:nil locale:nil];
-	str3 = [now stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [instant descriptionWithCalendarFormat:@"%m" timeZone:nil locale:nil];
+	str3 = [instant stringWithFormat:@"MM" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [now descriptionWithCalendarFormat:@"%d" timeZone:nil locale:nil];
-	str3 = [now stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [instant descriptionWithCalendarFormat:@"%d" timeZone:nil locale:nil];
+	str3 = [instant stringWithFormat:@"dd" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 
-	str1 = [now descriptionWithCalendarFormat:@"%H:%M:%S" timeZone:nil locale:nil];
-	str3 = [now stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
+	str1 = [instant descriptionWithCalendarFormat:@"%H:%M:%S" timeZone:nil locale:nil];
+	str3 = [instant stringWithFormat:@"HH:mm:ss" locale:[NSLocale autoupdatingCurrentLocale] timeZone:[NSTimeZone localTimeZone]];
 
 	XCTAssertEqualObjects(str1, str3);
 

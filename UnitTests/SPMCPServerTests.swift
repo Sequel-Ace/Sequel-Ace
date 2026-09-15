@@ -182,6 +182,7 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "DESC users",
             "EXPLAIN SELECT * FROM t",
             "EXPLAIN ANALYZE SELECT * FROM t",
+            "EXPLAIN ANALYZE FOR SCHEMA app SELECT * FROM t",
             "EXPLAIN FORMAT=JSON SELECT * FROM t",
             "(SELECT * FROM t)",
             "SELECT a FROM t UNION SELECT b FROM u",
@@ -340,15 +341,15 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
     func testCommentStripInsertsWhitespace() {
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1/* */AS x"), "SELECT 1 AS x")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT * FROM/**/t"), "SELECT * FROM t")
-        // A line comment ends at a CRLF line ending too (Swift folds "\r\n" into
-        // one Character, which "\n" alone never matches); a lone CR does not end
-        // it, as in MySQL.
-        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 -- c\r\nFROM t"), "SELECT 1  \r\nFROM t")
+        // A line comment ends at the line feed of a CRLF line ending; the
+        // carriage return before it belongs to the comment and a lone CR does
+        // not end it, as in MySQL.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 -- c\r\nFROM t"), "SELECT 1  \nFROM t")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 # c\rFROM t"), "SELECT 1  ")
         // A bare `--` directly followed by CRLF starts a comment as well: the
         // stripped query must keep its SELECT prefix so run_query caps it.
-        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("--\r\nSELECT 1"), " \r\nSELECT 1")
-        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\r\nFROM t"), "SELECT 1  \r\nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("--\r\nSELECT 1"), " \nSELECT 1")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\r\nFROM t"), "SELECT 1  \nFROM t")
         // MySQL accepts any control character after `--`, e.g. a form feed;
         // `--x` is not a comment.
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\u{0C}c\nFROM t"), "SELECT 1  \nFROM t")
@@ -383,7 +384,54 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "EXPLAIN ANALYZE UPDATE t SET x = 1",
             "EXPLAIN ANALYZE DELETE FROM t",
             "EXPLAIN ANALYZE INSERT INTO t VALUES (1)",
+            // MySQL 8.3+ modifiers between EXPLAIN ANALYZE and the statement.
+            "EXPLAIN ANALYZE FOR SCHEMA app DELETE FROM t",
+            "EXPLAIN ANALYZE INTO @plan UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE FORMAT=JSON INTO @plan FOR DATABASE app DELETE FROM t",
+            "EXPLAIN ANALYZE FOR SCHEMA `my db` DELETE FROM t",
+            "EXPLAIN ANALYZE INTO @'plan result' UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET x = 1",
+            "EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id",
+            // Under NO_BACKSLASH_ESCAPES the quote after the backslash closes the
+            // variable, also when a comment follows it.
+            "EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET x='v'",
+            "EXPLAIN ANALYZE INTO @'x\\' # comment\nUPDATE t SET x='v'",
+            // No whitespace is needed between INTO and the variable.
+            "EXPLAIN ANALYZE INTO@plan UPDATE t SET x = 1"
         ], "explain-analyze-write")
+    }
+
+    // The guard cannot know whether the connection runs with NO_BACKSLASH_ESCAPES,
+    // where the quote after a backslash closes the string. Read that way, the `#`
+    // below sits inside a literal and the `; DROP` behind it is a second statement,
+    // which the backslash reading would have stripped as a comment.
+    func testBackslashesAreReadBothWays() {
+        assertRejected([
+            "SELECT 'a\\' AS b, 'c # d', 1; DROP TABLE t",
+            "SELECT 'a\\' AS b, 'c -- d', 1; DROP TABLE t",
+            "SELECT 'a\\' AS b, 'c /* d', 1; DROP TABLE t */"
+        ], "backslash-reading")
+        // Each reading is judged on its own: with escapes the last quote closes
+        // the variable, without them the `#` comments it out - a read either way.
+        assertAllowed([
+            "SELECT 'a\\\\b' # comment",
+            "SELECT 'a\\\\b', 'c' /* comment */ FROM t",
+            "EXPLAIN ANALYZE INTO @'x\\' # suffix'\nSELECT 1"
+        ], "backslash-reading")
+    }
+
+    // A combining mark right after a quote must not hide the quote: Swift would
+    // merge the two into one Character, the server reads bytes.
+    func testCombiningMarksDoNotHideQuotes() {
+        assertRejected([
+            "SELECT '\u{301}' AS a, 'c # d', 1; DROP TABLE t",
+            "EXPLAIN ANALYZE FOR SCHEMA `\u{301}app`UPDATE `t` SET x = 1",
+            "EXPLAIN ANALYZE INTO @'\u{301}x' # comment\nUPDATE t SET x = 1"
+        ], "combining-mark")
+        assertAllowed([
+            "SELECT '\u{301}' AS a FROM t"
+        ], "combining-mark")
     }
 
     func testEmptyOrSeparatorOnlyRejected() {
