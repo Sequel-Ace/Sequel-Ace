@@ -35,7 +35,7 @@ import Foundation
     /// The views to recreate in the target, in `information_schema` order.
     @objc public let views: [String]
     /// Objects the rename cannot move, each named with its kind.
-    @objc public let unsupportedObjects: [String]
+    @objc public private(set) var unsupportedObjects: [String]
     /// Whether the server compares schema names without regard to case
     /// (`lower_case_table_names` 1 or 2, the default on macOS and Windows).
     @objc public let caseInsensitiveNames: Bool
@@ -44,6 +44,7 @@ import Foundation
     private var unsupportedCharacterSet: (characterSet: String, view: String)?
     private var unsupportedDefinitionView: String?
     private var objectPrivileges: [String] = []
+    private var targetPrivileges: [String] = []
     private var createFailureReason: String?
     private var failedObject: String?
     private var failedObjectReason: String?
@@ -141,10 +142,37 @@ import Foundation
         objectPrivileges = descriptions
     }
 
+    /// Records privileges that already exist for the target's name: grants
+    /// on a database pattern covering it, grants on tables in it and
+    /// partial revokes for it. The server keeps grants for databases that
+    /// do not exist - left behind by a dropped database or granted ahead of
+    /// time - and they would apply to the moved tables and the recreated
+    /// views the moment the target is created, so the rename is refused.
+    ///
+    /// - Parameter descriptions: One entry per grant, formatted like the
+    ///   entries of `recordObjectPrivileges(_:)`.
+    @objc(recordTargetPrivileges:)
+    public func recordTargetPrivileges(_ descriptions: [String]) {
+        targetPrivileges = descriptions
+    }
+
+    /// Records the source's stored libraries (MySQL 9.2 and later, `CREATE
+    /// LIBRARY`), which the rename cannot move and `DROP DATABASE` would
+    /// delete with the source.
+    ///
+    /// - Parameter libraryRows: `LIBRARY_NAME` rows of `information_schema.LIBRARIES`.
+    @objc(recordLibraryRows:)
+    public func recordLibraries(_ libraryRows: [[Any]]) {
+        unsupportedObjects += Self.stringRows(libraryRows, columns: 1).map {
+            String(format: NSLocalizedString("library '%@'", comment: "rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename"), $0[0])
+        }
+    }
+
     /// Whether the rename may start: the source was inspected and holds
-    /// nothing the rename cannot move.
+    /// nothing the rename cannot move, and nothing is granted on the new
+    /// name yet.
     @objc public var canStart: Bool {
-        inspectionFailureReason == nil && unsupportedObjects.isEmpty && unsupportedCharacterSet == nil && unsupportedDefinitionView == nil && objectPrivileges.isEmpty
+        inspectionFailureReason == nil && unsupportedObjects.isEmpty && unsupportedCharacterSet == nil && unsupportedDefinitionView == nil && objectPrivileges.isEmpty && targetPrivileges.isEmpty
     }
 
     /// Records that creating the target database failed.
@@ -205,10 +233,15 @@ import Foundation
             )
         }
         if !objectPrivileges.isEmpty {
-            let shown = objectPrivileges.prefix(5) + (objectPrivileges.count > 5 ? ["…"] : [])
             return String(
                 format: NSLocalizedString("The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed.", comment: "rename database refused because GRANTs on the source database or its tables or views, or a partial revoke for the database, would be lost; %@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host'"),
-                shown.joined(separator: ", ")
+                Self.shortList(objectPrivileges)
+            )
+        }
+        if !targetPrivileges.isEmpty {
+            return String(
+                format: NSLocalizedString("Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed.", comment: "rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host'"),
+                targetDatabase, Self.shortList(targetPrivileges)
             )
         }
         if let unsupportedCharacterSet {
@@ -246,6 +279,12 @@ import Foundation
 
     static var unknownReason: String {
         NSLocalizedString("unknown error", comment: "rename database: the server reported no error message")
+    }
+
+    /// The first five entries, joined for an alert, with an ellipsis when
+    /// there are more.
+    private static func shortList(_ entries: [String]) -> String {
+        (entries.prefix(5) + (entries.count > 5 ? ["…"] : [])).joined(separator: ", ")
     }
 
     private static func description(of name: String, kind: SADatabaseRenameObjectKind) -> String {
@@ -790,6 +829,33 @@ import Foundation
         rows = nil
         self.error = error ?? SADatabaseRenamePlan.unknownReason
     }
+
+    /// The outcome of one statement as the connection reports it.
+    ///
+    /// The connection hands back an empty result for a statement without a
+    /// result set, so a missing result object never means success: it
+    /// returns none without flagging an error while it is disconnected or
+    /// reconnecting, after the user disconnected, when checking the
+    /// connection before the query failed, or when a query too large to send
+    /// could not be made to fit. Counting such a statement as run would let
+    /// an inventory query miss objects or a `RENAME TABLE` count as done, and
+    /// the source could then be dropped with objects in it.
+    ///
+    /// - Parameters:
+    ///   - rows: The rows read from the result, empty without one.
+    ///   - resultReturned: Whether the connection returned a result object.
+    ///   - errored: Whether the connection reports the statement as failed.
+    ///   - errorMessage: The connection's last error message.
+    @objc(initWithRows:resultReturned:errored:errorMessage:)
+    public convenience init(rows: [[Any]], resultReturned: Bool, errored: Bool, errorMessage: String?) {
+        if errored {
+            self.init(error: errorMessage)
+        } else if !resultReturned {
+            self.init(error: NSLocalizedString("the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).", comment: "rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:'"))
+        } else {
+            self.init(rows: rows)
+        }
+    }
 }
 
 /// Runs "Rename Database" from the inspection of the source to the drop of
@@ -877,9 +943,18 @@ import Foundation
         let caseInsensitiveNames = lowerCaseTableNames != 0
         var serverLoweredSource: String?
         var serverLoweredTarget: String?
-        if caseInsensitiveNames, inspectionError == nil, let lowered = run("SELECT LOWER(\(schema)), LOWER(\(quote(target)))").rows?.first, lowered.count >= 2 {
-            serverLoweredSource = Self.text(lowered[0])
-            serverLoweredTarget = Self.text(lowered[1])
+        // Without them names the server folds beyond ASCII (`Àbc`, `àbc`)
+        // could not be recognised - in view references, partial revokes and
+        // the final check - so a failed or incomplete answer stops the rename.
+        if caseInsensitiveNames, inspectionError == nil {
+            let lowered = run("SELECT LOWER(\(schema)), LOWER(\(quote(target)))")
+            let row = lowered.rows?.first ?? []
+            if row.count >= 2, let loweredSource = Self.text(row[0]), let loweredTarget = Self.text(row[1]) {
+                serverLoweredSource = loweredSource
+                serverLoweredTarget = loweredTarget
+            } else {
+                inspectionError = lowered.error ?? SADatabaseRenamePlan.unknownReason
+            }
         }
         let routineRows = routineRowsForInspection(schema: schema, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         // both forms list the database first and the event's name second
@@ -888,14 +963,21 @@ import Foundation
             fallback: "SELECT db, name FROM mysql.event WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name"
         ).map { Array($0.dropFirst()) }
         let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = \(schema) ORDER BY TRIGGER_NAME")
-        let objectPrivileges = objectPrivilegeDescriptions(source: source, serverLoweredSource: serverLoweredSource, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
+        let libraryRows = libraryRowsForInspection(schema: schema, inspectionError: &inspectionError)
+        let objectPrivileges = privilegeDescriptions(forDatabase: source, serverLoweredName: serverLoweredSource, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
+        // The server keeps grants for databases that do not exist, so the
+        // new name may already carry some - they would cover the moved
+        // objects as soon as the target is created.
+        let targetPrivileges = privilegeDescriptions(forDatabase: target, serverLoweredName: serverLoweredTarget, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         let viewRows = rows("SELECT TABLE_NAME, CHARACTER_SET_CLIENT, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS WHERE TABLE_SCHEMA = \(schema) ORDER BY TABLE_NAME")
 
         let plan = SADatabaseRenamePlan(sourceDatabase: source, targetDatabase: target, lowerCaseTableNames: lowerCaseTableNames, tableRows: tableRows, routineRows: routineRows, eventRows: eventRows, triggerRows: triggerRows)
         if let inspectionError {
             plan.recordInspectionFailure(inspectionError)
         }
+        plan.recordLibraries(libraryRows)
         plan.recordObjectPrivileges(objectPrivileges)
+        plan.recordTargetPrivileges(targetPrivileges)
         // A view's definition travels through the connection's UTF-8
         // transport, in and out, so it must be UTF-8 to arrive unchanged:
         // the view must have been written through UTF-8 (the client's
@@ -1125,11 +1207,49 @@ import Foundation
         return rows
     }
 
-    /// The privileges granted on the source database, its tables and views,
-    /// and the partial revokes for the database, each as `` `pattern`.* for
+    /// The stored libraries of the source database as `name` rows, or an
+    /// empty list with `inspectionError` set when they cannot be listed
+    /// completely.
+    ///
+    /// Libraries (MySQL 9.2 and later, `CREATE LIBRARY`) belong to a
+    /// database and go with it on `DROP DATABASE`. Only the MLE component
+    /// provides `information_schema.LIBRARIES`, so the table is looked up
+    /// in `information_schema.TABLES` first - a server without it (MariaDB,
+    /// MySQL without the component) has no libraries to list, and an error
+    /// in the server's language says nothing reliable. Like
+    /// `information_schema.ROUTINES`, the table shows every library only to
+    /// an account with SHOW_ROUTINE or a global SELECT that no partial
+    /// revoke limits; anything else fails closed.
+    private func libraryRowsForInspection(schema: String, inspectionError: inout String?) -> [[Any]] {
+        guard inspectionError == nil else { return [] }
+        let probe = run("SELECT TABLE_NAME FROM information_schema.TABLES WHERE UPPER(TABLE_SCHEMA) = 'INFORMATION_SCHEMA' AND UPPER(TABLE_NAME) = 'LIBRARIES'")
+        guard let present = probe.rows else {
+            inspectionError = probe.error
+            return []
+        }
+        guard !present.isEmpty else { return [] }
+        let visibility = globalVisibilityForInspection()
+        if !visibility.privileges.contains("SHOW_ROUTINE"),
+           let reason = Self.reasonGlobalSelectDoesNotCoverEverything(visibility, otherwise: NSLocalizedString("this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")) {
+            inspectionError = reason
+            return []
+        }
+        let libraries = run("SELECT LIBRARY_NAME FROM information_schema.LIBRARIES WHERE LIBRARY_SCHEMA = \(schema) ORDER BY LIBRARY_NAME")
+        guard let rows = libraries.rows else {
+            inspectionError = libraries.error
+            return []
+        }
+        return rows
+    }
+
+    /// The privileges granted on a database, its tables and views, and the
+    /// partial revokes for the database, each as `` `pattern`.* for
     /// 'user'@'host' ``, `` `table` for 'user'@'host' `` or `` partial revoke
     /// on `db`.* for 'user'@'host' ``, or an empty list with
-    /// `inspectionError` set when they cannot be listed completely.
+    /// `inspectionError` set when they cannot be listed completely. Asked
+    /// for the source and for the target's name: the server keeps grants
+    /// for databases that do not exist, and those on the new name would
+    /// cover the moved objects once the target is created.
     ///
     /// A grant on the database stays with the old name, `RENAME TABLE` does
     /// not carry grants on tables across databases and a recreated view has
@@ -1153,10 +1273,10 @@ import Foundation
     /// given and as the server folds it. A server without partial revokes
     /// has none; one whose setting or `mysql.user` cannot be read fails
     /// closed.
-    private func objectPrivilegeDescriptions(source: String, serverLoweredSource: String?, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
+    private func privilegeDescriptions(forDatabase name: String, serverLoweredName: String?, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
         guard inspectionError == nil else { return [] }
         let unlistable = NSLocalizedString("this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
-        let schema = quote(source)
+        let schema = quote(name)
         // with partial revokes on, `_` and `%` in a database grant are
         // literal characters, not wildcards; the setting, read once, is
         // needed for the restrictions below anyway
@@ -1191,9 +1311,9 @@ import Foundation
                 // JSON_SEARCH compares exactly, so both forms of the name are
                 // searched where the server folds case; its search string is
                 // a LIKE pattern, hence the escaping
-                var names = [source]
-                if let serverLoweredSource, !serverLoweredSource.utf8.elementsEqual(source.utf8) {
-                    names.append(serverLoweredSource)
+                var names = [name]
+                if let serverLoweredName, !serverLoweredName.utf8.elementsEqual(name.utf8) {
+                    names.append(serverLoweredName)
                 }
                 let restrictionMatch = names
                     .map { "JSON_SEARCH(User_attributes, 'one', \(quote(Self.likePattern(matchingExactly: $0))), '!', '$.Restrictions[*].Database') IS NOT NULL" }
@@ -1204,7 +1324,7 @@ import Foundation
                 }
                 restrictions = Self.grantDescriptions(restrictedRows) { row in
                     guard row.count >= 2, let user = Self.text(row[0]), let host = Self.text(row[1]) else { return nil }
-                    return Self.restrictionDescription(database: source, grantee: "'\(user)'@'\(host)'")
+                    return Self.restrictionDescription(database: name, grantee: "'\(user)'@'\(host)'")
                 }
             }
             return onDatabase + onObjects + restrictions

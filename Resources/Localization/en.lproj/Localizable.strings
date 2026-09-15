@@ -134,6 +134,9 @@
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
 "Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
 
+/* rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
+"Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Privileges are already granted or partially revoked for the new name '%1$@' (%2$@); the moved tables and views would come under them. Nothing was changed.";
+
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
 "Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
 
@@ -517,6 +520,9 @@
 /* rename database: why a view was not recreated */
 "its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
 
+/* rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename */
+"library '%@'" = "library '%@'";
+
 /* rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host' */
 "partial revoke on `%@`.* for %@" = "partial revoke on `%1$@`.* for %2$@";
 
@@ -571,11 +577,17 @@
 /* rename database: a table, by name */
 "table '%@'" = "table '%@'";
 
+/* rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:' */
+"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).";
+
 /* rename database: why the views are not trusted and the source is kept */
 "the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
 
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
+
+/* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
+"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
 "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";

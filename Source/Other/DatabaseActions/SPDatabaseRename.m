@@ -106,17 +106,19 @@
     }
 
     SADatabaseRenameExecutor *executor = [[SADatabaseRenameExecutor alloc] initWithRun:^SADatabaseRenameStatementResult *(NSString *statement) {
+        // The result type decides what counts as success, including a
+        // missing result object that the connection did not flag as an error.
         SPMySQLResult *result = [renameConnection queryString:statement];
-        if ([renameConnection queryErrored]) {
-            return [[SADatabaseRenameStatementResult alloc] initWithError:[renameConnection lastErrorMessage]];
-        }
-        [result setReturnDataAsStrings:YES];
+        BOOL errored = [renameConnection queryErrored];
         NSMutableArray *rows = [NSMutableArray array];
-        NSArray *row;
-        while ((row = [result getRowAsArray]) != nil) {
-            [rows addObject:row];
+        if (result && !errored) {
+            [result setReturnDataAsStrings:YES];
+            NSArray *row;
+            while ((row = [result getRowAsArray]) != nil) {
+                [rows addObject:row];
+            }
         }
-        return [[SADatabaseRenameStatementResult alloc] initWithRows:rows];
+        return [[SADatabaseRenameStatementResult alloc] initWithRows:rows resultReturned:(result != nil) errored:errored errorMessage:[renameConnection lastErrorMessage]];
     } quote:^NSString *(NSString *value) {
         return [renameConnection escapeAndQuoteString:value];
     }];
