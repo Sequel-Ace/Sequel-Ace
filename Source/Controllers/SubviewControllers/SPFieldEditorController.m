@@ -631,7 +631,10 @@ typedef enum {
         NSString *editTVString = [editTVtextStorage string];
 
 		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
-			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVString characterCount] - (NSUInteger)maxLength)];
+			// The limit counts code points; the selection is in UTF-16 units and
+			// must start between code points, not inside a surrogate pair.
+			NSUInteger keptLength = (NSUInteger)[editTVString utf16LengthOfFirstCodePoints:(NSInteger)maxLength];
+			[editTextView setSelectedRange:NSMakeRange(keptLength, [editTVString length] - keptLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxLength]];
 
@@ -1241,8 +1244,6 @@ typedef enum {
 	if (textView == editTextView && (adjTextMaxTextLength > 0) &&
 			![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]])
 	{
-		NSInteger newLength;
-
 		// Auxilary to ensure that eg textViewDidChangeSelection:
 		// saves a non-space char + base char if that combination
 		// occurs at the end of a sequence of typing before saving
@@ -1276,58 +1277,32 @@ typedef enum {
 			}
 		}
 
-		// Calculate the length of the text after the change.
-		newLength = [[[textView textStorage] string] characterCount] + [replacementString characterCount] - r.length;
+		// Whether the edit fits is decided in code points - the text, the part
+		// the edit replaces and the insertion - and a FLOAT's decimal point is
+		// judged on the text the edit leaves (see SAFieldEditorEditLimit).
+		SAFieldEditorEditLimit *editLimit = [SAFieldEditorEditLimit evaluateEditOfText:[[textView textStorage] string] replacingRange:r withString:replacementString limit:(NSInteger)adjTextMaxTextLength fieldType:fieldType];
 
-		NSUInteger textLength = [[[textView textStorage] string] characterCount];
+		if (!editLimit.allowsEdit) {
+			NSString *fittingInsertion = editLimit.fittingInsertion;
 
-		unsigned long long originalMaxTextLength = adjTextMaxTextLength;
+			if (fittingInsertion) {
+				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), adjTextMaxTextLength]];
 
-		// For FLOAT fields ignore the decimal point in the text when comparing lengths
-		if ([[fieldType uppercaseString] isEqualToString:@"FLOAT"] &&
-				([[[textView textStorage] string] rangeOfString:@"."].location != NSNotFound)) {
-
-			if ((NSUInteger)newLength == (adjTextMaxTextLength + 1)) {
-				adjTextMaxTextLength++;
-				textLength--;
+				// Put what fits in place of the replaced range once the refused
+				// edit is over, through the text view, so it is checked again,
+				// can be undone and leaves the insertion point behind it.
+				dispatch_async(dispatch_get_main_queue(), ^{
+					if (NSMaxRange(r) <= [[textView string] length]) {
+						[textView insertText:fittingInsertion replacementRange:r];
+					}
+				});
 			}
-			else if ((NSUInteger)newLength > adjTextMaxTextLength) {
-				textLength--;
+			else {
+				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), adjTextMaxTextLength]];
 			}
-		}
-
-		// If it's too long, disallow the change but try
-		// to insert a text chunk partially to maxTextLength.
-		if ((NSUInteger)newLength > adjTextMaxTextLength) {
-			// Signed on purpose: when the existing text already exceeds the maximum,
-			// the remaining capacity is negative — the unsigned arithmetic this
-			// replaces underflowed to a huge value and silently skipped the tooltip.
-			long long insertableLength = (long long)adjTextMaxTextLength - (long long)textLength + (long long)[textView selectedRange].length;
-
-			if (insertableLength <= [replacementString characterCount]) {
-
-				NSString *tooltip = nil;
-
-				if (insertableLength > 0) {
-					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), adjTextMaxTextLength];
-				}
-				else {
-					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), adjTextMaxTextLength];
-				}
-
-				[SPTooltip showWithObject:tooltip];
-
-				if (insertableLength > 0) {
-					[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)insertableLength]]];
-				}
-			}
-
-			adjTextMaxTextLength = originalMaxTextLength;
 
 			return NO;
 		}
-
-		adjTextMaxTextLength = originalMaxTextLength;
 
 		if (self.displayFormatter) {
 			NSString *err = nil;

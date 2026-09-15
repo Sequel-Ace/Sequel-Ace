@@ -1253,12 +1253,11 @@
 	else if (selectedTableType == SPTableTypeView) {
 
 
-        // Create_time
-        NSDate *updateDate = [NSDateFormatter.naturalLanguageFormatter dateFromString:[status objectForKey:@"Create_time"]];
-
+        // Create_time is NULL for views on most servers; the formatter answers
+        // an empty string then, so the dictionary below is not cut short at it.
         [status addEntriesFromDictionary:[NSDictionary dictionaryWithObjectsAndKeys:
                                           @"View", @"Engine",
-                                          [NSDateFormatter.shortStyleNoTimeFormatter stringFromDate:updateDate], @"Create_time",
+                                          [NSDateFormatter mysqlDateTimeString:[status objectForKey:@"Create_time"] dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterNoStyle], @"Create_time",
                                           @"No status information is available for views.", @"Comment",
 											  selectedTableName, @"Name",
                                           [status objectForKey:@"COLLATION_CONNECTION"], @"Collation",
