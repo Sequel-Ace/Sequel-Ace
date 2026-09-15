@@ -45,6 +45,7 @@ import Foundation
     private var unsupportedDefinitionView: String?
     private var objectPrivileges: [String] = []
     private var targetPrivileges: [String] = []
+    private var externalViews: [String] = []
     private var createFailureReason: String?
     private var failedObject: String?
     private var failedObjectReason: String?
@@ -156,6 +157,16 @@ import Foundation
         targetPrivileges = descriptions
     }
 
+    /// Records views in other databases that read from the source's tables
+    /// or views. They would stop working once the source is dropped, and
+    /// the rename cannot repoint them, so it is refused.
+    ///
+    /// - Parameter descriptions: One entry per view, as `` `db`.`view` ``.
+    @objc(recordExternalViews:)
+    public func recordExternalViews(_ descriptions: [String]) {
+        externalViews = descriptions
+    }
+
     /// Records the source's stored libraries (MySQL 9.2 and later, `CREATE
     /// LIBRARY`), which the rename cannot move and `DROP DATABASE` would
     /// delete with the source.
@@ -169,10 +180,10 @@ import Foundation
     }
 
     /// Whether the rename may start: the source was inspected and holds
-    /// nothing the rename cannot move, and nothing is granted on the new
-    /// name yet.
+    /// nothing the rename cannot move, nothing is granted on the new name
+    /// yet, and no view in another database reads from the source.
     @objc public var canStart: Bool {
-        inspectionFailureReason == nil && unsupportedObjects.isEmpty && unsupportedCharacterSet == nil && unsupportedDefinitionView == nil && objectPrivileges.isEmpty && targetPrivileges.isEmpty
+        inspectionFailureReason == nil && unsupportedObjects.isEmpty && unsupportedCharacterSet == nil && unsupportedDefinitionView == nil && objectPrivileges.isEmpty && targetPrivileges.isEmpty && externalViews.isEmpty
     }
 
     /// Records that creating the target database failed.
@@ -242,6 +253,12 @@ import Foundation
             return String(
                 format: NSLocalizedString("Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed.", comment: "rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host'"),
                 targetDatabase, Self.shortList(targetPrivileges)
+            )
+        }
+        if !externalViews.isEmpty {
+            return String(
+                format: NSLocalizedString("Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed.", comment: "rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view`"),
+                sourceDatabase, Self.shortList(externalViews)
             )
         }
         if let unsupportedCharacterSet {
@@ -590,6 +607,26 @@ import Foundation
         return Self.asciiLowercased(Array(name.utf8)) == Self.asciiLowercased(Array(sourceDatabase.utf8))
     }
 
+    /// Whether a schema name, as `information_schema` prints it, is the
+    /// source database, compared the way the server compares database names.
+    func isSource(schemaName name: String) -> Bool {
+        isSourceDatabase(Self.backtickQuoted(name))
+    }
+
+    /// Whether a view definition names an object in the source database: a
+    /// backticked name of two or three parts whose first part is the source.
+    /// Any such name counts - a column reference through a table alias named
+    /// like the source as well - so a doubtful case refuses a rename instead
+    /// of breaking a view; string literals and comments do not.
+    func definitionReferencesSource(_ definition: String) -> Bool {
+        Self.tokens(of: definition).contains { token in
+            if case .name(let parts) = token {
+                return parts.count >= 2 && isSourceDatabase(parts[0])
+            }
+            return false
+        }
+    }
+
     /// The bytes of a name with the ASCII letters folded to lower case - an
     /// approximation of the folding the server applies to database and
     /// table names under `lower_case_table_names`, for when the server's own
@@ -895,7 +932,7 @@ import Foundation
 @objc public final class SADatabaseRenameExecutor: NSObject {
 
     public typealias Run = (String) -> SADatabaseRenameStatementResult
-    public typealias Quote = (String) -> String
+    public typealias Quote = (String) -> String?
 
     private let run: Run
     private let quote: Quote
@@ -920,7 +957,8 @@ import Foundation
     /// - Parameters:
     ///   - run: Runs one statement on the connection.
     ///   - quote: Turns a value into a quoted SQL string literal, escaped for
-    ///     the connection.
+    ///     the connection, or `nil` while the connection cannot (it is closed
+    ///     or being re-established); no statement is sent with such a value.
     @objc(initWithRun:quote:)
     public init(run: @escaping Run, quote: @escaping Quote) {
         self.run = run
@@ -948,7 +986,13 @@ import Foundation
         partialRevokes = nil
         let quotedSource = SADatabaseRenameViewRewriter.backtickQuoted(source)
         let quotedTarget = SADatabaseRenameViewRewriter.backtickQuoted(target)
-        let schema = quote(source)
+        // The connection hands back no quoted value while it is closed or
+        // being re-established; nothing is sent then.
+        guard let schema = quote(source), let targetLiteral = quote(target) else {
+            let plan = SADatabaseRenamePlan(sourceDatabase: source, targetDatabase: target, lowerCaseTableNames: 0, tableRows: [], routineRows: [], eventRows: [], triggerRows: [])
+            plan.recordInspectionFailure(Self.quoteFailureReason)
+            return plan.failureDescription
+        }
 
         // The plan needs the source's objects from the server; a failed query
         // leaves the picture incomplete and stops the rename. Events are read
@@ -985,7 +1029,7 @@ import Foundation
         // could not be recognised - in view references, partial revokes and
         // the final check - so a failed or incomplete answer stops the rename.
         if caseInsensitiveNames, inspectionError == nil {
-            let lowered = run("SELECT LOWER(\(schema)), LOWER(\(quote(target)))")
+            let lowered = run("SELECT LOWER(\(schema)), LOWER(\(targetLiteral))")
             let row = lowered.rows?.first ?? []
             if row.count >= 2, let loweredSource = Self.text(row[0]), let loweredTarget = Self.text(row[1]) {
                 serverLoweredSource = loweredSource
@@ -1038,6 +1082,19 @@ import Foundation
             return plan.failureDescription
         }
 
+        // Views in other databases that read from the source's tables or
+        // views would stop working once the source is dropped, and the rename
+        // cannot repoint them; they refuse it like the objects above.
+        let rewriter = SADatabaseRenameViewRewriter(sourceDatabase: source, targetDatabase: target, caseInsensitiveNames: plan.caseInsensitiveNames, serverLoweredSource: serverLoweredSource)
+        let externalViews = externalViewsReadingFromSource(schema: schema, recognisingSourceWith: rewriter, inspectionError: &inspectionError)
+        if let inspectionError {
+            plan.recordInspectionFailure(inspectionError)
+        }
+        plan.recordExternalViews(externalViews)
+        guard plan.canStart else {
+            return plan.failureDescription
+        }
+
         var create = "CREATE DATABASE \(quotedTarget)"
         if let encoding, !encoding.isEmpty {
             create += " DEFAULT CHARACTER SET = \(SADatabaseRenameViewRewriter.backtickQuoted(encoding))"
@@ -1065,8 +1122,25 @@ import Foundation
         // and on the early ways out no later check would notice. It is tried
         // twice, then reported through `sessionSettingsNotRestored`.
         func restoreSettings() {
-            let restores = settings.map(\.restore) + (collationToRestore.map { ["collation_connection = \(quote($0))"] } ?? [])
-            guard !restores.isEmpty, let session else { return }
+            guard let session else { return }
+            var restores = settings.map(\.restore)
+            // a collation the connection cannot quote cannot be put back
+            var collationUnquotable = false
+            if let collationToRestore {
+                if let literal = quote(collationToRestore) {
+                    restores.append("collation_connection = \(literal)")
+                } else {
+                    collationUnquotable = true
+                }
+            }
+            guard !collationUnquotable else {
+                if !restores.isEmpty {
+                    _ = run("SET " + restores.joined(separator: ", "))
+                }
+                sessionSettingsNotRestored = true
+                return
+            }
+            guard !restores.isEmpty else { return }
             for _ in 0..<2 {
                 if run("SET " + restores.joined(separator: ", ")).error == nil,
                    Self.settings(run("SELECT @@sql_mode, @@sql_quote_show_create, @@collation_connection").rows?.first, match: session) {
@@ -1076,7 +1150,6 @@ import Foundation
             sessionSettingsNotRestored = true
         }
         var definitions: [[UInt8]: ViewDefinition] = [:]
-        let rewriter = SADatabaseRenameViewRewriter(sourceDatabase: source, targetDatabase: target, caseInsensitiveNames: plan.caseInsensitiveNames, serverLoweredSource: serverLoweredSource)
         if !plan.views.isEmpty {
             let sessionResult = run("SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create, CONNECTION_ID()")
             guard let current = SessionSettings(row: sessionResult.rows?.first) else {
@@ -1086,7 +1159,12 @@ import Foundation
             session = current
             let mode = Self.sqlMode(forViewDefinitions: current.sqlMode)
             if mode != current.sqlMode {
-                settings.append(("sql_mode = \(quote(mode))", "sql_mode = \(quote(current.sqlMode))"))
+                // nothing has been changed yet
+                guard let modeLiteral = quote(mode), let sessionModeLiteral = quote(current.sqlMode) else {
+                    plan.recordInspectionFailure(Self.quoteFailureReason)
+                    return plan.failureDescription
+                }
+                settings.append(("sql_mode = \(modeLiteral)", "sql_mode = \(sessionModeLiteral)"))
             }
             if current.quoteShowCreate != "1" {
                 settings.append(("sql_quote_show_create = 1", "sql_quote_show_create = 0"))
@@ -1290,6 +1368,90 @@ import Foundation
         return rows
     }
 
+    /// The views in other databases that read from the source's tables or
+    /// views, as `` `db`.`view` ``, or an empty list with `inspectionError`
+    /// set when they cannot be listed completely.
+    ///
+    /// Such a view would stop working once the source is dropped. MySQL
+    /// 8.0.13 and later list what each view reads from in
+    /// `information_schema.VIEW_TABLE_USAGE` - looked up in
+    /// `information_schema.TABLES` first, not guessed from an error in the
+    /// server's language - which shows a view only to an account with some
+    /// privilege on it and on what it reads from; a global SELECT that no
+    /// partial revoke limits covers every one. Elsewhere (MariaDB, older
+    /// MySQL) every view's definition in `information_schema.VIEWS` is
+    /// scanned, which that table shows only with SHOW VIEW as well; an empty
+    /// definition is one the account may not see. The server prints every
+    /// reference to another database qualified and backticked, so a name
+    /// whose database part is the source counts - a column reference through
+    /// a table alias named like the source too, which refuses a rename
+    /// rather than breaking a view. Schema names are compared here the way
+    /// the server compares database names, since `information_schema`
+    /// compares them without regard to case even where the server keeps it.
+    /// Anything else fails closed.
+    private func externalViewsReadingFromSource(schema: String, recognisingSourceWith rewriter: SADatabaseRenameViewRewriter, inspectionError: inout String?) -> [String] {
+        guard inspectionError == nil else { return [] }
+        let unlistable = NSLocalizedString("this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing).", comment: "rename database: why the views in other databases that might read from the source could not be checked; shown after 'Reading the objects of the database … failed:'")
+        let probe = run("SELECT TABLE_NAME FROM information_schema.TABLES WHERE UPPER(TABLE_SCHEMA) = 'INFORMATION_SCHEMA' AND UPPER(TABLE_NAME) = 'VIEW_TABLE_USAGE'")
+        guard let present = probe.rows else {
+            inspectionError = probe.error
+            return []
+        }
+        let visibility = globalVisibilityForInspection()
+        if let reason = Self.reasonGlobalSelectDoesNotCoverEverything(visibility, otherwise: unlistable) {
+            inspectionError = reason
+            return []
+        }
+
+        var found: [String] = []
+        var seen: Set<[UInt8]> = []
+        func record(_ viewSchema: String, _ view: String) {
+            let description = SADatabaseRenameViewRewriter.backtickQuoted(viewSchema) + "." + SADatabaseRenameViewRewriter.backtickQuoted(view)
+            if seen.insert(Array(description.utf8)).inserted {
+                found.append(description)
+            }
+        }
+
+        if !present.isEmpty {
+            let usage = run("SELECT VIEW_SCHEMA, VIEW_NAME, TABLE_SCHEMA FROM information_schema.VIEW_TABLE_USAGE WHERE LOWER(TABLE_SCHEMA) = LOWER(\(schema)) ORDER BY VIEW_SCHEMA, VIEW_NAME")
+            guard let rows = usage.rows else {
+                inspectionError = usage.error
+                return []
+            }
+            for row in rows {
+                guard row.count >= 3, let viewSchema = Self.text(row[0]), let view = Self.text(row[1]), let tableSchema = Self.text(row[2]) else {
+                    inspectionError = unlistable
+                    return []
+                }
+                if rewriter.isSource(schemaName: tableSchema), !rewriter.isSource(schemaName: viewSchema) {
+                    record(viewSchema, view)
+                }
+            }
+            return found
+        }
+
+        guard visibility.privileges.contains("SHOW VIEW") else {
+            inspectionError = unlistable
+            return []
+        }
+        let views = run("SELECT TABLE_SCHEMA, TABLE_NAME, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS ORDER BY TABLE_SCHEMA, TABLE_NAME")
+        guard let rows = views.rows else {
+            inspectionError = views.error
+            return []
+        }
+        for row in rows {
+            guard row.count >= 3, let viewSchema = Self.text(row[0]), let view = Self.text(row[1]),
+                  let hex = Self.text(row[2]), let bytes = Self.bytes(fromHex: hex), !bytes.isEmpty else {
+                inspectionError = unlistable
+                return []
+            }
+            if !rewriter.isSource(schemaName: viewSchema), rewriter.definitionReferencesSource(String(decoding: bytes, as: UTF8.self)) {
+                record(viewSchema, view)
+            }
+        }
+        return found
+    }
+
     /// The privileges granted on a database, its tables and views, and the
     /// partial revokes for the database, each as `` `pattern`.* for
     /// 'user'@'host' ``, `` `table` for 'user'@'host' `` or `` partial revoke
@@ -1324,7 +1486,10 @@ import Foundation
     private func privilegeDescriptions(forDatabase name: String, serverLoweredName: String?, caseInsensitiveNames: Bool, inspectionError: inout String?) -> [String] {
         guard inspectionError == nil else { return [] }
         let unlistable = NSLocalizedString("this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).", comment: "rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:'")
-        let schema = quote(name)
+        guard let schema = quote(name) else {
+            inspectionError = Self.quoteFailureReason
+            return []
+        }
         // with partial revokes on, `_` and `%` in a database grant are
         // literal characters, not wildcards; the setting, read once, is
         // needed for the restrictions below anyway
@@ -1334,7 +1499,10 @@ import Foundation
         } else {
             literalGrants = false
         }
-        let databaseMatch = databaseGrantMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants)
+        guard let databaseMatch = databaseGrantMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants) else {
+            inspectionError = Self.quoteFailureReason
+            return []
+        }
         let match = Self.schemaMatch(column: "Db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         let databases = run("SELECT Db, User, Host FROM mysql.db WHERE \(databaseMatch) ORDER BY Db, User, Host")
         let tables = run("SELECT Table_name, User, Host FROM mysql.tables_priv WHERE \(match) ORDER BY Table_name, User, Host")
@@ -1363,8 +1531,13 @@ import Foundation
                 if let serverLoweredName, !serverLoweredName.utf8.elementsEqual(name.utf8) {
                     names.append(serverLoweredName)
                 }
-                let restrictionMatch = names
-                    .map { "JSON_SEARCH(User_attributes, 'one', \(quote(Self.likePattern(matchingExactly: $0))), '!', '$.Restrictions[*].Database') IS NOT NULL" }
+                let searchStrings = names.compactMap { quote(Self.likePattern(matchingExactly: $0)) }
+                guard searchStrings.count == names.count else {
+                    inspectionError = Self.quoteFailureReason
+                    return []
+                }
+                let restrictionMatch = searchStrings
+                    .map { "JSON_SEARCH(User_attributes, 'one', \($0), '!', '$.Restrictions[*].Database') IS NOT NULL" }
                     .joined(separator: " OR ")
                 guard let restrictedRows = run("SELECT User, Host FROM mysql.user WHERE \(restrictionMatch) ORDER BY User, Host").rows else {
                     inspectionError = unlistable
@@ -1381,7 +1554,10 @@ import Foundation
             inspectionError = reason
             return []
         }
-        let schemaGrantMatch = databaseGrantMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants)
+        guard let schemaGrantMatch = databaseGrantMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants) else {
+            inspectionError = Self.quoteFailureReason
+            return []
+        }
         let schemas = run("SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE \(schemaGrantMatch) ORDER BY TABLE_SCHEMA, GRANTEE")
         guard let schemaRows = schemas.rows else {
             inspectionError = schemas.error
@@ -1469,7 +1645,7 @@ import Foundation
         let host = "SUBSTRING_INDEX(CURRENT_USER(), '@', -1)"
         let user = "SUBSTRING(CURRENT_USER(), 1, CHAR_LENGTH(CURRENT_USER()) - CHAR_LENGTH(\(host)) - 1)"
         let grantee = "CONCAT('''', \(user), '''@''', \(host), '''')"
-        let privileges = Set((run("SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW_ROUTINE')").rows ?? [])
+        let privileges = Set((run("SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = \(grantee) AND PRIVILEGE_TYPE IN ('SELECT', 'SHOW VIEW', 'SHOW_ROUTINE')").rows ?? [])
             .compactMap { Self.text($0.first)?.uppercased() })
         let visibility = GlobalVisibility(privileges: privileges, partialRevokes: partialRevokesForInspection())
         globalVisibility = visibility
@@ -1538,12 +1714,15 @@ import Foundation
     /// quoted by the connection, which knows the mode (`'\\'`, or `'\'`
     /// under that mode). With partial revokes on the server reads `_` and
     /// `%` in database grants literally; `literal` compares for equality
-    /// then.
-    private func databaseGrantMatch(column: String, schema: String, caseInsensitiveNames: Bool, literal: Bool) -> String {
+    /// then. `nil` when the connection cannot quote the escape character.
+    private func databaseGrantMatch(column: String, schema: String, caseInsensitiveNames: Bool, literal: Bool) -> String? {
         if literal {
             return Self.schemaMatch(column: column, schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         }
-        let escape = "ESCAPE \(quote("\\"))"
+        guard let backslash = quote("\\") else {
+            return nil
+        }
+        let escape = "ESCAPE \(backslash)"
         return caseInsensitiveNames ? "LOWER(\(schema)) LIKE LOWER(\(column)) \(escape)" : "\(schema) LIKE \(column) \(escape)"
     }
 
@@ -1594,6 +1773,12 @@ import Foundation
             visit(view)
         }
         return ordered
+    }
+
+    /// Why a statement was not sent: the connection could not quote a value
+    /// for it, which happens while it is closed or being re-established.
+    static var quoteFailureReason: String {
+        NSLocalizedString("the connection could not quote a value for a statement (it was closed or is being re-established).", comment: "rename database: escaping a value for a statement failed because the connection is unavailable; shown after 'Reading the objects of the database … failed:' or 'Moving … failed:'")
     }
 
     /// The text of a result value: a string as it is, a number as the server
@@ -1727,7 +1912,10 @@ import Foundation
             return SADatabaseRenamePlan.unknownReason
         }
 
-        if let error = run("SET collation_connection = \(quote(definition.collation ?? session.collation))").error {
+        guard let collationLiteral = quote(definition.collation ?? session.collation) else {
+            return Self.quoteFailureReason
+        }
+        if let error = run("SET collation_connection = \(collationLiteral)").error {
             return error
         }
         if let error = run(definition.statement).error {
@@ -1921,7 +2109,10 @@ import Foundation
             if restoresEncoding {
                 restoreStoredEncoding()
             }
-            if run("SET collation_connection = \(quote(original.collation))").rows != nil, isRestored(original, exactCollation: true) {
+            guard let collationLiteral = quote(original.collation) else {
+                return false
+            }
+            if run("SET collation_connection = \(collationLiteral)").rows != nil, isRestored(original, exactCollation: true) {
                 return true
             }
         }
@@ -1957,7 +2148,9 @@ import Foundation
             return false
         }
         // the character set's default collation, which a refusal leaves, still matches it
-        _ = run("SET collation_connection = \(quote(original.collation))")
+        if let collationLiteral = quote(original.collation) {
+            _ = run("SET collation_connection = \(collationLiteral)")
+        }
         return isRestored(original, exactCollation: false)
     }
 

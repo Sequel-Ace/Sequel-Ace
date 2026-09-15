@@ -88,7 +88,9 @@
             }
         }
         return [[SADatabaseRenameStatementResult alloc] initWithRows:rows resultReturned:(result != nil) errored:errored errorMessage:[renameConnection lastErrorMessage]];
-    } quote:^NSString *(NSString *value) {
+    } quote:^NSString * _Nullable (NSString *value) {
+        // nil while the connection is closed or being re-established; the
+        // session and executor send no statement with it then
         return [renameConnection escapeAndQuoteString:value];
     } encoding:^NSString *{
         return [renameConnection encoding];
