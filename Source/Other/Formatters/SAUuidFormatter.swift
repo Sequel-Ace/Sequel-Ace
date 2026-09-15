@@ -136,10 +136,14 @@ import Foundation
         return Self.REGEX_VALID_CHARS.matches(in: s, range: range).isEmpty
     }
 
+    /// The 16 bytes a UUID string spells, or `nil` when it does not hold
+    /// exactly 32 hex digits. An empty field is turned into NULL before this
+    /// is reached, so a string that is empty only once its hyphens are gone
+    /// (`----`) is not a UUID either and must not become an empty value.
     func hexToData(_ s: String) -> Data? {
         let hex = removeHyphens(s)
         let len = hex.lengthOfBytes(using: .utf8)
-        guard len == 32 || len == 0 else {
+        guard len == 32 else {
             return nil
         }
 

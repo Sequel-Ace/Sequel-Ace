@@ -75,6 +75,16 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(helper.err.pointee!, "Invalid UUID: 01234567-89AB-CDEF")
   }
 
+  func testHyphensOnlyAreInvalidInsteadOfAnEmptyValue() {
+    for input in ["----", "-"] {
+      let helper = Helper()
+
+      XCTAssertFalse(formatter.getObjectValue(helper.autoPtr, for: input, errorDescription: helper.autoErrorPtr), input)
+      XCTAssertNotNil(helper.err.pointee, input)
+      XCTAssertEqual(helper.err.pointee, "Invalid UUID: \(input)" as NSString)
+    }
+  }
+
   func testValidPartial() {
     let input = "01234567-89AB-CDEF"
     let helper = Helper()
