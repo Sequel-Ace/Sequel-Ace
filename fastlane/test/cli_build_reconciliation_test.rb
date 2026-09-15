@@ -150,6 +150,74 @@ class CliBuildReconciliationTest < Minitest::Test
     assert_empty output.string
   end
 
+  def test_final_reconciliation_uses_the_prepared_source_identity_after_planning
+    original_plan_build = 20_111
+    prepared_identity = {
+      "channel" => "beta",
+      "version" => "6.0.0",
+      "build" => 20_112,
+      "tag" => "beta/6.0.0-20112"
+    }
+    git = reconciliation_git
+    files = Object.new
+    files.define_singleton_method(:current) { { "build" => prepared_identity.fetch("build") } }
+    files.define_singleton_method(:release_identity) { prepared_identity }
+    output = StringIO.new
+    error = StringIO.new
+    cli = SequelAceRelease::CLI.new(out: output, err: error, env: {})
+
+    status = SequelAceRelease::VersionFiles.stub(:new, files) do
+      SequelAceRelease::GitRepository.stub(:new, git) do
+        cli.run([
+          "reconcile-build",
+          "--channel", "beta",
+          "--target-version", "6.0.0",
+          "--highest-asc-build", (original_plan_build).to_s,
+          "--expected-target-build", "20112"
+        ])
+      end
+    end
+
+    assert_equal 0, status
+    result = JSON.parse(output.string)
+    assert_equal "preincremented_source", result.fetch("reason")
+    assert_equal 20_112, result.fetch("target_build")
+    assert_equal prepared_identity, result.dig("production_build_evidence", "source_release_identity")
+    assert_empty error.string
+  end
+
+  def test_final_reconciliation_aborts_when_authoritative_build_advances_after_preparation
+    prepared_identity = {
+      "channel" => "beta",
+      "version" => "6.0.0",
+      "build" => 20_112,
+      "tag" => "beta/6.0.0-20112"
+    }
+    git = reconciliation_git
+    files = Object.new
+    files.define_singleton_method(:current) { { "build" => prepared_identity.fetch("build") } }
+    files.define_singleton_method(:release_identity) { prepared_identity }
+    output = StringIO.new
+    error = StringIO.new
+    cli = SequelAceRelease::CLI.new(out: output, err: error, env: {})
+
+    status = SequelAceRelease::VersionFiles.stub(:new, files) do
+      SequelAceRelease::GitRepository.stub(:new, git) do
+        cli.run([
+          "reconcile-build",
+          "--channel", "beta",
+          "--target-version", "6.0.0",
+          "--highest-asc-build", "20112",
+          "--expected-target-build", "20112"
+        ])
+      end
+    end
+
+    assert_equal 1, status
+    assert_includes error.string, "API-derived Production build changed from expected 20112 to 20113"
+    assert_empty output.string
+  end
+
   def test_tag_only_recovery_validates_the_missing_release_and_enriches_its_cloud_run
     commit = "a" * 40
     tag = "production/5.4.0-20105"
@@ -223,5 +291,14 @@ class CliBuildReconciliationTest < Minitest::Test
     end
 
     assert_nil recovered
+  end
+
+  private
+
+  def reconciliation_git
+    git = Object.new
+    git.define_singleton_method(:tags) { |_pattern| [] }
+    git.define_singleton_method(:latest_commit_changing_all) { |_paths| nil }
+    git
   end
 end

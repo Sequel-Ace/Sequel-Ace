@@ -223,6 +223,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes final_gate, "APPROVED_BASE_SHA"
     assert_includes final_gate, "APPROVED_CHANGELOG_BASE_SHA"
     assert_includes final_gate, "--expected-target-build"
+    refute_includes final_gate, "release-plan.json"
+    refute_includes final_gate, "source_build="
+    refute_includes final_gate, "--source-build"
     assert_includes final_gate, "mv pre-merge-reconciliation.json reconciliation.json"
   end
 
