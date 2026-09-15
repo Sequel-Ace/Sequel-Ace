@@ -408,6 +408,25 @@ final class SADatabaseAssertionTests: XCTestCase {
         )
     }
 
+    /// The comment-syntax predicates are shared with the app's strippers, some
+    /// of which walk scalars and some Characters; both forms must agree on
+    /// CRLF, a lone CR and the control characters allowed after `--`.
+    func testCommentSyntaxScalarAndCharacterFormsAgree() {
+        XCTAssertTrue(SASQLCommentSyntax.endsLineComment(Character("\n")))
+        XCTAssertTrue(SASQLCommentSyntax.endsLineComment(Character("\r\n")))
+        XCTAssertFalse(SASQLCommentSyntax.endsLineComment(Character("\r")))
+        XCTAssertTrue(SASQLCommentSyntax.endsLineComment(Unicode.Scalar(UInt8(0x0A))))
+        XCTAssertFalse(SASQLCommentSyntax.endsLineComment(Unicode.Scalar(UInt8(0x0D))))
+        for value: UInt8 in [0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20] {
+            XCTAssertTrue(SASQLCommentSyntax.isCommentWhitespace(Unicode.Scalar(value)))
+            XCTAssertTrue(SASQLCommentSyntax.isCommentWhitespace(Character(Unicode.Scalar(value))))
+        }
+        XCTAssertTrue(SASQLCommentSyntax.isCommentWhitespace(Character("\r\n")))
+        XCTAssertFalse(SASQLCommentSyntax.isCommentWhitespace(Unicode.Scalar(UInt8(0x78))))
+        XCTAssertFalse(SASQLCommentSyntax.isCommentWhitespace(Character("x")))
+        XCTAssertFalse(SASQLCommentSyntax.isCommentWhitespace(Character("\u{A0}")))
+    }
+
     func testExecutableCommentVersionAndVendorGatesAreRespected() {
         XCTAssertFalse(queryMayChangeDatabaseContext("/*!99999 USE target */"))
         XCTAssertFalse(queryMayChangeDatabaseContext("/*M!80000 USE target */"))

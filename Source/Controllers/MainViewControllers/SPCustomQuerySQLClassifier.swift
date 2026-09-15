@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SPMySQL
 
 enum SPCustomQuerySQLClassifier {
 
@@ -121,7 +122,9 @@ enum SPCustomQuerySQLClassifier {
     /// adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes `SELECT 1`.
     /// The `--` form follows MySQL's whitespace/control rule, and comment
     /// markers inside strings or quoted identifiers are preserved. Keep these
-    /// lexical rules mirrored in SPMySQLFramework's SADatabaseAssertion.
+    /// lexical rules mirrored in SPMySQLFramework's SADatabaseAssertion; where
+    /// `#` and `--` comments start and end comes from `SASQLCommentSyntax`,
+    /// which both use.
     static func stripSQLComments(
         _ source: String,
         serverVersion: Int? = nil,
@@ -184,7 +187,7 @@ enum SPCustomQuerySQLClassifier {
             if character == "#" {
                 result.append(" ")
                 index += 1
-                while index < characters.count, !endsLineComment(characters[index]) {
+                while index < characters.count, !SASQLCommentSyntax.endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -193,10 +196,10 @@ enum SPCustomQuerySQLClassifier {
             if character == "-",
                index + 1 < characters.count,
                characters[index + 1] == "-",
-               (index + 2 == characters.count || isMySQLCommentWhitespace(characters[index + 2])) {
+               (index + 2 == characters.count || SASQLCommentSyntax.isCommentWhitespace(characters[index + 2])) {
                 result.append(" ")
                 index += 2
-                while index < characters.count, !endsLineComment(characters[index]) {
+                while index < characters.count, !SASQLCommentSyntax.endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -268,36 +271,6 @@ enum SPCustomQuerySQLClassifier {
             sql: result,
             hasIndeterminateExecutableComment: hasIndeterminateExecutableComment
         )
-    }
-
-    /// Whether a scalar may follow `--` for it to start a comment: MySQL's lexer
-    /// requires a space or control character there (tab, newline, carriage
-    /// return, form feed, vertical tab …). Shared with the MCP strippers so
-    /// every scanner recognises the same comment starts.
-    static func isMySQLCommentWhitespace(_ scalar: Unicode.Scalar) -> Bool {
-        scalar.value <= 0x20
-    }
-
-    /// `Character` form of `isMySQLCommentWhitespace(_:)` for the scanners
-    /// that walk Characters (the MCP placeholder binder); "\r\n" qualifies.
-    static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
-        character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
-    }
-
-    /// Whether a scalar ends a `#` or `-- ` comment. MySQL ends them at a line
-    /// feed only; a lone carriage return stays part of the comment. In a CRLF
-    /// line ending the carriage return and the line feed are separate scalars,
-    /// so the line feed ends the comment.
-    static func endsLineComment(_ scalar: Unicode.Scalar) -> Bool {
-        scalar == "\n"
-    }
-
-    /// `Character` form of `endsLineComment(_:)`. Swift folds "\r\n" into a
-    /// single `Character`, so a comparison with "\n" alone never matches a
-    /// CRLF line ending and the comment would swallow the rest of the batch,
-    /// hiding e.g. a `USE` or `DELETE` that the server executes.
-    static func endsLineComment(_ character: Character) -> Bool {
-        character == "\n" || character == "\r\n"
     }
 
     private static func isASCIIDigit(_ scalar: Unicode.Scalar) -> Bool {

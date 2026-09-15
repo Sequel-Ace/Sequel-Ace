@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SPMySQL
 
 enum SPMCPHTTP {
 
@@ -178,15 +179,15 @@ enum SPMCPReadOnlyGuard {
             // `FROM/**/t` -> `FROMt`), which matters because the stripped SQL is also
             // what run_query executes for capped reads.
             if c == "#" {                                        // # comment to end of line
-                while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { i += 1 }
+                while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { i += 1 }
                 out.append(" ")
                 continue
             }
             // -- comment: the second dash must be followed by whitespace/control or EOL
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || SPCustomQuerySQLClassifier.isMySQLCommentWhitespace(next) {
-                    while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { i += 1 }
+                if i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(next) {
+                    while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { i += 1 }
                     out.append(" ")
                     continue
                 }
@@ -235,13 +236,13 @@ enum SPMCPReadOnlyGuard {
             }
             // Comments are copied verbatim; a `?` inside one is not a placeholder.
             if c == "#" {                                        // # to end of line
-                while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
+                while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
                 continue
             }
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {    // -- (needs whitespace/EOL after)
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || SPCustomQuerySQLClassifier.isMySQLCommentWhitespace(next) {
-                    while i < n && !SPCustomQuerySQLClassifier.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
+                if i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(next) {
+                    while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { out.append(chars[i]); i += 1 }
                     continue
                 }
             }
