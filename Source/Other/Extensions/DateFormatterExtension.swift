@@ -89,6 +89,30 @@ extension DateFormatter {
         return formatter.string(from: date)
     }
 
+    /// A labelled row for a MySQL date-time, such as the "created:" and
+    /// "updated:" rows of the Table Information pane, or `nil` when there is
+    /// nothing to show.
+    ///
+    /// The value is formatted by `mysqlDateTimeString(_:dateStyle:timeStyle:)`
+    /// first. A missing key, a NULL from the server or text that is not a
+    /// date-time formats to an empty string, and then no row is made, so the
+    /// caller does not show a label with nothing behind it.
+    ///
+    /// - Parameters:
+    ///   - labelFormat: The localized row format with one `%@` for the date.
+    ///   - value: The MySQL date-time as a string, or `nil` / `NSNull`.
+    ///   - dateStyle: The date style to show.
+    ///   - timeStyle: The time style to show.
+    /// - Returns: The row, or `nil` when the value is missing or unreadable.
+    @objc(mysqlDateTimeRowWithLabelFormat:value:dateStyle:timeStyle:)
+    public static func mysqlDateTimeRow(labelFormat: String, value: Any?, dateStyle: DateFormatter.Style, timeStyle: DateFormatter.Style) -> String? {
+        let formatted = mysqlDateTimeString(value, dateStyle: dateStyle, timeStyle: timeStyle)
+        guard !formatted.isEmpty else {
+            return nil
+        }
+        return String(format: labelFormat, formatted)
+    }
+
     /// The parser behind `mysqlDateTimeString(_:dateStyle:timeStyle:)`: the
     /// MySQL date-time format, Gregorian, POSIX and UTC, so that a value
     /// reads the same on every Mac.

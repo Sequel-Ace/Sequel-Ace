@@ -38,12 +38,6 @@
 #import "SPAppController.h"
 #import "sequel-ace-Swift.h"
 
-@interface SPTableInfo ()
-
-- (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate;
-
-@end
-
 @implementation SPTableInfo
 
 #pragma mark -
@@ -169,19 +163,11 @@
                 return;
             }
 
-			// Check for 'Create_time' == NULL
-			if (![[tableStatus objectForKey:@"Create_time"] isNSNull]) {
-
-				// Add the creation date to the infoTable
-				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"Table Info Section : time+date table was created at"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Create_time"]]]];
-			}
-
-			// Check for 'Update_time' == NULL - InnoDB tables don't have an update time
-			if (![[tableStatus objectForKey:@"Update_time"] isNSNull]) {
-
-				// Add the update date to the infoTable
-				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Update_time"]]]];
-			}
+			// Add the creation and update dates to the infoTable; a date that is
+			// missing or cannot be read (InnoDB tables have no update time) adds
+			// no row, rather than a label with nothing behind it
+			[info safeAddObject:[NSDateFormatter mysqlDateTimeRowWithLabelFormat:NSLocalizedString(@"created: %@", @"Table Info Section : time+date table was created at") value:[tableStatus objectForKey:@"Create_time"] dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterShortStyle]];
+			[info safeAddObject:[NSDateFormatter mysqlDateTimeRowWithLabelFormat:NSLocalizedString(@"updated: %@", @"updated: %@") value:[tableStatus objectForKey:@"Update_time"] dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterShortStyle]];
 			
 			// Check for 'Engine' == NULL - should not happen (at least not with MySQL)
 			if (![[tableStatus objectForKey:@"Engine"] isNSNull]) {
@@ -277,19 +263,10 @@
 				return;
 			}
 
-			// Check for 'CREATED' == NULL
-			if (![[tableStatus objectForKey:@"CREATED"] isNSNull]) {
-
-				// Add the creation date to the infoTable
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"created: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"CREATED"]]]];
-			}
-
-			// Check for 'LAST_ALTERED'
-			if (![[tableStatus objectForKey:@"LAST_ALTERED"] isNSNull]) {
-
-				// Add the update date to the infoTable
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"LAST_ALTERED"]]]];
-			}
+			// Add the creation and update dates to the infoTable; a date that is
+			// missing or cannot be read adds no row
+			[info safeAddObject:[NSDateFormatter mysqlDateTimeRowWithLabelFormat:NSLocalizedString(@"created: %@", @"created: %@") value:[tableStatus objectForKey:@"CREATED"] dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterShortStyle]];
+			[info safeAddObject:[NSDateFormatter mysqlDateTimeRowWithLabelFormat:NSLocalizedString(@"updated: %@", @"updated: %@") value:[tableStatus objectForKey:@"LAST_ALTERED"] dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterShortStyle]];
 
 			// Check for 'SQL ACCESS' and deterministic
 			if (![[tableStatus objectForKey:@"SQL_DATA_ACCESS"] isNSNull] && ![[tableStatus objectForKey:@"IS_DETERMINISTIC"] isNSNull]) {
@@ -500,13 +477,6 @@
 			[(ImageAndTextCell*)cell setIndentationLevel:0];
 		}
 	}
-}
-
-#pragma mark -
-#pragma mark Private API
-
-- (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate {
-	return [NSDateFormatter mysqlDateTimeString:mysqlDate dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterShortStyle];
 }
 
 #pragma mark -

@@ -252,4 +252,20 @@ final class SAMySQLDateTimeTests: XCTestCase {
         XCTAssertEqual(DateFormatter.mysqlDateTimeString("not a date", dateStyle: .short, timeStyle: .none), "")
         XCTAssertEqual(DateFormatter.mysqlDateTimeString(42, dateStyle: .short, timeStyle: .none), "")
     }
+
+    /// Verifies a date row carries the formatted value behind its label, and
+    /// that a missing, NULL or unreadable value gives no row at all instead
+    /// of a label with nothing behind it.
+    func testADateRowIsOnlyMadeForAReadableValue() {
+        let shown = expected(year: 2020, month: 6, day: 30, hour: 14, minute: 14, second: 11, dateStyle: .short, timeStyle: .short)
+        XCTAssertEqual(
+            DateFormatter.mysqlDateTimeRow(labelFormat: "created: %@", value: "2020-06-30 14:14:11", dateStyle: .short, timeStyle: .short),
+            "created: \(shown)"
+        )
+
+        let unreadable: [Any?] = [nil, NSNull(), "", "not a date", 42]
+        for value in unreadable {
+            XCTAssertNil(DateFormatter.mysqlDateTimeRow(labelFormat: "updated: %@", value: value, dateStyle: .short, timeStyle: .short), String(describing: value))
+        }
+    }
 }
