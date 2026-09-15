@@ -37,6 +37,7 @@
 @interface SPDatabaseRename ()
 
 @property (nonatomic, copy, readwrite, nullable) NSString *failureDescription;
+@property (nonatomic, copy, readwrite, nullable) NSString *warningDescription;
 @property (nonatomic, readwrite) BOOL changedServer;
 
 @end
@@ -44,10 +45,11 @@
 @implementation SPDatabaseRename
 
 /**
- * Hands the rename to SADatabaseRenameExecutor, which inspects the source,
- * refuses databases holding triggers, routines or events, moves the tables,
- * recreates the views and drops the source only when everything moved. This
- * method only runs the statements it is given and reports the outcome.
+ * Hands the rename to SADatabaseRenameConnectionSession, which switches the
+ * connection to UTF-8 where needed, lets SADatabaseRenameExecutor inspect the
+ * source, move the tables, recreate the views and drop the source only when
+ * everything moved, and restores and verifies the connection afterwards. This
+ * method only reaches the connection for it and reports the outcome.
  */
 - (BOOL)renameDatabaseFrom:(SPCreateDatabaseInfo *)sourceDatabase to:(NSString *)targetDatabase
 {
@@ -56,6 +58,7 @@
     SPLog(@"renameDatabaseFrom: %@, to: %@", sourceDatabaseName, targetDatabase);
 
     self.failureDescription = nil;
+    self.warningDescription = nil;
     self.changedServer = NO;
 
 	// Check, whether the source database exists and the target database doesn't
@@ -69,43 +72,7 @@
 
     SPMySQLConnection *renameConnection = connection;
 
-    // View definitions travel through the connection's encoding on the way
-    // in and out; on a latin1 connection every character outside latin1
-    // would arrive as '?' and be written back that way. Read and replay them
-    // through utf8mb4 (utf8 on servers without it) and restore the encoding
-    // afterwards.
-    BOOL encodingChanged = NO;
-    NSString *originalCollation = nil;
-    if (![[renameConnection encoding] isEqualToString:@"utf8mb4"] || [renameConnection encodingUsesLatin1Transport]) {
-        // SET NAMES replaces the session's collation with the character set's
-        // default on the way in and out; keep the one the session had. Without
-        // it the restore would leave the connection on that default, so a
-        // collation that cannot be read stops the rename before anything is
-        // switched.
-        SPMySQLResult *collationResult = [renameConnection queryString:@"SELECT @@collation_connection"];
-        if (![renameConnection queryErrored]) {
-            [collationResult setReturnDataAsStrings:YES];
-            originalCollation = [[collationResult getRowAsArray] firstObject];
-        }
-        if (![originalCollation isKindOfClass:[NSString class]]) {
-            self.failureDescription = NSLocalizedString(@"The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.", @"rename database refused because @@collation_connection could not be read before switching the connection to UTF-8");
-            SPLog(@"rename refused: %@", self.failureDescription);
-            return NO;
-        }
-        [renameConnection storeEncodingForRestoration];
-        encodingChanged = [renameConnection setEncoding:@"utf8mb4"] || [renameConnection setEncoding:@"utf8"];
-        if (!encodingChanged) {
-            // Without UTF-8 transport a view definition could arrive and go
-            // back with characters replaced; better not to start at all.
-            [renameConnection restoreStoredEncoding];
-            self.failureDescription = NSLocalizedString(@"The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.", @"rename database refused because the connection could not be switched to a UTF-8 character set");
-            SPLog(@"rename refused: %@", self.failureDescription);
-            return NO;
-        }
-        [renameConnection setEncodingUsesLatin1Transport:NO];
-    }
-
-    SADatabaseRenameExecutor *executor = [[SADatabaseRenameExecutor alloc] initWithRun:^SADatabaseRenameStatementResult *(NSString *statement) {
+    SADatabaseRenameConnectionSession *session = [[SADatabaseRenameConnectionSession alloc] initWithRun:^SADatabaseRenameStatementResult *(NSString *statement) {
         // The result type decides what counts as success, including a
         // missing result object that the connection did not flag as an error.
         SPMySQLResult *result = [renameConnection queryString:statement];
@@ -121,18 +88,26 @@
         return [[SADatabaseRenameStatementResult alloc] initWithRows:rows resultReturned:(result != nil) errored:errored errorMessage:[renameConnection lastErrorMessage]];
     } quote:^NSString *(NSString *value) {
         return [renameConnection escapeAndQuoteString:value];
+    } encoding:^NSString *{
+        return [renameConnection encoding];
+    } usesLatin1Transport:^BOOL{
+        return [renameConnection encodingUsesLatin1Transport];
+    } setEncoding:^BOOL(NSString *encoding) {
+        return [renameConnection setEncoding:encoding];
+    } storeEncodingForRestoration:^{
+        [renameConnection storeEncodingForRestoration];
+    } restoreStoredEncoding:^{
+        [renameConnection restoreStoredEncoding];
     }];
 
-    self.failureDescription = [executor renameDatabase:sourceDatabaseName
-                                                    to:targetDatabase
-                                              encoding:[sourceDatabase defaultEncoding]
-                                             collation:[sourceDatabase defaultCollation]];
-    self.changedServer = [executor changedServer];
-    if (encodingChanged) {
-        [renameConnection restoreStoredEncoding];
-        if ([originalCollation isKindOfClass:[NSString class]]) {
-            [renameConnection queryString:[NSString stringWithFormat:@"SET collation_connection = %@", [renameConnection escapeAndQuoteString:originalCollation]]];
-        }
+    self.failureDescription = [session renameDatabase:sourceDatabaseName
+                                                   to:targetDatabase
+                                             encoding:[sourceDatabase defaultEncoding]
+                                            collation:[sourceDatabase defaultCollation]];
+    self.changedServer = [session changedServer];
+    self.warningDescription = [session warningDescription];
+    if (self.warningDescription) {
+        SPLog(@"rename warning: %@", self.warningDescription);
     }
     if (self.failureDescription) {
         SPLog(@"rename failed: %@", self.failureDescription);

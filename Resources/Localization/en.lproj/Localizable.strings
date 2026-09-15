@@ -143,6 +143,9 @@
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
 
+/* rename database: the connection's character set, latin1 transport mode or collation could not be put back after the rename (or after refusing it); shown as a warning after a successful rename or appended to the failure */
+"The connection's character set or collation could not be restored after Rename Database; reconnect before running further queries." = "The connection's character set or collation could not be restored after Rename Database; reconnect before running further queries.";
+
 /* rename database refused because @@collation_connection could not be read before switching the connection to UTF-8 */
 "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed." = "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.";
 

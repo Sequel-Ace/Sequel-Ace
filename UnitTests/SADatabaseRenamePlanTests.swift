@@ -1406,4 +1406,241 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         ])
         XCTAssertFalse(moves.statements.contains { $0.hasPrefix("DROP") }, moves.statements.joined(separator: "\n"))
     }
+
+    // MARK: - Connection session
+
+    /// A stand-in for the connection's encoding state in front of a
+    /// FakeServer: `SET NAMES` works for `acceptedEncodings` (and ends latin1
+    /// transport), and the restore puts back what was stored unless
+    /// `restoreWorks` is off.
+    private final class FakeConnection {
+        let server: FakeServer
+        var encoding: String
+        var usesLatin1Transport: Bool
+        var acceptedEncodings: Set<String> = ["utf8mb4", "utf8"]
+        var restoreWorks = true
+        private var stored: (encoding: String, usesLatin1Transport: Bool)?
+        private(set) var restoreCount = 0
+        private(set) var setEncodingCalls: [String] = []
+
+        init(server: FakeServer, encoding: String, usesLatin1Transport: Bool = false) {
+            self.server = server
+            self.encoding = encoding
+            self.usesLatin1Transport = usesLatin1Transport
+        }
+
+        func makeSession() -> SADatabaseRenameConnectionSession {
+            SADatabaseRenameConnectionSession(
+                run: { [unowned self] in self.server.run($0) },
+                quote: { "'" + $0.replacingOccurrences(of: "'", with: "''") + "'" },
+                encoding: { [unowned self] in self.encoding },
+                usesLatin1Transport: { [unowned self] in self.usesLatin1Transport },
+                setEncoding: { [unowned self] name in
+                    self.setEncodingCalls.append(name)
+                    guard self.acceptedEncodings.contains(name) else { return false }
+                    self.encoding = name
+                    self.usesLatin1Transport = false
+                    return true
+                },
+                storeEncodingForRestoration: { [unowned self] in
+                    self.stored = (self.encoding, self.usesLatin1Transport)
+                },
+                restoreStoredEncoding: { [unowned self] in
+                    self.restoreCount += 1
+                    guard self.restoreWorks, let stored = self.stored else { return }
+                    self.encoding = stored.encoding
+                    self.usesLatin1Transport = stored.usesLatin1Transport
+                })
+        }
+    }
+
+    private let collationQuery = "SELECT @@collation_connection"
+
+    private let restoredSettingsQuery = "SELECT @@character_set_client, @@character_set_connection, @@character_set_results, @@collation_connection"
+
+    private let restoreWarning = "The connection's character set or collation could not be restored after Rename Database; reconnect before running further queries."
+
+    /// A latin1 connection whose session collation is latin1_swedish_ci and
+    /// whose server reports `restored` once the settings are put back.
+    private func makeLatin1Connection(restored: [Any] = ["latin1", "latin1", "latin1", "latin1_swedish_ci"]) -> FakeConnection {
+        let server = makeServer()
+        server.respond(to: collationQuery, rows: [["latin1_swedish_ci"]])
+        server.respond(to: restoredSettingsQuery, rows: [restored])
+        return FakeConnection(server: server, encoding: "latin1")
+    }
+
+    /// A utf8mb4 connection whose session collation is utf8mb4_bin and whose
+    /// server reports `restored` once the collation is put back.
+    private func makeUTF8MB4Connection(restored: [Any] = ["utf8mb4", "utf8mb4", "utf8mb4", "utf8mb4_bin"]) -> FakeConnection {
+        let server = makeServer()
+        server.respond(to: collationQuery, rows: [["utf8mb4_bin"]])
+        server.respond(to: restoredSettingsQuery, rows: [restored])
+        return FakeConnection(server: server, encoding: "utf8mb4")
+    }
+
+    /// A connection already on utf8mb4 keeps its encoding - nothing is
+    /// switched, stored or restored, so another caller's stored encoding is
+    /// never applied - but its collation, which recreating views changes, is
+    /// still read up front, set again afterwards and verified.
+    func testSessionOnUTF8MB4KeepsTheEncodingAndVerifiesTheCollation() {
+        let connection = makeUTF8MB4Connection()
+        let session = connection.makeSession()
+
+        XCTAssertNil(session.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(session.changedServer)
+        XCTAssertNil(session.warningDescription)
+        XCTAssertEqual(connection.setEncodingCalls, [])
+        XCTAssertEqual(connection.restoreCount, 0)
+        XCTAssertEqual(connection.server.statements.first, collationQuery)
+        XCTAssertEqual(Array(connection.server.statements.suffix(2)), [
+            "SET collation_connection = 'utf8mb4_bin'",
+            restoredSettingsQuery
+        ])
+    }
+
+    /// On a utf8mb4 connection a collation left on a view's collation - the
+    /// executor's own restore failed - is retried once and then warned about.
+    func testSessionOnUTF8MB4WarnsWhenTheCollationStaysChanged() {
+        let connection = makeUTF8MB4Connection(restored: ["utf8mb4", "utf8mb4", "utf8mb4", "utf8mb4_general_ci"])
+        let session = connection.makeSession()
+
+        _ = session.rename("shop", to: "store", encoding: nil, collation: nil)
+        XCTAssertEqual(session.warningDescription, restoreWarning)
+        XCTAssertEqual(connection.restoreCount, 0)
+        XCTAssertEqual(connection.server.statements.filter { $0 == "SET collation_connection = 'utf8mb4_bin'" }.count, 2)
+        XCTAssertEqual(connection.server.statements.filter { $0 == restoredSettingsQuery }.count, 2)
+
+        let unreadable = FakeConnection(server: makeServer(), encoding: "utf8mb4")
+        unreadable.server.fail(collationQuery, with: "Lost connection to MySQL server during query")
+        let unreadableSession = unreadable.makeSession()
+        XCTAssertEqual(unreadableSession.rename("shop", to: "store", encoding: nil, collation: nil), "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.")
+        XCTAssertEqual(unreadable.server.statements, [collationQuery])
+    }
+
+    /// A latin1 connection is switched to utf8mb4 after its collation was
+    /// read, renamed, and then put back: the stored encoding restored, the
+    /// collation set again, and both checked against the server.
+    func testSessionSwitchesToUTF8AndVerifiesTheRestore() {
+        let connection = makeLatin1Connection()
+        let session = connection.makeSession()
+
+        XCTAssertNil(session.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertNil(session.warningDescription)
+        XCTAssertTrue(session.changedServer)
+        XCTAssertEqual(connection.setEncodingCalls, ["utf8mb4"])
+        XCTAssertEqual(connection.restoreCount, 1)
+        XCTAssertEqual(connection.encoding, "latin1")
+        XCTAssertEqual(connection.server.statements.first, collationQuery)
+        XCTAssertEqual(Array(connection.server.statements.suffix(2)), [
+            "SET collation_connection = 'latin1_swedish_ci'",
+            restoredSettingsQuery
+        ])
+    }
+
+    /// Under latin1 transport the server reports latin1 for the client and
+    /// the results, and utf8 as utf8mb3; both count as restored.
+    func testSessionAcceptsRestoredLatin1TransportAndUTF8MB3Names() {
+        let server = makeServer()
+        server.respond(to: collationQuery, rows: [["utf8mb3_general_ci"]])
+        server.respond(to: restoredSettingsQuery, rows: [["latin1", "utf8mb3", "latin1", "utf8mb3_general_ci"]])
+        let connection = FakeConnection(server: server, encoding: "utf8", usesLatin1Transport: true)
+        let session = connection.makeSession()
+
+        XCTAssertNil(session.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertNil(session.warningDescription)
+        XCTAssertEqual(connection.restoreCount, 1)
+        XCTAssertTrue(connection.usesLatin1Transport)
+    }
+
+    /// A restore that does not take - the connection stays on utf8mb4 - is
+    /// tried once more; the rename itself still succeeded, and the user is
+    /// told to reconnect.
+    func testSessionWarnsWhenTheRestoreDoesNotTake() {
+        let connection = makeLatin1Connection()
+        connection.restoreWorks = false
+        let session = connection.makeSession()
+
+        XCTAssertNil(session.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(session.warningDescription, restoreWarning)
+        XCTAssertEqual(connection.restoreCount, 2)
+        XCTAssertEqual(connection.server.statements.filter { $0 == "SET collation_connection = 'latin1_swedish_ci'" }.count, 2)
+    }
+
+    /// The server is the reference: another collation than the session had,
+    /// another client character set, or a refused `SET` all count as not
+    /// restored.
+    func testSessionWarnsWhenTheServerDisagrees() {
+        let collation = makeLatin1Connection(restored: ["latin1", "latin1", "latin1", "latin1_general_ci"])
+        let collationSession = collation.makeSession()
+        XCTAssertNil(collationSession.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(collationSession.warningDescription, restoreWarning)
+        XCTAssertEqual(collation.restoreCount, 2)
+        XCTAssertEqual(collation.server.statements.filter { $0 == restoredSettingsQuery }.count, 2)
+
+        let client = makeLatin1Connection(restored: ["utf8mb4", "latin1", "latin1", "latin1_swedish_ci"])
+        let clientSession = client.makeSession()
+        XCTAssertNil(clientSession.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(clientSession.warningDescription, restoreWarning)
+
+        let refused = makeLatin1Connection()
+        refused.server.responses.insert(({ $0 == "SET collation_connection = 'latin1_swedish_ci'" }, SADatabaseRenameStatementResult(error: "Lost connection to MySQL server during query")), at: 0)
+        let refusedSession = refused.makeSession()
+        XCTAssertNil(refusedSession.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(refusedSession.warningDescription, restoreWarning)
+        XCTAssertFalse(refused.server.statements.contains(restoredSettingsQuery))
+    }
+
+    /// A collation that cannot be read stops the rename before anything is
+    /// switched.
+    func testSessionRefusesWhenTheCollationCannotBeRead() {
+        let server = makeServer()
+        server.fail(collationQuery, with: "Lost connection to MySQL server during query")
+        let connection = FakeConnection(server: server, encoding: "latin1")
+        let session = connection.makeSession()
+
+        XCTAssertEqual(session.rename("shop", to: "store", encoding: nil, collation: nil), "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.")
+        XCTAssertEqual(server.statements, [collationQuery])
+        XCTAssertEqual(connection.setEncodingCalls, [])
+        XCTAssertEqual(connection.restoreCount, 0)
+        XCTAssertNil(session.warningDescription)
+        XCTAssertFalse(session.changedServer)
+    }
+
+    /// A connection that takes neither utf8mb4 nor utf8 is refused and put
+    /// back - verified like after a rename, with a warning when that fails
+    /// too.
+    func testSessionRefusesWhenUTF8CannotBeSelected() {
+        let refusal = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed."
+
+        let connection = makeLatin1Connection()
+        connection.acceptedEncodings = []
+        let session = connection.makeSession()
+        XCTAssertEqual(session.rename("shop", to: "store", encoding: nil, collation: nil), refusal)
+        XCTAssertEqual(connection.setEncodingCalls, ["utf8mb4", "utf8"])
+        XCTAssertEqual(connection.restoreCount, 1)
+        XCTAssertEqual(connection.server.statements, [
+            collationQuery,
+            "SET collation_connection = 'latin1_swedish_ci'",
+            restoredSettingsQuery
+        ])
+        XCTAssertNil(session.warningDescription)
+        XCTAssertFalse(session.changedServer)
+
+        let broken = makeLatin1Connection(restored: ["latin1", "latin1", "latin1", "latin1_general_ci"])
+        broken.acceptedEncodings = []
+        let brokenSession = broken.makeSession()
+        XCTAssertEqual(brokenSession.rename("shop", to: "store", encoding: nil, collation: nil), refusal)
+        XCTAssertEqual(brokenSession.warningDescription, restoreWarning)
+    }
+
+    /// Character set and collation names match across the utf8 spellings.
+    func testSessionCharacterSetNames() {
+        XCTAssertTrue(SADatabaseRenameConnectionSession.isSameCharacterSet("utf8", "UTF8MB3"))
+        XCTAssertFalse(SADatabaseRenameConnectionSession.isSameCharacterSet("utf8", "utf8mb4"))
+        XCTAssertTrue(SADatabaseRenameConnectionSession.collation("utf8mb3_general_ci", belongsTo: "utf8"))
+        XCTAssertTrue(SADatabaseRenameConnectionSession.collation("utf8_general_ci", belongsTo: "utf8mb3"))
+        XCTAssertFalse(SADatabaseRenameConnectionSession.collation("utf8mb4_general_ci", belongsTo: "utf8"))
+        XCTAssertTrue(SADatabaseRenameConnectionSession.collation("binary", belongsTo: "binary"))
+        XCTAssertFalse(SADatabaseRenameConnectionSession.collation("latin1_swedish_ci", belongsTo: "latin2"))
+    }
 }

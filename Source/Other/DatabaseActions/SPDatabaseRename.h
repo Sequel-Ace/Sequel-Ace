@@ -43,6 +43,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *failureDescription;
 
 /**
+ * Set when the connection's character set, transport mode or collation could
+ * not be restored after the last rename, whether it succeeded or not: the user
+ * should reconnect before running further queries. nil otherwise.
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *warningDescription;
+
+/**
  * Whether the last rename changed anything on the server before it stopped:
  * the target database exists and objects may have moved into it, so the
  * databases and tables shown need refreshing even though the rename failed.

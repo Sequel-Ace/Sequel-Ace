@@ -5006,11 +5006,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self selectDatabase:newDatabaseName item:nil];
         // inform observers that a new database was added
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        // The rename worked, but the connection may be left on another
+        // character set or collation: tell the user to reconnect.
+        if ([dbActionRename warningDescription]) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[dbActionRename warningDescription] callback:nil];
+        }
     }
     else {
         NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName];
         if ([dbActionRename failureDescription]) {
             message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename failureDescription]];
+        }
+        if ([dbActionRename warningDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename warningDescription]];
         }
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:message callback:nil];
         // A rename that stopped after the target was created leaves objects
