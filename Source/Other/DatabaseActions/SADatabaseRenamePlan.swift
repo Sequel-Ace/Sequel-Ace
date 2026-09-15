@@ -1294,12 +1294,16 @@ import Foundation
             // the database name when that database is the connection's
             // default - and the renamed database is the selected one. With
             // the target as the default such names resolve to the moved objects.
+            // A USE that fails without a clear answer - no result, a lost
+            // connection - may still have been applied, so the switch counts
+            // as made before it is sent and is undone on the way out.
+            defaultDatabaseSwitched = true
             if let error = run("USE \(quotedTarget)").error {
                 restoreSettings()
+                restoreDefaultDatabase()
                 _ = plan.recordMove(of: plan.views[0], kind: .view, succeeded: false, reason: error)
                 return plan.failureDescription
             }
-            defaultDatabaseSwitched = true
 
             // each view sets the collation it needs; the session's comes
             // back once, with the other settings, after the last one

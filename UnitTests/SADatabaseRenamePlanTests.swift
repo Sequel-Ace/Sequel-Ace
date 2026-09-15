@@ -1523,12 +1523,22 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertFalse(tableExecutor.sessionSettingsNotRestored)
         XCTAssertEqual(table.statements.suffix(2), [restore, restoreCheckQuery])
 
+        // a failed USE may still have been applied, so the source is selected again
         let use = makeServer()
         use.fail("USE `store`", with: "Access denied")
         let useExecutor = use.executor
         XCTAssertNotNil(useExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertFalse(useExecutor.sessionSettingsNotRestored)
-        XCTAssertEqual(use.statements.suffix(2), [restore, restoreCheckQuery])
+        XCTAssertEqual(use.statements.suffix(3), [restore, restoreCheckQuery, "USE `shop`"])
+
+        // and when that does not go through either, the connection is re-established
+        let lostUse = makeServer()
+        lostUse.fail("USE `store`", with: "Lost connection to MySQL server during query")
+        lostUse.fail("USE `shop`", with: "Lost connection to MySQL server during query")
+        let lostUseExecutor = lostUse.executor
+        XCTAssertNotNil(lostUseExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(lostUseExecutor.sessionSettingsNotRestored)
+        XCTAssertFalse(lostUse.statements.contains { $0.hasPrefix("CREATE ALGORITHM") || $0.hasPrefix("DROP") }, lostUse.statements.joined(separator: "\n"))
 
         // a complete rename, and one without settings to restore
         let done = makeServer()
