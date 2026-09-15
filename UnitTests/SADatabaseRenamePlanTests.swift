@@ -335,6 +335,34 @@ final class SADatabaseRenameViewRewriterTests: XCTestCase {
         XCTAssertTrue(SADatabaseRenameViewRewriter.hasLiteralOutsideUTF8("CREATE VIEW `v` AS select _latin1 /* c */ 'x' AS `n`"))
     }
 
+    /// Verifies the scan for views elsewhere recognises the source in front of
+    /// a dot, backticked or bare, but not in a similar name, a literal or a
+    /// comment - and not in a number: a database named `1` is not referenced
+    /// by the decimal `1.5`, which only a backticked `1` would be.
+    func testReferencesToTheSourceAreRecognisedButNumbersAreNot() {
+        XCTAssertTrue(rewriter.definitionReferencesSource("select v.n AS n from shop.v"))
+        XCTAssertTrue(rewriter.definitionReferencesSource("select `shop` . v.n AS n from `shop`.v"))
+        XCTAssertFalse(rewriter.definitionReferencesSource("select shopping.t.n AS n from shopping.t where shop = 1 and 'shop.x' = /* shop.y */ 'x'"))
+
+        let numeric = SADatabaseRenameViewRewriter(sourceDatabase: "1", targetDatabase: "2", caseInsensitiveNames: false)
+        XCTAssertFalse(numeric.definitionReferencesSource("select 1.5 AS `n`,1.5e10 AS `e`"))
+        XCTAssertTrue(numeric.definitionReferencesSource("select `1`.`t`.`n` AS `n` from `1`.`t`"))
+        XCTAssertTrue(numeric.definitionReferencesSource("select `1`.t.n AS n from `1`.t"))
+        let hexLike = SADatabaseRenameViewRewriter(sourceDatabase: "0x1F", targetDatabase: "x", caseInsensitiveNames: false)
+        XCTAssertFalse(hexLike.definitionReferencesSource("select 0x1F.5 AS n"))
+        let wordLike = SADatabaseRenameViewRewriter(sourceDatabase: "1e", targetDatabase: "x", caseInsensitiveNames: false)
+        XCTAssertTrue(wordLike.definitionReferencesSource("select 1e.t.n AS n from 1e.t"), "1e is an identifier, not a number")
+
+        XCTAssertTrue(SADatabaseRenameViewRewriter.isNumericLiteral("1"))
+        XCTAssertTrue(SADatabaseRenameViewRewriter.isNumericLiteral("2e2"))
+        XCTAssertTrue(SADatabaseRenameViewRewriter.isNumericLiteral("0x1F"))
+        XCTAssertTrue(SADatabaseRenameViewRewriter.isNumericLiteral("0b101"))
+        XCTAssertFalse(SADatabaseRenameViewRewriter.isNumericLiteral("1e"))
+        XCTAssertFalse(SADatabaseRenameViewRewriter.isNumericLiteral("1shop"))
+        XCTAssertFalse(SADatabaseRenameViewRewriter.isNumericLiteral("shop"))
+        XCTAssertFalse(SADatabaseRenameViewRewriter.isNumericLiteral("0xZZ"))
+    }
+
     /// Verifies a scalar subquery is followed whatever precedes its
     /// parenthesis - an operator word such as DIV, MOD, REGEXP or INTERVAL is
     /// not a function whose arguments hide the subquery's FROM.

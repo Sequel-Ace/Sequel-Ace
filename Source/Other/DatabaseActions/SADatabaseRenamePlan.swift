@@ -643,7 +643,8 @@ import Foundation
                     return true
                 }
             case .word(let word):
-                if followedByDot, isSource(schemaName: word) {
+                // a number in front of a dot is a decimal (`1.5`), not a database
+                if followedByDot, !Self.isNumericLiteral(word), isSource(schemaName: word) {
                     return true
                 }
             default:
@@ -651,6 +652,30 @@ import Foundation
             }
         }
         return false
+    }
+
+    /// Whether a bare word is a number the server reads as a literal rather
+    /// than an identifier: digits only (an unquoted identifier may not
+    /// consist solely of digits), digits with an exponent (`2e2`), or a hex
+    /// or bit value (`0x1F`, `0b101`).
+    static func isNumericLiteral(_ word: String) -> Bool {
+        let scalars = Array(word.unicodeScalars)
+        func isDigit(_ scalar: Unicode.Scalar, radix: Int = 10) -> Bool {
+            switch radix {
+            case 2: return scalar == "0" || scalar == "1"
+            case 16: return scalar.properties.isASCIIHexDigit
+            default: return ("0"..."9").contains(scalar)
+            }
+        }
+        guard let first = scalars.first, isDigit(first) else { return false }
+        if scalars.count > 2, first == "0", scalars[1] == "x" || scalars[1] == "b" {
+            let radix = scalars[1] == "x" ? 16 : 2
+            return scalars.dropFirst(2).allSatisfy { isDigit($0, radix: radix) }
+        }
+        let mantissa = scalars.prefix { isDigit($0) }
+        let rest = scalars.dropFirst(mantissa.count)
+        guard let marker = rest.first else { return true }
+        return (marker == "e" || marker == "E") && rest.count > 1 && rest.dropFirst().allSatisfy { isDigit($0) }
     }
 
     /// The bytes of a name with the ASCII letters folded to lower case - an
