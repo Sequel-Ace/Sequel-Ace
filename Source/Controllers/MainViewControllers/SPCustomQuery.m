@@ -103,7 +103,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @interface SPCustomQuery () <NSMenuItemValidation, NSFontChanging, SATextViewDelegate>
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
 - (NSInteger)_recordViewSelectedRow;
-- (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex;
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID;
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (void)_updateRecordView;
 - (void)_updateColumnHeadersForCurrentPreference;
@@ -2446,7 +2446,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     if (aTableView == customQueryView) {
         NSUInteger columnIndex = [[tableColumn identifier] integerValue];
         // if a user enters the field by keyboard navigation they might want to copy the contents without invoking the field editor sheet first
-        BOOL forEditing = ([customQueryView editedColumn] == (NSInteger)columnIndex && [customQueryView editedRow] == rowIndex);
+        BOOL forEditing = ([SACellFilterColumnIdentifier storageIndexForVisibleColumn:[customQueryView editedColumn] inTableView:customQueryView] == (NSInteger)columnIndex && [customQueryView editedRow] == rowIndex);
         return [self _resultDataItemAtRow:rowIndex columnIndex:[[tableColumn identifier] integerValue] preserveNULLs:NO asPreview:(forEditing != YES)];
     }
     
@@ -2831,7 +2831,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                 editedColumn++;
             }
             
-            NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+            NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[customQueryView columnWithIdentifier:[aTableColumn identifier]]];
             isFieldEditable = ([[editStatus objectAtIndex:0] integerValue] == 1) ? YES : NO;
             
             NSString *fieldType = nil;
@@ -2945,6 +2945,15 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             }
         }
     }
+}
+
+/**
+ * Refreshes the record view so its field order follows columns moved by dragging.
+ */
+- (void)tableViewColumnDidMove:(NSNotification *)aNotification
+{
+    if ([aNotification object] != customQueryView) return;
+    [self _updateRecordView];
 }
 
 /**
@@ -3668,7 +3677,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     isFieldEditable = shouldBeginEditing;
     
     // Open the field editor sheet if required
-    if ([customQueryView shouldUseFieldEditorForRow:row column:column checkWithLock:NULL])
+    if ([customQueryView shouldUseFieldEditorForRow:row column:[SACellFilterColumnIdentifier storageIndexForVisibleColumn:column inTableView:customQueryView] checkWithLock:NULL])
     {
         
         [customQueryView setFieldEditorSelectedRange:[aFieldEditor selectedRange]];
@@ -3773,29 +3782,29 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [recordViewController setShowHandler:^{
         [weakSelf _updateRecordView];
     }];
-    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldIndex) {
+    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
         SPCustomQuery *strongSelf = weakSelf;
         if (!strongSelf) return NO;
 
         NSInteger row = [strongSelf _recordViewSelectedRow];
-        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
         if (row < 0 || !column) return NO;
 
         if (![strongSelf tableView:strongSelf->customQueryView shouldEditTableColumn:column row:row]) return NO;
         NSInteger columnIndex = [strongSelf->customQueryView columnWithIdentifier:[column identifier]];
         return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
-    } validate:^NSString *(NSInteger fieldIndex, NSString *value) {
+    } validate:^NSString *(NSInteger fieldID, NSString *value) {
         SPCustomQuery *strongSelf = weakSelf;
         if (!strongSelf) return nil;
 
-        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
         return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
-    } commit:^BOOL(NSInteger fieldIndex, NSString *value) {
+    } commit:^BOOL(NSInteger fieldID, NSString *value) {
         SPCustomQuery *strongSelf = weakSelf;
         if (!strongSelf) return NO;
 
         NSInteger row = [strongSelf _recordViewSelectedRow];
-        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
         if (row < 0 || !column) return NO;
 
         NSInteger columnIndex = [[column identifier] integerValue];
@@ -3926,10 +3935,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return selectedRow;
 }
 
-- (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID
 {
-    if (fieldIndex < 0) return nil;
-    return [[customQueryView tableColumns] safeObjectAtIndex:(NSUInteger)fieldIndex];
+    if (fieldID < 0) return nil;
+    return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:customQueryView];
 }
 
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
@@ -3981,7 +3990,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
         id value = SPDataStorageObjectAtRowAndColumn(resultData, selectedRow, (NSUInteger)columnIndex);
         [fields addObject:@{
-            @"id": @(fieldIndex),
+            @"id": @(columnIndex),
             @"name": columnDefinition[@"name"] ?: @"",
             @"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
         }];
