@@ -112,6 +112,9 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR CONNECTION 5"))
     }
 
+    /// Verifies that the `EXPLAIN` aliases `DESCRIBE` and `DESC` follow the same
+    /// rule: `ANALYZE` in front of a mutating statement executes it, so the
+    /// alias spelling must not skip the destructive warning.
     func testExplainAliasesUseTheSameAnalyzeSafetyRule() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESCRIBE ANALYZE DELETE FROM t WHERE id = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE UPDATE t SET c = 1"))

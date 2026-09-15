@@ -509,6 +509,11 @@ final class SADatabaseAssertion: NSObject {
         ) != nil
     }
 
+    /// Returns the change a query makes to the connection's default database:
+    /// `.selected` for `USE`, `.dropped` for `DROP DATABASE`/`DROP SCHEMA`, or
+    /// nil when the default database is left untouched. Comments are stripped
+    /// first, under the server's executable-comment gates, so an ordinary
+    /// comment can neither hide the keyword nor fake one.
     static func databaseContextChange(
         _ query: String,
         serverVersion: Int,
