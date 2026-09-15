@@ -1372,6 +1372,8 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
+		// clear the JSON preview so the JSON segment re-parses the edited text
+		[jsonTextView setString:@""];
 
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
