@@ -480,6 +480,40 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertNil(item.view)
     }
 
+    /// Verifies fields resolve to their own column after columns were moved,
+    /// where the on-screen position now names a different column.
+    func testColumnMappingFollowsMovedColumns() {
+        let table = makeResultTable(columnCount: 3)
+        table.moveColumn(0, toColumn: 2)
+
+        XCTAssertEqual(table.tableColumns.map(\.identifier.rawValue), ["1", "2", "0"])
+        XCTAssertEqual(SARecordViewColumnMapping.tableColumn(forFieldID: 0, in: table)?.identifier.rawValue, "0")
+        XCTAssertEqual(SARecordViewColumnMapping.tableColumn(forFieldID: 2, in: table)?.identifier.rawValue, "2")
+    }
+
+    /// Verifies a column hidden by the column filter resolves to no column, so
+    /// an edit of its stale field is rejected instead of hitting a neighbour.
+    func testColumnMappingRejectsHiddenAndInvalidFields() {
+        let table = makeResultTable(columnCount: 3)
+        table.removeTableColumn(table.tableColumns[1])
+
+        XCTAssertNil(SARecordViewColumnMapping.tableColumn(forFieldID: 1, in: table))
+        XCTAssertEqual(SARecordViewColumnMapping.tableColumn(forFieldID: 2, in: table)?.identifier.rawValue, "2")
+        XCTAssertNil(SARecordViewColumnMapping.tableColumn(forFieldID: -1, in: table))
+        XCTAssertNil(SARecordViewColumnMapping.tableColumn(forFieldID: 3, in: table))
+    }
+
+    /// Builds a result table whose column identifiers are data column indexes
+    /// formatted the way SPTableData and SPMySQL write them.
+    private func makeResultTable(columnCount: Int) -> NSTableView {
+        let table = NSTableView()
+        for index in 0..<columnCount {
+            let identifier = String(format: "%llu", UInt64(index))
+            table.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier(identifier)))
+        }
+        return table
+    }
+
     private func keyEvent(keyCode: UInt16,
                           characters: String,
                           modifiers: NSEvent.ModifierFlags = [],

@@ -138,3 +138,191 @@ import AppKit
         observers.forEach(NotificationCenter.default.removeObserver(_:))
     }
 }
+
+/// Owns the lifecycle of the shared tooltip window's content: the dismissal
+/// monitor of the visible tooltip, how a new tooltip takes over the window,
+/// whether a fade-out may continue, and which web-view callbacks still apply.
+/// `SPTooltip` performs the window operations; the decisions live here.
+@objc public final class SATooltipLifecycle: NSObject {
+    private var dismissalMonitor: SATooltipDismissalMonitor?
+    private var tooltipCount = 0
+
+    /// Whether a dismissal monitor is currently attached.
+    @objc public var isMonitoring: Bool {
+        dismissalMonitor != nil
+    }
+
+    /// Prepares the shared window for a new tooltip and returns whether the
+    /// caller must hide the window (and stop a running fade-out) before the
+    /// new content loads.
+    ///
+    /// The previous tooltip may be visible and watched, fading out, or its web
+    /// view may still be loading. Whatever is on screen has to go at once:
+    /// the new content is measured in a window temporarily sized to most of
+    /// the screen, which would flash up at that size if the window stayed
+    /// visible (reproducible by holding a key equivalent that shows a
+    /// tooltip), a visible tooltip would otherwise show a blank page until
+    /// the new content loads, and a later fade tick would see a second
+    /// tooltip, hide the window and drop the fresh content. None of these
+    /// states ever reach `tooltipDidClose()`, so the count is reset to the new
+    /// tooltip instead of balancing the individual cases, and the previous
+    /// dismissal monitor is detached.
+    ///
+    /// - Parameters:
+    ///   - isVisible: Whether the shared window is currently on screen.
+    ///   - isFading: Whether the previous tooltip's fade-out is running.
+    /// - Returns: `true` when the caller must hide the window and stop the fade.
+    @objc(prepareForNewTooltipWhileVisible:fading:)
+    public func prepareForNewTooltip(isVisible: Bool, isFading: Bool) -> Bool {
+        detachDismissalMonitor()
+        tooltipCount = 1
+        return isVisible || isFading
+    }
+
+    /// Starts watching for the user activity that dismisses the visible
+    /// tooltip, replacing any previous monitor.
+    ///
+    /// - Parameters:
+    ///   - keyWindow: The key window at show time, if any.
+    ///   - onClose: Called once when the tooltip should close; the monitor is
+    ///     already detached at that point.
+    @objc(beginDismissalMonitoringWithKeyWindow:onClose:)
+    public func beginDismissalMonitoring(keyWindow: NSWindow?, onClose: @escaping () -> Void) {
+        detachDismissalMonitor()
+        dismissalMonitor = SATooltipDismissalMonitor(keyWindow: keyWindow) { [weak self] in
+            self?.detachDismissalMonitor()
+            onClose()
+        }
+    }
+
+    /// Stops the dismissal monitor (idempotent) and lets go of it - the single
+    /// teardown spot shared by replacement, close and the monitor's own close
+    /// callback.
+    @objc public func detachDismissalMonitor() {
+        dismissalMonitor?.stop()
+        dismissalMonitor = nil
+    }
+
+    /// Whether a fade-out tick may keep fading: the tooltip is still partly
+    /// visible and no newer tooltip has taken over the window.
+    ///
+    /// - Parameter alpha: The alpha value the tick would apply.
+    /// - Returns: `false` when the caller must hide and close the window.
+    @objc(fadeMayContinueWithAlpha:)
+    public func fadeMayContinue(alpha: CGFloat) -> Bool {
+        alpha > 0 && tooltipCount == 1
+    }
+
+    /// Records that a tooltip finished closing.
+    @objc public func tooltipDidClose() {
+        tooltipCount = max(0, tooltipCount - 1)
+    }
+
+    /// Whether work started for a web view still concerns the current content.
+    /// A newer tooltip can replace the web view before a navigation callback
+    /// arrives, or while the size measurement waits for its JavaScript results
+    /// in a nested run loop (holding a key equivalent that shows a tooltip does
+    /// this). Such stale work must not touch the shared window: applying the
+    /// old measurement and ordering the window front would show the new,
+    /// still loading content, whose own measurement then runs in a visible,
+    /// screen-sized window. Closing the tooltip clears the current web view, so
+    /// late callbacks of a closed tooltip are ignored as well and cannot order
+    /// it front again.
+    ///
+    /// - Parameters:
+    ///   - webView: The web view the callback or measurement belongs to.
+    ///   - currentWebView: The web view currently showing the tooltip.
+    /// - Returns: `true` when the work belongs to the current content.
+    @objc(isCurrentWebView:currentWebView:)
+    public static func isCurrent(webView: AnyObject?, currentWebView: AnyObject?) -> Bool {
+        webView === currentWebView
+    }
+
+    /// Whether a failed load should close the tooltip. A navigation superseded
+    /// by one the page itself started (possible in HTML tooltips with
+    /// JavaScript enabled) reports `NSURLErrorCancelled` while the replacement
+    /// is still loading, so there is nothing to close; any other failure leaves
+    /// an empty status-level window without a dismissal monitor and must close
+    /// it.
+    ///
+    /// - Parameter error: The navigation error.
+    /// - Returns: `true` when the caller must order the tooltip out.
+    @objc(shouldCloseAfterNavigationFailure:)
+    public static func shouldCloseAfterNavigationFailure(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return !(nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled)
+    }
+}
+
+/// The size measurement of one tooltip web view. `SPTooltip` asks the page for
+/// its height and width via JavaScript and waits for both answers in a nested
+/// run loop. Keeping that state per web view means late answers from a web
+/// view that a newer tooltip replaced can neither complete the newer
+/// measurement early (leaving it at the fallback size) nor keep an older wait
+/// spinning for an answer that will never arrive.
+@objc public final class SATooltipMeasurement: NSObject {
+    private weak var webView: AnyObject?
+    private var hasHeight = false
+    private var hasWidth = false
+
+    /// The content height reported by the page; the fallback until it answered.
+    @objc public private(set) var height = 21
+    /// The content width reported by the page; the fallback until it answered.
+    @objc public private(set) var width = 400
+
+    /// Creates the measurement for one web view.
+    ///
+    /// - Parameter webView: The web view whose content is measured.
+    @objc(initWithWebView:)
+    public init(webView: AnyObject) {
+        self.webView = webView
+        super.init()
+    }
+
+    /// Records the content height reported by the page.
+    ///
+    /// - Parameter height: The reported height.
+    @objc(recordHeight:)
+    public func recordHeight(_ height: Int) {
+        self.height = height
+        hasHeight = true
+    }
+
+    /// Records the content width reported by the page.
+    ///
+    /// - Parameter width: The reported width.
+    @objc(recordWidth:)
+    public func recordWidth(_ width: Int) {
+        self.width = width
+        hasWidth = true
+    }
+
+    /// Whether both dimensions have been reported.
+    @objc public var isComplete: Bool {
+        hasHeight && hasWidth
+    }
+
+    /// Whether the measurement belongs to the web view currently showing the
+    /// tooltip, so its result may be applied to the shared window.
+    ///
+    /// - Parameter currentWebView: The web view currently showing the tooltip.
+    /// - Returns: `false` once a newer tooltip replaced the measured web view
+    ///   or the web view is gone.
+    @objc(appliesToCurrentWebView:)
+    public func applies(toCurrentWebView currentWebView: AnyObject?) -> Bool {
+        guard let webView else {
+            return false
+        }
+        return webView === currentWebView
+    }
+
+    /// Whether the nested wait has to continue: an answer is still missing and
+    /// no newer tooltip replaced the measured web view.
+    ///
+    /// - Parameter currentWebView: The web view currently showing the tooltip.
+    /// - Returns: `true` while the caller must keep running the run loop.
+    @objc(shouldKeepWaitingForCurrentWebView:)
+    public func shouldKeepWaiting(currentWebView: AnyObject?) -> Bool {
+        !isComplete && applies(toCurrentWebView: currentWebView)
+    }
+}

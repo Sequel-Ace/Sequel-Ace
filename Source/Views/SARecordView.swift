@@ -68,6 +68,28 @@ enum SARecordViewFocusAction: Equatable {
     }
 }
 
+/// Resolves record view fields to result table columns. A field is identified
+/// by its column's identifier - the data column index - rather than by its
+/// on-screen position: columns can be reordered by dragging and hidden by the
+/// column filter while a record is shown, so a position recorded when the
+/// record view was filled can name a different column by the time an edit
+/// begins or commits, and the edit would silently change the wrong field.
+@objc final class SARecordViewColumnMapping: NSObject {
+    /// The table column currently showing a field, wherever it was moved.
+    ///
+    /// - Parameters:
+    ///   - fieldID: The field ID, i.e. the data column index of the column.
+    ///   - tableView: The result table.
+    /// - Returns: The column, or `nil` when the column is hidden or the ID is invalid.
+    @objc(tableColumnForFieldID:inTableView:)
+    static func tableColumn(forFieldID fieldID: Int, in tableView: NSTableView) -> NSTableColumn? {
+        guard fieldID >= 0 else {
+            return nil
+        }
+        return tableView.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier(String(fieldID)))
+    }
+}
+
 final class SARecordViewModel: ObservableObject {
     @Published private(set) var selectedRowCount = 0
     @Published private(set) var fields: [SARecordField] = []
