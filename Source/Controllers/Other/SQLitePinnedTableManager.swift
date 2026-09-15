@@ -119,7 +119,13 @@ import OSLog
             }
             log.info("schemaVersion < 1, creating database")
 
-            let createTableSQL = "CREATE TABLE PinnedTables ("
+            // IF NOT EXISTS: a launch that died between creating the table and
+            // writing the version below leaves the table in place at version 0.
+            // Creating it again would fail and switch persistence off for good,
+            // so the existing table is taken over here and the version written
+            // again; a table with another schema still fails the first read and
+            // leaves the store unused.
+            let createTableSQL = "CREATE TABLE IF NOT EXISTS PinnedTables ("
                     + "    id                   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                     + "    hostName             TEXT NOT NULL,"
                     + "    databaseName         TEXT NOT NULL,"

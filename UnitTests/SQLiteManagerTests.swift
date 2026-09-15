@@ -358,6 +358,23 @@ final class SASQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 1, "only the row that was there before")
     }
 
+    /// Verifies a store whose table exists while the schema version is still 0 - a launch that
+    /// died between the two - is taken over instead of disabling persistence for good.
+    func testTableWithoutItsSchemaVersionIsTakenOver() throws {
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, hostName TEXT NOT NULL, databaseName TEXT NOT NULL, pinnedTableName TEXT NOT NULL, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES ('conn-1', 'db', 'orders')",
+        ])
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertTrue(manager.isPersistent)
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
+
+        manager.pinTable(hostName: "conn-1", databaseName: "db", tableToPin: "users")
+        XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 2)
+        XCTAssertEqual(SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).getPinnedTables(hostName: "conn-1", databaseName: "db").sorted(), ["orders", "users"])
+    }
+
     /// Verifies a row without a host, database or table name fails the whole read instead of
     /// being skipped, so an incomplete pin list can never close a legacy migration.
     func testRowMissingARequiredFieldMakesTheStoreUnusable() throws {
