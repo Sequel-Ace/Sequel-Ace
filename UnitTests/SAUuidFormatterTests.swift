@@ -66,6 +66,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(helper.err.pointee!, "Invalid UUID Character in: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")
   }
 
+  /// Verifies an incomplete UUID is refused with the "Invalid UUID" message.
   func testInvalidLength() {
     let input = "01234567-89AB-CDEF"
     let helper = Helper()
@@ -75,6 +76,8 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(helper.err.pointee!, "Invalid UUID: 01234567-89AB-CDEF")
   }
 
+  /// Verifies a value made only of hyphens is refused as an invalid UUID
+  /// instead of being saved as an empty binary value.
   func testHyphensOnlyAreInvalidInsteadOfAnEmptyValue() {
     for input in ["----", "-"] {
       let helper = Helper()
@@ -85,6 +88,7 @@ final class SAUuidFormatterTests: XCTestCase {
     }
   }
 
+  /// Verifies an incomplete but well-formed UUID is accepted while typing.
   func testValidPartial() {
     let input = "01234567-89AB-CDEF"
     let helper = Helper()

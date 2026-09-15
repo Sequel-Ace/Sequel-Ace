@@ -127,6 +127,9 @@ import Foundation
         return false
     }
 
+    /// Whether `s` holds only characters a UUID can be typed with - hex digits
+    /// and hyphens - or is (part of) the NULL placeholder, so partial input
+    /// can still be edited. Length is not checked here; `hexToData(_:)` does.
     func containsOnlyValidUuidCharacters(_ s: String) -> Bool {
         if isPartialMatchForNullValue(s) {
             return true
