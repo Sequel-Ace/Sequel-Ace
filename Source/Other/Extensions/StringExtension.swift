@@ -389,6 +389,87 @@ public class SPProcessListRowSerializer: NSObject {
     }
 }
 
+/// What a length-limited table cell does with an edit, judged on the text, the
+/// part of it the edit replaces and the insertion - not on the prospective
+/// string as a whole. Cutting that string to the limit would drop text behind
+/// the insertion point: replacing the "c" of "abcde" with "XYZ" in a
+/// `VARCHAR(5)` cell would leave "abXYZ" and lose the "de".
+@objcMembers public final class SACellEditLimit: NSObject {
+    /// Whether the edit can go ahead as it is.
+    public let allowsEdit: Bool
+
+    /// Whether no length rule applies at all - no limit is set, or the text is
+    /// the NULL placeholder being typed. The cell's other checks, such as a BIT
+    /// column's 0/1 rule, are skipped then, so a value can always be nulled.
+    public let isExempt: Bool
+
+    /// The text the cell should hold instead, with only the insertion cut to
+    /// what fits. `nil` when the edit is allowed, or when nothing of the
+    /// insertion fits and the edit is refused.
+    public let replacementText: String?
+
+    /// Where the insertion point belongs in `replacementText`, in UTF-16
+    /// units: right behind the part of the insertion that was kept.
+    public let selectionLocation: Int
+
+    /// Creates a decision. Only
+    /// `evaluate(text:replacing:with:limit:fieldType:nullValue:)` makes these.
+    ///
+    /// - Parameters:
+    ///   - allowsEdit: Whether the edit can go ahead as it is.
+    ///   - isExempt: Whether no length rule applies at all.
+    ///   - replacementText: The text to put in the cell instead, if any.
+    ///   - selectionLocation: Where the insertion point belongs in it.
+    private init(allowsEdit: Bool, isExempt: Bool = false, replacementText: String?, selectionLocation: Int) {
+        self.allowsEdit = allowsEdit
+        self.isExempt = isExempt
+        self.replacementText = replacementText
+        self.selectionLocation = selectionLocation
+        super.init()
+    }
+
+    /// Decides how a cell treats replacing `range` of `text` with
+    /// `replacement` when the column holds `limit` code points.
+    ///
+    /// Lengths count code points, as MySQL counts a column's length. The NULL
+    /// placeholder is exempt while it is being typed, so a short limit cannot
+    /// stop a user from nulling the value.
+    ///
+    /// - Parameters:
+    ///   - text: The cell's text before the edit.
+    ///   - range: The range of `text` the edit replaces, in UTF-16 units.
+    ///   - replacement: The text the edit inserts.
+    ///   - limit: The column's length in code points; 0 means no limit.
+    ///   - fieldType: The column's type, such as "FLOAT".
+    ///   - nullValue: The NULL placeholder from the preferences, if any.
+    /// - Returns: An allowed edit, or a refused one with the text the cell
+    ///   should hold instead, if anything of the insertion fits.
+    @objc(evaluateCellEditOfText:replacingRange:withString:limit:fieldType:nullValue:)
+    public static func evaluate(text: NSString, replacing range: NSRange, with replacement: NSString, limit: Int, fieldType: String?, nullValue: String?) -> SACellEditLimit {
+        let location = min(max(range.location, 0), text.length)
+        let length = min(max(range.length, 0), text.length - location)
+        let replacedRange = NSRange(location: location, length: length)
+        let proposed = text.replacingCharacters(in: replacedRange, with: replacement as String)
+
+        let isNullPlaceholder = nullValue.map { $0 == proposed || $0.hasPrefix(proposed) } ?? false
+        guard limit > 0, !isNullPlaceholder else {
+            return SACellEditLimit(allowsEdit: true, isExempt: true, replacementText: nil, selectionLocation: 0)
+        }
+
+        let decision = SAFieldEditorEditLimit.evaluate(text: text, replacing: replacedRange, with: replacement, limit: limit, fieldType: fieldType)
+        guard !decision.allowsEdit else {
+            return SACellEditLimit(allowsEdit: true, replacementText: nil, selectionLocation: 0)
+        }
+        guard let fitting = decision.fittingInsertion else {
+            return SACellEditLimit(allowsEdit: false, replacementText: nil, selectionLocation: 0)
+        }
+        let cut = text.replacingCharacters(in: replacedRange, with: fitting)
+        return SACellEditLimit(allowsEdit: false,
+                               replacementText: cut,
+                               selectionLocation: replacedRange.location + (fitting as NSString).length)
+    }
+}
+
 @objc extension NSString {
     //Special space-character used to separate the column name and column type
     @objc static let columnHeaderSplittingSpace: String = " "

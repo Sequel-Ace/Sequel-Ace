@@ -236,6 +236,90 @@ final class SAFieldEditorEditLimitTests: XCTestCase {
     }
 }
 
+/// The length rules of a table cell, decided by
+/// `SACellEditLimit.evaluate(text:replacing:with:limit:fieldType:nullValue:)`
+/// and applied by `SPDataCellFormatter`: only the insertion is cut, so text
+/// behind the insertion point survives.
+final class SACellEditLimitTests: XCTestCase {
+
+    /// A run of `count` slightly smiling faces - one code point each, two UTF-16 units.
+    private func emoji(_ count: Int) -> String {
+        return String(repeating: "\u{1F642}", count: count)
+    }
+
+    /// Asks the decision under test about an edit, taking Swift strings.
+    private func evaluate(_ text: String, replacing range: NSRange, with replacement: String, limit: Int, fieldType: String? = "VARCHAR", nullValue: String? = "NULL") -> SACellEditLimit {
+        return SACellEditLimit.evaluate(text: text as NSString, replacing: range, with: replacement as NSString, limit: limit, fieldType: fieldType, nullValue: nullValue)
+    }
+
+    /// Verifies an insertion in the middle of a full cell keeps what follows it:
+    /// replacing the "c" of "abcde" with "XYZ" at a limit of 5 leaves "abXde",
+    /// where cutting the whole prospective string would have dropped the "de".
+    func testInsertionInTheMiddleKeepsTheTextBehindIt() {
+        let result = evaluate("abcde", replacing: NSRange(location: 2, length: 1), with: "XYZ", limit: 5)
+
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertEqual(result.replacementText, "abXde")
+        XCTAssertEqual(result.selectionLocation, 3)
+    }
+
+    /// Verifies an insertion into a cell that is already full is refused
+    /// outright, with no text to put in its place.
+    func testInsertionWithNoRoomIsRefused() {
+        let result = evaluate("abcde", replacing: NSRange(location: 5, length: 0), with: "X", limit: 5)
+
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertNil(result.replacementText)
+    }
+
+    /// Verifies an edit that stays within the limit is allowed untouched.
+    func testEditWithinTheLimitIsAllowed() {
+        let result = evaluate("ab", replacing: NSRange(location: 2, length: 0), with: "XYZ", limit: 5)
+
+        XCTAssertTrue(result.allowsEdit)
+        XCTAssertNil(result.replacementText)
+    }
+
+    /// Verifies the NULL placeholder can be typed and completed in a column
+    /// shorter than it, and that it is reported as exempt so the caller skips
+    /// its other checks - a BIT column's 0/1 rule would refuse those letters.
+    func testNullPlaceholderIsExemptFromTheLimit() {
+        let started = evaluate("", replacing: NSRange(location: 0, length: 0), with: "NU", limit: 3, fieldType: "BIT")
+        XCTAssertTrue(started.allowsEdit)
+        XCTAssertTrue(started.isExempt)
+
+        let completed = evaluate("NU", replacing: NSRange(location: 2, length: 0), with: "LL", limit: 3, fieldType: "BIT")
+        XCTAssertTrue(completed.allowsEdit)
+        XCTAssertTrue(completed.isExempt)
+    }
+
+    /// Verifies a column without a length limit takes any edit, and reports it
+    /// as exempt.
+    func testWithoutALimitEveryEditIsAllowed() {
+        let result = evaluate("abcde", replacing: NSRange(location: 0, length: 5), with: "XYZXYZ", limit: 0)
+        XCTAssertTrue(result.allowsEdit)
+        XCTAssertTrue(result.isExempt)
+    }
+
+    /// Verifies an edit that only fits because it is short is not reported as
+    /// exempt, so the caller still applies its other checks.
+    func testAnEditWithinTheLimitIsNotExempt() {
+        let result = evaluate("1", replacing: NSRange(location: 1, length: 0), with: "0", limit: 4, fieldType: "BIT")
+        XCTAssertTrue(result.allowsEdit)
+        XCTAssertFalse(result.isExempt)
+    }
+
+    /// Verifies the cut counts code points, not UTF-16 units, and still keeps
+    /// the text behind the insertion.
+    func testEmojiInsertionIsCutByCodePointsAndKeepsTheTail() {
+        let result = evaluate(emoji(2) + "ab", replacing: NSRange(location: 0, length: 2), with: emoji(3), limit: 4)
+
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertEqual(result.replacementText, emoji(2) + "ab")
+        XCTAssertEqual(result.selectionLocation, 2)
+    }
+}
+
 final class SAMySQLDateTimeTests: XCTestCase {
 
     /// The text a `DateFormatter` with these styles prints for the given UTC

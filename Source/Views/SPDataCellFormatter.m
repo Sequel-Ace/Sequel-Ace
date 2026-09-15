@@ -117,6 +117,98 @@
  * @return YES when the text is taken as it stands, NO when the edit is refused or
  *         replaced by the string returned in newString
  */
+/**
+ * Decide what an edit that replaces part of the cell's text may leave in it.
+ * The range-aware rules keep the text behind the insertion point: only the
+ * inserted text is cut, where cutting the whole prospective string would drop
+ * what follows it. The length rules are decided in Swift (SACellEditLimit).
+ *
+ * @param partialStringPtr The text the edit would leave in the cell; set to the
+ *        text with the insertion cut when it overshoots the column's length
+ * @param proposedSelRangePtr Set to the insertion point behind the kept text
+ * @param origString The cell's text before the edit
+ * @param origSelRange The range of that text the edit replaces
+ * @param error Unused; the rules show a tooltip instead of an error message
+ * @return YES when the text is taken as it stands, NO when the edit is refused
+ *         or replaced by the string returned in partialStringPtr
+ */
+- (BOOL)isPartialStringValid:(NSString * _Nonnull __autoreleasing * _Nonnull)partialStringPtr
+        proposedSelectedRange:(NSRangePointer)proposedSelRangePtr
+               originalString:(NSString *)origString
+        originalSelectedRange:(NSRange)origSelRange
+             errorDescription:(NSString * _Nullable __autoreleasing * _Nullable)error
+{
+	NSString *proposedString = *partialStringPtr;
+	NSInteger insertionLength = (NSInteger)proposedString.length - ((NSInteger)origString.length - (NSInteger)origSelRange.length);
+
+	// A change this method cannot locate - a deletion, or an edit the field
+	// editor reports differently - is left to the whole-string rules.
+	if (insertionLength < 0 || origSelRange.location + (NSUInteger)insertionLength > proposedString.length) {
+		return [self isPartialStringValid:proposedString newEditingString:partialStringPtr errorDescription:error];
+	}
+
+	NSString *insertion = [proposedString substringWithRange:NSMakeRange(origSelRange.location, (NSUInteger)insertionLength)];
+	NSString *nullValue = [[NSUserDefaults standardUserDefaults] objectForKey:SPNullValue];
+	SACellEditLimit *decision = [SACellEditLimit evaluateCellEditOfText:origString
+	                                                     replacingRange:origSelRange
+	                                                         withString:insertion
+	                                                              limit:textLimit
+	                                                          fieldType:fieldType
+	                                                          nullValue:nullValue];
+	// No length rule applies: no limit, or the NULL placeholder being typed.
+	// The BIT rule is skipped then, so a BIT value can still be nulled.
+	if (decision.isExempt) {
+		return YES;
+	}
+
+	if (!decision.allowsEdit) {
+		if (decision.replacementText) {
+			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld. Inserted text was truncated.", @"Maximum text length is set to %ld. Inserted text was truncated."), (long)textLimit]];
+			*partialStringPtr = decision.replacementText;
+			if (proposedSelRangePtr != NULL) {
+				*proposedSelRangePtr = NSMakeRange((NSUInteger)decision.selectionLocation, 0);
+			}
+		}
+		else {
+			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld.", @"Maximum text length is set to %ld."), (long)textLimit]];
+		}
+		return NO;
+	}
+
+	return [self isBitTextValid:proposedString];
+}
+
+/**
+ * The 0/1 rule of a BIT column, with its tooltip.
+ *
+ * @param text The text the edit would leave in the cell
+ * @return YES for any other column type, or when the text holds only 0 and 1
+ */
+- (BOOL)isBitTextValid:(NSString *)text
+{
+	if (fieldType && [fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
+		if ([text rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:@"01"] invertedSet]].location != NSNotFound) {
+			[SPTooltip showWithObject:NSLocalizedString(@"For BIT fields only “1” or “0” are allowed.", @"For BIT fields only “1” or “0” are allowed.")];
+			return NO;
+		}
+	}
+
+	return YES;
+}
+
+/**
+ * Decide what an edit in progress may leave in the cell when the range it
+ * replaces is not known: first the column's length rules on the whole text,
+ * then the 0/1 rule of a BIT column. Both report to the user with a tooltip.
+ * The range-aware method above is what the field editor normally calls; this
+ * one is its fallback and serves other callers.
+ *
+ * @param partialString The text the edit would leave in the cell
+ * @param newString Set to the text cut to the column's length when a paste overshoots it
+ * @param error Unused; the rules show a tooltip instead of an error message
+ * @return YES when the text is taken as it stands, NO when the edit is refused or
+ *         replaced by the string returned in newString
+ */
 - (BOOL)isPartialStringValid:(NSString *)partialString newEditingString:(NSString **)newString errorDescription:(NSString **)error
 {
     // SPNullValue = @"NULL"
@@ -142,17 +234,7 @@
 	}
 
 	// Check for BIT fields whether 1 or 0 are typed
-	if(fieldType && [fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
-
-		if([partialString rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:@"01"] invertedSet]].location != NSNotFound) {
-				[SPTooltip showWithObject:NSLocalizedString(@"For BIT fields only “1” or “0” are allowed.", @"For BIT fields only “1” or “0” are allowed.")];
-	    		return NO;
-		}
-
-		return YES;
-	}
-
-	return YES;
+	return [self isBitTextValid:partialString];
 }
 
 @end
