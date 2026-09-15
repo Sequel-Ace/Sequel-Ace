@@ -297,6 +297,37 @@ final class SADatabaseRenameViewRewriterTests: XCTestCase {
         )
     }
 
+    /// Verifies optimizer hints and other block comments are copied byte for
+    /// byte and do not count as the token before the next one: a `select
+    /// /*+ … */ straight_join` option stays a select option, so a column
+    /// reference through a table alias named like the database is left
+    /// alone; a SELECT after a parenthesis and a comment still opens a
+    /// subquery; and quotes, backticks or parentheses inside a comment are
+    /// not read as SQL.
+    func testOptimizerHintsAndCommentsDoNotChangeTheContext() {
+        let hint = "/*+ QB_NAME(`qb`) JOIN_ORDER(`t`@`qb`, `shop`)\n    SET_VAR(optimizer_switch = 'mrr=on') */"
+        XCTAssertEqual(
+            rewrite("CREATE VIEW `v` AS select \(hint) straight_join `shop`.`id` AS `id`,`shop`.`t`.`n` AS `n` from (`shop`.`t` join `shop`.`u` `shop` on((`shop`.`id` = `shop`.`t`.`id`)))"),
+            "CREATE VIEW `store`.`v` AS select \(hint) straight_join `shop`.`id` AS `id`,`store`.`t`.`n` AS `n` from (`store`.`t` join `store`.`u` `shop` on((`shop`.`id` = `store`.`t`.`id`)))"
+        )
+        XCTAssertEqual(
+            rewrite("CREATE VIEW `v` AS select (10 DIV (/* sub */ select /*+ NO_BKA(`b`) */ straight_join count(0) from `shop`.`b`)) AS `d` from `shop`.`t`"),
+            "CREATE VIEW `store`.`v` AS select (10 DIV (/* sub */ select /*+ NO_BKA(`b`) */ straight_join count(0) from `store`.`b`)) AS `d` from `store`.`t`"
+        )
+        // a sequence function or a join is still recognised across a comment
+        XCTAssertEqual(
+            rewrite("CREATE VIEW `v` AS select nextval /* c */ (`shop`.`s`) AS `n` from `shop`.`t` straight_join /* c */ `shop`.`u`"),
+            "CREATE VIEW `store`.`v` AS select nextval /* c */ (`store`.`s`) AS `n` from `store`.`t` straight_join /* c */ `store`.`u`"
+        )
+        // an unterminated comment is copied to the end and a literal-like text inside is no introducer
+        XCTAssertEqual(
+            rewrite("CREATE VIEW `v` AS select 1 AS `n` from `shop`.`t` /* `shop`.`x` ("),
+            "CREATE VIEW `store`.`v` AS select 1 AS `n` from `store`.`t` /* `shop`.`x` ("
+        )
+        XCTAssertFalse(SADatabaseRenameViewRewriter.hasLiteralOutsideUTF8("CREATE VIEW `v` AS select /*+ _latin1'x' */ 1 AS `n`"))
+        XCTAssertTrue(SADatabaseRenameViewRewriter.hasLiteralOutsideUTF8("CREATE VIEW `v` AS select _latin1 /* c */ 'x' AS `n`"))
+    }
+
     /// Verifies a scalar subquery is followed whatever precedes its
     /// parenthesis - an operator word such as DIV, MOD, REGEXP or INTERVAL is
     /// not a function whose arguments hide the subquery's FROM.

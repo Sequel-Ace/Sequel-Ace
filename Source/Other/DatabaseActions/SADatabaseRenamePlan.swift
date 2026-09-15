@@ -353,6 +353,8 @@ import Foundation
         case literal(String)
         case symbol(Character)
         case whitespace(String)
+        /// a block comment, such as an optimizer hint (`/*+ QB_NAME(qb) */`)
+        case comment(String)
     }
 
     private let sourceDatabase: String
@@ -406,12 +408,22 @@ import Foundation
         var previous: Token?
 
         for token in Self.tokens(of: statement) {
+            // Whitespace and comments do not count as the token before the
+            // next one: the server prints optimizer hints right after SELECT
+            // (`select /*+ QB_NAME(qb) */ straight_join …`), and they must
+            // not turn a select option into a join or hide the SELECT after
+            // a parenthesis.
             defer {
-                if case .whitespace = token {} else { previous = token }
+                switch token {
+                case .whitespace, .comment:
+                    break
+                default:
+                    previous = token
+                }
             }
 
             switch token {
-            case .whitespace(let text), .literal(let text):
+            case .whitespace(let text), .literal(let text), .comment(let text):
                 output += text
 
             case .word(let word):
@@ -610,8 +622,12 @@ import Foundation
     /// - Parameter statement: The `Create View` column of `SHOW CREATE VIEW`.
     static func hasLiteralOutsideUTF8(_ statement: String) -> Bool {
         let tokens = tokens(of: statement).filter {
-            if case .whitespace = $0 { return false }
-            return true
+            switch $0 {
+            case .whitespace, .comment:
+                return false
+            default:
+                return true
+            }
         }
         for (index, token) in tokens.enumerated() {
             guard case .word(let word) = token, word.count > 1, word.hasPrefix("_"), index + 1 < tokens.count else { continue }
@@ -639,7 +655,9 @@ import Foundation
     }
 
     /// Splits the definition into string literals (copied verbatim, honouring
-    /// backslash and doubled-quote escapes), dotted backticked names, words,
+    /// backslash and doubled-quote escapes), block comments (copied verbatim;
+    /// `SHOW CREATE VIEW` keeps optimizer hints such as `/*+ QB_NAME(qb) */`,
+    /// whose contents are not SQL context), dotted backticked names, words,
     /// whitespace and single symbols. It works on Unicode scalars, not
     /// Characters: a combining mark right after a quote would otherwise merge
     /// with it into one Character and hide the delimiter.
@@ -691,6 +709,18 @@ import Foundation
                     }
                 }
                 tokens.append(.literal(text(index..<end)))
+                index = end
+                continue
+            }
+
+            // a block comment runs to the first `*/`, or to the end when unterminated
+            if scalar == "/", index + 1 < scalars.count, scalars[index + 1] == "*" {
+                var end = index + 2
+                while end < scalars.count, !(scalars[end] == "*" && end + 1 < scalars.count && scalars[end + 1] == "/") {
+                    end += 1
+                }
+                end = min(end + 2, scalars.count)
+                tokens.append(.comment(text(index..<end)))
                 index = end
                 continue
             }
