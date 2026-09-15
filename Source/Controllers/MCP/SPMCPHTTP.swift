@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SPMySQL
 
 enum SPMCPHTTP {
 
@@ -178,15 +179,15 @@ enum SPMCPReadOnlyGuard {
             // `FROM/**/t` -> `FROMt`), which matters because the stripped SQL is also
             // what run_query executes for capped reads.
             if c == "#" {                                        // # comment to end of line
-                while i < n && chars[i] != "\n" { i += 1 }
+                while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { i += 1 }
                 out.append(" ")
                 continue
             }
             // -- comment: the second dash must be followed by whitespace/control or EOL
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
-                    while i < n && chars[i] != "\n" { i += 1 }
+                if i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(next) {
+                    while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { i += 1 }
                     out.append(" ")
                     continue
                 }
@@ -202,6 +203,96 @@ enum SPMCPReadOnlyGuard {
             i += 1
         }
         return out
+    }
+
+    /// Substitutes each unquoted `?` in `sql` with the literal that `literal`
+    /// renders for the next element of `params`. Quote- and comment-aware: a `?`
+    /// inside a string literal or a comment is not a placeholder and is copied
+    /// verbatim, so a `?` parked in a comment cannot turn param data into
+    /// executable SQL (it just fails the placeholder/param count check).
+    ///
+    /// The scan walks Unicode scalars, as `stripCommentsQuoteAware` does, so a
+    /// combining mark right after a quote cannot hide the delimiter. Whether a
+    /// backslash escapes the next character depends on the connection's
+    /// `NO_BACKSLASH_ESCAPES`, which the binder does not know, so the
+    /// placeholders are found under both readings; a query in which the two
+    /// disagree is refused instead of being bound in a way the server may read
+    /// differently.
+    /// Returns `(nil, message)` when the placeholder and param counts differ or
+    /// the placeholders depend on the backslash reading.
+    static func bindPlaceholders(in sql: String, params: [Any], literal: (Any) -> String) -> (String?, String?) {
+        let scalars = Array(sql.unicodeScalars)
+        let placeholders = placeholderOffsets(in: scalars, backslashEscapes: true)
+        guard placeholders == placeholderOffsets(in: scalars, backslashEscapes: false) else {
+            return (nil, "The ? placeholders depend on whether a backslash escapes a quote (NO_BACKSLASH_ESCAPES); write the string literals without backslash escapes")
+        }
+        if placeholders.count > params.count { return (nil, "More ? placeholders than params provided") }
+        if placeholders.count < params.count { return (nil, "More params than ? placeholders provided") }
+        var out = String.UnicodeScalarView()
+        var copied = 0
+        for (offset, param) in zip(placeholders, params) {
+            out.append(contentsOf: scalars[copied..<offset])
+            out.append(contentsOf: literal(param).unicodeScalars)
+            copied = offset + 1
+        }
+        out.append(contentsOf: scalars[copied...])
+        return (String(out), nil)
+    }
+
+    /// The positions of the `?` placeholders in a query: outside string
+    /// literals, quoted identifiers and comments.
+    ///
+    /// - Parameters:
+    ///   - scalars: The query's Unicode scalars.
+    ///   - backslashEscapes: Whether a backslash escapes the next character in
+    ///     a `'…'` or `"…"` literal, as it does unless NO_BACKSLASH_ESCAPES is set.
+    /// - Returns: The scalar offsets of the placeholders, in order.
+    private static func placeholderOffsets(in scalars: [Unicode.Scalar], backslashEscapes: Bool) -> [Int] {
+        var offsets: [Int] = []
+        var quote: Unicode.Scalar?
+        let n = scalars.count
+        var i = 0
+        while i < n {
+            let c = scalars[i]
+            if let q = quote {
+                if c == "\\" && backslashEscapes && q != "`" {    // backslash escape in a string literal
+                    i += 2
+                    continue
+                }
+                if c == q {
+                    if i + 1 < n && scalars[i + 1] == q {          // doubled-quote escape
+                        i += 2
+                        continue
+                    }
+                    quote = nil
+                }
+                i += 1
+                continue
+            }
+            // A `?` inside a comment is not a placeholder.
+            if c == "#" {                                         // # to end of line
+                while i < n && !SASQLCommentSyntax.endsLineComment(scalars[i]) { i += 1 }
+                continue
+            }
+            if c == "-" && i + 1 < n && scalars[i + 1] == "-"
+                && (i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(scalars[i + 2])) {   // -- (needs whitespace/EOL after)
+                while i < n && !SASQLCommentSyntax.endsLineComment(scalars[i]) { i += 1 }
+                continue
+            }
+            if c == "/" && i + 1 < n && scalars[i + 1] == "*" {   // /* ... */ block comment
+                i += 2
+                while i < n && !(scalars[i] == "*" && i + 1 < n && scalars[i + 1] == "/") { i += 1 }
+                i += 2
+                continue
+            }
+            if c == "'" || c == "\"" || c == "`" {
+                quote = c
+            } else if c == "?" {
+                offsets.append(i)
+            }
+            i += 1
+        }
+        return offsets
     }
 }
 
