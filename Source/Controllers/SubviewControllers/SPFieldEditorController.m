@@ -1278,10 +1278,9 @@ typedef enum {
 		}
 
 		// Whether the edit fits is decided in code points - the text, the part
-		// the edit replaces and the insertion (see SAFieldEditorEditLimit).
-		NSString *currentText = [[textView textStorage] string];
-		BOOL ignoresDecimalPoint = [[fieldType uppercaseString] isEqualToString:@"FLOAT"] && ([currentText rangeOfString:@"."].location != NSNotFound);
-		SAFieldEditorEditLimit *editLimit = [SAFieldEditorEditLimit evaluateEditOfText:currentText replacingRange:r withString:replacementString limit:(NSInteger)adjTextMaxTextLength ignoringDecimalPoint:ignoresDecimalPoint];
+		// the edit replaces and the insertion - and a FLOAT's decimal point is
+		// judged on the text the edit leaves (see SAFieldEditorEditLimit).
+		SAFieldEditorEditLimit *editLimit = [SAFieldEditorEditLimit evaluateEditOfText:[[textView textStorage] string] replacingRange:r withString:replacementString limit:(NSInteger)adjTextMaxTextLength fieldType:fieldType];
 
 		if (!editLimit.allowsEdit) {
 			NSString *fittingInsertion = editLimit.fittingInsertion;

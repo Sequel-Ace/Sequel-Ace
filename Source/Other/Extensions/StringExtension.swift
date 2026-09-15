@@ -298,33 +298,47 @@ public class SPProcessListRowSerializer: NSObject {
     /// code point counts would let a paste over selected emoji through
     /// uncut.
     ///
-    /// A FLOAT value's decimal point does not count against the limit: when
-    /// the text already holds one, the edit may end one code point over the
-    /// limit, and a cut insertion keeps one code point more.
+    /// A FLOAT value's decimal point does not count against the limit, judged
+    /// on the text the edit leaves behind: typing "." into "123" at a limit of
+    /// 3 is allowed, and replacing the "." of "1.23" with a digit is measured
+    /// without the allowance. A cut insertion keeps one code point more only
+    /// when the kept text or the part of the insertion that is kept holds the
+    /// point.
     ///
     /// - Parameters:
     ///   - text: The sheet's text before the edit.
     ///   - range: The range of `text` the edit replaces, in UTF-16 units.
     ///   - replacement: The text the edit inserts.
     ///   - limit: The column's length in code points; greater than 0.
-    ///   - ignoringDecimalPoint: Whether `text` is a FLOAT value holding a
-    ///     decimal point.
+    ///   - fieldType: The column's type, such as "FLOAT"; the decimal point
+    ///     allowance applies to FLOAT only.
     /// - Returns: An allowed edit, or a refused one with the part of
     ///   `replacement` that still fits, if any.
-    @objc(evaluateEditOfText:replacingRange:withString:limit:ignoringDecimalPoint:)
-    public static func evaluate(text: NSString, replacing range: NSRange, with replacement: NSString, limit: Int, ignoringDecimalPoint: Bool) -> SAFieldEditorEditLimit {
+    @objc(evaluateEditOfText:replacingRange:withString:limit:fieldType:)
+    public static func evaluate(text: NSString, replacing range: NSRange, with replacement: NSString, limit: Int, fieldType: String?) -> SAFieldEditorEditLimit {
         let location = min(max(range.location, 0), text.length)
         let length = min(max(range.length, 0), text.length - location)
-        let replacedCount = (text.substring(with: NSRange(location: location, length: length)) as NSString).characterCount()
-        let keptCount = text.characterCount() - replacedCount
+        let replacedRange = NSRange(location: location, length: length)
+        let keptText = text.replacingCharacters(in: replacedRange, with: "") as NSString
+        let keptCount = keptText.characterCount()
         let newLength = keptCount + replacement.characterCount()
 
-        let decimalPoint = ignoringDecimalPoint ? 1 : 0
-        guard newLength > limit + decimalPoint else {
+        let isFloat = fieldType?.uppercased() == "FLOAT"
+        let keptHoldsPoint = keptText.range(of: ".").location != NSNotFound
+        func decimalPointAllowance(inserting insertion: NSString) -> Int {
+            guard isFloat else { return 0 }
+            return keptHoldsPoint || insertion.range(of: ".").location != NSNotFound ? 1 : 0
+        }
+
+        guard newLength > limit + decimalPointAllowance(inserting: replacement) else {
             return SAFieldEditorEditLimit(allowsEdit: true, fittingInsertion: nil)
         }
 
-        let insertableCount = limit + decimalPoint - keptCount
+        var insertableCount = limit + decimalPointAllowance(inserting: replacement) - keptCount
+        if insertableCount > 0, decimalPointAllowance(inserting: replacement.prefix(codePoints: insertableCount)) < decimalPointAllowance(inserting: replacement) {
+            // The point that granted the allowance is not in the kept part.
+            insertableCount -= 1
+        }
         guard insertableCount > 0 else {
             return SAFieldEditorEditLimit(allowsEdit: false, fittingInsertion: nil)
         }
@@ -389,12 +403,17 @@ public class SPProcessListRowSerializer: NSObject {
     /// Decides how a table cell limited to `limit` code points treats this
     /// text, the text an edit would leave in it.
     ///
-    /// A text one code point over the limit is refused as a typo, unless it is
-    /// part of the NULL placeholder, so NULL can still be typed into a short
-    /// column. A text further over the limit is cut to it, but only when it is
-    /// also longer than the placeholder. The placeholder is compared as the
-    /// formatter always did: literally for the whole text, with
-    /// `range(of:)` for a part of it.
+    /// The NULL placeholder itself is exempt, and while the text is still the
+    /// start of the placeholder ("N", "NU", "NUL" for "NULL") it is accepted
+    /// however short the column is, so NULL can be typed into it. Any other
+    /// text one code point over the limit is refused as a typo, and text
+    /// further over the limit is cut to it.
+    ///
+    /// Only the start of the placeholder is let through, not any part of it:
+    /// typing NULL passes through its prefixes only, while a fragment such as
+    /// "UL" is not on that way and would otherwise slip past a one-character
+    /// limit. The placeholder is compared as the formatter always did, with
+    /// `range(of:)`, now anchored to its start.
     ///
     /// - Parameters:
     ///   - limit: The column's length in code points; 0 means no limit.
@@ -408,13 +427,12 @@ public class SPProcessListRowSerializer: NSObject {
         }
 
         let count = characterCount()
-        let isPartOfNullValue = nullValue.map { ($0 as NSString).range(of: self as String).location != NSNotFound } ?? false
-        if count == limit + 1 && !isPartOfNullValue {
+        let startsNullValue = nullValue.map { ($0 as NSString).range(of: self as String, options: .anchored).location != NSNotFound } ?? false
+        if count == limit + 1 && !startsNullValue {
             return .refuse
         }
 
-        let nullValueLength = nullValue.map { ($0 as NSString).length } ?? 0
-        if count > limit && length > nullValueLength {
+        if count > limit && !startsNullValue {
             return .truncate
         }
 

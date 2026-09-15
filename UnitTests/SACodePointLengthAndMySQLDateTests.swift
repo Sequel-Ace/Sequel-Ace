@@ -109,6 +109,18 @@ final class SATextLimitDecisionTests: XCTestCase {
         XCTAssertEqual(("NULL" as NSString).textLimitDecision(limit: 1, nullValue: nullValue), .exempt)
     }
 
+    /// Verifies over-long text that is not the start of the placeholder gets
+    /// no exception, however short it is compared with the placeholder: "abc"
+    /// is cut in a one-character column, and fragments from the middle of
+    /// "NULL" are refused or cut like any other text.
+    func testOnlyTheStartOfTheNullPlaceholderIsExempt() {
+        XCTAssertEqual(("abc" as NSString).textLimitDecision(limit: 1, nullValue: nullValue), .truncate)
+        XCTAssertEqual(("ab" as NSString).textLimitDecision(limit: 1, nullValue: nullValue), .refuse)
+        XCTAssertEqual(("UL" as NSString).textLimitDecision(limit: 1, nullValue: nullValue), .refuse)
+        XCTAssertEqual(("ULL" as NSString).textLimitDecision(limit: 1, nullValue: nullValue), .truncate)
+        XCTAssertEqual(("nu" as NSString).textLimitDecision(limit: 1, nullValue: nullValue), .refuse, "the placeholder is compared case-sensitively")
+    }
+
     /// Verifies no limit means no length rule at all.
     func testNoLimitExemptsAnyLength() {
         let pasted = "\u{1F642}\u{1F642}\u{1F642}\u{1F642}\u{1F642}" as NSString
@@ -125,7 +137,7 @@ final class SATextLimitDecisionTests: XCTestCase {
 }
 
 /// The length rules of the field editor sheet, decided by
-/// `SAFieldEditorEditLimit.evaluate(text:replacing:with:limit:ignoringDecimalPoint:)`
+/// `SAFieldEditorEditLimit.evaluate(text:replacing:with:limit:fieldType:)`
 /// and applied by `SPFieldEditorController`.
 final class SAFieldEditorEditLimitTests: XCTestCase {
 
@@ -133,8 +145,8 @@ final class SAFieldEditorEditLimitTests: XCTestCase {
         return String(repeating: "\u{1F642}", count: count)
     }
 
-    private func evaluate(_ text: String, replacing range: NSRange, with replacement: String, limit: Int, ignoringDecimalPoint: Bool = false) -> SAFieldEditorEditLimit {
-        return SAFieldEditorEditLimit.evaluate(text: text as NSString, replacing: range, with: replacement as NSString, limit: limit, ignoringDecimalPoint: ignoringDecimalPoint)
+    private func evaluate(_ text: String, replacing range: NSRange, with replacement: String, limit: Int, fieldType: String? = "VARCHAR") -> SAFieldEditorEditLimit {
+        return SAFieldEditorEditLimit.evaluate(text: text as NSString, replacing: range, with: replacement as NSString, limit: limit, fieldType: fieldType)
     }
 
     /// Verifies five emoji pasted over three selected ones keep three: the
@@ -180,15 +192,43 @@ final class SAFieldEditorEditLimitTests: XCTestCase {
     }
 
     /// Verifies a FLOAT value's decimal point does not count: one code point
-    /// over the limit is allowed, and a cut keeps one more.
+    /// over the limit is allowed, a cut keeps one more, and other types get
+    /// no allowance.
     func testAFloatDecimalPointDoesNotCount() {
-        XCTAssertTrue(evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "3", limit: 3, ignoringDecimalPoint: true).allowsEdit)
+        XCTAssertTrue(evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "3", limit: 3, fieldType: "FLOAT").allowsEdit)
 
-        let cut = evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "345", limit: 3, ignoringDecimalPoint: true)
+        let cut = evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "345", limit: 3, fieldType: "float")
         XCTAssertFalse(cut.allowsEdit)
         XCTAssertEqual(cut.fittingInsertion, "3")
 
         XCTAssertFalse(evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "3", limit: 3).allowsEdit)
+        XCTAssertFalse(evaluate("1.2", replacing: NSRange(location: 3, length: 0), with: "3", limit: 3, fieldType: nil).allowsEdit)
+    }
+
+    /// Verifies the allowance comes from the text after the edit: typing the
+    /// decimal point into a full FLOAT value is allowed, and a cut keeps one
+    /// code point more only when the kept part of the insertion holds the
+    /// point.
+    func testInsertingTheDecimalPointIsJudgedOnTheResult() {
+        XCTAssertTrue(evaluate("123", replacing: NSRange(location: 1, length: 0), with: ".", limit: 3, fieldType: "FLOAT").allowsEdit)
+
+        let keepsPoint = evaluate("12", replacing: NSRange(location: 2, length: 0), with: ".345", limit: 3, fieldType: "FLOAT")
+        XCTAssertFalse(keepsPoint.allowsEdit)
+        XCTAssertEqual(keepsPoint.fittingInsertion, ".3")
+
+        let dropsPoint = evaluate("12", replacing: NSRange(location: 2, length: 0), with: "345.6", limit: 3, fieldType: "FLOAT")
+        XCTAssertFalse(dropsPoint.allowsEdit)
+        XCTAssertEqual(dropsPoint.fittingInsertion, "3")
+    }
+
+    /// Verifies replacing the decimal point with a digit is measured without
+    /// the allowance the point granted before the edit.
+    func testReplacingTheDecimalPointDropsTheAllowance() {
+        let result = evaluate("1.23", replacing: NSRange(location: 1, length: 1), with: "4", limit: 3, fieldType: "FLOAT")
+        XCTAssertFalse(result.allowsEdit)
+        XCTAssertNil(result.fittingInsertion)
+
+        XCTAssertTrue(evaluate("1.23", replacing: NSRange(location: 3, length: 1), with: "4", limit: 3, fieldType: "FLOAT").allowsEdit)
     }
 }
 
