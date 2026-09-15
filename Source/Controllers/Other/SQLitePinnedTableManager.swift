@@ -105,6 +105,9 @@ import OSLog
         return queue
     }
 
+    /// Creates the pinned-tables table when the store's schema version predates it
+    /// and records the new version. Returns `false` when reading or updating the
+    /// schema fails; the failure is logged.
     private static func setupPinnedTablesDatabase(in queue: FMDatabaseQueue, traceExecution: Bool) -> Bool {
         let schemaBlock: (FMDatabase, Int) throws -> Int = { db, schemaVersion in
             db.beginTransaction()
@@ -196,12 +199,16 @@ import OSLog
         return pins
     }
 
+    /// Returns the tables pinned for `hostName` and `databaseName`; empty when
+    /// none are pinned.
     @objc func getPinnedTables(hostName: String, databaseName: String) -> [String] {
         stateLock.withLock {
             pinnedTablesDatabaseDictionary[hostName]?[databaseName] ?? []
         }
     }
 
+    /// Pins a table for a host and database, in memory and in the store when there
+    /// is one; a table that is pinned already stays as it is.
     @objc func pinTable(hostName: String, databaseName: String, tableToPin: String) {
         stateLock.withLock {
             _ = pinLocked(hostName: hostName, databaseName: databaseName, tableToPin: tableToPin)
@@ -301,6 +308,8 @@ import OSLog
         }
     }
 
+    /// Unpins a table for a host and database, in memory and in the store when
+    /// there is one; a table that is not pinned is ignored.
     @objc func unpinTable(hostName: String, databaseName: String, tableToUnpin: String) {
         stateLock.withLock {
             guard let pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToUnpin) else {

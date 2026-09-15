@@ -17,6 +17,7 @@ import XCTest
 final class SQLiteDisplayFormatManagerTests: XCTestCase {
     private var directory: URL!
 
+    /// Creates an empty temporary directory for the test's store.
     override func setUpWithError() throws {
         try super.setUpWithError()
         directory = FileManager.default.temporaryDirectory
@@ -24,12 +25,15 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
+    /// Removes the temporary directory and everything in it.
     override func tearDownWithError() throws {
         try? FileManager.default.removeItem(at: directory)
         directory = nil
         try super.tearDownWithError()
     }
 
+    /// Verifies that stored formats are read back per column, a later format replaces
+    /// an earlier one, and the formats survive reopening the store.
     func testFormatsRoundTripThroughTheStore() {
         let path = directory.appendingPathComponent("formats.db").path
         let manager = SQLiteDisplayFormatManager(databasePath: path)
@@ -49,6 +53,8 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertEqual(reopened.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), ["c": "binary", "c2": "base64"])
     }
 
+    /// Verifies that a store in a missing folder leaves the manager without persistence,
+    /// returning no formats and creating no file.
     func testUnwritableLocationDegradesToDefaults() {
         let path = directory.appendingPathComponent("missing/formats.db").path
         let manager = SQLiteDisplayFormatManager(databasePath: path)
@@ -60,6 +66,7 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: path))
     }
 
+    /// Verifies that a `nil` path leaves the manager without persistence, returning no formats.
     func testMissingLocationDegradesToDefaults() {
         let manager = SQLiteDisplayFormatManager(databasePath: nil)
         XCTAssertFalse(manager.isPersistent)
@@ -69,6 +76,7 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), [:])
     }
 
+    /// Verifies that a file that is not a database is not used and is left untouched.
     func testDamagedStoreDegradesToDefaults() throws {
         let url = directory.appendingPathComponent("formats.db")
         let garbage = Data(repeating: 0x5A, count: 4096)
@@ -83,6 +91,7 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), garbage)
     }
 
+    /// Verifies that a read-only empty file, in which the table cannot be created, is not used.
     func testReadOnlyStoreDegradesWhenTheTableCannotBeCreated() throws {
         let url = directory.appendingPathComponent("formats.db")
         try Data().write(to: url)
@@ -97,6 +106,8 @@ final class SQLiteDisplayFormatManagerTests: XCTestCase {
 }
 
 extension SQLiteDisplayFormatManagerTests {
+    /// Verifies that a store whose table lacks a column the queries read is not used and
+    /// receives no rows.
     func testStoreWhoseTableCannotBeReadIsNotUsed() throws {
         let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
         // Schema version 1, so the table is not created again, but it lacks the id column the queries order by;
@@ -123,6 +134,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
     private var prefsSuiteName: String!
     private var prefs: UserDefaults!
 
+    /// Creates an empty temporary directory for the store and a separate user-defaults
+    /// suite for the migration record.
     override func setUpWithError() throws {
         try super.setUpWithError()
         directory = FileManager.default.temporaryDirectory
@@ -132,6 +145,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         prefs = try XCTUnwrap(UserDefaults(suiteName: prefsSuiteName))
     }
 
+    /// Removes the user-defaults suite and the temporary directory.
     override func tearDownWithError() throws {
         prefs.removePersistentDomain(forName: prefsSuiteName)
         prefs = nil
@@ -144,6 +158,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         directory.appendingPathComponent("pinnedTables.db").path
     }
 
+    /// Verifies that pinning twice keeps one pin, unpinning ignores tables that are not
+    /// pinned, and the pins survive reopening the store.
     func testPinsPersistAcrossManagers() {
         let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
         XCTAssertTrue(manager.isPersistent)
@@ -165,6 +181,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(Set(reopened.getPinnedTables(hostName: "conn", databaseName: "db")), ["users", "customers"])
     }
 
+    /// Verifies that with a store in a missing folder pins and unpins work in memory and
+    /// no file is created.
     func testUnwritableLocationKeepsPinsInMemory() {
         let path = directory.appendingPathComponent("missing/pinnedTables.db").path
         let manager = SQLitePinnedTableManager(databasePath: path, prefs: prefs)
@@ -177,6 +195,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: path))
     }
 
+    /// Verifies that a read-only empty file, in which the table cannot be created, still
+    /// lets pins work in memory.
     func testReadOnlyStoreKeepsPinsInMemory() throws {
         try Data().write(to: URL(fileURLWithPath: storePath))
         try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: storePath)
@@ -188,6 +208,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn", databaseName: "db"), ["orders"])
     }
 
+    /// Verifies that concurrent pins and unpins across hosts leave no duplicates and the
+    /// same pins in memory and in the store.
     func testConcurrentPinningStaysConsistent() {
         let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
         let iterations = 64
@@ -216,6 +238,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         }
     }
 
+    /// Verifies that concurrent pins and unpins without a store leave exactly the shared pin.
     func testConcurrentInMemoryPinningStaysConsistent() {
         let manager = SQLitePinnedTableManager(databasePath: nil, prefs: prefs)
         let iterations = 500
@@ -230,6 +253,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn", databaseName: "db"), ["shared"])
     }
 
+    /// Verifies that concurrent migrations of one tuple move its pins and record it once,
+    /// never run again for it, and treat another database as its own tuple.
     func testLegacyMigrationRunsOncePerTupleUnderConcurrency() {
         let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
         manager.pinTable(hostName: "legacy.host", databaseName: "db", tableToPin: "orders")
@@ -262,6 +287,7 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 2)
     }
 
+    /// Verifies that concurrent migrations of different databases all reach the migration record.
     func testConcurrentMigrationsRecordEveryTuple() {
         let databases = (0..<32).map { "db\($0)" }
         let seeding = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
@@ -282,6 +308,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(Set(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey) ?? []), expected)
     }
 
+    /// Verifies that a user-defaults observer calling into the manager while the migration
+    /// record is written does not deadlock.
     func testRecordingAMigrationDoesNotHoldTheLockWhileDefaultsObserversRun() {
         let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
         manager.pinTable(hostName: "legacy.host", databaseName: "db", tableToPin: "orders")
@@ -308,6 +336,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
     }
 
+    /// Verifies that a store whose pins cannot be read is not used: pins stay in memory,
+    /// no migration is recorded and no row is added.
     func testStoreThatOpensButCannotBeReadKeepsPinsInMemory() throws {
         // Schema version 1, so preparing the store succeeds, but the table lacks the id column the first read
         // orders by; an insert would still work, so a store kept after that read would take rows it never loaded.
@@ -328,6 +358,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 1, "only the row that was there before")
     }
 
+    /// Verifies that a launch without the store neither migrates nor records the tuple,
+    /// and a later launch with the store does both.
     func testLegacyMigrationWaitsUntilTheStoreCanBeRead() {
         SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
             .pinTable(hostName: "legacy.host", databaseName: "db", tableToPin: "orders")
@@ -346,6 +378,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1)
     }
 
+    /// Verifies that a migration into a read-only store is neither recorded nor repeated
+    /// within the session, and completes once the store is writable again.
     func testLegacyMigrationWaitsWhileTheStoreRejectsWrites() throws {
         SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
             .pinTable(hostName: "legacy.host", databaseName: "db", tableToPin: "orders")
@@ -373,6 +407,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
     }
 
+    /// Verifies that a pin refused earlier for another database does not keep a stored
+    /// migration from being recorded.
     func testARefusedWriteElsewhereDoesNotHoldBackAStoredMigration() throws {
         SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
             .pinTable(hostName: "legacy.host", databaseName: "db2", tableToPin: "logs")
@@ -394,6 +430,8 @@ final class SQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(relaunched.getPinnedTables(hostName: "conn-1", databaseName: "db2"), [])
     }
 
+    /// Verifies that a moved pin another manager stored first counts as stored, so both
+    /// managers record the migration.
     func testPinAlreadyStoredByAnotherManagerStillCompletesTheMigration() throws {
         SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
             .pinTable(hostName: "legacy.host", databaseName: "db", tableToPin: "orders")
@@ -422,6 +460,8 @@ private final class SADefaultsObserver: NSObject {
     private var enabled = true
     private var calls = 0
 
+    /// Creates an observer that runs `onChange` for every change it is notified of
+    /// while it is enabled.
     init(onChange: @escaping () -> Void) {
         self.onChange = onChange
         super.init()
@@ -438,6 +478,7 @@ private final class SADefaultsObserver: NSObject {
         lock.withLock { calls }
     }
 
+    /// Runs the block and counts the call, unless the observer has been disabled.
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
         guard isEnabled else {
             return

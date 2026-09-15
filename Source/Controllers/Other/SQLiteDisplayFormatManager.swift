@@ -39,6 +39,8 @@ import OSLog
         queue != nil
     }
 
+    /// Returns the stored display format of one column, or `nil` when none is
+    /// stored or the store is unusable.
     @objc func displayOverrideFor(hostName: String, databaseName: String, tableName: String, columnName: String) -> String? {
         guard let queue else {
             return nil
@@ -71,6 +73,8 @@ import OSLog
         return found
     }
 
+    /// Returns the stored display formats of a table's columns, keyed by column
+    /// name; empty when none are stored or the store is unusable.
     @objc func allDisplayOverridesFor(hostName: String, databaseName: String, tableName: String) -> [String:String] {
         guard let queue else {
             return [:]
@@ -104,6 +108,8 @@ import OSLog
         return formats
     }
 
+    /// Stores `format` as the display format of one column, replacing an earlier
+    /// one. Does nothing when the store is unusable; a failed write is logged.
     @objc func replaceOverrideFor(hostName: String, databaseName: String, tableName: String, colName: String, format: String) {
         guard let queue else {
             return
@@ -140,6 +146,9 @@ import OSLog
         return queue
     }
 
+    /// Creates the table when the store's schema version predates it, records the
+    /// new version and verifies the table. Returns `false` when any step fails;
+    /// the failure is logged.
     private static func setupDatabase(in queue: FMDatabaseQueue) -> Bool {
         let builder: SchemaBuilder = { (db, schemaVersion: Int) in
             db.beginTransaction()
@@ -197,6 +206,7 @@ import OSLog
         return usable
     }
 
+    /// Reads the store's schema version from `PRAGMA user_version`; 0 for a new file.
     private static func loadCurrentSchemaVersion(_ db: FMDatabase) throws -> Int {
         var version = 0
         let rs = try db.executeQuery("PRAGMA user_version")
@@ -218,6 +228,8 @@ import OSLog
         rs.close()
     }
 
+    /// Writes `finalVersion` to `PRAGMA user_version` when the schema builder
+    /// raised the version.
     private static func finalizeSchemaVersion(_ db: FMDatabase, _ initialVersion: Int, _ finalVersion: Int) throws {
         guard finalVersion != initialVersion, finalVersion > 0 else {
             return
