@@ -1271,12 +1271,18 @@ import Foundation
         // The connection's default database becomes the target while the
         // views are recreated (see below) and is switched back whenever the
         // source survives; after a successful rename the caller selects the
-        // renamed database itself.
+        // renamed database itself. A switch back that fails - a cancelled
+        // query or a dropped connection - would leave unqualified queries
+        // running against the target while the document shows the source,
+        // so it is tried twice and then reported like any other setting
+        // that could not be restored, which re-establishes the connection.
         var defaultDatabaseSwitched = false
         func restoreDefaultDatabase() {
-            if defaultDatabaseSwitched {
-                _ = run("USE \(quotedSource)")
+            guard defaultDatabaseSwitched else { return }
+            for _ in 0..<2 where run("USE \(quotedSource)").error == nil {
+                return
             }
+            sessionSettingsNotRestored = true
         }
 
         if let session {

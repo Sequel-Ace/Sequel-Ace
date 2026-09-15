@@ -866,8 +866,22 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
         let failing = makeServer(quoteShowCreate: "0")
         failing.fail("CREATE ALGORITHM", with: "Access denied")
-        XCTAssertNotNil(failing.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        let failingExecutor = failing.executor
+        XCTAssertNotNil(failingExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertEqual(failing.statements.suffix(3), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", restoreCheckQuery, "USE `shop`"])
+        XCTAssertFalse(failingExecutor.sessionSettingsNotRestored)
+
+        // a switch back to the source that does not go through is tried
+        // twice and reported, so the connection is re-established instead of
+        // staying on the target while the source is shown as selected
+        let stuck = makeServer(quoteShowCreate: "0")
+        stuck.fail("CREATE ALGORITHM", with: "Access denied")
+        stuck.fail("USE `shop`", with: "Lost connection to MySQL server during query")
+        let stuckExecutor = stuck.executor
+        XCTAssertNotNil(stuckExecutor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertEqual(stuck.statements.suffix(2), ["USE `shop`", "USE `shop`"])
+        XCTAssertTrue(stuckExecutor.sessionSettingsNotRestored)
+        XCTAssertFalse(stuck.statements.contains { $0.hasPrefix("DROP") }, stuck.statements.joined(separator: "\n"))
     }
 
     /// Verifies the three UTF-8 character sets, in any case, are the ones a
