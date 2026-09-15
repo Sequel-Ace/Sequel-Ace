@@ -1024,14 +1024,17 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         // without VIEW_TABLE_USAGE (MariaDB, older MySQL) every definition is scanned
         let scan = makeServer()
         scan.respond(to: viewTableUsageProbe, rows: [])
+        // MariaDB keeps bare identifiers for a view created with sql_quote_show_create off
         scan.respond(to: externalViewsQuery, rows: [
+            ["bare", "v", hex("select v.n AS n from shop.v")],
+            ["clean", "near", hex("select `shopping`.`t`.`n` AS `n` from `shopping`.`t` where shop = 1 and shopping.t.n > 0")],
+            ["hinted", "v", hex("select /*+ QB_NAME(`shop`.`x`) */ 'shop.x' AS `s`")],
+            ["mixed", "v", hex("select `shop` . /* c */ v.n AS n from `SHOP`.v")],
             ["reporting", "proxy", hex("select `shop`.`base`.`n` AS `n` from `shop`.`base`")],
-            ["shop", "totals", hex("select sum(`shop`.`orders`.`total`) AS `t` from `shop`.`orders`")],
-            ["clean", "near", hex("select `shopping`.`t`.`n` AS `n` from `shopping`.`t`")],
-            ["hinted", "v", hex("select /*+ QB_NAME(`shop`.`x`) */ 'shop.x' AS `s`")]
+            ["shop", "totals", hex("select sum(`shop`.`orders`.`total`) AS `t` from `shop`.`orders`")]
         ])
         let scanned = try XCTUnwrap(scan.executor.rename("shop", to: "store", encoding: nil, collation: nil))
-        XCTAssertEqual(scanned, "Views in other databases read from 'shop' (`reporting`.`proxy`) and would stop working once it is renamed. Nothing was changed.")
+        XCTAssertEqual(scanned, "Views in other databases read from 'shop' (`bare`.`v`, `mixed`.`v`, `reporting`.`proxy`) and would stop working once it is renamed. Nothing was changed.")
         XCTAssertTrue(onlyInspected(scan), scan.statements.joined(separator: "\n"))
         XCTAssertFalse(scan.statements.contains { $0.hasPrefix(viewTableUsageQuery) })
 

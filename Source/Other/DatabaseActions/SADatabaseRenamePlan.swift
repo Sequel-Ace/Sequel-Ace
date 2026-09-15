@@ -613,18 +613,44 @@ import Foundation
         isSourceDatabase(Self.backtickQuoted(name))
     }
 
-    /// Whether a view definition names an object in the source database: a
-    /// backticked name of two or three parts whose first part is the source.
-    /// Any such name counts - a column reference through a table alias named
-    /// like the source as well - so a doubtful case refuses a rename instead
-    /// of breaking a view; string literals and comments do not.
+    /// Whether a view definition names an object in the source database: an
+    /// identifier that is the source followed by a dot - backticked
+    /// (`` `shop`.`t` ``, `` `shop`.t ``) or bare (`shop.t`, which MariaDB keeps
+    /// in `information_schema.VIEWS` for a view created with
+    /// `sql_quote_show_create` off), with whitespace or comments allowed
+    /// around the dot. Any such name counts - a column reference through a
+    /// table alias named like the source as well - so a doubtful case refuses
+    /// a rename instead of breaking a view; string literals and comments do not.
     func definitionReferencesSource(_ definition: String) -> Bool {
-        Self.tokens(of: definition).contains { token in
-            if case .name(let parts) = token {
-                return parts.count >= 2 && isSourceDatabase(parts[0])
+        let tokens = Self.tokens(of: definition).filter {
+            switch $0 {
+            case .whitespace, .comment:
+                return false
+            default:
+                return true
             }
-            return false
         }
+        for (index, token) in tokens.enumerated() {
+            let followedByDot: Bool
+            if index + 1 < tokens.count, case .symbol(".") = tokens[index + 1] {
+                followedByDot = true
+            } else {
+                followedByDot = false
+            }
+            switch token {
+            case .name(let parts):
+                if isSourceDatabase(parts[0]), parts.count >= 2 || followedByDot {
+                    return true
+                }
+            case .word(let word):
+                if followedByDot, isSource(schemaName: word) {
+                    return true
+                }
+            default:
+                break
+            }
+        }
+        return false
     }
 
     /// The bytes of a name with the ASCII letters folded to lower case - an
