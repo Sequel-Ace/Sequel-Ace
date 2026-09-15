@@ -182,10 +182,16 @@ import OSLog
                 var loaded: [String: [String: [String]]] = [:]
 
                 while rs.next() {
+                    // A row without one of these is a damaged or foreign
+                    // schema: skipping it would hand out an incomplete list,
+                    // and a legacy migration reading that list would record
+                    // itself as done although a pin never made it across.
                     guard let hostName = rs.string(forColumn: "hostname"),
                           let databaseName = rs.string(forColumn: "databaseName"),
                           let pinnedTableName = rs.string(forColumn: "pinnedTableName") else {
-                        continue
+                        rs.close()
+                        log.error("Reading \(dbFileName) failed: a row has no host, database or table name. Pinned tables start empty.")
+                        return
                     }
                     loaded[hostName, default: [:]][databaseName, default: []].append(pinnedTableName)
                 }

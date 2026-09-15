@@ -358,6 +358,26 @@ final class SASQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 1, "only the row that was there before")
     }
 
+    /// Verifies a row without a host, database or table name fails the whole read instead of
+    /// being skipped, so an incomplete pin list can never close a legacy migration.
+    func testRowMissingARequiredFieldMakesTheStoreUnusable() throws {
+        // A table that allows NULL in the columns the reader needs - a damaged or foreign schema.
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (id INTEGER PRIMARY KEY AUTOINCREMENT, hostName TEXT, databaseName TEXT, pinnedTableName TEXT, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES ('legacy.host', 'db', 'orders')",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES ('legacy.host', 'db', NULL)",
+            "PRAGMA user_version = 1",
+        ])
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertFalse(manager.isPersistent)
+        XCTAssertEqual(manager.getPinnedTables(hostName: "legacy.host", databaseName: "db"), [])
+
+        manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
+        XCTAssertNil(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey))
+        XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 2, "no row was added")
+    }
+
     /// Verifies that a launch without the store neither migrates nor records the tuple,
     /// and a later launch with the store does both.
     func testLegacyMigrationWaitsUntilTheStoreCanBeRead() {
