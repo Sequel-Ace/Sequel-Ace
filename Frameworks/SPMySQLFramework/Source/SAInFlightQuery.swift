@@ -140,7 +140,8 @@ public final class SAInFlightQuery: NSObject {
             return
         }
         cancellationRequestedGeneration = generation
-        cancellationRequestedOwner = generationOwners[generation] ?? 0
+        let isRemembered = generation + Self.rememberedOwners > storedLatestGeneration
+        cancellationRequestedOwner = isRemembered ? (generationOwners[generation] ?? 0) : 0
     }
 
     /// Whether the query with this number was asked to stop. Never waits.
@@ -209,8 +210,11 @@ public final class SAInFlightQuery: NSObject {
         storedLatestGeneration = generation
         latestGenerationThread = Thread.current
         generationOwners[generation] = owner
-        if generation > Self.rememberedOwners {
-            let oldest = generation - Self.rememberedOwners
+
+        // Numbers older than the remembered ones count as unknown anyway; their records are dropped
+        // now and then rather than on every query.
+        if generationOwners.count > 2 * Int(Self.rememberedOwners) {
+            let oldest = generation > Self.rememberedOwners ? generation - Self.rememberedOwners : 0
             generationOwners = generationOwners.filter { $0.key > oldest }
         }
     }

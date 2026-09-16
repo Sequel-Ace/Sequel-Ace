@@ -179,6 +179,20 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 1, through: 2 + SAInFlightQuery.rememberedOwners + 1))
     }
 
+    /// After many queries, the owners of the latest numbers are still known.
+    func testTheLatestOwnersAreKnownAfterManyQueries() {
+        for generation: UInt in 1...200 {
+            inFlightQuery.noteLatestGeneration(generation, ownedByQueryStartedAt: generation == 199 ? 0 : generation)
+        }
+
+        inFlightQuery.requestCancellation(ofGeneration: 190)
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 180, through: 200))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 190, through: 190))
+
+        inFlightQuery.requestCancellation(ofGeneration: 199)
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 180, through: 200))
+    }
+
     /// No request was made before any query ran.
     func testNoRequestMatchesBeforeAnyWasMade() {
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 0, through: 0))
