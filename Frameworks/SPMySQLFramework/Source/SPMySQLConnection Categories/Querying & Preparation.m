@@ -94,11 +94,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// record, while the value is going to be sent on the session that replaces it - whose handshake
 	// uses the character set on record. Such a value is escaped for that character set, without
 	// waiting for the new session.
+	// A character set the client library does not know leaves nothing safe to escape with.
 	MYSQL *escapingHandle = mySQLConnection;
-	MYSQL *recordedEncodingHandle = NULL;
+	SAOfflineEscapingHandle *recordedEncodingHandle __attribute__((objc_precise_lifetime)) = nil;
 	if (sessionMustBeReplacedBeforeUse) {
-		recordedEncodingHandle = [self _newEscapingHandleForRecordedEncoding];
-		if (recordedEncodingHandle) escapingHandle = recordedEncodingHandle;
+		recordedEncodingHandle = [SAOfflineEscapingHandle handleForCharacterSet:encoding escapingModeOfConnection:mySQLConnection];
+		if (!recordedEncodingHandle) return nil;
+		escapingHandle = (MYSQL *)[recordedEncodingHandle rawHandle];
 	}
 
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
@@ -129,12 +131,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 			NSString *theErrorMessage = [self _stringForCString:mysql_error(escapingHandle)];
 			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
 			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
-			if (recordedEncodingHandle) mysql_close(recordedEncodingHandle);
 			free(escBuffer);
 			return nil;
 		}
 	}
-	if (recordedEncodingHandle) mysql_close(recordedEncodingHandle);
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
 	// any nul characters contained in the string.
@@ -881,31 +881,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 	state = SPMySQLConnectionLostInBackground;
 	sessionWasClosedWithoutItsProxy = YES;
-}
-
-/**
- * Makes a handle that escapes values for the character set on record. The handle is never
- * connected: the client library then changes its character set without asking a server. It
- * takes over the current session's escaping mode (NO_BACKSLASH_ESCAPES), which is what the
- * connection's own handle would use too.
- *
- * @return The handle, to be closed with mysql_close(), or NULL if the character set is unknown to
- *         the client library.
- */
-- (MYSQL *)_newEscapingHandleForRecordedEncoding
-{
-	MYSQL *handle = mysql_init(NULL);
-	if (!handle) return NULL;
-
-	if (mysql_set_character_set(handle, [encoding UTF8String]) != 0) {
-		mysql_close(handle);
-		return NULL;
-	}
-
-	MYSQL *sessionHandle = mySQLConnection;
-	if (sessionHandle) handle->server_status = sessionHandle->server_status;
-
-	return handle;
 }
 
 /**

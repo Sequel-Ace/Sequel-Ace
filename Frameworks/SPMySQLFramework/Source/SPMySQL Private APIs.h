@@ -118,8 +118,6 @@
 - (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation;
 /** Takes the connection for a query, reconnecting first if it was closed meanwhile. */
 - (BOOL)_lockUsableConnectionForQuery;
-/** A never-connected handle escaping for the character set on record; close it with mysql_close(). */
-- (MYSQL *)_newEscapingHandleForRecordedEncoding;
 /** Closes the session of a query that finished after nobody waited for it; the connection must be held. */
 - (void)_closeSessionOfAbandonedQuery;
 

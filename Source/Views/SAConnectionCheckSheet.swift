@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import SwiftUI
 
 /// What the sheet of one wait shows.
 enum SAConnectionWaitSheetState: Equatable {
@@ -28,6 +29,60 @@ struct SAConnectionWaitSheetInput {
     let isSuspended: Bool
     /// Whether the work finished or the waiting was ended.
     let hasEnded: Bool
+}
+
+/// What the wait sheet says. The wait's event loop keeps it up to date.
+final class SAConnectionCheckSheetModel: ObservableObject {
+    /// The line under the title: how long the server has been silent, or why the sheet stays.
+    @Published var detail = ""
+    /// Whether the wait is over and the sheet only holds its window, with nothing left to press.
+    @Published var isFinishing = false
+    /// Stops the wait; called by the button.
+    let stop: () -> Void
+
+    /// Creates the model for one sheet.
+    /// - Parameter stop: What the button does.
+    init(stop: @escaping () -> Void) {
+        self.stop = stop
+    }
+}
+
+/// The content of the wait sheet.
+struct SAConnectionCheckSheetView: View {
+    @ObservedObject var model: SAConnectionCheckSheetModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(verbatim: NSLocalizedString("Waiting for the server…", comment: "connection wait sheet title"))
+                .bold()
+            Text(verbatim: model.detail)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            ProgressView()
+                .progressViewStyle(.linear)
+            HStack {
+                Spacer()
+                Button(NSLocalizedString("Stop Waiting", comment: "connection wait sheet cancel button"), action: model.stop)
+                    .keyboardShortcut(.cancelAction)
+                    .disabled(model.isFinishing)
+            }
+        }
+        .padding(20)
+        .frame(width: 380)
+    }
+}
+
+/// The sheet window of one wait, hosting its SwiftUI content.
+@objc final class SAConnectionCheckSheetWindowController: NSWindowController {
+
+    /// Builds the sheet window around the content for a model.
+    /// - Parameter model: What the sheet shows.
+    convenience init(model: SAConnectionCheckSheetModel) {
+        let hostingController = NSHostingController(rootView: SAConnectionCheckSheetView(model: model))
+        let window = NSWindow(contentViewController: hostingController)
+        window.styleMask = [.titled]
+        self.init(window: window)
+    }
 }
 
 /// The wait a window shows while its connection is busy with something that takes seconds.
@@ -57,9 +112,8 @@ final class SAConnectionCheckSheet: NSObject {
     /// The waits going on, innermost last. Only the main thread touches this.
     private static var activeWaits: [SAConnectionCheckSheet] = []
 
-    private var sheetWindow: NSWindow?
-    private var elapsedLabel: NSTextField?
-    private var cancelButton: NSButton?
+    private var sheetController: SAConnectionCheckSheetWindowController?
+    private var sheetModel: SAConnectionCheckSheetModel?
     private var startDate: Date?
     private weak var presentingWindow: NSWindow?
     private weak var documentWindow: NSWindow?
@@ -116,7 +170,7 @@ final class SAConnectionCheckSheet: NSObject {
             wait.dismissSheet()
         }
         for (wait, state) in zip(waits, states) where state != .hidden {
-            if wait.sheetWindow == nil {
+            if wait.sheetController == nil {
                 wait.present(on: wait.documentWindow)
             }
             if state == .finishing {
@@ -193,53 +247,20 @@ final class SAConnectionCheckSheet: NSObject {
     /// Builds the sheet and puts it on the window.
     /// - Parameter window: The window to show it on, if it can still show one.
     private func present(on window: NSWindow?) {
-        guard let window, window.isVisible, window.attachedSheet == nil, sheetWindow == nil else {
+        guard let window, window.isVisible, window.attachedSheet == nil, sheetController == nil else {
             return
         }
 
-        let title = NSTextField(labelWithString: NSLocalizedString("Waiting for the server…", comment: "connection wait sheet title"))
-        title.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
+        let model = SAConnectionCheckSheetModel { [weak self] in
+            self?.cancelButtonPressed()
+        }
+        let controller = SAConnectionCheckSheetWindowController(model: model)
+        guard let sheet = controller.window else {
+            return
+        }
 
-        let elapsed = NSTextField(labelWithString: "")
-        elapsed.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        elapsed.textColor = .secondaryLabelColor
-        elapsedLabel = elapsed
-
-        let progress = NSProgressIndicator()
-        progress.style = .bar
-        progress.isIndeterminate = true
-        progress.startAnimation(nil)
-
-        let cancelButton = NSButton(
-            title: NSLocalizedString("Stop Waiting", comment: "connection wait sheet cancel button"),
-            target: self,
-            action: #selector(cancelButtonPressed)
-        )
-        cancelButton.keyEquivalent = "\u{1b}"
-        self.cancelButton = cancelButton
-
-        let buttonRow = NSStackView(views: [NSView(), cancelButton])
-        buttonRow.orientation = .horizontal
-
-        let content = NSStackView(views: [title, elapsed, progress, buttonRow])
-        content.orientation = .vertical
-        content.alignment = .leading
-        content.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
-        content.spacing = 12
-        content.translatesAutoresizingMaskIntoConstraints = false
-
-        let sheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 150),
-                             styleMask: [.titled],
-                             backing: .buffered,
-                             defer: true)
-        sheet.contentView = content
-        NSLayoutConstraint.activate([
-            content.widthAnchor.constraint(equalToConstant: 380),
-            progress.widthAnchor.constraint(equalToConstant: 340),
-            buttonRow.widthAnchor.constraint(equalToConstant: 340)
-        ])
-
-        sheetWindow = sheet
+        sheetModel = model
+        sheetController = controller
         presentingWindow = window
         if startDate == nil {
             startDate = Date()
@@ -251,20 +272,22 @@ final class SAConnectionCheckSheet: NSObject {
 
     /// Takes the sheet down again.
     private func dismissSheet() {
-        if let sheetWindow, let presentingWindow {
-            presentingWindow.endSheet(sheetWindow)
-            sheetWindow.orderOut(nil)
+        if let sheet = sheetController?.window, let presentingWindow {
+            presentingWindow.endSheet(sheet)
+            sheet.orderOut(nil)
         }
-        sheetWindow = nil
+        sheetController = nil
+        sheetModel = nil
         presentingWindow = nil
-        elapsedLabel = nil
-        cancelButton = nil
     }
 
     /// Says that the wait is over and the window is only held until another window's wait ends.
     private func showFinishing() {
-        cancelButton?.isEnabled = false
-        elapsedLabel?.stringValue = NSLocalizedString(
+        guard let sheetModel, !sheetModel.isFinishing else {
+            return
+        }
+        sheetModel.isFinishing = true
+        sheetModel.detail = NSLocalizedString(
             "Continues once the other window has finished waiting.",
             comment: "connection wait sheet note while a finished wait is held up by another window's wait"
         )
@@ -283,15 +306,19 @@ final class SAConnectionCheckSheet: NSObject {
 
     /// Says how long the wait has lasted, so it is clear that something is still happening.
     private func updateElapsedTime() {
-        guard let startDate, let elapsedLabel else {
+        guard let startDate, let sheetModel, !sheetModel.isFinishing else {
             return
         }
 
+        // The loop comes by every few milliseconds; the sheet only changes once a second.
         let seconds = Int(Date().timeIntervalSince(startDate))
-        elapsedLabel.stringValue = String(
+        let detail = String(
             format: NSLocalizedString("The server has not answered for %ld seconds.", comment: "connection wait sheet elapsed time, %ld is a number of seconds"),
             seconds
         )
+        if sheetModel.detail != detail {
+            sheetModel.detail = detail
+        }
     }
 
     /// Ends the wait when the button is pressed, which is the user asking for the work to stop.

@@ -1340,7 +1340,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > attemptConnectTimeout) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > [_proxyReconnectCoordinator idleWaitLimitForConnectTimeout:attemptConnectTimeout]) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
@@ -1357,6 +1357,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 			if (!reuseProxy) [proxy connect];
 
 			// Wait while the proxy connects
+			SAProxyConnectWait *connectWait = [[SAProxyConnectWait alloc] initWithConnectTimeout:attemptConnectTimeout];
 			proxyWaitStart_t = _monotonicTime();
 			while (1) {
 				if ([self _abortCancelledReconnectWhileLocked]) return NO;
@@ -1373,8 +1374,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 					break;
 				}
 
-				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (attemptConnectTimeout + 1)) {
+				// If the proxy connection attempt has run out of time, or ended without connecting, break out of the loop.
+				if (![connectWait shouldKeepWaitingAfter:_timeIntervalSinceMonotonicTime(proxyWaitStart_t)
+				                               proxyState:[proxy state]
+				                           attemptPending:connectionAttemptPending]) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;

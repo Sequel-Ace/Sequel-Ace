@@ -96,6 +96,8 @@
 		A296B829FB2005B17DB7EA5E /* SADatabaseAssertionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */; };
 		6D4B7AA108824D1FB65A97DB /* SAConnectionCheckBudgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EB02B9D2AC42659EC5D880 /* SAConnectionCheckBudgetTests.swift */; };
 		7C2E91A4D05B4F3E8A61B2C9 /* SAProxyReconnectCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A1D07F3B9C4E62A8D5F013 /* SAProxyReconnectCoordinatorTests.swift */; };
+		93512D36305AE961004CD06D /* SAOfflineEscapingHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93512D35305AE961004CD06D /* SAOfflineEscapingHandle.swift */; };
+		93512D38305AE966004CD06D /* SAOfflineEscapingHandleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93512D37305AE966004CD06D /* SAOfflineEscapingHandleTests.swift */; };
 		1FB20C40D27743398C039CBF /* SAConnectionLivenessProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAED270722A04F45B6D1C08B /* SAConnectionLivenessProbeTests.swift */; };
 		D15BA58B98D64171AD64A4A4 /* SAConnectionRetryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EF01454440844DBAA25C322 /* SAConnectionRetryPolicyTests.swift */; };
 		B192A2FAE5D5445D92D48630 /* SAConnectionSocketTimeoutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A751EC9B093843509C8FBA9B /* SAConnectionSocketTimeoutsTests.swift */; };
@@ -160,6 +162,8 @@
 		20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseAssertionTests.swift; sourceTree = "<group>"; };
 		B6EB02B9D2AC42659EC5D880 /* SAConnectionCheckBudgetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCheckBudgetTests.swift; sourceTree = "<group>"; };
 		E4A1D07F3B9C4E62A8D5F013 /* SAProxyReconnectCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAProxyReconnectCoordinatorTests.swift; sourceTree = "<group>"; };
+		93512D35305AE961004CD06D /* SAOfflineEscapingHandle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAOfflineEscapingHandle.swift; path = Source/SAOfflineEscapingHandle.swift; sourceTree = "<group>"; };
+		93512D37305AE966004CD06D /* SAOfflineEscapingHandleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAOfflineEscapingHandleTests.swift; sourceTree = "<group>"; };
 		DAED270722A04F45B6D1C08B /* SAConnectionLivenessProbeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionLivenessProbeTests.swift; sourceTree = "<group>"; };
 		5EF01454440844DBAA25C322 /* SAConnectionRetryPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionRetryPolicyTests.swift; sourceTree = "<group>"; };
 		A751EC9B093843509C8FBA9B /* SAConnectionSocketTimeoutsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSocketTimeoutsTests.swift; sourceTree = "<group>"; };
@@ -381,6 +385,7 @@
 				0EA5700AA759774A87FC447F /* SPMySQL.modulemap */,
 				1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */,
 				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
+				93512D35305AE961004CD06D /* SAOfflineEscapingHandle.swift */,
 				A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */,
 			);
 			name = "Other Sources";
@@ -396,6 +401,7 @@
 				20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */,
 				B6EB02B9D2AC42659EC5D880 /* SAConnectionCheckBudgetTests.swift */,
 				E4A1D07F3B9C4E62A8D5F013 /* SAProxyReconnectCoordinatorTests.swift */,
+				93512D37305AE966004CD06D /* SAOfflineEscapingHandleTests.swift */,
 				DAED270722A04F45B6D1C08B /* SAConnectionLivenessProbeTests.swift */,
 				5EF01454440844DBAA25C322 /* SAConnectionRetryPolicyTests.swift */,
 				A751EC9B093843509C8FBA9B /* SAConnectionSocketTimeoutsTests.swift */,
@@ -762,6 +768,7 @@
 				A296B829FB2005B17DB7EA5E /* SADatabaseAssertionTests.swift in Sources */,
 				6D4B7AA108824D1FB65A97DB /* SAConnectionCheckBudgetTests.swift in Sources */,
 				7C2E91A4D05B4F3E8A61B2C9 /* SAProxyReconnectCoordinatorTests.swift in Sources */,
+				93512D38305AE966004CD06D /* SAOfflineEscapingHandleTests.swift in Sources */,
 				1FB20C40D27743398C039CBF /* SAConnectionLivenessProbeTests.swift in Sources */,
 				D15BA58B98D64171AD64A4A4 /* SAConnectionRetryPolicyTests.swift in Sources */,
 				B192A2FAE5D5445D92D48630 /* SAConnectionSocketTimeoutsTests.swift in Sources */,
@@ -812,6 +819,7 @@
 				412ECD26654049088134CFC9 /* SAInFlightQuery.swift in Sources */,
 				FECBBB22A70541849BC0FC93 /* SAConnectionCancellation.swift in Sources */,
 				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
+				93512D36305AE961004CD06D /* SAOfflineEscapingHandle.swift in Sources */,
 				444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
