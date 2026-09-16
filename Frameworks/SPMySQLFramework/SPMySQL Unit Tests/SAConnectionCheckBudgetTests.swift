@@ -38,6 +38,12 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         )
     }
 
+    func testASideConnectionNeverWaitsLongForAnAnswer() {
+        // The client library tries a read three times.
+        XCTAssertLessThanOrEqual(SAConnectionCheckBudget.sideConnectionAnswerTimeout() * 3, 10)
+        XCTAssertGreaterThan(SAConnectionCheckBudget.sideConnectionAnswerTimeout(), 0)
+    }
+
     func testCheckStaysWellBelowTheDefaultTimeout() {
         let worstCase = Double(SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: 30))
             + SAConnectionCheckBudget.networkWait(forConfiguredTimeout: 30)

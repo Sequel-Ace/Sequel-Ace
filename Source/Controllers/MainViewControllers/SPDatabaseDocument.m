@@ -1299,10 +1299,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)taskControllerDidRequestCancellation
 {
-    // See whether there is an active database structure task and whether it can be used
-    // to cancel the query, for speed (no connection overhead!)
+    // The query this is about is the one running now. By the time the cancellation gets to run,
+    // that query can have finished and another one taken over the connection, and that one was
+    // not what anybody asked to stop - so the request is tied to this query, and only sent while
+    // it is still running.
     SPMySQLConnection *connectionToCancel = mySQLConnection;
-    SPMySQLConnection *structureConnection = [databaseStructureRetrieval connection];
+    NSUInteger queryToCancel = [connectionToCancel currentQueryGeneration];
 
     // Asking a server to stop means reaching it: over the structure connection, or over a new
     // one opened for the purpose. Either can wait as long as the query being cancelled, so the
@@ -1310,12 +1312,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // is already off the main thread keeps the cancellation synchronous, because callers like
     // the field-removal task hold a lock across it and rely on it having happened on return.
     void (^cancelTheQuery)(void) = ^{
-        if (structureConnection) {
-            [connectionToCancel setLastQueryWasCancelled:YES];
-            [structureConnection killQueryOnThreadID:[connectionToCancel mysqlConnectionThreadId]];
-        } else {
-            [connectionToCancel cancelCurrentQuery];
-        }
+        [connectionToCancel cancelQueryIfStillRunning:queryToCancel];
     };
 
     if ([NSThread isMainThread]) {
@@ -6034,7 +6031,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
-    SPMainQSync(^{
+    // The connection asks for this from whichever thread its query runs on, and a query can have
+    // been started from a block on the main queue. Waiting for that queue here would mean the
+    // query waits for the block that is waiting for the query, so the note is only handed over.
+    dispatch_async(dispatch_get_main_queue(), ^{
         if ([[self.parentWindowController window] isVisible]) {
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
@@ -6052,6 +6052,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Close the connection - should be performed on the main thread.
  */
+/**
+ * Whether this document still holds its connection. A lost connection that can still come back
+ * counts as held; only closing the connection, which also closes the window, ends it.
+ */
+- (BOOL)connectionIsOpen
+{
+    return _isConnected;
+}
+
 - (void)closeAndDisconnect {
 
     _isConnected = NO;

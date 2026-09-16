@@ -62,9 +62,10 @@
 - (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
 - (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
 - (BOOL)_workShouldRunOffMainThread;
+- (void)_keepConnectionRecoverableAfterCancellation;
+- (void)_discardConnectionMadeAfterCancellation;
 - (void)_recordWorkAsCancelled;
-- (BOOL)_connectionIsStillBusy;
-- (void)_closeSocketOfUnansweredConnection;
+- (void)_settleAbandonedWorkFromGeneration:(NSUInteger)generation;
 - (BOOL)_abortCancelledReconnectWhileLocked;
 - (void)_disconnect;
 - (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;
@@ -106,6 +107,10 @@
 @end
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation;
+- (BOOL)_lockUsableConnectionForQuery;
+- (void)_closeSessionOfAbandonedQuery;
 
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;

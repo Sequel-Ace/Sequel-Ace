@@ -56,7 +56,27 @@ public final class SAProxyReconnectCoordinator: NSObject {
         if Thread.isMainThread {
             disconnect()
         } else {
-            DispatchQueue.main.sync(execute: disconnect)
+            Self.runOnMainRunLoopAndWait(disconnect)
         }
+    }
+
+    /// Runs a block on the main thread and waits for it, by way of the main run loop.
+    ///
+    /// Connection work can run on its own thread while the main thread waits for it from inside a
+    /// block on the main queue. That queue runs one block at a time, so `DispatchQueue.main.sync`
+    /// would wait for a wait that is waiting for it. The main run loop keeps turning meanwhile, and
+    /// a run loop block does not need the main queue to be free. The application does the same for
+    /// what it asks the main thread from connection work (`SAMainRunLoop`).
+    /// - Parameter block: The work to do on the main thread.
+    private static func runOnMainRunLoopAndWait(_ block: @escaping () -> Void) {
+        let finished = DispatchSemaphore(value: 0)
+        RunLoop.main.perform(inModes: [.common]) {
+            block()
+            finished.signal()
+        }
+
+        // A block handed to a run loop does not wake it.
+        CFRunLoopWakeUp(CFRunLoopGetMain())
+        finished.wait()
     }
 }

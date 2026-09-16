@@ -31,6 +31,7 @@
 // This class is private to the framework.
 
 #import "Locking.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import "SPMySQL Private APIs.h"
 
 @implementation SPMySQLConnection (Locking)
@@ -93,6 +94,10 @@
 		SPLog(@"SPMySQLConnection: Discarding unretrieved results. This is currently normal when using CALL.");
 		[self _flushMultipleResultSets];
 	}
+
+	// Whatever held the connection is no longer waiting on the server - a streaming result gets
+	// here only once its download is over, so a cancellation can reach it until then.
+	[inFlightQuery endWaitingForGeneration:queryGeneration];
 
 	// Tell everyone that the connection is available again
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];

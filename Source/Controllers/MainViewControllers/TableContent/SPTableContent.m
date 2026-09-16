@@ -2823,11 +2823,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
         isSavingRow = NO;
 		return YES;
-	} else if (![mySQLConnection isConnected]) {
+	} else if (![tableDocumentInstance connectionIsOpen]) {
 
-		// Without a connection there is nothing to write the row to and nothing to decide:
-		// keeping it in edit state and discarding it come to the same thing, and the window
-		// this row belongs to is on its way out.
+		// The user closed the connection, and with it the window this row belongs to. There is
+		// nothing left to write the row to and nothing to decide. A connection that was merely
+		// lost does not count: the edit is kept for when it comes back.
 		[self cancelRowEditing];
 		[tableContentView reloadData];
 

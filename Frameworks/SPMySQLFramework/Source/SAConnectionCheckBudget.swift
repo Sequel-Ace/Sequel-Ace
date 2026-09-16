@@ -33,6 +33,14 @@ public final class SAConnectionCheckBudget: NSObject {
     /// The longest an attempt waits once the user has said they will not wait, in seconds.
     public static let endedWaitConnectLimit: UInt = 1
 
+    /// How long a side connection waits for each answer from the server, in seconds.
+    ///
+    /// A side connection sends one short statement - asking the server to kill a query - while the
+    /// query it concerns is held still. A server that accepted the connection and then stopped
+    /// answering must not keep that query held for as long as it likes. The client library retries
+    /// a read up to three times, so the whole wait is at most three times this.
+    public static let sideConnectionAnswerLimit: UInt = 2
+
     /// The ping timeout a connection check uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
     /// - Returns: The shorter of the configured timeout and ``pingLimit``, in seconds.
@@ -67,6 +75,13 @@ public final class SAConnectionCheckBudget: NSObject {
     @objc(connectTimeoutAfterEndedWaitForConfiguredTimeout:)
     public static func connectTimeoutAfterEndedWait(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
         capped(configuredTimeout, to: endedWaitConnectLimit)
+    }
+
+    /// The read and write timeout for a side connection, which only ever asks the server to kill a query.
+    /// - Returns: ``sideConnectionAnswerLimit``, in seconds.
+    @objc(sideConnectionAnswerTimeout)
+    public static func sideConnectionAnswerTimeout() -> UInt {
+        sideConnectionAnswerLimit
     }
 
     /// Caps a configured timeout at one of the check limits.

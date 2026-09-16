@@ -13,9 +13,17 @@ import XCTest
 final class SAConnectionWorkCoordinatorTests: XCTestCase {
     private let coordinator = SAConnectionWorkCoordinator()
 
+    /// Runs work with a fixed operation stamp and an interface that never waits.
+    private func run(_ work: @escaping () -> Any?,
+                     stamp: @escaping () -> UInt = { 1 },
+                     whenSlow: (_ isFinished: @escaping () -> Bool) -> Void = { _ in },
+                     whenAbandonedWorkFinishes: @escaping (_ abandonedAtStamp: UInt) -> Void = { _ in }) -> SAConnectionWorkOutcome {
+        coordinator.run(work, operationStamp: stamp, whenSlow: whenSlow, whenAbandonedWorkFinishes: whenAbandonedWorkFinishes)
+    }
+
     func testQuickWorkIsNeverHandedToTheInterface() {
         var interfaceWasAsked = false
-        let outcome = coordinator.run({ "done" }, whenSlow: { _ in interfaceWasAsked = true }, whenAbandonedWorkFinishes: {})
+        let outcome = run({ "done" }, whenSlow: { _ in interfaceWasAsked = true })
 
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? String, "done")
@@ -24,20 +32,20 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
     func testWorkRunsAwayFromTheCallingThread() {
         let callingThread = Thread.current
-        let outcome = coordinator.run({ Thread.current == callingThread }, whenSlow: { _ in }, whenAbandonedWorkFinishes: {})
+        let outcome = run({ Thread.current == callingThread })
 
         XCTAssertEqual(outcome.result as? Bool, false)
     }
 
     func testSlowWorkIsWaitedForByTheInterface() {
-        let outcome = coordinator.run({
+        let outcome = run({
             Thread.sleep(forTimeInterval: 0.4)
             return "late"
         }, whenSlow: { isFinished in
             while !isFinished() {
                 usleep(5_000)
             }
-        }, whenAbandonedWorkFinishes: {})
+        })
 
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? String, "late")
@@ -46,38 +54,105 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
     func testAnInterfaceThatStopsWaitingGetsNoResult() {
         let workStarted = DispatchSemaphore(value: 0)
         let workMayFinish = DispatchSemaphore(value: 0)
-        let abandonedWorkReportedBack = DispatchSemaphore(value: 0)
+        let lateCompletionReported = DispatchSemaphore(value: 0)
 
-        let outcome = coordinator.run({
+        let outcome = run({
             workStarted.signal()
             workMayFinish.wait()
             return "too late"
-        }, whenSlow: { _ in
-            // The interface gives up rather than waiting for the work to finish.
-        }, whenAbandonedWorkFinishes: {
-            abandonedWorkReportedBack.signal()
+        }, whenAbandonedWorkFinishes: { abandonedAtStamp in
+            XCTAssertEqual(abandonedAtStamp, 1)
+            lateCompletionReported.signal()
         })
 
         XCTAssertFalse(outcome.finished)
+        XCTAssertTrue(outcome.wasAbandoned)
         XCTAssertNil(outcome.result)
 
         XCTAssertEqual(workStarted.wait(timeout: .now() + 2), .success)
         workMayFinish.signal()
 
-        // The work that nobody waited for says so when it finally finishes.
-        XCTAssertEqual(abandonedWorkReportedBack.wait(timeout: .now() + 2), .success)
+        // Nothing else happened on the connection, so the work that nobody waited for says so.
+        XCTAssertEqual(lateCompletionReported.wait(timeout: .now() + 2), .success)
+        XCTAssertNil(outcome.result)
+    }
+
+    func testALateCompletionLeavesANewerOperationAlone() {
+        var currentOperation: UInt = 1
+        let operationLock = NSLock()
+        let stamp: () -> UInt = {
+            operationLock.lock()
+            defer { operationLock.unlock() }
+            return currentOperation
+        }
+        let workMayFinish = DispatchSemaphore(value: 0)
+        let workFinished = DispatchSemaphore(value: 0)
+        var lateCompletionCalled = false
+
+        _ = run({
+            workMayFinish.wait()
+            return nil
+        }, stamp: stamp, whenAbandonedWorkFinishes: { _ in
+            lateCompletionCalled = true
+        })
+
+        // Another operation takes over the connection before the abandoned work finishes.
+        operationLock.lock()
+        currentOperation = 2
+        operationLock.unlock()
+
+        _ = run({
+            workFinished.signal()
+            return nil
+        }, stamp: stamp)
+        workMayFinish.signal()
+        XCTAssertEqual(workFinished.wait(timeout: .now() + 2), .success)
+        Thread.sleep(forTimeInterval: 0.2)
+
+        XCTAssertFalse(lateCompletionCalled)
+    }
+
+    func testQueuedWorkThatWasAbandonedNeverActsAsIfItWereStillWanted() {
+        let firstWorkMayFinish = DispatchSemaphore(value: 0)
+        let queuedWorkRan = DispatchSemaphore(value: 0)
+        var queuedWorkSawItselfAbandoned = false
+
+        // A nested wait queues a second piece of work behind the first on the same thread, and
+        // gives up on it while it is still queued.
+        _ = run({
+            firstWorkMayFinish.wait()
+            return nil
+        }, whenSlow: { _ in
+            _ = self.run({
+                queuedWorkSawItselfAbandoned = SAConnectionWorkCoordinator.currentWorkHasBeenAbandoned
+                queuedWorkRan.signal()
+                return nil
+            })
+        })
+
+        firstWorkMayFinish.signal()
+
+        // The thread it was queued on has been given up, so the work either never runs at all or
+        // runs knowing that nobody wants it any more. Either way it must not act as if it were.
+        if queuedWorkRan.wait(timeout: .now() + 1) == .success {
+            XCTAssertTrue(queuedWorkSawItselfAbandoned)
+        }
+    }
+
+    func testWorkIsNotAbandonedOnTheCallersThread() {
+        XCTAssertFalse(SAConnectionWorkCoordinator.currentWorkHasBeenAbandoned)
     }
 
     func testWorkThatWasAbandonedDoesNotHoldUpWhatFollows() {
         let stuckWorkMayFinish = DispatchSemaphore(value: 0)
 
-        _ = coordinator.run({
+        _ = run({
             stuckWorkMayFinish.wait()
             return nil
-        }, whenSlow: { _ in }, whenAbandonedWorkFinishes: {})
+        })
 
         // The thread the abandoned work sits on must not be the one the next work waits for.
-        let outcome = coordinator.run({ "next" }, whenSlow: { _ in }, whenAbandonedWorkFinishes: {})
+        let outcome = run({ "next" })
 
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? String, "next")
@@ -88,7 +163,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
     func testTheNextPieceOfWorkStillRunsAfterACancellation() {
         coordinator.cancel()
 
-        let outcome = coordinator.run({ 42 }, whenSlow: { _ in }, whenAbandonedWorkFinishes: {})
+        let outcome = run({ 42 })
 
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? Int, 42)

@@ -10,17 +10,59 @@
 import Foundation
 
 /// What came of a piece of connection work, and whether it was still being waited for.
+///
+/// Two threads decide this together: the worker, when the work finishes, and the waiting side,
+/// when it stops waiting. Both happen under one lock, so exactly one of them is first - work that
+/// finished just as the waiting ended counts as finished, and work given up on first counts as
+/// given up on, however the two moments fall.
 @objc(SAConnectionWorkOutcome)
 public final class SAConnectionWorkOutcome: NSObject {
 
-    /// What the work returned, if it finished while it was still being waited for.
-    @objc public var result: Any?
+    private let lock = NSLock()
+    private var storedResult: Any?
+    private var workHasFinished = false
+    private var abandonedAtStamp: UInt?
 
     /// Whether the work finished before the waiting ended.
     @objc public var finished = false
 
+    /// What the work returned, or nil if it was given up on.
+    @objc public var result: Any? {
+        lock.lock()
+        defer { lock.unlock() }
+        return abandonedAtStamp == nil ? storedResult : nil
+    }
+
     /// Whether the waiting ended before the work did, so that its answer is nobody's any more.
-    @objc public var wasAbandoned = false
+    @objc public var wasAbandoned: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return abandonedAtStamp != nil
+    }
+
+    /// Records what the work returned. Called by the worker once the work is done.
+    /// - Parameter result: What the work returned.
+    /// - Returns: The operation the connection was on when the work was given up on, if it was.
+    func storeResult(_ result: Any?) -> UInt? {
+        lock.lock()
+        defer { lock.unlock() }
+        storedResult = result
+        workHasFinished = true
+        return abandonedAtStamp
+    }
+
+    /// Gives the work up, unless it has already finished.
+    /// - Parameter stamp: The operation the connection is on right now.
+    /// - Returns: Whether the work was given up on; false if it had finished after all.
+    func abandon(atStamp stamp: UInt) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !workHasFinished else {
+            return false
+        }
+        abandonedAtStamp = stamp
+        return true
+    }
 }
 
 /// Runs the small block of work handed to it on another thread.
@@ -56,7 +98,21 @@ public final class SAConnectionWorkCoordinator: NSObject {
     /// How long the worker's run loop waits for the next piece of work before looking around, in seconds.
     private static let workerIdleInterval: TimeInterval = 1
 
+    /// The key that marks a thread as one of the coordinators' workers.
+    private static let workerThreadMarker = "SAConnectionWorkCoordinatorWorker"
+
     private var workerThread: Thread?
+
+    /// Whether the work running on the current thread is work that nobody is waiting for any more.
+    ///
+    /// Work is given up on while it can still be queued, or waiting for the connection. By the
+    /// time it gets the connection its caller has long been told it was cancelled, and a statement
+    /// that changes data must not run after all. Work asks this once it holds the connection, and
+    /// before it sends anything.
+    @objc public static var currentWorkHasBeenAbandoned: Bool {
+        let thread = Thread.current
+        return thread.threadDictionary[workerThreadMarker] != nil && thread.isCancelled
+    }
 
     /// Runs work off the main thread, waiting for it quietly first and visibly afterwards.
     /// - Parameters:
@@ -64,25 +120,30 @@ public final class SAConnectionWorkCoordinator: NSObject {
     ///   - waitForFinish: Called only when the work outlasts the quiet wait. It receives a block
     ///     that reports whether the work has finished, and is expected to keep the interface
     ///     answering until that block says yes - or to return earlier, ending the wait.
+    ///   - operationStamp: Identifies the operation the connection is on, and changes whenever a
+    ///     new one starts. A late completion only speaks for the operation it belonged to.
     ///   - lateCompletion: Called on the worker's thread if the work finishes after the waiting
-    ///     ended, so that what was reported to the caller in the meantime can be kept.
+    ///     ended - and only while no other operation has started since - so that what was reported
+    ///     to the caller in the meantime can be kept without touching anybody else's result. It is
+    ///     given the operation the waiting ended on, to check again under its own lock.
     /// - Returns: What the work returned, and whether it finished before the waiting ended.
-    @objc(runWork:whenSlow:whenAbandonedWorkFinishes:)
+    @objc(runWork:operationStamp:whenSlow:whenAbandonedWorkFinishes:)
     public func run(_ work: @escaping () -> Any?,
+                    operationStamp: @escaping () -> UInt,
                     whenSlow waitForFinish: (_ isFinished: @escaping () -> Bool) -> Void,
-                    whenAbandonedWorkFinishes lateCompletion: @escaping () -> Void) -> SAConnectionWorkOutcome {
+                    whenAbandonedWorkFinishes lateCompletion: @escaping (_ abandonedAtStamp: UInt) -> Void) -> SAConnectionWorkOutcome {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
         let item = SAConnectionWorkItem {
             let result = work()
 
             // Nobody is waiting for this any more, and what the caller was told instead has to
-            // stand: it was told this work did not happen.
-            if outcome.wasAbandoned {
-                lateCompletion()
+            // stand - unless the connection has moved on to other work since, whose result is
+            // that work's own.
+            if let abandonedAtStamp = outcome.storeResult(result), operationStamp() == abandonedAtStamp {
+                lateCompletion(abandonedAtStamp)
             }
 
-            outcome.result = result
             workFinished.signal()
         }
 
@@ -102,15 +163,16 @@ public final class SAConnectionWorkCoordinator: NSObject {
         }
 
         // Work nobody waited for to the end keeps running, and what it returns is nobody's
-        // answer any more.
+        // answer any more - unless it finished in the very moment the waiting ended.
         if !outcome.finished {
-            outcome.wasAbandoned = true
-            outcome.result = nil
-
-            // That work can hold this thread for as long as the server takes to answer, or for
-            // as long as the network takes to give up on it. The next piece of work gets a
-            // thread of its own rather than a place in the queue behind it.
-            cancel()
+            if outcome.abandon(atStamp: operationStamp()) {
+                // That work can hold this thread for as long as the server takes to answer, or
+                // for as long as the network takes to give up on it. The next piece of work gets
+                // a thread of its own rather than a place in the queue behind it.
+                cancel()
+            } else {
+                outcome.finished = true
+            }
         }
 
         return outcome
@@ -136,6 +198,7 @@ public final class SAConnectionWorkCoordinator: NSObject {
         // for a connection's lifetime would otherwise keep it alive for the application's.
         let thread = Thread { [weak self] in
             let thisThread = Thread.current
+            thisThread.threadDictionary[Self.workerThreadMarker] = true
             let runLoop = RunLoop.current
 
             // A run loop with nothing in it returns at once, so it is given something that
@@ -145,7 +208,7 @@ public final class SAConnectionWorkCoordinator: NSObject {
 
             while !thisThread.isCancelled && self != nil {
                 autoreleasepool {
-                    runLoop.run(mode: .default, before: Date().addingTimeInterval(Self.workerIdleInterval))
+                    _ = runLoop.run(mode: .default, before: Date().addingTimeInterval(Self.workerIdleInterval))
                 }
             }
 
