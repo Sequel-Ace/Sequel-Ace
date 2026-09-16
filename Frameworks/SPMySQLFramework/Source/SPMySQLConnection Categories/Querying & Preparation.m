@@ -489,7 +489,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				[self _unlockConnection];
 				return nil;
 			}
-			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
+			if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
 				lastQueryWasCancelled = YES;
 				[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
 				[self _unlockConnection];
@@ -538,7 +538,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 			// A request to stop can arrive while the query is losing its connection, before anything
 			// has reached the server; it still means the statement must not be sent again.
-			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
+			if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
 				lastQueryWasCancelled = YES;
 			}
 
@@ -575,7 +575,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 
 		// Stopping can also have been asked for while the connection was being checked.
-		if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
+		if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
 			lastQueryWasCancelled = YES;
 			[self _unlockConnection];
 			[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
@@ -584,8 +584,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			return nil;
 		}
 
-		// Reconnecting ran queries of its own, each with its own number. The retry is what runs
-		// now, and a cancellation has to be able to find it under the current one.
+		// Reconnecting ran queries of its own, each with its own number and each saying whether it
+		// was cancelled. The retry is what runs now: it starts out not cancelled, and a cancellation
+		// has to be able to find it under the current number.
+		lastQueryWasCancelled = NO;
 		thisQueryGeneration = ++queryGeneration;
 		[inFlightQuery noteLatestGeneration:thisQueryGeneration];
 
@@ -644,7 +646,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// A request to stop can reach a query that then finishes before the server acts on it. It
 	// still counts as cancelled, as it always has - callers running a batch stop on this.
-	if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
+	if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
 		lastQueryWasCancelled = YES;
 	}
 

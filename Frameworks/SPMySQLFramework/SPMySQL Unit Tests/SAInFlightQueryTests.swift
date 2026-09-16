@@ -128,18 +128,25 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 0))
     }
 
-    /// A request made during a retry reaches the query under the retry's number as well.
+    /// A request made while a query reconnects or retries reaches that query.
     func testARequestReachesAQueryOnItsRetry() {
-        inFlightQuery.requestCancellation(ofGeneration: 21)
+        // The query started as 20, its reconnect ran 21 and 22, and its retry runs as 23.
+        inFlightQuery.requestCancellation(ofGeneration: 23)
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 20, through: 23))
 
-        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 20, orAttempt: 21))
-        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 21, orAttempt: 21))
-        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 19, orAttempt: 20))
+        inFlightQuery.requestCancellation(ofGeneration: 21)
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 20, through: 23))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 21, through: 21))
+
+        // A request for a query before or after it does not.
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 22, through: 23))
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 18, through: 20))
     }
 
     /// No request was made before any query ran.
     func testNoRequestMatchesBeforeAnyWasMade() {
-        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 0, orAttempt: 0))
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 0, through: 0))
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 0, through: 5))
     }
 
     /// The latest number can be read without waiting for the query that set it.

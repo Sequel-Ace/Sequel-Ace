@@ -152,17 +152,18 @@ public final class SAInFlightQuery: NSObject {
     /// Whether a query that may be on a retry was asked to stop. Never waits.
     ///
     /// Whoever asks names the number the connection reported at that moment: the query's original
-    /// number, or - once a retry has begun - the retry's.
+    /// number, the retry's, or - while the query reconnects before its retry - the number of one of
+    /// the queries the reconnect runs. All of them are part of this query.
     /// - Parameters:
     ///   - generation: The query's original number.
     ///   - attempt: The number of the attempt that is running.
-    /// - Returns: Whether stopping was asked for under either number.
-    @objc(cancellationWasRequestedForGeneration:orAttempt:)
-    public func cancellationWasRequested(forGeneration generation: UInt, orAttempt attempt: UInt) -> Bool {
+    /// - Returns: Whether stopping was asked for under any number from the first to the last.
+    @objc(cancellationWasRequestedForGenerationsFrom:through:)
+    public func cancellationWasRequested(forGenerationsFrom generation: UInt, through attempt: UInt) -> Bool {
         requestLock.lock()
         defer { requestLock.unlock() }
-        return cancellationRequestedGeneration != 0
-            && (cancellationRequestedGeneration == generation || cancellationRequestedGeneration == attempt)
+        let requested = cancellationRequestedGeneration
+        return requested != 0 && generation <= requested && requested <= attempt
     }
 
     /// The number of the query or attempt that took the connection last. Never waits: it is read

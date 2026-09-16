@@ -151,6 +151,13 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertTrue(SAConnectionCancellation.restoresLostSessionWhenAskedIfConnected(onMainThread: false))
     }
 
+    /// A connection without a session answers which server it talks to from what it recorded.
+    func testServerQuestionsDoNotNeedTheSessionsHandle() {
+        let connection = SPMySQLConnection()
+        XCTAssertFalse(connection.isMariaDB())
+        XCTAssertTrue(connection.isNotMariadb103())
+    }
+
     /// Nothing changes without a cancellation or after the user disconnected.
     func testNothingChangesWithoutACancellationOrAfterTheUserDisconnected() {
         XCTAssertEqual(recovery(cancelled: false, userDisconnected: false, connected: false, disconnected: true, mayDisconnect: true), .none)

@@ -703,12 +703,14 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)isNotMariadb103
 {
-    serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
-    NSLog(@"%@", [serverVariableVersion lowercaseString]);
+    // The version was recorded when the session was set up. The session's handle is not read here:
+    // it is gone while a session closed after a stopped wait waits for the next query to replace it.
+    NSString *version = [serverVariableVersion lowercaseString];
+    NSLog(@"%@", version);
     NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
     
-    if ([myTest evaluateWithObject: [serverVariableVersion lowercaseString]]){
+    if ([myTest evaluateWithObject: version]){
         return false;
     }
     return true;
@@ -716,10 +718,11 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 - (BOOL) isMariaDB
 {
-  serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+  // The version recorded when the session was set up; see -isNotMariadb103.
+  NSString *version = [serverVariableVersion lowercaseString];
   // See more: https://regex101.com/r/0QRlsG/1
   NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
-  if ([predicate evaluateWithObject: [serverVariableVersion lowercaseString]]){
+  if ([predicate evaluateWithObject: version]){
     return true;
   }
   
