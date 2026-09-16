@@ -1617,8 +1617,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}];
 
 	// A streaming result keeps the connection until it has been read, and it is read here, on the
-	// thread that asked for it - which therefore holds the connection now, not the worker.
-	if ([outcome finished] && [[outcome result] isKindOfClass:[SPMySQLStreamingResult class]]) {
+	// thread that asked for it - which therefore holds the connection now, not the worker. A result
+	// store downloads on a thread of its own and gives the connection back there.
+	if ([outcome finished] && [[outcome result] isKindOfClass:[SPMySQLStreamingResult class]]
+	    && ![[outcome result] isKindOfClass:[SPMySQLStreamingResultStore class]]) {
 		[inFlightQuery noteConnectionHeldByCurrentThread:YES];
 	}
 
@@ -1628,6 +1630,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (![outcome finished]) {
 		[self _recordWorkAsCancelled];
 		lastWorkWasAbandoned = YES;
+
+		// The session that work runs in is on its way out: the work closes it once it finishes,
+		// and may have changed it before. Nothing else uses it any more - a value escaped meanwhile
+		// is escaped for the session that replaces it.
+		sessionMustBeReplacedBeforeUse = YES;
 
 		return nil;
 	}
@@ -1770,8 +1777,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return;
 	}
 
-	// If a query is active, cancel it
-	[self cancelCurrentQuery];
+	// If a query is active, cancel it - without recording a request to stop it: a retry that is
+	// reconnecting would otherwise find that request and stop, although nobody asked it to.
+	[self _cancelCurrentQueryRecordingRequest:NO];
 
 	state = SPMySQLDisconnecting;
 

@@ -93,13 +93,59 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(host.recordedCalls(), [])
     }
 
-    /// Stopping the wait stops the query that was running.
-    func testStoppingTheWaitStopsTheQueryThatWasRunning() {
-        host.currentQueryGeneration = 9
-        cancellation.userStoppedWaiting(workCoordinator: nil)
+    /// Stopping the wait stops the query the stopped work started.
+    func testStoppingTheWaitStopsTheQueryTheWorkStarted() {
+        let coordinator = SAConnectionWorkCoordinator()
+        let workStarted = DispatchSemaphore(value: 0)
+        _ = coordinator.run({
+            self.inFlightQuery.noteLatestGeneration(9)
+            workStarted.signal()
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, operationStamp: { 9 }, whenSlow: { _ in
+            XCTAssertEqual(workStarted.wait(timeout: .now() + 2), .success)
+            self.cancellation.userStoppedWaiting(workCoordinator: coordinator)
+        }, whenAbandonedWorkFinishes: { _ in })
 
         XCTAssertEqual(host.killRequested.wait(timeout: .now() + 2), .success)
         XCTAssertEqual(host.recordedCalls(), ["endedWait", "kill 9"])
+    }
+
+    /// Stopping the wait leaves a query alone that another thread runs while the work waits for the connection.
+    func testStoppingTheWaitLeavesAnotherThreadsQueryAlone() {
+        let otherThreadTookTheConnection = expectation(description: "another thread took the connection")
+        Thread {
+            self.inFlightQuery.noteLatestGeneration(7)
+            otherThreadTookTheConnection.fulfill()
+        }.start()
+        wait(for: [otherThreadTookTheConnection], timeout: 2)
+
+        let coordinator = SAConnectionWorkCoordinator()
+        let workStarted = DispatchSemaphore(value: 0)
+        _ = coordinator.run({
+            workStarted.signal()
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, operationStamp: { 7 }, whenSlow: { _ in
+            XCTAssertEqual(workStarted.wait(timeout: .now() + 2), .success)
+            self.cancellation.userStoppedWaiting(workCoordinator: coordinator)
+        }, whenAbandonedWorkFinishes: { _ in })
+
+        XCTAssertEqual(host.killRequested.wait(timeout: .now() + 0.5), .timedOut)
+        XCTAssertEqual(host.recordedCalls(), ["endedWait"])
+    }
+
+    /// Without work handed to a thread there is no query to stop.
+    func testStoppingWithoutWorkStopsNothing() {
+        host.currentQueryGeneration = 9
+        cancellation.userStoppedWaiting(workCoordinator: nil)
+
+        XCTAssertEqual(host.killRequested.wait(timeout: .now() + 0.5), .timedOut)
+        XCTAssertEqual(host.recordedCalls(), ["endedWait"])
     }
 
     /// Late work is settled while nothing else has run.

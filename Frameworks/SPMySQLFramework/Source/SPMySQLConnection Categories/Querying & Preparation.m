@@ -818,6 +818,25 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (void)cancelCurrentQuery
 {
+	[self _cancelCurrentQueryRecordingRequest:YES];
+}
+
+@end
+
+#pragma mark -
+#pragma mark Private API
+
+@implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/**
+ * Cancels the running query; see -cancelCurrentQuery.
+ *
+ * @param recordRequest Whether the query is also recorded as asked to stop. A stop the application
+ *                      asked for is; the connection's own teardown before a reconnect is not, since
+ *                      the query it interrupts may be the one that is about to retry.
+ */
+- (void)_cancelCurrentQueryRecordingRequest:(BOOL)recordRequest
+{
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
@@ -834,7 +853,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Also as a request for the query that is running now. A query that is reconnecting before its
 	// retry resets its own mark once the reconnect is done, and finds the request instead - under
 	// the number of whichever of its queries was running.
-	[inFlightQuery requestCancellationOfGeneration:[inFlightQuery latestGeneration]];
+	if (recordRequest) [inFlightQuery requestCancellationOfGeneration:[inFlightQuery latestGeneration]];
 
 	// If the server could be reached and killed the query, the active query was cancelled.
 	if ([self _killQueryOverSideConnectionForGeneration:0]) return;
@@ -859,13 +878,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Reset tracking bools to cover encompassed queries
 	lastQueryWasCancelled = YES;
 }
-
-@end
-
-#pragma mark -
-#pragma mark Private API
-
-@implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
 
 /**
  * Closes the session of a query that finished after nobody was waiting for it any more.

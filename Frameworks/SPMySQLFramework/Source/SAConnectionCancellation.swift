@@ -87,6 +87,10 @@ public final class SAConnectionCancellation: NSObject {
     }
 
     /// Stops the work the user has just stopped waiting for.
+    ///
+    /// Only a query that work started is asked to stop. Work still waiting for the connection -
+    /// behind a query another thread runs, say - has not started one, and that other query is not
+    /// what the user stopped waiting for; the work itself never runs once it has been given up on.
     /// - Parameter workCoordinator: Where that work runs; it is asked to stop too.
     @objc(userStoppedWaitingWithWorkCoordinator:)
     public func userStoppedWaiting(workCoordinator: SAConnectionWorkCoordinator?) {
@@ -94,8 +98,12 @@ public final class SAConnectionCancellation: NSObject {
             return
         }
         host.noteUserEndedWait()
+        let workerThread = workCoordinator?.currentWorkerThread
         workCoordinator?.abandonWorkForUserStop()
-        requestCancellation(ofGeneration: host.currentQueryGeneration, synchronously: false)
+        guard let workerThread else {
+            return
+        }
+        requestCancellation(ofGeneration: inFlightQuery.latestGeneration(ifTakenOn: workerThread), synchronously: false)
     }
 
     /// Stops the query with this number: records the request, asks the server to kill it, and closes

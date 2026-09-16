@@ -120,6 +120,8 @@
 - (BOOL)_lockUsableConnectionForQuery;
 /** Replaces a session marked to be replaced before its next use; NO if no usable session results. */
 - (BOOL)_replaceSessionMarkedForReplacement;
+/** Cancels the running query, recording a request to stop it only if asked to. */
+- (void)_cancelCurrentQueryRecordingRequest:(BOOL)recordRequest;
 /** Closes the session of a query that finished after nobody waited for it; the connection must be held. */
 - (void)_closeSessionOfAbandonedQuery;
 

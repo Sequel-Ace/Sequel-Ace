@@ -221,6 +221,11 @@ public final class SAConnectionWorkCoordinator: NSObject {
         cancel()
     }
 
+    /// The thread the coordinator's work runs on now, if it has one.
+    var currentWorkerThread: Thread? {
+        return workerThread
+    }
+
     /// Asks the work to stop and gives up the thread it runs on.
     ///
     /// The thread is not used again: what it is doing may take a while yet to notice that it has

@@ -33,6 +33,7 @@ public final class SAInFlightQuery: NSObject {
     private let requestLock = NSLock()
     private var cancellationRequestedGeneration: UInt = 0
     private var storedLatestGeneration: UInt = 0
+    private weak var latestGenerationThread: Thread?
     private var connectionHolder: pthread_t?
 
     /// Records that a query is about to wait on the server.
@@ -174,13 +175,24 @@ public final class SAInFlightQuery: NSObject {
         return storedLatestGeneration
     }
 
-    /// Records the number of the query or attempt that has just taken the connection.
+    /// Records the number of the query or attempt that has just taken the connection, on the
+    /// thread that took it.
     /// - Parameter generation: Its number.
     @objc(noteLatestGeneration:)
     public func noteLatestGeneration(_ generation: UInt) {
         requestLock.lock()
         defer { requestLock.unlock() }
         storedLatestGeneration = generation
+        latestGenerationThread = Thread.current
+    }
+
+    /// The number of the query that took the connection last, if a given thread took it.
+    /// - Parameter thread: The thread the query has to have run on.
+    /// - Returns: The query's number, or 0 if the connection was taken last by another thread.
+    func latestGeneration(ifTakenOn thread: Thread) -> UInt {
+        requestLock.lock()
+        defer { requestLock.unlock() }
+        return latestGenerationThread === thread ? storedLatestGeneration : 0
     }
 
     /// Records which thread has just taken the connection, or that it was given back.
