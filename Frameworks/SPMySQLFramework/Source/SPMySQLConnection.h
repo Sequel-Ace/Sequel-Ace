@@ -111,6 +111,7 @@
 
 	// Whether the user has ended a wait, which the next attempt is not allowed to spend again
 	BOOL userEndedPendingWork;
+	uint64_t userEndedPendingWorkTime;
 
 	// Which query is running, so that anything acting on "the query" later can tell whether it
 	// is still the same one, and which query is waiting on the server right now

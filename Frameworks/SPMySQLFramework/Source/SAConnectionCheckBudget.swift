@@ -33,6 +33,13 @@ public final class SAConnectionCheckBudget: NSObject {
     /// The longest an attempt waits once the user has said they will not wait, in seconds.
     public static let endedWaitConnectLimit: UInt = 1
 
+    /// How soon after the user ended a wait an attempt has to start to count as following it, in seconds.
+    ///
+    /// The short budget is for the attempt made right after the user stopped waiting, so their
+    /// question comes at once. An attempt made later - after the network came back, say - is an
+    /// ordinary one, and a single second is often not enough for it.
+    public static let endedWaitWindow: TimeInterval = 5
+
     /// How long a side connection waits for each answer from the server, in seconds.
     ///
     /// A side connection sends one short statement - asking the server to kill a query - while the
@@ -75,6 +82,14 @@ public final class SAConnectionCheckBudget: NSObject {
     @objc(connectTimeoutAfterEndedWaitForConfiguredTimeout:)
     public static func connectTimeoutAfterEndedWait(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
         capped(configuredTimeout, to: endedWaitConnectLimit)
+    }
+
+    /// Whether an attempt gets the short budget that follows the user ending a wait.
+    /// - Parameter seconds: How long ago the user ended the wait.
+    /// - Returns: `true` only for an attempt that starts within ``endedWaitWindow`` of it.
+    @objc(attemptIsShortenedStartingSecondsAfterEndedWait:)
+    public static func attemptIsShortened(startingSecondsAfterEndedWait seconds: Double) -> Bool {
+        seconds >= 0 && seconds < endedWaitWindow
     }
 
     /// The read and write timeout for a side connection, which only ever asks the server to kill a query.

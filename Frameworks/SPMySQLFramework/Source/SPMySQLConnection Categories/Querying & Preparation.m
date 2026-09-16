@@ -463,11 +463,22 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 		if (!queryStatus) {
 
-			// Selecting the database can take a while on a slow server, and the user can stop
-			// waiting meanwhile. This is the last point at which the statement has not been sent.
+			// Selecting the database can take a while on a slow server, and starting to wait can
+			// itself wait for a kill request meant for the query before. The user can stop waiting,
+			// or ask for this query to stop, meanwhile. This is the last point at which the
+			// statement has not been sent.
 			if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) {
 				[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
 				[self _unlockConnection];
+				return nil;
+			}
+			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+				lastQueryWasCancelled = YES;
+				[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
+				[self _unlockConnection];
+				[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+				[self _updateLastErrorID:1317];
+				[self _updateLastSqlstate:@"70100"];
 				return nil;
 			}
 
@@ -606,6 +617,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Update the connection's stored insert ID if available
 	if (mySQLConnection->insert_id) {
 		lastQueryInsertID = mySQLConnection->insert_id;
+	}
+
+	// A request to stop can reach a query that then finishes before the server acts on it. It
+	// still counts as cancelled, as it always has - callers running a batch stop on this.
+	if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+		lastQueryWasCancelled = YES;
 	}
 
 	// If the query was cancelled, override the error state

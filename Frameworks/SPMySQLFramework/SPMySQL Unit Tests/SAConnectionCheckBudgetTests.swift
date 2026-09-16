@@ -38,6 +38,12 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         )
     }
 
+    func testOnlyAnAttemptRightAfterStoppingIsShortened() {
+        XCTAssertTrue(SAConnectionCheckBudget.attemptIsShortened(startingSecondsAfterEndedWait: 0.5))
+        XCTAssertFalse(SAConnectionCheckBudget.attemptIsShortened(startingSecondsAfterEndedWait: 60))
+        XCTAssertFalse(SAConnectionCheckBudget.attemptIsShortened(startingSecondsAfterEndedWait: -1))
+    }
+
     func testASideConnectionNeverWaitsLongForAnAnswer() {
         // The client library tries a read three times.
         XCTAssertLessThanOrEqual(SAConnectionCheckBudget.sideConnectionAnswerTimeout() * 3, 10)

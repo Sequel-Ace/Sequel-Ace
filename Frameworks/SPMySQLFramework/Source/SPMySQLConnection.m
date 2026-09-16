@@ -785,6 +785,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (void)noteUserEndedWait
 {
 	userEndedPendingWork = YES;
+	userEndedPendingWorkTime = _monotonicTime();
 }
 
 /**
@@ -1289,6 +1290,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// Lock the connection while waiting for network and proxy
 		[self _lockConnection];
+
+		// The short budget belongs to the attempt made right after the user stopped waiting. One
+		// that comes later - once the network is back, say - is an ordinary attempt.
+		if (userEndedPendingWork && ![SAConnectionCheckBudget attemptIsShortenedStartingSecondsAfterEndedWait:_timeIntervalSinceMonotonicTime(userEndedPendingWorkTime)]) {
+			userEndedPendingWork = NO;
+		}
 
 		// If no network is present, wait for a short time for one to become available
 		// An attempt made after the user has stopped waiting does not wait for a network either.

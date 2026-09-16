@@ -95,8 +95,15 @@
 		[self _flushMultipleResultSets];
 	}
 
-	// Whatever held the connection is no longer waiting on the server - a streaming result gets
-	// here only once its download is over, so a cancellation can reach it until then.
+	// A streaming result gets here only once its download is over. If stopping it was asked for
+	// meanwhile, it counts as cancelled even if it finished first - callers running a batch stop
+	// on this.
+	if ([inFlightQuery cancellationWasRequestedForGeneration:queryGeneration]) {
+		lastQueryWasCancelled = YES;
+	}
+
+	// Whatever held the connection is no longer waiting on the server, and a cancellation can
+	// reach it until now.
 	[inFlightQuery endWaitingForGeneration:queryGeneration];
 
 	// Tell everyone that the connection is available again
