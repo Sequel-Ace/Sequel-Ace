@@ -60,8 +60,8 @@ public enum SAConnectionRecoveryAction: Int {
 
 /// How a connection stops work that nobody wants any more.
 ///
-/// Stopping a query takes three steps, in this order. The query is marked at once, so that it does
-/// not retry itself while anything slow happens. The server is asked to kill it, over a connection
+/// Stopping a query takes three steps, in this order. The request is recorded at once, so that the
+/// query does not retry itself while anything slow happens. The server is asked to kill it, over a connection
 /// of its own, which a server that is still there answers in milliseconds. And if the query is
 /// still waiting a little later, its socket is closed, because a server that has gone away answers
 /// neither the query nor the request to kill it. Every step names the query it is about, and only
@@ -98,8 +98,8 @@ public final class SAConnectionCancellation: NSObject {
         requestCancellation(ofGeneration: host.currentQueryGeneration, synchronously: false)
     }
 
-    /// Stops the query with this number: marks it, asks the server to kill it, and closes its socket
-    /// if it is still waiting once the grace period is over.
+    /// Stops the query with this number: records the request, asks the server to kill it, and closes
+    /// its socket if it is still waiting once the grace period is over.
     /// - Parameters:
     ///   - generation: The query to stop, as the connection numbered it when stopping was asked for.
     ///   - synchronously: Whether the request to the server is made before this returns. Callers
@@ -112,10 +112,9 @@ public final class SAConnectionCancellation: NSObject {
         }
 
         // Recorded before anything slow happens: a query that loses its connection meanwhile would
-        // otherwise reconnect and run its statement a second time.
-        inFlightQuery.requestCancellation(ofGeneration: generation) { [weak self] in
-            self?.host?.markRunningQueryCancelled()
-        }
+        // otherwise reconnect and run its statement a second time. The query asks for this record
+        // itself, so recording it never waits on anything - this may well be the main thread.
+        inFlightQuery.requestCancellation(ofGeneration: generation)
 
         let askServer: () -> Void = { [weak self] in
             self?.host?.killQueryOverSideConnection(forGeneration: generation)

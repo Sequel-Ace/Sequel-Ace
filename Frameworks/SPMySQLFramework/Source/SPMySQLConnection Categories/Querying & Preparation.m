@@ -914,17 +914,24 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// an explicit length, so no terminator is appended (see the main query path).
 		NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
 		killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
-
-		// Ensure the tracking bool is re-set to cover encompassed queries
-		if (killQueryStatus == 0) self->lastQueryWasCancelled = YES;
 	};
 
 	if (generation) {
-		[inFlightQuery performIfGenerationIsWaiting:generation action:^(NSUInteger serverThread) {
+		// The query is reserved while the request is on its way, so no other query can start in
+		// the same session meanwhile; nothing is locked while the request goes over the network.
+		NSUInteger serverThread = [inFlightQuery beginKillIfGenerationIsWaiting:generation];
+		if (serverThread) {
 			sendKill(serverThread);
-		}];
+			[inFlightQuery endKillForGeneration:generation succeeded:(killQueryStatus == 0) whileStillWaiting:^{
+				// Ensure the tracking bool is re-set to cover encompassed queries
+				self->lastQueryWasCancelled = YES;
+			}];
+		}
 	} else if (mySQLConnection && mySQLConnection->thread_id) {
 		sendKill(mySQLConnection->thread_id);
+
+		// Ensure the tracking bool is re-set to cover encompassed queries
+		if (killQueryStatus == 0) lastQueryWasCancelled = YES;
 	}
 
 	// Close the temporary connection

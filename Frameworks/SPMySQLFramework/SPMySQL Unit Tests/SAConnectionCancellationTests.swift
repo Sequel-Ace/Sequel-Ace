@@ -51,12 +51,12 @@ final class SAConnectionCancellationTests: XCTestCase {
     private let inFlightQuery = SAInFlightQuery()
     private lazy var cancellation = SAConnectionCancellation(host: host, inFlightQuery: inFlightQuery)
 
-    func testAWaitingQueryIsMarkedBeforeTheServerIsAsked() {
+    func testTheRequestIsRecordedBeforeTheServerIsAsked() {
         inFlightQuery.beginWaiting(forGeneration: 4, onSocket: -1, serverThread: 11)
 
         cancellation.requestCancellation(ofGeneration: 4, synchronously: true)
 
-        XCTAssertEqual(host.recordedCalls(), ["marked", "kill 4"])
+        XCTAssertEqual(host.recordedCalls(), ["kill 4"])
         XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 4))
     }
 

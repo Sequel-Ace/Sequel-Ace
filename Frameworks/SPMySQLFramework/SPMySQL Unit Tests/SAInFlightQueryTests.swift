@@ -60,17 +60,62 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertEqual(preparedFor, [7])
     }
 
-    func testAnActionOnlyConcernsTheQueryThatIsStillWaiting() {
-        var killedServerThreads: [UInt] = []
+    func testAKillOnlyConcernsTheQueryThatIsStillWaiting() {
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
 
-        XCTAssertFalse(inFlightQuery.perform(ifGenerationIsWaiting: 7) { killedServerThreads.append($0) })
-        XCTAssertTrue(inFlightQuery.perform(ifGenerationIsWaiting: 8) { killedServerThreads.append($0) })
+        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 7), 0)
+        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
 
+        // Only one request at a time is on its way.
+        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 0)
+
+        var marked = false
+        inFlightQuery.endKill(forGeneration: 8, succeeded: true) { marked = true }
+        XCTAssertTrue(marked)
+    }
+
+    func testAFailedOrLateKillMarksNothing() {
+        var marked: [String] = []
+        inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
+
+        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
+        inFlightQuery.endKill(forGeneration: 8, succeeded: false) { marked.append("failed") }
+
+        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
         inFlightQuery.endWaiting(forGeneration: 8)
-        XCTAssertFalse(inFlightQuery.perform(ifGenerationIsWaiting: 8) { killedServerThreads.append($0) })
+        inFlightQuery.endKill(forGeneration: 8, succeeded: true) { marked.append("late") }
 
-        XCTAssertEqual(killedServerThreads, [17])
+        XCTAssertEqual(marked, [])
+    }
+
+    func testANewQueryWaitsUntilAKillHasGoneOut() {
+        inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
+        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
+        inFlightQuery.endWaiting(forGeneration: 8)
+
+        let nextQueryStarted = DispatchSemaphore(value: 0)
+        Thread.detachNewThread {
+            self.inFlightQuery.beginWaiting(forGeneration: 9, onSocket: self.descriptors[0], serverThread: 17)
+            nextQueryStarted.signal()
+        }
+
+        // The request names the same server session, so the next query must not be waiting yet.
+        XCTAssertEqual(nextQueryStarted.wait(timeout: .now() + 0.3), .timedOut)
+
+        // Ending a wait and asking for requests never wait, even meanwhile.
+        inFlightQuery.endWaiting(forGeneration: 8)
+        inFlightQuery.requestCancellation(ofGeneration: 8)
+
+        inFlightQuery.endKill(forGeneration: 8, succeeded: true) {}
+        XCTAssertEqual(nextQueryStarted.wait(timeout: .now() + 2), .success)
+    }
+
+    func testARequestIsRememberedUnderTheQuerysOriginalNumber() {
+        inFlightQuery.requestCancellation(ofGeneration: 12)
+
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 12))
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 13))
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 0))
     }
 
     func testNothingIsEverWaitingBeforeTheFirstQuery() {
