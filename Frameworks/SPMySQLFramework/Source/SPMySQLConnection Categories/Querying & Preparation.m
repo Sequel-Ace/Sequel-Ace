@@ -663,10 +663,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// the session changing along. The session is closed while this query still holds the
 	// connection, so nothing can use it in between; the next query reconnects and restores it.
 	// The caller's view of the outcome was settled when the waiting ended, so nothing is recorded.
-	// A session with an open transaction is kept: closing it would roll the transaction back.
+	// A session with a transaction that was open before this statement is kept: closing it would roll
+	// that transaction back. One that was marked for replacement when the work was given up on is not.
 	BOOL queryWasAbandoned = [SAConnectionWorkCoordinator currentWorkHasBeenAbandoned];
 	if (queryWasAbandoned && ![theResult isKindOfClass:[SPMySQLStreamingResult class]]
-	    && !(mySQLConnection && [SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0])) {
+	    && !(mySQLConnection && [SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                                           markedForReplacement:sessionMustBeReplacedBeforeUse])) {
 		[self _closeSessionOfAbandonedQuery];
 	}
 

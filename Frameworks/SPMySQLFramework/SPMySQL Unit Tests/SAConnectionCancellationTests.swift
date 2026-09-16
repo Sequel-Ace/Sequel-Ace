@@ -195,8 +195,11 @@ final class SAConnectionCancellationTests: XCTestCase {
 
     /// A session with an open transaction is kept after its work was abandoned, and told the character set.
     func testASessionWithAnOpenTransactionIsKept() {
-        XCTAssertTrue(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: true))
-        XCTAssertFalse(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: false))
+        XCTAssertTrue(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: true, markedForReplacement: false))
+        XCTAssertFalse(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: false, markedForReplacement: false))
+        // The stopped statement opened the transaction itself: the session was marked when the work was
+        // given up on, and is closed when the work finishes, rolling back only that statement.
+        XCTAssertFalse(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: true, markedForReplacement: true))
         XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, sessionHasOpenTransaction: true))
         // A session that is gone is gone, transaction or not.
         XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: true, sessionHasOpenTransaction: true))

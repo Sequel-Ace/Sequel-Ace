@@ -864,9 +864,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)closeSessionIfConnected
 {
-	// A session with an open transaction is kept: closing it would roll the transaction back.
+	// A session with a transaction that was open before the stopped statement is kept: closing it
+	// would roll that transaction back. One that was marked for replacement when the work was given
+	// up on is not.
 	if (state == SPMySQLConnected && mySQLConnection
-	    && ![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
+	    && ![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                            markedForReplacement:sessionMustBeReplacedBeforeUse]) {
 		[self _closeSessionOfAbandonedQuery];
 	}
 }
@@ -1647,7 +1650,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// and may have changed it before. Nothing else uses it any more - a value escaped meanwhile
 		// is escaped for the session that replaces it. A session with an open transaction is kept
 		// instead, and only the stopped statement ends.
-		if (![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:[valueEscaper sessionReportedOpenTransaction]]) {
+		if (![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:[valueEscaper sessionReportedOpenTransaction]
+		                                                           markedForReplacement:NO]) {
 			sessionMustBeReplacedBeforeUse = YES;
 		}
 
