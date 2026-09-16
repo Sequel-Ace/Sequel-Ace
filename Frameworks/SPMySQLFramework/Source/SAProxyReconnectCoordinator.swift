@@ -113,8 +113,9 @@ public final class SAProxyReconnectCoordinator: NSObject {
 /// Decides how long a reconnect waits for its proxy to connect.
 ///
 /// With a connection timeout, the proxy gets that long and one second more, as before. Without one,
-/// the wait has no time limit and ends with the attempt instead: once the proxy has started and falls
-/// back to idle, or reports that it failed. The attempt starts on a thread of the proxy's own, so a
+/// the wait ends with the attempt instead: once the proxy has started and falls back to idle, or
+/// reports that it failed - or after two minutes, in case a server takes the connection but never
+/// finishes the handshake and nothing else would end the wait. The attempt starts on a thread of the proxy's own, so a
 /// proxy still idle right after the request is given a second to begin - as long as every attempt
 /// without a timeout was given before.
 @objc(SAProxyConnectWait)
@@ -122,6 +123,9 @@ public final class SAProxyConnectWait: NSObject {
 
     /// How long a proxy that has not started yet is waited for, in seconds, when there is no timeout.
     public static let startGrace: TimeInterval = 1
+
+    /// The longest wait for a proxy without a timeout, in seconds.
+    public static let longestWaitWithoutTimeout: TimeInterval = 120
 
     private let connectTimeout: UInt
     private var attemptHasStarted = false
@@ -147,7 +151,8 @@ public final class SAProxyConnectWait: NSObject {
         if connectTimeout > 0 {
             return elapsed <= TimeInterval(connectTimeout) + 1
         }
-        if proxyState == SPMySQLProxyForwardingFailed || proxyState == SPMySQLProxyLaunchFailed {
+        if elapsed > Self.longestWaitWithoutTimeout
+            || proxyState == SPMySQLProxyForwardingFailed || proxyState == SPMySQLProxyLaunchFailed {
             return false
         }
         if proxyState != SPMySQLProxyIdle {

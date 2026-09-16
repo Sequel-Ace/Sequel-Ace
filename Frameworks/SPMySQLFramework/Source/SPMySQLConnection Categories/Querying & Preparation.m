@@ -95,12 +95,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// uses the character set on record. Such a value is escaped for that character set, without
 	// waiting for the new session.
 	// A character set the client library does not know leaves nothing safe to escape with.
-	MYSQL *escapingHandle = mySQLConnection;
-	SAOfflineEscapingHandle *recordedEncodingHandle __attribute__((objc_precise_lifetime)) = nil;
+	SAOfflineEscapingHandle *recordedEncodingHandle = nil;
 	if (sessionMustBeReplacedBeforeUse) {
 		recordedEncodingHandle = [SAOfflineEscapingHandle handleForCharacterSet:encoding escapingModeOfConnection:mySQLConnection];
 		if (!recordedEncodingHandle) return nil;
-		escapingHandle = (MYSQL *)[recordedEncodingHandle rawHandle];
 	}
 
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
@@ -118,17 +116,29 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	NSUInteger mallocSize = (cDataLength * 2) + 2;
 	char *escBuffer = (char *)malloc(mallocSize);
 
-	// Use mysql_real_escape_string to perform the escape, starting one character in
-	NSUInteger escapedLength = mysql_real_escape_string(escapingHandle, escBuffer+1, [cData bytes], cDataLength);
+	NSUInteger escapedLength;
+	if (recordedEncodingHandle) {
+		NSData *escapedBytes = [recordedEncodingHandle escapedBytes:cData];
+		if (!escapedBytes) {
+			free(escBuffer);
+			return nil;
+		}
+		escapedLength = [escapedBytes length];
+		memcpy(escBuffer+1, [escapedBytes bytes], escapedLength);
+	}
+	else {
+		// Use mysql_real_escape_string to perform the escape, starting one character in
+		escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
+	}
 
 	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
 	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
 	if (escapedLength == (unsigned long)-1) {
-		NSUInteger theErrorID = mysql_errno(escapingHandle);
+		NSUInteger theErrorID = mysql_errno(mySQLConnection);
 		if (theErrorID == CR_INSECURE_API_ERR) {
-			escapedLength = mysql_real_escape_string_quote(escapingHandle, escBuffer+1, [cData bytes], cDataLength, '\'');
+			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
 		} else {
-			NSString *theErrorMessage = [self _stringForCString:mysql_error(escapingHandle)];
+			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
 			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
 			free(escBuffer);

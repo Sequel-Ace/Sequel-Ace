@@ -42,13 +42,14 @@ final class SAProxyReconnectCoordinatorTests: XCTestCase {
         XCTAssertFalse(wait.shouldKeepWaiting(after: 6.5, proxyState: SPMySQLProxyConnecting, attemptPending: false))
     }
 
-    /// Without a connection timeout, an attempt that keeps going is waited for however long it takes.
+    /// Without a connection timeout, an attempt that keeps going is waited for up to two minutes.
     func testAConnectWaitWithoutATimeoutFollowsTheAttempt() {
         let wait = SAProxyConnectWait(connectTimeout: 0)
         XCTAssertTrue(wait.shouldKeepWaiting(after: 0.1, proxyState: SPMySQLProxyIdle, attemptPending: false))
         XCTAssertTrue(wait.shouldKeepWaiting(after: 1, proxyState: SPMySQLProxyConnecting, attemptPending: false))
-        XCTAssertTrue(wait.shouldKeepWaiting(after: 300, proxyState: SPMySQLProxyWaitingForAuth, attemptPending: false))
-        XCTAssertTrue(wait.shouldKeepWaiting(after: 600, proxyState: SPMySQLProxyConnecting, attemptPending: false))
+        XCTAssertTrue(wait.shouldKeepWaiting(after: 60, proxyState: SPMySQLProxyWaitingForAuth, attemptPending: false))
+        XCTAssertTrue(wait.shouldKeepWaiting(after: SAProxyConnectWait.longestWaitWithoutTimeout, proxyState: SPMySQLProxyConnecting, attemptPending: false))
+        XCTAssertFalse(wait.shouldKeepWaiting(after: SAProxyConnectWait.longestWaitWithoutTimeout + 1, proxyState: SPMySQLProxyConnecting, attemptPending: false))
     }
 
     /// Without a connection timeout, an attempt that ends without connecting ends the wait.

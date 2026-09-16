@@ -49,15 +49,20 @@ final class SAConnectionCheckSheetModel: ObservableObject {
 
 /// The content of the wait sheet.
 struct SAConnectionCheckSheetView: View {
+    /// What the sheet shows, and what its button does.
     @ObservedObject var model: SAConnectionCheckSheetModel
 
+    /// The title, the detail line, a progress bar and the button to stop waiting.
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(verbatim: NSLocalizedString("Waiting for the server…", comment: "connection wait sheet title"))
                 .bold()
+            // Two lines are kept free, so that a longer translation does not push the button out
+            // of a sheet that was sized before the text arrived.
             Text(verbatim: model.detail)
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .lineLimit(2, reservesSpace: true)
             ProgressView()
                 .progressViewStyle(.linear)
             HStack {
@@ -81,6 +86,7 @@ struct SAConnectionCheckSheetView: View {
         let hostingController = NSHostingController(rootView: SAConnectionCheckSheetView(model: model))
         let window = NSWindow(contentViewController: hostingController)
         window.styleMask = [.titled]
+        window.isReleasedWhenClosed = false
         self.init(window: window)
     }
 }
@@ -254,18 +260,20 @@ final class SAConnectionCheckSheet: NSObject {
         let model = SAConnectionCheckSheetModel { [weak self] in
             self?.cancelButtonPressed()
         }
-        let controller = SAConnectionCheckSheetWindowController(model: model)
-        guard let sheet = controller.window else {
-            return
-        }
-
         sheetModel = model
-        sheetController = controller
-        presentingWindow = window
         if startDate == nil {
             startDate = Date()
         }
         updateElapsedTime()
+
+        let controller = SAConnectionCheckSheetWindowController(model: model)
+        guard let sheet = controller.window else {
+            sheetModel = nil
+            return
+        }
+
+        sheetController = controller
+        presentingWindow = window
 
         window.beginSheet(sheet, completionHandler: nil)
     }
@@ -326,7 +334,8 @@ final class SAConnectionCheckSheet: NSObject {
     /// The work is asked to stop right here. This wait's loop may be running beneath another one
     /// and only get to look at its state again once that one is over.
     @objc func cancelButtonPressed() {
-        guard !waitWasEnded else {
+        // A wait that is already over has nothing left to stop, even if its button was still shown.
+        guard !hasEnded else {
             return
         }
         waitWasEnded = true

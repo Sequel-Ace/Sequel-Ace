@@ -63,9 +63,33 @@ public final class SAOfflineEscapingHandle: NSObject {
         return SAOfflineEscapingHandle(handle: handle)
     }
 
-    /// The `MYSQL` handle to escape with. It stays valid for as long as this object lives.
-    @objc public var rawHandle: UnsafeMutableRawPointer {
-        return UnsafeMutableRawPointer(handle)
+    /// Escapes bytes for a string literal, in the handle's character set and escaping mode.
+    ///
+    /// In `NO_BACKSLASH_ESCAPES` mode the client library refuses to escape with backslashes; quotes
+    /// are then doubled instead, for a literal in single quotes, as the connection does for its own
+    /// handle.
+    /// - Parameter bytes: The value, already in the handle's character set.
+    /// - Returns: The escaped bytes, without surrounding quotes, or nil if they could not be escaped.
+    @objc(escapedBytes:)
+    public func escapedBytes(_ bytes: Data) -> Data? {
+        if bytes.isEmpty {
+            return Data()
+        }
+        var output = [CChar](repeating: 0, count: bytes.count * 2 + 1)
+        let failed = UInt.max
+        let length: UInt = bytes.withUnsafeBytes { rawSource in
+            let source = rawSource.bindMemory(to: CChar.self).baseAddress
+            let sourceLength = UInt(bytes.count)
+            let escaped = mysql_real_escape_string(handle, &output, source, sourceLength)
+            guard escaped == failed, mysql_errno(handle) == UInt32(CR_INSECURE_API_ERR) else {
+                return escaped
+            }
+            return mysql_real_escape_string_quote(handle, &output, source, sourceLength, CChar(UInt8(ascii: "'")))
+        }
+        guard length != failed else {
+            return nil
+        }
+        return Data(bytes: output, count: Int(length))
     }
 
     /// The character set the handle escapes for, as the client library names it.
