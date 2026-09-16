@@ -134,6 +134,24 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(escape(Data([0x5C, 0x27]), with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x5C, 0x5C, 0x27]))
     }
 
+    /// A mode a closed session was switched to does not outlive it; values follow the server's own mode.
+    func testAClosedSessionsSwitchedModeDoesNotOutliveIt() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        // A statement switched the session to NO_BACKSLASH_ESCAPES; then the session was closed.
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, openTransaction: false, isHandshake: false)
+        escaper.forgetSession()
+        XCTAssertEqual(escape(Data([0x5C, 0x27]), with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x5C, 0x5C, 0x27]))
+    }
+
+    /// A server that starts every session without backslash escapes keeps that mode between sessions.
+    func testTheServersOwnModeIsKeptBetweenSessions() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, openTransaction: false, isHandshake: true)
+        escaper.forgetSession()
+        XCTAssertEqual(escape(Data([0x5C, 0x27]), with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x27, 0x27]))
+    }
+
     /// The escaper keeps what the session said about an open transaction until the session is gone.
     func testTheEscaperKnowsWhetherTheSessionHasAnOpenTransaction() {
         let escaper = SAConnectionEscaper()

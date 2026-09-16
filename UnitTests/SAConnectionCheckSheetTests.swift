@@ -5,6 +5,7 @@
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
 //
 
+import AppKit
 import XCTest
 
 /// How the connection wait sheet ends its waits, alone and nested, and what nested waits show.

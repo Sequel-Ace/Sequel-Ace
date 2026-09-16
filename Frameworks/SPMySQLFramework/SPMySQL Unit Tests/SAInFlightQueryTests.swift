@@ -189,14 +189,14 @@ final class SAInFlightQueryTests: XCTestCase {
 
     /// A request made for this query, its reconnect or its retry stops this query.
     func testARequestForThisQuerysReconnectOrRetryIsForThisQuery() {
-        inFlightQuery.noteLatestGeneration(40, ownedByQueryStartedAt: 40)
-        inFlightQuery.noteLatestGeneration(41, ownedByQueryStartedAt: 0)
-        inFlightQuery.noteLatestGeneration(42, ownedByQueryStartedAt: 42)
-        inFlightQuery.noteLatestGeneration(43, ownedByQueryStartedAt: 40)
-
         for generation: UInt in [40, 41, 43] {
-            inFlightQuery.requestCancellation(ofGeneration: generation)
-            XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 40, through: 43), "request for \(generation)")
+            let query = SAInFlightQuery()
+            query.noteLatestGeneration(40, ownedByQueryStartedAt: 40)
+            query.noteLatestGeneration(41, ownedByQueryStartedAt: 0)
+            query.noteLatestGeneration(42, ownedByQueryStartedAt: 42)
+            query.noteLatestGeneration(43, ownedByQueryStartedAt: 40)
+            query.requestCancellation(ofGeneration: generation)
+            XCTAssertTrue(query.cancellationWasRequested(forGenerationsFrom: 40, through: 43), "request for \(generation)")
         }
     }
 
