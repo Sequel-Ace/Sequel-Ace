@@ -594,18 +594,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// connection now is this query again.
 		runningQueryFirstGeneration = originalQueryGeneration;
 
-		// The reconnect may have dropped uncommitted work. The statement is then not tried again on
-		// the new session, where it would run as if nothing had happened; its error says why.
-		if ([self _refusesStatementAfterLostUncommittedWork:theQueryString]) {
-			uncommittedWorkWasLost = NO;
-			[self _unlockConnection];
-			lastQueryWasCancelled = NO;
-			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
-			[self _updateLastErrorID:theErrorID];
-			[self _updateLastSqlstate:theSqlstate];
-			return nil;
-		}
-
 		// The user can stop waiting while the connection is checked, and the check can still
 		// succeed. A retry is a new chance for the statement to run, so it asks again whether
 		// anybody still wants it.
@@ -621,6 +609,19 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
 			[self _updateLastErrorID:1317];
 			[self _updateLastSqlstate:@"70100"];
+			return nil;
+		}
+
+		// The reconnect may have dropped uncommitted work. The statement is then not tried again on
+		// the new session, where it would run as if nothing had happened; its error says why. Work
+		// nobody waits for, or that was asked to stop, has returned above and leaves the report.
+		if ([self _refusesStatementAfterLostUncommittedWork:theQueryString]) {
+			uncommittedWorkWasLost = NO;
+			[self _unlockConnection];
+			lastQueryWasCancelled = NO;
+			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
+			[self _updateLastErrorID:theErrorID];
+			[self _updateLastSqlstate:theSqlstate];
 			return nil;
 		}
 
