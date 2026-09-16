@@ -226,6 +226,14 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .untouched, sessionHasOpenTransaction: false, markedForReplacement: false))
     }
 
+    /// A session whose ping was cut off before its answer came is replaced; any other is kept.
+    func testASessionIsReplacedOnlyAfterAPingCutOffBeforeItsAnswer() {
+        XCTAssertTrue(SAConnectionCancellation.replacesSessionAfterPing(cutOff: true, pingSucceeded: false))
+        XCTAssertFalse(SAConnectionCancellation.replacesSessionAfterPing(cutOff: true, pingSucceeded: true))
+        XCTAssertFalse(SAConnectionCancellation.replacesSessionAfterPing(cutOff: false, pingSucceeded: false))
+        XCTAssertFalse(SAConnectionCancellation.replacesSessionAfterPing(cutOff: false, pingSucceeded: true))
+    }
+
     /// Dropping a session loses uncommitted work when a transaction is open or autocommit was turned off.
     func testDroppingASessionLosesUncommittedWorkOnlyWithATransactionOrAutocommitTurnedOff() {
         XCTAssertTrue(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: true, autocommit: true, autocommitAtConnect: true))

@@ -273,6 +273,21 @@ public final class SAConnectionCancellation: NSObject {
         }
     }
 
+    /// Whether a session is replaced after a ping to it was cut off.
+    ///
+    /// A ping stopped while it waited - because the user stopped waiting, or it ran out of time -
+    /// may still have its answer on the way. The next statement would read that answer as its own,
+    /// and every answer after it would belong to the statement before. A ping that got its answer
+    /// leaves nothing behind; one that did not, whatever else happens, leaves the session unusable.
+    /// - Parameters:
+    ///   - pingWasCutOff: Whether the ping was cancelled or its thread stopped.
+    ///   - pingSucceeded: Whether the ping got its answer.
+    /// - Returns: Whether to replace the session before it is used again.
+    @objc(replacesSessionAfterPingCutOff:pingSucceeded:)
+    public static func replacesSessionAfterPing(cutOff pingWasCutOff: Bool, pingSucceeded: Bool) -> Bool {
+        return pingWasCutOff && !pingSucceeded
+    }
+
     /// Whether dropping a session loses work that was never committed.
     ///
     /// The server rolls back a transaction whose session ends. A session with autocommit turned

@@ -31,6 +31,7 @@
 #import "Ping & KeepAlive.h"
 #import "SPMySQL Private APIs.h"
 #import "Locking.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import <pthread.h>
 #include <stdio.h>
 
@@ -234,6 +235,14 @@ end_cleanup:
 
 	//wait for thread to go away, otherwise pingDetails may go away before _pingThreadCleanup() finishes
 	pthread_join(keepAlivePingThread_t, NULL);
+
+	// A ping cut off before its answer came may still get that answer, and the next statement would
+	// read it as its own. The session is replaced before it is used again; a transaction lost with it
+	// is reported like any other.
+	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
+	                                               pingSucceeded:keepAliveLastPingSuccess]) {
+		sessionMustBeReplacedBeforeUse = YES;
+	}
 
 	// Clean up
 	keepAlivePingThread_t = NULL;
