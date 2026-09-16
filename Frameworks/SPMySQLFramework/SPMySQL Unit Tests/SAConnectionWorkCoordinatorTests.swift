@@ -82,7 +82,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
     }
 
     /// A late completion leaves a newer operation alone.
-    func testALateCompletionLeavesANewerOperationAlone() {
+    func testALateCompletionLeavesANewerOperationAlone() throws {
         var currentOperation: UInt = 1
         let operationLock = NSLock()
         let stamp: () -> UInt = {
@@ -90,16 +90,24 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             defer { operationLock.unlock() }
             return currentOperation
         }
+        let workStarted = DispatchSemaphore(value: 0)
         let workMayFinish = DispatchSemaphore(value: 0)
         let workFinished = DispatchSemaphore(value: 0)
+        let lateCompletionLock = NSLock()
         var lateCompletionCalled = false
+        var abandonedWorkThread: Thread?
 
         _ = run({
+            abandonedWorkThread = Thread.current
+            workStarted.signal()
             workMayFinish.wait()
             return nil
         }, stamp: stamp, whenAbandonedWorkFinishes: { _ in
+            lateCompletionLock.lock()
             lateCompletionCalled = true
+            lateCompletionLock.unlock()
         })
+        XCTAssertEqual(workStarted.wait(timeout: .now() + 2), .success)
 
         // Another operation takes over the connection before the abandoned work finishes.
         operationLock.lock()
@@ -112,8 +120,18 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         }, stamp: stamp)
         workMayFinish.signal()
         XCTAssertEqual(workFinished.wait(timeout: .now() + 2), .success)
-        Thread.sleep(forTimeInterval: 0.2)
 
+        // The newer operation runs on a thread of its own. The abandoned work's thread, which was
+        // given up on, ends once that work has decided whether to report its completion.
+        let thread = try XCTUnwrap(abandonedWorkThread)
+        let deadline = Date().addingTimeInterval(3)
+        while !thread.isFinished && Date() < deadline {
+            usleep(5_000)
+        }
+        XCTAssertTrue(thread.isFinished)
+
+        lateCompletionLock.lock()
+        defer { lateCompletionLock.unlock() }
         XCTAssertFalse(lateCompletionCalled)
     }
 
