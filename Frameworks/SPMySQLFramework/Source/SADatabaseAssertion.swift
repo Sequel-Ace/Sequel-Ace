@@ -135,6 +135,24 @@ public final class SADatabaseAssertionState: NSObject {
         return error
     }
 
+    /// Whether a statement only reads, or only sets up the session; see
+    /// ``SADatabaseAssertion/statementLeavesDataAlone(_:serverVersion:serverIsMariaDB:)``.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - rawConnection: The connected handle, for the server's version.
+    /// - Returns: Whether the statement leaves the data alone.
+    @objc(statementLeavesDataAlone:onMySQLConnection:)
+    public static func statementLeavesDataAlone(_ query: String, onMySQLConnection rawConnection: UnsafeMutableRawPointer) -> Bool {
+        let connection = rawConnection.assumingMemoryBound(to: MYSQL.self)
+        let serverVersion = Int(mysql_get_server_version(connection))
+        let serverInfo = mysql_get_server_info(connection).map { String(cString: $0) } ?? ""
+        return SADatabaseAssertion.statementLeavesDataAlone(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverInfo.range(of: "mariadb", options: .caseInsensitive) != nil
+        )
+    }
+
     @objc(recordSuccessfulQuery:onMySQLConnection:)
     public func recordSuccessfulQuery(
         _ query: String,
@@ -330,6 +348,33 @@ public final class SADatabaseAssertionState: NSObject {
 }
 
 final class SADatabaseAssertion: NSObject {
+    /// The statements that leave the data a transaction holds alone: they read, or set up the session.
+    static let keywordsLeavingDataAlone: Set<String> = [
+        "SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "TABLE", "VALUES", "HELP", "SET", "USE", "KILL",
+    ]
+
+    /// Whether a statement only reads, or only sets up the session, so that running it on a new
+    /// session cannot stand in for work a lost transaction held.
+    ///
+    /// Only the first keyword counts, after comments; an executable comment the server would run
+    /// counts as code. Anything else - a statement starting with `WITH`, say, which can delete - is
+    /// taken to change data.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - serverVersion: The server's version number, for executable comments.
+    ///   - serverIsMariaDB: Whether the server is MariaDB, for executable comments.
+    /// - Returns: Whether the statement leaves the data alone.
+    static func statementLeavesDataAlone(_ query: String, serverVersion: Int, serverIsMariaDB: Bool) -> Bool {
+        guard let first = query.firstIndex(where: { !$0.isWhitespace }) else {
+            return false
+        }
+        let needsStripping = query[first] == "#" || query[first] == "(" || query[first...].hasPrefix("--") || query[first...].hasPrefix("/*")
+        let code = needsStripping ? stripSQLComments(query, serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB) : String(query[first...])
+        let statement = code.drop { $0.isWhitespace || $0 == "(" }
+        let keyword = statement.prefix { isIdentifierCharacter($0) }
+        return keywordsLeavingDataAlone.contains(keyword.uppercased())
+    }
+
     enum DatabaseContextChange: Equatable {
         case selected(String)
         case dropped(String)

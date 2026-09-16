@@ -431,11 +431,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// A session dropped with a transaction open, or with autocommit turned off, took uncommitted
-	// work with it. On this session the statement would run as if nothing had happened, so a caller
-	// that handles lost connections itself is told instead, once.
-	if ([SAConnectionCancellation refusesStatementAfterLostUncommittedWork:uncommittedWorkWasLost
-	                                                    retriesStatements:retryQueriesOnConnectionFailure
-	                                                     settingUpSession:[self _currentThreadIsReconnecting]]) {
+	// work with it. On this session the statement could run as if nothing had happened, so it is
+	// refused instead, once, and says why.
+	if ([self _refusesStatementAfterLostUncommittedWork:theQueryString]) {
 		uncommittedWorkWasLost = NO;
 		[self _unlockConnection];
 
@@ -596,6 +594,18 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// connection now is this query again.
 		runningQueryFirstGeneration = originalQueryGeneration;
 
+		// The reconnect may have dropped uncommitted work. The statement is then not tried again on
+		// the new session, where it would run as if nothing had happened; its error says why.
+		if ([self _refusesStatementAfterLostUncommittedWork:theQueryString]) {
+			uncommittedWorkWasLost = NO;
+			[self _unlockConnection];
+			lastQueryWasCancelled = NO;
+			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
+			[self _updateLastErrorID:theErrorID];
+			[self _updateLastSqlstate:theSqlstate];
+			return nil;
+		}
+
 		// The user can stop waiting while the connection is checked, and the check can still
 		// succeed. A retry is a new chance for the statement to run, so it asks again whether
 		// anybody still wants it.
@@ -678,16 +688,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// still counts as cancelled, as it always has - callers running a batch stop on this.
 	if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
 		lastQueryWasCancelled = YES;
-	}
-
-	// A statement that lost its connection while a transaction was open, or autocommit was off, says
-	// so itself, provided its caller handles lost connections - the reconnect dropped that work.
-	if (queryStatus && !lastQueryWasCancelled
-	    && [SAConnectionCancellation refusesStatementAfterLostUncommittedWork:uncommittedWorkWasLost
-	                                                       retriesStatements:retryQueriesOnConnectionFailure
-	                                                        settingUpSession:[self _currentThreadIsReconnecting]]) {
-		uncommittedWorkWasLost = NO;
-		theErrorMessage = [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")];
 	}
 
 	// If the query was cancelled, override the error state
@@ -947,6 +947,26 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// Until the next session connects, values follow the record, which its handshake uses.
 	[valueEscaper forgetSession];
+}
+
+/**
+ * Whether a statement is refused because a session before it was dropped with uncommitted work.
+ * The decision is SAConnectionCancellation's; the statement is only looked at when it matters.
+ * Called while the connection is held.
+ *
+ * @param query The statement about to be sent.
+ * @return Whether to refuse it.
+ */
+- (BOOL)_refusesStatementAfterLostUncommittedWork:(NSString *)query
+{
+	if (!uncommittedWorkWasLost) return NO;
+
+	BOOL leavesDataAlone = retryQueriesOnConnectionFailure && mySQLConnection
+		&& [SADatabaseAssertionState statementLeavesDataAlone:query onMySQLConnection:mySQLConnection];
+	return [SAConnectionCancellation refusesStatementAfterLostUncommittedWork:YES
+	                                                       retriesStatements:retryQueriesOnConnectionFailure
+	                                                        settingUpSession:[self _currentThreadIsReconnecting]
+	                                                 statementLeavesDataAlone:leavesDataAlone];
 }
 
 /**

@@ -244,16 +244,24 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertTrue(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: true, autocommit: false, autocommitAtConnect: false))
     }
 
-    /// Only a caller that handles lost connections itself is told about lost uncommitted work.
-    func testOnlyACallerThatHandlesLostConnectionsItselfIsToldAboutLostWork() {
-        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: false))
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: false))
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: false, retriesStatements: false, settingUpSession: false))
+    /// After lost uncommitted work, the query editor's next statement is refused, whatever it is.
+    func testTheQueryEditorsNextStatementIsRefusedAfterLostWork() {
+        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: false, statementLeavesDataAlone: true))
+        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: false, statementLeavesDataAlone: false))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: false, retriesStatements: false, settingUpSession: false, statementLeavesDataAlone: false))
+    }
+
+    /// After lost uncommitted work, the application's writes are refused, and its reads run.
+    func testTheApplicationsWritesAreRefusedAfterLostWork() {
+        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: false, statementLeavesDataAlone: false))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: false, statementLeavesDataAlone: true))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: false, retriesStatements: true, settingUpSession: false, statementLeavesDataAlone: false))
     }
 
     /// The statements that set up a new session always run, and leave the report for the caller.
     func testTheStatementsThatSetUpANewSessionAlwaysRun() {
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: true))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: true, statementLeavesDataAlone: false))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: true, statementLeavesDataAlone: false))
     }
 
     /// Only a thread other than the main thread restores a lost session when asked whether it is connected.

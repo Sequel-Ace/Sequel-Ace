@@ -15,6 +15,24 @@ import XCTest
 final class SADatabaseAssertionTests: XCTestCase {
     private let latin1CharacterSet = Data("latin1".utf8)
 
+    /// Reads and session settings leave the data alone, whatever comments come first.
+    func testReadsAndSessionSettingsLeaveTheDataAlone() {
+        for query in ["SELECT 1", "  select * from t", "/* note */ SHOW TABLES", "-- note\nSELECT 1", "# note\nDESCRIBE t",
+                      "(SELECT 1) UNION (SELECT 2)", "SET NAMES utf8mb4", "USE `db`", "EXPLAIN SELECT 1", "KILL QUERY 5",
+                      "/*!40101 SET NAMES utf8mb4 */", "TABLE t", "desc t"] {
+            XCTAssertTrue(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
+    /// Anything else is taken to change data, including a write hidden behind a comment.
+    func testEverythingElseIsTakenToChangeData() {
+        for query in ["UPDATE t SET a = 1", "INSERT INTO t VALUES (1)", "delete from t", "COMMIT", "CALL p()",
+                      "WITH x AS (SELECT 1) DELETE FROM t", "/* SELECT */ UPDATE t SET a = 1", "/*!40101 UPDATE t SET a = 1 */",
+                      "SELECTED", "", "   "] {
+            XCTAssertFalse(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
     func testDisabledAssertionDoesNotConsultOrMutateSession() {
         let error = assertDatabase(
             "target",

@@ -308,21 +308,26 @@ public final class SAConnectionCancellation: NSObject {
     /// Whether a statement is refused because a session before it was dropped with uncommitted work.
     ///
     /// On the new session the statement would run as if nothing had happened: an `UPDATE` would
-    /// commit on its own, a `COMMIT` would succeed without committing anything. A caller that has
-    /// statements retried after a lost connection runs its own statements, which do not belong to
-    /// the user's transaction; one that does not - the query editor - is told once, instead of
-    /// its next statement being run. The statements that set up the new session - its character
-    /// set, its database - are the connection's own and always run.
+    /// commit on its own, a `COMMIT` would succeed without committing anything. The first statement
+    /// that could stand in for the lost work is refused, once, and says why - any statement from
+    /// the query editor, which has statements not retried, and any statement that changes data from
+    /// anywhere else, such as an edit in the content view. The application's own reads and session
+    /// settings run as before, and so do the statements that set up the new session.
     /// - Parameters:
     ///   - lostUncommittedWork: Whether a dropped session lost uncommitted work nobody was told of.
     ///   - retriesStatements: Whether the caller has statements retried after a lost connection.
     ///   - settingUpSession: Whether the statement is one the connection sends to set up a session.
+    ///   - statementLeavesDataAlone: Whether the statement only reads or sets up the session.
     /// - Returns: Whether to refuse the statement and tell the caller.
-    @objc(refusesStatementAfterLostUncommittedWork:retriesStatements:settingUpSession:)
+    @objc(refusesStatementAfterLostUncommittedWork:retriesStatements:settingUpSession:statementLeavesDataAlone:)
     public static func refusesStatement(afterLostUncommittedWork lostUncommittedWork: Bool,
                                         retriesStatements: Bool,
-                                        settingUpSession: Bool) -> Bool {
-        return lostUncommittedWork && !retriesStatements && !settingUpSession
+                                        settingUpSession: Bool,
+                                        statementLeavesDataAlone: Bool) -> Bool {
+        guard lostUncommittedWork, !settingUpSession else {
+            return false
+        }
+        return !retriesStatements || !statementLeavesDataAlone
     }
 
     /// Whether asking a connection if it is connected restores a session lost in the background first.
