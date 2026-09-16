@@ -168,6 +168,31 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         stuckWorkMayFinish.signal()
     }
 
+    /// Work the user stops never counts as finished, even when it returns before the waiting ends.
+    func testWorkStoppedByTheUserNeverCountsAsFinished() {
+        let workReturned = DispatchSemaphore(value: 0)
+        var waitEndedAtOnce = false
+        let outcome = run({
+            // Stands in for work that notices the stop and returns early without saying why.
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            workReturned.signal()
+            return "stopped early"
+        }, whenSlow: { isFinished in
+            coordinator.abandonWorkForUserStop()
+            waitEndedAtOnce = isFinished()
+
+            // The work returns before the interface is done with its wait.
+            XCTAssertEqual(workReturned.wait(timeout: .now() + 2), .success)
+        })
+
+        XCTAssertTrue(waitEndedAtOnce)
+        XCTAssertFalse(outcome.finished)
+        XCTAssertTrue(outcome.wasAbandoned)
+        XCTAssertNil(outcome.result)
+    }
+
     /// The next piece of work still runs after a cancellation.
     func testTheNextPieceOfWorkStillRunsAfterACancellation() {
         coordinator.cancel()

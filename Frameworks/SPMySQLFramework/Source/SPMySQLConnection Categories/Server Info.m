@@ -111,6 +111,12 @@
 	// Lock the connection before using it
 	[self _lockConnection];
 
+	// The session can have been closed while this waited for the lock.
+	if (!mySQLConnection) {
+		[self _unlockConnection];
+		return nil;
+	}
+
 	// Ensure per-thread variables are set up
 	[self _validateThreadSetup];
 
@@ -156,6 +162,11 @@
 {
 	if([self checkConnectionIfNecessary]) {
 		[self _lockConnection];
+		// The session can have been closed while this waited for the lock.
+		if (!mySQLConnection) {
+			[self _unlockConnection];
+			return NO;
+		}
 		// Ensure per-thread variables are set up
 		[self _validateThreadSetup];
 		//only SHUTDOWN_DEFAULT is supported right now

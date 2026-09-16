@@ -111,8 +111,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
-// What the window shows while a connection check is running on its own thread
-
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;

@@ -38,6 +38,19 @@ public final class SAProxyReconnectCoordinator: NSObject {
         waitingForAuthentication || connectionAttemptPending
     }
 
+    /// Returns whether a reconnect can go through the proxy as it is.
+    ///
+    /// Closing only the session - after work nobody waited for - leaves the tunnel up. Waiting for
+    /// a connected tunnel to become idle would wait out the whole connection timeout, and asking it
+    /// to connect again does nothing, so its current port is used straight away.
+    @objc(reusesConnectedProxyAfterClosingSessionOnly:proxyConnected:)
+    public func reusesConnectedProxy(
+        afterClosingSessionOnly sessionClosedOnly: Bool,
+        proxyConnected: Bool
+    ) -> Bool {
+        sessionClosedOnly && proxyConnected
+    }
+
     /// Routes proxy teardown through the main thread. Internal reconnect cleanup
     /// preserves a request queued behind the current proxy lifecycle when the
     /// proxy supports that distinction; explicit teardown always cancels it.

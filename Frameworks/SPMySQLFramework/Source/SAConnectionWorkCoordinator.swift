@@ -104,6 +104,11 @@ public final class SAConnectionWorkCoordinator: NSObject {
 
     private var workerThread: Thread?
 
+    /// The work being waited for right now, and how to tell which operation the connection is on.
+    /// Guarded by `inFlightLock`; more than one when waits are nested.
+    private var inFlight: [(outcome: SAConnectionWorkOutcome, operationStamp: () -> UInt)] = []
+    private let inFlightLock = NSLock()
+
     /// Whether the work running on the current thread is work that nobody is waiting for any more.
     ///
     /// Work is given up on while it can still be queued, or waiting for the connection. By the
@@ -148,6 +153,15 @@ public final class SAConnectionWorkCoordinator: NSObject {
             workFinished.signal()
         }
 
+        inFlightLock.lock()
+        inFlight.append((outcome: outcome, operationStamp: operationStamp))
+        inFlightLock.unlock()
+        defer {
+            inFlightLock.lock()
+            inFlight.removeAll { $0.outcome === outcome }
+            inFlightLock.unlock()
+        }
+
         perform(#selector(runWorkItem(_:)), on: startedWorkerThread(), with: item, waitUntilDone: false)
 
         if workFinished.wait(timeout: .now() + Self.quietWait) == .success {
@@ -155,12 +169,23 @@ public final class SAConnectionWorkCoordinator: NSObject {
             return outcome
         }
 
-        // From here the interface owns the waiting, and asks as often as it likes.
+        // From here the interface owns the waiting, and asks as often as it likes. Work the user
+        // stopped is over for the interface at once, however long it takes to notice.
         waitForFinish {
+            if outcome.wasAbandoned {
+                return true
+            }
             if !outcome.finished, workFinished.wait(timeout: .now()) == .success {
                 outcome.finished = true
             }
             return outcome.finished
+        }
+
+        // The user stopped this work while the interface was waiting for it. Whatever it returns
+        // afterwards - early, because it was stopped - is not an answer.
+        if outcome.wasAbandoned {
+            outcome.finished = false
+            return outcome
         }
 
         // Work nobody waited for to the end keeps running, and what it returns is nobody's
@@ -177,6 +202,23 @@ public final class SAConnectionWorkCoordinator: NSObject {
         }
 
         return outcome
+    }
+
+    /// Stops the work that is being waited for, because the user asked for that.
+    ///
+    /// The work is given up on before its thread is asked to stop. Work that notices the request
+    /// returns early without saying why, and would otherwise count as having finished - a statement
+    /// that never ran would then look as if it had. Work that finished before this counts as
+    /// finished; so does work queued behind it on the same thread, which is given up on too.
+    @objc public func abandonWorkForUserStop() {
+        inFlightLock.lock()
+        let waitedFor = inFlight
+        inFlightLock.unlock()
+
+        for entry in waitedFor {
+            _ = entry.outcome.abandon(atStamp: entry.operationStamp())
+        }
+        cancel()
     }
 
     /// Asks the work to stop and gives up the thread it runs on.

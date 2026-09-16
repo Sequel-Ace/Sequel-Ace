@@ -4199,3 +4199,6 @@
 
 /* connection wait sheet cancel button */
 "Stop Waiting" = "Stop Waiting";
+
+/* connection wait sheet note while a finished wait is held up by another window's wait */
+"Continues once the other window has finished waiting." = "Continues once the other window has finished waiting.";

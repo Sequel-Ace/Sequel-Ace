@@ -355,7 +355,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
-	lastWorkWasAbandoned = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -868,6 +867,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		mySQLConnection = NULL;
 	}
 	state = SPMySQLConnectionLostInBackground;
+	sessionWasClosedWithoutItsProxy = YES;
 }
 
 /**

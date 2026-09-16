@@ -915,6 +915,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
 	sessionMustBeReplacedBeforeUse = NO;
+	sessionWasClosedWithoutItsProxy = NO;
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -1323,9 +1324,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
 
+			// A tunnel left running when only the session was closed is used as it is.
+			BOOL reuseProxy = [_proxyReconnectCoordinator reusesConnectedProxyAfterClosingSessionOnly:sessionWasClosedWithoutItsProxy
+			                                                                          proxyConnected:([proxy state] == SPMySQLProxyConnected)];
+
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
 			// to allow it to disconnect.
-			if ([proxy state] != SPMySQLProxyIdle) {
+			if (!reuseProxy && [proxy state] != SPMySQLProxyIdle) {
 
                 SPLog(@"proxy not idle, waiting");
 
@@ -1349,7 +1354,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// Request that the proxy re-establishes its connection
             SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
 
-			[proxy connect];
+			if (!reuseProxy) [proxy connect];
 
 			// Wait while the proxy connects
 			proxyWaitStart_t = _monotonicTime();
@@ -1570,6 +1575,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (!connectionWorkCoordinator) {
 		connectionWorkCoordinator = [[SAConnectionWorkCoordinator alloc] init];
 	}
+
+	// Whatever was abandoned before, this is the work the caller will ask about next.
+	lastWorkWasAbandoned = NO;
 
 	SAConnectionWorkOutcome *outcome = [connectionWorkCoordinator runWork:work
 	                                                       operationStamp:^NSUInteger{

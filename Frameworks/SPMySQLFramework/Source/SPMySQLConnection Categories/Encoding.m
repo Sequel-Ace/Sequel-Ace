@@ -168,14 +168,18 @@
  */
 - (void)restoreStoredEncoding
 {
-	if (!previousEncoding || state == SPMySQLDisconnected || state == SPMySQLDisconnecting) {
+	if (!previousEncoding || userTriggeredDisconnect) {
 		return;
 	}
 
-	// A session on its way out is not told: the next one is set up from the record, and the current
-	// one is not used again, even if it is still open when the next query comes.
-	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingAfterAbandonedWork:lastWorkWasAbandoned
-	                                                     connectionLostInBackground:(state == SPMySQLConnectionLostInBackground)]) {
+	// A session that is gone or on its way out is not told: the next one is set up from the record,
+	// and the current one is not used again, even if it is still open when the next query comes.
+	// Only the main thread hands work over, so only there can the last work have been abandoned.
+	BOOL hasNoUsableSession = (state == SPMySQLDisconnected || state == SPMySQLDisconnecting
+	                           || state == SPMySQLConnecting || state == SPMySQLConnectionLostInBackground);
+	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingAfterAbandonedWork:([NSThread isMainThread] && lastWorkWasAbandoned)
+	                                                             hasNoUsableSession:hasNoUsableSession
+	                                                             storedCharacterSet:previousEncoding]) {
 		encoding = [[NSString alloc] initWithString:previousEncoding];
 		stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[previousEncoding UTF8String]];
 		encodingUsesLatin1Transport = previousEncodingUsesLatin1Transport;

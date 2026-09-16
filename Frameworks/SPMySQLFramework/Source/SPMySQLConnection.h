@@ -119,6 +119,9 @@
 	BOOL lastWorkWasAbandoned;
 	BOOL sessionMustBeReplacedBeforeUse;
 
+	// Whether the last session was closed while its proxy was left running
+	BOOL sessionWasClosedWithoutItsProxy;
+
 	// Which query is running, so that anything acting on "the query" later can tell whether it
 	// is still the same one, and which query is waiting on the server right now
 	NSUInteger queryGeneration;

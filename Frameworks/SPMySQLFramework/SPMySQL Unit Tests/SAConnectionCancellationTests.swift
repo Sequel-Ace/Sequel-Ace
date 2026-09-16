@@ -138,11 +138,20 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(recovery(cancelled: true, userDisconnected: false, connected: true, disconnected: false, mayDisconnect: false), .none)
     }
 
-    /// A stored character set is only put on record while the session is on its way out.
+    /// A stored character set is only put on record while the session is gone or on its way out.
     func testStoredEncodingIsOnlyRecordedWhileTheSessionIsOnItsWayOut() {
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, connectionLostInBackground: false))
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, connectionLostInBackground: true))
-        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, connectionLostInBackground: false))
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, storedCharacterSet: "latin1"))
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: true, storedCharacterSet: "latin1"))
+        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: false, storedCharacterSet: "latin1"))
+    }
+
+    /// A session that is still open is told about a character set whose escaping depends on it.
+    func testAnEscapeSensitiveCharacterSetIsSentToAnOpenSession() {
+        for characterSet in ["big5", "cp932", "gb18030", "GBK", "sjis"] {
+            XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, storedCharacterSet: characterSet), characterSet)
+            XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: true, storedCharacterSet: characterSet), characterSet)
+        }
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, storedCharacterSet: "gb2312"))
     }
 
     /// Nothing changes without a cancellation or after the user disconnected.
