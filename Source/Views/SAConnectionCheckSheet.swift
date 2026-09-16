@@ -19,11 +19,19 @@ import AppKit
 /// then ignore every click on it. It deliberately does not run a modal session either: that would
 /// hold every other window of the application still as well, while only this document's window
 /// has anything to wait for - and the sheet on it already keeps that one window from being used.
+///
+/// Because other windows keep working, one of them can start a wait of its own while this one is
+/// still going, and that wait's loop runs inside this one's until it ends. Every loop therefore looks
+/// after every wait that is going on: a wait whose work finishes takes its sheet down at once, and
+/// the button ends its wait there and then instead of when the loops have unwound back to it.
 @objc(SAConnectionCheckSheet)
 final class SAConnectionCheckSheet: NSObject {
 
     /// How long the loop sleeps between rounds of events, in microseconds.
     private static let eventLoopPause: useconds_t = 3_000
+
+    /// The waits going on, innermost last. Only the main thread touches this.
+    private static var activeWaits: [SAConnectionCheckSheet] = []
 
     private var sheetWindow: NSWindow?
     private var elapsedLabel: NSTextField?
@@ -31,14 +39,16 @@ final class SAConnectionCheckSheet: NSObject {
     private weak var presentingWindow: NSWindow?
     private weak var documentWindow: NSWindow?
     private var waitWasEnded = false
-    private var waitWasCancelledByUser = false
     private var isSuspended = false
+    private var isFinished: (() -> Bool)?
+    private var cancelHandler: (() -> Void)?
 
     /// Waits for connection work while keeping the window answering, and shows what it is waiting for.
     /// - Parameters:
     ///   - window: The window the work belongs to.
     ///   - isFinished: Reports whether the work has finished; asked repeatedly until it says yes.
-    ///   - cancelHandler: Called if the user ends the wait, before this method returns.
+    ///   - cancelHandler: Called once if the user ends the wait - as soon as they do, and always
+    ///     before this method returns.
     @objc(waitInWindow:untilFinished:whenCancelled:)
     func wait(in window: NSWindow?, untilFinished isFinished: @escaping () -> Bool, whenCancelled cancelHandler: (() -> Void)?) {
         guard !isFinished() else {
@@ -46,32 +56,47 @@ final class SAConnectionCheckSheet: NSObject {
         }
 
         waitWasEnded = false
-        waitWasCancelledByUser = false
         isSuspended = false
         documentWindow = window
-        present(on: window)
+        self.isFinished = isFinished
+        self.cancelHandler = cancelHandler
+        Self.activeWaits.append(self)
+        defer {
+            Self.activeWaits.removeAll { $0 === self }
+            self.isFinished = nil
+            self.cancelHandler = nil
+        }
 
-        while !isFinished() && !waitWasEnded {
-            // Another sheet has taken the window for a question of its own. This wait gives the
-            // window back for as long as that lasts, and asks for it again afterwards.
-            if isSuspended {
-                deliverPendingEvents()
-                usleep(Self.eventLoopPause)
-                continue
-            }
-            if sheetWindow == nil {
-                present(on: documentWindow)
-            }
-            deliverPendingEvents()
-            updateElapsedTime()
+        Self.refreshActiveWaits()
+        while !hasEnded {
+            Self.deliverPendingEvents()
+            Self.refreshActiveWaits()
             usleep(Self.eventLoopPause)
         }
 
         dismissSheet()
+    }
 
-        if waitWasCancelledByUser {
-            cancelHandler?()
+    /// Takes a wait's sheet down again once it is no longer needed, and shows or updates the sheet
+    /// of every wait that still is.
+    ///
+    /// A window shows one of these sheets at a time; a wait whose window is showing another one
+    /// shows its own once that one is gone.
+    private static func refreshActiveWaits() {
+        for wait in activeWaits where wait.hasEnded || wait.isSuspended {
+            wait.dismissSheet()
         }
+        for wait in activeWaits where !wait.hasEnded && !wait.isSuspended {
+            if wait.sheetWindow == nil {
+                wait.present(on: wait.documentWindow)
+            }
+            wait.updateElapsedTime()
+        }
+    }
+
+    /// Whether the wait is over, because the work finished or the waiting was ended.
+    private var hasEnded: Bool {
+        return waitWasEnded || (isFinished?() ?? true)
     }
 
     /// Ends the wait from outside, without counting as the user cancelling the work.
@@ -84,23 +109,28 @@ final class SAConnectionCheckSheet: NSObject {
     /// A window holds one sheet at a time. A question the connection has to ask - whether to
     /// reconnect, say - is more important than a note about waiting, so the note steps aside
     /// rather than leaving both unanswerable.
-    @objc func suspendForOtherSheet() {
-        guard !isSuspended else {
-            return
+    /// - Parameter window: The window the other sheet is for; every wait on it steps aside.
+    @objc(suspendWaitsInWindow:)
+    static func suspendWaits(in window: NSWindow?) {
+        for wait in activeWaits where wait.documentWindow === window {
+            wait.isSuspended = true
+            wait.dismissSheet()
         }
-        isSuspended = true
-        dismissSheet()
     }
 
     /// Takes the window back after that other sheet is gone.
-    @objc func resumeAfterOtherSheet() {
-        isSuspended = false
+    /// - Parameter window: The window the other sheet was for.
+    @objc(resumeWaitsInWindow:)
+    static func resumeWaits(in window: NSWindow?) {
+        for wait in activeWaits where wait.documentWindow === window {
+            wait.isSuspended = false
+        }
     }
 
     /// Builds the sheet and puts it on the window.
     /// - Parameter window: The window to show it on, if it can still show one.
     private func present(on window: NSWindow?) {
-        guard let window, window.isVisible, sheetWindow == nil else {
+        guard let window, window.isVisible, window.attachedSheet == nil, sheetWindow == nil else {
             return
         }
 
@@ -167,7 +197,7 @@ final class SAConnectionCheckSheet: NSObject {
     }
 
     /// Takes the events that have arrived out of the queue and delivers them, without waiting for more.
-    private func deliverPendingEvents() {
+    private static func deliverPendingEvents() {
         while let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
             NSApp.sendEvent(event)
         }
@@ -187,8 +217,18 @@ final class SAConnectionCheckSheet: NSObject {
     }
 
     /// Ends the wait when the button is pressed, which is the user asking for the work to stop.
-    @objc private func cancelButtonPressed() {
-        waitWasCancelledByUser = true
+    ///
+    /// The work is asked to stop right here. This wait's loop may be running beneath another one
+    /// and only get to look at its state again once that one is over.
+    @objc func cancelButtonPressed() {
+        guard !waitWasEnded else {
+            return
+        }
         waitWasEnded = true
+        dismissSheet()
+
+        let handler = cancelHandler
+        cancelHandler = nil
+        handler?()
     }
 }

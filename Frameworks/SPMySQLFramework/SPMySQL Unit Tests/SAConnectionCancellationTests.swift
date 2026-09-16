@@ -138,6 +138,13 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(recovery(cancelled: true, userDisconnected: false, connected: true, disconnected: false, mayDisconnect: false), .none)
     }
 
+    /// A stored character set is only put on record while the session is on its way out.
+    func testStoredEncodingIsOnlyRecordedWhileTheSessionIsOnItsWayOut() {
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, connectionLostInBackground: false))
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, connectionLostInBackground: true))
+        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, connectionLostInBackground: false))
+    }
+
     /// Nothing changes without a cancellation or after the user disconnected.
     func testNothingChangesWithoutACancellationOrAfterTheUserDisconnected() {
         XCTAssertEqual(recovery(cancelled: false, userDisconnected: false, connected: false, disconnected: true, mayDisconnect: true), .none)

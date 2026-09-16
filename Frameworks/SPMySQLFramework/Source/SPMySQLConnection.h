@@ -113,6 +113,12 @@
 	BOOL userEndedPendingWork;
 	uint64_t userEndedPendingWorkTime;
 
+	// Whether the main thread stopped waiting for the work it ran last, whose session is then on its
+	// way out; and whether the character set on record was changed for the next session only, so
+	// the current one must not be used any more
+	BOOL lastWorkWasAbandoned;
+	BOOL sessionMustBeReplacedBeforeUse;
+
 	// Which query is running, so that anything acting on "the query" later can tell whether it
 	// is still the same one, and which query is waiting on the server right now
 	NSUInteger queryGeneration;

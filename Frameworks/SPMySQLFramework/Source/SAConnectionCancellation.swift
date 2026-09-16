@@ -159,6 +159,22 @@ public final class SAConnectionCancellation: NSObject {
         host.closeSessionIfConnected()
     }
 
+    /// Whether putting a stored character set back only has to change the connection's record of it.
+    ///
+    /// Work nobody waited for closes its session once it finishes, and a connection lost in the
+    /// background has no session left; either way the next query connects afresh with the character
+    /// set on record. Telling the server as well would only wait behind the abandoned work, or
+    /// reconnect, for a session that is on its way out.
+    /// - Parameters:
+    ///   - afterAbandonedWork: Whether the main thread stopped waiting for the work it ran last.
+    ///   - connectionLostInBackground: Whether the connection has already lost its session.
+    /// - Returns: Whether the record alone is to be changed.
+    @objc(storedEncodingOnlyNeedsRecordingAfterAbandonedWork:connectionLostInBackground:)
+    public static func storedEncodingOnlyNeedsRecording(afterAbandonedWork: Bool,
+                                                        connectionLostInBackground: Bool) -> Bool {
+        return afterAbandonedWork || connectionLostInBackground
+    }
+
     /// Decides what becomes of a connection whose reconnect ended while its thread was cancelled.
     ///
     /// Cancelling there means the user stopped waiting, not that they asked for the connection to

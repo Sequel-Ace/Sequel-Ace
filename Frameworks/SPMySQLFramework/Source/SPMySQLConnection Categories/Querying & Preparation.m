@@ -355,6 +355,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
+	lastWorkWasAbandoned = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -884,7 +885,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	[self _lockConnection];
 
 	for (NSUInteger attempt = 0; attempt < 2; attempt++) {
-		if (mySQLConnection && state != SPMySQLConnectionLostInBackground) return YES;
+		if (mySQLConnection && state != SPMySQLConnectionLostInBackground) {
+			if (!sessionMustBeReplacedBeforeUse) return YES;
+
+			// The character set on record was changed for the next session only. This one is closed
+			// like the session of abandoned work, and the reconnect below sets up the next one.
+			[self _closeSessionOfAbandonedQuery];
+		}
 
 		[self _unlockConnection];
 

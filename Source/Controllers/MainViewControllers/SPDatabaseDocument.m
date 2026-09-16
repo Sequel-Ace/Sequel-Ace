@@ -112,7 +112,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
 // What the window shows while a connection check is running on its own thread
-@property (nonatomic, strong) SAConnectionCheckSheet *connectionCheckSheet;
 
 - (void)_addDatabase;
 - (void)_alterDatabase;
@@ -5954,16 +5953,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
 {
     SAConnectionCheckSheet *sheet = [[SAConnectionCheckSheet alloc] init];
-    self.connectionCheckSheet = sheet;
 
     __weak id weakConnection = connection;
     [sheet waitInWindow:[self parentWindowControllerWindow] untilFinished:isFinished whenCancelled:^{
         [weakConnection cancelConnectionCheck];
     }];
-
-    if (self.connectionCheckSheet == sheet) {
-        self.connectionCheckSheet = nil;
-    }
 }
 
 /**
@@ -5975,7 +5969,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPLog(@"connectionLost");
 
     // A window holds one sheet at a time, and this question outranks a note about waiting.
-    [self.connectionCheckSheet suspendForOtherSheet];
+    NSWindow *questionWindow = [self parentWindowControllerWindow];
+    [SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
 
     SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
@@ -6007,7 +6002,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Whatever was chosen, the connection carries on working on it, and the wait for that
     // work can have the window back.
-    [self.connectionCheckSheet resumeAfterOtherSheet];
+    [SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
 
     return connectionErrorCode;
 }

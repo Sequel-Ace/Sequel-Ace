@@ -914,6 +914,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
+	sessionMustBeReplacedBeforeUse = NO;
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -1587,6 +1588,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// is: callers that judge by the error state rather than by the result see it too.
 	if (![outcome finished]) {
 		[self _recordWorkAsCancelled];
+		lastWorkWasAbandoned = YES;
 
 		return nil;
 	}
