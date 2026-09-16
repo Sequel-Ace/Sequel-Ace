@@ -368,11 +368,23 @@ final class SADatabaseAssertion: NSObject {
         guard let first = query.firstIndex(where: { !$0.isWhitespace }) else {
             return false
         }
-        let needsStripping = query[first] == "#" || query[first] == "(" || query[first...].hasPrefix("--") || query[first...].hasPrefix("/*")
-        let code = needsStripping ? stripSQLComments(query, serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB) : String(query[first...])
+        let rest = query[first...]
+        let needsStripping = rest.first == "#" || rest.first == "(" || rest.hasPrefix("--") || rest.hasPrefix("/*")
+        let code = needsStripping
+            ? Substring(stripSQLComments(query, serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+            : rest
         let statement = code.drop { $0.isWhitespace || $0 == "(" }
-        let keyword = statement.prefix { isIdentifierCharacter($0) }
-        return keywordsLeavingDataAlone.contains(keyword.uppercased())
+        let keyword = statement.prefix { isIdentifierCharacter($0) }.uppercased()
+        guard keywordsLeavingDataAlone.contains(keyword) else {
+            return false
+        }
+
+        // EXPLAIN ANALYZE runs the statement it explains, and that can be an UPDATE or a DELETE.
+        if keyword == "EXPLAIN" || keyword == "DESCRIBE" || keyword == "DESC" {
+            let afterKeyword = statement.dropFirst(keyword.count).drop { $0.isWhitespace }
+            return afterKeyword.prefix { isIdentifierCharacter($0) }.uppercased() != "ANALYZE"
+        }
+        return true
     }
 
     enum DatabaseContextChange: Equatable {

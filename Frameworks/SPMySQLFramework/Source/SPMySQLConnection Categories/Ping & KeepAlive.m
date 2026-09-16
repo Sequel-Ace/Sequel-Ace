@@ -55,8 +55,9 @@ typedef struct {
 - (void)_keepAlive
 {
 	// Do nothing if not connected, if keepalive is disabled, or a keepalive is in
-	// progress.
-	if (state != SPMySQLConnected || !useKeepAlive) return;
+	// progress. A session that is replaced before its next use is not kept alive either: a ping
+	// would only hold the connection, on a route that may have gone.
+	if (state != SPMySQLConnected || !useKeepAlive || sessionMustBeReplacedBeforeUse) return;
 
 	// Check to see whether a ping is required.  First, compare the last query
 	// and keepalive times against the keepalive interval.
@@ -150,8 +151,8 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
-	// The keepalive budget: as long as the connection timeout, and never less than thirty seconds -
-	// a ping cut off before its answer costs the session.
+	// The keepalive budget: as long as the connection timeout, with a minimum - a ping cut off
+	// before its answer costs the session.
 	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:[SAConnectionCheckBudget keepAlivePingTimeoutForConfiguredTimeout:timeout]];
 }
 

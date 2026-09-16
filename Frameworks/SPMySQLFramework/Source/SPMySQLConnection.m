@@ -490,7 +490,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	userTriggeredDisconnect = NO;
 
 	// A connection the user sets up afresh starts without a report about an earlier session.
-	uncommittedWorkWasLost = NO;
+	lostWorkReportPendingForEditor = NO;
+	lostWorkReportPendingForWrites = NO;
 	return [self _connect];
 }
 

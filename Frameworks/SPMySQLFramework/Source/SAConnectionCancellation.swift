@@ -51,6 +51,17 @@ public protocol SAConnectionCancellationHost: AnyObject {
     func closeSessionIfConnected()
 }
 
+/// Which report of uncommitted work lost with a session a statement is refused with.
+@objc(SALostWorkRefusal)
+public enum SALostWorkRefusal: Int {
+    /// The statement runs.
+    case none
+    /// A statement from the query editor. The user now knows, and nothing else is refused for this loss.
+    case editorStatement
+    /// A statement that changes data, from elsewhere. The query editor still has to be told.
+    case applicationWrite
+}
+
 /// What becomes of a connection whose reconnect was cut short by a cancelled thread.
 @objc(SAConnectionRecoveryAction)
 public enum SAConnectionRecoveryAction: Int {
@@ -305,29 +316,40 @@ public final class SAConnectionCancellation: NSObject {
         return openTransaction || (autocommitAtConnect && !autocommit)
     }
 
-    /// Whether a statement is refused because a session before it was dropped with uncommitted work.
+    /// Whether, and for whom, a statement is refused because a session before it was dropped with
+    /// uncommitted work.
     ///
     /// On the new session the statement would run as if nothing had happened: an `UPDATE` would
-    /// commit on its own, a `COMMIT` would succeed without committing anything. The first statement
-    /// that could stand in for the lost work is refused, once, and says why - any statement from
-    /// the query editor, which has statements not retried, and any statement that changes data from
-    /// anywhere else, such as an edit in the content view. The application's own reads and session
-    /// settings run as before, and so do the statements that set up the new session.
+    /// commit on its own, a `COMMIT` would succeed without committing anything. A loss is reported
+    /// twice, once to each kind of caller:
+    /// - the query editor, which has statements not retried and where the user's own transactions
+    ///   run, has its next statement refused, whatever it is - and then knows;
+    /// - anywhere else - an edit in the content view, an import, the MCP server - the first statement
+    ///   that changes data is refused. That does not tell the query editor, whose next statement is
+    ///   still refused.
+    ///
+    /// The application's own reads and session settings run as before, and so do the statements
+    /// that set up the new session.
     /// - Parameters:
-    ///   - lostUncommittedWork: Whether a dropped session lost uncommitted work nobody was told of.
+    ///   - reportPendingForEditor: Whether the query editor has yet to be told of a loss.
+    ///   - reportPendingForWrites: Whether a write from elsewhere has yet to be refused for a loss.
     ///   - retriesStatements: Whether the caller has statements retried after a lost connection.
     ///   - settingUpSession: Whether the statement is one the connection sends to set up a session.
     ///   - statementLeavesDataAlone: Whether the statement only reads or sets up the session.
-    /// - Returns: Whether to refuse the statement and tell the caller.
-    @objc(refusesStatementAfterLostUncommittedWork:retriesStatements:settingUpSession:statementLeavesDataAlone:)
-    public static func refusesStatement(afterLostUncommittedWork lostUncommittedWork: Bool,
-                                        retriesStatements: Bool,
-                                        settingUpSession: Bool,
-                                        statementLeavesDataAlone: Bool) -> Bool {
-        guard lostUncommittedWork, !settingUpSession else {
-            return false
+    /// - Returns: The report the statement is refused with, if any.
+    @objc(lostWorkRefusalWithReportPendingForEditor:reportPendingForWrites:retriesStatements:settingUpSession:statementLeavesDataAlone:)
+    public static func lostWorkRefusal(reportPendingForEditor: Bool,
+                                       reportPendingForWrites: Bool,
+                                       retriesStatements: Bool,
+                                       settingUpSession: Bool,
+                                       statementLeavesDataAlone: Bool) -> SALostWorkRefusal {
+        guard !settingUpSession else {
+            return .none
         }
-        return !retriesStatements || !statementLeavesDataAlone
+        if !retriesStatements {
+            return reportPendingForEditor ? .editorStatement : .none
+        }
+        return reportPendingForWrites && !statementLeavesDataAlone ? .applicationWrite : .none
     }
 
     /// Whether asking a connection if it is connected restores a session lost in the background first.

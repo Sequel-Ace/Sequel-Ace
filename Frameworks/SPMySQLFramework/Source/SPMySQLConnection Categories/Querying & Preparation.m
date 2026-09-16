@@ -433,8 +433,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// A session dropped with a transaction open, or with autocommit turned off, took uncommitted
 	// work with it. On this session the statement could run as if nothing had happened, so it is
 	// refused instead, once, and says why.
-	if ([self _refusesStatementAfterLostUncommittedWork:theQueryString]) {
-		uncommittedWorkWasLost = NO;
+	if ([self _refusesStatementForLostUncommittedWork:theQueryString]) {
 		[self _unlockConnection];
 
 		// Releasing the connection can find a request to stop the query before; this one is refused,
@@ -615,8 +614,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// The reconnect may have dropped uncommitted work. The statement is then not tried again on
 		// the new session, where it would run as if nothing had happened; its error says why. Work
 		// nobody waits for, or that was asked to stop, has returned above and leaves the report.
-		if ([self _refusesStatementAfterLostUncommittedWork:theQueryString]) {
-			uncommittedWorkWasLost = NO;
+		if ([self _refusesStatementForLostUncommittedWork:theQueryString]) {
 			[self _unlockConnection];
 			lastQueryWasCancelled = NO;
 			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
@@ -951,23 +949,36 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 }
 
 /**
- * Whether a statement is refused because a session before it was dropped with uncommitted work.
- * The decision is SAConnectionCancellation's; the statement is only looked at when it matters.
- * Called while the connection is held.
+ * Whether a statement is refused because a session before it was dropped with uncommitted work,
+ * using up the report it is refused with. The decision is SAConnectionCancellation's; the statement
+ * is only looked at when it matters. Called while the connection is held.
  *
  * @param query The statement about to be sent.
  * @return Whether to refuse it.
  */
-- (BOOL)_refusesStatementAfterLostUncommittedWork:(NSString *)query
+- (BOOL)_refusesStatementForLostUncommittedWork:(NSString *)query
 {
-	if (!uncommittedWorkWasLost) return NO;
+	if (!lostWorkReportPendingForEditor && !lostWorkReportPendingForWrites) return NO;
 
-	BOOL leavesDataAlone = retryQueriesOnConnectionFailure && mySQLConnection
+	BOOL leavesDataAlone = retryQueriesOnConnectionFailure && lostWorkReportPendingForWrites && mySQLConnection
 		&& [SADatabaseAssertionState statementLeavesDataAlone:query onMySQLConnection:mySQLConnection];
-	return [SAConnectionCancellation refusesStatementAfterLostUncommittedWork:YES
-	                                                       retriesStatements:retryQueriesOnConnectionFailure
-	                                                        settingUpSession:[self _currentThreadIsReconnecting]
-	                                                 statementLeavesDataAlone:leavesDataAlone];
+	SALostWorkRefusal refusal = [SAConnectionCancellation lostWorkRefusalWithReportPendingForEditor:lostWorkReportPendingForEditor
+	                                                                         reportPendingForWrites:lostWorkReportPendingForWrites
+	                                                                              retriesStatements:retryQueriesOnConnectionFailure
+	                                                                               settingUpSession:[self _currentThreadIsReconnecting]
+	                                                                        statementLeavesDataAlone:leavesDataAlone];
+	switch (refusal) {
+		case SALostWorkRefusalEditorStatement:
+			lostWorkReportPendingForEditor = NO;
+			lostWorkReportPendingForWrites = NO;
+			return YES;
+		case SALostWorkRefusalApplicationWrite:
+			lostWorkReportPendingForWrites = NO;
+			return YES;
+		case SALostWorkRefusalNone:
+			break;
+	}
+	return NO;
 }
 
 /**
@@ -984,7 +995,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	if ([SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(status & SERVER_STATUS_IN_TRANS) != 0
 	                                                                         autocommit:(status & SERVER_STATUS_AUTOCOMMIT) != 0
 	                                                                autocommitAtConnect:sessionAutocommitAtConnect]) {
-		uncommittedWorkWasLost = YES;
+		lostWorkReportPendingForEditor = YES;
+		lostWorkReportPendingForWrites = YES;
 	}
 }
 

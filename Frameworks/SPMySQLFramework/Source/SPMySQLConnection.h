@@ -135,9 +135,11 @@
 	// The number the running query started with; its retries run under later numbers
 	NSUInteger runningQueryFirstGeneration;
 
-	// Whether a dropped session took uncommitted work with it that the user has not been told of,
-	// and whether the current session had autocommit on when it connected
-	BOOL uncommittedWorkWasLost;
+	// Whether a dropped session took uncommitted work with it that the query editor has not been
+	// told of, or that no write elsewhere has been refused for yet; and whether the current session
+	// had autocommit on when it connected
+	BOOL lostWorkReportPendingForEditor;
+	BOOL lostWorkReportPendingForWrites;
 	BOOL sessionAutocommitAtConnect;
 
 	BOOL useKeepAlive;

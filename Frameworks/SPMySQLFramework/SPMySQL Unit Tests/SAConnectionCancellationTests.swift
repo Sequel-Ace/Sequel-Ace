@@ -244,24 +244,37 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertTrue(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: true, autocommit: false, autocommitAtConnect: false))
     }
 
+    /// Decides with every report pending unless a test says otherwise.
+    private func refusal(editor: Bool = true, writes: Bool = true, retries: Bool, settingUp: Bool = false, leavesDataAlone: Bool) -> SALostWorkRefusal {
+        SAConnectionCancellation.lostWorkRefusal(reportPendingForEditor: editor, reportPendingForWrites: writes,
+                                                 retriesStatements: retries, settingUpSession: settingUp,
+                                                 statementLeavesDataAlone: leavesDataAlone)
+    }
+
     /// After lost uncommitted work, the query editor's next statement is refused, whatever it is.
     func testTheQueryEditorsNextStatementIsRefusedAfterLostWork() {
-        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: false, statementLeavesDataAlone: true))
-        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: false, statementLeavesDataAlone: false))
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: false, retriesStatements: false, settingUpSession: false, statementLeavesDataAlone: false))
+        XCTAssertEqual(refusal(retries: false, leavesDataAlone: true), .editorStatement)
+        XCTAssertEqual(refusal(retries: false, leavesDataAlone: false), .editorStatement)
+        XCTAssertEqual(refusal(editor: false, retries: false, leavesDataAlone: false), .none)
+    }
+
+    /// The query editor is still told after a write elsewhere was refused for the same loss.
+    func testTheQueryEditorIsToldEvenAfterAWriteElsewhereWasRefused() {
+        XCTAssertEqual(refusal(writes: false, retries: false, leavesDataAlone: true), .editorStatement)
     }
 
     /// After lost uncommitted work, the application's writes are refused, and its reads run.
     func testTheApplicationsWritesAreRefusedAfterLostWork() {
-        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: false, statementLeavesDataAlone: false))
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: false, statementLeavesDataAlone: true))
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: false, retriesStatements: true, settingUpSession: false, statementLeavesDataAlone: false))
+        XCTAssertEqual(refusal(retries: true, leavesDataAlone: false), .applicationWrite)
+        XCTAssertEqual(refusal(editor: false, retries: true, leavesDataAlone: false), .applicationWrite)
+        XCTAssertEqual(refusal(retries: true, leavesDataAlone: true), .none)
+        XCTAssertEqual(refusal(writes: false, retries: true, leavesDataAlone: false), .none)
     }
 
     /// The statements that set up a new session always run, and leave the report for the caller.
     func testTheStatementsThatSetUpANewSessionAlwaysRun() {
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: true, statementLeavesDataAlone: false))
-        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: true, statementLeavesDataAlone: false))
+        XCTAssertEqual(refusal(retries: false, settingUp: true, leavesDataAlone: false), .none)
+        XCTAssertEqual(refusal(retries: true, settingUp: true, leavesDataAlone: false), .none)
     }
 
     /// Only a thread other than the main thread restores a lost session when asked whether it is connected.

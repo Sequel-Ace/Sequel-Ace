@@ -90,9 +90,11 @@ public final class SAConnectionCheckBudget: NSObject {
 
     /// The shortest a keepalive ping may take before it is cut off, in seconds.
     ///
-    /// Nobody waits for a keepalive, and a ping cut off before its answer costs the session - and
-    /// any transaction it has open - so a short connection timeout does not shorten it.
-    public static let keepAlivePingMinimum: UInt = 30
+    /// A ping cut off before its answer costs the session - and any transaction it has open - so a
+    /// very short connection timeout does not shorten it further. A longer minimum would hold the
+    /// connection for that long on a route that has gone, and whatever the user does next waits
+    /// behind it; this is the limit a check-triggered reconnect gets.
+    public static let keepAlivePingMinimum: UInt = connectLimit
 
     /// The ping timeout a keepalive uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.

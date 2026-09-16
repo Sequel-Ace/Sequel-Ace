@@ -19,7 +19,7 @@ final class SADatabaseAssertionTests: XCTestCase {
     func testReadsAndSessionSettingsLeaveTheDataAlone() {
         for query in ["SELECT 1", "  select * from t", "/* note */ SHOW TABLES", "-- note\nSELECT 1", "# note\nDESCRIBE t",
                       "(SELECT 1) UNION (SELECT 2)", "SET NAMES utf8mb4", "USE `db`", "EXPLAIN SELECT 1", "KILL QUERY 5",
-                      "/*!40101 SET NAMES utf8mb4 */", "TABLE t", "desc t"] {
+                      "/*!40101 SET NAMES utf8mb4 */", "TABLE t", "desc t", "EXPLAIN FORMAT=JSON SELECT 1"] {
             XCTAssertTrue(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
         }
     }
@@ -28,7 +28,7 @@ final class SADatabaseAssertionTests: XCTestCase {
     func testEverythingElseIsTakenToChangeData() {
         for query in ["UPDATE t SET a = 1", "INSERT INTO t VALUES (1)", "delete from t", "COMMIT", "CALL p()",
                       "WITH x AS (SELECT 1) DELETE FROM t", "/* SELECT */ UPDATE t SET a = 1", "/*!40101 UPDATE t SET a = 1 */",
-                      "SELECTED", "", "   "] {
+                      "SELECTED", "", "   ", "EXPLAIN ANALYZE DELETE t FROM t JOIN u", "explain  analyze select 1"] {
             XCTAssertFalse(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
         }
     }

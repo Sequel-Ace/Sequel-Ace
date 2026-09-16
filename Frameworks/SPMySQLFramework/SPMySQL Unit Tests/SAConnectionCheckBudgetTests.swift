@@ -85,6 +85,8 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 0), SAConnectionCheckBudget.keepAlivePingMinimum)
         XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 3), SAConnectionCheckBudget.keepAlivePingMinimum)
         XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 90), 90)
+        // The default timeout stays as it is.
+        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 10), 10)
     }
 
     /// A side connection never waits long to connect, even without a configured timeout.
