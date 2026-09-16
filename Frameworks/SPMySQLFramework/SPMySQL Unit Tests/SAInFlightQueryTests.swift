@@ -134,13 +134,14 @@ final class SAInFlightQueryTests: XCTestCase {
         inFlightQuery.requestCancellation(ofGeneration: 23)
         XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 20, through: 23))
 
-        inFlightQuery.requestCancellation(ofGeneration: 21)
-        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 20, through: 23))
-        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 21, through: 21))
+        let reconnecting = SAInFlightQuery()
+        reconnecting.requestCancellation(ofGeneration: 21)
+        XCTAssertTrue(reconnecting.cancellationWasRequested(forGenerationsFrom: 20, through: 23))
+        XCTAssertTrue(reconnecting.cancellationWasRequested(forGenerationsFrom: 21, through: 21))
 
         // A request for a query before or after it does not.
-        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 22, through: 23))
-        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 18, through: 20))
+        XCTAssertFalse(reconnecting.cancellationWasRequested(forGenerationsFrom: 22, through: 23))
+        XCTAssertFalse(reconnecting.cancellationWasRequested(forGenerationsFrom: 18, through: 20))
     }
 
     /// A request to stop a query another thread ran while this one reconnected does not stop this one.
@@ -155,6 +156,35 @@ final class SAInFlightQueryTests: XCTestCase {
 
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 40, through: 43))
         XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 42, through: 42))
+    }
+
+    /// A request to stop this query survives a later request to stop another thread's query.
+    func testARequestForThisQuerySurvivesALaterRequestForAnotherQuery() {
+        // This query, 40, is asked to stop while it reconnects (41); another thread's query, 42,
+        // is asked to stop after it; this query's retry runs as 43.
+        inFlightQuery.noteLatestGeneration(40, ownedByQueryStartedAt: 40)
+        inFlightQuery.noteLatestGeneration(41, ownedByQueryStartedAt: 0)
+        inFlightQuery.requestCancellation(ofGeneration: 41)
+        inFlightQuery.noteLatestGeneration(42, ownedByQueryStartedAt: 42)
+        inFlightQuery.requestCancellation(ofGeneration: 42)
+        inFlightQuery.noteLatestGeneration(43, ownedByQueryStartedAt: 40)
+
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 40, through: 43))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 42, through: 42))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 41))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 42))
+    }
+
+    /// A request is kept while other queries are asked to stop, up to the number of kept requests.
+    func testARequestIsKeptWhileOtherQueriesAreAskedToStop() {
+        inFlightQuery.noteLatestGeneration(1, ownedByQueryStartedAt: 1)
+        inFlightQuery.requestCancellation(ofGeneration: 1)
+        for generation in 2..<UInt(SAInFlightQuery.rememberedRequests + 1) {
+            inFlightQuery.noteLatestGeneration(generation, ownedByQueryStartedAt: generation)
+            inFlightQuery.requestCancellation(ofGeneration: generation)
+        }
+
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 1))
     }
 
     /// A request made for this query, its reconnect or its retry stops this query.

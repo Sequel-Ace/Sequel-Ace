@@ -30,9 +30,14 @@ public final class SAInFlightQuery: NSObject {
     private var waitingServerThread: UInt = 0
     private var killInProgress = false
 
+    /// A request to stop a query: the number it names, and the query that number belongs to.
+    private struct SACancellationRequest {
+        let generation: UInt
+        let owner: UInt
+    }
+
     private let requestLock = NSLock()
-    private var cancellationRequestedGeneration: UInt = 0
-    private var cancellationRequestedOwner: UInt = 0
+    private var cancellationRequests: [SACancellationRequest] = []
     private var storedLatestGeneration: UInt = 0
     private var generationOwners: [UInt: UInt] = [:]
     private weak var latestGenerationThread: Thread?
@@ -126,11 +131,15 @@ public final class SAInFlightQuery: NSObject {
         return Darwin.shutdown(waitingSocket, SHUT_RDWR) == 0
     }
 
+    /// How many of the latest requests to stop are kept.
+    static let rememberedRequests = 64
+
     /// Records that the query with this number was asked to stop. Never waits.
     ///
     /// A query that loses its connection reconnects and tries again under a new number. It asks
     /// under its original number whether it was asked to stop, so a request made before the retry
-    /// began still reaches it.
+    /// began still reaches it. Another thread's query can be asked to stop meanwhile; each request
+    /// is kept, so that one does not replace the other.
     /// - Parameter generation: The number of the query that was asked to stop.
     @objc(requestCancellationOfGeneration:)
     public func requestCancellation(ofGeneration generation: UInt) {
@@ -139,9 +148,12 @@ public final class SAInFlightQuery: NSObject {
         guard generation != 0 else {
             return
         }
-        cancellationRequestedGeneration = generation
         let isRemembered = generation + Self.rememberedOwners > storedLatestGeneration
-        cancellationRequestedOwner = isRemembered ? (generationOwners[generation] ?? 0) : 0
+        let owner = isRemembered ? (generationOwners[generation] ?? 0) : 0
+        cancellationRequests.append(SACancellationRequest(generation: generation, owner: owner))
+        if cancellationRequests.count > Self.rememberedRequests {
+            cancellationRequests.removeFirst(cancellationRequests.count - Self.rememberedRequests)
+        }
     }
 
     /// Whether the query with this number was asked to stop. Never waits.
@@ -151,7 +163,7 @@ public final class SAInFlightQuery: NSObject {
     public func cancellationWasRequested(forGeneration generation: UInt) -> Bool {
         requestLock.lock()
         defer { requestLock.unlock() }
-        return generation != 0 && cancellationRequestedGeneration == generation
+        return generation != 0 && cancellationRequests.contains { $0.generation == generation }
     }
 
     /// Whether a query that may be on a retry was asked to stop. Never waits.
@@ -171,11 +183,10 @@ public final class SAInFlightQuery: NSObject {
     public func cancellationWasRequested(forGenerationsFrom generation: UInt, through attempt: UInt) -> Bool {
         requestLock.lock()
         defer { requestLock.unlock() }
-        let requested = cancellationRequestedGeneration
-        guard requested != 0, generation <= requested, requested <= attempt else {
-            return false
+        return cancellationRequests.contains { request in
+            generation <= request.generation && request.generation <= attempt
+                && (request.owner == 0 || request.owner == generation)
         }
-        return cancellationRequestedOwner == 0 || cancellationRequestedOwner == generation
     }
 
     /// The number of the query or attempt that took the connection last. Never waits: it is read
