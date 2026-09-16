@@ -227,14 +227,21 @@ final class SAConnectionCancellationTests: XCTestCase {
     func testAnEarlyAnswerIsDecidedWhenTheGracePeriodEnds() {
         let attempt = SAKillAttempt()
         XCTAssertFalse(attempt.finish(accepted: true))
-        XCTAssertEqual(attempt.endGrace(), true)
+        XCTAssertEqual(attempt.endGrace(waitingForAnswer: true), true)
     }
 
-    /// An answer that comes after the grace period ended decides when it comes.
-    func testALateAnswerDecidesWhenItComes() {
+    /// With a transaction open, an answer that comes after the grace period ended decides when it comes.
+    func testALateAnswerDecidesWhenItIsWaitedFor() {
         let attempt = SAKillAttempt()
-        XCTAssertNil(attempt.endGrace())
+        XCTAssertNil(attempt.endGrace(waitingForAnswer: true))
         XCTAssertTrue(attempt.finish(accepted: false))
+    }
+
+    /// Without a transaction the grace period decides on its own, and a late answer changes nothing.
+    func testTheGracePeriodDecidesAloneWhenNoAnswerIsWaitedFor() {
+        let attempt = SAKillAttempt()
+        XCTAssertEqual(attempt.endGrace(waitingForAnswer: false), false)
+        XCTAssertFalse(attempt.finish(accepted: true))
     }
 
     /// Nothing changes without a cancellation or after the user disconnected.

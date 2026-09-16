@@ -130,7 +130,9 @@ public final class SAConnectionCancellation: NSObject {
 
         // Once the grace period is over, the socket is closed unless the server accepted the kill for
         // a session with an open transaction. Reaching the server can take longer than the grace
-        // period on a slow link; the decision then waits for the answer instead of guessing.
+        // period on a slow link. With a transaction open the decision then waits for the answer;
+        // without one the answer changes nothing, and a route that has gone would only make the
+        // socket stay open for as long as the kill takes to give up.
         let attempt = SAKillAttempt()
         let decideAfterGrace: (_ killAccepted: Bool) -> Void = { [weak self] killAccepted in
             guard let self,
@@ -152,8 +154,9 @@ public final class SAConnectionCancellation: NSObject {
             DispatchQueue.global(qos: .userInitiated).async(execute: askServer)
         }
 
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) {
-            if let accepted = attempt.endGrace() {
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) { [weak self] in
+            let waitsForAnswer = self?.host?.sessionHasOpenTransaction ?? false
+            if let accepted = attempt.endGrace(waitingForAnswer: waitsForAnswer) {
                 decideAfterGrace(accepted)
             }
         }
@@ -288,30 +291,45 @@ public final class SAConnectionCancellation: NSObject {
     }
 }
 
-/// One request to kill a query: whether the server has answered it, and whether the grace period
-/// is over. Whichever comes second decides what happens to the query's socket.
+/// One request to kill a query: whether the server has answered it, and who decides what happens to
+/// the query's socket - the end of the grace period, or an answer that comes after it. Exactly one of
+/// them decides.
 final class SAKillAttempt {
     private let lock = NSLock()
     private var answer: Bool?
-    private var graceIsOver = false
+    private var answerDecides = false
+    private var decided = false
 
     /// Records the server's answer.
     /// - Parameter accepted: Whether the server accepted the request.
-    /// - Returns: Whether the grace period was already over, so that the answer decides now.
+    /// - Returns: Whether this answer decides now, because the grace period ended waiting for it.
     func finish(accepted: Bool) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         answer = accepted
-        return graceIsOver
+        guard answerDecides, !decided else {
+            return false
+        }
+        decided = true
+        return true
     }
 
     /// Records that the grace period is over.
-    /// - Returns: The server's answer if it has come, so that the grace period decides now; nil if
-    ///   the answer is still outstanding and will decide when it comes.
-    func endGrace() -> Bool? {
+    /// - Parameter waitingForAnswer: Whether an answer that has not come yet is to be waited for.
+    /// - Returns: What to decide with now - the answer if it has come, "not accepted" if it is not
+    ///   waited for - or nil if the answer decides when it comes.
+    func endGrace(waitingForAnswer: Bool) -> Bool? {
         lock.lock()
         defer { lock.unlock() }
-        graceIsOver = true
-        return answer
+        if let answer {
+            decided = true
+            return answer
+        }
+        if waitingForAnswer {
+            answerDecides = true
+            return nil
+        }
+        decided = true
+        return false
     }
 }
