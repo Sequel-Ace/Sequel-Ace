@@ -487,6 +487,24 @@ final class SASQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(secondPrefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey)?.count, 1, "a row that is already there is not a rejected write")
         XCTAssertEqual(SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
     }
+
+    /// Verifies that a pin the store refuses for a constraint other than its unique key - a
+    /// CHECK in a schema this version did not create - is not taken as stored, so the
+    /// migration stays open for a later launch.
+    func testPinRefusedByAnotherConstraintDoesNotCompleteTheMigration() throws {
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, hostName TEXT NOT NULL, databaseName TEXT NOT NULL, pinnedTableName TEXT NOT NULL, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName), CHECK (hostName <> 'conn-1'))",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES ('legacy.host', 'db', 'orders')",
+            "PRAGMA user_version = 1",
+        ])
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertTrue(manager.isPersistent)
+        manager.migratePinnedTablesFromLegacyHost("legacy.host", toConnectionIdentifier: "conn-1", databaseName: "db")
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn-1", databaseName: "db"), ["orders"])
+        XCTAssertNil(prefs.stringArray(forKey: SQLitePinnedTableManager.migratedPinnedTablesKey), "a refused pin does not complete the migration")
+        XCTAssertEqual(try rowCount(inSQLiteFile: storePath, table: "PinnedTables"), 1, "the refused pin was not stored")
+    }
 }
 
 /// A key-value observer of a user default that runs a block on the thread

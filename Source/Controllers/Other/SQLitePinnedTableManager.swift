@@ -56,7 +56,8 @@ import OSLog
     private var recordGeneration = 0
 
     /// SQLite's primary result code for a violated constraint; a pin another
-    /// manager on the same file stored already fails with it.
+    /// manager on the same file stored already fails with it, and so does a pin
+    /// any other constraint refused.
     private static let sqliteConstraint = 19
 
     /// Opens or creates the store at `databasePath` and loads the pins it
@@ -349,9 +350,9 @@ import OSLog
     /// the caller holds `stateLock`.
     ///
     /// - Returns: `false` when the store refused the pin for a reason other
-    ///   than holding it already - a read-only file or folder, a full disk -
-    ///   so the pin lives in memory only; `true` otherwise, including when
-    ///   there is no store at all.
+    ///   than holding it already - a read-only file or folder, a full disk, a
+    ///   constraint other than its unique key - so the pin lives in memory
+    ///   only; `true` otherwise, including when there is no store at all.
     private func pinLocked(hostName: String, databaseName: String, tableToPin: String) -> Bool {
         if let pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToPin) {
             return true
@@ -370,12 +371,36 @@ import OSLog
             } catch {
                 logDBError(error)
                 // A pin another manager on the same file stored already
-                // violates the unique constraint; the store holds it.
+                // violates the unique constraint; the store holds it. Any
+                // other constraint - a CHECK in a schema this version did not
+                // create, say - reports the same code but refused the pin, so
+                // only a row that is actually there counts.
                 stored = (error as NSError).code & 0xFF == Self.sqliteConstraint
+                    && storeHoldsPin(in: db, hostName: hostName, databaseName: databaseName, tableName: tableToPin)
             }
         }
         queue.close()
         return stored
+    }
+
+    /// Whether the store holds the row for a pin; `false` when it cannot be read.
+    ///
+    /// - Parameters:
+    ///   - db: The open store.
+    ///   - hostName: The pin's host or connection key.
+    ///   - databaseName: The pin's database.
+    ///   - tableName: The pinned table.
+    /// - Returns: Whether exactly this pin has a row.
+    private func storeHoldsPin(in db: FMDatabase, hostName: String, databaseName: String, tableName: String) -> Bool {
+        do {
+            let rs = try db.executeQuery("SELECT 1 FROM PinnedTables WHERE hostName=? AND databaseName=? AND pinnedTableName=? LIMIT 1",
+                    values: [hostName, databaseName, tableName])
+            defer { rs.close() }
+            return rs.next()
+        } catch {
+            logDBError(error)
+            return false
+        }
     }
 
     /// Adds a pin to the in-memory state; the caller holds `stateLock`.
