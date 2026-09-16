@@ -960,7 +960,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
 	if (!lostWorkReportPendingForEditor && !lostWorkReportPendingForWrites) return NO;
 
+	// SQL from outside the application counts as a write whatever it starts with: a SELECT can call a
+	// function that changes data. Only the application's own statements are judged by their keyword.
 	BOOL leavesDataAlone = retryQueriesOnConnectionFailure && lostWorkReportPendingForWrites && mySQLConnection
+		&& ![SAOutsideStatements areRunningOnCurrentThread]
 		&& [SADatabaseAssertionState statementLeavesDataAlone:query onMySQLConnection:mySQLConnection];
 	SALostWorkRefusal refusal = [SAConnectionCancellation lostWorkRefusalWithReportPendingForEditor:lostWorkReportPendingForEditor
 	                                                                         reportPendingForWrites:lostWorkReportPendingForWrites

@@ -209,6 +209,9 @@ public final class SAConnectionWorkCoordinator: NSObject {
                     whenAbandonedWorkFinishes lateCompletion: @escaping (_ abandonedAtStamp: UInt) -> Void) -> SAConnectionWorkOutcome {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
+
+        // Statements from outside the application stay marked as such on the worker.
+        let comesFromOutside = SAOutsideStatements.areRunningOnCurrentThread
         let item = SAConnectionWorkItem {
             // The work and what settles it afterwards can tell how the work has used the session.
             let threadDictionary = Thread.current.threadDictionary
@@ -217,7 +220,12 @@ public final class SAConnectionWorkCoordinator: NSObject {
                 threadDictionary.removeObject(forKey: Self.runningWorkOutcomeKey)
             }
 
-            let result = work()
+            var result: Any?
+            if comesFromOutside {
+                SAOutsideStatements.run { result = work() }
+            } else {
+                result = work()
+            }
 
             // Nobody is waiting for this any more, and what the caller was told instead has to
             // stand - unless the connection has moved on to other work since, whose result is

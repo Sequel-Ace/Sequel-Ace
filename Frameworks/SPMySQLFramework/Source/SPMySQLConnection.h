@@ -269,6 +269,8 @@
 - (void)cancelQueryIfStillRunning:(NSUInteger)generation;
 /** Identifies the query the connection is running, and changes whenever another one takes over. */
 - (NSUInteger)currentQueryGeneration;
+/** Runs statements a client outside the application sent; after lost uncommitted work they are refused like writes. */
+- (void)runStatementsFromOutsideApplication:(NS_NOESCAPE void (^)(void))statements;
 - (BOOL)checkConnectionIfNecessary;
 - (double)timeConnected;
 - (BOOL)userTriggeredDisconnect;

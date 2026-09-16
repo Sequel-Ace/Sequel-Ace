@@ -269,6 +269,27 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.sessionUse, .untouched)
     }
 
+    /// Statements from outside the application stay marked as such on the worker, and only those.
+    func testWorkFromOutsideTheApplicationStaysMarkedOnTheWorker() {
+        var markedOnWorker: Bool?
+        SAOutsideStatements.run {
+            XCTAssertTrue(SAOutsideStatements.areRunningOnCurrentThread)
+            markedOnWorker = run({ SAOutsideStatements.areRunningOnCurrentThread }).result as? Bool
+        }
+        XCTAssertEqual(markedOnWorker, true)
+        XCTAssertEqual(run({ SAOutsideStatements.areRunningOnCurrentThread }).result as? Bool, false)
+        XCTAssertFalse(SAOutsideStatements.areRunningOnCurrentThread)
+    }
+
+    /// The mark survives nested runs and ends with the outermost one.
+    func testTheOutsideMarkEndsWithTheOutermostRun() {
+        SAOutsideStatements.run {
+            SAOutsideStatements.run {}
+            XCTAssertTrue(SAOutsideStatements.areRunningOnCurrentThread)
+        }
+        XCTAssertFalse(SAOutsideStatements.areRunningOnCurrentThread)
+    }
+
     /// Work that no coordinator runs may always send and never records a use of the session.
     func testWorkOutsideACoordinatorMayAlwaysSend() {
         XCTAssertTrue(SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: false))

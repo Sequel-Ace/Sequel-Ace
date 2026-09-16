@@ -51,6 +51,40 @@ public protocol SAConnectionCancellationHost: AnyObject {
     func closeSessionIfConnected()
 }
 
+/// Marks the statements the current thread sends as SQL the application did not write itself -
+/// statements a client outside the application sent.
+///
+/// After uncommitted work was lost with a session, such a statement is refused like a write,
+/// whatever its first keyword: a `SELECT` can call a function that changes data.
+@objc(SAOutsideStatements)
+public final class SAOutsideStatements: NSObject {
+
+    /// The key under which a thread keeps how deeply it is inside ``run(_:)``.
+    private static let depthKey = "SAOutsideStatementsDepth"
+
+    /// Runs work whose statements come from outside the application, on the current thread.
+    /// - Parameter work: The work that sends those statements.
+    @objc(runOnCurrentThread:)
+    public static func run(_ work: () -> Void) {
+        let threadDictionary = Thread.current.threadDictionary
+        let depth = (threadDictionary[depthKey] as? Int) ?? 0
+        threadDictionary[depthKey] = depth + 1
+        defer {
+            if depth == 0 {
+                threadDictionary.removeObject(forKey: depthKey)
+            } else {
+                threadDictionary[depthKey] = depth
+            }
+        }
+        work()
+    }
+
+    /// Whether the statements the current thread sends now come from outside the application.
+    @objc public static var areRunningOnCurrentThread: Bool {
+        return ((Thread.current.threadDictionary[depthKey] as? Int) ?? 0) > 0
+    }
+}
+
 /// Which report of uncommitted work lost with a session a statement is refused with.
 @objc(SALostWorkRefusal)
 public enum SALostWorkRefusal: Int {

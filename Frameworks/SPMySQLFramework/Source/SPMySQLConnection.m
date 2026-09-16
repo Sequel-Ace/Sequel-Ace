@@ -667,6 +667,18 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 }
 
 /**
+ * Runs statements a client outside the application sent - SQL the application did not write.
+ * After uncommitted work was lost with a session, they are refused like writes, whatever they
+ * start with. The decision is SAOutsideStatements'; this only lets the application reach it.
+ *
+ * @param statements The work that sends those statements, on the current thread.
+ */
+- (void)runStatementsFromOutsideApplication:(NS_NOESCAPE void (^)(void))statements
+{
+	[SAOutsideStatements runOnCurrentThread:statements];
+}
+
+/**
  * Stops a query, provided it is still the one running. The query is marked at once, the server is
  * asked to kill it, and its socket is closed if it is still waiting shortly afterwards. Off the
  * main thread the request to the server goes out before this returns, for callers that rely on it.
