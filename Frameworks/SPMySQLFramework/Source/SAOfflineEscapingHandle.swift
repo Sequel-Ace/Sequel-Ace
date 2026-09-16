@@ -113,7 +113,7 @@ public final class SAConnectionEscaper: NSObject {
     private var handshakeCharacterSet: String?
     private var sessionCharacterSet: String?
     private var sessionUsesNoBackslashEscapes = false
-    private var lastHandshakeUsedNoBackslashEscapes = false
+    private var sessionsStartWithNoBackslashEscapes = false
     private var sessionHasOpenTransaction = false
     private var handleCharacterSet: String?
     private var handleUsesNoBackslashEscapes = false
@@ -160,7 +160,7 @@ public final class SAConnectionEscaper: NSObject {
         defer { lock.unlock() }
         if isHandshake {
             handshakeCharacterSet = characterSet
-            lastHandshakeUsedNoBackslashEscapes = noBackslashEscapes
+            sessionsStartWithNoBackslashEscapes = noBackslashEscapes
         }
         sessionCharacterSet = characterSet
         sessionUsesNoBackslashEscapes = noBackslashEscapes
@@ -174,16 +174,27 @@ public final class SAConnectionEscaper: NSObject {
         return sessionHasOpenTransaction
     }
 
+    /// Records the escaping mode a new session started in, once it has run a statement - after
+    /// anything the server runs when a session starts, which the handshake's answer does not show
+    /// yet. The next session is taken to start in it too.
+    /// - Parameter noBackslashEscapes: Whether the session is in `NO_BACKSLASH_ESCAPES` mode.
+    @objc(recordStartingModeWithNoBackslashEscapes:)
+    public func recordStartingMode(noBackslashEscapes: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        sessionsStartWithNoBackslashEscapes = noBackslashEscapes
+    }
+
     /// Forgets what a session reported, once that session is closed. Until the next session
     /// connects, values follow the record, which that session's handshake uses, and the escaping mode
-    /// the last handshake reported - the server's own, which a mode the closed session was switched
-    /// to does not outlive.
+    /// sessions start in - the server's own, which a mode the closed session was switched to does not
+    /// outlive.
     @objc public func forgetSession() {
         lock.lock()
         defer { lock.unlock() }
         handshakeCharacterSet = nil
         sessionCharacterSet = nil
-        sessionUsesNoBackslashEscapes = lastHandshakeUsedNoBackslashEscapes
+        sessionUsesNoBackslashEscapes = sessionsStartWithNoBackslashEscapes
         sessionHasOpenTransaction = false
     }
 

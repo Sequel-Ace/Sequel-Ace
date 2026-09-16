@@ -1001,6 +1001,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _updateConnectionVariables];
 	if (state != SPMySQLConnected) return NO;
 
+	// What a session starts with is only known once it has run a statement: a server's init_connect
+	// runs after the handshake has been answered. Autocommit and the escaping mode are taken from
+	// there - the next session starts the same way.
+	[self _lockConnection];
+	if (mySQLConnection) {
+		sessionAutocommitAtConnect = (mySQLConnection->server_status & SERVER_STATUS_AUTOCOMMIT) != 0;
+		[valueEscaper recordStartingModeWithNoBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0];
+	}
+	[self _unlockConnection];
+
 	// Now connection is established and verified, reset the counter
 	reconnectionRetryAttempts = 0;
 

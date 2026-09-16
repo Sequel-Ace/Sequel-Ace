@@ -152,6 +152,18 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(escape(Data([0x5C, 0x27]), with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x27, 0x27]))
     }
 
+    /// The mode a session started in, after the server's own start-up statements, is kept between sessions.
+    func testTheModeASessionStartedInIsKeptBetweenSessions() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        // The server's start-up statement switched the mode after the handshake answered.
+        escaper.recordStartingMode(noBackslashEscapes: true)
+        // The user switched it back for this session only; then the session was closed.
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+        escaper.forgetSession()
+        XCTAssertEqual(escape(Data([0x5C, 0x27]), with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x27, 0x27]))
+    }
+
     /// The escaper keeps what the session said about an open transaction until the session is gone.
     func testTheEscaperKnowsWhetherTheSessionHasAnOpenTransaction() {
         let escaper = SAConnectionEscaper()
