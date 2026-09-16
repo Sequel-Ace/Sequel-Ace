@@ -88,6 +88,20 @@ public final class SAConnectionCheckBudget: NSObject {
     /// the connection but never greets is tried a second time without TLS, which doubles the wait.
     public static let sideConnectionConnectLimit: UInt = connectLimit
 
+    /// The shortest a keepalive ping may take before it is cut off, in seconds.
+    ///
+    /// Nobody waits for a keepalive, and a ping cut off before its answer costs the session - and
+    /// any transaction it has open - so a short connection timeout does not shorten it.
+    public static let keepAlivePingMinimum: UInt = 30
+
+    /// The ping timeout a keepalive uses on a connection with this timeout.
+    /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
+    /// - Returns: The longer of the configured timeout and ``keepAlivePingMinimum``, in seconds.
+    @objc(keepAlivePingTimeoutForConfiguredTimeout:)
+    public static func keepAlivePingTimeout(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
+        max(configuredTimeout, keepAlivePingMinimum)
+    }
+
     /// The ping timeout a connection check uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
     /// - Returns: The shorter of the configured timeout and ``pingLimit``, in seconds.

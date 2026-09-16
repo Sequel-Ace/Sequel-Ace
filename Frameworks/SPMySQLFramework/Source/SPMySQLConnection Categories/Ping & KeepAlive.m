@@ -150,8 +150,9 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
-	// The keepalive budget: as long as the connection timeout, thirty seconds by default.
-	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:(timeout > 0 ? timeout : 30)];
+	// The keepalive budget: as long as the connection timeout, and never less than thirty seconds -
+	// a ping cut off before its answer costs the session.
+	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:[SAConnectionCheckBudget keepAlivePingTimeoutForConfiguredTimeout:timeout]];
 }
 
 /**

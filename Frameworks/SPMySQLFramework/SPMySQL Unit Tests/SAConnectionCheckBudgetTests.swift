@@ -80,6 +80,13 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         XCTAssertGreaterThan(SAConnectionCheckBudget.sideConnectionAnswerTimeout(), 0)
     }
 
+    /// A keepalive ping is never cut off sooner than the minimum, but may take a longer configured timeout.
+    func testAKeepalivePingGetsAtLeastTheMinimum() {
+        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 0), SAConnectionCheckBudget.keepAlivePingMinimum)
+        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 3), SAConnectionCheckBudget.keepAlivePingMinimum)
+        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 90), 90)
+    }
+
     /// A side connection never waits long to connect, even without a configured timeout.
     func testASideConnectionNeverWaitsLongToConnect() {
         XCTAssertEqual(SAConnectionCheckBudget.sideConnectionConnectTimeout(forConfiguredTimeout: 0), SAConnectionCheckBudget.sideConnectionConnectLimit)
