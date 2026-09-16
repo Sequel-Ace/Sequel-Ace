@@ -120,6 +120,34 @@ final class SAConnectionCheckSheetTests: XCTestCase {
         XCTAssertTrue(waitEndedInTime)
     }
 
+    /// The time a wait shows is counted from the start of that wait, whether or not a sheet is up yet.
+    func testEachWaitCountsItsTimeFromItsOwnStart() {
+        let sheet = SAConnectionCheckSheet()
+
+        /// Runs one wait without a window and returns when it started, as seen while it was going on.
+        func startOfAWait() -> Date? {
+            var checks = 0
+            var seenStart: Date?
+            sheet.wait(in: nil, untilFinished: {
+                checks += 1
+                if checks == 2 {
+                    seenStart = sheet.waitStartDate
+                }
+                return checks >= 2
+            }, whenCancelled: nil)
+            return seenStart
+        }
+
+        let beforeFirstWait = Date()
+        let firstStart = startOfAWait()
+        XCTAssertNotNil(firstStart)
+        XCTAssertGreaterThanOrEqual(firstStart ?? .distantPast, beforeFirstWait)
+
+        let beforeSecondWait = Date()
+        let secondStart = startOfAWait()
+        XCTAssertGreaterThanOrEqual(secondStart ?? .distantPast, beforeSecondWait)
+    }
+
     /// A single wait shows its sheet, and none once it is over.
     func testASingleWaitShowsItsSheetUntilItIsOver() {
         XCTAssertEqual(SAConnectionCheckSheet.sheetStates(for: [wait(windowA)]), [.waiting])

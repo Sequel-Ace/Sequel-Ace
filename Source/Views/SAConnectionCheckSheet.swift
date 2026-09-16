@@ -142,6 +142,9 @@ final class SAConnectionCheckSheet: NSObject {
 
         waitWasEnded = false
         isSuspended = false
+
+        // The time is counted from the start of this wait, even when its sheet can only be shown later.
+        startDate = Date()
         documentWindow = window
         self.isFinished = isFinished
         self.cancelHandler = cancelHandler
@@ -160,6 +163,11 @@ final class SAConnectionCheckSheet: NSObject {
         }
 
         dismissSheet()
+    }
+
+    /// When the current wait started; the sheet counts the time from there.
+    var waitStartDate: Date? {
+        return startDate
     }
 
     /// Brings the sheet of every wait that is going on up to date.
@@ -261,9 +269,6 @@ final class SAConnectionCheckSheet: NSObject {
             self?.cancelButtonPressed()
         }
         sheetModel = model
-        if startDate == nil {
-            startDate = Date()
-        }
         updateElapsedTime()
 
         let controller = SAConnectionCheckSheetWindowController(model: model)
