@@ -162,6 +162,15 @@ public final class SAConnectionEscaper: NSObject {
         sessionUsesNoBackslashEscapes = noBackslashEscapes
     }
 
+    /// Forgets the character sets a session reported, once that session is closed. Until the next
+    /// session connects, values follow the record, which that session's handshake uses.
+    @objc public func forgetSession() {
+        lock.lock()
+        defer { lock.unlock() }
+        handshakeCharacterSet = nil
+        sessionCharacterSet = nil
+    }
+
     /// Escapes bytes for a string literal.
     /// - Parameters:
     ///   - source: The value, already in the connection's string encoding.

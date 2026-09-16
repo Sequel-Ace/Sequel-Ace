@@ -870,6 +870,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 	state = SPMySQLConnectionLostInBackground;
 	sessionWasClosedWithoutItsProxy = YES;
+
+	// Until the next session connects, values follow the record, which its handshake uses.
+	[valueEscaper forgetSession];
 }
 
 /**
