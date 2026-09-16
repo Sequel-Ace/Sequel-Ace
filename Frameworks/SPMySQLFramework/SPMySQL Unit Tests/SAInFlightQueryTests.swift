@@ -177,6 +177,20 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(inFlightQuery.connectionIsHeldByCurrentThread)
     }
 
+    /// A connection taken on one thread and handed to another is held by the thread it was handed to.
+    func testTheConnectionMovesToTheThreadItIsHandedTo() {
+        let takenElsewhere = expectation(description: "taken on another thread")
+        Thread {
+            self.inFlightQuery.noteConnectionHeld(byCurrentThread: true)
+            takenElsewhere.fulfill()
+        }.start()
+        wait(for: [takenElsewhere], timeout: 2)
+        XCTAssertFalse(inFlightQuery.connectionIsHeldByCurrentThread)
+
+        inFlightQuery.noteConnectionHeld(byCurrentThread: true)
+        XCTAssertTrue(inFlightQuery.connectionIsHeldByCurrentThread)
+    }
+
     /// Nothing is ever waiting before the first query.
     func testNothingIsEverWaitingBeforeTheFirstQuery() {
         XCTAssertFalse(inFlightQuery.closeSocket(ifGenerationIsWaiting: 0, beforeClosing: {}))

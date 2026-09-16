@@ -41,8 +41,11 @@
  */
 - (NSString *)serverVersionString
 {
-	if (serverVariableVersion) {
-		return [NSString stringWithString:serverVariableVersion];
+	// A reconnect on another thread can record the version of its new session meanwhile.
+	@synchronized (self) {
+		if (serverVariableVersion) {
+			return [NSString stringWithString:serverVariableVersion];
+		}
 	}
 
 	return nil;

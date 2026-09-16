@@ -705,8 +705,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 {
     // The version was recorded when the session was set up. The session's handle is not read here:
     // it is gone while a session closed after a stopped wait waits for the next query to replace it.
-    NSString *version = [serverVariableVersion lowercaseString];
-    NSLog(@"%@", version);
+    NSString *version = [[self serverVersionString] lowercaseString];
     NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
     
@@ -719,7 +718,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (BOOL) isMariaDB
 {
   // The version recorded when the session was set up; see -isNotMariadb103.
-  NSString *version = [serverVariableVersion lowercaseString];
+  NSString *version = [[self serverVersionString] lowercaseString];
   // See more: https://regex101.com/r/0QRlsG/1
   NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
   if ([predicate evaluateWithObject: version]){
@@ -950,7 +949,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 	//
 	// At that point (handshake) there is no charset and it's highly unlikely this will ever contain something other than ASCII,
 	// but to be safe, we'll use the Latin1 encoding which won't bail on invalid chars.
-	serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+	// Recorded under the same lock the version questions read it with: they can be asked on any
+	// thread, while a reconnect sets up the next session.
+	NSString *handshakeServerVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+	@synchronized (self) {
+		serverVariableVersion = handshakeServerVersion;
+	}
 	// this one can actually change the error state, but only if the server version string is not set (ie. no connection)
 	serverVersionNumber = mysql_get_server_version(mySQLConnection);
 
@@ -1611,6 +1615,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 	} whenAbandonedWorkFinishes:^(NSUInteger abandonedAtGeneration) {
 		[self->connectionCancellation settleAbandonedWorkFromGeneration:abandonedAtGeneration];
 	}];
+
+	// A streaming result keeps the connection until it has been read, and it is read here, on the
+	// thread that asked for it - which therefore holds the connection now, not the worker.
+	if ([outcome finished] && [[outcome result] isKindOfClass:[SPMySQLStreamingResult class]]) {
+		[inFlightQuery noteConnectionHeldByCurrentThread:YES];
+	}
 
 	// Work the user stopped waiting for keeps running until the server or a timeout answers it.
 	// The caller is told the same thing a cancelled query tells it, because that is what this

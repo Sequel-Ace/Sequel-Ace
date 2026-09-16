@@ -831,6 +831,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Mark that the last query was cancelled to prevent query retries from occurring
 	lastQueryWasCancelled = YES;
 
+	// Also as a request for the query that is running now. A query that is reconnecting before its
+	// retry resets its own mark once the reconnect is done, and finds the request instead - under
+	// the number of whichever of its queries was running.
+	[inFlightQuery requestCancellationOfGeneration:[inFlightQuery latestGeneration]];
+
 	// If the server could be reached and killed the query, the active query was cancelled.
 	if ([self _killQueryOverSideConnectionForGeneration:0]) return;
 
