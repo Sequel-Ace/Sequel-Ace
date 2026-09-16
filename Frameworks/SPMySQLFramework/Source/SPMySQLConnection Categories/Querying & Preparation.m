@@ -423,9 +423,28 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Work the user stopped waiting for can get the connection long after the caller was told it
 	// was cancelled. Sending it now would run a statement - possibly one that changes data - that
 	// was reported as not having run. Nothing is recorded either: the connection's state belongs
-	// to whatever runs next.
-	if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) {
+	// to whatever runs next. Work that goes ahead records whether a transaction was open before it
+	// first used the session; stopping it later decides by that.
+	if (![SAConnectionWorkCoordinator currentWorkMaySendWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
 		[self _unlockConnection];
+		return nil;
+	}
+
+	// A session dropped with a transaction open, or with autocommit turned off, took uncommitted
+	// work with it. On this session the statement would run as if nothing had happened, so a caller
+	// that handles lost connections itself is told instead, once.
+	if ([SAConnectionCancellation refusesStatementAfterLostUncommittedWork:uncommittedWorkWasLost
+	                                                    retriesStatements:retryQueriesOnConnectionFailure
+	                                                     settingUpSession:[self _currentThreadIsReconnecting]]) {
+		uncommittedWorkWasLost = NO;
+		[self _unlockConnection];
+
+		// Releasing the connection can find a request to stop the query before; this one is refused,
+		// not cancelled, and its caller has to see why.
+		lastQueryWasCancelled = NO;
+		[self _updateLastErrorMessage:NSLocalizedString(@"The connection to the server was lost while a transaction was open or autocommit was off. The server rolled back whatever had not been committed, and the new connection commits each statement on its own. This statement was not run.", @"Error for the next statement a user runs after the connection was lost while a transaction was open or autocommit was off")];
+		[self _updateLastErrorID:2013];
+		[self _updateLastSqlstate:@"HY000"];
 		return nil;
 	}
 
@@ -656,6 +675,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastQueryWasCancelled = YES;
 	}
 
+	// A statement that lost its connection while a transaction was open, or autocommit was off, says
+	// so itself, provided its caller handles lost connections - the reconnect dropped that work.
+	if (queryStatus && !lastQueryWasCancelled
+	    && [SAConnectionCancellation refusesStatementAfterLostUncommittedWork:uncommittedWorkWasLost
+	                                                       retriesStatements:retryQueriesOnConnectionFailure
+	                                                        settingUpSession:[self _currentThreadIsReconnecting]]) {
+		uncommittedWorkWasLost = NO;
+		theErrorMessage = [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")];
+	}
+
 	// If the query was cancelled, override the error state
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
@@ -668,12 +697,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// the session changing along. The session is closed while this query still holds the
 	// connection, so nothing can use it in between; the next query reconnects and restores it.
 	// The caller's view of the outcome was settled when the waiting ended, so nothing is recorded.
-	// A session with a transaction that was open before this statement is kept: closing it would roll
-	// that transaction back. One that was marked for replacement when the work was given up on is not.
+	// A session whose transaction was open before the work first used it is kept: closing it would
+	// roll that transaction back. A transaction this work opened itself is not.
 	BOOL queryWasAbandoned = [SAConnectionWorkCoordinator currentWorkHasBeenAbandoned];
 	if (queryWasAbandoned && ![theResult isKindOfClass:[SPMySQLStreamingResult class]]
-	    && !(mySQLConnection && [SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-	                                                                           markedForReplacement:sessionMustBeReplacedBeforeUse])) {
+	    && [SAConnectionCancellation closesSessionOfAbandonedWorkWithSessionUse:[SAConnectionWorkCoordinator currentWorkSessionUse]
+	                                                  sessionHasOpenTransaction:mySQLConnection && (mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                       markedForReplacement:sessionMustBeReplacedBeforeUse]) {
 		[self _closeSessionOfAbandonedQuery];
 	}
 
@@ -902,6 +932,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// socket gets that number next.
 	[inFlightQuery endWaitingForGeneration:queryGeneration];
 
+	[self _noteUncommittedWorkLostWithSession];
 	if (mySQLConnection) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
@@ -911,6 +942,24 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// Until the next session connects, values follow the record, which its handshake uses.
 	[valueEscaper forgetSession];
+}
+
+/**
+ * Notes that the session about to be dropped takes uncommitted work with it - a transaction it has
+ * open, or autocommit it had turned off - so that the next statement the user runs is not run as if
+ * nothing had happened. A handle whose connection is gone still reports its last status, which is
+ * what counts. Called while the connection is held, before the handle is closed.
+ */
+- (void)_noteUncommittedWorkLostWithSession
+{
+	if (!mySQLConnection) return;
+
+	unsigned int status = mySQLConnection->server_status;
+	if ([SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(status & SERVER_STATUS_IN_TRANS) != 0
+	                                                                         autocommit:(status & SERVER_STATUS_AUTOCOMMIT) != 0
+	                                                                autocommitAtConnect:sessionAutocommitAtConnect]) {
+		uncommittedWorkWasLost = YES;
+	}
 }
 
 /**

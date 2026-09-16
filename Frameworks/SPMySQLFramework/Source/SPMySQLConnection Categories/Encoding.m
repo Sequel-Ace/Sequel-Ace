@@ -176,7 +176,8 @@
 	// and the current one is not used again, even if it is still open when the next query comes.
 	// Only the main thread hands work over, so only there can the last work have been abandoned.
 	BOOL hasNoUsableSession = (state == SPMySQLDisconnected || state == SPMySQLDisconnecting
-	                           || state == SPMySQLConnecting || state == SPMySQLConnectionLostInBackground);
+	                           || state == SPMySQLConnecting || state == SPMySQLConnectionLostInBackground
+	                           || sessionMustBeReplacedBeforeUse);
 	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingAfterAbandonedWork:([NSThread isMainThread] && lastWorkWasAbandoned)
 	                                                             hasNoUsableSession:hasNoUsableSession
 	                                                      sessionHasOpenTransaction:[valueEscaper sessionReportedOpenTransaction]]) {

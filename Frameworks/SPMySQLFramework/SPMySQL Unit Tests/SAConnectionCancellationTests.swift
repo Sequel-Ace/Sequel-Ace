@@ -193,16 +193,59 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: false, sessionHasOpenTransaction: false))
     }
 
-    /// A session with an open transaction is kept after its work was abandoned, and told the character set.
-    func testASessionWithAnOpenTransactionIsKept() {
-        XCTAssertTrue(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: true, markedForReplacement: false))
-        XCTAssertFalse(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: false, markedForReplacement: false))
-        // The stopped statement opened the transaction itself: the session was marked when the work was
-        // given up on, and is closed when the work finishes, rolling back only that statement.
-        XCTAssertFalse(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: true, markedForReplacement: true))
+    /// A session with an open transaction is told the character set after its work was abandoned.
+    func testASessionWithAnOpenTransactionIsToldTheCharacterSet() {
         XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, sessionHasOpenTransaction: true))
-        // A session that is gone is gone, transaction or not.
+        // A session that is gone, or marked for replacement, is not told, transaction or not.
         XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: true, sessionHasOpenTransaction: true))
+    }
+
+    /// Only work that used the session outside a transaction leaves it to be replaced.
+    func testOnlyWorkThatUsedTheSessionOutsideATransactionLeavesItToBeReplaced() {
+        XCTAssertFalse(SAConnectionCancellation.replacesSessionWhenWorkIsGivenUp(sessionUse: .untouched))
+        XCTAssertTrue(SAConnectionCancellation.replacesSessionWhenWorkIsGivenUp(sessionUse: .outsideTransaction))
+        XCTAssertFalse(SAConnectionCancellation.replacesSessionWhenWorkIsGivenUp(sessionUse: .insideTransaction))
+    }
+
+    /// A session kept for a transaction the user had open is closed only once that transaction is over.
+    func testASessionKeptForATransactionIsClosedOnlyOnceTheTransactionIsOver() {
+        XCTAssertFalse(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .insideTransaction, sessionHasOpenTransaction: true, markedForReplacement: false))
+        XCTAssertTrue(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .insideTransaction, sessionHasOpenTransaction: false, markedForReplacement: false))
+        XCTAssertTrue(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .insideTransaction, sessionHasOpenTransaction: true, markedForReplacement: true))
+    }
+
+    /// A transaction the stopped work opened itself is closed with its session.
+    func testATransactionTheStoppedWorkOpenedItselfIsClosedWithItsSession() {
+        XCTAssertTrue(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .outsideTransaction, sessionHasOpenTransaction: true, markedForReplacement: false))
+        XCTAssertTrue(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .outsideTransaction, sessionHasOpenTransaction: false, markedForReplacement: true))
+    }
+
+    /// Work that sent nothing leaves the session open, whatever it has open.
+    func testWorkThatSentNothingLeavesTheSessionOpen() {
+        XCTAssertFalse(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .untouched, sessionHasOpenTransaction: true, markedForReplacement: false))
+        XCTAssertFalse(SAConnectionCancellation.closesSessionOfAbandonedWork(sessionUse: .untouched, sessionHasOpenTransaction: false, markedForReplacement: false))
+    }
+
+    /// Dropping a session loses uncommitted work when a transaction is open or autocommit was turned off.
+    func testDroppingASessionLosesUncommittedWorkOnlyWithATransactionOrAutocommitTurnedOff() {
+        XCTAssertTrue(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: true, autocommit: true, autocommitAtConnect: true))
+        XCTAssertTrue(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: false, autocommit: false, autocommitAtConnect: true))
+        XCTAssertFalse(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: false, autocommit: true, autocommitAtConnect: true))
+        // A server that starts every session with autocommit off hands the next session the same.
+        XCTAssertFalse(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: false, autocommit: false, autocommitAtConnect: false))
+        XCTAssertTrue(SAConnectionCancellation.droppingSessionLosesUncommittedWork(openTransaction: true, autocommit: false, autocommitAtConnect: false))
+    }
+
+    /// Only a caller that handles lost connections itself is told about lost uncommitted work.
+    func testOnlyACallerThatHandlesLostConnectionsItselfIsToldAboutLostWork() {
+        XCTAssertTrue(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: false))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: true, settingUpSession: false))
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: false, retriesStatements: false, settingUpSession: false))
+    }
+
+    /// The statements that set up a new session always run, and leave the report for the caller.
+    func testTheStatementsThatSetUpANewSessionAlwaysRun() {
+        XCTAssertFalse(SAConnectionCancellation.refusesStatement(afterLostUncommittedWork: true, retriesStatements: false, settingUpSession: true))
     }
 
     /// Only a thread other than the main thread restores a lost session when asked whether it is connected.

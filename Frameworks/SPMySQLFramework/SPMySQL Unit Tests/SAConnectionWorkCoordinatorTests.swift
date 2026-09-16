@@ -211,6 +211,70 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertNil(outcome.result)
     }
 
+    /// Runs work that sends one statement in each of the given transaction states, then waits until
+    /// the user stops it, and reports how it used the session.
+    /// - Parameter transactionStates: Whether a transaction is open before each statement.
+    /// - Returns: The work's outcome once the user stopped it.
+    private func stoppedWork(sendingWithOpenTransaction transactionStates: [Bool]) -> SAConnectionWorkOutcome {
+        let statementsSent = DispatchSemaphore(value: 0)
+        return run({
+            for isOpen in transactionStates {
+                _ = SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: isOpen)
+            }
+            statementsSent.signal()
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, whenSlow: { _ in
+            XCTAssertEqual(statementsSent.wait(timeout: .now() + 2), .success)
+            coordinator.abandonWorkForUserStop()
+        })
+    }
+
+    /// Work that sent nothing before it was stopped left the session untouched.
+    func testWorkStoppedBeforeItSentAnythingLeftTheSessionUntouched() {
+        XCTAssertEqual(stoppedWork(sendingWithOpenTransaction: []).sessionUse, .untouched)
+    }
+
+    /// Stopped work reports the transaction that was open before its first statement.
+    func testStoppedWorkReportsTheTransactionBeforeItsFirstStatement() {
+        XCTAssertEqual(stoppedWork(sendingWithOpenTransaction: [true]).sessionUse, .insideTransaction)
+        XCTAssertEqual(stoppedWork(sendingWithOpenTransaction: [false]).sessionUse, .outsideTransaction)
+    }
+
+    /// A transaction the work opened with its first statement does not count as one it found.
+    func testATransactionTheWorkOpenedItselfDoesNotCountAsOneItFound() {
+        XCTAssertEqual(stoppedWork(sendingWithOpenTransaction: [false, true]).sessionUse, .outsideTransaction)
+    }
+
+    /// Work that was stopped may send nothing more, and its use of the session stays as it was.
+    func testStoppedWorkMaySendNothingMore() {
+        let workWasStopped = DispatchSemaphore(value: 0)
+        let askedAfterTheStop = DispatchSemaphore(value: 0)
+        var maySendAfterTheStop = true
+
+        let outcome = run({
+            workWasStopped.wait()
+            maySendAfterTheStop = SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: true)
+            askedAfterTheStop.signal()
+            return nil
+        }, whenSlow: { _ in
+            coordinator.abandonWorkForUserStop()
+            workWasStopped.signal()
+        })
+
+        XCTAssertEqual(askedAfterTheStop.wait(timeout: .now() + 2), .success)
+        XCTAssertFalse(maySendAfterTheStop)
+        XCTAssertEqual(outcome.sessionUse, .untouched)
+    }
+
+    /// Work that no coordinator runs may always send and never records a use of the session.
+    func testWorkOutsideACoordinatorMayAlwaysSend() {
+        XCTAssertTrue(SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: false))
+        XCTAssertEqual(SAConnectionWorkCoordinator.currentWorkSessionUse, .untouched)
+    }
+
     /// The next piece of work still runs after a cancellation.
     func testTheNextPieceOfWorkStillRunsAfterACancellation() {
         coordinator.cancel()

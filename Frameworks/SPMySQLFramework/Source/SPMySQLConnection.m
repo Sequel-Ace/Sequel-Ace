@@ -488,6 +488,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
     SPLog(@"connect");
 
 	userTriggeredDisconnect = NO;
+
+	// A connection the user sets up afresh starts without a report about an earlier session.
+	uncommittedWorkWasLost = NO;
 	return [self _connect];
 }
 
@@ -864,12 +867,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)closeSessionIfConnected
 {
-	// A session with a transaction that was open before the stopped statement is kept: closing it
-	// would roll that transaction back. One that was marked for replacement when the work was given
-	// up on is not.
+	// Work that sent nothing leaves the session alone, and a session kept for a transaction that was
+	// open before the stopped work stays: closing it would roll that transaction back.
 	if (state == SPMySQLConnected && mySQLConnection
-	    && ![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-	                                                            markedForReplacement:sessionMustBeReplacedBeforeUse]) {
+	    && [SAConnectionCancellation closesSessionOfAbandonedWorkWithSessionUse:[SAConnectionWorkCoordinator currentWorkSessionUse]
+	                                                  sessionHasOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                       markedForReplacement:sessionMustBeReplacedBeforeUse]) {
 		[self _closeSessionOfAbandonedQuery];
 	}
 }
@@ -948,6 +951,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	                            isHandshake:YES];
 	sessionMustBeReplacedBeforeUse = NO;
 	sessionWasClosedWithoutItsProxy = NO;
+	sessionAutocommitAtConnect = (mySQLConnection->server_status & SERVER_STATUS_AUTOCOMMIT) != 0;
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -1258,6 +1262,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 	proxyStateChangeNotificationsIgnored = NO;
 	reconnectingThread = NULL;
 	return YES;
+}
+
+/**
+ * Whether the current thread is the one reconnecting. The statements it sends set up the new
+ * session - its character set, its database - on the connection's own behalf.
+ *
+ * @return Whether a reconnect is running on the current thread.
+ */
+- (BOOL)_currentThreadIsReconnecting
+{
+	pthread_t thread = reconnectingThread;
+	return thread && pthread_equal(thread, pthread_self());
 }
 
 /**
@@ -1646,12 +1662,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _recordWorkAsCancelled];
 		lastWorkWasAbandoned = YES;
 
-		// The session that work runs in is on its way out: the work closes it once it finishes,
-		// and may have changed it before. Nothing else uses it any more - a value escaped meanwhile
-		// is escaped for the session that replaces it. A session with an open transaction is kept
-		// instead, and only the stopped statement ends.
-		if (![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:[valueEscaper sessionReportedOpenTransaction]
-		                                                           markedForReplacement:NO]) {
+		// A session the work used outside a transaction is on its way out: the work closes it once it
+		// finishes, and may have changed it before. Nothing else uses it any more - a value escaped
+		// meanwhile is escaped for the session that replaces it. A session whose transaction was open
+		// before the work is kept instead, and only the stopped statement ends. The work recorded
+		// which of these it is before it first sent anything, so a transaction the stopped statement
+		// opens itself does not count.
+		if ([SAConnectionCancellation replacesSessionWhenWorkIsGivenUpWithSessionUse:[outcome sessionUse]]) {
 			sessionMustBeReplacedBeforeUse = YES;
 		}
 
@@ -1815,6 +1832,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _unlockConnection];
 	[self _cancelKeepAlives];
 	[self _lockConnection];
+
+	// A session dropped on the way to a new one may take uncommitted work with it; the user is told
+	// before their next statement runs. One the user closes is theirs to close.
+	if (preserveProxyReconnect) {
+		[self _noteUncommittedWorkLostWithSession];
+	}
+
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.

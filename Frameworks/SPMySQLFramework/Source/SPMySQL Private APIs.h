@@ -71,6 +71,8 @@
 /** Records cancelled connection work the same way a cancelled query is recorded. */
 - (void)_recordWorkAsCancelled;
 - (BOOL)_abortCancelledReconnectWhileLocked;
+/** Whether the current thread is the one reconnecting, and so sets up the new session. */
+- (BOOL)_currentThreadIsReconnecting;
 - (void)_disconnect;
 - (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;
 - (void)_updateConnectionVariables;
@@ -124,6 +126,8 @@
 - (void)_cancelCurrentQueryRecordingRequest:(BOOL)recordRequest;
 /** Closes the session of a query that finished after nobody waited for it; the connection must be held. */
 - (void)_closeSessionOfAbandonedQuery;
+/** Notes whether the session about to be dropped takes uncommitted work with it; the connection must be held. */
+- (void)_noteUncommittedWorkLostWithSession;
 
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;

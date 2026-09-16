@@ -135,6 +135,11 @@
 	// The number the running query started with; its retries run under later numbers
 	NSUInteger runningQueryFirstGeneration;
 
+	// Whether a dropped session took uncommitted work with it that the user has not been told of,
+	// and whether the current session had autocommit on when it connected
+	BOOL uncommittedWorkWasLost;
+	BOOL sessionAutocommitAtConnect;
+
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
 	CGFloat keepAliveInterval;

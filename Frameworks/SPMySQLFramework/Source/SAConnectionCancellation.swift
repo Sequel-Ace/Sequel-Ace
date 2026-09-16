@@ -210,11 +210,11 @@ public final class SAConnectionCancellation: NSObject {
 
     /// Whether putting a stored character set back only has to change the connection's record of it.
     ///
-    /// A connection without a usable session - lost in the background, or on its way between two
-    /// sessions - connects afresh with the character set on record. So does one whose last work
-    /// nobody waited for: that work closes its session once it finishes, and the session is not used
-    /// again in any case. Telling the server as well would only wait behind the abandoned work, or
-    /// reconnect, for a session that is on its way out.
+    /// A connection without a usable session - lost in the background, on its way between two
+    /// sessions, or marked for replacement - connects afresh with the character set on record. So
+    /// does one whose last work nobody waited for, unless that session has a transaction open:
+    /// telling the server would only wait behind the abandoned work for a session that is closed or
+    /// replaced anyway.
     ///
     /// Until that session is gone, its handle may still follow the temporary character set, so
     /// values are not escaped with it: the connection escapes them for the character set on record,
@@ -232,30 +232,82 @@ public final class SAConnectionCancellation: NSObject {
         if hasNoUsableSession {
             return true
         }
-        return afterAbandonedWork && !keepsSessionOfAbandonedWork(sessionHasOpenTransaction: sessionHasOpenTransaction,
-                                                                   markedForReplacement: false)
+        return afterAbandonedWork && !sessionHasOpenTransaction
     }
 
-    /// Whether the session of work nobody waited for is kept rather than closed and replaced.
+    /// Whether the session is marked for replacement when the work using it is given up on.
     ///
-    /// Closing that session keeps it from being used with changes the connection does not know
-    /// about. An open transaction weighs more: closing the session would roll it back without a word,
-    /// and a later `COMMIT` would succeed on the new session without committing anything. Such a
-    /// session is kept; stopping ends only the statement that was running. A session whose route
-    /// has gone is lost either way.
+    /// Work that sent nothing left the session as it was, and its values can still be escaped for
+    /// it. Work that started in a transaction the user had opened keeps the session: closing it
+    /// would roll that transaction back without a word. Only work that started outside a
+    /// transaction may have changed the session - its character set, say - and leaves it to be
+    /// replaced; a transaction such work opened holds nothing but statements reported as cancelled.
+    /// - Parameter sessionUse: How the work used the session before it was given up on.
+    /// - Returns: Whether to mark the session for replacement.
+    @objc(replacesSessionWhenWorkIsGivenUpWithSessionUse:)
+    public static func replacesSessionWhenWorkIsGivenUp(sessionUse: SAWorkSessionUse) -> Bool {
+        return sessionUse == .outsideTransaction
+    }
+
+    /// Whether the session of work nobody waited for is closed once that work ends.
     ///
-    /// What counts is the transaction that was open before the stopped statement, which the decision
-    /// made when the work was given up on already reflects: a session marked for replacement then is
-    /// closed when the work finishes, too. A transaction the stopped statement opened itself holds
-    /// nothing but that statement - reported as cancelled - and is rolled back with the session.
+    /// The decision follows ``replacesSessionWhenWorkIsGivenUp(sessionUse:)``. A session kept for a
+    /// transaction is closed after all when that transaction is over, or when the session was
+    /// marked for replacement anyway. A session whose route has gone is lost either way.
     /// - Parameters:
-    ///   - sessionHasOpenTransaction: Whether the session has a transaction open.
-    ///   - markedForReplacement: Whether the session was marked for replacement when the work was
-    ///     given up on.
-    /// - Returns: Whether to keep the session.
-    @objc(keepsSessionOfAbandonedWorkWithOpenTransaction:markedForReplacement:)
-    public static func keepsSessionOfAbandonedWork(sessionHasOpenTransaction: Bool, markedForReplacement: Bool) -> Bool {
-        return sessionHasOpenTransaction && !markedForReplacement
+    ///   - sessionUse: How the work used the session.
+    ///   - sessionHasOpenTransaction: Whether the session has a transaction open now.
+    ///   - markedForReplacement: Whether the session is marked for replacement.
+    /// - Returns: Whether to close the session.
+    @objc(closesSessionOfAbandonedWorkWithSessionUse:sessionHasOpenTransaction:markedForReplacement:)
+    public static func closesSessionOfAbandonedWork(sessionUse: SAWorkSessionUse,
+                                                    sessionHasOpenTransaction: Bool,
+                                                    markedForReplacement: Bool) -> Bool {
+        switch sessionUse {
+        case .untouched:
+            return false
+        case .outsideTransaction:
+            return true
+        case .insideTransaction:
+            return !sessionHasOpenTransaction || markedForReplacement
+        }
+    }
+
+    /// Whether dropping a session loses work that was never committed.
+    ///
+    /// The server rolls back a transaction whose session ends. A session with autocommit turned
+    /// off since it connected loses that setting too, and the next session commits every statement
+    /// on its own.
+    /// - Parameters:
+    ///   - openTransaction: Whether the session last reported an open transaction.
+    ///   - autocommit: Whether the session last reported autocommit on.
+    ///   - autocommitAtConnect: Whether autocommit was on when the session connected.
+    /// - Returns: Whether uncommitted work is lost with the session.
+    @objc(droppingSessionLosesUncommittedWorkWithOpenTransaction:autocommit:autocommitAtConnect:)
+    public static func droppingSessionLosesUncommittedWork(openTransaction: Bool,
+                                                           autocommit: Bool,
+                                                           autocommitAtConnect: Bool) -> Bool {
+        return openTransaction || (autocommitAtConnect && !autocommit)
+    }
+
+    /// Whether a statement is refused because a session before it was dropped with uncommitted work.
+    ///
+    /// On the new session the statement would run as if nothing had happened: an `UPDATE` would
+    /// commit on its own, a `COMMIT` would succeed without committing anything. A caller that has
+    /// statements retried after a lost connection runs its own statements, which do not belong to
+    /// the user's transaction; one that does not - the query editor - is told once, instead of
+    /// its next statement being run. The statements that set up the new session - its character
+    /// set, its database - are the connection's own and always run.
+    /// - Parameters:
+    ///   - lostUncommittedWork: Whether a dropped session lost uncommitted work nobody was told of.
+    ///   - retriesStatements: Whether the caller has statements retried after a lost connection.
+    ///   - settingUpSession: Whether the statement is one the connection sends to set up a session.
+    /// - Returns: Whether to refuse the statement and tell the caller.
+    @objc(refusesStatementAfterLostUncommittedWork:retriesStatements:settingUpSession:)
+    public static func refusesStatement(afterLostUncommittedWork lostUncommittedWork: Bool,
+                                        retriesStatements: Bool,
+                                        settingUpSession: Bool) -> Bool {
+        return lostUncommittedWork && !retriesStatements && !settingUpSession
     }
 
     /// Whether asking a connection if it is connected restores a session lost in the background first.

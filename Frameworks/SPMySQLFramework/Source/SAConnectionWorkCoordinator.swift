@@ -9,6 +9,19 @@
 
 import Foundation
 
+/// How a piece of connection work has used the connection's session, as far as stopping it is
+/// concerned.
+@objc(SAWorkSessionUse)
+public enum SAWorkSessionUse: Int {
+    /// The work has sent nothing, so the session is as the work found it.
+    case untouched
+    /// The work started sending while the session had no transaction open.
+    case outsideTransaction
+    /// The work started sending while the session had a transaction open - one the work did not
+    /// open itself.
+    case insideTransaction
+}
+
 /// What came of a piece of connection work, and whether it was still being waited for.
 ///
 /// Two threads decide this together: the worker, when the work finishes, and the waiting side,
@@ -22,6 +35,7 @@ public final class SAConnectionWorkOutcome: NSObject {
     private var storedResult: Any?
     private var workHasFinished = false
     private var abandonedAtStamp: UInt?
+    private var storedSessionUse = SAWorkSessionUse.untouched
 
     /// Whether the work finished before the waiting ended.
     @objc public var finished = false
@@ -38,6 +52,33 @@ public final class SAConnectionWorkOutcome: NSObject {
         lock.lock()
         defer { lock.unlock() }
         return abandonedAtStamp != nil
+    }
+
+    /// How the work has used the session. Once the work has been given up on, this no longer changes.
+    @objc public var sessionUse: SAWorkSessionUse {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedSessionUse
+    }
+
+    /// Lets the work send something to the session, unless it has been given up on. Called by the
+    /// worker while it holds the connection, before each statement.
+    ///
+    /// The first call records whether the session had a transaction open before the work sent
+    /// anything. A statement the work sends can open a transaction and report it before the work
+    /// is given up on; what counts for the stop is the transaction that was there before.
+    /// - Parameter sessionHasOpenTransaction: Whether the session has a transaction open right now.
+    /// - Returns: Whether the work may send; false once it has been given up on.
+    func beginSessionUse(sessionHasOpenTransaction: Bool) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard abandonedAtStamp == nil else {
+            return false
+        }
+        if storedSessionUse == .untouched {
+            storedSessionUse = sessionHasOpenTransaction ? .insideTransaction : .outsideTransaction
+        }
+        return true
     }
 
     /// Records what the work returned. Called by the worker once the work is done.
@@ -102,6 +143,9 @@ public final class SAConnectionWorkCoordinator: NSObject {
     /// The key that marks a thread as one of the coordinators' workers.
     private static let workerThreadMarker = "SAConnectionWorkCoordinatorWorker"
 
+    /// The key under which a worker keeps the outcome of the work it is running.
+    private static let runningWorkOutcomeKey = "SAConnectionWorkCoordinatorRunningWork"
+
     private var workerThread: Thread?
 
     /// The work being waited for right now, and how to tell which operation the connection is on.
@@ -118,6 +162,31 @@ public final class SAConnectionWorkCoordinator: NSObject {
     @objc public static var currentWorkHasBeenAbandoned: Bool {
         let thread = Thread.current
         return thread.threadDictionary[workerThreadMarker] != nil && thread.isCancelled
+    }
+
+    /// Whether the work running on the current thread may send a statement now. Asked while the
+    /// connection is held, before the work first touches the session in a query.
+    ///
+    /// Work a coordinator runs also records here whether a transaction was open before it first
+    /// used the session. Work that runs where it was asked for is never given up on.
+    /// - Parameter sessionHasOpenTransaction: Whether the session has a transaction open right now.
+    /// - Returns: Whether the work may send; false for work that has been given up on.
+    @objc(currentWorkMaySendWithOpenTransaction:)
+    public static func currentWorkMaySend(sessionHasOpenTransaction: Bool) -> Bool {
+        guard !currentWorkHasBeenAbandoned else {
+            return false
+        }
+        guard let outcome = Thread.current.threadDictionary[runningWorkOutcomeKey] as? SAConnectionWorkOutcome else {
+            return true
+        }
+        return outcome.beginSessionUse(sessionHasOpenTransaction: sessionHasOpenTransaction)
+    }
+
+    /// How the work running on the current thread has used the session; untouched for work that
+    /// no coordinator runs.
+    @objc public static var currentWorkSessionUse: SAWorkSessionUse {
+        let outcome = Thread.current.threadDictionary[runningWorkOutcomeKey] as? SAConnectionWorkOutcome
+        return outcome?.sessionUse ?? .untouched
     }
 
     /// Runs work off the main thread, waiting for it quietly first and visibly afterwards.
@@ -141,6 +210,13 @@ public final class SAConnectionWorkCoordinator: NSObject {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
         let item = SAConnectionWorkItem {
+            // The work and what settles it afterwards can tell how the work has used the session.
+            let threadDictionary = Thread.current.threadDictionary
+            threadDictionary[Self.runningWorkOutcomeKey] = outcome
+            defer {
+                threadDictionary.removeObject(forKey: Self.runningWorkOutcomeKey)
+            }
+
             let result = work()
 
             // Nobody is waiting for this any more, and what the caller was told instead has to
