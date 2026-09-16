@@ -452,7 +452,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// cancellation, say - has to be able to tell whether it is still this one, and counting
 	// any earlier would count queries that never got the connection.
 	NSUInteger thisQueryGeneration = ++queryGeneration;
-	[inFlightQuery noteLatestGeneration:thisQueryGeneration];
+
+	// The statements a reconnect sends belong to whichever query is reconnecting; any other query,
+	// and its retries, belongs to itself. A request to stop a query another thread runs meanwhile is
+	// then not taken for a request to stop this one.
+	NSUInteger generationOwner = [self _currentThreadIsReconnecting] ? 0 : thisQueryGeneration;
+	[inFlightQuery noteLatestGeneration:thisQueryGeneration ownedByQueryStartedAt:generationOwner];
 
 	// A retry runs under a new number. A request to stop this query names the number it had when
 	// the request was made, so the query keeps its first one to ask with.
@@ -614,7 +619,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// has to be able to find it under the current number.
 		lastQueryWasCancelled = NO;
 		thisQueryGeneration = ++queryGeneration;
-		[inFlightQuery noteLatestGeneration:thisQueryGeneration];
+		[inFlightQuery noteLatestGeneration:thisQueryGeneration ownedByQueryStartedAt:generationOwner];
 
 	} while (--queryAttemptsAllowed > 0);
 

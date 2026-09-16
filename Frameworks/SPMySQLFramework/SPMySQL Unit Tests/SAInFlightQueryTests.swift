@@ -143,6 +143,42 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 18, through: 20))
     }
 
+    /// A request to stop a query another thread ran while this one reconnected does not stop this one.
+    func testARequestForAnotherQueryBetweenTheAttemptsIsNotForThisQuery() {
+        // This query started as 40, its reconnect ran 41, another thread's query ran as 42, and
+        // this query's retry runs as 43.
+        inFlightQuery.noteLatestGeneration(40, ownedByQueryStartedAt: 40)
+        inFlightQuery.noteLatestGeneration(41, ownedByQueryStartedAt: 0)
+        inFlightQuery.noteLatestGeneration(42, ownedByQueryStartedAt: 42)
+        inFlightQuery.requestCancellation(ofGeneration: 42)
+        inFlightQuery.noteLatestGeneration(43, ownedByQueryStartedAt: 40)
+
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 40, through: 43))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 42, through: 42))
+    }
+
+    /// A request made for this query, its reconnect or its retry stops this query.
+    func testARequestForThisQuerysReconnectOrRetryIsForThisQuery() {
+        inFlightQuery.noteLatestGeneration(40, ownedByQueryStartedAt: 40)
+        inFlightQuery.noteLatestGeneration(41, ownedByQueryStartedAt: 0)
+        inFlightQuery.noteLatestGeneration(42, ownedByQueryStartedAt: 42)
+        inFlightQuery.noteLatestGeneration(43, ownedByQueryStartedAt: 40)
+
+        for generation: UInt in [40, 41, 43] {
+            inFlightQuery.requestCancellation(ofGeneration: generation)
+            XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 40, through: 43), "request for \(generation)")
+        }
+    }
+
+    /// A request for a number whose query is no longer known counts for the queries it could belong to.
+    func testARequestForAForgottenNumberCountsForTheQueriesAroundIt() {
+        inFlightQuery.noteLatestGeneration(2, ownedByQueryStartedAt: 2)
+        inFlightQuery.noteLatestGeneration(2 + SAInFlightQuery.rememberedOwners + 1, ownedByQueryStartedAt: 1)
+        inFlightQuery.requestCancellation(ofGeneration: 2)
+
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 1, through: 2 + SAInFlightQuery.rememberedOwners + 1))
+    }
+
     /// No request was made before any query ran.
     func testNoRequestMatchesBeforeAnyWasMade() {
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGenerationsFrom: 0, through: 0))

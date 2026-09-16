@@ -32,7 +32,9 @@ public final class SAInFlightQuery: NSObject {
 
     private let requestLock = NSLock()
     private var cancellationRequestedGeneration: UInt = 0
+    private var cancellationRequestedOwner: UInt = 0
     private var storedLatestGeneration: UInt = 0
+    private var generationOwners: [UInt: UInt] = [:]
     private weak var latestGenerationThread: Thread?
     private var connectionHolder: pthread_t?
 
@@ -138,6 +140,7 @@ public final class SAInFlightQuery: NSObject {
             return
         }
         cancellationRequestedGeneration = generation
+        cancellationRequestedOwner = generationOwners[generation] ?? 0
     }
 
     /// Whether the query with this number was asked to stop. Never waits.
@@ -154,17 +157,24 @@ public final class SAInFlightQuery: NSObject {
     ///
     /// Whoever asks names the number the connection reported at that moment: the query's original
     /// number, the retry's, or - while the query reconnects before its retry - the number of one of
-    /// the queries the reconnect runs. All of them are part of this query.
+    /// the queries the reconnect runs. All of them are part of this query. Another thread can take
+    /// the connection while the query reconnects, and its query gets a number in between; a request
+    /// to stop that query is not a request to stop this one. A number whose query is no longer known
+    /// counts, as it may have been this query's.
     /// - Parameters:
     ///   - generation: The query's original number.
     ///   - attempt: The number of the attempt that is running.
-    /// - Returns: Whether stopping was asked for under any number from the first to the last.
+    /// - Returns: Whether stopping was asked for under a number from the first to the last that
+    ///   belongs to this query or to a reconnect.
     @objc(cancellationWasRequestedForGenerationsFrom:through:)
     public func cancellationWasRequested(forGenerationsFrom generation: UInt, through attempt: UInt) -> Bool {
         requestLock.lock()
         defer { requestLock.unlock() }
         let requested = cancellationRequestedGeneration
-        return requested != 0 && generation <= requested && requested <= attempt
+        guard requested != 0, generation <= requested, requested <= attempt else {
+            return false
+        }
+        return cancellationRequestedOwner == 0 || cancellationRequestedOwner == generation
     }
 
     /// The number of the query or attempt that took the connection last. Never waits: it is read
@@ -175,15 +185,34 @@ public final class SAInFlightQuery: NSObject {
         return storedLatestGeneration
     }
 
-    /// Records the number of the query or attempt that has just taken the connection, on the
-    /// thread that took it.
+    /// How many of the latest numbers keep a record of the query they belong to.
+    static let rememberedOwners: UInt = 64
+
+    /// Records the number of a query that has just taken the connection, on the thread that took
+    /// it, as a query of its own.
     /// - Parameter generation: Its number.
     @objc(noteLatestGeneration:)
     public func noteLatestGeneration(_ generation: UInt) {
+        noteLatestGeneration(generation, ownedByQueryStartedAt: generation)
+    }
+
+    /// Records the number of the query or attempt that has just taken the connection, on the
+    /// thread that took it, and the query it belongs to.
+    /// - Parameters:
+    ///   - generation: Its number.
+    ///   - owner: The original number of the query it belongs to - its own, a retry's first one -
+    ///     or 0 for a statement a reconnect sends, which belongs to whichever query is reconnecting.
+    @objc(noteLatestGeneration:ownedByQueryStartedAt:)
+    public func noteLatestGeneration(_ generation: UInt, ownedByQueryStartedAt owner: UInt) {
         requestLock.lock()
         defer { requestLock.unlock() }
         storedLatestGeneration = generation
         latestGenerationThread = Thread.current
+        generationOwners[generation] = owner
+        if generation > Self.rememberedOwners {
+            let oldest = generation - Self.rememberedOwners
+            generationOwners = generationOwners.filter { $0.key > oldest }
+        }
     }
 
     /// The number of the query that took the connection last, if a given thread took it.
