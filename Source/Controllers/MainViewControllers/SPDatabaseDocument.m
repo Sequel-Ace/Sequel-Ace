@@ -4528,7 +4528,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
                 }
 
-                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
+                // The query comes from a bundle or a sequelace:// command, not from the application: after a
+                // transaction was lost with its session, it is refused like a write, whatever it starts with.
+                __block SPMySQLResult *theResult = nil;
+                [mySQLConnection runStatementsFromOutsideApplication:^{
+                    theResult = [self->mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
+                }];
                 [theResult setReturnDataAsStrings:YES];
                 if ([mySQLConnection queryErrored]) {
                     [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [mySQLConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
