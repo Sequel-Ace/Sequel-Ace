@@ -99,8 +99,8 @@
 
 	// A streaming result gets here only once its download is over. If stopping it was asked for
 	// meanwhile, it counts as cancelled even if it finished first - callers running a batch stop
-	// on this.
-	if ([inFlightQuery cancellationWasRequestedForGeneration:queryGeneration]) {
+	// on this. The request can name the number of any of the query's attempts.
+	if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:runningQueryFirstGeneration through:queryGeneration]) {
 		lastQueryWasCancelled = YES;
 	}
 

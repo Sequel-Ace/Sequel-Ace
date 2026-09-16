@@ -132,6 +132,9 @@
 	SAInFlightQuery *inFlightQuery;
 	SAConnectionCancellation *connectionCancellation;
 
+	// The number the running query started with; its retries run under later numbers
+	NSUInteger runningQueryFirstGeneration;
+
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
 	CGFloat keepAliveInterval;

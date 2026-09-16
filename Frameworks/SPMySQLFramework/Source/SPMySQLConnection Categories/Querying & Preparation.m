@@ -438,6 +438,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// A retry runs under a new number. A request to stop this query names the number it had when
 	// the request was made, so the query keeps its first one to ask with.
 	NSUInteger originalQueryGeneration = thisQueryGeneration;
+	runningQueryFirstGeneration = originalQueryGeneration;
 
 	// Whether the query was cancelled is this query's to say from here. Anything that finished late
 	// and wrote to it did so before this point, under the same lock.
@@ -566,6 +567,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			return nil;
 		}
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
+
+		// Reconnecting ran queries of their own, each starting from its own number. What holds the
+		// connection now is this query again.
+		runningQueryFirstGeneration = originalQueryGeneration;
 
 		// The user can stop waiting while the connection is checked, and the check can still
 		// succeed. A retry is a new chance for the statement to run, so it asks again whether
