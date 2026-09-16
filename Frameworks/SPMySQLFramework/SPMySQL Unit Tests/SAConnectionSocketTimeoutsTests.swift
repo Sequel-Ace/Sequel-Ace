@@ -14,6 +14,7 @@ import XCTest
 final class SAConnectionSocketTimeoutsTests: XCTestCase {
     private var openDescriptors: [Int32] = []
 
+    /// Closes every socket the test opened.
     override func tearDown() {
         for descriptor in openDescriptors {
             Darwin.close(descriptor)
@@ -22,6 +23,7 @@ final class SAConnectionSocketTimeoutsTests: XCTestCase {
         super.tearDown()
     }
 
+    /// A TCP socket keeps the limits it was given.
     func testATCPSocketKeepsTheLimitsItWasGiven() throws {
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
         try XCTSkipUnless(descriptor >= 0, "no socket available")
@@ -36,6 +38,7 @@ final class SAConnectionSocketTimeoutsTests: XCTestCase {
         XCTAssertEqual(readOption(descriptor, IPPROTO_TCP, TCP_RXT_CONNDROPTIME), SAConnectionSocketTimeouts.retransmitDropTime)
     }
 
+    /// The limits end a connection well before the connection timeout.
     func testTheLimitsEndAConnectionWellBeforeTheConnectionTimeout() {
         let keepAliveTotal = SAConnectionSocketTimeouts.keepAliveIdle
             + SAConnectionSocketTimeouts.keepAliveInterval * SAConnectionSocketTimeouts.keepAliveCount
@@ -43,6 +46,7 @@ final class SAConnectionSocketTimeoutsTests: XCTestCase {
         XCTAssertLessThan(SAConnectionSocketTimeouts.retransmitDropTime, 30)
     }
 
+    /// A local socket is left unchanged.
     func testALocalSocketIsLeftUnchanged() throws {
         var descriptors: [Int32] = [-1, -1]
         try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0, "no local socket pair available")
@@ -51,6 +55,7 @@ final class SAConnectionSocketTimeoutsTests: XCTestCase {
         XCTAssertFalse(SAConnectionSocketTimeouts.apply(toSocket: descriptors[0]))
     }
 
+    /// A missing descriptor is refused.
     func testAMissingDescriptorIsRefused() {
         XCTAssertFalse(SAConnectionSocketTimeouts.apply(toSocket: -1))
     }

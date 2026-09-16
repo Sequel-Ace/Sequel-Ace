@@ -69,6 +69,7 @@ public final class SAConnectionWorkOutcome: NSObject {
 private final class SAConnectionWorkItem: NSObject {
     private let work: () -> Void
 
+    /// Keeps the work until a thread runs it.
     init(_ work: @escaping () -> Void) {
         self.work = work
     }

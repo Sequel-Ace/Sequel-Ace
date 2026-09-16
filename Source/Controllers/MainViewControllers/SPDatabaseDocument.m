@@ -1297,6 +1297,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return self.parentWindowControllerWindow;
 }
 
+/**
+ * Stops the query that is running when the user presses the task's cancel button.
+ */
 - (void)taskControllerDidRequestCancellation
 {
     // The query this is about is the one running now. By the time anything reaches the server,

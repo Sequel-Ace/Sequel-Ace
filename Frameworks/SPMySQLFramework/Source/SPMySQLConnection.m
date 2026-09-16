@@ -747,6 +747,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	return nil;
 }
 
+/**
+ * Sets the session time zone, or the server's global one for an empty identifier, and reports
+ * a failure to the delegate.
+ *
+ * @param timeZoneIdentifier The time zone to use, or nil/empty for the server default.
+ */
 - (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
     if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
         return;
@@ -1297,15 +1303,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 			userEndedPendingWork = NO;
 		}
 
+		// What this attempt may spend, on every step - the proxy's included. The decision is
+		// SAConnectionCheckBudget's.
+		SAConnectionAttemptBudget *attemptBudget = [SAConnectionCheckBudget attemptBudgetForConfiguredTimeout:timeout
+		                                                                                         userEndedWait:userEndedPendingWork
+		                                                                                      afterFailedCheck:reconnectingAfterFailedCheck];
+		NSUInteger attemptConnectTimeout = [attemptBudget connectTimeout];
+
 		// If no network is present, wait for a short time for one to become available
-		// An attempt made after the user has stopped waiting does not wait for a network either.
-		double networkWait = 10;
-		if (userEndedPendingWork) {
-			networkWait = 0;
-		} else if (reconnectingAfterFailedCheck) {
-			networkWait = [SAConnectionCheckBudget networkWaitForConfiguredTimeout:timeout];
-		}
-		[self _waitForNetworkConnectionWithTimeout:networkWait];
+		[self _waitForNetworkConnectionWithTimeout:[attemptBudget networkWait]];
 
 		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
@@ -1328,7 +1334,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > attemptConnectTimeout) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
@@ -1362,7 +1368,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				}
 
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
+				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (attemptConnectTimeout + 1)) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;
@@ -1399,10 +1405,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// A host that is no longer routed swallows the connection attempt, so
 			// the attempt made before the user is asked runs on a short budget.
 			// Anything the user then triggers uses the full connection timeout.
-			if (userEndedPendingWork) {
-				connectTimeoutOverride = [SAConnectionCheckBudget connectTimeoutAfterEndedWaitForConfiguredTimeout:timeout];
-			} else if (reconnectingAfterFailedCheck) {
-				connectTimeoutOverride = [SAConnectionCheckBudget connectTimeoutForConfiguredTimeout:timeout];
+			if ([attemptBudget overridesConfiguredTimeout]) {
+				connectTimeoutOverride = attemptConnectTimeout;
 			}
 			[self _connect];
 			connectTimeoutOverride = 0;

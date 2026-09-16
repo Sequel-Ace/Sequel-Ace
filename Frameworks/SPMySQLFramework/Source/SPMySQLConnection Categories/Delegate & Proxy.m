@@ -32,6 +32,12 @@
 #import "SPMySQL Private APIs.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
+/**
+ * How many times, a tenth of a second apart, the lost-connection question waits for another modal
+ * window to close before it is asked anyway.
+ */
+static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
+
 @implementation SPMySQLConnection (Delegate_and_Proxy)
 
 #pragma mark -
@@ -168,8 +174,12 @@
 		// queue: the work that led here can itself have been started from a block on that
 		// queue, and a queue runs one block at a time. Waiting for that block to finish would
 		// mean waiting for something that is waiting for this answer.
-		[self performSelectorOnMainThread:@selector(_recordWhetherAModalWindowIsShowing) withObject:nil waitUntilDone:YES];
-		if (self->aModalWindowIsShowing) {
+		// The question is a sheet on the document's window, and asking it while another modal
+		// window is up would stack the two. It waits for that window to go, but not for ever: a
+		// question that never comes is worse than one that comes while something else is open.
+		for (NSUInteger check = 0; check < SPMySQLConnectionModalWindowChecks; check++) {
+			[self performSelectorOnMainThread:@selector(_recordWhetherAModalWindowIsShowing) withObject:nil waitUntilDone:YES];
+			if (!self->aModalWindowIsShowing) break;
 			usleep(100000);
 		}
 
@@ -191,6 +201,12 @@
 	aModalWindowIsShowing = ([NSApp modalWindow] != nil);
 }
 
+/**
+ * Asks the delegate what to do about the lost connection, and keeps the answer as the last
+ * decision under the lock that guards it.
+ *
+ * @return The delegate's decision.
+ */
 - (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision
 {
 	[delegateDecisionLock lock];

@@ -38,6 +38,7 @@
 
 // Master ping method
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay;
+/** Pings the connection within an explicit budget, so a quick check does not wait for the full timeout. */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay timeout:(NSUInteger)pingTimeout;
 
 // Ping thread internals

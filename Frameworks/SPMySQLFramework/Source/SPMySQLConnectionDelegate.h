@@ -59,6 +59,8 @@
  * @param title The title of the message to display to the user
  * @param message The main text of the message to display to the user
  */
+- (void)showErrorWithTitle:(NSString *)title message:(NSString *)message;
+
 /**
  * Called on the main thread when connection work has to wait for a server, and the wait has
  * already lasted long enough to be noticed. The work runs on the connection's own thread; the
@@ -73,8 +75,6 @@
  *                   returns YES from the moment the work is done.
  */
 - (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished;
-
-- (void)showErrorWithTitle:(NSString *)title message:(NSString *)message;
 
 /**
  * Requests the keychain password for the connection.

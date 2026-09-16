@@ -15,16 +15,19 @@ final class SAInFlightQueryTests: XCTestCase {
     private let inFlightQuery = SAInFlightQuery()
     private var descriptors: [Int32] = [-1, -1]
 
+    /// Creates the connected socket pair the tests work with.
     override func setUpWithError() throws {
         try super.setUpWithError()
         try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0, "no local socket pair available")
     }
 
+    /// Closes the socket pair.
     override func tearDown() {
         descriptors.filter { $0 >= 0 }.forEach { Darwin.close($0) }
         super.tearDown()
     }
 
+    /// Only the waiting query is ended.
     func testOnlyTheWaitingQueryIsEnded() {
         inFlightQuery.beginWaiting(forGeneration: 5, onSocket: descriptors[0], serverThread: 42)
 
@@ -35,6 +38,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertTrue(peerSawTheSocketClose())
     }
 
+    /// A query that stopped waiting is left alone.
     func testAQueryThatStoppedWaitingIsLeftAlone() {
         inFlightQuery.beginWaiting(forGeneration: 5, onSocket: descriptors[0], serverThread: 42)
         inFlightQuery.endWaiting(forGeneration: 5)
@@ -43,6 +47,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(peerSawTheSocketClose())
     }
 
+    /// A stale end does not end the query that followed.
     func testAStaleEndDoesNotEndTheQueryThatFollowed() {
         inFlightQuery.beginWaiting(forGeneration: 6, onSocket: descriptors[0], serverThread: 42)
         inFlightQuery.endWaiting(forGeneration: 5)
@@ -50,6 +55,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertTrue(inFlightQuery.closeSocket(ifGenerationIsWaiting: 6, beforeClosing: {}))
     }
 
+    /// The preparation runs only when the socket is closed.
     func testThePreparationRunsOnlyWhenTheSocketIsClosed() {
         var preparedFor: [UInt] = []
         inFlightQuery.beginWaiting(forGeneration: 7, onSocket: descriptors[0], serverThread: 42)
@@ -60,6 +66,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertEqual(preparedFor, [7])
     }
 
+    /// A kill only concerns the query that is still waiting.
     func testAKillOnlyConcernsTheQueryThatIsStillWaiting() {
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
 
@@ -74,6 +81,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertTrue(marked)
     }
 
+    /// A failed or late kill marks nothing.
     func testAFailedOrLateKillMarksNothing() {
         var marked: [String] = []
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
@@ -88,6 +96,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertEqual(marked, [])
     }
 
+    /// A new query waits until a kill has gone out.
     func testANewQueryWaitsUntilAKillHasGoneOut() {
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
         XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
@@ -110,6 +119,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertEqual(nextQueryStarted.wait(timeout: .now() + 2), .success)
     }
 
+    /// A request is remembered under the query's original number.
     func testARequestIsRememberedUnderTheQuerysOriginalNumber() {
         inFlightQuery.requestCancellation(ofGeneration: 12)
 
@@ -118,6 +128,7 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 0))
     }
 
+    /// Nothing is ever waiting before the first query.
     func testNothingIsEverWaitingBeforeTheFirstQuery() {
         XCTAssertFalse(inFlightQuery.closeSocket(ifGenerationIsWaiting: 0, beforeClosing: {}))
     }

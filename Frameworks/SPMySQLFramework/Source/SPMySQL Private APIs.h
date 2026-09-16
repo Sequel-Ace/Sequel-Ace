@@ -58,11 +58,17 @@
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
+/** Whether a recently used connection's socket already reports a lost peer. */
 - (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+/** Runs yes-or-no connection work without freezing the interface; NO if the user stopped waiting. */
 - (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
+/** Runs connection work off the main thread while the delegate shows the wait; nil if the wait ended first. */
 - (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
+/** Whether handing connection work over would actually move it off the main thread. */
 - (BOOL)_workShouldRunOffMainThread;
+/** Carries out what becomes of a connection whose reconnect ended while its thread was cancelled. */
 - (void)_recoverFromCancelledReconnectMayDisconnect:(BOOL)mayDisconnect;
+/** Records cancelled connection work the same way a cancelled query is recorded. */
 - (void)_recordWorkAsCancelled;
 - (BOOL)_abortCancelledReconnectWhileLocked;
 - (void)_disconnect;
@@ -83,7 +89,9 @@
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection;
+/** Asks the delegate what to do about the lost connection and remembers the answer. */
 - (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision;
+/** Records whether the application shows something modal; main thread only. */
 - (void)_recordWhetherAModalWindowIsShowing;
 
 @end
@@ -106,8 +114,11 @@
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
 
+/** Asks the server over a second connection to kill the query with this generation (0 for the running one). */
 - (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation;
+/** Takes the connection for a query, reconnecting first if it was closed meanwhile. */
 - (BOOL)_lockUsableConnectionForQuery;
+/** Closes the session of a query that finished after nobody waited for it; the connection must be held. */
 - (void)_closeSessionOfAbandonedQuery;
 
 - (void)_flushMultipleResultSets;

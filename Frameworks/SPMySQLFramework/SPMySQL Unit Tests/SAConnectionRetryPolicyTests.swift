@@ -11,12 +11,14 @@ import XCTest
 @testable import SPMySQL
 
 final class SAConnectionRetryPolicyTests: XCTestCase {
+    /// A host that was never reached is not tried again.
     func testAHostThatWasNeverReachedIsNotTriedAgain() {
         XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2002)) // CR_CONNECTION_ERROR
         XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2003)) // CR_CONN_HOST_ERROR
         XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2005)) // CR_UNKNOWN_HOST
     }
 
+    /// A server that answered is tried without TLS.
     func testAServerThatAnsweredIsTriedWithoutTLS() {
         XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2026)) // CR_SSL_CONNECTION_ERROR
         XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2013)) // CR_SERVER_LOST, closed during the handshake

@@ -13,10 +13,12 @@ import XCTest
 final class SAConnectionLostDecisionGateTests: XCTestCase {
     private let gate = SAConnectionLostDecisionGate()
 
+    /// A lone thread gets its own answer.
     func testALoneThreadGetsItsOwnAnswer() {
         XCTAssertEqual(gate.decision(askingWith: { 2 }), 2)
     }
 
+    /// Threads that lose the connection together share one question.
     func testThreadsThatLoseTheConnectionTogetherShareOneQuestion() {
         let questionIsOpen = DispatchSemaphore(value: 0)
         let userMayAnswer = DispatchSemaphore(value: 0)
@@ -68,6 +70,7 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
         XCTAssertEqual(answers, [1, 1, 1, 1])
     }
 
+    /// A loss after an answer is asked about again.
     func testALossAfterAnAnswerIsAskedAboutAgain() {
         XCTAssertEqual(gate.decision(askingWith: { 1 }), 1)
         XCTAssertEqual(gate.decision(askingWith: { 0 }), 0)

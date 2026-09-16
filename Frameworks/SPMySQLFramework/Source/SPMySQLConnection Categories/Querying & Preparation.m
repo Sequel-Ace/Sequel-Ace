@@ -318,6 +318,18 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	 databaseContextIsRequired:YES];
 }
 
+/**
+ * Runs a query, optionally in a database the connection makes sure of first. On the main
+ * thread the query is handed to the connection's worker thread, so the interface keeps
+ * answering while the server is waited for.
+ *
+ * @param theQueryString The query to run.
+ * @param theEncoding The encoding to send the query in.
+ * @param theReturnType The kind of result to return.
+ * @param databaseName The database the query must run in, or nil.
+ * @param databaseContextIsRequired Whether the query must not run without that database selected.
+ * @return The result, or nil if the query failed or the wait for it ended.
+ */
 - (id)queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding
     withResultType:(SPMySQLResultType)theReturnType

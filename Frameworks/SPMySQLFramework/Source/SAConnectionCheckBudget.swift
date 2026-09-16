@@ -18,8 +18,38 @@ import Foundation
 ///
 /// The limits apply to the attempt made before the user is asked. Anything the user then triggers
 /// runs on the configured timeout again, because by then someone is watching the progress.
+/// The time one reconnect attempt may spend on each of its steps.
+@objc(SAConnectionAttemptBudget)
+public final class SAConnectionAttemptBudget: NSObject {
+
+    /// How long the attempt waits for a route to the host, in seconds.
+    @objc public let networkWait: Double
+
+    /// How long the attempt may take to connect - through a proxy, if there is one, and to the
+    /// server itself - in seconds. Zero means the configured timeout's "no limit".
+    @objc public let connectTimeout: UInt
+
+    /// Whether ``connectTimeout`` differs from the connection's configured timeout.
+    @objc public let overridesConfiguredTimeout: Bool
+
+    /// Creates a budget.
+    /// - Parameters:
+    ///   - networkWait: How long to wait for a route, in seconds.
+    ///   - connectTimeout: How long connecting may take, in seconds.
+    ///   - overridesConfiguredTimeout: Whether that differs from the configured timeout.
+    init(networkWait: Double, connectTimeout: UInt, overridesConfiguredTimeout: Bool) {
+        self.networkWait = networkWait
+        self.connectTimeout = connectTimeout
+        self.overridesConfiguredTimeout = overridesConfiguredTimeout
+        super.init()
+    }
+}
+
 @objc(SAConnectionCheckBudget)
 public final class SAConnectionCheckBudget: NSObject {
+
+    /// How long an ordinary reconnect attempt waits for a route to the host, in seconds.
+    public static let ordinaryNetworkWait: Double = 10
 
     /// The longest a connection check waits for a ping reply, in seconds.
     public static let pingLimit: UInt = 5
@@ -82,6 +112,37 @@ public final class SAConnectionCheckBudget: NSObject {
     @objc(connectTimeoutAfterEndedWaitForConfiguredTimeout:)
     public static func connectTimeoutAfterEndedWait(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
         capped(configuredTimeout, to: endedWaitConnectLimit)
+    }
+
+    /// The budget for one reconnect attempt.
+    ///
+    /// An attempt made right after the user stopped waiting spends almost nothing, so their
+    /// question comes at once. One made because a connection check failed spends the check
+    /// limits, since the user is still waiting for the interface. Any other attempt - including
+    /// every one the user asks for - keeps the connection's configured timeout. The budget covers
+    /// the whole attempt, a proxy's connection included.
+    /// - Parameters:
+    ///   - configuredTimeout: The connection's configured timeout in seconds, zero for none.
+    ///   - userEndedWait: Whether the attempt follows the user ending a wait.
+    ///   - afterFailedCheck: Whether the attempt follows a failed connection check.
+    /// - Returns: The time each step of the attempt may take.
+    @objc(attemptBudgetForConfiguredTimeout:userEndedWait:afterFailedCheck:)
+    public static func attemptBudget(forConfiguredTimeout configuredTimeout: UInt,
+                                     userEndedWait: Bool,
+                                     afterFailedCheck: Bool) -> SAConnectionAttemptBudget {
+        if userEndedWait {
+            return SAConnectionAttemptBudget(networkWait: 0,
+                                             connectTimeout: connectTimeoutAfterEndedWait(forConfiguredTimeout: configuredTimeout),
+                                             overridesConfiguredTimeout: true)
+        }
+        if afterFailedCheck {
+            return SAConnectionAttemptBudget(networkWait: networkWait(forConfiguredTimeout: configuredTimeout),
+                                             connectTimeout: connectTimeout(forConfiguredTimeout: configuredTimeout),
+                                             overridesConfiguredTimeout: true)
+        }
+        return SAConnectionAttemptBudget(networkWait: ordinaryNetworkWait,
+                                         connectTimeout: configuredTimeout,
+                                         overridesConfiguredTimeout: false)
     }
 
     /// Whether an attempt gets the short budget that follows the user ending a wait.

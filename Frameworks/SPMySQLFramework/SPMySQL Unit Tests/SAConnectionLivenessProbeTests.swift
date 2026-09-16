@@ -14,6 +14,7 @@ import XCTest
 final class SAConnectionLivenessProbeTests: XCTestCase {
     private var openDescriptors: [Int32] = []
 
+    /// Closes every socket the test opened.
     override func tearDown() {
         for descriptor in openDescriptors {
             Darwin.close(descriptor)
@@ -22,23 +23,27 @@ final class SAConnectionLivenessProbeTests: XCTestCase {
         super.tearDown()
     }
 
+    /// A quiet socket with a live peer is left alone.
     func testQuietSocketWithALivePeerIsLeftAlone() throws {
         let pair = try makeLocalPair()
         XCTAssertFalse(SAConnectionLivenessProbe.shouldVerifyConnection(idleFor: 5, socket: pair.first))
     }
 
+    /// A closed peer is verified.
     func testClosedPeerIsVerified() throws {
         let pair = try makeLocalPair()
         closeDescriptor(pair.second)
         XCTAssertTrue(SAConnectionLivenessProbe.shouldVerifyConnection(idleFor: 5, socket: pair.first))
     }
 
+    /// Recent traffic skips the probe entirely.
     func testRecentTrafficSkipsTheProbeEntirely() throws {
         let pair = try makeLocalPair()
         closeDescriptor(pair.second)
         XCTAssertFalse(SAConnectionLivenessProbe.shouldVerifyConnection(idleFor: 0.5, socket: pair.first))
     }
 
+    /// Pending data does not count as a lost peer.
     func testPendingDataDoesNotCountAsALostPeer() throws {
         let pair = try makeLocalPair()
         var byte: UInt8 = 42
@@ -46,15 +51,18 @@ final class SAConnectionLivenessProbeTests: XCTestCase {
         XCTAssertFalse(SAConnectionLivenessProbe.shouldVerifyConnection(idleFor: 5, socket: pair.first))
     }
 
+    /// A missing descriptor is left alone.
     func testMissingDescriptorIsLeftAlone() {
         XCTAssertFalse(SAConnectionLivenessProbe.shouldVerifyConnection(idleFor: 5, socket: -1))
     }
 
+    /// A routable loopback peer is left alone.
     func testRoutableLoopbackPeerIsLeftAlone() throws {
         let connection = try makeLoopbackConnection()
         XCTAssertFalse(SAConnectionLivenessProbe.shouldVerifyConnection(idleFor: 5, socket: connection.client))
     }
 
+    /// A loopback peer that went away is verified.
     func testLoopbackPeerThatWentAwayIsVerified() throws {
         let connection = try makeLoopbackConnection()
         closeDescriptor(connection.server)

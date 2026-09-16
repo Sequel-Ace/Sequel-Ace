@@ -21,6 +21,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         coordinator.run(work, operationStamp: stamp, whenSlow: whenSlow, whenAbandonedWorkFinishes: whenAbandonedWorkFinishes)
     }
 
+    /// Quick work is never handed to the interface.
     func testQuickWorkIsNeverHandedToTheInterface() {
         var interfaceWasAsked = false
         let outcome = run({ "done" }, whenSlow: { _ in interfaceWasAsked = true })
@@ -30,6 +31,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertFalse(interfaceWasAsked)
     }
 
+    /// Work runs away from the calling thread.
     func testWorkRunsAwayFromTheCallingThread() {
         let callingThread = Thread.current
         let outcome = run({ Thread.current == callingThread })
@@ -37,6 +39,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.result as? Bool, false)
     }
 
+    /// Slow work is waited for by the interface.
     func testSlowWorkIsWaitedForByTheInterface() {
         let outcome = run({
             Thread.sleep(forTimeInterval: 0.4)
@@ -51,6 +54,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.result as? String, "late")
     }
 
+    /// An interface that stops waiting gets no result.
     func testAnInterfaceThatStopsWaitingGetsNoResult() {
         let workStarted = DispatchSemaphore(value: 0)
         let workMayFinish = DispatchSemaphore(value: 0)
@@ -77,6 +81,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertNil(outcome.result)
     }
 
+    /// A late completion leaves a newer operation alone.
     func testALateCompletionLeavesANewerOperationAlone() {
         var currentOperation: UInt = 1
         let operationLock = NSLock()
@@ -112,6 +117,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertFalse(lateCompletionCalled)
     }
 
+    /// Queued work that was abandoned never acts as if it were still wanted.
     func testQueuedWorkThatWasAbandonedNeverActsAsIfItWereStillWanted() {
         let firstWorkMayFinish = DispatchSemaphore(value: 0)
         let queuedWorkRan = DispatchSemaphore(value: 0)
@@ -139,10 +145,12 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         }
     }
 
+    /// Work is not abandoned on the caller's thread.
     func testWorkIsNotAbandonedOnTheCallersThread() {
         XCTAssertFalse(SAConnectionWorkCoordinator.currentWorkHasBeenAbandoned)
     }
 
+    /// Work that was abandoned does not hold up what follows.
     func testWorkThatWasAbandonedDoesNotHoldUpWhatFollows() {
         let stuckWorkMayFinish = DispatchSemaphore(value: 0)
 
@@ -160,6 +168,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         stuckWorkMayFinish.signal()
     }
 
+    /// The next piece of work still runs after a cancellation.
     func testTheNextPieceOfWorkStillRunsAfterACancellation() {
         coordinator.cancel()
 

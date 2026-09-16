@@ -14,9 +14,11 @@ import AppKit
 /// its own, and the waiting happens here: an event loop that keeps the window answering, a word
 /// about what is being waited for, and a button that ends the wait.
 ///
-/// The event loop is a modal session rather than a bare run loop. Turning a run loop keeps the
-/// window drawing but leaves its events sitting in the queue, so the sheet would appear and then
-/// ignore every click on it.
+/// The loop takes events out of the queue and delivers them itself. Turning a bare run loop keeps
+/// the window drawing but leaves its events sitting in the queue, so the sheet would appear and
+/// then ignore every click on it. It deliberately does not run a modal session either: that would
+/// hold every other window of the application still as well, while only this document's window
+/// has anything to wait for - and the sheet on it already keeps that one window from being used.
 @objc(SAConnectionCheckSheet)
 final class SAConnectionCheckSheet: NSObject {
 
@@ -28,7 +30,6 @@ final class SAConnectionCheckSheet: NSObject {
     private var startDate: Date?
     private weak var presentingWindow: NSWindow?
     private weak var documentWindow: NSWindow?
-    private var session: NSApplication.ModalSession?
     private var waitWasEnded = false
     private var waitWasCancelledByUser = false
     private var isSuspended = false
@@ -54,35 +55,19 @@ final class SAConnectionCheckSheet: NSObject {
             // Another sheet has taken the window for a question of its own. This wait gives the
             // window back for as long as that lasts, and asks for it again afterwards.
             if isSuspended {
+                deliverPendingEvents()
                 usleep(Self.eventLoopPause)
                 continue
             }
             if sheetWindow == nil {
                 present(on: documentWindow)
             }
-            if let currentSession = session {
-                let response = NSApp.runModalSession(currentSession)
-
-                // Another sheet can take the window while this session runs, ending the session on
-                // its way in. The ended session then says so on the way out, which is not the user
-                // ending the wait: the loop carries on and shows the sheet again once the window is
-                // free. Only a session that is still this sheet's own ends the wait this way.
-                if response != .continue, session == currentSession, !isSuspended {
-                    break
-                }
-            } else {
-                // Nothing could be shown - no window, or none visible. The events still have to
-                // be taken out of the queue and delivered, or the application stops answering
-                // exactly as it did before any of this.
-                while let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
-                    NSApp.sendEvent(event)
-                }
-            }
+            deliverPendingEvents()
             updateElapsedTime()
             usleep(Self.eventLoopPause)
         }
 
-        endSessionAndDismiss()
+        dismissSheet()
 
         if waitWasCancelledByUser {
             cancelHandler?()
@@ -94,7 +79,7 @@ final class SAConnectionCheckSheet: NSObject {
         waitWasEnded = true
     }
 
-    /// Gives the window up so another sheet can use it, and keeps waiting quietly meanwhile.
+    /// Gives the window up so another sheet can use it, and keeps waiting meanwhile.
     ///
     /// A window holds one sheet at a time. A question the connection has to ask - whether to
     /// reconnect, say - is more important than a note about waiting, so the note steps aside
@@ -104,7 +89,7 @@ final class SAConnectionCheckSheet: NSObject {
             return
         }
         isSuspended = true
-        endSessionAndDismiss()
+        dismissSheet()
     }
 
     /// Takes the window back after that other sheet is gone.
@@ -168,16 +153,10 @@ final class SAConnectionCheckSheet: NSObject {
         updateElapsedTime()
 
         window.beginSheet(sheet, completionHandler: nil)
-        session = NSApp.beginModalSession(for: sheet)
     }
 
-    /// Ends the event loop and takes the sheet down again.
-    private func endSessionAndDismiss() {
-        if let session {
-            NSApp.endModalSession(session)
-        }
-        session = nil
-
+    /// Takes the sheet down again.
+    private func dismissSheet() {
         if let sheetWindow, let presentingWindow {
             presentingWindow.endSheet(sheetWindow)
             sheetWindow.orderOut(nil)
@@ -185,6 +164,13 @@ final class SAConnectionCheckSheet: NSObject {
         sheetWindow = nil
         presentingWindow = nil
         elapsedLabel = nil
+    }
+
+    /// Takes the events that have arrived out of the queue and delivers them, without waiting for more.
+    private func deliverPendingEvents() {
+        while let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
+            NSApp.sendEvent(event)
+        }
     }
 
     /// Says how long the wait has lasted, so it is clear that something is still happening.
