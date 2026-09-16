@@ -177,15 +177,35 @@ public final class SAConnectionCancellation: NSObject {
     ///
     /// Until that session is gone, its handle may still follow the temporary character set, so
     /// values are not escaped with it: the connection escapes them for the character set on record,
-    /// which the next session's handshake uses.
+    /// which the next session's handshake uses. A session with an open transaction is kept, and is
+    /// told the character set as before.
     /// - Parameters:
     ///   - afterAbandonedWork: Whether the calling thread stopped waiting for the work it ran last.
     ///   - hasNoUsableSession: Whether the connection has no session to tell.
+    ///   - sessionHasOpenTransaction: Whether the session last reported an open transaction.
     /// - Returns: Whether the record alone is to be changed.
-    @objc(storedEncodingOnlyNeedsRecordingAfterAbandonedWork:hasNoUsableSession:)
+    @objc(storedEncodingOnlyNeedsRecordingAfterAbandonedWork:hasNoUsableSession:sessionHasOpenTransaction:)
     public static func storedEncodingOnlyNeedsRecording(afterAbandonedWork: Bool,
-                                                        hasNoUsableSession: Bool) -> Bool {
-        return afterAbandonedWork || hasNoUsableSession
+                                                        hasNoUsableSession: Bool,
+                                                        sessionHasOpenTransaction: Bool) -> Bool {
+        if hasNoUsableSession {
+            return true
+        }
+        return afterAbandonedWork && !keepsSessionOfAbandonedWork(sessionHasOpenTransaction: sessionHasOpenTransaction)
+    }
+
+    /// Whether the session of work nobody waited for is kept rather than closed and replaced.
+    ///
+    /// Closing that session keeps it from being used with changes the connection does not know
+    /// about. An open transaction weighs more: closing the session would roll it back without a word,
+    /// and a later `COMMIT` would succeed on the new session without committing anything. Such a
+    /// session is kept; stopping ends only the statement that was running. A session whose route
+    /// has gone is lost either way.
+    /// - Parameter sessionHasOpenTransaction: Whether the session last reported an open transaction.
+    /// - Returns: Whether to keep the session.
+    @objc(keepsSessionOfAbandonedWorkWithOpenTransaction:)
+    public static func keepsSessionOfAbandonedWork(sessionHasOpenTransaction: Bool) -> Bool {
+        return sessionHasOpenTransaction
     }
 
     /// Whether asking a connection if it is connected restores a session lost in the background first.

@@ -113,6 +113,7 @@ public final class SAConnectionEscaper: NSObject {
     private var handshakeCharacterSet: String?
     private var sessionCharacterSet: String?
     private var sessionUsesNoBackslashEscapes = false
+    private var sessionHasOpenTransaction = false
     private var handleCharacterSet: String?
     private var handleUsesNoBackslashEscapes = false
     private var handle: SAOfflineEscapingHandle?
@@ -150,9 +151,10 @@ public final class SAConnectionEscaper: NSObject {
     /// - Parameters:
     ///   - characterSet: The session's character set as the client library names it.
     ///   - noBackslashEscapes: Whether the session is in `NO_BACKSLASH_ESCAPES` mode.
+    ///   - openTransaction: Whether the session has a transaction open.
     ///   - isHandshake: Whether the session has just been connected.
-    @objc(recordSessionCharacterSet:noBackslashEscapes:isHandshake:)
-    public func recordSession(characterSet: String?, noBackslashEscapes: Bool, isHandshake: Bool) {
+    @objc(recordSessionCharacterSet:noBackslashEscapes:openTransaction:isHandshake:)
+    public func recordSession(characterSet: String?, noBackslashEscapes: Bool, openTransaction: Bool, isHandshake: Bool) {
         lock.lock()
         defer { lock.unlock() }
         if isHandshake {
@@ -160,6 +162,14 @@ public final class SAConnectionEscaper: NSObject {
         }
         sessionCharacterSet = characterSet
         sessionUsesNoBackslashEscapes = noBackslashEscapes
+        sessionHasOpenTransaction = openTransaction
+    }
+
+    /// Whether the session last reported an open transaction.
+    @objc public var sessionReportedOpenTransaction: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return sessionHasOpenTransaction
     }
 
     /// Forgets the character sets a session reported, once that session is closed. Until the next
@@ -169,6 +179,7 @@ public final class SAConnectionEscaper: NSObject {
         defer { lock.unlock() }
         handshakeCharacterSet = nil
         sessionCharacterSet = nil
+        sessionHasOpenTransaction = false
     }
 
     /// Escapes bytes for a string literal.

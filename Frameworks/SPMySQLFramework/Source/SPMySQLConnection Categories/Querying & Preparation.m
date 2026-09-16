@@ -509,6 +509,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			// escaped the way the session reports it reads them now.
 			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
 			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
 			                            isHandshake:NO];
 			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
@@ -662,8 +663,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// the session changing along. The session is closed while this query still holds the
 	// connection, so nothing can use it in between; the next query reconnects and restores it.
 	// The caller's view of the outcome was settled when the waiting ended, so nothing is recorded.
+	// A session with an open transaction is kept: closing it would roll the transaction back.
 	BOOL queryWasAbandoned = [SAConnectionWorkCoordinator currentWorkHasBeenAbandoned];
-	if (queryWasAbandoned && ![theResult isKindOfClass:[SPMySQLStreamingResult class]]) {
+	if (queryWasAbandoned && ![theResult isKindOfClass:[SPMySQLStreamingResult class]]
+	    && !(mySQLConnection && [SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0])) {
 		[self _closeSessionOfAbandonedQuery];
 	}
 

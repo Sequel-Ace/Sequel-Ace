@@ -855,7 +855,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)closeSessionIfConnected
 {
-	if (state == SPMySQLConnected) {
+	// A session with an open transaction is kept: closing it would roll the transaction back.
+	if (state == SPMySQLConnected && mySQLConnection
+	    && ![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
 		[self _closeSessionOfAbandonedQuery];
 	}
 }
@@ -930,6 +932,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// so that no value is escaped for the old session in between.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
 	                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+	                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
 	                            isHandshake:YES];
 	sessionMustBeReplacedBeforeUse = NO;
 	sessionWasClosedWithoutItsProxy = NO;
@@ -1633,8 +1636,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// The session that work runs in is on its way out: the work closes it once it finishes,
 		// and may have changed it before. Nothing else uses it any more - a value escaped meanwhile
-		// is escaped for the session that replaces it.
-		sessionMustBeReplacedBeforeUse = YES;
+		// is escaped for the session that replaces it. A session with an open transaction is kept
+		// instead, and only the stopped statement ends.
+		if (![SAConnectionCancellation keepsSessionOfAbandonedWorkWithOpenTransaction:[valueEscaper sessionReportedOpenTransaction]]) {
+			sessionMustBeReplacedBeforeUse = YES;
+		}
 
 		return nil;
 	}

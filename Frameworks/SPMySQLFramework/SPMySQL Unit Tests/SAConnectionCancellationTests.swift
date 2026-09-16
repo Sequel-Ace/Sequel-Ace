@@ -186,9 +186,18 @@ final class SAConnectionCancellationTests: XCTestCase {
 
     /// A stored character set is only put on record while the session is gone or on its way out.
     func testStoredEncodingIsOnlyRecordedWhileTheSessionIsOnItsWayOut() {
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false))
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: true))
-        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: false))
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, sessionHasOpenTransaction: false))
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: true, sessionHasOpenTransaction: false))
+        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: false, sessionHasOpenTransaction: false))
+    }
+
+    /// A session with an open transaction is kept after its work was abandoned, and told the character set.
+    func testASessionWithAnOpenTransactionIsKept() {
+        XCTAssertTrue(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: true))
+        XCTAssertFalse(SAConnectionCancellation.keepsSessionOfAbandonedWork(sessionHasOpenTransaction: false))
+        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, sessionHasOpenTransaction: true))
+        // A session that is gone is gone, transaction or not.
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: true, sessionHasOpenTransaction: true))
     }
 
     /// Only a thread other than the main thread restores a lost session when asked whether it is connected.
