@@ -82,9 +82,11 @@ public final class SAConnectionCheckBudget: NSObject {
     ///
     /// It connects to a server the main connection reached a moment ago. While a transaction is open,
     /// the stopped query is held until the server has answered the kill, so a route that has gone
-    /// must not hold it for the whole configured timeout - or, without one, for as long as the
-    /// system takes to give up.
-    public static let sideConnectionConnectLimit: UInt = 5
+    /// must not hold it for a long configured timeout - or, without one, for as long as the system
+    /// takes to give up. A kill that cannot connect in time costs that transaction, so the limit is
+    /// the one a check-triggered reconnect to the same server gets, not less. A server that accepts
+    /// the connection but never greets is tried a second time without TLS, which doubles the wait.
+    public static let sideConnectionConnectLimit: UInt = connectLimit
 
     /// The ping timeout a connection check uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
