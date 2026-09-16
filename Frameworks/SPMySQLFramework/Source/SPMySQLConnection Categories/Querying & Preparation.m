@@ -106,16 +106,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	char *escBuffer = (char *)malloc(mallocSize);
 
 	// Escape starting one character in. The session's own handle is not used: work nobody waits for
-	// any more can still be using it, or close it, while this runs, and a session marked for
-	// replacement may follow a character set that is no longer the one on record. The escaper uses
-	// the character set on record - which the next session's handshake uses too - and the escaping
-	// mode the latest session reported, doubling quotes instead of using backslashes in
-	// NO_BACKSLASH_ESCAPES mode.
+	// any more can still be using it, or close it, while this runs. The escaper follows what the
+	// session last reported - its character set and its NO_BACKSLASH_ESCAPES mode - and, for a
+	// session about to be replaced, the character set on record, which the next session uses.
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                            length:cDataLength
 	                                              into:escBuffer+1
-	                                      characterSet:encoding
-	                                noBackslashEscapes:sessionUsesNoBackslashEscapes];
+	                              characterSetOnRecord:encoding
+	                            sessionIsBeingReplaced:sessionMustBeReplacedBeforeUse];
 	if (escapedLength < 0) {
 		SPLog(@"[escapeString:includingQuotes]: the value could not be escaped for character set %@", encoding);
 		free(escBuffer);
@@ -499,9 +497,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
-			// The statement may have changed the escaping mode; values are escaped in the mode the
-			// session reports now.
-			sessionUsesNoBackslashEscapes = (mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0;
+			// The statement may have changed the character set or the escaping mode; values are
+			// escaped the way the session reports it reads them now.
+			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+			                            isHandshake:NO];
 			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.

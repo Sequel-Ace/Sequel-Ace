@@ -917,7 +917,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnected;
 	sessionMustBeReplacedBeforeUse = NO;
 	sessionWasClosedWithoutItsProxy = NO;
-	sessionUsesNoBackslashEscapes = (mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0;
+	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+	                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+	                            isHandshake:YES];
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();

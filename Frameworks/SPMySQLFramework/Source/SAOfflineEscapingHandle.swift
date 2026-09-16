@@ -74,8 +74,11 @@ final class SAOfflineEscapingHandle {
     func escapedBytes(_ bytes: Data) -> Data? {
         var output = [UInt8](repeating: 0, count: bytes.count * 2 + 1)
         let length = bytes.withUnsafeBytes { source in
-            output.withUnsafeMutableBytes { destination in
-                escape(source.baseAddress, length: bytes.count, into: destination.baseAddress!)
+            output.withUnsafeMutableBytes { destination -> Int in
+                guard let destination = destination.baseAddress else {
+                    return -1
+                }
+                return escape(source.baseAddress, length: bytes.count, into: destination)
             }
         }
         return length < 0 ? nil : Data(output.prefix(length))
@@ -98,46 +101,98 @@ final class SAOfflineEscapingHandle {
 /// Escapes a connection's values without touching its session.
 ///
 /// The session's own handle can be in use by work nobody waits for any more, or be closed by that
-/// work, while a value is escaped on another thread; and a session that is about to be replaced may
-/// follow a character set that is no longer the one on record, which the next session's handshake
-/// uses. So values are escaped with a handle of the connection's own that is never connected, set
-/// up for the character set on record and the escaping mode of the latest session, and set up again
-/// when either changes.
+/// work, while a value is escaped on another thread. So values are escaped with a handle of the
+/// connection's own that is never connected, set up again whenever the character set or the
+/// escaping mode changes. What the session reports - its character set, which the client library
+/// follows through session tracking, and its `NO_BACKSLASH_ESCAPES` mode - is recorded while the
+/// connection is held, after it connects and after every statement.
 @objc(SAConnectionEscaper)
 public final class SAConnectionEscaper: NSObject {
 
     private let lock = NSLock()
-    private var characterSet: String?
-    private var noBackslashEscapes = false
+    private var handshakeCharacterSet: String?
+    private var sessionCharacterSet: String?
+    private var sessionUsesNoBackslashEscapes = false
+    private var handleCharacterSet: String?
+    private var handleUsesNoBackslashEscapes = false
     private var handle: SAOfflineEscapingHandle?
+
+    /// Decides which character set a value is escaped for.
+    ///
+    /// A session that is about to be replaced may follow a character set that is no longer the one
+    /// on record, which the next session's handshake uses; its values follow the record. Otherwise a
+    /// session whose character set differs from the one it was connected with has been told about a
+    /// change - by the connection, or by a statement the user ran - and the client library followed
+    /// it; that is what the session reads values in. A session still on its handshake character set
+    /// either had no change, or runs on a server that does not report changes, where the record,
+    /// which follows every change the connection makes, is the better guide.
+    /// - Parameters:
+    ///   - characterSetOnRecord: The connection's character set on record.
+    ///   - sessionCharacterSet: The character set the session last reported, if known.
+    ///   - handshakeCharacterSet: The character set the session was connected with, if known.
+    ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
+    /// - Returns: The character set to escape for, or nil if there is none.
+    static func characterSetForEscaping(onRecord characterSetOnRecord: String?,
+                                        session sessionCharacterSet: String?,
+                                        handshake handshakeCharacterSet: String?,
+                                        sessionIsBeingReplaced: Bool) -> String? {
+        if sessionIsBeingReplaced {
+            return characterSetOnRecord
+        }
+        if let sessionCharacterSet, let handshakeCharacterSet,
+           sessionCharacterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
+            return sessionCharacterSet
+        }
+        return characterSetOnRecord ?? sessionCharacterSet
+    }
+
+    /// Records what the session reports. Called while the connection is held.
+    /// - Parameters:
+    ///   - characterSet: The session's character set as the client library names it.
+    ///   - noBackslashEscapes: Whether the session is in `NO_BACKSLASH_ESCAPES` mode.
+    ///   - isHandshake: Whether the session has just been connected.
+    @objc(recordSessionCharacterSet:noBackslashEscapes:isHandshake:)
+    public func recordSession(characterSet: String?, noBackslashEscapes: Bool, isHandshake: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        if isHandshake {
+            handshakeCharacterSet = characterSet
+        }
+        sessionCharacterSet = characterSet
+        sessionUsesNoBackslashEscapes = noBackslashEscapes
+    }
 
     /// Escapes bytes for a string literal.
     /// - Parameters:
-    ///   - source: The value, already in the character set on record.
+    ///   - source: The value, already in the connection's string encoding.
     ///   - length: The number of bytes in the value.
     ///   - destination: Room for at least twice the value's length and one more byte.
-    ///   - characterSet: The connection's character set on record.
-    ///   - noBackslashEscapes: Whether the latest session was in `NO_BACKSLASH_ESCAPES` mode.
+    ///   - characterSetOnRecord: The connection's character set on record.
+    ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
     /// - Returns: The number of escaped bytes written, or -1 if the value could not be escaped -
-    ///   when there is no character set on record, or the client library does not know it.
-    @objc(escapeBytes:length:into:characterSet:noBackslashEscapes:)
+    ///   when there is no character set to escape for, or the client library does not know it.
+    @objc(escapeBytes:length:into:characterSetOnRecord:sessionIsBeingReplaced:)
     public func escape(_ source: UnsafeRawPointer?,
                        length: Int,
                        into destination: UnsafeMutableRawPointer,
-                       characterSet: String?,
-                       noBackslashEscapes: Bool) -> Int {
-        guard let characterSet else {
-            return -1
-        }
+                       characterSetOnRecord: String?,
+                       sessionIsBeingReplaced: Bool) -> Int {
         lock.lock()
         defer { lock.unlock() }
-        if handle == nil || self.characterSet != characterSet || self.noBackslashEscapes != noBackslashEscapes {
+        guard let characterSet = Self.characterSetForEscaping(onRecord: characterSetOnRecord,
+                                                              session: sessionCharacterSet,
+                                                              handshake: handshakeCharacterSet,
+                                                              sessionIsBeingReplaced: sessionIsBeingReplaced) else {
+            return -1
+        }
+        let noBackslashEscapes = sessionUsesNoBackslashEscapes
+        if handle == nil || handleCharacterSet != characterSet || handleUsesNoBackslashEscapes != noBackslashEscapes {
             handle = SAOfflineEscapingHandle.handle(
                 forCharacterSet: characterSet,
                 serverStatus: noBackslashEscapes ? SAOfflineEscapingHandle.noBackslashEscapesStatus : 0
             )
-            self.characterSet = characterSet
-            self.noBackslashEscapes = noBackslashEscapes
+            handleCharacterSet = characterSet
+            handleUsesNoBackslashEscapes = noBackslashEscapes
         }
         guard let handle else {
             return -1
