@@ -324,6 +324,20 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
+	// A query waits for a server, and on a route that has gone away it waits for a timeout.
+	// The main thread must not be the one waiting: the query runs on the connection's worker
+	// thread instead, and the interface keeps drawing while it does. The same call is made
+	// again from there, where this test no longer holds and the query simply runs.
+	if ([self _workShouldRunOffMainThread]) {
+		return [self _runWorkKeepingInterfaceAlive:^id{
+			return [self queryString:theQueryString
+			           usingEncoding:theEncoding
+			          withResultType:theReturnType
+			       assertingDatabase:databaseName
+			databaseContextIsRequired:databaseContextIsRequired];
+		}];
+	}
+
 	double queryExecutionTime;
 	NSString *theErrorMessage;
 	NSUInteger theErrorID;
@@ -386,6 +400,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// Lock the connection while it's actively in use
 	[self _lockConnection];
+
+	// From here this is "the query that is running". Anything acting on that later - a
+	// cancellation, say - has to be able to tell whether it is still this one, and counting
+	// any earlier would count queries that never got the connection.
+	queryGeneration++;
 	if (!databaseAssertionState) {
 		databaseAssertionState = [[SADatabaseAssertionState alloc] init];
 	}

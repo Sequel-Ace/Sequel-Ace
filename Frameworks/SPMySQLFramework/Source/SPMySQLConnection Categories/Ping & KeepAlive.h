@@ -38,6 +38,7 @@
 
 // Master ping method
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay;
+- (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay timeout:(NSUInteger)pingTimeout;
 
 // Ping thread internals
 void _backgroundPingTask(void *ptr);

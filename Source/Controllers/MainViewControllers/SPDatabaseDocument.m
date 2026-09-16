@@ -111,6 +111,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
+// What the window shows while a connection check is running on its own thread
+@property (nonatomic, strong) SAConnectionCheckSheet *connectionCheckSheet;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -1298,12 +1301,32 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     // See whether there is an active database structure task and whether it can be used
     // to cancel the query, for speed (no connection overhead!)
-    if (databaseStructureRetrieval && [databaseStructureRetrieval connection]) {
-        [mySQLConnection setLastQueryWasCancelled:YES];
-        [[databaseStructureRetrieval connection] killQueryOnThreadID:[mySQLConnection mysqlConnectionThreadId]];
+    SPMySQLConnection *connectionToCancel = mySQLConnection;
+    SPMySQLConnection *structureConnection = [databaseStructureRetrieval connection];
+
+    // Asking a server to stop means reaching it: over the structure connection, or over a new
+    // one opened for the purpose. Either can wait as long as the query being cancelled, so the
+    // main thread - the thread this button was pressed on - never does it itself. A caller that
+    // is already off the main thread keeps the cancellation synchronous, because callers like
+    // the field-removal task hold a lock across it and rely on it having happened on return.
+    void (^cancelTheQuery)(void) = ^{
+        if (structureConnection) {
+            [connectionToCancel setLastQueryWasCancelled:YES];
+            [structureConnection killQueryOnThreadID:[connectionToCancel mysqlConnectionThreadId]];
+        } else {
+            [connectionToCancel cancelCurrentQuery];
+        }
+    };
+
+    if ([NSThread isMainThread]) {
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), cancelTheQuery);
     } else {
-        [mySQLConnection cancelCurrentQuery];
+        cancelTheQuery();
     }
+
+    // Both of those ask the server to stop, and a server that has stopped answering will not
+    // hear either. If the query is still waiting shortly from now, the wait is ended instead.
+    [mySQLConnection abandonQueryIfCancellationDoesNotTakeEffect];
 }
 
 #pragma mark -
@@ -5644,6 +5667,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), aTable]];
     }
 
+    // Loading a table can wait on a server that has stopped answering, so it can be stopped
+    // like loading a table's contents already can.
+    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:nil callbackFunction:NULL];
+
     // Update the tables list interface - also updates menus to reflect the selected table type
     [[tablesListInstance onMainThread] setSelectionState:[NSDictionary dictionaryWithObjectsAndKeys:aTable, @"name", [NSNumber numberWithInteger:aTableType], @"type", nil]];
 
@@ -5937,12 +5964,35 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
+ * Invoked when connection work has to wait for a server long enough to be noticed. The work runs
+ * on the connection's own thread; the window waits for it here, in an event loop that keeps it
+ * answering, and offers to stop waiting.
+ */
+- (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
+{
+    SAConnectionCheckSheet *sheet = [[SAConnectionCheckSheet alloc] init];
+    self.connectionCheckSheet = sheet;
+
+    __weak id weakConnection = connection;
+    [sheet waitInWindow:[self parentWindowControllerWindow] untilFinished:isFinished whenCancelled:^{
+        [weakConnection cancelConnectionCheck];
+    }];
+
+    if (self.connectionCheckSheet == sheet) {
+        self.connectionCheckSheet = nil;
+    }
+}
+
+/**
  * Invoked when the connection fails and the framework needs to know how to proceed.
  */
 - (SPMySQLConnectionLostDecision)connectionLost:(id)connection
 {
 
     SPLog(@"connectionLost");
+
+    // A window holds one sheet at a time, and this question outranks a note about waiting.
+    [self.connectionCheckSheet suspendForOtherSheet];
 
     SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
@@ -5971,6 +6021,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self performSelectorOnMainThread:@selector(closeAndDisconnect) withObject:nil waitUntilDone:YES];
         }
     }
+
+    // Whatever was chosen, the connection carries on working on it, and the wait for that
+    // work can have the window back.
+    [self.connectionCheckSheet resumeAfterOtherSheet];
 
     return connectionErrorCode;
 }

@@ -2823,6 +2823,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
         isSavingRow = NO;
 		return YES;
+	} else if (![mySQLConnection isConnected]) {
+
+		// Without a connection there is nothing to write the row to and nothing to decide:
+		// keeping it in edit state and discarding it come to the same thing, and the window
+		// this row belongs to is on its way out.
+		[self cancelRowEditing];
+		[tableContentView reloadData];
+
+		isSavingRow = NO;
+		return NO;
 	} else { // Report errors which have occurred
 		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];

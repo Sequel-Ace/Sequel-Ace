@@ -149,6 +149,18 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
+	// The keepalive budget: as long as the connection timeout, thirty seconds by default.
+	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:(timeout > 0 ? timeout : 30)];
+}
+
+/**
+ * As above, but with an explicit budget for the ping. A check that only has to
+ * find out whether the connection is still there uses a short one: on a dead
+ * route the read blocks until the budget runs out, and that time is time the
+ * caller - often the main thread - spends waiting.
+ */
+- (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay timeout:(NSUInteger)pingTimeout
+{
     SPLog(@"_pingConnectionUsingLoopDelay");
 
 	if (state != SPMySQLConnected) return NO;
@@ -169,10 +181,6 @@ end_cleanup:
 	volatile BOOL keepAliveLastPingSuccess = NO;
 	keepAliveLastPingBlocked = NO;
 	keepAlivePingThreadActive = YES;
-
-	// Use a ping timeout defaulting to thirty seconds, but using the connection timeout if set
-	NSUInteger pingTimeout = 30;
-	if (timeout > 0) pingTimeout = timeout;
 
 	// Set up a struct containing details the ping task will need
 	// we can do this on the stack since this method makes sure to outlive the ping thread

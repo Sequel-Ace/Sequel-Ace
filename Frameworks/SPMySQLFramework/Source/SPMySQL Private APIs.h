@@ -58,6 +58,13 @@
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
+- (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
+- (BOOL)_workShouldRunOffMainThread;
+- (void)_recordWorkAsCancelled;
+- (BOOL)_connectionIsStillBusy;
+- (void)_closeSocketOfUnansweredConnection;
 - (BOOL)_abortCancelledReconnectWhileLocked;
 - (void)_disconnect;
 - (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;
@@ -77,6 +84,8 @@
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection;
+- (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision;
+- (void)_recordWhetherAModalWindowIsShowing;
 
 @end
 

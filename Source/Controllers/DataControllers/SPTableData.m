@@ -1203,9 +1203,10 @@
 
 			
 	// Check for any errors, only displaying them if the connection hasn't been terminated
+	// and the query was not one the user asked to stop.
 	if ([mySQLConnection queryErrored]) {
 		[self _recordStatusLoadFailureForTable:selectedTableName database:selectedDatabaseName tableType:selectedTableType];
-		if ([mySQLConnection isConnected]) {
+		if ([mySQLConnection isConnected] && ![mySQLConnection lastQueryWasCancelled]) {
 			SPMainQSync(^{
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [self->mySQLConnection lastErrorMessage]] callback:nil];
 			});

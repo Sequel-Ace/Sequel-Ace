@@ -4190,3 +4190,12 @@
 
 /* Vault OIDC login already in progress */
 "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+
+/* connection wait sheet title */
+"Waiting for the server…" = "Waiting for the server…";
+
+/* connection wait sheet elapsed time, %ld is a number of seconds */
+"The server has not answered for %ld seconds." = "The server has not answered for %ld seconds.";
+
+/* connection wait sheet cancel button */
+"Stop Waiting" = "Stop Waiting";

@@ -47,6 +47,7 @@
 	// Cache whether the delegate implements certain delegate methods
 	delegateSupportsWillQueryString = [delegate respondsToSelector:@selector(willQueryString:connection:)];
 	delegateSupportsConnectionLost = [delegate respondsToSelector:@selector(connectionLost:)];
+	delegateSupportsConnectionCheckProgress = [delegate respondsToSelector:@selector(connection:waitForConnectionWorkUntilFinished:)];
 }
 
 /**
@@ -153,6 +154,26 @@
 {
 	SPMySQLConnectionLostDecision theDecision = SPMySQLConnectionLostDisconnect;
 
+	// A connection is lost for everything using it, so one question covers them all. A thread
+	// that arrives while the question is already being asked waits for that answer instead of
+	// stacking a second dialog behind the first. The main thread never waits here: it is the
+	// thread the question has to be asked on, so it asks its own.
+	if (![NSThread isMainThread]) {
+		[delegateDecisionCondition lock];
+		if (delegateDecisionInProgress) {
+			NSUInteger generationWaitedFor = delegateDecisionGeneration;
+			while (delegateDecisionInProgress && delegateDecisionGeneration == generationWaitedFor) {
+				[delegateDecisionCondition wait];
+			}
+			theDecision = lastDelegateDecisionForLostConnection;
+			[delegateDecisionCondition unlock];
+
+			return theDecision;
+		}
+		delegateDecisionInProgress = YES;
+		[delegateDecisionCondition unlock];
+	}
+
 	// If on the main thread, ask the delegate directly.
 	if ([NSThread isMainThread]) {
 		[delegateDecisionLock lock];
@@ -163,28 +184,53 @@
 	// Otherwise call ourself on the main thread, waiting until the reply is received.
 	} else {
 
-		// First check whether the application is in a modal state; if so, wait
-        do {
-            NSWindow __block *modalWindow = nil;
-            
-            dispatch_sync(dispatch_get_main_queue(), ^{
-                modalWindow = [NSApp modalWindow];
-            });
+		// First check whether the application is in a modal state; if so, wait.
+		// The question goes to the main thread through its run loop rather than through its
+		// queue: the work that led here can itself have been started from a block on that
+		// queue, and a queue runs one block at a time. Waiting for that block to finish would
+		// mean waiting for something that is waiting for this answer.
+		[self performSelectorOnMainThread:@selector(_recordWhetherAModalWindowIsShowing) withObject:nil waitUntilDone:YES];
+		if (aModalWindowIsShowing) {
+			usleep(100000);
+		}
 
-            if(modalWindow == nil){
-                break;
-            }
-            else{
-                usleep(100000);
-            }
-
-        } while(0);
-
-		[self performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection) withObject:nil waitUntilDone:YES];
+		[self performSelectorOnMainThread:@selector(_askDelegateForLostConnectionDecision) withObject:nil waitUntilDone:YES];
 		[delegateDecisionLock lock];
 		theDecision = lastDelegateDecisionForLostConnection;
 		[delegateDecisionLock unlock];
+
+		// The answer is in: everything that arrived behind this question shares it.
+		[delegateDecisionCondition lock];
+		delegateDecisionInProgress = NO;
+		delegateDecisionGeneration++;
+		[delegateDecisionCondition broadcast];
+		[delegateDecisionCondition unlock];
 	}
+
+	return theDecision;
+}
+
+/**
+ * Asks the delegate how to proceed with a lost connection. Only called on the main thread, which
+ * is where the question can actually be put to someone.
+ *
+ * @return What the delegate decided.
+ */
+/**
+ * Records whether the application is currently showing something modal. Only called on the main
+ * thread, which is the only place that can be asked.
+ */
+- (void)_recordWhetherAModalWindowIsShowing
+{
+	aModalWindowIsShowing = ([NSApp modalWindow] != nil);
+}
+
+- (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision
+{
+	[delegateDecisionLock lock];
+	lastDelegateDecisionForLostConnection = [delegate connectionLost:self];
+	SPMySQLConnectionLostDecision theDecision = lastDelegateDecisionForLostConnection;
+	[delegateDecisionLock unlock];
 
 	return theDecision;
 }

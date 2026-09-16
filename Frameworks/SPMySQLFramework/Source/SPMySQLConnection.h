@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionWorkCoordinator, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -36,6 +36,7 @@
     __weak NSObject <SPMySQLConnectionDelegate> *delegate;
 	BOOL delegateSupportsWillQueryString;
 	BOOL delegateSupportsConnectionLost;
+	BOOL delegateSupportsConnectionCheckProgress;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented
 
 	// Basic connection details
@@ -88,8 +89,35 @@
 	SPMySQLConnectionLostDecision lastDelegateDecisionForLostConnection;
 	NSLock *delegateDecisionLock;
 
+	// One lost-connection question at a time: whether one is being asked, and how many have
+	// been answered, so waiting threads can tell a new answer from the one they arrived after.
+	NSCondition *delegateDecisionCondition;
+	BOOL delegateDecisionInProgress;
+	NSUInteger delegateDecisionGeneration;
+	BOOL aModalWindowIsShowing;
+
 	// Timeout and keep-alive
 	NSUInteger timeout;
+
+	// Set while the connection is being re-established after a check found it
+	// gone: that first attempt runs on short budgets so the user is asked what
+	// to do instead of waiting out the full timeouts.
+	BOOL reconnectingAfterFailedCheck;
+	// Connect timeout for that attempt, in seconds; 0 while the normal one applies.
+	NSUInteger connectTimeoutOverride;
+
+	// Where connection work runs when the main thread must not wait for it, and how many waits
+	// for it are currently nested.
+	SAConnectionWorkCoordinator *connectionWorkCoordinator;
+	NSUInteger connectionWorkWaitDepth;
+
+	// Whether the user has ended a wait, which the next attempt is not allowed to spend again
+	BOOL userEndedPendingWork;
+
+	// Which query is running, so that anything acting on "the query" later can tell whether it
+	// is still the same one
+	NSUInteger queryGeneration;
+
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
 	CGFloat keepAliveInterval;
@@ -211,6 +239,10 @@
 - (BOOL)isConnected;
 - (BOOL)isConnectedViaSSL;
 - (BOOL)checkConnection;
+/** Ends the interface's wait for connection work, and asks that work to stop. */
+- (void)cancelConnectionCheck;
+/** Ends a wait for a peer that answers neither the query nor the request to cancel it. */
+- (void)abandonQueryIfCancellationDoesNotTakeEffect;
 - (BOOL)checkConnectionIfNecessary;
 - (double)timeConnected;
 - (BOOL)userTriggeredDisconnect;
