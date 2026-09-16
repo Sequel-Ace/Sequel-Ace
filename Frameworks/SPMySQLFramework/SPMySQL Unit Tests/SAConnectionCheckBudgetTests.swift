@@ -80,6 +80,14 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         XCTAssertGreaterThan(SAConnectionCheckBudget.sideConnectionAnswerTimeout(), 0)
     }
 
+    /// A side connection never waits long to connect, even without a configured timeout.
+    func testASideConnectionNeverWaitsLongToConnect() {
+        XCTAssertEqual(SAConnectionCheckBudget.sideConnectionConnectTimeout(forConfiguredTimeout: 0), SAConnectionCheckBudget.sideConnectionConnectLimit)
+        XCTAssertEqual(SAConnectionCheckBudget.sideConnectionConnectTimeout(forConfiguredTimeout: 30), SAConnectionCheckBudget.sideConnectionConnectLimit)
+        XCTAssertEqual(SAConnectionCheckBudget.sideConnectionConnectTimeout(forConfiguredTimeout: 2), 2)
+        XCTAssertLessThanOrEqual(SAConnectionCheckBudget.sideConnectionConnectLimit, SAConnectionCheckBudget.connectLimit)
+    }
+
     /// The check stays well below the default timeout.
     func testCheckStaysWellBelowTheDefaultTimeout() {
         let worstCase = Double(SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: 30))

@@ -1040,8 +1040,11 @@ asm(".desc ___crashreporter_info__, 0x10");
     }
 
 	// Set the connection timeout; a check-triggered reconnect shortens it so the
-	// user is asked quickly instead of waiting out a dead route.
-	NSUInteger connectTimeout = connectTimeoutOverride > 0 ? connectTimeoutOverride : timeout;
+	// user is asked quickly instead of waiting out a dead route. A side connection, which only asks
+	// the server to kill a query, keeps a short limit of its own.
+	NSUInteger connectTimeout = isMaster
+		? (connectTimeoutOverride > 0 ? connectTimeoutOverride : timeout)
+		: [SAConnectionCheckBudget sideConnectionConnectTimeoutForConfiguredTimeout:timeout];
 	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&connectTimeout);
 
 	// A side connection only asks the server to kill a query, and does so while that query is

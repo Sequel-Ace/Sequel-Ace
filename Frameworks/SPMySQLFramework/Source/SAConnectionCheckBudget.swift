@@ -78,6 +78,14 @@ public final class SAConnectionCheckBudget: NSObject {
     /// a read up to three times, so the whole wait is at most three times this.
     public static let sideConnectionAnswerLimit: UInt = 2
 
+    /// The longest a side connection waits to connect, in seconds.
+    ///
+    /// It connects to a server the main connection reached a moment ago. While a transaction is open,
+    /// the stopped query is held until the server has answered the kill, so a route that has gone
+    /// must not hold it for the whole configured timeout - or, without one, for as long as the
+    /// system takes to give up.
+    public static let sideConnectionConnectLimit: UInt = 5
+
     /// The ping timeout a connection check uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
     /// - Returns: The shorter of the configured timeout and ``pingLimit``, in seconds.
@@ -158,6 +166,14 @@ public final class SAConnectionCheckBudget: NSObject {
     @objc(sideConnectionAnswerTimeout)
     public static func sideConnectionAnswerTimeout() -> UInt {
         sideConnectionAnswerLimit
+    }
+
+    /// The connection timeout for a side connection on a connection with this timeout.
+    /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
+    /// - Returns: The shorter of the configured timeout and ``sideConnectionConnectLimit``, in seconds.
+    @objc(sideConnectionConnectTimeoutForConfiguredTimeout:)
+    public static func sideConnectionConnectTimeout(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
+        capped(configuredTimeout, to: sideConnectionConnectLimit)
     }
 
     /// Caps a configured timeout at one of the check limits.
