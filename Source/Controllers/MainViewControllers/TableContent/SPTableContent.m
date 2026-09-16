@@ -3506,9 +3506,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		// The value could not be escaped - the connection was not available, or the user stopped
-		// waiting for it. Nothing is written in its place.
+		// waiting for it. Nothing is written in its place. A cell in a view is written at once and has
+		// no row edit to keep it in, so the user is told, as for a write the server refused.
 		if (!newObject) {
-			NSBeep();
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't write field.\nThe value could not be prepared for the server because the connection is not available. Nothing was written.", @"message of panel when a view cell value could not be prepared for writing because the connection is not available") callback:nil];
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 			return;

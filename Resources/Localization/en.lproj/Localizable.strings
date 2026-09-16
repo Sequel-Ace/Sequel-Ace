@@ -4208,3 +4208,6 @@
 
 /* Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off */
 "A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own." = "A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.";
+
+/* message of panel when a view cell value could not be prepared for writing because the connection is not available */
+"Couldn't write field.\nThe value could not be prepared for the server because the connection is not available. Nothing was written." = "Couldn't write field.\nThe value could not be prepared for the server because the connection is not available. Nothing was written.";
