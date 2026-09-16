@@ -84,6 +84,42 @@ final class SAConnectionCheckSheetTests: XCTestCase {
         XCTAssertLessThan(Date(), deadline)
     }
 
+    /// What connection work asks of the main thread is done while a wait runs, even a wait inside
+    /// a block on the main queue.
+    func testWorkThatAsksTheMainThreadIsServedDuringAWait() {
+        let sheet = SAConnectionCheckSheet()
+        let deadline = Date().addingTimeInterval(2)
+        let lock = NSLock()
+        var askedOnMainThread = false
+        var waitEndedInTime = false
+        let waitEnded = expectation(description: "the wait is over")
+
+        DispatchQueue.main.async {
+            // The main thread is busy with this block until the wait below is over, so the work can
+            // only be served by the wait.
+            Thread.detachNewThread {
+                SAMainRunLoop.runAndWait {
+                    lock.lock()
+                    askedOnMainThread = Thread.isMainThread
+                    lock.unlock()
+                }
+            }
+            sheet.wait(in: nil, untilFinished: {
+                lock.lock()
+                defer { lock.unlock() }
+                return askedOnMainThread || Date() > deadline
+            }, whenCancelled: nil)
+            waitEndedInTime = Date() <= deadline
+            waitEnded.fulfill()
+        }
+
+        wait(for: [waitEnded], timeout: 3)
+        lock.lock()
+        defer { lock.unlock() }
+        XCTAssertTrue(askedOnMainThread)
+        XCTAssertTrue(waitEndedInTime)
+    }
+
     /// A single wait shows its sheet, and none once it is over.
     func testASingleWaitShowsItsSheetUntilItIsOver() {
         XCTAssertEqual(SAConnectionCheckSheet.sheetStates(for: [wait(windowA)]), [.waiting])
