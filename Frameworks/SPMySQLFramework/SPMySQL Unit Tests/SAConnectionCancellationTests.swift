@@ -223,6 +223,20 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: false, sessionHasOpenTransaction: false))
     }
 
+    /// An answer that comes before the grace period ends leaves the decision to the grace period.
+    func testAnEarlyAnswerIsDecidedWhenTheGracePeriodEnds() {
+        let attempt = SAKillAttempt()
+        XCTAssertFalse(attempt.finish(accepted: true))
+        XCTAssertEqual(attempt.endGrace(), true)
+    }
+
+    /// An answer that comes after the grace period ended decides when it comes.
+    func testALateAnswerDecidesWhenItComes() {
+        let attempt = SAKillAttempt()
+        XCTAssertNil(attempt.endGrace())
+        XCTAssertTrue(attempt.finish(accepted: false))
+    }
+
     /// Nothing changes without a cancellation or after the user disconnected.
     func testNothingChangesWithoutACancellationOrAfterTheUserDisconnected() {
         XCTAssertEqual(recovery(cancelled: false, userDisconnected: false, connected: false, disconnected: true, mayDisconnect: true), .none)

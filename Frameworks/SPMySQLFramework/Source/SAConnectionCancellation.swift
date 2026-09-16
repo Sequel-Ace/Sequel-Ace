@@ -128,10 +128,22 @@ public final class SAConnectionCancellation: NSObject {
         // itself, so recording it never waits on anything - this may well be the main thread.
         inFlightQuery.requestCancellation(ofGeneration: generation)
 
-        let killAccepted = SAKillAcceptance()
+        // Once the grace period is over, the socket is closed unless the server accepted the kill for
+        // a session with an open transaction. Reaching the server can take longer than the grace
+        // period on a slow link; the decision then waits for the answer instead of guessing.
+        let attempt = SAKillAttempt()
+        let decideAfterGrace: (_ killAccepted: Bool) -> Void = { [weak self] killAccepted in
+            guard let self,
+                  Self.closesSocketAfterGrace(killAccepted: killAccepted,
+                                              sessionHasOpenTransaction: self.host?.sessionHasOpenTransaction ?? false) else {
+                return
+            }
+            self.closeSocket(ifGenerationIsWaiting: generation)
+        }
         let askServer: () -> Void = { [weak self] in
-            if self?.host?.killQueryOverSideConnection(forGeneration: generation) == true {
-                killAccepted.record()
+            let accepted = self?.host?.killQueryOverSideConnection(forGeneration: generation) == true
+            if attempt.finish(accepted: accepted) {
+                decideAfterGrace(accepted)
             }
         }
         if synchronously {
@@ -140,20 +152,21 @@ public final class SAConnectionCancellation: NSObject {
             DispatchQueue.global(qos: .userInitiated).async(execute: askServer)
         }
 
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) { [weak self] in
-            guard let self else {
-                return
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) {
+            if let accepted = attempt.endGrace() {
+                decideAfterGrace(accepted)
             }
-            guard Self.closesSocketAfterGrace(killAccepted: killAccepted.wasRecorded,
-                                              sessionHasOpenTransaction: self.host?.sessionHasOpenTransaction ?? false) else {
-                return
-            }
-            self.inFlightQuery.closeSocket(ifGenerationIsWaiting: generation) {
-                // The query ends because it was asked to, so it counts as cancelled rather than
-                // failed, and the attempt that follows does not make anybody wait again.
-                self.host?.markRunningQueryCancelled()
-                self.host?.noteUserEndedWait()
-            }
+        }
+    }
+
+    /// Closes the socket of the query with this number, if it is still waiting on the server.
+    /// - Parameter generation: The query that was asked to stop.
+    private func closeSocket(ifGenerationIsWaiting generation: UInt) {
+        inFlightQuery.closeSocket(ifGenerationIsWaiting: generation) { [weak self] in
+            // The query ends because it was asked to, so it counts as cancelled rather than
+            // failed, and the attempt that follows does not make anybody wait again.
+            self?.host?.markRunningQueryCancelled()
+            self?.host?.noteUserEndedWait()
         }
     }
 
@@ -275,22 +288,30 @@ public final class SAConnectionCancellation: NSObject {
     }
 }
 
-/// Whether a server accepted a request to kill a query; set on one thread, read on another.
-private final class SAKillAcceptance {
+/// One request to kill a query: whether the server has answered it, and whether the grace period
+/// is over. Whichever comes second decides what happens to the query's socket.
+final class SAKillAttempt {
     private let lock = NSLock()
-    private var accepted = false
+    private var answer: Bool?
+    private var graceIsOver = false
 
-    /// Records that the server accepted the request.
-    func record() {
-        lock.lock()
-        accepted = true
-        lock.unlock()
-    }
-
-    /// Whether the server accepted the request so far.
-    var wasRecorded: Bool {
+    /// Records the server's answer.
+    /// - Parameter accepted: Whether the server accepted the request.
+    /// - Returns: Whether the grace period was already over, so that the answer decides now.
+    func finish(accepted: Bool) -> Bool {
         lock.lock()
         defer { lock.unlock() }
-        return accepted
+        answer = accepted
+        return graceIsOver
+    }
+
+    /// Records that the grace period is over.
+    /// - Returns: The server's answer if it has come, so that the grace period decides now; nil if
+    ///   the answer is still outstanding and will decide when it comes.
+    func endGrace() -> Bool? {
+        lock.lock()
+        defer { lock.unlock() }
+        graceIsOver = true
+        return answer
     }
 }
