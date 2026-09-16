@@ -13,6 +13,20 @@ import XCTest
 final class SAConnectionLostDecisionGateTests: XCTestCase {
     private let gate = SAConnectionLostDecisionGate()
 
+    /// Waits until a condition holds, for up to two seconds.
+    /// - Parameter condition: What has to hold.
+    /// - Returns: Whether it held in time.
+    private func waitUntil(_ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(2)
+        while !condition() {
+            guard Date() < deadline else {
+                return false
+            }
+            usleep(1_000)
+        }
+        return true
+    }
+
     /// A lone thread gets its own answer.
     func testALoneThreadGetsItsOwnAnswer() {
         XCTAssertEqual(gate.decision(askingWith: { 2 }), 2)
@@ -61,13 +75,55 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
             }
         }
 
-        // The latecomers are waiting on the open question by now.
-        Thread.sleep(forTimeInterval: 0.2)
+        // The answer is given only once all latecomers are waiting on the open question.
+        XCTAssertTrue(waitUntil { self.gate.threadsWaitingForAnswer == 3 })
         userMayAnswer.signal()
 
         XCTAssertEqual(answersCollected.wait(timeout: .now() + 2), .success)
         XCTAssertEqual(questionsAsked, 1)
         XCTAssertEqual(answers, [1, 1, 1, 1])
+    }
+
+    /// A waiting thread takes the answer to the question it waited for, even when the next question
+    /// has been asked and answered before it gets to take it.
+    func testAWaitingThreadTakesTheAnswerToItsOwnQuestion() {
+        for round in 1...50 {
+            let questionIsOpen = DispatchSemaphore(value: 0)
+            let userMayAnswer = DispatchSemaphore(value: 0)
+            let waiterIsDone = DispatchSemaphore(value: 0)
+            let askerIsDone = DispatchSemaphore(value: 0)
+            let lock = NSLock()
+            var waiterAnswer: Int?
+
+            Thread.detachNewThread {
+                _ = self.gate.decision(askingWith: {
+                    questionIsOpen.signal()
+                    userMayAnswer.wait()
+                    return round
+                })
+
+                // The next loss, answered at once, while the waiting thread is still waking up.
+                _ = self.gate.decision(askingWith: { -round })
+                askerIsDone.signal()
+            }
+            XCTAssertEqual(questionIsOpen.wait(timeout: .now() + 2), .success)
+
+            Thread.detachNewThread {
+                let answer = self.gate.decision(askingWith: { 0 })
+                lock.lock()
+                waiterAnswer = answer
+                lock.unlock()
+                waiterIsDone.signal()
+            }
+            XCTAssertTrue(waitUntil { self.gate.threadsWaitingForAnswer == 1 })
+            userMayAnswer.signal()
+
+            XCTAssertEqual(waiterIsDone.wait(timeout: .now() + 2), .success)
+            XCTAssertEqual(askerIsDone.wait(timeout: .now() + 2), .success)
+            lock.lock()
+            XCTAssertEqual(waiterAnswer, round)
+            lock.unlock()
+        }
     }
 
     /// A loss after an answer is asked about again.

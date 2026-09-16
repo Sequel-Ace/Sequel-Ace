@@ -19,10 +19,17 @@ import Foundation
 @objc(SAConnectionLostDecisionGate)
 public final class SAConnectionLostDecisionGate: NSObject {
 
+    /// One question put to the user, and its answer once it has been given.
+    ///
+    /// Each thread that waits keeps hold of the question it joined, so a later question - asked
+    /// before that thread gets to take its answer - cannot hand it the wrong one.
+    private final class SAQuestion {
+        var answer: Int?
+        var waitingThreads = 0
+    }
+
     private let condition = NSCondition()
-    private var questionIsOpen = false
-    private var answersGiven: UInt = 0
-    private var lastAnswer = 0
+    private var openQuestion: SAQuestion?
 
     /// The answer to the question, asked by this thread or shared with the one already asking.
     ///
@@ -33,27 +40,36 @@ public final class SAConnectionLostDecisionGate: NSObject {
     @objc(decisionAskingWith:)
     public func decision(askingWith ask: () -> Int) -> Int {
         condition.lock()
-        if questionIsOpen {
-            let answersBefore = answersGiven
-            while questionIsOpen && answersGiven == answersBefore {
+        if let question = openQuestion {
+            question.waitingThreads += 1
+            while true {
+                if let sharedAnswer = question.answer {
+                    question.waitingThreads -= 1
+                    condition.unlock()
+                    return sharedAnswer
+                }
                 condition.wait()
             }
-            let sharedAnswer = lastAnswer
-            condition.unlock()
-            return sharedAnswer
         }
-        questionIsOpen = true
+        let question = SAQuestion()
+        openQuestion = question
         condition.unlock()
 
         let answer = ask()
 
         condition.lock()
-        lastAnswer = answer
-        questionIsOpen = false
-        answersGiven += 1
+        question.answer = answer
+        openQuestion = nil
         condition.broadcast()
         condition.unlock()
 
         return answer
+    }
+
+    /// How many threads are waiting for the answer to the question that is open now.
+    var threadsWaitingForAnswer: Int {
+        condition.lock()
+        defer { condition.unlock() }
+        return openQuestion?.waitingThreads ?? 0
     }
 }
