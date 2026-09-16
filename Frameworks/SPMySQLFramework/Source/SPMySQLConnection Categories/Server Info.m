@@ -108,14 +108,9 @@
 	// Check the connection if appropriate
 	if (![self checkConnectionIfNecessary]) return nil;
 
-	// Lock the connection before using it
-	[self _lockConnection];
-
-	// The session can have been closed while this waited for the lock.
-	if (!mySQLConnection) {
-		[self _unlockConnection];
-		return nil;
-	}
+	// Lock the connection before using it. The session can have been closed, or marked to be
+	// replaced, while this waited for the lock.
+	if (![self _lockUsableConnectionForQuery]) return nil;
 
 	// Ensure per-thread variables are set up
 	[self _validateThreadSetup];
@@ -161,12 +156,8 @@
 - (BOOL)serverShutdown
 {
 	if([self checkConnectionIfNecessary]) {
-		[self _lockConnection];
-		// The session can have been closed while this waited for the lock.
-		if (!mySQLConnection) {
-			[self _unlockConnection];
-			return NO;
-		}
+		// The session can have been closed, or marked to be replaced, while this waited for the lock.
+		if (![self _lockUsableConnectionForQuery]) return NO;
 		// Ensure per-thread variables are set up
 		[self _validateThreadSetup];
 		//only SHUTDOWN_DEFAULT is supported right now

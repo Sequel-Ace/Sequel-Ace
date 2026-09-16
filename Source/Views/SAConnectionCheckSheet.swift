@@ -140,27 +140,31 @@ final class SAConnectionCheckSheet: NSObject {
             return !wait.isSuspended && !(wait.hasEnded && index == waits.count - 1)
         }
 
+        // Whether a wait further in belongs to the same window, and counts as holding it.
+        let heldFurtherIn = { (index: Int, counts: (Int) -> Bool) -> Bool in
+            guard let window = waits[index].window else {
+                return false
+            }
+            return waits.indices.contains { $0 > index && waits[$0].window == window && counts($0) }
+        }
+
         return waits.indices.map { index in
-            let wait = waits[index]
             guard wantsSheet(index) else {
                 return .hidden
             }
-            if let window = wait.window,
-               waits.indices.contains(where: { $0 > index && waits[$0].window == window && wantsSheet($0) }) {
-                return .hidden
+            if !waits[index].hasEnded {
+                return heldFurtherIn(index, wantsSheet) ? .hidden : .waiting
             }
-            return wait.hasEnded ? .finishing : .waiting
+
+            // An ended wait says it waits for another window only when that is so. Beneath a wait
+            // of its own window, that wait - or the code that ran it - has the window.
+            return heldFurtherIn(index, { !waits[$0].isSuspended }) ? .hidden : .finishing
         }
     }
 
     /// Whether the wait is over, because the work finished or the waiting was ended.
     private var hasEnded: Bool {
         return waitWasEnded || (isFinished?() ?? true)
-    }
-
-    /// Ends the wait from outside, without counting as the user cancelling the work.
-    @objc func endWait() {
-        waitWasEnded = true
     }
 
     /// Gives the window up so another sheet can use it, and keeps waiting meanwhile.

@@ -106,6 +106,14 @@ final class SAConnectionCheckSheetTests: XCTestCase {
                        [.hidden, .finishing, .waiting])
     }
 
+    /// An ended wait beneath a wait of its own window leaves that window to it.
+    func testAnEndedWaitBeneathAWaitOfItsOwnWindowShowsNothing() {
+        XCTAssertEqual(SAConnectionCheckSheet.sheetStates(for: [wait(windowA, ended: true), wait(windowA, ended: true)]),
+                       [.hidden, .hidden])
+        XCTAssertEqual(SAConnectionCheckSheet.sheetStates(for: [wait(windowA, ended: true), wait(windowB), wait(windowA)]),
+                       [.hidden, .waiting, .waiting])
+    }
+
     /// Waits that stepped aside for a question show nothing and hold nothing.
     func testSuspendedWaitsShowNothing() {
         XCTAssertEqual(SAConnectionCheckSheet.sheetStates(for: [wait(windowA, suspended: true)]), [.hidden])

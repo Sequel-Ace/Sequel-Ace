@@ -178,8 +178,7 @@
 	BOOL hasNoUsableSession = (state == SPMySQLDisconnected || state == SPMySQLDisconnecting
 	                           || state == SPMySQLConnecting || state == SPMySQLConnectionLostInBackground);
 	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingAfterAbandonedWork:([NSThread isMainThread] && lastWorkWasAbandoned)
-	                                                             hasNoUsableSession:hasNoUsableSession
-	                                                             storedCharacterSet:previousEncoding]) {
+	                                                             hasNoUsableSession:hasNoUsableSession]) {
 		encoding = [[NSString alloc] initWithString:previousEncoding];
 		stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[previousEncoding UTF8String]];
 		encodingUsesLatin1Transport = previousEncodingUsesLatin1Transport;

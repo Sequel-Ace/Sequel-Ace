@@ -90,6 +90,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 	if (![self checkConnectionIfNecessary]) return nil;
 
+	// A session marked for replacement may escape under a character set that is no longer the one
+	// on record, while the value is going to be sent on the session that replaces it. That session
+	// is set up first, so the value is escaped the way it will be read.
+	if (sessionMustBeReplacedBeforeUse && ![self _replaceSessionMarkedForReplacement]) return nil;
+
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
@@ -868,6 +873,22 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 	state = SPMySQLConnectionLostInBackground;
 	sessionWasClosedWithoutItsProxy = YES;
+}
+
+/**
+ * Replaces a session that was marked to be replaced before its next use, without sending anything
+ * over it. It waits for the connection the way a query does - off the main thread, where that
+ * applies.
+ *
+ * @return Whether a usable session is in place.
+ */
+- (BOOL)_replaceSessionMarkedForReplacement
+{
+	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+		if (![self _lockUsableConnectionForQuery]) return NO;
+		[self _unlockConnection];
+		return YES;
+	}];
 }
 
 /**

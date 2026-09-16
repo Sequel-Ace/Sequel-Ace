@@ -159,10 +159,6 @@ public final class SAConnectionCancellation: NSObject {
         host.closeSessionIfConnected()
     }
 
-    /// Character sets in which the second byte of a character can be a backslash. A value escaped
-    /// under another character set's rules is not safe to send in one of these.
-    public static let escapeSensitiveCharacterSets: Set<String> = ["big5", "cp932", "gb18030", "gbk", "sjis"]
-
     /// Whether putting a stored character set back only has to change the connection's record of it.
     ///
     /// A connection without a usable session - lost in the background, or on its way between two
@@ -171,22 +167,17 @@ public final class SAConnectionCancellation: NSObject {
     /// again in any case. Telling the server as well would only wait behind the abandoned work, or
     /// reconnect, for a session that is on its way out.
     ///
-    /// Until that session is gone, values are still escaped with its handle, which may already
-    /// follow the temporary character set. That is harmless unless the stored character set is one
-    /// in which escaping depends on it; for those the server is told as before.
+    /// Until that session is gone, its handle may still follow the temporary character set, so
+    /// nothing is escaped with it: the connection replaces a session marked like this before it
+    /// escapes a value, and the value is escaped for the character set on record.
     /// - Parameters:
     ///   - afterAbandonedWork: Whether the calling thread stopped waiting for the work it ran last.
     ///   - hasNoUsableSession: Whether the connection has no session to tell.
-    ///   - storedCharacterSet: The character set to put back.
     /// - Returns: Whether the record alone is to be changed.
-    @objc(storedEncodingOnlyNeedsRecordingAfterAbandonedWork:hasNoUsableSession:storedCharacterSet:)
+    @objc(storedEncodingOnlyNeedsRecordingAfterAbandonedWork:hasNoUsableSession:)
     public static func storedEncodingOnlyNeedsRecording(afterAbandonedWork: Bool,
-                                                        hasNoUsableSession: Bool,
-                                                        storedCharacterSet: String) -> Bool {
-        if hasNoUsableSession {
-            return true
-        }
-        return afterAbandonedWork && !escapeSensitiveCharacterSets.contains(storedCharacterSet.lowercased())
+                                                        hasNoUsableSession: Bool) -> Bool {
+        return afterAbandonedWork || hasNoUsableSession
     }
 
     /// Decides what becomes of a connection whose reconnect ended while its thread was cancelled.
