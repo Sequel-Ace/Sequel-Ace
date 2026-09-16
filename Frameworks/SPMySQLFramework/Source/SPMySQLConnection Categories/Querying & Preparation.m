@@ -418,6 +418,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// any earlier would count queries that never got the connection.
 	NSUInteger thisQueryGeneration = ++queryGeneration;
 
+	// A retry runs under a new number. A request to stop this query names the number it had when
+	// the request was made, so the query keeps its first one to ask with.
+	NSUInteger originalQueryGeneration = thisQueryGeneration;
+
 	// Whether the query was cancelled is this query's to say from here. Anything that finished late
 	// and wrote to it did so before this point, under the same lock.
 	lastQueryWasCancelled = NO;
@@ -499,6 +503,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 			}
 
+			// A request to stop can arrive while the query is losing its connection, before anything
+			// has reached the server; it still means the statement must not be sent again.
+			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+				lastQueryWasCancelled = YES;
+			}
+
 			// Prevent retries if the query was cancelled or not a connection error
 			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
@@ -528,6 +538,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// anybody still wants it.
 		if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) {
 			[self _unlockConnection];
+			return nil;
+		}
+
+		// Stopping can also have been asked for while the connection was being checked.
+		if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+			lastQueryWasCancelled = YES;
+			[self _unlockConnection];
+			[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+			[self _updateLastErrorID:1317];
+			[self _updateLastSqlstate:@"70100"];
 			return nil;
 		}
 

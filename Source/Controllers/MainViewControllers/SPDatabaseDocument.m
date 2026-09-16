@@ -1299,31 +1299,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)taskControllerDidRequestCancellation
 {
-    // The query this is about is the one running now. By the time the cancellation gets to run,
+    // The query this is about is the one running now. By the time anything reaches the server,
     // that query can have finished and another one taken over the connection, and that one was
-    // not what anybody asked to stop - so the request is tied to this query, and only sent while
-    // it is still running.
-    SPMySQLConnection *connectionToCancel = mySQLConnection;
-    NSUInteger queryToCancel = [connectionToCancel currentQueryGeneration];
-
-    // Asking a server to stop means reaching it: over the structure connection, or over a new
-    // one opened for the purpose. Either can wait as long as the query being cancelled, so the
-    // main thread - the thread this button was pressed on - never does it itself. A caller that
-    // is already off the main thread keeps the cancellation synchronous, because callers like
-    // the field-removal task hold a lock across it and rely on it having happened on return.
-    void (^cancelTheQuery)(void) = ^{
-        [connectionToCancel cancelQueryIfStillRunning:queryToCancel];
-    };
-
-    if ([NSThread isMainThread]) {
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), cancelTheQuery);
-    } else {
-        cancelTheQuery();
-    }
-
-    // Both of those ask the server to stop, and a server that has stopped answering will not
-    // hear either. If the query is still waiting shortly from now, the wait is ended instead.
-    [mySQLConnection abandonQueryIfCancellationDoesNotTakeEffect];
+    // not what anybody asked to stop - so the request is tied to this query. The connection marks
+    // it at once, asks the server to kill it, and closes its socket if the server does not answer.
+    // Reaching the server can take as long as the query itself, so the main thread - the thread
+    // this button was pressed on - does not wait for it; callers already off the main thread do,
+    // since some of them (the field-removal task) hold a lock across the request.
+    [mySQLConnection cancelQueryIfStillRunning:[mySQLConnection currentQueryGeneration]];
 }
 
 #pragma mark -

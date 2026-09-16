@@ -62,10 +62,8 @@
 - (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
 - (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
 - (BOOL)_workShouldRunOffMainThread;
-- (void)_keepConnectionRecoverableAfterCancellation;
-- (void)_discardConnectionMadeAfterCancellation;
+- (void)_recoverFromCancelledReconnectMayDisconnect:(BOOL)mayDisconnect;
 - (void)_recordWorkAsCancelled;
-- (void)_settleAbandonedWorkFromGeneration:(NSUInteger)generation;
 - (BOOL)_abortCancelledReconnectWhileLocked;
 - (void)_disconnect;
 - (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;

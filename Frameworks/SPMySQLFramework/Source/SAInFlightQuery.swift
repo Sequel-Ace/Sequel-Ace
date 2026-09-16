@@ -24,6 +24,7 @@ public final class SAInFlightQuery: NSObject {
     private var waitingGeneration: UInt = 0
     private var waitingSocket: Int32 = -1
     private var waitingServerThread: UInt = 0
+    private var cancellationRequestedGeneration: UInt = 0
 
     /// Records that a query is about to wait on the server.
     /// - Parameters:
@@ -73,6 +74,38 @@ public final class SAInFlightQuery: NSObject {
         }
         action(waitingServerThread)
         return true
+    }
+
+    /// Records that the query with this number was asked to stop.
+    ///
+    /// A query that loses its connection reconnects and tries again under a new number. It asks
+    /// under its original number whether it was asked to stop, so a request made before the retry
+    /// began still reaches it.
+    /// - Parameters:
+    ///   - generation: The number of the query that was asked to stop.
+    ///   - whileWaiting: Runs if that query is the one waiting on the server right now, while it
+    ///     cannot stop waiting.
+    @objc(requestCancellationOfGeneration:whileWaiting:)
+    public func requestCancellation(ofGeneration generation: UInt, whileWaiting: () -> Void) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard generation != 0 else {
+            return
+        }
+        cancellationRequestedGeneration = generation
+        if waitingGeneration == generation {
+            whileWaiting()
+        }
+    }
+
+    /// Whether the query with this number was asked to stop.
+    /// - Parameter generation: The query's original number.
+    /// - Returns: Whether stopping was asked for since that query began.
+    @objc(cancellationWasRequestedForGeneration:)
+    public func cancellationWasRequested(forGeneration generation: UInt) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return generation != 0 && cancellationRequestedGeneration == generation
     }
 
     /// Closes the socket of a query that is still waiting on the server, and of no other.

@@ -60,8 +60,14 @@ final class SAConnectionCheckSheet: NSObject {
             if sheetWindow == nil {
                 present(on: documentWindow)
             }
-            if let session {
-                if NSApp.runModalSession(session) != .continue {
+            if let currentSession = session {
+                let response = NSApp.runModalSession(currentSession)
+
+                // Another sheet can take the window while this session runs, ending the session on
+                // its way in. The ended session then says so on the way out, which is not the user
+                // ending the wait: the loop carries on and shows the sheet again once the window is
+                // free. Only a session that is still this sheet's own ends the wait this way.
+                if response != .continue, session == currentSession, !isSuspended {
                     break
                 }
             } else {

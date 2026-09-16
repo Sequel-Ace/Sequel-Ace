@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionLostDecisionGate, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAInFlightQuery, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionLostDecisionGate, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAInFlightQuery, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -116,6 +116,7 @@
 	// is still the same one, and which query is waiting on the server right now
 	NSUInteger queryGeneration;
 	SAInFlightQuery *inFlightQuery;
+	SAConnectionCancellation *connectionCancellation;
 
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
@@ -240,10 +241,8 @@
 - (BOOL)checkConnection;
 /** Ends the interface's wait for connection work, and asks that work to stop. */
 - (void)cancelConnectionCheck;
-/** Asks the server to stop a query, provided it is still the one running. */
+/** Stops a query, provided it is still the one running: marks it, asks the server, and closes its socket if the server does not answer. */
 - (void)cancelQueryIfStillRunning:(NSUInteger)generation;
-/** Ends a wait for a peer that answers neither the query nor the request to cancel it. */
-- (void)abandonQueryIfCancellationDoesNotTakeEffect;
 /** Identifies the query the connection is running, and changes whenever another one takes over. */
 - (NSUInteger)currentQueryGeneration;
 - (BOOL)checkConnectionIfNecessary;
