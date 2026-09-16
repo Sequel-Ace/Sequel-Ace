@@ -967,6 +967,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
+	// A value that could not be escaped - the connection was not available, or the user stopped
+	// waiting for it - keeps the row being edited instead of changing the column.
+	NSString *columnDefinition = [self _buildPartialColumnDefinitionString:theRow];
+	if (!columnDefinition) {
+		NSBeep();
+		return NO;
+	}
+
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable backtickQuotedString]];
 	[queryString appendString:@" "];
 	if (isEditingNewRow) {
@@ -976,7 +984,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] backtickQuotedString]];
 	}
 	[queryString appendString:@" "];
-	[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
+	[queryString appendString:columnDefinition];
 
 	// Process index if given for fields set to AUTO_INCREMENT
 	if (autoIncrementIndex) {
@@ -1074,6 +1082,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  * Takes the column definition from a dictionary and returns the it to be used
  * with an ALTER statement, e.g.:
  *  `col1` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT
+ * Returns nil if a default or comment could not be escaped, because the connection was not available.
  */
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow
 {
@@ -1126,7 +1135,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 		// Otherwise, use the provided default
 		else {
-			[queryString appendFormat:@"\n DEFAULT %@ ", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"default"]]];
+			NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"default"]];
+			if (!escapedDefault) return nil;
+			[queryString appendFormat:@"\n DEFAULT %@ ", escapedDefault];
 		}
 	}
 
@@ -1253,8 +1264,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP, DATETIME and DATE must always be wrapped in quotes.
             else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE",@"INET4",@"INET6"]]) {
                 // If default value is not an expresion or a string, add quotes.
-                if (!defaultValueIsExpression && !defaultValueIsString)
-                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+                if (!defaultValueIsExpression && !defaultValueIsString) {
+                    NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:defaultValue];
+                    if (!escapedDefault) return nil;
+                    [queryString appendFormat:@"\n DEFAULT %@", escapedDefault];
+                }
                 else
                     [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
             }
@@ -1294,7 +1308,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
     // Any column comments
     if ([(NSString *)[theRow objectForKey:@"comment"] length]) {
-        [queryString appendFormat:@"\n COMMENT %@", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
+        NSString *escapedComment = [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]];
+        if (!escapedComment) return nil;
+        [queryString appendFormat:@"\n COMMENT %@", escapedComment];
     }
 
 	return queryString;
@@ -1826,7 +1842,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
         else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"] || [type hasSuffix:@"ENUM"]) {
-            [theField setObject:[mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
+            // Without a connection the default stays as it is; it is escaped again when it is saved.
+            NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]];
+            if (escapedDefault) [theField setObject:escapedDefault forKey:@"default"];
         }
 
 		// Init Extra field
@@ -2298,12 +2316,19 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SADragPasteboard.tableRowType] integerValue];
 	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
+	// A value that could not be escaped leaves the column where it is.
+	NSString *columnDefinition = [self _buildPartialColumnDefinitionString:originalRow];
+	if (!columnDefinition) {
+		NSBeep();
+		return NO;
+	}
+
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
 	// Begin construction of the reordering query
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@ MODIFY COLUMN %@",
 									[selectedTable backtickQuotedString],
-									[self _buildPartialColumnDefinitionString:originalRow]];
+									columnDefinition];
 
 	[queryString appendString:@" "];
 	// Add the new location

@@ -2270,6 +2270,13 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             }
         }
 
+        // The value could not be escaped - the connection was not available, or the user stopped
+        // waiting for it. Nothing is written in its place.
+        if (!newObject) {
+            NSBeep();
+            return;
+        }
+
         NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
                               [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString],
                               [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryString];

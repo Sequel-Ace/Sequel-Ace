@@ -271,9 +271,13 @@ final class SAConnectionCheckSheet: NSObject {
     }
 
     /// Takes the events that have arrived out of the queue and delivers them, without waiting for more.
+    ///
+    /// An event can run a wait of its own and return only once that wait is over. The sheets are
+    /// brought up to date after every event, so the next one finds them as they should be.
     private static func deliverPendingEvents() {
         while let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
             NSApp.sendEvent(event)
+            refreshActiveWaits()
         }
     }
 

@@ -2851,7 +2851,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /**
  * Figures out what query will be performed.
  *
- *  @return the query string, can be empty.
+ *  @return the query string, can be empty; nil if a value could not be escaped, because the
+ *          connection was not available.
 */
 - (NSMutableString *)deriveQueryString{
 		
@@ -2926,6 +2927,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     // Store the key and value in the ordered arrays for saving (Except for generated columns).
     if (![fieldDefinition objectForKey:@"generatedalways"]) {
+      // A value that is missing would be left out and the values after it matched to the wrong
+      // columns, or written as NULL.
+      if (!fieldValue) return nil;
+
       [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
       [rowValuesToSave safeAddObject:fieldValue];
     }
@@ -2995,10 +3000,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     isSavingRow = YES;
 
+	// A value that could not be prepared - the connection was not available, or the user stopped
+	// waiting for it - leaves the row being edited, so that nothing is written in its place.
+	NSString *derivedQueryString = [self deriveQueryString];
+	if (!derivedQueryString) {
+		NSBeep();
+		isSavingRow = NO;
+		return NO;
+	}
+
 	// check for new flag, if set to no, just exec queries
 	if ([prefs boolForKey:SPQueryWarningEnabled] == YES) {
 		
-		NSMutableString *queryString = [[NSMutableString alloc] initWithString:[self deriveQueryString]];
+		NSMutableString *queryString = [[NSMutableString alloc] initWithString:derivedQueryString];
 		NSMutableString *originalQueryString = [[NSMutableString alloc] initWithString:queryString];
 		
 		SPLog(@"queryStringLen: %lu", queryString.length);
@@ -3040,7 +3054,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 	else{
 		SPLog(@"warning before query pref == NO, just execute");
-        NSMutableString *queryString = [[NSMutableString alloc] initWithString:[self deriveQueryString]];
+        NSMutableString *queryString = [[NSMutableString alloc] initWithString:derivedQueryString];
         if (queryString.length > 0) {
             returnCode = [self _saveRowToTableWithQuery:queryString];
         } else {
@@ -3489,6 +3503,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			} else {
 				newObject = [mySQLConnection escapeAndQuoteString:desc];
 			}
+		}
+
+		// The value could not be escaped - the connection was not available, or the user stopped
+		// waiting for it. Nothing is written in its place.
+		if (!newObject) {
+			NSBeep();
+			[tableDocumentInstance endTask];
+			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+			return;
 		}
 
 		[mySQLConnection queryString:

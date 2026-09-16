@@ -90,10 +90,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 	if (![self checkConnectionIfNecessary]) return nil;
 
-	// A session marked for replacement may escape under a character set that is no longer the one
-	// on record, while the value is going to be sent on the session that replaces it. That session
-	// is set up first, so the value is escaped the way it will be read.
-	if (sessionMustBeReplacedBeforeUse && ![self _replaceSessionMarkedForReplacement]) return nil;
+	// A session marked for replacement may follow a character set that is no longer the one on
+	// record, while the value is going to be sent on the session that replaces it - whose handshake
+	// uses the character set on record. Such a value is escaped for that character set, without
+	// waiting for the new session.
+	MYSQL *escapingHandle = mySQLConnection;
+	MYSQL *recordedEncodingHandle = NULL;
+	if (sessionMustBeReplacedBeforeUse) {
+		recordedEncodingHandle = [self _newEscapingHandleForRecordedEncoding];
+		if (recordedEncodingHandle) escapingHandle = recordedEncodingHandle;
+	}
 
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
@@ -111,22 +117,24 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	char *escBuffer = (char *)malloc(mallocSize);
 
 	// Use mysql_real_escape_string to perform the escape, starting one character in
-	NSUInteger escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
+	NSUInteger escapedLength = mysql_real_escape_string(escapingHandle, escBuffer+1, [cData bytes], cDataLength);
 
 	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
 	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
 	if (escapedLength == (unsigned long)-1) {
-		NSUInteger theErrorID = mysql_errno(mySQLConnection);
+		NSUInteger theErrorID = mysql_errno(escapingHandle);
 		if (theErrorID == CR_INSECURE_API_ERR) {
-			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
+			escapedLength = mysql_real_escape_string_quote(escapingHandle, escBuffer+1, [cData bytes], cDataLength, '\'');
 		} else {
-			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+			NSString *theErrorMessage = [self _stringForCString:mysql_error(escapingHandle)];
 			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
 			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
+			if (recordedEncodingHandle) mysql_close(recordedEncodingHandle);
 			free(escBuffer);
 			return nil;
 		}
 	}
+	if (recordedEncodingHandle) mysql_close(recordedEncodingHandle);
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
 	// any nul characters contained in the string.
@@ -876,19 +884,28 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 }
 
 /**
- * Replaces a session that was marked to be replaced before its next use, without sending anything
- * over it. It waits for the connection the way a query does - off the main thread, where that
- * applies.
+ * Makes a handle that escapes values for the character set on record. The handle is never
+ * connected: the client library then changes its character set without asking a server. It
+ * takes over the current session's escaping mode (NO_BACKSLASH_ESCAPES), which is what the
+ * connection's own handle would use too.
  *
- * @return Whether a usable session is in place.
+ * @return The handle, to be closed with mysql_close(), or NULL if the character set is unknown to
+ *         the client library.
  */
-- (BOOL)_replaceSessionMarkedForReplacement
+- (MYSQL *)_newEscapingHandleForRecordedEncoding
 {
-	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
-		if (![self _lockUsableConnectionForQuery]) return NO;
-		[self _unlockConnection];
-		return YES;
-	}];
+	MYSQL *handle = mysql_init(NULL);
+	if (!handle) return NULL;
+
+	if (mysql_set_character_set(handle, [encoding UTF8String]) != 0) {
+		mysql_close(handle);
+		return NULL;
+	}
+
+	MYSQL *sessionHandle = mySQLConnection;
+	if (sessionHandle) handle->server_status = sessionHandle->server_status;
+
+	return handle;
 }
 
 /**

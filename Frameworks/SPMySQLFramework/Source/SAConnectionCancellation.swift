@@ -168,8 +168,8 @@ public final class SAConnectionCancellation: NSObject {
     /// reconnect, for a session that is on its way out.
     ///
     /// Until that session is gone, its handle may still follow the temporary character set, so
-    /// nothing is escaped with it: the connection replaces a session marked like this before it
-    /// escapes a value, and the value is escaped for the character set on record.
+    /// values are not escaped with it: the connection escapes them for the character set on record,
+    /// which the next session's handshake uses.
     /// - Parameters:
     ///   - afterAbandonedWork: Whether the calling thread stopped waiting for the work it ran last.
     ///   - hasNoUsableSession: Whether the connection has no session to tell.
