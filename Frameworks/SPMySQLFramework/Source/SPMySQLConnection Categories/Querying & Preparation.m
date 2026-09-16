@@ -90,17 +90,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 	if (![self checkConnectionIfNecessary]) return nil;
 
-	// A session marked for replacement may follow a character set that is no longer the one on
-	// record, while the value is going to be sent on the session that replaces it - whose handshake
-	// uses the character set on record. Such a value is escaped for that character set, without
-	// waiting for the new session.
-	// A character set the client library does not know leaves nothing safe to escape with.
-	SAOfflineEscapingHandle *recordedEncodingHandle = nil;
-	if (sessionMustBeReplacedBeforeUse) {
-		recordedEncodingHandle = [SAOfflineEscapingHandle handleForCharacterSet:encoding escapingModeOfConnection:mySQLConnection];
-		if (!recordedEncodingHandle) return nil;
-	}
-
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
@@ -116,34 +105,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	NSUInteger mallocSize = (cDataLength * 2) + 2;
 	char *escBuffer = (char *)malloc(mallocSize);
 
-	NSUInteger escapedLength;
-	if (recordedEncodingHandle) {
-		NSData *escapedBytes = [recordedEncodingHandle escapedBytes:cData];
-		if (!escapedBytes) {
-			free(escBuffer);
-			return nil;
-		}
-		escapedLength = [escapedBytes length];
-		memcpy(escBuffer+1, [escapedBytes bytes], escapedLength);
-	}
-	else {
-		// Use mysql_real_escape_string to perform the escape, starting one character in
-		escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
-	}
-
-	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
-	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
-	if (escapedLength == (unsigned long)-1) {
-		NSUInteger theErrorID = mysql_errno(mySQLConnection);
-		if (theErrorID == CR_INSECURE_API_ERR) {
-			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
-		} else {
-			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
-			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
-			free(escBuffer);
-			return nil;
-		}
+	// Escape starting one character in. The session's own handle is not used: work nobody waits for
+	// any more can still be using it, or close it, while this runs, and a session marked for
+	// replacement may follow a character set that is no longer the one on record. The escaper uses
+	// the character set on record - which the next session's handshake uses too - and the escaping
+	// mode the latest session reported, doubling quotes instead of using backslashes in
+	// NO_BACKSLASH_ESCAPES mode.
+	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
+	                                            length:cDataLength
+	                                              into:escBuffer+1
+	                                      characterSet:encoding
+	                                noBackslashEscapes:sessionUsesNoBackslashEscapes];
+	if (escapedLength < 0) {
+		SPLog(@"[escapeString:includingQuotes]: the value could not be escaped for character set %@", encoding);
+		free(escBuffer);
+		return nil;
 	}
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
@@ -523,6 +499,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
+			// The statement may have changed the escaping mode; values are escaped in the mode the
+			// session reports now.
+			sessionUsesNoBackslashEscapes = (mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0;
 			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.

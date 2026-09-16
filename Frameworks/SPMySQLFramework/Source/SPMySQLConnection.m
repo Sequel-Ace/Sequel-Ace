@@ -395,6 +395,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		delegateDecisionLock = [[NSLock alloc] init];
 		delegateDecisionGate = [[SAConnectionLostDecisionGate alloc] init];
 		inFlightQuery = [[SAInFlightQuery alloc] init];
+		valueEscaper = [[SAConnectionEscaper alloc] init];
 		connectionCancellation = [[SAConnectionCancellation alloc] initWithHost:self inFlightQuery:inFlightQuery];
 
 		// Set up the connection lock
@@ -916,6 +917,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnected;
 	sessionMustBeReplacedBeforeUse = NO;
 	sessionWasClosedWithoutItsProxy = NO;
+	sessionUsesNoBackslashEscapes = (mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0;
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();

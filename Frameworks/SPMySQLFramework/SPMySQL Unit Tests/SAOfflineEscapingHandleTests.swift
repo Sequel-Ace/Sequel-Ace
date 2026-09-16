@@ -10,25 +10,38 @@
 import XCTest
 @testable import SPMySQL
 
-/// How a handle that is never connected is set up for escaping.
+/// How values are escaped without a server, for the character set on record.
 final class SAOfflineEscapingHandleTests: XCTestCase {
+
+    private let noBackslashEscapes: UInt32 = 512
+
+    /// Escapes a value through a connection's escaper, as the connection does.
+    private func escape(_ bytes: Data, with escaper: SAConnectionEscaper, characterSet: String?, noBackslashEscapes: Bool = false) -> Data? {
+        var output = [UInt8](repeating: 0, count: bytes.count * 2 + 1)
+        let length = bytes.withUnsafeBytes { source in
+            output.withUnsafeMutableBytes { destination in
+                escaper.escape(source.baseAddress, length: bytes.count, into: destination.baseAddress!,
+                               characterSet: characterSet, noBackslashEscapes: noBackslashEscapes)
+            }
+        }
+        return length < 0 ? nil : Data(output.prefix(length))
+    }
 
     /// The handle takes the character set it is asked for, without a server.
     func testTheHandleFollowsTheCharacterSetOnRecord() throws {
         for characterSet in ["gbk", "latin1", "utf8mb4", "sjis"] {
-            let handle = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: characterSet, escapingModeOfConnection: nil))
+            let handle = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: characterSet, serverStatus: 0))
             XCTAssertEqual(handle.characterSetName, characterSet)
         }
     }
 
     /// A character set the client library does not know gives no handle.
     func testAnUnknownCharacterSetGivesNoHandle() {
-        XCTAssertNil(SAOfflineEscapingHandle.handle(forCharacterSet: "no-such-character-set", escapingModeOfConnection: nil))
+        XCTAssertNil(SAOfflineEscapingHandle.handle(forCharacterSet: "no-such-character-set", serverStatus: 0))
     }
 
     /// The handle escapes in the session's mode.
     func testTheHandleTakesOverTheEscapingMode() throws {
-        let noBackslashEscapes: UInt32 = 512
         let strict = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: "utf8mb4", serverStatus: noBackslashEscapes))
         XCTAssertTrue(strict.escapesWithoutBackslashes)
 
@@ -47,7 +60,7 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
 
     /// In a session without backslash escapes, quotes are doubled and backslashes left alone.
     func testAValueIsEscapedInTheSessionsMode() throws {
-        let strict = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: "utf8mb4", serverStatus: 512))
+        let strict = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: "utf8mb4", serverStatus: noBackslashEscapes))
         XCTAssertEqual(strict.escapedBytes(Data("it's a \\".utf8)), Data("it''s a \\".utf8))
 
         let ordinary = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: "utf8mb4", serverStatus: 0))
@@ -55,9 +68,22 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(ordinary.escapedBytes(Data()), Data())
     }
 
-    /// Without a session there is no mode to take over.
-    func testWithoutASessionTheOrdinaryModeApplies() throws {
-        let handle = try XCTUnwrap(SAOfflineEscapingHandle.handle(forCharacterSet: "utf8mb4", escapingModeOfConnection: nil))
-        XCTAssertFalse(handle.escapesWithoutBackslashes)
+    /// The connection's escaper follows the character set and the mode it is given each time.
+    func testTheEscaperFollowsTheCharacterSetAndModeOnRecord() {
+        let escaper = SAConnectionEscaper()
+        let value = Data([0xBF, 0x27])
+
+        XCTAssertEqual(escape(value, with: escaper, characterSet: "gbk"), Data([0x5C, 0xBF, 0x5C, 0x27]))
+        XCTAssertEqual(escape(value, with: escaper, characterSet: "latin1"), Data([0xBF, 0x5C, 0x27]))
+        XCTAssertEqual(escape(Data("it's".utf8), with: escaper, characterSet: "latin1", noBackslashEscapes: true), Data("it''s".utf8))
+        XCTAssertEqual(escape(Data("it's".utf8), with: escaper, characterSet: "latin1"), Data("it\\'s".utf8))
+    }
+
+    /// Without a character set the escaper knows, nothing is escaped.
+    func testTheEscaperRefusesAnUnknownOrMissingCharacterSet() {
+        let escaper = SAConnectionEscaper()
+        XCTAssertNil(escape(Data("x".utf8), with: escaper, characterSet: nil))
+        XCTAssertNil(escape(Data("x".utf8), with: escaper, characterSet: "no-such-character-set"))
+        XCTAssertEqual(escape(Data("x".utf8), with: escaper, characterSet: "utf8mb4"), Data("x".utf8))
     }
 }

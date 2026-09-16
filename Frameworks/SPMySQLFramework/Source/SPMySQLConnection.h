@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionCancellation, SAConnectionLostDecisionGate, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAInFlightQuery, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAInFlightQuery, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -121,6 +121,11 @@
 
 	// Whether the last session was closed while its proxy was left running
 	BOOL sessionWasClosedWithoutItsProxy;
+
+	// What escapes values without touching the session, and the escaping mode the latest session
+	// reported (NO_BACKSLASH_ESCAPES), recorded while the connection was held
+	SAConnectionEscaper *valueEscaper;
+	BOOL sessionUsesNoBackslashEscapes;
 
 	// Which query is running, so that anything acting on "the query" later can tell whether it
 	// is still the same one, and which query is waiting on the server right now
