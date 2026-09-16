@@ -17,6 +17,7 @@ final class SAConnectionCancellationTests: XCTestCase {
         let lock = NSLock()
         var currentQueryGeneration: UInt = 0
         var connectionIsFree = true
+        var sessionHasOpenTransaction = false
         var calls: [String] = []
         let killRequested = DispatchSemaphore(value: 0)
 
@@ -38,10 +39,11 @@ final class SAConnectionCancellationTests: XCTestCase {
         func noteUserEndedWait() { note("endedWait") }
         /// Records that the running query was marked cancelled.
         func markRunningQueryCancelled() { note("marked") }
-        /// Records a kill request and lets the test know it was made.
-        func killQueryOverSideConnection(forGeneration generation: UInt) {
+        /// Records a kill request, lets the test know it was made, and reports it accepted.
+        func killQueryOverSideConnection(forGeneration generation: UInt) -> Bool {
             note("kill \(generation)")
             killRequested.signal()
+            return true
         }
         /// Records the attempt to take the connection, which succeeds while it is free.
         func holdConnectionIfFree() -> Bool {
@@ -211,6 +213,14 @@ final class SAConnectionCancellationTests: XCTestCase {
         let connection = SPMySQLConnection()
         XCTAssertFalse(connection.isMariaDB())
         XCTAssertTrue(connection.isNotMariadb103())
+    }
+
+    /// A session with an open transaction keeps its socket once the server accepted the kill.
+    func testAnAcceptedKillLeavesASessionWithAnOpenTransactionToTheServer() {
+        XCTAssertFalse(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: true, sessionHasOpenTransaction: true))
+        XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: true, sessionHasOpenTransaction: false))
+        XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: false, sessionHasOpenTransaction: true))
+        XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: false, sessionHasOpenTransaction: false))
     }
 
     /// Nothing changes without a cancellation or after the user disconnected.

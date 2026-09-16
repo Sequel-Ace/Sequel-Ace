@@ -26,8 +26,12 @@ public protocol SAConnectionCancellationHost: AnyObject {
 
     /// Asks the server to kill the query with this number, over a connection of its own.
     /// - Parameter generation: The query to kill.
+    /// - Returns: Whether the server accepted the request.
     @objc(killQueryOverSideConnectionForGeneration:)
-    func killQueryOverSideConnection(forGeneration generation: UInt)
+    func killQueryOverSideConnection(forGeneration generation: UInt) -> Bool
+
+    /// Whether the session last reported an open transaction.
+    @objc var sessionHasOpenTransaction: Bool { get }
 
     /// Takes the connection, provided nothing else holds it.
     /// - Returns: Whether the connection is now held.
@@ -124,8 +128,11 @@ public final class SAConnectionCancellation: NSObject {
         // itself, so recording it never waits on anything - this may well be the main thread.
         inFlightQuery.requestCancellation(ofGeneration: generation)
 
+        let killAccepted = SAKillAcceptance()
         let askServer: () -> Void = { [weak self] in
-            self?.host?.killQueryOverSideConnection(forGeneration: generation)
+            if self?.host?.killQueryOverSideConnection(forGeneration: generation) == true {
+                killAccepted.record()
+            }
         }
         if synchronously {
             askServer()
@@ -137,6 +144,10 @@ public final class SAConnectionCancellation: NSObject {
             guard let self else {
                 return
             }
+            guard Self.closesSocketAfterGrace(killAccepted: killAccepted.wasRecorded,
+                                              sessionHasOpenTransaction: self.host?.sessionHasOpenTransaction ?? false) else {
+                return
+            }
             self.inFlightQuery.closeSocket(ifGenerationIsWaiting: generation) {
                 // The query ends because it was asked to, so it counts as cancelled rather than
                 // failed, and the attempt that follows does not make anybody wait again.
@@ -144,6 +155,20 @@ public final class SAConnectionCancellation: NSObject {
                 self.host?.noteUserEndedWait()
             }
         }
+    }
+
+    /// Whether a query still waiting once the grace period is over has its socket closed.
+    ///
+    /// Closing the socket ends the session, and with it a transaction the session has open. A server
+    /// that accepted the kill ends the statement on its own - rolling back a large one can take a
+    /// while - so such a session is left to it. Without an accepted kill the route is presumed gone,
+    /// and the socket is closed as before.
+    /// - Parameters:
+    ///   - killAccepted: Whether the server accepted the request to kill the query.
+    ///   - sessionHasOpenTransaction: Whether the session last reported an open transaction.
+    /// - Returns: Whether to close the socket.
+    static func closesSocketAfterGrace(killAccepted: Bool, sessionHasOpenTransaction: Bool) -> Bool {
+        return !(killAccepted && sessionHasOpenTransaction)
     }
 
     /// Settles the connection after work that nobody waited for has finished after all.
@@ -247,5 +272,25 @@ public final class SAConnectionCancellation: NSObject {
             return mayDisconnect ? .discardAndMarkLost : .none
         }
         return isDisconnected ? .markLost : .none
+    }
+}
+
+/// Whether a server accepted a request to kill a query; set on one thread, read on another.
+private final class SAKillAcceptance {
+    private let lock = NSLock()
+    private var accepted = false
+
+    /// Records that the server accepted the request.
+    func record() {
+        lock.lock()
+        accepted = true
+        lock.unlock()
+    }
+
+    /// Whether the server accepted the request so far.
+    var wasRecorded: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return accepted
     }
 }

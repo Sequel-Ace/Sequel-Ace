@@ -818,10 +818,19 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  * Asks the server to kill a query over a connection of its own.
  *
  * @param generation The query to kill.
+ * @return Whether the server accepted the request.
  */
-- (void)killQueryOverSideConnectionForGeneration:(NSUInteger)generation
+- (BOOL)killQueryOverSideConnectionForGeneration:(NSUInteger)generation
 {
-	[self _killQueryOverSideConnectionForGeneration:generation];
+	return [self _killQueryOverSideConnectionForGeneration:generation];
+}
+
+/**
+ * Whether the session last reported an open transaction.
+ */
+- (BOOL)sessionHasOpenTransaction
+{
+	return [valueEscaper sessionReportedOpenTransaction];
 }
 
 /**
