@@ -145,6 +145,12 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: false))
     }
 
+    /// Only a thread other than the main thread restores a lost session when asked whether it is connected.
+    func testOnlyBackgroundThreadsRestoreALostSessionWhenAsked() {
+        XCTAssertFalse(SAConnectionCancellation.restoresLostSessionWhenAskedIfConnected(onMainThread: true))
+        XCTAssertTrue(SAConnectionCancellation.restoresLostSessionWhenAskedIfConnected(onMainThread: false))
+    }
+
     /// Nothing changes without a cancellation or after the user disconnected.
     func testNothingChangesWithoutACancellationOrAfterTheUserDisconnected() {
         XCTAssertEqual(recovery(cancelled: false, userDisconnected: false, connected: false, disconnected: true, mayDisconnect: true), .none)

@@ -32,6 +32,8 @@ public final class SAInFlightQuery: NSObject {
 
     private let requestLock = NSLock()
     private var cancellationRequestedGeneration: UInt = 0
+    private var storedLatestGeneration: UInt = 0
+    private var connectionHolder: pthread_t?
 
     /// Records that a query is about to wait on the server.
     ///
@@ -145,5 +147,58 @@ public final class SAInFlightQuery: NSObject {
         requestLock.lock()
         defer { requestLock.unlock() }
         return generation != 0 && cancellationRequestedGeneration == generation
+    }
+
+    /// Whether a query that may be on a retry was asked to stop. Never waits.
+    ///
+    /// Whoever asks names the number the connection reported at that moment: the query's original
+    /// number, or - once a retry has begun - the retry's.
+    /// - Parameters:
+    ///   - generation: The query's original number.
+    ///   - attempt: The number of the attempt that is running.
+    /// - Returns: Whether stopping was asked for under either number.
+    @objc(cancellationWasRequestedForGeneration:orAttempt:)
+    public func cancellationWasRequested(forGeneration generation: UInt, orAttempt attempt: UInt) -> Bool {
+        requestLock.lock()
+        defer { requestLock.unlock() }
+        return cancellationRequestedGeneration != 0
+            && (cancellationRequestedGeneration == generation || cancellationRequestedGeneration == attempt)
+    }
+
+    /// The number of the query or attempt that took the connection last. Never waits: it is read
+    /// by whoever wants to stop that query, which must not wait for the query itself.
+    @objc public var latestGeneration: UInt {
+        requestLock.lock()
+        defer { requestLock.unlock() }
+        return storedLatestGeneration
+    }
+
+    /// Records the number of the query or attempt that has just taken the connection.
+    /// - Parameter generation: Its number.
+    @objc(noteLatestGeneration:)
+    public func noteLatestGeneration(_ generation: UInt) {
+        requestLock.lock()
+        defer { requestLock.unlock() }
+        storedLatestGeneration = generation
+    }
+
+    /// Records which thread has just taken the connection, or that it was given back.
+    /// - Parameter held: Whether the current thread now holds the connection.
+    @objc(noteConnectionHeldByCurrentThread:)
+    public func noteConnectionHeld(byCurrentThread held: Bool) {
+        requestLock.lock()
+        defer { requestLock.unlock() }
+        connectionHolder = held ? pthread_self() : nil
+    }
+
+    /// Whether the current thread is the one holding the connection - a streaming result it is
+    /// still reading, say. Such a thread must not wait for the connection. Never waits.
+    @objc public var connectionIsHeldByCurrentThread: Bool {
+        requestLock.lock()
+        defer { requestLock.unlock() }
+        guard let connectionHolder else {
+            return false
+        }
+        return pthread_equal(connectionHolder, pthread_self()) != 0
     }
 }

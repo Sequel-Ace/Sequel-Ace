@@ -123,6 +123,17 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: nil, handshake: nil, sessionIsBeingReplaced: true), "latin1")
     }
 
+    /// A new session's escaping mode replaces the one the closed session had.
+    func testANewSessionsModeReplacesTheClosedSessionsMode() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, isHandshake: true)
+        XCTAssertEqual(escape(Data("\\'".utf8), with: escaper, onRecord: "utf8mb4"), Data("\\''".utf8))
+
+        escaper.forgetSession()
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, isHandshake: true)
+        XCTAssertEqual(escape(Data("\\'".utf8), with: escaper, onRecord: "utf8mb4"), Data("\\\\\\'".utf8))
+    }
+
     /// Without a character set the escaper knows, nothing is escaped.
     func testTheEscaperRefusesAnUnknownOrMissingCharacterSet() {
         let escaper = SAConnectionEscaper()

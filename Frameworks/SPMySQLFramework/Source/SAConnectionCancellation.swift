@@ -180,6 +180,18 @@ public final class SAConnectionCancellation: NSObject {
         return afterAbandonedWork || hasNoUsableSession
     }
 
+    /// Whether asking a connection if it is connected restores a session lost in the background first.
+    ///
+    /// Restoring it waits for the network. Off the main thread that is what callers have always
+    /// relied on; on the main thread it would freeze the interface, so the connection answers that
+    /// it is connected and leaves the restoring to the next query, which waits without freezing.
+    /// - Parameter onMainThread: Whether the question is asked on the main thread.
+    /// - Returns: Whether to restore the session before answering.
+    @objc(restoresLostSessionWhenAskedIfConnectedOnMainThread:)
+    public static func restoresLostSessionWhenAskedIfConnected(onMainThread: Bool) -> Bool {
+        return !onMainThread
+    }
+
     /// Decides what becomes of a connection whose reconnect ended while its thread was cancelled.
     ///
     /// Cancelling there means the user stopped waiting, not that they asked for the connection to

@@ -115,7 +115,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (NSUInteger)currentQueryGeneration
 {
-	return queryGeneration;
+	// Read from the in-flight record, which never waits: the connection's own counter is written
+	// by the query's thread while it holds the connection.
+	return [inFlightQuery latestGeneration];
 }
 @synthesize clientFlags = clientFlags;
 
@@ -526,8 +528,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)isConnected
 {
-	// If the connection has been allowed to drop in the background, restore it if posslbe
+	// If the connection has been allowed to drop in the background, restore it if posslbe.
+	// Not on the main thread: that would freeze the interface for as long as the network takes -
+	// after a stopped wait, whose session is closed on purpose, as much as after a dropped route.
+	// There the connection still counts as connected, and the next query restores the session
+	// while the interface keeps answering.
 	if (state == SPMySQLConnectionLostInBackground) {
+		if (![SAConnectionCancellation restoresLostSessionWhenAskedIfConnectedOnMainThread:[NSThread isMainThread]]) {
+			return YES;
+		}
         SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
 		[self _reconnectAllowingRetries:YES];
 	}

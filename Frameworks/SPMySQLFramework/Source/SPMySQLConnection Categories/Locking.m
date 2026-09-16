@@ -46,6 +46,7 @@
 	[connectionLock lockWhenCondition:SPMySQLConnectionIdle];
 
 	// Set the condition to SPMySQLConnectionBusy
+	[inFlightQuery noteConnectionHeldByCurrentThread:YES];
 	[connectionLock unlockWithCondition:SPMySQLConnectionBusy];
 }
 
@@ -63,6 +64,7 @@
 	}
 
 	// We're allowed to use the connection; set it to busy, and return success
+	[inFlightQuery noteConnectionHeldByCurrentThread:YES];
 	[connectionLock unlockWithCondition:SPMySQLConnectionBusy];
 	return YES;
 }
@@ -107,6 +109,7 @@
 	[inFlightQuery endWaitingForGeneration:queryGeneration];
 
 	// Tell everyone that the connection is available again
+	[inFlightQuery noteConnectionHeldByCurrentThread:NO];
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];
 }
 

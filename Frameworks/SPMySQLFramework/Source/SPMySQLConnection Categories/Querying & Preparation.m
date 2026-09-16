@@ -90,6 +90,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 	if (![self checkConnectionIfNecessary]) return nil;
 
+	// A session marked for replacement may run in a different escaping mode than the session that
+	// replaces it, which the value is going to be sent on. That session is set up first - unless
+	// this thread holds the connection itself, reading a streaming result, and would wait for itself.
+	if (sessionMustBeReplacedBeforeUse && ![inFlightQuery connectionIsHeldByCurrentThread]) {
+		if (![self _replaceSessionMarkedForReplacement]) return nil;
+	}
+
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
@@ -426,6 +433,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// cancellation, say - has to be able to tell whether it is still this one, and counting
 	// any earlier would count queries that never got the connection.
 	NSUInteger thisQueryGeneration = ++queryGeneration;
+	[inFlightQuery noteLatestGeneration:thisQueryGeneration];
 
 	// A retry runs under a new number. A request to stop this query names the number it had when
 	// the request was made, so the query keeps its first one to ask with.
@@ -481,7 +489,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				[self _unlockConnection];
 				return nil;
 			}
-			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
 				lastQueryWasCancelled = YES;
 				[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
 				[self _unlockConnection];
@@ -530,7 +538,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 			// A request to stop can arrive while the query is losing its connection, before anything
 			// has reached the server; it still means the statement must not be sent again.
-			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+			if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
 				lastQueryWasCancelled = YES;
 			}
 
@@ -567,7 +575,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 
 		// Stopping can also have been asked for while the connection was being checked.
-		if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+		if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
 			lastQueryWasCancelled = YES;
 			[self _unlockConnection];
 			[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
@@ -579,6 +587,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// Reconnecting ran queries of its own, each with its own number. The retry is what runs
 		// now, and a cancellation has to be able to find it under the current one.
 		thisQueryGeneration = ++queryGeneration;
+		[inFlightQuery noteLatestGeneration:thisQueryGeneration];
 
 	} while (--queryAttemptsAllowed > 0);
 
@@ -635,7 +644,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// A request to stop can reach a query that then finishes before the server acts on it. It
 	// still counts as cancelled, as it always has - callers running a batch stop on this.
-	if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration]) {
+	if ([inFlightQuery cancellationWasRequestedForGeneration:originalQueryGeneration orAttempt:thisQueryGeneration]) {
 		lastQueryWasCancelled = YES;
 	}
 
@@ -873,6 +882,22 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// Until the next session connects, values follow the record, which its handshake uses.
 	[valueEscaper forgetSession];
+}
+
+/**
+ * Replaces a session that was marked to be replaced before its next use, without sending anything
+ * over it. It waits for the connection the way a query does - off the main thread, where that
+ * applies.
+ *
+ * @return Whether a usable session is in place.
+ */
+- (BOOL)_replaceSessionMarkedForReplacement
+{
+	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+		if (![self _lockUsableConnectionForQuery]) return NO;
+		[self _unlockConnection];
+		return YES;
+	}];
 }
 
 /**

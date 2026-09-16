@@ -128,6 +128,48 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 0))
     }
 
+    /// A request made during a retry reaches the query under the retry's number as well.
+    func testARequestReachesAQueryOnItsRetry() {
+        inFlightQuery.requestCancellation(ofGeneration: 21)
+
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 20, orAttempt: 21))
+        XCTAssertTrue(inFlightQuery.cancellationWasRequested(forGeneration: 21, orAttempt: 21))
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 19, orAttempt: 20))
+    }
+
+    /// No request was made before any query ran.
+    func testNoRequestMatchesBeforeAnyWasMade() {
+        XCTAssertFalse(inFlightQuery.cancellationWasRequested(forGeneration: 0, orAttempt: 0))
+    }
+
+    /// The latest number can be read without waiting for the query that set it.
+    func testTheLatestNumberIsWhatWasNotedLast() {
+        XCTAssertEqual(inFlightQuery.latestGeneration, 0)
+        inFlightQuery.noteLatestGeneration(30)
+        inFlightQuery.noteLatestGeneration(31)
+        XCTAssertEqual(inFlightQuery.latestGeneration, 31)
+    }
+
+    /// Only the thread that took the connection counts as holding it, and only until it is given back.
+    func testOnlyTheThreadThatTookTheConnectionHoldsIt() {
+        XCTAssertFalse(inFlightQuery.connectionIsHeldByCurrentThread)
+
+        inFlightQuery.noteConnectionHeld(byCurrentThread: true)
+        XCTAssertTrue(inFlightQuery.connectionIsHeldByCurrentThread)
+
+        let otherThreadChecked = expectation(description: "checked on another thread")
+        var heldElsewhere = true
+        Thread {
+            heldElsewhere = self.inFlightQuery.connectionIsHeldByCurrentThread
+            otherThreadChecked.fulfill()
+        }.start()
+        wait(for: [otherThreadChecked], timeout: 2)
+        XCTAssertFalse(heldElsewhere)
+
+        inFlightQuery.noteConnectionHeld(byCurrentThread: false)
+        XCTAssertFalse(inFlightQuery.connectionIsHeldByCurrentThread)
+    }
+
     /// Nothing is ever waiting before the first query.
     func testNothingIsEverWaitingBeforeTheFirstQuery() {
         XCTAssertFalse(inFlightQuery.closeSocket(ifGenerationIsWaiting: 0, beforeClosing: {}))
