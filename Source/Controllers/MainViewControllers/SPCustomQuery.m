@@ -820,7 +820,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                                                          currentDatabase:databaseName
                                                                             serverVersion:serverVersion
                                                                           serverIsMariaDB:serverIsMariaDB]) {
+                // The lookup is the editor's own statement and may be retried like the application's
+                // others; a report about uncommitted work lost with an earlier session is left for the
+                // user's statement that follows, instead of being taken by this lookup.
+                [mySQLConnection setRetryQueriesOnConnectionFailure:YES];
                 id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                [mySQLConnection setRetryQueriesOnConnectionFailure:NO];
                 // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
                 databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
                 databaseNameCaseSensitivityWasLoaded = YES;

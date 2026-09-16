@@ -1799,6 +1799,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
+
+		// A session found lost in the background - by the keepalive, or by the proxy - keeps its
+		// handle until the next session replaces it, and the handle still reports what the session
+		// had open. The session is dropped here, on the way to a new one.
+		if (preserveProxyReconnect && [self _tryLockConnection]) {
+			[self _noteUncommittedWorkLostWithSession];
+			[self _unlockConnection];
+		}
 		state = SPMySQLDisconnected;
 	}
 
