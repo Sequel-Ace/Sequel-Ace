@@ -427,6 +427,11 @@ typedef enum {
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
 			[self refreshPHPSerializedEditorAvailability];
 			[self performSelector:@selector(openPHPSerializedEditorIfCurrentTextIsStructured) withObject:nil afterDelay:0.15];
+
+			// Only when no image was decoded, since that keeps its own segment selected.
+			if (image == nil) {
+				[self selectJsonSegmentIfValueIsJSON:stringValue];
+			}
 		}
 
 		editSheetWillBeInitialized = NO;
@@ -719,6 +724,9 @@ typedef enum {
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
 
+		// clear the JSON preview so the JSON segment re-parses the loaded data
+		[jsonTextView setString:@""];
+
 		// set the image preview, string contents and hex representation
 		[editImage setImage:image];
 		if (image) { // If the image cell now contains a valid image, select the image view
@@ -794,6 +802,7 @@ typedef enum {
 		sheetEditData = [[NSData alloc] init];
 		[editTextView setString:@""];
 		[hexTextView setString:@""];
+		[jsonTextView setString:@""];
 		return;
 	}
 }
@@ -995,6 +1004,7 @@ typedef enum {
 			[editTextView setString:contents];
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
+		[jsonTextView setString:@""];
 	}
 
 	editSheetWillBeInitialized = NO;
@@ -1014,6 +1024,7 @@ typedef enum {
 		sheetEditData = [[NSData alloc] init];
 		[editTextView setString:@""];
 		[hexTextView setString:@""];
+		[jsonTextView setString:@""];
 		editSheetWillBeInitialized = NO;
 		return;
 	}
@@ -1029,6 +1040,7 @@ typedef enum {
 		[editTextView setString:contents];
 	if(![[hexTextView string] isEqualToString:@""])
 		[hexTextView setString:[sheetEditData dataToFormattedHexString]];
+	[jsonTextView setString:@""];
 	editSheetWillBeInitialized = NO;
 }
 
@@ -1342,6 +1354,8 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
+		// clear the JSON preview so the JSON segment re-parses the edited text
+		[jsonTextView setString:@""];
 
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
@@ -1461,6 +1475,28 @@ typedef enum {
 		[self showJsonText:hidden];
 		[self showImage:hidden];
 	}
+}
+
+/**
+ * Selects the JSON segment when the value is a JSON object or array.
+ *
+ * `_isJSON` only covers columns declared with MySQL's JSON type. JSON is just as often kept in a
+ * text column - MariaDB's `longtext ... CHECK (json_valid(<column>))`, for example - and those had
+ * to be switched to the JSON segment by hand on every open.
+ */
+- (void)selectJsonSegmentIfValueIsJSON:(NSString *)value {
+	if (![SAJSONValueDetector isJSONContainer:value]) {
+		return;
+	}
+
+	// The JSON segment reads raw data as UTF-8 whatever the connection encoding is, so data that only
+	// decodes to this value in another encoding (latin1 with an é, say) would show "Invalid JSON" there.
+	if ([sheetEditData isKindOfClass:[NSData class]] && ![value isEqualToString:[[NSString alloc] initWithData:sheetEditData encoding:NSUTF8StringEncoding]]) {
+		return;
+	}
+
+	[editSheetSegmentControl setSelectedSegment:JsonSegment];
+	[self segmentControllerChanged:editSheetSegmentControl];
 }
 
 - (void)showJsonText:(BOOL)show {
