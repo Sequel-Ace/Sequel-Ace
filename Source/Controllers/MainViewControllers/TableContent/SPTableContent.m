@@ -1864,7 +1864,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// against "(null)".
 			NSString *argumentValue;
 			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-				argumentValue = [[aValue description] mysqlBitLiteral];
+				argumentValue = [SPFieldTypeClassifier bitLiteralForValue:[aValue description]];
 			}
 			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
 				argumentValue = [mySQLConnection escapeAndQuoteData:[aValue data]];
@@ -2919,7 +2919,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
 					// A BIT value that is not only 0 and 1 is not written; the row stays in editing.
-					fieldValue = [desc mysqlBitLiteral];
+					// An empty value stands for 0, as it always did.
+					fieldValue = [SPFieldTypeClassifier bitLiteralForValue:([desc length] ? desc : @"0")];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
 				} else if ([fieldTypeGroup isEqualToString:@"string"] && ([desc isEqualToString:@"UUID()"] || [desc isEqualToString:@"UUID_v4()"])) {
@@ -3507,7 +3508,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				newObject = [(NSString*)anObject getGeomFromTextString];
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"bit"]) {
 				// A BIT value that is not only 0 and 1 is not written, like one that cannot be escaped.
-				newObject = [desc mysqlBitLiteral];
+				// An empty value stands for 0, as it always did.
+				newObject = [SPFieldTypeClassifier bitLiteralForValue:([desc length] ? desc : @"0")];
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 				newObject = @"NOW()";
 			} else {

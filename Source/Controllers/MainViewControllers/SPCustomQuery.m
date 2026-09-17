@@ -2205,7 +2205,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             // against "(null)".
             NSString *argumentValue;
             if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-                argumentValue = [[aValue description] mysqlBitLiteral];
+                argumentValue = [SPFieldTypeClassifier bitLiteralForValue:[aValue description]];
             }
             else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
                 argumentValue = [mySQLConnection escapeAndQuoteData:[aValue data]];
@@ -2273,7 +2273,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                 newObject = [(NSString*)anObject getGeomFromTextString];
             } else if ([columnTypeGroup isEqualToString:@"bit"]) {
                 // A BIT value that is not only 0 and 1 is not written, like one that cannot be escaped.
-                newObject = [desc mysqlBitLiteral];
+                // An empty value stands for 0, as it always did.
+                newObject = [SPFieldTypeClassifier bitLiteralForValue:([desc length] ? desc : @"0")];
             } else if ([columnTypeGroup isEqualToString:@"date"]
                        && [desc isEqualToString:@"NOW()"]) {
                 newObject = @"NOW()";

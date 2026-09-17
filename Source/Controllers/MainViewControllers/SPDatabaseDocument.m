@@ -6347,6 +6347,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         if (!printable) {
             [self endTask];
+            SPMainQSync(^{
+                NSBeep();
+            });
             return;
         }
 

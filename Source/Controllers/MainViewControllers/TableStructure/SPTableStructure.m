@@ -1478,6 +1478,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (NSDictionary *)tableSourceForPrinting
 {
 	NSString *printedTable = [tablesListInstance tableName];
+	if (![printedTable length]) {
+		return @{@"structure": @[], @"indexes": @[]};
+	}
 	NSUInteger i, j;
 	NSMutableArray *tempResult  = [NSMutableArray array];
 	NSMutableArray *tempResult2 = [NSMutableArray array];
