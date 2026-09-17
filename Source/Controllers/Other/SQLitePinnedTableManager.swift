@@ -16,6 +16,8 @@ import OSLog
 /// in-memory state and its store happens under one lock. The store is a
 /// convenience: when it cannot be opened or created, pins still work for the
 /// running session but are not persisted; the app never terminates over it.
+/// The first problem with the store is handed to `problems`, which the app
+/// shows.
 @objc final class SQLitePinnedTableManager: NSObject {
 
     static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "pinnedTablesDatabase")
@@ -39,6 +41,11 @@ import OSLog
     private let storeWasLoaded: Bool
     private let prefs: UserDefaults
     private let traceExecution: Bool
+    /// Where the store lives, for the problems reported about it.
+    private let databasePath: String?
+    /// Receives the first problem with the store: one that left the manager
+    /// without a store, or a write the store refused.
+    let problems = SASQLiteStoreProblemReporter()
 
     /// Guards the state below and the store's writes.
     private let stateLock = NSLock()
@@ -63,7 +70,7 @@ import OSLog
     /// Opens or creates the store at `databasePath` and loads the pins it
     /// holds. A `nil` path, a file that cannot be opened, a schema that
     /// cannot be created or pins that cannot be read leave the manager
-    /// without a store. The app uses
+    /// without a store, and are reported to `problems`. The app uses
     /// `sharedInstance`, declared in the app-target-only
     /// SASQLiteSharedStoreLocation.swift.
     ///
@@ -75,8 +82,22 @@ import OSLog
         self.prefs = prefs
         self.traceExecution = traceExecution
         migratedLegacyPinnedTableTokens = Set(prefs.stringArray(forKey: Self.migratedPinnedTablesKey) ?? [])
-        let openedQueue = databasePath.flatMap { Self.openStore(at: $0, traceExecution: traceExecution) }
-        let storedPins = openedQueue.flatMap { Self.loadPinnedTablesHistory(from: $0, traceExecution: traceExecution) }
+        self.databasePath = databasePath
+        var problem: SASQLiteStoreProblem?
+        var openedQueue: FMDatabaseQueue?
+        var storedPins: [String: [String: [String]]]?
+        if let databasePath {
+            openedQueue = Self.openStore(at: databasePath, traceExecution: traceExecution, problem: &problem)
+            if let openedQueue {
+                let loaded = Self.loadPinnedTablesHistory(from: openedQueue, traceExecution: traceExecution)
+                storedPins = loaded.pins
+                if loaded.pins == nil {
+                    problem = SASQLiteStoreProblem(kind: .cannotUse, path: databasePath, reason: loaded.failure)
+                }
+            }
+        } else {
+            problem = SASQLiteStoreProblem(kind: .noLocation, path: nil, reason: nil)
+        }
         // A store that opened but could not be read is not used: its pins are
         // unknown, so writing to it would add rows next to ones this session
         // never loaded. loadPinnedTablesHistory has closed it already.
@@ -84,6 +105,9 @@ import OSLog
         storeWasLoaded = storedPins != nil
         pinnedTablesDatabaseDictionary = storedPins ?? [:]
         super.init()
+        if let problem {
+            problems.report(problem)
+        }
     }
 
     /// Whether pins are persisted; `false` when the store is unusable.
@@ -93,23 +117,25 @@ import OSLog
 
     /// Opens the store at `databasePath` and brings its schema up to date.
     /// Returns `nil` when the file cannot be opened or prepared; the failure
-    /// is logged and nothing else happens to the app.
-    private static func openStore(at databasePath: String, traceExecution: Bool) -> FMDatabaseQueue? {
+    /// is logged and described in `problem`.
+    private static func openStore(at databasePath: String, traceExecution: Bool, problem: inout SASQLiteStoreProblem?) -> FMDatabaseQueue? {
         guard let queue = FMDatabaseQueue(path: databasePath) else {
             log.error("Could not open \(databasePath). Pinned tables are not persisted.")
+            problem = SASQLiteStoreProblem(kind: .cannotOpen, path: databasePath, reason: nil)
             return nil
         }
-        guard setupPinnedTablesDatabase(in: queue, traceExecution: traceExecution) else {
+        if let failure = setupPinnedTablesDatabase(in: queue, traceExecution: traceExecution) {
             queue.close()
+            problem = SASQLiteStoreProblem(kind: .cannotUse, path: databasePath, reason: failure)
             return nil
         }
         return queue
     }
 
     /// Creates the pinned-tables table when the store's schema version predates it
-    /// and records the new version. Returns `false` when reading or updating the
-    /// schema fails; the failure is logged.
-    private static func setupPinnedTablesDatabase(in queue: FMDatabaseQueue, traceExecution: Bool) -> Bool {
+    /// and records the new version. Returns the description of the step that
+    /// failed, which is logged, or `nil` when the store is ready.
+    private static func setupPinnedTablesDatabase(in queue: FMDatabaseQueue, traceExecution: Bool) -> String? {
         let schemaBlock: (FMDatabase, Int) throws -> Int = { db, schemaVersion in
             db.beginTransaction()
 
@@ -150,7 +176,7 @@ import OSLog
             return schemaVersion + 1
         }
 
-        var usable = false
+        var failure: String? = nil
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
@@ -172,19 +198,25 @@ import OSLog
                 } else {
                     log.info("db schema did not need an update")
                 }
-                usable = true
             } catch {
                 log.error("Preparing \(dbFileName) failed: \(error.localizedDescription). Pinned tables are not persisted.")
+                failure = error.localizedDescription
             }
         }
         queue.close()
-        return usable
+        return failure
     }
 
     /// Reads every pin from the store, latest first per host and database.
-    /// Returns `nil` when the store cannot be read; the failure is logged.
-    private static func loadPinnedTablesHistory(from queue: FMDatabaseQueue, traceExecution: Bool) -> [String: [String: [String]]]? {
+    ///
+    /// - Parameters:
+    ///   - queue: The open store; it is closed here.
+    ///   - traceExecution: Whether SQLite logs every statement.
+    /// - Returns: The pins, or `pins == nil` when the store cannot be read, with
+    ///   `failure` describing the error where there is one. Every failure is logged.
+    private static func loadPinnedTablesHistory(from queue: FMDatabaseQueue, traceExecution: Bool) -> (pins: [String: [String: [String]]]?, failure: String?) {
         var pins: [String: [String: [String]]]? = nil
+        var failure: String? = nil
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
@@ -210,10 +242,11 @@ import OSLog
                 pins = loaded
             } catch {
                 log.error("Reading \(dbFileName) failed: \(error.localizedDescription). Pinned tables start empty.")
+                failure = error.localizedDescription
             }
         }
         queue.close()
-        return pins
+        return (pins, failure)
     }
 
     /// Returns the tables pinned for `hostName` and `databaseName`; empty when
@@ -344,6 +377,7 @@ import OSLog
                             values: [hostName, databaseName, tableToUnpin])
                 } catch {
                     logDBError(error)
+                    problems.report(SASQLiteStoreProblem(kind: .cannotSave, path: databasePath, reason: error.localizedDescription))
                 }
             }
             queue.close()
@@ -356,7 +390,8 @@ import OSLog
     /// - Returns: `false` when the store refused the pin for a reason other
     ///   than holding it already - a read-only file or folder, a full disk, a
     ///   constraint other than its unique key - so the pin lives in memory
-    ///   only; `true` otherwise, including when there is no store at all.
+    ///   only and the refusal is reported to `problems`; `true` otherwise,
+    ///   including when there is no store at all.
     private func pinLocked(hostName: String, databaseName: String, tableToPin: String) -> Bool {
         if let pinnedTables = pinnedTablesDatabaseDictionary[hostName]?[databaseName], pinnedTables.contains(tableToPin) {
             return true
@@ -381,6 +416,9 @@ import OSLog
                 // only a row that is actually there counts.
                 stored = (error as NSError).code & 0xFF == Self.sqliteConstraint
                     && storeHoldsPin(in: db, hostName: hostName, databaseName: databaseName, tableName: tableToPin)
+                if stored == false {
+                    problems.report(SASQLiteStoreProblem(kind: .cannotSave, path: databasePath, reason: error.localizedDescription))
+                }
             }
         }
         queue.close()

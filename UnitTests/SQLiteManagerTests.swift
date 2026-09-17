@@ -590,6 +590,279 @@ private final class SADefaultsObserver: NSObject {
     }
 }
 
+// MARK: - Store problems
+
+/// A store the managers cannot use has to reach the user, so the app does not
+/// silently forget what they set: the first problem is kept and handed on once.
+final class SASQLiteStoreProblemTests: XCTestCase {
+
+    /// Verifies that a problem reported before anyone listens is handed over as soon
+    /// as a handler is set, and only once.
+    func testProblemReportedBeforeTheHandlerIsHandedOverOnce() {
+        let reporter = SASQLiteStoreProblemReporter()
+        reporter.report(SASQLiteStoreProblem(kind: .cannotOpen, path: "/tmp/store.db", reason: nil))
+
+        var received: [SASQLiteStoreProblem] = []
+        reporter.onProblem { received.append($0) }
+        XCTAssertEqual(received.count, 1)
+        XCTAssertEqual(received.first?.kind, .cannotOpen)
+
+        reporter.onProblem { received.append($0) }
+        XCTAssertEqual(received.count, 1)
+    }
+
+    /// Verifies that only the first problem is kept and handed on, so the user is
+    /// told once per store and launch.
+    func testOnlyTheFirstProblemIsReported() {
+        let reporter = SASQLiteStoreProblemReporter()
+        var received: [SASQLiteStoreProblem] = []
+        reporter.onProblem { received.append($0) }
+
+        reporter.report(SASQLiteStoreProblem(kind: .cannotUse, path: "/tmp/store.db", reason: "file is not a database"))
+        reporter.report(SASQLiteStoreProblem(kind: .cannotSave, path: "/tmp/store.db", reason: "attempt to write a readonly database"))
+
+        XCTAssertEqual(received.count, 1)
+        XCTAssertEqual(received.first?.kind, .cannotUse)
+        XCTAssertEqual(reporter.firstProblem?.reason, "file is not a database")
+    }
+
+    /// Verifies that the message names the file, the error, what it means for the user
+    /// and what they can do about it.
+    func testMessageNamesTheFileTheErrorAndTheAdvice() {
+        let problem = SASQLiteStoreProblem(kind: .cannotUse, path: "/tmp/Data/pinnedTables.db", reason: "file is not a database")
+        let message = problem.message(consequence: "Pins are not kept.")
+
+        XCTAssertTrue(message.contains("/tmp/Data/pinnedTables.db"), message)
+        XCTAssertTrue(message.contains("file is not a database"), message)
+        XCTAssertTrue(message.contains("Pins are not kept."), message)
+        XCTAssertTrue(message.contains("written to"), message)
+        XCTAssertTrue(message.contains("move the file out of its folder"), message)
+    }
+
+    /// Verifies that a store without a location says so, without advice about a file
+    /// that does not exist.
+    func testMessageWithoutALocationAdvisesNothingAboutAFile() {
+        let message = SASQLiteStoreProblem(kind: .noLocation, path: nil, reason: nil).message(consequence: "Pins are not kept.")
+
+        XCTAssertTrue(message.contains("Application Support"), message)
+        XCTAssertTrue(message.contains("Pins are not kept."), message)
+        XCTAssertFalse(message.contains("written to"), message)
+        XCTAssertFalse(message.contains("move the file"), message)
+    }
+
+    /// Verifies that a write that failed names the file and the error, and advises about
+    /// permissions and a damaged file.
+    func testMessageForARefusedWriteNamesTheError() {
+        let message = SASQLiteStoreProblem(kind: .cannotSave, path: "/tmp/Data/pinnedTables.db", reason: "attempt to write a readonly database")
+            .message(consequence: "Pins are not kept.")
+
+        XCTAssertTrue(message.contains("attempt to write a readonly database"), message)
+        XCTAssertTrue(message.contains("written to"), message)
+    }
+
+    /// Verifies that the message keeps the whole path. Sequel Ace is sandboxed, so its
+    /// home directory is the app's container: a tilde would hide the container and send
+    /// the user to a folder that does not hold the file.
+    func testMessageKeepsTheWholePathOfTheStore() {
+        let path = NSHomeDirectory() + "/Library/Containers/com.sequel-ace.sequel-ace/Data/Library/Application Support/Sequel Ace/Data/pinnedTables.db"
+        let message = SASQLiteStoreProblem(kind: .cannotOpen, path: path, reason: nil).message(consequence: "Pins are not kept.")
+
+        XCTAssertTrue(message.contains(path), message)
+        XCTAssertFalse(message.contains("~"), message)
+    }
+
+    /// Verifies that Finder is pointed at the file when it exists, at its folder when only
+    /// that exists, and nowhere when neither does.
+    func testRevealURLPrefersTheFileAndFallsBackToItsFolder() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SASQLiteStoreProblemTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let file = directory.appendingPathComponent("store.db")
+        XCTAssertEqual(SASQLiteStoreProblem(kind: .cannotOpen, path: file.path, reason: nil).revealURL?.path, directory.path)
+
+        try Data().write(to: file)
+        XCTAssertEqual(SASQLiteStoreProblem(kind: .cannotOpen, path: file.path, reason: nil).revealURL?.path, file.path)
+
+        XCTAssertNil(SASQLiteStoreProblem(kind: .noLocation, path: nil, reason: nil).revealURL)
+        XCTAssertNil(SASQLiteStoreProblem(kind: .cannotOpen, path: directory.appendingPathComponent("gone/store.db").path, reason: nil).revealURL)
+    }
+}
+
+/// Every way a store can let the managers down has to reach the user, not only
+/// the log.
+final class SASQLiteStoreProblemReportingTests: XCTestCase {
+    private var directory: URL!
+    private var prefsSuiteName: String!
+    private var prefs: UserDefaults!
+
+    /// Creates an empty temporary directory for the store and a separate user-defaults
+    /// suite for the pinned-table manager.
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SASQLiteStoreProblemReportingTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        prefsSuiteName = "SASQLiteStoreProblemReportingTests-\(UUID().uuidString)"
+        prefs = try XCTUnwrap(UserDefaults(suiteName: prefsSuiteName))
+    }
+
+    /// Removes the user-defaults suite and the temporary directory.
+    override func tearDownWithError() throws {
+        prefs.removePersistentDomain(forName: prefsSuiteName)
+        prefs = nil
+        try? FileManager.default.removeItem(at: directory)
+        directory = nil
+        try super.tearDownWithError()
+    }
+
+    /// Verifies that a store that works reports nothing.
+    func testAUsableStoreReportsNoProblem() {
+        let formats = SQLiteDisplayFormatManager(databasePath: directory.appendingPathComponent("formats.db").path)
+        formats.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
+        XCTAssertNil(formats.problems.firstProblem)
+
+        let pins = SQLitePinnedTableManager(databasePath: directory.appendingPathComponent("pinnedTables.db").path, prefs: prefs)
+        pins.pinTable(hostName: "conn", databaseName: "db", tableToPin: "orders")
+        XCTAssertNil(pins.problems.firstProblem)
+    }
+
+    /// Verifies that a manager without a location reports it, both for formats and for pins.
+    func testMissingLocationIsReported() {
+        XCTAssertEqual(SQLiteDisplayFormatManager(databasePath: nil).problems.firstProblem?.kind, .noLocation)
+
+        let pins = SQLitePinnedTableManager(databasePath: nil, prefs: prefs)
+        XCTAssertEqual(pins.problems.firstProblem?.kind, .noLocation)
+        XCTAssertNil(pins.problems.firstProblem?.path)
+    }
+
+    /// Verifies that a store in a missing folder, which cannot be opened at all, is reported
+    /// with its path.
+    func testFileThatCannotBeOpenedIsReported() {
+        let path = directory.appendingPathComponent("missing/formats.db").path
+        let problem = SQLiteDisplayFormatManager(databasePath: path).problems.firstProblem
+        XCTAssertEqual(problem?.kind, .cannotOpen)
+        XCTAssertEqual(problem?.path, path)
+    }
+
+    /// Verifies that a damaged file is reported with SQLite's own reason, so the alert can
+    /// say why.
+    func testDamagedFileIsReportedWithItsReason() throws {
+        let url = directory.appendingPathComponent("formats.db")
+        try Data(repeating: 0x5A, count: 4096).write(to: url)
+
+        let problem = SQLiteDisplayFormatManager(databasePath: url.path).problems.firstProblem
+        XCTAssertEqual(problem?.kind, .cannotUse)
+        XCTAssertEqual(problem?.path, url.path)
+        XCTAssertEqual(problem?.reason?.isEmpty, false)
+    }
+
+    /// Verifies that a table without the columns the manager reads is reported as unusable.
+    func testForeignTableIsReported() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        try makeSQLiteFile(at: path, statements: [
+            "CREATE TABLE ColumnDisplayOverrides (hostName TEXT NOT NULL, databaseName TEXT NOT NULL, tableName TEXT NOT NULL, columnName TEXT NOT NULL, format TEXT NOT NULL)",
+            "PRAGMA user_version = 1",
+        ])
+
+        XCTAssertEqual(SQLiteDisplayFormatManager(databasePath: path).problems.firstProblem?.kind, .cannotUse)
+    }
+
+    /// Verifies that pins that cannot be read are reported, even though SQLite itself
+    /// raised no error.
+    func testUnreadablePinsAreReported() throws {
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, hostName TEXT, databaseName TEXT NOT NULL, pinnedTableName TEXT NOT NULL)",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES (NULL, 'db', 'orders')",
+            "PRAGMA user_version = 1",
+        ])
+
+        let problem = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).problems.firstProblem
+        XCTAssertEqual(problem?.kind, .cannotUse)
+        XCTAssertEqual(problem?.path, storePath)
+        XCTAssertNil(problem?.reason)
+    }
+
+    /// Verifies that a store that can be read but refuses writes is reported when the
+    /// first write fails, once, with the error.
+    func testRefusedWritesAreReportedOnce() throws {
+        SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+            .pinTable(hostName: "conn", databaseName: "db", tableToPin: "orders")
+        try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: storePath)
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertTrue(manager.isPersistent)
+        var received: [SASQLiteStoreProblem] = []
+        manager.problems.onProblem { received.append($0) }
+
+        manager.pinTable(hostName: "conn", databaseName: "db", tableToPin: "users")
+        manager.pinTable(hostName: "conn", databaseName: "db", tableToPin: "customers")
+        manager.unpinTable(hostName: "conn", databaseName: "db", tableToUnpin: "orders")
+
+        XCTAssertEqual(received.count, 1)
+        XCTAssertEqual(received.first?.kind, .cannotSave)
+        XCTAssertEqual(received.first?.path, storePath)
+        XCTAssertEqual(received.first?.reason?.isEmpty, false)
+        // The pins still work for the running session.
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn", databaseName: "db"), ["users", "customers"])
+    }
+
+    /// Verifies that an unpin the store refuses is reported, even when nothing failed
+    /// before it.
+    func testARefusedUnpinIsReported() throws {
+        SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+            .pinTable(hostName: "conn", databaseName: "db", tableToPin: "orders")
+        try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: storePath)
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn", databaseName: "db"), ["orders"])
+        manager.unpinTable(hostName: "conn", databaseName: "db", tableToUnpin: "orders")
+
+        XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
+        XCTAssertEqual(manager.problems.firstProblem?.path, storePath)
+        XCTAssertEqual(manager.getPinnedTables(hostName: "conn", databaseName: "db"), [])
+    }
+
+    /// Verifies that a single failed read is not announced - the store is still there and
+    /// the query may succeed again - while the write that follows is.
+    func testAFailedReadIsNotReportedButARefusedWriteIs() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        let manager = SQLiteDisplayFormatManager(databasePath: path)
+        manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
+        XCTAssertTrue(manager.isPersistent)
+
+        // The table disappears under the running manager, as another process could do.
+        try makeSQLiteFile(at: path, statements: ["DROP TABLE ColumnDisplayOverrides"])
+
+        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
+        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), [:])
+        XCTAssertNil(manager.problems.firstProblem)
+
+        manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "base64")
+        XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
+    }
+
+    /// Verifies that a format that cannot be written is reported as well.
+    func testRefusedFormatWriteIsReported() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        SQLiteDisplayFormatManager(databasePath: path)
+            .replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
+        try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: path)
+
+        let manager = SQLiteDisplayFormatManager(databasePath: path)
+        XCTAssertTrue(manager.isPersistent)
+        manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c2", format: "base64")
+
+        XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
+        XCTAssertEqual(manager.problems.firstProblem?.path, path)
+    }
+
+    private var storePath: String {
+        directory.appendingPathComponent("pinnedTables.db").path
+    }
+}
+
 /// Creates an SQLite file at `path` and runs `statements` in it.
 private func makeSQLiteFile(at path: String, statements: [String]) throws {
     let db = FMDatabase(path: path)
