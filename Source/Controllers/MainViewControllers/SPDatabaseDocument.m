@@ -131,6 +131,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void) closeAndDisconnect;
 
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection;
+- (NSString *)credentialErrorMessageForConnection:(SPMySQLConnection *)connection;
 - (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection;
 
 @end
@@ -5911,6 +5912,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection
 {
     return [connectionController passwordForConnectionRequest];
+}
+
+/**
+ * Invoked when the current connection could not supply a password, to describe why.
+ */
+- (NSString *)credentialErrorMessageForConnection:(SPMySQLConnection *)connection
+{
+    if ([connectionController type] != SPAWSIAMConnection) return nil;
+
+    return [[connectionController lastAWSIAMTokenError] localizedDescription];
 }
 
 /**

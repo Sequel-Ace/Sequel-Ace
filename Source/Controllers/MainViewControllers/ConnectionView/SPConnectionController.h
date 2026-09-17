@@ -317,6 +317,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite) BOOL useCompression;
 @property (readwrite, strong) NSMutableArray<NSDictionary<NSString *, id> *> *bookmarks;
 
+@property (readonly, strong, nullable) NSError *lastAWSIAMTokenError;
 @property (readonly) BOOL isConnecting;
 @property (readonly) BOOL isEditingConnection;
 

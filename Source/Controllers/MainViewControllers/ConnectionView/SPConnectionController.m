@@ -85,6 +85,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 @property (readwrite, assign) BOOL errorShowing;
 @property (readwrite, assign) BOOL localNetworkPermissionDeniedForCurrentAttempt;
+@property (readwrite, strong, nullable) NSError *lastAWSIAMTokenError;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (void)_sortFavorites;
@@ -298,21 +299,28 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     }
 
     if (awsError) {
+        self.lastAWSIAMTokenError = awsError;
         NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
         return nil;
     }
 
     if (![token length]) {
+        NSError *emptyTokenError = [NSError errorWithDomain:@"AWSIAMAuthErrorDomain"
+                                                       code:-1
+                                                   userInfo:@{
+                                                       NSLocalizedDescriptionKey: NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
+                                                   }];
+
         if (errorPointer && !*errorPointer) {
-            *errorPointer = [NSError errorWithDomain:@"AWSIAMAuthErrorDomain"
-                                                code:-1
-                                            userInfo:@{
-                                                NSLocalizedDescriptionKey: NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
-                                            }];
+            *errorPointer = emptyTokenError;
         }
+
+        self.lastAWSIAMTokenError = emptyTokenError;
         NSLog(@"AWS IAM Authentication token generation failed: empty authentication token returned");
         return nil;
     }
+
+    self.lastAWSIAMTokenError = nil;
 
     return token;
 }
