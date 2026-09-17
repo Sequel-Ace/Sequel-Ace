@@ -82,6 +82,11 @@ module SequelAceRelease
         "target_version" => chosen_version,
         "iteration" => iteration,
         "build_policy" => approval.payload.fetch("build_policy"),
+        "operational_requirements" => {
+          "status" => "Use release_status.yml and the protected ASC API key; no signed-in browser is needed for Apple state",
+          "artifact_owner" => "release_publish.yml",
+          "compatibility_warning" => "A legacy_updater_v1 GitHub release requires a compatible-user browser upload of the verified ZIP. Surface this before approval; do not promise browser-free publication or silently break old clients. The protected publisher selector determines the actual profile."
+        },
         "changes" => changes.map(&:to_h),
         "app_store_notes" => human_notes,
         "github_release_body" => release_body,

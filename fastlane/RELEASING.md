@@ -489,6 +489,51 @@ Store build rather than selecting the newest result.
 
 ## Release component responsibilities
 
+### Inspect before retrying
+
+Use the protected App Store Connect API key, not a logged-in browser, to check
+Apple state. From an authenticated maintainer CLI:
+
+```sh
+gh workflow run release_status.yml --ref main -f release_tag=production/6.0.0-20113
+```
+
+Read that run's summary or its `release-status` JSON artifact. The workflow is
+read-only and does not wait behind the publisher's concurrency group. It pulls
+the exact private handoff, queries ASC, and reports version existence, selected
+build, metadata validation against approved notes, phased/scheduled settings,
+and submission state. A green status job means inspection succeeded, not that
+the release completed. Missing/incomplete versions remain explicit. Raw Apple
+responses, review credentials, and signed download links are never published.
+No ASC key needs to be copied to a maintainer's Mac.
+
+For an already authorized local keyed runtime, the same read-only command is:
+
+```sh
+Scripts/release-tool release-status --manifest /private/path/manifest.json \
+  --notes /private/path/app-store-notes.txt
+```
+
+Check the exact GHCR manifest and existing queued/running publisher before
+dispatching recovery. `artifacts_verified` means the verified ZIP is already
+archived: inspect `github-public-assets-status` and the publisher summary, not
+just GitHub check colors. Do not rebuild or manually repackage it. A delayed
+manual publisher request for `submitted` succeeds without repeating writes
+only after live handoff, public-asset, exact App Store build, and metadata
+validation. Failed or other ineligible requests still stop explicitly.
+
+The planner exposes the legacy upload constraint under
+`operational_requirements`. If `legacy_updater_v1` is selected, surface its
+manual upload requirement before approval. API-only Apple status/submission
+does **not** solve GitHub's legacy `label: null` upload compatibility constraint.
+Do not promise browser-free publication or change publisher/compatibility policy
+without a separately authorized decision.
+
+Tooling repairs must end with an actual PR, not just a pushed branch: include
+the changes, concrete checks, remaining limitations, and the PR URL. Host
+instructions and their deployment belong to the host repository; no host policy
+or secrets belong in this public repository.
+
 - **Release starter (`release.yml`):** freezes the approved source and notes,
   prepares and merges the release PR, creates the direct-commit tag and GitHub
   prerelease, starts the exact Xcode Cloud run, and preserves the immutable
@@ -883,10 +928,17 @@ Use Homebrew Ruby and an isolated Bundler path; do not use the system Ruby:
 
 ```sh
 export BUNDLE_PATH="$(mktemp -d -t sequel-ace-release-bundle)"
-export PATH="/opt/homebrew/bin:${PATH}"
-/opt/homebrew/bin/bundle install
-/opt/homebrew/bin/bundle exec /opt/homebrew/bin/rake -f fastlane/Rakefile test
+export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}"
+bundle install
+bundle exec rake -f fastlane/Rakefile test
 ```
+
+`Scripts/release-tool` selects this keg-only Ruby and sets `BUNDLE_GEMFILE` to
+its own checkout even when invoked from another directory. The GHCR archive
+adapter uses a private temporary ORAS registry configuration by default and
+cleans it on exit, including failures. It does not depend on Docker Desktop's
+credential helper or modify global registry credentials. An explicit absolute
+`GHCR_REGISTRY_CONFIG` is caller-owned and is not removed.
 
 The same planner, reconciler, version editor, metadata gates, and artifact
 verifier work locally. Manual local notarization is not ready unless
