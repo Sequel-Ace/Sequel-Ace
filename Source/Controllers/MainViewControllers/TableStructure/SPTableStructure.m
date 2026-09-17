@@ -1908,7 +1908,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  * Reloads the table selected in the tables list (performing a new query).
  * After a load that was stopped or failed, the table recorded here can still be the one shown before,
  * while the table information belongs to the selected one; like the content view, the reload
- * therefore follows the tables list.
+ * therefore follows the tables list, and clears the view when no table or view is selected there.
  */
 - (IBAction)reloadTable:(id)sender
 {
@@ -1921,7 +1921,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Query the structure of all databases in the background (mainly for completion)
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 
-	[self loadTable:[tablesListInstance tableName]];
+	// A routine selected in the list has no structure here, and the view is cleared instead.
+	SPTableType selectedType = [tablesListInstance tableType];
+	BOOL listShowsTableOrView = (selectedType == SPTableTypeTable || selectedType == SPTableTypeView);
+	[self loadTable:listShowsTableOrView ? [tablesListInstance tableName] : nil];
 }
 
 /**

@@ -1882,14 +1882,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
- * Adds an empty row to the table-array and goes into edit mode
+ * Adds an empty row to the table-array and goes into edit mode.
+ * Nothing is added while no columns are shown: a table always has a column, and a load that was
+ * stopped or failed may still have the name of the table shown before it recorded.
  */
 - (IBAction)addRow:(id)sender
 {
 	NSMutableArray *newRow = [NSMutableArray array];
 
 	// Check whether table editing is permitted (necessary as some actions - eg table double-click - bypass validation)
-	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable) return;
+	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable || ![dataColumns count]) return;
 
 	// Check whether a save of the current row is required.
 	if ( ![self saveRowOnDeselect] ) return;
@@ -4062,6 +4064,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 /**
  * Enable all content interactive elements after an ongoing task.
+ * Rows can only be added while the table's columns are shown; a reload stays available either way.
  */
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
@@ -4073,7 +4076,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return;
 
 	if ( ![[tableDataInstance statusValueForKey:@"Rows"] isNSNull] && selectedTable && [selectedTable length] && [tableDataInstance tableEncoding]) {
-		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable)];
+		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable) && [dataColumns count]];
 		[self updatePaginationState];
 		[reloadButton setEnabled:YES];
 	}
