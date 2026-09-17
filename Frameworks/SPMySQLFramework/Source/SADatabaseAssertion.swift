@@ -359,8 +359,11 @@ final class SADatabaseAssertion: NSObject {
     /// whatever the statement it runs changes.
     private static let setFormsBeyondSession: Set<String> = ["PASSWORD", "DEFAULT", "RESOURCE", "STATEMENT"]
 
-    /// The words after `SET` that start a statement changing only the session.
-    private static let setFormsOfSession: Set<String> = ["NAMES", "CHARSET", "CHARACTER", "TRANSACTION", "ROLE"]
+    /// The words after `SET` that start a statement changing only the session, and nothing can follow.
+    private static let setFormsOfSession: Set<String> = ["TRANSACTION", "ROLE"]
+
+    /// The words after `SET` that start a character set setting, which assignments can follow.
+    private static let setCharacterSetForms: Set<String> = ["NAMES", "CHARSET", "CHARACTER"]
 
     /// The scopes that make a variable assignment change the server rather than the session.
     private static let scopesBeyondSession: Set<String> = ["GLOBAL", "PERSIST", "PERSIST_ONLY"]
@@ -434,7 +437,8 @@ final class SADatabaseAssertion: NSObject {
                 return true
             }
         }
-        guard let targets = setAssignmentTargets(afterSet) else {
+        let startsWithCharacterSet = setCharacterSetForms.contains(form)
+        guard let targets = setAssignmentTargets(afterSet, startingWithCharacterSet: startsWithCharacterSet) else {
             return false
         }
         return targets.allSatisfy { assignmentTargetIsInSession($0) }
@@ -442,10 +446,14 @@ final class SADatabaseAssertion: NSObject {
 
     /// The variables a `SET` statement assigns to, one per assignment, or nil when an assignment has
     /// none or the list cannot be read. Another statement after it makes the list unreadable too.
-    /// - Parameter statement: The statement after `SET`.
+    /// - Parameters:
+    ///   - statement: The statement after `SET`.
+    ///   - startingWithCharacterSet: Whether the list starts with `NAMES` or `CHARACTER SET`, which
+    ///     assigns to no variable and only changes the session.
     /// - Returns: The text before each assignment's `=`.
-    private static func setAssignmentTargets(_ statement: Substring) -> [Substring]? {
+    private static func setAssignmentTargets(_ statement: Substring, startingWithCharacterSet: Bool) -> [Substring]? {
         var assignments = statement
+        var characterSetPending = startingWithCharacterSet
         var targets: [Substring] = []
         var assignmentStart = assignments.startIndex
         var targetEnd: Substring.Index?
@@ -479,16 +487,26 @@ final class SADatabaseAssertion: NSObject {
             } else if depth == 0, character == "=", targetEnd == nil {
                 targetEnd = index
             } else if depth == 0, character == "," {
-                guard let end = targetEnd else {
-                    return nil
+                if characterSetPending {
+                    characterSetPending = false
+                } else {
+                    guard let end = targetEnd else {
+                        return nil
+                    }
+                    targets.append(assignments[assignmentStart..<end])
                 }
-                targets.append(assignments[assignmentStart..<end])
                 assignmentStart = assignments.index(after: index)
                 targetEnd = nil
             }
             assignments.formIndex(after: &index)
         }
-        guard quote == nil, depth == 0, let end = targetEnd else {
+        guard quote == nil, depth == 0 else {
+            return nil
+        }
+        if characterSetPending {
+            return targets
+        }
+        guard let end = targetEnd else {
             return nil
         }
         targets.append(assignments[assignmentStart..<end])
