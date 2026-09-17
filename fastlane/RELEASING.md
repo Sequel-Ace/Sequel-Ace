@@ -369,10 +369,18 @@ write only after the new `cloud_running` archive is durable; the predecessor is
 not cleared if forward dispatch fails. The state adapter retries transient API
 failures. If arming fails or is cancelled after the durable archive exists,
 cleanup preserves that discoverable `cloud_running` handoff and prerelease for
-an exact manual publisher dispatch instead of marking it terminal. The Linux job performs one exact Cloud-status read and exits; it
-starts the protected GitHub-hosted `macos-15` verification job only after every
-required Production and Alpha run is complete and related to the expected app
-build. Authorized manual recovery requires
+an exact manual publisher dispatch instead of marking it terminal. The Linux
+job performs one exact Cloud-status read through the protected App Store
+Connect Team API key and exits. App Store Connect is authoritative for the
+exact workflow, tag, commit, build relationship, and artifact; GitHub checks
+and statuses are wake-up hints and may lag the Apple UI or API. It starts the
+protected GitHub-hosted `macos-15` verification job after every required
+Production and Alpha run is complete and related to the expected app build. If
+Apple's build-run progress field lags, the exact related app/version/platform/
+build plus an HTTPS-downloadable artifact is equivalent readiness; the
+publisher then proves the artifact itself before any public attachment or App
+Store submission. A UI success state alone never bypasses these checks.
+Authorized manual recovery requires
 `PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
 The immediate continuation authenticates its source by the immutable workflow
 path from the `workflow_run` payload; GitHub's `workflow_run.name` contains the
@@ -478,6 +486,33 @@ The API client follows Apple's documented
 [Xcode Cloud build-run endpoint](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-ciworkflows-_id_-buildruns)
 and binds a release run to its workflow, source tag, commit, and related App
 Store build rather than selecting the newest result.
+
+## Release component responsibilities
+
+- **Release starter (`release.yml`):** freezes the approved source and notes,
+  prepares and merges the release PR, creates the direct-commit tag and GitHub
+  prerelease, starts the exact Xcode Cloud run, and preserves the immutable
+  private handoff. It does not attach a public binary or submit App Store
+  metadata.
+- **Xcode Cloud:** builds the tagged source and runs Apple's configured
+  Notarize and TestFlight post-actions. Its UI is useful operator evidence, but
+  the publisher independently reads the exact run, build, and artifacts through
+  the App Store Connect API.
+- **Release Artifact Publisher (`release_publish.yml`):** owns the notarized
+  distributable after Cloud. It downloads the exact Cloud artifact; verifies
+  version/build, architectures, signing identity, notarization and stapling,
+  Gatekeeper, and launch/quit behavior; packages the updater ZIP; preserves it
+  in private GHCR; attaches the checksum-matched copy to the GitHub prerelease
+  (or records the required legacy-compatible browser upload); then stages,
+  validates, attaches, and submits the exact App Store build.
+- **Release finalizer (`release_finalize.yml`):** waits for App Store
+  `READY_FOR_DISTRIBUTION`, revalidates the archived and public artifacts, and
+  only then converts the GitHub prerelease to a final release.
+
+Therefore a successful Xcode Cloud page is not the end of artifact publication,
+and a missing GitHub asset is still publisher work. Conversely, a lagging
+GitHub check or Apple run-progress field must not force a rebuild when the exact
+App Store build and downloadable Cloud artifact are already available.
 
 ## Fastlane behavior and documentation
 
