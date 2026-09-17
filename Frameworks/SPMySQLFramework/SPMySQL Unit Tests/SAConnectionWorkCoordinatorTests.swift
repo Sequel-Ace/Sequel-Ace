@@ -281,6 +281,35 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertFalse(SAOutsideStatements.areRunningOnCurrentThread)
     }
 
+    /// The connection's own upkeep stays marked as such on the worker, and so does work that is both.
+    func testUpkeepStaysMarkedOnTheWorker() {
+        var upkeepOnWorker: Bool?
+        var bothOnWorker: [Bool]?
+        SAConnectionUpkeepStatements.run {
+            XCTAssertTrue(SAConnectionUpkeepStatements.areRunningOnCurrentThread)
+            upkeepOnWorker = run({ SAConnectionUpkeepStatements.areRunningOnCurrentThread }).result as? Bool
+            SAOutsideStatements.run {
+                bothOnWorker = run({
+                    [SAConnectionUpkeepStatements.areRunningOnCurrentThread, SAOutsideStatements.areRunningOnCurrentThread]
+                }).result as? [Bool]
+            }
+        }
+        XCTAssertEqual(upkeepOnWorker, true)
+        XCTAssertEqual(bothOnWorker, [true, true])
+        XCTAssertEqual(run({ SAConnectionUpkeepStatements.areRunningOnCurrentThread }).result as? Bool, false)
+        XCTAssertFalse(SAConnectionUpkeepStatements.areRunningOnCurrentThread)
+    }
+
+    /// The upkeep mark survives nested runs, ends with the outermost one, and is not the outside mark.
+    func testTheUpkeepMarkEndsWithTheOutermostRun() {
+        SAConnectionUpkeepStatements.run {
+            SAConnectionUpkeepStatements.run {}
+            XCTAssertTrue(SAConnectionUpkeepStatements.areRunningOnCurrentThread)
+            XCTAssertFalse(SAOutsideStatements.areRunningOnCurrentThread)
+        }
+        XCTAssertFalse(SAConnectionUpkeepStatements.areRunningOnCurrentThread)
+    }
+
     /// The mark survives nested runs and ends with the outermost one.
     func testTheOutsideMarkEndsWithTheOutermostRun() {
         SAOutsideStatements.run {

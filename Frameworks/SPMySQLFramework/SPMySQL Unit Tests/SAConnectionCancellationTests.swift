@@ -245,9 +245,9 @@ final class SAConnectionCancellationTests: XCTestCase {
     }
 
     /// Decides with every report pending unless a test says otherwise.
-    private func refusal(editor: Bool = true, writes: Bool = true, retries: Bool, settingUp: Bool = false, leavesDataAlone: Bool) -> SALostWorkRefusal {
+    private func refusal(editor: Bool = true, writes: Bool = true, retries: Bool, sentByConnection: Bool = false, leavesDataAlone: Bool) -> SALostWorkRefusal {
         SAConnectionCancellation.lostWorkRefusal(reportPendingForEditor: editor, reportPendingForWrites: writes,
-                                                 retriesStatements: retries, settingUpSession: settingUp,
+                                                 retriesStatements: retries, sentByConnection: sentByConnection,
                                                  statementLeavesDataAlone: leavesDataAlone)
     }
 
@@ -271,10 +271,11 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(refusal(writes: false, retries: true, leavesDataAlone: false), .none)
     }
 
-    /// The statements that set up a new session always run, and leave the report for the caller.
-    func testTheStatementsThatSetUpANewSessionAlwaysRun() {
-        XCTAssertEqual(refusal(retries: false, settingUp: true, leavesDataAlone: false), .none)
-        XCTAssertEqual(refusal(retries: true, settingUp: true, leavesDataAlone: false), .none)
+    /// The statements the connection sends itself - setting up a new session, or its upkeep - always
+    /// run, and leave the report for the caller.
+    func testTheStatementsTheConnectionSendsItselfAlwaysRun() {
+        XCTAssertEqual(refusal(retries: false, sentByConnection: true, leavesDataAlone: false), .none)
+        XCTAssertEqual(refusal(retries: true, sentByConnection: true, leavesDataAlone: false), .none)
     }
 
     /// Only a thread other than the main thread restores a lost session when asked whether it is connected.

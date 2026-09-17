@@ -210,8 +210,10 @@ public final class SAConnectionWorkCoordinator: NSObject {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
 
-        // Statements from outside the application stay marked as such on the worker.
+        // Statements from outside the application, and the connection's own upkeep, stay marked as
+        // such on the worker.
         let comesFromOutside = SAOutsideStatements.areRunningOnCurrentThread
+        let isUpkeep = SAConnectionUpkeepStatements.areRunningOnCurrentThread
         let item = SAConnectionWorkItem {
             // The work and what settles it afterwards can tell how the work has used the session.
             let threadDictionary = Thread.current.threadDictionary
@@ -221,10 +223,18 @@ public final class SAConnectionWorkCoordinator: NSObject {
             }
 
             var result: Any?
+            /// Runs the work, marked as the connection's upkeep if it was on the caller's thread.
+            func runMarkedAsUpkeepIfItWas() {
+                if isUpkeep {
+                    SAConnectionUpkeepStatements.run { result = work() }
+                } else {
+                    result = work()
+                }
+            }
             if comesFromOutside {
-                SAOutsideStatements.run { result = work() }
+                SAOutsideStatements.run { runMarkedAsUpkeepIfItWas() }
             } else {
-                result = work()
+                runMarkedAsUpkeepIfItWas()
             }
 
             // Nobody is waiting for this any more, and what the caller was told instead has to

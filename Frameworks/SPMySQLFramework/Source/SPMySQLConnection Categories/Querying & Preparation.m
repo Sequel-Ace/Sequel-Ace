@@ -965,10 +965,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	BOOL leavesDataAlone = retryQueriesOnConnectionFailure && lostWorkReportPendingForWrites && mySQLConnection
 		&& ![SAOutsideStatements areRunningOnCurrentThread]
 		&& [SADatabaseAssertionState statementLeavesDataAlone:query onMySQLConnection:mySQLConnection];
+	BOOL sentByConnection = [self _currentThreadIsReconnecting] || [SAConnectionUpkeepStatements areRunningOnCurrentThread];
 	SALostWorkRefusal refusal = [SAConnectionCancellation lostWorkRefusalWithReportPendingForEditor:lostWorkReportPendingForEditor
 	                                                                         reportPendingForWrites:lostWorkReportPendingForWrites
 	                                                                              retriesStatements:retryQueriesOnConnectionFailure
-	                                                                               settingUpSession:[self _currentThreadIsReconnecting]
+	                                                                               sentByConnection:sentByConnection
 	                                                                        statementLeavesDataAlone:leavesDataAlone];
 	switch (refusal) {
 		case SALostWorkRefusalEditorStatement:

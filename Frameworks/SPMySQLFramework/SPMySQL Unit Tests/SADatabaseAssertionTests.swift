@@ -24,6 +24,32 @@ final class SADatabaseAssertionTests: XCTestCase {
         }
     }
 
+    /// A SET that only changes the session leaves the data alone, whatever its values read.
+    func testSessionSettingsLeaveTheDataAlone() {
+        for query in ["SET CHARACTER SET utf8mb4", "SET CHARSET utf8mb4", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED",
+                      "SET SESSION TRANSACTION READ ONLY", "SET ROLE ALL", "SET @a = 1", "SET @a := 1, @b = 2;",
+                      "SET time_zone = @@GLOBAL.time_zone", "SET SQL_MODE='GLOBAL,PERSIST'", "SET FOREIGN_KEY_CHECKS = 0",
+                      "SET @@session.sql_mode = '', @@local.x = 1, @@wait_timeout = 10", "SET SESSION sql_mode = 'a,b'",
+                      "SET LOCAL x = 1", "set @x = (SELECT a, b = 1 FROM t)", "SET @`a b` = 'it''s'",
+                      "SET /* GLOBAL */ x = 1", "SET @@sql_mode = @@GLOBAL.sql_mode;;", "SET character_set_client = utf8mb4"] {
+            XCTAssertTrue(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
+    /// A SET that changes more than the session is taken to change data.
+    func testSettingsBeyondTheSessionAreTakenToChangeData() {
+        for query in ["SET PASSWORD FOR 'u'@'h' = 'x'", "set password = 'x'", "SET GLOBAL max_allowed_packet = 1024",
+                      "SET GLOBAL max_allowed_packet = @@global.max_allowed_packet", "SET PERSIST max_connections = 10",
+                      "SET PERSIST_ONLY back_log = 100", "SET @@GLOBAL.max_connections = 10", "SET @@persist.x = 1",
+                      "SET @@ global . x = 1", "SET @a = 1, GLOBAL max_connections = 10", "SET /*!80000 GLOBAL */ x = 1",
+                      "SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED", "SET DEFAULT ROLE ALL TO u",
+                      "SET RESOURCE GROUP rg FOR 1", "SET STATEMENT max_statement_time = 1 FOR DELETE FROM t",
+                      "SET @a = 'x\\', GLOBAL y = 1 -- '", "SET @a = 1; DELETE FROM t", "SET x", "SET", "SET `x` = 1",
+                      "SET @ = 1", "SET @a = (1", "SET @a = 'open", "SET @@GTID_PURGED = '1', @@global.gtid_purged = '2'"] {
+            XCTAssertFalse(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
     /// Anything else is taken to change data, including a write hidden behind a comment.
     func testEverythingElseIsTakenToChangeData() {
         for query in ["UPDATE t SET a = 1", "INSERT INTO t VALUES (1)", "delete from t", "COMMIT", "CALL p()",

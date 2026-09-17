@@ -51,21 +51,16 @@ public protocol SAConnectionCancellationHost: AnyObject {
     func closeSessionIfConnected()
 }
 
-/// Marks the statements the current thread sends as SQL the application did not write itself -
-/// statements a client outside the application sent.
-///
-/// After uncommitted work was lost with a session, such a statement is refused like a write,
-/// whatever its first keyword: a `SELECT` can call a function that changes data.
-@objc(SAOutsideStatements)
-public final class SAOutsideStatements: NSObject {
+/// A mark the current thread carries while it runs a piece of work; runs can nest, and the mark
+/// ends with the outermost one.
+struct SAThreadMark {
 
     /// The key under which a thread keeps how deeply it is inside ``run(_:)``.
-    private static let depthKey = "SAOutsideStatementsDepth"
+    let depthKey: String
 
-    /// Runs work whose statements come from outside the application, on the current thread.
-    /// - Parameter work: The work that sends those statements.
-    @objc(runOnCurrentThread:)
-    public static func run(_ work: () -> Void) {
+    /// Runs work on the current thread with the mark set.
+    /// - Parameter work: The work to run.
+    func run(_ work: () -> Void) {
         let threadDictionary = Thread.current.threadDictionary
         let depth = (threadDictionary[depthKey] as? Int) ?? 0
         threadDictionary[depthKey] = depth + 1
@@ -79,9 +74,59 @@ public final class SAOutsideStatements: NSObject {
         work()
     }
 
+    /// Whether the current thread carries the mark now.
+    var isSetOnCurrentThread: Bool {
+        return ((Thread.current.threadDictionary[depthKey] as? Int) ?? 0) > 0
+    }
+}
+
+/// Marks the statements the current thread sends as SQL the application did not write itself -
+/// statements a client outside the application sent.
+///
+/// After uncommitted work was lost with a session, such a statement is refused like a write,
+/// whatever its first keyword: a `SELECT` can call a function that changes data.
+@objc(SAOutsideStatements)
+public final class SAOutsideStatements: NSObject {
+
+    /// The mark of such statements.
+    private static let mark = SAThreadMark(depthKey: "SAOutsideStatementsDepth")
+
+    /// Runs work whose statements come from outside the application, on the current thread.
+    /// - Parameter work: The work that sends those statements.
+    @objc(runOnCurrentThread:)
+    public static func run(_ work: () -> Void) {
+        mark.run(work)
+    }
+
     /// Whether the statements the current thread sends now come from outside the application.
     @objc public static var areRunningOnCurrentThread: Bool {
-        return ((Thread.current.threadDictionary[depthKey] as? Int) ?? 0) > 0
+        return mark.isSetOnCurrentThread
+    }
+}
+
+/// Marks the statements the current thread sends as the connection's own upkeep: raising the
+/// server's `max_allowed_packet` for a query that needs it, putting it back, and finding out
+/// whether that is allowed.
+///
+/// Such a statement is not the user's work. After uncommitted work was lost with a session it runs,
+/// like the statements that set up the new session: refused, it would report the loss as a failed
+/// upkeep - a query "too large" to send - and could leave the server's setting raised.
+@objc(SAConnectionUpkeepStatements)
+public final class SAConnectionUpkeepStatements: NSObject {
+
+    /// The mark of such statements.
+    private static let mark = SAThreadMark(depthKey: "SAConnectionUpkeepStatementsDepth")
+
+    /// Runs work whose statements are the connection's own upkeep, on the current thread.
+    /// - Parameter work: The work that sends those statements.
+    @objc(runOnCurrentThread:)
+    public static func run(_ work: () -> Void) {
+        mark.run(work)
+    }
+
+    /// Whether the statements the current thread sends now are the connection's own upkeep.
+    @objc public static var areRunningOnCurrentThread: Bool {
+        return mark.isSetOnCurrentThread
     }
 }
 
@@ -363,21 +408,23 @@ public final class SAConnectionCancellation: NSObject {
     ///   still refused.
     ///
     /// The application's own reads and session settings run as before, and so do the statements
-    /// that set up the new session.
+    /// the connection sends itself: those that set up the new session, and its upkeep
+    /// (``SAConnectionUpkeepStatements``).
     /// - Parameters:
     ///   - reportPendingForEditor: Whether the query editor has yet to be told of a loss.
     ///   - reportPendingForWrites: Whether a write from elsewhere has yet to be refused for a loss.
     ///   - retriesStatements: Whether the caller has statements retried after a lost connection.
-    ///   - settingUpSession: Whether the statement is one the connection sends to set up a session.
+    ///   - sentByConnection: Whether the connection sends the statement itself, to set up a session
+    ///     or as upkeep.
     ///   - statementLeavesDataAlone: Whether the statement only reads or sets up the session.
     /// - Returns: The report the statement is refused with, if any.
-    @objc(lostWorkRefusalWithReportPendingForEditor:reportPendingForWrites:retriesStatements:settingUpSession:statementLeavesDataAlone:)
+    @objc(lostWorkRefusalWithReportPendingForEditor:reportPendingForWrites:retriesStatements:sentByConnection:statementLeavesDataAlone:)
     public static func lostWorkRefusal(reportPendingForEditor: Bool,
                                        reportPendingForWrites: Bool,
                                        retriesStatements: Bool,
-                                       settingUpSession: Bool,
+                                       sentByConnection: Bool,
                                        statementLeavesDataAlone: Bool) -> SALostWorkRefusal {
-        guard !settingUpSession else {
+        guard !sentByConnection else {
             return .none
         }
         if !retriesStatements {
