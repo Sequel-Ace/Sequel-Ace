@@ -635,7 +635,9 @@ typedef enum {
         NSTextStorage *editTVtextStorage = [editTextView textStorage];
         NSString *editTVString = [editTVtextStorage string];
 
-		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
+		// Only the placeholder itself is exempt here: a part of it left in the sheet ("ULL", "NU") is
+		// not NULL and is measured like any other text.
+		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue]) {
 			// The limit counts code points; the selection is in UTF-16 units and
 			// must start between code points, not inside a surrogate pair.
 			NSUInteger keptLength = (NSUInteger)[editTVString utf16LengthOfFirstCodePoints:(NSInteger)maxLength];
