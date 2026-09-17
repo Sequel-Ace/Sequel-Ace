@@ -681,6 +681,9 @@
 		CF0000232F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */; };
 		CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */; };
 		CF0000262F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */; };
+		CF0000352F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */; };
+		CF0000362F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */; };
+		CF0000382F8C000600C4C14A /* SADatabaseRenamePlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */; };
 		CF0000302F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */; };
 		CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */; };
 		CF0000332F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */; };
@@ -1626,6 +1629,8 @@
 		CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SACellFilterRuleControllerStubs.m; sourceTree = "<group>"; };
 		CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterColumnIdentifier.swift; sourceTree = "<group>"; };
 		CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterColumnIdentifierTests.swift; sourceTree = "<group>"; };
+		CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseRenamePlan.swift; sourceTree = "<group>"; };
+		CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseRenamePlanTests.swift; sourceTree = "<group>"; };
 		CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARuleFilterRootConjunction.swift; sourceTree = "<group>"; };
 		CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARuleFilterRootConjunctionTests.swift; sourceTree = "<group>"; };
 		D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowTabAccessory.swift; sourceTree = "<group>"; };
@@ -1762,6 +1767,7 @@
 				1198F5B21174EDD500670590 /* SPDatabaseCopy.m */,
 				11C2109C1180E70800758039 /* SPDatabaseRename.h */,
 				11C2109D1180E70800758039 /* SPDatabaseRename.m */,
+				CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */,
 				11B55BFC1189E3B2009EF465 /* SPDatabaseAction.h */,
 				11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */,
 				17B548611E81FFA600175D5A /* SPCreateDatabaseInfo.h */,
@@ -2873,6 +2879,7 @@
 				51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */,
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */,
+				CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */,
 				CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */,
 				CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */,
 				CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */,
@@ -3684,9 +3691,11 @@
 				CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
 				CF0000122F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
+				CF0000362F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */,
 				CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */,
 				51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */,
 				CF0000262F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift in Sources */,
+				CF0000382F8C000600C4C14A /* SADatabaseRenamePlanTests.swift in Sources */,
 				CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */,
 				5A1E0F1C2F9A000100C4C14A /* SAContentFilterLengthTests.swift in Sources */,
 				CF0000152F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m in Sources */,
@@ -3820,6 +3829,7 @@
 				CF00000E2F8C000600C4C14A /* SACellFilterAction.swift in Sources */,
 				CF0000102F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000232F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
+				CF0000352F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */,
 				17E641570EF01EF6001BC333 /* SPAppController.m in Sources */,
 				507FF1121BBCC57600104523 /* SPFunctions.m in Sources */,
 				5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */,
