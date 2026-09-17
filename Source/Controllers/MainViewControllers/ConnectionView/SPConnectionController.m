@@ -522,8 +522,20 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                                          delegateAvailable:self.connectionService.mySQLDelegate != nil];
 
     // Resolve explicit passwords and generated credentials before entering the service.
-    NSString *resolvedPassword = deferMySQLPasswordToDelegate ? nil : [self _resolvedMySQLPassword];
-    if (!resolvedPassword && !deferMySQLPasswordToDelegate) return; // AWS IAM error already shown
+    // An AWS IAM token is generated up front to validate the credentials and report
+    // failures, then discarded when the delegate supplies one per connection attempt.
+    NSString *resolvedPassword = nil;
+
+    if ([self _isAWSIAMConnection]) {
+        NSString *preflightToken = [self _resolvedMySQLPassword];
+        if (!preflightToken) return; // AWS IAM error already shown
+
+        if (!deferMySQLPasswordToDelegate) resolvedPassword = preflightToken;
+    }
+    else if (!deferMySQLPasswordToDelegate) {
+        resolvedPassword = [self _resolvedMySQLPassword];
+        if (!resolvedPassword) return;
+    }
 
     NSString *resolvedSSHPassword = [self _resolvedSSHPassword];
 
