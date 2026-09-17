@@ -977,20 +977,24 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (mysql_options(theConnection, MYSQL_OPT_TLS_CIPHERSUITES, (const void *)theTLSCipherSuites)) {
 			SPLog(@"Failed to set default TLS 1.3 cipher suites; continuing with libmysqlclient defaults.");
 		}
-		enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_REQUIRED;
-		if(mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode)) {
-			if(isMaster) {
-				[self _updateLastErrorMessage:@"libmysqlclient is missing support for MYSQL_OPT_SSL_MODE"];
-				[self _updateLastSqlstate:@"HY000"];
-				[self _updateLastErrorID:2026];
-			}
-			return NULL;
-		}
-    } else {
-        BOOL requiresTLS = [SACleartextAuthPolicy requiresTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL];
-        enum mysql_ssl_mode opt_ssl_mode = requiresTLS ? SSL_MODE_REQUIRED : SSL_MODE_PREFERRED;
-        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
     }
+
+	// An attempt that requires TLS is abandoned when the mode cannot be applied, as
+	// libmysqlclient otherwise falls back to SSL_MODE_PREFERRED and its plaintext fallback.
+	BOOL requiresTLS = [SACleartextAuthPolicy requiresTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL];
+	enum mysql_ssl_mode opt_ssl_mode = requiresTLS ? SSL_MODE_REQUIRED : SSL_MODE_PREFERRED;
+
+	if (mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode) && requiresTLS) {
+		if (isMaster) {
+			[self _updateLastErrorMessage:@"libmysqlclient is missing support for MYSQL_OPT_SSL_MODE"];
+			[self _updateLastSqlstate:@"HY000"];
+			[self _updateLastErrorID:CR_SSL_CONNECTION_ERROR];
+		}
+
+		mysql_close(theConnection);
+
+		return NULL;
+	}
 
     MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
 
