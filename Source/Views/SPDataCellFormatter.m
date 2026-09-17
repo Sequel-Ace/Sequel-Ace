@@ -148,13 +148,22 @@
 	                                                          fieldType:fieldType
 	                                                          nullValue:nullValue];
 	// No length rule applies: no limit, or the NULL placeholder being typed.
-	// The BIT rule is skipped then, so a BIT value can still be nulled.
+	// The BIT rule is skipped only for the placeholder, so a BIT value can still
+	// be nulled; without a limit it still applies to anything else.
 	if (decision.isExempt) {
-		return YES;
+		if (!proposedString.length || [proposedString isNullPlaceholderOrItsStart:nullValue]) {
+			return YES;
+		}
+		return [self isBitTextValid:proposedString];
 	}
 
 	if (!decision.allowsEdit) {
 		if (decision.replacementText) {
+			// The cut text is what the cell keeps, so it has to pass the BIT rule
+			// as well; a BIT value is later written as b'…' from this text.
+			if (![self isBitTextValid:decision.replacementText]) {
+				return NO;
+			}
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld. Inserted text was truncated.", @"Maximum text length is set to %ld. Inserted text was truncated."), (long)textLimit]];
 			*partialStringPtr = decision.replacementText;
 			if (proposedSelRangePtr != NULL) {
@@ -210,17 +219,24 @@
 	// their tooltip and applies the cut.
 	switch ([partialString textLimitDecisionForLimit:textLimit nullValue:nullValue]) {
 		case SATextLimitDecisionExempt:
-			// No limit set or partialString is NULL value string allow editing
-			return YES;
+			// No limit set or partialString is NULL value string allow editing;
+			// without a limit the BIT rule below still applies to anything but NULL.
+			break;
 		case SATextLimitDecisionRefuse:
 			// A single character over the length of the string - likely typed.  Prevent the change - JCS - Unless it's NULL
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld.", @"Maximum text length is set to %ld."), (long)textLimit]];
 			return NO;
-		case SATextLimitDecisionTruncate:
+		case SATextLimitDecisionTruncate: {
 			// If the string is considerably longer than the limit, likely pasted.  Accept but truncate. - JCS - Unless it's NULL
+			NSString *cut = [NSString stringWithString:[partialString prefixOfCodePoints:textLimit]];
+			// The cut text is what the cell keeps, so it has to pass the BIT rule as well.
+			if (![self isBitTextValid:cut]) {
+				return NO;
+			}
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %ld. Inserted text was truncated.", @"Maximum text length is set to %ld. Inserted text was truncated."), (long)textLimit]];
-			*newString = [NSString stringWithString:[partialString prefixOfCodePoints:textLimit]];
+			*newString = cut;
 			return NO;
+		}
 		case SATextLimitDecisionWithinLimit:
 			break;
 	}
