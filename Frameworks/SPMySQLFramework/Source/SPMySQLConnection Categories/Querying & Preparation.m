@@ -90,6 +90,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 	if (![self checkConnectionIfNecessary]) return nil;
 
+	// A session marked for replacement may run in a different escaping mode than the session that
+	// replaces it, which the value is going to be sent on. That session is set up first - unless
+	// this thread holds the connection itself, reading a streaming result, and would wait for itself.
+	if (sessionMustBeReplacedBeforeUse && ![inFlightQuery connectionIsHeldByCurrentThread]) {
+		if (![self _replaceSessionMarkedForReplacement]) return nil;
+	}
+
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
@@ -105,22 +112,19 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	NSUInteger mallocSize = (cDataLength * 2) + 2;
 	char *escBuffer = (char *)malloc(mallocSize);
 
-	// Use mysql_real_escape_string to perform the escape, starting one character in
-	NSUInteger escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
-
-	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
-	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
-	if (escapedLength == (unsigned long)-1) {
-		NSUInteger theErrorID = mysql_errno(mySQLConnection);
-		if (theErrorID == CR_INSECURE_API_ERR) {
-			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
-		} else {
-			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
-			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
-			free(escBuffer);
-			return nil;
-		}
+	// Escape starting one character in. The session's own handle is not used: work nobody waits for
+	// any more can still be using it, or close it, while this runs. The escaper follows what the
+	// session last reported - its character set and its NO_BACKSLASH_ESCAPES mode - and, for a
+	// session about to be replaced, the character set on record, which the next session uses.
+	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
+	                                            length:cDataLength
+	                                              into:escBuffer+1
+	                              characterSetOnRecord:encoding
+	                            sessionIsBeingReplaced:sessionMustBeReplacedBeforeUse];
+	if (escapedLength < 0) {
+		SPLog(@"[escapeString:includingQuotes]: the value could not be escaped for character set %@", encoding);
+		free(escBuffer);
+		return nil;
 	}
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
@@ -318,12 +322,38 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	 databaseContextIsRequired:YES];
 }
 
+/**
+ * Runs a query, optionally in a database the connection makes sure of first. On the main
+ * thread the query is handed to the connection's worker thread, so the interface keeps
+ * answering while the server is waited for.
+ *
+ * @param theQueryString The query to run.
+ * @param theEncoding The encoding to send the query in.
+ * @param theReturnType The kind of result to return.
+ * @param databaseName The database the query must run in, or nil.
+ * @param databaseContextIsRequired Whether the query must not run without that database selected.
+ * @return The result, or nil if the query failed or the wait for it ended.
+ */
 - (id)queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding
     withResultType:(SPMySQLResultType)theReturnType
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
+	// A query waits for a server, and on a route that has gone away it waits for a timeout.
+	// The main thread must not be the one waiting: the query runs on the connection's worker
+	// thread instead, and the interface keeps drawing while it does. The same call is made
+	// again from there, where this test no longer holds and the query simply runs.
+	if ([self _workShouldRunOffMainThread]) {
+		return [self _runWorkKeepingInterfaceAlive:^id{
+			return [self queryString:theQueryString
+			           usingEncoding:theEncoding
+			          withResultType:theReturnType
+			       assertingDatabase:databaseName
+			databaseContextIsRequired:databaseContextIsRequired];
+		}];
+	}
+
 	double queryExecutionTime;
 	NSString *theErrorMessage;
 	NSUInteger theErrorID;
@@ -351,6 +381,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	[self _validateThreadSetup];
 
 	// Check the connection if necessary, returning nil if the state couldn't be validated
+	// The same goes for reconnecting on behalf of work that nobody is waiting for any more.
+	if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) return nil;
+
 	if (![self checkConnectionIfNecessary]) return nil;
 
 	// Determine whether a maximum query size needs to be restored from a previous query
@@ -385,7 +418,52 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	int queryStatus;
 
 	// Lock the connection while it's actively in use
-	[self _lockConnection];
+	if (![self _lockUsableConnectionForQuery]) return nil;
+
+	// Work the user stopped waiting for can get the connection long after the caller was told it
+	// was cancelled. Sending it now would run a statement - possibly one that changes data - that
+	// was reported as not having run. Nothing is recorded either: the connection's state belongs
+	// to whatever runs next. Work that goes ahead records whether a transaction was open before it
+	// first used the session; stopping it later decides by that.
+	if (![SAConnectionWorkCoordinator currentWorkMaySendWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
+		[self _unlockConnection];
+		return nil;
+	}
+
+	// A session dropped with a transaction open, or with autocommit turned off, took uncommitted
+	// work with it. On this session the statement could run as if nothing had happened, so it is
+	// refused instead, once, and says why.
+	if ([self _refusesStatementForLostUncommittedWork:theQueryString]) {
+		[self _unlockConnection];
+
+		// Releasing the connection can find a request to stop the query before; this one is refused,
+		// not cancelled, and its caller has to see why.
+		lastQueryWasCancelled = NO;
+		[self _updateLastErrorMessage:NSLocalizedString(@"The connection to the server was lost while a transaction was open or autocommit was off. The server rolled back whatever had not been committed, and the new connection commits each statement on its own. This statement was not run.", @"Error for the next statement a user runs after the connection was lost while a transaction was open or autocommit was off")];
+		[self _updateLastErrorID:2013];
+		[self _updateLastSqlstate:@"HY000"];
+		return nil;
+	}
+
+	// From here this is "the query that is running". Anything acting on that later - a
+	// cancellation, say - has to be able to tell whether it is still this one, and counting
+	// any earlier would count queries that never got the connection.
+	NSUInteger thisQueryGeneration = ++queryGeneration;
+
+	// The statements a reconnect sends belong to whichever query is reconnecting; any other query,
+	// and its retries, belongs to itself. A request to stop a query another thread runs meanwhile is
+	// then not taken for a request to stop this one.
+	NSUInteger generationOwner = [self _currentThreadIsReconnecting] ? 0 : thisQueryGeneration;
+	[inFlightQuery noteLatestGeneration:thisQueryGeneration ownedByQueryStartedAt:generationOwner];
+
+	// A retry runs under a new number. A request to stop this query names the number it had when
+	// the request was made, so the query keeps its first one to ask with.
+	NSUInteger originalQueryGeneration = thisQueryGeneration;
+	runningQueryFirstGeneration = originalQueryGeneration;
+
+	// Whether the query was cancelled is this query's to say from here. Anything that finished late
+	// and wrote to it did so before this point, under the same lock.
+	lastQueryWasCancelled = NO;
 	if (!databaseAssertionState) {
 		databaseAssertionState = [[SADatabaseAssertionState alloc] init];
 	}
@@ -400,6 +478,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = 0;
+
+		// Waiting on the server starts here; a cancellation that finds the server gone can end
+		// this wait, and only this one, until it is marked as over.
+		[inFlightQuery beginWaitingForGeneration:thisQueryGeneration onSocket:mySQLConnection->net.fd serverThread:mySQLConnection->thread_id];
+
 		SADatabaseAssertionError *databaseAssertionError = [databaseAssertionState
 			assertDatabase:databaseName
 			required:databaseContextIsRequired
@@ -418,12 +501,38 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 
 		if (!queryStatus) {
+
+			// Selecting the database can take a while on a slow server, and starting to wait can
+			// itself wait for a kill request meant for the query before. The user can stop waiting,
+			// or ask for this query to stop, meanwhile. This is the last point at which the
+			// statement has not been sent.
+			if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) {
+				[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
+				[self _unlockConnection];
+				return nil;
+			}
+			if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
+				lastQueryWasCancelled = YES;
+				[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
+				[self _unlockConnection];
+				[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+				[self _updateLastErrorID:1317];
+				[self _updateLastSqlstate:@"70100"];
+				return nil;
+			}
+
 			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
+			// The statement may have changed the character set or the escaping mode; values are
+			// escaped the way the session reports it reads them now.
+			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+			                            isHandshake:NO];
 			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
@@ -450,13 +559,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 			}
 
+			// A request to stop can arrive while the query is losing its connection, before anything
+			// has reached the server; it still means the statement must not be sent again.
+			if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
+				lastQueryWasCancelled = YES;
+			}
+
 			// Prevent retries if the query was cancelled or not a connection error
 			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
 		}
 
-		// Query has failed - check the connection
+		// Query has failed - check the connection. The socket may change on the way, so this
+		// wait is over and the next attempt marks its own.
+		[inFlightQuery endWaitingForGeneration:thisQueryGeneration];
 		[self _unlockConnection];
 		if (![self checkConnection]) {
 			[self _updateLastErrorMessage:theErrorMessage];
@@ -464,8 +581,54 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			[self _updateLastSqlstate:theSqlstate];
 			return nil;
 		}
-		[self _lockConnection];
+		if (![self _lockUsableConnectionForQuery]) {
+			[self _updateLastErrorMessage:theErrorMessage];
+			[self _updateLastErrorID:theErrorID];
+			[self _updateLastSqlstate:theSqlstate];
+			return nil;
+		}
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
+
+		// Reconnecting ran queries of their own, each starting from its own number. What holds the
+		// connection now is this query again.
+		runningQueryFirstGeneration = originalQueryGeneration;
+
+		// The user can stop waiting while the connection is checked, and the check can still
+		// succeed. A retry is a new chance for the statement to run, so it asks again whether
+		// anybody still wants it.
+		if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) {
+			[self _unlockConnection];
+			return nil;
+		}
+
+		// Stopping can also have been asked for while the connection was being checked.
+		if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
+			lastQueryWasCancelled = YES;
+			[self _unlockConnection];
+			[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+			[self _updateLastErrorID:1317];
+			[self _updateLastSqlstate:@"70100"];
+			return nil;
+		}
+
+		// The reconnect may have dropped uncommitted work. The statement is then not tried again on
+		// the new session, where it would run as if nothing had happened; its error says why. Work
+		// nobody waits for, or that was asked to stop, has returned above and leaves the report.
+		if ([self _refusesStatementForLostUncommittedWork:theQueryString]) {
+			[self _unlockConnection];
+			lastQueryWasCancelled = NO;
+			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
+			[self _updateLastErrorID:theErrorID];
+			[self _updateLastSqlstate:theSqlstate];
+			return nil;
+		}
+
+		// Reconnecting ran queries of its own, each with its own number and each saying whether it
+		// was cancelled. The retry is what runs now: it starts out not cancelled, and a cancellation
+		// has to be able to find it under the current number.
+		lastQueryWasCancelled = NO;
+		thisQueryGeneration = ++queryGeneration;
+		[inFlightQuery noteLatestGeneration:thisQueryGeneration ownedByQueryStartedAt:generationOwner];
 
 	} while (--queryAttemptsAllowed > 0);
 
@@ -514,9 +677,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 	}
 
+
 	// Update the connection's stored insert ID if available
 	if (mySQLConnection->insert_id) {
 		lastQueryInsertID = mySQLConnection->insert_id;
+	}
+
+	// A request to stop can reach a query that then finishes before the server acts on it. It
+	// still counts as cancelled, as it always has - callers running a batch stop on this.
+	if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
+		lastQueryWasCancelled = YES;
 	}
 
 	// If the query was cancelled, override the error state
@@ -524,6 +694,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
 		theSqlstate = @"70100";
+	}
+
+	// A query nobody waited for finished anyway. Its caller was told it was cancelled, and what it
+	// did may have changed the session - a character set, say - without the connection's record of
+	// the session changing along. The session is closed while this query still holds the
+	// connection, so nothing can use it in between; the next query reconnects and restores it.
+	// The caller's view of the outcome was settled when the waiting ended, so nothing is recorded.
+	// A session whose transaction was open before the work first used it is kept: closing it would
+	// roll that transaction back. A transaction this work opened itself is not.
+	BOOL queryWasAbandoned = [SAConnectionWorkCoordinator currentWorkHasBeenAbandoned];
+	if (queryWasAbandoned && ![theResult isKindOfClass:[SPMySQLStreamingResult class]]
+	    && [SAConnectionCancellation closesSessionOfAbandonedWorkWithSessionUse:[SAConnectionWorkCoordinator currentWorkSessionUse]
+	                                                  sessionHasOpenTransaction:mySQLConnection && (mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                       markedForReplacement:sessionMustBeReplacedBeforeUse]) {
+		[self _closeSessionOfAbandonedQuery];
 	}
 
 	// Unlock the connection if appropriate - if not a streaming result type.
@@ -536,6 +721,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			[self _restoreMaximumQuerySizeAfterQuery];
 		}
 	}
+
+	if (queryWasAbandoned) return nil;
 
 	// Update error string and ID, and the rows affected
 	[self _updateLastErrorMessage:theErrorMessage];
@@ -675,6 +862,25 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (void)cancelCurrentQuery
 {
+	[self _cancelCurrentQueryRecordingRequest:YES];
+}
+
+@end
+
+#pragma mark -
+#pragma mark Private API
+
+@implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/**
+ * Cancels the running query; see -cancelCurrentQuery.
+ *
+ * @param recordRequest Whether the query is also recorded as asked to stop. A stop the application
+ *                      asked for is; the connection's own teardown before a reconnect is not, since
+ *                      the query it interrupts may be the one that is about to retry.
+ */
+- (void)_cancelCurrentQueryRecordingRequest:(BOOL)recordRequest
+{
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
@@ -688,43 +894,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Mark that the last query was cancelled to prevent query retries from occurring
 	lastQueryWasCancelled = YES;
 
-	// The query cancellation cannot occur on the connection actively running a query
-	// so set up a new connection to run the KILL command.
-	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
+	// Also as a request for the query that is running now. A query that is reconnecting before its
+	// retry resets its own mark once the reconnect is done, and finds the request instead - under
+	// the number of whichever of its queries was running.
+	if (recordRequest) [inFlightQuery requestCancellationOfGeneration:[inFlightQuery latestGeneration]];
 
-	// If the new connection was successfully set up, use it to run a KILL command.
-	if (killerConnection) {
-		NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
-
-		// Build the kill query
-		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
-		if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-			[killQuery appendString:@" TIDB"];
-            NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
-		}
-		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
-
-		// Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
-		// an explicit length, so no terminator is appended (see the main query path).
-		NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
-
-		// Run the query
-		int killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
-
-		// Close the temporary connection
-		mysql_close(killerConnection);
-
-		// If the kill query succeeded, the active query was cancelled.
-		if (killQueryStatus == 0) {
-			// Ensure the tracking bool is re-set to cover encompassed queries and return
-			lastQueryWasCancelled = YES;
-			return;
-		} else {
-            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
-		}
-	} else if (!userTriggeredDisconnect) {
-        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
-	}
+	// If the server could be reached and killed the query, the active query was cancelled.
+	if ([self _killQueryOverSideConnectionForGeneration:0]) return;
 
 	// A full reconnect is required at this point to force a cancellation.  As the
 	// connection may have finished processing the query at this point (depending how
@@ -747,12 +923,213 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	lastQueryWasCancelled = YES;
 }
 
-@end
+/**
+ * Closes the session of a query that finished after nobody was waiting for it any more.
+ * Called while the connection is held - by that query, or by the cleanup after it. The connection then counts as lost in the
+ * background, which makes the next query reconnect and restore the session from the record the
+ * connection keeps of it - the same way it does after any lost connection.
+ */
+- (void)_closeSessionOfAbandonedQuery
+{
+	// The socket number is free for reuse the moment the handle is closed. The waiting record must
+	// not name it any more by then, or a cancellation arriving later could shut down whatever
+	// socket gets that number next.
+	[inFlightQuery endWaitingForGeneration:queryGeneration];
 
-#pragma mark -
-#pragma mark Private API
+	[self _noteUncommittedWorkLostWithSession];
+	if (mySQLConnection) {
+		mysql_close(mySQLConnection);
+		mySQLConnection = NULL;
+	}
+	state = SPMySQLConnectionLostInBackground;
+	sessionWasClosedWithoutItsProxy = YES;
 
-@implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
+	// Until the next session connects, values follow the record, which its handshake uses.
+	[valueEscaper forgetSession];
+}
+
+/**
+ * Whether a statement is refused because a session before it was dropped with uncommitted work,
+ * using up the report it is refused with. The decision is SAConnectionCancellation's; the statement
+ * is only looked at when it matters. Called while the connection is held.
+ *
+ * @param query The statement about to be sent.
+ * @return Whether to refuse it.
+ */
+- (BOOL)_refusesStatementForLostUncommittedWork:(NSString *)query
+{
+	if (!lostWorkReportPendingForEditor && !lostWorkReportPendingForWrites) return NO;
+
+	// SQL from outside the application counts as a write whatever it starts with: a SELECT can call a
+	// function that changes data. Only the application's own statements are judged by their keyword.
+	BOOL leavesDataAlone = retryQueriesOnConnectionFailure && lostWorkReportPendingForWrites && mySQLConnection
+		&& ![SAOutsideStatements areRunningOnCurrentThread]
+		&& [SADatabaseAssertionState statementLeavesDataAlone:query onMySQLConnection:mySQLConnection];
+	BOOL sentByConnection = [self _currentThreadIsReconnecting] || [SAConnectionUpkeepStatements areRunningOnCurrentThread];
+	SALostWorkRefusal refusal = [SAConnectionCancellation lostWorkRefusalWithReportPendingForEditor:lostWorkReportPendingForEditor
+	                                                                         reportPendingForWrites:lostWorkReportPendingForWrites
+	                                                                              retriesStatements:retryQueriesOnConnectionFailure
+	                                                                               sentByConnection:sentByConnection
+	                                                                        statementLeavesDataAlone:leavesDataAlone];
+	switch (refusal) {
+		case SALostWorkRefusalEditorStatement:
+			lostWorkReportPendingForEditor = NO;
+			lostWorkReportPendingForWrites = NO;
+			return YES;
+		case SALostWorkRefusalApplicationWrite:
+			lostWorkReportPendingForWrites = NO;
+			return YES;
+		case SALostWorkRefusalNone:
+			break;
+	}
+	return NO;
+}
+
+/**
+ * Notes that the session about to be dropped takes uncommitted work with it - a transaction it has
+ * open, or autocommit it had turned off - so that the next statement the user runs is not run as if
+ * nothing had happened. A handle whose connection is gone still reports its last status, which is
+ * what counts. Called while the connection is held, before the handle is closed.
+ */
+- (void)_noteUncommittedWorkLostWithSession
+{
+	if (!mySQLConnection) return;
+
+	unsigned int status = mySQLConnection->server_status;
+	if ([SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(status & SERVER_STATUS_IN_TRANS) != 0
+	                                                                         autocommit:(status & SERVER_STATUS_AUTOCOMMIT) != 0
+	                                                                autocommitAtConnect:sessionAutocommitAtConnect]) {
+		lostWorkReportPendingForEditor = YES;
+		lostWorkReportPendingForWrites = YES;
+	}
+}
+
+/**
+ * Replaces a session that was marked to be replaced before its next use, without sending anything
+ * over it. It waits for the connection the way a query does - off the main thread, where that
+ * applies.
+ *
+ * @return Whether a usable session is in place.
+ */
+- (BOOL)_replaceSessionMarkedForReplacement
+{
+	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+		if (![self _lockUsableConnectionForQuery]) return NO;
+		[self _unlockConnection];
+		return YES;
+	}];
+}
+
+/**
+ * Takes the connection for a query, and makes sure there is a connection to take.
+ *
+ * Between checking the connection and getting hold of it, a query can find it closed: the cleanup
+ * after work that nobody waited for closes the session once that work finishes, and it can be the
+ * one that gets hold of the connection first. A query that finds it closed reconnects, as it would
+ * after any lost connection, and takes it again.
+ *
+ * @return Whether the connection is held and usable. If it is not usable, it is not held either.
+ */
+- (BOOL)_lockUsableConnectionForQuery
+{
+	[self _lockConnection];
+
+	for (NSUInteger attempt = 0; attempt < 2; attempt++) {
+		if (mySQLConnection && state != SPMySQLConnectionLostInBackground) {
+			if (!sessionMustBeReplacedBeforeUse) return YES;
+
+			// The character set on record was changed for the next session only. This one is closed
+			// like the session of abandoned work, and the reconnect below sets up the next one.
+			[self _closeSessionOfAbandonedQuery];
+		}
+
+		[self _unlockConnection];
+
+		// Reconnecting is not something to do for work nobody waits for any more.
+		if ([SAConnectionWorkCoordinator currentWorkHasBeenAbandoned]) return NO;
+		if (![self checkConnectionIfNecessary]) return NO;
+
+		[self _lockConnection];
+	}
+
+	if (mySQLConnection && state != SPMySQLConnectionLostInBackground) return YES;
+
+	[self _unlockConnection];
+	return NO;
+}
+
+/**
+ * Asks the server to kill a query this connection is running, over a second connection opened
+ * for the purpose. The query cancellation cannot occur on the connection actively running it.
+ *
+ * Nothing else is tried if the server cannot be reached: a caller that needs the query ended
+ * regardless decides for itself what that is worth.
+ *
+ * @param generation The query to kill, or 0 for whatever the connection is running. A query
+ *                   that is named is only killed while it is still waiting on the server: opening
+ *                   the second connection takes time, and by the end of it the connection can be
+ *                   running a different query in the same server session.
+ * @return Whether the server accepted the request.
+ */
+- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation
+{
+	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
+
+	// If the new connection could not be set up, the server cannot be asked.
+	if (!killerConnection) {
+		if (!userTriggeredDisconnect) {
+			SPLog(@"SPMySQL Framework: query cancellation failed because connection failed");
+		}
+		return NO;
+	}
+
+	NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
+	BOOL isTiDB = [[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound;
+	__block int killQueryStatus = -1;
+
+	void (^sendKill)(NSUInteger) = ^(NSUInteger serverThread) {
+		// Build the kill query
+		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
+		if (isTiDB) {
+			[killQuery appendString:@" TIDB"];
+			NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
+		}
+		[killQuery appendFormat:@" QUERY %lu", (unsigned long)serverThread];
+
+		// Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
+		// an explicit length, so no terminator is appended (see the main query path).
+		NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
+		killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
+	};
+
+	if (generation) {
+		// The query is reserved while the request is on its way, so no other query can start in
+		// the same session meanwhile; nothing is locked while the request goes over the network.
+		NSUInteger serverThread = [inFlightQuery beginKillIfGenerationIsWaiting:generation];
+		if (serverThread) {
+			sendKill(serverThread);
+			[inFlightQuery endKillForGeneration:generation succeeded:(killQueryStatus == 0) whileStillWaiting:^{
+				// Ensure the tracking bool is re-set to cover encompassed queries
+				self->lastQueryWasCancelled = YES;
+			}];
+		}
+	} else if (mySQLConnection && mySQLConnection->thread_id) {
+		sendKill(mySQLConnection->thread_id);
+
+		// Ensure the tracking bool is re-set to cover encompassed queries
+		if (killQueryStatus == 0) lastQueryWasCancelled = YES;
+	}
+
+	// Close the temporary connection
+	mysql_close(killerConnection);
+
+	if (killQueryStatus != 0) {
+		SPLog(@"SPMySQL Framework: query cancellation did not reach the query (status %d)", killQueryStatus);
+		return NO;
+	}
+
+	return YES;
+}
 
 /**
  * Retrieves all remaining results and discards them.

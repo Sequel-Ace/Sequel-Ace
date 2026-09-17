@@ -343,12 +343,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 #pragma mark Edit methods
 
 /**
- * Adds an empty row to the tableSource-array and goes into edit mode
+ * Adds an empty row to the tableSource-array and goes into edit mode.
+ * Nothing is added while no fields are shown: a table always has a column, and a load that was
+ * stopped or failed may still have the name of the table shown before it recorded.
  */
 - (IBAction)addField:(id)sender
 {
 	// Check whether table editing is permitted (necessary as some actions - eg table double-click - bypass validation)
-	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable) return;
+	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable || ![tableFields count]) return;
 
 	// Check whether a save of the current row is required.
 	if (![self saveRowOnDeselect]) return;
@@ -967,6 +969,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
+	// A value that could not be escaped - the connection was not available, or the user stopped
+	// waiting for it - keeps the row being edited instead of changing the column.
+	NSString *columnDefinition = [self _buildPartialColumnDefinitionString:theRow];
+	if (!columnDefinition) {
+		NSBeep();
+		return NO;
+	}
+
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable backtickQuotedString]];
 	[queryString appendString:@" "];
 	if (isEditingNewRow) {
@@ -976,7 +986,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] backtickQuotedString]];
 	}
 	[queryString appendString:@" "];
-	[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
+	[queryString appendString:columnDefinition];
 
 	// Process index if given for fields set to AUTO_INCREMENT
 	if (autoIncrementIndex) {
@@ -1074,6 +1084,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  * Takes the column definition from a dictionary and returns the it to be used
  * with an ALTER statement, e.g.:
  *  `col1` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT
+ * Returns nil if a default or comment could not be escaped, because the connection was not available.
  */
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow
 {
@@ -1126,7 +1137,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 		// Otherwise, use the provided default
 		else {
-			[queryString appendFormat:@"\n DEFAULT %@ ", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"default"]]];
+			NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"default"]];
+			if (!escapedDefault) return nil;
+			[queryString appendFormat:@"\n DEFAULT %@ ", escapedDefault];
 		}
 	}
 
@@ -1217,7 +1230,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                   }
                 }
                 // Check if defaultValue is a string in quotes (single or double)
-                else if ( ((firstChar == '"') && (lastChar = '"')) || ((firstChar == '\'') && (lastChar = '\'')) ) {
+                else if ( ((firstChar == '"') && (lastChar == '"')) || ((firstChar == '\'') && (lastChar == '\'')) ) {
                     defaultValueIsString = YES;
                 }
             }
@@ -1253,8 +1266,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP, DATETIME and DATE must always be wrapped in quotes.
             else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE",@"INET4",@"INET6"]]) {
                 // If default value is not an expresion or a string, add quotes.
-                if (!defaultValueIsExpression && !defaultValueIsString)
-                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+                if (!defaultValueIsExpression && !defaultValueIsString) {
+                    NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:defaultValue];
+                    if (!escapedDefault) return nil;
+                    [queryString appendFormat:@"\n DEFAULT %@", escapedDefault];
+                }
                 else
                     [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
             }
@@ -1294,7 +1310,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
     // Any column comments
     if ([(NSString *)[theRow objectForKey:@"comment"] length]) {
-        [queryString appendFormat:@"\n COMMENT %@", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
+        NSString *escapedComment = [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]];
+        if (!escapedComment) return nil;
+        [queryString appendFormat:@"\n COMMENT %@", escapedComment];
     }
 
 	return queryString;
@@ -1453,10 +1471,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  * Returns a dictionary describing the source of the table to be used for printing purposes. The object accessible
  * via the key 'structure' is an array of the tables fields, where the first element is always the field names
  * and each subsequent element is the field data. This is also true for the table's indexes, which are accessible
- * via the key 'indexes'.
+ * via the key 'indexes'. An array whose query failed has no field names at all.
+ * The table is the one selected in the tables list: after a load that was stopped or failed, the one recorded
+ * here can still be the table shown before.
  */
 - (NSDictionary *)tableSourceForPrinting
 {
+	NSString *printedTable = [tablesListInstance tableName];
+	if (![printedTable length]) {
+		return @{@"structure": @[], @"indexes": @[]};
+	}
 	NSUInteger i, j;
 	NSMutableArray *tempResult  = [NSMutableArray array];
 	NSMutableArray *tempResult2 = [NSMutableArray array];
@@ -1465,8 +1489,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
 	NSString *databaseName = [tableDocumentInstance database];
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [printedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [printedTable backtickQuotedString]] assertingDatabase:databaseName];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1545,13 +1569,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 /**
  * Enable all content interactive elements after an ongoing task.
+ * Fields and indexes can only be added while the table's fields are shown.
  */
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification
 {
 	// Only re-enable elements if the current tab is the structure view
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableStructure]) return;
 
-	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable);
+	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && [tableFields count];
 
 	[tableSourceView setEnabled:YES];
 	[tableSourceView displayIfNeeded];
@@ -1636,6 +1661,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 /**
  * Loads aTable, puts it in an array, updates the tableViewColumns and reloads the tableView.
+ * A column default that cannot be escaped stops the load and leaves the view empty.
  */
 - (void)loadTable:(NSString *)aTable
 {
@@ -1661,12 +1687,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Retrieve the indexes for the table
 	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 
-	// If an error occurred, reset the interface and abort
+	// If an error occurred, reset the interface and abort; a query the user stopped needs no alert
 	if ([mySQLConnection queryErrored]) {
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 		[[self onMainThread] setTableDetails:nil];
 
-		if ([mySQLConnection isConnected]) {
+		if ([mySQLConnection isConnected] && ![mySQLConnection lastQueryWasCancelled]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
@@ -1826,7 +1852,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
         else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"] || [type hasSuffix:@"ENUM"]) {
-            [theField setObject:[mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
+            // A default that cannot be escaped - the connection is gone, or the user stopped waiting for it -
+            // would be saved as it is later on, so the table is not shown at all.
+            NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]];
+            if (!escapedDefault) {
+                [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+                [[self onMainThread] setTableDetails:nil];
+                return;
+            }
+            [theField setObject:escapedDefault forKey:@"default"];
         }
 
 		// Init Extra field
@@ -1877,7 +1911,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 }
 
 /**
- * Reloads the table (performing a new query).
+ * Reloads the table selected in the tables list (performing a new query).
+ * After a load that was stopped or failed, the table recorded here can still be the one shown before,
+ * while the table information belongs to the selected one; like the content view, the reload
+ * therefore follows the tables list, and clears the view when no table or view is selected there.
  */
 - (IBAction)reloadTable:(id)sender
 {
@@ -1890,7 +1927,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Query the structure of all databases in the background (mainly for completion)
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 
-	[self loadTable:selectedTable];
+	// A routine selected in the list has no structure here, and the view is cleared instead.
+	SPTableType selectedType = [tablesListInstance tableType];
+	BOOL listShowsTableOrView = (selectedType == SPTableTypeTable || selectedType == SPTableTypeView);
+	[self loadTable:listShowsTableOrView ? [tablesListInstance tableName] : nil];
 }
 
 /**
@@ -1957,8 +1997,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Enable the edit table button
 	[editTableButton setEnabled:enableInteraction];
 
-	// If a view is selected, disable the buttons; otherwise enable.
-	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && enableInteraction;
+	// If a view is selected, disable the buttons; otherwise enable. A table without fields was not loaded.
+	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && enableInteraction && [tableFields count];
 
 	[addFieldButton setEnabled:editingEnabled];
 	[addIndexButton setEnabled:editingEnabled && ![[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"]];
@@ -2298,12 +2338,19 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SADragPasteboard.tableRowType] integerValue];
 	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
+	// A value that could not be escaped leaves the column where it is.
+	NSString *columnDefinition = [self _buildPartialColumnDefinitionString:originalRow];
+	if (!columnDefinition) {
+		NSBeep();
+		return NO;
+	}
+
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
 	// Begin construction of the reordering query
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@ MODIFY COLUMN %@",
 									[selectedTable backtickQuotedString],
-									[self _buildPartialColumnDefinitionString:originalRow]];
+									columnDefinition];
 
 	[queryString appendString:@" "];
 	// Add the new location

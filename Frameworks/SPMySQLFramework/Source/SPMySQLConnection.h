@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAInFlightQuery, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -36,6 +36,7 @@
     __weak NSObject <SPMySQLConnectionDelegate> *delegate;
 	BOOL delegateSupportsWillQueryString;
 	BOOL delegateSupportsConnectionLost;
+	BOOL delegateSupportsConnectionCheckProgress;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented
 
 	// Basic connection details
@@ -88,8 +89,59 @@
 	SPMySQLConnectionLostDecision lastDelegateDecisionForLostConnection;
 	NSLock *delegateDecisionLock;
 
+	// One lost-connection question at a time, and whether a modal window was showing last time
+	// anybody looked.
+	SAConnectionLostDecisionGate *delegateDecisionGate;
+	BOOL aModalWindowIsShowing;
+
 	// Timeout and keep-alive
 	NSUInteger timeout;
+
+	// Set while the connection is being re-established after a check found it
+	// gone: that first attempt runs on short budgets so the user is asked what
+	// to do instead of waiting out the full timeouts.
+	BOOL reconnectingAfterFailedCheck;
+	// Connect timeout for that attempt, in seconds; 0 while the normal one applies.
+	NSUInteger connectTimeoutOverride;
+
+	// Where connection work runs when the main thread must not wait for it, and how many waits
+	// for it are currently nested.
+	SAConnectionWorkCoordinator *connectionWorkCoordinator;
+	NSUInteger connectionWorkWaitDepth;
+
+	// Whether the user has ended a wait, which the next attempt is not allowed to spend again
+	BOOL userEndedPendingWork;
+	uint64_t userEndedPendingWorkTime;
+
+	// Whether the main thread stopped waiting for the work it ran last, whose session is then on its
+	// way out; and whether the character set on record was changed for the next session only, so
+	// the current one must not be used any more
+	BOOL lastWorkWasAbandoned;
+	BOOL sessionMustBeReplacedBeforeUse;
+
+	// Whether the last session was closed while its proxy was left running
+	BOOL sessionWasClosedWithoutItsProxy;
+
+	// What escapes values without touching the session; it is told what the session reports
+	// while the connection is held
+	SAConnectionEscaper *valueEscaper;
+
+	// Which query is running, so that anything acting on "the query" later can tell whether it
+	// is still the same one, and which query is waiting on the server right now
+	NSUInteger queryGeneration;
+	SAInFlightQuery *inFlightQuery;
+	SAConnectionCancellation *connectionCancellation;
+
+	// The number the running query started with; its retries run under later numbers
+	NSUInteger runningQueryFirstGeneration;
+
+	// Whether a dropped session took uncommitted work with it that the query editor has not been
+	// told of, or that no write elsewhere has been refused for yet; and whether the current session
+	// had autocommit on when it connected
+	BOOL lostWorkReportPendingForEditor;
+	BOOL lostWorkReportPendingForWrites;
+	BOOL sessionAutocommitAtConnect;
+
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
 	CGFloat keepAliveInterval;
@@ -211,6 +263,14 @@
 - (BOOL)isConnected;
 - (BOOL)isConnectedViaSSL;
 - (BOOL)checkConnection;
+/** Ends the interface's wait for connection work, and asks that work to stop. */
+- (void)cancelConnectionCheck;
+/** Stops a query, provided it is still the one running: marks it, asks the server, and closes its socket if the server does not answer. */
+- (void)cancelQueryIfStillRunning:(NSUInteger)generation;
+/** Identifies the query the connection is running, and changes whenever another one takes over. */
+- (NSUInteger)currentQueryGeneration;
+/** Runs statements a client outside the application sent; after lost uncommitted work they are refused like writes. */
+- (void)runStatementsFromOutsideApplication:(NS_NOESCAPE void (^)(void))statements;
 - (BOOL)checkConnectionIfNecessary;
 - (double)timeConnected;
 - (BOOL)userTriggeredDisconnect;

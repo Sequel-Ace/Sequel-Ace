@@ -72,6 +72,64 @@ enum SABookmarkPathNormalizer {
     }
 }
 
+/// Warns that a value the user entered was not written, and keeps the value within reach.
+///
+/// A cell in a view, or in the query editor's results, is written the moment it is committed, with no
+/// row edit to keep the value in. When it cannot be written, the alert that says so offers to copy the
+/// value, so the user can enter it again later instead of typing it anew. Only text is offered; binary data comes from a file or an
+/// image the user still has.
+@objc final class SAUnsentValueAlert: NSObject {
+
+    /// The text of an entered value, if it is text.
+    /// - Parameter value: The entered value.
+    /// - Returns: The value's text, or nil for anything else.
+    static func text(of value: Any?) -> String? {
+        switch value {
+        case let string as String:
+            return string
+        case let number as NSNumber:
+            return number.stringValue
+        default:
+            return nil
+        }
+    }
+
+    /// Puts an entered value's text on a pasteboard, replacing what was there.
+    /// - Parameters:
+    ///   - text: The text.
+    ///   - pasteboard: The pasteboard to put it on.
+    /// - Returns: Whether the pasteboard took it.
+    @discardableResult
+    static func copy(_ text: String, to pasteboard: NSPasteboard) -> Bool {
+        pasteboard.clearContents()
+        return pasteboard.setString(text, forType: .string)
+    }
+
+    /// Shows the warning, with a button that copies the value when it is text.
+    /// - Parameters:
+    ///   - title: The alert's title.
+    ///   - message: The alert's message.
+    ///   - value: The value that was not written.
+    @objc(showWarningWithTitle:message:unsentValue:)
+    static func showWarning(title: String, message: String, unsentValue value: Any?) {
+        let text = text(of: value)
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = title
+            alert.informativeText = message
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            if text != nil {
+                alert.addButton(withTitle: NSLocalizedString("Copy Entered Value", comment: "button of the panel saying that an edited cell value could not be written; copies that value"))
+            }
+            let response = alert.runModal()
+            if let text, response == .alertSecondButtonReturn {
+                copy(text, to: .general)
+            }
+        }
+    }
+}
+
 @objc extension NSAlert {
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message.
 	/// - Parameters:

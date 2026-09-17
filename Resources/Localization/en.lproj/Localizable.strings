@@ -4190,3 +4190,27 @@
 
 /* Vault OIDC login already in progress */
 "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+
+/* connection wait sheet title */
+"Waiting for the server…" = "Waiting for the server…";
+
+/* connection wait sheet elapsed time, %ld is a number of seconds */
+"The server has not answered for %ld seconds." = "The server has not answered for %ld seconds.";
+
+/* connection wait sheet cancel button */
+"Stop Waiting" = "Stop Waiting";
+
+/* connection wait sheet note while a finished wait is held up by another window's wait */
+"Continues once the other window has finished waiting." = "Continues once the other window has finished waiting.";
+
+/* Error for the next statement a user runs after the connection was lost while a transaction was open or autocommit was off */
+"The connection to the server was lost while a transaction was open or autocommit was off. The server rolled back whatever had not been committed, and the new connection commits each statement on its own. This statement was not run." = "The connection to the server was lost while a transaction was open or autocommit was off. The server rolled back whatever had not been committed, and the new connection commits each statement on its own. This statement was not run.";
+
+/* Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off */
+"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own." = "A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.";
+
+/* message of panel when an edited cell value could not be prepared for writing, for example because the connection is not available */
+"Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written." = "Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written.";
+
+/* button of the panel saying that an edited cell value could not be written; copies that value */
+"Copy Entered Value" = "Copy Entered Value";

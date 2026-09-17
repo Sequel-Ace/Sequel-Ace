@@ -374,3 +374,23 @@ final class SPOptimizedFieldTypeEstimatorTests: XCTestCase {
         )
     }
 }
+
+/// The BIT literal the table views write for a cell value, from
+/// `SPFieldTypeClassifier.bitLiteral(for:)`; the views pass an empty value as "0".
+final class SABitLiteralTests: XCTestCase {
+
+    /// Verifies text of only 0 and 1 becomes a literal.
+    func testBinaryDigitsBecomeALiteral() {
+        XCTAssertEqual(SPFieldTypeClassifier.bitLiteral(for: "1"), "b'1'")
+        XCTAssertEqual(SPFieldTypeClassifier.bitLiteral(for: "0"), "b'0'")
+        XCTAssertEqual(SPFieldTypeClassifier.bitLiteral(for: "0101"), "b'0101'")
+    }
+
+    /// Verifies any other text is refused, above all one that would end the literal.
+    func testAnyOtherTextIsRefused() {
+        for text in ["", "2", "01a", "1' OR 1=1 -- ", "1'", " 1", "1 ", "NULL", "b'1'", "\u{0661}", "1\u{0301}"] {
+            XCTAssertNil(SPFieldTypeClassifier.bitLiteral(for: text), text)
+        }
+    }
+}
+

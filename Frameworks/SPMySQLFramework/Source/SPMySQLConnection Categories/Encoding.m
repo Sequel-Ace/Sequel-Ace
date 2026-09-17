@@ -30,6 +30,7 @@
 
 #import "Encoding.h"
 #import "SPMySQLStringAdditions.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Encoding)
 
@@ -167,7 +168,27 @@
  */
 - (void)restoreStoredEncoding
 {
-	if (!previousEncoding || state == SPMySQLDisconnected || state == SPMySQLDisconnecting) {
+	if (!previousEncoding || userTriggeredDisconnect) {
+		return;
+	}
+
+	// A session that is gone or on its way out is not told: the next one is set up from the record,
+	// and the current one is not used again, even if it is still open when the next query comes.
+	// Only the main thread hands work over, so only there can the last work have been abandoned.
+	BOOL hasNoUsableSession = (state == SPMySQLDisconnected || state == SPMySQLDisconnecting
+	                           || state == SPMySQLConnecting || state == SPMySQLConnectionLostInBackground
+	                           || sessionMustBeReplacedBeforeUse);
+	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingAfterAbandonedWork:([NSThread isMainThread] && lastWorkWasAbandoned)
+	                                                             hasNoUsableSession:hasNoUsableSession
+	                                                      sessionHasOpenTransaction:[valueEscaper sessionReportedOpenTransaction]]) {
+		encoding = [[NSString alloc] initWithString:previousEncoding];
+		stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[previousEncoding UTF8String]];
+		encodingUsesLatin1Transport = previousEncodingUsesLatin1Transport;
+		if (encodingToRestore) {
+			encodingToRestore = [[NSString alloc] initWithString:previousEncoding];
+			encodingUsesLatin1TransportToRestore = previousEncodingUsesLatin1Transport;
+		}
+		sessionMustBeReplacedBeforeUse = YES;
 		return;
 	}
 

@@ -143,11 +143,12 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 /**
  * Opens the add new index sheet.
+ * Nothing is opened while no fields are shown, as the table they would belong to was not loaded.
  */
 - (IBAction)addIndex:(id)sender
 {
 	// Check whether table editing is permitted (necessary as some actions - eg table double-click - bypass validation)
-	if ([dbDocument isWorking] || [tablesList tableType] != SPTableTypeTable) return;
+	if ([dbDocument isWorking] || [tablesList tableType] != SPTableTypeTable || ![fields count]) return;
 	
 	// Check whether a save of the current field row is required.
 	if (![tableStructure saveRowOnDeselect]) return;

@@ -217,3 +217,31 @@ final class SAPrintUtilityTests: XCTestCase {
         XCTAssertTrue(accessory.keyPathsForValuesAffectingPreview().contains("printsBackgrounds"))
     }
 }
+
+/// How a table handed over for printing is split into column names and rows.
+final class SAPrintTableTests: XCTestCase {
+
+    /// Verifies the first element is the header and the others are the rows.
+    func testAReadTableSplitsIntoHeaderAndRows() {
+        let table: [Any] = [["Field", "Type"], ["id", "int"], ["name", "text"]]
+        XCTAssertEqual(SAPrintTable.header(of: table) as? [String], ["Field", "Type"])
+        XCTAssertEqual(SAPrintTable.rows(of: table) as? [[String]], [["id", "int"], ["name", "text"]])
+    }
+
+    /// Verifies a table with only its header has no rows, which is printable.
+    func testATableWithOnlyItsHeaderHasNoRows() {
+        let table: [Any] = [["Key_name"]]
+        XCTAssertEqual(SAPrintTable.header(of: table) as? [String], ["Key_name"])
+        XCTAssertEqual(SAPrintTable.rows(of: table)?.count, 0)
+    }
+
+    /// Verifies a table that could not be read - nothing, empty, or no header row - is not printable.
+    func testATableWithoutAHeaderIsNotPrintable() {
+        XCTAssertNil(SAPrintTable.header(of: nil))
+        XCTAssertNil(SAPrintTable.rows(of: nil))
+        XCTAssertNil(SAPrintTable.header(of: []))
+        XCTAssertNil(SAPrintTable.rows(of: []))
+        XCTAssertNil(SAPrintTable.header(of: ["not a row"]))
+        XCTAssertNil(SAPrintTable.rows(of: ["not a row", ["id"]]))
+    }
+}
