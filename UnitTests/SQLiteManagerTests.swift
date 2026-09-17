@@ -143,6 +143,20 @@ extension SASQLiteDisplayFormatManagerTests {
         XCTAssertTrue(reopened.isPersistent)
         XCTAssertEqual(reopened.allDisplayOverridesFor(hostName: "host", databaseName: "db", tableName: "orders"), ["id": "UUID", "payload": "hex"])
     }
+
+    /// Verifies a table of another schema at version 0 is not taken over and the file is left
+    /// as it was: no index, no schema version.
+    func testForeignTableWithoutASchemaVersionIsLeftAlone() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        try makeSQLiteFile(at: path, statements: [
+            "CREATE TABLE ColumnDisplayOverrides (hostName TEXT NOT NULL, databaseName TEXT NOT NULL, tableName TEXT NOT NULL, columnName TEXT NOT NULL)",
+        ])
+
+        let manager = SQLiteDisplayFormatManager(databasePath: path)
+        XCTAssertFalse(manager.isPersistent)
+        XCTAssertEqual(try schemaVersion(ofSQLiteFile: path), 0)
+        XCTAssertEqual(try indexNames(inSQLiteFile: path, table: "ColumnDisplayOverrides"), [])
+    }
 }
 
 // MARK: - SQLitePinnedTableManager
@@ -395,6 +409,19 @@ final class SASQLitePinnedTableManagerTests: XCTestCase {
         XCTAssertEqual(SQLitePinnedTableManager(databasePath: storePath, prefs: prefs).getPinnedTables(hostName: "conn-1", databaseName: "db").sorted(), ["orders", "users"])
     }
 
+    /// Verifies a table of another schema at version 0 is not taken over and the file is left
+    /// as it was: no index, no schema version.
+    func testForeignTableWithoutASchemaVersionIsLeftAlone() throws {
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (hostName TEXT NOT NULL, databaseName TEXT NOT NULL)",
+        ])
+
+        let manager = SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+        XCTAssertFalse(manager.isPersistent)
+        XCTAssertEqual(try schemaVersion(ofSQLiteFile: storePath), 0)
+        XCTAssertEqual(try indexNames(inSQLiteFile: storePath, table: "PinnedTables"), [])
+    }
+
     /// Verifies a row without a host, database or table name fails the whole read instead of
     /// being skipped, so an incomplete pin list can never close a legacy migration.
     func testRowMissingARequiredFieldMakesTheStoreUnusable() throws {
@@ -573,6 +600,39 @@ private func makeSQLiteFile(at path: String, statements: [String]) throws {
     for statement in statements {
         try db.executeUpdate(statement, values: nil)
     }
+}
+
+/// The schema version (`PRAGMA user_version`) of the SQLite file at `path`.
+private func schemaVersion(ofSQLiteFile path: String) throws -> Int {
+    let db = FMDatabase(path: path)
+    guard db.open() else {
+        throw db.lastError()
+    }
+    defer { db.close() }
+    let rs = try db.executeQuery("PRAGMA user_version", values: nil)
+    defer { rs.close() }
+    guard rs.next() else {
+        return -1
+    }
+    return Int(rs.int(forColumnIndex: 0))
+}
+
+/// The names of the indexes created on `table` of the SQLite file at `path`.
+private func indexNames(inSQLiteFile path: String, table: String) throws -> [String] {
+    let db = FMDatabase(path: path)
+    guard db.open() else {
+        throw db.lastError()
+    }
+    defer { db.close() }
+    let rs = try db.executeQuery("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND sql IS NOT NULL ORDER BY name", values: [table])
+    defer { rs.close() }
+    var names: [String] = []
+    while rs.next() {
+        if let name = rs.string(forColumnIndex: 0) {
+            names.append(name)
+        }
+    }
+    return names
 }
 
 /// The number of rows in `table` of the SQLite file at `path`.

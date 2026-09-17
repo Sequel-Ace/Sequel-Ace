@@ -124,8 +124,8 @@ import OSLog
             // writing the version below leaves the table in place at version 0.
             // Creating it again would fail and switch persistence off for good,
             // so the existing table is taken over here and the version written
-            // again; a table with another schema still fails the first read and
-            // leaves the store unused.
+            // again; a table with another schema fails the column check below,
+            // leaves the file as it was and the store unused.
             let createTableSQL = "CREATE TABLE IF NOT EXISTS PinnedTables ("
                     + "    id                   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
                     + "    hostName             TEXT NOT NULL,"
@@ -136,6 +136,10 @@ import OSLog
             do {
                 try db.executeUpdate(createTableSQL, values: nil)
                 try db.executeUpdate("CREATE INDEX IF NOT EXISTS host_db_idx ON PinnedTables (hostName, databaseName)", values: nil)
+                // A table taken over has to be one this manager can read;
+                // otherwise nothing is committed and no version is written.
+                let columns = try db.executeQuery("SELECT id, hostName, databaseName, pinnedTableName FROM PinnedTables LIMIT 0", values: nil)
+                columns.close()
             } catch {
                 db.rollback()
                 throw error
