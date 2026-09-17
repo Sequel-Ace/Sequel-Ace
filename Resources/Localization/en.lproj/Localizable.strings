@@ -4190,3 +4190,6 @@
 
 /* Vault OIDC login already in progress */
 "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+
+/* Connection error: the cleartext authentication plugin requires TLS */
+"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
