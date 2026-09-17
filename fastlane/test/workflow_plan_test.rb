@@ -103,6 +103,27 @@ class WorkflowPlanTest < Minitest::Test
     end
   end
 
+  def test_pasted_bullet_styles_normalize_without_doubled_markers
+    ["- ", "* ", "+ ", "• ", "•", "●\t", "▪ ", "◦ ", "‣ ", "– ", "— ", "1. ", "2) ", "- - ", "- * "].each do |marker|
+      plan = create(inputs.merge("app_store_notes" => "  #{marker}Fix SSH\r\n\n#{marker}Improve exports  "))
+      notes = "- Fix SSH\n- Improve exports"
+      assert_equal notes, plan.fetch("app_store_notes"), marker
+      assert_equal notes, Base64.strict_decode64(plan.fetch("dispatch_inputs").fetch("app_store_notes_b64"))
+      assert_includes plan.fetch("github_release_body"), notes
+      replay = create(inputs.merge("app_store_notes" => notes))
+      assert_equal replay.fetch("approval").fetch("sha256"), plan.fetch("approval").fetch("sha256")
+    end
+  end
+
+  def test_note_content_is_preserved_and_empty_markers_are_rejected
+    notes = "-1 is a valid value | C++ compatibility | 6.0.0 support | Café and 日本語"
+    assert_equal "- -1 is a valid value\n- C++ compatibility\n- 6.0.0 support\n- Café and 日本語",
+                 create(inputs.merge("app_store_notes" => notes)).fetch("app_store_notes")
+    ["*", "•", "1.", "- -", "Good change | +", "- # Heading"].each do |bad|
+      assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("app_store_notes" => bad)) }
+    end
+  end
+
   def test_preview_is_optional_and_strictly_boolean
     assert create(inputs.merge("preview_only" => true)).fetch("preview_only")
     assert create(inputs.merge("preview_only" => "true")).fetch("preview_only")

@@ -24,8 +24,11 @@ The form asks for:
 - **Version:** e.g. `6.0.1`, without a build number.
 - **Channel:** `beta` or `production` (production submits to the App Store).
 - **Release notes:** plain text, e.g. `Fix SSH connections | Improve exports`.
-  Actions converts each change into an App Store bullet. Existing `- ` bullets
-  and real multiline input through the CLI/API work too. GitHub has no supported
+  Actions converts each change into exactly one `- ` App Store bullet, including
+  pasted Markdown bullets, numbered lists, and common rich-text bullets.
+  Blank lines are ignored; empty bullets and headings are rejected rather than
+  silently publishing them. Real multiline input through the CLI/API works too.
+  GitHub has no supported
   textarea workflow input; use `|` to separate changes in its single-line form.
 - **Optional main commit check:** leave blank to freeze latest main at submission.
   A supplied full SHA must match that revision; it never selects stale source.

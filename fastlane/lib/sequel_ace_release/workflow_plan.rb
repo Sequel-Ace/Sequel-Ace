@@ -61,10 +61,18 @@ module SequelAceRelease
       # GitHub's native form has no textarea input. Pipes offer a human-readable
       # alternative; CLI/API callers can send real newlines without escaping.
       lines = value.split(/\r\n|[\r\n|]/).map(&:strip).reject(&:empty?)
-      if lines.empty? || lines.any? { |line| line.start_with?("#") || line == "-" }
+      lines.map! do |line|
+        # Normalize pasted Markdown, numbered lists and common rich-text bullets.
+        # Require a boundary for ASCII markers so -1, C++ and version numbers
+        # remain content. Repeated markers must not produce "- - Change".
+        marker = /\A(?:(?:[-*+–—]|\d+[.)])(?:[[:space:]]+|\z)|[•●▪◦‣][[:space:]]*)/
+        line = line.sub(marker, "").strip while line.match?(marker)
+        line
+      end
+      if lines.empty? || lines.any? { |line| line.empty? || line.start_with?("#") }
         raise ValidationError, "enter release-note changes separated by | or newlines, without headings"
       end
-      lines.map { |line| line.start_with?("- ") ? line : "- #{line}" }.join("\n")
+      lines.map { |line| "- #{line}" }.join("\n")
     end
   end
 end
