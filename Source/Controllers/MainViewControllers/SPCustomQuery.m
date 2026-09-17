@@ -2276,9 +2276,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         }
 
         // The value could not be escaped - the connection was not available, or the user stopped
-        // waiting for it. Nothing is written in its place.
+        // waiting for it. Nothing is written in its place. The cell is written at once and has no
+        // row edit to keep the value in, so the user is told, and can copy the value to enter it again.
         if (!newObject) {
-            NSBeep();
+            [SAUnsentValueAlert showWarningWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written.", @"message of panel when an edited cell value could not be prepared for writing, for example because the connection is not available") unsentValue:anObject];
             return;
         }
 

@@ -4209,8 +4209,8 @@
 /* Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off */
 "A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own." = "A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.";
 
-/* message of panel when a view cell value could not be prepared for writing, for example because the connection is not available */
+/* message of panel when an edited cell value could not be prepared for writing, for example because the connection is not available */
 "Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written." = "Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written.";
 
-/* button of the panel saying that a value entered in a view could not be written; copies that value */
+/* button of the panel saying that an edited cell value could not be written; copies that value */
 "Copy Entered Value" = "Copy Entered Value";

@@ -74,9 +74,9 @@ enum SABookmarkPathNormalizer {
 
 /// Warns that a value the user entered was not written, and keeps the value within reach.
 ///
-/// A cell in a view is written the moment it is committed, with no row edit to keep the value in.
-/// When it cannot be written, the alert that says so offers to copy the value, so the user can enter
-/// it again later instead of typing it anew. Only text is offered; binary data comes from a file or an
+/// A cell in a view, or in the query editor's results, is written the moment it is committed, with no
+/// row edit to keep the value in. When it cannot be written, the alert that says so offers to copy the
+/// value, so the user can enter it again later instead of typing it anew. Only text is offered; binary data comes from a file or an
 /// image the user still has.
 @objc final class SAUnsentValueAlert: NSObject {
 
@@ -120,7 +120,7 @@ enum SABookmarkPathNormalizer {
             alert.informativeText = message
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
             if text != nil {
-                alert.addButton(withTitle: NSLocalizedString("Copy Entered Value", comment: "button of the panel saying that a value entered in a view could not be written; copies that value"))
+                alert.addButton(withTitle: NSLocalizedString("Copy Entered Value", comment: "button of the panel saying that an edited cell value could not be written; copies that value"))
             }
             let response = alert.runModal()
             if let text, response == .alertSecondButtonReturn {
