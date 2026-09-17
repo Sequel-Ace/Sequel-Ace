@@ -1,4 +1,4 @@
-name: Release
+name: Internal release engine (advanced recovery only)
 
 run-name: "${{ inputs.mode }} ${{ inputs.channel }} ${{ inputs.version }} by @${{ github.actor }}"
 
@@ -40,7 +40,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Start a release or resume after a preserved failure
+        description: 'Internal recovery only. For a new release, select the New Sequel Ace release workflow instead.'
         required: true
         type: choice
         options:

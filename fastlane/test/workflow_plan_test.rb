@@ -59,10 +59,10 @@ class WorkflowPlanTest < Minitest::Test
     assert_equal 2, plan.fetch("iteration")
   end
 
-  def test_custom_body_is_data_and_reproduces_the_exact_approval_in_the_engine
-    body = "## Hand-written notes\n\n- Quotes: ' \" $HOME $(touch /tmp/not-executed)\n- Café\n"
-    plan = create(inputs.merge("github_release_notes" => body))
-    assert_equal body, plan.fetch("github_release_body")
+  def test_generated_body_is_data_and_reproduces_the_exact_approval_in_the_engine
+    notes = "- Quotes: ' \" $HOME $(touch /tmp/not-executed)\n- Café\n"
+    plan = create(inputs.merge("app_store_notes" => notes))
+    assert_includes plan.fetch("github_release_body"), notes.strip
     dispatch = plan.fetch("dispatch_inputs")
     replay = planner.plan(
       channel: dispatch.fetch("channel"), target_version: dispatch.fetch("version"),
@@ -76,14 +76,31 @@ class WorkflowPlanTest < Minitest::Test
   end
 
   def test_rejects_empty_or_oversized_notes_and_hidden_operational_inputs
-    ["", "A paragraph", "- " + "x" * 4000, "- text\0", "- Good\n# heading"].each do |notes|
+    ["", "- " + "x" * 4000, "- text\0", "- Good\n# heading", "-", " | \n"].each do |notes|
       assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("app_store_notes" => notes)) }
     end
-    %w[expected_main_sha approval_sha256 recovery_tag build confirmation].each do |field|
+    %w[previous_tag approval_sha256 recovery_tag build confirmation github_release_notes github_release_body_b64].each do |field|
       assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge(field => "override")) }
     end
     assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("github_release_notes" => "x" * 46_000)) }
     assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("github_release_notes" => "\0")) }
+  end
+
+  def test_plain_text_web_notes_and_multiline_notes_become_the_same_bullets
+    expected = "- Fix SSH connections\n- Improve exports"
+    ["Fix SSH connections | Improve exports", "Fix SSH connections\nImprove exports",
+     "- Fix SSH connections\r\n- Improve exports", "  Fix SSH connections | - Improve exports  "].each do |notes|
+      assert_equal expected, create(inputs.merge("app_store_notes" => notes)).fetch("app_store_notes")
+    end
+  end
+
+  def test_optional_source_pin_defaults_to_dispatch_main_and_never_selects_stale_source
+    ["", "a" * 40, "A" * 40].each do |sha|
+      assert_equal "a" * 40, create(inputs.merge("expected_main_sha" => sha)).fetch("main_sha")
+    end
+    ["b" * 40, "main", "abc", nil, "a" * 40 + "\n"].each do |sha|
+      assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("expected_main_sha" => sha)) }
+    end
   end
 
   def test_preview_is_optional_and_strictly_boolean
@@ -107,6 +124,13 @@ class WorkflowPlanTest < Minitest::Test
     fields = events(form).fetch("workflow_dispatch").fetch("inputs")
     assert_equal SequelAceRelease::WorkflowPlan::INPUTS.sort, fields.keys.sort
     assert_equal false, fields.fetch("preview_only").fetch("default")
+    assert_equal false, fields.fetch("expected_main_sha").fetch("required")
+    assert_equal "", fields.fetch("expected_main_sha").fetch("default")
+    assert_equal "New Sequel Ace release", form.fetch("name")
+    assert_includes engine.fetch("name"), "advanced recovery only"
+    wake_names = events(workflow("release_publish")).fetch("workflow_run").fetch("workflows")
+    assert_includes wake_names, form.fetch("name")
+    assert_includes wake_names, engine.fetch("name")
     refute form.key?("concurrency"), "caller must not deadlock the serialized engine"
     assert_equal({ "contents" => "read" }, form.dig("jobs", "plan", "permissions"))
     refute form.dig("jobs", "plan").key?("environment")
