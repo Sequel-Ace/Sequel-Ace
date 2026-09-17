@@ -1661,9 +1661,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Whatever was abandoned before, this is the work the caller will ask about next.
 	lastWorkWasAbandoned = NO;
 
+	// The stamp is read on other threads than the one counting queries, so it comes from the
+	// in-flight record, which takes each number under its lock as soon as it is counted.
 	SAConnectionWorkOutcome *outcome = [connectionWorkCoordinator runWork:work
 	                                                       operationStamp:^NSUInteger{
-		return self->queryGeneration;
+		return [self currentQueryGeneration];
 	}
 	                                                             whenSlow:^(BOOL (^workHasFinished)(void)) {
 		self->connectionWorkWaitDepth++;
