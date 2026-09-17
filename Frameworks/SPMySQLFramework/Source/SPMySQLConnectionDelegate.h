@@ -76,7 +76,9 @@
  * Requests a message describing why no password could be supplied, asked only
  * when keychainPasswordForConnection: returned no password.  Returning a
  * non-empty string abandons the connection attempt without contacting the
- * server, and the string becomes the connection's last error message.
+ * server.  It becomes the last error message of the connection's own attempt;
+ * a temporary attempt, such as the one made to cancel a query, leaves that
+ * state to the connection.
  *
  * @param connection The connection instance whose password could not be supplied
  */
