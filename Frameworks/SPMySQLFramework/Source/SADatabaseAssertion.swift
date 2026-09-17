@@ -379,9 +379,13 @@ final class SADatabaseAssertion: NSObject {
             return false
         }
 
-        // EXPLAIN ANALYZE runs the statement it explains, and that can be an UPDATE or a DELETE.
+        // EXPLAIN ANALYZE runs the statement it explains, and that can be an UPDATE or a DELETE. A
+        // comment can stand between the two words, so the whole statement is looked at without them.
         if keyword == "EXPLAIN" || keyword == "DESCRIBE" || keyword == "DESC" {
-            let afterKeyword = statement.dropFirst(keyword.count).drop { $0.isWhitespace }
+            let explained = needsStripping
+                ? statement
+                : Substring(stripSQLComments(String(statement), serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+            let afterKeyword = explained.dropFirst(keyword.count).drop { $0.isWhitespace }
             return afterKeyword.prefix { isIdentifierCharacter($0) }.uppercased() != "ANALYZE"
         }
         return true
