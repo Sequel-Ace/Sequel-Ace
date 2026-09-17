@@ -5695,6 +5695,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
+        // A load the user stopped left the table's information unloaded, and the views would show it
+        // as empty. The whole table is loaded again - which loads the selected view as well, and can be
+        // stopped in turn; a load stopped again leaves the views as they are.
+        if (self.tableLoadStopRequested && selectedTableName) {
+            [self loadTable:selectedTableName ofType:selectedTableType];
+            if (self.tableLoadStopRequested) {
+                [self endTask];
+                return;
+            }
+        }
+
         // Get the tab view index and ensure the associated view is loaded
         SPTableViewType selectedTabViewIndex = (SPTableViewType)[tabViewItemIndexNumber integerValue];
 
