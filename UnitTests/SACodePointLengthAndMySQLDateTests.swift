@@ -55,13 +55,25 @@ final class SACodePointLengthTests: XCTestCase {
 /// decided by `textLimitDecision(limit:nullValue:)` and applied by
 /// `SPDataCellFormatter`.
 ///
-/// Not covered here: a BIT cell given a limit would also run the formatter's
-/// 0/1-only check, which refuses "N", "NU" and "NUL" on the way to NULL. That
-/// check lives in the Objective-C formatter, and it is why the table content
-/// view gives BIT cells no limit.
+/// A BIT cell given a limit also runs the formatter's 0/1-only check; the
+/// formatter lets the start of the NULL placeholder past it, as decided by
+/// `isNullPlaceholderOrItsStart(_:)`.
 final class SATextLimitDecisionTests: XCTestCase {
 
     private let nullValue = "NULL"
+
+    /// Verifies only the placeholder and its start count as typing NULL - not
+    /// any part of it, another case, a longer text, an empty text, or anything
+    /// without a placeholder.
+    func testOnlyThePlaceholderAndItsStartCountAsTypingNull() {
+        for text in ["N", "NU", "NUL", "NULL"] {
+            XCTAssertTrue((text as NSString).isNullPlaceholderOrItsStart(nullValue), text)
+        }
+        for text in ["UL", "L", "n", "null", "NULLX", "0", ""] {
+            XCTAssertFalse((text as NSString).isNullPlaceholderOrItsStart(nullValue), text)
+        }
+        XCTAssertFalse(("N" as NSString).isNullPlaceholderOrItsStart(nil))
+    }
 
     /// Verifies five pasted emoji are cut to three whole code points, never
     /// half of a fourth surrogate pair.

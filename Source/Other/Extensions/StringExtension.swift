@@ -533,6 +533,19 @@ public class SPProcessListRowSerializer: NSObject {
         return substring(to: utf16Length(ofFirstCodePoints: count)) as NSString
     }
 
+    /// Whether this text is the NULL placeholder or the start of it - what a
+    /// cell holds while the user types NULL. The comparison is exact, as the
+    /// placeholder is typed; an empty text or a missing placeholder is neither.
+    /// The cell formatter's whole-string rules use it to let typing NULL past
+    /// the BIT rule, as `SACellEditLimit` does for an edit it can locate.
+    ///
+    /// - Parameter nullValue: The NULL placeholder from the preferences, if any.
+    @objc(isNullPlaceholderOrItsStart:)
+    public func isNullPlaceholderOrItsStart(_ nullValue: String?) -> Bool {
+        guard let nullValue, length > 0 else { return false }
+        return nullValue.hasPrefix(self as String)
+    }
+
     /// Decides how a table cell limited to `limit` code points treats this
     /// text, the text an edit would leave in it.
     ///

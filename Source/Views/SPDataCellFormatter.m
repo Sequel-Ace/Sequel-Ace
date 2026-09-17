@@ -108,16 +108,6 @@
 }
 
 /**
- * Decide what an edit in progress may leave in the cell: first the column's length
- * rules, then the 0/1 rule of a BIT column. Both report to the user with a tooltip.
- *
- * @param partialString The text the edit would leave in the cell
- * @param newString Set to the text cut to the column's length when a paste overshoots it
- * @param error Unused; the rules show a tooltip instead of an error message
- * @return YES when the text is taken as it stands, NO when the edit is refused or
- *         replaced by the string returned in newString
- */
-/**
  * Decide what an edit that replaces part of the cell's text may leave in it.
  * The range-aware rules keep the text behind the insertion point: only the
  * inserted text is cut, where cutting the whole prospective string would drop
@@ -141,8 +131,10 @@
 	NSString *proposedString = *partialStringPtr;
 	NSInteger insertionLength = (NSInteger)proposedString.length - ((NSInteger)origString.length - (NSInteger)origSelRange.length);
 
-	// A change this method cannot locate - a deletion, or an edit the field
-	// editor reports differently - is left to the whole-string rules.
+	// A change whose replaced range does not account for the text that went
+	// away cannot be located and is left to the whole-string rules. The field
+	// editor reports a deletion with the range it removes, so a deletion is
+	// located like any other edit.
 	if (insertionLength < 0 || origSelRange.location + (NSUInteger)insertionLength > proposedString.length) {
 		return [self isPartialStringValid:proposedString newEditingString:partialStringPtr errorDescription:error];
 	}
@@ -231,6 +223,12 @@
 			return NO;
 		case SATextLimitDecisionWithinLimit:
 			break;
+	}
+
+	// Typing NULL passes through the start of the placeholder, which the BIT
+	// rule would refuse; the range-aware rules let it through as well.
+	if ([partialString isNullPlaceholderOrItsStart:nullValue]) {
+		return YES;
 	}
 
 	// Check for BIT fields whether 1 or 0 are typed

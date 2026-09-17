@@ -1253,8 +1253,9 @@
 	else if (selectedTableType == SPTableTypeView) {
 
 
-        // Create_time is NULL for views on most servers; the formatter answers
-        // an empty string then, so the dictionary below is not cut short at it.
+        // The view's status comes from information_schema.VIEWS, which has no
+        // Create_time; the formatter answers an empty string for the missing
+        // value, so the dictionary below is not cut short at it.
         [status addEntriesFromDictionary:[NSDictionary dictionaryWithObjectsAndKeys:
                                           @"View", @"Engine",
                                           [NSDateFormatter mysqlDateTimeString:[status objectForKey:@"Create_time"] dateStyle:NSDateFormatterShortStyle timeStyle:NSDateFormatterNoStyle], @"Create_time",
