@@ -187,6 +187,7 @@ NSString *SPCustomQueryFunctionCompletionInsertsArguments = @"CustomQueryFunctio
 NSString *SPCustomQueryEditorThemeName           = @"CustomQueryEditorThemeName";
 NSString *SPCustomQuerySoftIndent                = @"CustomQuerySoftIndent";
 NSString *SPCustomQuerySoftIndentWidth           = @"CustomQuerySoftIndentWidth";
+NSString *SPCustomQueryVimMode                   = @"CustomQueryVimMode";
 NSString *UseDashStyleForBlockComment            = @"UseDashStyleForBlockComment";
 
 // AutoUpdate Prefpane
