@@ -85,7 +85,6 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 @property (readwrite, assign) BOOL errorShowing;
 @property (readwrite, assign) BOOL localNetworkPermissionDeniedForCurrentAttempt;
-@property (readwrite, strong, nullable) NSError *lastAWSIAMTokenError;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (void)_sortFavorites;
@@ -258,13 +257,50 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     return kcPassword;
 }
 
-- (NSString *)passwordForConnectionRequest
+- (NSString *)passwordForConnectionRequestForConnection:(SPMySQLConnection *)connection
 {
-    if ([self _isAWSIAMConnection]) {
-        return [self generateAWSIAMAuthToken];
+    if (![self _isAWSIAMConnection]) {
+        return [self keychainPassword];
     }
 
-    return [self keychainPassword];
+    NSError *awsError = nil;
+    NSString *token = [self generateAWSIAMAuthTokenWithError:&awsError];
+
+    [self _setLastAWSIAMTokenError:(token ? nil : awsError) forConnection:connection];
+
+    return token;
+}
+
+/**
+ * Records, or clears, the reason a connection could not be given an AWS IAM auth
+ * token. Each connection keeps its own reason: a document's own connection and the
+ * connection cloned for its database structure query ask for tokens independently
+ * and from different threads.
+ */
+- (void)_setLastAWSIAMTokenError:(NSError *)error forConnection:(SPMySQLConnection *)connection
+{
+    if (!connection) return;
+
+    [awsIAMTokenErrorLock lock];
+
+    if (error) {
+        [awsIAMTokenErrorsByConnection setObject:error forKey:connection];
+    } else {
+        [awsIAMTokenErrorsByConnection removeObjectForKey:connection];
+    }
+
+    [awsIAMTokenErrorLock unlock];
+}
+
+- (NSError *)lastAWSIAMTokenErrorForConnection:(SPMySQLConnection *)connection
+{
+    if (!connection) return nil;
+
+    [awsIAMTokenErrorLock lock];
+    NSError *error = [awsIAMTokenErrorsByConnection objectForKey:connection];
+    [awsIAMTokenErrorLock unlock];
+
+    return error;
 }
 
 /**
@@ -299,7 +335,6 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     }
 
     if (awsError) {
-        self.lastAWSIAMTokenError = awsError;
         NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
         return nil;
     }
@@ -315,12 +350,9 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
             *errorPointer = emptyTokenError;
         }
 
-        self.lastAWSIAMTokenError = emptyTokenError;
         NSLog(@"AWS IAM Authentication token generation failed: empty authentication token returned");
         return nil;
     }
-
-    self.lastAWSIAMTokenError = nil;
 
     return token;
 }
@@ -4660,6 +4692,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Weak reference
         dbDocument = document;
+
+        awsIAMTokenErrorsByConnection = [NSMapTable weakToStrongObjectsMapTable];
+        awsIAMTokenErrorLock = [[NSLock alloc] init];
 
         databaseConnectionView = [dbDocument contentViewSplitter];
 

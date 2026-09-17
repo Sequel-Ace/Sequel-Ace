@@ -5906,7 +5906,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection
 {
-    return [connectionController passwordForConnectionRequest];
+    return [connectionController passwordForConnectionRequestForConnection:connection];
 }
 
 /**
@@ -5916,7 +5916,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     if ([connectionController type] != SPAWSIAMConnection) return nil;
 
-    return [[connectionController lastAWSIAMTokenError] localizedDescription];
+    return [[connectionController lastAWSIAMTokenErrorForConnection:connection] localizedDescription];
 }
 
 /**
@@ -5964,7 +5964,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
 
         // Display the connection error sheet and wait for the return code
-        SAConnectionLostSheetCopy *sheetCopy = [SAConnectionLostSheetCopy sheetCopyForAWSIAMTokenError:[connectionController lastAWSIAMTokenError]
+        SAConnectionLostSheetCopy *sheetCopy = [SAConnectionLostSheetCopy sheetCopyForAWSIAMTokenError:[connectionController lastAWSIAMTokenErrorForConnection:connection]
                                                                                    isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)];
 
         connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
