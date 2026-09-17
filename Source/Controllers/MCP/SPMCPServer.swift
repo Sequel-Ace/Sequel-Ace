@@ -57,6 +57,8 @@ import Network
 
     /// Runs an arbitrary SQL statement, binding `params` to ? placeholders and
     /// optionally paginating a read query with limit/offset (limit 0 = no paging).
+    /// Without params the SQL is sent as written - the SQL the read-only guard
+    /// validated - and a ? left in it is the server's syntax error to report.
     func mcpRunQuery(_ sql: String, params: [Any], limit: Int, offset: Int, connection connID: String) -> [String: Any]
 
     /// Returns the EXPLAIN plan for a query (does not execute it).

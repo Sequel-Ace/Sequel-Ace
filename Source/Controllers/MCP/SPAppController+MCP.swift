@@ -516,7 +516,11 @@ extension SPAppController: SPMCPDataSource {
         guard let ci = mcpResolveConnection(connID) else { return mcpNoConnectionError() }
         let conn = ci.conn
 
-        // Bind ? placeholders to escaped literals (injection-safe).
+        // Bind ? placeholders to escaped literals (injection-safe). Without params the SQL
+        // runs as written, which is the SQL the read-only guard validated; a ? left in it
+        // is answered by the server as a syntax error. Scanning it anyway would refuse
+        // queries the server runs fine, where a ? only looks live under one backslash
+        // reading (see SPMCPReadOnlyGuard.bindPlaceholders).
         var bound = sql
         if !params.isEmpty {
             let (result, err) = mcpBindParams(params, intoSQL: sql, connection: conn)
