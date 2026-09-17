@@ -343,12 +343,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 #pragma mark Edit methods
 
 /**
- * Adds an empty row to the tableSource-array and goes into edit mode
+ * Adds an empty row to the tableSource-array and goes into edit mode.
+ * Nothing is added while no fields are shown: a table always has a column, and a load that was
+ * stopped or failed may still have the name of the table shown before it recorded.
  */
 - (IBAction)addField:(id)sender
 {
 	// Check whether table editing is permitted (necessary as some actions - eg table double-click - bypass validation)
-	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable) return;
+	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable || ![tableFields count]) return;
 
 	// Check whether a save of the current row is required.
 	if (![self saveRowOnDeselect]) return;
@@ -1561,13 +1563,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 /**
  * Enable all content interactive elements after an ongoing task.
+ * Fields and indexes can only be added while the table's fields are shown.
  */
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification
 {
 	// Only re-enable elements if the current tab is the structure view
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableStructure]) return;
 
-	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable);
+	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && [tableFields count];
 
 	[tableSourceView setEnabled:YES];
 	[tableSourceView displayIfNeeded];
@@ -1678,12 +1681,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Retrieve the indexes for the table
 	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 
-	// If an error occurred, reset the interface and abort
+	// If an error occurred, reset the interface and abort; a query the user stopped needs no alert
 	if ([mySQLConnection queryErrored]) {
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 		[[self onMainThread] setTableDetails:nil];
 
-		if ([mySQLConnection isConnected]) {
+		if ([mySQLConnection isConnected] && ![mySQLConnection lastQueryWasCancelled]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 		}
 
@@ -1902,7 +1905,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 }
 
 /**
- * Reloads the table (performing a new query).
+ * Reloads the table selected in the tables list (performing a new query).
+ * After a load that was stopped or failed, the table recorded here can still be the one shown before,
+ * while the table information belongs to the selected one; like the content view, the reload
+ * therefore follows the tables list.
  */
 - (IBAction)reloadTable:(id)sender
 {
@@ -1915,7 +1921,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Query the structure of all databases in the background (mainly for completion)
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 
-	[self loadTable:selectedTable];
+	[self loadTable:[tablesListInstance tableName]];
 }
 
 /**
@@ -1982,8 +1988,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Enable the edit table button
 	[editTableButton setEnabled:enableInteraction];
 
-	// If a view is selected, disable the buttons; otherwise enable.
-	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && enableInteraction;
+	// If a view is selected, disable the buttons; otherwise enable. A table without fields was not loaded.
+	BOOL editingEnabled = ([tablesListInstance tableType] == SPTableTypeTable) && enableInteraction && [tableFields count];
 
 	[addFieldButton setEnabled:editingEnabled];
 	[addIndexButton setEnabled:editingEnabled && ![[[tableDataInstance statusValueForKey:@"Engine"] uppercaseString] isEqualToString:@"CSV"]];
