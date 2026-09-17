@@ -134,9 +134,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 @end
 
-// Marks a column default that was loaded without being escaped, because the connection was not available
-static NSString *const SATableStructureDefaultIsUnescapedKey = @"defaultIsUnescaped";
-
 @implementation SPTableStructure
 
 #pragma mark -
@@ -1203,10 +1200,7 @@ static NSString *const SATableStructureDefaultIsUnescapedKey = @"defaultIsUnesca
             // Check if defaultValue is an expression - Must be surrunded by ( and )
             BOOL defaultValueIsExpression = NO;
             BOOL defaultValueIsString = NO;
-            // A default loaded without a connection is the server's value as it is, not something the
-            // user typed; however it looks, it is escaped as a whole.
-            BOOL defaultIsUnescaped = [[theRow objectForKey:SATableStructureDefaultIsUnescapedKey] boolValue];
-            if ([defaultValue length] && !defaultIsUnescaped) {
+            if ([defaultValue length]) {
                 NSString *trimmedWhiteSpace = [defaultValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
                 // if trimmed string is empty, revert to original to avoid crash
                 if ([trimmedWhiteSpace isEqualToString: @""]) {
@@ -1658,6 +1652,7 @@ static NSString *const SATableStructureDefaultIsUnescapedKey = @"defaultIsUnesca
 
 /**
  * Loads aTable, puts it in an array, updates the tableViewColumns and reloads the tableView.
+ * A column default that cannot be escaped stops the load and leaves the view empty.
  */
 - (void)loadTable:(NSString *)aTable
 {
@@ -1848,14 +1843,15 @@ static NSString *const SATableStructureDefaultIsUnescapedKey = @"defaultIsUnesca
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
         else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"] || [type hasSuffix:@"ENUM"]) {
-            // Without a connection the default stays as it is, and is marked so: it is escaped as a whole
-            // when it is saved, even if it looks quoted already.
+            // A default that cannot be escaped - the connection is gone, or the user stopped waiting for it -
+            // would be saved as it is later on, so the table is not shown at all.
             NSString *escapedDefault = [mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]];
-            if (escapedDefault) {
-                [theField setObject:escapedDefault forKey:@"default"];
-            } else {
-                [theField setObject:@YES forKey:SATableStructureDefaultIsUnescapedKey];
+            if (!escapedDefault) {
+                [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+                [[self onMainThread] setTableDetails:nil];
+                return;
             }
+            [theField setObject:escapedDefault forKey:@"default"];
         }
 
 		// Init Extra field
@@ -2250,11 +2246,6 @@ static NSString *const SATableStructureDefaultIsUnescapedKey = @"defaultIsUnesca
 	}
 
 	[currentRow setObject:(anObject) ? anObject : @"" forKey:[aTableColumn identifier]];
-
-	// A default the user typed follows the usual rules again.
-	if ([[aTableColumn identifier] isEqualToString:@"default"]) {
-		[currentRow removeObjectForKey:SATableStructureDefaultIsUnescapedKey];
-	}
 }
 
 /**
