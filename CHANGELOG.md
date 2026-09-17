@@ -13,6 +13,8 @@
 - Fix the flaky pid-file race in the command runner test ([606050681](https://github.com/Sequel-Ace/Sequel-Ace/commit/6060506819b3dd9e70fcf7a1f963958c255a834f), [#2570](https://github.com/Sequel-Ace/Sequel-Ace/pull/2570))
 
 ### Changed
+- Auto-detect JSON values in the field editor pop-up ([42c3d319c](https://github.com/Sequel-Ace/Sequel-Ace/commit/42c3d319cdd7ccccb97823b2edf3d87e130eb9fe), [#2656](https://github.com/Sequel-Ace/Sequel-Ace/pull/2656))
+- Center import dialog menus ([5ddadf1b3](https://github.com/Sequel-Ace/Sequel-Ace/commit/5ddadf1b3b34482156009abf17df6c34241635b0), [#2653](https://github.com/Sequel-Ace/Sequel-Ace/pull/2653))
 - Reconcile the prepared build before release merge ([69d58a80e](https://github.com/Sequel-Ace/Sequel-Ace/commit/69d58a80efa3d67229411d2f27681324cae83129), [#2670](https://github.com/Sequel-Ace/Sequel-Ace/pull/2670))
 - Record View and inline edits use the right column after columns move or are filtered ([600290c15](https://github.com/Sequel-Ace/Sequel-Ace/commit/600290c15b636dc80e4f1cb2a622cb910d0cc2b4), [#2661](https://github.com/Sequel-Ace/Sequel-Ace/pull/2661))
 - Move the tooltip replacement lifecycle into Swift ([08b86fe37](https://github.com/Sequel-Ace/Sequel-Ace/commit/08b86fe37d8c5407c26d1aaade880e1eff3fdcea), [#2660](https://github.com/Sequel-Ace/Sequel-Ace/pull/2660))
