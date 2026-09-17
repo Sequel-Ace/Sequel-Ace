@@ -1207,8 +1207,8 @@ asm(".desc ___crashreporter_info__, 0x10");
     MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
 
     //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL.
-    // A host that never answered is not worth a second connection timeout: it fails the same
-    // way without TLS, and the wait happens while the interface stands still.
+    // Only a failed TLS negotiation is: a host that never answered fails the same way again, and a
+    // server that refused the credentials would only get them a second time, unencrypted.
     if(!useSSL && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
         enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);

@@ -18,11 +18,21 @@ final class SAConnectionRetryPolicyTests: XCTestCase {
         XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2005)) // CR_UNKNOWN_HOST
     }
 
-    /// A server that answered is tried without TLS.
-    func testAServerThatAnsweredIsTriedWithoutTLS() {
+    /// A failed TLS negotiation is tried without TLS.
+    func testAFailedTLSNegotiationIsTriedWithoutTLS() {
         XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2026)) // CR_SSL_CONNECTION_ERROR
         XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2013)) // CR_SERVER_LOST, closed during the handshake
-        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 1045)) // ER_ACCESS_DENIED_ERROR
-        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 0))
+        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2055)) // CR_SERVER_LOST_EXTENDED
+        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2006)) // CR_SERVER_GONE_ERROR
+    }
+
+    /// Rejected credentials and any other or unknown error are not sent again without TLS.
+    func testRejectedCredentialsAndOtherErrorsAreNotTriedWithoutTLS() {
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 1045)) // ER_ACCESS_DENIED_ERROR
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 1044)) // ER_DBACCESS_DENIED_ERROR
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 1130)) // ER_HOST_NOT_PRIVILEGED
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2059)) // CR_AUTH_PLUGIN_CANNOT_LOAD
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2061)) // CR_AUTH_PLUGIN_ERR
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 0))
     }
 }

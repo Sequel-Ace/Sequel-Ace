@@ -12,25 +12,27 @@ import Foundation
 
 /// Whether a failed connection attempt is worth repeating without TLS.
 ///
-/// A server that refuses TLS is worth a second attempt without it, and that fallback is why the
-/// framework connects twice. A host that never answered is not: the second attempt takes the same
-/// route as the first, waits the same connection timeout and fails the same way, which doubles the
-/// time the interface stands still before the user is told the connection is gone.
+/// A server whose TLS the client cannot negotiate is worth a second attempt without it, and that
+/// fallback is why the framework connects twice. Nothing else is: a host that never answered fails
+/// the same way again and doubles the time the interface stands still, and a server that refused the
+/// credentials would only receive them a second time, unencrypted - in plain text where the cleartext
+/// authentication plugin is enabled.
 @objc(SAConnectionRetryPolicy)
 public final class SAConnectionRetryPolicy: NSObject {
 
-    /// The client errors that mean the server was never reached, so TLS cannot have been the reason.
-    private static let unreachableErrorIDs: Set<UInt> = [
-        UInt(CR_CONNECTION_ERROR),  // the local socket could not be used
-        UInt(CR_CONN_HOST_ERROR),   // the host did not answer
-        UInt(CR_UNKNOWN_HOST)       // the host could not be resolved
+    /// The client errors with which the TLS negotiation of an attempt fails.
+    private static let tlsNegotiationErrorIDs: Set<UInt> = [
+        UInt(CR_SSL_CONNECTION_ERROR),  // the TLS handshake failed
+        UInt(CR_SERVER_LOST),           // the server closed the connection during the handshake
+        UInt(CR_SERVER_LOST_EXTENDED),  // the same, with the system error
+        UInt(CR_SERVER_GONE_ERROR)      // the server was gone when the handshake was written
     ]
 
     /// Whether a connection attempt that failed with this error should be repeated without TLS.
     /// - Parameter errorID: The client or server error the attempt ended with.
-    /// - Returns: `false` only for errors that report a server the client never reached.
+    /// - Returns: `true` only for errors with which the TLS negotiation fails.
     @objc(shouldRetryWithoutTLSAfterErrorID:)
     public static func shouldRetryWithoutTLS(afterErrorID errorID: UInt) -> Bool {
-        !unreachableErrorIDs.contains(errorID)
+        tlsNegotiationErrorIDs.contains(errorID)
     }
 }
