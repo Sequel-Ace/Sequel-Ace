@@ -13,6 +13,30 @@ thin adapter for the App Store operations it already supports; it never chooses
 a build number, creates a git branch, stages files, commits, pushes, opens a PR,
 or creates a GitHub release.
 
+## Self-service deployment (proposed)
+
+The **Deploy Release** workflow (`release_deploy.yml`) provides the normal
+GitHub form: version, beta/production channel, customer-facing App Store bullet
+notes, optional complete GitHub Markdown notes, and an optional read-only preview.
+Leave preview off to deploy. Submitting the form is the sole approval; Actions
+generates the internal confirmation and approval digest itself. No second
+approval or mandatory preview is introduced. Environment reviewer/wait gates
+must not be added to this workflow's release environment.
+
+Actions freezes the selected main revision and calls the existing guarded
+release engine. The advanced interface below remains available for recovery.
+Custom GitHub notes are preserved in the immutable plan and forward recovery;
+they do not replace the separate App Store What's New bullets.
+
+**Remaining limitation:** `legacy_updater_v1` still requires a compatible web
+upload of the notarized ZIPs. This is not yet a fully browser-free deployment.
+The publisher exposes only verified public ZIPs and checksums in its Actions
+artifact; extract that bundle and upload the inner ZIPs, not the outer bundle.
+The armed recovery schedule resumes after attachment without a second approval
+or dispatch. If that artifact is unavailable, use the existing private archive
+recovery procedure. Removing this transport limitation without breaking old
+clients remains unfinished work; do not describe the form as end-to-end automatic.
+
 ## Safety model
 
 - `main` is frozen at the approved SHA. Any movement requires a new plan except
@@ -21,7 +45,8 @@ or creates a GitHub release.
 - Only `Jason-Morcos` and `Kaspik` may initiate a release. The Actions bot may
   dispatch only a chained `mode=resume` recovery authenticated against the
   failed release's private archive and original approval.
-- The typed confirmation is `RELEASE <channel> <version>`.
+- The advanced interface's typed confirmation is `RELEASE <channel> <version>`;
+  the normal Deploy Release form generates it internally.
 - `SA_RELEASE_AUTOMATION_ENABLED` remains `false` until every feasibility gate
   passes.
 - One `sequel-ace-release` concurrency group prevents overlapping preparation,

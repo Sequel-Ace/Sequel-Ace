@@ -27,6 +27,7 @@ require_relative "sequel_ace_release/forward_build_recovery"
 require_relative "sequel_ace_release/tar_archive_validator"
 require_relative "sequel_ace_release/artifact_verifier"
 require_relative "sequel_ace_release/planner"
+require_relative "sequel_ace_release/workflow_plan"
 require_relative "sequel_ace_release/cli"
 
 module SequelAceRelease
