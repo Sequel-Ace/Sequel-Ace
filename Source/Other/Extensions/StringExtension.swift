@@ -253,6 +253,21 @@ public class SPProcessListRowSerializer: NSObject {
 }
 
 @objc extension NSString {
+
+    /// The MySQL bit-value literal for this text, `b'…'`, when the text holds
+    /// only the digits 0 and 1; an empty text stands for 0, as the table views
+    /// always wrote it. Anything else answers nil: the text goes into the
+    /// literal as it is, so a quote in it would end the literal and change the
+    /// statement around it.
+    @objc(mysqlBitLiteral)
+    public func mysqlBitLiteral() -> String? {
+        let text = self as String
+        guard text.unicodeScalars.allSatisfy({ $0 == "0" || $0 == "1" }) else {
+            return nil
+        }
+        return "b'\(text.isEmpty ? "0" : text)'"
+    }
+
     //Special space-character used to separate the column name and column type
     @objc static let columnHeaderSplittingSpace: String = " "
 

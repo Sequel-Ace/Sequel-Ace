@@ -374,3 +374,23 @@ final class SPOptimizedFieldTypeEstimatorTests: XCTestCase {
         )
     }
 }
+
+/// The BIT literal a table view writes for a cell value.
+final class SABitLiteralTests: XCTestCase {
+
+    /// Verifies text of only 0 and 1 becomes a literal, and an empty text stands for 0.
+    func testBinaryDigitsBecomeALiteral() {
+        XCTAssertEqual(("1" as NSString).mysqlBitLiteral(), "b'1'")
+        XCTAssertEqual(("0" as NSString).mysqlBitLiteral(), "b'0'")
+        XCTAssertEqual(("0101" as NSString).mysqlBitLiteral(), "b'0101'")
+        XCTAssertEqual(("" as NSString).mysqlBitLiteral(), "b'0'")
+    }
+
+    /// Verifies any other text is refused, above all one that would end the literal.
+    func testAnyOtherTextIsRefused() {
+        for text in ["2", "01a", "1' OR 1=1 -- ", "1'", " 1", "1 ", "NULL", "b'1'", "\u{0661}"] {
+            XCTAssertNil((text as NSString).mysqlBitLiteral(), text)
+        }
+    }
+}
+

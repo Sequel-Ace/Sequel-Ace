@@ -2200,19 +2200,25 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             }
             
             // If the field is of type BIT then it needs a binary prefix
+            // A value that cannot be written into the statement - a BIT value that is not only 0 and
+            // 1, or one that could not be escaped - leaves the row unidentified rather than matched
+            // against "(null)".
+            NSString *argumentValue;
             if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+                argumentValue = [[aValue description] mysqlBitLiteral];
             }
             else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+                argumentValue = [mySQLConnection escapeAndQuoteData:[aValue data]];
             }
             // BLOB/TEXT data
             else if ([aValue isKindOfClass:[NSData class]]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
+                argumentValue = [mySQLConnection escapeAndQuoteData:aValue];
             }
             else {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
+                argumentValue = [mySQLConnection escapeAndQuoteString:aValue];
             }
+            if (!argumentValue) return nil;
+            [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], argumentValue]];
         }
     }
     
@@ -2266,7 +2272,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             } else if ([columnTypeGroup isEqualToString:@"geometry"]) {
                 newObject = [(NSString*)anObject getGeomFromTextString];
             } else if ([columnTypeGroup isEqualToString:@"bit"]) {
-                newObject = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+                // A BIT value that is not only 0 and 1 is not written, like one that cannot be escaped.
+                newObject = [desc mysqlBitLiteral];
             } else if ([columnTypeGroup isEqualToString:@"date"]
                        && [desc isEqualToString:@"NOW()"]) {
                 newObject = @"NOW()";

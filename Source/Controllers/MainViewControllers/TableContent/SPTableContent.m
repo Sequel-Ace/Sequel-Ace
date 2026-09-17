@@ -1859,19 +1859,25 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 
 			// If the field is of type BIT then it needs a binary prefix
+			// A value that cannot be written into the statement - a BIT value that is not only 0 and
+			// 1, or one that could not be escaped - leaves the row unidentified rather than matched
+			// against "(null)".
+			NSString *argumentValue;
 			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+				argumentValue = [[aValue description] mysqlBitLiteral];
 			}
 			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+				argumentValue = [mySQLConnection escapeAndQuoteData:[aValue data]];
 			}
 			// BLOB/TEXT data
 			else if ([aValue isKindOfClass:[NSData class]]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
+				argumentValue = [mySQLConnection escapeAndQuoteData:aValue];
 			}
 			else {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
+				argumentValue = [mySQLConnection escapeAndQuoteString:aValue];
 			}
+			if (!argumentValue) return nil;
+			[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], argumentValue]];
 		}
 	}
 
@@ -2912,7 +2918,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				if ([[fieldDefinition objectForKey:@"isfunction"] boolValue] && desc == defaultFieldValue) {
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
-					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+					// A BIT value that is not only 0 and 1 is not written; the row stays in editing.
+					fieldValue = [desc mysqlBitLiteral];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
 				} else if ([fieldTypeGroup isEqualToString:@"string"] && ([desc isEqualToString:@"UUID()"] || [desc isEqualToString:@"UUID_v4()"])) {
@@ -3499,7 +3506,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"geometry"]) {
 				newObject = [(NSString*)anObject getGeomFromTextString];
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"bit"]) {
-				newObject = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+				// A BIT value that is not only 0 and 1 is not written, like one that cannot be escaped.
+				newObject = [desc mysqlBitLiteral];
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 				newObject = @"NOW()";
 			} else {
