@@ -20,19 +20,17 @@ import Foundation
 @objc(SAConnectionRetryPolicy)
 public final class SAConnectionRetryPolicy: NSObject {
 
-    /// The client errors with which the TLS negotiation of an attempt fails.
-    private static let tlsNegotiationErrorIDs: Set<UInt> = [
-        UInt(CR_SSL_CONNECTION_ERROR),  // the TLS handshake failed
-        UInt(CR_SERVER_LOST),           // the server closed the connection during the handshake
-        UInt(CR_SERVER_LOST_EXTENDED),  // the same, with the system error
-        UInt(CR_SERVER_GONE_ERROR)      // the server was gone when the handshake was written
-    ]
-
     /// Whether a connection attempt that failed with this error should be repeated without TLS.
+    ///
+    /// Only `CR_SSL_CONNECTION_ERROR` qualifies: the client reports every failure of the TLS
+    /// negotiation with it - a reset or an unexpected end while the server is asked for TLS or
+    /// during the handshake - before any credential leaves it. A connection lost later, reported as
+    /// `CR_SERVER_LOST`, may already have carried the credentials over TLS, and repeating them
+    /// without TLS is what the fallback must not do.
     /// - Parameter errorID: The client or server error the attempt ended with.
-    /// - Returns: `true` only for errors with which the TLS negotiation fails.
+    /// - Returns: `true` only for a failed TLS negotiation.
     @objc(shouldRetryWithoutTLSAfterErrorID:)
     public static func shouldRetryWithoutTLS(afterErrorID errorID: UInt) -> Bool {
-        tlsNegotiationErrorIDs.contains(errorID)
+        errorID == UInt(CR_SSL_CONNECTION_ERROR)
     }
 }

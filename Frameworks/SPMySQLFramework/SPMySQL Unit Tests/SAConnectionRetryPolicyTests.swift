@@ -21,9 +21,14 @@ final class SAConnectionRetryPolicyTests: XCTestCase {
     /// A failed TLS negotiation is tried without TLS.
     func testAFailedTLSNegotiationIsTriedWithoutTLS() {
         XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2026)) // CR_SSL_CONNECTION_ERROR
-        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2013)) // CR_SERVER_LOST, closed during the handshake
-        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2055)) // CR_SERVER_LOST_EXTENDED
-        XCTAssertTrue(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2006)) // CR_SERVER_GONE_ERROR
+    }
+
+    /// A connection lost after the negotiation may already have carried the credentials over TLS,
+    /// so it is not repeated without TLS.
+    func testAConnectionLostAfterTheNegotiationIsNotTriedWithoutTLS() {
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2013)) // CR_SERVER_LOST
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2055)) // CR_SERVER_LOST_EXTENDED
+        XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2006)) // CR_SERVER_GONE_ERROR
     }
 
     /// Rejected credentials and any other or unknown error are not sent again without TLS.
