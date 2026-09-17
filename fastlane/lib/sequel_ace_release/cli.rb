@@ -56,6 +56,7 @@ module SequelAceRelease
       when "create-manifest" then create_manifest(argv)
       when "update-manifest" then update_manifest(argv)
       when "reconcile-submission" then reconcile_submission(argv)
+      when "release-status" then release_status(argv)
       when "record-failure" then record_failure(argv)
       when "version" then emit("version" => SequelAceRelease::VERSION)
       when nil, "help", "--help", "-h"
@@ -1156,6 +1157,21 @@ module SequelAceRelease
       emit(updated.to_h)
     end
 
+    def release_status(arguments)
+      options = {}
+      OptionParser.new do |value|
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :manifest, :notes)
+      result = ReleaseStatus.new(client: app_store_client, production_workflow_id: @env["SA_PRODUCTION_WORKFLOW_ID"]).inspect(
+        manifest: Manifest.read(options[:manifest]), app_store_notes: File.read(options[:notes])
+      )
+      emit(result, options[:output])
+    end
+
     def reconcile_submission(arguments)
       options = { wait_seconds: 0, poll_interval: 15 }
       parser = OptionParser.new do |value|
@@ -1741,6 +1757,7 @@ module SequelAceRelease
           create-manifest            Create the versioned non-secret release manifest
           update-manifest            Advance a manifest with redacted run evidence
           reconcile-submission       Read back an ambiguous production App Store submission
+          release-status             Read App Store state and validate metadata without mutation
           record-failure             Preserve finalizable state while recording a failed run
       HELP
     end

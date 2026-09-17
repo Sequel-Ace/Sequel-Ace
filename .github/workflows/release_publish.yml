@@ -250,8 +250,21 @@ jobs:
           ' "${archive_directory}/manifest.json" "${release_tag}")"
           if [[ "${locally_eligible}" != "true" ]]; then
             if [[ -n "${REQUESTED_TAG}" ]]; then
-              echo "Requested release ${release_tag} is not eligible for artifact publication." >&2
-              exit 1
+              # A queued request may arrive after another publisher submitted
+              # this exact release. Prove that outcome; do not repeat writes.
+              handoff_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${archive_directory}/manifest.json")"
+              [[ "${handoff_state}" == "submitted" ]] || {
+                echo "Requested release ${release_tag} is not eligible for artifact publication; inspect release_status.yml." >&2
+                exit 1
+              }
+              bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+                --manifest "${archive_directory}/manifest.json" --tag "${release_tag}" \
+                --notes "${archive_directory}/app-store-notes.txt" --output "${state_directory}/handoff.json"
+              bundle exec ruby fastlane/bin/sa-release release-status \
+                --manifest "${archive_directory}/manifest.json" \
+                --notes "${archive_directory}/app-store-notes.txt" --output "${state_directory}/status.json"
+              jq -e '.app_store.submitted == true and .app_store.metadata_valid == true' "${state_directory}/status.json" >/dev/null
+              echo "Exact submitted release verified through App Store Connect; no publication or submission repeated." >> "${GITHUB_STEP_SUMMARY}"
             fi
             {
               echo "action=settled"
