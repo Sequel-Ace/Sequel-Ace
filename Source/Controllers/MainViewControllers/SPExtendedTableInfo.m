@@ -703,7 +703,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
 			// 2020-06-30 14:14:11 is one example
-			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDateFormatter.naturalLanguageFormatter dateFromString:value]];
+			value = [NSDateFormatter mysqlDateTimeString:value dateStyle:NSDateFormatterMediumStyle timeStyle:NSDateFormatterMediumStyle];
 		}
 		// Format numbers
 		else if ([key isEqualToString:SPMySQLRowsField] ||
