@@ -136,6 +136,9 @@ final class SAConnectionCheckSheet: NSObject {
     ///     before this method returns.
     @objc(waitInWindow:untilFinished:whenCancelled:)
     func wait(in window: NSWindow?, untilFinished isFinished: @escaping () -> Bool, whenCancelled cancelHandler: (() -> Void)?) {
+        // The connection asks for the wait on the thread that handed its work over, which is always
+        // the main thread; the work itself runs elsewhere.
+        assert(Thread.isMainThread, "A connection wait runs on the main thread")
         guard !isFinished() else {
             return
         }
