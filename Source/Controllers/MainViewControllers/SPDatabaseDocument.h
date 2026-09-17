@@ -143,7 +143,6 @@ NS_ASSUME_NONNULL_BEGIN
 	IBOutlet NSTextField *createTableSyntaxTextField;
 	IBOutlet NSTextView *createTableSyntaxTextView;
 	IBOutlet NSWindow *createTableSyntaxWindow;
-	IBOutlet NSWindow *connectionErrorDialog;
 	
 	IBOutlet id inputTextWindow;
 	IBOutlet id inputTextWindowHeader;

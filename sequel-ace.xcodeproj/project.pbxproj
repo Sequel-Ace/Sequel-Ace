@@ -265,6 +265,7 @@
 		5146ADF02F79B16900C4C14A /* SAFavoritesListDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */; };
 		5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */; };
 		5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */; };
+		D10000242F8C000600C4C14A /* SAConnectionLostAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */; };
 		D10000212F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */; };
 		D10000222F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */; };
 		5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
@@ -385,7 +386,6 @@
 		51CD0BE8258D06D8009E2484 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCA258D06D8009E2484 /* MainMenu.xib */; };
 		51CD0BE9258D06D8009E2484 /* Console.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCB258D06D8009E2484 /* Console.xib */; };
 		51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */; };
-		51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */; };
 		51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */; };
 		51CD0BED258D06D8009E2484 /* SaveSPFAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */; };
 		51CD0BEE258D06D8009E2484 /* UserManagerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD0258D06D8009E2484 /* UserManagerView.xib */; };
@@ -1200,6 +1200,7 @@
 		5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDelegate.swift; sourceTree = "<group>"; };
 		5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDataSource.swift; sourceTree = "<group>"; };
 		5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionService.swift; sourceTree = "<group>"; };
+		D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionLostAlert.swift; sourceTree = "<group>"; };
 		D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionLostSheetCopy.swift; sourceTree = "<group>"; };
 		5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPDatabaseDocument+ViewMode.swift"; sourceTree = "<group>"; };
 		5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATaskManaging.swift; sourceTree = "<group>"; };
@@ -1300,7 +1301,6 @@
 		51CD0BCA258D06D8009E2484 /* MainMenu.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		51CD0BCB258D06D8009E2484 /* Console.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Console.xib; sourceTree = "<group>"; };
 		51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseServerVariables.xib; sourceTree = "<group>"; };
-		51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionErrorDialog.xib; sourceTree = "<group>"; };
 		51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ProgressIndicatorLayer.xib; sourceTree = "<group>"; };
 		51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SaveSPFAccessory.xib; sourceTree = "<group>"; };
 		51CD0BD0258D06D8009E2484 /* UserManagerView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = UserManagerView.xib; sourceTree = "<group>"; };
@@ -2599,7 +2599,6 @@
 			children = (
 				51F41FB625F56A5900594BA5 /* MainWindow.xib */,
 				51CD0BD2258D06D8009E2484 /* BundleEditor.xib */,
-				51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */,
 				51CD0BD8258D06D8009E2484 /* ConnectionView.xib */,
 				51CD0BCB258D06D8009E2484 /* Console.xib */,
 				51CD0BD3258D06D8009E2484 /* ContentFilterManager.xib */,
@@ -2837,6 +2836,7 @@
 				4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
 				B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */,
 				5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */,
+				D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */,
 				D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */,
 				51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */,
 				91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */,
@@ -3411,7 +3411,6 @@
 				8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */,
 				177E792E0FCB54EC00E9E122 /* database-small.png in Resources */,
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
-				51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */,
 				1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */,
 				51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
@@ -4017,6 +4016,7 @@
 				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
 				5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */,
+				D10000242F8C000600C4C14A /* SAConnectionLostAlert.swift in Sources */,
 				D10000212F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
 				51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */,

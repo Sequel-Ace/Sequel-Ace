@@ -304,11 +304,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Hide the activity list
     [self setActivityPaneHidden:@1];
 
-    // Load additional nibs, keeping track of the top-level objects to allow correct release
-    NSArray *connectionDialogTopLevelObjects = nil;
-    NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ConnectionErrorDialog" bundle:[NSBundle mainBundle]];
-    [nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects];
-
     // The task progress window, indicator and layer are loaded and configured
     // by SATaskController (created in -initWithWindowController:).
 
@@ -5961,19 +5956,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // and we are not terminating
     if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
 
-        SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
+        SPLog(@"not terminating, parentWindow isVisible, showing connection lost sheet");
         // Ensure the window isn't miniaturized
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];
         }
         [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
 
-        // Display the connection error dialog and wait for the return code
-        [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
-        connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
+        // Display the connection error sheet and wait for the return code
+        SAConnectionLostSheetCopy *sheetCopy = [SAConnectionLostSheetCopy sheetCopyForAWSIAMTokenError:[connectionController lastAWSIAMTokenError]
+                                                                                   isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)];
 
-        [NSApp endSheet:connectionErrorDialog];
-        [connectionErrorDialog orderOut:nil];
+        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
+            ? SPMySQLConnectionLostReconnect
+            : SPMySQLConnectionLostDisconnect;
 
         [taskController resetQueryTimer];
 
@@ -5996,14 +5992,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
     });
-}
-
-/**
- * Invoked when user dismisses the error sheet displayed as a result of the current connection being lost.
- */
-- (IBAction)closeErrorConnectionSheet:(id)sender
-{
-    [NSApp stopModalWithCode:[sender tag]];
 }
 
 /**
