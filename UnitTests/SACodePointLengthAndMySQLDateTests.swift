@@ -165,6 +165,26 @@ final class SAFieldEditorEditLimitTests: XCTestCase {
         return SAFieldEditorEditLimit.evaluate(text: text as NSString, replacing: range, with: replacement as NSString, limit: limit, fieldType: fieldType)
     }
 
+    /// Verifies the NULL placeholder and its start count as such on the text
+    /// the edit leaves: typed into a short column, completed, or pasted over a
+    /// selection - and nothing else does.
+    func testNullPlaceholderEditsAreJudgedOnTheResultingText() {
+        /// Asks whether the edit leaves the placeholder "NULL" or its start.
+        func isNullEdit(_ text: String, _ range: NSRange, _ replacement: String) -> Bool {
+            return SAFieldEditorEditLimit.isNullPlaceholderEdit(text: text as NSString, replacing: range, with: replacement as NSString, nullValue: "NULL")
+        }
+        XCTAssertTrue(isNullEdit("", NSRange(location: 0, length: 0), "N"))
+        XCTAssertTrue(isNullEdit("N", NSRange(location: 1, length: 0), "U"))
+        XCTAssertTrue(isNullEdit("NUL", NSRange(location: 3, length: 0), "L"))
+        XCTAssertTrue(isNullEdit("abc", NSRange(location: 0, length: 3), "NULL"))
+        XCTAssertFalse(isNullEdit("NULL", NSRange(location: 4, length: 0), "X"))
+        XCTAssertFalse(isNullEdit("ab", NSRange(location: 0, length: 0), "N"))
+        XCTAssertFalse(isNullEdit("abc", NSRange(location: 1, length: 1), "NULL"))
+        XCTAssertFalse(isNullEdit("ab", NSRange(location: 1, length: 5), "N"), "a range outside the text")
+        XCTAssertFalse(isNullEdit("ab", NSRange(location: NSNotFound, length: 0), "N"))
+        XCTAssertFalse(SAFieldEditorEditLimit.isNullPlaceholderEdit(text: "", replacing: NSRange(location: 0, length: 0), with: "N", nullValue: nil))
+    }
+
     /// Verifies five emoji pasted over three selected ones keep three: the
     /// selection is six UTF-16 units but three code points, so the paste is
     /// not waved through as shortening the text.

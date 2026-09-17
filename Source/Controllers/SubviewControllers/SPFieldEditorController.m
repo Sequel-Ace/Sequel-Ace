@@ -1242,7 +1242,8 @@ typedef enum {
 }
 
 /**
- * Validate editTextView for maximum text length except for NULL as value string
+ * Validate editTextView for maximum text length except for NULL as value string,
+ * or its start while it is typed
  */
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
@@ -1253,8 +1254,7 @@ typedef enum {
 
 	unsigned long long adjTextMaxTextLength = self.maxLengthDateWithOverride;
 
-	if (textView == editTextView && (adjTextMaxTextLength > 0) &&
-			![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]])
+	if (textView == editTextView && (adjTextMaxTextLength > 0))
 	{
 		// Auxilary to ensure that eg textViewDidChangeSelection:
 		// saves a non-space char + base char if that combination
@@ -1267,6 +1267,13 @@ typedef enum {
 
 		// The exact change isn't known. Disallow the change to be safe.
 		if (r.location == NSNotFound) return NO;
+
+		// The NULL placeholder, and its start while it is typed, are exempt from
+		// the length rules and the display format, judged on the text the edit
+		// leaves - also when it replaces a selection.
+		if ([SAFieldEditorEditLimit isNullPlaceholderEditOfText:[[textView textStorage] string] replacingRange:r withString:replacementString nullValue:[prefs objectForKey:SPNullValue]]) {
+			return YES;
+		}
 
 		// Length checking while using the Input Manager (eg for Japanese)
 		if ([textView hasMarkedText] && (adjTextMaxTextLength > 0) && (r.location < adjTextMaxTextLength)) {

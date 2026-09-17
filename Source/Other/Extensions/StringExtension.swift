@@ -387,6 +387,27 @@ public class SPProcessListRowSerializer: NSObject {
         }
         return SAFieldEditorEditLimit(allowsEdit: false, fittingInsertion: replacement.prefix(codePoints: insertableCount) as String)
     }
+
+    /// Whether replacing `range` of `text` with `replacement` leaves the NULL
+    /// placeholder, or its start while it is typed. The sheet lets such an edit
+    /// past its length rules, as the table cells do, so NULL can be entered
+    /// into a column shorter than the placeholder - typed, or pasted over a
+    /// selection.
+    ///
+    /// - Parameters:
+    ///   - text: The sheet's text before the edit.
+    ///   - range: The range of `text` the edit replaces, in UTF-16 units.
+    ///   - replacement: The text the edit inserts.
+    ///   - nullValue: The NULL placeholder from the preferences, if any.
+    /// - Returns: `false` as well when `range` does not lie within `text`.
+    @objc(isNullPlaceholderEditOfText:replacingRange:withString:nullValue:)
+    public static func isNullPlaceholderEdit(text: NSString, replacing range: NSRange, with replacement: NSString, nullValue: String?) -> Bool {
+        guard range.location != NSNotFound, NSMaxRange(range) <= text.length else {
+            return false
+        }
+        let proposed = text.replacingCharacters(in: range, with: replacement as String) as NSString
+        return proposed.isNullPlaceholderOrItsStart(nullValue)
+    }
 }
 
 /// What a length-limited table cell does with an edit, judged on the text, the
