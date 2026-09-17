@@ -1,4 +1,4 @@
-name: Deploy Release
+name: New Sequel Ace release
 
 run-name: "${{ inputs.preview_only && 'Preview' || 'Deploy' }} ${{ inputs.channel }} ${{ inputs.version }} by @${{ github.actor }}"
 
@@ -16,12 +16,13 @@ on:
         default: beta
         options: [beta, production]
       app_store_notes:
-        description: Customer-facing release notes as '- ' bullets (also used for beta)
+        description: 'Release notes: separate changes with | (example: Fix SSH connections | Improve exports). Multiline text also accepted via CLI/API.'
         required: true
         type: string
-      github_release_notes:
-        description: Optional complete GitHub Markdown body; blank generates notes plus categorized changes
+      expected_main_sha:
+        description: Optional main commit check; leave blank to use latest main at submission
         required: false
+        default: ""
         type: string
       preview_only:
         description: Only generate the plan; create no PR, tag, build, or release
@@ -36,6 +37,9 @@ permissions: {}
 jobs:
   plan:
     name: Freeze and plan the submitted release
+    if: >-
+      (github.actor == 'Jason-Morcos' || github.actor == 'Kaspik') &&
+      (github.triggering_actor == 'Jason-Morcos' || github.triggering_actor == 'Kaspik')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -58,8 +62,8 @@ jobs:
         run: |
           set -euo pipefail
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Use main for release deployment." >&2; exit 1; }
-          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || exit 1
-          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || exit 1
+          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Only Jason-Morcos and Kaspik may start a release." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Only Jason-Morcos and Kaspik may rerun a release." >&2; exit 1; }
           [[ "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
           [[ "${RELEASE_CHANNEL}" == "beta" || "${RELEASE_CHANNEL}" == "production" ]] || exit 1
 

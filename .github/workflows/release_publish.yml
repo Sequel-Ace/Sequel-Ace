@@ -13,6 +13,8 @@ on:
     workflows:
       - Release
       - Deploy Release
+      - New Sequel Ace release
+      - Internal release engine (advanced recovery only)
       - Retry Alpha Beta Artifact
     types:
       - completed

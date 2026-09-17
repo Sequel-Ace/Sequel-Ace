@@ -13,11 +13,34 @@ thin adapter for the App Store operations it already supports; it never chooses
 a build number, creates a git branch, stages files, commits, pushes, opens a PR,
 or creates a GitHub release.
 
-## Self-service deployment (proposed)
+## Start a new release
 
-The **Deploy Release** workflow (`release_deploy.yml`) provides the normal
-GitHub form: version, beta/production channel, customer-facing App Store bullet
-notes, optional complete GitHub Markdown notes, and an optional read-only preview.
+Choose **New Sequel Ace release** (`release_deploy.yml`) in GitHub Actions,
+then **Run workflow** on `main`. Do not use **Internal release engine (advanced
+recovery only)** to start an ordinary new release.
+
+The form asks for:
+
+- **Version:** e.g. `6.0.1`, without a build number.
+- **Channel:** `beta` or `production` (production submits to the App Store).
+- **Release notes:** plain text, e.g. `Fix SSH connections | Improve exports`.
+  Actions converts each change into exactly one `- ` App Store bullet, including
+  pasted Markdown bullets, numbered lists, and common rich-text bullets.
+  Blank lines are ignored; empty bullets and headings are rejected rather than
+  silently publishing them. Real multiline input through the CLI/API works too.
+  GitHub has no supported
+  textarea workflow input; use `|` to separate changes in its single-line form.
+- **Optional main commit check:** leave blank to freeze latest main at submission.
+  A supplied full SHA must match that revision; it never selects stale source.
+- **Preview only:** optional, off by default.
+
+Comparison tags, recovery state, base64 encoding, the approval SHA-256, and the
+`RELEASE channel version` confirmation are internal. You do not enter them.
+Only `Jason-Morcos` and `Kaspik` may initiate or rerun this workflow. Both the
+original actor and rerun initiator are checked before planning and before the
+credential-bearing engine job. Other writers may still see GitHub's Run workflow
+button, but their jobs are skipped. The bot-only archived forward-recovery path
+is not authority to start a new release.
 Leave preview off to deploy. Submitting the form is the sole approval; Actions
 generates the internal confirmation and approval digest itself. No second
 approval or mandatory preview is introduced. Environment reviewer/wait gates
@@ -25,8 +48,9 @@ must not be added to this workflow's release environment.
 
 Actions freezes the selected main revision and calls the existing guarded
 release engine. The advanced interface below remains available for recovery.
-Custom GitHub notes are preserved in the immutable plan and forward recovery;
-they do not replace the separate App Store What's New bullets.
+The GitHub body is always generated from your customer notes plus categorized
+changes, contributors, and comparison link; the form has no body override.
+Actions preserves that generated body in the immutable plan and forward recovery.
 
 **Remaining limitation:** `legacy_updater_v1` still requires a compatible web
 upload of the notarized ZIPs. This is not yet a fully browser-free deployment.
@@ -46,7 +70,7 @@ clients remains unfinished work; do not describe the form as end-to-end automati
   dispatch only a chained `mode=resume` recovery authenticated against the
   failed release's private archive and original approval.
 - The advanced interface's typed confirmation is `RELEASE <channel> <version>`;
-  the normal Deploy Release form generates it internally.
+  the normal New Sequel Ace release form generates it internally.
 - `SA_RELEASE_AUTOMATION_ENABLED` remains `false` until every feasibility gate
   passes.
 - One `sequel-ace-release` concurrency group prevents overlapping preparation,
