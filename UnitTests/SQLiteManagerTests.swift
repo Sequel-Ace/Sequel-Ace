@@ -123,6 +123,26 @@ extension SASQLiteDisplayFormatManagerTests {
         XCTAssertNil(manager.displayOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", columnName: "id"))
         XCTAssertEqual(try rowCount(inSQLiteFile: path, table: "ColumnDisplayOverrides"), 0)
     }
+
+    /// Verifies a store whose table exists while the schema version is still 0 - a launch that
+    /// died between the two - is taken over instead of disabling persistence for good.
+    func testTableWithoutItsSchemaVersionIsTakenOver() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        try makeSQLiteFile(at: path, statements: [
+            "CREATE TABLE ColumnDisplayOverrides (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, hostName TEXT NOT NULL, databaseName TEXT NOT NULL, tableName TEXT NOT NULL, columnName TEXT NOT NULL, format TEXT NOT NULL, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, tableName, columnName))",
+            "INSERT INTO ColumnDisplayOverrides (hostName, databaseName, tableName, columnName, format) VALUES ('host', 'db', 'orders', 'id', 'UUID')",
+        ])
+
+        let manager = SQLiteDisplayFormatManager(databasePath: path)
+        XCTAssertTrue(manager.isPersistent)
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", columnName: "id"), "UUID")
+
+        manager.replaceOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", colName: "payload", format: "hex")
+        XCTAssertEqual(try rowCount(inSQLiteFile: path, table: "ColumnDisplayOverrides"), 2)
+        let reopened = SQLiteDisplayFormatManager(databasePath: path)
+        XCTAssertTrue(reopened.isPersistent)
+        XCTAssertEqual(reopened.allDisplayOverridesFor(hostName: "host", databaseName: "db", tableName: "orders"), ["id": "UUID", "payload": "hex"])
+    }
 }
 
 // MARK: - SQLitePinnedTableManager

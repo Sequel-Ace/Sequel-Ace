@@ -155,8 +155,14 @@ import OSLog
             var newSchemaVersion = schemaVersion
 
             if schemaVersion < 1 {
+                // IF NOT EXISTS: a launch that died between creating the table and
+                // writing the version leaves the table in place at version 0.
+                // Creating it again would fail and switch persistence off for good,
+                // so the existing table is taken over and the version written again;
+                // a table with another schema still fails the check below and leaves
+                // the store unused.
                 let createTableSql = """
-                    CREATE TABLE \(sqliteTableName) (
+                    CREATE TABLE IF NOT EXISTS \(sqliteTableName) (
                       id            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                       hostName      TEXT NOT NULL,
                       databaseName  TEXT NOT NULL,
