@@ -354,6 +354,23 @@
 }
 
 /**
+ * Records that the user stopped loading the current table, so that its information and status are
+ * not asked for again - by a view that reads them lazily - until the table is loaded anew.
+ */
+- (void) recordLoadsStoppedForCurrentTable
+{
+	pthread_mutex_lock(&dataProcessingLock);
+	NSString *tableName = [tableListInstance tableName];
+	if (tableName) {
+		NSString *database = [tableListInstance selectedDatabase];
+		SPTableType tableType = [tableListInstance tableType];
+		[self _recordTableInformationLoadFailureForTable:tableName database:database tableType:tableType];
+		[self _recordStatusLoadFailureForTable:tableName database:database tableType:tableType];
+	}
+	pthread_mutex_unlock(&dataProcessingLock);
+}
+
+/**
  * Retrieve all known status values as a dictionary, using or refreshing the cache as appropriate.
  */
 - (NSDictionary *) statusValues

@@ -127,7 +127,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)_loadTabTask:(NSNumber *)tabViewItemIndexNumber;
 - (void)_loadTableTask;
-- (void)_tableLoadStopRequested;
+/** Records that the user stopped the table load, and keeps the Stop button available. */
+- (void)_stopTableLoad;
 
 #pragma mark - SPConnectionDelegate
 
@@ -1223,6 +1224,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isWorkingLevel) {
 
         SPLog(@"!_isWorkingLevel, all tasks have ended");
+
+        // The cancellation callback of the last task is let go of: a task that passed itself - the
+        // document, say - would otherwise be kept alive, and the next task would inherit it.
+        [taskController disableTaskCancellation];
 
         // Hide the task interface, stop the timers and reset to indeterminate
         [taskController endTaskDisplay];
@@ -5659,7 +5664,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // like loading a table's contents already can. Stopping ends the whole load, not only the
     // query that is running when the button is pressed.
     self.tableLoadStopRequested = NO;
-    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_tableLoadStopRequested)];
+    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
 
     // Update the tables list interface - also updates menus to reflect the selected table type
     [[tablesListInstance onMainThread] setSelectionState:[NSDictionary dictionaryWithObjectsAndKeys:aTable, @"name", [NSNumber numberWithInteger:aTableType], @"type", nil]];
@@ -5734,19 +5739,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * In a threaded task, load the currently selected table/view/proc/function.
- */
-/**
  * Records that the user stopped the table load, so that its task goes on to none of its next
  * stages. The button stays available: a query the load sends before it gets there can wait on the
  * server as well, and pressing it again stops that one too.
  */
-- (void)_tableLoadStopRequested
+- (void)_stopTableLoad
 {
     self.tableLoadStopRequested = YES;
-    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_tableLoadStopRequested)];
+    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
 }
 
+/**
+ * In a threaded task, load the currently selected table/view/proc/function.
+ */
 - (void)_loadTableTask
 {
     @autoreleasepool {
@@ -5799,6 +5804,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
+        // A stopped load leaves the table's status and information unloaded on purpose; the views that
+        // read them lazily must not ask the server for them after all.
+        if (self.tableLoadStopRequested) {
+            [tableDataInstance recordLoadsStoppedForCurrentTable];
+        }
+
         // Notify listeners of the table change now that the state is fully set up.
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
 
@@ -5844,6 +5855,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if (!statusLoaded) [[extendedTableInfoInstance onMainThread] loadTable:nil];
         if (!triggersLoaded) [[tableTriggersInstance onMainThread] resetInterface];
 
+        // A view's own load ends its own cancellation, which hides the button while this load goes on.
+        if (!self.tableLoadStopRequested) {
+            [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
+        }
+
         // If the table row counts an inaccurate and require updating, trigger an update - no
         // action will be performed if not necessary
         if (!self.tableLoadStopRequested) {
@@ -5852,8 +5868,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         SPMainQSync(^{
             // Update the "Show Create Syntax" window if it's already opened
-            // according to the selected table/view/proc/func
-            if ([[self getCreateTableSyntaxWindow] isVisible]) {
+            // according to the selected table/view/proc/func - unless the load was stopped
+            if (!self.tableLoadStopRequested && [[self getCreateTableSyntaxWindow] isVisible]) {
                 [self showCreateTableSyntax:self];
             }
         });
