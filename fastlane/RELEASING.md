@@ -36,6 +36,11 @@ The form asks for:
 
 Comparison tags, recovery state, base64 encoding, the approval SHA-256, and the
 `RELEASE channel version` confirmation are internal. You do not enter them.
+Only `Jason-Morcos` and `Kaspik` may initiate or rerun this workflow. Both the
+original actor and rerun initiator are checked before planning and before the
+credential-bearing engine job. Other writers may still see GitHub's Run workflow
+button, but their jobs are skipped. The bot-only archived forward-recovery path
+is not authority to start a new release.
 Leave preview off to deploy. Submitting the form is the sole approval; Actions
 generates the internal confirmation and approval digest itself. No second
 approval or mandatory preview is introduced. Environment reviewer/wait gates

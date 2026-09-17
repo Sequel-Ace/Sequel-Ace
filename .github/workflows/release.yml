@@ -102,6 +102,14 @@ concurrency:
 jobs:
   release:
     name: Guarded release deployment
+    # Reject unauthorized humans before entering the credential-bearing job.
+    # The bot exception continues only an archived, independently validated
+    # failed release; it cannot initiate a new release.
+    if: >-
+      ((github.actor == 'Jason-Morcos' || github.actor == 'Kaspik') &&
+       (github.triggering_actor == 'Jason-Morcos' || github.triggering_actor == 'Kaspik')) ||
+      (github.actor == 'github-actions[bot]' && github.triggering_actor == 'github-actions[bot]' &&
+       inputs.mode == 'resume' && inputs.recovery_tag != '')
     runs-on: ubuntu-latest
     timeout-minutes: 150
     environment: sequel-ace-release

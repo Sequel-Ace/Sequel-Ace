@@ -170,11 +170,28 @@ class WorkflowPlanTest < Minitest::Test
   def test_precheckout_authorization_rejects_wrong_actor_ref_version_and_rerun_identity
     gate = workflow("release_deploy").dig("jobs", "plan", "steps").first.fetch("run")
     base = { "RELEASE_REF" => "refs/heads/main", "RELEASE_ACTOR" => "Jason-Morcos", "RELEASE_TRIGGERING_ACTOR" => "Jason-Morcos", "RELEASE_VERSION" => "6.0.1", "RELEASE_CHANNEL" => "production" }
-    assert Open3.capture3(base, "bash", "-c", gate).last.success?
+    %w[Jason-Morcos Kaspik].product(%w[Jason-Morcos Kaspik]).each do |actor, rerunner|
+      assert Open3.capture3(base.merge("RELEASE_ACTOR" => actor, "RELEASE_TRIGGERING_ACTOR" => rerunner), "bash", "-c", gate).last.success?
+    end
+    %w[intruder github-actions[bot] codex-pnw[bot] jason-morcos kaspik].each do |other|
+      %w[RELEASE_ACTOR RELEASE_TRIGGERING_ACTOR].each do |field|
+        refute Open3.capture3(base.merge(field => other), "bash", "-c", gate).last.success?
+      end
+    end
     [{ "RELEASE_REF" => "refs/heads/feature" }, { "RELEASE_ACTOR" => "github-actions[bot]" },
      { "RELEASE_TRIGGERING_ACTOR" => "intruder" }, { "RELEASE_VERSION" => "6.0.1; exit 0" },
      { "RELEASE_CHANNEL" => "anything" }].each do |override|
       refute Open3.capture3(base.merge(override), "bash", "-c", gate).last.success?
     end
+  end
+
+  def test_job_level_authorization_precedes_planning_and_engine_credentials
+    human_guard = "(github.actor == 'Jason-Morcos' || github.actor == 'Kaspik') && " \
+                  "(github.triggering_actor == 'Jason-Morcos' || github.triggering_actor == 'Kaspik')"
+    assert_equal human_guard, workflow("release_deploy").dig("jobs", "plan", "if").strip
+    engine = workflow("release").dig("jobs", "release", "if").gsub(/\s+/, " ").strip
+    assert_equal "(#{human_guard}) || " \
+                 "(github.actor == 'github-actions[bot]' && github.triggering_actor == 'github-actions[bot]' && " \
+                 "inputs.mode == 'resume' && inputs.recovery_tag != '')", engine
   end
 end
