@@ -6233,9 +6233,18 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSMutableDictionary *connection = [NSMutableDictionary dictionary];
         NSMutableDictionary *printData = [NSMutableDictionary dictionary];
 
+        // A table whose data could not be read - its query failed, or the wait for it was
+        // stopped - is not printed; the print task then just ends.
+        __block BOOL printable = YES;
+
         SPMainQSync(^{
             [connection setDictionary:[self connectionInformation]];
-            [printData setObject:[self columnNames] forKey:@"columns"];
+            NSArray *columns = [self columnNames];
+            if (!columns) {
+                printable = NO;
+                return;
+            }
+            [printData setObject:columns forKey:@"columns"];
             SPTableViewType view = [self currentlySelectedView];
 
             NSString *heading = @"";
@@ -6256,17 +6265,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                         break;
                 }
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [[tableSource objectForKey:@"structure"] objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [[tableSource objectForKey:@"structure"] count] - 1)]]
-                                 ];
-
-                NSArray *indexes = [[NSArray alloc] initWithArray:
-                                    [[tableSource objectForKey:@"indexes"] objectsAtIndexes:
-                                     [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [[tableSource objectForKey:@"indexes"] count] - 1)]]
-                                    ];
-
-                NSArray *indexColumns = [[tableSource objectForKey:@"indexes"] objectAtIndex:0];
+                NSArray *rows = [SAPrintTable rowsOfTable:[tableSource objectForKey:@"structure"]];
+                NSArray *indexes = [SAPrintTable rowsOfTable:[tableSource objectForKey:@"indexes"]];
+                NSArray *indexColumns = [SAPrintTable headerOfTable:[tableSource objectForKey:@"indexes"]];
+                if (!rows || !indexes || !indexColumns) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
                 [printData setObject:indexes forKey:@"indexes"];
@@ -6281,10 +6286,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Table Content", @"table content print heading");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [data count] - 1)]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
                 [connection setValue:[self->tableContentInstance usedQuery] forKey:@"query"];
@@ -6296,10 +6302,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Query Result", @"query result print heading");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [data count] - 1)]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
                 [connection setValue:[self->customQueryInstance usedQuery] forKey:@"query"];
@@ -6311,10 +6318,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Table Relations", @"toolbar item label for switching to the Table Relations tab");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, ([data count] - 1))]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
             }
@@ -6325,16 +6333,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Table Triggers", @"toolbar item label for switching to the Table Triggers tab");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, ([data count] - 1))]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
             }
 
             [printData setObject:heading forKey:@"heading"];
         });
+
+        if (!printable) {
+            [self endTask];
+            return;
+        }
 
         // Set up template engine with your chosen matcher
         MGTemplateEngine *engine = [MGTemplateEngine templateEngine];
@@ -6396,43 +6410,37 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Returns an array of columns for whichever view is being printed.
+ * Returns an array of columns for whichever view is being printed, or nil when that
+ * view's data could not be read - its query failed, or the wait for it was stopped.
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
 - (NSArray *)columnNames
 {
-    NSArray *columns = nil;
+    NSArray *table = nil;
 
-    SPTableViewType view = [self currentlySelectedView];
-
-    // Table source view
-    if ((view == SPTableViewStructure) && ([[tableSourceInstance tableSourceForPrinting] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[[tableSourceInstance tableSourceForPrinting] objectForKey:@"structure"] objectAtIndex:0] copyItems:YES];
-    }
-    // Table content view
-    else if ((view == SPTableViewContent) && ([[tableContentInstance currentResult] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[tableContentInstance currentResult] objectAtIndex:0] copyItems:YES];
-    }
-    // Custom query view
-    else if ((view == SPTableViewCustomQuery) && ([[customQueryInstance currentResult] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[customQueryInstance currentResult] objectAtIndex:0] copyItems:YES];
-    }
-    // Table relations view
-    else if ((view == SPTableViewRelations) && ([[tableRelationsInstance relationDataForPrinting] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[tableRelationsInstance relationDataForPrinting] objectAtIndex:0] copyItems:YES];
-    }
-    // Table triggers view
-    else if ((view == SPTableViewTriggers) && ([[tableTriggersInstance triggerDataForPrinting] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[tableTriggersInstance triggerDataForPrinting] objectAtIndex:0] copyItems:YES];
+    switch ([self currentlySelectedView]) {
+        case SPTableViewStructure:
+            table = [[tableSourceInstance tableSourceForPrinting] objectForKey:@"structure"];
+            break;
+        case SPTableViewContent:
+            table = [tableContentInstance currentResult];
+            break;
+        case SPTableViewCustomQuery:
+            table = [customQueryInstance currentResult];
+            break;
+        case SPTableViewRelations:
+            table = [tableRelationsInstance relationDataForPrinting];
+            break;
+        case SPTableViewTriggers:
+            table = [tableTriggersInstance triggerDataForPrinting];
+            break;
+        default:
+            break;
     }
 
-    return columns;
+    NSArray *header = [SAPrintTable headerOfTable:table];
+    return header ? [[NSArray alloc] initWithArray:header copyItems:YES] : nil;
 }
 
 /**

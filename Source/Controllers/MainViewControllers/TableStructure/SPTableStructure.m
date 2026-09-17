@@ -1471,10 +1471,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  * Returns a dictionary describing the source of the table to be used for printing purposes. The object accessible
  * via the key 'structure' is an array of the tables fields, where the first element is always the field names
  * and each subsequent element is the field data. This is also true for the table's indexes, which are accessible
- * via the key 'indexes'.
+ * via the key 'indexes'. An array whose query failed has no field names at all.
+ * The table is the one selected in the tables list: after a load that was stopped or failed, the one recorded
+ * here can still be the table shown before.
  */
 - (NSDictionary *)tableSourceForPrinting
 {
+	NSString *printedTable = [tablesListInstance tableName];
 	NSUInteger i, j;
 	NSMutableArray *tempResult  = [NSMutableArray array];
 	NSMutableArray *tempResult2 = [NSMutableArray array];
@@ -1483,8 +1486,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
 	NSString *databaseName = [tableDocumentInstance database];
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [printedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [printedTable backtickQuotedString]] assertingDatabase:databaseName];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
