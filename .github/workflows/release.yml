@@ -3,6 +3,40 @@ name: Release
 run-name: "${{ inputs.mode }} ${{ inputs.channel }} ${{ inputs.version }} by @${{ github.actor }}"
 
 on:
+  workflow_call:
+    inputs:
+      mode:
+        required: true
+        type: string
+      channel:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      expected_main_sha:
+        required: true
+        type: string
+      previous_tag:
+        required: true
+        type: string
+      recovery_tag:
+        required: false
+        default: ""
+        type: string
+      app_store_notes_b64:
+        required: true
+        type: string
+      github_release_body_b64:
+        required: false
+        default: ""
+        type: string
+      approval_sha256:
+        required: true
+        type: string
+      confirmation:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       mode:
@@ -39,6 +73,11 @@ on:
       app_store_notes_b64:
         description: Base64-encoded approved App Store notes
         required: true
+        type: string
+      github_release_body_b64:
+        description: Optional base64 initial GitHub body bound by the approved plan
+        required: false
+        default: ""
         type: string
       approval_sha256:
         description: SHA-256 emitted by sa-release plan
@@ -174,6 +213,7 @@ jobs:
             /release-plan.json \
             /approval.json \
             /release-body.md \
+            /requested-release-body.md \
             /reconciliation.json \
             /manifest.json \
             /preparation.json \
@@ -342,16 +382,23 @@ jobs:
         id: plan
         env:
           APPROVED_NOTES_B64: ${{ inputs.app_store_notes_b64 }}
+          APPROVED_GITHUB_BODY_B64: ${{ inputs.github_release_body_b64 }}
           SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
         run: |
           set -euo pipefail
           ruby -rbase64 -e 'File.binwrite("app-store-notes.txt", Base64.strict_decode64(ENV.fetch("APPROVED_NOTES_B64")))'
+          body_arguments=()
+          if [[ -n "${APPROVED_GITHUB_BODY_B64}" ]]; then
+            ruby -rbase64 -e 'File.binwrite("requested-release-body.md", Base64.strict_decode64(ENV.fetch("APPROVED_GITHUB_BODY_B64")))'
+            body_arguments+=(--github-release-body requested-release-body.md)
+          fi
           bundle exec ruby fastlane/bin/sa-release plan \
             --channel "${{ inputs.channel }}" \
             --target-version "${{ inputs.version }}" \
             --base-tag "${{ inputs.previous_tag }}" \
             --main-ref "${{ inputs.expected_main_sha }}" \
             --app-store-notes app-store-notes.txt \
+            "${body_arguments[@]}" \
             --expected-approval-sha "${{ inputs.approval_sha256 }}" \
             --output release-plan.json
           ruby -rjson -e 'plan = JSON.parse(File.read("release-plan.json")); File.write("approval.json", JSON.pretty_generate(plan.fetch("approval")) + "\n"); File.binwrite("app-store-notes.txt", plan.fetch("approval").fetch("app_store_notes")); File.write("release-body.md", plan.fetch("github_release_body")); output = ENV.fetch("GITHUB_OUTPUT"); File.open(output, "a") { |file| file.puts("iteration=#{plan.fetch("iteration")}"); file.puts("base_sha=#{plan.fetch("base_sha")}"); file.puts("changelog_base_tag=#{plan.fetch("changelog_base_tag")}"); file.puts("changelog_base_sha=#{plan.fetch("changelog_base_sha")}") }'

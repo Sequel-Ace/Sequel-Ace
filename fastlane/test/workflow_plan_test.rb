@@ -1,0 +1,135 @@
+# frozen_string_literal: true
+
+require "test_helper"
+require "yaml"
+require "open3"
+
+class WorkflowPlanTest < Minitest::Test
+  include ReleaseTestHelpers
+
+  class Git
+    def sha(ref)
+      ref.start_with?("production/") ? "b" * 40 : "a" * 40
+    end
+
+    def changes(**)
+      [SequelAceRelease::GitRepository::Change.new(sha: "c" * 40, title: "Improve connections", category: "fixed")]
+    end
+
+    def ancestor?(*); true; end
+  end
+
+  def inputs
+    { "channel" => "production", "version" => "5.3.2", "app_store_notes" => "- Improve connections.\n", "preview_only" => "false" }
+  end
+
+  def planner(beta: false)
+    releases = [{ "tag_name" => "production/5.3.1-20104", "draft" => false, "prerelease" => false }]
+    releases << { "tag_name" => "beta/5.3.2-20105", "prerelease" => true, "name" => "5.3.2 (20105) Beta 1" } if beta
+    github = Object.new
+    github.define_singleton_method(:releases) { releases }
+    github.define_singleton_method(:new_contributors) { |_| {} }
+    versions = Object.new
+    versions.define_singleton_method(:current) { { "version" => "5.3.1", "build" => 20_104 } }
+    SequelAceRelease::Planner.new(git: Git.new, github: github, version_files: versions)
+  end
+
+  def create(values = inputs, beta: false)
+    SequelAceRelease::WorkflowPlan.new(planner: planner(beta: beta)).create(inputs: values, main_sha: "a" * 40)
+  end
+
+  def test_form_submission_generates_all_internal_approval_fields
+    plan = create
+    dispatch = plan.fetch("dispatch_inputs")
+    assert_equal "start", dispatch.fetch("mode")
+    assert_equal "RELEASE production 5.3.2", dispatch.fetch("confirmation")
+    assert_equal "production/5.3.1-20104", dispatch.fetch("previous_tag")
+    assert_equal "a" * 40, dispatch.fetch("expected_main_sha")
+    assert_equal "- Improve connections.", Base64.strict_decode64(dispatch.fetch("app_store_notes_b64"))
+    assert_equal plan.fetch("github_release_body"), Base64.strict_decode64(dispatch.fetch("github_release_body_b64"))
+    assert SequelAceRelease::Approval.from_hash(plan.fetch("approval")).verify!(dispatch.fetch("approval_sha256"))
+    refute plan.fetch("preview_only")
+    refute dispatch.key?("build")
+  end
+
+  def test_later_beta_resolves_incremental_notes_and_cumulative_changelog_in_actions
+    plan = create(inputs.merge("channel" => "beta"), beta: true)
+    assert_equal "beta/5.3.2-20105", plan.fetch("base_tag")
+    assert_equal "production/5.3.1-20104", plan.fetch("changelog_base_tag")
+    assert_equal 2, plan.fetch("iteration")
+  end
+
+  def test_custom_body_is_data_and_reproduces_the_exact_approval_in_the_engine
+    body = "## Hand-written notes\n\n- Quotes: ' \" $HOME $(touch /tmp/not-executed)\n- Café\n"
+    plan = create(inputs.merge("github_release_notes" => body))
+    assert_equal body, plan.fetch("github_release_body")
+    dispatch = plan.fetch("dispatch_inputs")
+    replay = planner.plan(
+      channel: dispatch.fetch("channel"), target_version: dispatch.fetch("version"),
+      base_tag: dispatch.fetch("previous_tag"), main_ref: dispatch.fetch("expected_main_sha"),
+      app_store_notes: Base64.strict_decode64(dispatch.fetch("app_store_notes_b64")),
+      github_release_body: Base64.strict_decode64(dispatch.fetch("github_release_body_b64"))
+    )
+    assert_equal dispatch.fetch("approval_sha256"), replay.fetch("approval").fetch("sha256")
+    changed = replay.fetch("approval").merge("release_notes_sha256" => Digest::SHA256.hexdigest("changed"))
+    assert_raises(SequelAceRelease::ValidationError) { SequelAceRelease::Approval.from_hash(changed).verify!(dispatch.fetch("approval_sha256")) }
+  end
+
+  def test_rejects_empty_or_oversized_notes_and_hidden_operational_inputs
+    ["", "A paragraph", "- " + "x" * 4000, "- text\0", "- Good\n# heading"].each do |notes|
+      assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("app_store_notes" => notes)) }
+    end
+    %w[expected_main_sha approval_sha256 recovery_tag build confirmation].each do |field|
+      assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge(field => "override")) }
+    end
+    assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("github_release_notes" => "x" * 46_000)) }
+    assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("github_release_notes" => "\0")) }
+  end
+
+  def test_preview_is_optional_and_strictly_boolean
+    assert create(inputs.merge("preview_only" => true)).fetch("preview_only")
+    assert create(inputs.merge("preview_only" => "true")).fetch("preview_only")
+    refute create(inputs.reject { |key, _| key == "preview_only" }).fetch("preview_only")
+    assert_raises(SequelAceRelease::ValidationError) { create(inputs.merge("preview_only" => "yes")) }
+  end
+
+  def workflow(name)
+    YAML.load_file(File.expand_path("../../.github/workflows/#{name}.yml", __dir__))
+  end
+
+  def events(data)
+    data["on"] || data[true]
+  end
+
+  def test_public_form_reuses_the_same_revision_engine_without_a_second_approval
+    form = workflow("release_deploy")
+    engine = workflow("release")
+    fields = events(form).fetch("workflow_dispatch").fetch("inputs")
+    assert_equal SequelAceRelease::WorkflowPlan::INPUTS.sort, fields.keys.sort
+    assert_equal false, fields.fetch("preview_only").fetch("default")
+    refute form.key?("concurrency"), "caller must not deadlock the serialized engine"
+    assert_equal({ "contents" => "read" }, form.dig("jobs", "plan", "permissions"))
+    refute form.dig("jobs", "plan").key?("environment")
+    deploy = form.dig("jobs", "deploy")
+    assert_equal "./.github/workflows/release.yml", deploy.fetch("uses")
+    assert_equal "${{ !inputs.preview_only }}", deploy.fetch("if")
+    assert_equal ["deploy", "plan"], form.fetch("jobs").keys.sort
+    schema = events(engine).fetch("workflow_call").fetch("inputs")
+    assert_empty deploy.fetch("with").keys - schema.keys
+    assert_empty schema.select { |_, value| value["required"] }.keys - deploy.fetch("with").keys
+    assert_equal "sequel-ace-release", engine.fetch("concurrency").fetch("group")
+    assert_equal "sequel-ace-release", engine.dig("jobs", "release", "environment")
+    assert_equal engine.fetch("permissions"), deploy.fetch("permissions")
+  end
+
+  def test_precheckout_authorization_rejects_wrong_actor_ref_version_and_rerun_identity
+    gate = workflow("release_deploy").dig("jobs", "plan", "steps").first.fetch("run")
+    base = { "RELEASE_REF" => "refs/heads/main", "RELEASE_ACTOR" => "Jason-Morcos", "RELEASE_TRIGGERING_ACTOR" => "Jason-Morcos", "RELEASE_VERSION" => "6.0.1", "RELEASE_CHANNEL" => "production" }
+    assert Open3.capture3(base, "bash", "-c", gate).last.success?
+    [{ "RELEASE_REF" => "refs/heads/feature" }, { "RELEASE_ACTOR" => "github-actions[bot]" },
+     { "RELEASE_TRIGGERING_ACTOR" => "intruder" }, { "RELEASE_VERSION" => "6.0.1; exit 0" },
+     { "RELEASE_CHANNEL" => "anything" }].each do |override|
+      refute Open3.capture3(base.merge(override), "bash", "-c", gate).last.success?
+    end
+  end
+end
