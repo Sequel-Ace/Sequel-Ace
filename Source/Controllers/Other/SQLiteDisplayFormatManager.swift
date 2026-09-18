@@ -10,9 +10,11 @@ import OSLog
 /// Persists the per-column display formats in an SQLite store in the
 /// application-support folder. The store is a convenience: when it cannot
 /// be opened or created - the folder is not writable, the file is damaged -
-/// the manager carries on without it, formats simply do not persist, and the
-/// table content keeps working. It never terminates the app; the first
-/// problem with the store is handed to `problems`, which the app shows.
+/// the manager carries on without it: the formats chosen in the running
+/// session are kept in memory, so the table content and its column menu agree
+/// with what the user picked, they are simply gone after the next launch. It
+/// never terminates the app; the first problem with the store is handed to
+/// `problems`, which the app shows.
 @objc final class SQLiteDisplayFormatManager: NSObject {
     typealias SchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) throws -> Int
 
@@ -24,6 +26,13 @@ import OSLog
 
     /// The store, or `nil` when it turned out to be unusable.
     private let queue: FMDatabaseQueue?
+    /// Guards the formats chosen in this session.
+    private let stateLock = NSLock()
+    /// The formats chosen in this session, per table and column. They answer
+    /// every read, whether or not they reached the store, so a store that is
+    /// unusable or refuses a write does not make the column menu and the
+    /// installed formatter disagree with what the user just picked.
+    private var sessionOverrides: [SADisplayFormatTableKey: [String: String]] = [:]
     /// Where the store lives, for the problems reported about it.
     private let databasePath: String?
     /// Receives the first problem with the store: one that left the manager
@@ -58,9 +67,13 @@ import OSLog
         queue != nil
     }
 
-    /// Returns the stored display format of one column, or `nil` when none is
-    /// stored or the store is unusable.
+    /// Returns the display format of one column: the one chosen in this
+    /// session, otherwise the stored one, or `nil` when there is neither.
     @objc func displayOverrideFor(hostName: String, databaseName: String, tableName: String, columnName: String) -> String? {
+        let key = SADisplayFormatTableKey(hostName: hostName, databaseName: databaseName, tableName: tableName)
+        if let chosen = stateLock.withLock({ sessionOverrides[key]?[columnName] }) {
+            return chosen
+        }
         guard let queue else {
             return nil
         }
@@ -92,11 +105,14 @@ import OSLog
         return found
     }
 
-    /// Returns the stored display formats of a table's columns, keyed by column
-    /// name; empty when none are stored or the store is unusable.
+    /// Returns the display formats of a table's columns, keyed by column name:
+    /// the stored ones, with the ones chosen in this session on top. Empty when
+    /// there are neither.
     @objc func allDisplayOverridesFor(hostName: String, databaseName: String, tableName: String) -> [String:String] {
+        let key = SADisplayFormatTableKey(hostName: hostName, databaseName: databaseName, tableName: tableName)
+        let chosen = stateLock.withLock { sessionOverrides[key] ?? [:] }
         guard let queue else {
-            return [:]
+            return chosen
         }
         var formats = [String:String]()
 
@@ -124,13 +140,19 @@ import OSLog
         }
         queue.close()
 
+        formats.merge(chosen) { _, chosenFormat in chosenFormat }
         return formats
     }
 
-    /// Stores `format` as the display format of one column, replacing an earlier
-    /// one. Does nothing when the store is unusable; a failed write is logged
+    /// Sets `format` as the display format of one column, replacing an earlier
+    /// one; an empty format means no override. It holds for the running session
+    /// either way, and is stored when there is a store; a failed write is logged
     /// and reported to `problems`.
     @objc func replaceOverrideFor(hostName: String, databaseName: String, tableName: String, colName: String, format: String) {
+        let key = SADisplayFormatTableKey(hostName: hostName, databaseName: databaseName, tableName: tableName)
+        stateLock.withLock {
+            sessionOverrides[key, default: [:]][colName] = format
+        }
         guard let queue else {
             return
         }
@@ -282,6 +304,14 @@ fileprivate extension FMDatabase {
     func executeUpdate(_ sql: String) throws {
         try self.executeUpdate(sql, values: nil)
     }
+}
+
+/// One table of one database on one host: what the formats chosen in a
+/// session are kept under.
+private struct SADisplayFormatTableKey: Hashable {
+    let hostName: String
+    let databaseName: String
+    let tableName: String
 }
 
 // MARK: - Store problems

@@ -53,27 +53,37 @@ final class SASQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertEqual(reopened.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), ["c": "binary", "c2": "base64"])
     }
 
-    /// Verifies that a store in a missing folder leaves the manager without persistence,
-    /// returning no formats and creating no file.
-    func testUnwritableLocationDegradesToDefaults() {
+    /// Verifies that with a store in a missing folder the formats chosen in the session
+    /// are still answered - the column menu has to agree with the installed formatter -
+    /// while nothing is written and a later launch starts without them.
+    func testUnwritableLocationKeepsFormatsInMemory() {
         let path = directory.appendingPathComponent("missing/formats.db").path
         let manager = SQLiteDisplayFormatManager(databasePath: path)
         XCTAssertFalse(manager.isPersistent)
 
         manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
-        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
-        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), [:])
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "hex")
+        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), ["c": "hex"])
+        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "other", columnName: "c"))
+
+        // Switching the override off is answered as such, not as the earlier format.
+        manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "")
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "")
+
         XCTAssertFalse(FileManager.default.fileExists(atPath: path))
+        XCTAssertNil(SQLiteDisplayFormatManager(databasePath: path).displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
     }
 
-    /// Verifies that a `nil` path leaves the manager without persistence, returning no formats.
-    func testMissingLocationDegradesToDefaults() {
+    /// Verifies that a `nil` path leaves the manager without persistence while the formats
+    /// chosen in the session still answer.
+    func testMissingLocationKeepsFormatsInMemory() {
         let manager = SQLiteDisplayFormatManager(databasePath: nil)
         XCTAssertFalse(manager.isPersistent)
+        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
 
         manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
-        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
-        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), [:])
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "hex")
+        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), ["c": "hex"])
     }
 
     /// Verifies that a file that is not a database is not used and is left untouched.
@@ -86,13 +96,13 @@ final class SASQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertFalse(manager.isPersistent)
 
         manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
-        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
-        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), [:])
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "hex")
         XCTAssertEqual(try Data(contentsOf: url), garbage)
     }
 
-    /// Verifies that a read-only empty file, in which the table cannot be created, is not used.
-    func testReadOnlyStoreDegradesWhenTheTableCannotBeCreated() throws {
+    /// Verifies that a read-only empty file, in which the table cannot be created, is not
+    /// used, while the formats chosen in the session still answer.
+    func testReadOnlyStoreIsNotUsedWhileFormatsStayInMemory() throws {
         let url = directory.appendingPathComponent("formats.db")
         try Data().write(to: url)
         try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: url.path)
@@ -101,11 +111,37 @@ final class SASQLiteDisplayFormatManagerTests: XCTestCase {
         XCTAssertFalse(manager.isPersistent)
 
         manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
-        XCTAssertNil(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "hex")
+        // Nothing reached the file, and nothing leaks into another manager.
+        XCTAssertTrue(try Data(contentsOf: url).isEmpty)
+        XCTAssertNil(SQLiteDisplayFormatManager(databasePath: url.path).displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"))
     }
 }
 
 extension SASQLiteDisplayFormatManagerTests {
+    /// Verifies that a format the store refuses still answers for the running session, and
+    /// replaces a stored one, while the file keeps what it had.
+    func testFormatRefusedByTheStoreStillAnswersForTheSession() throws {
+        let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        SQLiteDisplayFormatManager(databasePath: path)
+            .replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "UUID")
+        try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: path)
+
+        let manager = SQLiteDisplayFormatManager(databasePath: path)
+        XCTAssertTrue(manager.isPersistent)
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "UUID")
+
+        // Switching it off is refused by the file, but holds for the session.
+        manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "")
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "")
+        XCTAssertEqual(manager.allDisplayOverridesFor(hostName: "h", databaseName: "d", tableName: "t"), ["c": ""])
+        XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
+
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: path)
+        XCTAssertEqual(SQLiteDisplayFormatManager(databasePath: path).displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "UUID")
+    }
+
+
     /// Verifies that a store whose table lacks a column the queries read is not used and
     /// receives no rows.
     func testStoreWhoseTableCannotBeReadIsNotUsed() throws {
@@ -120,7 +156,7 @@ extension SASQLiteDisplayFormatManagerTests {
         let manager = SQLiteDisplayFormatManager(databasePath: path)
         XCTAssertFalse(manager.isPersistent)
         manager.replaceOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", colName: "id", format: "UUID")
-        XCTAssertNil(manager.displayOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", columnName: "id"))
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "host", databaseName: "db", tableName: "orders", columnName: "id"), "UUID")
         XCTAssertEqual(try rowCount(inSQLiteFile: path, table: "ColumnDisplayOverrides"), 0)
     }
 
@@ -828,9 +864,13 @@ final class SASQLiteStoreProblemReportingTests: XCTestCase {
     /// the query may succeed again - while the write that follows is.
     func testAFailedReadIsNotReportedButARefusedWriteIs() throws {
         let path = directory.appendingPathComponent("ColumnDisplayOverrides.db").path
+        SQLiteDisplayFormatManager(databasePath: path)
+            .replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
+
+        // A manager that has chosen nothing itself, so only the store can answer.
         let manager = SQLiteDisplayFormatManager(databasePath: path)
-        manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "hex")
         XCTAssertTrue(manager.isPersistent)
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "hex")
 
         // The table disappears under the running manager, as another process could do.
         try makeSQLiteFile(at: path, statements: ["DROP TABLE ColumnDisplayOverrides"])
@@ -841,6 +881,8 @@ final class SASQLiteStoreProblemReportingTests: XCTestCase {
 
         manager.replaceOverrideFor(hostName: "h", databaseName: "d", tableName: "t", colName: "c", format: "base64")
         XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
+        // The choice still answers for this session, even though the store could not take it.
+        XCTAssertEqual(manager.displayOverrideFor(hostName: "h", databaseName: "d", tableName: "t", columnName: "c"), "base64")
     }
 
     /// Verifies that a format that cannot be written is reported as well.
