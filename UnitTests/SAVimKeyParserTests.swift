@@ -131,6 +131,26 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(type("x"), .command(.deleteChar(forward: true, count: 1)))
     }
 
+    func testAGuardedRejectionClearsThePendingOperator() {
+        // A mistyped key after an operator must not leave `d` armed: the motion
+        // that follows it would delete instead of moving.
+        for rejected in ["v", "V", "r", "u", ".", "/", "?"] {
+            parser.reset()
+            XCTAssertEqual(type("d"), .pending(display: "d"))
+            XCTAssertEqual(type(rejected), .rejected, "\(rejected) after an operator")
+            XCTAssertFalse(parser.hasPendingSequence, "\(rejected) left a pending sequence")
+            XCTAssertEqual(type("w"), .command(.move(.wordForward(big: false), count: 1)),
+                           "the motion after a rejected \(rejected)")
+        }
+    }
+
+    func testARejectedRepeatFindClearsThePendingOperatorAndCount() {
+        XCTAssertEqual(type("2d"), .pending(display: "2d"))
+        XCTAssertEqual(type(";"), .rejected)
+        XCTAssertFalse(parser.hasPendingSequence)
+        XCTAssertEqual(type("w"), .command(.move(.wordForward(big: false), count: 1)))
+    }
+
     // MARK: - Mode changes
 
     func testInsertKeysEnterInsertMode() {

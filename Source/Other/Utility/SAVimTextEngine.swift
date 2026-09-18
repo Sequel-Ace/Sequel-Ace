@@ -122,13 +122,18 @@ enum SAVimTextEngine {
 
         case .selectTextObject(let object):
             guard let range = textObjectRange(object, context: context) else { return .failed }
-            return SAVimOutcome(caret: NSMaxRange(range) - 1, selection: range, visualAnchor: range.location)
+            let head = range.length > 0
+                ? characterStart(at: NSMaxRange(range) - 1, in: context.text)
+                : range.location
+            return SAVimOutcome(caret: head, selection: range, visualAnchor: range.location)
 
         case .enterInsert(let placement, _):
             return runEnterInsert(placement, context: context)
 
         case .enterVisual(let line):
-            let range = line ? lineRange(at: context.caret, in: context.text) : NSRange(location: context.caret, length: 1)
+            let range = line
+                ? lineRange(at: context.caret, in: context.text)
+                : characterRange(at: context.caret, in: context.text)
             return SAVimOutcome(caret: context.caret,
                                 selection: clampRange(range, in: context.text),
                                 mode: line ? .visualLine : .visual,
@@ -217,11 +222,19 @@ enum SAVimTextEngine {
         switch motion {
         case .charLeft:
             let start = lineStart(at: caret, in: text)
-            return (max(start, caret - repeats), .exclusive, nil)
+            var location = caret
+            for _ in 0..<repeats {
+                location = characterBefore(location, notBefore: start, in: text)
+            }
+            return (location, .exclusive, nil)
 
         case .charRight:
             let end = lineContentEnd(at: caret, in: text)
-            return (min(end, caret + repeats), .exclusive, nil)
+            var location = caret
+            for _ in 0..<repeats {
+                location = characterAfter(location, notBeyond: end, in: text)
+            }
+            return (location, .exclusive, nil)
 
         case .lineUp, .lineDown:
             let column = context.desiredColumn ?? (caret - lineStart(at: caret, in: text))
@@ -238,7 +251,7 @@ enum SAVimTextEngine {
             }
             let contentEnd = lineContentEnd(at: lineStartLocation, in: text)
             let target = min(lineStartLocation + column, contentEnd)
-            return (target, .linewise, column)
+            return (characterStart(at: target, in: text), .linewise, column)
 
         case .wordForward(let big):
             var location = caret
@@ -536,7 +549,7 @@ enum SAVimTextEngine {
 
         let range = NSRange(location: caret, length: location - caret)
         let replacement = String(repeating: String(character), count: repeats)
-        let caretAfter = caret + (replacement as NSString).length - 1
+        let caretAfter = caret + (replacement as NSString).length - (String(character) as NSString).length
         return SAVimOutcome(edit: SAVimEdit(range: range, text: replacement),
                             caret: max(caret, caretAfter),
                             selection: NSRange(location: max(caret, caretAfter), length: 0))
@@ -579,7 +592,10 @@ enum SAVimTextEngine {
         let location = (after && caret < end)
             ? NSMaxRange(text.rangeOfComposedCharacterSequence(at: caret))
             : caret
-        let caretAfter = location + (body as NSString).length - 1
+        let pasted = body as NSString
+        let caretAfter = pasted.length > 0
+            ? location + pasted.rangeOfComposedCharacterSequence(at: pasted.length - 1).location
+            : location
         return SAVimOutcome(edit: SAVimEdit(range: NSRange(location: location, length: 0), text: body),
                             caret: max(location, caretAfter),
                             selection: NSRange(location: max(location, caretAfter), length: 0))
@@ -704,6 +720,33 @@ extension SAVimTextEngine {
         lineRange(at: location, in: text).location
     }
 
+    /// vim counts whole characters, `NSTextView` counts UTF-16 code units.
+    /// Stepping by code units would split an emoji's surrogate pair, so every
+    /// horizontal step and every one-character span goes through these.
+    static func characterAfter(_ location: Int, notBeyond limit: Int, in text: NSString) -> Int {
+        guard location < limit else { return location }
+        return min(NSMaxRange(text.rangeOfComposedCharacterSequence(at: location)), limit)
+    }
+
+    static func characterBefore(_ location: Int, notBefore limit: Int, in text: NSString) -> Int {
+        guard location > limit else { return location }
+        return max(text.rangeOfComposedCharacterSequence(at: location - 1).location, limit)
+    }
+
+    /// The start of the character `location` sits in, so that a caret computed
+    /// as an offset never ends up half-way through one.
+    static func characterStart(at location: Int, in text: NSString) -> Int {
+        guard location > 0, location < text.length else { return location }
+        return text.rangeOfComposedCharacterSequence(at: location).location
+    }
+
+    /// The single character under the caret, empty at the end of the text.
+    static func characterRange(at location: Int, in text: NSString) -> NSRange {
+        let bounded = max(0, min(location, text.length))
+        guard bounded < text.length else { return NSRange(location: bounded, length: 0) }
+        return text.rangeOfComposedCharacterSequence(at: bounded)
+    }
+
     /// The end of the line's text, before the newline.
     static func lineContentEnd(at location: Int, in text: NSString) -> Int {
         guard text.length > 0 else { return 0 }
@@ -782,7 +825,7 @@ extension SAVimTextEngine {
         let start = lineStart(at: bounded, in: text)
         let end = lineContentEnd(at: bounded, in: text)
         guard end > start, bounded >= end else {
-            return max(start, min(bounded, end))
+            return characterStart(at: max(start, min(bounded, end)), in: text)
         }
         return text.rangeOfComposedCharacterSequence(at: end - 1).location
     }

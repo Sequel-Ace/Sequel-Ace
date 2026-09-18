@@ -231,8 +231,13 @@ import AppKit
             guard shouldChangeText(in: edit.range, replacementString: edit.text) else {
                 // The delegate refused the edit, so the insert session this
                 // command was about to open never happens — close its undo
-                // group again rather than leaving grouping switched off.
+                // group again rather than leaving grouping switched off, and
+                // put the parser back in normal mode so the next key is read
+                // as a command and not typed into the query.
                 leaveInsertMode()
+                parser.setMode(.normal)
+                refreshInsertionPoint()
+                refreshBadge()
                 NSSound.beep()
                 return
             }

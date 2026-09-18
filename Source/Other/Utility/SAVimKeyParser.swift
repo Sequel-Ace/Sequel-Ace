@@ -346,8 +346,7 @@ final class SAVimKeyParser {
                 // Arrows and page keys keep moving the caret as they always have.
                 return .passthrough
             }
-            resetSequence()
-            return .rejected
+            return reject()
         }
     }
 
@@ -414,7 +413,7 @@ final class SAVimKeyParser {
                                  till: character == "t" || character == "T")
             return pendingResult(character)
         case ";", ",":
-            guard let last = lastFind else { return .rejected }
+            guard let last = lastFind else { return reject() }
             let reverse = character == ","
             return motion(.findChar(last.character,
                                     forward: reverse ? !last.forward : last.forward,
@@ -437,10 +436,10 @@ final class SAVimKeyParser {
 
         // Visual mode
         case "v":
-            guard pendingOperator == nil else { return .rejected }
+            guard pendingOperator == nil else { return reject() }
             return toggleVisual(line: false)
         case "V":
-            guard pendingOperator == nil else { return .rejected }
+            guard pendingOperator == nil else { return reject() }
             return toggleVisual(line: true)
 
         // Operators
@@ -465,21 +464,21 @@ final class SAVimKeyParser {
         case "J": return edit(.joinLines(count: takeCount()))
         case "~": return edit(.toggleCase(count: takeCount()))
         case "r":
-            guard pendingOperator == nil else { return .rejected }
+            guard pendingOperator == nil else { return reject() }
             awaiting = .replaceChar
             return pendingResult(character)
 
         // Undo, redo, repeat
         case "u":
-            guard pendingOperator == nil else { return .rejected }
+            guard pendingOperator == nil else { return reject() }
             return complete(.undo(count: takeCount()))
         case ".":
-            guard pendingOperator == nil else { return .rejected }
+            guard pendingOperator == nil else { return reject() }
             return complete(.repeatLastChange(count: takeCount()))
 
         // Search
         case "/", "?":
-            guard pendingOperator == nil else { return .rejected }
+            guard pendingOperator == nil else { return reject() }
             clearCounts()
             search = (pattern: "", forward: character == "/")
             pendingDisplay = String(character)
@@ -492,8 +491,7 @@ final class SAVimKeyParser {
             return .command(.unsupported(":"))
 
         default:
-            resetSequence()
-            return .rejected
+            return reject()
         }
     }
 
@@ -501,8 +499,7 @@ final class SAVimKeyParser {
 
     private func handleAwaited(_ awaiting: Awaiting, _ stroke: SAVimKeyStroke) -> SAVimParseResult {
         guard let character = stroke.character, !stroke.control else {
-            resetSequence()
-            return .rejected
+            return reject()
         }
 
         switch awaiting {
@@ -518,8 +515,7 @@ final class SAVimKeyParser {
         case .textObject(let around):
             self.awaiting = nil
             guard let object = SAVimKeyParser.textObject(for: character, around: around) else {
-                resetSequence()
-                return .rejected
+                return reject()
             }
             if let pendingOperator {
                 return finishOperator(pendingOperator, .textObject(object))
@@ -533,8 +529,7 @@ final class SAVimKeyParser {
             case "g":
                 return motion(.fileStart)
             default:
-                resetSequence()
-                return .rejected
+                return reject()
             }
         }
     }
@@ -556,7 +551,7 @@ final class SAVimKeyParser {
     // MARK: - Search entry
 
     private func handleSearchKey(_ stroke: SAVimKeyStroke) -> SAVimParseResult {
-        guard var entry = search else { return .rejected }
+        guard var entry = search else { return reject() }
 
         if stroke.isReturn {
             resetSequence()
@@ -640,8 +635,7 @@ final class SAVimKeyParser {
 
     private func edit(_ command: SAVimCommand) -> SAVimParseResult {
         guard pendingOperator == nil else {
-            resetSequence()
-            return .rejected
+            return reject()
         }
         if mode.isVisual, case .deleteChar = command {
             return visualOperator(.delete)
@@ -657,10 +651,17 @@ final class SAVimKeyParser {
         return .command(command)
     }
 
+    /// Every rejected key ends the sequence. A pending operator that survived
+    /// a rejection would swallow the next motion: after `d` and a rejected
+    /// `v`, the following `w` would delete a word instead of moving.
+    private func reject() -> SAVimParseResult {
+        resetSequence()
+        return .rejected
+    }
+
     private func enterInsert(_ placement: SAVimInsertPlacement) -> SAVimParseResult {
         guard pendingOperator == nil, !mode.isVisual else {
-            resetSequence()
-            return .rejected
+            return reject()
         }
         let repeats = takeCount()
         mode = .insert
@@ -687,8 +688,7 @@ final class SAVimKeyParser {
         if let pending = pendingOperator {
             // `dd`, `yy`, `>>` … — the doubled key means "this many lines".
             guard pending == op else {
-                resetSequence()
-                return .rejected
+                return reject()
             }
             return finishOperator(op, .wholeLines)
         }
@@ -704,8 +704,7 @@ final class SAVimKeyParser {
 
     private func shorthand(_ op: SAVimOperator, _ target: SAVimTarget) -> SAVimParseResult {
         guard pendingOperator == nil else {
-            resetSequence()
-            return .rejected
+            return reject()
         }
         if mode.isVisual {
             return visualOperator(op)

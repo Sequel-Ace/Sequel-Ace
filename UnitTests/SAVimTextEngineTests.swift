@@ -520,6 +520,48 @@ final class SAVimTextEngineTests: XCTestCase {
         XCTAssertEqual(applied(run(.operate(.delete, .motion(.lineEnd), count: 1), trailing, caret: 7), to: trailing), "SELECT ")
     }
 
+    func testHorizontalMotionsStepOverWholeCharacters() {
+        let emoji = "😀x😀y"
+
+        // `l` from the start clears the whole surrogate pair, not half of it.
+        XCTAssertEqual(run(.move(.charRight, count: 1), emoji, caret: 0).caret, 2)
+        XCTAssertEqual(run(.move(.charRight, count: 2), emoji, caret: 0).caret, 3)
+        XCTAssertEqual(run(.move(.charLeft, count: 1), emoji, caret: 3).caret, 2)
+        XCTAssertEqual(run(.move(.charLeft, count: 2), emoji, caret: 3).caret, 0)
+    }
+
+    func testDeleteRightTakesTheWholeCharacter() {
+        let emoji = "😀x"
+        XCTAssertEqual(applied(run(.operate(.delete, .motion(.charRight), count: 1), emoji, caret: 0), to: emoji), "x")
+        XCTAssertEqual(applied(run(.operate(.delete, .motion(.charLeft), count: 1), emoji, caret: 2), to: emoji), "x")
+    }
+
+    func testVisualModeStartsOnAWholeCharacter() {
+        let emoji = "😀x"
+        XCTAssertEqual(run(.enterVisual(line: false), emoji, caret: 0).selection, NSRange(location: 0, length: 2))
+        // And the selection the operator then sees covers the pair.
+        XCTAssertEqual(applied(run(.operateSelection(.delete), emoji, caret: 0,
+                                   mode: .visual, selection: NSRange(location: 0, length: 2)), to: emoji), "x")
+    }
+
+    func testVerticalMotionNeverLandsInsideACharacter() {
+        // The remembered column is a UTF-16 offset, so it can point at the
+        // second half of the emoji on the line below.
+        let lines = "abc\n😀x"
+        XCTAssertEqual(run(.move(.lineDown, count: 1), lines, caret: 1).caret, 4)
+    }
+
+    func testPasteAndReplaceLeaveTheCaretOnACharacterBoundary() {
+        let pasted = run(.paste(after: false, count: 1), "ab", caret: 1,
+                         register: SAVimRegister(text: "😀", isLinewise: false))
+        XCTAssertEqual(applied(pasted, to: "ab"), "a😀b")
+        XCTAssertEqual(pasted.caret, 1)
+
+        let replaced = run(.replaceChar("😀", count: 1), "ab", caret: 0)
+        XCTAssertEqual(applied(replaced, to: "ab"), "😀b")
+        XCTAssertEqual(replaced.caret, 0)
+    }
+
     // MARK: - Edge cases
 
     func testCommandsOnAnEmptyBufferDoNotCrash() {
