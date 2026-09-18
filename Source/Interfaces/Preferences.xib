@@ -1837,7 +1837,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             <point key="canvasLocation" x="732" y="551"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="802" userLabel="Editor">
-            <rect key="frame" x="0.0" y="-2" width="540" height="528"/>
+            <rect key="frame" x="0.0" y="-2" width="540" height="559"/>
             <userGuides>
                 <userLayoutGuide location="146" affinity="minX"/>
                 <userLayoutGuide location="317" affinity="minX"/>
@@ -1939,6 +1939,19 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     </constraints>
                     <connections>
                         <binding destination="117" name="value" keyPath="values.CustomQueryAutoUppercaseKeywords" id="1093"/>
+                    </connections>
+                </button>
+                <button translatesAutoresizingMaskIntoConstraints="NO" id="2600">
+                    <rect key="frame" x="261" y="324" width="259" height="22"/>
+                    <buttonCell key="cell" type="check" title="Vim mode" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="2601">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="22" id="Vm0-ht-cSt"/>
+                    </constraints>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.CustomQueryVimMode" id="2602"/>
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1041">
@@ -2477,7 +2490,10 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                 <constraint firstItem="1036" firstAttribute="leading" secondItem="1037" secondAttribute="trailing" constant="10" id="xPc-Pi-SU3"/>
                 <constraint firstItem="1034" firstAttribute="baseline" secondItem="1037" secondAttribute="firstBaseline" id="xk7-gj-cHh"/>
                 <constraint firstItem="2185" firstAttribute="top" secondItem="1039" secondAttribute="bottom" constant="9" id="xyX-Pw-PqC"/>
-                <constraint firstItem="1041" firstAttribute="top" secondItem="1042" secondAttribute="bottom" constant="9" id="y6U-1y-Z26"/>
+                <constraint firstItem="2600" firstAttribute="top" secondItem="1042" secondAttribute="bottom" constant="9" id="Vm1-tp-Q8r"/>
+                <constraint firstItem="2600" firstAttribute="leading" secondItem="1039" secondAttribute="leading" id="Vm2-ld-K3w"/>
+                <constraint firstItem="2600" firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" id="Vm3-tr-H7d"/>
+                <constraint firstItem="1041" firstAttribute="top" secondItem="2600" secondAttribute="bottom" constant="9" id="y6U-1y-Z26"/>
                 <constraint firstItem="1128" firstAttribute="top" secondItem="1045" secondAttribute="bottom" id="yPB-4e-MCn"/>
                 <constraint firstAttribute="trailing" secondItem="1085" secondAttribute="trailing" constant="20" id="ydA-be-JIe"/>
                 <constraint firstAttribute="trailing" secondItem="1039" secondAttribute="trailing" constant="20" id="yoh-2E-iOA"/>
