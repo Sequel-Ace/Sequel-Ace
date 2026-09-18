@@ -696,8 +696,10 @@ final class SAVimKeyParser {
         return pendingResult(character)
     }
 
+    /// The mode an operator leaves behind is the engine's to decide: it is the
+    /// only side that knows whether the target resolved. Switching to insert
+    /// here would strand `cfz` in insert mode when the line holds no `z`.
     private func visualOperator(_ op: SAVimOperator) -> SAVimParseResult {
-        mode = (op == .change) ? .insert : .normal
         resetSequence()
         return .command(.operateSelection(op))
     }
@@ -710,18 +712,12 @@ final class SAVimKeyParser {
             return visualOperator(op)
         }
         let resolved = takeCount()
-        if op == .change {
-            mode = .insert
-        }
         resetSequence()
         return .command(.operate(op, target, count: resolved))
     }
 
     private func finishOperator(_ op: SAVimOperator, _ target: SAVimTarget, explicitCount: Int? = nil) -> SAVimParseResult {
         let resolved = explicitCount ?? takeOperatorCount()
-        if op == .change {
-            mode = .insert
-        }
         resetSequence()
         return .command(.operate(op, target, count: resolved))
     }

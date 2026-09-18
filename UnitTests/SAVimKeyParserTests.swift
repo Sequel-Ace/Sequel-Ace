@@ -106,8 +106,6 @@ final class SAVimKeyParserTests: XCTestCase {
 
     func testOperatorAcceptsATextObject() {
         XCTAssertEqual(type("ciw"), .command(.operate(.change, .textObject(.word(big: false, around: false)), count: 1)))
-        // `c` left the parser in insert mode, where keys pass through.
-        parser.setMode(.normal)
         XCTAssertEqual(type("da\""), .command(.operate(.delete, .textObject(.quoted("\"", around: true)), count: 1)))
         XCTAssertEqual(type("dib"), .command(.operate(.delete, .textObject(.bracketed(open: "(", around: false)), count: 1)))
         XCTAssertEqual(type("yiB"), .command(.operate(.yank, .textObject(.bracketed(open: "{", around: false)), count: 1)))
@@ -122,7 +120,6 @@ final class SAVimKeyParserTests: XCTestCase {
     func testOperatorShorthands() {
         XCTAssertEqual(type("D"), .command(.operate(.delete, .motion(.lineEnd), count: 1)))
         XCTAssertEqual(type("C"), .command(.operate(.change, .motion(.lineEnd), count: 1)))
-        parser.setMode(.normal)
         XCTAssertEqual(type("Y"), .command(.operate(.yank, .wholeLines, count: 1)))
     }
 
@@ -192,9 +189,20 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(parser.mode, .normal)
     }
 
-    func testChangeOperatorLeavesTheParserInInsertMode() {
-        type("cw")
-        XCTAssertEqual(parser.mode, .insert)
+    func testAChangeOperatorLeavesTheModeToTheEngine() {
+        // The engine is the only side that knows whether the target resolved.
+        // `cfz` on a line without a `z` fails there, and a parser that had
+        // already switched to insert mode would type the next key into the
+        // query instead of reading it as a command.
+        XCTAssertEqual(type("cfz"), .command(.operate(.change, .motion(.findChar("z", forward: true, till: false)), count: 1)))
+        XCTAssertEqual(parser.mode, .normal)
+
+        XCTAssertEqual(type("C"), .command(.operate(.change, .motion(.lineEnd), count: 1)))
+        XCTAssertEqual(parser.mode, .normal)
+
+        parser.setMode(.visual)
+        XCTAssertEqual(type("c"), .command(.operateSelection(.change)))
+        XCTAssertEqual(parser.mode, .visual)
     }
 
     func testVisualModeTogglesAndOperatorsActOnTheSelection() {
@@ -202,7 +210,9 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(parser.mode, .visual)
         XCTAssertEqual(type("j"), .command(.move(.lineDown, count: 1)))
         XCTAssertEqual(type("d"), .command(.operateSelection(.delete)))
-        XCTAssertEqual(parser.mode, .normal)
+        // Leaving visual mode is part of the outcome the engine returns and the
+        // text view installs; the parser does not pre-empt it.
+        XCTAssertEqual(parser.mode, .visual)
     }
 
     func testVisualLineMode() {
