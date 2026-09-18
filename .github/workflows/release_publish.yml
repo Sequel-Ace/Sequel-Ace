@@ -12,6 +12,9 @@ on:
   workflow_run:
     workflows:
       - Release
+      - Deploy Release
+      - New Sequel Ace release
+      - Internal release engine (advanced recovery only)
       - Retry Alpha Beta Artifact
     types:
       - completed
@@ -161,7 +164,7 @@ jobs:
                 echo "The source workflow did not succeed; no artifact continuation was attempted." >> "${GITHUB_STEP_SUMMARY}"
                 exit 0
               fi
-              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
+              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_deploy.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
               [[ "${SOURCE_EVENT}" == "workflow_dispatch" ]] || { echo "Artifact handoffs must originate from an authorized manual workflow." >&2; exit 1; }
               [[ "${SOURCE_HEAD_BRANCH}" == "main" ]] || { echo "Artifact handoff source was not main." >&2; exit 1; }
               if [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" && "${SOURCE_ACTOR}" == "github-actions[bot]" ]]; then
@@ -250,8 +253,21 @@ jobs:
           ' "${archive_directory}/manifest.json" "${release_tag}")"
           if [[ "${locally_eligible}" != "true" ]]; then
             if [[ -n "${REQUESTED_TAG}" ]]; then
-              echo "Requested release ${release_tag} is not eligible for artifact publication." >&2
-              exit 1
+              # A queued request may arrive after another publisher submitted
+              # this exact release. Prove that outcome; do not repeat writes.
+              handoff_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${archive_directory}/manifest.json")"
+              [[ "${handoff_state}" == "submitted" ]] || {
+                echo "Requested release ${release_tag} is not eligible for artifact publication; inspect release_status.yml." >&2
+                exit 1
+              }
+              bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+                --manifest "${archive_directory}/manifest.json" --tag "${release_tag}" \
+                --notes "${archive_directory}/app-store-notes.txt" --output "${state_directory}/handoff.json"
+              bundle exec ruby fastlane/bin/sa-release release-status \
+                --manifest "${archive_directory}/manifest.json" \
+                --notes "${archive_directory}/app-store-notes.txt" --output "${state_directory}/status.json"
+              jq -e '.app_store.submitted == true and .app_store.metadata_valid == true' "${state_directory}/status.json" >/dev/null
+              echo "Exact submitted release verified through App Store Connect; no publication or submission repeated." >> "${GITHUB_STEP_SUMMARY}"
             fi
             {
               echo "action=settled"
@@ -567,6 +583,7 @@ jobs:
             "previous_tag" => approval.fetch("previous_tag"),
             "recovery_tag" => recovery.fetch("predecessor_tag"),
             "app_store_notes_b64" => Base64.strict_encode64(File.binread("recovery-archive/app-store-notes.txt")),
+            "github_release_body_b64" => Base64.strict_encode64(File.binread("recovery-archive/release-body.md")),
             "approval_sha256" => approval.fetch("sha256"),
             "confirmation" => "RELEASE #{approval.fetch('channel')} #{approval.fetch('target_version')}"
           }
@@ -903,6 +920,23 @@ jobs:
             --output public-assets.json
           ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("ready=#{value.fetch("ready")}"); file.puts("mode=#{value.fetch("mode")}"); file.puts("profile=#{value.fetch("compatibility_profile")}"); file.puts("uploaders=#{value.fetch("compatible_uploaders").join(",")}"); file.puts("missing=#{value.fetch("missing_assets").join(",")}") }' public-assets.json
 
+      - name: Stage only verified public ZIPs for the compatibility handoff
+        if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
+        run: |
+          bundle exec ruby fastlane/bin/sa-release stage-public-handoff \
+            --archive release-archive --destination "${RUNNER_TEMP}/public-release-handoff"
+
+      - name: Offer the verified ZIPs without private archive access
+        if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
+        id: public_handoff
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-release-zips-${{ needs.discover.outputs.build }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/public-release-handoff/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
       - name: Record the required legacy-compatible browser upload handoff
         if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
         env:
@@ -911,6 +945,7 @@ jobs:
           COMPATIBLE_UPLOADERS: ${{ steps.public_assets.outputs.uploaders }}
           MISSING_ASSETS: ${{ steps.public_assets.outputs.missing }}
           RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          HANDOFF_URL: ${{ steps.public_handoff.outputs.artifact-url }}
         run: |
           {
             echo "### Legacy-compatible GitHub asset upload required"
@@ -919,7 +954,10 @@ jobs:
             echo "- Compatible uploaders: ${COMPATIBLE_UPLOADERS}"
             echo "- Missing assets: ${MISSING_ASSETS}"
             echo "- Private archive: ${ARCHIVE_REFERENCE}"
-            echo "- Upload through a listed user's GitHub release editor, verify a JSON-null label and compatible uploader, then dispatch this workflow for the exact tag."
+            echo "- Download the verified ZIP bundle: ${HANDOFF_URL}"
+            echo "- Extract the outer Actions artifact, then upload only the missing inner ZIPs through a listed user's GitHub release editor. Do not upload SHA256SUMS.txt or the outer Actions ZIP."
+            echo "- No second approval or dispatch is required: the armed recovery schedule verifies the exact assets and continues automatically (normally within 30 minutes)."
+            echo "- Use Inspect Release State for API status; do not rebuild or repackage the app."
             echo "- App Store submission has not started, and the event-driven wake state remains armed."
           } >> "${GITHUB_STEP_SUMMARY}"
 
