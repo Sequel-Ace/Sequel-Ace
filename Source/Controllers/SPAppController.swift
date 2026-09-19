@@ -156,6 +156,10 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.alterDatabase()
     }
 
+    @IBAction func showSearchAllTables(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showSearchAllTables()
+    }
+
     @IBAction func refreshTables(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.refreshTables()
     }

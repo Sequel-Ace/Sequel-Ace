@@ -13,6 +13,9 @@
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
 
+/* Search in All Tables sheet : status after a search ($1 = matching rows, $2 = tables with matches, $3 = tables searched) */
+"%1$ld matching rows in %2$ld of %3$ld tables." = "%1$ld matching rows in %2$ld of %3$ld tables.";
+
 /* text showing how many rows are selected */
 "%@ %@ selected" = "%1$@ %2$@ selected";
 
@@ -64,6 +67,9 @@
 
 /* Error display text, showing original MySQL error */
 "%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+
+/* Search in All Tables sheet : status when some tables returned an error ($1 = number of tables) */
+"%ld tables could not be searched." = "%ld tables could not be searched.";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favorite";
@@ -124,6 +130,69 @@
 
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
+
+/* Search in All Tables sheet : table name filter placeholder */
+"All tables (or only names containing…)" = "All tables (or only names containing…)";
+
+/* Search in All Tables sheet : match values containing the text */
+"Contains" = "Contains";
+
+/* Search in All Tables sheet : search text label */
+"Find:" = "Find:";
+
+/* Search in All Tables sheet : also search views */
+"Include views" = "Include views";
+
+/* Search in All Tables sheet : match mode label */
+"Match:" = "Match:";
+
+/* Search in All Tables sheet : results column : columns with matches and their row counts */
+"Matching Columns" = "Matching Columns";
+
+/* Search in All Tables sheet : status when nothing matched ($1 = number of tables searched) */
+"No matches in %ld tables." = "No matches in %ld tables.";
+
+/* Search in All Tables sheet : status when no table has a column to search */
+"No tables with searchable columns." = "No tables with searchable columns.";
+
+/* Search in All Tables sheet : status while listing columns */
+"Reading table columns…" = "Reading table columns…";
+
+/* Search in All Tables sheet : results column : number of matching rows */
+"Rows" = "Rows";
+
+/* Search in All Tables sheet : search button */
+"Search" = "Search";
+
+/* Search in All Tables sheet : title ($1 = database name) */
+"Search all tables in “%@”" = "Search all tables in “%@”";
+
+/* Search in All Tables sheet : window title */
+"Search in All Tables" = "Search in All Tables";
+
+/* Search in All Tables sheet : status after the search was stopped */
+"Search stopped." = "Search stopped.";
+
+/* Search in All Tables sheet : progress status ($1 = table name, $2 = table number, $3 = table count) */
+"Searching %1$@ (%2$ld of %3$ld)…" = "Searching %1$@ (%2$ld of %3$ld)…";
+
+/* Search in All Tables sheet : status when the connection is busy */
+"Sequel Ace is busy. Try again when the current task has finished." = "Sequel Ace is busy. Try again when the current task has finished.";
+
+/* Search in All Tables sheet : table name filter label */
+"Tables:" = "Tables:";
+
+/* Search in All Tables sheet : only search character and text columns */
+"Text columns only" = "Text columns only";
+
+/* Search in All Tables sheet : status when the column list could not be read ($1 = MySQL error) */
+"The search failed: %@" = "The search failed: %@";
+
+/* Search in All Tables sheet : search text placeholder */
+"Value to search for" = "Value to search for";
+
+/* Search in All Tables sheet : match values equal to the text */
+"Whole value" = "Whole value";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";

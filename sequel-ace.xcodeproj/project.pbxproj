@@ -745,6 +745,10 @@
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 		FE96153A16ECBA48C12BCA09 /* SAFieldEditorCommitPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */; };
 		FEA466FB9F9F757D557F334B /* SATypeAheadSelectionLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */; };
+		5EA2C1B0A8A302CFDB7685E4 /* SASearchAllTables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA2C179FF15BA1B77C4AEAB /* SASearchAllTables.swift */; };
+		5EA2C158A5A54047FE4137F9 /* SASearchAllTables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA2C179FF15BA1B77C4AEAB /* SASearchAllTables.swift */; };
+		5EA2C1DDC46F0B367AA240C0 /* SASearchAllTablesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA2C10DDB7D16564C88BB2A /* SASearchAllTablesWindowController.swift */; };
+		5EA2C1F46159183072ABEFC3 /* SASearchAllTablesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA2C12F57AA2621EDD05113 /* SASearchAllTablesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1669,6 +1673,9 @@
 		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
+		5EA2C179FF15BA1B77C4AEAB /* SASearchAllTables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASearchAllTables.swift; sourceTree = "<group>"; };
+		5EA2C10DDB7D16564C88BB2A /* SASearchAllTablesWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASearchAllTablesWindowController.swift; sourceTree = "<group>"; };
+		5EA2C12F57AA2621EDD05113 /* SASearchAllTablesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASearchAllTablesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1980,6 +1987,8 @@
 				506CE9301A311C6C0039F736 /* SPRuleFilterController.m */,
 				D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */,
 				CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */,
+				5EA2C10DDB7D16564C88BB2A /* SASearchAllTablesWindowController.swift */,
+				5EA2C179FF15BA1B77C4AEAB /* SASearchAllTables.swift */,
 				9BE76A3D5C9830E2F7738770 /* SPFilterTableController.m */,
 				9BE76F9BF9BDA2921CDD05AF /* SPFilterTableController.h */,
 				BC29C37D10501EFD00DD6C6E /* SPQueryController.h */,
@@ -2882,6 +2891,7 @@
 				CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */,
 				D10000102F8C000600C4C14A /* SAProfilingFollowupTests.swift */,
 				CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */,
+				5EA2C12F57AA2621EDD05113 /* SASearchAllTablesTests.swift */,
 				CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */,
 				AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */,
 				F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
@@ -3547,6 +3557,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EA2C1F46159183072ABEFC3 /* SASearchAllTablesTests.swift in Sources */,
+				5EA2C158A5A54047FE4137F9 /* SASearchAllTables.swift in Sources */,
 				51AC3B7430475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift in Sources */,
 				1196D9FED5B52DE6CD6B0C76 /* SASSHTunnelAuthSource.swift in Sources */,
 				EDDD0AB23E0A1F4A5AE67091 /* SASSHTunnelAuthService.swift in Sources */,
@@ -3804,6 +3816,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EA2C1DDC46F0B367AA240C0 /* SASearchAllTablesWindowController.swift in Sources */,
+				5EA2C1B0A8A302CFDB7685E4 /* SASearchAllTables.swift in Sources */,
 				11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */,
 				17E641460EF01EB5001BC333 /* main.m in Sources */,
 				1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */,
