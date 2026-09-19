@@ -101,6 +101,16 @@ final class SAJSONExportFormatterTests: XCTestCase {
         XCTAssertEqual(text, "[\n{\"we\\\"ird\\\\name\":\"x\"}\n]\n")
     }
 
+    func testDuplicateColumnNamesGetUniqueKeys() {
+        XCTAssertEqual(SAJSONExportFormatter.uniqueKeys(["id", "name", "id", "id_2", "id"]),
+                       ["id", "name", "id_2", "id_2_2", "id_3"])
+
+        // A query selecting a.id, b.id keeps both values
+        let text = document(columns: ["id", "id"], numeric: nil, rows: [["1", "2"]], pretty: false)
+        XCTAssertEqual(text, "[\n{\"id\":1,\"id_2\":2}\n]\n")
+        XCTAssertEqual((parse(text) as? [[String: Any]])?.first?.count, 2)
+    }
+
     func testBinaryCollationTextIsDecodedButBinaryCharsetStaysBytes() {
         let json = Data(#"{"k": [1]}"#.utf8)
 

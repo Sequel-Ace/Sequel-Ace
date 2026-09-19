@@ -37,7 +37,8 @@ final class SAJSONExportFormatter {
     private let prettyPrint: Bool
 
     /// - Parameters:
-    ///   - columnNames: The result's column names, used as object keys.
+    ///   - columnNames: The result's column names, used as object keys. Repeated names (a query
+    ///     selecting `a.id, b.id`) get a `_2`, `_3`, ... suffix so no key is overwritten.
     ///   - numericColumns: Per column, whether it holds numbers. Pass `nil` when the column types are
     ///     unknown (query and filtered results); any cell that reads as a JSON number is then written
     ///     unquoted, as the CSV exporter does for the same sources.
@@ -45,7 +46,7 @@ final class SAJSONExportFormatter {
     ///     or `nil` to write a bare array.
     ///   - prettyPrint: Indent the output; otherwise each row is written compactly on its own line.
     init(columnNames: [String], numericColumns: [Bool]?, tableKey: String?, prettyPrint: Bool) {
-        self.columnKeys = columnNames.map(SAJSONExportFormatter.quoted)
+        self.columnKeys = SAJSONExportFormatter.uniqueKeys(columnNames).map(SAJSONExportFormatter.quoted)
         self.numericColumns = numericColumns
         self.tableKey = tableKey
         self.prettyPrint = prettyPrint
@@ -94,6 +95,21 @@ final class SAJSONExportFormatter {
         }
 
         return text + newline + indent(rowLevel) + "}"
+    }
+
+    /// `names` with each repeat of an earlier name suffixed `_2`, `_3`, ... until it is unused.
+    static func uniqueKeys(_ names: [String]) -> [String] {
+        var used = Set<String>()
+        return names.map { name in
+            var candidate = name
+            var suffix = 1
+            while used.contains(candidate) {
+                suffix += 1
+                candidate = "\(name)_\(suffix)"
+            }
+            used.insert(candidate)
+            return candidate
+        }
     }
 
     // MARK: - Values

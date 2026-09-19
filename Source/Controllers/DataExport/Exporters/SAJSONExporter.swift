@@ -73,6 +73,13 @@ import Foundation
                                                               useLowMemoryBlockingStreaming: exportUsingLowMemoryBlockingStreaming,
                                                               assertingDatabase: databaseName) as? SPMySQLStreamingResult
             guard let streamingResult else {
+                // Tables sharing a file: still write this table's (empty) member, so the other
+                // tables' opening and closing text leaves the file one valid JSON document
+                if jsonKeyByTableName {
+                    let formatter = SAJSONExportFormatter(columnNames: [], numericColumns: nil, tableKey: tableName, prettyPrint: jsonPrettyPrint)
+                    write(formatter.opening(isFirstInFile: jsonIsFirstTableInFile)
+                          + formatter.closing(rowCount: 0, isLastInFile: jsonIsLastTableInFile))
+                }
                 exportProcessIsRunning = false
                 notifyDelegate { $0.jsonExportProcessComplete(self) }
                 return
