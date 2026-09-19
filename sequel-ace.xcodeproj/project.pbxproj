@@ -310,6 +310,10 @@
 		519788CC30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */; };
 		519788CD30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */; };
 		519788D130502FC700C5D23D /* SAExportOutputEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */; };
+		5A150A0230602A0100C5D23D /* SAJSONExportFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A150A0130602A0100C5D23D /* SAJSONExportFormatter.swift */; };
+		5A150A0330602A0100C5D23D /* SAJSONExportFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A150A0130602A0100C5D23D /* SAJSONExportFormatter.swift */; };
+		5A150A0530602A0100C5D23D /* SAJSONExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A150A0430602A0100C5D23D /* SAJSONExporter.swift */; };
+		5A150A0730602A0100C5D23D /* SAJSONExportFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A150A0630602A0100C5D23D /* SAJSONExportFormatterTests.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
 		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
@@ -1234,6 +1238,9 @@
 		7383424B751DCE7B1E781C44 /* SAImportProgressReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAImportProgressReporterTests.swift; sourceTree = "<group>"; };
 		519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAExportOutputEncoding.swift; sourceTree = "<group>"; };
 		519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAExportOutputEncodingTests.swift; sourceTree = "<group>"; };
+		5A150A0130602A0100C5D23D /* SAJSONExportFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAJSONExportFormatter.swift; sourceTree = "<group>"; };
+		5A150A0430602A0100C5D23D /* SAJSONExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAJSONExporter.swift; sourceTree = "<group>"; };
+		5A150A0630602A0100C5D23D /* SAJSONExportFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAJSONExportFormatterTests.swift; sourceTree = "<group>"; };
 		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
@@ -1881,6 +1888,7 @@
 				17F5B39B1049B96A00FC794F /* SPSQLExporter.m */,
 				17292441107AC41000B21980 /* SPXMLExporter.h */,
 				17292442107AC41000B21980 /* SPXMLExporter.m */,
+				5A150A0430602A0100C5D23D /* SAJSONExporter.swift */,
 				173C837311AAD2AE00B8B084 /* SPDotExporter.h */,
 				173C837411AAD2AE00B8B084 /* SPDotExporter.m */,
 				173C837711AAD2AE00B8B084 /* SPPDFExporter.h */,
@@ -2648,6 +2656,7 @@
 				17F90E451210B41100274C98 /* Model */,
 				173C836C11AAD24300B8B084 /* Exporters */,
 				519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */,
+				5A150A0130602A0100C5D23D /* SAJSONExportFormatter.swift */,
 			);
 			name = "Data Export";
 			path = DataExport;
@@ -2813,6 +2822,7 @@
 				7383424B751DCE7B1E781C44 /* SAImportProgressReporterTests.swift */,
 				0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */,
 				519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */,
+				5A150A0630602A0100C5D23D /* SAJSONExportFormatterTests.swift */,
 			);
 			name = "Unit Tests";
 			path = UnitTests;
@@ -3723,7 +3733,9 @@
 				5147B0172F8D000100C4C14A /* SPCSVParser.m in Sources */,
 				5147B0182F8D000100C4C14A /* SPNotLoaded.m in Sources */,
 				519788D130502FC700C5D23D /* SAExportOutputEncodingTests.swift in Sources */,
+				5A150A0730602A0100C5D23D /* SAJSONExportFormatterTests.swift in Sources */,
 				519788CD30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */,
+				5A150A0330602A0100C5D23D /* SAJSONExportFormatter.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */,
@@ -4053,6 +4065,8 @@
 				1A9EB9AE25651F5000FE60FF /* SQLiteHistoryManager.swift in Sources */,
 				582F02311370B52600B30621 /* SPExportFileNameTokenObject.m in Sources */,
 				519788CC30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */,
+				5A150A0230602A0100C5D23D /* SAJSONExportFormatter.swift in Sources */,
+				5A150A0530602A0100C5D23D /* SAJSONExporter.swift in Sources */,
 				500DA4BC1BF0CD57000773FE /* SPScreenAdditions.m in Sources */,
 				584D878B15140FEB00F24774 /* SPObjectAdditions.m in Sources */,
 				584D87921514101E00F24774 /* SPDatabaseStructure.m in Sources */,
