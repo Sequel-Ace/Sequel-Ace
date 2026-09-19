@@ -729,6 +729,9 @@
 /* quitting app informal alert body */
 "Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
 
+/* table list and query result : context menu : Export submenu : export as JSON */
+"As JSON file..." = "As JSON file...";
+
 /* character set client: %@ */
 "character set client: %@" = "character set client: %@";
 
@@ -1797,6 +1800,9 @@
 /* items */
 "items" = "items";
 
+/* export : export dialog : tab label for the JSON export format */
+"JSON" = "JSON";
+
 /* javascript exception */
 "JavaScript Exception" = "JavaScript Exception";
 
@@ -2151,6 +2157,9 @@
 
 /* Please enter the password */
 "Please enter the password for ‘%@’:" = "Please enter the password for ‘%@’:";
+
+/* export : export dialog : JSON options : checkbox that indents the exported JSON */
+"Pretty print" = "Pretty print";
 
 /* print button */
 "Print" = "Print";
