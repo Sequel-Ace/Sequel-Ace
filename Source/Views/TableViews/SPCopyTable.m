@@ -793,7 +793,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 						|| [fieldTypeGroup isEqualToString:@"textdata"]
 						|| [fieldTypeGroup isEqualToString:@"string"]
 					)) {
-					  cellData = [[NSString alloc] initWithData:cellData encoding:NSUTF8StringEncoding];
+					  // Bytes that are not valid UTF-8 have no string form. Leave those as data so
+					  // they are escaped as a binary literal below rather than dropped, which would
+					  // leave the row one value short of its column list.
+					  NSString *stringValue = [[NSString alloc] initWithData:cellData encoding:NSUTF8StringEncoding];
+					  if (stringValue) cellData = stringValue;
 					}
 
 					if ([cellData isKindOfClass:nsDataClass]) {
