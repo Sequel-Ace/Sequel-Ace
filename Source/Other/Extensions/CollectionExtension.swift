@@ -10,25 +10,25 @@ import Foundation
 
 public extension Collection {
 
-	/// Returns the element at the specified index if it is within bounds, otherwise nil.
-	subscript (safe index: Index) -> Element? {
-		return indices.contains(index) ? self[index] : nil
-	}
+    /// Returns the element at the specified index if it is within bounds, otherwise nil.
+    subscript (safe index: Index) -> Element? {
+        return indices.contains(index) ? self[index] : nil
+    }
 
-	/// Returns second element from collection
-	var second: Element? {
-		return self.dropFirst().first
-	}
+    /// Returns second element from collection
+    var second: Element? {
+        return self.dropFirst().first
+    }
 
-	var isNotEmpty: Bool {
-		return !isEmpty
-	}
+    var isNotEmpty: Bool {
+        return !isEmpty
+    }
 }
 
 public extension Set {
-	var isNotEmpty: Bool {
-		return !isEmpty
-	}
+    var isNotEmpty: Bool {
+        return !isEmpty
+    }
 }
 
 public extension RangeReplaceableCollection where Element: Equatable {
@@ -68,5 +68,17 @@ enum PinnedTableMigrationPlanner {
         }
 
         return tablesToMigrate
+    }
+}
+
+enum PinnedTableGroupPlanner {
+    /// The empty name is reserved for the historical global pinned section.
+    static func normalizedGroupName(_ groupName: String) -> String {
+        return groupName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func orderedGroupNames(_ groupNames: [String]) -> [String] {
+        let normalizedNames = Set(groupNames.map(normalizedGroupName))
+        return normalizedNames.filter(\.isNotEmpty).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 }

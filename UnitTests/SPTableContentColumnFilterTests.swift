@@ -132,6 +132,18 @@ final class PinnedTableMigrationPlannerTests: XCTestCase {
     }
 }
 
+final class PinnedTableGroupTests: XCTestCase {
+
+    func testPinnedTableGroupNamesAreNormalizedAndOrdered() {
+        XCTAssertEqual(PinnedTableGroupPlanner.normalizedGroupName("  Reporting \n"), "Reporting")
+        XCTAssertEqual(PinnedTableGroupPlanner.normalizedGroupName(" \n "), "")
+        XCTAssertEqual(
+            PinnedTableGroupPlanner.orderedGroupNames([" zeta", "", "Alpha", "alpha", " \n"]),
+            ["Alpha", "alpha", "zeta"]
+        )
+    }
+}
+
 final class SPOptimizedFieldTypeEstimatorTests: XCTestCase {
 
     func testNormalizedFieldType() {
