@@ -85,8 +85,8 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 @property (readwrite, assign) BOOL errorShowing;
 @property (readwrite, assign) BOOL localNetworkPermissionDeniedForCurrentAttempt;
-/** The connection type of the attempt whose Local Network denial is being reported; the tabs stay usable while connecting. */
-@property (readwrite, assign) NSInteger localNetworkPermissionDeniedConnectionType;
+/** The details of the attempt whose failure is being reported; the tabs and fields stay editable while connecting. */
+@property (readwrite, strong) SAConnectionInfoObjC *failedAttemptInfo;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (void)_sortFavorites;
@@ -126,11 +126,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /** Shows the outcome of the Test Connection button. */
 - (void)_showConnectionTestResult:(NSString *)resultString;
 /** Whether an SSH failure's messages point to a denied Local Network permission (macOS 15 and later). */
-- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
+- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail connectionType:(NSInteger)connectionType sshHost:(NSString *)attemptSSHHost;
 /** Whether a failed attempt was blocked by a denied Local Network permission; probes the attempt's host when it could be. */
 - (BOOL)_isLocalNetworkAccessDeniedForConnectionResult:(SAConnectionResult *)result info:(SAConnectionInfoObjC *)info;
-/** Ends a failed attempt on the main thread; a Local Network denial is reported for the attempt's connection type. */
-- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied connectionType:(NSInteger)connectionType;
+/** Ends a failed attempt on the main thread; a Local Network denial is judged and worded for `attemptInfo`. */
+- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied attemptInfo:(SAConnectionInfoObjC *)attemptInfo;
 /** Explains that Local Network access is needed, worded for an SSH or a direct connection. */
 - (void)_showLocalNetworkPermissionAlertForConnectionType:(NSInteger)connectionType;
 - (BOOL)_openLocalNetworkPrivacySettings;
@@ -610,7 +610,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                               errorMessage:failMessage
                                     detail:failDetail
                    localNetworkPermissionDenied:localNetworkDenied
-                                connectionType:(NSInteger)info.type];
+                                   attemptInfo:info];
             return;
         }
 
@@ -3718,11 +3718,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
-- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied connectionType:(NSInteger)connectionType
+/**
+ * Ends a failed attempt on the main thread. `attemptInfo` holds the attempt's details, so a Local Network
+ * denial is judged and worded for that attempt even when the form has been edited since.
+ */
+- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied attemptInfo:(SAConnectionInfoObjC *)attemptInfo
 {
     void (^presentFailure)(void) = ^{
         self.localNetworkPermissionDeniedForCurrentAttempt = localNetworkPermissionDenied;
-        self.localNetworkPermissionDeniedConnectionType = connectionType;
+        self.failedAttemptInfo = attemptInfo;
         [self failConnectionWithTitle:theTitle errorMessage:theErrorMessage detail:errorDetail];
     };
 
@@ -3778,9 +3782,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
     }
 
-    BOOL shouldShowLocalNetworkPermissionAlert = self.localNetworkPermissionDeniedForCurrentAttempt || [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage detail:errorDetail];
-    // The type of the attempt that failed, not the tab selected since.
-    NSInteger localNetworkAlertConnectionType = self.localNetworkPermissionDeniedForCurrentAttempt ? self.localNetworkPermissionDeniedConnectionType : [self type];
+    // Judge and word a Local Network denial for the attempt that failed, not for the tab or
+    // fields as edited since; failures reported without the attempt's details use the fields.
+    SAConnectionInfoObjC *attemptInfo = self.failedAttemptInfo;
+    self.failedAttemptInfo = nil;
+    NSInteger localNetworkAlertConnectionType = attemptInfo ? (NSInteger)attemptInfo.type : [self type];
+    NSString *localNetworkAlertSSHHost = attemptInfo ? attemptInfo.sshHost : [self sshHost];
+    BOOL shouldShowLocalNetworkPermissionAlert = self.localNetworkPermissionDeniedForCurrentAttempt
+        || [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage
+                                                                detail:errorDetail
+                                                        connectionType:localNetworkAlertConnectionType
+                                                               sshHost:localNetworkAlertSSHHost];
     self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
     // Only display the connection error message if there is a window visible
@@ -3850,13 +3862,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
-- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail
+/**
+ * Whether an SSH failure's messages point to a denied Local Network permission (macOS 15 and later),
+ * judged for the given connection type and SSH host.
+ */
+- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail connectionType:(NSInteger)connectionType sshHost:(NSString *)attemptSSHHost
 {
-    if ([self type] != SPSSHTunnelConnection) return NO;
+    if (connectionType != SPSSHTunnelConnection) return NO;
 
     // Local Network privacy restrictions for sandboxed macOS apps started with macOS 15 (Sequoia).
     if (@available(macOS 15.0, *)) {
-        return SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(errorMessage, errorDetail, [self sshHost]);
+        return SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(errorMessage, errorDetail, attemptSSHHost);
     }
 
     return NO;
