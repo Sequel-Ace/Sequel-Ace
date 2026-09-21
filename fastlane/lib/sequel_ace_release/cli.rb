@@ -948,8 +948,9 @@ module SequelAceRelease
     def download_cloud_artifacts(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release download-cloud-artifacts --run-id ID --output-directory DIR"
+        value.banner = "Usage: sa-release download-cloud-artifacts --run-id ID --output-directory DIR [--notarized-only]"
         value.on("--run-id ID") { |item| options[:run_id] = item }
+        value.on("--notarized-only") { options[:notarized_only] = true }
         value.on("--output-directory DIR") { |item| options[:directory] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
@@ -960,6 +961,12 @@ module SequelAceRelease
       client = app_store_client
       artifacts = client.run_artifacts(options[:run_id])
       downloadable = artifacts.select { |artifact| artifact.dig("attributes", "downloadUrl").to_s.start_with?("https://") }
+      if options[:notarized_only]
+        downloadable.select! do |artifact|
+          artifact.dig("attributes", "fileType") == CloudRunStatus::NOTARIZED_ARTIFACT_TYPE
+        end
+        raise ValidationError, "Xcode Cloud stapled notarized artifact is not ready; retry discovery" if downloadable.empty?
+      end
       raise ValidationError, "Xcode Cloud build exposes no downloadable artifacts" if downloadable.empty?
 
       destination = Pathname.new(options[:directory]).expand_path

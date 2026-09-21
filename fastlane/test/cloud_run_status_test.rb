@@ -67,7 +67,7 @@ class CloudRunStatusTest < Minitest::Test
     assert_nil client.artifact_run_id
   end
 
-  def test_reports_an_in_progress_run_as_pending_when_the_exact_build_has_no_downloadable_artifact
+  def test_reports_an_in_progress_run_as_pending_when_the_exact_build_has_no_notarized_artifact
     client = Client.new(
       run: cloud_run("RUNNING", nil),
       builds: [exact_build]
@@ -76,7 +76,7 @@ class CloudRunStatusTest < Minitest::Test
     result = readiness_for(client)
 
     assert_equal "pending", result.fetch("readiness")
-    assert_equal "run_in_progress", result.fetch("reason")
+    assert_equal "notarized_artifact_not_ready", result.fetch("reason")
     assert_equal "run-id", client.artifact_run_id
   end
 
@@ -84,7 +84,7 @@ class CloudRunStatusTest < Minitest::Test
     client = Client.new(
       run: cloud_run("RUNNING", nil),
       builds: [exact_build],
-      artifacts: [{ "attributes" => { "downloadUrl" => "https://example.invalid/archive.zip" } }]
+      artifacts: [notarized_artifact]
     )
 
     result = readiness_for(client)
@@ -105,7 +105,7 @@ class CloudRunStatusTest < Minitest::Test
     result = readiness_for(client)
 
     assert_equal "pending", result.fetch("readiness")
-    assert_equal "run_in_progress", result.fetch("reason")
+    assert_equal "notarized_artifact_not_ready", result.fetch("reason")
   end
 
   def test_reports_a_higher_assigned_number_as_forward_recovery_without_waiting
@@ -153,7 +153,8 @@ class CloudRunStatusTest < Minitest::Test
         "version" => "5.3.2",
         "platform" => "MAC_OS",
         "build" => 20_105
-      }]
+      }],
+      artifacts: [notarized_artifact]
     )
 
     result = readiness_for(client)
@@ -174,7 +175,8 @@ class CloudRunStatusTest < Minitest::Test
         "version" => "5.3.2",
         "platform" => "MAC_OS",
         "build" => 20_105
-      }]
+      }],
+      artifacts: [notarized_artifact]
     )
 
     result = readiness_for(client, build: "20105")
@@ -190,6 +192,39 @@ class CloudRunStatusTest < Minitest::Test
 
     assert_equal "pending", result.fetch("readiness")
     assert_equal "app_store_build_not_ready", result.fetch("reason")
+  end
+
+  def test_requires_a_stapled_https_artifact_for_both_run_progress_values
+    ["RUNNING", "COMPLETE"].each do |progress|
+      [
+        { "fileType" => "LOG_BUNDLE", "downloadUrl" => "https://example.invalid/archive.zip" },
+        { "fileType" => "RESULT_BUNDLE", "downloadUrl" => "https://example.invalid/archive.zip" },
+        { "fileType" => "ARCHIVE_EXPORT", "downloadUrl" => "https://example.invalid/archive.zip" },
+        { "fileType" => "ARCHIVE", "downloadUrl" => "https://example.invalid/archive.zip" },
+        { "downloadUrl" => "https://example.invalid/archive.zip" },
+        { "fileType" => "STAPLED_NOTARIZED_ARCHIVE", "downloadUrl" => "http://example.invalid/archive.zip" }
+      ].each do |attributes|
+        result = readiness_for(Client.new(
+          run: cloud_run(progress, progress == "COMPLETE" ? "SUCCEEDED" : nil),
+          builds: [exact_build],
+          artifacts: [{ "attributes" => attributes }]
+        ))
+
+        assert_equal "pending", result.fetch("readiness"), "#{progress} #{attributes.inspect}"
+        assert_equal "notarized_artifact_not_ready", result.fetch("reason"), "#{progress} #{attributes.inspect}"
+      end
+    end
+  end
+
+  def test_keeps_a_succeeded_exact_build_pending_without_an_artifact
+    result = readiness_for(Client.new(
+      run: cloud_run("COMPLETE", "SUCCEEDED"),
+      builds: [exact_build],
+      artifacts: []
+    ))
+
+    assert_equal "pending", result.fetch("readiness")
+    assert_equal "notarized_artifact_not_ready", result.fetch("reason")
   end
 
   def test_treats_a_temporarily_missing_build_relationship_as_pending
@@ -298,5 +333,9 @@ class CloudRunStatusTest < Minitest::Test
       "platform" => "MAC_OS",
       "build" => 20_105
     }
+  end
+
+  def notarized_artifact
+    { "attributes" => { "fileType" => "STAPLED_NOTARIZED_ARCHIVE", "downloadUrl" => "https://example.invalid/archive.zip" } }
   end
 end
