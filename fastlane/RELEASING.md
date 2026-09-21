@@ -424,11 +424,20 @@ Connect Team API key and exits. App Store Connect is authoritative for the
 exact workflow, tag, commit, build relationship, and artifact; GitHub checks
 and statuses are wake-up hints and may lag the Apple UI or API. It starts the
 protected GitHub-hosted `macos-15` verification job after every required
-Production and Alpha run is complete and related to the expected app build. If
-Apple's build-run progress field lags, the exact related app/version/platform/
-build plus an HTTPS-downloadable artifact is equivalent readiness; the
-publisher then proves the artifact itself before any public attachment or App
-Store submission. A UI success state alone never bypasses these checks.
+Production and Alpha run is related to the expected app build and exposes an
+HTTPS-downloadable `STAPLED_NOTARIZED_ARCHIVE`. This artifact gate applies even
+when the run reports complete/succeeded: logs, xcarchives, and ordinary Developer
+ID exports may be available before notarization finishes. Missing stapled output
+stays pending on Ubuntu with the exact wake tag armed. If Apple's run-progress
+field lags, the exact build plus that stapled artifact can still admit verification.
+The publisher then proves signing, stapling, notarization, and the artifact itself
+before any public attachment or App Store submission. Metadata readiness never
+replaces those byte-level checks.
+The publisher repeats the artifact-type selection at download with
+`--notarized-only`. If the stapled resource is no longer downloadable, it fails
+before verification and preserves the retryable handoff instead of stamping a
+terminal artifact failure. Terminal releases already recorded by older tooling
+are not automatically reset or republished by this readiness change.
 Authorized manual recovery requires
 `PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
 The immediate continuation authenticates its source by the immutable workflow
@@ -606,7 +615,7 @@ or secrets belong in this public repository.
 Therefore a successful Xcode Cloud page is not the end of artifact publication,
 and a missing GitHub asset is still publisher work. Conversely, a lagging
 GitHub check or Apple run-progress field must not force a rebuild when the exact
-App Store build and downloadable Cloud artifact are already available.
+App Store build and downloadable stapled-notarized Cloud artifact are already available.
 
 ## Fastlane behavior and documentation
 

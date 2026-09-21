@@ -782,11 +782,13 @@ jobs:
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+            --notarized-only \
             --run-id "${PRODUCTION_RUN_ID}" \
             --output-directory artifacts/cloud-production \
             --output production-artifacts.json
           if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
             bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+              --notarized-only \
               --run-id "${ALPHA_RUN_ID}" \
               --output-directory artifacts/cloud-alpha \
               --output alpha-artifacts.json

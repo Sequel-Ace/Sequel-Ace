@@ -83,7 +83,10 @@ class ReleaseStatusTest < Minitest::Test
          "version" => "5.3.2", "platform" => "MAC_OS", "build" => 20_105 }]
     end
     client.define_singleton_method(:run_artifacts) do |_run|
-      [{ "attributes" => { "downloadUrl" => "https://example.invalid/private-token" } }]
+      [{ "attributes" => {
+        "fileType" => "STAPLED_NOTARIZED_ARCHIVE",
+        "downloadUrl" => "https://example.invalid/private-token"
+      } }]
     end
     manifest = Struct.new(:to_h).new({
       "tag" => "production/5.3.2-20105", "target_version" => "5.3.2",
