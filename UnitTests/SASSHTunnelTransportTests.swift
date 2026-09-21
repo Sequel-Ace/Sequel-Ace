@@ -26,12 +26,20 @@ final class SASSHTunnelTransportTests: XCTestCase {
         super.tearDown()
     }
 
-    func testAbsentPreferenceMeansTheDefaultWhichIsTheSocketSinceStep5() {
-        XCTAssertEqual(SASSHTunnelTransportSelection.selectedTransport(from: defaults), .socket)
-        XCTAssertEqual(SASSHTunnelTransportSelection.defaultTransport, .socket)
+    /// Step 5a made the socket the default and 6.0.0 shipped it; issue #2689
+    /// showed it failing outright on some machines, so 6.0.1 defaults to
+    /// Distributed Objects again and the socket is opt-in.
+    func testAbsentPreferenceMeansDistributedObjectsAgainAfterIssue2689() {
+        XCTAssertEqual(SASSHTunnelTransportSelection.selectedTransport(from: defaults), .distributedObjects)
+        XCTAssertEqual(SASSHTunnelTransportSelection.defaultTransport, .distributedObjects)
     }
 
-    func testRollbackIsTheExplicitFalse() {
+    func testOptingIntoTheSocketIsTheExplicitTrue() {
+        defaults.set(true, forKey: "SPSSHTunnelUseSocketTransport")
+        XCTAssertEqual(SASSHTunnelTransportSelection.selectedTransport(from: defaults), .socket)
+    }
+
+    func testExplicitFalseStaysDistributedObjects() {
         defaults.set(false, forKey: "SPSSHTunnelUseSocketTransport")
         XCTAssertEqual(SASSHTunnelTransportSelection.selectedTransport(from: defaults), .distributedObjects)
     }

@@ -55,6 +55,20 @@ struct SASSHTunnelSocketClient {
         /// control, so both surface here.
         case noReply
         case malformedReply(SASSHTunnelAuthWireError)
+
+        /// True when the failure happened before any request reached the app,
+        /// so nothing was asked and no prompt can have been shown. Only these
+        /// are safe to retry over another transport: once the request is on
+        /// the wire the app may already be prompting the user, and a second
+        /// attempt would ask twice (see `noReply`'s note on the close race).
+        var isPreSend: Bool {
+            switch self {
+            case .socketFailed, .connectFailed, .peerRejected:
+                return true
+            case .sendFailed, .noReply, .malformedReply:
+                return false
+            }
+        }
     }
 
     let path: String

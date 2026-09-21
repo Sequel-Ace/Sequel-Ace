@@ -274,6 +274,62 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         }
     }
 
+    // MARK: - Falling back to Distributed Objects (issue #2689)
+
+    /// The assistant repeats the askpass run over Distributed Objects only
+    /// when nothing reached the app. Anything that could have prompted the
+    /// user must not be repeated, or they are asked twice.
+    func testOnlyFailuresBeforeTheRequestIsSentAreSafeToRetryOverAnotherTransport() {
+        let preSend: [SASSHTunnelSocketClient.Error] = [
+            .socketFailed(EMFILE),
+            .connectFailed(ENOENT),
+            .peerRejected,
+        ]
+        for error in preSend {
+            XCTAssertTrue(error.isPreSend, "\(error) happens before anything is sent")
+        }
+
+        let afterTheAppCouldHaveSeenIt: [SASSHTunnelSocketClient.Error] = [
+            .sendFailed(EIO),
+            .noReply,
+            .malformedReply(.unknownKind("nope")),
+        ]
+        for error in afterTheAppCouldHaveSeenIt {
+            XCTAssertFalse(error.isPreSend, "\(error) may have reached the app; failing closed is the only safe answer")
+        }
+    }
+
+    /// The two failures a machine with a broken socket transport actually
+    /// produces — the socket is gone, or the app is not who it claims to be —
+    /// are the ones that reach the fallback, and the server saw no request.
+    func testTheRealUnreachableSocketFailuresClassifyAsPreSend() throws {
+        XCTAssertThrowsError(try SASSHTunnelSocketClient(path: NSTemporaryDirectory() + "sa-nonexistent.sock").send(.question("q"))) { error in
+            XCTAssertEqual((error as? SASSHTunnelSocketClient.Error)?.isPreSend, true)
+        }
+
+        var handled = 0
+        let server = try startServer { request in handled += 1; return Self.echo(request) }
+        var client = SASSHTunnelSocketClient(path: server.path)
+        client.peerPolicy = { _ in false }
+        XCTAssertThrowsError(try client.send(.password(verificationHash: "h"))) { error in
+            XCTAssertEqual((error as? SASSHTunnelSocketClient.Error)?.isPreSend, true)
+        }
+        Thread.sleep(forTimeInterval: 0.1)
+        XCTAssertEqual(handled, 0, "the fallback is only safe because the app was never asked")
+    }
+
+    /// A server that accepts and then goes away mid-exchange is the case the
+    /// fallback must *not* take: the app may already be showing a prompt.
+    func testAPeerThatAnsweredNothingMidExchangeIsNotRetried() throws {
+        let server = try startServer { _ in .refused }
+        var client = SASSHTunnelSocketClient(path: server.path)
+        client.peerPolicy = { _ in true }
+        // Reaching the app at all is enough to disqualify a retry; prove the
+        // normal path is not classified as pre-send.
+        XCTAssertEqual(try client.send(.password(verificationHash: "h")), .refused)
+        XCTAssertFalse(SASSHTunnelSocketClient.Error.noReply.isPreSend)
+    }
+
     // MARK: - Raw socket helpers
 
     private func rawConnection(to path: String) throws -> Int32 {

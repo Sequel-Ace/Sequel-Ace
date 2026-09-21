@@ -485,7 +485,7 @@ Execution notes (2026-09-01):
   disabled) and is not. Check `codesign -dv` for the team before a live
   run; give test runs their own `-derivedDataPath`.
 
-## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) prepared
+## Step 5 — Flip the default, then delete DO — 🟡 5a flipped and rolled back (#2689); 5b (delete) blocked
 
 Separate releases. Flip to the socket, let it soak, then remove the DO path,
 the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
@@ -503,6 +503,36 @@ shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 UTF-8 bytes fit
 the 103-byte `sun_path` after the 62-byte container-tmp prefix; the stale
 sweep recognises both name shapes, at their exact widths only. This is the
 release that soaks.
+
+Execution notes, 5a rollback (2026-09-21): the soak failed. 6.0.0 shipped the
+socket as the default and issue #2689 brought two independent reports of
+*every* tunnel failing, both cured by `SPSSHTunnelUseSocketTransport -bool NO`.
+`defaultTransport` is `.distributedObjects` again for 6.0.1 and the socket is
+opt-in (`-bool YES`) for anyone diagnosing it. Root cause is still unknown —
+the reproduction is on macOS 27.0 and neither reporter has produced the
+`SSH tunnel: socket peer rejected: …` line yet, which is what discriminates
+`noGuest` / `requirementFailed` / `teamMismatch` in Step 4's validator.
+
+The rollback also fixed the structural fault the incident exposed, which is
+the more important half: the fallback was one-sided. The app degrades to DO
+when it cannot *create* the socket (`SPSSHTunnel.m`), but the assistant had no
+such path — once `SP_CONNECTION_TRANSPORT=socket` was in ssh's environment it
+either completed the socket exchange or failed closed, taking the tunnel with
+it. So any post-bind socket fault was unsurvivable, which is why the symptom
+was total rather than partial. `SASSHTunnelAssistantSocketMain.run` now
+reports whether the socket ever carried a request and `main` falls through to
+DO when it did not. The boundary is `SASSHTunnelSocketClient.Error.isPreSend`:
+`socketFailed` / `connectFailed` / `peerRejected` happen before anything is
+written, so nothing was asked and no prompt can have been shown; `sendFailed`
+/ `noReply` / `malformedReply` may have reached the app, and repeating those
+over DO would prompt the user twice. This works only because the app vends DO
+unconditionally — `SPSSHTunnel` registers its `NSConnection` and exports
+`SP_CONNECTION_NAME` / `SP_CONNECTION_VERIFY_HASH` whichever transport it
+picked — which is a Step 3 property worth keeping until 5b.
+
+**5b (#2623) must not merge until 5a is re-flipped and has actually soaked.**
+Deleting DO now would delete the rollback that is currently carrying every
+affected user, and the assistant's new fallback along with it.
 
 Before DO can go, the socket must have somewhere to live for *every* user:
 today a container-tmp path over 103 bytes (user names past 26 UTF-8 bytes)
@@ -582,6 +612,14 @@ build's defaults domain, `com.sequel-ace.sequel-ace` for release and
 `com.sequel-ace.sequel-ace-beta` for Beta. Without it, a regression means a
 point release. This is the main reason for the flag — do not skip it to save
 time.
+
+This earned itself in 6.0.0: issue #2689 was diagnosed and worked around by
+users writing that key before a maintainer had reproduced anything, and the
+6.0.1 fix was flipping the same default in code. Note what it did *not* buy —
+the flag rescues a user who can be told about it, and the two reporters found
+it only because one of them read the release notes. A transport that fails
+closed still costs everyone else their tunnel, which is why the assistant-side
+fallback landed alongside the flip.
 
 ## Effort
 

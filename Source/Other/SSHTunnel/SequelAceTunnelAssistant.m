@@ -41,8 +41,18 @@ int main(int argc, const char *argv[])
 		// The socket transport (SSH tunnel IPC plan, Step 3) is handled entirely
 		// in Swift; everything below is the Distributed Objects path, kept
 		// verbatim until Step 5 deletes it.
+		//
+		// A socket that never carried a request — nothing reached the app, so
+		// no prompt can have been shown — falls through to Distributed
+		// Objects, which the app vends whichever transport it selected. The
+		// alternative is what 6.0.0 did: fail closed and take the tunnel with
+		// it (issue #2689). A socket that did reach the app keeps its answer,
+		// so the user is never asked twice.
 		if ([SASSHTunnelAssistantSocketMain isSelectedInEnvironment]) {
-			return [SASSHTunnelAssistantSocketMain run];
+			int32_t socketExitCode = 1;
+			if ([SASSHTunnelAssistantSocketMain runReturningExitCode:&socketExitCode]) {
+				return socketExitCode;
+			}
 		}
 
 		NSDictionary *environment = [[NSProcessInfo processInfo] environment];
