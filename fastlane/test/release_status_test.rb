@@ -104,6 +104,22 @@ class ReleaseStatusTest < Minitest::Test
     refute report(snapshot).dig("app_store", "metadata_valid")
   end
 
+  def test_live_release_uses_distribution_checks_instead_of_submission_schedule
+    snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    snapshot["version"]["attributes"]["releaseType"] = "AFTER_APPROVAL"
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+
+    result = report(snapshot)
+    assert result.dig("app_store", "metadata_valid")
+    assert result.dig("app_store", "submitted")
+    assert_includes result.fetch("next_action"), "finalizer owns"
+
+    snapshot["phased_release"]["attributes"]["phasedReleaseState"] = "PAUSED"
+    result = report(snapshot)
+    refute result.dig("app_store", "metadata_valid")
+    assert_includes result.dig("app_store", "metadata_error"), "phased release is not active"
+  end
+
   def test_incomplete_localization_reports_metadata_gap
     client = Client.new(metadata_snapshot)
     client.define_singleton_method(:metadata_snapshot) { |**| raise SequelAceRelease::ValidationError, "localization missing" }

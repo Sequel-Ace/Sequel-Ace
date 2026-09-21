@@ -51,18 +51,19 @@ module SequelAceRelease
                            "state" => MetadataValidator.app_version_state(version) }
         )
       end
+      state = MetadataValidator.app_version_state(snapshot.fetch("version"))
       metadata_valid = true
       metadata_error = nil
       begin
         MetadataValidator.new.validate!(
           snapshot: snapshot, expected_build: data.fetch("canonical_build"), expected_notes: app_store_notes,
+          require_live: state == "READY_FOR_DISTRIBUTION",
           minimum_release_time: Time.at(0).utc
         )
       rescue ValidationError => error
         metadata_valid = false
         metadata_error = error.message
       end
-      state = MetadataValidator.app_version_state(snapshot.fetch("version"))
       exact_build = snapshot.dig("selected_build", "attributes", "version").to_s == data.fetch("canonical_build").to_s
       submitted = exact_build && SubmissionReconciler::SUBMITTED_STATES.include?(state)
       result["app_store"] = {
