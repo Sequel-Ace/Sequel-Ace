@@ -16,6 +16,7 @@ on:
       - New Sequel Ace release
       - Internal release engine (advanced recovery only)
       - Retry Alpha Beta Artifact
+      - Retry Existing Release Artifacts
     types:
       - completed
   workflow_dispatch:
@@ -164,7 +165,7 @@ jobs:
                 echo "The source workflow did not succeed; no artifact continuation was attempted." >> "${GITHUB_STEP_SUMMARY}"
                 exit 0
               fi
-              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_deploy.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
+              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_deploy.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_artifact_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
               [[ "${SOURCE_EVENT}" == "workflow_dispatch" ]] || { echo "Artifact handoffs must originate from an authorized manual workflow." >&2; exit 1; }
               [[ "${SOURCE_HEAD_BRANCH}" == "main" ]] || { echo "Artifact handoff source was not main." >&2; exit 1; }
               if [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" && "${SOURCE_ACTOR}" == "github-actions[bot]" ]]; then

@@ -123,4 +123,26 @@ class ArtifactRetryTest < Minitest::Test
     ruby = script.split("<<'RUBY'\n", 2).last.split("\nRUBY", 2).first
     assert Open3.capture3(RbConfig.ruby, "-c", stdin_data: ruby).last.success?
   end
+
+  def test_completion_wakes_publisher_without_bot_manual_dispatch
+    directory = File.expand_path("../../.github/workflows", __dir__)
+    retry_workflow = YAML.load_file(File.join(directory, "release_artifact_retry.yml"))
+    publisher = YAML.load_file(File.join(directory, "release_publish.yml"))
+    assert_includes publisher.fetch("on", publisher[true]).dig("workflow_run", "workflows"), retry_workflow.fetch("name")
+    refute retry_workflow.dig("jobs", "retry", "permissions").key?("actions")
+    refute_includes File.read(File.join(directory, "release_artifact_retry.yml")), "gh workflow run"
+    gate = publisher.dig("jobs", "discover", "steps").first.fetch("run")
+    base = { "RELEASE_REF" => "refs/heads/main", "RELEASE_EVENT" => "workflow_run",
+             "RELEASE_PENDING_TAG" => "production/5.3.2-20105", "SOURCE_CONCLUSION" => "success",
+             "SOURCE_WORKFLOW_PATH" => ".github/workflows/release_artifact_retry.yml",
+             "SOURCE_EVENT" => "workflow_dispatch", "SOURCE_HEAD_BRANCH" => "main",
+             "SOURCE_ACTOR" => "Jason-Morcos", "RELEASE_RUN_ATTEMPT" => "1",
+             "RELEASE_ENABLED" => "true", "GITHUB_OUTPUT" => File::NULL, "GITHUB_STEP_SUMMARY" => File::NULL }
+    assert Open3.capture3(base, "bash", "-c", gate).last.success?
+    [{ "SOURCE_ACTOR" => "github-actions[bot]" }, { "SOURCE_HEAD_BRANCH" => "feature" },
+     { "SOURCE_WORKFLOW_PATH" => ".github/workflows/untrusted.yml" },
+     { "SOURCE_EVENT" => "push" }, { "RELEASE_RUN_ATTEMPT" => "2", "RELEASE_TRIGGERING_ACTOR" => "intruder" }].each do |change|
+      refute Open3.capture3(base.merge(change), "bash", "-c", gate).last.success?, change.inspect
+    end
+  end
 end
