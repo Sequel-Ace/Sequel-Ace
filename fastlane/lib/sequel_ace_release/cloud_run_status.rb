@@ -42,11 +42,8 @@ module SequelAceRelease
         end
       end
 
-      unless run["execution_progress"] == "COMPLETE"
-        return run.merge("readiness" => "pending", "reason" => "run_in_progress")
-      end
-
-      unless run["completion_status"] == "SUCCEEDED"
+      run_complete = run["execution_progress"] == "COMPLETE"
+      if run_complete && run["completion_status"] != "SUCCEEDED"
         return run.merge("readiness" => "failed", "reason" => "cloud_run_failed")
       end
 
@@ -66,28 +63,49 @@ module SequelAceRelease
         true
       end
       if matching_build
+        unless run_complete
+          # Apple's UI and artifacts can be ready before ciBuildRuns updates
+          # executionProgress. The exact build plus a downloadable artifact is
+          # sufficient to start the verifier; the artifact itself still has to
+          # pass every release check before publication.
+          unless downloadable_artifact?(run.fetch("id"))
+            return run.merge("readiness" => "pending", "reason" => "run_in_progress")
+          end
+        end
+
         return run.merge(
           "readiness" => "ready",
-          "reason" => "exact_build_ready",
+          "reason" => run_complete ? "exact_build_ready" : "exact_build_and_artifact_ready",
           "app_store_build_id" => matching_build.fetch("id"),
           "app_version" => matching_build.fetch("version"),
           "app_build" => matching_build.fetch("build")
         )
       end
 
-      unless cloud_builds.empty?
+      unless cloud_builds.empty? || !run_complete
         observed = cloud_builds.map { |candidate| candidate.slice("app_id", "version", "platform", "build") }
         raise ValidationError,
               "Xcode Cloud run does not contain the expected MAC_OS app version/build (observed: #{observed})"
       end
 
-      run.merge("readiness" => "pending", "reason" => "app_store_build_not_ready")
+      reason = run_complete ? "app_store_build_not_ready" : "run_in_progress"
+      run.merge("readiness" => "pending", "reason" => reason)
     end
 
     private
 
     def pending(reason)
       { "readiness" => "pending", "reason" => reason }
+    end
+
+    def downloadable_artifact?(run_id)
+      @client.run_artifacts(run_id).any? do |artifact|
+        artifact.dig("attributes", "downloadUrl").to_s.start_with?("https://")
+      end
+    rescue APIError => error
+      raise unless error.message.include?("HTTP 404")
+
+      false
     end
 
     def positive_integer(value, label)
