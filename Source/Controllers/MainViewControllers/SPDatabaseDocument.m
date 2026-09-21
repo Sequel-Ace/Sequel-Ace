@@ -2023,7 +2023,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)exportData {
     if (_isConnected) {
-        [exportControllerInstance exportData];
+        // Typed: SPExporter's exportData property is also visible here (via the Swift header) and would make the selector ambiguous on id
+        [(SPExportController *)exportControllerInstance exportData];
     }
 }
 
