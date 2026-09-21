@@ -306,8 +306,10 @@ An anonymous GitHub rate limit, transport error, or response that cannot be
 read as the feed array is a retryable failure: do not write the terminal
 integrity marker and do not mutate the release. A successfully parsed feed
 with a missing, duplicate, stale, or incompatible exact target is a terminal
-integrity failure and remains fail-closed. Under `legacy_updater_v1`, any other
-entry that the shipped decoder cannot parse is also terminal. Linux discovery
+integrity failure and remains fail-closed, except for the narrowly validated
+pre-finalization title/flag propagation case described below. That case remains
+pending and never counts as successful finalization. Under `legacy_updater_v1`,
+any other entry that the shipped decoder cannot parse is also terminal. Linux discovery
 routes that marker through one Ubuntu-only recovery pass so private failure
 evidence is durable and the exact wake tag is cleared instead of polling the
 same terminal state.
@@ -888,8 +890,13 @@ automatic RC recovery described above.
   post-transition readback leaves the exact wake tag armed and the durable
   archive at its last retryable checkpoint. The next scheduled run therefore
   retries the same `finalizing` release even when GitHub already reports it as
-  stable; there is no special anonymous-feed exception and no prerelease-only
-  discovery assumption.
+  stable; discovery does not assume the release is still a prerelease.
+  A feed that still has the exact previously validated title and prerelease
+  flag is pending propagation, not successful finalization. The validator must
+  verify every other identity, asset, checksum, and compatibility field against
+  the current authenticated release before treating that readback as retryable.
+  Recovery uses the exact release/commit-bound `finalizing` validation evidence;
+  it neither repeats a completed promotion nor accepts arbitrary stale metadata.
 - A successfully parsed incompatible release or anonymous feed writes versioned
   finalization-integrity evidence into the private archive. The scheduled run
   clears the wake tag after that evidence is durable so it does not repeat a

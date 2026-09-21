@@ -1324,13 +1324,18 @@ module SequelAceRelease
         login: release.dig("author", "login"),
         id: release.dig("author", "id")
       )
-      verify_release_assets!(release, data, github: client)
       final_title = ReleaseNaming.new(
         channel: "production",
         version: data.fetch("target_version"),
         build: data.fetch("canonical_build"),
         iteration: data.fetch("iteration")
       ).final_title
+      if data["state"] == "finalizing" &&
+         data.dig("finalization", "github_transition") == "durably_validated_before_public_transition" &&
+         data.dig("finalization", "target_title") == final_title
+        previous_finalization = data["finalization"]
+      end
+      verify_release_assets!(release, data, github: client, previous_finalization: previous_finalization)
       current_latest = begin
         client.latest_release
       rescue APIError => error
@@ -1383,7 +1388,7 @@ module SequelAceRelease
              )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
-      post_transition_assets = verify_release_assets!(release, data, github: client)
+      post_transition_assets = verify_release_assets!(release, data, github: client, previous_finalization: evidence)
       latest_release = client.latest_release
       unless latest_release["id"] == release["id"] && latest_release["tag_name"] == data.fetch("tag") &&
              latest_release["name"] == final_title && latest_release["draft"] == false &&
@@ -1694,7 +1699,7 @@ module SequelAceRelease
       end
     end
 
-    def verify_release_assets!(release, manifest, github:)
+    def verify_release_assets!(release, manifest, github:, previous_finalization: nil)
       validator = GitHubReleasePayload.new(
         release: release,
         expected_digests: release_asset_sha256s!(manifest)
@@ -1704,7 +1709,35 @@ module SequelAceRelease
         raise IntegrityError,
               "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
       end
-      status["release_feed_entries_verified"] = validator.validate_public_feed!(github.public_release_feed_page)
+      feed = github.public_release_feed_page
+      begin
+        status["release_feed_entries_verified"] = validator.validate_public_feed!(feed)
+      rescue IntegrityError => error
+        # A read immediately after promotion may still expose the exact validated
+        # pre-transition title/flag. Verify every other feed and asset field before
+        # leaving that checkpoint retryable; never accept stale data as success.
+        prior = previous_finalization
+        if prior.is_a?(Hash) &&
+           prior["release_id"] == release["id"] && prior["tag"] == manifest["tag"] &&
+           prior["release_commit_sha"] == manifest["release_commit_sha"] &&
+           prior["current_draft"] == false && [true, false].include?(prior["current_prerelease"]) &&
+           prior["current_title"].is_a?(String) && !prior["current_title"].empty? &&
+           release["draft"] == false && release["prerelease"] == false &&
+           release["name"] == prior["target_title"]
+          previous_release = release.merge(
+            "name" => prior.fetch("current_title"), "prerelease" => prior.fetch("current_prerelease")
+          )
+          begin
+            GitHubReleasePayload.new(
+              release: previous_release, expected_digests: release_asset_sha256s!(manifest)
+            ).validate_public_feed!(feed)
+          rescue IntegrityError
+            raise error
+          end
+          raise APIError, "GitHub public release feed still shows validated pre-finalization metadata; retry readback"
+        end
+        raise
+      end
       status["release_feed_verification"] = "verified"
       status
     end
