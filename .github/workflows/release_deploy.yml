@@ -146,4 +146,5 @@ jobs:
       github_release_body_b64: ${{ needs.plan.outputs.github_release_body_b64 }}
       approval_sha256: ${{ needs.plan.outputs.approval_sha256 }}
       confirmation: ${{ needs.plan.outputs.confirmation }}
+    secrets: inherit
     # Credentials are loaded only by the engine's protected environment.

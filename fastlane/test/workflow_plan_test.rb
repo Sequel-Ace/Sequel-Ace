@@ -162,6 +162,7 @@ class WorkflowPlanTest < Minitest::Test
     schema = events(engine).fetch("workflow_call").fetch("inputs")
     assert_empty deploy.fetch("with").keys - schema.keys
     assert_empty schema.select { |_, value| value["required"] }.keys - deploy.fetch("with").keys
+    assert_equal "inherit", deploy.fetch("secrets")
     assert_equal "sequel-ace-release", engine.fetch("concurrency").fetch("group")
     assert_equal "sequel-ace-release", engine.dig("jobs", "release", "environment")
     assert_equal engine.fetch("permissions"), deploy.fetch("permissions")

@@ -50,6 +50,9 @@ Actions freezes the selected main revision and calls the existing guarded
 release engine. The advanced interface below remains available for recovery.
 The GitHub body is always generated from your customer notes plus categorized
 changes, contributors, and comparison link; the form has no body override.
+The caller uses GitHub's reusable-workflow secret inheritance so the called
+engine can resolve its job-scoped `sequel-ace-release` environment secrets;
+the environment remains the credential owner and overrides caller secrets.
 Actions preserves that generated body in the immutable plan and forward recovery.
 
 **Remaining limitation:** `legacy_updater_v1` still requires a compatible web
