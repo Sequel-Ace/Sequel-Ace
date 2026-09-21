@@ -125,6 +125,48 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
+"Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
+
+/* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
+"Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%1$@', but dropping '%2$@' failed: %3$@";
+
+/* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
+"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
+
+/* rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
+"Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Privileges are already granted or partially revoked for the new name '%1$@' (%2$@); the moved tables and views would come under them. Nothing was changed.";
+
+/* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
+"Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
+
+/* rename database refused because the connection could not be switched to a UTF-8 character set */
+"The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
+
+/* rename database: the connection's settings could not be put back after the rename (or after refusing it) and reconnecting failed too; shown as a warning after a successful rename or appended to the failure */
+"The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries." = "The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries.";
+
+/* rename database: the connection's character set, latin1 transport mode, collation or sql_mode could not be put back after the rename (or after refusing it), so it was reconnected; shown as a warning after a successful rename or appended to the failure */
+"The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established." = "The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established.";
+
+/* rename database refused because @@collation_connection could not be read before switching the connection to UTF-8 */
+"The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed." = "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.";
+
+/* rename database refused because the source holds triggers, routines or events; %@ lists them */
+"The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "The database contains objects that Rename Database cannot move: %@. Nothing was changed.";
+
+/* rename database refused because GRANTs on the source database or its tables or views, or a partial revoke for the database, would be lost; %@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
+"The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed." = "The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed.";
+
+/* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
+"The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
+
+/* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+
+/* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
+"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
+
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
 
@@ -451,6 +493,12 @@
 /* all privileges operation description */
 "ALL PRIVILEGES" = "ALL PRIVILEGES";
 
+/* rename database: one privilege granted on a table, view or column, listed in the refusal; %1$@ the table or view, %2$@ the account as 'user'@'host' */
+"`%@` for %@" = "`%1$@` for %2$@";
+
+/* rename database: one privilege granted on a database, listed in the refusal; %1$@ the grant's database pattern, %2$@ the account as 'user'@'host' */
+"`%@`.* for %@" = "`%1$@`.* for %2$@";
+
 /* privilege operation all databases scope */
 "all databases" = "all databases";
 
@@ -463,6 +511,12 @@
 /* fallback privilege operation description */
 "change" = "change";
 
+/* rename database: a scheduled event, by name; listed among the objects that block the rename */
+"event '%@'" = "event '%@'";
+
+/* rename database: a stored function, by name; listed among the objects that block the rename */
+"function '%@'" = "function '%@'";
+
 /* grant privilege operation */
 "grant" = "grant";
 
@@ -471,6 +525,18 @@
 
 /* allow nonexistent definer privilege checkbox title */
 "Nonexistent Definer" = "Nonexistent Definer";
+
+/* rename database: why a view was not recreated */
+"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
+
+/* rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename */
+"library '%@'" = "library '%@'";
+
+/* rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host' */
+"partial revoke on `%@`.* for %@" = "partial revoke on `%1$@`.* for %2$@";
+
+/* rename database: a stored procedure, by name; listed among the objects that block the rename */
+"procedure '%@'" = "procedure '%@'";
 
 /* revoke privilege operation */
 "revoke" = "revoke";
@@ -517,8 +583,32 @@
 /* show create routine privilege checkbox title */
 "Show Create Routine" = "Show Create Routine";
 
+/* rename database: a table, by name */
+"table '%@'" = "table '%@'";
+
+/* rename database: escaping a value for a statement failed because the connection is unavailable; shown after 'Reading the objects of the database … failed:' or 'Moving … failed:' */
+"the connection could not quote a value for a statement (it was closed or is being re-established)." = "the connection could not quote a value for a statement (it was closed or is being re-established).";
+
+/* rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:' */
+"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).";
+
+/* rename database: why the views are not trusted and the source is kept */
+"the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
+
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
+
+/* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
+"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).";
+
+/* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
+
+/* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
+"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).";
+
+/* rename database: why the views in other databases that might read from the source could not be checked; shown after 'Reading the objects of the database … failed:' */
+"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing).";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";
@@ -2873,6 +2963,15 @@
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles.";
+
+/* rename database: a trigger, by name and table; listed among the objects that block the rename */
+"trigger '%@' on table '%@'" = "trigger '%1$@' on table '%2$@'";
+
+/* rename database: the server reported no error message */
+"unknown error" = "unknown error";
+
+/* rename database: a view, by name */
+"view '%@'" = "view '%@'";
 
 "‘%@’ Bundle contains legacy components" = "‘%@’ Bundle contains legacy components";
 
