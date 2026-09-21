@@ -828,6 +828,10 @@ use `release_artifact_retry.yml` after inspecting the failed private manifest.
 Supply its SHA-256, exact production tag, existing release commit, exact
 successful Production Cloud run ID, and `RETRY ARTIFACTS <tag>` confirmation.
 This is an explicitly authorized same-build recovery, not a new RC or rebuild.
+Successful recovery wakes the publisher through its authenticated
+`workflow_run` completion event. It does not dispatch the human-only manual
+publisher entry point as `github-actions[bot]`; the armed schedule remains the
+fallback if the completion event is delayed or lost.
 
 The workflow requires unchanged live source/tag identity, no public assets or
 App Store version, and a completed successful run
