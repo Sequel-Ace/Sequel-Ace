@@ -522,8 +522,38 @@ validator's `socket peer rejected: <failure>`), the read timing out
 (`askpass request not understood`), and the reply write failing
 (`could not deliver the askpass reply`). Only the last is post-handler.
 
-Still unconfirmed which of the four, and the reason is a diagnostics gap, not
-a filtering mistake. The reporter's log came from **Sequel Ace's own SSH debug
+**Root cause, confirmed 2026-09-21: path 1, and for a reason no dev build can
+reproduce.** `assistantPeerPolicy` required `identifier
+"SequelAceTunnelAssistant"`, the assistant's product name. The assistant is a
+bare Mach-O with no Info.plist, so codesign derives its identifier from the
+file name and ignores the target's `PRODUCT_BUNDLE_IDENTIFIER` — and the
+distribution pipeline re-signs it with a hash suffix. On shipped 6.0.0:
+
+| build | assistant `Identifier` | satisfies the requirement |
+|---|---|---|
+| local, Apple Development | `SequelAceTunnelAssistant` | yes |
+| `/Applications`, Apple Mac OS Application Signing | `SequelAceTunnelAssistant-55554944e48d2df47eb331fcba5ba8a3b2434a63` | **no** |
+
+`identifier` in a code requirement is exact equality, so the app rejected its
+own assistant on every connection: policy rejects → `serve` closes → the
+assistant reads EOF → `noReply` → no password → every tunnel fails. Verify
+with `codesign --verify -R '=anchor apple generic and identifier
+"SequelAceTunnelAssistant"'` against the shipped binary.
+
+The asymmetry is the lesson: **the live test in #2622 could not have caught
+this, and neither could any soak on a development build.** A signed-locally
+assistant satisfies the requirement; only the distributed artifact does not.
+Anything that validates the shipped signature has to be tested against a
+shipped (or at least export-signed) build, not a local one.
+
+Fixed by reading the identifier off the assistant binary the tunnel is about
+to launch instead of hardcoding it — which is what the file's own doc comment
+already claimed it did ("Each side derives its expectations from its own
+signature (never hardcoded)"); `assistantIdentifier` was the single place that
+did not. Unreadable identifier degrades to `anchor apple generic` plus the
+team check rather than locking every tunnel out.
+
+The diagnostics gap that delayed finding it, for the record: The reporter's log came from **Sequel Ace's own SSH debug
 window**, which `standardErrorHandler:` fills from one source: the ssh task's
 stderr. The assistant's messages land there because it inherits ssh's stderr;
 the app's own refusal messages went to `NSLog` in the app process and could

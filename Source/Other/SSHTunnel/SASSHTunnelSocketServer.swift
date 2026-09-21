@@ -156,14 +156,19 @@ import Foundation
     /// Objective-C entry: serve a tunnel's `SASSHTunnelAuthService`, admitting
     /// only a connecting process that is Apple-signed, of this app's team and
     /// named as the tunnel assistant.
+    /// `assistantPath` is the askpass binary the tunnel will launch, whose
+    /// signing identifier the peer must carry (issue #2689).
     /// `diagnosticSink` receives every reason a connection was refused, so
     /// the tunnel can put them where the user can see them.
     /// Selector spelled out: Swift's default bridging for a throwing init
     /// puts `error:` before the trailing argument.
-    @objc(initWithService:diagnosticSink:error:)
-    convenience init(service: SASSHTunnelAuthService, diagnosticSink: @escaping (String) -> Void) throws {
+    @objc(initWithService:assistantPath:diagnosticSink:error:)
+    convenience init(service: SASSHTunnelAuthService,
+                     assistantPath: String?,
+                     diagnosticSink: @escaping (String) -> Void) throws {
         try self.init(handler: service.handle,
-                      peerPolicy: SASSHTunnelPeerValidator.assistantPeerPolicy(log: diagnosticSink),
+                      peerPolicy: SASSHTunnelPeerValidator.assistantPeerPolicy(assistantPath: assistantPath,
+                                                                               log: diagnosticSink),
                       log: diagnosticSink)
     }
 
