@@ -123,7 +123,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_showConnectionTestResult:(NSString *)resultString;
 - (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
-- (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt;
+- (BOOL)_isLocalNetworkAccessDeniedForConnectionResult:(SAConnectionResult *)result;
 - (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied;
 - (void)_showLocalNetworkPermissionAlert;
 - (BOOL)_openLocalNetworkPrivacySettings;
@@ -574,8 +574,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         // Connection failure — format case-specific error messages
         if (!result.isSuccess) {
-            // Check local network denial before clearing mySQLConnection
-            BOOL localNetworkDenied = result.isLocalNetworkDenied || [strongSelf _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+            BOOL localNetworkDenied = [strongSelf _isLocalNetworkAccessDeniedForConnectionResult:result];
             strongSelf->mySQLConnection = nil;
 
             NSString *failTitle = result.errorTitle ?: NSLocalizedString(@"Unable to connect", @"connection failed title");
@@ -3852,7 +3851,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     return NO;
 }
 
-- (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt
+/**
+ * Whether a failed connection attempt was blocked by a denied Local Network permission (macOS 15 and later).
+ * Probes the host when the failure could have that cause; the MySQL error comes from `result`, because the
+ * failed connection is not kept on this controller.
+ */
+- (BOOL)_isLocalNetworkAccessDeniedForConnectionResult:(SAConnectionResult *)result
 {
     if (@available(macOS 15.0, *)) {
         BOOL shouldProbeForLocalNetworkDenial = NO;
@@ -3866,16 +3870,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 return NO;
             }
         } else {
-            NSUInteger lastErrorID = [mySQLConnection lastErrorID];
-            if (lastErrorID == 1045) return NO; // Access denied credentials error.
-
-            NSString *lastErrorMessage = [[mySQLConnection lastErrorMessage] lowercaseString] ?: @"";
-            BOOL looksLikeNetworkFailure = ([lastErrorMessage rangeOfString:@"can't connect"].location != NSNotFound
-                                            || [lastErrorMessage rangeOfString:@"timed out"].location != NSNotFound
-                                            || [lastErrorMessage rangeOfString:@"no route to host"].location != NSNotFound
-                                            || [lastErrorMessage rangeOfString:@"network is unreachable"].location != NSNotFound);
-
-            shouldProbeForLocalNetworkDenial = (looksLikeNetworkFailure || lastErrorID == 2002 || lastErrorID == 2003);
+            shouldProbeForLocalNetworkDenial = [SALocalNetworkPermissionChecker shouldProbeAfterMySQLErrorID:result.lastErrorID
+                                                                                                     message:result.rawErrorMessage ?: @""];
         }
 
         if (!shouldProbeForLocalNetworkDenial) return NO;
@@ -3883,7 +3879,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *probeHost = nil;
         NSInteger probePort = 0;
 
-        if ([self type] == SPTCPIPConnection) {
+        // A Vault connection dials the database host directly, like a TCP/IP one.
+        if ([self type] == SPTCPIPConnection || [self type] == SPVaultConnection) {
             probeHost = [self host];
             probePort = ([[self port] length] ? [[self port] integerValue] : 3306);
         } else if ([self type] == SPSSHTunnelConnection) {
