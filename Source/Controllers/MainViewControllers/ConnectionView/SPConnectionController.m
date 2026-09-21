@@ -123,6 +123,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_showConnectionTestResult:(NSString *)resultString;
 - (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
+/** Whether a failed attempt was blocked by a denied Local Network permission; probes the host when it could be. */
 - (BOOL)_isLocalNetworkAccessDeniedForConnectionResult:(SAConnectionResult *)result;
 - (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied;
 - (void)_showLocalNetworkPermissionAlert;
@@ -3879,8 +3880,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *probeHost = nil;
         NSInteger probePort = 0;
 
-        // A Vault connection dials the database host directly, like a TCP/IP one.
-        if ([self type] == SPTCPIPConnection || [self type] == SPVaultConnection) {
+        // Vault and AWS IAM connections dial the database host directly, like a TCP/IP one.
+        if ([self type] == SPTCPIPConnection || [self type] == SPVaultConnection || [self type] == SPAWSIAMConnection) {
             probeHost = [self host];
             probePort = ([[self port] length] ? [[self port] integerValue] : 3306);
         } else if ([self type] == SPSSHTunnelConnection) {
