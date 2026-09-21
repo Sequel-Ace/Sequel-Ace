@@ -623,3 +623,82 @@ final class SAMCPToolDefinitionsTests: XCTestCase {
         }
     }
 }
+
+/// The CSV export must keep numbers as numbers while still neutralising cells a
+/// spreadsheet would run as a formula.
+final class SAMCPCSVTests: XCTestCase {
+
+    /// Verifies that plain numbers, negative ones included, are written unchanged.
+    func testNumbersStayNumbers() {
+        for number in ["-5", "-12.50", "+3", "-1.5E+10", "-2e-3", "-.5", "-0", "42", "-7."] {
+            XCTAssertEqual(SAMCPCSV.escapedField(number), number, number)
+        }
+    }
+
+    /// Verifies that anything a spreadsheet could run as a formula is prefixed with a
+    /// single quote, including values that only start like a number.
+    func testFormulasAreNeutralised() {
+        XCTAssertEqual(SAMCPCSV.escapedField("=1+1"), "'=1+1")
+        XCTAssertEqual(SAMCPCSV.escapedField("@SUM(A1:A2)"), "'@SUM(A1:A2)")
+        XCTAssertEqual(SAMCPCSV.escapedField("-2+3"), "'-2+3")
+        XCTAssertEqual(SAMCPCSV.escapedField("+cmd|' /C calc'!A0"), "'+cmd|' /C calc'!A0")
+        XCTAssertEqual(SAMCPCSV.escapedField("-1e5x"), "'-1e5x")
+        XCTAssertEqual(SAMCPCSV.escapedField("- 5"), "'- 5")
+        XCTAssertEqual(SAMCPCSV.escapedField("-"), "'-")
+        // Digits outside ASCII are not a number MySQL returns.
+        XCTAssertEqual(SAMCPCSV.escapedField("-\u{0663}"), "'-\u{0663}")
+    }
+
+    /// Verifies that a leading tab or carriage return is neutralised, also when the
+    /// carriage return starts a CRLF pair, which Swift treats as one Character.
+    func testLeadingControlCharactersAreNeutralised() {
+        XCTAssertEqual(SAMCPCSV.escapedField("\tfoo"), "'\tfoo")
+        XCTAssertEqual(SAMCPCSV.escapedField("\r=cmd"), "\"'\r=cmd\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("\r\n=cmd"), "\"'\r\n=cmd\"")
+    }
+
+    /// Verifies that fields holding a separator, a double quote or a line break are
+    /// enclosed in double quotes, a CRLF pair included.
+    func testFieldsAreQuotedWhenNeeded() {
+        XCTAssertEqual(SAMCPCSV.escapedField("plain"), "plain")
+        XCTAssertEqual(SAMCPCSV.escapedField("a,b"), "\"a,b\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("say \"hi\""), "\"say \"\"hi\"\"\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("line\nbreak"), "\"line\nbreak\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("a\r\nb"), "\"a\r\nb\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("-5,0"), "\"'-5,0\"")
+    }
+
+    /// Verifies that a double quote followed by a combining mark is found and doubled.
+    /// Compared as Characters the two form one cluster that is not a quote, so the
+    /// field used to stay unquoted with a bare quote inside.
+    func testQuoteFollowedByACombiningMarkIsEscaped() {
+        XCTAssertEqual(SAMCPCSV.escapedField("a\"\u{301}b"), "\"a\"\"\u{301}b\"")
+    }
+}
+
+/// `containsAnyUnicodeScalar(of:)` is the shared answer to Swift folding "\r\n" (and a
+/// quote plus a combining mark) into one Character that `contains` does not match.
+final class SAStringUnicodeScalarSearchTests: XCTestCase {
+
+    /// Verifies that line breaks are found alone and inside a CRLF pair, and only then.
+    func testLineBreaksAreFoundInEveryForm() {
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\n"))
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\r"))
+        XCTAssertTrue("a\nb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertTrue("a\rb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("a\tb c".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("".containsAnyUnicodeScalar(of: "\n\r"))
+    }
+
+    /// Verifies that any listed scalar is found, also when it is merged into a cluster
+    /// with the next one.
+    func testAnyListedScalarIsFound() {
+        XCTAssertTrue("a\"\u{301}b".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertTrue("x,y".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ""))
+        XCTAssertTrue("ab".prefix(1).containsAnyUnicodeScalar(of: "a"))
+        XCTAssertFalse("ab".prefix(1).containsAnyUnicodeScalar(of: "b"))
+    }
+}
+

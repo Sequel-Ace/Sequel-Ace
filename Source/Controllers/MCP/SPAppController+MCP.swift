@@ -978,9 +978,16 @@ extension SPAppController: SPMCPDataSource {
 
     // MARK: - CSV helpers
 
+    /// Builds the CSV text of a query result: a header row with the column names,
+    /// then one line per row, every field escaped by `SAMCPCSV.escapedField`.
+    ///
+    /// - Parameters:
+    ///   - columns: The column names, in order.
+    ///   - rows: The rows, keyed by column name; `nil` and `NSNull` become empty fields.
+    /// - Returns: The CSV text.
     private func csvString(fromColumns columns: [String], rows: [[String: Any]]) -> String {
         var csv = ""
-        csv += columns.map { csvEscape($0) }.joined(separator: ",") + "\n"
+        csv += columns.map { SAMCPCSV.escapedField($0) }.joined(separator: ",") + "\n"
         for row in rows {
             var vals: [String] = []
             for col in columns {
@@ -993,26 +1000,10 @@ extension SPAppController: SPMCPDataSource {
                 } else {
                     strVal = "\(val!)"
                 }
-                vals.append(csvEscape(strVal))
+                vals.append(SAMCPCSV.escapedField(strVal))
             }
             csv += vals.joined(separator: ",") + "\n"
         }
         return csv
-    }
-
-    private func csvEscape(_ value: String) -> String {
-        var v = value
-        // Guard against CSV/formula injection: spreadsheet apps treat a cell that
-        // starts with = + - @ (or a leading tab/CR) as a formula. Prefix such cells
-        // with a single quote so they are read as literal text. The export data can
-        // be attacker-influenced (prompt injection), so neutralise it here.
-        if let first = v.first, "=+-@\t\r".contains(first) {
-            v = "'" + v
-        }
-        if v.contains(",") || v.contains("\"") || v.contains("\n") || v.contains("\r") {
-            let escaped = v.replacingOccurrences(of: "\"", with: "\"\"")
-            return "\"\(escaped)\""
-        }
-        return v
     }
 }
