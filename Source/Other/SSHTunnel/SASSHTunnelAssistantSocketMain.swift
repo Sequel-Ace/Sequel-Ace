@@ -45,19 +45,18 @@ import Foundation
 
     /// Runs the askpass exchange over the socket.
     ///
-    /// Returns false when the socket never carried a request — no path in the
-    /// environment, or every attempt failed before anything reached the app
-    /// (`SASSHTunnelSocketClient.Error.isPreSend`). The caller then runs the
-    /// Distributed Objects path instead, which the app always vends alongside
-    /// the socket: `SPSSHTunnel` registers its `NSConnection` and exports
+    /// Returns false when the run can safely be repeated over Distributed
+    /// Objects — no socket path in the environment, or it failed without any
+    /// prompt having been put in front of the user. The caller then runs the
+    /// DO path, which the app always vends alongside the socket:
+    /// `SPSSHTunnel` registers its `NSConnection` and exports
     /// `SP_CONNECTION_NAME` / `SP_CONNECTION_VERIFY_HASH` whichever transport
-    /// it selected. Before this, an unreachable socket failed the tunnel
+    /// it selected. Before this, an unusable socket failed the tunnel
     /// outright — issue #2689.
     ///
-    /// Returns true once the app has been asked anything, including when the
-    /// exchange then failed: the app may already be prompting the user, and a
-    /// second run over another transport would ask twice. `exitCode` carries
-    /// the answer in that case, and the caller returns it unchanged.
+    /// Returns true when the run succeeded, or when repeating it might ask
+    /// the user something twice. `exitCode` carries the answer either way and
+    /// the caller returns it unchanged.
     @objc(runReturningExitCode:)
     public static func run(returningExitCode exitCode: UnsafeMutablePointer<Int32>) -> Bool {
         let environment = ProcessInfo.processInfo.environment
@@ -69,7 +68,7 @@ import Foundation
             return false
         }
 
-        let reachability = Reachability()
+        let attempts = Attempts()
         let outcome = SASSHTunnelAskpass.run(argument: argument, environment: environment) {
             // Whatever answers at the socket must be Apple-signed and of this
             // assistant's own team, or it is not the app (Step 4).
@@ -78,10 +77,10 @@ import Foundation
             return { request in
                 do {
                     let response = try client.send(request)
-                    reachability.recordReachedTheApp()
+                    attempts.recordSuccess(of: request)
                     return response
                 } catch {
-                    reachability.record(error)
+                    attempts.recordFailure(error, of: request)
                     throw error
                 }
             }
@@ -92,8 +91,8 @@ import Foundation
         }
         exitCode.pointee = outcome.exitCode
 
-        if outcome.exitCode != 0, reachability.neverReachedTheApp {
-            NSLog("%@", "SSH tunnel: the socket transport never reached the app (\(reachability.summary)); using Distributed Objects")
+        if outcome.exitCode != 0, attempts.isSafeToRepeatOnAnotherTransport {
+            NSLog("%@", "SSH tunnel: the socket transport failed without prompting (\(attempts.summary)); using Distributed Objects")
             return false
         }
         return true
@@ -107,22 +106,33 @@ import Foundation
         return exitCode
     }
 
-    /// Whether the socket ever carried a request to the app. The askpass run
-    /// may make several attempts (a refused password becomes a GUI prompt);
-    /// only a run where *every* attempt failed pre-send, and at least one was
-    /// made, is safe to repeat over Distributed Objects.
-    private final class Reachability {
+    /// Tracks whether repeating the whole askpass run over another transport
+    /// could ask the user something a second time.
+    ///
+    /// One run can make several attempts — a refused password becomes a GUI
+    /// prompt — and a repeat redoes all of them, so a single prompting
+    /// request anywhere in the run is enough to rule it out. A request is
+    /// only harmless if it never reached the app (`isPreSend`) or cannot
+    /// prompt at all (`SASSHTunnelAuthRequest.mayPromptTheUser`); the latter
+    /// is what makes issue #2689's failure recoverable, since a `password`
+    /// request is an idempotent keychain read whose `noReply` would otherwise
+    /// be indistinguishable from a lost reply to a prompt.
+    private final class Attempts {
         private var failures: [Swift.Error] = []
-        private var reachedTheApp = false
+        private var mayHavePrompted = false
 
-        func recordReachedTheApp() { reachedTheApp = true }
-
-        func record(_ error: Swift.Error) {
-            failures.append(error)
-            if (error as? SASSHTunnelSocketClient.Error)?.isPreSend != true { reachedTheApp = true }
+        func recordSuccess(of request: SASSHTunnelAuthRequest) {
+            // It reached the app, so a prompting request has now prompted.
+            if request.mayPromptTheUser { mayHavePrompted = true }
         }
 
-        var neverReachedTheApp: Bool { !reachedTheApp && !failures.isEmpty }
+        func recordFailure(_ error: Swift.Error, of request: SASSHTunnelAuthRequest) {
+            failures.append(error)
+            let neverReachedTheApp = (error as? SASSHTunnelSocketClient.Error)?.isPreSend == true
+            if request.mayPromptTheUser && !neverReachedTheApp { mayHavePrompted = true }
+        }
+
+        var isSafeToRepeatOnAnotherTransport: Bool { !mayHavePrompted && !failures.isEmpty }
 
         var summary: String {
             failures.map { String(describing: $0) }.joined(separator: ", ")

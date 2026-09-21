@@ -48,6 +48,20 @@ enum SASSHTunnelAuthRequest: Equatable {
     case password(verificationHash: String)
     /// A key passphrase, a SecurID code, or any other prompt ssh raises.
     case query(String, verificationHash: String)
+
+    /// Whether answering this can put a sheet in front of the user, which
+    /// decides whether a failed attempt may be repeated over another
+    /// transport (issue #2689). `password` is a keychain or in-memory read in
+    /// `SASSHTunnelAuthService`: no UI and idempotent, so repeating it costs
+    /// at most a second keychain lookup. `question` runs the tunnel's
+    /// yes/no sheet and `query` may run the password sheet, so a repeat of
+    /// either risks asking the user twice.
+    var mayPromptTheUser: Bool {
+        switch self {
+        case .password: return false
+        case .question, .query: return true
+        }
+    }
 }
 
 enum SASSHTunnelAuthResponse: Equatable {

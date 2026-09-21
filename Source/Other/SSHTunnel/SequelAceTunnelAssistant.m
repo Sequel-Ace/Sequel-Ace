@@ -42,12 +42,12 @@ int main(int argc, const char *argv[])
 		// in Swift; everything below is the Distributed Objects path, kept
 		// verbatim until Step 5 deletes it.
 		//
-		// A socket that never carried a request — nothing reached the app, so
-		// no prompt can have been shown — falls through to Distributed
-		// Objects, which the app vends whichever transport it selected. The
-		// alternative is what 6.0.0 did: fail closed and take the tunnel with
-		// it (issue #2689). A socket that did reach the app keeps its answer,
-		// so the user is never asked twice.
+		// A socket run that failed without putting a prompt in front of the
+		// user falls through to Distributed Objects, which the app vends
+		// whichever transport it selected. The alternative is what 6.0.0 did:
+		// fail closed and take the tunnel with it (issue #2689). A run that
+		// may already have asked the user something keeps its answer, so
+		// nobody is prompted twice.
 		if ([SASSHTunnelAssistantSocketMain isSelectedInEnvironment]) {
 			int32_t socketExitCode = 1;
 			if ([SASSHTunnelAssistantSocketMain runReturningExitCode:&socketExitCode]) {

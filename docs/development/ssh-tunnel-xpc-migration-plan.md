@@ -508,10 +508,26 @@ Execution notes, 5a rollback (2026-09-21): the soak failed. 6.0.0 shipped the
 socket as the default and issue #2689 brought two independent reports of
 *every* tunnel failing, both cured by `SPSSHTunnelUseSocketTransport -bool NO`.
 `defaultTransport` is `.distributedObjects` again for 6.0.1 and the socket is
-opt-in (`-bool YES`) for anyone diagnosing it. Root cause is still unknown —
-the reproduction is on macOS 27.0 and neither reporter has produced the
-`SSH tunnel: socket peer rejected: …` line yet, which is what discriminates
-`noGuest` / `requirementFailed` / `teamMismatch` in Step 4's validator.
+opt-in (`-bool YES`) for anyone diagnosing it.
+
+What the reporter's log pinned down: the assistant fails with
+`unable to obtain the password from Sequel Ace (noReply)`, repeatedly, on a
+`password` request. `noReply` means the app *accepted the connection and then
+closed without answering*, so the socket bound, the assistant found it and
+connected — the fault is inside `SASSHTunnelSocketServer.serve`. Exactly four
+paths there close silently, and each logs its own line: `peerPolicy` rejecting
+(`rejected an askpass connection that failed peer validation`, preceded by the
+validator's `socket peer rejected: <failure>`), the read timing out
+(`askpass connection sent no request`), the decode failing
+(`askpass request not understood`), and the reply write failing
+(`could not deliver the askpass reply`). Only the last is post-handler.
+
+Still unconfirmed which of the four, because of a logging trap worth fixing:
+the app's lines are prefixed `SSH tunnel:` (lowercase t) and the assistant's
+`SSH Tunnel:` (capital T). The reporter filtered on `"SSH Tunnel"` and
+`NSPredicate`'s `CONTAINS` is case-sensitive, so every app-side line was
+filtered out and only assistant lines came back. Ask with `CONTAINS[c]` and
+`process == "Sequel Ace"`.
 
 The rollback also fixed the structural fault the incident exposed, which is
 the more important half: the fallback was one-sided. The app degrades to DO
@@ -520,15 +536,36 @@ such path — once `SP_CONNECTION_TRANSPORT=socket` was in ssh's environment it
 either completed the socket exchange or failed closed, taking the tunnel with
 it. So any post-bind socket fault was unsurvivable, which is why the symptom
 was total rather than partial. `SASSHTunnelAssistantSocketMain.run` now
-reports whether the socket ever carried a request and `main` falls through to
-DO when it did not. The boundary is `SASSHTunnelSocketClient.Error.isPreSend`:
-`socketFailed` / `connectFailed` / `peerRejected` happen before anything is
-written, so nothing was asked and no prompt can have been shown; `sendFailed`
-/ `noReply` / `malformedReply` may have reached the app, and repeating those
-over DO would prompt the user twice. This works only because the app vends DO
+reports whether the run may have prompted anyone, and `main` falls through to
+DO when it cannot have. This works only because the app vends DO
 unconditionally — `SPSSHTunnel` registers its `NSConnection` and exports
 `SP_CONNECTION_NAME` / `SP_CONNECTION_VERIFY_HASH` whichever transport it
 picked — which is a Step 3 property worth keeping until 5b.
+
+The retry rule has two halves, and it needs both. *Where* it failed:
+`SASSHTunnelSocketClient.Error.isPreSend` — `socketFailed` / `connectFailed` /
+`peerRejected` happen before anything is written, so nothing was asked. *What*
+was being asked: `SASSHTunnelAuthRequest.mayPromptTheUser` — `password`
+resolves from the keychain or memory in `SASSHTunnelAuthService` with no UI
+and is idempotent, so repeating it costs at most a second keychain read, while
+`question` and `query` are sheet-backed.
+
+The second half is what actually rescues #2689, and the first half alone would
+not have: the reported failure is `noReply`, which is post-send, so an
+error-only rule keeps failing closed on exactly the bug it was written for.
+`noReply` is ambiguous by construction — three of its four server-side causes
+are pre-handler and one is not — so it can only be judged together with the
+request. A run is repeated only when every attempt either never reached the
+app or could not have prompted; one sheet-backed request anywhere in the run
+rules it out, because a repeat redoes the whole run.
+
+Deliberately *not* fixed here: the `SSH tunnel:` / `SSH Tunnel:` prefix split
+above. Normalising it is a one-line-per-call-site change, but it would make
+every future log line differ from what 6.0.0 users are pasting into #2689
+while that incident is still open. Worth doing once the incident closes, in
+its own `#infra` PR, along with deciding whether the assistant should name the
+transport it used in its failure lines — the reporter's log says `noReply` but
+not that it came from the socket.
 
 **5b (#2623) must not merge until 5a is re-flipped and has actually soaked.**
 Deleting DO now would delete the rollback that is currently carrying every
