@@ -71,6 +71,12 @@ class ReleaseStatusTest < Minitest::Test
     assert_includes result.fetch("next_action"), "complete"
   end
 
+  def test_failed_beta_guidance_uses_the_alpha_retry_workflow
+    result = report(nil, state: "failed", channel: "beta")
+    assert_includes result.fetch("next_action"), "release_alpha_retry.yml"
+    refute_includes result.fetch("next_action"), "release_artifact_retry.yml"
+  end
+
   def test_running_handoff_queries_exact_cloud_run_and_does_not_emit_signed_urls
     client = Client.new(nil)
     client.define_singleton_method(:find_cloud_run) do |**args|
@@ -93,12 +99,15 @@ class ReleaseStatusTest < Minitest::Test
       "canonical_build" => 20_105, "state" => "cloud_running", "channel" => "production",
       "release_commit_sha" => "a" * 40, "cloud_build_ids" => { "production" => "run-id" }
     })
-    result = SequelAceRelease::ReleaseStatus.new(client: client, production_workflow_id: "workflow").inspect(
-      manifest: manifest, app_store_notes: "notes"
-    )
-    assert_equal "ready", result.dig("cloud", "readiness")
-    refute_includes JSON.generate(result), "secret-url"
-    refute_includes JSON.generate(result), "private-token"
+    %w[cloud_running failed].each do |state|
+      manifest.to_h["state"] = state
+      result = SequelAceRelease::ReleaseStatus.new(client: client, production_workflow_id: "workflow").inspect(
+        manifest: manifest, app_store_notes: "notes"
+      )
+      assert_equal "ready", result.dig("cloud", "readiness")
+      refute_includes JSON.generate(result), "secret-url"
+      refute_includes JSON.generate(result), "private-token"
+    end
   end
 
   def test_missing_schedule_does_not_validate_metadata
