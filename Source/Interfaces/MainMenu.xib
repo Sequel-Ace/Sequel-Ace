@@ -606,6 +606,12 @@
                                     <action selector="showGotoDatabase:" target="-1" id="jS0-aP-Y7o"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Search in All Tables…" keyEquivalent="F" id="SaS-eA-t01">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                <connections>
+                                    <action selector="showSearchAllTables:" target="-1" id="SaS-eA-t02"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="Yzp-Qk-v7Y"/>
                             <menuItem title="Add Database..." keyEquivalent="A" id="629">
                                 <modifierMask key="keyEquivalentModifierMask" option="YES"/>
