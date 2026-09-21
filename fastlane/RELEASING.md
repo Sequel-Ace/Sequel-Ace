@@ -51,14 +51,22 @@ release engine. The advanced interface below remains available for recovery.
 The GitHub body is always generated from your customer notes plus categorized
 changes, contributors, and comparison link; the form has no body override.
 The engine resolves credentials directly from its job-scoped
-`sequel-ace-release` environment. Environment secrets cannot be forwarded
-through `workflow_call`; `secrets: inherit` does not repair missing environment
-credentials. Before minting a token, the engine checks that its required
+`sequel-ace-release` environment. Environment secrets are not forwarded by the
+caller. However, the caller must retain `secrets: inherit` as a workaround for
+[actions/runner#4453](https://github.com/actions/runner/issues/4453): without it,
+GitHub can resolve every environment-only secret to an empty string in the
+called job even though its environment variables and branch policy are applied.
+This exact symptom was reproduced by form run `35611391949`; the standalone
+engine can access the same environment. Inheritance enables the reported
+resolution workaround; it does not move secrets out of the protected environment.
+Before minting a token, the engine checks that its required
 credentials are available and reports only missing names. If that check fails,
 inspect the called job's environment configuration and secret availability;
 do not duplicate credentials into repository or organization secrets.
-The original empty-key failure remains unproven until this path succeeds in
-a hosted run; local tests cannot verify GitHub's secret injection.
+Local tests verify the wiring and fail-closed checks, not GitHub secret injection.
+Confirm the workaround through a hosted form run after merge. If a form run
+fails before mutation, recover its exact archived `dispatch_inputs` through the
+standalone internal engine; do not regenerate or broaden the approved plan.
 Actions preserves that generated body in the immutable plan and forward recovery.
 
 **Remaining limitation:** `legacy_updater_v1` still requires a compatible web

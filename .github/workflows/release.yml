@@ -199,7 +199,7 @@ jobs:
           missing=0
           for credential in SA_RELEASE_GITHUB_APP_PRIVATE_KEY SA_ASC_KEY_ID SA_ASC_PRIVATE_KEY SA_ASC_ISSUER_ID; do
             if [[ -z "${!credential}" ]]; then
-              echo "::error::Missing ${credential} in the called job's sequel-ace-release environment. Check environment configuration and secret availability; caller secret inheritance cannot supply environment secrets." >&2
+              echo "::error::Missing ${credential} in the called job's sequel-ace-release environment. Check environment configuration, secret availability, and the caller's inheritance workaround for actions/runner#4453." >&2
               missing=1
             fi
           done
