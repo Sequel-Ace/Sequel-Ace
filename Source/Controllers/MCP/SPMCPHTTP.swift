@@ -147,13 +147,15 @@ enum SPMCPReadOnlyGuard {
         }
     }
 
-    /// Whether `scalar` may be part of an unquoted MySQL identifier: an ASCII
-    /// letter or digit, `_`, `$`, or any character beyond ASCII.
+    /// Whether `scalar` continues a possibly qualified unquoted name: an ASCII
+    /// letter or digit, `_`, `$`, any character beyond ASCII, or the `.` between
+    /// qualifiers. The dot keeps `t.ANALYZE` whole: after a dot MySQL reads even a
+    /// reserved word as an identifier.
     ///
     /// - Parameter scalar: The character to check.
-    /// - Returns: Whether it continues an identifier.
+    /// - Returns: Whether it continues the name.
     private static func isUnquotedIdentifierScalar(_ scalar: Unicode.Scalar) -> Bool {
-        scalar.value >= 0x80 || scalar == "_" || scalar == "$"
+        scalar.value >= 0x80 || scalar == "_" || scalar == "$" || scalar == "."
             || ("A"..."Z").contains(scalar) || ("a"..."z").contains(scalar) || ("0"..."9").contains(scalar)
     }
 
@@ -210,10 +212,13 @@ enum SPMCPReadOnlyGuard {
                 out.append(" ")
                 continue
             }
-            // -- comment: the second dash must be followed by whitespace/control or EOL
+            // -- comment: the second dash must be followed by whitespace, a control
+            // character or the end, as MySQL's lexer requires (my_isspace or
+            // my_iscntrl: 0x00-0x20 and 0x7F). Accepting fewer - a vertical tab or form
+            // feed, say - would leave text in that the server skips as a comment.
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
+                if i + 2 >= n || next.value <= 0x20 || next.value == 0x7F {
                     while i < n && chars[i] != "\n" { i += 1 }
                     out.append(" ")
                     continue

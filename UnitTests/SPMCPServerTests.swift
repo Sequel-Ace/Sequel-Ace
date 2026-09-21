@@ -467,6 +467,10 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         for sql in [
             "--\u{0B}SELECT\nANALYZE UPDATE a, b SET a.x = b.x WHERE a.id = b.id",
             "--\u{0C} SELECT 1\nANALYZE DELETE a FROM a JOIN b ON a.id = b.id",
+            // An unmatched quote in such a comment used to open a string that swallowed ANALYZE.
+            "--\u{0B}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{7F}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{01}\"\nANALYZE UPDATE t SET x = 1",
             "ANALYZE(SELECT 1)",
         ] {
             XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
@@ -482,6 +486,9 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT `analyze` FROM t",
             "SELECT \"ANALYZE\" AS label",
             "SELECT 'it''s ANALYZE time' AS label",
+            // After a dot MySQL reads a reserved word as an identifier.
+            "SELECT t.ANALYZE FROM t",
+            "SELECT * FROM db.analyze",
         ] {
             XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
         }
