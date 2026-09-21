@@ -1,0 +1,149 @@
+name: New Sequel Ace release
+
+run-name: "${{ inputs.preview_only && 'Preview' || 'Deploy' }} ${{ inputs.channel }} ${{ inputs.version }} by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New semantic version (for example 6.0.1); no build number
+        required: true
+        type: string
+      channel:
+        description: Production submits to App Store; beta publishes both beta artifacts
+        required: true
+        type: choice
+        default: beta
+        options: [beta, production]
+      app_store_notes:
+        description: 'Release notes: separate changes with | (example: Fix SSH connections | Improve exports). Multiline text also accepted via CLI/API.'
+        required: true
+        type: string
+      expected_main_sha:
+        description: Optional main commit check; leave blank to use latest main at submission
+        required: false
+        default: ""
+        type: string
+      preview_only:
+        description: Only generate the plan; create no PR, tag, build, or release
+        required: false
+        type: boolean
+        default: false
+
+permissions: {}
+
+# Do not hold the release concurrency group in this caller: the reused engine
+# owns it. Parallel plans are harmless; the engine rejects an advanced main.
+jobs:
+  plan:
+    name: Freeze and plan the submitted release
+    if: >-
+      (github.actor == 'Jason-Morcos' || github.actor == 'Kaspik') &&
+      (github.triggering_actor == 'Jason-Morcos' || github.triggering_actor == 'Kaspik')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      expected_main_sha: ${{ steps.plan.outputs.expected_main_sha }}
+      previous_tag: ${{ steps.plan.outputs.previous_tag }}
+      app_store_notes_b64: ${{ steps.plan.outputs.app_store_notes_b64 }}
+      github_release_body_b64: ${{ steps.plan.outputs.github_release_body_b64 }}
+      approval_sha256: ${{ steps.plan.outputs.approval_sha256 }}
+      confirmation: ${{ steps.plan.outputs.confirmation }}
+    steps:
+      - name: Authorize form submission before executing repository code
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Use main for release deployment." >&2; exit 1; }
+          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Only Jason-Morcos and Kaspik may start a release." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Only Jason-Morcos and Kaspik may rerun a release." >&2; exit 1; }
+          [[ "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          [[ "${RELEASE_CHANNEL}" == "beta" || "${RELEASE_CHANNEL}" == "production" ]] || exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Keep Bundler configuration outside the checkout
+        run: |
+          set -euo pipefail
+          bundle_config_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-plan-bundle.XXXXXX")"
+          cp .bundle/config "${bundle_config_directory}/config"
+          printf 'BUNDLE_APP_CONFIG=%s\n' "${bundle_config_directory}" >> "${GITHUB_ENV}"
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Generate immutable engine inputs and an audit plan
+        id: plan
+        env:
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git diff --quiet -- .bundle/config
+          bundle exec ruby fastlane/bin/sa-release workflow-plan \
+            --event "${GITHUB_EVENT_PATH}" --main-sha "${GITHUB_SHA}" \
+            --output "${RUNNER_TEMP}/release-plan.json"
+          ruby -rjson <<'RUBY'
+          plan = JSON.parse(File.read(File.join(ENV.fetch("RUNNER_TEMP"), "release-plan.json")))
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |output|
+            plan.fetch("dispatch_inputs").each do |key, value|
+              raise "Unsafe workflow output" if value.match?(/[\r\n\0]/)
+              output.puts("#{key}=#{value}")
+            end
+          end
+          File.open(ENV.fetch("GITHUB_STEP_SUMMARY"), "a") do |summary|
+            summary.puts("## #{plan.fetch('preview_only') ? 'Preview only' : 'Authorized by form submission'}")
+            summary.puts("- Channel/version: #{plan.fetch('channel')} #{plan.fetch('target_version')}")
+            summary.puts("- Frozen source: #{plan.fetch('main_sha')}")
+            summary.puts("- Comparison: #{plan.fetch('base_tag')}")
+            summary.puts("- Cumulative changelog: #{plan.fetch('changelog_base_tag')}")
+            summary.puts("- Approval digest: #{plan.fetch('approval').fetch('sha256')}")
+            summary.puts("- No further approval is required. The existing engine owns all release mutations.")
+            summary.puts("- #{plan.fetch('operational_requirements').fetch('compatibility_warning')}")
+            summary.puts("\n### Customer-facing notes\n\n#{plan.fetch('app_store_notes')}")
+            summary.puts("\n### Initial GitHub release body\n\n#{plan.fetch('github_release_body')}")
+          end
+          RUBY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-plan.json
+          if-no-files-found: error
+          retention-days: 30
+
+  deploy:
+    name: Execute the guarded release engine
+    needs: plan
+    if: ${{ !inputs.preview_only }}
+    permissions:
+      actions: read
+      checks: read
+      contents: write
+      packages: write
+      pull-requests: write
+    uses: ./.github/workflows/release.yml
+    with:
+      mode: start
+      channel: ${{ inputs.channel }}
+      version: ${{ inputs.version }}
+      expected_main_sha: ${{ needs.plan.outputs.expected_main_sha }}
+      previous_tag: ${{ needs.plan.outputs.previous_tag }}
+      app_store_notes_b64: ${{ needs.plan.outputs.app_store_notes_b64 }}
+      github_release_body_b64: ${{ needs.plan.outputs.github_release_body_b64 }}
+      approval_sha256: ${{ needs.plan.outputs.approval_sha256 }}
+      confirmation: ${{ needs.plan.outputs.confirmation }}
+    # Credentials are loaded only by the engine's protected environment.

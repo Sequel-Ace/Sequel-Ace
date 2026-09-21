@@ -30,6 +30,7 @@ module SequelAceRelease
       command = argv.shift
       case command
       when "plan" then plan(argv)
+      when "workflow-plan" then workflow_plan(argv)
       when "guard" then guard(argv)
       when "prepare" then prepare(argv)
       when "reconcile-build" then reconcile_build(argv)
@@ -46,6 +47,7 @@ module SequelAceRelease
       when "github-release-publisher-mode" then github_release_publisher_mode(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-public-assets-status" then github_public_assets_status(argv)
+      when "stage-public-handoff" then stage_public_handoff(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "validate-publish-handoff" then validate_publish_handoff(argv)
       when "validate-forward-recovery" then validate_forward_recovery(argv)
@@ -56,6 +58,7 @@ module SequelAceRelease
       when "create-manifest" then create_manifest(argv)
       when "update-manifest" then update_manifest(argv)
       when "reconcile-submission" then reconcile_submission(argv)
+      when "release-status" then release_status(argv)
       when "record-failure" then record_failure(argv)
       when "version" then emit("version" => SequelAceRelease::VERSION)
       when nil, "help", "--help", "-h"
@@ -104,6 +107,7 @@ module SequelAceRelease
         value.on("--base-tag TAG") { |item| options[:base_tag] = item }
         value.on("--main-ref REF") { |item| options[:main_ref] = item }
         value.on("--app-store-notes FILE") { |item| options[:app_store_notes] = File.read(item) }
+        value.on("--github-release-body FILE") { |item| options[:github_release_body] = File.read(item) }
         value.on("--expected-approval-sha SHA") { |item| options[:expected_approval_sha] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
@@ -111,11 +115,26 @@ module SequelAceRelease
       reject_arguments!(arguments)
       github = github_client(optional: true)
       result = Planner.new(github: github).plan(**options.slice(
-        :channel, :target_version, :base_tag, :main_ref, :app_store_notes
+        :channel, :target_version, :base_tag, :main_ref, :app_store_notes, :github_release_body
       ))
       if options[:expected_approval_sha]
         Approval.from_hash(result.fetch("approval")).verify!(options[:expected_approval_sha])
       end
+      emit(result, options[:output])
+    end
+
+    def workflow_plan(arguments)
+      options = {}
+      OptionParser.new do |value|
+        value.on("--event FILE") { |item| options[:event] = item }
+        value.on("--main-sha SHA") { |item| options[:main_sha] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :event, :main_sha, :output)
+      result = WorkflowPlan.new(planner: Planner.new(github: github_client)).create(
+        inputs: read_json(options[:event]).fetch("inputs"), main_sha: options[:main_sha]
+      )
       emit(result, options[:output])
     end
 
@@ -656,6 +675,45 @@ module SequelAceRelease
       emit(result, options[:output])
     end
 
+    def stage_public_handoff(arguments)
+      options = {}
+      OptionParser.new do |value|
+        value.on("--archive DIRECTORY") { |item| options[:archive] = item }
+        value.on("--destination DIRECTORY") { |item| options[:destination] = item }
+      end.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :archive, :destination)
+      root = File.realpath(options[:archive])
+      manifest = Manifest.read(File.join(root, "manifest.json"))
+      data = manifest.to_h
+      raise ValidationError, "public handoff requires verified artifacts" unless data.fetch("state") == "artifacts_verified"
+      naming = ReleaseNaming.new(channel: data.fetch("channel"), version: data.fetch("target_version"), build: data.fetch("canonical_build"), iteration: data.fetch("iteration"))
+      unless naming.tag == data.fetch("tag") && naming.public_artifacts == data.fetch("artifact_names")
+        raise IntegrityError, "public handoff identity is not canonical"
+      end
+      destination = options.fetch(:destination)
+      if File.exist?(destination) || File.symlink?(destination)
+        raise ValidationError, "public handoff destination must not exist"
+      end
+      digests = naming.public_artifacts.to_h do |name|
+        path = File.join(root, "artifacts", "public", name)
+        unless File.realpath(path).start_with?("#{root}/")
+          raise IntegrityError, "public artifact escapes its archive"
+        end
+        [name, verified_release_asset_sha256!(manifest: manifest, path: path, name: name)]
+      end
+      FileUtils.mkdir_p(destination)
+      digests.each do |name, digest|
+        output = File.join(destination, name)
+        FileUtils.copy_file(File.join(root, "artifacts", "public", name), output)
+        raise IntegrityError, "public handoff copy checksum mismatch" unless Digest::SHA256.file(output).hexdigest == digest
+      end
+      File.write(File.join(destination, "SHA256SUMS.txt"), digests.map { |name, digest| "#{digest}  #{name}\n" }.join)
+      emit("tag" => naming.tag, "artifact_names" => digests.keys, "sha256" => digests)
+    rescue SystemCallError => error
+      raise ValidationError, "public handoff filesystem operation failed: #{error.class}"
+    end
+
     def github_upload_asset(arguments)
       options = {}
       parser = OptionParser.new do |value|
@@ -1154,6 +1212,21 @@ module SequelAceRelease
       destination = options[:output] || options[:manifest]
       updated.write(destination)
       emit(updated.to_h)
+    end
+
+    def release_status(arguments)
+      options = {}
+      OptionParser.new do |value|
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :manifest, :notes)
+      result = ReleaseStatus.new(client: app_store_client, production_workflow_id: @env["SA_PRODUCTION_WORKFLOW_ID"]).inspect(
+        manifest: Manifest.read(options[:manifest]), app_store_notes: File.read(options[:notes])
+      )
+      emit(result, options[:output])
     end
 
     def reconcile_submission(arguments)
@@ -1713,6 +1786,7 @@ module SequelAceRelease
         Commands:
           guard                      Enforce actor, ref, freeze, confirmation, and enable gates
           plan                       Create a read-only release plan and approval payload
+          workflow-plan              Resolve a human dispatch into immutable release-engine inputs
           prepare                    Set explicit version/build values and regenerate CHANGELOG.md
           reconcile-build            Derive highest observed Production build plus one
           verify-artifact            Verify signing, notarization, architecture, metadata, and launch
@@ -1730,7 +1804,8 @@ module SequelAceRelease
                                      Select a live-capable initial release publisher
           github-create-release      Create the tag-backed GitHub prerelease
           github-public-assets-status
-                                     Validate public assets and legacy-client metadata
+                             Validate public assets and legacy-client metadata
+          stage-public-handoff       Copy only checksum-verified public ZIPs for a manual upload
           github-upload-asset        Upload a verified zip to the prerelease
           validate-publish-handoff   Validate an archived prerelease continuation
           validate-forward-recovery  Validate a preserved forward-only build mismatch
@@ -1741,6 +1816,7 @@ module SequelAceRelease
           create-manifest            Create the versioned non-secret release manifest
           update-manifest            Advance a manifest with redacted run evidence
           reconcile-submission       Read back an ambiguous production App Store submission
+          release-status             Read App Store state and validate metadata without mutation
           record-failure             Preserve finalizable state while recording a failed run
       HELP
     end
