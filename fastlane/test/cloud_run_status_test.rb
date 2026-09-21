@@ -4,11 +4,12 @@ require "test_helper"
 
 class CloudRunStatusTest < Minitest::Test
   class Client
-    attr_reader :find_arguments, :build_run_id
+    attr_reader :find_arguments, :build_run_id, :artifact_run_id
 
-    def initialize(run:, builds: [])
+    def initialize(run:, builds: [], artifacts: [])
       @run = run
       @builds = builds
+      @artifacts = artifacts
     end
 
     def find_cloud_run(**arguments)
@@ -21,6 +22,13 @@ class CloudRunStatusTest < Minitest::Test
       raise @builds if @builds.is_a?(Exception)
 
       @builds
+    end
+
+    def run_artifacts(run_id)
+      @artifact_run_id = run_id
+      raise @artifacts if @artifacts.is_a?(Exception)
+
+      @artifacts
     end
   end
 
@@ -47,7 +55,7 @@ class CloudRunStatusTest < Minitest::Test
     assert_nil client.find_arguments
   end
 
-  def test_reports_an_in_progress_run_as_pending_without_reading_builds
+  def test_reports_an_in_progress_run_as_pending_when_no_related_build_is_ready
     client = Client.new(run: cloud_run("RUNNING", nil))
 
     result = readiness_for(client)
@@ -55,7 +63,49 @@ class CloudRunStatusTest < Minitest::Test
     assert_equal "pending", result.fetch("readiness")
     assert_equal "run_in_progress", result.fetch("reason")
     assert_equal "run-id", result.fetch("id")
-    assert_nil client.build_run_id
+    assert_equal "run-id", client.build_run_id
+    assert_nil client.artifact_run_id
+  end
+
+  def test_reports_an_in_progress_run_as_pending_when_the_exact_build_has_no_downloadable_artifact
+    client = Client.new(
+      run: cloud_run("RUNNING", nil),
+      builds: [exact_build]
+    )
+
+    result = readiness_for(client)
+
+    assert_equal "pending", result.fetch("readiness")
+    assert_equal "run_in_progress", result.fetch("reason")
+    assert_equal "run-id", client.artifact_run_id
+  end
+
+  def test_accepts_an_exact_downloadable_artifact_when_the_run_progress_lags
+    client = Client.new(
+      run: cloud_run("RUNNING", nil),
+      builds: [exact_build],
+      artifacts: [{ "attributes" => { "downloadUrl" => "https://example.invalid/archive.zip" } }]
+    )
+
+    result = readiness_for(client)
+
+    assert_equal "ready", result.fetch("readiness")
+    assert_equal "exact_build_and_artifact_ready", result.fetch("reason")
+    assert_equal "app-store-build-id", result.fetch("app_store_build_id")
+    assert_equal "run-id", client.artifact_run_id
+  end
+
+  def test_keeps_an_in_progress_run_pending_when_the_artifact_relationship_is_temporarily_missing
+    client = Client.new(
+      run: cloud_run("RUNNING", nil),
+      builds: [exact_build],
+      artifacts: SequelAceRelease::APIError.new("App Store Connect API returned HTTP 404")
+    )
+
+    result = readiness_for(client)
+
+    assert_equal "pending", result.fetch("readiness")
+    assert_equal "run_in_progress", result.fetch("reason")
   end
 
   def test_reports_a_higher_assigned_number_as_forward_recovery_without_waiting
@@ -237,6 +287,16 @@ class CloudRunStatusTest < Minitest::Test
       "workflow_id" => "workflow-id",
       "git_reference" => "production/5.3.2-20105",
       "source_commit" => "a" * 40
+    }
+  end
+
+  def exact_build
+    {
+      "id" => "app-store-build-id",
+      "app_id" => "1518036000",
+      "version" => "5.3.2",
+      "platform" => "MAC_OS",
+      "build" => 20_105
     }
   end
 end

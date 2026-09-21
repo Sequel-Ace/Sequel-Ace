@@ -3,6 +3,32 @@
 require "test_helper"
 
 class WorkflowRecoveryTest < Minitest::Test
+  def test_status_uses_protected_api_credentials_without_release_mutations_or_serialization
+    workflow = File.read(repo_path(".github/workflows/release_status.yml"))
+    assert_includes workflow, "contents: read"
+    assert_includes workflow, "packages: read"
+    assert_includes workflow, "environment: sequel-ace-release"
+    assert_includes workflow, "SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}"
+    assert_includes workflow, "release-status"
+    assert_includes workflow, "Archive tag mismatch"
+    refute_includes workflow, "group: sequel-ace-release"
+    refute_includes workflow, "contents: write"
+    refute_includes workflow, "create-github-app-token"
+    assert_operator workflow.index("Authorize exact read-only inspection"), :<, workflow.index("actions/checkout@")
+    assert_operator workflow.index('"refs/heads/main"'), :<, workflow.index("SA_ASC_PRIVATE_KEY:")
+  end
+
+  def test_delayed_manual_publisher_requires_exact_live_submission_before_settling
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    duplicate = workflow.split('if [[ "${locally_eligible}" != "true" ]]; then', 2).last
+                        .split('manifest_path="${archive_directory}/manifest.json"', 2).first
+    assert_includes duplicate, '"${handoff_state}" == "submitted"'
+    assert_includes duplicate, "validate-publish-handoff"
+    assert_includes duplicate, ".app_store.submitted == true and .app_store.metadata_valid == true"
+    assert_operator duplicate.index("validate-publish-handoff"), :<, duplicate.index("action=settled")
+    refute_includes duplicate, "sa-release submit"
+  end
+
   def test_release_wait_uses_job_token_then_refreshes_app_tokens_for_mutations
     workflow = File.read(repo_path(".github/workflows/release.yml"))
     wait_step = workflow.index("- name: Wait for exact-head release PR checks")
@@ -661,7 +687,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator requested, :<, settled
     assert_operator settled, :<, terminal_exit
     assert_operator terminal_exit, :<, live_validation
-    assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication."
+    assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication; inspect release_status.yml."
     assert_includes discovery, "recovery wake state can be cleared."
     assert_includes discovery, "PublishHandoff::ELIGIBLE_STATES"
     assert_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
