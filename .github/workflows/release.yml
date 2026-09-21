@@ -188,6 +188,23 @@ jobs:
             exit 1
           }
 
+      - name: Check protected environment credentials
+        env:
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for credential in SA_RELEASE_GITHUB_APP_PRIVATE_KEY SA_ASC_KEY_ID SA_ASC_PRIVATE_KEY SA_ASC_ISSUER_ID; do
+            if [[ -z "${!credential}" ]]; then
+              echo "::error::Missing ${credential} in the called job's sequel-ace-release environment. Check environment configuration and secret availability; caller secret inheritance cannot supply environment secrets." >&2
+              missing=1
+            fi
+          done
+          [[ "${missing}" == "0" ]]
+
       - name: Mint repository-scoped release App token
         id: app_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0

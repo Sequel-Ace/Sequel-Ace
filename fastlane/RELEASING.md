@@ -50,9 +50,15 @@ Actions freezes the selected main revision and calls the existing guarded
 release engine. The advanced interface below remains available for recovery.
 The GitHub body is always generated from your customer notes plus categorized
 changes, contributors, and comparison link; the form has no body override.
-The caller uses GitHub's reusable-workflow secret inheritance so the called
-engine can resolve its job-scoped `sequel-ace-release` environment secrets;
-the environment remains the credential owner and overrides caller secrets.
+The engine resolves credentials directly from its job-scoped
+`sequel-ace-release` environment. Environment secrets cannot be forwarded
+through `workflow_call`; `secrets: inherit` does not repair missing environment
+credentials. Before minting a token, the engine checks that its required
+credentials are available and reports only missing names. If that check fails,
+inspect the called job's environment configuration and secret availability;
+do not duplicate credentials into repository or organization secrets.
+The original empty-key failure remains unproven until this path succeeds in
+a hosted run; local tests cannot verify GitHub's secret injection.
 Actions preserves that generated body in the immutable plan and forward recovery.
 
 **Remaining limitation:** `legacy_updater_v1` still requires a compatible web
