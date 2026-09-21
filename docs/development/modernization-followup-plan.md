@@ -711,11 +711,15 @@ what is actually next.
    naming from the shadow-rename pass) is the same shape of work and is best
    done while the code is young. This is the file that regressed; it is the
    highest-value target on the list.
-2. **SSH tunnel IPC, step 5b** — ✅ steps 0-5a merged (#2618-#2622), the
-   socket transport is the default. Deleting Distributed Objects (#2623)
-   merges with the next release once the transport has soaked; until then DO
-   stays as the rollback (`SPSSHTunnelUseSocketTransport -bool NO`). That
-   merge also removes the last five accepted build warnings.
+2. **SSH tunnel IPC, step 5b** — ⛔ blocked. Steps 0-5a merged
+   (#2618-#2622), but the 6.0.0 soak failed: issue #2689 had every tunnel
+   failing for two reporters until they disabled the socket, so 6.0.1 flips
+   `defaultTransport` back to Distributed Objects and the assistant now falls
+   back on its own when the socket never reached the app. Deleting DO (#2623)
+   would delete both that rollback and that fallback, so it cannot merge until
+   the socket is default again and has soaked for real — and the root cause of
+   #2689 is still unknown, so that is not the next release. The last five
+   accepted build warnings stay until it does.
 3. **Warnings residue** (optional, small) — the ten untracked lines listed in
    the state section: three xib binding transformers to
    `NSSecureUnarchiveFromData`, five test-file nits, the crash-reporter

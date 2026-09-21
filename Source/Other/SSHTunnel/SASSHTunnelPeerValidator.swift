@@ -78,9 +78,14 @@ enum SASSHTunnelPeerValidator {
 
     // MARK: - Policies
 
-    /// The app's check on a connecting assistant.
-    static func assistantPeerPolicy() -> (Int32) -> Bool {
-        policy(ownTeamIdentifier: ownIdentity().teamIdentifier, expectedIdentifier: assistantIdentifier)
+    /// The app's check on a connecting assistant. `log` defaults to the app's
+    /// own log; `SPSSHTunnel` passes a sink that also reaches the tunnel's
+    /// debug window, where the rejection reason is actually visible to a user
+    /// filing a report (issue #2689).
+    static func assistantPeerPolicy(log: @escaping (String) -> Void = { NSLog("%@", $0) }) -> (Int32) -> Bool {
+        policy(ownTeamIdentifier: ownIdentity().teamIdentifier,
+               expectedIdentifier: assistantIdentifier,
+               log: log)
     }
 
     /// The assistant's check on whatever answered at the socket path.
