@@ -13,6 +13,54 @@ thin adapter for the App Store operations it already supports; it never chooses
 a build number, creates a git branch, stages files, commits, pushes, opens a PR,
 or creates a GitHub release.
 
+## Start a new release
+
+Choose **New Sequel Ace release** (`release_deploy.yml`) in GitHub Actions,
+then **Run workflow** on `main`. Do not use **Internal release engine (advanced
+recovery only)** to start an ordinary new release.
+
+The form asks for:
+
+- **Version:** e.g. `6.0.1`, without a build number.
+- **Channel:** `beta` or `production` (production submits to the App Store).
+- **Release notes:** plain text, e.g. `Fix SSH connections | Improve exports`.
+  Actions converts each change into exactly one `- ` App Store bullet, including
+  pasted Markdown bullets, numbered lists, and common rich-text bullets.
+  Blank lines are ignored; empty bullets and headings are rejected rather than
+  silently publishing them. Real multiline input through the CLI/API works too.
+  GitHub has no supported
+  textarea workflow input; use `|` to separate changes in its single-line form.
+- **Optional main commit check:** leave blank to freeze latest main at submission.
+  A supplied full SHA must match that revision; it never selects stale source.
+- **Preview only:** optional, off by default.
+
+Comparison tags, recovery state, base64 encoding, the approval SHA-256, and the
+`RELEASE channel version` confirmation are internal. You do not enter them.
+Only `Jason-Morcos` and `Kaspik` may initiate or rerun this workflow. Both the
+original actor and rerun initiator are checked before planning and before the
+credential-bearing engine job. Other writers may still see GitHub's Run workflow
+button, but their jobs are skipped. The bot-only archived forward-recovery path
+is not authority to start a new release.
+Leave preview off to deploy. Submitting the form is the sole approval; Actions
+generates the internal confirmation and approval digest itself. No second
+approval or mandatory preview is introduced. Environment reviewer/wait gates
+must not be added to this workflow's release environment.
+
+Actions freezes the selected main revision and calls the existing guarded
+release engine. The advanced interface below remains available for recovery.
+The GitHub body is always generated from your customer notes plus categorized
+changes, contributors, and comparison link; the form has no body override.
+Actions preserves that generated body in the immutable plan and forward recovery.
+
+**Remaining limitation:** `legacy_updater_v1` still requires a compatible web
+upload of the notarized ZIPs. This is not yet a fully browser-free deployment.
+The publisher exposes only verified public ZIPs and checksums in its Actions
+artifact; extract that bundle and upload the inner ZIPs, not the outer bundle.
+The armed recovery schedule resumes after attachment without a second approval
+or dispatch. If that artifact is unavailable, use the existing private archive
+recovery procedure. Removing this transport limitation without breaking old
+clients remains unfinished work; do not describe the form as end-to-end automatic.
+
 ## Safety model
 
 - `main` is frozen at the approved SHA. Any movement requires a new plan except
@@ -21,7 +69,8 @@ or creates a GitHub release.
 - Only `Jason-Morcos` and `Kaspik` may initiate a release. The Actions bot may
   dispatch only a chained `mode=resume` recovery authenticated against the
   failed release's private archive and original approval.
-- The typed confirmation is `RELEASE <channel> <version>`.
+- The advanced interface's typed confirmation is `RELEASE <channel> <version>`;
+  the normal New Sequel Ace release form generates it internally.
 - `SA_RELEASE_AUTOMATION_ENABLED` remains `false` until every feasibility gate
   passes.
 - One `sequel-ace-release` concurrency group prevents overlapping preparation,
@@ -369,10 +418,18 @@ write only after the new `cloud_running` archive is durable; the predecessor is
 not cleared if forward dispatch fails. The state adapter retries transient API
 failures. If arming fails or is cancelled after the durable archive exists,
 cleanup preserves that discoverable `cloud_running` handoff and prerelease for
-an exact manual publisher dispatch instead of marking it terminal. The Linux job performs one exact Cloud-status read and exits; it
-starts the protected GitHub-hosted `macos-15` verification job only after every
-required Production and Alpha run is complete and related to the expected app
-build. Authorized manual recovery requires
+an exact manual publisher dispatch instead of marking it terminal. The Linux
+job performs one exact Cloud-status read through the protected App Store
+Connect Team API key and exits. App Store Connect is authoritative for the
+exact workflow, tag, commit, build relationship, and artifact; GitHub checks
+and statuses are wake-up hints and may lag the Apple UI or API. It starts the
+protected GitHub-hosted `macos-15` verification job after every required
+Production and Alpha run is complete and related to the expected app build. If
+Apple's build-run progress field lags, the exact related app/version/platform/
+build plus an HTTPS-downloadable artifact is equivalent readiness; the
+publisher then proves the artifact itself before any public attachment or App
+Store submission. A UI success state alone never bypasses these checks.
+Authorized manual recovery requires
 `PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
 The immediate continuation authenticates its source by the immutable workflow
 path from the `workflow_run` payload; GitHub's `workflow_run.name` contains the
@@ -478,6 +535,78 @@ The API client follows Apple's documented
 [Xcode Cloud build-run endpoint](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-ciworkflows-_id_-buildruns)
 and binds a release run to its workflow, source tag, commit, and related App
 Store build rather than selecting the newest result.
+
+## Release component responsibilities
+
+### Inspect before retrying
+
+Use the protected App Store Connect API key, not a logged-in browser, to check
+Apple state. From an authenticated maintainer CLI:
+
+```sh
+gh workflow run release_status.yml --ref main -f release_tag=production/6.0.0-20113
+```
+
+Read that run's summary or its `release-status` JSON artifact. The workflow is
+read-only and does not wait behind the publisher's concurrency group. It pulls
+the exact private handoff, queries ASC, and reports version existence, selected
+build, metadata validation against approved notes, phased/scheduled settings,
+and submission state. A green status job means inspection succeeded, not that
+the release completed. Missing/incomplete versions remain explicit. Raw Apple
+responses, review credentials, and signed download links are never published.
+No ASC key needs to be copied to a maintainer's Mac.
+
+For an already authorized local keyed runtime, the same read-only command is:
+
+```sh
+Scripts/release-tool release-status --manifest /private/path/manifest.json \
+  --notes /private/path/app-store-notes.txt
+```
+
+Check the exact GHCR manifest and existing queued/running publisher before
+dispatching recovery. `artifacts_verified` means the verified ZIP is already
+archived: inspect `github-public-assets-status` and the publisher summary, not
+just GitHub check colors. Do not rebuild or manually repackage it. A delayed
+manual publisher request for `submitted` succeeds without repeating writes
+only after live handoff, public-asset, exact App Store build, and metadata
+validation. Failed or other ineligible requests still stop explicitly.
+
+The planner exposes the legacy upload constraint under
+`operational_requirements`. If `legacy_updater_v1` is selected, surface its
+manual upload requirement before approval. API-only Apple status/submission
+does **not** solve GitHub's legacy `label: null` upload compatibility constraint.
+Do not promise browser-free publication or change publisher/compatibility policy
+without a separately authorized decision.
+
+Tooling repairs must end with an actual PR, not just a pushed branch: include
+the changes, concrete checks, remaining limitations, and the PR URL. Host
+instructions and their deployment belong to the host repository; no host policy
+or secrets belong in this public repository.
+
+- **Release starter (`release.yml`):** freezes the approved source and notes,
+  prepares and merges the release PR, creates the direct-commit tag and GitHub
+  prerelease, starts the exact Xcode Cloud run, and preserves the immutable
+  private handoff. It does not attach a public binary or submit App Store
+  metadata.
+- **Xcode Cloud:** builds the tagged source and runs Apple's configured
+  Notarize and TestFlight post-actions. Its UI is useful operator evidence, but
+  the publisher independently reads the exact run, build, and artifacts through
+  the App Store Connect API.
+- **Release Artifact Publisher (`release_publish.yml`):** owns the notarized
+  distributable after Cloud. It downloads the exact Cloud artifact; verifies
+  version/build, architectures, signing identity, notarization and stapling,
+  Gatekeeper, and launch/quit behavior; packages the updater ZIP; preserves it
+  in private GHCR; attaches the checksum-matched copy to the GitHub prerelease
+  (or records the required legacy-compatible browser upload); then stages,
+  validates, attaches, and submits the exact App Store build.
+- **Release finalizer (`release_finalize.yml`):** waits for App Store
+  `READY_FOR_DISTRIBUTION`, revalidates the archived and public artifacts, and
+  only then converts the GitHub prerelease to a final release.
+
+Therefore a successful Xcode Cloud page is not the end of artifact publication,
+and a missing GitHub asset is still publisher work. Conversely, a lagging
+GitHub check or Apple run-progress field must not force a rebuild when the exact
+App Store build and downloadable Cloud artifact are already available.
 
 ## Fastlane behavior and documentation
 
@@ -848,10 +977,17 @@ Use Homebrew Ruby and an isolated Bundler path; do not use the system Ruby:
 
 ```sh
 export BUNDLE_PATH="$(mktemp -d -t sequel-ace-release-bundle)"
-export PATH="/opt/homebrew/bin:${PATH}"
-/opt/homebrew/bin/bundle install
-/opt/homebrew/bin/bundle exec /opt/homebrew/bin/rake -f fastlane/Rakefile test
+export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}"
+bundle install
+bundle exec rake -f fastlane/Rakefile test
 ```
+
+`Scripts/release-tool` selects this keg-only Ruby and sets `BUNDLE_GEMFILE` to
+its own checkout even when invoked from another directory. The GHCR archive
+adapter uses a private temporary ORAS registry configuration by default and
+cleans it on exit, including failures. It does not depend on Docker Desktop's
+credential helper or modify global registry credentials. An explicit absolute
+`GHCR_REGISTRY_CONFIG` is caller-owned and is not removed.
 
 The same planner, reconciler, version editor, metadata gates, and artifact
 verifier work locally. Manual local notarization is not ready unless

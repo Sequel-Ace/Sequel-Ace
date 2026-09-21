@@ -56,7 +56,8 @@ class ChangelogGenerationTest < Minitest::Test
   end
 
   def git(directory, *arguments)
-    stdout, stderr, status = Open3.capture3("git", "-C", directory, *arguments)
+    # Fixture tags are unsigned; never alter the host's real signing policy.
+    stdout, stderr, status = Open3.capture3("git", "-c", "tag.gpgsign=false", "-C", directory, *arguments)
     raise "git #{arguments.join(' ')} failed: #{stderr}" unless status.success?
 
     stdout.strip
