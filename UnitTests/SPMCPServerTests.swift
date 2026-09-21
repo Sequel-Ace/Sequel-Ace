@@ -439,6 +439,79 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql)")
         }
     }
+
+    /// Verifies that ANALYZE is found whatever whitespace separates it from its
+    /// neighbours, a CRLF pair included. Swift folds "\r\n" into one Character that
+    /// equals neither "\n" nor "\r", so a split on those alone kept
+    /// "ANALYZE\r\nUPDATE" as one word and let an executing EXPLAIN through the
+    /// read-only guard.
+    func testExplainWouldExecuteDetectsAnalyzeAcrossLineEndings() {
+        for sql in [
+            "ANALYZE\r\nUPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "FORMAT=TREE\r\nANALYZE\r\nDELETE a FROM a JOIN b ON a.id = b.id",
+            "ANALYZE\nUPDATE t SET x = 1",
+            "ANALYZE\rUPDATE t SET x = 1",
+            "ANALYZE\u{0B}UPDATE t SET x = 1",   // vertical tab, whitespace to MySQL
+            "ANALYZE\u{0C}UPDATE t SET x = 1",   // form feed, whitespace to MySQL
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+        XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute("FORMAT=TREE\r\nSELECT 1\r\nFROM t"))
+    }
+
+    /// Verifies that text the comment stripper keeps but the server reads as a comment
+    /// cannot hide the modifier: a `--` followed by a vertical tab or form feed starts a
+    /// comment for MySQL, and a SELECT inside it used to end the scan before the real
+    /// ANALYZE on the next line.
+    func testExplainWouldExecuteLooksPastTextTheServerIgnores() {
+        for sql in [
+            "--\u{0B}SELECT\nANALYZE UPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "--\u{0C} SELECT 1\nANALYZE DELETE a FROM a JOIN b ON a.id = b.id",
+            // An unmatched quote in such a comment used to open a string that swallowed ANALYZE.
+            "--\u{0B}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{7F}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{01}\"\nANALYZE UPDATE t SET x = 1",
+            "ANALYZE(SELECT 1)",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that ANALYZE inside a quoted operand, whatever whitespace surrounds it,
+    /// does not count: MySQL 8.3 allows `EXPLAIN FORMAT=JSON INTO @'name'`, and a name
+    /// or string may hold any text.
+    func testExplainWouldExecuteIgnoresAnalyzeInsideQuotedOperands() {
+        for sql in [
+            "FORMAT=JSON INTO @'plan\r\nANALYZE\r\ncopy' SELECT 1",
+            "SELECT `analyze` FROM t",
+            "SELECT \"ANALYZE\" AS label",
+            "SELECT 'it''s ANALYZE time' AS label",
+            // After a dot MySQL reads a reserved word as an identifier.
+            "SELECT t.ANALYZE FROM t",
+            "SELECT * FROM db.analyze",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that string introducers and hex or bit literals behave like any other
+    /// quoted operand: ANALYZE inside them does not count, and an ANALYZE modifier next
+    /// to them is still found.
+    func testExplainWouldExecuteHandlesStringIntroducers() {
+        for sql in [
+            "SELECT N'ANALYZE', X'414E414C595A45', B'01', _utf8mb4'analyze' AS a",
+            "SELECT _latin1'it''s ANALYZE' COLLATE latin1_bin",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+        for sql in [
+            "ANALYZE SELECT N'x'",
+            "FORMAT=TREE ANALYZE UPDATE t SET a = _utf8mb4'b', c = X'00'",
+            "ANALYZE UPDATE t SET a = 'x\\'",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+    }
 }
 
 final class SPMCPServerRouteTests: XCTestCase {

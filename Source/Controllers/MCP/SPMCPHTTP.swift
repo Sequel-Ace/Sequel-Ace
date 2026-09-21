@@ -103,9 +103,10 @@ enum SPMCPReadOnlyGuard {
 
     /// `true` if running `EXPLAIN <sql>` would execute the statement rather than just
     /// plan it. EXPLAIN ANALYZE runs its target, and the ANALYZE/FORMAT modifiers may
-    /// appear in any order (e.g. `FORMAT=TREE ANALYZE UPDATE ...`), so scan the whole
-    /// modifier region - not just the prefix - for ANALYZE. An executable /*! */
-    /// comment is also treated as unsafe.
+    /// appear in any order (e.g. `FORMAT=TREE ANALYZE UPDATE ...`). ANALYZE is a
+    /// reserved word in MySQL and MariaDB, so outside quotes it can only be that
+    /// modifier: any unquoted ANALYZE word counts. An executable /*! */ comment is also
+    /// treated as unsafe.
     static func explainWouldExecute(_ sql: String) -> Bool {
         if hasExecutableComment(sql) { return true }
         // As in isReadOnly, the statement is read with and without backslash
@@ -114,19 +115,48 @@ enum SPMCPReadOnlyGuard {
         return backslashReadings.contains { explainWouldExecute(sql, backslashEscapes: $0) }
     }
 
+    /// Whether the statement holds an unquoted ANALYZE word under one reading of
+    /// backslashes.
+    ///
+    /// The tokens come from the SQL classifier's tokenizer, which works on Unicode
+    /// scalars and keeps every quoted operand - `'...'`, `"..."`, `` `...` ``,
+    /// `@'...'` - in one token, so a quoted ANALYZE never counts. Every token is
+    /// looked at, rather than stopping at the statement's first keyword: text the
+    /// comment stripper leaves in but the server reads as a comment can then only
+    /// cause a rejection, never hide the modifier. Words are split once more at
+    /// characters that cannot be part of an unquoted identifier, so ANALYZE glued to
+    /// punctuation is found too.
+    ///
+    /// - Parameters:
+    ///   - sql: The statement after EXPLAIN.
+    ///   - backslashEscapes: Whether a backslash escapes the next character in
+    ///     quoted strings.
+    /// - Returns: Whether EXPLAIN would execute the statement.
     private static func explainWouldExecute(_ sql: String, backslashEscapes: Bool) -> Bool {
         let stripped = stripCommentsQuoteAware(sql, backslashEscapes: backslashEscapes)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        // The statement body starts at one of these keywords; ANALYZE/FORMAT before
-        // it are EXPLAIN modifiers.
-        let statementStarters: Set<String> = ["SELECT", "WITH", "INSERT", "UPDATE", "DELETE",
-                                              "REPLACE", "VALUES", "TABLE", "CALL", "DO", "HANDLER"]
-        for raw in stripped.uppercased().split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" || $0 == "\r" }) {
-            let head = String(raw.split(separator: "=").first ?? raw)   // "FORMAT=TREE" -> "FORMAT"
-            if statementStarters.contains(head) { return false }
-            if head == "ANALYZE" { return true }
+        let analyze = Array("ANALYZE".unicodeScalars)
+        let tokens = SPCustomQuerySQLClassifier.sqlTokens(from: stripped.uppercased(), backslashEscapes: backslashEscapes)
+        return tokens.contains { token in
+            // Quoted operands and user variables are never the modifier.
+            guard let first = token.unicodeScalars.first, !"'\"`@".unicodeScalars.contains(first) else {
+                return false
+            }
+            return token.unicodeScalars
+                .split(whereSeparator: { !isUnquotedIdentifierScalar($0) })
+                .contains { Array($0) == analyze }
         }
-        return false
+    }
+
+    /// Whether `scalar` continues a possibly qualified unquoted name: an ASCII
+    /// letter or digit, `_`, `$`, any character beyond ASCII, or the `.` between
+    /// qualifiers. The dot keeps `t.ANALYZE` whole: after a dot MySQL reads even a
+    /// reserved word as an identifier.
+    ///
+    /// - Parameter scalar: The character to check.
+    /// - Returns: Whether it continues the name.
+    private static func isUnquotedIdentifierScalar(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value >= 0x80 || scalar == "_" || scalar == "$" || scalar == "."
+            || ("A"..."Z").contains(scalar) || ("a"..."z").contains(scalar) || ("0"..."9").contains(scalar)
     }
 
     /// `true` if `sql` contains an executable comment whose body the server runs:
@@ -182,10 +212,13 @@ enum SPMCPReadOnlyGuard {
                 out.append(" ")
                 continue
             }
-            // -- comment: the second dash must be followed by whitespace/control or EOL
+            // -- comment: the second dash must be followed by whitespace, a control
+            // character or the end, as MySQL's lexer requires (my_isspace or
+            // my_iscntrl: 0x00-0x20 and 0x7F). Accepting fewer - a vertical tab or form
+            // feed, say - would leave text in that the server skips as a comment.
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
+                if i + 2 >= n || next.value <= 0x20 || next.value == 0x7F {
                     while i < n && chars[i] != "\n" { i += 1 }
                     out.append(" ")
                     continue
