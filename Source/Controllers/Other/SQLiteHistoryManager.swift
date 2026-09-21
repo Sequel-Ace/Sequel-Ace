@@ -404,7 +404,7 @@ typealias SASchemaBuilder = (_ db: FMDatabase, _ schemaVersion: Int) -> Void
                     continue
                 }
 
-                if query.contains("\n"){
+                if query.containsLineBreak {
                     Log.debug("query contains newline: [\(query)]")
                     // an array where each entry contains the value from
                     // the history query, delimited by a semi colon

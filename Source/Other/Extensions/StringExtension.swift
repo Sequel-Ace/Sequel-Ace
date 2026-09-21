@@ -8,6 +8,30 @@
 
 import Foundation
 
+extension StringProtocol {
+
+    /// Whether the text holds any of the Unicode scalars in `scalars`.
+    ///
+    /// Use this instead of `contains("\n")` and the like when looking for a single
+    /// control or delimiter character. Those compare Characters, and Swift folds
+    /// "\r\n" into one Character that equals neither "\n" nor "\r", and a quote
+    /// followed by a combining mark into one that is not a quote - so the character
+    /// is missed although it is there.
+    ///
+    /// - Parameter scalars: The scalars to look for, given as a string.
+    /// - Returns: Whether any of them occurs.
+    func containsAnyUnicodeScalar(of scalars: String) -> Bool {
+        let wanted = Set(scalars.unicodeScalars)
+        return unicodeScalars.contains(where: wanted.contains)
+    }
+
+    /// Whether the text holds a line feed or a carriage return, also as part of a
+    /// CRLF pair, which `contains("\n")` does not see.
+    var containsLineBreak: Bool {
+        containsAnyUnicodeScalar(of: "\n\r")
+    }
+}
+
 extension String {
 
     subscript(_ range: CountableRange<Int>) -> String {

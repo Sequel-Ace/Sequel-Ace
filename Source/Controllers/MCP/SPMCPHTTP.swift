@@ -316,3 +316,44 @@ struct HTTPRequest {
         return nil
     }
 }
+
+/// Formats the fields of the CSV files `export_results` writes.
+enum SAMCPCSV {
+    /// Escapes one CSV field.
+    ///
+    /// A spreadsheet reads a cell that starts with `=`, `+`, `-`, `@`, a tab or a
+    /// carriage return as a formula, and the exported data can be
+    /// attacker-influenced (prompt injection), so such a cell gets a leading single
+    /// quote and is read as text. A plain number is left as it is: `-5` or
+    /// `+1.5E3` cannot be a formula, and quoting it would turn every negative
+    /// number in the export into text.
+    ///
+    /// - Parameter value: The field's text.
+    /// - Returns: The field as it goes into the file, enclosed in double quotes
+    ///   when it holds a comma, a double quote or a line break.
+    static func escapedField(_ value: String) -> String {
+        var field = value
+        // Unicode scalars, not Characters: Swift folds "\r\n" into one Character,
+        // which would hide a leading carriage return.
+        if let first = field.unicodeScalars.first, "=+-@\t\r".unicodeScalars.contains(first), !isPlainNumber(field) {
+            field = "'" + field
+        }
+        if field.containsAnyUnicodeScalar(of: ",\"\n\r") {
+            // .literal: without it a quote followed by a combining mark is not
+            // found, stays single and ends the field early.
+            return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"", options: .literal) + "\""
+        }
+        return field
+    }
+
+    /// Whether `value` is a plain decimal number in ASCII digits - an optional
+    /// sign, digits with an optional fraction, an optional exponent - as MySQL
+    /// returns numeric columns.
+    ///
+    /// - Parameter value: The field's text.
+    /// - Returns: Whether the whole value is such a number.
+    private static func isPlainNumber(_ value: String) -> Bool {
+        value.range(of: #"\A[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?\z"#, options: .regularExpression) != nil
+    }
+}
+
