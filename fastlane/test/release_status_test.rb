@@ -71,6 +71,12 @@ class ReleaseStatusTest < Minitest::Test
     assert_includes result.fetch("next_action"), "complete"
   end
 
+  def test_failed_beta_guidance_uses_the_alpha_retry_workflow
+    result = report(nil, state: "failed", channel: "beta")
+    assert_includes result.fetch("next_action"), "release_alpha_retry.yml"
+    refute_includes result.fetch("next_action"), "release_artifact_retry.yml"
+  end
+
   def test_running_handoff_queries_exact_cloud_run_and_does_not_emit_signed_urls
     client = Client.new(nil)
     client.define_singleton_method(:find_cloud_run) do |**args|

@@ -89,7 +89,11 @@ module SequelAceRelease
       when "cloud_running"
         "Inspect exact Cloud run and downloadable notarized resource through the ASC API"
       when "failed"
-        "Inspect failure evidence and exact Cloud readiness; a successful existing Production build may use release_artifact_retry.yml"
+        if data.fetch("channel") == "beta"
+          "Inspect failure evidence and exact Cloud readiness; Alpha-only failures use release_alpha_retry.yml"
+        else
+          "Inspect failure evidence and exact Cloud readiness; a successful existing Production build may use release_artifact_retry.yml"
+        end
       when "artifacts_verified"
         "Inspect github-public-assets-status; use the verified GHCR ZIP, do not rebuild or re-download Cloud artifacts"
       when "archived"
