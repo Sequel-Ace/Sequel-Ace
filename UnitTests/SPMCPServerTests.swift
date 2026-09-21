@@ -439,6 +439,25 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql)")
         }
     }
+
+    /// Verifies that ANALYZE is found whatever whitespace separates it from its
+    /// neighbours, a CRLF pair included. Swift folds "\r\n" into one Character that
+    /// equals neither "\n" nor "\r", so a split on those alone kept
+    /// "ANALYZE\r\nUPDATE" as one word and let an executing EXPLAIN through the
+    /// read-only guard.
+    func testExplainWouldExecuteDetectsAnalyzeAcrossLineEndings() {
+        for sql in [
+            "ANALYZE\r\nUPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "FORMAT=TREE\r\nANALYZE\r\nDELETE a FROM a JOIN b ON a.id = b.id",
+            "ANALYZE\nUPDATE t SET x = 1",
+            "ANALYZE\rUPDATE t SET x = 1",
+            "ANALYZE\u{0B}UPDATE t SET x = 1",   // vertical tab, whitespace to MySQL
+            "ANALYZE\u{0C}UPDATE t SET x = 1",   // form feed, whitespace to MySQL
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+        XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute("FORMAT=TREE\r\nSELECT 1\r\nFROM t"))
+    }
 }
 
 final class SPMCPServerRouteTests: XCTestCase {

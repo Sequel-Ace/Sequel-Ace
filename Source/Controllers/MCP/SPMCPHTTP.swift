@@ -121,7 +121,10 @@ enum SPMCPReadOnlyGuard {
         // it are EXPLAIN modifiers.
         let statementStarters: Set<String> = ["SELECT", "WITH", "INSERT", "UPDATE", "DELETE",
                                               "REPLACE", "VALUES", "TABLE", "CALL", "DO", "HANDLER"]
-        for raw in stripped.uppercased().split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" || $0 == "\r" }) {
+        // Split on every whitespace Character. Comparing with "\n" and "\r" alone
+        // missed a CRLF pair, which Swift folds into one Character equal to neither,
+        // so "ANALYZE\r\nUPDATE ..." stayed one word and ANALYZE went unnoticed.
+        for raw in stripped.uppercased().split(whereSeparator: \.isWhitespace) {
             let head = String(raw.split(separator: "=").first ?? raw)   // "FORMAT=TREE" -> "FORMAT"
             if statementStarters.contains(head) { return false }
             if head == "ANALYZE" { return true }
