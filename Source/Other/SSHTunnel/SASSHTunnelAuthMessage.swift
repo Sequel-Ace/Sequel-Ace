@@ -51,11 +51,17 @@ enum SASSHTunnelAuthRequest: Equatable {
 
     /// Whether answering this can put a sheet in front of the user, which
     /// decides whether a failed attempt may be repeated over another
-    /// transport (issue #2689). `password` is a keychain or in-memory read in
-    /// `SASSHTunnelAuthService`: no UI and idempotent, so repeating it costs
-    /// at most a second keychain lookup. `question` runs the tunnel's
-    /// yes/no sheet and `query` may run the password sheet, so a repeat of
-    /// either risks asking the user twice.
+    /// transport (issue #2689). `question` runs the tunnel's yes/no sheet and
+    /// `query` may run the password sheet, so repeating either risks asking
+    /// twice.
+    ///
+    /// `password` cannot: `SASSHTunnelAuthService` answers it from memory or
+    /// from the keychain, and that read happens **in the app**, whose own ACL
+    /// the item already carries — see the keychain migration plan, "The ACL
+    /// problem, and the tunnel assistant". The prompt that plan warns about is
+    /// the *assistant* reading the item directly, which Step 3 retired for
+    /// exactly this reason. So the read is prompt-free and idempotent, and a
+    /// repeat costs at most a second lookup.
     var mayPromptTheUser: Bool {
         switch self {
         case .password: return false

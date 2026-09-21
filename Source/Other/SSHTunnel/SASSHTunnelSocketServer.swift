@@ -100,14 +100,44 @@ import Foundation
         name.range(of: "^(s-[0-9a-f]{8}|ssh-[0-9a-f]{10})\\.sock$", options: .regularExpression) != nil
     }
 
+    /// Paths this process is currently serving. The sweep skips them: they
+    /// are live by definition, and probing one makes its server accept a
+    /// connection from the app rather than the assistant, which its peer
+    /// policy then rejects. That rejection is now user-visible, so a second
+    /// tunnel starting would report a failure against a perfectly healthy
+    /// first tunnel. Two *different* installs cannot collide here — release
+    /// and Beta have separate bundle identifiers and so separate containers.
+    private static let liveSocketPaths = LivePaths()
+
+    final class LivePaths {
+        private let lock = NSLock()
+        private var paths: Set<String> = []
+
+        func insert(_ path: String) {
+            lock.lock(); defer { lock.unlock() }
+            paths.insert(path)
+        }
+
+        func remove(_ path: String) {
+            lock.lock(); defer { lock.unlock() }
+            paths.remove(path)
+        }
+
+        func contains(_ path: String) -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            return paths.contains(path)
+        }
+    }
+
     /// Removes sockets a previous app process left behind (a crash or a
     /// kill skips `close()`): anything in the naming scheme that refuses a
-    /// connection. A live socket accepts, so it is left alone — its server
-    /// just sees one empty connection.
+    /// connection. Sockets this process is serving are skipped outright; any
+    /// other live socket accepts and is left alone.
     static func sweepStaleSockets(in directory: String) {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
         for name in names where isOwnSocketName(name) {
             let candidate = (directory as NSString).appendingPathComponent(name)
+            if liveSocketPaths.contains(candidate) { continue }
             guard var address = try? SASSHTunnelSocketIO.address(for: candidate),
                   let fd = SASSHTunnelSocketIO.makeSocket() else { continue }
             let connected = withUnsafePointer(to: &address) { pointer in
@@ -184,6 +214,7 @@ import Foundation
         }
         SASSHTunnelSocketIO.setBlocking(fd, false)
         listeningDescriptor = fd
+        Self.liveSocketPaths.insert(path)
         super.init()
 
         let source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: acceptQueue)
@@ -191,6 +222,7 @@ import Foundation
         source.setCancelHandler {
             Darwin.close(fd)
             unlink(path)
+            Self.liveSocketPaths.remove(path)
         }
         source.resume()
         acceptSource = source

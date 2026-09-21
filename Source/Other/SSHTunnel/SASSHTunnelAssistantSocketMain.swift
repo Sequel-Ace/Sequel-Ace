@@ -128,8 +128,18 @@ import Foundation
 
         func recordFailure(_ error: Swift.Error, of request: SASSHTunnelAuthRequest) {
             failures.append(error)
-            let neverReachedTheApp = (error as? SASSHTunnelSocketClient.Error)?.isPreSend == true
-            if request.mayPromptTheUser && !neverReachedTheApp { mayHavePrompted = true }
+            if request.mayPromptTheUser && !Self.neverReachedTheApp(error) { mayHavePrompted = true }
+        }
+
+        /// Whether `error` rules out the app having seen the request.
+        /// `SASSHTunnelSocketIO.Error` counts too: `send` resolves the address
+        /// before it makes a socket, so `pathTooLong` is thrown with nothing
+        /// opened, let alone written. An unrecognised error is assumed to have
+        /// reached the app — the conservative side.
+        static func neverReachedTheApp(_ error: Swift.Error) -> Bool {
+            if let socketError = error as? SASSHTunnelSocketClient.Error { return socketError.isPreSend }
+            if error is SASSHTunnelSocketIO.Error { return true }
+            return false
         }
 
         var isSafeToRepeatOnAnotherTransport: Bool { !mayHavePrompted && !failures.isEmpty }

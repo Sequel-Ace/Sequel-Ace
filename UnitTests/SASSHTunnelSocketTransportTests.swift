@@ -287,6 +287,20 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         }
     }
 
+    /// `send` resolves the address before it opens anything, so a path that
+    /// cannot fit `sun_path` throws `SASSHTunnelSocketIO.Error` — a different
+    /// type from the client's own errors, and one that must still count as
+    /// never having reached the app or a failed `query` would wrongly
+    /// suppress the fallback.
+    func testAPathTooLongToBindAlsoNeverReachedTheApp() {
+        let tooLong = "/" + String(repeating: "b", count: 110)
+        XCTAssertThrowsError(try SASSHTunnelSocketClient(path: tooLong).send(.query("q", verificationHash: "h"))) { error in
+            XCTAssertTrue(error is SASSHTunnelSocketIO.Error)
+            XCTAssertNil(error as? SASSHTunnelSocketClient.Error,
+                         "it is not a client error, which is exactly why the cast alone was not enough")
+        }
+    }
+
     /// The other half: what was being asked. `password` is an idempotent
     /// keychain or in-memory read in `SASSHTunnelAuthService` and shows no
     /// UI, so repeating it cannot ask the user anything; the two sheet-backed
@@ -391,6 +405,27 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
             lock.lock(); defer { lock.unlock() }
             return storage
         }
+    }
+
+    /// A second tunnel's stale-socket sweep connects to this tunnel's live
+    /// socket to see whether it answers. That peer is the app, not the
+    /// assistant, so the policy rejects it — and once refusals reach the
+    /// user's debug window a healthy tunnel would report a failure it did not
+    /// have. The app's server drops connections from its own process first.
+    func testTheSweepsOwnLivenessProbeIsNotReportedAsARefusal() throws {
+        let sink = Sink()
+        let server = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()],
+                                                 handler: Self.echo,
+                                                 peerPolicy: { _ in false },
+                                                 log: sink.record)
+        servers.append(server)
+
+        // Exactly what sweepStaleSockets does to a socket that is still alive.
+        SASSHTunnelSocketServer.sweepStaleSockets(in: NSTemporaryDirectory())
+
+        Thread.sleep(forTimeInterval: 0.2)
+        XCTAssertTrue(sink.messages.isEmpty, "a liveness probe is not a failure; got \(sink.messages)")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: server.path), "a live socket must survive the sweep")
     }
 
     // MARK: - Raw socket helpers
