@@ -1,12 +1,46 @@
-name: Release
+name: Internal release engine (advanced recovery only)
 
 run-name: "${{ inputs.mode }} ${{ inputs.channel }} ${{ inputs.version }} by @${{ github.actor }}"
 
 on:
+  workflow_call:
+    inputs:
+      mode:
+        required: true
+        type: string
+      channel:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      expected_main_sha:
+        required: true
+        type: string
+      previous_tag:
+        required: true
+        type: string
+      recovery_tag:
+        required: false
+        default: ""
+        type: string
+      app_store_notes_b64:
+        required: true
+        type: string
+      github_release_body_b64:
+        required: false
+        default: ""
+        type: string
+      approval_sha256:
+        required: true
+        type: string
+      confirmation:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       mode:
-        description: Start a release or resume after a preserved failure
+        description: 'Internal recovery only. For a new release, select the New Sequel Ace release workflow instead.'
         required: true
         type: choice
         options:
@@ -40,6 +74,11 @@ on:
         description: Base64-encoded approved App Store notes
         required: true
         type: string
+      github_release_body_b64:
+        description: Optional base64 initial GitHub body bound by the approved plan
+        required: false
+        default: ""
+        type: string
       approval_sha256:
         description: SHA-256 emitted by sa-release plan
         required: true
@@ -63,6 +102,14 @@ concurrency:
 jobs:
   release:
     name: Guarded release deployment
+    # Reject unauthorized humans before entering the credential-bearing job.
+    # The bot exception continues only an archived, independently validated
+    # failed release; it cannot initiate a new release.
+    if: >-
+      ((github.actor == 'Jason-Morcos' || github.actor == 'Kaspik') &&
+       (github.triggering_actor == 'Jason-Morcos' || github.triggering_actor == 'Kaspik')) ||
+      (github.actor == 'github-actions[bot]' && github.triggering_actor == 'github-actions[bot]' &&
+       inputs.mode == 'resume' && inputs.recovery_tag != '')
     runs-on: ubuntu-latest
     timeout-minutes: 150
     environment: sequel-ace-release
@@ -174,6 +221,7 @@ jobs:
             /release-plan.json \
             /approval.json \
             /release-body.md \
+            /requested-release-body.md \
             /reconciliation.json \
             /manifest.json \
             /preparation.json \
@@ -201,7 +249,7 @@ jobs:
           printf 'BUNDLE_APP_CONFIG=%s\n' "${bundle_config_directory}" >> "${GITHUB_ENV}"
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -342,16 +390,23 @@ jobs:
         id: plan
         env:
           APPROVED_NOTES_B64: ${{ inputs.app_store_notes_b64 }}
+          APPROVED_GITHUB_BODY_B64: ${{ inputs.github_release_body_b64 }}
           SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
         run: |
           set -euo pipefail
           ruby -rbase64 -e 'File.binwrite("app-store-notes.txt", Base64.strict_decode64(ENV.fetch("APPROVED_NOTES_B64")))'
+          body_arguments=()
+          if [[ -n "${APPROVED_GITHUB_BODY_B64}" ]]; then
+            ruby -rbase64 -e 'File.binwrite("requested-release-body.md", Base64.strict_decode64(ENV.fetch("APPROVED_GITHUB_BODY_B64")))'
+            body_arguments+=(--github-release-body requested-release-body.md)
+          fi
           bundle exec ruby fastlane/bin/sa-release plan \
             --channel "${{ inputs.channel }}" \
             --target-version "${{ inputs.version }}" \
             --base-tag "${{ inputs.previous_tag }}" \
             --main-ref "${{ inputs.expected_main_sha }}" \
             --app-store-notes app-store-notes.txt \
+            "${body_arguments[@]}" \
             --expected-approval-sha "${{ inputs.approval_sha256 }}" \
             --output release-plan.json
           ruby -rjson -e 'plan = JSON.parse(File.read("release-plan.json")); File.write("approval.json", JSON.pretty_generate(plan.fetch("approval")) + "\n"); File.binwrite("app-store-notes.txt", plan.fetch("approval").fetch("app_store_notes")); File.write("release-body.md", plan.fetch("github_release_body")); output = ENV.fetch("GITHUB_OUTPUT"); File.open(output, "a") { |file| file.puts("iteration=#{plan.fetch("iteration")}"); file.puts("base_sha=#{plan.fetch("base_sha")}"); file.puts("changelog_base_tag=#{plan.fetch("changelog_base_tag")}"); file.puts("changelog_base_sha=#{plan.fetch("changelog_base_sha")}") }'

@@ -1,0 +1,88 @@
+name: Inspect Release State
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Exact production or beta release tag (read-only)
+        required: true
+        type: string
+
+permissions: {}
+
+# Status must not queue behind the publisher it is inspecting.
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: sequel-ace-release
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Authorize exact read-only inspection
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Inspection must run from main." >&2; exit 1; }
+          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || exit 1
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || exit 1
+          [[ "${RELEASE_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Read archived handoff and App Store Connect API
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          SA_ASC_REQUIRE_ISSUER: "1"
+          SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
+        run: |
+          set -euo pipefail
+          archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-status.XXXXXX")"
+          trap 'rm -rf "${archive_directory}"' EXIT
+          Scripts/archive-release-to-ghcr.sh pull "${GHCR_REPOSITORY}:${RELEASE_TAG//\//-}" "${archive_directory}" >/dev/null
+          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+            data = SequelAceRelease::Manifest.read(ARGV.fetch(0)).to_h
+            abort "Archive tag mismatch" unless data.fetch("tag") == ARGV.fetch(1)
+          ' "${archive_directory}/manifest.json" "${RELEASE_TAG}"
+          bundle exec ruby fastlane/bin/sa-release release-status \
+            --manifest "${archive_directory}/manifest.json" \
+            --notes "${archive_directory}/app-store-notes.txt" \
+            --output "${RUNNER_TEMP}/release-status.json"
+          {
+            echo 'Read-only status; a successful inspection is not proof of release completion.'
+            echo '```json'
+            cat "${RUNNER_TEMP}/release-status.json"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-status
+          path: ${{ runner.temp }}/release-status.json
+          if-no-files-found: error
+          retention-days: 7
