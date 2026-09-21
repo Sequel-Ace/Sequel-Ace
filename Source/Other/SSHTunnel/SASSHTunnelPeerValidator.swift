@@ -56,8 +56,19 @@ import Security
 /// Compiled into the app, the assistant and the Unit Tests target.
 enum SASSHTunnelPeerValidator {
 
-    /// The assistant's code-signing identifier: it is a bare executable, so
-    /// this is its product name, not a bundle identifier.
+    /// What a *locally built* assistant's code-signing identifier is: a bare
+    /// executable, so codesign derives it from the product name rather than
+    /// from `PRODUCT_BUNDLE_IDENTIFIER` (which the target sets, and which is
+    /// ignored for a Mach-O with no Info.plist).
+    ///
+    /// Do not require this of a peer. The distribution pipeline re-signs the
+    /// assistant with a hash suffix — shipped 6.0.0 carries
+    /// `SequelAceTunnelAssistant-<40 hex>` — and `identifier` in a code
+    /// requirement is an exact match, so demanding the bare name rejected
+    /// every shipped assistant and broke every tunnel (issue #2689) while
+    /// passing in every development build. `assistantPeerPolicy` reads the
+    /// identifier off the binary instead; this constant is the documented
+    /// default and what the tests pin.
     static let assistantIdentifier = "SequelAceTunnelAssistant"
 
     static let baseRequirement = "anchor apple generic"
@@ -78,14 +89,42 @@ enum SASSHTunnelPeerValidator {
 
     // MARK: - Policies
 
-    /// The app's check on a connecting assistant. `log` defaults to the app's
-    /// own log; `SPSSHTunnel` passes a sink that also reaches the tunnel's
-    /// debug window, where the rejection reason is actually visible to a user
-    /// filing a report (issue #2689).
-    static func assistantPeerPolicy(log: @escaping (String) -> Void = { NSLog("%@", $0) }) -> (Int32) -> Bool {
-        policy(ownTeamIdentifier: ownIdentity().teamIdentifier,
-               expectedIdentifier: assistantIdentifier,
-               log: log)
+    /// The app's check on a connecting assistant.
+    ///
+    /// `assistantPath` is the binary the app is about to hand ssh as
+    /// `SSH_ASKPASS`; its signing identifier is read from disk and required of
+    /// the peer, because that identifier is not predictable — see
+    /// `assistantIdentifier`. Deriving it here is what the rest of this file
+    /// already does for the team: expectations come from a signature, never
+    /// from a literal.
+    ///
+    /// When it cannot be read — an unsigned local build, a missing path — the
+    /// identifier half is dropped and the peer is held to `anchor apple
+    /// generic` plus this process's team. That is weaker than naming the
+    /// binary but still admits only Apple-signed code of our own team, and it
+    /// fails open rather than locking every tunnel out, which is the failure
+    /// this whole change exists to prevent.
+    ///
+    /// `log` defaults to the app's own log; `SPSSHTunnel` passes a sink that
+    /// also reaches the tunnel's debug window (issue #2689).
+    static func assistantPeerPolicy(assistantPath: String?,
+                                    log: @escaping (String) -> Void = { NSLog("%@", $0) }) -> (Int32) -> Bool {
+        let expected = assistantPath.flatMap { signingIdentifier(ofBinaryAt: $0) }
+        if expected == nil {
+            log("SSH tunnel: could not read the assistant's signing identifier; admitting any Apple-signed peer of this team")
+        }
+        return policy(ownTeamIdentifier: ownIdentity().teamIdentifier,
+                      expectedIdentifier: expected,
+                      log: log)
+    }
+
+    /// The code-signing identifier recorded in the binary at `path`, or nil if
+    /// it has none or cannot be read.
+    static func signingIdentifier(ofBinaryAt path: String) -> String? {
+        var staticCode: SecStaticCode?
+        let created = SecStaticCodeCreateWithPath(URL(fileURLWithPath: path) as CFURL, [], &staticCode)
+        guard created == errSecSuccess, let staticCode else { return nil }
+        return try? identity(ofStaticCode: staticCode).get().identifier
     }
 
     /// The assistant's check on whatever answered at the socket path.
@@ -203,6 +242,10 @@ enum SASSHTunnelPeerValidator {
         var staticCode: SecStaticCode?
         let copied = SecCodeCopyStaticCode(code, [], &staticCode)
         guard copied == errSecSuccess, let staticCode else { return .failure(.noSigningInformation(copied)) }
+        return identity(ofStaticCode: staticCode)
+    }
+
+    static func identity(ofStaticCode staticCode: SecStaticCode) -> Result<Identity, Failure> {
         var information: CFDictionary?
         let status = SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation), &information)
         guard status == errSecSuccess, let information = information as? [String: Any] else {
