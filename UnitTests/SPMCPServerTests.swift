@@ -188,6 +188,11 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT a FROM t UNION SELECT b FROM u",
             "/* leading comment */ SELECT 1",
             "-- a comment\nSELECT 1",
+            "-- a comment\r\nSELECT 1",
+            "--\r\nSELECT 1",
+            "--\u{0C}form feed\nSELECT 1",
+            "--\u{0B}vertical tab\nSELECT 1",
+            "# a comment\r\nSHOW TABLES",
             "SELECT COUNT(*) FROM t WHERE name = 'Bob'",
         ], "read")
     }
@@ -254,11 +259,17 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "stacked")
     }
 
+    /// Verifies that writes placed behind block, `--` or `#` comments, with LF or
+    /// CRLF line endings, are rejected by the read-only guard.
     func testCommentHiddenWritesRejected() {
         assertRejected([
             "/* x */ DELETE FROM t",
             "-- c\nUPDATE t SET x = 1",
             "# c\nDROP TABLE t",
+            "-- c\r\nUPDATE t SET x = 1",
+            "--\r\nDELETE FROM t",
+            "# c\r\nDROP TABLE t",
+            "SELECT 1 -- c\r\n; DROP TABLE t",
             "/* multi\nline */ INSERT INTO t VALUES (1)",
         ], "comment-hidden")
     }
@@ -332,12 +343,68 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
     func testCommentStripInsertsWhitespace() {
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1/* */AS x"), "SELECT 1 AS x")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT * FROM/**/t"), "SELECT * FROM t")
+        // A line comment ends at the line feed of a CRLF line ending; the
+        // carriage return before it belongs to the comment and a lone CR does
+        // not end it, as in MySQL.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 -- c\r\nFROM t"), "SELECT 1  \nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 # c\rFROM t"), "SELECT 1  ")
+        // A bare `--` directly followed by CRLF starts a comment as well: the
+        // stripped query must keep its SELECT prefix so run_query caps it.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("--\r\nSELECT 1"), " \nSELECT 1")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\r\nFROM t"), "SELECT 1  \nFROM t")
+        // MySQL accepts any control character after `--`, e.g. a form feed;
+        // `--x` is not a comment.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\u{0C}c\nFROM t"), "SELECT 1  \nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --x\nFROM t"), "SELECT 1 --x\nFROM t")
         // Still caught: INTO/**/OUTFILE -> INTO OUTFILE keeps the keyword intact.
         XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
         // Still allowed: a comment between other tokens is just whitespace.
         XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly("SELECT/**/1 AS a"))
     }
 
+    // The placeholder binder scans comments itself: a `?` inside a comment is
+    // copied verbatim and never bound, while a live `?` behind a comment is bound
+    // whether the comment ends with LF or CRLF.
+    func testPlaceholderBindingSkipsCommentsAcrossLineEndings() {
+        /// Binds `params` into `sql`, rendering each value as `<value>`; returns the bound SQL or an error.
+        func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
+            SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
+        }
+
+        XCTAssertEqual(bind("SELECT ? -- ?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("SELECT ? -- ?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\r\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("SELECT ? --\u{0C}?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> --\u{0C}?\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("--\r\nSELECT ? # ?\r\nFROM t WHERE y = ?", ["a", "b"]).0, "--\r\nSELECT <a> # ?\r\nFROM t WHERE y = <b>")
+        XCTAssertEqual(bind("SELECT '?' /* ? */ FROM t WHERE x = ?", [3]).0, "SELECT '?' /* ? */ FROM t WHERE x = <3>")
+        // A commented `?` must not absorb a param: the counts then disagree.
+        XCTAssertNotNil(bind("SELECT ? -- ?\r\nFROM t", [1, 2]).1)
+        XCTAssertNotNil(bind("SELECT ?, ?", [1]).1)
+    }
+
+    // The binder walks Unicode scalars, so a combining mark after an opening
+    // quote does not hide it, and it refuses placeholders whose position
+    // depends on NO_BACKSLASH_ESCAPES instead of guessing the reading.
+    func testPlaceholderBindingUsesScalarsAndBothBackslashReadings() {
+        /// Binds `params` into `sql`, rendering each value as `<value>`; returns the bound SQL or an error.
+        func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
+            SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
+        }
+
+        // `'` + U+0301 is one Character but two scalars: the `?` stays inside the literal.
+        XCTAssertNotNil(bind("SELECT '\u{301}?'", [1]).1)
+        XCTAssertEqual(bind("SELECT '\u{301}?' WHERE x = ?", [1]).0, "SELECT '\u{301}?' WHERE x = <1>")
+        // The quote after the backslash escapes or closes the literal depending on the mode.
+        XCTAssertNotNil(bind("SELECT 'a\\' , ?", [1]).1)
+        XCTAssertNotNil(bind("SELECT 'a\\', ? -- '", [1]).1)
+        // Backslashes that do not change where a literal ends stay bindable.
+        XCTAssertEqual(bind("SELECT 'a\\\\b', ?", [1]).0, "SELECT 'a\\\\b', <1>")
+        XCTAssertEqual(bind("SELECT `a\\`, ?", [1]).0, "SELECT `a\\`, <1>")
+        XCTAssertEqual(bind("SELECT 'it''s', ?", [1]).0, "SELECT 'it''s', <1>")
+    }
+
+    /// Verifies that EXPLAIN ANALYZE over a write is rejected, including behind
+    /// the MySQL 8.3+ `FOR SCHEMA`/`FOR DATABASE`, `INTO @var` and `FORMAT`
+    /// modifiers.
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([
