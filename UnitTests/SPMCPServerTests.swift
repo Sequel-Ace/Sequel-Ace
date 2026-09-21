@@ -493,6 +493,25 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
         }
     }
+
+    /// Verifies that string introducers and hex or bit literals behave like any other
+    /// quoted operand: ANALYZE inside them does not count, and an ANALYZE modifier next
+    /// to them is still found.
+    func testExplainWouldExecuteHandlesStringIntroducers() {
+        for sql in [
+            "SELECT N'ANALYZE', X'414E414C595A45', B'01', _utf8mb4'analyze' AS a",
+            "SELECT _latin1'it''s ANALYZE' COLLATE latin1_bin",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+        for sql in [
+            "ANALYZE SELECT N'x'",
+            "FORMAT=TREE ANALYZE UPDATE t SET a = _utf8mb4'b', c = X'00'",
+            "ANALYZE UPDATE t SET a = 'x\\'",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+    }
 }
 
 final class SPMCPServerRouteTests: XCTestCase {
