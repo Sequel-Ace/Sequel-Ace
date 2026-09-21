@@ -804,6 +804,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/public
+          mark_terminal_failure_if_cloud_complete() {
+            if ruby -rjson -e '
+              paths = ARGV.select { |path| File.file?(path) }
+              exit(paths.any? && paths.all? { |path| JSON.parse(File.read(path)).fetch("execution_progress") == "COMPLETE" } ? 0 : 1)
+            ' production-cloud-run.json alpha-cloud-run.json; then
+              touch terminal-artifact-verification-failure
+            else
+              echo "Artifact verification failed before every required Cloud run completed; the exact handoff remains retryable." >> "${GITHUB_STEP_SUMMARY}"
+            fi
+          }
           if ! bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
               --index production-artifacts.json \
               --version "${RELEASE_VERSION}" \
@@ -813,7 +823,7 @@ jobs:
               --launch \
               --output-zip "artifacts/public/${PRODUCTION_ASSET}" \
               --output production-verification.json; then
-            touch terminal-artifact-verification-failure
+            mark_terminal_failure_if_cloud_complete
             exit 1
           fi
           if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
@@ -826,7 +836,7 @@ jobs:
                 --launch \
                 --output-zip "artifacts/public/${ALPHA_ASSET}" \
                 --output alpha-verification.json; then
-              touch terminal-artifact-verification-failure
+              mark_terminal_failure_if_cloud_complete
               exit 1
             fi
           fi

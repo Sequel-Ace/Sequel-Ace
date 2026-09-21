@@ -826,7 +826,10 @@ automatic RC recovery described above.
   there before completion: higher invokes the authenticated forward-recovery
   path, while lower remains terminal. Architecture, signing, notarization,
   stapling, Gatekeeper, bundle metadata,
-  or launch verification failures are also terminal. Network, runner, download,
+  or launch verification failures are terminal only after every required Cloud
+  run reports complete. A verifier failure while Apple still reports a required
+  run in progress remains retryable so the Notarize post-action can finish.
+  Network, runner, download,
   upload, registry, and API failures leave the remote manifest unchanged and
   leave the exact wake tag armed so the next Xcode event or short recovery
   check can retry it. Automated failure and recovery reporting is kept in the
