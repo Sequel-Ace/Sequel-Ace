@@ -355,7 +355,7 @@ enum SPCustomQuerySQLClassifier {
     ///   - backslashEscapes: Whether a backslash escapes the next character
     ///     inside `'…'` and `"…"`; `false` reads the statement the way a
     ///     connection with `NO_BACKSLASH_ESCAPES` does.
-    private static func sqlTokens(from upper: String, backslashEscapes: Bool = true) -> [String] {
+    static func sqlTokens(from upper: String, backslashEscapes: Bool = true) -> [String] {
         let characters = Array(upper.unicodeScalars)
         var tokens: [String] = []
         var index = 0

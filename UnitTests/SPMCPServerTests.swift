@@ -458,6 +458,34 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         }
         XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute("FORMAT=TREE\r\nSELECT 1\r\nFROM t"))
     }
+
+    /// Verifies that text the comment stripper keeps but the server reads as a comment
+    /// cannot hide the modifier: a `--` followed by a vertical tab or form feed starts a
+    /// comment for MySQL, and a SELECT inside it used to end the scan before the real
+    /// ANALYZE on the next line.
+    func testExplainWouldExecuteLooksPastTextTheServerIgnores() {
+        for sql in [
+            "--\u{0B}SELECT\nANALYZE UPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "--\u{0C} SELECT 1\nANALYZE DELETE a FROM a JOIN b ON a.id = b.id",
+            "ANALYZE(SELECT 1)",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that ANALYZE inside a quoted operand, whatever whitespace surrounds it,
+    /// does not count: MySQL 8.3 allows `EXPLAIN FORMAT=JSON INTO @'name'`, and a name
+    /// or string may hold any text.
+    func testExplainWouldExecuteIgnoresAnalyzeInsideQuotedOperands() {
+        for sql in [
+            "FORMAT=JSON INTO @'plan\r\nANALYZE\r\ncopy' SELECT 1",
+            "SELECT `analyze` FROM t",
+            "SELECT \"ANALYZE\" AS label",
+            "SELECT 'it''s ANALYZE time' AS label",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+    }
 }
 
 final class SPMCPServerRouteTests: XCTestCase {
