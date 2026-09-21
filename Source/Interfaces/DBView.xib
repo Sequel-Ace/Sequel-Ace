@@ -4750,6 +4750,12 @@ Gw
                         <action selector="copy:" target="36" id="vef-dB-uno"/>
                     </connections>
                 </menuItem>
+                <menuItem title="Copy as SQL UPDATE" tag="2005" id="Hn3-bq-Ze8">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="copy:" target="36" id="Wd5-lp-Xc2"/>
+                    </connections>
+                </menuItem>
                 <menuItem isSeparatorItem="YES" id="7796"/>
                 <menuItem title="Add New Row" id="7795">
                     <modifierMask key="keyEquivalentModifierMask"/>
@@ -4797,6 +4803,12 @@ Gw
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="copy:" target="-1" id="6ey-zg-Cgj"/>
+                    </connections>
+                </menuItem>
+                <menuItem title="Copy as SQL UPDATE" tag="2005" id="Jm4-ts-Vy6">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="copy:" target="-1" id="Bq8-rn-Lf3"/>
                     </connections>
                 </menuItem>
                 <menuItem isSeparatorItem="YES" hidden="YES" id="7472"/>
