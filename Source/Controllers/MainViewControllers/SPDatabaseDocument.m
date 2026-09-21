@@ -108,6 +108,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 // Whether the NSUserDefaults KVO observers are currently registered (#2033)
 @property (assign) BOOL preferenceObserversRegistered;
+// Whether the user stopped the table load that is running; read by its task between its stages
+@property (atomic, assign) BOOL tableLoadStopRequested;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
@@ -125,6 +127,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)_loadTabTask:(NSNumber *)tabViewItemIndexNumber;
 - (void)_loadTableTask;
+/** Records that the user stopped the table load, and keeps the Stop button available. */
+- (void)_stopTableLoad;
 
 #pragma mark - SPConnectionDelegate
 
@@ -1221,6 +1225,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         SPLog(@"!_isWorkingLevel, all tasks have ended");
 
+        // The cancellation callback of the last task is let go of: a task that passed itself - the
+        // document, say - would otherwise be kept alive, and the next task would inherit it.
+        [taskController disableTaskCancellation];
+
         // Hide the task interface, stop the timers and reset to indeterminate
         [taskController endTaskDisplay];
 
@@ -1294,16 +1302,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return self.parentWindowControllerWindow;
 }
 
+/**
+ * Stops the query that is running when the user presses the task's cancel button.
+ */
 - (void)taskControllerDidRequestCancellation
 {
-    // See whether there is an active database structure task and whether it can be used
-    // to cancel the query, for speed (no connection overhead!)
-    if (databaseStructureRetrieval && [databaseStructureRetrieval connection]) {
-        [mySQLConnection setLastQueryWasCancelled:YES];
-        [[databaseStructureRetrieval connection] killQueryOnThreadID:[mySQLConnection mysqlConnectionThreadId]];
-    } else {
-        [mySQLConnection cancelCurrentQuery];
-    }
+    // The query this is about is the one running now. By the time anything reaches the server,
+    // that query can have finished and another one taken over the connection, and that one was
+    // not what anybody asked to stop - so the request is tied to this query. The connection marks
+    // it at once, asks the server to kill it, and closes its socket if the server does not answer.
+    // Reaching the server can take as long as the query itself, so the main thread - the thread
+    // this button was pressed on - does not wait for it; callers already off the main thread do,
+    // since some of them (the field-removal task) hold a lock across the request.
+    [mySQLConnection cancelQueryIfStillRunning:[mySQLConnection currentQueryGeneration]];
 }
 
 #pragma mark -
@@ -4525,7 +4536,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
                 }
 
-                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
+                // The query comes from a bundle or a sequelace:// command, not from the application: after a
+                // transaction was lost with its session, it is refused like a write, whatever it starts with.
+                __block SPMySQLResult *theResult = nil;
+                [mySQLConnection runStatementsFromOutsideApplication:^{
+                    theResult = [self->mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
+                }];
                 [theResult setReturnDataAsStrings:YES];
                 if ([mySQLConnection queryErrored]) {
                     [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [mySQLConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -5644,6 +5660,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), aTable]];
     }
 
+    // Loading a table can wait on a server that has stopped answering, so it can be stopped
+    // like loading a table's contents already can. Stopping ends the whole load, not only the
+    // query that is running when the button is pressed.
+    self.tableLoadStopRequested = NO;
+    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
+
     // Update the tables list interface - also updates menus to reflect the selected table type
     [[tablesListInstance onMainThread] setSelectionState:[NSDictionary dictionaryWithObjectsAndKeys:aTable, @"name", [NSNumber numberWithInteger:aTableType], @"type", nil]];
 
@@ -5675,6 +5697,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Get the tab view index and ensure the associated view is loaded
         SPTableViewType selectedTabViewIndex = (SPTableViewType)[tabViewItemIndexNumber integerValue];
+
+        // A load the user stopped left the table's information unloaded, and the views would show it
+        // as empty. The whole table is loaded again - which loads the selected view as well, and can be
+        // stopped in turn; a load stopped again leaves the views as they are. The query editor needs
+        // nothing of the table, and switching to it loads nothing.
+        BOOL viewNeedsTheTable = (selectedTabViewIndex != SPTableViewCustomQuery && selectedTabViewIndex != SPTableViewInvalid);
+        if (self.tableLoadStopRequested && selectedTableName && viewNeedsTheTable) {
+            [self loadTable:selectedTableName ofType:selectedTableType];
+            if (self.tableLoadStopRequested) {
+                [self endTask];
+                return;
+            }
+        }
 
         switch (selectedTabViewIndex) {
             case SPTableViewStructure:
@@ -5717,6 +5752,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
+ * Records that the user stopped the table load, so that its task goes on to none of its next
+ * stages. The button stays available: a query the load sends before it gets there can wait on the
+ * server as well, and pressing it again stops that one too.
+ */
+- (void)_stopTableLoad
+{
+    self.tableLoadStopRequested = YES;
+    [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
+}
+
+/**
  * In a threaded task, load the currently selected table/view/proc/function.
  */
 - (void)_loadTableTask
@@ -5745,13 +5791,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [mySQLConnection setEncoding:@"utf8mb4"];
         }
 
-        // Cache status information on the working thread
-        [tableDataInstance updateStatusInformationForCurrentTable];
+        // Cache status information on the working thread. A load the user stopped skips every stage
+        // that asks the server for more, and only tidies up.
+        if (!self.tableLoadStopRequested) {
+            [tableDataInstance updateStatusInformationForCurrentTable];
+        }
 
         // Check the current encoding against the table encoding to see whether
         // an encoding change and reset is required.  This also caches table information on
         // the working thread.
-        if( selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) {
+        if ((selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) && !self.tableLoadStopRequested) {
 
             // tableEncoding == nil indicates that there was an error while retrieving table data
             tableEncoding = [tableDataInstance tableEncoding];
@@ -5768,6 +5817,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
+        // A stopped load leaves the table's status and information unloaded on purpose; the views that
+        // read them lazily must not ask the server for them after all.
+        if (self.tableLoadStopRequested) {
+            [tableDataInstance recordLoadsStoppedForCurrentTable];
+        }
+
         // Notify listeners of the table change now that the state is fully set up.
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
 
@@ -5775,7 +5830,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [spHistoryControllerInstance restoreViewStates];
 
         // Load the currently selected view if looking at a table or view
-        if (tableEncoding && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable))
+        if (tableEncoding && !self.tableLoadStopRequested && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable))
         {
             NSInteger selectedTabViewIndex = [[self onMainThread] currentlySelectedView];
 
@@ -5813,14 +5868,21 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if (!statusLoaded) [[extendedTableInfoInstance onMainThread] loadTable:nil];
         if (!triggersLoaded) [[tableTriggersInstance onMainThread] resetInterface];
 
+        // A view's own load ends its own cancellation, which hides the button while this load goes on.
+        if (!self.tableLoadStopRequested) {
+            [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
+        }
+
         // If the table row counts an inaccurate and require updating, trigger an update - no
         // action will be performed if not necessary
-        [tableDataInstance updateAccurateNumberOfRowsForCurrentTableForcingUpdate:NO];
+        if (!self.tableLoadStopRequested) {
+            [tableDataInstance updateAccurateNumberOfRowsForCurrentTableForcingUpdate:NO];
+        }
 
         SPMainQSync(^{
             // Update the "Show Create Syntax" window if it's already opened
-            // according to the selected table/view/proc/func
-            if ([[self getCreateTableSyntaxWindow] isVisible]) {
+            // according to the selected table/view/proc/func - unless the load was stopped
+            if (!self.tableLoadStopRequested && [[self getCreateTableSyntaxWindow] isVisible]) {
                 [self showCreateTableSyntax:self];
             }
         });
@@ -5937,12 +5999,31 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
+ * Invoked when connection work has to wait for a server long enough to be noticed. The work runs
+ * on the connection's own thread; the window waits for it here, in an event loop that keeps it
+ * answering, and offers to stop waiting.
+ */
+- (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
+{
+    SAConnectionCheckSheet *sheet = [[SAConnectionCheckSheet alloc] init];
+
+    __weak id weakConnection = connection;
+    [sheet waitInWindow:[self parentWindowControllerWindow] untilFinished:isFinished whenCancelled:^{
+        [weakConnection cancelConnectionCheck];
+    }];
+}
+
+/**
  * Invoked when the connection fails and the framework needs to know how to proceed.
  */
 - (SPMySQLConnectionLostDecision)connectionLost:(id)connection
 {
 
     SPLog(@"connectionLost");
+
+    // A window holds one sheet at a time, and this question outranks a note about waiting.
+    NSWindow *questionWindow = [self parentWindowControllerWindow];
+    [SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
 
     SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
@@ -5972,6 +6053,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     }
 
+    // Whatever was chosen, the connection carries on working on it, and the wait for that
+    // work can have the window back.
+    [SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
+
     return connectionErrorCode;
 }
 
@@ -5980,7 +6065,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
-    SPMainQSync(^{
+    // The connection asks for this from whichever thread its query runs on, and a query can have
+    // been started from a block on the main queue. Waiting for that queue here would mean the
+    // query waits for the block that is waiting for the query, so the note is only handed over.
+    dispatch_async(dispatch_get_main_queue(), ^{
         if ([[self.parentWindowController window] isVisible]) {
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
@@ -5998,6 +6086,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Close the connection - should be performed on the main thread.
  */
+/**
+ * Whether this document still holds its connection. A lost connection that can still come back
+ * counts as held; only closing the connection, which also closes the window, ends it.
+ */
+- (BOOL)connectionIsOpen
+{
+    return _isConnected;
+}
+
 - (void)closeAndDisconnect {
 
     _isConnected = NO;
@@ -6136,9 +6233,18 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSMutableDictionary *connection = [NSMutableDictionary dictionary];
         NSMutableDictionary *printData = [NSMutableDictionary dictionary];
 
+        // A table whose data could not be read - its query failed, or the wait for it was
+        // stopped - is not printed; the print task then just ends.
+        __block BOOL printable = YES;
+
         SPMainQSync(^{
             [connection setDictionary:[self connectionInformation]];
-            [printData setObject:[self columnNames] forKey:@"columns"];
+            NSArray *columns = [self columnNames];
+            if (!columns) {
+                printable = NO;
+                return;
+            }
+            [printData setObject:columns forKey:@"columns"];
             SPTableViewType view = [self currentlySelectedView];
 
             NSString *heading = @"";
@@ -6159,17 +6265,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                         break;
                 }
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [[tableSource objectForKey:@"structure"] objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [[tableSource objectForKey:@"structure"] count] - 1)]]
-                                 ];
-
-                NSArray *indexes = [[NSArray alloc] initWithArray:
-                                    [[tableSource objectForKey:@"indexes"] objectsAtIndexes:
-                                     [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [[tableSource objectForKey:@"indexes"] count] - 1)]]
-                                    ];
-
-                NSArray *indexColumns = [[tableSource objectForKey:@"indexes"] objectAtIndex:0];
+                NSArray *rows = [SAPrintTable rowsOfTable:[tableSource objectForKey:@"structure"]];
+                NSArray *indexes = [SAPrintTable rowsOfTable:[tableSource objectForKey:@"indexes"]];
+                NSArray *indexColumns = [SAPrintTable headerOfTable:[tableSource objectForKey:@"indexes"]];
+                if (!rows || !indexes || !indexColumns) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
                 [printData setObject:indexes forKey:@"indexes"];
@@ -6184,10 +6286,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Table Content", @"table content print heading");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [data count] - 1)]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
                 [connection setValue:[self->tableContentInstance usedQuery] forKey:@"query"];
@@ -6199,10 +6302,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Query Result", @"query result print heading");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, [data count] - 1)]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
                 [connection setValue:[self->customQueryInstance usedQuery] forKey:@"query"];
@@ -6214,10 +6318,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Table Relations", @"toolbar item label for switching to the Table Relations tab");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, ([data count] - 1))]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
             }
@@ -6228,16 +6333,25 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 heading = NSLocalizedString(@"Table Triggers", @"toolbar item label for switching to the Table Triggers tab");
 
-                NSArray *rows = [[NSArray alloc] initWithArray:
-                                 [data objectsAtIndexes:
-                                  [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, ([data count] - 1))]]
-                                 ];
+                NSArray *rows = [SAPrintTable rowsOfTable:data];
+                if (!rows) {
+                    printable = NO;
+                    return;
+                }
 
                 [printData setObject:rows forKey:@"rows"];
             }
 
             [printData setObject:heading forKey:@"heading"];
         });
+
+        if (!printable) {
+            [self endTask];
+            SPMainQSync(^{
+                NSBeep();
+            });
+            return;
+        }
 
         // Set up template engine with your chosen matcher
         MGTemplateEngine *engine = [MGTemplateEngine templateEngine];
@@ -6299,43 +6413,37 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Returns an array of columns for whichever view is being printed.
+ * Returns an array of columns for whichever view is being printed, or nil when that
+ * view's data could not be read - its query failed, or the wait for it was stopped.
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
 - (NSArray *)columnNames
 {
-    NSArray *columns = nil;
+    NSArray *table = nil;
 
-    SPTableViewType view = [self currentlySelectedView];
-
-    // Table source view
-    if ((view == SPTableViewStructure) && ([[tableSourceInstance tableSourceForPrinting] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[[tableSourceInstance tableSourceForPrinting] objectForKey:@"structure"] objectAtIndex:0] copyItems:YES];
-    }
-    // Table content view
-    else if ((view == SPTableViewContent) && ([[tableContentInstance currentResult] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[tableContentInstance currentResult] objectAtIndex:0] copyItems:YES];
-    }
-    // Custom query view
-    else if ((view == SPTableViewCustomQuery) && ([[customQueryInstance currentResult] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[customQueryInstance currentResult] objectAtIndex:0] copyItems:YES];
-    }
-    // Table relations view
-    else if ((view == SPTableViewRelations) && ([[tableRelationsInstance relationDataForPrinting] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[tableRelationsInstance relationDataForPrinting] objectAtIndex:0] copyItems:YES];
-    }
-    // Table triggers view
-    else if ((view == SPTableViewTriggers) && ([[tableTriggersInstance triggerDataForPrinting] count] > 0)) {
-
-        columns = [[NSArray alloc] initWithArray:[[tableTriggersInstance triggerDataForPrinting] objectAtIndex:0] copyItems:YES];
+    switch ([self currentlySelectedView]) {
+        case SPTableViewStructure:
+            table = [[tableSourceInstance tableSourceForPrinting] objectForKey:@"structure"];
+            break;
+        case SPTableViewContent:
+            table = [tableContentInstance currentResult];
+            break;
+        case SPTableViewCustomQuery:
+            table = [customQueryInstance currentResult];
+            break;
+        case SPTableViewRelations:
+            table = [tableRelationsInstance relationDataForPrinting];
+            break;
+        case SPTableViewTriggers:
+            table = [tableTriggersInstance triggerDataForPrinting];
+            break;
+        default:
+            break;
     }
 
-    return columns;
+    NSArray *header = [SAPrintTable headerOfTable:table];
+    return header ? [[NSArray alloc] initWithArray:header copyItems:YES] : nil;
 }
 
 /**

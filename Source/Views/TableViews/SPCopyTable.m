@@ -701,7 +701,14 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                             if ([cellData isKindOfClass:nsDataClass]) {
                                 [rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:cellData]];
                             } else {
-                                [rowValues safeAddObject:[mySQLConnection escapeAndQuoteString:[cellData description]]];
+                                // A value that could not be escaped would shift the ones after it
+                                // onto the wrong columns, so nothing is copied.
+                                NSString *escapedValue = [mySQLConnection escapeAndQuoteString:[cellData description]];
+                                if (!escapedValue) {
+                                    NSBeep();
+                                    return nil;
+                                }
+                                [rowValues addObject:escapedValue];
                             }
                             break;
 

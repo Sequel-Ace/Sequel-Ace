@@ -34,12 +34,13 @@
 #include <mach/mach_time.h>
 #include <pthread.h>
 #include <SystemConfiguration/SCNetworkReachability.h>
+#include <sys/socket.h>
 #import "SPMySQLUtilities.h"
 #import "SPMySQLArrayAdditions.h"
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-@interface SPMySQLConnection ()
+@interface SPMySQLConnection () <SAConnectionCancellationHost>
 
 @property (readwrite, copy) NSString *timeZoneIdentifier;
 @property (readonly, strong) SAProxyReconnectCoordinator *proxyReconnectCoordinator;
@@ -104,6 +105,20 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 @synthesize retryQueriesOnConnectionFailure;
 @synthesize delegateQueryLogging;
 @synthesize lastQueryWasCancelled;
+
+/**
+ * Identifies the query the connection is running, or ran last. It changes whenever a query takes
+ * over the connection, so something that acts on "the running query" later can check that it is
+ * still the one it meant.
+ *
+ * @return The current query's number.
+ */
+- (NSUInteger)currentQueryGeneration
+{
+	// Read from the in-flight record, which never waits: the connection's own counter is written
+	// by the query's thread while it holds the connection.
+	return [inFlightQuery latestGeneration];
+}
 @synthesize clientFlags = clientFlags;
 
 #pragma mark -
@@ -380,6 +395,10 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		reconnectionRetryAttempts = 0;
 		lastDelegateDecisionForLostConnection = SPMySQLConnectionLostDisconnect;
 		delegateDecisionLock = [[NSLock alloc] init];
+		delegateDecisionGate = [[SAConnectionLostDecisionGate alloc] init];
+		inFlightQuery = [[SAInFlightQuery alloc] init];
+		valueEscaper = [[SAConnectionEscaper alloc] init];
+		connectionCancellation = [[SAConnectionCancellation alloc] initWithHost:self inFlightQuery:inFlightQuery];
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];
@@ -469,6 +488,10 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
     SPLog(@"connect");
 
 	userTriggeredDisconnect = NO;
+
+	// A connection the user sets up afresh starts without a report about an earlier session.
+	lostWorkReportPendingForEditor = NO;
+	lostWorkReportPendingForWrites = NO;
 	return [self _connect];
 }
 
@@ -509,8 +532,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)isConnected
 {
-	// If the connection has been allowed to drop in the background, restore it if posslbe
+	// If the connection has been allowed to drop in the background, restore it if posslbe.
+	// Not on the main thread: that would freeze the interface for as long as the network takes -
+	// after a stopped wait, whose session is closed on purpose, as much as after a dropped route.
+	// There the connection still counts as connected, and the next query restores the session
+	// while the interface keeps answering.
 	if (state == SPMySQLConnectionLostInBackground) {
+		if (![SAConnectionCancellation restoresLostSessionWhenAskedIfConnectedOnMainThread:[NSThread isMainThread]]) {
+			return YES;
+		}
         SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
 		[self _reconnectAllowingRetries:YES];
 	}
@@ -562,10 +592,11 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		}
 	}
 
-
     SPLog(@"calling _pingConnectionUsingLoopDelay");
 	// Confirm whether the connection is still responding by using a ping
-	BOOL connectionVerified = [self _pingConnectionUsingLoopDelay:400];
+	// A connection configured with a shorter timeout keeps it; the budget only caps.
+	NSUInteger checkPingTimeout = [SAConnectionCheckBudget pingTimeoutForConfiguredTimeout:timeout];
+	BOOL connectionVerified = [self _pingConnectionUsingLoopDelay:400 timeout:checkPingTimeout];
     SPLog(@"_pingConnectionUsingLoopDelay finished");
 
 	// If the connection didn't respond, trigger a reconnect.  This will automatically
@@ -573,7 +604,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// to keep reconnecting, or whether to disconnect.
 	if (!connectionVerified) {
         SPLog(@"!connectionVerified, calling _reconnectAllowingRetries");
+		// The connection is gone as far as the check can tell. Keep the first
+		// automatic attempt short so the "connection lost" question reaches the
+		// user in seconds rather than after a minute of blocked interface.
+		reconnectingAfterFailedCheck = YES;
 		connectionVerified = [self _reconnectAllowingRetries:YES];
+		reconnectingAfterFailedCheck = NO;
 	}
 
 	// Update the connection tracking use variable if the connection was confirmed,
@@ -602,17 +638,58 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _reconnectAllowingRetries:YES];
+		return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+			return [self _reconnectAllowingRetries:YES];
+		}];
 	}
 	
-	// If the connection was recently used, return success
-	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 30) {
-		return YES;
+	// If the connection was recently used, return success - unless its socket
+	// already knows the peer is gone, which a dropped route does not announce.
+	double idleTime = _timeIntervalSinceMonotonicTime(lastConnectionUsedTime);
+	if (idleTime < 30) {
+		if (![self _shouldVerifyRecentlyUsedConnectionIdleFor:idleTime]) return YES;
+		SPLog(@"connection socket reports the peer is gone; checking despite recent use");
 	}
 	
 	// Otherwise check the connection
-	return [self checkConnection];
+	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+		return [self checkConnection];
+	}];
 }
+
+/**
+ * Ends the interface's wait for connection work, and stops that work: the thread it runs on, and
+ * the query it may have waiting on the server.
+ */
+- (void)cancelConnectionCheck
+{
+	[connectionCancellation userStoppedWaitingWithWorkCoordinator:connectionWorkCoordinator];
+}
+
+/**
+ * Runs statements a client outside the application sent - SQL the application did not write.
+ * After uncommitted work was lost with a session, they are refused like writes, whatever they
+ * start with. The decision is SAOutsideStatements'; this only lets the application reach it.
+ *
+ * @param statements The work that sends those statements, on the current thread.
+ */
+- (void)runStatementsFromOutsideApplication:(NS_NOESCAPE void (^)(void))statements
+{
+	[SAOutsideStatements runOnCurrentThread:statements];
+}
+
+/**
+ * Stops a query, provided it is still the one running. The query is marked at once, the server is
+ * asked to kill it, and its socket is closed if it is still waiting shortly afterwards. Off the
+ * main thread the request to the server goes out before this returns, for callers that rely on it.
+ *
+ * @param generation The query to stop, as -currentQueryGeneration named it.
+ */
+- (void)cancelQueryIfStillRunning:(NSUInteger)generation
+{
+	[connectionCancellation requestCancellationOfGeneration:generation synchronously:![NSThread isMainThread]];
+}
+
 
 /**
  * Retrieve the time elapsed since the connection was established, in seconds.
@@ -642,12 +719,13 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)isNotMariadb103
 {
-    serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
-    NSLog(@"%@", [serverVariableVersion lowercaseString]);
+    // The version was recorded when the session was set up. The session's handle is not read here:
+    // it is gone while a session closed after a stopped wait waits for the next query to replace it.
+    NSString *version = [[self serverVersionString] lowercaseString];
     NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
     
-    if ([myTest evaluateWithObject: [serverVariableVersion lowercaseString]]){
+    if ([myTest evaluateWithObject: version]){
         return false;
     }
     return true;
@@ -655,10 +733,11 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 - (BOOL) isMariaDB
 {
-  serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+  // The version recorded when the session was set up; see -isNotMariadb103.
+  NSString *version = [[self serverVersionString] lowercaseString];
   // See more: https://regex101.com/r/0QRlsG/1
   NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
-  if ([predicate evaluateWithObject: [serverVariableVersion lowercaseString]]){
+  if ([predicate evaluateWithObject: version]){
     return true;
   }
   
@@ -696,6 +775,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	return nil;
 }
 
+/**
+ * Sets the session time zone, or the server's global one for an empty identifier, and reports
+ * a failure to the delegate.
+ *
+ * @param timeZoneIdentifier The time zone to use, or nil/empty for the server default.
+ */
 - (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
     if ([timeZoneIdentifier isEqualToString:self.timeZoneIdentifier]) {
         return;
@@ -723,6 +808,86 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
             }
         }
     }
+}
+
+#pragma mark -
+#pragma mark Cancellation host
+
+/**
+ * Keeps the next connection attempt short, because the user has said they will not wait.
+ */
+- (void)noteUserEndedWait
+{
+	userEndedPendingWork = YES;
+	userEndedPendingWorkTime = _monotonicTime();
+}
+
+/**
+ * Marks the query that holds the connection as cancelled.
+ */
+- (void)markRunningQueryCancelled
+{
+	lastQueryWasCancelled = YES;
+}
+
+/**
+ * Asks the server to kill a query over a connection of its own.
+ *
+ * @param generation The query to kill.
+ * @return Whether the server accepted the request.
+ */
+- (BOOL)killQueryOverSideConnectionForGeneration:(NSUInteger)generation
+{
+	return [self _killQueryOverSideConnectionForGeneration:generation];
+}
+
+/**
+ * Whether the session last reported an open transaction.
+ */
+- (BOOL)sessionHasOpenTransaction
+{
+	return [valueEscaper sessionReportedOpenTransaction];
+}
+
+/**
+ * Takes the connection, provided nothing else holds it.
+ *
+ * @return Whether the connection is now held.
+ */
+- (BOOL)holdConnectionIfFree
+{
+	return [self _tryLockConnection];
+}
+
+/**
+ * Gives back a connection taken with -holdConnectionIfFree.
+ */
+- (void)releaseHeldConnection
+{
+	[self _unlockConnection];
+}
+
+/**
+ * Records that the work on the connection was cancelled.
+ */
+- (void)recordWorkAsCancelled
+{
+	[self _recordWorkAsCancelled];
+}
+
+/**
+ * Closes the session the connection holds, if it holds one. Only called while the connection is held.
+ */
+- (void)closeSessionIfConnected
+{
+	// Work that sent nothing leaves the session alone, and a session kept for a transaction that was
+	// open before the stopped work stays: closing it would roll that transaction back.
+	if (state == SPMySQLConnected && mySQLConnection
+	    && [SAConnectionCancellation closesSessionOfAbandonedWorkWithSessionUse:[SAConnectionWorkCoordinator currentWorkSessionUse]
+	                                                  sessionHasOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                       markedForReplacement:sessionMustBeReplacedBeforeUse]) {
+		[self _closeSessionOfAbandonedQuery];
+	}
 }
 
 @end
@@ -776,6 +941,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return NO;
 	}
 
+	// Bound how long the kernel waits on a peer that has stopped answering entirely, so a
+	// query sent onto a route that disappeared ends in an error rather than in a wait that
+	// outlasts anyone's patience.
+	[SAConnectionSocketTimeouts applyToSocket:mySQLConnection->net.fd];
+
 	// If the connection was cancelled, clean up and don't continue
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
@@ -786,6 +956,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
+	// What the new session reports is recorded before the old one stops counting as being replaced,
+	// so that no value is escaped for the old session in between.
+	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+	                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+	                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                            isHandshake:YES];
+	sessionMustBeReplacedBeforeUse = NO;
+	sessionWasClosedWithoutItsProxy = NO;
+	sessionAutocommitAtConnect = (mySQLConnection->server_status & SERVER_STATUS_AUTOCOMMIT) != 0;
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -802,7 +981,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 	//
 	// At that point (handshake) there is no charset and it's highly unlikely this will ever contain something other than ASCII,
 	// but to be safe, we'll use the Latin1 encoding which won't bail on invalid chars.
-	serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+	// Recorded under the same lock the version questions read it with: they can be asked on any
+	// thread, while a reconnect sets up the next session.
+	NSString *handshakeServerVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+	@synchronized (self) {
+		serverVariableVersion = handshakeServerVersion;
+	}
 	// this one can actually change the error state, but only if the server version string is not set (ie. no connection)
 	serverVersionNumber = mysql_get_server_version(mySQLConnection);
 
@@ -828,6 +1012,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// a query, ensure the connection is still up afterwards (!)
 	[self _updateConnectionVariables];
 	if (state != SPMySQLConnected) return NO;
+
+	// What a session starts with is only known once it has run a statement: a server's init_connect
+	// runs after the handshake has been answered. Autocommit and the escaping mode are taken from
+	// there - the next session starts the same way.
+	[self _lockConnection];
+	if (mySQLConnection) {
+		sessionAutocommitAtConnect = (mySQLConnection->server_status & SERVER_STATUS_AUTOCOMMIT) != 0;
+		[valueEscaper recordStartingModeWithNoBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0];
+	}
+	[self _unlockConnection];
 
 	// Now connection is established and verified, reset the counter
 	reconnectionRetryAttempts = 0;
@@ -868,8 +1062,22 @@ asm(".desc ___crashreporter_info__, 0x10");
         mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
     }
 
-	// Set the connection timeout
-	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&timeout);
+	// Set the connection timeout; a check-triggered reconnect shortens it so the
+	// user is asked quickly instead of waiting out a dead route. A side connection, which only asks
+	// the server to kill a query, keeps a short limit of its own.
+	NSUInteger connectTimeout = isMaster
+		? (connectTimeoutOverride > 0 ? connectTimeoutOverride : timeout)
+		: [SAConnectionCheckBudget sideConnectionConnectTimeoutForConfiguredTimeout:timeout];
+	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&connectTimeout);
+
+	// A side connection only asks the server to kill a query, and does so while that query is
+	// held still. It must not wait on a server that accepted it and then stopped answering; the
+	// main connection keeps no such limit, as it would cut long queries short.
+	if (!isMaster) {
+		unsigned int answerTimeout = (unsigned int)[SAConnectionCheckBudget sideConnectionAnswerTimeout];
+		mysql_options(theConnection, MYSQL_OPT_READ_TIMEOUT, (const void *)&answerTimeout);
+		mysql_options(theConnection, MYSQL_OPT_WRITE_TIMEOUT, (const void *)&answerTimeout);
+	}
 
 	// Set the connection encoding
 	NSStringEncoding connectEncodingNS = [SPMySQLConnection stringEncodingForMySQLCharset:[encodingName UTF8String]];
@@ -991,13 +1199,21 @@ asm(".desc ___crashreporter_info__, 0x10");
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
     }
 
-    MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+    // A failed attempt frees every option that was set on this handle unless the client asks
+    // to keep them, and the retry below has to run on the same connection timeout as the
+    // attempt before it rather than on the system default.
+    unsigned long connectClientFlags = [self clientFlags] | CLIENT_REMEMBER_OPTIONS;
 
-    //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL
-    if(!useSSL && theConnection != connectionStatus) {
+    MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
+
+    //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL.
+    // Only a failed TLS negotiation is: a host that never answered fails the same way again, and
+    // credentials the server refused, or that may already have gone out over TLS before the
+    // connection was lost, must not be sent a second time unencrypted.
+    if(!useSSL && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
         enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
-        connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+        connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
     }
 
 	// If the connection failed, return NULL
@@ -1030,6 +1246,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self _updateLastSqlstate:_stringForCStringWithEncoding(mysql_sqlstate(theConnection),NSISOLatin1StringEncoding)];
 		}
 
+		// The handle keeps its options and its own allocations after a failed attempt, so it
+		// is closed here rather than left behind.
+		mysql_close(theConnection);
+
 		return NULL;
 	}
 
@@ -1051,6 +1271,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (![_proxyReconnectCoordinator shouldAbortReconnectWithThreadCancelled:threadCancelled
 	                                              userTriggeredDisconnect:userTriggeredDisconnect]) return NO;
 
+	// The attempt ends here, and the short check budgets end with it.
+	connectTimeoutOverride = 0;
+	reconnectingAfterFailedCheck = NO;
+	userEndedPendingWork = NO;
+
+	[self _recoverFromCancelledReconnectMayDisconnect:NO];
+
 	SPLog(@"reconnect cancelled by thread or explicit disconnect; cleaning up proxy attempt");
 	[self _unlockConnection];
 	if (proxy) {
@@ -1062,6 +1289,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 	proxyStateChangeNotificationsIgnored = NO;
 	reconnectingThread = NULL;
 	return YES;
+}
+
+/**
+ * Whether the current thread is the one reconnecting. The statements it sends set up the new
+ * session - its character set, its database - on the connection's own behalf.
+ *
+ * @return Whether a reconnect is running on the current thread.
+ */
+- (BOOL)_currentThreadIsReconnecting
+{
+	pthread_t thread = reconnectingThread;
+	return thread && pthread_equal(thread, pthread_self());
 }
 
 /**
@@ -1140,8 +1379,21 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// Lock the connection while waiting for network and proxy
 		[self _lockConnection];
 
+		// The short budget belongs to the attempt made right after the user stopped waiting. One
+		// that comes later - once the network is back, say - is an ordinary attempt.
+		if (userEndedPendingWork && ![SAConnectionCheckBudget attemptIsShortenedStartingSecondsAfterEndedWait:_timeIntervalSinceMonotonicTime(userEndedPendingWorkTime)]) {
+			userEndedPendingWork = NO;
+		}
+
+		// What this attempt may spend, on every step - the proxy's included. The decision is
+		// SAConnectionCheckBudget's.
+		SAConnectionAttemptBudget *attemptBudget = [SAConnectionCheckBudget attemptBudgetForConfiguredTimeout:timeout
+		                                                                                         userEndedWait:userEndedPendingWork
+		                                                                                      afterFailedCheck:reconnectingAfterFailedCheck];
+		NSUInteger attemptConnectTimeout = [attemptBudget connectTimeout];
+
 		// If no network is present, wait for a short time for one to become available
-		[self _waitForNetworkConnectionWithTimeout:10];
+		[self _waitForNetworkConnectionWithTimeout:[attemptBudget networkWait]];
 
 		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
@@ -1152,9 +1404,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
 
+			// A tunnel left running when only the session was closed is used as it is.
+			BOOL reuseProxy = [_proxyReconnectCoordinator reusesConnectedProxyAfterClosingSessionOnly:sessionWasClosedWithoutItsProxy
+			                                                                          proxyConnected:([proxy state] == SPMySQLProxyConnected)];
+
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
 			// to allow it to disconnect.
-			if ([proxy state] != SPMySQLProxyIdle) {
+			if (!reuseProxy && [proxy state] != SPMySQLProxyIdle) {
 
                 SPLog(@"proxy not idle, waiting");
 
@@ -1164,7 +1420,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > [_proxyReconnectCoordinator idleWaitLimitForConnectTimeout:attemptConnectTimeout]) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
@@ -1178,9 +1434,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// Request that the proxy re-establishes its connection
             SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
 
-			[proxy connect];
+			if (!reuseProxy) [proxy connect];
 
 			// Wait while the proxy connects
+			SAProxyConnectWait *connectWait = [[SAProxyConnectWait alloc] initWithConnectTimeout:attemptConnectTimeout];
 			proxyWaitStart_t = _monotonicTime();
 			while (1) {
 				if ([self _abortCancelledReconnectWhileLocked]) return NO;
@@ -1197,8 +1454,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 					break;
 				}
 
-				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
+				// If the proxy connection attempt has run out of time, or ended without connecting, break out of the loop.
+				if (![connectWait shouldKeepWaitingAfter:_timeIntervalSinceMonotonicTime(proxyWaitStart_t)
+				                               proxyState:[proxy state]
+				                           attemptPending:connectionAttemptPending]) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;
@@ -1232,22 +1491,57 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If not using a proxy, or if the proxy successfully connected, trigger a connection
 		if (![[NSThread currentThread] isCancelled] && (!proxy || [proxy state] == SPMySQLProxyConnected)) {
+			// A host that is no longer routed swallows the connection attempt, so
+			// the attempt made before the user is asked runs on a short budget.
+			// Anything the user then triggers uses the full connection timeout.
+			if ([attemptBudget overridesConfiguredTimeout]) {
+				connectTimeoutOverride = attemptConnectTimeout;
+			}
 			[self _connect];
+			connectTimeoutOverride = 0;
+			reconnectingAfterFailedCheck = NO;
+			userEndedPendingWork = NO;
+			[self _recoverFromCancelledReconnectMayDisconnect:YES];
 		} else if ([[NSThread currentThread] isCancelled] && proxy) {
 			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
+			connectTimeoutOverride = 0;
+			reconnectingAfterFailedCheck = NO;
+			userEndedPendingWork = NO;
+			[self _recoverFromCancelledReconnectMayDisconnect:NO];
+		} else {
+			// The proxy never came up: no connection was attempted, and the short
+			// budgets must not outlive this attempt either.
+			connectTimeoutOverride = 0;
+			reconnectingAfterFailedCheck = NO;
+			userEndedPendingWork = NO;
 		}
 
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-			reconnectSucceeded = YES;
             [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
-            // When the connection is restored successfully, reset the relevant variables to prepare for the next time
-            databaseToRestore = nil;
-            encodingToRestore = nil;
-            encodingUsesLatin1TransportToRestore = NO;
+
+            // The user can stop waiting while the session is being restored, and the restoring
+            // queries then do not run. A half-restored session is dropped like one that came up
+            // too late, and the values to restore stay for the next attempt.
+            if ([[NSThread currentThread] isCancelled]) {
+
+                // Restoring clears the recorded time zone before setting it again, and that
+                // second step did not run. The next attempt takes its snapshot from the record.
+                if (![self.timeZoneIdentifier length] && [timeZoneIdentifierToRestore length]) {
+                    self.timeZoneIdentifier = timeZoneIdentifierToRestore;
+                }
+                [self _recoverFromCancelledReconnectMayDisconnect:YES];
+            } else {
+                reconnectSucceeded = YES;
+
+                // When the connection is restored successfully, reset the relevant variables to prepare for the next time
+                databaseToRestore = nil;
+                encodingToRestore = nil;
+                encodingUsesLatin1TransportToRestore = NO;
+            }
 		}
 			// If the connection failed and the connection is permitted to retry,
 			// then retry the reconnection.
@@ -1300,6 +1594,172 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 
 	return (state == SPMySQLConnected);
+}
+
+
+/**
+ * Applies what becomes of a connection whose reconnect ended while its thread was cancelled.
+ * The decision is SAConnectionCancellation's; this only carries it out.
+ *
+ * @param mayDisconnect Whether the caller is in a position to close a connection that came up.
+ */
+- (void)_recoverFromCancelledReconnectMayDisconnect:(BOOL)mayDisconnect
+{
+	SAConnectionRecoveryAction action = [SAConnectionCancellation recoveryAfterCancelledReconnectWithThreadCancelled:[[NSThread currentThread] isCancelled]
+	                                                                                               userDisconnected:userTriggeredDisconnect
+	                                                                                                    isConnected:(state == SPMySQLConnected)
+	                                                                                                 isDisconnected:(state == SPMySQLDisconnected)
+	                                                                                                  mayDisconnect:mayDisconnect];
+	switch (action) {
+		case SAConnectionRecoveryActionDiscardAndMarkLost:
+			[self _disconnectPreservingProxyReconnect:YES];
+			state = SPMySQLConnectionLostInBackground;
+			break;
+		case SAConnectionRecoveryActionMarkLost:
+			state = SPMySQLConnectionLostInBackground;
+			break;
+		case SAConnectionRecoveryActionNone:
+			break;
+	}
+}
+
+/**
+ * Whether connection work would actually move to another thread if it were handed over.
+ *
+ * Off the main thread there is nothing to protect, and without a delegate there is nothing that
+ * could show the wait or end it; the work then runs where it was asked for. Callers that hand
+ * their work over have to ask first, because work that runs where it was asked for would
+ * otherwise hand itself over again, and again.
+ *
+ * @return Whether handing work over would move it off the main thread.
+ */
+- (BOOL)_workShouldRunOffMainThread
+{
+	return [NSThread isMainThread] && delegateSupportsConnectionCheckProgress;
+}
+
+/**
+ * Runs connection work that may have to wait for a server, without freezing the interface.
+ *
+ * Away from the main thread the work runs where it was asked for. On the main thread it is
+ * handed to the connection's work coordinator, which runs it on a thread of its own; the
+ * delegate is asked to do the waiting from there, so the window keeps answering and the user
+ * can stop waiting.
+ *
+ * @param work The work to run. It must not expect to be on the main thread.
+ * @return What the work returned, or nil if the waiting ended before the work did.
+ */
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work
+{
+	if (![self _workShouldRunOffMainThread]) {
+		return work();
+	}
+
+	if (!connectionWorkCoordinator) {
+		connectionWorkCoordinator = [[SAConnectionWorkCoordinator alloc] init];
+	}
+
+	// Whatever was abandoned before, this is the work the caller will ask about next.
+	lastWorkWasAbandoned = NO;
+
+	// The stamp is read on other threads than the one counting queries, so it comes from the
+	// in-flight record, which takes each number under its lock as soon as it is counted.
+	SAConnectionWorkOutcome *outcome = [connectionWorkCoordinator runWork:work
+	                                                       operationStamp:^NSUInteger{
+		return [self currentQueryGeneration];
+	}
+	                                                             whenSlow:^(BOOL (^workHasFinished)(void)) {
+		self->connectionWorkWaitDepth++;
+		[self->delegate connection:self waitForConnectionWorkUntilFinished:workHasFinished];
+		self->connectionWorkWaitDepth--;
+	} whenAbandonedWorkFinishes:^(NSUInteger abandonedAtGeneration) {
+		[self->connectionCancellation settleAbandonedWorkFromGeneration:abandonedAtGeneration];
+	}];
+
+	// A streaming result keeps the connection until it has been read, and it is read here, on the
+	// thread that asked for it - which therefore holds the connection now, not the worker. A result
+	// store downloads on a thread of its own and gives the connection back there.
+	if ([outcome finished] && [[outcome result] isKindOfClass:[SPMySQLStreamingResult class]]
+	    && ![[outcome result] isKindOfClass:[SPMySQLStreamingResultStore class]]) {
+		[inFlightQuery noteConnectionHeldByCurrentThread:YES];
+	}
+
+	// Work the user stopped waiting for keeps running until the server or a timeout answers it.
+	// The caller is told the same thing a cancelled query tells it, because that is what this
+	// is: callers that judge by the error state rather than by the result see it too.
+	if (![outcome finished]) {
+		[self _recordWorkAsCancelled];
+		lastWorkWasAbandoned = YES;
+
+		// A session the work used outside a transaction is on its way out: the work closes it once it
+		// finishes, and may have changed it before. Nothing else uses it any more - a value escaped
+		// meanwhile is escaped for the session that replaces it. A session whose transaction was open
+		// before the work is kept instead, and only the stopped statement ends. The work recorded
+		// which of these it is before it first sent anything, so a transaction the stopped statement
+		// opens itself does not count.
+		if ([SAConnectionCancellation replacesSessionWhenWorkIsGivenUpWithSessionUse:[outcome sessionUse]]) {
+			sessionMustBeReplacedBeforeUse = YES;
+		}
+
+		return nil;
+	}
+
+	return [outcome result];
+}
+
+
+/**
+ * Records that work on this connection was cancelled, in the same way a cancelled query is
+ * recorded, so that everything which asks the connection what happened gets the same answer.
+ */
+- (void)_recordWorkAsCancelled
+{
+	lastQueryWasCancelled = YES;
+	[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+	[self _updateLastErrorID:1317];
+	[self _updateLastSqlstate:@"70100"];
+}
+
+/**
+ * Runs connection work whose answer is a plain yes or no. See -_runWorkKeepingInterfaceAlive:.
+ *
+ * @param work The work to run.
+ * @return What the work returned, or NO if the user stopped waiting before it finished.
+ */
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work
+{
+	NSNumber *result = [self _runWorkKeepingInterfaceAlive:^id{
+		return @(work());
+	}];
+
+	return [result boolValue];
+}
+
+/**
+ * Asks a recently used connection's socket whether its peer is still there, without
+ * sending anything over it. A query that goes out on a connection whose route has
+ * disappeared blocks the thread that runs it, so a socket that already reports the
+ * loss is worth the connection check the grace period would otherwise skip.
+ *
+ * @param idleTime Seconds since the connection last carried traffic.
+ * @return Whether the connection should be verified despite its recent use.
+ */
+- (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime
+{
+	if (state != SPMySQLConnected || !mySQLConnection) return NO;
+
+	// Only look while nothing else holds the connection: an active query is traffic
+	// of its own, and the thread running it owns the connection structure.
+	if (![self _tryLockConnection]) return NO;
+
+	BOOL shouldVerify = NO;
+	if (mySQLConnection && !mySQLConnection->net.reading_or_writing && mySQLConnection->net.vio) {
+		shouldVerify = [SAConnectionLivenessProbe shouldVerifyConnectionIdleFor:idleTime socket:mySQLConnection->net.fd];
+	}
+
+	[self _unlockConnection];
+
+	return shouldVerify;
 }
 
 /**
@@ -1368,6 +1828,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
+
+		// A session found lost in the background - by the keepalive, or by the proxy - keeps its
+		// handle until the next session replaces it, and the handle still reports what the session
+		// had open. The session is dropped here, on the way to a new one.
+		if (preserveProxyReconnect && [self _tryLockConnection]) {
+			[self _noteUncommittedWorkLostWithSession];
+			[self _unlockConnection];
+		}
 		state = SPMySQLDisconnected;
 	}
 
@@ -1382,8 +1850,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return;
 	}
 
-	// If a query is active, cancel it
-	[self cancelCurrentQuery];
+	// If a query is active, cancel it - without recording a request to stop it: a retry that is
+	// reconnecting would otherwise find that request and stop, although nobody asked it to.
+	[self _cancelCurrentQueryRecordingRequest:NO];
 
 	state = SPMySQLDisconnecting;
 
@@ -1400,6 +1869,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _unlockConnection];
 	[self _cancelKeepAlives];
 	[self _lockConnection];
+
+	// A session dropped on the way to a new one may take uncommitted work with it; the user is told
+	// before their next statement runs. One the user closes is theirs to close.
+	if (preserveProxyReconnect) {
+		[self _noteUncommittedWorkLostWithSession];
+	}
+
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.
@@ -1483,7 +1959,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self queryString:@"SET wait_timeout=600"];
 		}
 	}
-
 
     // Check the information_schema_stats_expiry timeout - if it's not zero, set it to 0
     // Otherwise, stats page will lag behind reality

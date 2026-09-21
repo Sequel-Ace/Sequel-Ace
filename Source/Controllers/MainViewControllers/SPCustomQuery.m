@@ -820,7 +820,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                                                          currentDatabase:databaseName
                                                                             serverVersion:serverVersion
                                                                           serverIsMariaDB:serverIsMariaDB]) {
+                // The lookup is the editor's own statement and may be retried like the application's
+                // others; a report about uncommitted work lost with an earlier session is left for the
+                // user's statement that follows, instead of being taken by this lookup.
+                [mySQLConnection setRetryQueriesOnConnectionFailure:YES];
                 id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                [mySQLConnection setRetryQueriesOnConnectionFailure:NO];
                 // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
                 databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
                 databaseNameCaseSensitivityWasLoaded = YES;
@@ -2195,19 +2200,25 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             }
             
             // If the field is of type BIT then it needs a binary prefix
+            // A value that cannot be written into the statement - a BIT value that is not only 0 and
+            // 1, or one that could not be escaped - leaves the row unidentified rather than matched
+            // against "(null)".
+            NSString *argumentValue;
             if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+                argumentValue = [SPFieldTypeClassifier bitLiteralForValue:[aValue description]];
             }
             else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+                argumentValue = [mySQLConnection escapeAndQuoteData:[aValue data]];
             }
             // BLOB/TEXT data
             else if ([aValue isKindOfClass:[NSData class]]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
+                argumentValue = [mySQLConnection escapeAndQuoteData:aValue];
             }
             else {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
+                argumentValue = [mySQLConnection escapeAndQuoteString:aValue];
             }
+            if (!argumentValue) return nil;
+            [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], argumentValue]];
         }
     }
     
@@ -2261,13 +2272,23 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             } else if ([columnTypeGroup isEqualToString:@"geometry"]) {
                 newObject = [(NSString*)anObject getGeomFromTextString];
             } else if ([columnTypeGroup isEqualToString:@"bit"]) {
-                newObject = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+                // A BIT value that is not only 0 and 1 is not written, like one that cannot be escaped.
+                // An empty value stands for 0, as it always did.
+                newObject = [SPFieldTypeClassifier bitLiteralForValue:([desc length] ? desc : @"0")];
             } else if ([columnTypeGroup isEqualToString:@"date"]
                        && [desc isEqualToString:@"NOW()"]) {
                 newObject = @"NOW()";
             } else {
                 newObject = [mySQLConnection escapeAndQuoteString:desc];
             }
+        }
+
+        // The value could not be escaped - the connection was not available, or the user stopped
+        // waiting for it. Nothing is written in its place. The cell is written at once and has no
+        // row edit to keep the value in, so the user is told, and can copy the value to enter it again.
+        if (!newObject) {
+            [SAUnsentValueAlert showWarningWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written.", @"message of panel when an edited cell value could not be prepared for writing, for example because the connection is not available") unsentValue:anObject];
+            return;
         }
 
         NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",

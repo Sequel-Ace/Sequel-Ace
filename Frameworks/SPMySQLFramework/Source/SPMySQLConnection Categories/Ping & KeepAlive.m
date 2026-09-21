@@ -31,6 +31,7 @@
 #import "Ping & KeepAlive.h"
 #import "SPMySQL Private APIs.h"
 #import "Locking.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import <pthread.h>
 #include <stdio.h>
 
@@ -54,8 +55,9 @@ typedef struct {
 - (void)_keepAlive
 {
 	// Do nothing if not connected, if keepalive is disabled, or a keepalive is in
-	// progress.
-	if (state != SPMySQLConnected || !useKeepAlive) return;
+	// progress. A session that is replaced before its next use is not kept alive either: a ping
+	// would only hold the connection, on a route that may have gone.
+	if (state != SPMySQLConnected || !useKeepAlive || sessionMustBeReplacedBeforeUse) return;
 
 	// Check to see whether a ping is required.  First, compare the last query
 	// and keepalive times against the keepalive interval.
@@ -149,6 +151,19 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
+	// The keepalive budget: as long as the connection timeout, with a minimum - a ping cut off
+	// before its answer costs the session.
+	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:[SAConnectionCheckBudget keepAlivePingTimeoutForConfiguredTimeout:timeout]];
+}
+
+/**
+ * As above, but with an explicit budget for the ping. A check that only has to
+ * find out whether the connection is still there uses a short one: on a dead
+ * route the read blocks until the budget runs out, and that time is time the
+ * caller - often the main thread - spends waiting.
+ */
+- (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay timeout:(NSUInteger)pingTimeout
+{
     SPLog(@"_pingConnectionUsingLoopDelay");
 
 	if (state != SPMySQLConnected) return NO;
@@ -169,10 +184,6 @@ end_cleanup:
 	volatile BOOL keepAliveLastPingSuccess = NO;
 	keepAliveLastPingBlocked = NO;
 	keepAlivePingThreadActive = YES;
-
-	// Use a ping timeout defaulting to thirty seconds, but using the connection timeout if set
-	NSUInteger pingTimeout = 30;
-	if (timeout > 0) pingTimeout = timeout;
 
 	// Set up a struct containing details the ping task will need
 	// we can do this on the stack since this method makes sure to outlive the ping thread
@@ -226,6 +237,14 @@ end_cleanup:
 
 	//wait for thread to go away, otherwise pingDetails may go away before _pingThreadCleanup() finishes
 	pthread_join(keepAlivePingThread_t, NULL);
+
+	// A ping cut off before its answer came may still get that answer, and the next statement would
+	// read it as its own. The session is replaced before it is used again; a transaction lost with it
+	// is reported like any other.
+	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
+	                                               pingSucceeded:keepAliveLastPingSuccess]) {
+		sessionMustBeReplacedBeforeUse = YES;
+	}
 
 	// Clean up
 	keepAlivePingThread_t = NULL;

@@ -354,6 +354,23 @@
 }
 
 /**
+ * Records that the user stopped loading the current table, so that its information and status are
+ * not asked for again - by a view that reads them lazily - until the table is loaded anew.
+ */
+- (void) recordLoadsStoppedForCurrentTable
+{
+	pthread_mutex_lock(&dataProcessingLock);
+	NSString *tableName = [tableListInstance tableName];
+	if (tableName) {
+		NSString *database = [tableListInstance selectedDatabase];
+		SPTableType tableType = [tableListInstance tableType];
+		[self _recordTableInformationLoadFailureForTable:tableName database:database tableType:tableType];
+		[self _recordStatusLoadFailureForTable:tableName database:database tableType:tableType];
+	}
+	pthread_mutex_unlock(&dataProcessingLock);
+}
+
+/**
  * Retrieve all known status values as a dictionary, using or refreshing the cache as appropriate.
  */
 - (NSDictionary *) statusValues
@@ -1203,12 +1220,17 @@
 
 			
 	// Check for any errors, only displaying them if the connection hasn't been terminated
+	// and the query was not one the user asked to stop.
 	if ([mySQLConnection queryErrored]) {
 		[self _recordStatusLoadFailureForTable:selectedTableName database:selectedDatabaseName tableType:selectedTableType];
 		if ([mySQLConnection isConnected]) {
-			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [self->mySQLConnection lastErrorMessage]] callback:nil];
-			});
+			if (![mySQLConnection lastQueryWasCancelled]) {
+				SPMainQSync(^{
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [self->mySQLConnection lastErrorMessage]] callback:nil];
+				});
+			}
+
+			// A cancelled query still leaves the temporary encoding behind.
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		}
 		pthread_mutex_unlock(&dataProcessingLock);
