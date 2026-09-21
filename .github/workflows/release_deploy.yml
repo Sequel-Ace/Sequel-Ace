@@ -136,6 +136,9 @@ jobs:
       packages: write
       pull-requests: write
     uses: ./.github/workflows/release.yml
+    # Work around actions/runner#4453: without inheritance, environment-only
+    # secrets resolve empty in the called job despite its environment binding.
+    secrets: inherit
     with:
       mode: start
       channel: ${{ inputs.channel }}
