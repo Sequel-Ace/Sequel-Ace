@@ -7,6 +7,9 @@
 
 
 ### Changed
+- Check release credentials and retry early artifacts ([71895e580](https://github.com/Sequel-Ace/Sequel-Ace/commit/71895e5804191ccbf3b0afd491911eb3e4ed3655), [#2702](https://github.com/Sequel-Ace/Sequel-Ace/pull/2702))
+- Retry validated stale public-feed reads during finalization ([b340af6c9](https://github.com/Sequel-Ace/Sequel-Ace/commit/b340af6c94563e422c583ad4dd84344cbac1ce48), [#2703](https://github.com/Sequel-Ace/Sequel-Ace/pull/2703))
+- Wait for stapled notarized artifacts before publishing ([152423f38](https://github.com/Sequel-Ace/Sequel-Ace/commit/152423f38766b372d05cbfb6f287084f3aa7cbc1), [#2704](https://github.com/Sequel-Ace/Sequel-Ace/pull/2704))
 - Finalize live App Store releases without submission scheduling checks ([8144cfc5d](https://github.com/Sequel-Ace/Sequel-Ace/commit/8144cfc5d29c7b7217381e6d969fe2150ab27992), [#2700](https://github.com/Sequel-Ace/Sequel-Ace/pull/2700))
 - Restore AWS RDS IAM and cleartext plugin authentication ([a73a15421](https://github.com/Sequel-Ace/Sequel-Ace/commit/a73a1542152f6bca052c75ade330a0242e5b0253), [#2679](https://github.com/Sequel-Ace/Sequel-Ace/pull/2679))
 - Stop reporting a Local Network denial for every error that mentions "network" ([67c33cefc](https://github.com/Sequel-Ace/Sequel-Ace/commit/67c33cefceffff74805f35239703299142136c28), [#2696](https://github.com/Sequel-Ace/Sequel-Ace/pull/2696))
