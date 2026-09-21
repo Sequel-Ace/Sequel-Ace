@@ -24,12 +24,6 @@ extension StringProtocol {
         let wanted = Set(scalars.unicodeScalars)
         return unicodeScalars.contains(where: wanted.contains)
     }
-
-    /// Whether the text holds a line feed or a carriage return, also as part of a
-    /// CRLF pair, which `contains("\n")` does not see.
-    var containsLineBreak: Bool {
-        containsAnyUnicodeScalar(of: "\n\r")
-    }
 }
 
 extension String {

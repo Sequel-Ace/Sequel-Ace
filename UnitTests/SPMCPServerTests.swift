@@ -676,24 +676,18 @@ final class SAMCPCSVTests: XCTestCase {
     }
 }
 
-/// `containsAnyUnicodeScalar(of:)` and `containsLineBreak` are the shared answer to
-/// Swift folding "\r\n" (and a quote plus a combining mark) into one Character.
+/// `containsAnyUnicodeScalar(of:)` is the shared answer to Swift folding "\r\n" (and a
+/// quote plus a combining mark) into one Character that `contains` does not match.
 final class SAStringUnicodeScalarSearchTests: XCTestCase {
-
-    /// Verifies the premise: Character-based `contains` misses both halves of a CRLF pair.
-    func testCharacterBasedContainsMissesACRLFPair() {
-        XCTAssertFalse("a\r\nb".contains("\n"))
-        XCTAssertFalse("a\r\nb".contains("\r"))
-    }
 
     /// Verifies that line breaks are found alone and inside a CRLF pair, and only then.
     func testLineBreaksAreFoundInEveryForm() {
-        XCTAssertTrue("a\r\nb".containsLineBreak)
-        XCTAssertTrue("a\nb".containsLineBreak)
-        XCTAssertTrue("a\rb".containsLineBreak)
-        XCTAssertTrue("SELECT 1;\r\n".containsLineBreak)
-        XCTAssertFalse("a\tb c".containsLineBreak)
-        XCTAssertFalse("".containsLineBreak)
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\n"))
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\r"))
+        XCTAssertTrue("a\nb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertTrue("a\rb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("a\tb c".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("".containsAnyUnicodeScalar(of: "\n\r"))
     }
 
     /// Verifies that any listed scalar is found, also when it is merged into a cluster
@@ -703,7 +697,8 @@ final class SAStringUnicodeScalarSearchTests: XCTestCase {
         XCTAssertTrue("x,y".containsAnyUnicodeScalar(of: ",\""))
         XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ",\""))
         XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ""))
-        XCTAssertTrue("ab"[..."a".endIndex].containsAnyUnicodeScalar(of: "a"))
+        XCTAssertTrue("ab".prefix(1).containsAnyUnicodeScalar(of: "a"))
+        XCTAssertFalse("ab".prefix(1).containsAnyUnicodeScalar(of: "b"))
     }
 }
 
