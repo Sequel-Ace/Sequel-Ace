@@ -19,7 +19,7 @@ module SequelAceRelease
         "artifact_owner" => "release_publish.yml",
         "next_action" => next_action(data)
       }
-      if data.fetch("state") == "cloud_running"
+      if %w[cloud_running failed].include?(data.fetch("state"))
         if @production_workflow_id.to_s.empty?
           result["cloud"] = { "queried" => false, "reason" => "production_workflow_id_not_configured" }
         else
@@ -88,6 +88,8 @@ module SequelAceRelease
       case data.fetch("state")
       when "cloud_running"
         "Inspect exact Cloud run and downloadable notarized resource through the ASC API"
+      when "failed"
+        "Inspect failure evidence and exact Cloud readiness; a successful existing Production build may use release_artifact_retry.yml"
       when "artifacts_verified"
         "Inspect github-public-assets-status; use the verified GHCR ZIP, do not rebuild or re-download Cloud artifacts"
       when "archived"

@@ -813,6 +813,26 @@ its number. Ordinary build failures remain preserved for an explicitly
 authorized resume; only a proven higher-number assignment receives the bounded
 automatic RC recovery described above.
 
+## Retry artifacts from an existing successful build
+
+If a publisher prematurely recorded failure before notarization completed,
+use `release_artifact_retry.yml` after inspecting the failed private manifest.
+Supply its SHA-256, exact production tag, existing release commit, exact
+successful Production Cloud run ID, and `RETRY ARTIFACTS <tag>` confirmation.
+This is an explicitly authorized same-build recovery, not a new RC or rebuild.
+
+The workflow requires unchanged live source/tag identity, no public assets or
+App Store version, and a completed successful run
+with the exact version/build and a downloadable stapled-notarized artifact.
+It preserves the original manifest bytes inside the private archive and records
+the failure, digest, actor, run, and recovery URL before rearming publication.
+Each later inspected failure can be authorized by its new fingerprint; recovery
+history and digest-named predecessor manifests remain preserved across retries.
+The normal publisher still performs every signing, notarization, architecture,
+launch, checksum, and App Store gate. Failed Cloud builds or build-number
+mismatches cannot use this recovery. A transient rearming failure leaves the
+validated `cloud_running` archive available for exact manual publisher dispatch.
+
 ## Artifacts, App Store submission, and finalization
 
 - Production artifacts must be universal `arm64`/`x86_64`, carry bundle ID
