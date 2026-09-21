@@ -522,12 +522,23 @@ validator's `socket peer rejected: <failure>`), the read timing out
 (`askpass request not understood`), and the reply write failing
 (`could not deliver the askpass reply`). Only the last is post-handler.
 
-Still unconfirmed which of the four, because of a logging trap worth fixing:
-the app's lines are prefixed `SSH tunnel:` (lowercase t) and the assistant's
-`SSH Tunnel:` (capital T). The reporter filtered on `"SSH Tunnel"` and
-`NSPredicate`'s `CONTAINS` is case-sensitive, so every app-side line was
-filtered out and only assistant lines came back. Ask with `CONTAINS[c]` and
-`process == "Sequel Ace"`.
+Still unconfirmed which of the four, and the reason is a diagnostics gap, not
+a filtering mistake. The reporter's log came from **Sequel Ace's own SSH debug
+window**, which `standardErrorHandler:` fills from one source: the ssh task's
+stderr. The assistant's messages land there because it inherits ssh's stderr;
+the app's own refusal messages went to `NSLog` in the app process and could
+never appear in that window at all. So the window showed half the
+conversation, and the half naming the cause was structurally missing. (A
+first reading blamed `NSPredicate`'s case-sensitive `CONTAINS` against the
+`SSH tunnel:` / `SSH Tunnel:` prefix split — wrong: no predicate was
+involved.)
+
+Fixed here: `SASSHTunnelSocketServer` and `assistantPeerPolicy` take a
+diagnostic sink instead of calling `NSLog` directly, and `SPSSHTunnel` passes
+one that mirrors every refusal into `debugMessages` (weakly, and through a
+lock — the server reports from its service queue). The next report of this
+shape arrives with the cause already in the pasted window. The prefix split is
+still worth normalising, but it was never the blocker.
 
 The rollback also fixed the structural fault the incident exposed, which is
 the more important half: the fallback was one-sided. The app degrades to DO
@@ -559,13 +570,13 @@ request. A run is repeated only when every attempt either never reached the
 app or could not have prompted; one sheet-backed request anywhere in the run
 rules it out, because a repeat redoes the whole run.
 
-Deliberately *not* fixed here: the `SSH tunnel:` / `SSH Tunnel:` prefix split
-above. Normalising it is a one-line-per-call-site change, but it would make
-every future log line differ from what 6.0.0 users are pasting into #2689
-while that incident is still open. Worth doing once the incident closes, in
-its own `#infra` PR, along with deciding whether the assistant should name the
-transport it used in its failure lines — the reporter's log says `noReply` but
-not that it came from the socket.
+Deliberately *not* fixed here: the `SSH tunnel:` / `SSH Tunnel:` prefix split.
+Normalising it is a one-line-per-call-site change, but it would make every
+future log line differ from what 6.0.0 users are pasting into #2689 while that
+incident is still open. Worth doing once it closes, in its own `#infra` PR,
+along with deciding whether the assistant should name the transport in its
+failure lines — the reporter's log says `noReply` but not that it came from
+the socket, which cost a round trip to establish.
 
 **5b (#2623) must not merge until 5a is re-flipped and has actually soaked.**
 Deleting DO now would delete the rollback that is currently carrying every

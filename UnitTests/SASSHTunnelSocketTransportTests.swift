@@ -343,6 +343,56 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         XCTAssertEqual(handled, 0)
     }
 
+    /// Every reason the app refuses a connection has to reach the tunnel's
+    /// diagnostic sink, because that is what lands in the debug window a user
+    /// pastes into a bug report. Issue #2689 stalled precisely here: the
+    /// window only carries ssh's stderr, so the app-side reason was invisible
+    /// and the reporter could only supply the assistant's half.
+    func testRefusalReasonsReachTheDiagnosticSink() throws {
+        let sink = Sink()
+
+        let rejecting = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()],
+                                                    handler: Self.echo,
+                                                    peerPolicy: { _ in false },
+                                                    log: sink.record)
+        servers.append(rejecting)
+        _ = try? SASSHTunnelSocketClient(path: rejecting.path).send(.password(verificationHash: "h"))
+
+        let garbled = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()],
+                                                  handler: Self.echo,
+                                                  log: sink.record)
+        servers.append(garbled)
+        let raw = try rawConnection(to: garbled.path)
+        XCTAssertTrue(SASSHTunnelSocketIO.writeAll(raw, Data("this is not json\n".utf8)))
+        _ = SASSHTunnelSocketIO.readLine(raw)
+        close(raw)
+
+        let deadline = Date().addingTimeInterval(2)
+        while sink.messages.count < 2 && Date() < deadline { Thread.sleep(forTimeInterval: 0.02) }
+
+        XCTAssertTrue(sink.messages.contains { $0.contains("failed peer validation") },
+                      "got \(sink.messages)")
+        XCTAssertTrue(sink.messages.contains { $0.contains("not understood") },
+                      "got \(sink.messages)")
+    }
+
+    /// The server reports from its concurrent service queue, so the sink is
+    /// called off the main thread and must be safe to share.
+    private final class Sink {
+        private let lock = NSLock()
+        private var storage: [String] = []
+
+        func record(_ message: String) {
+            lock.lock(); defer { lock.unlock() }
+            storage.append(message)
+        }
+
+        var messages: [String] {
+            lock.lock(); defer { lock.unlock() }
+            return storage
+        }
+    }
+
     // MARK: - Raw socket helpers
 
     private func rawConnection(to path: String) throws -> Int32 {
