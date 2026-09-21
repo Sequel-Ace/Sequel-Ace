@@ -895,7 +895,8 @@ asm(".desc ___crashreporter_info__, 0x10");
     
 	// Allow using ENABLE CLEARTEXT PLUGIN; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/368
 	if (enableClearTextPlugin) {
-		mysql_options(theConnection, MYSQL_ENABLE_CLEARTEXT_PLUGIN, [@"On" UTF8String]);
+		bool trueMyBool = TRUE;
+		mysql_options(theConnection, MYSQL_ENABLE_CLEARTEXT_PLUGIN, &trueMyBool);
 	}
 
 	if (requestServerPublicKey) {
