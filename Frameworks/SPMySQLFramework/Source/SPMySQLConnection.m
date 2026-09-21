@@ -925,7 +925,26 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (password) {
 		thePassword = [password cStringUsingEncoding:connectEncodingNS];
 	} else if ([delegate respondsToSelector:@selector(keychainPasswordForConnection:)]) {
-        thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
+		NSString *delegatePassword = [delegate keychainPasswordForConnection:self];
+
+		// A non-empty delegate message abandons the attempt without contacting the server.
+		if (!delegatePassword && [delegate respondsToSelector:@selector(credentialErrorMessageForConnection:)]) {
+			NSString *credentialError = [delegate credentialErrorMessageForConnection:self];
+
+			if ([credentialError length]) {
+				if (isMaster) {
+					[self _updateLastErrorMessage:credentialError];
+					[self _updateLastErrorID:CR_UNKNOWN_ERROR];
+					[self _updateLastSqlstate:@"HY000"];
+				}
+
+				mysql_close(theConnection);
+
+				return NULL;
+			}
+		}
+
+		thePassword = [delegatePassword cStringUsingEncoding:connectEncodingNS];
 	}
 
 	// If set to use a socket and a socket was supplied, use it; otherwise, search for a socket to use
