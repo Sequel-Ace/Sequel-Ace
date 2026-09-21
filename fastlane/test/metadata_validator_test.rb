@@ -97,14 +97,67 @@ class MetadataValidatorTest < Minitest::Test
   end
 
   def test_live_gate_requires_distribution_and_active_phase
-    assert @validator.validate!(
-      snapshot: metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE"),
-      expected_build: 20_105,
-      require_live: true
-    )
+    snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+
+    assert @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
 
     assert_raises(SequelAceRelease::ValidationError) do
       @validator.validate!(snapshot: metadata_snapshot, expected_build: 20_105, require_live: true)
+    end
+  end
+
+  def test_live_gate_ignores_submission_only_release_type_and_date
+    ["MANUAL", "AFTER_APPROVAL"].each do |release_type|
+      snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+      snapshot["version"]["attributes"]["releaseType"] = release_type
+      snapshot["version"]["attributes"].delete("earliestReleaseDate")
+
+      assert @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
+    end
+
+    snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    snapshot["version"]["attributes"].delete("releaseType")
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+    assert @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
+  end
+
+  def test_live_gate_keeps_distribution_phase_build_and_ratings_checks
+    snapshot = metadata_snapshot(state: "PREPARE_FOR_SUBMISSION", phased_state: "ACTIVE")
+    snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+    assert_raises(SequelAceRelease::ValidationError) do
+      @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
+    end
+
+    snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "INACTIVE")
+    snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+    assert_raises(SequelAceRelease::ValidationError) do
+      @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
+    end
+
+    snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+    snapshot["selected_build"]["attributes"]["version"] = "20106"
+    assert_raises(SequelAceRelease::ValidationError) do
+      @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
+    end
+
+    snapshot["selected_build"]["attributes"]["version"] = "20105"
+    snapshot["reset_ratings_request"] = { "id" => "reset-request" }
+    assert_raises(SequelAceRelease::ValidationError) do
+      @validator.validate!(snapshot: snapshot, expected_build: 20_105, require_live: true)
+    end
+  end
+
+  def test_submission_requires_scheduled_release_type
+    snapshot = metadata_snapshot
+    snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+    assert_raises(SequelAceRelease::ValidationError) do
+      @validator.validate!(snapshot: snapshot, expected_build: 20_105)
     end
   end
 

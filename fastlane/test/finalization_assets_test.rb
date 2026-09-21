@@ -74,7 +74,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_validate_only_does_not_make_the_public_github_transition
-    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = non_scheduled_live_snapshot
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) do |app_id:, version:|
       raise "wrong app" unless app_id == SequelAceRelease::Config::PRODUCTION_APP_ID
@@ -121,7 +121,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_clears_prerelease_and_marks_release_latest
-    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = non_scheduled_live_snapshot
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -642,6 +642,13 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   private
+
+  def non_scheduled_live_snapshot
+    metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE").tap do |snapshot|
+      snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+      snapshot["version"]["attributes"].delete("earliestReleaseDate")
+    end
+  end
 
   def release
     github_release_payload(

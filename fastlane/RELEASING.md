@@ -880,6 +880,10 @@ automatic RC recovery described above.
   public transition. The update repeats the exact tag and archived commit, then
   revalidates the tag, authenticated release, anonymous release feed, assets,
   and latest-release endpoint before accepting success.
+  `SCHEDULED` and the minimum release date are submission-only checks. Live
+  finalization and live status inspection use distribution and phased-release
+  state instead of requiring the version to retain its submission schedule;
+  selected-build, metadata, and ratings-preservation checks still apply.
 - Every transport failure, rate limit, unavailable archive, or failed
   post-transition readback leaves the exact wake tag armed and the durable
   archive at its last retryable checkpoint. The next scheduled run therefore
