@@ -17,11 +17,17 @@
 - (NSDictionary *)serializedFilter;
 - (void)setColumns:(NSArray *)dataColumns;
 - (BOOL)appendFilterForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull;
+/** Seeds the unchecked starter row, as the content view does on a table switch. */
 - (void)addStarterFilterExpression;
+/** The drop zone's "add a filter" click. */
 - (void)addEmptyFilterRow;
+/** Enables or disables the rule editor. */
 - (void)setEnabled:(BOOL)enabled;
+/** Called while the user types into an argument field. */
 - (void)controlTextDidChange:(NSNotification *)notification;
+/** Called when the user clicks a row's enable checkbox. */
 - (IBAction)_checkboxClicked:(id)sender;
+/** The WHERE clause the enabled rules produce. */
 - (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
 @end
 
@@ -143,6 +149,50 @@
 	XCTAssertEqual([editor numberOfRows], 1);
 	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOn);
 	XCTAssertTrue([[self whereOf:controller] containsString:@"7"]);
+}
+
+/**
+ * Verifies that the starter row still waits for its first edit after the filter is saved and restored, as
+ * on a reload or a return to the table - otherwise a value typed into it would silently not be applied.
+ */
+- (void)testTheStarterRowWaitsForItsFirstEditAfterARestore
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller addStarterFilterExpression];
+	NSDictionary *saved = [controller serializedFilter];
+
+	[controller restoreSerializedFilters:saved];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+	XCTAssertEqual([editor numberOfRows], 1);
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOff);
+	XCTAssertEqual([[self whereOf:controller] length], 0u);
+
+	NSTextField *field = [self firstTextFieldInRow:0 of:editor];
+	[field setStringValue:@"5"];
+	[controller controlTextDidChange:[NSNotification notificationWithName:NSControlTextDidChangeNotification object:field]];
+
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOn);
+	XCTAssertTrue([[self whereOf:controller] containsString:@"5"]);
+}
+
+/**
+ * Verifies that a drop that cannot become a rule leaves the starter row unchecked and waiting.
+ */
+- (void)testARejectedDropLeavesTheStarterRowAlone
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller setEnabled:YES];
+	[controller addStarterFilterExpression];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+
+	XCTAssertFalse([controller appendFilterForColumn:@"no_such_column" value:@"7" isNull:NO]);
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOff);
+	XCTAssertEqual([[self whereOf:controller] length], 0u);
+
+	// Still waiting: the first edit checks it.
+	[controller addEmptyFilterRow];
+	XCTAssertEqual([editor numberOfRows], 1);
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOn);
 }
 
 /** The WHERE clause the controller would apply; empty when nothing is enabled. */

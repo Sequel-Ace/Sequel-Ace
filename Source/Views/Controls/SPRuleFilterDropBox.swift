@@ -238,6 +238,16 @@ enum SARuleFilterDropBoxClickPolicy {
 
     override public var acceptsFirstResponder: Bool { false }
 
+    /// Every click inside the zone belongs to the zone itself. The chevron is an
+    /// image view - an `NSControl` - that would otherwise take a click on it
+    /// and never pass it on.
+    ///
+    /// - Parameter point: The point in the superview's coordinates.
+    /// - Returns: This view for any point inside it, otherwise `nil`.
+    override public func hitTest(_ point: NSPoint) -> NSView? {
+        return super.hitTest(point) == nil ? nil : self
+    }
+
     override public func resetCursorRects() {
         addCursorRect(bounds, cursor: .pointingHand)
     }

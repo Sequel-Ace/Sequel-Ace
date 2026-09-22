@@ -68,6 +68,73 @@ enum SARuleFilterContextMenu {
     }
 }
 
+/// Tracks the filter row the content view seeds when another table is
+/// selected. The row starts unchecked: it is an empty template, not a filter,
+/// and a checked one made the WHERE preview show `column = ''` while the table
+/// was unfiltered. Its first edit checks it; a click on its checkbox is the
+/// user's own decision and ends the tracking. Only a weak reference to the
+/// row's checkbox is kept, so a removed or replaced row simply stops being
+/// tracked; the controller records the state in the saved filter so a restored
+/// row is tracked again.
+@objc public final class SARuleFilterPendingStarter: NSObject {
+    /// The seeded row's checkbox while the row waits for its first edit.
+    @objc public private(set) weak var checkbox: NSButton?
+
+    /// Tracks `checkbox` as the seeded row's and unchecks it.
+    ///
+    /// - Parameter checkbox: The row's enable checkbox.
+    @objc(beginWithCheckbox:)
+    public func begin(with checkbox: NSButton) {
+        checkbox.state = .off
+        self.checkbox = checkbox
+    }
+
+    /// Stops tracking, e.g. because the user clicked the row's checkbox.
+    @objc public func forget() {
+        checkbox = nil
+    }
+
+    /// Whether `value` is the tracked checkbox.
+    ///
+    /// - Parameter value: A display value of the rule editor.
+    /// - Returns: Whether it is the seeded row's checkbox.
+    @objc public func isCheckbox(_ value: Any?) -> Bool {
+        guard let checkbox, let button = value as? NSButton else { return false }
+        return button === checkbox
+    }
+
+    /// The tracked row's index, or `NSNotFound` when there is none any more.
+    ///
+    /// - Parameter editor: The rule editor holding the row.
+    /// - Returns: The row index.
+    @objc(rowInEditor:)
+    public func row(in editor: NSRuleEditor) -> Int {
+        guard let checkbox else { return NSNotFound }
+        let row = editor.row(forDisplayValue: checkbox)
+        guard row != NSNotFound, row >= 0 else {
+            self.checkbox = nil
+            return NSNotFound
+        }
+        return row
+    }
+
+    /// Checks the tracked row when `row` is that row and stops tracking it:
+    /// editing the row means filtering by it.
+    ///
+    /// - Parameters:
+    ///   - row: The row that is being edited.
+    ///   - editor: The rule editor holding it.
+    /// - Returns: Whether the tracked row was checked.
+    @objc(enableIfRow:inEditor:)
+    public func enableIfRow(_ row: Int, in editor: NSRuleEditor) -> Bool {
+        let tracked = self.row(in: editor)
+        guard tracked != NSNotFound, row == tracked, let checkbox else { return false }
+        checkbox.state = .on
+        self.checkbox = nil
+        return true
+    }
+}
+
 /// Keeps the rule editor's visibility setter free of model mutations when it
 /// is only reapplying an already-visible state during table reloads.
 @objc public final class SARuleFilterVisibilityPolicy: NSObject {
