@@ -1665,8 +1665,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 }
 
 /**
- * The drop zone's "add a filter" click: checks the waiting starter row when there is one, otherwise appends
- * an empty row at the end.
+ * The drop zone's "add a filter" click: checks an unchecked row without a value when there is one - the
+ * waiting starter row or a row unchecked again - otherwise appends an empty row at the end.
  */
 - (void)addEmptyFilterRow
 {
@@ -1678,12 +1678,22 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// insert-at-0 semantics.
 	if (!enabled || ![columns count]) return;
 
-	// The unchecked starter row is the empty filter this click asks for: check it rather than
-	// adding a second, identical row next to it.
-	NSInteger starterRow = [self.pendingStarter rowInEditor:filterRuleEditor];
-	if (starterRow != NSNotFound) {
-		[self _enablePendingStarterInRow:starterRow];
-		[self focusFirstInputField];
+	// An unchecked row without a value - the starter row, or one the user unchecked again - is the
+	// empty filter this click asks for: check it rather than adding a second one next to it.
+	NSInteger emptyRow = [SARuleFilterPendingStarter reusableEmptyRowInEditor:filterRuleEditor];
+	if (emptyRow != NSNotFound) {
+		if ([self.pendingStarter rowInEditor:filterRuleEditor] == emptyRow) [self.pendingStarter forget];
+		NSArray *values = [filterRuleEditor displayValuesForRow:emptyRow];
+		[(NSButton *)[values firstObject] setState:NSControlStateValueOn];
+		[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:emptyRow]];
+		[self _updateButtonStates];
+		[self _updateFilterPreview];
+		for (id value in values) {
+			if ([value isKindOfClass:[NSTextField class]]) {
+				[[(NSTextField *)value window] makeFirstResponder:value];
+				break;
+			}
+		}
 		return;
 	}
 

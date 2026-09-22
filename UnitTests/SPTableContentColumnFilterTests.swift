@@ -253,6 +253,47 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertEqual(editor.numberOfRows, 2, "with no row waiting, the click adds one as before")
     }
 
+    /// Verifies that "add a filter" also reuses the row after the user unchecked it again, rather than
+    /// adding a second empty row next to it.
+    func testAddingAFilterReusesARowUncheckedAgain() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+
+        call(controller, "addEmptyFilterRow")
+        let box = try XCTUnwrap(checkbox(in: editor))
+        XCTAssertEqual(box.state, .on)
+        box.state = .off
+        controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
+
+        call(controller, "addEmptyFilterRow")
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+    }
+
+    /// Verifies that an unchecked row with a value, and one whose operator takes no value, are filters set
+    /// aside: "add a filter" leaves them alone and adds a row.
+    func testAddingAFilterLeavesSetAsideFiltersAlone() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+        type("5", into: editor, of: controller)
+        let box = try XCTUnwrap(checkbox(in: editor))
+        box.state = .off
+        controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
+
+        call(controller, "addEmptyFilterRow")
+        XCTAssertEqual(editor.numberOfRows, 2)
+        XCTAssertEqual(checkbox(in: editor)?.state, .off, "the set-aside `id = 5` stays unchecked")
+
+        let isNullRow: [String: Any] = ["filterClass": "expressionNode", "column": "id", "filterComparison": "IS NULL", "filterValues": [String](), "enabled": false]
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: isNullRow)
+        XCTAssertEqual(editor.numberOfRows, 1)
+        call(controller, "addEmptyFilterRow")
+        XCTAssertEqual(editor.numberOfRows, 2)
+        XCTAssertEqual(checkbox(in: editor)?.state, .off, "the set-aside IS NULL stays unchecked")
+    }
+
     /// Verifies a dropped value replaces the seeded row and comes out checked, although the rule editor
     /// reuses the replaced row's checkbox; a drop that cannot become a rule leaves the row waiting.
     func testDroppedValuesAndTheSeededRow() throws {

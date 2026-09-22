@@ -29,9 +29,9 @@ import Cocoa
     func replaceFilter(at row: Int, forColumn columnName: String, value: String?, isNull: Bool) -> Bool
 
     /// Insert an empty filter row (same as clicking the "+" button), or check
-    /// the unchecked starter row when there is one instead of adding a second
-    /// empty row. Used when the user clicks the drop box instead of dropping
-    /// onto it.
+    /// an unchecked row without a value when there is one instead of adding a
+    /// second empty row (see `SARuleFilterPendingStarter.reusableEmptyRow`).
+    /// Used when the user clicks the drop box instead of dropping onto it.
     @objc(addEmptyFilterRow)
     func addEmptyFilterRow()
 
@@ -116,6 +116,28 @@ enum SARuleFilterContextMenu {
             return NSNotFound
         }
         return row
+    }
+
+    /// The first top-level row that is an unchecked, empty filter - it has
+    /// value fields and nothing is typed into any of them - or `NSNotFound`.
+    /// "Add Filter" checks such a row instead of adding a second empty one next
+    /// to it, whether it is the seeded starter row or a row the user unchecked
+    /// again. An unchecked row with a value, or one whose operator takes none
+    /// (`IS NULL`), is a filter set aside and is left alone.
+    ///
+    /// - Parameter editor: The rule editor to search.
+    /// - Returns: The row index.
+    @objc(reusableEmptyRowInEditor:)
+    public static func reusableEmptyRow(in editor: NSRuleEditor) -> Int {
+        for row in 0..<editor.numberOfRows where editor.parentRow(forRow: row) == -1 && editor.rowType(forRow: row) == .simple {
+            let values = editor.displayValues(forRow: row)
+            guard let checkbox = values.first as? NSButton, checkbox.state == .off else { continue }
+            let fields = values.compactMap { $0 as? NSTextField }
+            if !fields.isEmpty && fields.allSatisfy({ $0.stringValue.isEmpty }) {
+                return row
+            }
+        }
+        return NSNotFound
     }
 
     /// Checks the tracked row when `row` is that row and stops tracking it:
