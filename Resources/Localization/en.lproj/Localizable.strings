@@ -122,6 +122,18 @@
 /* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
 ", taking %1$@" = ", taking %1$@";
 
+/* Query editor : vim mode : insert mode badge */
+"-- INSERT --" = "-- INSERT --";
+
+/* Query editor : vim mode : normal mode badge */
+"-- NORMAL --" = "-- NORMAL --";
+
+/* Query editor : vim mode : visual mode badge */
+"-- VISUAL --" = "-- VISUAL --";
+
+/* Query editor : vim mode : visual line mode badge */
+"-- VISUAL LINE --" = "-- VISUAL LINE --";
+
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
@@ -471,6 +483,9 @@
 
 /* allow nonexistent definer privilege checkbox title */
 "Nonexistent Definer" = "Nonexistent Definer";
+
+/* Query editor : vim mode : badge text for a key this layer does not implement */
+"not supported" = "not supported";
 
 /* revoke privilege operation */
 "revoke" = "revoke";

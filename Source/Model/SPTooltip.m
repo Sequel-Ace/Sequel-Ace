@@ -30,6 +30,7 @@
 
 //	Usage:
 //	#import "SPTooltip.h"
+#import "SPTextView.h"
 //
 //	[SPTooltip showWithObject:@"<h1>Hello</h1>I am a <b>tooltip</b>" ofType:@"html"
 //			displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
@@ -324,7 +325,7 @@ static CGFloat slow_in_out (CGFloat t)
 	id fr = [[NSApp keyWindow] firstResponder];
 
 	//If first responder is a textview return the caret position
-	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSTextAlignmentLeft) || [[[fr class] description] isEqualToString:@"SPTextView"]) {
+	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSTextAlignmentLeft) || [fr isKindOfClass:[SPTextView class]]) {
 		NSTextView *frTextView = (NSTextView *)fr;
 		NSRange range = NSMakeRange([frTextView selectedRange].location,1);
 		NSRange glyphRange = [[frTextView layoutManager] glyphRangeForCharacterRange:range actualCharacterRange:NULL];
