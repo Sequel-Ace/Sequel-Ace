@@ -195,6 +195,197 @@ final class SARuleFilterDropBoxClickTests: XCTestCase {
     }
 }
 
+/// The row seeded when another table is selected starts unchecked: it is an empty
+/// template, and a checked one made the WHERE preview show `column = ''` while the
+/// table was unfiltered. Its first edit checks it, and it keeps waiting across
+/// reloads. The controller is Objective-C without a bridging header in this target,
+/// so it is driven through selectors and KVC.
+final class SARuleFilterPendingStarterTests: XCTestCase {
+
+    /// Verifies the seeded row starts unchecked and is no filter.
+    func testSeededStarterRowStartsUncheckedAndIsNoFilter() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .off)
+        XCTAssertEqual(whereClause(of: controller), "")
+    }
+
+    /// Verifies typing a value into the seeded row checks it, so Apply filters by it.
+    func testTypingIntoTheStarterRowChecksIt() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+
+        type("5", into: editor, of: controller)
+
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("5"), whereClause(of: controller))
+    }
+
+    /// Verifies a click on the seeded row's checkbox is the user's choice and later typing leaves it alone.
+    func testAClickOnTheStarterCheckboxIsRespected() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+        let box = try XCTUnwrap(checkbox(in: editor))
+
+        box.state = .on
+        controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
+        box.state = .off
+        controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
+        type("5", into: editor, of: controller)
+
+        XCTAssertEqual(box.state, .off)
+        XCTAssertEqual(whereClause(of: controller), "")
+    }
+
+    /// Verifies the drop zone's "add a filter" click checks the seeded row instead of adding a second one.
+    func testAddingAFilterUsesTheSeededRow() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+
+        call(controller, "addEmptyFilterRow")
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+
+        call(controller, "addEmptyFilterRow")
+        XCTAssertEqual(editor.numberOfRows, 2, "with no row waiting, the click adds one as before")
+    }
+
+    /// Verifies a dropped value replaces the seeded row and comes out checked, although the rule editor
+    /// reuses the replaced row's checkbox; a drop that cannot become a rule leaves the row waiting.
+    func testDroppedValuesAndTheSeededRow() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+
+        XCTAssertFalse(appendFilter(to: controller, column: "no_such_column", value: "7"))
+        XCTAssertEqual(checkbox(in: editor)?.state, .off)
+        XCTAssertEqual(whereClause(of: controller), "")
+
+        XCTAssertTrue(appendFilter(to: controller, column: "id", value: "7"))
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("7"))
+    }
+
+    /// Verifies the seeded row still waits for its first edit after the filter is saved and restored, as
+    /// on a reload or a return to the table, and after the criteria are reloaded, as after "Edit Filters…".
+    func testTheSeededRowKeepsWaitingAcrossRestoreAndCriteriaReload() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: saved)
+        editor.reloadCriteria()
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .off)
+        XCTAssertEqual(whereClause(of: controller), "")
+
+        type("5", into: editor, of: controller)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("5"))
+    }
+
+    /// Verifies the persisted marker is a plain plist key that older readers ignore, and that an unchecked
+    /// empty row saved by an older version - without the marker - restores as a plain unchecked row that
+    /// typing does not check.
+    func testPendingMarkerWireFormatAndLegacyRows() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+
+        let data = try PropertyListSerialization.data(fromPropertyList: saved, format: .xml, options: 0)
+        let decoded = try XCTUnwrap(try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any])
+        let leaf = try XCTUnwrap(leaves(of: decoded).first)
+        XCTAssertEqual(leaf["pendingStarter"] as? Bool, true)
+        XCTAssertEqual(leaf["enabled"] as? Bool, false, "older readers see an unchecked row")
+        XCTAssertEqual(leaf["column"] as? String, "id")
+
+        // What an older version wrote for an unchecked empty row.
+        let legacyRow: [String: Any] = [
+            "filterClass": "expressionNode",
+            "column": "id",
+            "filterComparison": "=",
+            "filterValues": [""],
+            "enabled": false,
+        ]
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: legacyRow)
+        XCTAssertEqual(checkbox(in: editor)?.state, .off)
+        type("5", into: editor, of: controller)
+        XCTAssertEqual(checkbox(in: editor)?.state, .off, "a legacy unchecked row is the user's, not a waiting starter")
+        XCTAssertEqual(whereClause(of: controller), "")
+    }
+
+    // MARK: - Helpers
+
+    /// An `SPRuleFilterController` for one integer column `id`, whose rule editor is set up and bound to the
+    /// controller's model the way DBView.xib and `-awakeFromNib` do it.
+    private func makeBoundController() throws -> (NSObject, NSRuleEditor) {
+        let controllerClass = try XCTUnwrap(NSClassFromString("SPRuleFilterController") as? NSObject.Type)
+        let controller = controllerClass.init()
+        let editor = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 600, height: 120))
+        editor.nestingMode = .compound
+        editor.canRemoveAllRows = true
+        editor.delegate = controller as? NSRuleEditorDelegate
+        controller.setValue(editor, forKey: "filterRuleEditor")
+        controller.perform(NSSelectorFromString("setColumns:"), with: [["name": "id", "typegrouping": "integer"]])
+        call(controller, "awakeFromNib")
+        return (controller, editor)
+    }
+
+    /// Sends a selector without arguments.
+    private func call(_ controller: NSObject, _ selector: String) {
+        controller.perform(NSSelectorFromString(selector))
+    }
+
+    /// The enable checkbox of the first row.
+    private func checkbox(in editor: NSRuleEditor) -> NSButton? {
+        return editor.displayValues(forRow: 0).first as? NSButton
+    }
+
+    /// Types `value` into the first row's argument field, as the user would.
+    private func type(_ value: String, into editor: NSRuleEditor, of controller: NSObject) {
+        guard let field = editor.displayValues(forRow: 0).compactMap({ $0 as? NSTextField }).first else {
+            XCTFail("the row has no argument field")
+            return
+        }
+        field.stringValue = value
+        controller.perform(NSSelectorFromString("controlTextDidChange:"),
+                           with: Notification(name: NSControl.textDidChangeNotification, object: field))
+    }
+
+    /// The WHERE clause the enabled rules produce; empty when none is enabled.
+    private func whereClause(of controller: NSObject) -> String {
+        let selector = NSSelectorFromString("sqlWhereExpressionWithBinary:error:")
+        typealias SAWhereFunction = @convention(c) (NSObject, Selector, Bool, AutoreleasingUnsafeMutablePointer<NSError?>?) -> NSString?
+        let function = unsafeBitCast(controller.method(for: selector), to: SAWhereFunction.self)
+        return (function(controller, selector, false, nil) as String?) ?? ""
+    }
+
+    /// Calls `-appendFilterForColumn:value:isNull:`, the drop of a cell onto the drop zone.
+    private func appendFilter(to controller: NSObject, column: String, value: String) -> Bool {
+        let selector = NSSelectorFromString("appendFilterForColumn:value:isNull:")
+        typealias SAAppendFunction = @convention(c) (NSObject, Selector, NSString, NSString?, Bool) -> Bool
+        let function = unsafeBitCast(controller.method(for: selector), to: SAAppendFunction.self)
+        return function(controller, selector, column as NSString, value as NSString, false)
+    }
+
+    /// Calls `-serializedFilter`.
+    private func serializedFilter(of controller: NSObject) -> [String: Any]? {
+        return controller.perform(NSSelectorFromString("serializedFilter"))?.takeUnretainedValue() as? [String: Any]
+    }
+
+    /// The expression leaves of a serialized filter tree.
+    private func leaves(of filter: [String: Any]) -> [[String: Any]] {
+        if filter["filterClass"] as? String == "expressionNode" {
+            return [filter]
+        }
+        return (filter["children"] as? [[String: Any]] ?? []).flatMap { leaves(of: $0) }
+    }
+}
+
 final class SARuleFilterBottomBarLayoutTests: XCTestCase {
 
     /// Verifies rows sit above a fully reserved bottom bar (drop zone shown).

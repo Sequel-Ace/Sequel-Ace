@@ -1912,7 +1912,12 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		// for backwards compatibility. this key was added later
 		//                        vvvvvvvvvvvvv
 		[enabler setInitialState:(!enabledValue || [enabledValue boolValue])];
-		[enabler setPendingStarter:[[serialized objectForKey:SerFilterExprPendingStarter] boolValue]];
+		if ([[serialized objectForKey:SerFilterExprPendingStarter] boolValue]) {
+			// Unchecked through the tracker when its checkbox is created. The node itself stays like a
+			// fresh row's, so reloading the criteria (after "Edit Filters…") keeps the row and its checkbox.
+			[enabler setInitialState:YES];
+			[enabler setPendingStarter:YES];
+		}
 		[criteria addObject:enabler];
 
 		// add column
