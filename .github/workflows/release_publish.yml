@@ -16,6 +16,7 @@ on:
       - New Sequel Ace release
       - Internal release engine (advanced recovery only)
       - Retry Alpha Beta Artifact
+      - Retry Existing Release Artifacts
     types:
       - completed
   workflow_dispatch:
@@ -164,7 +165,7 @@ jobs:
                 echo "The source workflow did not succeed; no artifact continuation was attempted." >> "${GITHUB_STEP_SUMMARY}"
                 exit 0
               fi
-              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_deploy.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
+              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_deploy.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_artifact_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
               [[ "${SOURCE_EVENT}" == "workflow_dispatch" ]] || { echo "Artifact handoffs must originate from an authorized manual workflow." >&2; exit 1; }
               [[ "${SOURCE_HEAD_BRANCH}" == "main" ]] || { echo "Artifact handoff source was not main." >&2; exit 1; }
               if [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" && "${SOURCE_ACTOR}" == "github-actions[bot]" ]]; then
@@ -203,7 +204,7 @@ jobs:
 
       - name: Set up Ruby and locked gems
         if: steps.authorization.outputs.enabled == 'true'
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -442,7 +443,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -535,7 +536,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -638,7 +639,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -782,11 +783,13 @@ jobs:
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+            --notarized-only \
             --run-id "${PRODUCTION_RUN_ID}" \
             --output-directory artifacts/cloud-production \
             --output production-artifacts.json
           if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
             bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+              --notarized-only \
               --run-id "${ALPHA_RUN_ID}" \
               --output-directory artifacts/cloud-alpha \
               --output alpha-artifacts.json
@@ -804,6 +807,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/public
+          mark_terminal_failure_if_cloud_complete() {
+            if ruby -rjson -e '
+              paths = ARGV.select { |path| File.file?(path) }
+              exit(paths.any? && paths.all? { |path| JSON.parse(File.read(path)).fetch("execution_progress") == "COMPLETE" } ? 0 : 1)
+            ' production-cloud-run.json alpha-cloud-run.json; then
+              touch terminal-artifact-verification-failure
+            else
+              echo "Artifact verification failed before every required Cloud run completed; the exact handoff remains retryable." >> "${GITHUB_STEP_SUMMARY}"
+            fi
+          }
           if ! bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
               --index production-artifacts.json \
               --version "${RELEASE_VERSION}" \
@@ -813,7 +826,7 @@ jobs:
               --launch \
               --output-zip "artifacts/public/${PRODUCTION_ASSET}" \
               --output production-verification.json; then
-            touch terminal-artifact-verification-failure
+            mark_terminal_failure_if_cloud_complete
             exit 1
           fi
           if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
@@ -826,7 +839,7 @@ jobs:
                 --launch \
                 --output-zip "artifacts/public/${ALPHA_ASSET}" \
                 --output alpha-verification.json; then
-              touch terminal-artifact-verification-failure
+              mark_terminal_failure_if_cloud_complete
               exit 1
             fi
           fi
@@ -929,7 +942,7 @@ jobs:
       - name: Offer the verified ZIPs without private archive access
         if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
         id: public_handoff
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verified-release-zips-${{ needs.discover.outputs.build }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/public-release-handoff/
@@ -1124,7 +1137,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true

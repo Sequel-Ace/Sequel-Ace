@@ -74,7 +74,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_validate_only_does_not_make_the_public_github_transition
-    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = non_scheduled_live_snapshot
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) do |app_id:, version:|
       raise "wrong app" unless app_id == SequelAceRelease::Config::PRODUCTION_APP_ID
@@ -121,7 +121,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_clears_prerelease_and_marks_release_latest
-    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = non_scheduled_live_snapshot
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -401,7 +401,7 @@ class FinalizationAssetsTest < Minitest::Test
     assert_equal 2, feed_reads
   end
 
-  def test_finalization_rejects_a_stale_anonymous_prerelease_after_transition
+  def test_finalization_retries_a_stale_anonymous_prerelease_after_transition
     live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
@@ -415,7 +415,7 @@ class FinalizationAssetsTest < Minitest::Test
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
     github.define_singleton_method(:public_release_feed_page) do
       feed_reads += 1
-      [stale_prerelease]
+      feed_reads <= 2 ? [stale_prerelease] : [release_data]
     end
     github.define_singleton_method(:latest_release) { release_data }
     github.define_singleton_method(:update_release) do |**options|
@@ -427,12 +427,133 @@ class FinalizationAssetsTest < Minitest::Test
 
     Dir.mktmpdir do |directory|
       marker = File.join(directory, "terminal-finalization-integrity-failure")
+      output = File.join(directory, "finalization.json")
 
-      assert_equal 1, run_finalizer(app_store: app_store, github: github, integrity_marker: marker)
-      assert_equal "release asset integrity failure\n", File.read(marker)
+      assert_equal 1, run_finalizer(
+        app_store: app_store, github: github, integrity_marker: marker, output_path: output
+      )
+      refute_path_exists marker
+      refute_path_exists output
+      assert_equal 0, run_finalizer(app_store: app_store, github: github, integrity_marker: marker, output_path: output)
+      assert_equal 1, updates
+      assert File.file?(output)
     end
-    assert_equal 1, updates
-    assert_equal 2, feed_reads
+    assert_equal 4, feed_reads
+  end
+
+  def test_stale_feed_with_wrong_asset_identity_remains_terminal
+    final_release = release.merge("name" => "5.3.2 (20109)", "prerelease" => false)
+    stale_wrong_asset = release.merge(
+      "assets" => [release.fetch("assets").first.merge("id" => 999, "digest" => "sha256:#{'b' * 64}")]
+    )
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      @cli.send(
+        :verify_release_assets!,
+        final_release,
+        release_manifest.to_h,
+        github: public_feed_client(stale_wrong_asset),
+        previous_finalization: {
+          "release_id" => final_release.fetch("id"),
+          "tag" => final_release.fetch("tag_name"),
+          "release_commit_sha" => "d" * 40,
+          "current_draft" => false,
+          "current_prerelease" => true,
+          "current_title" => release.fetch("name"),
+          "target_title" => final_release.fetch("name")
+        }
+      )
+    end
+    assert_includes error.message, "checksum mismatch"
+
+    wrong_asset_id = release.merge(
+      "assets" => [release.fetch("assets").first.merge("id" => 999)]
+    )
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      @cli.send(
+        :verify_release_assets!,
+        final_release,
+        release_manifest.to_h,
+        github: public_feed_client(wrong_asset_id),
+        previous_finalization: {
+          "release_id" => final_release.fetch("id"), "tag" => final_release.fetch("tag_name"),
+          "release_commit_sha" => "d" * 40, "current_draft" => false,
+          "current_prerelease" => true, "current_title" => release.fetch("name"),
+          "target_title" => final_release.fetch("name")
+        }
+      )
+    end
+    assert_kind_of SequelAceRelease::IntegrityError, error
+  end
+
+  def test_finalizing_resume_uses_archived_evidence_for_stale_feed_and_converges_without_mutation
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release.merge("name" => "5.3.2 (20109)", "prerelease" => false)
+    stale_feed = release
+    feed_reads = 0
+    updates = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:public_release_feed_page) do
+      feed_reads += 1
+      feed_reads == 1 ? [stale_feed] : [release_data]
+    end
+    github.define_singleton_method(:latest_release) { release_data }
+    github.define_singleton_method(:update_release) { |_options| updates += 1 }
+
+    archived_evidence = {
+      "release_id" => release_data.fetch("id"),
+      "tag" => release_data.fetch("tag_name"),
+      "release_commit_sha" => "d" * 40,
+      "current_title" => stale_feed.fetch("name"),
+      "current_draft" => false,
+      "current_prerelease" => true,
+      "target_title" => release_data.fetch("name"),
+      "github_transition" => "durably_validated_before_public_transition"
+    }
+    finalizing_manifest = release_manifest.with(
+      "state" => "finalizing",
+      "finalization" => archived_evidence
+    )
+
+    Dir.mktmpdir do |directory|
+      marker = File.join(directory, "terminal-finalization-integrity-failure")
+      output = File.join(directory, "finalization.json")
+      options = { app_store: app_store, github: github, integrity_marker: marker,
+                  output_path: output, manifest_value: finalizing_manifest }
+      assert_equal 1, run_finalizer(**options)
+      refute_path_exists marker
+      refute_path_exists output
+      assert_equal 0, run_finalizer(**options)
+      assert_path_exists output
+
+      # An unrelated checkpoint cannot turn the same stale payload retryable.
+      feed_reads = 0
+      wrong_evidence = finalizing_manifest.with(
+        "finalization" => archived_evidence.merge("release_commit_sha" => "e" * 40)
+      )
+      assert_equal 1, run_finalizer(**options.merge(manifest_value: wrong_evidence, output_path: nil))
+      assert_path_exists marker
+
+      # Matching a corrupt evidence title to GitHub cannot replace the manifest's
+      # canonical final title as the authority for propagation recovery.
+      feed_reads = 0
+      release_data = release_data.merge("name" => "Wrong final title")
+      wrong_title = finalizing_manifest.with(
+        "finalization" => archived_evidence.merge("target_title" => "Wrong final title")
+      )
+      title_marker = File.join(directory, "wrong-title-integrity-failure")
+      assert_equal 1, run_finalizer(**options.merge(
+        manifest_value: wrong_title, integrity_marker: title_marker, output_path: nil
+      ))
+      assert_path_exists title_marker
+    end
+    assert_equal 0, updates
+    assert_equal 1, feed_reads
   end
 
   def test_finalization_rechecks_the_tag_after_the_public_transition
@@ -643,6 +764,13 @@ class FinalizationAssetsTest < Minitest::Test
 
   private
 
+  def non_scheduled_live_snapshot
+    metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE").tap do |snapshot|
+      snapshot["version"]["attributes"]["releaseType"] = "MANUAL"
+      snapshot["version"]["attributes"].delete("earliestReleaseDate")
+    end
+  end
+
   def release
     github_release_payload(
       tag: "production/5.3.2-20109",
@@ -655,7 +783,7 @@ class FinalizationAssetsTest < Minitest::Test
     )
   end
 
-  def run_finalizer(app_store:, github:, integrity_marker: nil, output_path: nil)
+  def run_finalizer(app_store:, github:, integrity_marker: nil, output_path: nil, manifest_value: release_manifest)
     unless github.respond_to?(:public_release_feed_page)
       github.define_singleton_method(:public_release_feed_page) do
         [github.release_by_tag("production/5.3.2-20109")]
@@ -663,7 +791,7 @@ class FinalizationAssetsTest < Minitest::Test
     end
     Dir.mktmpdir do |directory|
       manifest_path = File.join(directory, "manifest.json")
-      release_manifest.write(manifest_path)
+      manifest_value.write(manifest_path)
       cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
       cli.stub(:app_store_client, app_store) do
         cli.stub(:github_client, github) do

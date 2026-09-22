@@ -19,7 +19,7 @@ module SequelAceRelease
         "artifact_owner" => "release_publish.yml",
         "next_action" => next_action(data)
       }
-      if data.fetch("state") == "cloud_running"
+      if %w[cloud_running failed].include?(data.fetch("state"))
         if @production_workflow_id.to_s.empty?
           result["cloud"] = { "queried" => false, "reason" => "production_workflow_id_not_configured" }
         else
@@ -51,18 +51,19 @@ module SequelAceRelease
                            "state" => MetadataValidator.app_version_state(version) }
         )
       end
+      state = MetadataValidator.app_version_state(snapshot.fetch("version"))
       metadata_valid = true
       metadata_error = nil
       begin
         MetadataValidator.new.validate!(
           snapshot: snapshot, expected_build: data.fetch("canonical_build"), expected_notes: app_store_notes,
+          require_live: state == "READY_FOR_DISTRIBUTION",
           minimum_release_time: Time.at(0).utc
         )
       rescue ValidationError => error
         metadata_valid = false
         metadata_error = error.message
       end
-      state = MetadataValidator.app_version_state(snapshot.fetch("version"))
       exact_build = snapshot.dig("selected_build", "attributes", "version").to_s == data.fetch("canonical_build").to_s
       submitted = exact_build && SubmissionReconciler::SUBMITTED_STATES.include?(state)
       result["app_store"] = {
@@ -87,6 +88,12 @@ module SequelAceRelease
       case data.fetch("state")
       when "cloud_running"
         "Inspect exact Cloud run and downloadable notarized resource through the ASC API"
+      when "failed"
+        if data.fetch("channel") == "beta"
+          "Inspect failure evidence and exact Cloud readiness; Alpha-only failures use release_alpha_retry.yml"
+        else
+          "Inspect failure evidence and exact Cloud readiness; a successful existing Production build may use release_artifact_retry.yml"
+        end
       when "artifacts_verified"
         "Inspect github-public-assets-status; use the verified GHCR ZIP, do not rebuild or re-download Cloud artifacts"
       when "archived"

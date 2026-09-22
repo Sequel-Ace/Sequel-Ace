@@ -50,6 +50,23 @@ Actions freezes the selected main revision and calls the existing guarded
 release engine. The advanced interface below remains available for recovery.
 The GitHub body is always generated from your customer notes plus categorized
 changes, contributors, and comparison link; the form has no body override.
+The engine resolves credentials directly from its job-scoped
+`sequel-ace-release` environment. Environment secrets are not forwarded by the
+caller. However, the caller must retain `secrets: inherit` as a workaround for
+[actions/runner#4453](https://github.com/actions/runner/issues/4453): without it,
+GitHub can resolve every environment-only secret to an empty string in the
+called job even though its environment variables and branch policy are applied.
+This exact symptom was reproduced by form run `35611391949`; the standalone
+engine can access the same environment. Inheritance enables the reported
+resolution workaround; it does not move secrets out of the protected environment.
+Before minting a token, the engine checks that its required
+credentials are available and reports only missing names. If that check fails,
+inspect the called job's environment configuration and secret availability;
+do not duplicate credentials into repository or organization secrets.
+Local tests verify the wiring and fail-closed checks, not GitHub secret injection.
+Confirm the workaround through a hosted form run after merge. If a form run
+fails before mutation, recover its exact archived `dispatch_inputs` through the
+standalone internal engine; do not regenerate or broaden the approved plan.
 Actions preserves that generated body in the immutable plan and forward recovery.
 
 **Remaining limitation:** `legacy_updater_v1` still requires a compatible web
@@ -306,8 +323,10 @@ An anonymous GitHub rate limit, transport error, or response that cannot be
 read as the feed array is a retryable failure: do not write the terminal
 integrity marker and do not mutate the release. A successfully parsed feed
 with a missing, duplicate, stale, or incompatible exact target is a terminal
-integrity failure and remains fail-closed. Under `legacy_updater_v1`, any other
-entry that the shipped decoder cannot parse is also terminal. Linux discovery
+integrity failure and remains fail-closed, except for the narrowly validated
+pre-finalization title/flag propagation case described below. That case remains
+pending and never counts as successful finalization. Under `legacy_updater_v1`,
+any other entry that the shipped decoder cannot parse is also terminal. Linux discovery
 routes that marker through one Ubuntu-only recovery pass so private failure
 evidence is durable and the exact wake tag is cleared instead of polling the
 same terminal state.
@@ -424,11 +443,20 @@ Connect Team API key and exits. App Store Connect is authoritative for the
 exact workflow, tag, commit, build relationship, and artifact; GitHub checks
 and statuses are wake-up hints and may lag the Apple UI or API. It starts the
 protected GitHub-hosted `macos-15` verification job after every required
-Production and Alpha run is complete and related to the expected app build. If
-Apple's build-run progress field lags, the exact related app/version/platform/
-build plus an HTTPS-downloadable artifact is equivalent readiness; the
-publisher then proves the artifact itself before any public attachment or App
-Store submission. A UI success state alone never bypasses these checks.
+Production and Alpha run is related to the expected app build and exposes an
+HTTPS-downloadable `STAPLED_NOTARIZED_ARCHIVE`. This artifact gate applies even
+when the run reports complete/succeeded: logs, xcarchives, and ordinary Developer
+ID exports may be available before notarization finishes. Missing stapled output
+stays pending on Ubuntu with the exact wake tag armed. If Apple's run-progress
+field lags, the exact build plus that stapled artifact can still admit verification.
+The publisher then proves signing, stapling, notarization, and the artifact itself
+before any public attachment or App Store submission. Metadata readiness never
+replaces those byte-level checks.
+The publisher repeats the artifact-type selection at download with
+`--notarized-only`. If the stapled resource is no longer downloadable, it fails
+before verification and preserves the retryable handoff instead of stamping a
+terminal artifact failure. Terminal releases already recorded by older tooling
+are not automatically reset or republished by this readiness change.
 Authorized manual recovery requires
 `PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
 The immediate continuation authenticates its source by the immutable workflow
@@ -606,7 +634,7 @@ or secrets belong in this public repository.
 Therefore a successful Xcode Cloud page is not the end of artifact publication,
 and a missing GitHub asset is still publisher work. Conversely, a lagging
 GitHub check or Apple run-progress field must not force a rebuild when the exact
-App Store build and downloadable Cloud artifact are already available.
+App Store build and downloadable stapled-notarized Cloud artifact are already available.
 
 ## Fastlane behavior and documentation
 
@@ -793,6 +821,30 @@ its number. Ordinary build failures remain preserved for an explicitly
 authorized resume; only a proven higher-number assignment receives the bounded
 automatic RC recovery described above.
 
+## Retry artifacts from an existing successful build
+
+If a publisher prematurely recorded failure before notarization completed,
+use `release_artifact_retry.yml` after inspecting the failed private manifest.
+Supply its SHA-256, exact production tag, existing release commit, exact
+successful Production Cloud run ID, and `RETRY ARTIFACTS <tag>` confirmation.
+This is an explicitly authorized same-build recovery, not a new RC or rebuild.
+Successful recovery wakes the publisher through its authenticated
+`workflow_run` completion event. It does not dispatch the human-only manual
+publisher entry point as `github-actions[bot]`; the armed schedule remains the
+fallback if the completion event is delayed or lost.
+
+The workflow requires unchanged live source/tag identity, no public assets or
+App Store version, and a completed successful run
+with the exact version/build and a downloadable stapled-notarized artifact.
+It preserves the original manifest bytes inside the private archive and records
+the failure, digest, actor, run, and recovery URL before rearming publication.
+Each later inspected failure can be authorized by its new fingerprint; recovery
+history and digest-named predecessor manifests remain preserved across retries.
+The normal publisher still performs every signing, notarization, architecture,
+launch, checksum, and App Store gate. Failed Cloud builds or build-number
+mismatches cannot use this recovery. A transient rearming failure leaves the
+validated `cloud_running` archive available for exact manual publisher dispatch.
+
 ## Artifacts, App Store submission, and finalization
 
 - Production artifacts must be universal `arm64`/`x86_64`, carry bundle ID
@@ -823,7 +875,10 @@ automatic RC recovery described above.
   there before completion: higher invokes the authenticated forward-recovery
   path, while lower remains terminal. Architecture, signing, notarization,
   stapling, Gatekeeper, bundle metadata,
-  or launch verification failures are also terminal. Network, runner, download,
+  or launch verification failures are terminal only after every required Cloud
+  run reports complete. A verifier failure while Apple still reports a required
+  run in progress remains retryable so the Notarize post-action can finish.
+  Network, runner, download,
   upload, registry, and API failures leave the remote manifest unchanged and
   leave the exact wake tag armed so the next Xcode event or short recovery
   check can retry it. Automated failure and recovery reporting is kept in the
@@ -880,12 +935,21 @@ automatic RC recovery described above.
   public transition. The update repeats the exact tag and archived commit, then
   revalidates the tag, authenticated release, anonymous release feed, assets,
   and latest-release endpoint before accepting success.
+  `SCHEDULED` and the minimum release date are submission-only checks. Live
+  finalization and live status inspection use distribution and phased-release
+  state instead of requiring the version to retain its submission schedule;
+  selected-build, metadata, and ratings-preservation checks still apply.
 - Every transport failure, rate limit, unavailable archive, or failed
   post-transition readback leaves the exact wake tag armed and the durable
   archive at its last retryable checkpoint. The next scheduled run therefore
   retries the same `finalizing` release even when GitHub already reports it as
-  stable; there is no special anonymous-feed exception and no prerelease-only
-  discovery assumption.
+  stable; discovery does not assume the release is still a prerelease.
+  A feed that still has the exact previously validated title and prerelease
+  flag is pending propagation, not successful finalization. The validator must
+  verify every other identity, asset, checksum, and compatibility field against
+  the current authenticated release before treating that readback as retryable.
+  Recovery uses the exact release/commit-bound `finalizing` validation evidence;
+  it neither repeats a completed promotion nor accepts arbitrary stale metadata.
 - A successfully parsed incompatible release or anonymous feed writes versioned
   finalization-integrity evidence into the private archive. The scheduled run
   clears the wake tag after that evidence is durable so it does not repeat a

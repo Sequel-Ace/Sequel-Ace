@@ -28,8 +28,12 @@ module SequelAceRelease
       validate_screenshots!(snapshot.fetch("screenshot_sets"))
       validate_review_detail!(review_detail)
       validate_selected_build!(selected_build, expected_build)
-      validate_release_configuration!(version, phased_release, reset_ratings_request, minimum_release_time)
-      validate_live!(version, phased_release) if require_live
+      validate_release_configuration!(phased_release, reset_ratings_request)
+      if require_live
+        validate_live!(version, phased_release)
+      else
+        validate_submission_schedule!(version, minimum_release_time)
+      end
       true
     end
 
@@ -82,11 +86,16 @@ module SequelAceRelease
       raise ValidationError, "selected App Store build #{actual} does not match #{expected_build}" unless actual == expected_build.to_s
     end
 
-    def validate_release_configuration!(version, phased_release, reset_ratings_request, minimum_release_time)
-      attributes = version.fetch("attributes", {})
-      raise ValidationError, "App Store version must use SCHEDULED release" unless attributes["releaseType"] == "SCHEDULED"
+    def validate_release_configuration!(phased_release, reset_ratings_request)
       raise ValidationError, "ratings reset must remain disabled" if reset_ratings_request
       raise ValidationError, "seven-day phased release is not configured" unless phased_release
+    end
+
+    # Scheduling constrains submission. Once live, distribution and phased-release
+    # state prove availability independently of the version's release mechanism.
+    def validate_submission_schedule!(version, minimum_release_time)
+      attributes = version.fetch("attributes", {})
+      raise ValidationError, "App Store version must use SCHEDULED release" unless attributes["releaseType"] == "SCHEDULED"
 
       return unless minimum_release_time
 
