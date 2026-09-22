@@ -140,6 +140,61 @@ final class SARuleFilterPreviewFormatterTests: XCTestCase {
     }
 }
 
+/// A click on the WHERE preview used to add a filter row, which nobody expected
+/// from a line that reads as text; it now opens the filter menu instead.
+final class SARuleFilterDropBoxClickTests: XCTestCase {
+
+    /// Records what the drop box asks of its controller.
+    private final class SARuleFilterDropHandlerStub: NSObject, SPFilterRuleEditorDropHandler {
+        var addedRows = 0
+        var addedGroups = 0
+
+        /// Accepts a dropped value without doing anything.
+        func appendFilter(forColumn columnName: String, value: String?, isNull: Bool) -> Bool { true }
+        /// Accepts a replacing drop without doing anything.
+        func replaceFilter(at row: Int, forColumn columnName: String, value: String?, isNull: Bool) -> Bool { true }
+        /// Counts added rows.
+        func addEmptyFilterRow() { addedRows += 1 }
+        /// Counts added groups.
+        func addEmptyFilterGroup() { addedGroups += 1 }
+    }
+
+    /// Verifies that the prompt still adds a row or, with ⌥, a group, while the preview
+    /// opens the menu whatever the modifier.
+    func testClickAddsOnlyWhileThePromptShows() {
+        XCTAssertEqual(SARuleFilterDropBoxClickPolicy.action(showingPreview: false, optionPressed: false), .addFilterRow)
+        XCTAssertEqual(SARuleFilterDropBoxClickPolicy.action(showingPreview: false, optionPressed: true), .addFilterGroup)
+        XCTAssertEqual(SARuleFilterDropBoxClickPolicy.action(showingPreview: true, optionPressed: false), .showFilterMenu)
+        XCTAssertEqual(SARuleFilterDropBoxClickPolicy.action(showingPreview: true, optionPressed: true), .showFilterMenu)
+    }
+
+    /// Verifies the menu a click on the preview opens: adding a filter or a group, and
+    /// copying the clause - the last only while there is a clause to copy.
+    func testPreviewMenuOffersAddingAndCopying() throws {
+        let box = SPRuleFilterDropBox(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        let handler = SARuleFilterDropHandlerStub()
+        box.dropHandler = handler
+
+        XCTAssertFalse(box.isShowingPreview)
+        XCTAssertEqual(box.filterMenu()?.items.filter { !$0.isSeparatorItem }.map(\.title), ["Add Filter", "Add AND/OR Group"])
+
+        box.setPreviewClause("`a` = '1'")
+        XCTAssertTrue(box.isShowingPreview)
+        let menu = try XCTUnwrap(box.filterMenu())
+        XCTAssertEqual(menu.items.filter { !$0.isSeparatorItem }.map(\.title), ["Add Filter", "Add AND/OR Group", "Copy WHERE Clause"])
+        XCTAssertTrue(box.toolTip?.contains("filter menu") ?? false)
+
+        // The menu's items still reach the controller.
+        let addFilter = menu.items[0]
+        _ = (addFilter.target as AnyObject?)?.perform(addFilter.action, with: addFilter)
+        XCTAssertEqual(handler.addedRows, 1)
+
+        box.setPreviewClause(nil)
+        XCTAssertFalse(box.isShowingPreview)
+        XCTAssertFalse(box.filterMenu()?.items.contains { $0.title == "Copy WHERE Clause" } ?? true)
+    }
+}
+
 final class SARuleFilterBottomBarLayoutTests: XCTestCase {
 
     /// Verifies rows sit above a fully reserved bottom bar (drop zone shown).
