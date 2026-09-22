@@ -359,6 +359,36 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertEqual(whereClause(of: controller), "")
     }
 
+    /// Verifies that a filter restored straight over the waiting seeded row - a cell's "filter by this
+    /// value", or a same-table foreign-key jump - comes out checked and is applied. The rule editor keeps
+    /// the replaced row's checkbox for the new row.
+    func testAFilterRestoredOverTheSeededRowIsChecked() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+
+        let cellFilter: [String: Any] = ["filterClass": "expressionNode", "column": "id", "filterComparison": "=", "filterValues": ["7"], "enabled": true]
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: cellFilter)
+
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("7"), whereClause(of: controller))
+    }
+
+    /// Verifies the cell context menu's "filter by this value" path: the current filter, holding the
+    /// waiting seeded row, is merged with the cell's filter and restored, and the result is applied.
+    func testACellFilterMergedOverTheSeededRowIsChecked() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+
+        let cellFilter: [String: Any] = ["filterClass": "expressionNode", "column": "id", "filterComparison": "=", "filterValues": ["7"]]
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: serializedFilter(of: controller), newFilter: cellFilter)
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: merged)
+
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("7"), whereClause(of: controller))
+    }
+
     // MARK: - Helpers
 
     /// An `SPRuleFilterController` for one integer column `id`, whose rule editor is set up and bound to the
