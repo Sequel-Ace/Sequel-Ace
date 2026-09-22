@@ -17,6 +17,12 @@
 - (NSDictionary *)serializedFilter;
 - (void)setColumns:(NSArray *)dataColumns;
 - (BOOL)appendFilterForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull;
+- (void)addStarterFilterExpression;
+- (void)addEmptyFilterRow;
+- (void)setEnabled:(BOOL)enabled;
+- (void)controlTextDidChange:(NSNotification *)notification;
+- (IBAction)_checkboxClicked:(id)sender;
+- (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
 @end
 
 @interface SACellFilterOperatorRoundTripControllerTests : XCTestCase
@@ -61,6 +67,143 @@
 			XCTAssertEqualObjects(serialized[@"filterValues"], values, @"%@/%@ changed values during restore", typeGrouping, [op serializedName]);
 		}
 	}
+}
+
+/**
+ * Verifies the starter row seeded on a table switch starts unchecked, so it is neither previewed nor
+ * applied as `id = ''` while the table shows unfiltered.
+ */
+- (void)testSeededStarterRowStartsUncheckedAndIsNoFilter
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller addStarterFilterExpression];
+
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+	XCTAssertEqual([editor numberOfRows], 1);
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOff);
+	XCTAssertEqual([[self whereOf:controller] length], 0u, @"an unchecked starter row must not be a filter");
+}
+
+/**
+ * Verifies that typing a value into the unchecked starter row checks it, so Apply filters by it.
+ */
+- (void)testTypingIntoTheStarterRowChecksIt
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller addStarterFilterExpression];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+
+	NSTextField *field = [self firstTextFieldInRow:0 of:editor];
+	XCTAssertNotNil(field);
+	[field setStringValue:@"5"];
+	[controller controlTextDidChange:[NSNotification notificationWithName:NSControlTextDidChangeNotification object:field]];
+
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOn);
+	NSString *where = [self whereOf:controller];
+	XCTAssertTrue([where containsString:@"`id`"] && [where containsString:@"5"], @"%@", where);
+}
+
+/**
+ * Verifies that once the user has clicked the starter row's checkbox, typing no longer changes it.
+ */
+- (void)testAClickOnTheStarterCheckboxIsRespected
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller addStarterFilterExpression];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+	NSButton *checkbox = [self checkboxInRow:0 of:editor];
+
+	// Checked and unchecked again by the user.
+	[checkbox setState:NSControlStateValueOn];
+	[controller _checkboxClicked:checkbox];
+	[checkbox setState:NSControlStateValueOff];
+	[controller _checkboxClicked:checkbox];
+
+	NSTextField *field = [self firstTextFieldInRow:0 of:editor];
+	[field setStringValue:@"5"];
+	[controller controlTextDidChange:[NSNotification notificationWithName:NSControlTextDidChangeNotification object:field]];
+
+	XCTAssertEqual([checkbox state], NSControlStateValueOff);
+	XCTAssertEqual([[self whereOf:controller] length], 0u);
+}
+
+/**
+ * Verifies that a value dropped onto the drop zone still replaces the unchecked starter row, as it
+ * replaced the checked one before, and is itself a filter.
+ */
+- (void)testADroppedValueReplacesTheUncheckedStarterRow
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller setEnabled:YES];
+	[controller addStarterFilterExpression];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+
+	XCTAssertTrue([controller appendFilterForColumn:@"id" value:@"7" isNull:NO]);
+
+	XCTAssertEqual([editor numberOfRows], 1);
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOn);
+	XCTAssertTrue([[self whereOf:controller] containsString:@"7"]);
+}
+
+/** The WHERE clause the controller would apply; empty when nothing is enabled. */
+- (NSString *)whereOf:(id)controller
+{
+	NSError *error = nil;
+	NSString *where = [controller sqlWhereExpressionWithBinary:NO error:&error];
+	XCTAssertNil(error);
+	return where ?: @"";
+}
+
+/**
+ * Verifies that the drop zone's "add a filter" click checks the unchecked starter row instead of adding a
+ * second empty row next to it.
+ */
+- (void)testAddingAFilterUsesTheUncheckedStarterRow
+{
+	id controller = [self boundRuleFilterControllerWithColumn:@"id"];
+	[controller setEnabled:YES];
+	[controller addStarterFilterExpression];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+
+	[controller addEmptyFilterRow];
+
+	XCTAssertEqual([editor numberOfRows], 1);
+	XCTAssertEqual([[self checkboxInRow:0 of:editor] state], NSControlStateValueOn);
+
+	// With no starter pending, the click adds a row as before.
+	[controller addEmptyFilterRow];
+	XCTAssertEqual([editor numberOfRows], 2);
+}
+
+/**
+ * A controller whose rule editor is set up and bound to the controller's model the way DBView.xib and
+ * -awakeFromNib do it, so rows added through the editor reach the model the WHERE clause is built from.
+ */
+- (id)boundRuleFilterControllerWithColumn:(NSString *)columnName
+{
+	id controller = [self ruleFilterControllerForTypeGrouping:@"integer" columnName:columnName];
+	NSRuleEditor *editor = [controller valueForKey:@"filterRuleEditor"];
+	[editor setNestingMode:NSRuleEditorNestingModeCompound];
+	[editor setCanRemoveAllRows:YES];
+	[controller awakeFromNib];
+	return controller;
+}
+
+/** The enable checkbox of `row`. */
+- (NSButton *)checkboxInRow:(NSInteger)row of:(NSRuleEditor *)editor
+{
+	id value = [[editor displayValuesForRow:row] firstObject];
+	XCTAssertTrue([value isKindOfClass:[NSButton class]]);
+	return value;
+}
+
+/** The first argument field of `row`, or nil. */
+- (NSTextField *)firstTextFieldInRow:(NSInteger)row of:(NSRuleEditor *)editor
+{
+	for (id value in [editor displayValuesForRow:row]) {
+		if ([value isKindOfClass:[NSTextField class]]) return value;
+	}
+	return nil;
 }
 
 - (id)ruleFilterControllerForTypeGrouping:(NSString *)typeGrouping columnName:(NSString *)columnName

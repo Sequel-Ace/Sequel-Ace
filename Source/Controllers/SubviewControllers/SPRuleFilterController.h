@@ -164,6 +164,17 @@ NSString * const SPRuleFilterHeightChangedNotification;
 - (void)addFilterExpression;
 
 /**
+ * Adds the starter row the table content seeds when the editor appears or another table is selected.
+ * The row starts unchecked: it is an empty template, not a filter, so the WHERE preview must not show
+ * it as `column = ''` while the table is unfiltered. The first edit of the row - a value typed, a column
+ * or operator picked, or a click on the drop zone's "add a filter" prompt - checks it; a click on its
+ * checkbox is the user's own decision and is left alone.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (void)addStarterFilterExpression;
+
+/**
  * Append a fully-populated rule (column, a sensible default operator for
  * the column's type, and one value) to the current filter set,
  * preserving any existing rules. The filter is NOT auto-applied; the

@@ -28,8 +28,10 @@ import Cocoa
     @objc(replaceFilterAtRow:forColumn:value:isNull:)
     func replaceFilter(at row: Int, forColumn columnName: String, value: String?, isNull: Bool) -> Bool
 
-    /// Insert an empty filter row (same as clicking the "+" button).
-    /// Used when the user clicks the drop box instead of dropping onto it.
+    /// Insert an empty filter row (same as clicking the "+" button), or check
+    /// the unchecked starter row when there is one instead of adding a second
+    /// empty row. Used when the user clicks the drop box instead of dropping
+    /// onto it.
     @objc(addEmptyFilterRow)
     func addEmptyFilterRow()
 

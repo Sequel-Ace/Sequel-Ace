@@ -232,6 +232,13 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 @interface SPRuleFilterController () <NSRuleEditorDelegate, NSTextFieldDelegate, SPFilterRuleEditorDropHandler>
 
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
+/** The checkbox of the seeded starter row while it waits, unchecked, for its first edit; see -addStarterFilterExpression. */
+@property (weak, nonatomic) NSButton *pendingStarterCheckbox;
+
+/** The row of the unchecked starter row, or NSNotFound when there is none (any more). */
+- (NSInteger)_pendingStarterRow;
+/** Checks the unchecked starter row when `row` is that row: editing it means filtering by it. */
+- (void)_enablePendingStarterInRow:(NSInteger)row;
 
 - (NSArray *)_compareTypesForColumn:(ColumnNode *)colNode;
 - (IBAction)_textFieldAction:(id)sender;
@@ -736,6 +743,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (IBAction)_checkboxClicked:(id)sender
 {
+	// A click on the starter row's checkbox is the user's own choice; later edits must not undo it.
+	if (sender == self.pendingStarterCheckbox) self.pendingStarterCheckbox = nil;
+
 	NSInteger row = [filterRuleEditor rowForDisplayValue:sender];
 	NSControlStateValue newState = [(NSButton *)sender state];
 
@@ -927,6 +937,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  */
 - (void)controlTextDidChange:(NSNotification *)notification
 {
+	// Typing into the unchecked starter row means filtering by it.
+	[self _enablePendingStarterInRow:[filterRuleEditor rowForDisplayValue:[notification object]]];
 	[self _updateFilterPreview];
 }
 
@@ -964,6 +976,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self _updateFilterPreview];
 		return;
 	}
+
+	// Picking a column or operator in the unchecked starter row means filtering by it.
+	[self _enablePendingStarterInRow:row];
 
 	RuleNode *criterion = [[(NSMenuItem *)sender representedObject] objectForKey:@"node"];
 
@@ -1470,6 +1485,44 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self focusFirstInputField];
 }
 
+- (void)addStarterFilterExpression
+{
+	[self addFilterExpression];
+	if ([filterRuleEditor numberOfRows] < 1) return;
+
+	id checkbox = [[filterRuleEditor displayValuesForRow:0] firstObject];
+	if (![checkbox isKindOfClass:[NSButton class]]) return;
+	[(NSButton *)checkbox setState:NSControlStateValueOff];
+	self.pendingStarterCheckbox = checkbox;
+	[self _updateButtonStates];
+	[self _updateFilterPreview];
+}
+
+- (NSInteger)_pendingStarterRow
+{
+	NSButton *checkbox = self.pendingStarterCheckbox;
+	if (!checkbox) return NSNotFound;
+	NSInteger row = [filterRuleEditor rowForDisplayValue:checkbox];
+	if (row == NSNotFound || row < 0) {
+		// The row was replaced or removed, e.g. by a restore or a dropped value.
+		self.pendingStarterCheckbox = nil;
+		return NSNotFound;
+	}
+	return row;
+}
+
+- (void)_enablePendingStarterInRow:(NSInteger)row
+{
+	NSInteger starterRow = [self _pendingStarterRow];
+	if (starterRow == NSNotFound || row != starterRow) return;
+
+	[self.pendingStarterCheckbox setState:NSControlStateValueOn];
+	self.pendingStarterCheckbox = nil;
+	[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:row]];
+	[self _updateButtonStates];
+	[self _updateFilterPreview];
+}
+
 - (NSDictionary *)_makeSerializedRuleForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull
 {
 	if (![columnName length]) return nil;
@@ -1525,6 +1578,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (BOOL)appendFilterForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull
 {
 	if (!enabled || ![columns count]) return NO;
+	// The untouched starter row is replaced below, but the rule editor keeps the replaced row's
+	// checkbox for the new one; check it first so the dropped filter is not born unchecked.
+	[self _enablePendingStarterInRow:[self _pendingStarterRow]];
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
 
@@ -1546,6 +1602,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (BOOL)replaceFilterAtRow:(NSInteger)row forColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull
 {
 	if (!enabled || row < 0 || ![columns count]) return NO;
+	// Dropping onto the unchecked starter row replaces it with a filter the user wants; its reused
+	// checkbox must not leave that filter unchecked.
+	[self _enablePendingStarterInRow:row];
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
 
@@ -1602,6 +1661,15 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// (backing the top-right "Add Filter" button) keeps its original
 	// insert-at-0 semantics.
 	if (!enabled || ![columns count]) return;
+
+	// The unchecked starter row is the empty filter this click asks for: check it rather than
+	// adding a second, identical row next to it.
+	NSInteger starterRow = [self _pendingStarterRow];
+	if (starterRow != NSNotFound) {
+		[self _enablePendingStarterInRow:starterRow];
+		[self focusFirstInputField];
+		return;
+	}
 
 	[self _doChangeToRuleEditorData:^{
 		NSInteger tailIndex = [self->filterRuleEditor numberOfRows];
