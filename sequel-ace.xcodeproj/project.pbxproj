@@ -581,6 +581,7 @@
 		9FAB1CF8AFD6A6D9D3F89171 /* SAAsyncResultBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */; };
 		A57A61739BA9FEC6706473D6 /* SPAppController+MCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC51026DDFB4980A84A78F1 /* SPAppController+MCP.swift */; };
 		A69CC1B9E445E5FCF1484A09 /* SAAnalyticsConsentPolicy+Firebase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */; };
+		A6BAA2D43DB4655F209F68F1 /* SASessionTimeZoneReconnectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB465EB3A153D34EE0AB6BFA /* SASessionTimeZoneReconnectTests.swift */; };
 		A946E44AA14C458182205CFF /* CompletionTokens.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC962D651144EACA006170BD /* CompletionTokens.plist */; };
 		AA000001000000000000001B /* SAAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001A /* SAAboutView.swift */; };
 		AED27D68E816948A2CE775B5 /* SAMarkedTextInputStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC23B8A2720007CC603932B3 /* SAMarkedTextInputStateTests.swift */; };
@@ -1543,6 +1544,7 @@
 		B5EAC0FC0EC87FF900CC579C /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SALocalNetworkPermissionCheckerTests.swift; sourceTree = "<group>"; };
 		B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SALocalNetworkPermissionChecker.swift; sourceTree = "<group>"; };
+		BB465EB3A153D34EE0AB6BFA /* SASessionTimeZoneReconnectTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionTimeZoneReconnectTests.swift; sourceTree = "<group>"; };
 		BC01BCCD104024BE006BDEE7 /* SPEncodingPopupAccessory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPEncodingPopupAccessory.h; sourceTree = "<group>"; };
 		BC01BCCE104024BE006BDEE7 /* SPEncodingPopupAccessory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPEncodingPopupAccessory.m; sourceTree = "<group>"; };
 		BC05F1C3101241DF008A97F8 /* YRKSpinningProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YRKSpinningProgressIndicator.h; sourceTree = "<group>"; };
@@ -2925,6 +2927,7 @@
 				51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */,
 				51AC3BA83047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift */,
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
+				BB465EB3A153D34EE0AB6BFA /* SASessionTimeZoneReconnectTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3772,6 +3775,7 @@
 				7B182E1F0D6218CA522A86D4 /* SATableListCellRendererTests.swift in Sources */,
 				AEF6ABA38A7BC5E5C41F1907 /* SATypeAheadSelectionLoad.swift in Sources */,
 				FEA466FB9F9F757D557F334B /* SATypeAheadSelectionLoadTests.swift in Sources */,
+				A6BAA2D43DB4655F209F68F1 /* SASessionTimeZoneReconnectTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

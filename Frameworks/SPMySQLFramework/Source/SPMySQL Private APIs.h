@@ -64,7 +64,7 @@
 - (void)_updateConnectionVariables;
 - (BOOL)_serverIsProxySQL;
 - (void)_restoreConnectionVariables;
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier;

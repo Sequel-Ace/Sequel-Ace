@@ -1240,11 +1240,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-			reconnectSucceeded = YES;
-            [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+            reconnectSucceeded = [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
+            if (!reconnectSucceeded) {
+                // Never hand a session with the server's default time zone to a query.
+                // Preserve all saved state so the next use can retry restoration.
+                [self _disconnectPreservingProxyReconnect:YES];
+                state = SPMySQLConnectionLostInBackground;
+                reconnectingThread = NULL;
+                return NO;
+            }
             // When the connection is restored successfully, reset the relevant variables to prepare for the next time
             databaseToRestore = nil;
             encodingToRestore = nil;
@@ -1534,7 +1541,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self setEncodingUsesLatin1Transport:encodingUsesLatin1Transport];
 }
 
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier
@@ -1548,12 +1555,7 @@ asm(".desc ___crashreporter_info__, 0x10");
         [self setEncodingUsesLatin1Transport:useLatin1Transport];
     }
 
-    if ([timeZoneIdentifier length]) {
-        // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
-        // bypasses its equality guard and re-runs SET time_zone after reconnect.
-        self.timeZoneIdentifier = nil;
-        [self updateTimeZoneIdentifier:timeZoneIdentifier];
-    }
+    return [SASessionTimeZoneRestorer restoreTimeZoneIdentifier:timeZoneIdentifier onConnection:self];
 }
 
 /**
