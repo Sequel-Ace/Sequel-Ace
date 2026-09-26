@@ -324,6 +324,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
+    return [self.sessionAccess performQuery:^id {
+        return [self _queryString:theQueryString
+                   usingEncoding:theEncoding
+                  withResultType:theReturnType
+               assertingDatabase:databaseName
+       databaseContextIsRequired:databaseContextIsRequired];
+    }];
+}
+
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired
+{
 	double queryExecutionTime;
 	NSString *theErrorMessage;
 	NSUInteger theErrorID;

@@ -37,10 +37,14 @@
 #import "Locking.h"
 #import "Conversion.h"
 
+@class SAConnectionSessionAccess;
+
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
 // clang warn that the category's @implementation lacks their definitions).
 @interface SPMySQLConnection ()
+
+@property (readonly, strong) SAConnectionSessionAccess *sessionAccess;
 
 + (NSArray<NSString *> *)defaultSSLCipherList;
 + (NSArray<NSString *> *)legacySSLCipherList;
@@ -56,6 +60,7 @@
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (BOOL)_abortCancelledReconnectWhileLocked;
@@ -97,6 +102,12 @@
 @end
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;

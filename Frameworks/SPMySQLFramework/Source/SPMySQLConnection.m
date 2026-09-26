@@ -346,6 +346,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		proxy = nil;
 		proxyStateChangeNotificationsIgnored = NO;
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
+		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -1078,6 +1079,13 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
+    return [self.sessionAccess reconnectAllowingRetries:canRetry operation:^BOOL {
+        return [self _performReconnectAllowingRetries:canRetry];
+    }];
+}
+
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry
+{
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
@@ -1085,30 +1093,6 @@ asm(".desc ___crashreporter_info__, 0x10");
     NSString *timeZoneIdentifierToRestore = nil;
 
 	@autoreleasepool {
-		// Check whether a reconnection attempt is already being made - if so, wait
-		// and return the status of that reconnection attempt.  This improves threaded
-		// use of the connection by preventing reconnect races.
-		if (reconnectingThread && !pthread_equal(reconnectingThread, pthread_self())) {
-
-			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
-			// takes less than the requested 0.1s, sleep instead.
-			while (reconnectingThread) {
-                SPLog(@"a reconnection attempt is already being made, waiting");
-
-				uint64_t loopIterationStart_t = _monotonicTime();
-
-				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.1) {
-					usleep(100000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
-				}
-			}
-
-			// Continue only if the reconnection being waited on was a background attempt
-			if (!(state == SPMySQLConnectionLostInBackground && canRetry)) {
-				return (state == SPMySQLConnected);
-			}
-		}
-
 		if ([[NSThread currentThread] isCancelled]) {
             SPLog(@"NSThread currentThread] isCancelled, returning");
 

@@ -176,18 +176,30 @@ final class SASessionTimeZoneReconnectTests: XCTestCase {
 /// other queries untouched. Only this test's session is changed.
 private final class SASessionTimeZoneLiveConnection: SPMySQLConnection {
     var failNextTimeZoneUpdate = false
+    var beforeTimeZoneUpdate: (() -> Void)?
+    var beforeUserQuery: (() -> Void)?
 
     override func queryString(_ query: String!) -> SPMySQLResult! {
-        if failNextTimeZoneUpdate && query.hasPrefix("SET time_zone") {
-            failNextTimeZoneUpdate = false
-            return super.queryString("SET time_zone = 'SequelAce/InvalidTimeZone'")
+        if query.hasPrefix("SET time_zone") {
+            beforeTimeZoneUpdate?()
+            if failNextTimeZoneUpdate {
+                failNextTimeZoneUpdate = false
+                return super.queryString("SET time_zone = 'SequelAce/InvalidTimeZone'")
+            }
         }
         return super.queryString(query)
+    }
+
+    override func queryString(_ query: String!, assertingDatabase database: String!) -> SPMySQLResult! {
+        if query == "SELECT @@session.time_zone" {
+            beforeUserQuery?()
+        }
+        return super.queryString(query, assertingDatabase: database)
     }
 }
 
 final class SASessionTimeZoneIntegrationTests: XCTestCase {
-    func testLiveReconnectRetainsTimeZoneAcrossRestorationFailureAndRecovery() throws {
+    private func makeConnection() throws -> SASessionTimeZoneLiveConnection {
         let environment = ProcessInfo.processInfo.environment
         let connection = SASessionTimeZoneLiveConnection()
         connection.username = environment["SPMYSQL_TEST_USER"] ?? "root"
@@ -209,6 +221,11 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
         guard connection.connect() else {
             throw XCTSkip("MySQL test connection unavailable: \(connection.lastErrorMessage() ?? "unknown error")")
         }
+        return connection
+    }
+
+    func testLiveReconnectRetainsTimeZoneAcrossRestorationFailureAndRecovery() throws {
+        let connection = try makeConnection()
         defer { connection.disconnect() }
 
         // An offset works even on servers without the optional named-zone tables.
@@ -228,5 +245,112 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
         XCTAssertFalse(connection.queryErrored())
         XCTAssertEqual(connection.timeZoneIdentifier, "+01:00")
+    }
+
+    func testConcurrentQueryWaitsForSuccessfulTimeZoneRestoration() throws {
+        try assertConcurrentQueryWaits(failRestoration: false)
+    }
+
+    func testConcurrentQueryRetriesAfterFailedTimeZoneRestoration() throws {
+        try assertConcurrentQueryWaits(failRestoration: true)
+    }
+
+    private func assertConcurrentQueryWaits(failRestoration: Bool) throws {
+        let connection = try makeConnection()
+        defer { connection.disconnect() }
+        connection.updateTimeZoneIdentifier("+01:00")
+        XCTAssertFalse(connection.queryErrored())
+
+        let restoring = expectation(description: "restoring time zone")
+        let resumeRestoration = DispatchSemaphore(value: 0)
+        let queryStarted = expectation(description: "user query started")
+        let queryReturned = DispatchSemaphore(value: 0)
+        let reconnectFinished = expectation(description: "reconnect finished")
+        let queryFinished = expectation(description: "query finished")
+        connection.failNextTimeZoneUpdate = failRestoration
+        connection.beforeTimeZoneUpdate = {
+            // Pause only the first attempt. The caller may need to retry a failed SET.
+            connection.beforeTimeZoneUpdate = nil
+            restoring.fulfill()
+            XCTAssertEqual(resumeRestoration.wait(timeout: .now() + 5), .success)
+        }
+        connection.beforeUserQuery = { queryStarted.fulfill() }
+        Thread.detachNewThread {
+            XCTAssertEqual(connection.reconnect(), !failRestoration)
+            reconnectFinished.fulfill()
+        }
+        wait(for: [restoring], timeout: 5)
+        Thread.detachNewThread {
+            XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
+            queryReturned.signal()
+            queryFinished.fulfill()
+        }
+        wait(for: [queryStarted], timeout: 5)
+        XCTAssertEqual(queryReturned.wait(timeout: .now() + 0.1), .timedOut,
+                       "The query must not reach the new session before its time zone is restored")
+        resumeRestoration.signal()
+        wait(for: [reconnectFinished, queryFinished], timeout: 5)
+    }
+}
+
+final class SAConnectionSessionAccessTests: XCTestCase {
+    func testReconnectCanRunSetupQueriesAndNestedReconnects() {
+        let access = SAConnectionSessionAccess()
+        XCTAssertTrue(access.reconnect(allowingRetries: true) {
+            XCTAssertEqual(access.performQuery { "setup" } as? String, "setup")
+            return access.reconnect(allowingRetries: true) { true }
+        })
+    }
+
+    func testCancelledQueryWaiterExitsWhileReconnectStillOwnsSession() {
+        let access = SAConnectionSessionAccess()
+        let owned = DispatchSemaphore(value: 0)
+        let release = DispatchSemaphore(value: 0)
+        let waiting = DispatchSemaphore(value: 0)
+        let cancelled = expectation(description: "cancelled query returned")
+        let reconnected = expectation(description: "reconnect completed")
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: false) {
+                owned.signal()
+                XCTAssertEqual(release.wait(timeout: .now() + 5), .success)
+                return true
+            }
+            reconnected.fulfill()
+        }
+        XCTAssertEqual(owned.wait(timeout: .now() + 5), .success)
+        let waiter = Thread {
+            waiting.signal()
+            XCTAssertNil(access.performQuery {
+                XCTFail("A cancelled caller must not execute its query")
+                return "unexpected"
+            })
+            cancelled.fulfill()
+        }
+        waiter.start()
+        XCTAssertEqual(waiting.wait(timeout: .now() + 5), .success)
+        waiter.cancel()
+        wait(for: [cancelled], timeout: 2)
+        release.signal()
+        wait(for: [reconnected], timeout: 2)
+    }
+
+    func testMainThreadWaitServicesReconnectMainQueueWork() {
+        XCTAssertTrue(Thread.isMainThread)
+        let access = SAConnectionSessionAccess()
+        let owned = DispatchSemaphore(value: 0)
+        let mainQueueWork = DispatchSemaphore(value: 0)
+        let reconnected = expectation(description: "reconnect completed")
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: false) {
+                owned.signal()
+                DispatchQueue.main.async { mainQueueWork.signal() }
+                XCTAssertEqual(mainQueueWork.wait(timeout: .now() + 2), .success)
+                return true
+            }
+            reconnected.fulfill()
+        }
+        XCTAssertEqual(owned.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(access.performQuery { "ready" } as? String, "ready")
+        wait(for: [reconnected], timeout: 2)
     }
 }
