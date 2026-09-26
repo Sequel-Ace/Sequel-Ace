@@ -179,8 +179,20 @@ private final class SASessionTimeZoneLiveConnection: SPMySQLConnection {
     var failNextTimeZoneUpdate = false
     var failCancellationConnection = false
     var failedCancellationConnections = 0
+    var cancelAfterNextConnectionCheck = false
     var beforeTimeZoneUpdate: (() -> Void)?
     var beforeUserQuery: (() -> Void)?
+
+    override func check() -> Bool {
+        let connected = super.check()
+        if connected && cancelAfterNextConnectionCheck {
+            cancelAfterNextConnectionCheck = false
+            // Model a cancellation recorded while the auxiliary KILL connection
+            // targets the old session, just before the original query retries.
+            (value(forKey: "sessionAccess") as? SAConnectionSessionAccess)?.recordQueryCancellation()
+        }
+        return connected
+    }
 
     @objc(_makeRawMySQLConnectionWithEncoding:isMasterConnection:)
     func makeRawConnection(_ encoding: NSString, isMasterConnection: Bool) -> UnsafeMutableRawPointer? {
@@ -349,6 +361,28 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
     }
 
+    func testCancellationDuringReconnectPreventsResubmittingTheOriginalQuery() throws {
+        let connection = try makeConnection()
+        let observer = try makeConnection()
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        connection.updateTimeZoneIdentifier("+01:00")
+        let session = connection.mysqlConnectionThreadId
+        _ = observer.queryString("KILL CONNECTION \(session)")
+        XCTAssertFalse(observer.queryErrored())
+        connection.cancelAfterNextConnectionCheck = true
+
+        XCTAssertNil(connection.queryString("SELECT @retry_marker := 'retried'"))
+        XCTAssertFalse(connection.cancelAfterNextConnectionCheck)
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @retry_marker IS NULL") as? String, "1")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
+    }
+
     private func assertConcurrentQueryWaits(failRestoration: Bool) throws {
         let connection = try makeConnection()
         defer { connection.disconnect() }
@@ -388,6 +422,42 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
 }
 
 final class SAConnectionSessionAccessTests: XCTestCase {
+    func testBackgroundLossDisconnectRetiresTrackedSocket() throws {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        let access = try XCTUnwrap(connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess)
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { for socket in sockets where socket >= 0 { Darwin.close(socket) } }
+        try access.trackSocket(sockets[0])
+        let token = access.socketToken
+        connection.setValue(SPMySQLConnectionLostInBackground.rawValue, forKey: "state")
+
+        connection.disconnect()
+
+        XCTAssertNotEqual(access.socketToken, token)
+        access.cancelSocket(token: token) { XCTFail("Background-loss disconnect must retire the cancellation handle") }
+    }
+
+    func testSetupQueriesCannotEraseTheirCallersCancellation() {
+        let access = SAConnectionSessionAccess()
+        _ = access.performQuery {
+            XCTAssertFalse(access.currentQueryWasCancelled)
+            access.recordQueryCancellation()
+            XCTAssertTrue(access.currentQueryWasCancelled)
+            _ = access.performQuery {
+                XCTAssertFalse(access.currentQueryWasCancelled)
+                return nil
+            }
+            XCTAssertTrue(access.currentQueryWasCancelled)
+            return nil
+        }
+        _ = access.performQuery {
+            XCTAssertFalse(access.currentQueryWasCancelled)
+            return nil
+        }
+    }
+
     func testCancellationSocketSurvivesTheOriginalDescriptorClosing() throws {
         let access = SAConnectionSessionAccess()
         var sockets = [Int32](repeating: -1, count: 2)

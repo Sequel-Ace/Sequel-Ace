@@ -19,6 +19,23 @@ import Darwin
     private var cancellationSocket: Int32 = -1
     private var socketGeneration: UInt = 0
     private var cancellationThreads: Set<ObjectIdentifier> = []
+    private var queryCancellationGeneration: UInt = 0
+    private var queryCancellationTokens: [UInt] = []
+
+    /// Remember cancellation across setup queries run by the interrupted query's
+    /// reconnect. Each nested query has its own token; it cannot erase its caller's.
+    @objc public func recordQueryCancellation() {
+        socketLock.withLock { queryCancellationGeneration &+= 1 }
+    }
+
+    @objc public var currentQueryWasCancelled: Bool {
+        socketLock.withLock {
+            guard let token = queryCancellationTokens.last else {
+                return false
+            }
+            return token != queryCancellationGeneration
+        }
+    }
 
     deinit {
         if cancellationSocket >= 0 {
@@ -93,7 +110,11 @@ import Darwin
         guard acquire() else {
             return nil
         }
-        defer { sessionLock.unlock() }
+        socketLock.withLock { queryCancellationTokens.append(queryCancellationGeneration) }
+        defer {
+            socketLock.withLock { _ = queryCancellationTokens.popLast() }
+            sessionLock.unlock()
+        }
         return operation()
     }
 

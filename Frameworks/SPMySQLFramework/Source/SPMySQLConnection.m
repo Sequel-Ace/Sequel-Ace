@@ -1371,6 +1371,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
+		[self.sessionAccess clearSocket];
 		state = SPMySQLDisconnected;
 	}
 

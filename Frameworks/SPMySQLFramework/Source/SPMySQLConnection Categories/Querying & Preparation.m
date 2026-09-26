@@ -466,7 +466,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			}
 
 			// Prevent retries if the query was cancelled or not a connection error
-			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+			if (self.sessionAccess.currentQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
 		}
@@ -481,6 +481,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 		[self _lockConnection];
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
+		if (self.sessionAccess.currentQueryWasCancelled) {
+			queryStatus = 1;
+			break;
+		}
 
 	} while (--queryAttemptsAllowed > 0);
 
@@ -535,6 +539,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// If the query was cancelled, override the error state
+	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -703,6 +708,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// Mark that the last query was cancelled to prevent query retries from occurring
+	[self.sessionAccess recordQueryCancellation];
 	lastQueryWasCancelled = YES;
 
 	// The query cancellation cannot occur on the connection actively running a query
