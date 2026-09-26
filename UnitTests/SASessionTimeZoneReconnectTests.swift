@@ -176,8 +176,28 @@ final class SASessionTimeZoneReconnectTests: XCTestCase {
 /// other queries untouched. Only this test's session is changed.
 private final class SASessionTimeZoneLiveConnection: SPMySQLConnection {
     var failNextTimeZoneUpdate = false
+    var failCancellationConnection = false
+    var failedCancellationConnections = 0
     var beforeTimeZoneUpdate: (() -> Void)?
     var beforeUserQuery: (() -> Void)?
+
+    @objc(_makeRawMySQLConnectionWithEncoding:isMasterConnection:)
+    func makeRawConnection(_ encoding: NSString, isMasterConnection: Bool) -> UnsafeMutableRawPointer? {
+        if failCancellationConnection && !isMasterConnection {
+            failedCancellationConnections += 1
+            return nil
+        }
+        // The transport factory is private Objective-C API. Forward successful
+        // connections to its real implementation and fail only the KILL connection.
+        let selector = #selector(makeRawConnection(_:isMasterConnection:))
+        guard let method = class_getInstanceMethod(SPMySQLConnection.self, selector) else {
+            XCTFail("Missing connection factory")
+            return nil
+        }
+        typealias Factory = @convention(c) (AnyObject, Selector, NSString, Bool) -> UnsafeMutableRawPointer?
+        let factory = unsafeBitCast(method_getImplementation(method), to: Factory.self)
+        return factory(self, selector, encoding, isMasterConnection)
+    }
 
     override func queryString(_ query: String!) -> SPMySQLResult! {
         if query.hasPrefix("SET time_zone") {
@@ -253,6 +273,79 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
 
     func testConcurrentQueryRetriesAfterFailedTimeZoneRestoration() throws {
         try assertConcurrentQueryWaits(failRestoration: true)
+    }
+
+    func testFallbackCancellationInterruptsActiveQueryBeforeReconnecting() throws {
+        try assertCancellation(failCancellationConnection: true)
+    }
+
+    func testKillQueryCancellationKeepsSessionAndTimeZone() throws {
+        try assertCancellation(failCancellationConnection: false)
+    }
+
+    private func assertCancellation(failCancellationConnection: Bool) throws {
+        let connection = try makeConnection()
+        let observer = try makeConnection()
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        connection.updateTimeZoneIdentifier("+01:00")
+        XCTAssertFalse(connection.queryErrored())
+        connection.failCancellationConnection = failCancellationConnection
+        let session = connection.mysqlConnectionThreadId
+        let queryFinished = expectation(description: "cancelled query returned")
+        Thread.detachNewThread {
+            _ = connection.queryString("SELECT SLEEP(10)")
+            queryFinished.fulfill()
+        }
+
+        // Confirm that the real server is executing the query, rather than racing
+        // a cancellation against a thread that has not submitted its query yet.
+        let runningSQL = "SELECT COUNT(*) FROM information_schema.processlist WHERE ID = \(session) AND INFO = 'SELECT SLEEP(10)'"
+        let deadline = Date(timeIntervalSinceNow: 3)
+        var running = false
+        repeat {
+            running = (observer.getFirstField(fromQuery: runningSQL) as? NSString)?.integerValue == 1
+            if !running {
+                RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+            }
+        } while !running && Date() < deadline
+        XCTAssertTrue(running)
+
+        let cancellationStarted = Date()
+        connection.cancelCurrentQuery()
+        XCTAssertLessThan(Date().timeIntervalSince(cancellationStarted), 3,
+                          "Fallback cancellation must interrupt the query before waiting for session access")
+        wait(for: [queryFinished], timeout: 3)
+        if failCancellationConnection {
+            XCTAssertGreaterThan(connection.failedCancellationConnections, 0)
+            XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)
+        } else {
+            XCTAssertEqual(connection.failedCancellationConnections, 0)
+            XCTAssertEqual(connection.mysqlConnectionThreadId, session)
+        }
+        XCTAssertEqual(connection.timeZoneIdentifier, "+01:00")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
+    }
+
+    func testFallbackCancellationDrainsStreamingQueryWithoutRecursing() throws {
+        let connection = try makeConnection()
+        defer { connection.disconnect() }
+        connection.updateTimeZoneIdentifier("+01:00")
+        connection.failCancellationConnection = true
+        let session = connection.mysqlConnectionThreadId
+        // A row larger than the server's network buffer flushes the result header
+        // before SLEEP, leaving the result downloader active after queryString returns.
+        let result = try XCTUnwrap(connection.streamingQueryString("SELECT REPEAT('x', 20000) UNION ALL SELECT SLEEP(10)"))
+        let cancellationStarted = Date()
+        connection.cancelCurrentQuery()
+        XCTAssertLessThan(Date().timeIntervalSince(cancellationStarted), 3)
+        result.cancelLoad()
+        XCTAssertGreaterThan(connection.failedCancellationConnections, 0)
+        XCTAssertLessThan(connection.failedCancellationConnections, 3, "Cancellation must not recursively reconnect")
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
     }
 
     private func assertConcurrentQueryWaits(failRestoration: Bool) throws {

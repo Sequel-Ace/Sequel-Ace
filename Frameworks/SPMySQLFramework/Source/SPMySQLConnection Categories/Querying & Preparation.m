@@ -751,12 +751,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	if (state == SPMySQLDisconnecting || state == SPMySQLDisconnected) return;
 
-	// Reset the connection with a reconnect.  Unlock the connection beforehand,
-	// to allow the reconnect, but lock it again afterwards to restore the expected
-	// state (query execution process should unlock as appropriate).
-	[self _unlockConnection];
+	// Interrupt the socket before waiting for the active query's session guard.
+	// Let the query release its own native lock before reconnect closes MYSQL.
+	[SAConnectionSessionAccess interruptSocket:mySQLConnection->net.fd];
 	[self _reconnectAllowingRetries:YES];
-	[self _lockConnection];
 
 	// Reset tracking bools to cover encompassed queries
 	lastQueryWasCancelled = YES;

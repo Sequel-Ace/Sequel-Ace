@@ -1374,8 +1374,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return;
 	}
 
-	// If a query is active, cancel it
-	[self cancelCurrentQuery];
+	// A fallback cancellation has already interrupted the socket. Do not recurse
+	// into cancellation again while a streaming result is releasing its lock.
+	if (!lastQueryWasCancelled) [self cancelCurrentQuery];
 
 	state = SPMySQLDisconnecting;
 

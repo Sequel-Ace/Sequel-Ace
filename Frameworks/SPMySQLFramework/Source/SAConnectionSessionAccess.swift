@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Darwin
 
 /// Keeps queries out of a partially restored session. Recursive access lets the
 /// reconnect owner run its own setup queries and recover from another disconnect.
@@ -14,6 +15,14 @@ import Foundation
     private let completionLock = NSLock()
     private var generation: UInt64 = 0
     private var reconnectSucceeded = false
+
+    /// Wake an active query before waiting for its session access during fallback
+    /// cancellation. Shutdown leaves the descriptor and MYSQL owned by the query;
+    /// reconnect closes them only after that query has unwound and released access.
+    @objc(interruptSocket:)
+    public static func interruptSocket(_ socket: Int32) {
+        _ = Darwin.shutdown(socket, SHUT_RDWR)
+    }
 
     /// Runs a query only after the current reconnect (including restoration) ends.
     @objc(performQuery:)
