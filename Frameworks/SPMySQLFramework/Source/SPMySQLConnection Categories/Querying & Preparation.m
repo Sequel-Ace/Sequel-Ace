@@ -693,6 +693,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
+	NSUInteger socketToken = self.sessionAccess.socketToken;
+	unsigned long connectionThreadId = mysqlConnectionThreadId;
 
 	// Check whether a query is actually being performed - if not, return
 	if ([self _tryLockConnection]) {
@@ -709,6 +711,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// If the new connection was successfully set up, use it to run a KILL command.
 	if (killerConnection) {
+		if (socketToken != self.sessionAccess.socketToken) {
+			mysql_close(killerConnection);
+			return;
+		}
 		NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
 
 		// Build the kill query
@@ -717,7 +723,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			[killQuery appendString:@" TIDB"];
             NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
 		}
-		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
+		[killQuery appendFormat:@" QUERY %lu", connectionThreadId];
 
 		// Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
 		// an explicit length, so no terminator is appended (see the main query path).
@@ -735,10 +741,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			lastQueryWasCancelled = YES;
 			return;
 		} else {
-            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
+            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, connectionThreadId);
 		}
 	} else if (!userTriggeredDisconnect) {
-        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
+        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", connectionThreadId);
 	}
 
 	// A full reconnect is required at this point to force a cancellation.  As the
@@ -753,8 +759,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// Interrupt the socket before waiting for the active query's session guard.
 	// Let the query release its own native lock before reconnect closes MYSQL.
-	[SAConnectionSessionAccess interruptSocket:mySQLConnection->net.fd];
-	[self _reconnectAllowingRetries:YES];
+	[self.sessionAccess cancelSocketWithToken:socketToken reconnect:^{
+		[self _reconnectAllowingRetries:YES];
+	}];
 
 	// Reset tracking bools to cover encompassed queries
 	lastQueryWasCancelled = YES;

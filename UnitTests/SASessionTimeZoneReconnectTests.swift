@@ -7,6 +7,7 @@
 
 import XCTest
 import SPMySQL
+import Darwin
 
 /// Replaces only the transport. The public reconnect entry point, session-state
 /// restoration, time-zone setter and error accessors are the framework's real code.
@@ -387,6 +388,75 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
 }
 
 final class SAConnectionSessionAccessTests: XCTestCase {
+    func testCancellationSocketSurvivesTheOriginalDescriptorClosing() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { for socket in sockets where socket >= 0 { Darwin.close(socket) } }
+        try access.trackSocket(sockets[0])
+        let token = access.socketToken
+        Darwin.close(sockets[0])
+        sockets[0] = -1
+
+        var reconnected = false
+        access.cancelSocket(token: token) {
+            reconnected = true
+            XCTAssertTrue(access.isCancellingOnCurrentThread)
+        }
+        XCTAssertTrue(reconnected)
+        XCTAssertFalse(access.isCancellingOnCurrentThread)
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
+        access.clearSocket()
+        access.cancelSocket(token: token) { XCTFail("A cleared socket cannot be cancelled") }
+    }
+
+    func testStaleCancellationCannotInterruptAReplacementSocket() throws {
+        let access = SAConnectionSessionAccess()
+        var old = [Int32](repeating: -1, count: 2)
+        var replacement = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &old), 0)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &replacement), 0)
+        defer { for socket in old + replacement where socket >= 0 { Darwin.close(socket) } }
+        try access.trackSocket(old[0])
+        let staleToken = access.socketToken
+        try access.trackSocket(replacement[0])
+        access.cancelSocket(token: staleToken) { XCTFail("A stale cancellation cannot reconnect a newer session") }
+
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), -1)
+        XCTAssertEqual(errno, EAGAIN)
+        access.cancelSocket(token: access.socketToken) { }
+        XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), 0)
+    }
+
+    func testCancellationScopeClearsAfterNestedReconnectAndSocketFailure() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { for socket in sockets where socket >= 0 { Darwin.close(socket) } }
+        try access.trackSocket(sockets[0])
+        let token = access.socketToken
+        XCTAssertThrowsError(try access.trackSocket(-1))
+        XCTAssertEqual(access.socketToken, token)
+        access.cancelSocket(token: token) {
+            XCTAssertTrue(access.isCancellingOnCurrentThread)
+            let otherThread = expectation(description: "independent cancellation scope")
+            Thread.detachNewThread {
+                XCTAssertFalse(access.isCancellingOnCurrentThread)
+                otherThread.fulfill()
+            }
+            wait(for: [otherThread], timeout: 2)
+            access.cancelSocket(token: token) { XCTAssertTrue(access.isCancellingOnCurrentThread) }
+            XCTAssertTrue(access.isCancellingOnCurrentThread)
+        }
+        XCTAssertFalse(access.isCancellingOnCurrentThread)
+        XCTAssertTrue(access.reconnect(allowingRetries: true) {
+            XCTAssertFalse(access.isCancellingOnCurrentThread)
+            return true
+        })
+    }
+
     func testReconnectCanRunSetupQueriesAndNestedReconnects() {
         let access = SAConnectionSessionAccess()
         XCTAssertTrue(access.reconnect(allowingRetries: true) {

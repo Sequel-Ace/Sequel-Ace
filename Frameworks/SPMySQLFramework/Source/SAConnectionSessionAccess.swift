@@ -15,13 +15,76 @@ import Darwin
     private let completionLock = NSLock()
     private var generation: UInt64 = 0
     private var reconnectSucceeded = false
+    private let socketLock = NSLock()
+    private var cancellationSocket: Int32 = -1
+    private var socketGeneration: UInt = 0
+    private var cancellationThreads: Set<ObjectIdentifier> = []
 
-    /// Wake an active query before waiting for its session access during fallback
-    /// cancellation. Shutdown leaves the descriptor and MYSQL owned by the query;
-    /// reconnect closes them only after that query has unwound and released access.
-    @objc(interruptSocket:)
-    public static func interruptSocket(_ socket: Int32) {
-        _ = Darwin.shutdown(socket, SHUT_RDWR)
+    deinit {
+        if cancellationSocket >= 0 {
+            Darwin.close(cancellationSocket)
+        }
+    }
+
+    /// Own a descriptor independently of MYSQL, which may close its descriptor
+    /// during query failure or teardown. The duplicate cannot be recycled under us.
+    @objc(trackSocket:error:)
+    public func trackSocket(_ socket: Int32) throws {
+        let duplicate = fcntl(socket, F_DUPFD_CLOEXEC, 0)
+        guard duplicate >= 0 else {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
+        socketLock.withLock {
+            if cancellationSocket >= 0 {
+                Darwin.close(cancellationSocket)
+            }
+            cancellationSocket = duplicate
+            socketGeneration &+= 1
+        }
+    }
+
+    /// Retire the cancellation handle before disconnect releases MYSQL.
+    @objc public func clearSocket() {
+        socketLock.withLock {
+            if cancellationSocket >= 0 {
+                Darwin.close(cancellationSocket)
+            }
+            cancellationSocket = -1
+            socketGeneration &+= 1
+        }
+    }
+
+    /// Identifies the session that a cancellation was requested against.
+    @objc public var socketToken: UInt {
+        socketLock.withLock { socketGeneration }
+    }
+
+    /// Suppress recursive cancellation only inside this thread's fallback reconnect.
+    @objc public var isCancellingOnCurrentThread: Bool {
+        socketLock.withLock { cancellationThreads.contains(ObjectIdentifier(Thread.current)) }
+    }
+
+    /// Interrupt before waiting for query access. A stale cancellation must not
+    /// interrupt a replacement session. Neither shutdown nor teardown reads MYSQL.
+    @objc(cancelSocketWithToken:reconnect:)
+    public func cancelSocket(token: UInt, reconnect: () -> Void) {
+        let thread = ObjectIdentifier(Thread.current)
+        let cancellation = socketLock.withLock { () -> (current: Bool, inserted: Bool) in
+            guard token == socketGeneration, cancellationSocket >= 0 else {
+                return (false, false)
+            }
+            _ = Darwin.shutdown(cancellationSocket, SHUT_RDWR)
+            return (true, cancellationThreads.insert(thread).inserted)
+        }
+        guard cancellation.current else {
+            return
+        }
+        defer {
+            if cancellation.inserted {
+                _ = socketLock.withLock { cancellationThreads.remove(thread) }
+            }
+        }
+        reconnect()
     }
 
     /// Runs a query only after the current reconnect (including restoration) ends.
