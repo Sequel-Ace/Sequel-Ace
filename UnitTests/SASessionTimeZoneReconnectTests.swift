@@ -296,7 +296,11 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
         try assertCancellation(failCancellationConnection: false)
     }
 
-    private func assertCancellation(failCancellationConnection: Bool) throws {
+    func testExternalKillPreservesThePublicCancellationFlag() throws {
+        try assertCancellation(failCancellationConnection: false, externalKill: true)
+    }
+
+    private func assertCancellation(failCancellationConnection: Bool, externalKill: Bool = false) throws {
         let connection = try makeConnection()
         let observer = try makeConnection()
         defer {
@@ -327,10 +331,19 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
         XCTAssertTrue(running)
 
         let cancellationStarted = Date()
-        connection.cancelCurrentQuery()
+        if externalKill {
+            // SPDatabaseDocument's structure fast path uses this public setter
+            // and sends KILL through its separate cancellation connection.
+            connection.lastQueryWasCancelled = true
+            _ = observer.queryString("KILL QUERY \(session)")
+            XCTAssertFalse(observer.queryErrored())
+        } else {
+            connection.cancelCurrentQuery()
+        }
         XCTAssertLessThan(Date().timeIntervalSince(cancellationStarted), 3,
                           "Fallback cancellation must interrupt the query before waiting for session access")
         wait(for: [queryFinished], timeout: 3)
+        XCTAssertTrue(connection.lastQueryWasCancelled)
         if failCancellationConnection {
             XCTAssertGreaterThan(connection.failedCancellationConnections, 0)
             XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)

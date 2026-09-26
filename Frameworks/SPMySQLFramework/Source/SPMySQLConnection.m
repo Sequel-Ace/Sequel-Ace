@@ -109,6 +109,22 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 #pragma mark -
 #pragma mark Getters and Setters
 
+- (BOOL)lastQueryWasCancelled
+{
+	@synchronized (self) {
+		return lastQueryWasCancelled;
+	}
+}
+
+- (void)setLastQueryWasCancelled:(BOOL)cancelled
+{
+	// Some callers issue KILL through another connection and mark cancellation here.
+	@synchronized (self) {
+		if (cancelled) [self.sessionAccess recordQueryCancellation];
+		lastQueryWasCancelled = cancelled;
+	}
+}
+
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
