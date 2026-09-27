@@ -1106,9 +1106,11 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
-    return [self.sessionAccess reconnectAllowingRetries:canRetry operation:^BOOL {
+    BOOL restored = [self.sessionAccess reconnectAllowingRetries:canRetry operation:^BOOL {
         return [self _performReconnectAllowingRetries:canRetry];
     }];
+    // Explicit disconnect can retire a completed session while this caller waits.
+    return restored && state == SPMySQLConnected && !userTriggeredDisconnect;
 }
 
 - (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry

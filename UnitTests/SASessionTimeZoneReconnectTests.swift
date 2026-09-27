@@ -72,7 +72,38 @@ private final class SASessionTimeZoneTestConnection: SPMySQLConnection {
     }
 }
 
+/// Models a successful completion that became stale before its caller resumed.
+private final class SAStaleReconnectResultConnection: SPMySQLConnection {
+    var disconnectBeforeReturning = false
+
+    @objc(_performReconnectAllowingRetries:)
+    func completedReconnect(_ allowRetries: Bool) -> Bool {
+        if disconnectBeforeReturning {
+            setValue(true, forKey: "userTriggeredDisconnect")
+        }
+        return true
+    }
+}
+
 final class SASessionTimeZoneReconnectTests: XCTestCase {
+    func testReconnectRevalidatesSuccessfulCompletionAgainstLiveState() {
+        let connection = SAStaleReconnectResultConnection()
+        connection.useKeepAlive = false
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+        XCTAssertTrue(connection.reconnect())
+
+        connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+        XCTAssertFalse(connection.reconnect(), "An earlier success cannot make a disconnected session usable")
+
+        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+        connection.disconnectBeforeReturning = true
+        XCTAssertFalse(connection.reconnect(), "Explicit disconnect must invalidate an earlier success")
+    }
+
     private func connection(timeZone: String? = "Europe/London") -> SASessionTimeZoneTestConnection {
         let connection = SASessionTimeZoneTestConnection()
         connection.useKeepAlive = false
