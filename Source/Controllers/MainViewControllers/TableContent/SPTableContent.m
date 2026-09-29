@@ -107,9 +107,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
 @property (strong, nonatomic) SAComboBoxSelectionTracker *comboBoxSelectionTracker;
+@property (strong, nonatomic) SATableReloadRetryPolicy *reloadRetryPolicy;
 
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
+- (void)_startTableReload;
+- (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName;
 
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate;
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification;
@@ -149,6 +152,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		dataColumns       = [[NSMutableArray alloc] init];
 		oldRow            = [[NSMutableArray alloc] init];
 		_comboBoxSelectionTracker = [[SAComboBoxSelectionTracker alloc] init];
+		_reloadRetryPolicy = [[SATableReloadRetryPolicy alloc] init];
 
 		tableRowsCount         = 0;
 		previousTableRowsCount = 0;
@@ -517,6 +521,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Otherwise store the newly selected table name and reset the data
 	} else {
+
+		// Another table is a fresh start for the automatic reload budget.
+		[self.reloadRetryPolicy resetAll];
 
         if (newTableName){
             SPLog(@"new table: %@", newTableName);
@@ -952,6 +959,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
     SPLog(@"[selectedItems count] = %lu", (unsigned long)[selectedItems count]);
 
 	BOOL fullTableReloadRequired = NO;
+	BOOL columnMismatchUnresolved = NO;
     // only do the column vs numfields check if selectedItems.count == 1
     // otherwise, when selecting two (or more) tables to export, the code falls into this block when it shouldn't
     // and cancels the current query, which always seems to fail, which then triggers the diabolical reconnect code
@@ -962,16 +970,28 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[tableDocumentInstance disableTaskCancellation];
 		[mySQLConnection cancelCurrentQuery];
 		[resultStore cancelResultLoad];
-		fullTableReloadRequired = YES;
+
+		// A reload only helps while the column list can still change. If the list keeps
+		// disagreeing with the result - a dropping connection leaves it empty, and the
+		// query then selects every column - each reload queues the next one, so the
+		// reloads are capped and the user is told instead.
+		if ([self.reloadRetryPolicy shouldReloadForTable:selectedTable]) {
+			fullTableReloadRequired = YES;
+		} else {
+			SPLog(@"Column mismatch persists after %ld reloads, giving up", (long)[self.reloadRetryPolicy attemptCountForTable:selectedTable]);
+			columnMismatchUnresolved = YES;
+		}
+	} else if (selectedItems.count == 1 && resultStore) {
+		[self.reloadRetryPolicy resetForTable:selectedTable];
 	}
 
 	// Process the result into the data store
-	if (!fullTableReloadRequired && resultStore) {
+	if (!fullTableReloadRequired && !columnMismatchUnresolved && resultStore) {
 		[self updateResultStore:resultStore approximateRowCount:rowsToLoad];
 	}
 
 	// If the result is empty, and a late page is selected, reset the page
-	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
+	if (!fullTableReloadRequired && !columnMismatchUnresolved && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
 		contentPage = 1;
 		previousTableRowsCount = tableRowsCount;
 		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT 0,%ld", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
@@ -1112,11 +1132,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	} 
 	else
 	{
-		// Trigger a full reload if required
+		// Trigger a full reload if required. The reload is asked for on the main
+		// thread: -reloadTable: only detaches a worker when it is called there, so
+		// asking for it from this worker would run the next load inside this one
+		// and nest a further load inside that, without end.
         if (fullTableReloadRequired){
             SPLog(@"Trigger a full reload");
-            [self reloadTable:self];
+            [[self onMainThread] _startTableReload];
 
+        } else if (columnMismatchUnresolved) {
+            [self _reportUnresolvedColumnMismatchForTable:selectedTable];
         }
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
@@ -1368,6 +1393,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (IBAction)reloadTable:(id)sender
 {
+	// A reload asked for from outside starts the automatic budget over; the budget
+	// only bounds the reloads a load queues for itself after a column mismatch.
+	[self.reloadRetryPolicy resetForTable:selectedTable];
+	[self _startTableReload];
+}
+
+/**
+ * Starts a table reload without touching the automatic retry budget.
+ *
+ * Called on the main thread this detaches a worker, so a load that queues the
+ * next reload for itself does not run it inside the load it is finishing.
+ */
+- (void)_startTableReload
+{
 	// Reserve the reload before detaching its worker so popup callbacks cannot
 	// slip through between a schema-mismatch load and its queued full reload.
 	[_comboBoxSelectionTracker tableDataReloadWillBegin];
@@ -1378,6 +1417,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	} else {
 		[self reloadTableTask];
 	}
+}
+
+/**
+ * Tells the user that a table's column list kept disagreeing with the data the
+ * server returned, so its contents were not loaded and the reloads were stopped.
+ *
+ * @param tableName The table whose contents were left unloaded.
+ */
+- (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName
+{
+	NSString *message = [NSString stringWithFormat:NSLocalizedString(@"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.", @"table column list mismatch informative message"), tableName ? tableName : @""];
+
+	// Asked for without waiting: the load has nothing left to do once it has given
+	// up, and its worker should not sit on the alert until the user dismisses it.
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Table contents not loaded", @"table contents not loaded message") message:message callback:nil];
+	});
 }
 
 - (void)reloadTableTask

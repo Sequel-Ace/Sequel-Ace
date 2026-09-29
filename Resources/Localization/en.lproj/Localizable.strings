@@ -2796,6 +2796,9 @@
 /* table content print heading */
 "Table Content" = "Table Content";
 
+/* table contents not loaded message */
+"Table contents not loaded" = "Table contents not loaded";
+
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "Table Content (CSV)";
 
@@ -2883,6 +2886,9 @@
 
 /* the color theme ‘%@’ already exists. */
 "The color theme ‘%@’ already exists." = "The color theme ‘%@’ already exists.";
+
+/* table column list mismatch informative message */
+"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.";
 
 /* the connection is busy. please wait and try again tooltip */
 "The connection is busy. Please wait and try again." = "The connection is busy. Please wait and try again.";
