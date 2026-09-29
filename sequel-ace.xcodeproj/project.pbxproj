@@ -564,6 +564,8 @@
 		9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; };
 		9651262524926F1600E65B53 /* SPMySQL.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */; };
+		C5EEDE1ADCC4EE30FF22B4F3 /* SAAWSLoginRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9350D86BB21914CD4A1D6D5F /* SAAWSLoginRefresh.swift */; };
+		3090839CFE350D576C5FC9AF /* SAAWSLoginRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51987AE809CD6C12A0ABCDFE /* SAAWSLoginRefreshTests.swift */; };
 		967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967D875A24B67B4300BAE934 /* SPAutosizingTextView.swift */; };
 		969178A524A5640D0012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 969178A324A5640D0012ED42 /* Default Bundles */; };
 		969178A624A5640D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 969178A424A5640D0012ED42 /* Default Themes */; };
@@ -695,6 +697,7 @@
 		E51CC2AA59AF37FEF73B06A0 /* SADragPasteboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */; };
 		EB9FF92F188F0B4AA444A892 /* SAConnectionInfo+ConnectionString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */; };
 		ED3C9DE94BCF6D3F17DACBCA /* AWSLoginCredentialsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */; };
+		7DDAC2A1CA1C077D1D6B7833 /* SAAWSLoginRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9350D86BB21914CD4A1D6D5F /* SAAWSLoginRefresh.swift */; };
 		ED73B484E6B129113C1C8221 /* SAAnalyticsConsentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA5B97BE9E063395AB12888 /* SAAnalyticsConsentPolicy.swift */; };
 		EDDD0AB23E0A1F4A5AE67091 /* SASSHTunnelAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B7130475EAD00BCE2B9 /* SASSHTunnelAuthService.swift */; };
 		F04AA77A50488C1B938879D7 /* SASSHTunnelAssistantSocketMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */; };
@@ -1147,6 +1150,7 @@
 		4D90B79C101E0CF200D116A1 /* SPUserMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserMO.h; sourceTree = "<group>"; };
 		4D90B79D101E0CF200D116A1 /* SPUserMO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserMO.m; sourceTree = "<group>"; };
 		4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AWSLoginCredentialsProvider.swift; sourceTree = "<group>"; };
+		9350D86BB21914CD4A1D6D5F /* SAAWSLoginRefresh.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAAWSLoginRefresh.swift; sourceTree = "<group>"; };
 		4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAMCPToolDefinitions.swift; sourceTree = "<group>"; };
 		500C1F901BFB5F9F0095DC7F /* SPPrivilegesMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPrivilegesMO.h; sourceTree = "<group>"; };
 		500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPrivilegesMO.m; sourceTree = "<group>"; };
@@ -1641,6 +1645,7 @@
 		EF5C9FD78A565D5260B38E55 /* SAUserManagerPrivilegeNormalizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAUserManagerPrivilegeNormalizer.swift; sourceTree = "<group>"; };
 		F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAAnalyticsConsentPolicy+Firebase.swift"; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentialsTests.swift; sourceTree = "<group>"; };
+		51987AE809CD6C12A0ABCDFE /* SAAWSLoginRefreshTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAAWSLoginRefreshTests.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthenticationTests.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManagerTests.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentials.swift; sourceTree = "<group>"; };
@@ -2885,6 +2890,7 @@
 				CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */,
 				AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */,
 				F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
+				51987AE809CD6C12A0ABCDFE /* SAAWSLoginRefreshTests.swift */,
 				F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
 				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
 				FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */,
@@ -3140,6 +3146,7 @@
 				F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */,
 				F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */,
 				4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */,
+				9350D86BB21914CD4A1D6D5F /* SAAWSLoginRefresh.swift */,
 				ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */,
 			);
 			path = AWS;
@@ -3736,6 +3743,8 @@
 				28DF4018C826FF45D15D16E6 /* SPMCPServerTests.swift in Sources */,
 				26BBEDE8A7A7D1C9DA602D39 /* SPMCPHTTP.swift in Sources */,
 				96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */,
+				C5EEDE1ADCC4EE30FF22B4F3 /* SAAWSLoginRefresh.swift in Sources */,
+				3090839CFE350D576C5FC9AF /* SAAWSLoginRefreshTests.swift in Sources */,
 				11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */,
 				441E45F5DCF87A54D8FEC130 /* SADatabaseScopedValueCache.swift in Sources */,
 				51AC3B9B304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift in Sources */,
@@ -4099,6 +4108,7 @@
 				2A7D5700E8EA895137AA6F91 /* SPMCPHTTP.swift in Sources */,
 				5AF0C4000000000000000002 /* SAConnectionInfo+Favorite.swift in Sources */,
 				ED3C9DE94BCF6D3F17DACBCA /* AWSLoginCredentialsProvider.swift in Sources */,
+				7DDAC2A1CA1C077D1D6B7833 /* SAAWSLoginRefresh.swift in Sources */,
 				1E4E58D8ABEA1E269DC46FD2 /* AWSSSOClient.swift in Sources */,
 				A57A61739BA9FEC6706473D6 /* SPAppController+MCP.swift in Sources */,
 				7EE575894C57515419B0A30A /* SPMCPPreferencePane.swift in Sources */,

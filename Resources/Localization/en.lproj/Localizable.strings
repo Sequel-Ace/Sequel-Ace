@@ -4190,3 +4190,27 @@
 
 /* Vault OIDC login already in progress */
 "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+
+/* aws login refresh error: the user's AWS password or credentials changed */
+"Your AWS sign-in credentials changed after you ran `aws login`. Run `aws login` and reconnect." = "Your AWS sign-in credentials changed after you ran `aws login`. Run `aws login` and reconnect.";
+
+/* aws login refresh error: missing IAM permission */
+"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.";
+
+/* aws login refresh error: AWS rejected the refresh token */
+"AWS rejected the renewal of your console sign-in session. Run `aws login` and reconnect." = "AWS rejected the renewal of your console sign-in session. Run `aws login` and reconnect.";
+
+/* aws login refresh error: no region for the sign-in session */
+"Sequel Ace could not tell which AWS region your console sign-in session belongs to. Run `aws login` and reconnect." = "Sequel Ace could not tell which AWS region your console sign-in session belongs to. Run `aws login` and reconnect.";
+
+/* aws login refresh error: the .aws folder is read-only for Sequel Ace */
+"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder: connect from the connection window and allow access when asked, or run `aws login` and reconnect." = "Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder: connect from the connection window and allow access when asked, or run `aws login` and reconnect.";
+
+/* aws login refresh error: the cached DPoP key cannot be read */
+"The cached AWS console sign-in session has an unreadable signing key. Run `aws login` and reconnect." = "The cached AWS console sign-in session has an unreadable signing key. Run `aws login` and reconnect.";
+
+/* aws login refresh error: malformed response */
+"AWS returned an unexpected response while renewing your console sign-in session." = "AWS returned an unexpected response while renewing your console sign-in session.";
+
+/* aws login refresh error: request failed; %@ is the underlying error */
+"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
