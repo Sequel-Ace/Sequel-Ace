@@ -4214,3 +4214,9 @@
 
 /* aws login refresh error: request failed; %@ is the underlying error */
 "Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
+
+/* AWS directory write access panel message */
+"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically.";
+
+/* AWS directory write access panel button */
+"Allow" = "Allow";

@@ -440,6 +440,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         return;
     }
 
+    if ([self _isAWSIAMConnection]) {
+        [SAAWSDirectoryWriteAccessPrompt requestWriteAccessIfNeededForProfile:[self awsProfile]];
+    }
+
     if ([self _isVaultConnection] && ![[self vaultHost] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
                                      message:NSLocalizedString(@"A Vault host is required to connect.", @"vault host required connect message")

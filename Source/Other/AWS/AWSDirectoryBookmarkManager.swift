@@ -38,10 +38,9 @@ import OSLog
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSDirectoryBookmark")
 
-    /// The bookmark creation options for security-scoped access
+    /// The bookmark creation options for security-scoped read-write access
     private let bookmarkCreationOptions: URL.BookmarkCreationOptions = [
-        .withSecurityScope,
-        .securityScopeAllowOnlyReadAccess
+        .withSecurityScope
     ]
     private let stateLock = NSLock()
 
@@ -259,6 +258,25 @@ import OSLog
         }
 
         return false
+    }
+
+    /// Replaces every AWS directory bookmark with a new read-write bookmark for `url`.
+    func replaceAWSDirectoryBookmark(with url: URL) -> Bool {
+        stopAllAccessingAWSDirectory()
+        revokeAllAWSDirectoryBookmarks()
+        return addAWSDirectoryBookmark(from: url)
+    }
+
+    /// True when `url` names a folder this manager recognizes as the AWS directory.
+    func isAWSDirectoryURL(_ url: URL) -> Bool {
+        isAWSDirectoryBookmarkKey(url.absoluteString)
+    }
+
+    /// The location of the authorized AWS directory, or nil when no bookmark resolves.
+    var authorizedAWSDirectoryURL: URL? {
+        guard hasAWSDirectoryBookmark(), startAccessingAWSDirectory() else { return nil }
+        defer { stopAccessingAWSDirectory() }
+        return currentResolvedAWSDirectoryURL()
     }
 
     private func isAWSDirectoryBookmarkKey(_ key: String) -> Bool {

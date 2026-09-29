@@ -306,6 +306,7 @@ import SwiftUI
                                               comment: "AWS authorization required message"))))
                 return
             }
+            SAAWSDirectoryWriteAccessPrompt.requestWriteAccessIfNeeded(forProfile: info.awsProfile)
             completion(resolveAWSIAMToken(info: info))
 
         case .vault:
