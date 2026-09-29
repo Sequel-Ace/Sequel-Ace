@@ -457,15 +457,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 /**
  * Starts a noted full reload, unless something is still loading around it.
  *
- * A reload task runs its rounds in a loop of its own, a load that is still
- * restoring its details would clear the details the new reload saves, and an
- * enclosing document task switches cancellation off as it closes, which would
- * leave the new query without a working Stop button. While a task is running
- * the note therefore waits for -endDocumentTaskForTab:.
+ * A reload task runs its rounds in a loop of its own, and a load that is still
+ * restoring its details would clear the details the new reload saves, so both
+ * take the note themselves once they are through. As before, the reload runs
+ * within any document task the load belongs to.
  */
 - (void)_startPendingFullReloadIfIdle
 {
-	if (isWorking) return;
 	if (![self.reloadCoordinator takeNoteWhenIdle]) return;
 
 	[[self onMainThread] _startTableReload];
@@ -4162,12 +4160,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	isWorking = NO;
 	[self _resumeDeferredComboBoxEdit];
-
-	// The task is closed, so a full reload a load asked for can start with a
-	// Stop button of its own.
-	if ([self.reloadCoordinator takeNoteWhenIdle]) {
-		[self _startTableReload];
-	}
 
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent])
