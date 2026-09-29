@@ -260,8 +260,16 @@ import OSLog
         return false
     }
 
-    /// Replaces every AWS directory bookmark with a new read-write bookmark for `url`.
+    /// Replaces every AWS directory bookmark with a new read-write bookmark for `url`,
+    /// keeping the existing bookmarks when no bookmark can be created for `url`.
     func replaceAWSDirectoryBookmark(with url: URL) -> Bool {
+        do {
+            _ = try url.bookmarkData(options: bookmarkCreationOptions, includingResourceValuesForKeys: nil, relativeTo: nil)
+        } catch {
+            os_log(.error, log: Self.log, "Cannot create a bookmark for the selected AWS directory: %{public}@", error.localizedDescription)
+            return false
+        }
+
         stopAllAccessingAWSDirectory()
         revokeAllAWSDirectoryBookmarks()
         return addAWSDirectoryBookmark(from: url)
