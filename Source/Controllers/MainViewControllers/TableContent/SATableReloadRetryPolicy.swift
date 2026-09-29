@@ -164,11 +164,14 @@ final class SATableReloadCoordinator: NSObject {
         lock.unlock()
     }
 
-    /// Records that the reload task is through, dropping a note it did not use.
+    /// Records that the reload task is through.
+    ///
+    /// A note still waiting here was left by a load running beside the task -
+    /// the task's own loop takes its notes as it goes - so it is kept and the
+    /// caller asks straight away whether to start it.
     @objc func reloadTaskDidEnd() {
         lock.lock()
         reloadTaskIsRunning = false
-        reloadIsNoted = false
         lock.unlock()
     }
 

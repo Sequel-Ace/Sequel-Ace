@@ -171,15 +171,28 @@ final class SATableReloadCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.takeNoteForReloadTask())
     }
 
-    /// Checks that a task which ends drops a note nobody used.
-    func testEndingTheTaskDropsAnUnusedNote() {
+    /// Checks that a note left beside the task survives the task ending.
+    ///
+    /// The task's own loop takes its notes as it goes, so one still waiting when
+    /// the task ends came from a load running beside it and must not be lost.
+    func testANoteLeftBesideTheTaskSurvivesItsEnd() {
         let coordinator = SATableReloadCoordinator()
 
         coordinator.reloadTaskDidBegin()
         XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
         coordinator.reloadTaskDidEnd()
 
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
         XCTAssertFalse(coordinator.takeNoteWhenIdle())
+    }
+
+    /// Checks that a task starting clears a note left over from before it.
+    func testAStartingTaskClearsAnEarlierNote() {
+        let coordinator = SATableReloadCoordinator()
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        coordinator.reloadTaskDidBegin()
+
         XCTAssertFalse(coordinator.takeNoteForReloadTask())
     }
 

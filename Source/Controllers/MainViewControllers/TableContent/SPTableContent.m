@@ -1522,6 +1522,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		[tableDocumentInstance endTask];
 		[self _tableDataReloadDidFinish];
+
+		// A load running beside this task may have left a note the loop above
+		// never saw; it is started here rather than left behind.
+		[self _startPendingFullReloadIfIdle];
 	}
 }
 
