@@ -174,15 +174,23 @@ final class SATableReloadCoordinator: NSObject {
 
     /// Notes that a table wants a full reload of itself.
     ///
+    /// Two loads can report the same mismatch before either note is taken - a
+    /// filter load and the refresh after a save, say. They share the one note
+    /// that is already waiting and only the first of them spends from the
+    /// budget, so the budget counts reloads that actually ran.
+    ///
     /// - Parameter table: The table asking to be reloaded.
     /// - Returns: `true` while the table's budget lasts. `false` means the
     ///   reloads have not settled anything and the caller should stop and say so.
     @objc func noteFullReload(forTable table: String?) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if reloadIsNoted { return true }
+
         guard policy.shouldReload(forTable: table) else { return false }
 
-        lock.lock()
         reloadIsNoted = true
-        lock.unlock()
         return true
     }
 

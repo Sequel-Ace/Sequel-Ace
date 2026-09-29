@@ -183,12 +183,18 @@ final class SATableReloadCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.takeNoteForReloadTask())
     }
 
-    /// Checks that the budget bounds the notes a table may leave.
+    /// Checks that the budget bounds the reloads a table may run.
+    ///
+    /// Each note is taken before the next is left, the way a round of reloading
+    /// takes the note it was started for.
     func testTheBudgetBoundsTheNotes() {
         let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 2))
 
         XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
         XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+
         XCTAssertFalse(coordinator.noteFullReload(forTable: "orders"))
         XCTAssertEqual(coordinator.attemptCount(forTable: "orders"), 2)
     }
@@ -217,11 +223,31 @@ final class SATableReloadCoordinatorTests: XCTestCase {
         let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 1))
 
         XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
         XCTAssertTrue(coordinator.noteFullReload(forTable: "customers"))
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+
         coordinator.reset(forTable: "orders")
 
         XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
         XCTAssertFalse(coordinator.noteFullReload(forTable: "customers"))
+    }
+
+    /// Checks that a second load sharing a waiting note does not spend from the budget.
+    func testASharedNoteIsChargedOnlyOnce() {
+        let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 2))
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertEqual(coordinator.attemptCount(forTable: "orders"), 1)
+
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertEqual(coordinator.attemptCount(forTable: "orders"), 2)
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+        XCTAssertFalse(coordinator.noteFullReload(forTable: "orders"))
     }
 
     /// Checks that an unbalanced end does not push the load count below zero.
