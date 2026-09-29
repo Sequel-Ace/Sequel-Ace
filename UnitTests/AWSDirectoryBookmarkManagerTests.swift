@@ -108,8 +108,11 @@ final class AWSDirectoryBookmarkManagerTests: XCTestCase {
 final class AWSDirectoryBookmarkReplacementTests: XCTestCase {
 
     private var root: URL!
+    private var savedBookmarkURLs: [URL] = []
 
     override func setUpWithError() throws {
+        savedBookmarkURLs = bookmarkKeys.compactMap(URL.init(string:))
+
         root = FileManager.default.temporaryDirectory
             .appendingPathComponent("SequelAce-BookmarkReplace-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("old/.aws"), withIntermediateDirectories: true)
@@ -118,6 +121,9 @@ final class AWSDirectoryBookmarkReplacementTests: XCTestCase {
 
     override func tearDownWithError() throws {
         while AWSDirectoryBookmarkManager.shared.revokeAWSDirectoryBookmark() {}
+        for url in savedBookmarkURLs where !bookmarkKeys.contains(url.absoluteString) {
+            _ = SecureBookmarkManager.sharedInstance.addBookmarkFor(url: url, options: 0, isForStaleBookmark: false, isForKnownHostsFile: false)
+        }
         try? FileManager.default.removeItem(at: root)
     }
 
@@ -128,7 +134,7 @@ final class AWSDirectoryBookmarkReplacementTests: XCTestCase {
         XCTAssertTrue(manager.addAWSDirectoryBookmark(from: old))
 
         XCTAssertTrue(manager.replaceAWSDirectoryBookmark(with: new))
-        XCTAssertEqual(bookmarkKeys, [new.absoluteString])
+        XCTAssertEqual(testBookmarkKeys, [new.absoluteString])
     }
 
     func testReplacementKeepsTheExistingBookmarkWhenNoNewOneCanBeCreated() {
@@ -138,10 +144,14 @@ final class AWSDirectoryBookmarkReplacementTests: XCTestCase {
         XCTAssertTrue(manager.addAWSDirectoryBookmark(from: old))
 
         XCTAssertFalse(manager.replaceAWSDirectoryBookmark(with: missing))
-        XCTAssertEqual(bookmarkKeys, [old.absoluteString])
+        XCTAssertEqual(testBookmarkKeys, [old.absoluteString])
     }
 
     private var bookmarkKeys: [String] {
         SecureBookmarkManager.sharedInstance.bookmarks.flatMap { $0.keys }
+    }
+
+    private var testBookmarkKeys: [String] {
+        bookmarkKeys.filter { $0.hasPrefix(root.absoluteString) }
     }
 }
