@@ -484,6 +484,12 @@ final class SAAtomicFileReplacement {
             unlink(temporaryPath)
             throw POSIXError(code)
         }
+
+        let directoryDescriptor = open((destinationPath as NSString).deletingLastPathComponent, O_RDONLY | O_CLOEXEC)
+        if directoryDescriptor >= 0 {
+            _ = fsync(directoryDescriptor)
+            close(directoryDescriptor)
+        }
     }
 
     /// Removes the temporary file unless it has been committed.
