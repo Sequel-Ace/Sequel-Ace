@@ -926,6 +926,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	// If no table is selected, return
 	if (!selectedTable) return;
+
+	// Count this load as running, so a reload task finishing beside it does not
+	// take its note while it is still working. Filtering, paging, sorting and
+	// the refresh after an edit come straight here with no -loadTable: around
+	// them, and would otherwise look like no load at all.
+	[self.reloadCoordinator loadDidBegin];
 	// Conservatively block popup commits until this load either mutates the snapshot or finishes unchanged.
 	[_comboBoxSelectionTracker tableDataReloadWillBegin];
 
@@ -1192,8 +1198,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 	[self _tableDataReloadDidFinish];
 
+	[self.reloadCoordinator loadDidEnd];
+
 	// Filtering, paging, sorting and the refresh after an edit load the values
-	// without a surrounding -loadTable:, so the note is taken here as well.
+	// without a surrounding -loadTable:, so the note is taken here as well. With
+	// a -loadTable: around this load the count is still above zero here and that
+	// wrapper takes the note instead.
 	[self _startPendingFullReloadIfIdle];
 }
 
