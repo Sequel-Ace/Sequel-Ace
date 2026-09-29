@@ -311,6 +311,11 @@ import OSLog
         return FileManager.default.fileExists(atPath: resolvePathForCurrentAWSDirectory(path))
     }
 
+    /// Translates a path under `~/.aws` into the authorized directory; call while access is held.
+    func resolvedAWSPath(for path: String) -> String {
+        resolvePathForCurrentAWSDirectory(path)
+    }
+
     private func resolvePathForCurrentAWSDirectory(_ path: String) -> String {
         guard let resolvedURL = currentResolvedAWSDirectoryURL() else {
             return path

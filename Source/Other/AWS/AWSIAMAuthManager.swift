@@ -218,7 +218,7 @@ import Security
 
         // Console sign-in (`aws login`) profiles resolve cached temporary credentials.
         // Static keys and role assumption outrank console sign-in, matching the AWS CLI.
-        if baseCredentials.isLoginProfile && !baseCredentials.isValid && !baseCredentials.requiresRoleAssumption {
+        if AWSLoginCredentialsProvider.resolvesThroughConsoleSignIn(baseCredentials) {
             return try resolveLoginCredentials(baseCredentials, profileName: profileName)
         }
 

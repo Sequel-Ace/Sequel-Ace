@@ -3708,8 +3708,8 @@
 /* AWS console sign-in (aws login) error: no cached session on disk */
 "No cached AWS console sign-in session was found. Run `aws login` and try again." = "No cached AWS console sign-in session was found. Run `aws login` and try again.";
 
-/* AWS console sign-in (aws login) error: cached credentials have expired */
-"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect.";
+/* AWS console sign-in (aws login) error: the sign-in session can no longer be renewed */
+"Your AWS console sign-in session has ended. Run `aws login` and reconnect." = "Your AWS console sign-in session has ended. Run `aws login` and reconnect.";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
