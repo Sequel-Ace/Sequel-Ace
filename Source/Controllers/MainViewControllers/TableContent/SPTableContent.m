@@ -103,18 +103,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation, SPComboBoxCellDelegate>
-{
-	// How many -loadTable: calls are on the stack, so the outermost one knows it
-	// is the one that may start a full reload noted during the load.
-	NSInteger loadTableDepth;
-}
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
 @property (strong, nonatomic) SAComboBoxSelectionTracker *comboBoxSelectionTracker;
-@property (strong, nonatomic) SATableReloadRetryPolicy *reloadRetryPolicy;
-@property (atomic, assign) BOOL fullTableReloadPending;
-@property (atomic, assign) BOOL reloadTaskIsRunning;
+@property (strong, nonatomic) SATableReloadCoordinator *reloadCoordinator;
 
 /** Abandons the row being edited, reporting whether one was abandoned. */
 - (BOOL)cancelRowEditing;
@@ -124,16 +117,22 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)_startTableReload;
 /** Carries out one load of a table; -loadTable: tracks that it is running. */
 - (void)_loadTableContents:(NSString *)aTable;
-/** Starts a noted full reload once no load or reload task is still running. */
-- (void)_startPendingFullReloadIfOutermost;
+/** Starts a noted full reload once nothing else is loading. */
+- (void)_startPendingFullReloadIfIdle;
 /** Reports that a table's column list never matched the data it was sent. */
 - (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName;
 
+/** Resizes the filter rule editor to the height it asked for. */
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate;
+/** Follows the filter rule editor when its preferred size changes. */
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification;
+/** Re-lays out the content view after its size changed. */
 - (void)contentViewSizeChanged:(NSNotification *)notification;
+/** Shows or hides the rule filter editor. */
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate;
+/** Shows or hides the rule filter editor, noting whether the table changed. */
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate tableChanged:(BOOL)tableChanged;
+/** Runs the query that saves the edited row, reporting whether it worked. */
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 - (void)_updateRecordView;
@@ -167,7 +166,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		dataColumns       = [[NSMutableArray alloc] init];
 		oldRow            = [[NSMutableArray alloc] init];
 		_comboBoxSelectionTracker = [[SAComboBoxSelectionTracker alloc] init];
-		_reloadRetryPolicy = [[SATableReloadRetryPolicy alloc] init];
+		_reloadCoordinator = [[SATableReloadCoordinator alloc] init];
 
 		tableRowsCount         = 0;
 		previousTableRowsCount = 0;
@@ -377,15 +376,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)loadTable:(NSString *)aTable
 {
-	@synchronized (self) { loadTableDepth++; }
+	[self.reloadCoordinator loadDidBegin];
 
 	[self _loadTableContents:aTable];
 
-	@synchronized (self) { loadTableDepth--; }
+	[self.reloadCoordinator loadDidEnd];
 
 	// The load is over and has put its details back, so a full reload it asked
 	// for along the way can now have a worker of its own.
-	[self _startPendingFullReloadIfOutermost];
+	[self _startPendingFullReloadIfIdle];
 }
 
 /**
@@ -456,23 +455,19 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 }
 
 /**
- * Starts a noted full reload, unless a load or a reload task still has one to run.
+ * Starts a noted full reload, unless something is still loading around it.
  *
- * A reload task runs its rounds in a loop of its own, and a load that is still
- * restoring its details would clear the details the new reload saves, so both
- * of them drain the note themselves once they are through.
+ * A reload task runs its rounds in a loop of its own, a load that is still
+ * restoring its details would clear the details the new reload saves, and an
+ * enclosing document task switches cancellation off as it closes, which would
+ * leave the new query without a working Stop button. While a task is running
+ * the note therefore waits for -endDocumentTaskForTab:.
  */
-- (void)_startPendingFullReloadIfOutermost
+- (void)_startPendingFullReloadIfIdle
 {
-	if (self.reloadTaskIsRunning) return;
+	if (isWorking) return;
+	if (![self.reloadCoordinator takeNoteWhenIdle]) return;
 
-	@synchronized (self) {
-		if (loadTableDepth > 0) return;
-	}
-
-	if (!self.fullTableReloadPending) return;
-
-	self.fullTableReloadPending = NO;
 	[[self onMainThread] _startTableReload];
 }
 
@@ -577,7 +572,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	} else {
 
 		// Another table is a fresh start for the automatic reload budget.
-		[self.reloadRetryPolicy resetAll];
+		[self.reloadCoordinator resetAll];
 
         if (newTableName){
             SPLog(@"new table: %@", newTableName);
@@ -1027,16 +1022,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		// A reload only helps while the column list can still change. If the list keeps
 		// disagreeing with the result - a dropping connection leaves it empty, and the
-		// query then selects every column - each reload queues the next one, so the
+		// query then selects every column - each reload asks for the next one, so the
 		// reloads are capped and the user is told instead.
-		if ([self.reloadRetryPolicy shouldReloadForTable:selectedTable]) {
+		if ([self.reloadCoordinator noteFullReloadForTable:selectedTable]) {
 			fullTableReloadRequired = YES;
 		} else {
-			SPLog(@"Column mismatch persists after %ld reloads, giving up", (long)[self.reloadRetryPolicy attemptCountForTable:selectedTable]);
+			SPLog(@"Column mismatch persists after %ld reloads, giving up", (long)[self.reloadCoordinator attemptCountForTable:selectedTable]);
 			columnMismatchUnresolved = YES;
 		}
 	} else if (selectedItems.count == 1 && resultStore) {
-		[self.reloadRetryPolicy resetForTable:selectedTable];
+		[self.reloadCoordinator resetForTable:selectedTable];
 	}
 
 	// Process the result into the data store
@@ -1186,14 +1181,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	} 
 	else
 	{
-		// Note the reload rather than starting it here: running it from this worker
-		// would load inside the load that asked for it, and nest a further load
-		// inside that, without end. The reload task picks the note up once the
-		// load around it has finished, and -loadTable: does the same for a load
-		// that no reload task is driving.
+		// The reload was noted with the coordinator above rather than started here:
+		// running it from this worker would load inside the load that asked for
+		// it, and nest a further load inside that, without end.
         if (fullTableReloadRequired){
             SPLog(@"Trigger a full reload");
-            self.fullTableReloadPending = YES;
 
         } else if (columnMismatchUnresolved) {
             [self _reportUnresolvedColumnMismatchForTable:selectedTable];
@@ -1203,8 +1195,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[self _tableDataReloadDidFinish];
 
 	// Filtering, paging, sorting and the refresh after an edit load the values
-	// without a surrounding -loadTable:, so the note is drained here as well.
-	[self _startPendingFullReloadIfOutermost];
+	// without a surrounding -loadTable:, so the note is taken here as well.
+	[self _startPendingFullReloadIfIdle];
 }
 
 /**
@@ -1454,7 +1446,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	// A reload asked for from outside starts the automatic budget over; the budget
 	// only bounds the reloads a load queues for itself after a column mismatch.
-	[self.reloadRetryPolicy resetForTable:selectedTable];
+	[self.reloadCoordinator resetForTable:selectedTable];
 	[self _startTableReload];
 }
 
@@ -1496,10 +1488,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	});
 }
 
+/**
+ * Reloads the table, repeating the load while a round asks for another.
+ */
 - (void)reloadTableTask
 {
 	@autoreleasepool {
-		self.reloadTaskIsRunning = YES;
+		[self.reloadCoordinator reloadTaskDidBegin];
 
 		// A load whose column list disagrees with the result asks for another full
 		// load. Those rounds run here one after another rather than one inside the
@@ -1519,22 +1514,22 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			[tableDataInstance resetColumnData];
 			[tableDataInstance resetStatusData];
 
-			self.fullTableReloadPending = NO;
-
 			// Load the table's data
 			[self loadTable:[tablesListInstance tableName]];
 
-			loadAgain = self.fullTableReloadPending;
+			loadAgain = [self.reloadCoordinator takeNoteForReloadTask];
 		} while (loadAgain);
 
-		self.fullTableReloadPending = NO;
-		self.reloadTaskIsRunning = NO;
+		[self.reloadCoordinator reloadTaskDidEnd];
 
 		[tableDocumentInstance endTask];
 		[self _tableDataReloadDidFinish];
 	}
 }
 
+/**
+ * Releases the reload reserved for popup callbacks once the load is through.
+ */
 - (void)_tableDataReloadDidFinish
 {
 	if (![_comboBoxSelectionTracker tableDataReloadDidFinish]) return;
@@ -1544,6 +1539,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	});
 }
 
+/**
+ * Resumes a popup edit that was put off while the table was loading.
+ */
 - (void)_resumeDeferredComboBoxEdit
 {
 	// An enclosing document task can outlive its data query. Its end
@@ -4164,6 +4162,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	isWorking = NO;
 	[self _resumeDeferredComboBoxEdit];
+
+	// The task is closed, so a full reload a load asked for can start with a
+	// Stop button of its own.
+	if ([self.reloadCoordinator takeNoteWhenIdle]) {
+		[self _startTableReload];
+	}
 
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent])

@@ -127,6 +127,117 @@ final class SATableReloadRetryPolicyTests: XCTestCase {
     }
 }
 
+
+final class SATableReloadCoordinatorTests: XCTestCase {
+
+    /// Checks that a note is only taken once no load is still running.
+    func testANoteWaitsForTheLoadAroundItToFinish() {
+        let coordinator = SATableReloadCoordinator()
+
+        coordinator.loadDidBegin()
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+
+        coordinator.loadDidEnd()
+
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+    }
+
+    /// Checks that only the outermost of nested loads may take the note.
+    func testNestedLoadsOnlyReleaseTheNoteAtTheOuterEnd() {
+        let coordinator = SATableReloadCoordinator()
+
+        coordinator.loadDidBegin()
+        coordinator.loadDidBegin()
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+
+        coordinator.loadDidEnd()
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+
+        coordinator.loadDidEnd()
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+    }
+
+    /// Checks that a running reload task keeps the note for its own loop.
+    func testAReloadTaskKeepsTheNoteForItself() {
+        let coordinator = SATableReloadCoordinator()
+
+        coordinator.reloadTaskDidBegin()
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+
+        XCTAssertTrue(coordinator.takeNoteForReloadTask())
+        XCTAssertFalse(coordinator.takeNoteForReloadTask())
+    }
+
+    /// Checks that a task which ends drops a note nobody used.
+    func testEndingTheTaskDropsAnUnusedNote() {
+        let coordinator = SATableReloadCoordinator()
+
+        coordinator.reloadTaskDidBegin()
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        coordinator.reloadTaskDidEnd()
+
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+        XCTAssertFalse(coordinator.takeNoteForReloadTask())
+    }
+
+    /// Checks that the budget bounds the notes a table may leave.
+    func testTheBudgetBoundsTheNotes() {
+        let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 2))
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertFalse(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertEqual(coordinator.attemptCount(forTable: "orders"), 2)
+    }
+
+    /// Checks that a refused note leaves nothing behind for anyone to take.
+    func testARefusedNoteStartsNoReload() {
+        let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 0))
+
+        XCTAssertFalse(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+    }
+
+    /// Checks that a reset refills the budget and forgets a pending note.
+    func testResetAllForgetsBudgetAndNote() {
+        let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 1))
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        coordinator.resetAll()
+
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+    }
+
+    /// Checks that resetting one table refills only that table's budget.
+    func testResetOfOneTableRefillsOnlyThatTable() {
+        let coordinator = SATableReloadCoordinator(policy: SATableReloadRetryPolicy(limit: 1))
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "customers"))
+        coordinator.reset(forTable: "orders")
+
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertFalse(coordinator.noteFullReload(forTable: "customers"))
+    }
+
+    /// Checks that an unbalanced end does not push the load count below zero.
+    func testAnExtraLoadEndDoesNotUnbalanceTheCount() {
+        let coordinator = SATableReloadCoordinator()
+
+        coordinator.loadDidEnd()
+        coordinator.loadDidBegin()
+        XCTAssertTrue(coordinator.noteFullReload(forTable: "orders"))
+        XCTAssertFalse(coordinator.takeNoteWhenIdle())
+
+        coordinator.loadDidEnd()
+        XCTAssertTrue(coordinator.takeNoteWhenIdle())
+    }
+}
+
 /// A counter several queues may raise, so the concurrency test can total the
 /// reloads the policy granted without racing on the total itself.
 private final class SAReloadPolicyTestCounter {
