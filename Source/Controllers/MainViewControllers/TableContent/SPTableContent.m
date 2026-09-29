@@ -103,6 +103,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation, SPComboBoxCellDelegate>
+{
+	// How many -loadTable: calls are on the stack, so the outermost one knows it
+	// is the one that may start a full reload noted during the load.
+	NSInteger loadTableDepth;
+}
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
@@ -111,11 +116,16 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 @property (atomic, assign) BOOL fullTableReloadPending;
 @property (atomic, assign) BOOL reloadTaskIsRunning;
 
+/** Abandons the row being edited, reporting whether one was abandoned. */
 - (BOOL)cancelRowEditing;
 /** Tears the content view down when its document window closes. */
 - (void)documentWillClose:(NSNotification *)notification;
 /** Starts a table reload without touching the automatic retry budget. */
 - (void)_startTableReload;
+/** Carries out one load of a table; -loadTable: tracks that it is running. */
+- (void)_loadTableContents:(NSString *)aTable;
+/** Starts a noted full reload once no load or reload task is still running. */
+- (void)_startPendingFullReloadIfOutermost;
 /** Reports that a table's column list never matched the data it was sent. */
 - (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName;
 
@@ -367,6 +377,24 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)loadTable:(NSString *)aTable
 {
+	@synchronized (self) { loadTableDepth++; }
+
+	[self _loadTableContents:aTable];
+
+	@synchronized (self) { loadTableDepth--; }
+
+	// The load is over and has put its details back, so a full reload it asked
+	// for along the way can now have a worker of its own.
+	[self _startPendingFullReloadIfOutermost];
+}
+
+/**
+ * Carries out one load of aTable; the wrapper above tracks that it is running.
+ *
+ * @param aTable The to be loaded table name
+ */
+- (void)_loadTableContents:(NSString *)aTable
+{
 	// Abort the reload if the user is still editing a row
 	if (isEditingRow) return;
 
@@ -425,14 +453,27 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Clear any details to restore now that they have been restored
 	[self clearDetailsToRestore];
+}
 
-	// A load outside a reload task has no round after it, so the full reload it
-	// asked for is started here - once this load has put its details back, so the
-	// reload's own saved details are not cleared out from under it.
-	if (self.fullTableReloadPending && !self.reloadTaskIsRunning) {
-		self.fullTableReloadPending = NO;
-		[[self onMainThread] _startTableReload];
+/**
+ * Starts a noted full reload, unless a load or a reload task still has one to run.
+ *
+ * A reload task runs its rounds in a loop of its own, and a load that is still
+ * restoring its details would clear the details the new reload saves, so both
+ * of them drain the note themselves once they are through.
+ */
+- (void)_startPendingFullReloadIfOutermost
+{
+	if (self.reloadTaskIsRunning) return;
+
+	@synchronized (self) {
+		if (loadTableDepth > 0) return;
 	}
+
+	if (!self.fullTableReloadPending) return;
+
+	self.fullTableReloadPending = NO;
+	[[self onMainThread] _startTableReload];
 }
 
 /**
@@ -1160,6 +1201,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
 	[self _tableDataReloadDidFinish];
+
+	// Filtering, paging, sorting and the refresh after an edit load the values
+	// without a surrounding -loadTable:, so the note is drained here as well.
+	[self _startPendingFullReloadIfOutermost];
 }
 
 /**
