@@ -1390,15 +1390,21 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
         XCTAssertTrue(requests.isEmpty)
     }
 
-    func testRenewalByAnotherProcessIsNotOverwritten() throws {
+    func testRenewalByAnotherProcessIsNotOverwrittenAndItsCredentialsAreUsed() throws {
         try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(120)))
-        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
-            self.requests.append(request)
-            var renewedElsewhere = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(900))
-            renewedElsewhere["refreshToken"] = "cliRefreshToken"
-            try self.writeCache(renewedElsewhere)
-            return (SAAWSLoginTestFixtures.successResponse, 200)
+        renewElsewhereDuringRequest(expiresIn: 900)
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIACLI0000000000000")
+            XCTAssertEqual(credentials.sessionToken, "cliSessionToken")
         }
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
+    }
+
+    func testRenewalByAnotherProcessThatIsAboutToExpireUsesTheRenewedCredentials() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(120)))
+        renewElsewhereDuringRequest(expiresIn: 60)
 
         try withLoginProfile { profile in
             let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
@@ -1455,6 +1461,23 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: config) { _, _ in
             try body(try AWSCredentials(profile: nil))
+        }
+    }
+
+    private func renewElsewhereDuringRequest(expiresIn: TimeInterval) {
+        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
+            self.requests.append(request)
+            var renewedElsewhere = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(expiresIn))
+            renewedElsewhere["accessToken"] = [
+                "accessKeyId": "ASIACLI0000000000000",
+                "secretAccessKey": "cliSecret",
+                "sessionToken": "cliSessionToken",
+                "accountId": "123456789012",
+                "expiresAt": SAAWSLoginSession.formatTimestamp(Date().addingTimeInterval(expiresIn))
+            ]
+            renewedElsewhere["refreshToken"] = "cliRefreshToken"
+            try self.writeCache(renewedElsewhere)
+            return (SAAWSLoginTestFixtures.successResponse, 200)
         }
     }
 

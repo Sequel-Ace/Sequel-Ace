@@ -165,7 +165,12 @@ import OSLog
         if let onDisk = try? SAAWSLoginSession(jsonData: FileManager.default.contents(atPath: path) ?? Data()),
            onDisk.refreshToken != refreshToken {
             log.info("Console sign-in cache changed during renewal; leaving it unchanged")
-            return credentials
+
+            let now = Date()
+            guard !onDisk.needsRefresh(at: now), let onDiskCredentials = try? onDisk.credentials(at: now) else {
+                return credentials
+            }
+            return onDiskCredentials
         }
 
         do {
