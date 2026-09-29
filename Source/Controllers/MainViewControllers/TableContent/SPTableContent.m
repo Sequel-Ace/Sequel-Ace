@@ -108,10 +108,15 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
 @property (strong, nonatomic) SAComboBoxSelectionTracker *comboBoxSelectionTracker;
 @property (strong, nonatomic) SATableReloadRetryPolicy *reloadRetryPolicy;
+@property (atomic, assign) BOOL fullTableReloadPending;
+@property (atomic, assign) BOOL reloadTaskIsRunning;
 
 - (BOOL)cancelRowEditing;
+/** Tears the content view down when its document window closes. */
 - (void)documentWillClose:(NSNotification *)notification;
+/** Starts a table reload without touching the automatic retry budget. */
 - (void)_startTableReload;
+/** Reports that a table's column list never matched the data it was sent. */
 - (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName;
 
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate;
@@ -420,6 +425,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Clear any details to restore now that they have been restored
 	[self clearDetailsToRestore];
+
+	// A load outside a reload task has no round after it, so the full reload it
+	// asked for is started here - once this load has put its details back, so the
+	// reload's own saved details are not cleared out from under it.
+	if (self.fullTableReloadPending && !self.reloadTaskIsRunning) {
+		self.fullTableReloadPending = NO;
+		[[self onMainThread] _startTableReload];
+	}
 }
 
 /**
@@ -1132,13 +1145,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	} 
 	else
 	{
-		// Trigger a full reload if required. The reload is asked for on the main
-		// thread: -reloadTable: only detaches a worker when it is called there, so
-		// asking for it from this worker would run the next load inside this one
-		// and nest a further load inside that, without end.
+		// Note the reload rather than starting it here: running it from this worker
+		// would load inside the load that asked for it, and nest a further load
+		// inside that, without end. The reload task picks the note up once the
+		// load around it has finished, and -loadTable: does the same for a load
+		// that no reload task is driving.
         if (fullTableReloadRequired){
             SPLog(@"Trigger a full reload");
-            [[self onMainThread] _startTableReload];
+            self.fullTableReloadPending = YES;
 
         } else if (columnMismatchUnresolved) {
             [self _reportUnresolvedColumnMismatchForTable:selectedTable];
@@ -1402,8 +1416,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /**
  * Starts a table reload without touching the automatic retry budget.
  *
- * Called on the main thread this detaches a worker, so a load that queues the
- * next reload for itself does not run it inside the load it is finishing.
+ * Asked for on the main thread this detaches a worker of its own. A load that
+ * noted a full reload for itself starts it here only once that load is done,
+ * so the two never run into each other over the details they save and restore.
  */
 - (void)_startTableReload
 {
@@ -1439,8 +1454,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (void)reloadTableTask
 {
 	@autoreleasepool {
-		// Check whether a save of the current row is required, abort if pending changes couldn't be saved.
-		if ([[self onMainThread] saveRowOnDeselect]) {
+		self.reloadTaskIsRunning = YES;
+
+		// A load whose column list disagrees with the result asks for another full
+		// load. Those rounds run here one after another rather than one inside the
+		// next, so each load finishes - and puts back the details it saved - before
+		// the following one starts. -loadTableValues bounds how many there can be.
+		BOOL loadAgain = NO;
+		do {
+			// Check whether a save of the current row is required, abort if pending changes couldn't be saved.
+			if (![[self onMainThread] saveRowOnDeselect]) break;
 
 			// Save view details to restore safely if possible (except viewport, which will be
 			// preserved automatically, and can then be scrolled as the table loads)
@@ -1451,9 +1474,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			[tableDataInstance resetColumnData];
 			[tableDataInstance resetStatusData];
 
+			self.fullTableReloadPending = NO;
+
 			// Load the table's data
 			[self loadTable:[tablesListInstance tableName]];
-		}
+
+			loadAgain = self.fullTableReloadPending;
+		} while (loadAgain);
+
+		self.fullTableReloadPending = NO;
+		self.reloadTaskIsRunning = NO;
 
 		[tableDocumentInstance endTask];
 		[self _tableDataReloadDidFinish];
