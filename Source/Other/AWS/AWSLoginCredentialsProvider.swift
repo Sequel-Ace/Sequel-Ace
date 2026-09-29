@@ -111,8 +111,9 @@ import OSLog
 
     // MARK: - Renewal
 
-    /// Renews the credentials cached at `path` unless they were renewed in the meantime,
-    /// returning the cached credentials when renewal fails and they remain usable.
+    /// Renews the credentials cached at `path` unless they were renewed in the meantime. When renewal
+    /// fails, returns credentials another process wrote to `path` meanwhile, or the cached credentials
+    /// while they remain usable.
     private static func renewCredentials(cachedAt path: String, fallbackRegion: String?) throws -> AWSCredentials {
         let session = try loadSession { FileManager.default.contents(atPath: path) }
 
@@ -125,8 +126,15 @@ import OSLog
         } catch {
             log.error("Console sign-in renewal failed: \(error.localizedDescription)", privacy: .visible)
 
-            if let remaining = session.remainingLifetime(at: Date()), remaining > minimumFallbackLifetime {
-                return try session.credentials(at: Date())
+            let now = Date()
+            if let onDisk = try? loadSession({ FileManager.default.contents(atPath: path) }),
+               !onDisk.needsRefresh(at: now),
+               let onDiskCredentials = try? onDisk.credentials(at: now) {
+                return onDiskCredentials
+            }
+
+            if let remaining = session.remainingLifetime(at: now), remaining > minimumFallbackLifetime {
+                return try session.credentials(at: now)
             }
             throw error
         }

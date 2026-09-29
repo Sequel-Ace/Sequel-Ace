@@ -1413,6 +1413,19 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
         XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
     }
 
+    func testFailedRenewalUsesCredentialsAnotherProcessRenewedMeanwhile() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        renewElsewhereDuringRequest(expiresIn: 900, status: 400,
+                                    body: Data(#"{"error":"INVALID_REQUEST","message":"The provided authorization grant is invalid"}"#.utf8))
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIACLI0000000000000")
+        }
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
+    }
+
     func testCacheWithoutRefreshTokenReportsSessionExpiredOnceExpired() throws {
         var contents = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60))
         contents.removeValue(forKey: "refreshToken")
@@ -1464,7 +1477,7 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
         }
     }
 
-    private func renewElsewhereDuringRequest(expiresIn: TimeInterval) {
+    private func renewElsewhereDuringRequest(expiresIn: TimeInterval, status: Int = 200, body: Data = SAAWSLoginTestFixtures.successResponse) {
         AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
             self.requests.append(request)
             var renewedElsewhere = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(expiresIn))
@@ -1477,7 +1490,7 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
             ]
             renewedElsewhere["refreshToken"] = "cliRefreshToken"
             try self.writeCache(renewedElsewhere)
-            return (SAAWSLoginTestFixtures.successResponse, 200)
+            return (body, status)
         }
     }
 
