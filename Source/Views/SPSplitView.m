@@ -646,7 +646,41 @@
 #pragma mark -
 #pragma mark Delegate method forwarding
 
-- (CGFloat)splitView:(NSSplitView *)splitView constrainSplitPosition:(CGFloat)proposedPosition ofSubviewAt:(NSInteger)dividerIndex {
+/**
+ * Constrain a proposed divider position to the allowed range.
+ *
+ * Since 10.5, NSSplitView calls this single method (instead of the old
+ * constrainMinCoordinate:/constrainMaxCoordinate: pair) while the divider is
+ * being dragged and from -setPosition:ofDividerAtIndex:. This is therefore
+ * where the minimum/maximum sizes set via setMinSize:/setMaxSize: - and the
+ * delegate's own coordinate constraints - actually have to be enforced.
+ * Previously the proposed position was returned unchanged, so e.g. the
+ * tables-list sidebar could be dragged to zero width, at which point the
+ * divider had no grabbable rect anymore and the sidebar could not be
+ * restored (see #2675).
+ */
+- (CGFloat)splitView:(NSSplitView *)splitView constrainSplitPosition:(CGFloat)proposedPosition ofSubviewAt:(NSInteger)dividerIndex
+{
+	// The full coordinate range the divider can occupy along the split axis
+	CGFloat minPossibleCoordinate = 0;
+	CGFloat maxPossibleCoordinate = [self _lengthOfView:self] - [self dividerThickness];
+
+	// Derive the constrained range from the existing implementations, which already
+	// merge the delegate's constraints with the per-subview min/max sizes.
+	CGFloat minPosition = [self splitView:splitView constrainMinCoordinate:minPossibleCoordinate ofSubviewAt:dividerIndex];
+	CGFloat maxPosition = [self splitView:splitView constrainMaxCoordinate:maxPossibleCoordinate ofSubviewAt:dividerIndex];
+
+	// If the constraints conflict, the minimum wins
+	if (minPosition > maxPosition) {
+		maxPosition = minPosition;
+	}
+
+	if (proposedPosition < minPosition) {
+		return minPosition;
+	}
+	if (proposedPosition > maxPosition) {
+		return maxPosition;
+	}
 	return proposedPosition;
 }
 
