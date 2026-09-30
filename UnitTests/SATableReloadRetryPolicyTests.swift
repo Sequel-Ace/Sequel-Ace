@@ -326,22 +326,31 @@ final class SATableReloadCoordinatorSequenceTests: XCTestCase {
     }
 
     /// Runs the reload task's loop, returning how many rounds it loaded.
+    ///
+    /// The loop is bounded and leaves on its own once the bound is reached, so a
+    /// regression that never stops asking fails the test instead of running the
+    /// runner into its timeout - which is what an endless reload would do here.
+    /// `stoppedOnItsOwn` reports whether the rounds ended because none was asked
+    /// for, rather than because the bound was hit.
     private func runReloadTask(_ coordinator: SATableReloadCoordinator,
-                               mismatchPerRound: Bool) -> (rounds: Int, gaveUp: Bool) {
+                               mismatchPerRound: Bool,
+                               bound: Int = 20) -> (rounds: Int, gaveUp: Bool, stoppedOnItsOwn: Bool) {
         coordinator.reloadTaskDidBegin()
         var rounds = 0
         var gaveUp = false
-        var again = true
-        while again {
+        var stoppedOnItsOwn = false
+        while rounds < bound {
             rounds += 1
             coordinator.loadDidBegin()
             if loadValues(coordinator, mismatch: mismatchPerRound) { gaveUp = true }
             coordinator.loadDidEnd()
-            again = coordinator.takeNoteForReloadTask()
-            XCTAssertLessThan(rounds, 20, "the task must not loop without end")
+            if !coordinator.takeNoteForReloadTask() {
+                stoppedOnItsOwn = true
+                break
+            }
         }
         coordinator.reloadTaskDidEnd()
-        return (rounds, gaveUp)
+        return (rounds, gaveUp, stoppedOnItsOwn)
     }
 
     /// Checks that a table whose columns never match reloads three times and stops.
@@ -355,8 +364,9 @@ final class SATableReloadCoordinatorSequenceTests: XCTestCase {
         XCTAssertFalse(loadTable(coordinator, mismatch: true, startsReload: &startsReload))
         XCTAssertTrue(startsReload, "the load is through, so its reload may start")
 
-        let (rounds, gaveUp) = runReloadTask(coordinator, mismatchPerRound: true)
+        let (rounds, gaveUp, stoppedOnItsOwn) = runReloadTask(coordinator, mismatchPerRound: true)
 
+        XCTAssertTrue(stoppedOnItsOwn, "the rounds ended on their own, not at the bound")
         XCTAssertEqual(rounds, 3, "one round per remaining attempt, then the refusal")
         XCTAssertTrue(gaveUp, "the last round reports that it is giving up")
         XCTAssertEqual(coordinator.attemptCount(forTable: "orders"), 3)
@@ -371,8 +381,9 @@ final class SATableReloadCoordinatorSequenceTests: XCTestCase {
         loadTable(coordinator, mismatch: true, startsReload: &startsReload)
         XCTAssertTrue(startsReload)
 
-        let (rounds, gaveUp) = runReloadTask(coordinator, mismatchPerRound: false)
+        let (rounds, gaveUp, stoppedOnItsOwn) = runReloadTask(coordinator, mismatchPerRound: false)
 
+        XCTAssertTrue(stoppedOnItsOwn, "the rounds ended on their own, not at the bound")
         XCTAssertEqual(rounds, 1, "a load that matches asks for nothing further")
         XCTAssertFalse(gaveUp)
         XCTAssertEqual(coordinator.attemptCount(forTable: "orders"), 0, "the budget is back")
@@ -408,12 +419,14 @@ final class SATableReloadCoordinatorSequenceTests: XCTestCase {
         var startsReload = false
         loadTable(coordinator, mismatch: true, startsReload: &startsReload)
         let first = runReloadTask(coordinator, mismatchPerRound: true)
+        XCTAssertTrue(first.stoppedOnItsOwn)
         XCTAssertTrue(first.gaveUp)
 
         // -reloadTable: resets before starting its own task.
         coordinator.reset(forTable: "orders")
         let second = runReloadTask(coordinator, mismatchPerRound: true)
 
+        XCTAssertTrue(second.stoppedOnItsOwn, "the rounds ended on their own, not at the bound")
         XCTAssertEqual(second.rounds, 4, "three fresh attempts, then the round that refuses")
         XCTAssertTrue(second.gaveUp)
     }
