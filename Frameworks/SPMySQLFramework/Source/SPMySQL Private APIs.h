@@ -58,7 +58,21 @@
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
+/** Whether a recently used connection's socket already reports a lost peer. */
+- (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+/** Runs yes-or-no connection work without freezing the interface; NO if the user stopped waiting. */
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
+/** Runs connection work off the main thread while the delegate shows the wait; nil if the wait ended first. */
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
+/** Whether handing connection work over would actually move it off the main thread. */
+- (BOOL)_workShouldRunOffMainThread;
+/** Carries out what becomes of a connection whose reconnect ended while its thread was cancelled. */
+- (void)_recoverFromCancelledReconnectMayDisconnect:(BOOL)mayDisconnect;
+/** Records cancelled connection work the same way a cancelled query is recorded. */
+- (void)_recordWorkAsCancelled;
 - (BOOL)_abortCancelledReconnectWhileLocked;
+/** Whether the current thread is the one reconnecting, and so sets up the new session. */
+- (BOOL)_currentThreadIsReconnecting;
 - (void)_disconnect;
 - (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;
 - (void)_updateConnectionVariables;
@@ -77,6 +91,10 @@
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection;
+/** Asks the delegate what to do about the lost connection and remembers the answer. */
+- (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision;
+/** Records whether the application shows something modal; main thread only. */
+- (void)_recordWhetherAModalWindowIsShowing;
 
 @end
 
@@ -97,6 +115,21 @@
 @end
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/** Asks the server over a second connection to kill the query with this generation (0 for the running one). */
+- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation;
+/** Takes the connection for a query, reconnecting first if it was closed meanwhile. */
+- (BOOL)_lockUsableConnectionForQuery;
+/** Replaces a session marked to be replaced before its next use; NO if no usable session results. */
+- (BOOL)_replaceSessionMarkedForReplacement;
+/** Cancels the running query, recording a request to stop it only if asked to. */
+- (void)_cancelCurrentQueryRecordingRequest:(BOOL)recordRequest;
+/** Closes the session of a query that finished after nobody waited for it; the connection must be held. */
+- (void)_closeSessionOfAbandonedQuery;
+/** Notes whether the session about to be dropped takes uncommitted work with it; the connection must be held. */
+- (void)_noteUncommittedWorkLostWithSession;
+/** Whether a statement is refused because a session before it was dropped with uncommitted work, using up that report; the connection must be held. */
+- (BOOL)_refusesStatementForLostUncommittedWork:(NSString *)query;
 
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;

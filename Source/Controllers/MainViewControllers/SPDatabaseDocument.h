@@ -292,6 +292,8 @@ NS_ASSUME_NONNULL_BEGIN
 // SATaskControllerDelegate (Phase A2 — task progress UI lives in SATaskController)
 - (nullable NSWindow *)taskParentWindow;
 - (void)taskControllerDidRequestCancellation;
+/// Whether this document still holds its connection; false once the user has closed it.
+- (BOOL)connectionIsOpen;
 
 // Encoding methods
 - (void)setConnectionEncoding:(NSString *)mysqlEncoding reloadingViews:(BOOL)reloadViews;

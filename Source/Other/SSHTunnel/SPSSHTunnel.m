@@ -1043,8 +1043,12 @@ static unsigned short getRandomPort(void);
 		[[NSApplication sharedApplication] abortModal];
 		[[self->answerAvailableLock onMainThread] unlock];
 	}];
+	// A window holds one sheet at a time; a wait for the connection steps aside while this is asked.
+	NSWindow *questionWindow = parentWindow;
+	[SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
 	[parentWindow beginSheet:sshQuestionDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow:sshQuestionDialog];
+	[SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
 }
 
 /*
@@ -1133,8 +1137,12 @@ static unsigned short getRandomPort(void);
 		[[NSApplication sharedApplication] abortModal];
 		[[self->answerAvailableLock onMainThread] unlock];
 	}];
+	// A window holds one sheet at a time; a wait for the connection steps aside while this is asked.
+	NSWindow *questionWindow = parentWindow;
+	[SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
 	[parentWindow beginSheet:sshPasswordDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow: sshPasswordDialog];
+	[SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
 }
  
 /*

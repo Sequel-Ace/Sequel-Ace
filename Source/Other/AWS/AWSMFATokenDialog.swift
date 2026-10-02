@@ -55,13 +55,9 @@ import OSLog
             )
         }
 
-        if Thread.isMainThread {
-            showDialog()
-        } else {
-            DispatchQueue.main.sync {
-                showDialog()
-            }
-        }
+        // A reconnect can ask for this from the thread its connection work runs on, while the
+        // main thread waits for that work from inside a block on the main queue.
+        SAMainRunLoop.runAndWait(showDialog)
 
         return result
     }

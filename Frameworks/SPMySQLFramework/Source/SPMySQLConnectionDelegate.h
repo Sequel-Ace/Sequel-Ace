@@ -62,6 +62,21 @@
 - (void)showErrorWithTitle:(NSString *)title message:(NSString *)message;
 
 /**
+ * Called on the main thread when connection work has to wait for a server, and the wait has
+ * already lasted long enough to be noticed. The work runs on the connection's own thread; the
+ * delegate is asked to wait for it in a way that keeps the interface answering, which means
+ * running an event loop of its own rather than blocking.
+ *
+ * The delegate may also stop waiting before the work is finished, in which case the connection
+ * treats the work as failed. The work itself runs on until the server or a timeout answers it.
+ *
+ * @param connection The connection whose work is being waited for.
+ * @param isFinished A block that reports whether the work has finished. Call it repeatedly; it
+ *                   returns YES from the moment the work is done.
+ */
+- (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished;
+
+/**
  * Requests the keychain password for the connection.
  * When a connection is being made to a server, it is best not to
  * set the password on the class; instead, it should be kept within
