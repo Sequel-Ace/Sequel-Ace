@@ -141,7 +141,8 @@ import AppKit
         )
         guard !descriptors.isEmpty else { return }
 
-        var insertionIndex = menu.indexOfItem(withTag: SPEditMenuCopyAsSQLNoAutoInc)
+        var insertionIndex = menu.indexOfItem(withTag: SPEditMenuCopyAsSQLUpdate)
+        if insertionIndex == -1 { insertionIndex = menu.indexOfItem(withTag: SPEditMenuCopyAsSQLNoAutoInc) }
         if insertionIndex == -1 { insertionIndex = menu.numberOfItems - 1 }
         insertionIndex += 1
         for descriptor in descriptors {

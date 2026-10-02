@@ -42,6 +42,7 @@ extern NSInteger SPEditMenuCopy;
 extern NSInteger SPEditMenuCopyWithColumns;
 extern NSInteger SPEditMenuCopyAsSQL;
 extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
+extern NSInteger SPEditMenuCopyAsSQLUpdate;
 
 /*!
 	@class copyTable
@@ -170,6 +171,14 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
  * @result SQL to insert the rows
 */
 - (NSString *)rowsAsSqlInsertsOnlySelectedRows:(BOOL)onlySelected;
+
+/*!
+ * Generate a string in form of UPDATE <table> SET <column> = <value> WHERE <key> = <value> of
+ * currently selected rows or all, one statement per row. Support blob data as well.
+ * @param  A bool determining all rows or just selected
+ * @result SQL to update the rows, or nil if they carry no primary key to match on
+*/
+- (NSString *)rowsAsSqlUpdatesOnlySelectedRows:(BOOL)onlySelected;
 
 /*
  * Set all necessary data from the table content view.
