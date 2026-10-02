@@ -173,6 +173,13 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             "SELECT 1  "
         )
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nDELETE FROM t"))
+        // A DEL-prefixed comment may contain an unmatched quote; the write
+        // and database change after it still execute on the server.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("--\u{7F}'\nDELETE FROM t"))
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "--\u{7F}'\nUSE new_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new_db"
+        )
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nSELECT 1"))
         XCTAssertEqual(
             contextDatabaseName(afterSuccessfulQuery: "-- selected\r\nUSE new_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
