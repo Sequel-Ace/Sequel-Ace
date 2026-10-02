@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SPMySQL
 
 enum SPCustomQuerySQLClassifier {
 
@@ -121,7 +122,9 @@ enum SPCustomQuerySQLClassifier {
     /// adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes `SELECT 1`.
     /// The `--` form follows MySQL's whitespace/control rule, and comment
     /// markers inside strings or quoted identifiers are preserved. Keep these
-    /// lexical rules mirrored in SPMySQLFramework's SADatabaseAssertion.
+    /// lexical rules mirrored in SPMySQLFramework's SADatabaseAssertion; where
+    /// `#` and `--` comments start and end comes from `SASQLCommentSyntax`,
+    /// which both use.
     static func stripSQLComments(
         _ source: String,
         serverVersion: Int? = nil,
@@ -184,7 +187,7 @@ enum SPCustomQuerySQLClassifier {
             if character == "#" {
                 result.append(" ")
                 index += 1
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !SASQLCommentSyntax.endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -193,10 +196,10 @@ enum SPCustomQuerySQLClassifier {
             if character == "-",
                index + 1 < characters.count,
                characters[index + 1] == "-",
-               (index + 2 == characters.count || isMySQLCommentWhitespace(characters[index + 2])) {
+               (index + 2 == characters.count || SASQLCommentSyntax.isCommentWhitespace(characters[index + 2])) {
                 result.append(" ")
                 index += 2
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !SASQLCommentSyntax.endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -270,10 +273,7 @@ enum SPCustomQuerySQLClassifier {
         )
     }
 
-    private static func isMySQLCommentWhitespace(_ scalar: Unicode.Scalar) -> Bool {
-        scalar.value <= 0x20
-    }
-
+    /// Returns true if the scalar is one of the ASCII digits `0` through `9`.
     private static func isASCIIDigit(_ scalar: Unicode.Scalar) -> Bool {
         (48...57).contains(scalar.value)
     }
