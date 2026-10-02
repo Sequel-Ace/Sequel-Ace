@@ -34,12 +34,14 @@ import Foundation
 /// plan, Step 3). Selected once per tunnel from a hidden preference and
 /// handed to ssh in its environment, so a tunnel never changes transport
 /// mid-life and support can flip the default without a rebuild. The socket
-/// is the default since Step 5; the rollback to Distributed Objects is one
-/// key in the running build's own defaults domain — the Beta configuration
-/// has its own bundle identifier, so the command differs per build:
+/// was the default in 6.0.0 (Step 5a) and is opt-in again in 6.0.1 after
+/// issue #2689 — on some machines the assistant could not complete the
+/// socket exchange and every tunnel failed. Opting back in is one key in the
+/// running build's own defaults domain — the Beta configuration has its own
+/// bundle identifier, so the command differs per build:
 ///
-///     defaults write com.sequel-ace.sequel-ace      SPSSHTunnelUseSocketTransport -bool NO   # release
-///     defaults write com.sequel-ace.sequel-ace-beta SPSSHTunnelUseSocketTransport -bool NO   # Beta
+///     defaults write com.sequel-ace.sequel-ace      SPSSHTunnelUseSocketTransport -bool YES  # release
+///     defaults write com.sequel-ace.sequel-ace-beta SPSSHTunnelUseSocketTransport -bool YES  # Beta
 ///
 /// App and Unit Tests targets.
 @objc enum SASSHTunnelTransport: Int {
@@ -60,10 +62,13 @@ import Foundation
     /// Hidden preference: a Bool. Absent means `defaultTransport`.
     static let defaultsKey = "SPSSHTunnelUseSocketTransport"
 
-    /// What a fresh install gets: the socket transport (Step 5, first
-    /// release). Distributed Objects remains selectable as the rollback until
-    /// Step 5's second release deletes it.
-    static let defaultTransport: SASSHTunnelTransport = .socket
+    /// What a fresh install gets. Step 5a made this `.socket`; 6.0.0 shipped
+    /// it and issue #2689 showed the socket exchange failing outright on some
+    /// machines, so it is `.distributedObjects` again until the cause is
+    /// known. `.socket` stays one key away for anyone diagnosing it, and the
+    /// assistant now falls back on its own when the socket is unreachable, so
+    /// this default is the belt to that brace rather than the only guard.
+    static let defaultTransport: SASSHTunnelTransport = .distributedObjects
 
     @objc static let transportEnvironmentKey = SASSHTunnelSocketIO.EnvironmentKey.transport
     @objc static let socketPathEnvironmentKey = SASSHTunnelSocketIO.EnvironmentKey.socketPath

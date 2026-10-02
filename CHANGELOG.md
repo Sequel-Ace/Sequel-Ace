@@ -1,3 +1,27 @@
+## [6.0.1](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.1+%28*%29%22&expanded=true)
+
+### Added
+- Add self-service release dispatch with sole form approval ([dc6d2dbd4](https://github.com/Sequel-Ace/Sequel-Ace/commit/dc6d2dbd4c9fe8a3b64e1b97c0c5755f237a005c), [#2686](https://github.com/Sequel-Ace/Sequel-Ace/pull/2686))
+
+### Fixed
+
+
+### Changed
+- Finalize live App Store releases without submission scheduling checks ([8144cfc5d](https://github.com/Sequel-Ace/Sequel-Ace/commit/8144cfc5d29c7b7217381e6d969fe2150ab27992), [#2700](https://github.com/Sequel-Ace/Sequel-Ace/pull/2700))
+- Restore AWS RDS IAM and cleartext plugin authentication ([a73a15421](https://github.com/Sequel-Ace/Sequel-Ace/commit/a73a1542152f6bca052c75ade330a0242e5b0253), [#2679](https://github.com/Sequel-Ace/Sequel-Ace/pull/2679))
+- Stop reporting a Local Network denial for every error that mentions "network" ([67c33cefc](https://github.com/Sequel-Ace/Sequel-Ace/commit/67c33cefceffff74805f35239703299142136c28), [#2696](https://github.com/Sequel-Ace/Sequel-Ace/pull/2696))
+- SSH tunnel: default back to Distributed Objects and let the assistant fall back ([630278130](https://github.com/Sequel-Ace/Sequel-Ace/commit/6302781302b6149cc41ea4d5c4a4b4acbc222552), [#2699](https://github.com/Sequel-Ace/Sequel-Ace/pull/2699))
+- Make the new release form human-facing ([59d0aa260](https://github.com/Sequel-Ace/Sequel-Ace/commit/59d0aa260d770fc9720e1d67c4b9296e2d00d6b8), [#2687](https://github.com/Sequel-Ace/Sequel-Ace/pull/2687))
+- Make release state inspectable and recovery predictable ([cc324e736](https://github.com/Sequel-Ace/Sequel-Ace/commit/cc324e7362d828a63f9e78d732a91fbb81757940), [#2685](https://github.com/Sequel-Ace/Sequel-Ace/pull/2685))
+- Accept ready Xcode Cloud artifacts when run status lags ([380e0652c](https://github.com/Sequel-Ace/Sequel-Ace/commit/380e0652c1ac17599382f0772969d515ca7413f6), [#2684](https://github.com/Sequel-Ace/Sequel-Ace/pull/2684))
+
+### Removed
+
+
+### Infra
+- Bump ruby/setup-ruby from 1.321.0 to 1.324.0 ([0dc7896bc](https://github.com/Sequel-Ace/Sequel-Ace/commit/0dc7896bcf8126818524c7a4a1d8af1dc54b4ad9), [#2694](https://github.com/Sequel-Ace/Sequel-Ace/pull/2694))
+- Bump actions/upload-artifact from 4.6.2 to 7.0.1 ([01adb8a7e](https://github.com/Sequel-Ace/Sequel-Ace/commit/01adb8a7e2b1a60d0f1632aa8e8a6012176c9db5), [#2695](https://github.com/Sequel-Ace/Sequel-Ace/pull/2695))
+
 ## [6.0.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.0+%28*%29%22&expanded=true)
 
 ### Added
