@@ -162,9 +162,30 @@ class WorkflowPlanTest < Minitest::Test
     schema = events(engine).fetch("workflow_call").fetch("inputs")
     assert_empty deploy.fetch("with").keys - schema.keys
     assert_empty schema.select { |_, value| value["required"] }.keys - deploy.fetch("with").keys
+    assert_equal "inherit", deploy.fetch("secrets"), "retain the environment-secret resolution workaround for actions/runner#4453"
     assert_equal "sequel-ace-release", engine.fetch("concurrency").fetch("group")
     assert_equal "sequel-ace-release", engine.dig("jobs", "release", "environment")
     assert_equal engine.fetch("permissions"), deploy.fetch("permissions")
+  end
+
+  def test_engine_checks_environment_credentials_before_minting_without_logging_values
+    steps = workflow("release").dig("jobs", "release", "steps")
+    check = steps.find { |step| step["name"] == "Check protected environment credentials" }
+    mint = steps.index { |step| step["name"] == "Mint repository-scoped release App token" }
+    assert_operator steps.index(check), :<, mint
+    credentials = check.fetch("env").to_h { |name, expression|
+      assert_equal "${{ secrets.#{name} }}", expression
+      [name, "private-fixture-#{name}"]
+    }
+    stdout, stderr, status = Open3.capture3(credentials, "bash", "-c", check.fetch("run"))
+    assert status.success?
+    assert_empty stdout + stderr
+    credentials.each_key do |missing|
+      stdout, stderr, status = Open3.capture3(credentials.merge(missing => ""), "bash", "-c", check.fetch("run"))
+      refute status.success?
+      assert_includes stderr, "Missing #{missing}"
+      credentials.each_value { |value| refute_includes stdout + stderr, value }
+    end
   end
 
   def test_precheckout_authorization_rejects_wrong_actor_ref_version_and_rerun_identity

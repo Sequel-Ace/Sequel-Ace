@@ -4,6 +4,7 @@ module SequelAceRelease
   class CloudRunStatus
     READINESS_STATES = %w[pending ready failed].freeze
     RUN_ID_PATTERN = /\A[A-Za-z0-9-]+\z/.freeze
+    NOTARIZED_ARTIFACT_TYPE = "STAPLED_NOTARIZED_ARCHIVE".freeze
 
     def initialize(client:)
       @client = client
@@ -63,14 +64,11 @@ module SequelAceRelease
         true
       end
       if matching_build
-        unless run_complete
-          # Apple's UI and artifacts can be ready before ciBuildRuns updates
-          # executionProgress. The exact build plus a downloadable artifact is
-          # sufficient to start the verifier; the artifact itself still has to
-          # pass every release check before publication.
-          unless downloadable_artifact?(run.fetch("id"))
-            return run.merge("readiness" => "pending", "reason" => "run_in_progress")
-          end
+        # Archive completion and export downloads can precede notarization.
+        # Require Apple's stapled artifact even when the aggregate run is complete;
+        # logs, xcarchives, and unstapled Developer ID exports cannot admit a verifier.
+        unless downloadable_notarized_artifact?(run.fetch("id"))
+          return run.merge("readiness" => "pending", "reason" => "notarized_artifact_not_ready")
         end
 
         return run.merge(
@@ -98,9 +96,10 @@ module SequelAceRelease
       { "readiness" => "pending", "reason" => reason }
     end
 
-    def downloadable_artifact?(run_id)
+    def downloadable_notarized_artifact?(run_id)
       @client.run_artifacts(run_id).any? do |artifact|
-        artifact.dig("attributes", "downloadUrl").to_s.start_with?("https://")
+        artifact.dig("attributes", "fileType") == NOTARIZED_ARTIFACT_TYPE &&
+          artifact.dig("attributes", "downloadUrl").to_s.start_with?("https://")
       end
     rescue APIError => error
       raise unless error.message.include?("HTTP 404")
