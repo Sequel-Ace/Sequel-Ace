@@ -235,6 +235,8 @@ import Foundation
         parentWindow: NSWindow?,
         completion: @escaping (SAConnectionResult) -> Void
     ) {
+        // Fence earlier MySQL completions while AWS credentials are being resolved.
+        let serviceAttemptID = startAttempt()
         AWSIAMAuthManager.generateAuthTokenInBackground(
             hostname: info.host,
             port: info.port.isEmpty ? 3306 : (info.port as NSString).integerValue,
@@ -242,11 +244,13 @@ import Foundation
             region: region,
             profile: profile,
             parentWindow: parentWindow,
-            shouldContinue: { [weak controller] in
-                controller?.isAWSConnectionAttemptCurrent(attemptID) == true
+            shouldContinue: { [weak self, weak controller] in
+                self?.isCurrentAttempt(serviceAttemptID) == true &&
+                    controller?.isAWSConnectionAttemptCurrent(attemptID) == true
             }
         ) { [weak self, weak controller] token, error in
             guard let self, let controller,
+                  self.isCurrentAttempt(serviceAttemptID),
                   controller.isAWSConnectionAttemptCurrent(attemptID)
             else { return }
             guard let token, !token.isEmpty, error == nil else {
