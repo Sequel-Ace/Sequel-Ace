@@ -10,7 +10,7 @@ module SequelAceRelease
       @version_files = version_files
     end
 
-    def plan(channel:, target_version: nil, base_tag: nil, main_ref: "HEAD", app_store_notes: nil)
+    def plan(channel:, target_version: nil, base_tag: nil, main_ref: "HEAD", app_store_notes: nil, github_release_body: nil)
       Config.validate_channel!(channel)
       main_sha = @git.sha(main_ref)
       release_notes_head_ref = resolve_release_notes_head_ref(main_ref)
@@ -48,12 +48,15 @@ module SequelAceRelease
       human_notes = app_store_notes.to_s.strip
       human_notes = notes.app_store_draft if human_notes.empty?
       contributors = contributor_map(changes)
-      release_body = notes.github_body(
+      release_body = github_release_body || notes.github_body(
         app_store_notes: human_notes,
         base_tag: stable,
         head_ref: release_notes_head_sha,
         contributors: contributors
       )
+      unless release_body.is_a?(String) && release_body.valid_encoding? && !release_body.strip.empty? && !release_body.include?("\0")
+        raise ValidationError, "GitHub release notes must be nonempty UTF-8 text without NUL bytes"
+      end
       release_notes_sha256 = notes.sha256(release_body)
       iteration = next_iteration(channel, chosen_version, release_catalog)
       approval = Approval.new(
@@ -82,6 +85,11 @@ module SequelAceRelease
         "target_version" => chosen_version,
         "iteration" => iteration,
         "build_policy" => approval.payload.fetch("build_policy"),
+        "operational_requirements" => {
+          "status" => "Use release_status.yml and the protected ASC API key; no signed-in browser is needed for Apple state",
+          "artifact_owner" => "release_publish.yml",
+          "compatibility_warning" => "A legacy_updater_v1 GitHub release requires a compatible-user browser upload of the verified ZIP. Surface this before approval; do not promise browser-free publication or silently break old clients. The protected publisher selector determines the actual profile."
+        },
         "changes" => changes.map(&:to_h),
         "app_store_notes" => human_notes,
         "github_release_body" => release_body,

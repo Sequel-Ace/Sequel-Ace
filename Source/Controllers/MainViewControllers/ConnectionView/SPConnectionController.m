@@ -85,6 +85,8 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 @property (readwrite, assign) BOOL errorShowing;
 @property (readwrite, assign) BOOL localNetworkPermissionDeniedForCurrentAttempt;
+/** The details of the attempt whose failure is being reported; the tabs and fields stay editable while connecting. */
+@property (readwrite, strong) SAConnectionInfoObjC *failedAttemptInfo;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (void)_sortFavorites;
@@ -121,11 +123,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 #pragma mark - SPConnectionHandlerPrivateAPI
 
+/** Shows the outcome of the Test Connection button. */
 - (void)_showConnectionTestResult:(NSString *)resultString;
-- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
-- (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt;
-- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied;
-- (void)_showLocalNetworkPermissionAlert;
+/** Whether an SSH failure's messages point to a denied Local Network permission (macOS 15 and later). */
+- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail connectionType:(NSInteger)connectionType sshHost:(NSString *)attemptSSHHost;
+/** Whether a failed attempt was blocked by a denied Local Network permission; probes the attempt's host when it could be. */
+- (BOOL)_isLocalNetworkAccessDeniedForConnectionResult:(SAConnectionResult *)result info:(SAConnectionInfoObjC *)info;
+/** Ends a failed attempt on the main thread; a Local Network denial is judged and worded for `attemptInfo`. */
+- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied attemptInfo:(SAConnectionInfoObjC *)attemptInfo;
+/** Explains that Local Network access is needed, worded for an SSH or a direct connection. */
+- (void)_showLocalNetworkPermissionAlertForConnectionType:(NSInteger)connectionType;
 - (BOOL)_openLocalNetworkPrivacySettings;
 
 #pragma mark - SPConnectionControllerInitializer_Private_API
@@ -574,8 +581,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         // Connection failure — format case-specific error messages
         if (!result.isSuccess) {
-            // Check local network denial before clearing mySQLConnection
-            BOOL localNetworkDenied = result.isLocalNetworkDenied || [strongSelf _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+            BOOL localNetworkDenied = [strongSelf _isLocalNetworkAccessDeniedForConnectionResult:result info:info];
             strongSelf->mySQLConnection = nil;
 
             NSString *failTitle = result.errorTitle ?: NSLocalizedString(@"Unable to connect", @"connection failed title");
@@ -603,7 +609,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [strongSelf _failConnectionWithTitle:failTitle
                               errorMessage:failMessage
                                     detail:failDetail
-                   localNetworkPermissionDenied:localNetworkDenied];
+                   localNetworkPermissionDenied:localNetworkDenied
+                                   attemptInfo:info];
             return;
         }
 
@@ -3711,10 +3718,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
-- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied
+/**
+ * Ends a failed attempt on the main thread. `attemptInfo` holds the attempt's details, so a Local Network
+ * denial is judged and worded for that attempt even when the form has been edited since.
+ */
+- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied attemptInfo:(SAConnectionInfoObjC *)attemptInfo
 {
     void (^presentFailure)(void) = ^{
         self.localNetworkPermissionDeniedForCurrentAttempt = localNetworkPermissionDenied;
+        self.failedAttemptInfo = attemptInfo;
         [self failConnectionWithTitle:theTitle errorMessage:theErrorMessage detail:errorDetail];
     };
 
@@ -3770,14 +3782,24 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
     }
 
-    BOOL shouldShowLocalNetworkPermissionAlert = self.localNetworkPermissionDeniedForCurrentAttempt || [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage detail:errorDetail];
+    // Judge and word a Local Network denial for the attempt that failed, not for the tab or
+    // fields as edited since; failures reported without the attempt's details use the fields.
+    SAConnectionInfoObjC *attemptInfo = self.failedAttemptInfo;
+    self.failedAttemptInfo = nil;
+    NSInteger localNetworkAlertConnectionType = attemptInfo ? (NSInteger)attemptInfo.type : [self type];
+    NSString *localNetworkAlertSSHHost = attemptInfo ? attemptInfo.sshHost : [self sshHost];
+    BOOL shouldShowLocalNetworkPermissionAlert = self.localNetworkPermissionDeniedForCurrentAttempt
+        || [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage
+                                                                detail:errorDetail
+                                                        connectionType:localNetworkAlertConnectionType
+                                                               sshHost:localNetworkAlertSSHHost];
     self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
     // Only display the connection error message if there is a window visible
     if ([[dbDocument parentWindowControllerWindow] isVisible]) {
         if (shouldShowLocalNetworkPermissionAlert) {
             errorShowing = YES;
-            [self _showLocalNetworkPermissionAlert];
+            [self _showLocalNetworkPermissionAlertForConnectionType:localNetworkAlertConnectionType];
             errorShowing = NO;
 
             // we're not connecting anymore, it failed.
@@ -3840,24 +3862,35 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
-- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail
+/**
+ * Whether an SSH failure's messages point to a denied Local Network permission (macOS 15 and later),
+ * judged for the given connection type and SSH host.
+ */
+- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail connectionType:(NSInteger)connectionType sshHost:(NSString *)attemptSSHHost
 {
-    if ([self type] != SPSSHTunnelConnection) return NO;
+    if (connectionType != SPSSHTunnelConnection) return NO;
 
     // Local Network privacy restrictions for sandboxed macOS apps started with macOS 15 (Sequoia).
     if (@available(macOS 15.0, *)) {
-        return SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(errorMessage, errorDetail, [self sshHost]);
+        return SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(errorMessage, errorDetail, attemptSSHHost);
     }
 
     return NO;
 }
 
-- (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt
+/**
+ * Whether a failed connection attempt was blocked by a denied Local Network permission (macOS 15 and later).
+ * Probes the host when the failure could have that cause; the MySQL error comes from `result`, because the
+ * failed connection is not kept on this controller.
+ */
+- (BOOL)_isLocalNetworkAccessDeniedForConnectionResult:(SAConnectionResult *)result info:(SAConnectionInfoObjC *)info
 {
     if (@available(macOS 15.0, *)) {
         BOOL shouldProbeForLocalNetworkDenial = NO;
+        // The attempt's own details: the tabs and fields stay editable while connecting.
+        NSInteger attemptType = (NSInteger)info.type;
 
-        if ([self type] == SPSSHTunnelConnection && sshTunnel) {
+        if (attemptType == SPSSHTunnelConnection && sshTunnel) {
             if ([sshTunnel state] == SPMySQLProxyIdle) {
                 // SSH setup failed before MySQL had a chance to emit a network error.
                 shouldProbeForLocalNetworkDenial = YES;
@@ -3866,16 +3899,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 return NO;
             }
         } else {
-            NSUInteger lastErrorID = [mySQLConnection lastErrorID];
-            if (lastErrorID == 1045) return NO; // Access denied credentials error.
-
-            NSString *lastErrorMessage = [[mySQLConnection lastErrorMessage] lowercaseString] ?: @"";
-            BOOL looksLikeNetworkFailure = ([lastErrorMessage rangeOfString:@"can't connect"].location != NSNotFound
-                                            || [lastErrorMessage rangeOfString:@"timed out"].location != NSNotFound
-                                            || [lastErrorMessage rangeOfString:@"no route to host"].location != NSNotFound
-                                            || [lastErrorMessage rangeOfString:@"network is unreachable"].location != NSNotFound);
-
-            shouldProbeForLocalNetworkDenial = (looksLikeNetworkFailure || lastErrorID == 2002 || lastErrorID == 2003);
+            shouldProbeForLocalNetworkDenial = [SALocalNetworkPermissionChecker shouldProbeAfterMySQLErrorID:result.lastErrorID
+                                                                                                     message:result.rawErrorMessage ?: @""];
         }
 
         if (!shouldProbeForLocalNetworkDenial) return NO;
@@ -3883,12 +3908,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *probeHost = nil;
         NSInteger probePort = 0;
 
-        if ([self type] == SPTCPIPConnection) {
-            probeHost = [self host];
-            probePort = ([[self port] length] ? [[self port] integerValue] : 3306);
-        } else if ([self type] == SPSSHTunnelConnection) {
-            probeHost = [self sshHost];
-            probePort = ([[self sshPort] length] ? [[self sshPort] integerValue] : 22);
+        // Vault and AWS IAM connections dial the database host directly, like a TCP/IP one.
+        if (attemptType == SPTCPIPConnection || attemptType == SPVaultConnection || attemptType == SPAWSIAMConnection) {
+            probeHost = info.host;
+            probePort = ([info.port length] ? [info.port integerValue] : 3306);
+        } else if (attemptType == SPSSHTunnelConnection) {
+            probeHost = info.sshHost;
+            probePort = ([info.sshPort length] ? [info.sshPort integerValue] : 22);
         } else {
             return NO;
         }
@@ -3904,12 +3930,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     return NO;
 }
 
-- (void)_showLocalNetworkPermissionAlert
+/**
+ * Explains that Local Network access is needed and offers to open the privacy settings, worded for
+ * the SSH host or the database host depending on `connectionType`.
+ */
+- (void)_showLocalNetworkPermissionAlertForConnectionType:(NSInteger)connectionType
 {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:NSLocalizedString(@"Local Network Access is Required", @"title for local network privacy alert")];
     NSString *informativeText = nil;
-    if ([self type] == SPSSHTunnelConnection) {
+    if (connectionType == SPSSHTunnelConnection) {
         informativeText = NSLocalizedString(@"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.", @"informative text for local network privacy alert (ssh)");
     } else {
         informativeText = NSLocalizedString(@"Sequel Ace could not reach the database host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.", @"informative text for local network privacy alert (direct)");

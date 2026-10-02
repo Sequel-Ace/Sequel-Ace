@@ -46,6 +46,9 @@ class ArchiveReleaseScriptTest < Minitest::Test
       assert_match(/\A[0-9a-f]{64}\z/, evidence.fetch("archive_sha256"))
       assert_match(/\A[0-9a-f]{64}\z/, evidence.fetch("manifest_sha256"))
       arguments = File.readlines(arguments_file, chomp: true)
+      # The pull logs its isolated registry configuration after push layers.
+      registry_config = arguments.pop
+      refute File.exist?(File.dirname(registry_config)), "temporary credentials must be removed"
       assert_equal 2, arguments.length
       arguments.each do |argument|
         path = argument.split(":", 2).first
@@ -90,6 +93,24 @@ class ArchiveReleaseScriptTest < Minitest::Test
       assert status.success?, stderr
       registry_configs = File.readlines(arguments_file, chomp: true)
       assert_equal [registry_config, registry_config], registry_configs
+    end
+  end
+
+  def test_pull_isolates_registry_credentials_by_default_and_cleans_them
+    Dir.mktmpdir do |directory|
+      remote = File.join(directory, "remote")
+      arguments_file = File.join(directory, "arguments.txt")
+      build_remote_archive(remote)
+      _stdout, stderr, status = run_pull(
+        remote: remote, destination: File.join(directory, "destination"),
+        extra_environment: { "GHCR_REGISTRY_CONFIG" => nil, "ORAS_ARGUMENTS_FILE" => arguments_file }
+      )
+      assert status.success?, stderr
+      configs = File.readlines(arguments_file, chomp: true)
+      assert_equal 2, configs.length
+      assert_equal configs.first, configs.last
+      assert_includes configs.first, "sequel-ace-oras."
+      refute File.exist?(File.dirname(configs.first))
     end
   end
 
@@ -375,7 +396,13 @@ class ArchiveReleaseScriptTest < Minitest::Test
           reference="${1}"
           shift
           : > "${ORAS_ARGUMENTS_FILE}"
-          for layer in "$@"; do
+          while [[ "$#" -gt 0 ]]; do
+            if [[ "${1}" == "--registry-config" ]]; then
+              shift 2
+              continue
+            fi
+            layer="${1}"
+            shift
             path="${layer%%:*}"
             [[ "${path}" != /* ]]
             [[ -f "${path}" ]]

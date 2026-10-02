@@ -112,11 +112,17 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR CONNECTION 5"))
     }
 
+    /// Verifies that the `EXPLAIN` aliases `DESCRIBE` and `DESC` follow the same
+    /// rule: `ANALYZE` in front of a mutating statement executes it, so the
+    /// alias spelling must not skip the destructive warning.
     func testExplainAliasesUseTheSameAnalyzeSafetyRule() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESCRIBE ANALYZE DELETE FROM t WHERE id = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE UPDATE t SET c = 1"))
     }
 
+    /// Verifies that comments are treated as whitespace when classifying a
+    /// query, that quoted comment markers are kept, that executable comments
+    /// are unwrapped, and that keywords only match on whole-word boundaries.
     func testCommentsAreIgnoredButKeywordBoundariesRemainStrict() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/* c */ EXPLAIN /* c */ ANALYZE /* c */ DELETE FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAINER ANALYZE DELETE FROM t"))
@@ -142,6 +148,44 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
     }
 
+    /// A `#` or `--` comment in CRLF text must end at the line feed; otherwise
+    /// it swallows the rest of the batch, hiding statements the server
+    /// executes. The carriage return before the line feed belongs to the
+    /// comment, as in MySQL.
+    func testLineCommentsEndAtCRLFLineEndings() {
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\r\nFROM t"),
+            "SELECT 1  \nFROM t"
+        )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 # c\r\nFROM t"),
+            "SELECT 1  \nFROM t"
+        )
+        // A bare `--` directly followed by CRLF starts a comment too.
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("--\r\nSELECT 1"),
+            " \nSELECT 1"
+        )
+        // MySQL ends a line comment at a line feed only; a lone carriage
+        // return stays part of the comment.
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\rFROM t"),
+            "SELECT 1  "
+        )
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nDELETE FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nSELECT 1"))
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "-- selected\r\nUSE new_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new_db"
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "# rebuild\r\nDROP DATABASE old_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true)
+        )
+    }
+
+    /// Verifies that executable comments with a version gate the server cannot
+    /// be matched against always require the destructive-query warning, since
+    /// either reading of the batch could be the one the server executes.
     func testUnknownExecutableCommentGatesAlwaysRequireWarning() {
         // On current servers the future-gated SELECT is ignored, so the DELETE
         // is the real leading statement. Preserving only the comment body would
