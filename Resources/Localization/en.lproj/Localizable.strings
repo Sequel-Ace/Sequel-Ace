@@ -4226,3 +4226,6 @@
 
 /* button that reveals a file in Finder */
 "Show in Finder" = "Show in Finder";
+
+/* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";

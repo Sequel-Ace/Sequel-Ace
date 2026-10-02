@@ -116,6 +116,12 @@ const NSString * const SerFilterExprDefinition = @"_filterDefinition";
  * Is the filter expression enabled for filtering?
  */
 const NSString * const SerFilterExprEnabled = @"enabled";
+/**
+ * Expression Nodes only:
+ * Is this the row seeded for a newly selected table, still unchecked and waiting for its first edit?
+ * (see SARuleFilterPendingStarter). Absent means no.
+ */
+const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 
 #pragma mark -
 
@@ -188,6 +194,8 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 }
 @property (assign, nonatomic) BOOL initialState;
 @property (assign, nonatomic) BOOL allowsMixedState;
+/** Whether the row is the seeded starter row restored from a saved filter; its checkbox is tracked again. */
+@property (assign, nonatomic) BOOL pendingStarter;
 @end
 
 #pragma mark -
@@ -232,6 +240,11 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 @interface SPRuleFilterController () <NSRuleEditorDelegate, NSTextFieldDelegate, SPFilterRuleEditorDropHandler>
 
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
+/** The seeded starter row while it waits, unchecked, for its first edit; see -addStarterFilterExpression. */
+@property (strong, nonatomic) SARuleFilterPendingStarter *pendingStarter;
+
+/** Checks the unchecked starter row when `row` is that row, and updates the preview: editing it means filtering by it. */
+- (void)_enablePendingStarterInRow:(NSInteger)row;
 
 - (NSArray *)_compareTypesForColumn:(ColumnNode *)colNode;
 - (IBAction)_textFieldAction:(id)sender;
@@ -609,6 +622,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setState:([node initialState] ? NSControlStateValueOn : NSControlStateValueOff)];
 			[check setTarget:self];
 			[check setAction:@selector(_checkboxClicked:)];
+			// A restored starter row waits for its first edit again.
+			if ([node pendingStarter]) [self.pendingStarter beginWithCheckbox:check];
 			return check;
 		}
 		case RuleNodeTypeColumn: {
@@ -736,6 +751,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (IBAction)_checkboxClicked:(id)sender
 {
+	// A click on the starter row's checkbox is the user's own choice; later edits must not undo it.
+	if ([self.pendingStarter isCheckbox:sender]) [self.pendingStarter forget];
+
 	NSInteger row = [filterRuleEditor rowForDisplayValue:sender];
 	NSControlStateValue newState = [(NSButton *)sender state];
 
@@ -927,6 +945,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  */
 - (void)controlTextDidChange:(NSNotification *)notification
 {
+	// Typing into the unchecked starter row means filtering by it.
+	[self _enablePendingStarterInRow:[filterRuleEditor rowForDisplayValue:[notification object]]];
 	[self _updateFilterPreview];
 }
 
@@ -977,6 +997,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			return;
 		}
 	}
+
+	// Picking a column or operator in the unchecked starter row means filtering by it; a command
+	// such as "Edit Filters…" above does not change the row and does not count.
+	[self _enablePendingStarterInRow:row];
 
 	/* now comes the painful part, where we'd have to find out where exactly in the row this
 	 * displayValue should appear.
@@ -1470,6 +1494,47 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self focusFirstInputField];
 }
 
+/**
+ * Adds the seeded starter row, unchecked and waiting for its first edit; see the header.
+ */
+- (void)addStarterFilterExpression
+{
+	[self addFilterExpression];
+	if ([filterRuleEditor numberOfRows] < 1) return;
+
+	id checkbox = [[filterRuleEditor displayValuesForRow:0] firstObject];
+	if (![checkbox isKindOfClass:[NSButton class]]) return;
+	[self.pendingStarter beginWithCheckbox:checkbox];
+	[self _updateButtonStates];
+	[self _updateFilterPreview];
+}
+
+/**
+ * The tracker of the seeded starter row, created on first use.
+ */
+- (SARuleFilterPendingStarter *)pendingStarter
+{
+	if (!_pendingStarter) _pendingStarter = [[SARuleFilterPendingStarter alloc] init];
+	return _pendingStarter;
+}
+
+/**
+ * Checks the waiting starter row when `row` is that row and refreshes the checkbox states, the buttons and
+ * the WHERE preview; does nothing for any other row.
+ */
+- (void)_enablePendingStarterInRow:(NSInteger)row
+{
+	if (![self.pendingStarter enableIfRow:row inEditor:filterRuleEditor]) return;
+
+	[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:row]];
+	[self _updateButtonStates];
+	[self _updateFilterPreview];
+}
+
+/**
+ * Builds the serialized rule a dropped cell becomes: the column, its default operator for the value (or
+ * IS NULL) and the value; nil when the column is unknown.
+ */
 - (NSDictionary *)_makeSerializedRuleForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull
 {
 	if (![columnName length]) return nil;
@@ -1527,6 +1592,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (!enabled || ![columns count]) return NO;
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
+	// The untouched starter row is replaced below, but the rule editor keeps the replaced row's
+	// checkbox for the new one; check it first so the dropped filter is not born unchecked.
+	[self _enablePendingStarterInRow:[self.pendingStarter rowInEditor:filterRuleEditor]];
 
 	// Merge the new rule with any existing tree as a further top-level
 	// row (combined via the AND/OR popup) so it can be fed to
@@ -1548,6 +1616,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (!enabled || row < 0 || ![columns count]) return NO;
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
+	// Dropping onto the unchecked starter row replaces it with a filter the user wants; its reused
+	// checkbox must not leave that filter unchecked.
+	[self _enablePendingStarterInRow:row];
 
 	// Only a single expression or a flat root group can be addressed by
 	// row index; nested groups break the 1:1 mapping between NSRuleEditor
@@ -1593,6 +1664,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 }
 
+/**
+ * The drop zone's "add a filter" click: checks an unchecked row without a value when there is one - the
+ * waiting starter row or a row unchecked again - otherwise appends an empty row at the end.
+ */
 - (void)addEmptyFilterRow
 {
 	// Click-to-add on the drop box mirrors the in-row "+" behaviour by
@@ -1602,6 +1677,25 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// (backing the top-right "Add Filter" button) keeps its original
 	// insert-at-0 semantics.
 	if (!enabled || ![columns count]) return;
+
+	// An unchecked row without a value - the starter row, or one the user unchecked again - is the
+	// empty filter this click asks for: check it rather than adding a second one next to it.
+	NSInteger emptyRow = [SARuleFilterPendingStarter reusableEmptyRowInEditor:filterRuleEditor];
+	if (emptyRow != NSNotFound) {
+		if ([self.pendingStarter rowInEditor:filterRuleEditor] == emptyRow) [self.pendingStarter forget];
+		NSArray *values = [filterRuleEditor displayValuesForRow:emptyRow];
+		[(NSButton *)[values firstObject] setState:NSControlStateValueOn];
+		[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:emptyRow]];
+		[self _updateButtonStates];
+		[self _updateFilterPreview];
+		for (id value in values) {
+			if ([value isKindOfClass:[NSTextField class]]) {
+				[[(NSTextField *)value window] makeFirstResponder:value];
+				break;
+			}
+		}
+		return;
+	}
 
 	[self _doChangeToRuleEditorData:^{
 		NSInteger tailIndex = [self->filterRuleEditor numberOfRows];
@@ -1729,6 +1823,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			SerFilterExprValues: filterValues,
 			SerFilterExprEnabled: @(isEnabled),
 		};
+		// Keep the seeded starter row recognisable, so a reload or a return to this table restores
+		// it waiting for its first edit instead of as a plain unchecked row.
+		if ([self.pendingStarter isCheckbox:[displayValues objectAtIndex:0]]) {
+			NSMutableDictionary *marked = [out mutableCopy];
+			[marked setObject:@YES forKey:SerFilterExprPendingStarter];
+			out = marked;
+		}
 		if(includeDefinition) {
 			out = [NSMutableDictionary dictionaryWithDictionary:out];
 			[(NSMutableDictionary *)out setObject:[op filter] forKey:SerFilterExprDefinition];
@@ -1821,6 +1922,12 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		// for backwards compatibility. this key was added later
 		//                        vvvvvvvvvvvvv
 		[enabler setInitialState:(!enabledValue || [enabledValue boolValue])];
+		if ([[serialized objectForKey:SerFilterExprPendingStarter] boolValue]) {
+			// Unchecked through the tracker when its checkbox is created. The node itself stays like a
+			// fresh row's, so reloading the criteria (after "Edit Filters…") keeps the row and its checkbox.
+			[enabler setInitialState:YES];
+			[enabler setPendingStarter:YES];
+		}
 		[criteria addObject:enabler];
 
 		// add column
@@ -2260,6 +2367,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 
 @synthesize initialState = initialState;
 @synthesize allowsMixedState = allowsMixedState;
+@synthesize pendingStarter = _pendingStarter;
 
 - (instancetype)init {
 	self = [super init];

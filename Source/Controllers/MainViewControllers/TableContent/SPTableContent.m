@@ -1570,7 +1570,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// switch to another table should seed the editor. Same-table refreshes
 		// only reapply the already-visible state and must remain idempotent.
 		if(shouldAddStarterRule) {
-			[[ruleFilterController onMainThread] addFilterExpression];
+			// Unchecked: an empty template is not a filter, and nothing is applied yet.
+			[[ruleFilterController onMainThread] addStarterFilterExpression];
 			// the sizing will be updated automatically by adding a row
 		}
 		else {
