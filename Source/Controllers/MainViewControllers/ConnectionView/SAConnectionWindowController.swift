@@ -306,7 +306,7 @@ import SwiftUI
                                               comment: "AWS authorization required message"))))
                 return
             }
-            completion(resolveAWSIAMToken(info: info))
+            resolveAWSIAMToken(info: info, completion: completion)
 
         case .vault:
             resolveVaultCredentials(info: info, completion: completion)
@@ -357,37 +357,29 @@ import SwiftUI
         return AWSDirectoryBookmarkManager.shared.addAWSDirectoryBookmark(from: url)
     }
 
-    /// Generates the RDS auth token that stands in for the password. Stays on
-    /// the main queue because the profile flow can raise an MFA sheet.
-    private func resolveAWSIAMToken(info: SAConnectionInfo) -> Result<SAResolvedCredentials, SACredentialFailure> {
+    /// Resolve credentials off main, keeping MFA presentation and completion on main.
+    private func resolveAWSIAMToken(
+        info: SAConnectionInfo,
+        completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void
+    ) {
         let port = Int(info.port.trimmingCharacters(in: .whitespaces)) ?? 3306
-        let trimmedProfile = info.awsProfile.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        do {
-            let token = try AWSIAMAuthManager.generateAuthToken(
-                hostname: info.host,
-                port: port,
-                username: info.user,
-                region: info.awsRegion,
-                // Matches -generateAWSIAMAuthTokenWithError:, which falls back to
-                // "default" rather than passing an empty profile name.
-                profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
-                accessKey: nil,
-                secretKey: nil,
-                parentWindow: window
-            )
-
-            guard !token.isEmpty else {
-                return .failure(SACredentialFailure(
+        let attemptID = credentialAttemptID
+        AWSIAMAuthManager.generateAuthTokenInBackground(
+            hostname: info.host, port: port, username: info.user,
+            region: info.awsRegion, profile: info.awsProfile, parentWindow: window,
+            shouldContinue: { [weak self] in self?.credentialAttemptID == attemptID }
+        ) { token, error in
+            if let error {
+                completion(.failure(SACredentialFailure(
                     title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
-                    detail: NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error")))
+                    detail: error.localizedDescription)))
+            } else if let token, !token.isEmpty {
+                completion(.success(SAResolvedCredentials(user: info.user, password: token)))
+            } else {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    detail: NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error"))))
             }
-
-            return .success(SAResolvedCredentials(user: info.user, password: token))
-        } catch {
-            return .failure(SACredentialFailure(
-                title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
-                detail: error.localizedDescription))
         }
     }
 
