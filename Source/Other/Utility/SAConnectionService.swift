@@ -222,6 +222,46 @@ import Foundation
 
     // MARK: - Public API
 
+    /// Resolves AWS credentials off the main thread before starting the legacy connection flow.
+    @objc(connectAWSIAMWithController:info:preferences:region:profile:attemptID:sshPassword:parentWindow:completion:)
+    func connectAWSIAM(
+        with controller: SPConnectionController,
+        info: SAConnectionInfoObjC,
+        preferences: SAConnectionPreferences,
+        region: String?,
+        profile: String?,
+        attemptID: UInt,
+        sshPassword: String,
+        parentWindow: NSWindow?,
+        completion: @escaping (SAConnectionResult) -> Void
+    ) {
+        AWSIAMAuthManager.generateAuthTokenInBackground(
+            hostname: info.host,
+            port: info.port.isEmpty ? 3306 : (info.port as NSString).integerValue,
+            username: info.user,
+            region: region,
+            profile: profile,
+            parentWindow: parentWindow,
+            shouldContinue: { [weak controller] in
+                controller?.isAWSConnectionAttemptCurrent(attemptID) == true
+            }
+        ) { [weak self, weak controller] token, error in
+            guard let self, let controller,
+                  controller.isAWSConnectionAttemptCurrent(attemptID)
+            else { return }
+            guard let token, !token.isEmpty, error == nil else {
+                controller.failConnection(
+                    withTitle: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    errorMessage: error?.localizedDescription ?? NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error"),
+                    detail: nil
+                )
+                return
+            }
+            self.connect(with: info, preferences: preferences, password: token,
+                         sshPassword: sshPassword, parentWindow: parentWindow, completion: completion)
+        }
+    }
+
     /// Creates and configures an SPMySQLConnection from the given parameters.
     /// Runs on a background thread; calls completion on the main thread.
     @objc func connect(

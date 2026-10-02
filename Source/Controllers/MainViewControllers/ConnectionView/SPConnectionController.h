@@ -391,6 +391,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (void)mySQLConnectionEstablished;
 - (void)addConnectionToDocument;
 
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID NS_SWIFT_NAME(isAWSConnectionAttemptCurrent(_:));
+
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail;
 
 #pragma mark - SPConnectionControllerInitializer

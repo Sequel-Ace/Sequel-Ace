@@ -620,30 +620,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     };
 
     if ([self _isAWSIAMConnection]) {
-        NSUInteger awsConnectionAttemptID = connectionAttemptID;
-        [AWSIAMAuthManager generateAuthTokenInBackgroundWithHostname:info.host
-                                                               port:[[self port] length] ? [[self port] integerValue] : 3306
-                                                           username:info.user
-                                                             region:[self awsRegion]
-                                                            profile:[self awsProfile]
-                                                       parentWindow:[dbDocument parentWindowControllerWindow]
-                                                     shouldContinue:^BOOL {
-            SPConnectionController *strongSelf = weakSelf;
-            return strongSelf && !strongSelf->cancellingConnection && strongSelf->connectionAttemptID == awsConnectionAttemptID;
-        }
-                                                         completion:^(NSString *token, NSError *error) {
-            SPConnectionController *strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != awsConnectionAttemptID) return;
-            if (error || ![token length]) {
-                [strongSelf failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
-                                      errorMessage:error ? error.localizedDescription : NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
-                                            detail:nil];
-                return;
-            }
-            [strongSelf.connectionService connectWith:info preferences:preferences password:token
-                                          sshPassword:resolvedSSHPassword parentWindow:[strongSelf->dbDocument parentWindowControllerWindow]
-                                           completion:connectCompletion];
-        }];
+        [self.connectionService connectAWSIAMWithController:self info:info preferences:preferences
+                                                     region:[self awsRegion] profile:[self awsProfile]
+                                                  attemptID:connectionAttemptID sshPassword:resolvedSSHPassword
+                                               parentWindow:[dbDocument parentWindowControllerWindow]
+                                                 completion:connectCompletion];
         return;
     }
 
@@ -3763,6 +3744,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     } else {
         dispatch_async(dispatch_get_main_queue(), presentFailure);
     }
+}
+
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID
+{
+    return !cancellingConnection && connectionAttemptID == attemptID;
 }
 
 /**
