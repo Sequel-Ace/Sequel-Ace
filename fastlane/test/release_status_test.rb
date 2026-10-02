@@ -71,6 +71,12 @@ class ReleaseStatusTest < Minitest::Test
     assert_includes result.fetch("next_action"), "complete"
   end
 
+  def test_failed_beta_guidance_uses_the_alpha_retry_workflow
+    result = report(nil, state: "failed", channel: "beta")
+    assert_includes result.fetch("next_action"), "release_alpha_retry.yml"
+    refute_includes result.fetch("next_action"), "release_artifact_retry.yml"
+  end
+
   def test_running_handoff_queries_exact_cloud_run_and_does_not_emit_signed_urls
     client = Client.new(nil)
     client.define_singleton_method(:find_cloud_run) do |**args|
@@ -83,25 +89,47 @@ class ReleaseStatusTest < Minitest::Test
          "version" => "5.3.2", "platform" => "MAC_OS", "build" => 20_105 }]
     end
     client.define_singleton_method(:run_artifacts) do |_run|
-      [{ "attributes" => { "downloadUrl" => "https://example.invalid/private-token" } }]
+      [{ "attributes" => {
+        "fileType" => "STAPLED_NOTARIZED_ARCHIVE",
+        "downloadUrl" => "https://example.invalid/private-token"
+      } }]
     end
     manifest = Struct.new(:to_h).new({
       "tag" => "production/5.3.2-20105", "target_version" => "5.3.2",
       "canonical_build" => 20_105, "state" => "cloud_running", "channel" => "production",
       "release_commit_sha" => "a" * 40, "cloud_build_ids" => { "production" => "run-id" }
     })
-    result = SequelAceRelease::ReleaseStatus.new(client: client, production_workflow_id: "workflow").inspect(
-      manifest: manifest, app_store_notes: "notes"
-    )
-    assert_equal "ready", result.dig("cloud", "readiness")
-    refute_includes JSON.generate(result), "secret-url"
-    refute_includes JSON.generate(result), "private-token"
+    %w[cloud_running failed].each do |state|
+      manifest.to_h["state"] = state
+      result = SequelAceRelease::ReleaseStatus.new(client: client, production_workflow_id: "workflow").inspect(
+        manifest: manifest, app_store_notes: "notes"
+      )
+      assert_equal "ready", result.dig("cloud", "readiness")
+      refute_includes JSON.generate(result), "secret-url"
+      refute_includes JSON.generate(result), "private-token"
+    end
   end
 
   def test_missing_schedule_does_not_validate_metadata
     snapshot = metadata_snapshot(state: "WAITING_FOR_REVIEW")
     snapshot["version"]["attributes"].delete("earliestReleaseDate")
     refute report(snapshot).dig("app_store", "metadata_valid")
+  end
+
+  def test_live_release_uses_distribution_checks_instead_of_submission_schedule
+    snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    snapshot["version"]["attributes"]["releaseType"] = "AFTER_APPROVAL"
+    snapshot["version"]["attributes"].delete("earliestReleaseDate")
+
+    result = report(snapshot)
+    assert result.dig("app_store", "metadata_valid")
+    assert result.dig("app_store", "submitted")
+    assert_includes result.fetch("next_action"), "finalizer owns"
+
+    snapshot["phased_release"]["attributes"]["phasedReleaseState"] = "PAUSED"
+    result = report(snapshot)
+    refute result.dig("app_store", "metadata_valid")
+    assert_includes result.dig("app_store", "metadata_error"), "phased release is not active"
   end
 
   def test_incomplete_localization_reports_metadata_gap

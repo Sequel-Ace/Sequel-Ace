@@ -274,6 +274,160 @@ final class SASSHTunnelSocketTransportTests: XCTestCase {
         }
     }
 
+    // MARK: - Falling back to Distributed Objects (issue #2689)
+
+    /// Half the retry rule: where the failure happened. Anything that never
+    /// reached the app is safe whatever was being asked.
+    func testFailuresBeforeTheRequestIsSentNeverReachedTheApp() {
+        for error in [SASSHTunnelSocketClient.Error.socketFailed(EMFILE), .connectFailed(ENOENT), .peerRejected] {
+            XCTAssertTrue(error.isPreSend, "\(error) happens before anything is written")
+        }
+        for error in [SASSHTunnelSocketClient.Error.sendFailed(EIO), .noReply, .malformedReply(.unknownKind("nope"))] {
+            XCTAssertFalse(error.isPreSend, "\(error) may have reached the app")
+        }
+    }
+
+    /// `send` resolves the address before it opens anything, so a path that
+    /// cannot fit `sun_path` throws `SASSHTunnelSocketIO.Error` — a different
+    /// type from the client's own errors, and one that must still count as
+    /// never having reached the app or a failed `query` would wrongly
+    /// suppress the fallback.
+    func testAPathTooLongToBindAlsoNeverReachedTheApp() {
+        let tooLong = "/" + String(repeating: "b", count: 110)
+        XCTAssertThrowsError(try SASSHTunnelSocketClient(path: tooLong).send(.query("q", verificationHash: "h"))) { error in
+            XCTAssertTrue(error is SASSHTunnelSocketIO.Error)
+            XCTAssertNil(error as? SASSHTunnelSocketClient.Error,
+                         "it is not a client error, which is exactly why the cast alone was not enough")
+        }
+    }
+
+    /// The other half: what was being asked. `password` is an idempotent
+    /// keychain or in-memory read in `SASSHTunnelAuthService` and shows no
+    /// UI, so repeating it cannot ask the user anything; the two sheet-backed
+    /// requests can.
+    func testOnlyThePasswordRequestCannotPromptTheUser() {
+        XCTAssertFalse(SASSHTunnelAuthRequest.password(verificationHash: "h").mayPromptTheUser)
+        XCTAssertTrue(SASSHTunnelAuthRequest.question("host key changed (yes/no)?").mayPromptTheUser)
+        XCTAssertTrue(SASSHTunnelAuthRequest.query("Enter passphrase for key 'k':", verificationHash: "h").mayPromptTheUser)
+    }
+
+    /// Issue #2689's actual failure: the app accepted the connection and then
+    /// closed without answering a `password` request. That is `noReply`, so
+    /// the error alone cannot clear it — the request is what makes the retry
+    /// safe. Every server path that closes silently before the handler runs
+    /// produces it, and this is the one the reporters hit.
+    func testTheReportedFailureIsAPasswordRequestMeetingASilentClose() throws {
+        var handled = 0
+        let server = try startServer(peerPolicy: { _ in false }) { request in
+            handled += 1
+            return Self.echo(request)
+        }
+        let client = SASSHTunnelSocketClient(path: server.path)
+        XCTAssertThrowsError(try client.send(.password(verificationHash: "h"))) { error in
+            XCTAssertEqual(error as? SASSHTunnelSocketClient.Error, .noReply,
+                           "an app-side peer rejection reaches the assistant as noReply — what issue #2689 logged")
+            XCTAssertFalse((error as? SASSHTunnelSocketClient.Error)?.isPreSend ?? true,
+                           "noReply cannot be cleared by the error kind alone")
+        }
+        Thread.sleep(forTimeInterval: 0.1)
+        XCTAssertEqual(handled, 0, "the handler never ran, so nothing was asked of the user")
+    }
+
+    /// The case the fallback must refuse: a sheet-backed request that got far
+    /// enough for the app to have shown it. Same `noReply`, opposite verdict.
+    func testAPromptingRequestThatReachedTheAppIsNotRepeated() throws {
+        let server = try startServer { _ in .refused }
+        let client = SASSHTunnelSocketClient(path: server.path)
+        XCTAssertEqual(try client.send(.query("Enter passphrase for key 'k':", verificationHash: "h")), .refused)
+        XCTAssertTrue(SASSHTunnelAuthRequest.query("q", verificationHash: "h").mayPromptTheUser,
+                      "a repeat would run the password sheet a second time")
+    }
+
+    /// A client-side peer rejection is pre-send, so even a prompting request
+    /// is safe to repeat: the app was never contacted.
+    func testAPromptingRequestIsStillSafeWhenItNeverLeftTheAssistant() throws {
+        var handled = 0
+        let server = try startServer { request in handled += 1; return Self.echo(request) }
+        var client = SASSHTunnelSocketClient(path: server.path)
+        client.peerPolicy = { _ in false }
+        XCTAssertThrowsError(try client.send(.question("host key changed (yes/no)?"))) { error in
+            XCTAssertEqual((error as? SASSHTunnelSocketClient.Error)?.isPreSend, true)
+        }
+        Thread.sleep(forTimeInterval: 0.1)
+        XCTAssertEqual(handled, 0)
+    }
+
+    /// Every reason the app refuses a connection has to reach the tunnel's
+    /// diagnostic sink, because that is what lands in the debug window a user
+    /// pastes into a bug report. Issue #2689 stalled precisely here: the
+    /// window only carries ssh's stderr, so the app-side reason was invisible
+    /// and the reporter could only supply the assistant's half.
+    func testRefusalReasonsReachTheDiagnosticSink() throws {
+        let sink = Sink()
+
+        let rejecting = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()],
+                                                    handler: Self.echo,
+                                                    peerPolicy: { _ in false },
+                                                    log: sink.record)
+        servers.append(rejecting)
+        _ = try? SASSHTunnelSocketClient(path: rejecting.path).send(.password(verificationHash: "h"))
+
+        let garbled = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()],
+                                                  handler: Self.echo,
+                                                  log: sink.record)
+        servers.append(garbled)
+        let raw = try rawConnection(to: garbled.path)
+        XCTAssertTrue(SASSHTunnelSocketIO.writeAll(raw, Data("this is not json\n".utf8)))
+        _ = SASSHTunnelSocketIO.readLine(raw)
+        close(raw)
+
+        let deadline = Date().addingTimeInterval(2)
+        while sink.messages.count < 2 && Date() < deadline { Thread.sleep(forTimeInterval: 0.02) }
+
+        XCTAssertTrue(sink.messages.contains { $0.contains("failed peer validation") },
+                      "got \(sink.messages)")
+        XCTAssertTrue(sink.messages.contains { $0.contains("not understood") },
+                      "got \(sink.messages)")
+    }
+
+    /// The server reports from its concurrent service queue, so the sink is
+    /// called off the main thread and must be safe to share.
+    private final class Sink {
+        private let lock = NSLock()
+        private var storage: [String] = []
+
+        func record(_ message: String) {
+            lock.lock(); defer { lock.unlock() }
+            storage.append(message)
+        }
+
+        var messages: [String] {
+            lock.lock(); defer { lock.unlock() }
+            return storage
+        }
+    }
+
+    /// A second tunnel's stale-socket sweep connects to this tunnel's live
+    /// socket to see whether it answers. That peer is the app, not the
+    /// assistant, so the policy rejects it — and once refusals reach the
+    /// user's debug window a healthy tunnel would report a failure it did not
+    /// have. The app's server drops connections from its own process first.
+    func testTheSweepsOwnLivenessProbeIsNotReportedAsARefusal() throws {
+        let sink = Sink()
+        let server = try SASSHTunnelSocketServer(directories: [NSTemporaryDirectory()],
+                                                 handler: Self.echo,
+                                                 peerPolicy: { _ in false },
+                                                 log: sink.record)
+        servers.append(server)
+
+        // Exactly what sweepStaleSockets does to a socket that is still alive.
+        SASSHTunnelSocketServer.sweepStaleSockets(in: NSTemporaryDirectory())
+
+        Thread.sleep(forTimeInterval: 0.2)
+        XCTAssertTrue(sink.messages.isEmpty, "a liveness probe is not a failure; got \(sink.messages)")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: server.path), "a live socket must survive the sweep")
+    }
+
     // MARK: - Raw socket helpers
 
     private func rawConnection(to path: String) throws -> Int32 {

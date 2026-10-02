@@ -55,6 +55,25 @@ struct SASSHTunnelSocketClient {
         /// control, so both surface here.
         case noReply
         case malformedReply(SASSHTunnelAuthWireError)
+
+        /// True when the failure happened before any request reached the app,
+        /// so nothing was asked and no prompt can have been shown.
+        ///
+        /// This is one half of the retry rule (issue #2689); the other is the
+        /// request's own `mayPromptTheUser`. A pre-send failure is safe to
+        /// repeat whatever was being asked, and a request that cannot prompt
+        /// is safe to repeat whenever it failed — `noReply` in particular is
+        /// ambiguous by construction (the app closes silently for a rejected
+        /// peer, an unread request, an undecodable one, *and* an undelivered
+        /// reply), so it can only be judged together with what was asked.
+        var isPreSend: Bool {
+            switch self {
+            case .socketFailed, .connectFailed, .peerRejected:
+                return true
+            case .sendFailed, .noReply, .malformedReply:
+                return false
+            }
+        }
     }
 
     let path: String
