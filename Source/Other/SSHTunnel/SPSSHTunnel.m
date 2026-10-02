@@ -144,7 +144,16 @@ static unsigned short getRandomPort(void);
 		transport = [SASSHTunnelTransportSelection selectedTransport];
 		if (transport == SASSHTunnelTransportSocket) {
 			NSError *socketError = nil;
-			socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService error:&socketError];
+			// Socket refusals are reported by the app, not by ssh, so they
+			// never reach the debug window on their own — which is the window
+			// users paste into bug reports (issue #2689). Mirror them there.
+			__weak SPSSHTunnel *weakSelf = self;
+			socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService
+			                                                 diagnosticSink:^(NSString *message) {
+				NSLog(@"%@", message);
+				[weakSelf addDebugMessage:message];
+			}
+			                                                          error:&socketError];
 			if (!socketServer) {
 				NSLog(@"SSH tunnel: socket transport unavailable (%@); using Distributed Objects for this tunnel", socketError);
 				transport = SASSHTunnelTransportDistributedObjects;
@@ -306,6 +315,16 @@ static unsigned short getRandomPort(void);
  * Returns all the debug text for this tunnel as a string, separated
  * by line endings.
  */
+/// Appends one line to the debug window's buffer. Thread-safe: the socket
+/// server reports from its own service queue.
+- (void)addDebugMessage:(NSString *)message
+{
+	if (![message length]) return;
+	[debugMessagesLock lock];
+	[debugMessages addObject:[NSString stringWithFormat:@"%@\n", message]];
+	[debugMessagesLock unlock];
+}
+
 - (NSString *)debugMessages {
 	[debugMessagesLock lock];
 	NSString *debugMessagesString = [debugMessages componentsJoinedByString:@"\n"];
