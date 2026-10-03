@@ -108,11 +108,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// Escape starting one character in. The session's own handle is not used: work nobody waits
 	// for any more can still be using it, or close it, while this runs. The escaper follows what
 	// the session last reported - its character set and its NO_BACKSLASH_ESCAPES mode.
+	// A session on its way out is being replaced: the next one is connected with the character
+	// set on record, so a value built now - which may well be sent on that next session - follows
+	// the record rather than what the old session last reported. Without this the safeguard had
+	// no caller that ever enabled it.
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1
 	                               characterSetOnRecord:encoding
-	                             sessionIsBeingReplaced:NO];
+	                             sessionIsBeingReplaced:(state == SPMySQLDisconnecting)];
 	if (escapedLength < 0) {
 		// A value that cannot be escaped for this character set is not written. Before, an
 		// unexpected error raised an assertion, which ends the application in a debug build and

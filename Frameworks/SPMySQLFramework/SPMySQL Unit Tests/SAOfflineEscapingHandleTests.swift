@@ -349,4 +349,24 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertNil(escape(Data("x".utf8), with: escaper, onRecord: "no-such-character-set"))
         XCTAssertEqual(escape(Data("x".utf8), with: escaper, onRecord: "utf8mb4"), Data("x".utf8))
     }
+    /// A session being replaced follows the record, which is what the next session is connected
+    /// with - the state the connection reports while it is disconnecting.
+    func testASessionBeingReplacedFollowsTheRecord() throws {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        // A statement moved the session to latin1, so the escaper has seen this server report
+        // changes; the record still says gbk, which the replacement session will use.
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        // BF 27: escaped for latin1 this is BF 5C 27, which GBK reads as one character followed
+        // by an unescaped quote.
+        let value = Data([0xBF, 0x27])
+        let forTheOldSession = try XCTUnwrap(escape(value, with: escaper, onRecord: "gbk", sessionIsBeingReplaced: false))
+        XCTAssertEqual(forTheOldSession, Data([0xBF, 0x5C, 0x27]), "the session reported latin1")
+
+        let forTheReplacement = try XCTUnwrap(escape(value, with: escaper, onRecord: "gbk", sessionIsBeingReplaced: true))
+        XCTAssertEqual(forTheReplacement, Data([0x5C, 0xBF, 0x5C, 0x27]),
+                       "a session being replaced follows the record, so the lead byte is protected")
+    }
+
 }
