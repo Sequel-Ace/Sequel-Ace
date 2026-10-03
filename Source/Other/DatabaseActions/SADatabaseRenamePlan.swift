@@ -423,14 +423,20 @@ import Foundation
     }
 
     /// Reads the columns of the views of one schema from
-    /// `information_schema.COLUMNS` rows, keyed by view name.
+    /// `information_schema.COLUMNS` rows, keyed by the view name's bytes.
+    ///
+    /// The key is the name as the server sent it, byte for byte: Swift's
+    /// `String` equality treats canonically equivalent names such as NFC and
+    /// NFD `café` as the same, the server does not, and merging two such views
+    /// here would compare one against the other's columns and send the user to
+    /// check the wrong view.
     ///
     /// - Parameter rows: `TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,
     ///   CHARACTER_SET_NAME, COLLATION_NAME` rows ordered by `TABLE_NAME` and
     ///   `ORDINAL_POSITION`.
     /// - Returns: The columns of each view, in the order they were read.
-    @objc public static func signatures(fromRows rows: [[Any]]) -> [String: [SAViewColumnSignature]] {
-        var result: [String: [SAViewColumnSignature]] = [:]
+    public static func signatures(fromRows rows: [[Any]]) -> [[UInt8]: [SAViewColumnSignature]] {
+        var result: [[UInt8]: [SAViewColumnSignature]] = [:]
         for row in rows {
             guard row.count >= 4,
                   let table = row[0] as? String,
@@ -446,7 +452,7 @@ import Foundation
                 characterSet: row.count > 4 ? row[4] as? String : nil,
                 collation: row.count > 5 ? row[5] as? String : nil
             )
-            result[table, default: []].append(signature)
+            result[Array(table.utf8), default: []].append(signature)
         }
         return result
     }
@@ -1369,7 +1375,7 @@ import Foundation
             sessionSettingsNotRestored = true
         }
         var definitions: [[UInt8]: ViewDefinition] = [:]
-        var sourceViewColumns: [String: [SAViewColumnSignature]] = [:]
+        var sourceViewColumns: [[UInt8]: [SAViewColumnSignature]] = [:]
         if !plan.views.isEmpty {
             let sessionResult = run("SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create, CONNECTION_ID()")
             guard let current = SessionSettings(row: sessionResult.rows?.first) else {
@@ -2178,7 +2184,7 @@ import Foundation
     ///   - before: The columns of the source views, by view name.
     ///   - targetLiteral: The target schema name as a quoted literal.
     ///   - plan: The plan that collects the outcome.
-    private func compareViewColumns(before: [String: [SAViewColumnSignature]], targetLiteral: String, plan: SADatabaseRenamePlan) {
+    private func compareViewColumns(before: [[UInt8]: [SAViewColumnSignature]], targetLiteral: String, plan: SADatabaseRenamePlan) {
         let targetColumns = run(Self.viewColumnsStatement(schema: targetLiteral))
         guard let targetRows = targetColumns.rows else {
             plan.recordUnreadableViewSignatures(targetColumns.error)
@@ -2188,15 +2194,17 @@ import Foundation
 
         for view in plan.views {
             // The server keeps the name the way it stores it, which is the way
-            // it came back from information_schema on both sides.
-            guard let sourceSignature = before[view], !sourceSignature.isEmpty else {
+            // it came back from information_schema on both sides; the lookup
+            // goes by those bytes rather than by Swift's String equality.
+            let key = Array(view.utf8)
+            guard let sourceSignature = before[key], !sourceSignature.isEmpty else {
                 plan.recordUnreadableViewSignatures(String(
                     format: NSLocalizedString("the columns of the view '%@' were not listed before the move.", comment: "rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view"),
                     view
                 ))
                 return
             }
-            guard let targetSignature = after[view], !targetSignature.isEmpty else {
+            guard let targetSignature = after[key], !targetSignature.isEmpty else {
                 plan.recordUnreadableViewSignatures(String(
                     format: NSLocalizedString("the columns of the recreated view '%@' were not listed.", comment: "rename database: a recreated view whose columns information_schema did not report; %@ is the view"),
                     view

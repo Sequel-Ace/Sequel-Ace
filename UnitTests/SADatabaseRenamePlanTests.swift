@@ -601,10 +601,10 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             ["other", "x", "bigint", "YES", NSNull(), NSNull()],
         ])
 
-        XCTAssertEqual(signatures["totals"]?.count, 2)
-        XCTAssertEqual(signatures["totals"]?[0].signature, "t int unsigned NOT NULL")
-        XCTAssertEqual(signatures["totals"]?[1].signature, "label varchar(10) NULL utf8mb4 utf8mb4_general_ci")
-        XCTAssertEqual(signatures["other"]?.count, 1)
+        XCTAssertEqual(signatures[Array("totals".utf8)]?.count, 2)
+        XCTAssertEqual(signatures[Array("totals".utf8)]?[0].signature, "t int unsigned NOT NULL")
+        XCTAssertEqual(signatures[Array("totals".utf8)]?[1].signature, "label varchar(10) NULL utf8mb4 utf8mb4_general_ci")
+        XCTAssertEqual(signatures[Array("other".utf8)]?.count, 1)
     }
 
     /// Checks that a row without the columns the comparison needs is left out.
@@ -614,7 +614,47 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             ["totals", "t", "int", "YES"],
         ])
 
-        XCTAssertEqual(signatures["totals"]?.count, 1)
+        XCTAssertEqual(signatures[Array("totals".utf8)]?.count, 1)
+    }
+
+    /// Checks that two views whose names are canonically equivalent keep their
+    /// own columns, as the server keeps them apart.
+    func testSignatureKeepsCanonicallyEquivalentNamesApart() {
+        let nfc = "caf\u{00E9}"
+        let nfd = "cafe\u{0301}"
+        let signatures = SAViewColumnSignature.signatures(fromRows: [
+            [nfc, "a", "int", "NO", NSNull(), NSNull()],
+            [nfd, "b", "varchar(4)", "YES", "utf8mb4", "utf8mb4_general_ci"],
+        ])
+
+        XCTAssertEqual(signatures.count, 2, "the two names are not merged")
+        XCTAssertEqual(signatures[Array(nfc.utf8)]?.first?.name, "a")
+        XCTAssertEqual(signatures[Array(nfd.utf8)]?.first?.name, "b")
+    }
+
+    /// Checks that a difference is reported for the view it belongs to when the
+    /// schema holds two canonically equivalent names.
+    func testCanonicallyEquivalentViewsAreComparedSeparately() throws {
+        let nfc = "caf\u{00E9}"
+        let nfd = "cafe\u{0301}"
+        let server = makeServer(tables: [[nfc, "VIEW"], [nfd, "VIEW"]])
+        server.respond(to: showCreateViewPrefix + "`\(nfc)`", rows: [[nfc, totalsDefinition, "utf8mb4", "utf8mb4_general_ci"]])
+        server.respond(to: showCreateViewPrefix + "`\(nfd)`", rows: [[nfd, totalsDefinition, "utf8mb4", "utf8mb4_general_ci"]])
+        // the first view is unchanged, the second comes back with another type
+        server.respond(to: viewColumnsQuery(schema: "shop"), rows: [
+            columnRow(view: nfc, name: "t", type: "decimal(32,0)"),
+            columnRow(view: nfd, name: "t", type: "int unsigned"),
+        ])
+        server.respond(to: viewColumnsQuery(schema: "store"), rows: [
+            columnRow(view: nfc, name: "t", type: "decimal(32,0)"),
+            columnRow(view: nfd, name: "t", type: "int"),
+        ])
+
+        let failure = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP DATABASE") })
+        XCTAssertTrue(failure.contains(nfd), "the view that changed is named, not the one before it")
+        XCTAssertTrue(failure.contains("int unsigned"), failure)
     }
 
     /// Checks what counts as the same column and what does not.
