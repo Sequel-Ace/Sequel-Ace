@@ -114,6 +114,10 @@ public final class SAConnectionEscaper: NSObject {
     private var sessionCharacterSet: String?
     private var sessionUsesNoBackslashEscapes = false
     private var sessionsStartWithNoBackslashEscapes = false
+    /// Set once the session reported a character set other than the one it was connected
+    /// with. Until then there is no telling a server that does not report changes from one
+    /// that does and happens to report the same name.
+    private var sessionReportsCharacterSetChanges = false
     private var sessionHasOpenTransaction = false
     private var handleCharacterSet: String?
     private var handleUsesNoBackslashEscapes = false
@@ -137,9 +141,19 @@ public final class SAConnectionEscaper: NSObject {
     static func characterSetForEscaping(onRecord characterSetOnRecord: String?,
                                         session sessionCharacterSet: String?,
                                         handshake handshakeCharacterSet: String?,
+                                        sessionReportsChanges: Bool,
                                         sessionIsBeingReplaced: Bool) -> String? {
         if sessionIsBeingReplaced {
             return characterSetOnRecord
+        }
+        // Once this server has been seen reporting a change, what it reports is the guide - also
+        // when it reports the name the session was connected with again. A session that was
+        // switched away from that name and back would otherwise be escaped for the record, which
+        // is where the connection's own last change went, and that can be another character set
+        // entirely: escaping `BF 27` for latin1 while the session reads GBK leaves the quote
+        // unescaped, since GBK takes `BF 5C` as one character.
+        if sessionReportsChanges, let sessionCharacterSet {
+            return sessionCharacterSet
         }
         if let sessionCharacterSet, let handshakeCharacterSet,
            sessionCharacterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
@@ -161,6 +175,10 @@ public final class SAConnectionEscaper: NSObject {
         if isHandshake {
             handshakeCharacterSet = characterSet
             sessionsStartWithNoBackslashEscapes = noBackslashEscapes
+        }
+        if !isHandshake, let characterSet, let handshakeCharacterSet,
+           characterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
+            sessionReportsCharacterSetChanges = true
         }
         sessionCharacterSet = characterSet
         sessionUsesNoBackslashEscapes = noBackslashEscapes
@@ -218,6 +236,7 @@ public final class SAConnectionEscaper: NSObject {
         guard let characterSet = Self.characterSetForEscaping(onRecord: characterSetOnRecord,
                                                               session: sessionCharacterSet,
                                                               handshake: handshakeCharacterSet,
+                                                              sessionReportsChanges: sessionReportsCharacterSetChanges,
                                                               sessionIsBeingReplaced: sessionIsBeingReplaced) else {
             return -1
         }

@@ -432,6 +432,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 		// If the query succeeded, no need to re-attempt.
 		if (!queryStatus) {
+			// The statement may have changed the character set or the escaping mode, and a SET
+			// has no result columns at all, so this is recorded for every statement that went
+			// through rather than only for those that came back with a result.
+			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+			                            isHandshake:NO];
 			theErrorMessage = nil;
 			theErrorID = 0;
 			theSqlstate = nil;
@@ -502,13 +509,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding connection:self];
 					break;
 			}
-
-			// The statement may have changed the character set or the escaping mode; values are
-			// escaped the way the session reports it reads them now.
-			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
-			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
-			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-			                            isHandshake:NO];
 
 			// Update the error message, if appropriate, to reflect result store errors or overall success
 			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
