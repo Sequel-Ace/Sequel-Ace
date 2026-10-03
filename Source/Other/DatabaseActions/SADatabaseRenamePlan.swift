@@ -1269,7 +1269,11 @@ import Foundation
             "SHOW EVENTS FROM \(quotedSource)",
             fallback: "SELECT db, name FROM mysql.event WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name"
         ).map { Array($0.dropFirst()) }
-        let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = \(schema) ORDER BY TRIGGER_NAME")
+        // The one place the server does not compare the way it stores names; see
+        // `inventorySchemaMatch`. Without it, a rename of `Foo` on a case-sensitive MariaDB
+        // inventories the triggers of a separate `foo`, reports them as objects it cannot
+        // move, and refuses a rename that is perfectly possible.
+        let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE \(Self.inventorySchemaMatch(column: "TRIGGER_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY TRIGGER_NAME")
         let libraryRows = libraryRowsForInspection(schema: schema, inspectionError: &inspectionError)
         let objectPrivileges = privilegeDescriptions(forDatabase: source, serverLoweredName: serverLoweredSource, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         // The server keeps grants for databases that do not exist, so the
@@ -1968,6 +1972,28 @@ import Foundation
     /// folds both sides then.
     private static func schemaMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
         caseInsensitiveNames ? "LOWER(\(column)) = LOWER(\(schema))" : "\(column) = \(schema)"
+    }
+
+    /// How to match a schema name in `information_schema`, where the server mostly compares the
+    /// way it stores names - but not everywhere.
+    ///
+    /// `information_schema.TRIGGERS.TRIGGER_SCHEMA` is collated case-insensitively on MariaDB
+    /// (`utf8mb3_general_ci` on 11.8) whatever `lower_case_table_names` says, so on a
+    /// case-sensitive server `TRIGGER_SCHEMA = 'Foo'` also lists the triggers of a separate
+    /// `foo`. `TABLES`, `ROUTINES`, `VIEWS` and `SCHEMATA` follow the setting on both MariaDB and
+    /// MySQL, and MySQL follows it for `TRIGGERS` too - so the binary comparison is asked for
+    /// only where the server does not fold, and only where it is needed. Where the server does
+    /// fold, the plain comparison is right and is left as it was: the names it stores are folded
+    /// already, so there is nothing to tell apart. (The folding in `schemaMatch` is for the grant
+    /// tables, which are matched against a name the user typed rather than one the server
+    /// stored.)
+    /// - Parameters:
+    ///   - column: The `information_schema` column holding the schema name.
+    ///   - schema: The name to match, already a literal.
+    ///   - caseInsensitiveNames: Whether the server folds the case of names.
+    /// - Returns: The condition for a `WHERE` clause.
+    private static func inventorySchemaMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
+        caseInsensitiveNames ? "\(column) = \(schema)" : "BINARY \(column) = \(schema)"
     }
 
     /// The condition under which a database grant in a schema-name column
