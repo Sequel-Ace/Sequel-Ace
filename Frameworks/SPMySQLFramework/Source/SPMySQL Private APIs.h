@@ -77,6 +77,12 @@
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection;
+/** Whether a recently used connection's socket already reports a lost peer. */
+- (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+/** Asks the delegate what to do about the lost connection and remembers the answer. */
+- (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision;
+/** Records whether the application shows something modal; main thread only. */
+- (void)_recordWhetherAModalWindowIsShowing;
 
 @end
 
