@@ -153,6 +153,44 @@ final class SAConnectionCharacterSetsTests: XCTestCase {
         XCTAssertEqual(chinese, Data([0xCA, 0xFD, 0xBE, 0xDD, 0xBF, 0xE2]))
     }
 
+    // MARK: - The two directions agree
+
+    /// Going from a string encoding to a character set and back must land on the same
+    /// encoding. The SQL import names the character set an imported file is in this way, so a
+    /// pair that disagrees has the server read the file as something it is not.
+    func testTheCharacterSetForAnEncodingConvertsBackToThatEncoding() {
+        // Three deliberate approximations, each documented where it is made: ISO 8859-1 is
+        // named latin1, which MySQL defines as Windows-1252; non-lossy ASCII and big-endian
+        // UTF-32 are named for their general form.
+        let approximations: Set<String.Encoding> = [
+            .isoLatin1, .nonLossyASCII, .utf32BigEndian,
+        ]
+        let encodings: [String.Encoding] = [
+            .ascii, .japaneseEUC, .utf8, .isoLatin1, .nonLossyASCII, .shiftJIS, .isoLatin2,
+            .unicode, .windowsCP1251, .windowsCP1252, .windowsCP1250, .macOSRoman,
+            .utf16BigEndian, .utf16LittleEndian, .utf32, .utf32BigEndian,
+            String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringEncoding(CFStringEncodings.isoLatinGreek.rawValue))),
+            String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringEncoding(CFStringEncodings.isoLatin5.rawValue))),
+        ]
+        for stringEncoding in encodings where !approximations.contains(stringEncoding) {
+            guard let characterSet = SPMySQLConnection.mySQLCharset(forStringEncoding: stringEncoding.rawValue) else {
+                XCTFail("no character set for \(stringEncoding)")
+                continue
+            }
+            XCTAssertEqual(encoding(for: characterSet), stringEncoding,
+                           "\(characterSet) does not convert back to the encoding it was named for")
+        }
+    }
+
+    /// Windows-1253 and Windows-1254 are not MySQL's greek and latin5 - they disagree over 22
+    /// and 25 bytes - so they no longer name them for an import.
+    func testTheWindowsCodePagesDoNotNameTheISOCharacterSets() {
+        XCTAssertNil(SPMySQLConnection.mySQLCharset(forStringEncoding: String.Encoding.windowsCP1253.rawValue))
+        XCTAssertNil(SPMySQLConnection.mySQLCharset(forStringEncoding: String.Encoding.windowsCP1254.rawValue))
+    }
+
     /// The character sets that were already right stay right.
     func testTheMappingsThatWereCorrectAreUnchanged() throws {
         XCTAssertEqual(encoding(for: "utf8mb4"), .utf8)

@@ -350,6 +350,15 @@
  */
 + (NSString *)mySQLCharsetForStringEncoding:(NSStringEncoding)aStringEncoding
 {
+	// The character sets whose encoding is only reachable through CoreFoundation, which a
+	// switch cannot take as a case label.
+	if (aStringEncoding == CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatinGreek)) {
+		return @"greek";
+	}
+	if (aStringEncoding == CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin5)) {
+		return @"latin5";
+	}
+
 	// Switch through the list of NSStringEncodings from NSString, returning the most
 	// appropriate encoding for each
 	switch (aStringEncoding) {
@@ -383,12 +392,6 @@
 
 		case NSWindowsCP1252StringEncoding:
 			return @"latin1";
-
-		case NSWindowsCP1253StringEncoding:
-			return @"greek";
-
-		case NSWindowsCP1254StringEncoding:
-			return @"latin5";
 
 		case NSWindowsCP1250StringEncoding:
 			return @"cp1250";
