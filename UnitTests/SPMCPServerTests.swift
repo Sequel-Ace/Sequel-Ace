@@ -845,3 +845,38 @@ final class SAStringUnicodeScalarSearchTests: XCTestCase {
     }
 }
 
+
+
+/// The query executor must not change a validated read while applying its cap.
+final class SAMCPResultLimitSQLTests: XCTestCase {
+    func testValidNoBackslashEscapesReadKeepsItsOriginalSQL() {
+        let sql = "SELECT 'a\\' AS a, 'b#c' AS b"
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware(sql, backslashEscapes: false), sql)
+        XCTAssertNotEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware(sql), sql)
+        XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql),
+                     "the executor must retain the query and enforce only its read-side cap")
+    }
+
+    func testAmbiguousDashAndBlockMarkersAreNotRewritten() {
+        for marker in ["-- ", "/*"] {
+            let sql = "SELECT 'a\\' AS a, 'b" + marker + "c' AS b"
+            XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+            XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql), marker)
+        }
+    }
+
+    func testOrdinaryCommentsCanStillBeStrippedAndCapped() {
+        let sql = "/* leading */ SELECT 'a\\\\b#c' AS value -- trailing\r\n"
+        let stripped = SPMCPReadOnlyGuard.sqlForResultLimiting(sql)
+        XCTAssertEqual(stripped?.trimmingCharacters(in: .whitespacesAndNewlines), "SELECT 'a\\\\b#c' AS value")
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+    }
+
+    func testExecutableCommentsAreNeverRewrittenForLimiting() {
+        for sql in ["SELECT 1 /*! UNION SELECT 2 */", "SELECT 1 /*M! UNION SELECT 2 */"] {
+            XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql))
+            XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly(sql))
+        }
+    }
+}

@@ -238,6 +238,19 @@ enum SPMCPReadOnlyGuard {
         return out
     }
 
+    /// A comment-stripped query that can be rewritten without knowing the
+    /// connection's NO_BACKSLASH_ESCAPES mode. Otherwise keep the original SQL
+    /// and enforce the result cap while reading it, as for executable comments.
+    /// Validation accepting both readings does not mean their SQL text is the
+    /// same: a comment marker can be inside a string under only one reading.
+    static func sqlForResultLimiting(_ sql: String) -> String? {
+        guard !hasExecutableComment(sql) else { return nil }
+        let stripped = stripCommentsQuoteAware(sql)
+        let withoutEscapes = stripCommentsQuoteAware(sql, backslashEscapes: false)
+        guard stripped.utf8.elementsEqual(withoutEscapes.utf8) else { return nil }
+        return stripped
+    }
+
     /// Substitutes each unquoted `?` in `sql` with the literal that `literal`
     /// renders for the next element of `params`. Quote- and comment-aware: a `?`
     /// inside a string literal or a comment is not a placeholder and is copied
