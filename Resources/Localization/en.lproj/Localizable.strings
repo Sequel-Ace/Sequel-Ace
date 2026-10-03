@@ -4265,3 +4265,6 @@
 
 /* AWS sign-in recovery; %@ is an AWS CLI command */
 "Run `%@` in Terminal, then try again." = "Run `%@` in Terminal, then try again.";
+
+/* AWS IAM credentials status message */
+"Getting AWS credentials..." = "Getting AWS credentials...";

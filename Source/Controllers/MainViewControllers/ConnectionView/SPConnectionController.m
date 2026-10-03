@@ -731,6 +731,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // AWS IAM: generate the token on a background queue, then connect from the main queue.
     if (isAWSIAMConnection) {
         NSUInteger awsConnectionAttemptID = connectionAttemptID;
+        NSString *mySQLProgressText = [progressIndicatorText stringValue];
+        [progressIndicatorText setStringValue:NSLocalizedString(@"Getting AWS credentials...", @"AWS IAM credentials status message")];
 
         [self generateAWSIAMAuthTokenWithCompletion:^(NSString *token, NSError *awsError) {
             SPConnectionController *mainSelf = weakSelf;
@@ -743,6 +745,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 return;
             }
 
+            [mainSelf->progressIndicatorText setStringValue:mySQLProgressText];
             [mainSelf.connectionService connectWith:info
                                         preferences:preferences
                                            password:(deferMySQLPasswordToDelegate ? nil : token)
