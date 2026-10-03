@@ -560,21 +560,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                                                    password:[self password] ?: @""
                                                                                          delegateAvailable:self.connectionService.mySQLDelegate != nil];
 
-    // Resolve explicit passwords and generated credentials before entering the service.
-    // An AWS IAM token is generated up front to validate the credentials and report
-    // failures, then discarded when the delegate supplies one per connection attempt.
-    NSString *resolvedPassword = nil;
-
-    if ([self _isAWSIAMConnection]) {
-        NSString *preflightToken = [self _resolvedMySQLPassword];
-        if (!preflightToken) return; // AWS IAM error already shown
-
-        if (!deferMySQLPasswordToDelegate) resolvedPassword = preflightToken;
-    }
-    else if (!deferMySQLPasswordToDelegate) {
-        resolvedPassword = [self _resolvedMySQLPassword];
-        if (!resolvedPassword) return;
-    }
+    // Resolve explicit passwords here; the Swift service validates AWS credentials off the main thread.
+    NSString *resolvedPassword = (deferMySQLPasswordToDelegate || [self _isAWSIAMConnection]) ? nil : [self _resolvedMySQLPassword];
+    if (!resolvedPassword && !deferMySQLPasswordToDelegate && ![self _isAWSIAMConnection]) return; // AWS IAM error already shown
 
     NSString *resolvedSSHPassword = [self _resolvedSSHPassword];
 
@@ -670,6 +658,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         strongSelf->mySQLConnection = result.connection;
         [strongSelf mySQLConnectionEstablished];
     };
+
+    if ([self _isAWSIAMConnection]) {
+        [self.connectionService connectAWSIAMWithController:self info:info preferences:preferences
+                                                     region:[self awsRegion] profile:[self awsProfile]
+                                                  attemptID:connectionAttemptID sshPassword:resolvedSSHPassword
+                                               parentWindow:[dbDocument parentWindowControllerWindow]
+                                                 completion:connectCompletion];
+        return;
+    }
 
     // Vault: fetch ephemeral credentials on a background thread so that a
     // browser-based OIDC flow (up to 120 s) does not block the main thread.
@@ -3787,6 +3784,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     } else {
         dispatch_async(dispatch_get_main_queue(), presentFailure);
     }
+}
+
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID
+{
+    return !cancellingConnection && connectionAttemptID == attemptID;
 }
 
 /**
