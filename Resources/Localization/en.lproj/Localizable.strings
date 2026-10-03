@@ -4326,6 +4326,30 @@
 /* AWS directory write access panel button */
 "Allow" = "Allow";
 
+/* Connection lost sheet: default title */
+"Connection Lost" = "Connection Lost";
+
+/* Connection lost sheet: default message */
+"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace appears to have lost the connection to the server, or the server has stopped responding.";
+
+/* Connection lost sheet: title when the AWS session has lapsed */
+"AWS Sign-In Required" = "AWS Sign-In Required";
+
+/* Connection lost sheet: message when the AWS session has lapsed; %@ is an AWS CLI command */
+"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect.";
+
+/* Connection lost sheet: message when an AWS IAM token could not be generated; %@ is the AWS error description */
+"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect.";
+
+/* Connection lost sheet: fallback AWS error description */
+"Unknown AWS IAM error" = "Unknown AWS IAM error";
+
+/* Connection lost sheet: reconnect button */
+"Reconnect" = "Reconnect";
+
+/* Connection lost sheet: close connection button */
+"Close connection" = "Close connection";
+
 /* SQLite store problem alert title: the pinned-tables store is unusable */
 "Pinned tables are not being saved" = "Pinned tables are not being saved";
 
@@ -4367,6 +4391,9 @@
 
 /* AWS IAM credentials status message */
 "Getting AWS credentials..." = "Getting AWS credentials...";
+
+/* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";
 
 /* Connection error: the cleartext authentication plugin requires TLS */
 "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";

@@ -525,18 +525,50 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         ))
     }
 
-    func testGeneratedCredentialsAreNeverDeferredToConnectionDelegate() {
-        for connectionType in [SAConnectionType.awsIAM, .vault] {
-            let info = SAConnectionInfoObjC()
-            info.type = connectionType
-            info.connectionKeychainItemName = "Favorite password"
+    func testAWSIAMPasswordIsDeferredToConnectionDelegate() {
+        let info = SAConnectionInfoObjC()
+        info.type = .awsIAM
 
-            XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
-                for: info,
-                password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
-                delegateAvailable: true
-            ))
-        }
+        XCTAssertTrue(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: "",
+            delegateAvailable: true
+        ))
+    }
+
+    func testAWSIAMPasswordIsDeferredRegardlessOfKeychainItem() {
+        let info = SAConnectionInfoObjC()
+        info.type = .awsIAM
+        info.connectionKeychainItemName = "Favorite password"
+
+        XCTAssertTrue(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
+            delegateAvailable: true
+        ))
+    }
+
+    func testAWSIAMPasswordWithoutDelegateIsPassedDirectly() {
+        let info = SAConnectionInfoObjC()
+        info.type = .awsIAM
+
+        XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: "",
+            delegateAvailable: false
+        ))
+    }
+
+    func testVaultCredentialsAreNeverDeferredToConnectionDelegate() {
+        let info = SAConnectionInfoObjC()
+        info.type = .vault
+        info.connectionKeychainItemName = "Favorite password"
+
+        XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
+            delegateAvailable: true
+        ))
     }
 
     func testSpecialSettingsForService() {
