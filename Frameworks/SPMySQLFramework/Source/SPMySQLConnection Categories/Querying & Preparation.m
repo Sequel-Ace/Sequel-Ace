@@ -121,7 +121,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	                                             length:cDataLength
 	                                               into:escBuffer+1
 	                               characterSetOnRecord:transportCharacterSet
-	                             sessionIsBeingReplaced:(state == SPMySQLDisconnecting)];
+	                             sessionIsBeingReplaced:NO];
+	// Not marked as being replaced. `SPMySQLDisconnecting` looks like the signal for it, but it
+	// does not say that the next statement runs on the replacement session:
+	// `_disconnectPreservingProxyReconnect:` releases the connection before closing the old
+	// handle, and `queryString:` still accepts a connection used a moment ago. A value escaped
+	// for the replacement and then run on the outgoing session is worse than the other way round,
+	// because the two escaping modes are not interchangeable: backslashes in a literal a
+	// `NO_BACKSLASH_ESCAPES` session reads leave the quote after one unescaped. Setting this needs
+	// the state that says the replacement is in hand, which #2676 introduces.
 	if (escapedLength < 0) {
 		// A value that cannot be escaped for this character set is not written. Before, an
 		// unexpected error raised an assertion, which ends the application in a debug build and
