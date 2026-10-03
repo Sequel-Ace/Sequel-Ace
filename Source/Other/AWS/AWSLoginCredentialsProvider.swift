@@ -43,9 +43,9 @@ import OSLog
         case .invalidProfile:
             return NSLocalizedString("The profile is not configured for AWS console sign-in", comment: "aws login error")
         case .cacheNotFound:
-            return NSLocalizedString("No cached AWS console sign-in session was found. Run `aws login` and try again.", comment: "aws login error")
+            return NSLocalizedString("No cached AWS console sign-in session was found.", comment: "aws login error")
         case .sessionExpired:
-            return NSLocalizedString("Your AWS console sign-in session has ended. Run `aws login` and reconnect.", comment: "aws login error: the sign-in session can no longer be renewed")
+            return NSLocalizedString("Your AWS console sign-in session has ended.", comment: "aws login error: the sign-in session can no longer be renewed")
         case .invalidCacheContents:
             return NSLocalizedString("The cached AWS console sign-in session could not be read", comment: "aws login error")
         }

@@ -43,17 +43,17 @@ enum SAAWSLoginRefreshError: Error, LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .credentialsChanged:
-            return NSLocalizedString("Your AWS sign-in credentials changed after you ran `aws login`. Run `aws login` and reconnect.", comment: "aws login refresh error: the user's AWS password or credentials changed")
+            return NSLocalizedString("Your AWS sign-in credentials changed after you signed in.", comment: "aws login refresh error: the user's AWS password or credentials changed")
         case .insufficientPermissions:
             return NSLocalizedString("AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.", comment: "aws login refresh error: missing IAM permission")
         case .grantRejected:
-            return NSLocalizedString("AWS rejected the renewal of your console sign-in session. Run `aws login` and reconnect.", comment: "aws login refresh error: AWS rejected the refresh token")
+            return NSLocalizedString("AWS rejected the renewal of your console sign-in session.", comment: "aws login refresh error: AWS rejected the refresh token")
         case .regionUnavailable:
-            return NSLocalizedString("Sequel Ace could not tell which AWS region your console sign-in session belongs to. Run `aws login` and reconnect.", comment: "aws login refresh error: no region for the sign-in session")
+            return NSLocalizedString("Sequel Ace could not tell which AWS region your console sign-in session belongs to.", comment: "aws login refresh error: no region for the sign-in session")
         case .writeAccessRequired:
-            return NSLocalizedString("Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder: connect from the connection window and allow access when asked, or run `aws login` and reconnect.", comment: "aws login refresh error: the .aws folder is read-only for Sequel Ace")
+            return NSLocalizedString("Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window.", comment: "aws login refresh error: the .aws folder is read-only for Sequel Ace")
         case .invalidSigningKey:
-            return NSLocalizedString("The cached AWS console sign-in session has an unreadable signing key. Run `aws login` and reconnect.", comment: "aws login refresh error: the cached DPoP key cannot be read")
+            return NSLocalizedString("The cached AWS console sign-in session has an unreadable signing key.", comment: "aws login refresh error: the cached DPoP key cannot be read")
         case .invalidResponse:
             return NSLocalizedString("AWS returned an unexpected response while renewing your console sign-in session.", comment: "aws login refresh error: malformed response")
         case .requestFailed(let detail):

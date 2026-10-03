@@ -390,3 +390,58 @@ final class SAAtomicFileReplacementTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path), [])
     }
 }
+
+final class SAAWSSignInCommandTests: XCTestCase {
+
+    func testCommandsNameTheProfile() {
+        XCTAssertEqual(SAAWSSignInCommand.login(profile: "dev"), "aws login --profile dev")
+        XCTAssertEqual(SAAWSSignInCommand.ssoLogin(profile: "dev"), "aws sso login --profile dev")
+    }
+
+    func testCommandsNameTheDefaultProfileWhenNoneIsSelected() {
+        XCTAssertEqual(SAAWSSignInCommand.login(profile: nil), "aws login --profile default")
+        XCTAssertEqual(SAAWSSignInCommand.login(profile: "  "), "aws login --profile default")
+        XCTAssertEqual(SAAWSSignInCommand.ssoLogin(profile: ""), "aws sso login --profile default")
+    }
+
+    func testProfileNamesAreShellQuotedWhenNeeded() {
+        XCTAssertEqual(SAAWSSignInCommand.shellQuoted("team-prod_1.eu"), "team-prod_1.eu")
+        XCTAssertEqual(SAAWSSignInCommand.shellQuoted("my profile"), "'my profile'")
+        XCTAssertEqual(SAAWSSignInCommand.shellQuoted("it's"), "'it'\\''s'")
+        XCTAssertEqual(SAAWSSignInCommand.shellQuoted("dev;rm -rf ~"), "'dev;rm -rf ~'")
+        XCTAssertEqual(SAAWSSignInCommand.shellQuoted("$(whoami)"), "'$(whoami)'")
+        XCTAssertEqual(SAAWSSignInCommand.login(profile: "my profile"), "aws login --profile 'my profile'")
+    }
+
+    func testCommandIsOnlyNamedForErrorsThatSigningInResolves() {
+        XCTAssertEqual(SAAWSSignInCommand.command(for: AWSLoginAuthError.sessionExpired, profile: "dev"), "aws login --profile dev")
+        XCTAssertEqual(SAAWSSignInCommand.command(for: AWSLoginAuthError.cacheNotFound, profile: "dev"), "aws login --profile dev")
+        XCTAssertEqual(SAAWSSignInCommand.command(for: SAAWSLoginRefreshError.grantRejected, profile: "dev"), "aws login --profile dev")
+        XCTAssertEqual(SAAWSSignInCommand.command(for: AWSSSOClientError.tokenExpired, profile: "dev"), "aws sso login --profile dev")
+
+        XCTAssertNil(SAAWSSignInCommand.command(for: AWSLoginAuthError.invalidProfile, profile: "dev"))
+        XCTAssertNil(SAAWSSignInCommand.command(for: SAAWSLoginRefreshError.insufficientPermissions, profile: "dev"))
+        XCTAssertNil(SAAWSSignInCommand.command(for: SAAWSLoginRefreshError.requestFailed("offline"), profile: "dev"))
+        XCTAssertNil(SAAWSSignInCommand.command(for: AWSSSOClientError.networkFailure, profile: "dev"))
+        XCTAssertNil(SAAWSSignInCommand.command(for: AWSIAMAuthError.tokenGenerationFailed, profile: "dev"))
+    }
+
+    func testMessageAppendsTheCommandForTheProfile() {
+        XCTAssertEqual(SAAWSSignInCommand.message(for: AWSLoginAuthError.sessionExpired, profile: "dev"),
+                       "Your AWS console sign-in session has ended. Run `aws login --profile dev` in Terminal, then try again.")
+        XCTAssertEqual(SAAWSSignInCommand.message(for: AWSLoginAuthError.invalidCacheContents, profile: nil),
+                       "The cached AWS console sign-in session could not be read. Run `aws login --profile default` in Terminal, then try again.")
+        XCTAssertEqual(SAAWSSignInCommand.message(for: SAAWSLoginRefreshError.insufficientPermissions, profile: "dev"),
+                       SAAWSLoginRefreshError.insufficientPermissions.localizedDescription)
+    }
+
+    func testPresentableErrorKeepsTheDomainAndCode() throws {
+        let original = AWSLoginAuthError.sessionExpired as NSError
+        let presentable = SAAWSSignInCommand.presentableError(AWSLoginAuthError.sessionExpired, profile: "dev")
+
+        XCTAssertEqual(presentable.domain, original.domain)
+        XCTAssertEqual(presentable.code, original.code)
+        XCTAssertTrue(presentable.localizedDescription.contains("`aws login --profile dev`"))
+        XCTAssertEqual(presentable as Error as? AWSLoginAuthError, .sessionExpired)
+    }
+}

@@ -663,17 +663,22 @@ extension AWSIAMAuthManager {
                 secretKey: secretKey,
                 parentWindow: parentWindow
             )
-        } catch let authError as AWSIAMAuthError {
-            errorPointer?.pointee = NSError(
+        } catch {
+            errorPointer?.pointee = presentableError(error, profile: profile)
+            return nil
+        }
+    }
+
+    /// `error` as an NSError for display, naming the AWS CLI command for `profile` when signing in again resolves it.
+    private static func presentableError(_ error: Error, profile: String?) -> NSError {
+        if let authError = error as? AWSIAMAuthError {
+            return NSError(
                 domain: "AWSIAMAuthErrorDomain",
                 code: authError.rawValue,
                 userInfo: [NSLocalizedDescriptionKey: authError.localizedDescription]
             )
-            return nil
-        } catch let otherError {
-            errorPointer?.pointee = otherError as NSError
-            return nil
         }
+        return SAAWSSignInCommand.presentableError(error, profile: profile)
     }
 }
 
