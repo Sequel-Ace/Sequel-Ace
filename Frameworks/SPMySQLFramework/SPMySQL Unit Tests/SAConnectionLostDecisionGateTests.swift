@@ -137,31 +137,43 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
     /// - cancelled while waiting for the main thread, say - the threads waiting on that question
     /// would wait for one that is never coming, and the connection would never ask again.
     func testWaitingThreadsAreReleasedWhenTheAskingEndsWithoutAnAnswer() {
-        let gate = SAConnectionLostDecisionGate()
-        let asking = expectation(description: "the question is published")
-        let waited = expectation(description: "the waiting thread was released")
+        let questionIsOpen = DispatchSemaphore(value: 0)
+        let askerMayAnswer = DispatchSemaphore(value: 0)
+        let askerIsDone = DispatchSemaphore(value: 0)
+        let waiterIsDone = DispatchSemaphore(value: 0)
+        let lock = NSLock()
+        var waiterAnswer: Int?
 
-        DispatchQueue.global().async {
-            _ = gate.decision {
-                asking.fulfill()
-                // long enough for the other thread to find the question and wait on it
-                Thread.sleep(forTimeInterval: 0.2)
+        Thread.detachNewThread {
+            _ = self.gate.decision(askingWith: { () -> Int in
+                questionIsOpen.signal()
+                // held until the other thread is on the question, so the order is not a matter of
+                // scheduling
+                askerMayAnswer.wait()
                 return 7
-            }
+            })
+            askerIsDone.signal()
         }
+        XCTAssertEqual(questionIsOpen.wait(timeout: .now() + 2), .success)
 
-        wait(for: [asking], timeout: 2)
-
-        DispatchQueue.global().async {
-            let answer = gate.decision { XCTFail("the second thread must not ask"); return 1 }
-            XCTAssertEqual(answer, 7, "it takes the answer of the question it waited on")
-            waited.fulfill()
+        Thread.detachNewThread {
+            let answer = self.gate.decision(askingWith: { XCTFail("the second thread must not ask"); return 1 })
+            lock.lock()
+            waiterAnswer = answer
+            lock.unlock()
+            waiterIsDone.signal()
         }
+        XCTAssertTrue(waitUntil { self.gate.threadsWaitingForAnswer == 1 })
+        askerMayAnswer.signal()
 
-        wait(for: [waited], timeout: 2)
+        XCTAssertEqual(waiterIsDone.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(askerIsDone.wait(timeout: .now() + 2), .success)
+        lock.lock()
+        XCTAssertEqual(waiterAnswer, 7, "it takes the answer of the question it waited on")
+        lock.unlock()
 
         // and the gate is free for the next question
-        XCTAssertEqual(gate.decision { 3 }, 3)
+        XCTAssertEqual(gate.decision(askingWith: { 3 }), 3)
     }
 
     /// Checks that the fallback is the answer that gives the connection up.
