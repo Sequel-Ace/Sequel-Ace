@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "yaml"
+require "open3"
 
 class WorkflowRecoveryTest < Minitest::Test
   def test_status_uses_protected_api_credentials_without_release_mutations_or_serialization
@@ -693,6 +695,83 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
     assert_includes discovery, '--integrity-failure-marker "${integrity_marker}"'
     assert_includes discovery, "Live handoff validation failed transiently; recovery remains armed."
+  end
+
+  def test_verified_archive_continuation_does_not_query_cloud_downloads
+    workflow = YAML.load_file(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.dig("jobs", "discover", "steps").find do |step|
+      step["name"] == "Inspect exact Cloud runs once"
+    end.fetch("run")
+    # Run the actual readiness and action-selection shell with the real CLI and
+    # CloudRunStatus. The earlier handoff checks remain covered by their suites.
+    shell = discovery[discovery.index("# Handoff and public-asset validation above")..]
+    assert_operator discovery.index("validate-publish-handoff"), :<, discovery.index("artifact_arguments=()")
+    assert_operator discovery.index("github-public-assets-status"), :<, discovery.index("artifact_arguments=()")
+    recheck = workflow.dig("jobs", "publish", "steps").find do |step|
+      step["name"] == "Recheck exact Cloud readiness once"
+    end
+    assert_equal "${{ steps.context.outputs.state }}", recheck.fetch("env").fetch("VERIFIED_HANDOFF_STATE")
+
+    Dir.mktmpdir do |directory|
+      fixture = File.join(directory, "cloud-fixture.rb")
+      File.write(fixture, <<~'RUBY')
+        require "sequel_ace_release"
+        client = Object.new
+        client.define_singleton_method(:find_cloud_run) do |**args|
+          { "id" => args.fetch(:run_id), "number" => 20105,
+            "execution_progress" => "COMPLETE", "completion_status" => "SUCCEEDED" }
+        end
+        client.define_singleton_method(:cloud_builds_for_run) do |run_id|
+          [{ "id" => "app-build", "app_id" => run_id == "alpha-run" ? "1594104035" : "1518036000",
+             "version" => "5.3.2", "platform" => "MAC_OS", "build" => 20105 }]
+        end
+        client.define_singleton_method(:run_artifacts) do |run_id|
+          File.open(ENV.fetch("ARTIFACT_CALLS"), "a") { |file| file.puts(run_id) }
+          raise "Verified continuation queried an expired Cloud download" if ENV.fetch("VERIFIED_HANDOFF_STATE") != "cloud_running"
+          []
+        end
+        cli = SequelAceRelease::CLI.new(out: $stdout, err: $stderr, env: ENV)
+        cli.define_singleton_method(:app_store_client) { client }
+        exit cli.run(ARGV)
+      RUBY
+      prefix = <<~'SH'
+        set -euo pipefail
+        bundle() { "${RUBY_BIN}" -I"${RELEASE_LIB}" "${FIXTURE_CLI}" "${@:4}"; }
+      SH
+      %w[production beta].each do |channel|
+        %w[cloud_running artifacts_verified archived].each do |state|
+          calls = File.join(directory, "calls")
+          FileUtils.rm_f(calls)
+          output = File.join(directory, "output")
+          File.write(output, "")
+          env = {
+            "RUBY_BIN" => RbConfig.ruby, "RELEASE_LIB" => repo_path("fastlane/lib"), "FIXTURE_CLI" => fixture,
+            "ARTIFACT_CALLS" => calls, "VERIFIED_HANDOFF_STATE" => state,
+            "GITHUB_OUTPUT" => output, "GITHUB_STEP_SUMMARY" => File.join(directory, "summary"),
+            "terminal_integrity_failure" => "false", "manual_assets_pending" => "false",
+            "handoff_state" => state, "channel" => channel, "version" => "5.3.2", "build" => "20105",
+            "release_tag" => "#{channel}/5.3.2-20105", "commit" => "a" * 40,
+            "archive_ref" => "fixture-archive", "production_run_id" => "production-run", "alpha_run_id" => "alpha-run",
+            "SA_PRODUCTION_WORKFLOW_ID" => "production-workflow", "SA_ALPHA_WORKFLOW_ID" => "alpha-workflow",
+            "state_directory" => directory,
+            "EXPECTED_CHANNEL" => channel, "EXPECTED_VERSION" => "5.3.2", "EXPECTED_BUILD" => "20105",
+            "EXPECTED_TAG" => "#{channel}/5.3.2-20105", "EXPECTED_COMMIT" => "a" * 40,
+            "PRODUCTION_RUN_ID" => "production-run", "ALPHA_RUN_ID" => "alpha-run"
+          }
+          _stdout, stderr, status = Open3.capture3(env, "bash", "-c", prefix + shell, chdir: directory)
+          assert status.success?, "#{channel} #{state}: #{stderr}"
+          assert_includes File.read(output), "action=#{state == 'cloud_running' ? 'pending' : 'continue'}"
+          if state == "cloud_running"
+            assert_equal ["production-run"], File.readlines(calls, chomp: true)
+          else
+            refute_path_exists calls
+            _stdout, stderr, status = Open3.capture3(env, "bash", "-c", prefix + recheck.fetch("run"), chdir: directory)
+            assert status.success?, "recheck #{channel} #{state}: #{stderr}"
+            refute_path_exists calls
+          end
+        end
+      end
+    end
   end
 
   def test_publisher_shell_uses_environment_indirection_for_external_values

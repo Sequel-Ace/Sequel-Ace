@@ -451,7 +451,12 @@ stays pending on Ubuntu with the exact wake tag armed. If Apple's run-progress
 field lags, the exact build plus that stapled artifact can still admit verification.
 The publisher then proves signing, stapling, notarization, and the artifact itself
 before any public attachment or App Store submission. Metadata readiness never
-replaces those byte-level checks.
+replaces those byte-level checks. Once handoff, archive digests, and public assets
+validate an `artifacts_verified` or `archived` continuation, Cloud checks use
+`cloud-status --artifacts-already-verified`: exact run, app/version/build identity
+and terminal failure checks still apply, but expired or unavailable Cloud download
+resources cannot block reuse of the verified ZIPs. Initial `cloud_running`
+collection and other Cloud callers retain the downloadable stapled-artifact gate.
 The publisher repeats the artifact-type selection at download with
 `--notarized-only`. If the stapled resource is no longer downloadable, it fails
 before verification and preserves the retryable handoff instead of stamping a
