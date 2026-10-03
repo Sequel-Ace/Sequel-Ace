@@ -1126,6 +1126,7 @@ asm(".desc ___crashreporter_info__, 0x10");
     // is what the side connection's limits are there to avoid.
     unsigned long connectClientFlags = [self clientFlags] | CLIENT_REMEMBER_OPTIONS;
 
+    uint64_t connectStart_t = _monotonicTime();
     MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
 
     //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL.
@@ -1133,9 +1134,20 @@ asm(".desc ___crashreporter_info__, 0x10");
     // same way again, and credentials the server refused, or that may already have gone out over
     // TLS before the connection was lost, must not be sent a second time unencrypted.
     if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
-        opt_ssl_mode = SSL_MODE_DISABLED;
-        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
-        connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
+        // On what is left of the attempt's budget, not on a second helping of it: the flag above
+        // keeps the timeout's value rather than a deadline, so a TLS negotiation that used the
+        // whole budget would otherwise be followed by an attempt entitled to all of it again.
+        NSNumber *retryConnectTimeout = [SAConnectionRetryPolicy retryConnectTimeoutForConnectTimeout:connectTimeout
+                                                                                        secondsSpent:_timeIntervalSinceMonotonicTime(connectStart_t)];
+        if (retryConnectTimeout) {
+            NSUInteger retryTimeout = [retryConnectTimeout unsignedIntegerValue];
+            if (retryTimeout > 0) {
+                mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&retryTimeout);
+            }
+            opt_ssl_mode = SSL_MODE_DISABLED;
+            mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
+            connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
+        }
     }
 
 	// If the connection failed, return NULL

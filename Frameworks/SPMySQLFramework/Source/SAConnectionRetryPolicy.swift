@@ -33,4 +33,31 @@ public final class SAConnectionRetryPolicy: NSObject {
     public static func shouldRetryWithoutTLS(afterErrorID errorID: UInt) -> Bool {
         errorID == UInt(CR_SSL_CONNECTION_ERROR)
     }
+    /// What the retry without TLS may still spend of the attempt's connect budget.
+    ///
+    /// A failed `mysql_real_connect` keeps the options set on the handle when the client asks it
+    /// to, but what it keeps is the timeout's *value*, not a deadline. So a TLS negotiation that
+    /// spent the whole budget before failing would be followed by a second attempt entitled to all
+    /// of it again, and a check-triggered reconnect could take twice its budget before the user is
+    /// asked anything. The retry is given what is left instead, and is not made at all once the
+    /// budget is gone - the first attempt reached the server's TLS and the question is more use
+    /// than another wait.
+    /// - Parameters:
+    ///   - connectTimeoutOrZero: The attempt's connect timeout in seconds, zero for no limit.
+    ///   - secondsSpent: How long the first attempt took.
+    /// - Returns: The retry's connect timeout in seconds - zero where there is no limit - or nil
+    ///   when nothing is left and the retry is to be skipped.
+    @objc(retryConnectTimeoutForConnectTimeout:secondsSpent:)
+    public static func retryConnectTimeout(forConnectTimeout connectTimeoutOrZero: UInt,
+                                           secondsSpent: Double) -> NSNumber? {
+        guard connectTimeoutOrZero > 0 else {
+            return NSNumber(value: UInt(0))
+        }
+        let remaining = Double(connectTimeoutOrZero) - max(0, secondsSpent)
+        guard remaining >= 1 else {
+            return nil
+        }
+        return NSNumber(value: UInt(remaining.rounded(.down)))
+    }
+
 }

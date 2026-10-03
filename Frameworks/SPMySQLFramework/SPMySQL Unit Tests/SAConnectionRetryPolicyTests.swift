@@ -40,4 +40,36 @@ final class SAConnectionRetryPolicyTests: XCTestCase {
         XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 2061)) // CR_AUTH_PLUGIN_ERR
         XCTAssertFalse(SAConnectionRetryPolicy.shouldRetryWithoutTLS(afterErrorID: 0))
     }
+    /// The retry without TLS runs on what is left of the attempt's budget, so an attempt cannot
+    /// take it twice.
+    func testTheRetryWithoutTLSGetsWhatIsLeftOfTheBudget() {
+        // Nothing spent yet: the retry has the whole budget.
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 0)?.uintValue, 10)
+        // Half of it gone.
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 4)?.uintValue, 6)
+        // A part second does not buy a whole one back.
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 4.7)?.uintValue, 5)
+    }
+
+    /// Once the budget is gone the retry is not made at all: the first attempt reached the
+    /// server's TLS, so the question is more use to the user than another wait.
+    func testTheRetryIsSkippedOnceTheBudgetIsGone() {
+        XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 10))
+        XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 9.5),
+                     "less than a second left is not worth an attempt")
+        XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 40),
+                     "and an attempt that overran its budget gets nothing")
+    }
+
+    /// A connection with no limit keeps none for the retry either.
+    func testAnUnlimitedBudgetStaysUnlimited() {
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 0, secondsSpent: 0)?.uintValue, 0)
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 0, secondsSpent: 600)?.uintValue, 0)
+    }
+
+    /// A clock that went backwards is not taken for budget earned back.
+    func testTimeThatWentBackwardsEarnsNothing() {
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: -5)?.uintValue, 10)
+    }
+
 }
