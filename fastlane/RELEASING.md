@@ -373,9 +373,14 @@ happens before any caller-selected commit is checked out or executed. The
 scheduled and manually dispatched finalizer checks out the immutable trigger
 SHA rather than resolving the mutable `main` branch after authorization.
 
-All release workflows that use the private archive install ORAS 1.3.3 through
-`oras-project/setup-oras` v2.0.2 pinned to commit
-`005458ad77f1c8facd38a094e4af2e69e5607ff4`. Linux-only orchestration jobs use
+All release workflows that use the private archive install ORAS through
+`oras-project/setup-oras`, pinned to a full immutable commit and maintained by
+Dependabot. The workflow files are the source of truth for the action revision,
+CLI download version, and archive checksums; see the
+[release orchestrator](../.github/workflows/release.yml) and
+[artifact publisher](../.github/workflows/release_publish.yml). Tests validate
+these pinning and consistency requirements without fixing a particular version.
+Linux-only orchestration jobs use
 the checksum-pinned Linux amd64 archive; hosted-Mac feasibility and artifact
 verification jobs use the checksum-pinned Darwin archive for the runner's exact
 architecture. The GHCR adapter packages layers from a private temporary working

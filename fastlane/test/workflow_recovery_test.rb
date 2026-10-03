@@ -1159,38 +1159,76 @@ class WorkflowRecoveryTest < Minitest::Test
   end
 
   def test_release_workflows_use_commit_and_checksum_pinned_oras
-    action = "oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4"
-    arm64_checksum = "f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c"
-    amd64_checksum = "aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48"
+    expected_platforms = {
+      "release.yml" => { "linux_amd64" => 1 },
+      "release_alpha_retry.yml" => { "linux_amd64" => 1 },
+      "release_artifact_retry.yml" => { "linux_amd64" => 1 },
+      "release_finalize.yml" => { "linux_amd64" => 1 },
+      "release_status.yml" => { "linux_amd64" => 1 },
+      "release_feasibility.yml" => { "darwin_arm64" => 1, "darwin_amd64" => 1 },
+      "release_publish.yml" => { "linux_amd64" => 5, "darwin_arm64" => 1, "darwin_amd64" => 1 }
+    }
+    installations = []
+    workflows_using_oras = Dir.glob(repo_path(".github/workflows/*.{yml,yaml}"))
+                              .select { |path| File.read(path).include?("oras-project/setup-oras") }
+                              .map { |path| File.basename(path) }
+    assert_equal expected_platforms.keys.sort, workflows_using_oras.sort
 
-    linux_checksum = "9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59"
-    %w[release.yml release_alpha_retry.yml release_finalize.yml].each do |filename|
-      workflow = File.read(repo_path(".github/workflows/#{filename}"))
-
-      assert_equal 1, workflow.scan(action).length
-      assert_includes workflow, "oras_1.3.3_linux_amd64.tar.gz"
-      assert_includes workflow, linux_checksum
-      refute_includes workflow, "oras_1.3.3_darwin_"
-      refute_includes workflow, "brew install oras"
+    expected_platforms.each do |filename, platforms|
+      configured = oras_installation_steps(filename).map { |step| assert_oras_installation_pinned(step) }
+      assert_equal platforms, configured.map { |install| install.fetch(:platform) }.tally, filename
+      refute_includes File.read(repo_path(".github/workflows/#{filename}")), "brew install oras"
+      installations.concat(configured)
     end
 
-    feasibility = File.read(repo_path(".github/workflows/release_feasibility.yml"))
-    assert_equal 2, feasibility.scan(action).length
-    assert_includes feasibility, "oras_1.3.3_darwin_arm64.tar.gz"
-    assert_includes feasibility, arm64_checksum
-    assert_includes feasibility, "oras_1.3.3_darwin_amd64.tar.gz"
-    assert_includes feasibility, amd64_checksum
-    refute_includes feasibility, "brew install oras"
+    assert_equal 1, installations.map { |install| install.fetch(:action) }.uniq.length,
+                 "All ORAS installations must use the same immutable action revision"
+    assert_equal 1, installations.map { |install| install.fetch(:version) }.uniq.length,
+                 "All ORAS installations must use the same configured CLI version"
+    installations.group_by { |install| install.fetch(:platform) }.each do |platform, configured|
+      assert_equal 1, configured.map { |install| install.values_at(:url, :checksum) }.uniq.length,
+                   "#{platform} downloads must use matching URLs and checksums across workflows"
+    end
+  end
 
-    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 7, publisher.scan(action).length
-    assert_includes publisher, "oras_1.3.3_linux_amd64.tar.gz"
-    assert_includes publisher, linux_checksum
-    assert_includes publisher, "oras_1.3.3_darwin_arm64.tar.gz"
-    assert_includes publisher, arm64_checksum
-    assert_includes publisher, "oras_1.3.3_darwin_amd64.tar.gz"
-    assert_includes publisher, amd64_checksum
-    refute_includes publisher, "brew install oras"
+  def test_oras_pin_contract_accepts_dependency_updates
+    step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
+    current = assert_oras_installation_pinned(step)
+    major, minor, = current.fetch(:version).split(".").map(&:to_i)
+    updated_version = [major, minor + 1, 0].join(".")
+    step["uses"] = "oras-project/setup-oras@#{Digest::SHA1.hexdigest('updated action revision')}"
+    step.fetch("with")["url"] = current.fetch(:url).gsub(current.fetch(:version), updated_version)
+    step.fetch("with")["checksum"] = Digest::SHA256.hexdigest("updated CLI archive")
+
+    updated = assert_oras_installation_pinned(step)
+    assert_equal updated_version, updated.fetch(:version)
+    refute_equal current.fetch(:action), updated.fetch(:action)
+    refute_equal current.fetch(:checksum), updated.fetch(:checksum)
+  end
+
+  def test_oras_pin_contract_rejects_floating_or_short_action_references
+    %w[main latest deadbeef].each do |reference|
+      step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
+      step["uses"] = "oras-project/setup-oras@#{reference}"
+      assert_raises(Minitest::Assertion) { assert_oras_installation_pinned(step) }
+    end
+  end
+
+  def test_oras_pin_contract_rejects_untrusted_or_mismatched_downloads
+    original = oras_installation_steps("release.yml").fetch(0)
+    current = assert_oras_installation_pinned(original)
+    mutations = [
+      ["checksum", nil],
+      ["checksum", "not-a-sha256"],
+      ["url", current.fetch(:url).sub("github.com", "example.com")],
+      ["url", current.fetch(:url).sub("/v#{current.fetch(:version)}/", "/v#{current.fetch(:version)}-different/")],
+      ["url", current.fetch(:url).sub("linux_amd64", "unsupported_architecture")]
+    ]
+    mutations.each do |key, value|
+      step = Marshal.load(Marshal.dump(original))
+      step.fetch("with")[key] = value
+      assert_raises(Minitest::Assertion) { assert_oras_installation_pinned(step) }
+    end
   end
 
   def test_publisher_executes_the_immutable_event_revision
@@ -1589,6 +1627,26 @@ class WorkflowRecoveryTest < Minitest::Test
   end
 
   private
+
+  def oras_installation_steps(filename)
+    YAML.load_file(repo_path(".github/workflows/#{filename}")).fetch("jobs").values
+        .flat_map { |job| job.fetch("steps", []) }
+        .select { |step| step["uses"].to_s.start_with?("oras-project/setup-oras") }
+  end
+
+  def assert_oras_installation_pinned(step)
+    action = step["uses"]
+    assert_match(/\Aoras-project\/setup-oras@[0-9a-f]{40}\z/, action.to_s,
+                 "ORAS setup must use a full immutable action commit")
+    inputs = step.fetch("with", {})
+    url = inputs["url"]
+    checksum = inputs["checksum"]
+    # Read the version from the workflow; Dependabot updates must not require fixture edits.
+    download = %r{\Ahttps://github\.com/oras-project/oras/releases/download/v(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)/oras_\1_(linux_amd64|darwin_arm64|darwin_amd64)\.tar\.gz\z}.match(url.to_s)
+    refute_nil download, "ORAS must use an official archive with matching directory and filename versions"
+    assert_match(/\A[0-9a-f]{64}\z/, checksum.to_s, "Each ORAS archive must have a SHA-256 checksum")
+    { action: action, version: download[1], platform: download[2], url: url, checksum: checksum }
+  end
 
   def repo_path(relative_path)
     File.expand_path("../..", __dir__) + "/#{relative_path}"
