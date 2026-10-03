@@ -480,6 +480,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         return;
     }
 
+    if ([self _isAWSIAMConnection]) {
+        [SAAWSDirectoryWriteAccessPrompt requestWriteAccessIfNeededForProfile:[self awsProfile]];
+    }
+
     if ([self _isVaultConnection] && ![[self vaultHost] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
                                      message:NSLocalizedString(@"A Vault host is required to connect.", @"vault host required connect message")
@@ -560,9 +564,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                                                    password:[self password] ?: @""
                                                                                          delegateAvailable:self.connectionService.mySQLDelegate != nil];
 
-    // Resolve explicit passwords here; the Swift service validates AWS credentials off the main thread.
-    NSString *resolvedPassword = (deferMySQLPasswordToDelegate || [self _isAWSIAMConnection]) ? nil : [self _resolvedMySQLPassword];
-    if (!resolvedPassword && !deferMySQLPasswordToDelegate && ![self _isAWSIAMConnection]) return; // AWS IAM error already shown
+    // Keep AWS token resolution in SAConnectionService so it can invalidate an
+    // earlier attempt before the credential phase and fence stale completions.
+    BOOL isAWSIAMConnection = [self _isAWSIAMConnection];
+    NSString *resolvedPassword = (deferMySQLPasswordToDelegate || isAWSIAMConnection) ? nil : [self _resolvedMySQLPassword];
+    if (!resolvedPassword && !deferMySQLPasswordToDelegate && !isAWSIAMConnection) return; // Password error already shown
 
     NSString *resolvedSSHPassword = [self _resolvedSSHPassword];
 
@@ -659,7 +665,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [strongSelf mySQLConnectionEstablished];
     };
 
-    if ([self _isAWSIAMConnection]) {
+    if (isAWSIAMConnection) {
         [self.connectionService connectAWSIAMWithController:self info:info preferences:preferences
                                                      region:[self awsRegion] profile:[self awsProfile]
                                                   attemptID:connectionAttemptID sshPassword:resolvedSSHPassword

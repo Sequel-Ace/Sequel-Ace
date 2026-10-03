@@ -46,12 +46,12 @@ import SwiftUI
     /// The in-flight Vault OIDC login, if any, so closing the window releases it.
     private var activeVaultLoginIdentifier: String?
 
-    /// Identifies the current credential attempt. Credential generation is
-    /// asynchronous and the form stays interactive, so a Vault login the user
-    /// abandoned can finish after a newer attempt has started; without this its
-    /// completion would call connectDirectly again, and SAConnectionService's
-    /// startAttempt() would invalidate the newer connection.
-    private var credentialAttemptID: UInt = 0
+    /// The window's connection attempts. Starting one cancels the previous
+    /// attempt's connection and drops every result still delivered for it, from
+    /// its credential leg or from its connection.
+    private lazy var attempts = SAConnectionAttemptSequence { [connectionService] in
+        connectionService.cancel()
+    }
 
     /// Set to true after a successful connection handoff to prevent
     /// windowWillClose from disconnecting the just-handed-off connection.
@@ -244,8 +244,8 @@ import SwiftUI
 
         let attemptID = beginCredentialAttempt()
 
-        resolveCredentials(for: attempt) { [weak self] result in
-            guard let self, self.credentialAttemptID == attemptID else { return }
+        resolveCredentials(for: attempt, attempts.deliver(to: attemptID) { [weak self] result in
+            guard let self else { return }
 
             switch result {
             case .failure(let failure):
@@ -263,18 +263,19 @@ import SwiftUI
 
                 self.connectDirectly(with: SAConnectionInfoObjC(info: resolved),
                                      password: credentials.password,
-                                     sshPassword: resolved.sshPassword)
+                                     sshPassword: resolved.sshPassword,
+                                     attemptID: attemptID)
             }
-        }
+        })
     }
 
-    /// Starts a new credential attempt, superseding any in flight, and returns
-    /// its identifier. Abandoning a Vault login also cancels it rather than
-    /// leaving it to hold the exclusive slot until it times out.
+    /// Starts a new attempt, superseding any in flight and cancelling its
+    /// connection, and returns its identifier. Abandoning a Vault login also
+    /// cancels it rather than leaving it to hold the exclusive slot until it
+    /// times out.
     private func beginCredentialAttempt() -> UInt {
         cancelActiveVaultLogin()
-        credentialAttemptID &+= 1
-        return credentialAttemptID
+        return attempts.begin()
     }
 
     /// Releases an in-flight Vault OIDC login, if there is one.
@@ -311,6 +312,7 @@ import SwiftUI
                                               comment: "AWS authorization required message"))))
                 return
             }
+            SAAWSDirectoryWriteAccessPrompt.requestWriteAccessIfNeeded(forProfile: info.awsProfile)
             resolveAWSIAMToken(info: info, completion: completion)
 
         case .vault:
@@ -368,11 +370,22 @@ import SwiftUI
         completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void
     ) {
         let port = Int(info.port.trimmingCharacters(in: .whitespaces)) ?? 3306
-        let attemptID = credentialAttemptID
+        let attemptID = attempts.currentAttemptID
+        let trimmedProfile = info.awsProfile.trimmingCharacters(in: .whitespacesAndNewlines)
         AWSIAMAuthManager.generateAuthTokenInBackground(
             hostname: info.host, port: port, username: info.user,
-            region: info.awsRegion, profile: info.awsProfile, parentWindow: window,
-            shouldContinue: { [weak self] in self?.credentialAttemptID == attemptID }
+            region: info.awsRegion,
+            profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
+            parentWindow: window,
+            shouldContinue: { [weak self] in
+                guard let self else { return false }
+                // The attempt sequence is main-thread-owned, while IAM token generation
+                // checks continuation from its credential worker as well as from main.
+                if Thread.isMainThread {
+                    return self.attempts.isCurrent(attemptID)
+                }
+                return DispatchQueue.main.sync { self.attempts.isCurrent(attemptID) }
+            }
         ) { token, error in
             if let error {
                 completion(.failure(SACredentialFailure(
@@ -549,14 +562,15 @@ import SwiftUI
 
     /// Connects directly using SAConnectionService, bypassing SPConnectionController.
     /// Use this for programmatic connections (e.g. from a SwiftUI favorites list).
-    @objc func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String) {
+    /// Connects for `attemptID`, handing off or reporting the result only while it is the newest attempt.
+    private func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String, attemptID: UInt) {
         connectionService.connect(
             with: info,
             preferences: .fromUserDefaults(),
             password: password,
             sshPassword: sshPassword,
-            parentWindow: window
-        ) { [weak self] result in
+            parentWindow: window,
+            completion: attempts.deliver(to: attemptID) { [weak self] (result: SAConnectionResult) in
             guard let self = self else { return }
 
             if result.databaseSelectionFailed, let connection = result.connection {
@@ -586,7 +600,7 @@ import SwiftUI
                     detail: detail.isEmpty ? nil : detail
                 )
             }
-        }
+        })
     }
 }
 
