@@ -1159,7 +1159,7 @@ class WorkflowRecoveryTest < Minitest::Test
   end
 
   def test_release_workflows_use_commit_and_checksum_pinned_oras
-    action = "oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d"
+    action = "oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4"
     arm64_checksum = "f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c"
     amd64_checksum = "aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48"
 
