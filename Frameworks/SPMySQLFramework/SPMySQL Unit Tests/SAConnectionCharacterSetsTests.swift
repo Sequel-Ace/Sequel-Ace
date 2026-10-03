@@ -145,6 +145,17 @@ final class SAConnectionCharacterSetsTests: XCTestCase {
         XCTAssertEqual(hangul, Data([0xC7, 0xD1, 0xB1, 0xDB]))
     }
 
+    /// The pre-4.1 name for a character set converts the same way the current name does.
+    func testThePre41NamesMatchTheirCurrentEquivalents() {
+        for (old, current) in [("euc_kr", "euckr"), ("win1251", "cp1251"), ("win1250", "cp1250"),
+                               ("czech", "latin2"), ("hungarian", "latin2"), ("croat", "latin2"),
+                               ("usa7", "ascii"), ("german1", "latin1"), ("latin1_de", "latin1"),
+                               ("koi8_ru", "koi8r"), ("koi8_ukr", "koi8u"), ("estonia", "latin7")] {
+            XCTAssertEqual(encoding(for: old), encoding(for: current),
+                           "\(old) and \(current) are the same character set and must convert alike")
+        }
+    }
+
     /// gb18030 was missing from the table and fell through to the UTF-8 guess.
     func testGB18030HasItsOwnEncoding() throws {
         let gb18030 = encoding(for: "gb18030")

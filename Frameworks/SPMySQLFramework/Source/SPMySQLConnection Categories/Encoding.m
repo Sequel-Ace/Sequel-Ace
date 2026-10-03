@@ -310,7 +310,8 @@
 	} else if (!strcmp(mysqlCharset, "win1251")) {
 		return NSWindowsCP1251StringEncoding;
 	} else if (!strcmp(mysqlCharset, "euc_kr")) {
-		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_KR);
+		// The pre-4.1 name for euckr, and the same extended CP949 the server means by it.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSKorean);
 	} else if (!strcmp(mysqlCharset, "estonia")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin7);
 	} else if (!strcmp(mysqlCharset, "hungarian")) {
@@ -350,13 +351,11 @@
  */
 + (NSString *)mySQLCharsetForStringEncoding:(NSStringEncoding)aStringEncoding
 {
-	// The character sets whose encoding is only reachable through CoreFoundation, which a
-	// switch cannot take as a case label.
-	if (aStringEncoding == CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatinGreek)) {
-		return @"greek";
-	}
-	if (aStringEncoding == CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin5)) {
-		return @"latin5";
+	// The character sets a switch cannot take as a case label, because their encoding is only
+	// reachable through CoreFoundation.
+	NSString *namedCharacterSet = [SAConnectionCharacterSets characterSetNameForStringEncoding:aStringEncoding];
+	if (namedCharacterSet) {
+		return namedCharacterSet;
 	}
 
 	// Switch through the list of NSStringEncodings from NSString, returning the most

@@ -49,6 +49,37 @@ public final class SAConnectionCharacterSets: NSObject {
         return carriable.contains(name.lowercased())
     }
 
+    /// The character sets whose string encoding is only reachable through CoreFoundation, so
+    /// that naming one is a lookup rather than a constant: which MySQL character set a value in
+    /// that encoding belongs to.
+    ///
+    /// Windows-1253 and Windows-1254 are deliberately absent. They were once named for `greek`
+    /// and `latin5`, the code pages those character sets were wrongly converted with, and they
+    /// disagree with the real ones over 22 and 25 bytes - an import declared that way is read
+    /// as something it is not.
+    private static let characterSetsByEncoding: [UInt: String] = {
+        var table: [UInt: String] = [:]
+        for (encoding, name) in [(CFStringEncodings.isoLatinGreek, "greek"),
+                                 (CFStringEncodings.isoLatin5, "latin5")] {
+            let value = CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(encoding.rawValue))
+            guard value != kCFStringEncodingInvalidId else {
+                continue
+            }
+            table[value] = name
+        }
+        return table
+    }()
+
+    /// The MySQL character set a value in a string encoding belongs to, for the encodings that
+    /// have no constant to switch on.
+    /// - Parameter stringEncoding: The `NSStringEncoding` value.
+    /// - Returns: The character set's MySQL name, or nil if this table does not name one. The
+    ///   caller's own table is asked next.
+    @objc(characterSetNameForStringEncoding:)
+    public static func characterSetName(forStringEncoding stringEncoding: UInt) -> String? {
+        return characterSetsByEncoding[stringEncoding]
+    }
+
     /// The character set a connection falls back to when the one asked for cannot be carried.
     ///
     /// Every server that offers more than the pre-4.1 character sets offers this one, and the
