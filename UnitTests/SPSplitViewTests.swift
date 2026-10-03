@@ -33,6 +33,7 @@ final class SPSplitViewTests: XCTestCase {
 
         let widths = splitView.subviews.map(\.frame.width)
         XCTAssertEqual(widths.count, 2)
+        XCTAssertEqual(widths[0], widths[1], accuracy: 1)
         XCTAssertEqual(widths.reduce(0, +) + splitView.dividerThickness, 400, accuracy: 0.5)
     }
 }
