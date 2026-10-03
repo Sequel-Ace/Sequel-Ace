@@ -1511,10 +1511,19 @@ asm(".desc ___crashreporter_info__, 0x10");
 	NSString *trackingList = [SASessionStateTracking
 		trackingListToSetGivenCurrentList:[variables objectForKey:@"session_track_system_variables"]];
 	if (trackingList) {
-		[self queryString:[NSString stringWithFormat:@"SET SESSION session_track_system_variables = %@",
-		                   [trackingList mySQLTickQuotedString]]];
-		if ([self queryErrored]) {
-			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
+		// ProxySQL does not track this variable either, and setting one it does not know pins
+		// the connection to its current hostgroup, which breaks every later query that should
+		// route elsewhere - the same trap as information_schema_stats_expiry below
+		// (https://github.com/Sequel-Ace/Sequel-Ace/issues/2006). The check costs a round trip,
+		// so it is only made when something would actually be set, which a server at its
+		// default never needs. Behind ProxySQL a SET NAMES the user runs therefore stays
+		// invisible to the escaper, exactly as it is on main.
+		if (![self _serverIsProxySQL]) {
+			[self queryString:[NSString stringWithFormat:@"SET SESSION session_track_system_variables = %@",
+			                   [trackingList mySQLTickQuotedString]]];
+			if ([self queryErrored]) {
+				SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
+			}
 		}
 	}
 
