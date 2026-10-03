@@ -564,8 +564,6 @@
 		96B0A1512493DF3E007BB270 /* ShortcutRecorder.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; };
 		96B0A1522493DF3E007BB270 /* ShortcutRecorder.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		96B0A16124941670007BB270 /* SequelAceTunnelAssistant in Copy SequelAceTunnelAssistant and sign */ = {isa = PBXBuildFile; fileRef = 58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		96CA8F9C2783A9010061C2D1 /* Menlo.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */; };
-		96CA8FA12783AA650061C2D1 /* Menlo.ttc in Copy Fonts */ = {isa = PBXBuildFile; fileRef = 96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */; };
 		99A89739992311A3A5EF3409 /* SATablesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61984CED94C89FF3D0CEA884 /* SATablesListView.swift */; };
 		9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */; };
 		9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE768F3989033CEDDC2027E /* SPFillView.m */; };
@@ -861,17 +859,6 @@
 				96B0A16124941670007BB270 /* SequelAceTunnelAssistant in Copy SequelAceTunnelAssistant and sign */,
 			);
 			name = "Copy SequelAceTunnelAssistant and sign";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		96CA8FA02783AA560061C2D1 /* Copy Fonts */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = Fonts;
-			dstSubfolderSpec = 7;
-			files = (
-				96CA8FA12783AA650061C2D1 /* Menlo.ttc in Copy Fonts */,
-			);
-			name = "Copy Fonts";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1513,7 +1500,6 @@
 		96A5DDB42D63C8E70079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		96B0A1502493DF16007BB270 /* ShortcutRecorder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ShortcutRecorder.framework; path = Frameworks/ShortcutRecorder.framework; sourceTree = "<group>"; };
 		96B0A1532493F43B007BB270 /* TunnelAssistant-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "TunnelAssistant-Info.plist"; path = "Plists/TunnelAssistant-Info.plist"; sourceTree = "<group>"; };
-		96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */ = {isa = PBXFileReference; lastKnownFileType = file; name = Menlo.ttc; path = Fonts/Menlo.ttc; sourceTree = "<group>"; };
 		9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAFieldEditorCommitPolicy.swift; sourceTree = "<group>"; };
 		9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPHelpViewerClient.h; sourceTree = "<group>"; };
 		9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPHelpViewerClient.m; sourceTree = "<group>"; };
@@ -2368,7 +2354,6 @@
 				517E44F5257A906100ED333B /* Localization */,
 				1740F8370FC306C900CF3699 /* Plists */,
 				17E6418B0EF01FF7001BC333 /* Images */,
-				96CA8F922783A3E40061C2D1 /* Fonts */,
 				1740F8360FC306AE00CF3699 /* Scripting */,
 				58D1006813A57FAE0092E019 /* Localization Strings Files */,
 				1740F8350FC3069700CF3699 /* Templates */,
@@ -3072,14 +3057,6 @@
 			path = Parsing;
 			sourceTree = "<group>";
 		};
-		96CA8F922783A3E40061C2D1 /* Fonts */ = {
-			isa = PBXGroup;
-			children = (
-				96CA8F9B2783A8FE0061C2D1 /* Menlo.ttc */,
-			);
-			name = Fonts;
-			sourceTree = "<group>";
-		};
 		96D494B8249C07940092F335 /* SSH Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -3256,7 +3233,6 @@
 				96B0A162249416B1007BB270 /* Copy SequelAceTunnelAssistant and sign */,
 				4DECC4940EC2B447008D359E /* Copy Frameworks */,
 				9691789224A562330012ED42 /* Copy Default Themes and Default Bundles */,
-				96CA8FA02783AA560061C2D1 /* Copy Fonts */,
 				1A62C63425BE08F400DF903B /* ShellScript */,
 			);
 			buildRules = (
@@ -3512,7 +3488,6 @@
 				8831EFBD2240159E00D10172 /* button_pane_hideTemplate.pdf in Resources */,
 				517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */,
 				8831EFA8224011B700D10172 /* button_addTemplate.pdf in Resources */,
-				96CA8F9C2783A9010061C2D1 /* Menlo.ttc in Resources */,
 				582E942E1683658A003459FD /* clearconsole.png in Resources */,
 				582E944A168374C1003459FD /* field-small-square.png in Resources */,
 				582E944C16837986003459FD /* hideconsole.png in Resources */,
