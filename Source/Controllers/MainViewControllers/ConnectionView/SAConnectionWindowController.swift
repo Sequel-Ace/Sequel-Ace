@@ -254,7 +254,12 @@ import SwiftUI
             case .success(let credentials):
                 var resolved = attempt
                 resolved.user = credentials.user
-                resolved.password = credentials.password
+
+                // An AWS IAM token is only valid for this attempt, so it is passed to the
+                // service without being stored as the favorite's password.
+                if attempt.type != .awsIAM {
+                    resolved.password = credentials.password
+                }
 
                 self.connectDirectly(with: SAConnectionInfoObjC(info: resolved),
                                      password: credentials.password,
@@ -484,14 +489,22 @@ import SwiftUI
         // reconnect and no connection-loss decision UI.
         connection.setDelegate(document)
 
-        // 5. setConnection: transitions the document out of connection mode
+        // 5. Clear the stored AWS IAM token so the delegate generates a fresh one for
+        // every later connection attempt; the token expires 15 minutes after it is
+        // generated. This has to happen before -setConnection:, which clones the
+        // connection for the structure query and copies the password with it.
+        if info.type == .awsIAM {
+            connection.password = nil
+        }
+
+        // 6. setConnection: transitions the document out of connection mode
         // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
-        // 6. Mark handoff complete so windowWillClose doesn't cancel the connection
+        // 7. Mark handoff complete so windowWillClose doesn't cancel the connection
         connectionHandedOff = true
 
-        // 7. Close the standalone connection window
+        // 8. Close the standalone connection window
         close()
     }
 
