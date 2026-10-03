@@ -15,6 +15,23 @@ import Foundation
 /// server will report later changes to the character set, and that the character set it is in is
 /// one this framework can convert values for. Both are decided here, and the connection only runs
 /// the statements that come back - it does not work out which ones are needed.
+/// One way to move a session to a character set values can be converted for.
+@objc(SASessionCharacterSetMove)
+public final class SASessionCharacterSetMove: NSObject {
+
+    /// The statement that makes the move.
+    @objc public let statement: String
+
+    /// The character set the session is in once it has run.
+    @objc public let characterSet: String
+
+    init(statement: String, characterSet: String) {
+        self.statement = statement
+        self.characterSet = characterSet
+        super.init()
+    }
+}
+
 @objc(SASessionStartupPlan)
 public final class SASessionStartupPlan: NSObject {
 
@@ -25,11 +42,15 @@ public final class SASessionStartupPlan: NSObject {
     /// one failing decides which character set the session is actually in.
     @objc public let trackingStatement: String?
 
-    /// The statement that moves the session to a character set values can be converted for, or
-    /// nil when the one it reported already is.
-    @objc public let characterSetStatement: String?
+    /// The statements that move the session to a character set values can be converted for,
+    /// best first, each with the character set it leaves the session in. Empty when the one it
+    /// reported already is one.
+    ///
+    /// More than one because `utf8mb4` only arrived in MySQL 5.5: a server too old for it is
+    /// offered `utf8` rather than left in a character set nothing can convert for.
+    @objc public let characterSetMoves: [SASessionCharacterSetMove]
 
-    /// The character set the session is in once ``characterSetStatement`` has run - or the one it
+    /// The character set the first of ``characterSetMoves`` leaves the session in - or the one it
     /// reported, when none was needed.
     @objc public let characterSet: String
 
@@ -38,14 +59,14 @@ public final class SASessionStartupPlan: NSObject {
     @objc public let characterSetWithoutStatements: String
 
     /// Whether the character set reported cannot be carried, so the session is being moved.
-    @objc public var movesToAnotherCharacterSet: Bool { characterSetStatement != nil }
+    @objc public var movesToAnotherCharacterSet: Bool { !characterSetMoves.isEmpty }
 
     private init(trackingStatement: String?,
-                 characterSetStatement: String?,
+                 characterSetMoves: [SASessionCharacterSetMove],
                  characterSet: String,
                  characterSetWithoutStatements: String) {
         self.trackingStatement = trackingStatement
-        self.characterSetStatement = characterSetStatement
+        self.characterSetMoves = characterSetMoves
         self.characterSet = characterSet
         self.characterSetWithoutStatements = characterSetWithoutStatements
         super.init()
@@ -94,15 +115,17 @@ public final class SASessionStartupPlan: NSObject {
         if let carried = SAConnectionCharacterSets.carriableName(forCharacterSet: reported) {
             // In the spelling the encoding table is keyed by, which it matches case-sensitively.
             return SASessionStartupPlan(trackingStatement: trackingStatement,
-                                        characterSetStatement: nil,
+                                        characterSetMoves: [],
                                         characterSet: carried,
                                         characterSetWithoutStatements: carried)
         }
 
-        let fallback = SAConnectionCharacterSets.fallbackCharacterSet
+        let moves = SAConnectionCharacterSets.fallbackCharacterSets.map {
+            SASessionCharacterSetMove(statement: "SET NAMES \(quote($0))", characterSet: $0)
+        }
         return SASessionStartupPlan(trackingStatement: trackingStatement,
-                                    characterSetStatement: "SET NAMES \(quote(fallback))",
-                                    characterSet: fallback,
+                                    characterSetMoves: moves,
+                                    characterSet: moves[0].characterSet,
                                     characterSetWithoutStatements: reported)
     }
 }

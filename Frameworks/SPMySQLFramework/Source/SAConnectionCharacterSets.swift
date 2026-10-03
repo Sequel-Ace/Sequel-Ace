@@ -98,5 +98,15 @@ public final class SAConnectionCharacterSets: NSObject {
     /// Every server that offers more than the pre-4.1 character sets offers this one, and the
     /// server converts between it and whatever character set a table is in, so no data goes out
     /// of reach by connecting in it.
+    /// The character sets a connection falls back to when the one asked for cannot be carried,
+    /// best first.
+    ///
+    /// `utf8mb4` is the one to have, but it only arrived in MySQL 5.5, while `utf8` has been
+    /// there since 4.1 - so a server too old for the first is offered the second rather than
+    /// being left in a character set nothing can convert for. The server converts between
+    /// whichever of them is in use and the character set a table is in, so no data goes out of
+    /// reach by connecting in either.
+    @objc public static let fallbackCharacterSets = ["utf8mb4", "utf8"]
+
     @objc public static let fallbackCharacterSet = "utf8mb4"
 }

@@ -1537,13 +1537,20 @@ asm(".desc ___crashreporter_info__, 0x10");
 			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
 		}
 	}
-	if ([startupPlan characterSetStatement]) {
-		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session to %@.",
-		      retrievedEncoding, [startupPlan characterSet]);
-		[self queryString:[startupPlan characterSetStatement]];
-		retrievedEncoding = [self queryErrored]
-			? [startupPlan characterSetWithoutStatements]
-			: [startupPlan characterSet];
+	if ([startupPlan movesToAnotherCharacterSet]) {
+		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session.",
+		      retrievedEncoding);
+		// More than one candidate, best first: a server too old for utf8mb4 is offered utf8
+		// rather than left in a character set nothing can convert for.
+		retrievedEncoding = [startupPlan characterSetWithoutStatements];
+		for (SASessionCharacterSetMove *move in [startupPlan characterSetMoves]) {
+			[self queryString:[move statement]];
+			if (![self queryErrored]) {
+				retrievedEncoding = [move characterSet];
+				break;
+			}
+			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", [move statement], [self lastErrorMessage]);
+		}
 	} else {
 		retrievedEncoding = [startupPlan characterSet];
 	}
