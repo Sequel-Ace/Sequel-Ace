@@ -385,6 +385,8 @@ final class SADatabaseAssertionTests: XCTestCase {
     /// from the server's.
     func testLineCommentsEndAtCRLFLineEndings() {
         XCTAssertTrue(queryMayChangeDatabaseContext("-- comment\r\nUSE target"))
+        // DEL starts a comment too; its unmatched quote must not hide USE.
+        XCTAssertTrue(queryMayChangeDatabaseContext("--\u{7F}'\nUSE target"))
         XCTAssertTrue(queryMayChangeDatabaseContext("--\r\nUSE target"))
         XCTAssertTrue(queryMayChangeDatabaseContext("# comment\r\nDROP DATABASE target"))
         XCTAssertFalse(queryMayChangeDatabaseContext("-- USE target\r\nSELECT 1"))
@@ -417,7 +419,7 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertFalse(SASQLCommentSyntax.endsLineComment(Character("\r")))
         XCTAssertTrue(SASQLCommentSyntax.endsLineComment(Unicode.Scalar(UInt8(0x0A))))
         XCTAssertFalse(SASQLCommentSyntax.endsLineComment(Unicode.Scalar(UInt8(0x0D))))
-        for value: UInt8 in [0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20] {
+        for value: UInt8 in [0x00, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x7F] {
             XCTAssertTrue(SASQLCommentSyntax.isCommentWhitespace(Unicode.Scalar(value)))
             XCTAssertTrue(SASQLCommentSyntax.isCommentWhitespace(Character(Unicode.Scalar(value))))
         }
