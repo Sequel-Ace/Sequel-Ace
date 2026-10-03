@@ -260,6 +260,9 @@
 		5146ADF02F79B16900C4C14A /* SAFavoritesListDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */; };
 		5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */; };
 		5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */; };
+		D10000242F8C000600C4C14A /* SAConnectionLostAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */; };
+		D10000212F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */; };
+		D10000222F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */; };
 		5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
 		5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
 		5146C7202F7A539E00C4C14A /* SATaskManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */; };
@@ -293,6 +296,7 @@
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
 		517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */; };
+		D10000262F8C000600C4C14A /* SAConnectionLostSheetCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000252F8C000600C4C14A /* SAConnectionLostSheetCopyTests.swift */; };
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
@@ -373,7 +377,6 @@
 		51CD0BE8258D06D8009E2484 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCA258D06D8009E2484 /* MainMenu.xib */; };
 		51CD0BE9258D06D8009E2484 /* Console.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCB258D06D8009E2484 /* Console.xib */; };
 		51CD0BEA258D06D8009E2484 /* DatabaseServerVariables.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */; };
-		51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */; };
 		51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */; };
 		51CD0BED258D06D8009E2484 /* SaveSPFAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */; };
 		51CD0BEE258D06D8009E2484 /* UserManagerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD0258D06D8009E2484 /* UserManagerView.xib */; };
@@ -470,6 +473,8 @@
 		58DA8863103E15B5000B98DF /* SPLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DA8862103E15B5000B98DF /* SPLogger.m */; };
 		58DF9F3315AB26C2003B4330 /* SPDateAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F3215AB26C2003B4330 /* SPDateAdditions.m */; };
 		58DF9F7315AB8509003B4330 /* SPSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F7215AB8509003B4330 /* SPSplitView.m */; };
+		69BF3B916722A604CA457EA5 /* SPSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 58DF9F7215AB8509003B4330 /* SPSplitView.m */; };
+		9CCA3AB68B36D366680D6D15 /* SPSplitViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B2DA345A69E6CE58206277 /* SPSplitViewTests.swift */; };
 		58E205FC1234FE4F00A97059 /* KeyTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58E205FB1234FE4F00A97059 /* KeyTemplate.pdf */; };
 		58F48AA3161D03C6008536A1 /* quick-connect-icon.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58F48AA2161D03C6008536A1 /* quick-connect-icon.pdf */; };
 		58F48B2E161D08C0008536A1 /* quick-connect-icon-white.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 58F48B2D161D08C0008536A1 /* quick-connect-icon-white.pdf */; };
@@ -676,6 +681,9 @@
 		CF0000232F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */; };
 		CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */; };
 		CF0000262F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */; };
+		CF0000352F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */; };
+		CF0000362F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */; };
+		CF0000382F8C000600C4C14A /* SADatabaseRenamePlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */; };
 		CF0000302F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */; };
 		CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */; };
 		CF0000332F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */; };
@@ -1191,6 +1199,8 @@
 		5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDelegate.swift; sourceTree = "<group>"; };
 		5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDataSource.swift; sourceTree = "<group>"; };
 		5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionService.swift; sourceTree = "<group>"; };
+		D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionLostAlert.swift; sourceTree = "<group>"; };
+		D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionLostSheetCopy.swift; sourceTree = "<group>"; };
 		5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPDatabaseDocument+ViewMode.swift"; sourceTree = "<group>"; };
 		5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATaskManaging.swift; sourceTree = "<group>"; };
 		5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfoTests.swift; sourceTree = "<group>"; };
@@ -1218,6 +1228,7 @@
 		51731E7B27DFB99A00D81B98 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionServiceTests.swift; sourceTree = "<group>"; };
+		D10000252F8C000600C4C14A /* SAConnectionLostSheetCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionLostSheetCopyTests.swift; sourceTree = "<group>"; };
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
 		51905622267DFF1700212442 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -1287,7 +1298,6 @@
 		51CD0BCA258D06D8009E2484 /* MainMenu.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		51CD0BCB258D06D8009E2484 /* Console.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Console.xib; sourceTree = "<group>"; };
 		51CD0BCC258D06D8009E2484 /* DatabaseServerVariables.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseServerVariables.xib; sourceTree = "<group>"; };
-		51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionErrorDialog.xib; sourceTree = "<group>"; };
 		51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ProgressIndicatorLayer.xib; sourceTree = "<group>"; };
 		51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SaveSPFAccessory.xib; sourceTree = "<group>"; };
 		51CD0BD0258D06D8009E2484 /* UserManagerView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = UserManagerView.xib; sourceTree = "<group>"; };
@@ -1620,6 +1630,8 @@
 		CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SACellFilterRuleControllerStubs.m; sourceTree = "<group>"; };
 		CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterColumnIdentifier.swift; sourceTree = "<group>"; };
 		CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterColumnIdentifierTests.swift; sourceTree = "<group>"; };
+		CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseRenamePlan.swift; sourceTree = "<group>"; };
+		CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseRenamePlanTests.swift; sourceTree = "<group>"; };
 		CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARuleFilterRootConjunction.swift; sourceTree = "<group>"; };
 		CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARuleFilterRootConjunctionTests.swift; sourceTree = "<group>"; };
 		D10000022F8C000600C4C14A /* SAAppearancePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAppearancePreference.swift; sourceTree = "<group>"; };
@@ -1640,6 +1652,7 @@
 		F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAAnalyticsConsentPolicy+Firebase.swift"; sourceTree = "<group>"; };
 		F2C579DE7A5CF887DB114A54 /* SATableReloadRetryPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableReloadRetryPolicy.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentialsTests.swift; sourceTree = "<group>"; };
+		48B2DA345A69E6CE58206277 /* SPSplitViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SPSplitViewTests.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthenticationTests.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManagerTests.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentials.swift; sourceTree = "<group>"; };
@@ -1763,6 +1776,7 @@
 				1198F5B21174EDD500670590 /* SPDatabaseCopy.m */,
 				11C2109C1180E70800758039 /* SPDatabaseRename.h */,
 				11C2109D1180E70800758039 /* SPDatabaseRename.m */,
+				CF0000372F8C000600C4C14A /* SADatabaseRenamePlan.swift */,
 				11B55BFC1189E3B2009EF465 /* SPDatabaseAction.h */,
 				11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */,
 				17B548611E81FFA600175D5A /* SPCreateDatabaseInfo.h */,
@@ -2597,7 +2611,6 @@
 			children = (
 				51F41FB625F56A5900594BA5 /* MainWindow.xib */,
 				51CD0BD2258D06D8009E2484 /* BundleEditor.xib */,
-				51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */,
 				51CD0BD8258D06D8009E2484 /* ConnectionView.xib */,
 				51CD0BCB258D06D8009E2484 /* Console.xib */,
 				51CD0BD3258D06D8009E2484 /* ContentFilterManager.xib */,
@@ -2835,6 +2848,8 @@
 				4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
 				B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */,
 				5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */,
+				D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */,
+				D10000202F8C000600C4C14A /* SAConnectionLostSheetCopy.swift */,
 				51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */,
 				91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */,
 				EC963BC8D32F5BF63842F4AF /* SATypeAheadMatcher.swift */,
@@ -2876,6 +2891,7 @@
 				51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */,
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */,
+				CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */,
 				CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */,
 				CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */,
 				CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */,
@@ -2888,6 +2904,7 @@
 				CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */,
 				AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */,
 				F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
+				48B2DA345A69E6CE58206277 /* SPSplitViewTests.swift */,
 				F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
 				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
 				FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */,
@@ -2899,6 +2916,7 @@
 				5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */,
 				5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */,
 				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
+				D10000252F8C000600C4C14A /* SAConnectionLostSheetCopyTests.swift */,
 				01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */,
 				8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */,
 				A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */,
@@ -3401,7 +3419,6 @@
 				8831EFCE2240175400D10172 /* button_paginationTemplate.pdf in Resources */,
 				177E792E0FCB54EC00E9E122 /* database-small.png in Resources */,
 				8831EFC22240166D00D10172 /* button_select_noneTemplate.pdf in Resources */,
-				51CD0BEB258D06D8009E2484 /* ConnectionErrorDialog.xib in Resources */,
 				1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */,
 				51CD0BF1258D06D8009E2484 /* ContentFilterManager.xib in Resources */,
 				177E792F0FCB54EC00E9E122 /* dummy-small.png in Resources */,
@@ -3562,6 +3579,8 @@
 				C15BC205A797F1C3C14733CB /* SAImportProgressReporterTests.swift in Sources */,
 				51AC3B8B3047621900BCE2B9 /* SASSHTunnelSocketServer.swift in Sources */,
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
+				D10000222F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */,
+				D10000262F8C000600C4C14A /* SAConnectionLostSheetCopyTests.swift in Sources */,
 				9EF08F69717C447F6B39B6D0 /* SAKeychainStoreCharacterizationTests.swift in Sources */,
 				0C794751619B275F42D2A42B /* SAKeychainTestSupport.swift in Sources */,
 				442DC8CE81CCD45D45F19DE7 /* SAKeychain.swift in Sources */,
@@ -3625,6 +3644,8 @@
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				51AC6E6E3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift in Sources */,
 				F3A4B8C191E14E7094C9A111 /* AWSCredentialsTests.swift in Sources */,
+				69BF3B916722A604CA457EA5 /* SPSplitView.m in Sources */,
+				9CCA3AB68B36D366680D6D15 /* SPSplitViewTests.swift in Sources */,
 				F3A4B8C191E14E7094C9A112 /* RDSIAMAuthenticationTests.swift in Sources */,
 				51AC3BA43047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift in Sources */,
 				F3A4B8C191E14E7094C9A113 /* AWSDirectoryBookmarkManagerTests.swift in Sources */,
@@ -3682,9 +3703,11 @@
 				CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
 				CF0000122F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
+				CF0000362F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */,
 				CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */,
 				51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */,
 				CF0000262F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift in Sources */,
+				CF0000382F8C000600C4C14A /* SADatabaseRenamePlanTests.swift in Sources */,
 				CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */,
 				5A1E0F1C2F9A000100C4C14A /* SAContentFilterLengthTests.swift in Sources */,
 				CF0000152F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m in Sources */,
@@ -3822,6 +3845,7 @@
 				CF00000E2F8C000600C4C14A /* SACellFilterAction.swift in Sources */,
 				CF0000102F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000232F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
+				CF0000352F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */,
 				17E641570EF01EF6001BC333 /* SPAppController.m in Sources */,
 				507FF1121BBCC57600104523 /* SPFunctions.m in Sources */,
 				5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */,
@@ -4010,6 +4034,8 @@
 				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
 				5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */,
+				D10000242F8C000600C4C14A /* SAConnectionLostAlert.swift in Sources */,
+				D10000212F8C000600C4C14A /* SAConnectionLostSheetCopy.swift in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
 				51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */,
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
