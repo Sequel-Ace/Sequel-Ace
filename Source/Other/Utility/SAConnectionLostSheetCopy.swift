@@ -75,27 +75,28 @@ import Foundation
     /// Returns the AWS CLI command that renews `profile`'s session for this error, or nil
     /// when the error is not a lapsed session. An empty profile means the `default` profile.
     static func awsSignInCommand(for error: Error, profile: String?) -> String? {
-        guard let command = awsSignInCommand(for: error) else { return nil }
-
-        let trimmedProfile = profile?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return command + " --profile " + shellQuoted(trimmedProfile.isEmpty ? "default" : trimmedProfile)
-    }
-
-    /// `value` quoted for a POSIX shell, or unchanged when it holds only characters a shell takes literally.
-    static func shellQuoted(_ value: String) -> String {
-        guard value.isEmpty || value.range(of: "[^A-Za-z0-9_@%+=:,./-]", options: .regularExpression) != nil else {
-            return value
+        switch signInKind(for: error) {
+        case .consoleSignIn:
+            return SAAWSSignInCommand.login(profile: profile)
+        case .identityCenter:
+            return SAAWSSignInCommand.ssoLogin(profile: profile)
+        case nil:
+            return nil
         }
-        return "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
-    private static func awsSignInCommand(for error: Error) -> String? {
+    private enum SignInKind {
+        case consoleSignIn
+        case identityCenter
+    }
+
+    private static func signInKind(for error: Error) -> SignInKind? {
         if let loginError = error as? AWSLoginAuthError {
-            return signInCommand(forConsoleSignIn: loginError)
+            return isLapsed(loginError) ? .consoleSignIn : nil
         }
 
         if let ssoError = error as? AWSSSOClientError {
-            return signInCommand(forIdentityCenter: ssoError)
+            return isLapsed(ssoError) ? .identityCenter : nil
         }
 
         // An error carried through Objective-C can arrive as a plain NSError, which
@@ -103,31 +104,31 @@ import Foundation
         let bridged = error as NSError
 
         if bridged.domain.hasSuffix("AWSLoginAuthError"), let loginError = AWSLoginAuthError(rawValue: bridged.code) {
-            return signInCommand(forConsoleSignIn: loginError)
+            return isLapsed(loginError) ? .consoleSignIn : nil
         }
 
         if bridged.domain.hasSuffix("AWSSSOClientError"), let ssoError = AWSSSOClientError(rawValue: bridged.code) {
-            return signInCommand(forIdentityCenter: ssoError)
+            return isLapsed(ssoError) ? .identityCenter : nil
         }
 
         return nil
     }
 
-    private static func signInCommand(forConsoleSignIn error: AWSLoginAuthError) -> String? {
+    private static func isLapsed(_ error: AWSLoginAuthError) -> Bool {
         switch error {
         case .sessionExpired, .cacheNotFound:
-            return "aws login"
+            return true
         case .invalidProfile, .invalidCacheContents:
-            return nil
+            return false
         }
     }
 
-    private static func signInCommand(forIdentityCenter error: AWSSSOClientError) -> String? {
+    private static func isLapsed(_ error: AWSSSOClientError) -> Bool {
         switch error {
         case .tokenExpired, .tokenNotFound:
-            return "aws sso login"
+            return true
         case .invalidProfile, .networkFailure, .invalidResponse, .accessDenied, .requestTimeout:
-            return nil
+            return false
         }
     }
 

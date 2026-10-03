@@ -107,6 +107,7 @@
 		                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
 		                            isHandshake:NO];
 	}
+	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];
