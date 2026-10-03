@@ -374,6 +374,9 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         XCTAssertEqual(bind("SELECT ? -- ?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\nFROM t WHERE x = <2>")
         XCTAssertEqual(bind("SELECT ? -- ?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\r\nFROM t WHERE x = <2>")
         XCTAssertEqual(bind("SELECT ? --\u{0C}?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> --\u{0C}?\nFROM t WHERE x = <2>")
+        // DEL is a MySQL control character: even an unmatched quote in the
+        // comment must not hide the live placeholder after its line ending.
+        XCTAssertEqual(bind("SELECT ? --\u{7F}'?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> --\u{7F}'?\r\nFROM t WHERE x = <2>")
         XCTAssertEqual(bind("--\r\nSELECT ? # ?\r\nFROM t WHERE y = ?", ["a", "b"]).0, "--\r\nSELECT <a> # ?\r\nFROM t WHERE y = <b>")
         XCTAssertEqual(bind("SELECT '?' /* ? */ FROM t WHERE x = ?", [3]).0, "SELECT '?' /* ? */ FROM t WHERE x = <3>")
         // A commented `?` must not absorb a param: the counts then disagree.
@@ -504,6 +507,79 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT 'ANALYZE' AS label",         // ANALYZE only inside a string literal
         ] {
             XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql)")
+        }
+    }
+
+    /// Verifies that ANALYZE is found whatever whitespace separates it from its
+    /// neighbours, a CRLF pair included. Swift folds "\r\n" into one Character that
+    /// equals neither "\n" nor "\r", so a split on those alone kept
+    /// "ANALYZE\r\nUPDATE" as one word and let an executing EXPLAIN through the
+    /// read-only guard.
+    func testExplainWouldExecuteDetectsAnalyzeAcrossLineEndings() {
+        for sql in [
+            "ANALYZE\r\nUPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "FORMAT=TREE\r\nANALYZE\r\nDELETE a FROM a JOIN b ON a.id = b.id",
+            "ANALYZE\nUPDATE t SET x = 1",
+            "ANALYZE\rUPDATE t SET x = 1",
+            "ANALYZE\u{0B}UPDATE t SET x = 1",   // vertical tab, whitespace to MySQL
+            "ANALYZE\u{0C}UPDATE t SET x = 1",   // form feed, whitespace to MySQL
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+        XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute("FORMAT=TREE\r\nSELECT 1\r\nFROM t"))
+    }
+
+    /// Verifies that text the comment stripper keeps but the server reads as a comment
+    /// cannot hide the modifier: a `--` followed by a vertical tab or form feed starts a
+    /// comment for MySQL, and a SELECT inside it used to end the scan before the real
+    /// ANALYZE on the next line.
+    func testExplainWouldExecuteLooksPastTextTheServerIgnores() {
+        for sql in [
+            "--\u{0B}SELECT\nANALYZE UPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "--\u{0C} SELECT 1\nANALYZE DELETE a FROM a JOIN b ON a.id = b.id",
+            // An unmatched quote in such a comment used to open a string that swallowed ANALYZE.
+            "--\u{0B}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{7F}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{01}\"\nANALYZE UPDATE t SET x = 1",
+            "ANALYZE(SELECT 1)",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that ANALYZE inside a quoted operand, whatever whitespace surrounds it,
+    /// does not count: MySQL 8.3 allows `EXPLAIN FORMAT=JSON INTO @'name'`, and a name
+    /// or string may hold any text.
+    func testExplainWouldExecuteIgnoresAnalyzeInsideQuotedOperands() {
+        for sql in [
+            "FORMAT=JSON INTO @'plan\r\nANALYZE\r\ncopy' SELECT 1",
+            "SELECT `analyze` FROM t",
+            "SELECT \"ANALYZE\" AS label",
+            "SELECT 'it''s ANALYZE time' AS label",
+            // After a dot MySQL reads a reserved word as an identifier.
+            "SELECT t.ANALYZE FROM t",
+            "SELECT * FROM db.analyze",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that string introducers and hex or bit literals behave like any other
+    /// quoted operand: ANALYZE inside them does not count, and an ANALYZE modifier next
+    /// to them is still found.
+    func testExplainWouldExecuteHandlesStringIntroducers() {
+        for sql in [
+            "SELECT N'ANALYZE', X'414E414C595A45', B'01', _utf8mb4'analyze' AS a",
+            "SELECT _latin1'it''s ANALYZE' COLLATE latin1_bin",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+        for sql in [
+            "ANALYZE SELECT N'x'",
+            "FORMAT=TREE ANALYZE UPDATE t SET a = _utf8mb4'b', c = X'00'",
+            "ANALYZE UPDATE t SET a = 'x\\'",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
         }
     }
 }
@@ -690,3 +766,82 @@ final class SAMCPToolDefinitionsTests: XCTestCase {
         }
     }
 }
+
+/// The CSV export must keep numbers as numbers while still neutralising cells a
+/// spreadsheet would run as a formula.
+final class SAMCPCSVTests: XCTestCase {
+
+    /// Verifies that plain numbers, negative ones included, are written unchanged.
+    func testNumbersStayNumbers() {
+        for number in ["-5", "-12.50", "+3", "-1.5E+10", "-2e-3", "-.5", "-0", "42", "-7."] {
+            XCTAssertEqual(SAMCPCSV.escapedField(number), number, number)
+        }
+    }
+
+    /// Verifies that anything a spreadsheet could run as a formula is prefixed with a
+    /// single quote, including values that only start like a number.
+    func testFormulasAreNeutralised() {
+        XCTAssertEqual(SAMCPCSV.escapedField("=1+1"), "'=1+1")
+        XCTAssertEqual(SAMCPCSV.escapedField("@SUM(A1:A2)"), "'@SUM(A1:A2)")
+        XCTAssertEqual(SAMCPCSV.escapedField("-2+3"), "'-2+3")
+        XCTAssertEqual(SAMCPCSV.escapedField("+cmd|' /C calc'!A0"), "'+cmd|' /C calc'!A0")
+        XCTAssertEqual(SAMCPCSV.escapedField("-1e5x"), "'-1e5x")
+        XCTAssertEqual(SAMCPCSV.escapedField("- 5"), "'- 5")
+        XCTAssertEqual(SAMCPCSV.escapedField("-"), "'-")
+        // Digits outside ASCII are not a number MySQL returns.
+        XCTAssertEqual(SAMCPCSV.escapedField("-\u{0663}"), "'-\u{0663}")
+    }
+
+    /// Verifies that a leading tab or carriage return is neutralised, also when the
+    /// carriage return starts a CRLF pair, which Swift treats as one Character.
+    func testLeadingControlCharactersAreNeutralised() {
+        XCTAssertEqual(SAMCPCSV.escapedField("\tfoo"), "'\tfoo")
+        XCTAssertEqual(SAMCPCSV.escapedField("\r=cmd"), "\"'\r=cmd\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("\r\n=cmd"), "\"'\r\n=cmd\"")
+    }
+
+    /// Verifies that fields holding a separator, a double quote or a line break are
+    /// enclosed in double quotes, a CRLF pair included.
+    func testFieldsAreQuotedWhenNeeded() {
+        XCTAssertEqual(SAMCPCSV.escapedField("plain"), "plain")
+        XCTAssertEqual(SAMCPCSV.escapedField("a,b"), "\"a,b\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("say \"hi\""), "\"say \"\"hi\"\"\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("line\nbreak"), "\"line\nbreak\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("a\r\nb"), "\"a\r\nb\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("-5,0"), "\"'-5,0\"")
+    }
+
+    /// Verifies that a double quote followed by a combining mark is found and doubled.
+    /// Compared as Characters the two form one cluster that is not a quote, so the
+    /// field used to stay unquoted with a bare quote inside.
+    func testQuoteFollowedByACombiningMarkIsEscaped() {
+        XCTAssertEqual(SAMCPCSV.escapedField("a\"\u{301}b"), "\"a\"\"\u{301}b\"")
+    }
+}
+
+/// `containsAnyUnicodeScalar(of:)` is the shared answer to Swift folding "\r\n" (and a
+/// quote plus a combining mark) into one Character that `contains` does not match.
+final class SAStringUnicodeScalarSearchTests: XCTestCase {
+
+    /// Verifies that line breaks are found alone and inside a CRLF pair, and only then.
+    func testLineBreaksAreFoundInEveryForm() {
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\n"))
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\r"))
+        XCTAssertTrue("a\nb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertTrue("a\rb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("a\tb c".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("".containsAnyUnicodeScalar(of: "\n\r"))
+    }
+
+    /// Verifies that any listed scalar is found, also when it is merged into a cluster
+    /// with the next one.
+    func testAnyListedScalarIsFound() {
+        XCTAssertTrue("a\"\u{301}b".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertTrue("x,y".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ""))
+        XCTAssertTrue("ab".prefix(1).containsAnyUnicodeScalar(of: "a"))
+        XCTAssertFalse("ab".prefix(1).containsAnyUnicodeScalar(of: "b"))
+    }
+}
+

@@ -10,14 +10,17 @@ import XCTest
 final class SAUuidFormatterTests: XCTestCase {
   let formatter = SAUuidFormatter()
 
+  /// Verifies the field editor allows 36 characters: 32 hex digits and 4 hyphens.
   func testFormatterMaxLengthOverride() {
     XCTAssertEqual(formatter.maxLengthOverride, 36)
   }
 
+  /// Verifies the label shown for the override in the field editor.
   func testFormatterLabelOverride() {
     XCTAssertEqual(formatter.label, "UUID Display Override")
   }
 
+  /// Verifies an empty field is stored as NULL.
   func testEmptyStringToNSNull() {
     let input = ""
     let helper = Helper()
@@ -27,6 +30,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertNil(helper.err.pointee)
   }
 
+  /// Verifies the NULL placeholder is stored as NULL.
   func testNilValueIsValidButAsNSNull() {
     let input = "NULL"
     let helper = Helper()
@@ -37,10 +41,12 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertNil(helper.err.pointee)
   }
 
+  /// Verifies a missing value has no UUID text.
   func testNilObjectToNilString() {
     XCTAssertNil(formatter.string(for: nil))
   }
 
+  /// Verifies a UUID survives the round trip from text to 16 bytes and back.
   func testUuidDataRoundTrip() {
     let input = "772EFFB2-FB9F-FFFF-FFFF-7E50977355E4"
     let helper = Helper()
@@ -57,6 +63,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(convertedString!, input)
   }
 
+  /// Verifies characters other than hex digits and hyphens are refused with an error.
   func testInvalidCharacters() {
     let input = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     let helper = Helper()
@@ -66,6 +73,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(helper.err.pointee!, "Invalid UUID Character in: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")
   }
 
+  /// Verifies an incomplete UUID is refused with the "Invalid UUID" message.
   func testInvalidLength() {
     let input = "01234567-89AB-CDEF"
     let helper = Helper()
@@ -75,6 +83,19 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(helper.err.pointee!, "Invalid UUID: 01234567-89AB-CDEF")
   }
 
+  /// Verifies a value made only of hyphens is refused as an invalid UUID
+  /// instead of being saved as an empty binary value.
+  func testHyphensOnlyAreInvalidInsteadOfAnEmptyValue() {
+    for input in ["----", "-"] {
+      let helper = Helper()
+
+      XCTAssertFalse(formatter.getObjectValue(helper.autoPtr, for: input, errorDescription: helper.autoErrorPtr), input)
+      XCTAssertNotNil(helper.err.pointee, input)
+      XCTAssertEqual(helper.err.pointee, "Invalid UUID: \(input)" as NSString)
+    }
+  }
+
+  /// Verifies an incomplete but well-formed UUID is accepted while typing.
   func testValidPartial() {
     let input = "01234567-89AB-CDEF"
     let helper = Helper()
@@ -83,6 +104,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertNil(helper.err.pointee)
   }
 
+  /// Verifies partial text with invalid characters is refused while typing.
   func testInvalidPartial() {
     let input = "01234567-89AB-XXXX"
     let helper = Helper()
@@ -92,6 +114,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertEqual(helper.err.pointee!, "Invalid UUID Character in: 01234567-89AB-XXXX")
   }
 
+  /// Verifies the start of the NULL placeholder is accepted while typing.
   func testPartialNullValueIsValid() {
     let input = "NU"
     let helper = Helper()
@@ -100,6 +123,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertTrue(mockFormatter.isPartialStringValid(input, newEditingString: helper.autoStrPtr, errorDescription: helper.autoErrorPtr))
   }
 
+  /// Verifies the range-based partial check accepts an incomplete but well-formed UUID.
   func testValidPartialSecondOverride() {
     let input = "01234567-89AB-CDEF"
     let helper = Helper()
@@ -116,6 +140,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertNil(helper.err.pointee)
   }
 
+  /// Verifies the range-based partial check accepts the start of the NULL placeholder.
   func testPartialNullValidPartialSecondOverride() {
     let input = "NU"
     let helper = Helper()
@@ -133,6 +158,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertNil(helper.err.pointee)
   }
 
+  /// Verifies the range-based partial check refuses invalid characters.
   func testInvalidPartialSecondOverride() {
     let input = "01234567-89AB-XXXX"
     let helper = Helper()
@@ -149,6 +175,7 @@ final class SAUuidFormatterTests: XCTestCase {
     XCTAssertNotNil(helper.err.pointee)
   }
 
+  /// Verifies the range-based partial check refuses more than 32 hex digits.
   func testInvalidPartialSecondOverrideTooLong() {
     let input = "01234567-89AB-CDEF-0123-456789ABCDEF000"
     let helper = Helper()
@@ -186,6 +213,7 @@ final class SAUuidFormatterTests: XCTestCase {
       AutoreleasingUnsafeMutablePointer<NSString>(partialStr)
     }
 
+    /// Allocates the pointers the formatter writes its results and errors into.
     init() {
       obj = UnsafeMutablePointer<AnyObject?>.allocate(capacity: 1)
       err = UnsafeMutablePointer<NSString?>.allocate(capacity: 1)
@@ -194,6 +222,7 @@ final class SAUuidFormatterTests: XCTestCase {
       partialStr.initialize(to: "" as NSString)
     }
 
+    /// Releases the pointers allocated in `init()`.
     deinit {
       obj.deallocate()
       err.deallocate()
@@ -206,10 +235,12 @@ final class SAUuidFormatterTests: XCTestCase {
   class MockUserDefault: UserDefaults {
     let mockNullValue: String
 
+    /// Creates defaults that answer `mockNullValue` for the NULL placeholder.
     convenience init(mockNullValue: String) {
       self.init(mockNullValue: mockNullValue, suiteName: "Mock User Defaults")!
     }
 
+    /// Creates defaults in a fresh suite that answer `mockNullValue` for the NULL placeholder.
     init?(mockNullValue: String, suiteName suitename: String?) {
       UserDefaults().removePersistentDomain(forName: suitename!)
 
@@ -217,6 +248,7 @@ final class SAUuidFormatterTests: XCTestCase {
       super.init(suiteName: suitename)
     }
 
+    /// Returns the mocked NULL placeholder for `NullValue` and nothing else.
     override func string(forKey defaultName: String) -> String? {
       guard defaultName == "NullValue" else { return nil }
       return mockNullValue

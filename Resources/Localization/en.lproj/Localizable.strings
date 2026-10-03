@@ -4268,3 +4268,6 @@
 
 /* AWS IAM credentials status message */
 "Getting AWS credentials..." = "Getting AWS credentials...";
+
+/* Connection error: the cleartext authentication plugin requires TLS */
+"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
