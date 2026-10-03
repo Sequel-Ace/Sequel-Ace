@@ -380,6 +380,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		reconnectionRetryAttempts = 0;
 		lastDelegateDecisionForLostConnection = SPMySQLConnectionLostDisconnect;
 		delegateDecisionLock = [[NSLock alloc] init];
+		delegateDecisionGate = [[SAConnectionLostDecisionGate alloc] init];
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];
@@ -565,7 +566,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
     SPLog(@"calling _pingConnectionUsingLoopDelay");
 	// Confirm whether the connection is still responding by using a ping
-	BOOL connectionVerified = [self _pingConnectionUsingLoopDelay:400];
+	// A connection configured with a shorter timeout keeps it; the budget only caps.
+	NSUInteger checkPingTimeout = [SAConnectionCheckBudget pingTimeoutForConfiguredTimeout:timeout];
+	BOOL connectionVerified = [self _pingConnectionUsingLoopDelay:400 timeout:checkPingTimeout];
     SPLog(@"_pingConnectionUsingLoopDelay finished");
 
 	// If the connection didn't respond, trigger a reconnect.  This will automatically
@@ -583,6 +586,24 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	}
 
 	return connectionVerified;
+}
+
+- (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime
+{
+	if (state != SPMySQLConnected || !mySQLConnection) return NO;
+
+	// Only look while nothing else holds the connection: an active query is traffic
+	// of its own, and the thread running it owns the connection structure.
+	if (![self _tryLockConnection]) return NO;
+
+	BOOL shouldVerify = NO;
+	if (mySQLConnection && !mySQLConnection->net.reading_or_writing && mySQLConnection->net.vio) {
+		shouldVerify = [SAConnectionLivenessProbe shouldVerifyConnectionIdleFor:idleTime socket:mySQLConnection->net.fd];
+	}
+
+	[self _unlockConnection];
+
+	return shouldVerify;
 }
 
 /**
@@ -605,9 +626,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		return [self _reconnectAllowingRetries:YES];
 	}
 	
-	// If the connection was recently used, return success
-	if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 30) {
-		return YES;
+	// If the connection was recently used, return success - unless its socket
+	// already knows the peer is gone, which a dropped route does not announce.
+	double idleTime = _timeIntervalSinceMonotonicTime(lastConnectionUsedTime);
+	if (idleTime < 30) {
+		if (![self _shouldVerifyRecentlyUsedConnectionIdleFor:idleTime]) return YES;
+		SPLog(@"connection socket reports the peer is gone; checking despite recent use");
 	}
 	
 	// Otherwise check the connection
@@ -776,6 +800,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return NO;
 	}
 
+	// Bound how long the kernel waits on a peer that has stopped answering entirely, so a
+	// query sent onto a route that disappeared ends in an error rather than in a wait that
+	// outlasts anyone's patience.
+	[SAConnectionSocketTimeouts applyToSocket:mySQLConnection->net.fd];
+
 	// If the connection was cancelled, clean up and don't continue
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
@@ -868,8 +897,21 @@ asm(".desc ___crashreporter_info__, 0x10");
         mysql_options(theConnection, MYSQL_OPT_PROTOCOL, &proto);
     }
 
-	// Set the connection timeout
-	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&timeout);
+	// Set the connection timeout. A side connection, which only asks the server to kill a query,
+	// keeps a short limit of its own instead of waiting out the configured one.
+	NSUInteger connectTimeout = isMaster
+		? timeout
+		: [SAConnectionCheckBudget sideConnectionConnectTimeoutForConfiguredTimeout:timeout];
+	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&connectTimeout);
+
+	// A side connection asks the server to kill a query while that query is held still. It must
+	// not wait on a server that accepted it and then stopped answering; the main connection keeps
+	// no such limit, as it would cut long queries short.
+	if (!isMaster) {
+		unsigned int answerTimeout = (unsigned int)[SAConnectionCheckBudget sideConnectionAnswerTimeout];
+		mysql_options(theConnection, MYSQL_OPT_READ_TIMEOUT, (const void *)&answerTimeout);
+		mysql_options(theConnection, MYSQL_OPT_WRITE_TIMEOUT, (const void *)&answerTimeout);
+	}
 
 	// Set the connection encoding
 	NSStringEncoding connectEncodingNS = [SPMySQLConnection stringEncodingForMySQLCharset:[encodingName UTF8String]];
@@ -997,13 +1039,21 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return NULL;
 	}
 
-    MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+    // A failed attempt frees every option set on this handle unless the client asks to keep them,
+    // so the retry below would run without the timeouts set above - on the system default, which
+    // is what the side connection's limits are there to avoid.
+    unsigned long connectClientFlags = [self clientFlags] | CLIENT_REMEMBER_OPTIONS;
 
-    //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL
-    if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus) {
+    MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
+
+    //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL.
+    // Only a failed TLS negotiation is retried that way: a host that never answered fails the
+    // same way again, and credentials the server refused, or that may already have gone out over
+    // TLS before the connection was lost, must not be sent a second time unencrypted.
+    if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
         enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
-        connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
+        connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
     }
 
 	// If the connection failed, return NULL
@@ -1040,6 +1090,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 				[self _updateLastErrorMessage:NSLocalizedString(@"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.", @"cleartext authentication plugin requires TLS error")];
 			}
 		}
+
+		// The handle keeps its options and its own allocations after a failed attempt, so it
+		// is closed here rather than left behind.
+		mysql_close(theConnection);
 
 		return NULL;
 	}
