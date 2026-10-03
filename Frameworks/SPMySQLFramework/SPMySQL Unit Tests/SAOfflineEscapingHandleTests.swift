@@ -167,6 +167,65 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk", session: nil, handshake: nil, sessionReportsChanges: false, sessionIsBeingReplaced: false), "gbk")
     }
 
+
+    /// Checks that a forgotten session leaves the record in charge, which is what the session after
+    /// it will be set up with.
+    ///
+    /// The connection forgets the session when it tears the handle down - on a disconnect, and on a
+    /// connect the user cancelled. Without that, a value escaped while the teardown runs would
+    /// follow the character set of a session that no longer exists.
+    func testAForgottenSessionLeavesTheRecordInCharge() throws {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: true, isHandshake: true)
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: true, isHandshake: false)
+
+        escaper.forgetSession()
+
+        XCTAssertFalse(escaper.sessionReportedOpenTransaction, "no session, no transaction")
+
+        // the record is GBK, and that is what the value is escaped for - escaping `BF 27` for
+        // latin1 would leave the quote for GBK to swallow
+        let source: [UInt8] = [0xBF, 0x27]
+        var destination = [UInt8](repeating: 0, count: 16)
+        let written = source.withUnsafeBytes { bytes in
+            destination.withUnsafeMutableBytes { out in
+                escaper.escape(bytes.baseAddress, length: source.count, into: out.baseAddress!,
+                               characterSetOnRecord: "gbk", sessionIsBeingReplaced: false)
+            }
+        }
+
+        XCTAssertGreaterThan(written, 0)
+        XCTAssertEqual(Array(destination[0..<written]), [0x5C, 0xBF, 0x5C, 0x27])
+    }
+
+    /// Checks that forgetting a session keeps the escaping mode sessions start with.
+    ///
+    /// A forgotten session is followed by a new one, and that one starts from the server's own
+    /// default - which is what the last handshake showed. The mode therefore stays while the
+    /// session's own character set does not.
+    func testForgettingASessionKeepsTheModeSessionsStartWith() throws {
+        let escaper = SAConnectionEscaper()
+        // a server whose sessions start under NO_BACKSLASH_ESCAPES
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, openTransaction: false, isHandshake: true)
+        // a statement turned it off for this session
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        escaper.forgetSession()
+
+        let source = Array("it's".utf8)
+        var destination = [UInt8](repeating: 0, count: 32)
+        let written = source.withUnsafeBytes { bytes in
+            destination.withUnsafeMutableBytes { out in
+                escaper.escape(bytes.baseAddress, length: source.count, into: out.baseAddress!,
+                               characterSetOnRecord: "utf8mb4", sessionIsBeingReplaced: false)
+            }
+        }
+
+        XCTAssertGreaterThan(written, 0)
+        XCTAssertEqual(String(decoding: destination[0..<written], as: UTF8.self), "it''s",
+                       "back to the mode a new session starts in, so the quote is doubled")
+    }
+
     /// The connection's escaper follows what the session reports.
     func testTheEscaperFollowsWhatTheSessionReports() {
         let escaper = SAConnectionEscaper()

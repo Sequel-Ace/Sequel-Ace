@@ -781,6 +781,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
+		[valueEscaper forgetSession];
 		[self _unlockConnection];
 		return NO;
 	}
@@ -1429,6 +1430,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	mySQLConnection = NULL;
 	serverVersionNumber = 0;
 	state = SPMySQLDisconnected;
+	// The session is gone, so what it reported goes with it: until the next one shakes hands,
+	// values follow the character set on record, which that session will be set up with.
+	[valueEscaper forgetSession];
 	[self _unlockConnection];
 
 	// If using a connection proxy, disconnect that too
