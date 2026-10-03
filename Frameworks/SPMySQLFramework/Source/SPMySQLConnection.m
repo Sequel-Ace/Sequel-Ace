@@ -1217,8 +1217,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 		attemptBudgetForConfiguredTimeout:timeout userEndedWait:NO afterFailedCheck:afterFailedCheck];
 	// One clock for the whole attempt: the stages below share the budget instead of each
 	// starting it afresh, so a proxy that takes its time does not add to what connecting may
-	// then spend.
-	uint64_t attemptStart_t = _monotonicTime();
+	// then spend. __block because the proxy loop moves it forward to skip time the user spent
+	// answering, and the block that reads it has to see that - a block captures a local by
+	// value, so without this it would keep measuring from where the attempt began.
+	__block uint64_t attemptStart_t = _monotonicTime();
 	BOOL reconnectSucceeded = NO;
     NSString *timeZoneIdentifierToRestore = nil;
 
