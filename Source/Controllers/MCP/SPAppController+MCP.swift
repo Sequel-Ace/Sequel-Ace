@@ -547,8 +547,9 @@ extension SPAppController: SPMCPDataSource {
         // statement (WITH ... UPDATE/DELETE), so capping a WITH query could limit a write.
         let cap = mcpMaxResultRows
         var finalSQL = bound
-        var maxRows = cap
-        var readOffset = 0
+        var maxRows = SAMCPResultPage.rowLimit(requested: limit, cap: cap)
+        var readOffset = max(0, offset)
+        var streamResult = true
         // Rewrite only when comment stripping agrees under both backslash
         // modes. Otherwise preserve the SQL and use the read-side cap, just as
         // for executable comments (which read-only validation already rejects).
@@ -557,17 +558,25 @@ extension SPAppController: SPMCPDataSource {
             while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
             let up = t.uppercased()
             if up.hasPrefix("SELECT") || up.hasPrefix("(") {
-                if let clamp = mcpClampTrailingLimit(t, cap: cap) {
-                    // Has its own trailing LIMIT. Execute the stripped query; if the
-                    // limit exceeds the cap, shrink it so the DB stops at the cap.
-                    finalSQL = clamp.count > cap ? clamp.clamped : t
-                    maxRows = min(clamp.count, cap)
+                if let page = SAMCPResultPage.sqlPageWithinTrailingLimit(t, requested: limit, offset: offset, cap: cap) {
+                    // Compose the tool page with the SQL's existing window,
+                    // keeping the database-side fetch bounded as well.
+                    finalSQL = page.sql
+                    maxRows = page.maxRows
+                    readOffset = 0
+                    streamResult = false
+                } else if SAMCPResultPage.hasTrailingLimit(t) {
+                    // An integer outside Int's range cannot be composed safely.
+                    // Leave it to MySQL and use bounded-memory result reading.
+                    finalSQL = t
                 } else {
                     // No trailing LIMIT: append one so the database stops at the cap.
                     // The +1 lets us detect that more rows existed (truncation).
                     let effectiveLimit = SAMCPResultPage.rowLimit(requested: limit, cap: cap)
                     maxRows = effectiveLimit
                     let off = max(0, offset)
+                    readOffset = 0
+                    streamResult = false
                     finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
                 }
             }
@@ -576,42 +585,13 @@ extension SPAppController: SPMCPDataSource {
             // and paginate its result while consuming it instead of rewriting.
             maxRows = SAMCPResultPage.rowLimit(requested: limit, cap: cap)
             readOffset = max(0, offset)
+            streamResult = true
         }
 
         return mcpDBSync {
             mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id,
-                                  maxRows: maxRows, offset: readOffset)
+                                  maxRows: maxRows, offset: readOffset, streamResult: streamResult)
         }
-    }
-
-    /// Parses a trailing `LIMIT` clause and returns its row count plus a copy of the
-    /// query with that count clamped to `cap + 1` (preserving any offset form), or nil
-    /// if there is no trailing LIMIT. Lets run_query enforce the row cap even when the
-    /// caller supplied an explicit LIMIT larger than the cap.
-    private func mcpClampTrailingLimit(_ sql: String, cap: Int) -> (count: Int, clamped: String)? {
-        let pattern = "(?i)\\blimit\\s+([0-9]+)(?:\\s*,\\s*([0-9]+)|\\s+offset\\s+([0-9]+))?\\s*$"
-        guard let re = try? NSRegularExpression(pattern: pattern) else { return nil }
-        let ns = sql as NSString
-        guard let m = re.firstMatch(in: sql, range: NSRange(location: 0, length: ns.length)) else { return nil }
-        /// Returns the text of capture group `i`, or nil if the group did not participate in the match.
-        func group(_ i: Int) -> String? {
-            let r = m.range(at: i)
-            return r.location == NSNotFound ? nil : ns.substring(with: r)
-        }
-        let first = group(1) ?? "0"      // `LIMIT first` or, in the comma form, the offset
-        let commaCount = group(2)        // `LIMIT offset, count`
-        let offsetValue = group(3)       // `LIMIT count OFFSET value`
-        let count = Int(commaCount ?? first) ?? 0
-        let newCount = min(count, cap + 1)
-        let clause: String
-        if commaCount != nil {
-            clause = "LIMIT \(first), \(newCount)"
-        } else if let offsetValue = offsetValue {
-            clause = "LIMIT \(newCount) OFFSET \(offsetValue)"
-        } else {
-            clause = "LIMIT \(newCount)"
-        }
-        return (count, ns.replacingCharacters(in: m.range, with: clause))
     }
 
     /// Substitutes each unquoted ? in `sql` with the next param as an escaped SQL
@@ -650,8 +630,16 @@ extension SPAppController: SPMCPDataSource {
     // Callers that can bound the query at the SQL level should also push a
     // `LIMIT maxRows + 1` so the database does not materialise an unbounded result.
     // Caller holds mcpDBQueue.
-    private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows, offset: Int = 0) -> [String: Any] {
-        let result = conn.queryString(sql)
+    private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows, offset: Int = 0, streamResult: Bool = false) -> [String: Any] {
+        // queryString buffers the entire native result. Unmodified queries must
+        // use mysql_use_result instead so pagination bounds retained memory.
+        let result: SPMySQLResult? = streamResult
+            ? conn.streamingQueryString(sql, useLowMemoryBlockingStreaming: true) as? SPMySQLResult
+            : conn.queryString(sql)
+        // A streaming result owns the native connection lock. Drain it before
+        // returning on every path, without KILL/reconnect or closing its handle.
+        // This bounds memory, not server execution time or network transfer.
+        defer { (result as? SPMySQLStreamingResult)?.cancelResultLoad() }
         if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
 
         // Non-result statements (INSERT, UPDATE, DELETE, ...) come back as nil or an
@@ -700,6 +688,11 @@ extension SPAppController: SPMCPDataSource {
                 }
             }
             rows.append(safeRow)
+        }
+
+        if let stream = res as? SPMySQLStreamingResult {
+            stream.cancelResultLoad()
+            if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
         }
 
         var r: [String: Any] = [:]

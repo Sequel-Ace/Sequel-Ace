@@ -882,6 +882,34 @@ final class SAMCPResultLimitSQLTests: XCTestCase {
 }
 
 final class SAMCPResultPageTests: XCTestCase {
+    func testToolPageComposesWithEachSQLLimitWindow() {
+        for sql in ["SELECT value LIMIT 20 OFFSET 5", "SELECT value LIMIT 5, 20"] {
+            let page = SAMCPResultPage.sqlPageWithinTrailingLimit(sql, requested: 2, offset: 3, cap: 10)
+            XCTAssertEqual(page?.sql, "SELECT value LIMIT 3 OFFSET 8")
+            XCTAssertEqual(page?.maxRows, 2)
+        }
+        let finalPage = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 20", requested: 10, offset: 18, cap: 10)
+        XCTAssertEqual(finalPage?.sql, "SELECT value LIMIT 2 OFFSET 18")
+        XCTAssertEqual(finalPage?.maxRows, 2)
+    }
+
+    func testSQLWindowCapsFetchAndHandlesAnOffsetBeyondItsEnd() {
+        let capped = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 1000000", requested: Int.max, offset: 0, cap: 10000)
+        XCTAssertEqual(capped?.sql, "SELECT value LIMIT 10001 OFFSET 0")
+        XCTAssertEqual(capped?.maxRows, 10000)
+        let empty = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2 OFFSET 5", requested: 2, offset: 3, cap: 10)
+        XCTAssertEqual(empty?.sql, "SELECT value LIMIT 0 OFFSET 8")
+        XCTAssertEqual(empty?.maxRows, 0)
+    }
+
+    func testSQLWindowPreservesMeaningOnIntegerOverflowAndNegativeToolOffset() {
+        let oversized = "SELECT value LIMIT 18446744073709551615"
+        XCTAssertTrue(SAMCPResultPage.hasTrailingLimit(oversized))
+        XCTAssertNil(SAMCPResultPage.sqlPageWithinTrailingLimit(oversized, requested: 2, offset: 0, cap: 10))
+        XCTAssertNil(SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2 OFFSET \(Int.max)", requested: 2, offset: 1, cap: 10))
+        XCTAssertEqual(SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2", requested: 2, offset: -1, cap: 10)?.sql, "SELECT value LIMIT 2 OFFSET 0")
+    }
+
     func testUnmodifiedQueryResultHonorsLimitOffsetAndOneLookahead() {
         var index = 0
         var rows: [Int] = []

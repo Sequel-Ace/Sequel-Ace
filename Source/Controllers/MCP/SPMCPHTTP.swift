@@ -502,6 +502,36 @@ enum SAMCPResultPage {
         requested > 0 ? min(requested, cap) : cap
     }
 
+    private static let trailingLimitPattern = #"(?i)\blimit\s+([0-9]+)(?:\s*,\s*([0-9]+)|\s+offset\s+([0-9]+))?\s*$"#
+
+    static func hasTrailingLimit(_ sql: String) -> Bool {
+        sql.range(of: trailingLimitPattern, options: .regularExpression) != nil
+    }
+
+    /// Apply tool pagination inside an existing SQL result window, fetching
+    /// only the output page and one lookahead. Nil leaves oversized integers
+    /// to MySQL rather than overflowing or silently changing their meaning.
+    static func sqlPageWithinTrailingLimit(_ sql: String, requested: Int, offset: Int, cap: Int) -> (sql: String, maxRows: Int)? {
+        guard let re = try? NSRegularExpression(pattern: trailingLimitPattern) else { return nil }
+        let text = sql as NSString
+        guard let match = re.firstMatch(in: sql, range: NSRange(location: 0, length: text.length)) else { return nil }
+        func group(_ index: Int) -> String? {
+            let range = match.range(at: index)
+            return range.location == NSNotFound ? nil : text.substring(with: range)
+        }
+        let commaCount = group(2)
+        guard let count = Int(commaCount ?? group(1) ?? "0"),
+              let sqlOffset = Int(commaCount == nil ? (group(3) ?? "0") : (group(1) ?? "0")) else { return nil }
+        let toolOffset = max(0, offset)
+        let combinedOffset = sqlOffset.addingReportingOverflow(toolOffset)
+        guard !combinedOffset.overflow else { return nil }
+        let remaining = max(0, count - toolOffset)
+        let maxRows = min(remaining, rowLimit(requested: requested, cap: cap))
+        let fetchRows = maxRows < remaining ? maxRows + 1 : maxRows
+        let clause = "LIMIT \(fetchRows) OFFSET \(combinedOffset.partialValue)"
+        return (text.replacingCharacters(in: match.range, with: clause), maxRows)
+    }
+
     /// Returns whether one more row exists after the requested page. Skipped
     /// rows never enter the output, and only one lookahead row is consumed.
     static func consumeRows<Row>(maxRows: Int, offset: Int = 0,
