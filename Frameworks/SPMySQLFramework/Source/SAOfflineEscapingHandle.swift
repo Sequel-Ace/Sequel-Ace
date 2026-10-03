@@ -182,6 +182,11 @@ public final class SAConnectionEscaper: NSObject {
         }
         if !isHandshake, let characterSet, let handshakeCharacterSet,
            characterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
+            // A reported name that differs from the one the session was connected with can only
+            // have come from the server reporting a change. This is the fallback for a session
+            // that was never told it reports - behind a proxy, or on a server that refused - and
+            // it cannot see a change back to the handshake name, which is why being told is
+            // better.
             sessionReportsCharacterSetChanges = true
         }
         sessionCharacterSet = characterSet
@@ -194,6 +199,23 @@ public final class SAConnectionEscaper: NSObject {
         lock.lock()
         defer { lock.unlock() }
         return sessionHasOpenTransaction
+    }
+
+    /// Records that this session reports its character set changes, so what it reports is the
+    /// whole truth.
+    ///
+    /// Known from the server's own `session_track_system_variables`, which the connection reads
+    /// and completes when it starts a session. Without it the escaper can only notice a reported
+    /// name that differs from the one the session was connected with - which misses a change
+    /// back to that name, and so would keep following a record the session has moved away from.
+    /// - Parameter reportsChanges: Whether the session reports changes to `character_set_client`.
+    @objc(recordSessionReportsChanges:)
+    public func recordSessionReportsChanges(_ reportsChanges: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        if reportsChanges {
+            sessionReportsCharacterSetChanges = true
+        }
     }
 
     /// Records the escaping mode a new session started in, once it has run a statement - after

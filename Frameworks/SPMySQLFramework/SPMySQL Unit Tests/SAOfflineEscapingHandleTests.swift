@@ -411,4 +411,34 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
                        "the replacement session starts without them, so the quote is doubled")
     }
 
+    /// Codex's case: a session that reports a change leading back to the name it was connected
+    /// with. The escaper cannot see that as a change, so being told that the session reports is
+    /// what keeps it following the session rather than a record it has moved away from.
+    func testAReportedChangeBackToTheHandshakeNameIsFollowed() throws {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        escaper.recordSessionReportsChanges(true)
+        // The connection moved the record to gbk while the session was not reporting, then a
+        // raw SET NAMES took the session back to latin1 - the name it started in.
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        // BF 27 escaped for latin1 doubles the backslash it adds; for gbk the BF would be taken
+        // as a lead byte and protected instead, leaving the quote loose on a latin1 session.
+        let value = Data([0xBF, 0x27])
+        let escaped = try XCTUnwrap(escape(value, with: escaper, onRecord: "gbk"))
+        XCTAssertEqual(escaped, Data([0xBF, 0x5C, 0x27]),
+                       "the session says latin1 and reports its changes, so latin1 is what it is escaped for")
+    }
+
+    /// Without being told, the same sequence falls back to the record - which is why the
+    /// connection tells it. Pinned so the fallback's limit stays visible.
+    func testWithoutBeingToldTheSameSequenceFollowsTheRecord() throws {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        let escaped = try XCTUnwrap(escape(Data([0xBF, 0x27]), with: escaper, onRecord: "gbk"))
+        XCTAssertEqual(escaped, Data([0x5C, 0xBF, 0x5C, 0x27]), "escaped for the record, gbk")
+    }
+
 }
