@@ -37,7 +37,8 @@ final class SASessionStartupPlanTests: XCTestCase {
         let result = plan(reported: "utf8mb4",
                           tracking: "time_zone,autocommit,character_set_client,character_set_results,character_set_connection",
                           proxySQLWasAsked: &asked)
-        XCTAssertEqual(result.statements, [])
+        XCTAssertNil(result.trackingStatement)
+        XCTAssertNil(result.characterSetStatement)
         XCTAssertEqual(result.characterSet, "utf8mb4")
         XCTAssertFalse(result.movesToAnotherCharacterSet)
         XCTAssertFalse(asked, "the ProxySQL question costs a round trip and must not be asked for nothing")
@@ -46,15 +47,15 @@ final class SASessionStartupPlanTests: XCTestCase {
     /// A server that reports nothing is asked to report the character set.
     func testASessionThatReportsNothingIsAskedTo() {
         let result = plan(reported: "utf8mb4", tracking: "")
-        XCTAssertEqual(result.statements, ["SET SESSION session_track_system_variables = 'character_set_client'"])
+        XCTAssertEqual(result.trackingStatement, "SET SESSION session_track_system_variables = 'character_set_client'")
+        XCTAssertNil(result.characterSetStatement)
         XCTAssertEqual(result.characterSet, "utf8mb4")
     }
 
     /// What the server already reports is kept, not replaced.
     func testWhatIsAlreadyReportedIsKept() {
         let result = plan(reported: "utf8mb4", tracking: "time_zone")
-        XCTAssertEqual(result.statements,
-                       ["SET SESSION session_track_system_variables = 'time_zone,character_set_client'"])
+        XCTAssertEqual(result.trackingStatement, "SET SESSION session_track_system_variables = 'time_zone,character_set_client'")
     }
 
     /// Behind ProxySQL the tracking statement is not sent: it does not know the variable, and a
@@ -62,7 +63,8 @@ final class SASessionStartupPlanTests: XCTestCase {
     func testBehindProxySQLTheTrackingStatementIsNotSent() {
         var asked = false
         let result = plan(reported: "utf8mb4", tracking: "", isProxySQL: true, proxySQLWasAsked: &asked)
-        XCTAssertEqual(result.statements, [])
+        XCTAssertNil(result.trackingStatement)
+        XCTAssertNil(result.characterSetStatement)
         XCTAssertTrue(asked, "the question has to be asked when a statement would otherwise be sent")
         XCTAssertEqual(result.characterSet, "utf8mb4")
     }
@@ -70,7 +72,8 @@ final class SASessionStartupPlanTests: XCTestCase {
     /// A character set nothing can carry moves the session to the fallback.
     func testACharacterSetThatCannotBeCarriedMovesTheSession() {
         let result = plan(reported: "swe7", tracking: "character_set_client")
-        XCTAssertEqual(result.statements, ["SET NAMES 'utf8mb4'"])
+        XCTAssertNil(result.trackingStatement)
+        XCTAssertEqual(result.characterSetStatement, "SET NAMES 'utf8mb4'")
         XCTAssertEqual(result.characterSet, "utf8mb4")
         XCTAssertTrue(result.movesToAnotherCharacterSet)
     }
@@ -85,11 +88,20 @@ final class SASessionStartupPlanTests: XCTestCase {
     /// is reported.
     func testBothNeedsComeInOrder() {
         let result = plan(reported: "hp8", tracking: "")
-        XCTAssertEqual(result.statements, [
-            "SET SESSION session_track_system_variables = 'character_set_client'",
-            "SET NAMES 'utf8mb4'",
-        ])
+        XCTAssertEqual(result.trackingStatement, "SET SESSION session_track_system_variables = 'character_set_client'")
+        XCTAssertEqual(result.characterSetStatement, "SET NAMES 'utf8mb4'")
         XCTAssertEqual(result.characterSet, "utf8mb4")
+    }
+
+    /// A tracking statement that fails does not decide the character set: the session is in the
+    /// one its own statement left it in. On a server too old to have the tracking variable, the
+    /// move to the fallback still counts.
+    func testTheTwoOutcomesAreIndependent() {
+        let result = plan(reported: "swe7", tracking: "")
+        XCTAssertNotNil(result.trackingStatement, "an old server is still asked, and may refuse")
+        XCTAssertEqual(result.characterSetStatement, "SET NAMES 'utf8mb4'")
+        XCTAssertEqual(result.characterSet, "utf8mb4", "which is where a successful move leaves it")
+        XCTAssertEqual(result.characterSetWithoutStatements, "swe7", "and where a failed one leaves it")
     }
 
     /// The name comes back in the spelling the encoding table is keyed by, which matches
@@ -104,7 +116,8 @@ final class SASessionStartupPlanTests: XCTestCase {
     /// on a name nothing can convert for.
     func testNoReportedCharacterSetMovesToTheFallback() {
         let result = plan(reported: nil, tracking: "character_set_client")
-        XCTAssertEqual(result.statements, ["SET NAMES 'utf8mb4'"])
+        XCTAssertNil(result.trackingStatement)
+        XCTAssertEqual(result.characterSetStatement, "SET NAMES 'utf8mb4'")
         XCTAssertTrue(result.movesToAnotherCharacterSet)
     }
 }

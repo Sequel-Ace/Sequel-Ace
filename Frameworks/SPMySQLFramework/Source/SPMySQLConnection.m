@@ -1528,21 +1528,25 @@ asm(".desc ___crashreporter_info__, 0x10");
 		               trackingList:[variables objectForKey:@"session_track_system_variables"]
 		                      quote:^NSString *(NSString *value) { return [value mySQLTickQuotedString]; }
 		           serverIsProxySQL:^BOOL{ return [self _serverIsProxySQL]; }];
-	BOOL startupStatementsSucceeded = YES;
-	for (NSString *statement in [startupPlan statements]) {
-		[self queryString:statement];
+	// The two statements are run apart because their outcomes mean different things: a failed
+	// tracking statement costs later changes being reported, which the session survives, while a
+	// failed SET NAMES decides which character set the session is actually in.
+	if ([startupPlan trackingStatement]) {
+		[self queryString:[startupPlan trackingStatement]];
 		if ([self queryErrored]) {
-			startupStatementsSucceeded = NO;
-			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", statement, [self lastErrorMessage]);
+			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
 		}
 	}
-	if ([startupPlan movesToAnotherCharacterSet]) {
+	if ([startupPlan characterSetStatement]) {
 		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session to %@.",
 		      retrievedEncoding, [startupPlan characterSet]);
+		[self queryString:[startupPlan characterSetStatement]];
+		retrievedEncoding = [self queryErrored]
+			? [startupPlan characterSetWithoutStatements]
+			: [startupPlan characterSet];
+	} else {
+		retrievedEncoding = [startupPlan characterSet];
 	}
-	retrievedEncoding = startupStatementsSucceeded
-		? [startupPlan characterSet]
-		: [startupPlan characterSetWithoutStatements];
 
 	// Update instance variables
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];

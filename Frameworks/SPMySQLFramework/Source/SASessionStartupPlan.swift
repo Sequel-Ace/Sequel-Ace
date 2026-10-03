@@ -18,26 +18,36 @@ import Foundation
 @objc(SASessionStartupPlan)
 public final class SASessionStartupPlan: NSObject {
 
-    /// The statements to run on the session, in order. Empty when nothing needs settling.
-    @objc public let statements: [String]
+    /// The statement that makes the server report later changes, or nil when it already does.
+    ///
+    /// Kept apart from the one below because their outcomes mean different things: this one
+    /// failing costs later changes being reported, which the session survives, while the other
+    /// one failing decides which character set the session is actually in.
+    @objc public let trackingStatement: String?
 
-    /// The character set the session is in once the statements have run.
+    /// The statement that moves the session to a character set values can be converted for, or
+    /// nil when the one it reported already is.
+    @objc public let characterSetStatement: String?
+
+    /// The character set the session is in once ``characterSetStatement`` has run - or the one it
+    /// reported, when none was needed.
     @objc public let characterSet: String
 
-    /// The character set the session stays in if a statement fails.
+    /// The character set the session stays in if ``characterSetStatement`` fails. A server too
+    /// old to take the fallback keeps what it reported.
     @objc public let characterSetWithoutStatements: String
 
     /// Whether the character set reported cannot be carried, so the session is being moved.
-    @objc public let movesToAnotherCharacterSet: Bool
+    @objc public var movesToAnotherCharacterSet: Bool { characterSetStatement != nil }
 
-    private init(statements: [String],
+    private init(trackingStatement: String?,
+                 characterSetStatement: String?,
                  characterSet: String,
-                 characterSetWithoutStatements: String,
-                 movesToAnotherCharacterSet: Bool) {
-        self.statements = statements
+                 characterSetWithoutStatements: String) {
+        self.trackingStatement = trackingStatement
+        self.characterSetStatement = characterSetStatement
         self.characterSet = characterSet
         self.characterSetWithoutStatements = characterSetWithoutStatements
-        self.movesToAnotherCharacterSet = movesToAnotherCharacterSet
         super.init()
     }
 
@@ -56,13 +66,13 @@ public final class SASessionStartupPlan: NSObject {
     ///   - quote: Quotes a value for a statement, as the server expects it.
     ///   - serverIsProxySQL: Answers whether the connection is served by ProxySQL. Asked at most
     ///     once, and only when a tracking statement would be sent.
-    /// - Returns: The statements to run and the character set they leave the session in.
+    /// - Returns: The statements to run, each with what its outcome means.
     @objc(planForReportedCharacterSet:trackingList:quote:serverIsProxySQL:)
     public static func plan(forReportedCharacterSet reportedCharacterSet: String?,
                             trackingList: String?,
                             quote: (String) -> String,
                             serverIsProxySQL: () -> Bool) -> SASessionStartupPlan {
-        var statements: [String] = []
+        var trackingStatement: String?
 
         // Escaping follows what the session reports, and the client library only learns of a
         // SET NAMES through the server's session-state tracking. A server that does not list
@@ -70,7 +80,7 @@ public final class SASessionStartupPlan: NSObject {
         // being escaped for the character set the connection last set itself.
         if let tracking = SASessionStateTracking.trackingListToSet(givenCurrentList: trackingList),
            !serverIsProxySQL() {
-            statements.append("SET SESSION session_track_system_variables = \(quote(tracking))")
+            trackingStatement = "SET SESSION session_track_system_variables = \(quote(tracking))"
         }
 
         // A session can end up in a character set that was never asked for - a server default, or
@@ -83,17 +93,16 @@ public final class SASessionStartupPlan: NSObject {
         let reported = reportedCharacterSet ?? ""
         if let carried = SAConnectionCharacterSets.carriableName(forCharacterSet: reported) {
             // In the spelling the encoding table is keyed by, which it matches case-sensitively.
-            return SASessionStartupPlan(statements: statements,
+            return SASessionStartupPlan(trackingStatement: trackingStatement,
+                                        characterSetStatement: nil,
                                         characterSet: carried,
-                                        characterSetWithoutStatements: carried,
-                                        movesToAnotherCharacterSet: false)
+                                        characterSetWithoutStatements: carried)
         }
 
         let fallback = SAConnectionCharacterSets.fallbackCharacterSet
-        statements.append("SET NAMES \(quote(fallback))")
-        return SASessionStartupPlan(statements: statements,
+        return SASessionStartupPlan(trackingStatement: trackingStatement,
+                                    characterSetStatement: "SET NAMES \(quote(fallback))",
                                     characterSet: fallback,
-                                    characterSetWithoutStatements: reported,
-                                    movesToAnotherCharacterSet: true)
+                                    characterSetWithoutStatements: reported)
     }
 }
