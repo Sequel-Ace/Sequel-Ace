@@ -594,8 +594,11 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
     SPLog(@"calling _pingConnectionUsingLoopDelay");
 	// Confirm whether the connection is still responding by using a ping
-	// A connection configured with a shorter timeout keeps it; the budget only caps.
-	NSUInteger checkPingTimeout = [SAConnectionCheckBudget pingTimeoutForConfiguredTimeout:timeout];
+	// A connection configured with a shorter timeout keeps it; the budget only caps. A session with
+	// a transaction open is not cut short: the cut costs the session, and the server rolls the
+	// transaction back, so a server that is only slow to answer would lose uncommitted work.
+	NSUInteger checkPingTimeout = [SAConnectionCheckBudget checkPingTimeoutForConfiguredTimeout:timeout
+	                                                                 sessionHasOpenTransaction:[self sessionHasOpenTransaction]];
 	BOOL connectionVerified = [self _pingConnectionUsingLoopDelay:400 timeout:checkPingTimeout];
     SPLog(@"_pingConnectionUsingLoopDelay finished");
 

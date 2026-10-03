@@ -104,4 +104,28 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
             + Double(SAConnectionCheckBudget.connectTimeout(forConfiguredTimeout: 30))
         XCTAssertLessThan(worstCase, 30)
     }
+    /// The check's ping is cut short - but not on a session with a transaction open, where the cut
+    /// costs the session and the server rolls the transaction back. Such a session gets the same
+    /// floor the keepalive has, for the same reason.
+    func testTheCheckPingIsNotCutShortWithATransactionOpen() {
+        for configured in [UInt(0), 1, 3, 5, 10, 30, 120] {
+            XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: configured,
+                                                                    sessionHasOpenTransaction: false),
+                           SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: configured))
+            XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: configured,
+                                                                    sessionHasOpenTransaction: true),
+                           SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: configured))
+        }
+        // Concretely: a server that takes eight seconds to answer keeps a session that has work in
+        // it, and loses one that has none.
+        XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: 30,
+                                                                sessionHasOpenTransaction: true), 30)
+        XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: 30,
+                                                                sessionHasOpenTransaction: false),
+                       SAConnectionCheckBudget.pingLimit)
+        XCTAssertGreaterThan(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: 1,
+                                                                      sessionHasOpenTransaction: true),
+                             SAConnectionCheckBudget.pingLimit, "a very short timeout does not shorten it further")
+    }
+
 }

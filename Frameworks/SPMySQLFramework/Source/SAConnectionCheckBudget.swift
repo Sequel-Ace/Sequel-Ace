@@ -112,6 +112,26 @@ public final class SAConnectionCheckBudget: NSObject {
         capped(configuredTimeout, to: pingLimit)
     }
 
+    /// The ping timeout the check before a connection's next query uses.
+    ///
+    /// The check's ping is cut short, so that a route that has gone is noticed in seconds rather
+    /// than after the configured timeout. A session with a transaction open cannot afford that: a
+    /// ping cut off before its answer costs the session, and the server rolls the transaction back,
+    /// so a server that is only slow to answer would lose the user's uncommitted work. Such a
+    /// session gets ``keepAlivePingMinimum`` instead - the same floor the keepalive has had for the
+    /// same reason - and the wait that buys is bounded by the short reconnect that follows.
+    /// - Parameters:
+    ///   - configuredTimeout: The connection's configured timeout in seconds, zero for none.
+    ///   - sessionHasOpenTransaction: Whether the session last reported a transaction open.
+    /// - Returns: The ping timeout in seconds.
+    @objc(checkPingTimeoutForConfiguredTimeout:sessionHasOpenTransaction:)
+    public static func checkPingTimeout(forConfiguredTimeout configuredTimeout: UInt,
+                                        sessionHasOpenTransaction: Bool) -> UInt {
+        sessionHasOpenTransaction
+            ? keepAlivePingTimeout(forConfiguredTimeout: configuredTimeout)
+            : pingTimeout(forConfiguredTimeout: configuredTimeout)
+    }
+
     /// The network wait a check-triggered reconnect uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
     /// - Returns: The shorter of the configured timeout and ``networkWaitLimit``, in seconds.
