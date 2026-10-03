@@ -194,6 +194,7 @@
 		2E69A3914D17A0971CD68A09 /* SATypeAheadMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC963BC8D32F5BF63842F4AF /* SATypeAheadMatcher.swift */; };
 		302DF8917DC7950ACEC08BEB /* SAQueryFavoriteStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812D779A61DFF497CD129924 /* SAQueryFavoriteStoreTests.swift */; };
 		32F9E22AF3964434B1429591 /* SATextViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB59B1CBC3F48418228E1EC /* SATextViewDelegate.swift */; };
+		33C3E41F77A1BEF1D611A511 /* SACodePointLengthAndMySQLDateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */; };
 		380D266BBBC36C450828626B /* SAMarkedTextInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2617B1FEDA3776DCA242666C /* SAMarkedTextInputState.swift */; };
 		380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 380F4EF40FC0B68F00B0BFD7 /* SPStringAdditionsTests.m */; };
 		384582C40FB95FF800DDACB6 /* func-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C30FB95FF800DDACB6 /* func-small.png */; };
@@ -1464,6 +1465,7 @@
 		73F70A941E4E547500636550 /* SPJSONFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPJSONFormatter.h; sourceTree = "<group>"; };
 		73F70A951E4E547500636550 /* SPJSONFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPJSONFormatter.m; sourceTree = "<group>"; };
 		7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADragPasteboardTests.swift; sourceTree = "<group>"; };
+		7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACodePointLengthAndMySQLDateTests.swift; sourceTree = "<group>"; };
 		7AC51026DDFB4980A84A78F1 /* SPAppController+MCP.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SPAppController+MCP.swift"; sourceTree = "<group>"; };
 		7D53166D77A40496B91F45A9 /* SAKeychainNamingCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainNamingCharacterizationTests.swift; sourceTree = "<group>"; };
 		812D779A61DFF497CD129924 /* SAQueryFavoriteStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAQueryFavoriteStoreTests.swift; sourceTree = "<group>"; };
@@ -2942,6 +2944,7 @@
 				51AC3BA83047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift */,
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 				49A74A9F19E546A0AB95B7AA /* SATableReloadRetryPolicyTests.swift */,
+				7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3795,6 +3798,7 @@
 				FEA466FB9F9F757D557F334B /* SATypeAheadSelectionLoadTests.swift in Sources */,
 				F2DC12897FE531483FA55474 /* SATableReloadRetryPolicy.swift in Sources */,
 				2DEA028C8FA0650277377586 /* SATableReloadRetryPolicyTests.swift in Sources */,
+				33C3E41F77A1BEF1D611A511 /* SACodePointLengthAndMySQLDateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

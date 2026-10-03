@@ -20,14 +20,14 @@ public enum SASQLCommentSyntax {
 
     /// Whether a scalar may follow `--` for it to start a comment: MySQL's
     /// lexer requires a space or control character there (tab, newline,
-    /// carriage return, form feed, vertical tab …).
+    /// carriage return, form feed, vertical tab and DEL).
     public static func isCommentWhitespace(_ scalar: Unicode.Scalar) -> Bool {
-        scalar.value <= 0x20
+        scalar.value <= 0x20 || scalar.value == 0x7F
     }
 
     /// `Character` form of `isCommentWhitespace(_:)`; "\r\n" qualifies.
     public static func isCommentWhitespace(_ character: Character) -> Bool {
-        character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
+        character.unicodeScalars.allSatisfy { isCommentWhitespace($0) }
     }
 
     /// Whether a scalar ends a `#` or `-- ` comment. MySQL ends them at a line
