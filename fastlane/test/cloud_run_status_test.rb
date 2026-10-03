@@ -299,9 +299,100 @@ class CloudRunStatusTest < Minitest::Test
     assert_nil client.find_arguments
   end
 
+  def test_verified_artifacts_do_not_query_expired_missing_or_forbidden_downloads
+    [[], SequelAceRelease::APIError.new("App Store Connect API returned HTTP 404"),
+     SequelAceRelease::APIError.new("App Store Connect API returned HTTP 403")].each do |artifacts|
+      client = Client.new(run: cloud_run("COMPLETE", "SUCCEEDED"), builds: [exact_build], artifacts: artifacts)
+
+      result = readiness_for(client, require_downloadable_artifact: false)
+
+      assert_equal "ready", result.fetch("readiness")
+      assert_equal "verified_artifacts_exact_build_ready", result.fetch("reason")
+      assert_nil client.artifact_run_id
+      assert_equal "run-id", client.find_arguments.fetch(:run_id)
+      assert_equal "a" * 40, client.find_arguments.fetch(:commit)
+      assert_equal "production/5.3.2-20105", client.find_arguments.fetch(:tag)
+    end
+  end
+
+  def test_verified_artifacts_still_reject_failed_or_wrong_assigned_builds
+    [cloud_run("COMPLETE", "FAILED"),
+     cloud_run("COMPLETE", "SUCCEEDED").merge("number" => 20_104),
+     cloud_run("COMPLETE", "SUCCEEDED").merge("number" => 20_106)].each do |run|
+      client = Client.new(run: run, builds: [exact_build])
+
+      assert_equal "failed", readiness_for(client, require_downloadable_artifact: false).fetch("readiness")
+      assert_nil client.artifact_run_id
+    end
+  end
+
+  def test_verified_artifacts_still_require_the_exact_app_version_platform_and_build
+    [{ "app_id" => "different-app" }, { "version" => "5.3.3" },
+     { "platform" => "IOS" }, { "build" => 20_106 }].each do |changes|
+      client = Client.new(run: cloud_run("COMPLETE", "SUCCEEDED"), builds: [exact_build.merge(changes)])
+
+      assert_raises(SequelAceRelease::ValidationError) do
+        readiness_for(client, require_downloadable_artifact: false)
+      end
+      assert_nil client.artifact_run_id
+    end
+    missing = Client.new(run: nil)
+    assert_equal "pending", readiness_for(missing, require_downloadable_artifact: false).fetch("readiness")
+    assert_nil missing.artifact_run_id
+  end
+
+  def test_verified_artifacts_still_reject_a_different_run_id
+    client = Client.new(run: cloud_run("COMPLETE", "SUCCEEDED").merge("id" => "other-run"), builds: [exact_build])
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      readiness_for(client, require_downloadable_artifact: false)
+    end
+
+    assert_includes error.message, "different build-run ID"
+    assert_nil client.build_run_id
+    assert_nil client.artifact_run_id
+  end
+
+  def test_verified_artifacts_preserve_the_asc_clients_source_identity_filter
+    [{ "workflow_id" => "different-workflow" }, { "source_commit" => "b" * 40 },
+     { "git_reference" => "production/5.3.3-20105" }].each do |changes|
+      client = SequelAceRelease::AppStoreConnectClient.allocate
+      run = cloud_run("COMPLETE", "SUCCEEDED").merge(changes)
+      client.define_singleton_method(:build_run) { |_run_id| run }
+      client.define_singleton_method(:cloud_builds_for_run) { |_| raise "Wrong source identity queried builds" }
+      client.define_singleton_method(:run_artifacts) { |_| raise "Wrong source identity queried artifacts" }
+
+      result = readiness_for(client, require_downloadable_artifact: false)
+
+      assert_equal "pending", result.fetch("readiness")
+      assert_equal "run_not_found", result.fetch("reason")
+    end
+  end
+
+  def test_cli_verified_artifact_flag_preserves_the_default_collection_gate
+    [false, true].each do |verified|
+      client = Client.new(run: cloud_run("COMPLETE", "SUCCEEDED"), builds: [exact_build])
+      out = StringIO.new
+      cli = SequelAceRelease::CLI.new(out: out, err: StringIO.new, env: {})
+      arguments = ["cloud-status", "--workflow-id", "workflow-id", "--app-id", "1518036000",
+                   "--version", "5.3.2", "--tag", "production/5.3.2-20105", "--build", "20105",
+                   "--run-id", "run-id", "--commit", "a" * 40]
+      arguments << "--artifacts-already-verified" if verified
+
+      cli.stub(:app_store_client, client) { assert_equal 0, cli.run(arguments) }
+
+      assert_equal verified ? "ready" : "pending", JSON.parse(out.string).fetch("readiness")
+      if verified
+        assert_nil client.artifact_run_id
+      else
+        assert_equal "run-id", client.artifact_run_id
+      end
+    end
+  end
+
   private
 
-  def readiness_for(client, run_id: "run-id", build: 20_105)
+  def readiness_for(client, run_id: "run-id", build: 20_105, require_downloadable_artifact: true)
     SequelAceRelease::CloudRunStatus.new(client: client).readiness(
       workflow_id: "workflow-id",
       app_id: "1518036000",
@@ -309,7 +400,8 @@ class CloudRunStatusTest < Minitest::Test
       tag: "production/5.3.2-20105",
       build: build,
       commit: "a" * 40,
-      run_id: run_id
+      run_id: run_id,
+      require_downloadable_artifact: require_downloadable_artifact
     )
   end
 

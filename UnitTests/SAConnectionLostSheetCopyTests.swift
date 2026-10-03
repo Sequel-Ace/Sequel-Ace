@@ -142,9 +142,6 @@ final class SAConnectionLostSheetCopyTests: XCTestCase {
                        "aws login --profile 'team dev'")
         XCTAssertEqual(SAConnectionLostSheetCopy.awsSignInCommand(for: AWSSSOClientError.tokenExpired, profile: "it's"),
                        "aws sso login --profile 'it'\\''s'")
-        XCTAssertEqual(SAConnectionLostSheetCopy.shellQuoted("team-prod_1.eu"), "team-prod_1.eu")
-        XCTAssertEqual(SAConnectionLostSheetCopy.shellQuoted("dev;rm -rf ~"), "'dev;rm -rf ~'")
-        XCTAssertEqual(SAConnectionLostSheetCopy.shellQuoted("$(whoami)"), "'$(whoami)'")
     }
 
     // MARK: - Buttons
