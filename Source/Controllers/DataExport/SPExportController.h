@@ -37,6 +37,7 @@
 @class SPServerSupport;
 @class SPCSVExporter;
 @class SPXMLExporter;
+@class SAJSONExporter;
 @class SPExportFile;
 
 /**
@@ -125,6 +126,9 @@
 
 	// Dot
 	IBOutlet NSButton *exportDotForceLowerTableNamesCheck;
+
+	// JSON
+	IBOutlet NSButton *exportJSONPrettyPrintCheck;
 
 	/**
 	 * Whether the awakeFromNib routine has already been run
@@ -305,6 +309,7 @@
 
 - (SPCSVExporter *)initializeCSVExporterForTable:(NSString *)table orDataArray:(NSArray *)dataArray;
 - (SPXMLExporter *)initializeXMLExporterForTable:(NSString *)table orDataArray:(NSArray *)dataArray;
+- (SAJSONExporter *)initializeJSONExporterForTable:(NSString *)table orDataArray:(NSArray *)dataArray;
 
 #pragma mark - SPExportFileUtilities
 
