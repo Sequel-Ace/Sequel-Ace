@@ -30,6 +30,7 @@
 
 #import "Ping & KeepAlive.h"
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import "Locking.h"
 #import <pthread.h>
 #include <stdio.h>
@@ -149,8 +150,13 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
-	// as before: the connection's own timeout where it has one, thirty seconds otherwise
-	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:(timeout > 0 ? timeout : 30)];
+	// A ping cut off before its answer costs the session, and any transaction it has open, so a
+	// very short configured timeout does not shorten it further - SAConnectionCheckBudget keeps a
+	// minimum. Without a configured timeout it is thirty seconds, as before.
+	NSUInteger pingTimeout = timeout > 0
+		? [SAConnectionCheckBudget keepAlivePingTimeoutForConfiguredTimeout:timeout]
+		: 30;
+	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:pingTimeout];
 }
 
 /**

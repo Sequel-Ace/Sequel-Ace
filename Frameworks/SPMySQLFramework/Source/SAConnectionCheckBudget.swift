@@ -32,6 +32,40 @@ public final class SAConnectionAttemptBudget: NSObject {
     /// Whether ``connectTimeout`` differs from the connection's configured timeout.
     @objc public let overridesConfiguredTimeout: Bool
 
+    /// The seconds of ``connectTimeout`` still to spend after the attempt has been running this
+    /// long.
+    ///
+    /// The budget covers the whole attempt, so the stages it passes through - waiting for a
+    /// proxy to go idle, waiting for it to connect, then connecting to the server - share it
+    /// rather than each starting it afresh. A budget that only caps nothing in particular
+    /// (``overridesConfiguredTimeout`` false) is left to the configured timeout, which each
+    /// stage applies as it always did.
+    /// - Parameter elapsed: How long the attempt has been running, in seconds.
+    /// - Returns: What is left, never below zero.
+    @objc(remainingSecondsAfterSeconds:)
+    public func remainingSeconds(afterSeconds elapsed: Double) -> Double {
+        guard overridesConfiguredTimeout else {
+            return Double(connectTimeout)
+        }
+        return max(0, Double(connectTimeout) - max(0, elapsed))
+    }
+
+    /// The connect timeout to hand the client library after the attempt has been running this
+    /// long.
+    ///
+    /// Zero means "the configured timeout", which is what an attempt that is not capped gets. A
+    /// capped attempt whose budget is spent gets the smallest limit that is still a limit, since
+    /// zero there would mean no limit at all - the opposite of what is left.
+    /// - Parameter elapsed: How long the attempt has been running, in seconds.
+    /// - Returns: The timeout in seconds, zero for the configured one.
+    @objc(remainingConnectTimeoutAfterSeconds:)
+    public func remainingConnectTimeout(afterSeconds elapsed: Double) -> UInt {
+        guard overridesConfiguredTimeout else {
+            return 0
+        }
+        return max(1, UInt(remainingSeconds(afterSeconds: elapsed).rounded(.up)))
+    }
+
     /// Creates a budget.
     /// - Parameters:
     ///   - networkWait: How long to wait for a route, in seconds.

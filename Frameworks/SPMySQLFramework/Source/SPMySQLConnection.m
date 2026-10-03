@@ -1215,7 +1215,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// entering this method would otherwise overwrite the limit of an attempt already running.
 	SAConnectionAttemptBudget *attemptBudget = [SAConnectionCheckBudget
 		attemptBudgetForConfiguredTimeout:timeout userEndedWait:NO afterFailedCheck:afterFailedCheck];
-	NSUInteger attemptConnectTimeout = [attemptBudget overridesConfiguredTimeout] ? [attemptBudget connectTimeout] : 0;
+	// One clock for the whole attempt: the stages below share the budget instead of each
+	// starting it afresh, so a proxy that takes its time does not add to what connecting may
+	// then spend.
+	uint64_t attemptStart_t = _monotonicTime();
 	BOOL reconnectSucceeded = NO;
     NSString *timeZoneIdentifierToRestore = nil;
 
@@ -1289,9 +1292,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
 			// The proxy's own connection is part of the attempt, so it shares its budget. A
 			// budget of zero carries the configured timeout's "no limit" through unchanged.
-			NSUInteger proxyWaitLimit = [attemptBudget overridesConfiguredTimeout]
-				? [attemptBudget connectTimeout]
-				: timeout;
+			// What is left of the attempt's budget, which the proxy shares with the connect
+			// that follows it. Without a budget this is the configured timeout, as before.
+			double configuredTimeout = (double)timeout;
+			double (^proxyWaitLimit)(void) = ^double{
+				return [attemptBudget overridesConfiguredTimeout]
+					? [attemptBudget remainingSecondsAfterSeconds:_timeIntervalSinceMonotonicTime(attemptStart_t)]
+					: configuredTimeout;
+			};
 
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
 			// to allow it to disconnect.
@@ -1305,7 +1313,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > proxyWaitLimit) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > proxyWaitLimit()) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
@@ -1339,7 +1347,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				}
 
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (proxyWaitLimit + 1)) {
+				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (proxyWaitLimit() + 1)) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;
@@ -1373,7 +1381,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If not using a proxy, or if the proxy successfully connected, trigger a connection
 		if (![[NSThread currentThread] isCancelled] && (!proxy || [proxy state] == SPMySQLProxyConnected)) {
-			[self _connectUsingConnectTimeout:attemptConnectTimeout];
+			[self _connectUsingConnectTimeout:[attemptBudget remainingConnectTimeoutAfterSeconds:_timeIntervalSinceMonotonicTime(attemptStart_t)]];
 		} else if ([[NSThread currentThread] isCancelled] && proxy) {
 			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
 		}
@@ -1421,7 +1429,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 				default:
 					reconnectingThread = NULL;
                     SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
-					reconnectSucceeded = [self _reconnectAllowingRetries:YES afterFailedCheck:afterFailedCheck];
+					// The user asked for this one, so it is theirs to wait for: it runs on the
+					// configured timeout rather than on the check's limits, which exist to keep
+					// the interface from hanging while nobody has been asked anything. A
+					// connection that legitimately needs longer - a slow proxy, or an
+					// authentication handshake with a thirty-second timeout - could otherwise
+					// never come back through this dialog.
+					reconnectSucceeded = [self _reconnectAllowingRetries:YES afterFailedCheck:NO];
 			}
 		}
 	}

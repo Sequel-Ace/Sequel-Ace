@@ -98,6 +98,41 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
     }
 
     /// The check stays well below the default timeout.
+    /// The stages of one attempt share its budget rather than each starting it afresh: a proxy
+    /// that takes its time leaves less for connecting, not the same again.
+    func testTheStagesShareOneBudget() {
+        let budget = SAConnectionCheckBudget.attemptBudget(forConfiguredTimeout: 0,
+                                                            userEndedWait: false, afterFailedCheck: true)
+        XCTAssertEqual(budget.connectTimeout, SAConnectionCheckBudget.connectLimit)
+        XCTAssertEqual(budget.remainingSeconds(afterSeconds: 0), 10, accuracy: 0.001)
+        XCTAssertEqual(budget.remainingSeconds(afterSeconds: 4), 6, accuracy: 0.001)
+        XCTAssertEqual(budget.remainingSeconds(afterSeconds: 10), 0, accuracy: 0.001)
+        XCTAssertEqual(budget.remainingSeconds(afterSeconds: 99), 0, accuracy: 0.001,
+                       "a spent budget leaves nothing, never a negative amount")
+    }
+
+    /// A spent budget still means "a limit" to the client library, which reads zero as no limit
+    /// at all - the opposite of what is left.
+    func testASpentBudgetStillMeansALimit() {
+        let budget = SAConnectionCheckBudget.attemptBudget(forConfiguredTimeout: 30,
+                                                            userEndedWait: false, afterFailedCheck: true)
+        XCTAssertEqual(budget.remainingConnectTimeout(afterSeconds: 0), 10)
+        XCTAssertEqual(budget.remainingConnectTimeout(afterSeconds: 7.5), 3, "rounded up, so nothing is lost")
+        XCTAssertEqual(budget.remainingConnectTimeout(afterSeconds: 10), 1)
+        XCTAssertEqual(budget.remainingConnectTimeout(afterSeconds: 60), 1)
+    }
+
+    /// An attempt that is not capped is left to the configured timeout at every stage, which is
+    /// what zero means to the client library.
+    func testAnUncappedAttemptIsLeftToTheConfiguredTimeout() {
+        let budget = SAConnectionCheckBudget.attemptBudget(forConfiguredTimeout: 30,
+                                                            userEndedWait: false, afterFailedCheck: false)
+        XCTAssertFalse(budget.overridesConfiguredTimeout)
+        XCTAssertEqual(budget.remainingConnectTimeout(afterSeconds: 0), 0)
+        XCTAssertEqual(budget.remainingConnectTimeout(afterSeconds: 999), 0)
+        XCTAssertEqual(budget.remainingSeconds(afterSeconds: 999), 30, accuracy: 0.001)
+    }
+
     /// The connection carries the budget into the attempt. Without this the budget is a table
     /// nothing reads: the ping is bounded and the reconnect that follows it is not, which is the
     /// whole of what a dropped route costs.
