@@ -1520,51 +1520,29 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// should be encoded in utf8, too, the character got lost.
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
 
-	// Escaping follows what the session reports, and the client library only learns of a
-	// SET NAMES through the server's session-state tracking. A server that does not list
-	// character_set_client there leaves such a statement invisible, and values would go on
-	// being escaped for the character set this connection last set itself. The variable is
-	// settable per session, so the tracking is turned on here rather than assumed. Its value
-	// comes from the SHOW VARIABLES above, so this costs no extra round trip when nothing
-	// needs changing; a server without the variable simply errors and is left as it is.
-	NSString *trackingList = [SASessionStateTracking
-		trackingListToSetGivenCurrentList:[variables objectForKey:@"session_track_system_variables"]];
-	if (trackingList) {
-		// ProxySQL does not track this variable either, and setting one it does not know pins
-		// the connection to its current hostgroup, which breaks every later query that should
-		// route elsewhere - the same trap as information_schema_stats_expiry below
-		// (https://github.com/Sequel-Ace/Sequel-Ace/issues/2006). The check costs a round trip,
-		// so it is only made when something would actually be set, which a server at its
-		// default never needs. Behind ProxySQL a SET NAMES the user runs therefore stays
-		// invisible to the escaper, exactly as it is on main.
-		if (![self _serverIsProxySQL]) {
-			[self queryString:[NSString stringWithFormat:@"SET SESSION session_track_system_variables = %@",
-			                   [trackingList mySQLTickQuotedString]]];
-			if ([self queryErrored]) {
-				SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
-			}
+	// What a session still needs once it has reported its variables - that the server will
+	// report later character set changes, and that the one it is in can be converted for - is
+	// worked out by SASessionStartupPlan. Only the statements it returns are run here.
+	SASessionStartupPlan *startupPlan = [SASessionStartupPlan
+		planForReportedCharacterSet:retrievedEncoding
+		               trackingList:[variables objectForKey:@"session_track_system_variables"]
+		                      quote:^NSString *(NSString *value) { return [value mySQLTickQuotedString]; }
+		           serverIsProxySQL:^BOOL{ return [self _serverIsProxySQL]; }];
+	BOOL startupStatementsSucceeded = YES;
+	for (NSString *statement in [startupPlan statements]) {
+		[self queryString:statement];
+		if ([self queryErrored]) {
+			startupStatementsSucceeded = NO;
+			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", statement, [self lastErrorMessage]);
 		}
 	}
-
-	// The session can end up in a character set that was never asked for - a server default,
-	// or an init_connect that runs SET NAMES - and this framework has no string encoding for
-	// every one of them. Reading such a session's bytes as UTF-8 reinterprets them instead of
-	// converting them, so the session is moved to a character set that can be carried. The
-	// server converts between a table's own character set and the session's, so this puts no
-	// data out of reach. A server too old to know the fallback keeps what it reported.
-	NSString *carriedEncoding = [SAConnectionCharacterSets carriableNameForCharacterSet:retrievedEncoding];
-	if (carriedEncoding) {
-		// In the spelling the encoding table is keyed by, which it matches case-sensitively.
-		retrievedEncoding = carriedEncoding;
-	} else {
-		NSString *fallback = [SAConnectionCharacterSets fallbackCharacterSet];
+	if ([startupPlan movesToAnotherCharacterSet]) {
 		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session to %@.",
-		      retrievedEncoding, fallback);
-		[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [fallback mySQLTickQuotedString]]];
-		if (![self queryErrored]) {
-			retrievedEncoding = fallback;
-		}
+		      retrievedEncoding, [startupPlan characterSet]);
 	}
+	retrievedEncoding = startupStatementsSucceeded
+		? [startupPlan characterSet]
+		: [startupPlan characterSetWithoutStatements];
 
 	// Update instance variables
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];
