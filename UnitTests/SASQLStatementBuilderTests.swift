@@ -252,4 +252,308 @@ final class SASQLStatementBuilderTests: XCTestCase {
             )
         )
     }
+
+    // MARK: - UPDATE origin (the metadata the caller supplies)
+
+    /// A query result field shaped as the server delivers it: `name` is whatever the SELECT
+    /// wrote, `org_name` the column actually read, `org_table`/`db` where it lives, and
+    /// `PRI_KEY_FLAG` whether it is part of the key.
+    private func queryField(_ name: String, origin: String, table: String = "people", database: String = "mydb", keyFlagged: Bool = false) -> [String: Any] {
+        [
+            "name": name,
+            "org_name": origin,
+            "org_table": table,
+            "db": database,
+            "PRI_KEY_FLAG": keyFlagged ? 1 : 0,
+        ]
+    }
+
+    /// A table content field shaped as the SHOW CREATE TABLE parse delivers it: the column is
+    /// the table's own, and only key columns carry `isprimarykey`.
+    private func contentField(_ name: String, keyFlagged: Bool = false) -> [String: Any] {
+        var field: [String: Any] = ["name": name]
+        if keyFlagged { field["isprimarykey"] = 1 }
+        return field
+    }
+
+    /// The UPDATE path must follow where a column really came from — `org_name` — not the
+    /// alias the SELECT gave it, which names no column to assign or match.
+    func testFieldOriginsFollowTheServersOriginMetadataRatherThanAliases() {
+        let origins = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("user_label", origin: "name"),
+                queryField("The Key", origin: "id", keyFlagged: true),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertEqual(origins.map(\.name), ["name", "id"])
+        XCTAssertEqual(origins.map(\.table), ["people", "people"])
+        XCTAssertEqual(origins.map(\.database), ["mydb", "mydb"])
+        XCTAssertEqual(origins.map(\.primaryKeyFlagged), [false, true])
+    }
+
+    /// Table content metadata carries no origin fields of its own — its columns belong to the
+    /// table and database the caller passes in.
+    func testFieldOriginsFallBackToTheTableMetadata() {
+        let origins = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                contentField("tenant", keyFlagged: true),
+                contentField("name"),
+            ],
+            table: "people",
+            database: "mydb"
+        )
+
+        XCTAssertEqual(origins.map(\.name), ["tenant", "name"])
+        XCTAssertEqual(origins.map(\.table), ["people", "people"])
+        XCTAssertEqual(origins.map(\.database), ["mydb", "mydb"])
+        XCTAssertEqual(origins.map(\.primaryKeyFlagged), [true, false])
+    }
+
+    /// An expression such as `SELECT COUNT(*)` read no column, so nothing in the row ties it
+    /// to one to update through.
+    func testFieldsWithoutAnOriginColumnExtractAnEmptyName() {
+        let origins = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [queryField("COUNT(*)", origin: "")],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertEqual(origins.first?.name, "")
+    }
+
+    /// For a table keyed by (tenant, id), a projection carrying only tenant supplies tenant's
+    /// key flag but not id — matching on tenant alone would update every row of that tenant.
+    /// What counts is the origin table's complete key, and every part of it must be present.
+    func testAPartiallyProjectedCompositeKeyYieldsNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("tenant", origin: "tenant", keyFlagged: true),
+                queryField("name", origin: "name"),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"]))
+    }
+
+    func testACompleteCompositeKeyYieldsTheKeyIndexes() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("name", origin: "name"),
+                queryField("The Key", origin: "id", keyFlagged: true),
+                queryField("tenant", origin: "tenant", keyFlagged: true),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"])
+
+        XCTAssertEqual(origin?.table, "people")
+        XCTAssertEqual(origin?.columns, ["name", "id", "tenant"])
+        XCTAssertEqual(origin?.keyColumnIndexes, IndexSet([1, 2]))
+    }
+
+    /// The whole point of the exercise: whatever the SELECT aliased columns to, the statement
+    /// must update the origin table under its real column names.
+    func testAnAliasedProjectionUpdatesOriginColumnsOfTheOriginTable() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("user_label", origin: "name"),
+                queryField("The Key", origin: "id", keyFlagged: true),
+            ],
+            table: nil,
+            database: nil
+        )
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"])!
+
+        let sql = SASQLStatementBuilder.updateStatements(
+            table: origin.table,
+            columns: origin.columns,
+            keyColumnIndexes: origin.keyColumnIndexes,
+            rows: [["'Ada'", "1"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `people` SET `name` = 'Ada'\nWHERE `id` = 1;\n")
+    }
+
+    /// Table content metadata decides by the same rules: its key columns are the table's own
+    /// `isprimarykey` entries, projected in full.
+    func testACompleteCompositeKeyFromTableMetadataYieldsTheKeyIndexes() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                contentField("tenant", keyFlagged: true),
+                contentField("name"),
+                contentField("id", keyFlagged: true),
+            ],
+            table: "people",
+            database: "mydb"
+        )
+
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"])
+
+        XCTAssertEqual(origin?.table, "people")
+        XCTAssertEqual(origin?.columns, ["tenant", "name", "id"])
+        XCTAssertEqual(origin?.keyColumnIndexes, IndexSet([0, 2]))
+    }
+
+    func testFieldsSpanningTablesYieldNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("a", origin: "a", table: "people"),
+                queryField("b", origin: "b", table: "orders"),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["a"]))
+    }
+
+    /// `SELECT id AS a, id AS b FROM people` would assign to the same column twice, which the
+    /// server rejects.
+    func testRepeatedOriginColumnsYieldNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("a", origin: "id", keyFlagged: true),
+                queryField("b", origin: "id", keyFlagged: true),
+                queryField("c", origin: "name"),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"]))
+    }
+
+    /// A column named like a key part that the projection's own metadata did not flag means
+    /// two sources disagree, which is not something to copy statements over.
+    func testAKeyNameTheProjectionDidNotFlagYieldsNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("id", origin: "id"),
+                queryField("name", origin: "name"),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"]))
+    }
+
+    func testAProjectionOfNothingButTheKeyYieldsNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("tenant", origin: "tenant", keyFlagged: true),
+                queryField("id", origin: "id", keyFlagged: true),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"]))
+    }
+
+    func testATableWithNoKeyYieldsNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [queryField("a", origin: "a")],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: []))
+    }
+
+    /// The caller produces the finished literal — quoting binary data needs the connection's
+    /// character set — so the builder only has to match what it is given, as-is.
+    func testABinaryKeyLiteralIsMatchedAsIs() {
+        let sql = SASQLStatementBuilder.updateStatements(
+            table: "t",
+            columns: ["id", "a"],
+            keyColumnIndexes: IndexSet(integer: 0),
+            rows: [["X'0a1b'", "'x'"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `t` SET `a` = 'x'\nWHERE `id` = X'0a1b';\n")
+    }
+
+    // MARK: - UPDATE plausibility (menu validation)
+
+    /// Menu items validate on every pass and must not talk to the server, so plausibility can
+    /// only judge the projection's own shape. A partially-projected composite key looks
+    /// plausible here and is refused at copy time, when the origin table's complete key is
+    /// known.
+    func testAPartialCompositeProjectionIsPlausibleForTheMenu() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("tenant", origin: "tenant", keyFlagged: true),
+                queryField("name", origin: "name"),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertTrue(SASQLStatementBuilder.updateCopyPlausible(forFields: fields))
+    }
+
+    func testWhatCouldNeverUpdateIsNotPlausibleForTheMenu() {
+        // An expression carries no origin column.
+        XCTAssertFalse(
+            SASQLStatementBuilder.updateCopyPlausible(
+                forFields: SASQLStatementBuilder.fieldOrigins(
+                    fromFieldDefinitions: [
+                        queryField("COUNT(*)", origin: ""),
+                        queryField("name", origin: "name"),
+                    ],
+                    table: nil,
+                    database: nil
+                )
+            )
+        )
+
+        // A join spans tables.
+        XCTAssertFalse(
+            SASQLStatementBuilder.updateCopyPlausible(
+                forFields: SASQLStatementBuilder.fieldOrigins(
+                    fromFieldDefinitions: [
+                        queryField("a", origin: "a", table: "people"),
+                        queryField("b", origin: "b", table: "orders"),
+                    ],
+                    table: nil,
+                    database: nil
+                )
+            )
+        )
+
+        // No key part at all.
+        XCTAssertFalse(
+            SASQLStatementBuilder.updateCopyPlausible(
+                forFields: SASQLStatementBuilder.fieldOrigins(
+                    fromFieldDefinitions: [
+                        queryField("a", origin: "a"),
+                        queryField("b", origin: "b"),
+                    ],
+                    table: nil,
+                    database: nil
+                )
+            )
+        )
+
+        // Nothing but the key to assign.
+        XCTAssertFalse(
+            SASQLStatementBuilder.updateCopyPlausible(
+                forFields: SASQLStatementBuilder.fieldOrigins(
+                    fromFieldDefinitions: [
+                        queryField("id", origin: "id", keyFlagged: true),
+                    ],
+                    table: nil,
+                    database: nil
+                )
+            )
+        )
+    }
 }
