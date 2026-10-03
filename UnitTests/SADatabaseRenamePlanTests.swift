@@ -472,6 +472,178 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
     /// A stand-in for the connection: records every statement and answers
     /// from a table of responses, treating anything else as a statement
     /// without a result set.
+
+    // MARK: - Recreated view column signatures
+
+    /// Checks that a view whose columns change signedness keeps the source.
+    ///
+    /// This is the case the review asked for: a subtraction of unsigned columns
+    /// is signed under NO_UNSIGNED_SUBTRACTION and unsigned without it, so a
+    /// view created under that mode and recreated from a session without it
+    /// presents a different column type while still opening without error.
+    func testUnsignedSubtractionViewChangingTypeKeepsTheSource() {
+        let server = makeServer()
+        server.respond(to: viewColumnsQuery(schema: "shop"),
+                       rows: [columnRow(view: "totals", name: "t", type: "int unsigned", nullable: "NO")])
+        server.respond(to: viewColumnsQuery(schema: "store"),
+                       rows: [columnRow(view: "totals", name: "t", type: "int", nullable: "NO")])
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP DATABASE") }, "the source is kept")
+        let message = try? XCTUnwrap(failure)
+        XCTAssertTrue(message?.contains("does not present the same columns") == true, message ?? "no message")
+        XCTAssertTrue(message?.contains("int unsigned") == true, "the message names the column as it was")
+        XCTAssertTrue(message?.contains("'shop' was kept") == true || message?.contains("kept") == true, "the message says the source was kept")
+    }
+
+    /// Checks that a changed collation on a view column keeps the source.
+    func testViewColumnChangingCollationKeepsTheSource() {
+        let server = makeServer()
+        server.respond(to: viewColumnsQuery(schema: "shop"),
+                       rows: [columnRow(view: "totals", name: "t", type: "varchar(10)", characterSet: "utf8mb4", collation: "utf8mb4_general_ci")])
+        server.respond(to: viewColumnsQuery(schema: "store"),
+                       rows: [columnRow(view: "totals", name: "t", type: "varchar(10)", characterSet: "utf8mb4", collation: "utf8mb4_0900_ai_ci")])
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP DATABASE") })
+        XCTAssertTrue(failure?.contains("utf8mb4_general_ci") == true, failure ?? "no message")
+    }
+
+    /// Checks that a recreated view with a column fewer keeps the source.
+    func testRecreatedViewMissingAColumnKeepsTheSource() {
+        let server = makeServer()
+        server.respond(to: viewColumnsQuery(schema: "shop"),
+                       rows: [columnRow(view: "totals", name: "t", type: "decimal(32,0)"),
+                              columnRow(view: "totals", name: "n", type: "bigint")])
+        server.respond(to: viewColumnsQuery(schema: "store"),
+                       rows: [columnRow(view: "totals", name: "t", type: "decimal(32,0)")])
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP DATABASE") })
+        XCTAssertTrue(failure?.contains("is missing") == true, failure ?? "no message")
+    }
+
+    /// Checks that the source stays when the recreated views cannot be described.
+    func testUnreadableTargetViewColumnsKeepTheSource() {
+        let server = makeServer()
+        server.fail(viewColumnsQuery(schema: "store"), with: "SELECT command denied")
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP DATABASE") })
+        XCTAssertTrue(failure?.contains("could not be compared") == true, failure ?? "no message")
+        XCTAssertTrue(failure?.contains("SELECT command denied") == true, failure ?? "no message")
+    }
+
+    /// Checks that a recreated view the server does not describe keeps the source.
+    func testTargetViewWithoutColumnsKeepsTheSource() {
+        let server = makeServer()
+        server.respond(to: viewColumnsQuery(schema: "store"), rows: [])
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP DATABASE") })
+        XCTAssertTrue(failure?.contains("were not listed") == true, failure ?? "no message")
+    }
+
+    /// Checks that the columns are read before anything is moved, so they
+    /// describe the source as it was.
+    func testSourceViewColumnsAreReadBeforeTheMove() {
+        let server = makeServer()
+
+        _ = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        let sourceRead = server.statements.firstIndex { $0.hasPrefix(viewColumnsQuery(schema: "shop")) }
+        let created = server.statements.firstIndex { $0.hasPrefix("CREATE DATABASE") }
+        let renamed = server.statements.firstIndex { $0.hasPrefix("RENAME TABLE") }
+        XCTAssertNotNil(sourceRead)
+        XCTAssertNotNil(created)
+        XCTAssertNotNil(renamed)
+        if let sourceRead, let created, let renamed {
+            XCTAssertLessThan(sourceRead, created, "the source columns are read before the target exists")
+            XCTAssertLessThan(sourceRead, renamed, "and before any table moves")
+        }
+    }
+
+    /// Checks that a failed read of the source columns changes nothing at all.
+    func testUnreadableSourceViewColumnsChangeNothing() {
+        let server = makeServer()
+        server.fail(viewColumnsQuery(schema: "shop"), with: "SELECT command denied")
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        // the settings for reading the definitions are set and put back, but
+        // nothing is created, moved or dropped
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("CREATE DATABASE") }, "nothing was created")
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("RENAME TABLE") }, "nothing was moved")
+        XCTAssertFalse(server.statements.contains { $0.hasPrefix("DROP ") }, "nothing was dropped")
+        XCTAssertTrue(failure?.contains("SELECT command denied") == true, failure ?? "no message")
+    }
+
+    /// Checks that matching columns let the source be dropped as before.
+    func testMatchingViewColumnsDropTheSource() {
+        let server = makeServer()
+
+        let failure = server.executor.rename("shop", to: "store", encoding: nil, collation: nil)
+
+        XCTAssertNil(failure)
+        XCTAssertTrue(server.statements.contains("DROP DATABASE `shop`"))
+    }
+
+    /// Checks that a column signature is read from an information_schema row.
+    func testSignatureReadsOneRow() {
+        let signatures = SAViewColumnSignature.signatures(fromRows: [
+            ["totals", "t", "int unsigned", "NO", NSNull(), NSNull()],
+            ["totals", "label", "varchar(10)", "YES", "utf8mb4", "utf8mb4_general_ci"],
+            ["other", "x", "bigint", "YES", NSNull(), NSNull()],
+        ])
+
+        XCTAssertEqual(signatures["totals"]?.count, 2)
+        XCTAssertEqual(signatures["totals"]?[0].signature, "t int unsigned NOT NULL")
+        XCTAssertEqual(signatures["totals"]?[1].signature, "label varchar(10) NULL utf8mb4 utf8mb4_general_ci")
+        XCTAssertEqual(signatures["other"]?.count, 1)
+    }
+
+    /// Checks that a row without the columns the comparison needs is left out.
+    func testSignatureSkipsIncompleteRows() {
+        let signatures = SAViewColumnSignature.signatures(fromRows: [
+            ["totals", "t", "int"],
+            ["totals", "t", "int", "YES"],
+        ])
+
+        XCTAssertEqual(signatures["totals"]?.count, 1)
+    }
+
+    /// Checks what counts as the same column and what does not.
+    func testMatchesComparesEveryPart() {
+        let base = SAViewColumnSignature(name: "t", type: "int unsigned", isNullable: "NO", characterSet: nil, collation: nil)
+
+        XCTAssertTrue(base.matches(SAViewColumnSignature(name: "t", type: "int unsigned", isNullable: "NO", characterSet: nil, collation: nil)))
+        XCTAssertFalse(base.matches(SAViewColumnSignature(name: "u", type: "int unsigned", isNullable: "NO", characterSet: nil, collation: nil)))
+        XCTAssertFalse(base.matches(SAViewColumnSignature(name: "t", type: "int", isNullable: "NO", characterSet: nil, collation: nil)))
+        XCTAssertFalse(base.matches(SAViewColumnSignature(name: "t", type: "int unsigned", isNullable: "YES", characterSet: nil, collation: nil)))
+        XCTAssertFalse(base.matches(SAViewColumnSignature(name: "t", type: "int unsigned", isNullable: "NO", characterSet: "utf8mb4", collation: nil)))
+        XCTAssertFalse(base.matches(SAViewColumnSignature(name: "t", type: "int unsigned", isNullable: "NO", characterSet: nil, collation: "utf8mb4_general_ci")))
+    }
+
+    /// Checks that identical column lists report no difference.
+    func testDifferenceIsNilForTheSameColumns() {
+        let columns = [SAViewColumnSignature(name: "t", type: "int", isNullable: "YES", characterSet: nil, collation: nil)]
+
+        XCTAssertNil(SAViewColumnSignature.difference(between: columns, after: columns))
+    }
+
+    /// Checks that an added column is reported.
+    func testDifferenceReportsAnAddedColumn() {
+        let before = [SAViewColumnSignature(name: "t", type: "int", isNullable: "YES", characterSet: nil, collation: nil)]
+        let after = before + [SAViewColumnSignature(name: "n", type: "bigint", isNullable: "YES", characterSet: nil, collation: nil)]
+
+        XCTAssertEqual(SAViewColumnSignature.difference(between: before, after: after)?.contains("was added"), true)
+    }
+
     private final class FakeServer {
         var statements: [String] = []
         var responses: [(matches: (String) -> Bool, result: SADatabaseRenameStatementResult)] = []
@@ -540,6 +712,40 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
 
     private let externalViewsQuery = "SELECT TABLE_SCHEMA, TABLE_NAME, HEX(VIEW_DEFINITION) FROM information_schema.VIEWS ORDER BY TABLE_SCHEMA, TABLE_NAME"
 
+    /// The start of the statement that reads the columns of a schema's views,
+    /// up to the schema name, so a test can answer for source and target.
+    private let viewColumnsPrefix = "SELECT c.TABLE_NAME, c.COLUMN_NAME, c.COLUMN_TYPE, c.IS_NULLABLE, c.CHARACTER_SET_NAME, c.COLLATION_NAME FROM information_schema.COLUMNS c JOIN information_schema.TABLES t ON t.TABLE_SCHEMA = c.TABLE_SCHEMA AND t.TABLE_NAME = c.TABLE_NAME WHERE c.TABLE_SCHEMA = "
+
+    /// The statement that reads the columns of the views of `schema`.
+    ///
+    /// - Parameter schema: The schema name, unquoted.
+    /// - Returns: The prefix a response is registered for.
+    private func viewColumnsQuery(schema: String) -> String {
+        viewColumnsPrefix + "'\(schema)'"
+    }
+
+    /// The full statement that reads the columns of the views of `schema`.
+    ///
+    /// - Parameter schema: The schema name, unquoted.
+    /// - Returns: The statement as the executor sends it.
+    private func viewColumnsStatement(schema: String) -> String {
+        viewColumnsQuery(schema: schema) + " AND t.TABLE_TYPE = 'VIEW' ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION"
+    }
+
+    /// One `information_schema.COLUMNS` row of a view column.
+    ///
+    /// - Parameters:
+    ///   - view: The view the column belongs to.
+    ///   - name: The column's name.
+    ///   - type: `COLUMN_TYPE`, `int unsigned` and the like.
+    ///   - nullable: `IS_NULLABLE`.
+    ///   - characterSet: `CHARACTER_SET_NAME`, nil for non-text columns.
+    ///   - collation: `COLLATION_NAME`, nil for non-text columns.
+    /// - Returns: The row as the server would return it.
+    private func columnRow(view: String, name: String, type: String, nullable: String = "YES", characterSet: Any? = NSNull(), collation: Any? = NSNull()) -> [Any] {
+        [view, name, type, nullable, characterSet ?? NSNull(), collation ?? NSNull()]
+    }
+
     /// `HEX()` of a definition body, as information_schema.VIEWS would print it.
     private func hex(_ text: String) -> String {
         text.utf8.map { String(format: "%02X", $0) }.joined()
@@ -566,6 +772,14 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         // the session as the executor leaves it: the target selected, the settings restored, the same connection
         server.respond(to: checkQuery, rows: [["store", sqlMode, collation, "42"]])
         server.respond(to: showCreateViewPrefix + "`totals`", rows: [["totals", totalsDefinition, viewCharacterSet, viewCollation]])
+        // the views present the same columns before and after by default, which
+        // is what lets the source be dropped; a test that wants a difference
+        // registers its own answer for one of the two schemas
+        let viewNames = tables.filter { ($0[1] as? String)?.uppercased() == "VIEW" }.compactMap { $0[0] as? String }
+        let columns = viewNames.map { columnRow(view: $0, name: "t", type: "decimal(32,0)") }
+        // registered without the schema, so it answers for whatever source and
+        // target a test renames; a test's own answer for one schema still wins
+        server.respondByDefault(to: viewColumnsPrefix, rows: columns)
         return server
     }
 
@@ -625,6 +839,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             sessionQuery,
             "SET sql_mode = 'STRICT_TRANS_TABLES'",
             "SHOW CREATE VIEW `shop`.`totals`",
+            viewColumnsStatement(schema: "shop"),
             "CREATE DATABASE `store` DEFAULT CHARACTER SET = `utf8mb4` DEFAULT COLLATE = `utf8mb4_general_ci`",
             "RENAME TABLE `shop`.`orders` TO `store`.`orders`",
             "USE `store`",
@@ -634,6 +849,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
             "SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', collation_connection = 'utf8mb4_0900_ai_ci'",
             restoreCheckQuery,
             checkQuery,
+            viewColumnsStatement(schema: "store"),
             "DROP DATABASE `shop`"
         ])
         XCTAssertFalse(server.statements.contains { $0.hasPrefix("SET ") && $0.contains("character_set_client") })
@@ -842,7 +1058,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertEqual(server.statements.filter { $0.hasPrefix("SET ") }, ["SET collation_connection = 'utf8mb4_general_ci'", "SET collation_connection = 'utf8mb4_general_ci'"], server.statements.joined(separator: "\n"))
         let create = try XCTUnwrap(server.statements.firstIndex { $0.hasPrefix("CREATE ALGORITHM") })
         XCTAssertEqual(server.statements[create - 1], "SET collation_connection = 'utf8mb4_general_ci'")
-        XCTAssertEqual(server.statements.suffix(4), ["SET collation_connection = 'utf8mb4_general_ci'", restoreCheckQuery, checkQuery, "DROP DATABASE `shop`"])
+        XCTAssertEqual(server.statements.suffix(5), ["SET collation_connection = 'utf8mb4_general_ci'", restoreCheckQuery, checkQuery, viewColumnsStatement(schema: "store"), "DROP DATABASE `shop`"])
 
         // a SET the server refuses fails the view instead of creating it under another collation
         let refused = makeServer()
@@ -862,7 +1078,7 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let server = makeServer(quoteShowCreate: "0")
         XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertEqual(statements(of: server, from: sessionQuery).prefix(3).map { $0 }, [sessionQuery, "SET sql_mode = 'STRICT_TRANS_TABLES', sql_quote_show_create = 1", "SHOW CREATE VIEW `shop`.`totals`"])
-        XCTAssertEqual(server.statements.suffix(4), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", restoreCheckQuery, checkQuery, "DROP DATABASE `shop`"])
+        XCTAssertEqual(server.statements.suffix(5), ["SET sql_mode = 'STRICT_TRANS_TABLES,NO_BACKSLASH_ESCAPES', sql_quote_show_create = 0, collation_connection = 'utf8mb4_0900_ai_ci'", restoreCheckQuery, checkQuery, viewColumnsStatement(schema: "store"), "DROP DATABASE `shop`"])
 
         let failing = makeServer(quoteShowCreate: "0")
         failing.fail("CREATE ALGORITHM", with: "Access denied")

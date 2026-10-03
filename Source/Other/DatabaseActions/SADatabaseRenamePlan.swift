@@ -50,6 +50,8 @@ import Foundation
     private var failedObject: String?
     private var failedObjectReason: String?
     private var dropFailureReason: String?
+    private var viewSignatureMismatch: (view: String, difference: String)?
+    private var unreadableViewSignatures: String?
 
     /// Creates the plan for renaming `sourceDatabase` to `targetDatabase` from
     /// the source database's `information_schema` rows. The rows are taken as
@@ -223,14 +225,50 @@ import Foundation
         dropFailureReason = reason ?? Self.unknownReason
     }
 
+    /// Records that a recreated view no longer presents the columns the source
+    /// view did, which keeps the source database.
+    ///
+    /// - Parameters:
+    ///   - view: The view whose columns changed.
+    ///   - difference: What changed, from ``SAViewColumnSignature/difference(between:after:)``.
+    @objc(recordViewSignatureMismatchForView:difference:)
+    public func recordViewSignatureMismatch(forView view: String, difference: String) {
+        guard viewSignatureMismatch == nil else { return }
+        viewSignatureMismatch = (view, difference)
+    }
+
+    /// Records that the columns of the views could not be read on one side of
+    /// the move, so the recreated views cannot be compared and the source stays.
+    ///
+    /// - Parameter reason: The server's error message, if any.
+    @objc(recordUnreadableViewSignatures:)
+    public func recordUnreadableViewSignatures(_ reason: String?) {
+        guard unreadableViewSignatures == nil else { return }
+        unreadableViewSignatures = reason ?? Self.unknownReason
+    }
+
     /// Whether the source database may be dropped: the rename could start,
-    /// the target exists and every object moved.
+    /// the target exists, every object moved, and every recreated view still
+    /// presents the columns it did before.
     @objc public var mayDropSourceDatabase: Bool {
         canStart && createFailureReason == nil && failedObject == nil
+            && viewSignatureMismatch == nil && unreadableViewSignatures == nil
     }
 
     /// Why the rename stopped, for the alert, or `nil` while nothing went wrong.
     @objc public var failureDescription: String? {
+        if let viewSignatureMismatch {
+            return String(
+                format: NSLocalizedString("The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied.", comment: "rename database: a recreated view's column signature differs from the source view's, so the source database is kept; %1$@ view, %2$@ target database, %3$@ source database, %4$@ what changed, %5$@ and %6$@ source database"),
+                viewSignatureMismatch.view, targetDatabase, sourceDatabase, viewSignatureMismatch.difference, sourceDatabase, sourceDatabase
+            )
+        }
+        if let unreadableViewSignatures {
+            return String(
+                format: NSLocalizedString("The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied.", comment: "rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database"),
+                targetDatabase, sourceDatabase, unreadableViewSignatures, sourceDatabase, sourceDatabase
+            )
+        }
         if let inspectionFailureReason {
             return String(
                 format: NSLocalizedString("Reading the objects of the database '%@' failed: %@ Nothing was changed.", comment: "rename database: querying information_schema failed; %1$@ source database, %2$@ server error"),
@@ -315,6 +353,136 @@ import Foundation
 }
 
 /// The outcome of rewriting a view's `CREATE` statement for the target database.
+/// The columns a view presents, as `information_schema.COLUMNS` describes
+/// them, for comparing a recreated view against the one it was copied from.
+///
+/// A view is recreated from the text of its definition, and the server works
+/// out the result columns again from scratch. That can land somewhere else
+/// than it did when the view was first created: a subtraction of unsigned
+/// columns is signed under `NO_UNSIGNED_SUBTRACTION` and unsigned without it,
+/// a string literal takes the character set of the session that creates the
+/// view, and a column's nullability follows from how the server plans the
+/// query. Opening the view proves only that it can be opened, not that it
+/// still presents the same columns, so the signatures are compared and the
+/// source is kept whenever they differ or cannot be read.
+@objc public final class SAViewColumnSignature: NSObject {
+
+    /// The column's name.
+    @objc public let name: String
+    /// The column's full type as the server prints it, `int(10) unsigned`
+    /// and `decimal(10,2)` included, so a change of signedness, width or
+    /// scale shows.
+    @objc public let type: String
+    /// `YES` when the column may be NULL.
+    @objc public let nullable: Bool
+    /// The character set of a text column, empty for other types.
+    @objc public let characterSet: String
+    /// The collation of a text column, empty for other types.
+    @objc public let collation: String
+
+    /// Creates a signature from one `information_schema.COLUMNS` row.
+    ///
+    /// - Parameters:
+    ///   - name: `COLUMN_NAME`.
+    ///   - type: `COLUMN_TYPE`.
+    ///   - isNullable: `IS_NULLABLE`, `YES` or `NO`.
+    ///   - characterSet: `CHARACTER_SET_NAME`, NULL for non-text columns.
+    ///   - collation: `COLLATION_NAME`, NULL for non-text columns.
+    @objc public init(name: String, type: String, isNullable: String, characterSet: String?, collation: String?) {
+        self.name = name
+        self.type = type
+        nullable = isNullable.uppercased() == "YES"
+        self.characterSet = characterSet ?? ""
+        self.collation = collation ?? ""
+        super.init()
+    }
+
+    /// The signature as one line, for naming a difference in the alert.
+    @objc public var signature: String {
+        var text = "\(name) \(type)\(nullable ? " NULL" : " NOT NULL")"
+        if !characterSet.isEmpty {
+            text += " \(characterSet)"
+        }
+        if !collation.isEmpty {
+            text += " \(collation)"
+        }
+        return text
+    }
+
+    /// Whether `other` describes the same column.
+    ///
+    /// - Parameter other: The column of the recreated view in the same position.
+    /// - Returns: `true` when name, type, nullability, character set and
+    ///   collation all match.
+    @objc public func matches(_ other: SAViewColumnSignature) -> Bool {
+        name.utf8.elementsEqual(other.name.utf8)
+            && type.utf8.elementsEqual(other.type.utf8)
+            && nullable == other.nullable
+            && characterSet.utf8.elementsEqual(other.characterSet.utf8)
+            && collation.utf8.elementsEqual(other.collation.utf8)
+    }
+
+    /// Reads the columns of the views of one schema from
+    /// `information_schema.COLUMNS` rows, keyed by view name.
+    ///
+    /// - Parameter rows: `TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,
+    ///   CHARACTER_SET_NAME, COLLATION_NAME` rows ordered by `TABLE_NAME` and
+    ///   `ORDINAL_POSITION`.
+    /// - Returns: The columns of each view, in the order they were read.
+    @objc public static func signatures(fromRows rows: [[Any]]) -> [String: [SAViewColumnSignature]] {
+        var result: [String: [SAViewColumnSignature]] = [:]
+        for row in rows {
+            guard row.count >= 4,
+                  let table = row[0] as? String,
+                  let name = row[1] as? String,
+                  let type = row[2] as? String,
+                  let isNullable = row[3] as? String else {
+                continue
+            }
+            let signature = SAViewColumnSignature(
+                name: name,
+                type: type,
+                isNullable: isNullable,
+                characterSet: row.count > 4 ? row[4] as? String : nil,
+                collation: row.count > 5 ? row[5] as? String : nil
+            )
+            result[table, default: []].append(signature)
+        }
+        return result
+    }
+
+    /// The first difference between the columns a view had and the ones it has
+    /// after being recreated, or `nil` while they are the same.
+    ///
+    /// - Parameters:
+    ///   - before: The columns of the source view.
+    ///   - after: The columns of the recreated view.
+    /// - Returns: A description of the first difference, for the alert.
+    @objc public static func difference(between before: [SAViewColumnSignature], after: [SAViewColumnSignature]) -> String? {
+        for (index, source) in before.enumerated() {
+            guard index < after.count else {
+                return String(
+                    format: NSLocalizedString("the column '%@' is missing", comment: "rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature"),
+                    source.signature
+                )
+            }
+            if !source.matches(after[index]) {
+                return String(
+                    format: NSLocalizedString("'%@' became '%@'", comment: "rename database: a column of a recreated view that changed; %1$@ the column as it was, %2$@ as it is now"),
+                    source.signature, after[index].signature
+                )
+            }
+        }
+        if after.count > before.count {
+            return String(
+                format: NSLocalizedString("the column '%@' was added", comment: "rename database: a column the recreated view presents that the source view did not; %@ is the column's signature"),
+                after[before.count].signature
+            )
+        }
+        return nil
+    }
+}
+
 @objc public final class SADatabaseRenameViewRewrite: NSObject {
 
     /// The statement to run, or `nil` when it could not be rewritten.
@@ -1201,6 +1369,7 @@ import Foundation
             sessionSettingsNotRestored = true
         }
         var definitions: [[UInt8]: ViewDefinition] = [:]
+        var sourceViewColumns: [String: [SAViewColumnSignature]] = [:]
         if !plan.views.isEmpty {
             let sessionResult = run("SELECT @@sql_mode, @@collation_connection, @@sql_quote_show_create, CONNECTION_ID()")
             guard let current = SessionSettings(row: sessionResult.rows?.first) else {
@@ -1250,6 +1419,22 @@ import Foundation
                 }
                 definitions[Array(view.utf8)] = ViewDefinition(statement: rewritten, references: rewrite.referencedObjects, collation: row.count > 3 ? Self.text(row[3]) : nil)
             }
+
+            // The columns the views present are read while the source is still
+            // whole, so the recreated views can be held against them. Opening a
+            // view proves only that it opens; the server works its result
+            // columns out again from the definition's text, and a subtraction
+            // under NO_UNSIGNED_SUBTRACTION, a string literal's character set
+            // or a column's nullability can land elsewhere than they did when
+            // the view was created. Nothing has been changed yet, so a read
+            // that fails here stops the rename rather than keeping the source.
+            let sourceColumns = run(Self.viewColumnsStatement(schema: schema))
+            guard let sourceColumnRows = sourceColumns.rows else {
+                restoreSettings()
+                plan.recordInspectionFailure(sourceColumns.error)
+                return plan.failureDescription
+            }
+            sourceViewColumns = SAViewColumnSignature.signatures(fromRows: sourceColumnRows)
         }
 
         if let error = run(create).error {
@@ -1345,6 +1530,13 @@ import Foundation
                 _ = plan.recordMove(of: plan.views[plan.views.count - 1], kind: .view, succeeded: false, reason: NSLocalizedString("the connection was re-established while the views were recreated, so they may still point at the old database.", comment: "rename database: why the views are not trusted and the source is kept"))
                 return plan.failureDescription
             }
+
+            // Every view opened, and the session is the one the views were
+            // created under. What is left to establish is that they present
+            // the same columns; where they do not, or where the comparison
+            // cannot be made, the objects stay moved and the source is kept
+            // for the user to check.
+            compareViewColumns(before: sourceViewColumns, targetLiteral: targetLiteral, plan: plan)
         }
 
         guard plan.mayDropSourceDatabase else {
@@ -1952,6 +2144,70 @@ import Foundation
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty && !parsingSQLModes.contains($0.uppercased()) }
             .joined(separator: ",")
+    }
+
+    /// The statement that reads the columns of every view of one schema.
+    ///
+    /// Only views are read: a table's columns move with `RENAME TABLE` and are
+    /// the server's own, while a view's are worked out again from its
+    /// definition. The order is the one the comparison relies on.
+    ///
+    /// - Parameter schema: The schema name as a quoted literal.
+    /// - Returns: The statement to run.
+    private static func viewColumnsStatement(schema: String) -> String {
+        """
+        SELECT c.TABLE_NAME, c.COLUMN_NAME, c.COLUMN_TYPE, c.IS_NULLABLE, \
+        c.CHARACTER_SET_NAME, c.COLLATION_NAME \
+        FROM information_schema.COLUMNS c \
+        JOIN information_schema.TABLES t \
+        ON t.TABLE_SCHEMA = c.TABLE_SCHEMA AND t.TABLE_NAME = c.TABLE_NAME \
+        WHERE c.TABLE_SCHEMA = \(schema) AND t.TABLE_TYPE = 'VIEW' \
+        ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION
+        """
+    }
+
+    /// Holds the recreated views against the columns the source views had and
+    /// records the first difference, which keeps the source database.
+    ///
+    /// A view that the source side could not describe is compared too: it would
+    /// mean the comparison has nothing to stand on, and that is reported rather
+    /// than passed over. The recreated views were opened before this runs, so a
+    /// read that fails here is a failure of the comparison, not of the views.
+    ///
+    /// - Parameters:
+    ///   - before: The columns of the source views, by view name.
+    ///   - targetLiteral: The target schema name as a quoted literal.
+    ///   - plan: The plan that collects the outcome.
+    private func compareViewColumns(before: [String: [SAViewColumnSignature]], targetLiteral: String, plan: SADatabaseRenamePlan) {
+        let targetColumns = run(Self.viewColumnsStatement(schema: targetLiteral))
+        guard let targetRows = targetColumns.rows else {
+            plan.recordUnreadableViewSignatures(targetColumns.error)
+            return
+        }
+        let after = SAViewColumnSignature.signatures(fromRows: targetRows)
+
+        for view in plan.views {
+            // The server keeps the name the way it stores it, which is the way
+            // it came back from information_schema on both sides.
+            guard let sourceSignature = before[view], !sourceSignature.isEmpty else {
+                plan.recordUnreadableViewSignatures(String(
+                    format: NSLocalizedString("the columns of the view '%@' were not listed before the move.", comment: "rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view"),
+                    view
+                ))
+                return
+            }
+            guard let targetSignature = after[view], !targetSignature.isEmpty else {
+                plan.recordUnreadableViewSignatures(String(
+                    format: NSLocalizedString("the columns of the recreated view '%@' were not listed.", comment: "rename database: a recreated view whose columns information_schema did not report; %@ is the view"),
+                    view
+                ))
+                return
+            }
+            if let difference = SAViewColumnSignature.difference(between: sourceSignature, after: targetSignature) {
+                plan.recordViewSignatureMismatch(forView: view, difference: difference)
+                return
+            }
+        }
     }
 
     /// Recreates one view in the target from the definition read up front

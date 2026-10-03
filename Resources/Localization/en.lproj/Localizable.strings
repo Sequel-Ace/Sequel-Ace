@@ -4325,3 +4325,24 @@
 
 /* button that reveals a file in Finder */
 "Show in Finder" = "Show in Finder";
+
+/* rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature */
+"the column '%@' is missing" = "the column '%@' is missing";
+
+/* rename database: a column the recreated view presents that the source view did not; %@ is the column's signature */
+"the column '%@' was added" = "the column '%@' was added";
+
+/* rename database: a column of a recreated view that changed; %1$@ the column as it was, %2$@ as it is now */
+"'%@' became '%@'" = "'%1$@' became '%2$@'";
+
+/* rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view */
+"the columns of the view '%@' were not listed before the move." = "the columns of the view '%@' were not listed before the move.";
+
+/* rename database: a recreated view whose columns information_schema did not report; %@ is the view */
+"the columns of the recreated view '%@' were not listed." = "the columns of the recreated view '%@' were not listed.";
+
+/* rename database: a recreated view's column signature differs from the source view's, so the source database is kept; %1$@ view, %2$@ target database, %3$@ source database, %4$@ what changed, %5$@ and %6$@ source database */
+"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "The view '%1$@' does not present the same columns in '%2$@' as it did in '%3$@' (%4$@), so its results could differ. The objects were moved, and '%5$@' was kept; check the view and remove '%6$@' yourself once you are satisfied.";
+
+/* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
+"The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
