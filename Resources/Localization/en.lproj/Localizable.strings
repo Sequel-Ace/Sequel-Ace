@@ -2796,6 +2796,9 @@
 /* table content print heading */
 "Table Content" = "Table Content";
 
+/* table contents not loaded message */
+"Table contents not loaded" = "Table contents not loaded";
+
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "Table Content (CSV)";
 
@@ -2883,6 +2886,9 @@
 
 /* the color theme ‘%@’ already exists. */
 "The color theme ‘%@’ already exists." = "The color theme ‘%@’ already exists.";
+
+/* table column list mismatch informative message */
+"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.";
 
 /* the connection is busy. please wait and try again tooltip */
 "The connection is busy. Please wait and try again." = "The connection is busy. Please wait and try again.";
@@ -4214,3 +4220,39 @@
 
 /* Connection lost sheet: close connection button */
 "Close connection" = "Close connection";
+
+/* SQLite store problem alert title: the pinned-tables store is unusable */
+"Pinned tables are not being saved" = "Pinned tables are not being saved";
+
+/* SQLite store problem alert title: the display-format store is unusable */
+"Column display formats are not being saved" = "Column display formats are not being saved";
+
+/* SQLite store problem: what an unusable pinned-tables store means for the user */
+"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept.";
+
+/* SQLite store problem: what an unusable display-format store means for the user */
+"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Display formats you choose still work until you quit Sequel Ace, but they are not kept.";
+
+/* SQLite store problem: the folder for the app's data files is missing */
+"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace could not find or create its data folder in Application Support.";
+
+/* SQLite store problem: the data file could not be opened; the argument is its path */
+"Sequel Ace could not open the file “%@”." = "Sequel Ace could not open the file “%@”.";
+
+/* SQLite store problem: the data file could not be prepared or read; the arguments are its path and the error */
+"Sequel Ace could not use the file “%1$@”: %2$@" = "Sequel Ace could not use the file “%1$@”: %2$@";
+
+/* SQLite store problem: the data file holds entries that cannot be read; the argument is its path */
+"Sequel Ace could not read the file “%@”." = "Sequel Ace could not read the file “%@”.";
+
+/* SQLite store problem: a change could not be written to the data file; the arguments are its path and the error */
+"Sequel Ace could not save to the file “%1$@”: %2$@" = "Sequel Ace could not save to the file “%1$@”: %2$@";
+
+/* SQLite store problem: advice for a file or folder that cannot be written to */
+"Make sure the file and its folder can be written to." = "Make sure the file and its folder can be written to.";
+
+/* SQLite store problem: advice for a damaged data file */
+"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts.";
+
+/* button that reveals a file in Finder */
+"Show in Finder" = "Show in Finder";

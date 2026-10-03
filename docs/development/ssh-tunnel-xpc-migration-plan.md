@@ -485,7 +485,7 @@ Execution notes (2026-09-01):
   disabled) and is not. Check `codesign -dv` for the team before a live
   run; give test runs their own `-derivedDataPath`.
 
-## Step 5 — Flip the default, then delete DO — 🟡 5a (flip) done; 5b (delete) prepared
+## Step 5 — Flip the default, then delete DO — 🟡 5a flipped and rolled back (#2689); 5b (delete) blocked
 
 Separate releases. Flip to the socket, let it soak, then remove the DO path,
 the `NSConnection` ivar, the assistant's DO shim and its `SPSSHTunnel.h`
@@ -503,6 +503,84 @@ shrank to `s-<8 hex>.sock` (15 bytes) so user names up to 26 UTF-8 bytes fit
 the 103-byte `sun_path` after the 62-byte container-tmp prefix; the stale
 sweep recognises both name shapes, at their exact widths only. This is the
 release that soaks.
+
+Execution notes, 5a rollback (2026-09-21): the soak failed. 6.0.0 shipped the
+socket as the default and issue #2689 brought two independent reports of
+*every* tunnel failing, both cured by `SPSSHTunnelUseSocketTransport -bool NO`.
+`defaultTransport` is `.distributedObjects` again for 6.0.1 and the socket is
+opt-in (`-bool YES`) for anyone diagnosing it.
+
+What the reporter's log pinned down: the assistant fails with
+`unable to obtain the password from Sequel Ace (noReply)`, repeatedly, on a
+`password` request. `noReply` means the app *accepted the connection and then
+closed without answering*, so the socket bound, the assistant found it and
+connected — the fault is inside `SASSHTunnelSocketServer.serve`. Exactly four
+paths there close silently, and each logs its own line: `peerPolicy` rejecting
+(`rejected an askpass connection that failed peer validation`, preceded by the
+validator's `socket peer rejected: <failure>`), the read timing out
+(`askpass connection sent no request`), the decode failing
+(`askpass request not understood`), and the reply write failing
+(`could not deliver the askpass reply`). Only the last is post-handler.
+
+Still unconfirmed which of the four, and the reason is a diagnostics gap, not
+a filtering mistake. The reporter's log came from **Sequel Ace's own SSH debug
+window**, which `standardErrorHandler:` fills from one source: the ssh task's
+stderr. The assistant's messages land there because it inherits ssh's stderr;
+the app's own refusal messages went to `NSLog` in the app process and could
+never appear in that window at all. So the window showed half the
+conversation, and the half naming the cause was structurally missing. (A
+first reading blamed `NSPredicate`'s case-sensitive `CONTAINS` against the
+`SSH tunnel:` / `SSH Tunnel:` prefix split — wrong: no predicate was
+involved.)
+
+Fixed here: `SASSHTunnelSocketServer` and `assistantPeerPolicy` take a
+diagnostic sink instead of calling `NSLog` directly, and `SPSSHTunnel` passes
+one that mirrors every refusal into `debugMessages` (weakly, and through a
+lock — the server reports from its service queue). The next report of this
+shape arrives with the cause already in the pasted window. The prefix split is
+still worth normalising, but it was never the blocker.
+
+The rollback also fixed the structural fault the incident exposed, which is
+the more important half: the fallback was one-sided. The app degrades to DO
+when it cannot *create* the socket (`SPSSHTunnel.m`), but the assistant had no
+such path — once `SP_CONNECTION_TRANSPORT=socket` was in ssh's environment it
+either completed the socket exchange or failed closed, taking the tunnel with
+it. So any post-bind socket fault was unsurvivable, which is why the symptom
+was total rather than partial. `SASSHTunnelAssistantSocketMain.run` now
+reports whether the run may have prompted anyone, and `main` falls through to
+DO when it cannot have. This works only because the app vends DO
+unconditionally — `SPSSHTunnel` registers its `NSConnection` and exports
+`SP_CONNECTION_NAME` / `SP_CONNECTION_VERIFY_HASH` whichever transport it
+picked — which is a Step 3 property worth keeping until 5b.
+
+The retry rule has two halves, and it needs both. *Where* it failed:
+`SASSHTunnelSocketClient.Error.isPreSend` — `socketFailed` / `connectFailed` /
+`peerRejected` happen before anything is written, so nothing was asked. *What*
+was being asked: `SASSHTunnelAuthRequest.mayPromptTheUser` — `password`
+resolves from the keychain or memory in `SASSHTunnelAuthService` with no UI
+and is idempotent, so repeating it costs at most a second keychain read, while
+`question` and `query` are sheet-backed.
+
+The second half is what actually rescues #2689, and the first half alone would
+not have: the reported failure is `noReply`, which is post-send, so an
+error-only rule keeps failing closed on exactly the bug it was written for.
+`noReply` is ambiguous by construction — three of its four server-side causes
+are pre-handler and one is not — so it can only be judged together with the
+request. A run is repeated only when every attempt either never reached the
+app or could not have prompted; one sheet-backed request anywhere in the run
+rules it out, because a repeat redoes the whole run.
+
+Deliberately *not* fixed here: the `SSH tunnel:` / `SSH Tunnel:` prefix split.
+Normalising it is a one-line-per-call-site change, but it would make every
+future log line differ from what 6.0.0 users are pasting into #2689 while that
+incident is still open. Worth doing once it closes, in its own `#infra` PR,
+along with deciding whether the assistant should name the transport in its
+failure lines — the reporter's log says `noReply` but not that it came from
+the socket, which cost a round trip to establish.
+
+**5b (#2623) must not merge until 5a is re-flipped and has actually soaked.**
+Deleting DO now would delete the rollback that is currently carrying every
+affected user, and the assistant's new fallback along with it.
 
 Before DO can go, the socket must have somewhere to live for *every* user:
 today a container-tmp path over 103 bytes (user names past 26 UTF-8 bytes)
@@ -582,6 +660,14 @@ build's defaults domain, `com.sequel-ace.sequel-ace` for release and
 `com.sequel-ace.sequel-ace-beta` for Beta. Without it, a regression means a
 point release. This is the main reason for the flag — do not skip it to save
 time.
+
+This earned itself in 6.0.0: issue #2689 was diagnosed and worked around by
+users writing that key before a maintainer had reproduced anything, and the
+6.0.1 fix was flipping the same default in code. Note what it did *not* buy —
+the flag rescues a user who can be told about it, and the two reporters found
+it only because one of them read the release notes. A transport that fails
+closed still costs everyone else their tunnel, which is why the assistant-side
+fallback landed alongside the flip.
 
 ## Effort
 

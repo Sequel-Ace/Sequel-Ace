@@ -23,6 +23,24 @@ command -v oras >/dev/null 2>&1 || {
 
 script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
+# Never inherit Docker Desktop's credential helper or persist this job's token
+# in the operator's global registry configuration.
+registry_directory=""
+temporary_directory=""
+extraction_directory=""
+cleanup() {
+  [[ -z "${registry_directory}" ]] || /bin/rm -rf "${registry_directory}"
+  [[ -z "${temporary_directory}" ]] || /bin/rm -rf "${temporary_directory}"
+  [[ -z "${extraction_directory}" ]] || /bin/rm -rf "${extraction_directory}"
+  return 0
+}
+trap cleanup EXIT
+if [[ -z "${GHCR_REGISTRY_CONFIG:-}" ]]; then
+  registry_directory="$(mktemp -d "${TMPDIR:-/tmp}/sequel-ace-oras.XXXXXX")"
+  chmod 700 "${registry_directory}"
+  export GHCR_REGISTRY_CONFIG="${registry_directory}/registry.json"
+fi
+
 oras_with_registry_config() {
   if [[ -n "${GHCR_REGISTRY_CONFIG:-}" ]]; then
     [[ "${GHCR_REGISTRY_CONFIG}" == /* && ! -L "${GHCR_REGISTRY_CONFIG}" ]] || {
@@ -155,7 +173,6 @@ case "${mode}" in
     validate_archive_tree "${directory}"
     login
     temporary_directory="$(mktemp -d "${TMPDIR:-/tmp}/sequel-ace-ghcr-push.XXXXXX")"
-    trap 'rm -rf "${temporary_directory}"' EXIT
     archive_file="${temporary_directory}/sequel-ace-release-archive.tar.gz"
     manifest_file="${temporary_directory}/manifest.json"
     /usr/bin/tar -czf "${archive_file}" -C "${directory}" .
@@ -238,7 +255,6 @@ case "${mode}" in
     destination_parent="$(cd "${resolved_directory}/.." && pwd -P)"
     destination_name="$(/usr/bin/basename "${resolved_directory}")"
     extraction_directory="$(mktemp -d "${destination_parent}/.${destination_name}.extract.XXXXXX")"
-    trap '/bin/rm -rf "${extraction_directory}"' EXIT
     validate_archive_members "${pulled_archive}"
     /usr/bin/tar --no-same-owner --no-same-permissions -xzf "${pulled_archive}" -C "${extraction_directory}"
     validate_archive_tree "${extraction_directory}"

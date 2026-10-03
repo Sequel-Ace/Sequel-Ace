@@ -53,6 +53,8 @@ class PlannerTest < Minitest::Test
     )
 
     assert_equal "minor", plan.fetch("recommended_bump")
+    assert_includes plan.dig("operational_requirements", "compatibility_warning"), "before approval"
+    assert_equal "release_publish.yml", plan.dig("operational_requirements", "artifact_owner")
     assert_equal "5.4.0", plan.fetch("recommended_version")
     assert_equal SequelAceRelease::Approval::POLICY, plan.fetch("build_policy")
     assert_equal SequelAceRelease::Approval::POLICY, plan.dig("approval", "build_policy")
