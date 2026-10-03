@@ -206,7 +206,8 @@ public final class SAConnectionCancellation: NSObject {
     ///   - generation: The query to stop, as the connection numbered it when stopping was asked for.
     ///   - synchronously: Whether the request to the server is made before this returns. Callers
     ///     that rely on the request having gone out ask for that; the main thread never should,
-    ///     since reaching the server can take as long as the query itself.
+    ///     since reaching the server can take as long as the query itself. The grace period runs
+    ///     from this call either way, not from the server's answer.
     @objc(requestCancellationOfGeneration:synchronously:)
     public func requestCancellation(ofGeneration generation: UInt, synchronously: Bool) {
         guard generation != 0 else {
@@ -238,17 +239,21 @@ public final class SAConnectionCancellation: NSObject {
                 decideAfterGrace(accepted)
             }
         }
-        if synchronously {
-            askServer()
-        } else {
-            DispatchQueue.global(qos: .userInitiated).async(execute: askServer)
-        }
-
+        // The grace period starts now, before the server is asked, because asking it can take
+        // longer than the grace period and a synchronous request is waited for here. Counting from
+        // the answer instead would keep the query's socket open for the side connection's own
+        // timeouts and the grace period on top, which is exactly the wait this is meant to bound.
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) { [weak self] in
             let waitsForAnswer = self?.host?.sessionHasOpenTransaction ?? false
             if let accepted = attempt.endGrace(waitingForAnswer: waitsForAnswer) {
                 decideAfterGrace(accepted)
             }
+        }
+
+        if synchronously {
+            askServer()
+        } else {
+            DispatchQueue.global(qos: .userInitiated).async(execute: askServer)
         }
     }
 

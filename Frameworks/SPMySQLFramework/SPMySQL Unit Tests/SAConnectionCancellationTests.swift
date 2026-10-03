@@ -58,6 +58,28 @@ final class SAConnectionCancellationTests: XCTestCase {
         func closeSessionIfConnected() { note("closed") }
     }
 
+    /// A connection stand-in whose kill request does not come back until the test lets it, as a
+    /// side connection over a route that has gone does not.
+    private final class SABlockedKillHost: NSObject, SAConnectionCancellationHost {
+        var currentQueryGeneration: UInt = 0
+        var sessionHasOpenTransaction = false
+        let letTheKillReturn = DispatchSemaphore(value: 0)
+        let killHasReturned = DispatchSemaphore(value: 0)
+        let socketWasClosed = DispatchSemaphore(value: 0)
+
+        func noteUserEndedWait() {}
+        func markRunningQueryCancelled() { socketWasClosed.signal() }
+        func killQueryOverSideConnection(forGeneration generation: UInt) -> Bool {
+            letTheKillReturn.wait()
+            killHasReturned.signal()
+            return true
+        }
+        func holdConnectionIfFree() -> Bool { true }
+        func releaseHeldConnection() {}
+        func recordWorkAsCancelled() {}
+        func closeSessionIfConnected() {}
+    }
+
     private let host = SARecordingHost()
     private let inFlightQuery = SAInFlightQuery()
     private lazy var cancellation = SAConnectionCancellation(host: host, inFlightQuery: inFlightQuery)
@@ -93,6 +115,35 @@ final class SAConnectionCancellationTests: XCTestCase {
         cancellation.requestCancellation(ofGeneration: 0, synchronously: true)
 
         XCTAssertEqual(host.recordedCalls(), [])
+    }
+
+    /// The grace period runs from the moment stopping was asked for, not from the server's answer.
+    ///
+    /// A synchronous request is waited for here, and reaching the server over a route that has gone
+    /// takes the side connection's own timeouts. If the grace period only started afterwards, the
+    /// query's socket would stay open for all of that and two seconds more - the wait this is meant
+    /// to bound.
+    func testTheGracePeriodDoesNotWaitForTheServer() throws {
+        let socket = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
+        try XCTSkipIf(socket < 0, "no socket to close")
+        defer { Darwin.close(socket) }
+
+        let blockedHost = SABlockedKillHost()
+        let inFlight = SAInFlightQuery()
+        let cancellation = SAConnectionCancellation(host: blockedHost, inFlightQuery: inFlight)
+        inFlight.beginWaiting(forGeneration: 7, onSocket: socket, serverThread: 11)
+
+        DispatchQueue.global().async {
+            cancellation.requestCancellation(ofGeneration: 7, synchronously: true)
+        }
+
+        // The socket is closed once the grace period is over, while the kill is still out there.
+        XCTAssertEqual(blockedHost.socketWasClosed.wait(timeout: .now() + SAConnectionCancellation.shutdownGrace + 3),
+                       .success, "the grace period waited for the server")
+        XCTAssertEqual(blockedHost.killHasReturned.wait(timeout: .now()), .timedOut,
+                       "and it did so before the server answered")
+        blockedHost.letTheKillReturn.signal()
+        XCTAssertEqual(blockedHost.killHasReturned.wait(timeout: .now() + 5), .success)
     }
 
     /// Stopping the wait stops the query the stopped work started.
