@@ -32,11 +32,10 @@
 #import "SPMySQL Private APIs.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-/**
- * How many times, a tenth of a second apart, the lost-connection question waits for another modal
- * window to close before it is asked anyway.
- */
-static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
+// The connection carries out the steps SAConnectionLostQuestion needs; declared here, where the
+// generated Swift header is in scope, rather than in the public header.
+@interface SPMySQLConnection (LostConnectionQuestionHost) <SAConnectionLostQuestionHost>
+@end
 
 @implementation SPMySQLConnection (Delegate_and_Proxy)
 
@@ -158,42 +157,45 @@ static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
  */
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection
 {
-	// If on the main thread, ask without waiting. That is the thread the question is put to the
-	// user on, so it can never wait for an answer - it is the thread that produces them. It still
-	// goes through the gate, so a background thread that loses the connection while this question
-	// is open shares the answer instead of queueing a dialog behind it; and if a question is
-	// already open, the gate answers rather than letting a second dialog stack on the first.
-	if ([NSThread isMainThread]) {
-		return (SPMySQLConnectionLostDecision)[delegateDecisionGate decisionAskingHereWith:^NSInteger{
-			return [self _askDelegateForLostConnectionDecision];
-		}];
-	}
+	// Who asks, who waits, and how long to hold off while something else is modal is decided by
+	// SAConnectionLostQuestion; the three steps below are what only the connection can do.
+	return (SPMySQLConnectionLostDecision)[SAConnectionLostQuestion
+		decisionThroughGate:delegateDecisionGate
+		       isMainThread:[NSThread isMainThread]
+		               host:self];
+}
 
-	// Otherwise the question goes to the main thread, and threads that lose the connection at the
-	// same time share one answer rather than asking one dialog each.
-	return (SPMySQLConnectionLostDecision)[delegateDecisionGate decisionAskingWith:^NSInteger{
+/**
+ * Whether the application is showing something modal, asked from the main thread.
+ */
+- (BOOL)aModalWindowIsShowingOnTheMainThread
+{
+	[self performSelectorOnMainThread:@selector(_recordWhetherAModalWindowIsShowing) withObject:nil waitUntilDone:YES];
+	return aModalWindowIsShowing;
+}
 
-		// First check whether the application is in a modal state; if so, wait.
-		// The question goes to the main thread through its run loop rather than through its
-		// queue: the work that led here can itself have been started from a block on that
-		// queue, and a queue runs one block at a time. Waiting for that block to finish would
-		// mean waiting for something that is waiting for this answer.
-		// The question is a sheet on the document's window, and asking it while another modal
-		// window is up would stack the two. It waits for that window to go, but not for ever: a
-		// question that never comes is worse than one that comes while something else is open.
-		for (NSUInteger check = 0; check < SPMySQLConnectionModalWindowChecks; check++) {
-			[self performSelectorOnMainThread:@selector(_recordWhetherAModalWindowIsShowing) withObject:nil waitUntilDone:YES];
-			if (!self->aModalWindowIsShowing) break;
-			usleep(100000);
-		}
+/**
+ * Puts the question to the delegate on the main thread and returns once it has been answered.
+ * The hand-off runs through that thread's run loop rather than its queue: the work that led here
+ * can itself have been started from a block on that queue, and a queue runs one block at a time,
+ * so waiting for that block to finish would mean waiting for something that waits for this
+ * answer.
+ */
+- (void)askTheDelegateOnTheMainThread
+{
+	[self performSelectorOnMainThread:@selector(_askDelegateForLostConnectionDecision) withObject:nil waitUntilDone:YES];
+}
 
-		[self performSelectorOnMainThread:@selector(_askDelegateForLostConnectionDecision) withObject:nil waitUntilDone:YES];
-		[self->delegateDecisionLock lock];
-		SPMySQLConnectionLostDecision decision = self->lastDelegateDecisionForLostConnection;
-		[self->delegateDecisionLock unlock];
+/**
+ * The answer that was kept, read under the lock that guards it.
+ */
+- (NSInteger)theAnswerThatWasKept
+{
+	[delegateDecisionLock lock];
+	SPMySQLConnectionLostDecision decision = lastDelegateDecisionForLostConnection;
+	[delegateDecisionLock unlock];
 
-		return decision;
-	}];
+	return (NSInteger)decision;
 }
 
 /**
