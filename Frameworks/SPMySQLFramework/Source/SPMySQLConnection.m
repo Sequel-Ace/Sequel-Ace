@@ -1291,14 +1291,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
 			// The proxy's own connection is part of the attempt, so it shares its budget. A
-			// budget of zero carries the configured timeout's "no limit" through unchanged.
-			// What is left of the attempt's budget, which the proxy shares with the connect
-			// that follows it. Without a budget this is the configured timeout, as before.
+			// Whether this stage has waited long enough. Under a budget that is a question
+			// about the attempt as a whole, which the proxy shares with the connect after it -
+			// so it is asked of the attempt's own clock, not of this stage's, or the elapsed
+			// time would count twice and the budget run out in half of it. Without a budget it
+			// is the configured timeout per stage, as before. `extra` is the grace the second
+			// loop allowed itself.
 			double configuredTimeout = (double)timeout;
-			double (^proxyWaitLimit)(void) = ^double{
-				return [attemptBudget overridesConfiguredTimeout]
-					? [attemptBudget remainingSecondsAfterSeconds:_timeIntervalSinceMonotonicTime(attemptStart_t)]
-					: configuredTimeout;
+			BOOL (^proxyWaitedLongEnough)(uint64_t, double) = ^BOOL(uint64_t stageStart, double extra) {
+				if ([attemptBudget overridesConfiguredTimeout]) {
+					return [attemptBudget remainingSecondsAfterSeconds:_timeIntervalSinceMonotonicTime(attemptStart_t)] <= 0;
+				}
+				return _timeIntervalSinceMonotonicTime(stageStart) > (configuredTimeout + extra);
 			};
 
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
@@ -1313,7 +1317,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > proxyWaitLimit()) break;
+					if (proxyWaitedLongEnough(proxyWaitStart_t, 0)) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
@@ -1347,7 +1351,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				}
 
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (proxyWaitLimit() + 1)) {
+				if (proxyWaitedLongEnough(proxyWaitStart_t, 1)) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;
@@ -1366,7 +1370,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 				if ([_proxyReconnectCoordinator
 						shouldExcludeWaitTimeForAuthentication:([proxy state] == SPMySQLProxyWaitingForAuth)
 						connectionAttemptPending:connectionAttemptPending]) {
-					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
+					uint64_t excluded = _monotonicTime() - loopIterationStart_t;
+					proxyWaitStart_t += excluded;
+					// The attempt's own clock skips it as well: a passphrase the user takes a
+					// while over is their time, not the connection's, and charging it to the
+					// budget would leave a healthy connection a second to be made in.
+					attemptStart_t += excluded;
 				}
 			}
 			if ([self _abortCancelledReconnectWhileLocked]) return NO;
