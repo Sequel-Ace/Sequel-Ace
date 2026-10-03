@@ -803,7 +803,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Reserve the cancellation handle while the native connection is locked.
 	NSError *socketError = nil;
-	if (![self.sessionAccess trackSocket:mySQLConnection->net.fd error:&socketError]) {
+	if (![self.sessionAccess trackSocket:mySQLConnection->net.fd serverThreadID:mySQLConnection->thread_id error:&socketError]) {
 		[self _updateLastErrorMessage:socketError.localizedDescription];
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
@@ -1433,9 +1433,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return;
 	}
 
-	// A fallback cancellation has already interrupted the socket. Do not recurse
-	// into cancellation again while a streaming result is releasing its lock.
-	if (!self.sessionAccess.isCancellingOnCurrentThread) [self cancelCurrentQuery];
+    [self.sessionAccess cancelActiveQuery:^{ [self cancelCurrentQuery]; }];
 
 	state = SPMySQLDisconnecting;
 

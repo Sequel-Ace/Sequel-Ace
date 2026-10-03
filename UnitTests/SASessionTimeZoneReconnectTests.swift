@@ -211,6 +211,8 @@ private final class SASessionTimeZoneLiveConnection: SPMySQLConnection {
     var failCancellationConnection = false
     var failedCancellationConnections = 0
     var cancelAfterNextConnectionCheck = false
+    var cancelDuringNextTimeZoneUpdate = false
+    var beforeCancellationConnection: (() -> Void)?
     var beforeTimeZoneUpdate: (() -> Void)?
     var beforeUserQuery: (() -> Void)?
 
@@ -227,6 +229,7 @@ private final class SASessionTimeZoneLiveConnection: SPMySQLConnection {
 
     @objc(_makeRawMySQLConnectionWithEncoding:isMasterConnection:)
     func makeRawConnection(_ encoding: NSString, isMasterConnection: Bool) -> UnsafeMutableRawPointer? {
+        if !isMasterConnection { beforeCancellationConnection?() }
         if failCancellationConnection && !isMasterConnection {
             failedCancellationConnections += 1
             return nil
@@ -246,6 +249,13 @@ private final class SASessionTimeZoneLiveConnection: SPMySQLConnection {
     override func queryString(_ query: String!) -> SPMySQLResult! {
         if query.hasPrefix("SET time_zone") {
             beforeTimeZoneUpdate?()
+            if cancelDuringNextTimeZoneUpdate {
+                cancelDuringNextTimeZoneUpdate = false
+                (value(forKey: "sessionAccess") as? SAConnectionSessionAccess)?.cancelQuery { _ in
+                    XCTFail("No native statement has been submitted yet")
+                    return true
+                }
+            }
             if failNextTimeZoneUpdate {
                 failNextTimeZoneUpdate = false
                 return super.queryString("SET time_zone = 'SequelAce/InvalidTimeZone'")
@@ -375,6 +385,7 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
                           "Fallback cancellation must interrupt the query before waiting for session access")
         wait(for: [queryFinished], timeout: 3)
         XCTAssertTrue(connection.lastQueryWasCancelled)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
         if failCancellationConnection {
             XCTAssertGreaterThan(connection.failedCancellationConnections, 0)
             XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)
@@ -401,7 +412,94 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
         result.cancelLoad()
         XCTAssertGreaterThan(connection.failedCancellationConnections, 0)
         XCTAssertLessThan(connection.failedCancellationConnections, 3, "Cancellation must not recursively reconnect")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
         XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)
+    }
+
+    func testFallbackCancellationLeavesLowMemoryResultAliveUntilItDrains() throws {
+        let connection = try makeConnection()
+        defer { connection.disconnect() }
+        connection.updateTimeZoneIdentifier("+01:00")
+        connection.failCancellationConnection = true
+        let session = connection.mysqlConnectionThreadId
+        let result = try XCTUnwrap(connection.streamingQueryString(
+            "SELECT REPEAT('x', 20000) UNION ALL SELECT SLEEP(10)",
+            useLowMemoryBlockingStreaming: true) as? SPMySQLStreamingResult)
+        let started = Date()
+        connection.cancelCurrentQuery()
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1)
+        XCTAssertEqual(connection.failedCancellationConnections, 1)
+        XCTAssertEqual(connection.mysqlConnectionThreadId, session,
+                       "Cancellation must leave MYSQL alive while the exporter still owns its result")
+        result.cancelLoad()
+        XCTAssertLessThan(Date().timeIntervalSince(started), 3)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, session)
+        XCTAssertEqual(connection.failedCancellationConnections, 1)
+    }
+
+    func testDelayedKillCannotReachTheNextQuery() throws {
+        let connection = try makeConnection()
+        let observer = try makeConnection()
+        defer { connection.disconnect(); observer.disconnect() }
+        let session = connection.mysqlConnectionThreadId
+        let firstDone = expectation(description: "first query finished")
+        let killStarted = expectation(description: "KILL connection paused")
+        let cancelDone = expectation(description: "cancellation returned")
+        let nextDone = expectation(description: "next query returned")
+        let releaseKill = DispatchSemaphore(value: 0)
+        let nextReturned = DispatchSemaphore(value: 0)
+        connection.beforeCancellationConnection = {
+            killStarted.fulfill()
+            XCTAssertEqual(releaseKill.wait(timeout: .now() + 5), .success)
+        }
+        Thread.detachNewThread {
+            _ = connection.queryString("SELECT SLEEP(1)")
+            firstDone.fulfill()
+        }
+        let deadline = Date(timeIntervalSinceNow: 3)
+        var running = false
+        repeat {
+            running = (observer.getFirstField(fromQuery:
+                "SELECT COUNT(*) FROM information_schema.processlist WHERE ID = \(session) AND INFO = 'SELECT SLEEP(1)'") as? NSString)?.integerValue == 1
+            if !running { RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01)) }
+        } while !running && Date() < deadline
+        XCTAssertTrue(running)
+        Thread.detachNewThread {
+            connection.cancelCurrentQuery()
+            cancelDone.fulfill()
+        }
+        wait(for: [killStarted, firstDone], timeout: 3)
+        Thread.detachNewThread {
+            XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT SLEEP(0.2)") as? String, "0")
+            XCTAssertFalse(connection.queryErrored())
+            nextReturned.signal()
+            nextDone.fulfill()
+        }
+        XCTAssertEqual(nextReturned.wait(timeout: .now() + 0.1), .timedOut,
+                       "A later query must wait until the old cancellation finishes")
+        releaseKill.signal()
+        wait(for: [cancelDone, nextDone], timeout: 3)
+        XCTAssertEqual(connection.mysqlConnectionThreadId, session)
+    }
+
+    func testCancellationDuringDeferredRecoveryDoesNotSubmitThePendingStatement() throws {
+        let connection = try makeConnection()
+        defer { connection.disconnect() }
+        connection.updateTimeZoneIdentifier("+01:00")
+        connection.failCancellationConnection = true
+        let result = try XCTUnwrap(connection.streamingQueryString(
+            "SELECT REPEAT('x', 20000) UNION ALL SELECT SLEEP(10)",
+            useLowMemoryBlockingStreaming: true) as? SPMySQLStreamingResult)
+        connection.cancelCurrentQuery()
+        result.cancelLoad()
+        connection.cancelDuringNextTimeZoneUpdate = true
+
+        XCTAssertNil(connection.queryString("SELECT @deferred_marker := 'submitted'"))
+        XCTAssertFalse(connection.cancelDuringNextTimeZoneUpdate)
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @deferred_marker IS NULL") as? String, "1")
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@session.time_zone") as? String, "+01:00")
     }
 
@@ -466,6 +564,155 @@ final class SASessionTimeZoneIntegrationTests: XCTestCase {
 }
 
 final class SAConnectionSessionAccessTests: XCTestCase {
+    func testCancellationPublishesSocketAndServerThreadTogether() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 101)
+        access.clearSocket()
+        let published = expectation(description: "replacement socket published")
+        let queryDone = expectation(description: "replacement query done")
+        let begin = DispatchSemaphore(value: 0)
+        let running = DispatchSemaphore(value: 0)
+        let release = DispatchSemaphore(value: 0)
+        Thread.detachNewThread {
+            _ = access.performQuery {
+                do { try access.trackSocket(sockets[0], serverThreadID: 202) }
+                catch { XCTFail("Failed to publish replacement socket: \(error)") }
+                published.fulfill()
+                XCTAssertEqual(begin.wait(timeout: .now() + 5), .success)
+                access.beginNativeQuery()
+                running.signal()
+                XCTAssertEqual(release.wait(timeout: .now() + 5), .success)
+                access.endNativeQuery()
+                return nil
+            }
+            queryDone.fulfill()
+        }
+        wait(for: [published], timeout: 2)
+        access.cancelQuery { _ in XCTFail("Connection setup alone is not an active query"); return true }
+        begin.signal()
+        XCTAssertEqual(running.wait(timeout: .now() + 2), .success)
+        var cancelledThread: UInt = 0
+        access.cancelQuery { cancelledThread = $0; return true }
+        XCTAssertEqual(cancelledThread, 202, "A new socket must never use the retired server thread ID")
+        release.signal()
+        wait(for: [queryDone], timeout: 2)
+    }
+
+    func testDelayedCancellationBlocksNextQueryAndReconnect() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
+        let killing = expectation(description: "KILL in flight")
+        let killed = expectation(description: "KILL completed")
+        let nextDone = expectation(description: "next query returned")
+        let reconnectDone = expectation(description: "reconnect returned")
+        let release = DispatchSemaphore(value: 0)
+        let nextStarted = DispatchSemaphore(value: 0)
+        let reconnectStarted = DispatchSemaphore(value: 0)
+        Thread.detachNewThread {
+            access.cancelQuery {
+                XCTAssertEqual($0, 42)
+                killing.fulfill()
+                XCTAssertEqual(release.wait(timeout: .now() + 5), .success)
+                XCTAssertFalse(access.cancellationIsCurrent, "The first query has already ended")
+                return true
+            }
+            killed.fulfill()
+        }
+        wait(for: [killing], timeout: 2)
+        access.endNativeQuery()
+        Thread.detachNewThread {
+            _ = access.performQuery { nextStarted.signal(); return nil }
+            nextDone.fulfill()
+        }
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: true) { reconnectStarted.signal(); return true }
+            reconnectDone.fulfill()
+        }
+        XCTAssertEqual(nextStarted.wait(timeout: .now() + 0.1), .timedOut)
+        XCTAssertEqual(reconnectStarted.wait(timeout: .now() + 0.1), .timedOut)
+        release.signal()
+        wait(for: [killed, nextDone, reconnectDone], timeout: 2)
+    }
+
+    func testFailedKillDefersRecoveryUntilTheStreamingResultReleasesItsLock() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
+        access.cancelQuery { _ in false }
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
+        let recovered = DispatchSemaphore(value: 0)
+        let done = expectation(description: "next query recovered")
+        Thread.detachNewThread {
+            XCTAssertEqual(access.performQuery({ "next" }, recover: { recovered.signal(); return true }) as? String, "next")
+            done.fulfill()
+        }
+        XCTAssertEqual(recovered.wait(timeout: .now() + 0.1), .timedOut)
+        access.endNativeQuery()
+        wait(for: [done], timeout: 2)
+        XCTAssertEqual(recovered.wait(timeout: .now() + 0.1), .success)
+        XCTAssertEqual(access.performQuery { "later" } as? String, "later")
+    }
+
+    func testDeferredRecoveryKeepsTheOuterCancellationTokenAcrossSetupQueries() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
+        access.cancelQuery { _ in false }
+        access.endNativeQuery()
+        _ = access.performQuery({
+            XCTAssertTrue(access.currentQueryWasCancelled)
+            XCTAssertFalse(access.beginNativeQuery(), "The pending statement must not be submitted")
+            access.endNativeQuery()
+            return nil
+        }, recover: {
+            access.cancelActiveQuery {
+                access.cancelQuery { _ in XCTFail("Teardown has no native statement to KILL"); return true }
+            }
+            XCTAssertFalse(access.currentQueryWasCancelled, "Recovery must not cancel its own pending caller")
+            _ = access.performQuery {
+                access.beginNativeQuery()
+                access.cancelQuery { _ in true }
+                access.endNativeQuery()
+                XCTAssertTrue(access.currentQueryWasCancelled)
+                return nil
+            }
+            _ = access.performQuery {
+                XCTAssertFalse(access.currentQueryWasCancelled)
+                return nil
+            }
+            return true
+        })
+        XCTAssertEqual(access.performQuery { "later" } as? String, "later")
+    }
+
+    func testFailedKillDoesNotInterruptAQueryThatFinishedDuringConnectionSetup() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
+        access.cancelQuery { _ in access.endNativeQuery(); return false }
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), -1)
+        XCTAssertEqual(errno, EAGAIN)
+        XCTAssertEqual(access.performQuery { "next" } as? String, "next")
+    }
+
     func testBackgroundLossDisconnectRetiresTrackedSocket() throws {
         let connection = SPMySQLConnection()
         connection.useKeepAlive = false
@@ -480,7 +727,7 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         connection.disconnect()
 
         XCTAssertNotEqual(access.socketToken, token)
-        access.cancelSocket(token: token) { XCTFail("Background-loss disconnect must retire the cancellation handle") }
+        access.cancelQuery { _ in XCTFail("Background-loss disconnect must retire the cancellation handle"); return false }
     }
 
     func testSetupQueriesCannotEraseTheirCallersCancellation() {
@@ -507,68 +754,57 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         var sockets = [Int32](repeating: -1, count: 2)
         XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
         defer { for socket in sockets where socket >= 0 { Darwin.close(socket) } }
-        try access.trackSocket(sockets[0])
-        let token = access.socketToken
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
         Darwin.close(sockets[0])
         sockets[0] = -1
-
-        var reconnected = false
-        access.cancelSocket(token: token) {
-            reconnected = true
-            XCTAssertTrue(access.isCancellingOnCurrentThread)
-        }
-        XCTAssertTrue(reconnected)
-        XCTAssertFalse(access.isCancellingOnCurrentThread)
+        access.cancelQuery { _ in false }
         var byte: UInt8 = 0
         XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
+        access.endNativeQuery()
         access.clearSocket()
-        access.cancelSocket(token: token) { XCTFail("A cleared socket cannot be cancelled") }
+        access.cancelQuery { _ in XCTFail("A cleared socket cannot be cancelled"); return false }
     }
 
-    func testStaleCancellationCannotInterruptAReplacementSocket() throws {
+    func testRetiredCancellationCannotInterruptAReplacementSocket() throws {
         let access = SAConnectionSessionAccess()
         var old = [Int32](repeating: -1, count: 2)
         var replacement = [Int32](repeating: -1, count: 2)
         XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &old), 0)
         XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &replacement), 0)
         defer { for socket in old + replacement where socket >= 0 { Darwin.close(socket) } }
-        try access.trackSocket(old[0])
-        let staleToken = access.socketToken
-        try access.trackSocket(replacement[0])
-        access.cancelSocket(token: staleToken) { XCTFail("A stale cancellation cannot reconnect a newer session") }
-
+        try access.trackSocket(old[0], serverThreadID: 41)
+        access.beginNativeQuery()
+        access.cancelQuery { thread in
+            XCTAssertEqual(thread, 41)
+            access.endNativeQuery()
+            access.clearSocket()
+            try? access.trackSocket(replacement[0], serverThreadID: 42)
+            XCTAssertFalse(access.cancellationIsCurrent)
+            return false
+        }
         var byte: UInt8 = 0
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), -1)
         XCTAssertEqual(errno, EAGAIN)
-        access.cancelSocket(token: access.socketToken) { }
+        access.beginNativeQuery()
+        access.cancelQuery { thread in XCTAssertEqual(thread, 42); return false }
+        access.endNativeQuery()
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), 0)
     }
 
-    func testCancellationScopeClearsAfterNestedReconnectAndSocketFailure() throws {
+    func testFailedSocketReservationKeepsThePublishedCancellationIdentity() throws {
         let access = SAConnectionSessionAccess()
         var sockets = [Int32](repeating: -1, count: 2)
         XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
-        defer { for socket in sockets where socket >= 0 { Darwin.close(socket) } }
-        try access.trackSocket(sockets[0])
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
         let token = access.socketToken
-        XCTAssertThrowsError(try access.trackSocket(-1))
+        XCTAssertThrowsError(try access.trackSocket(-1, serverThreadID: 99))
         XCTAssertEqual(access.socketToken, token)
-        access.cancelSocket(token: token) {
-            XCTAssertTrue(access.isCancellingOnCurrentThread)
-            let otherThread = expectation(description: "independent cancellation scope")
-            Thread.detachNewThread {
-                XCTAssertFalse(access.isCancellingOnCurrentThread)
-                otherThread.fulfill()
-            }
-            wait(for: [otherThread], timeout: 2)
-            access.cancelSocket(token: token) { XCTAssertTrue(access.isCancellingOnCurrentThread) }
-            XCTAssertTrue(access.isCancellingOnCurrentThread)
-        }
-        XCTAssertFalse(access.isCancellingOnCurrentThread)
-        XCTAssertTrue(access.reconnect(allowingRetries: true) {
-            XCTAssertFalse(access.isCancellingOnCurrentThread)
-            return true
-        })
+        access.beginNativeQuery()
+        access.cancelQuery { thread in XCTAssertEqual(thread, 42); return true }
+        access.endNativeQuery()
+        XCTAssertEqual(access.performQuery { "next" } as? String, "next")
     }
 
     func testReconnectCanRunSetupQueriesAndNestedReconnects() {
