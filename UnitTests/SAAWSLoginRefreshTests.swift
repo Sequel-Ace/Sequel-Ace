@@ -445,3 +445,77 @@ final class SAAWSSignInCommandTests: XCTestCase {
         XCTAssertEqual(presentable as Error as? AWSLoginAuthError, .sessionExpired)
     }
 }
+
+final class SAAWSLoginRefreshTransportTests: XCTestCase {
+
+    private let url = URL(string: "https://eu-north-1.signin.aws.amazon.com/v1/token")!
+
+    func testUnresponsiveEndpointFailsAtTheDeadline() {
+        let started = Date()
+
+        XCTAssertThrowsError(try SAAWSLoginRefreshRequest.send(URLRequest(url: url),
+                                                               configuration: configuration(using: SAHangingURLProtocol.self),
+                                                               deadline: 1)) { error in
+            guard case .requestFailed = error as? SAAWSLoginRefreshError else {
+                return XCTFail("Expected requestFailed, got \(error)")
+            }
+        }
+        XCTAssertLessThan(Date().timeIntervalSince(started), 5)
+    }
+
+    func testUnreachableEndpointReportsTheTransportError() {
+        XCTAssertThrowsError(try SAAWSLoginRefreshRequest.send(URLRequest(url: url),
+                                                               configuration: configuration(using: SAUnreachableURLProtocol.self))) { error in
+            guard case .requestFailed = error as? SAAWSLoginRefreshError else {
+                return XCTFail("Expected requestFailed, got \(error)")
+            }
+        }
+    }
+
+    func testFailingEndpointReturnsItsStatusAndBody() throws {
+        let (data, status) = try SAAWSLoginRefreshRequest.send(URLRequest(url: url),
+                                                               configuration: configuration(using: SAServiceUnavailableURLProtocol.self))
+
+        XCTAssertEqual(status, 503)
+        XCTAssertThrowsError(try SAAWSLoginTokenResponse.parse(data: data, statusCode: status)) { error in
+            XCTAssertEqual(error as? SAAWSLoginRefreshError, .requestFailed("Unavailable"))
+        }
+    }
+
+    private func configuration(using protocolClass: URLProtocol.Type) -> URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [protocolClass]
+        return configuration
+    }
+}
+
+/// Accepts every request and never responds.
+private final class SAHangingURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {}
+    override func stopLoading() {}
+}
+
+/// Fails every request as if the host could not be reached.
+private final class SAUnreachableURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() { client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost)) }
+    override func stopLoading() {}
+}
+
+/// Answers every request with HTTP 503 and a Sign-In error body.
+private final class SAServiceUnavailableURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let url = request.url,
+              let response = HTTPURLResponse(url: url, statusCode: 503, httpVersion: "HTTP/1.1",
+                                             headerFields: ["Content-Type": "application/json"]) else { return }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(#"{"error":"server_error","message":"Unavailable"}"#.utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}

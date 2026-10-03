@@ -1461,11 +1461,113 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
         }
     }
 
+    func testBackgroundTokenGenerationKeepsTheMainQueueResponsiveDuringASlowRenewal() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        let requestStarted = expectation(description: "renewal request started")
+        let releaseRequest = DispatchSemaphore(value: 0)
+        var requestRanOnMainThread = true
+        AWSLoginCredentialsProvider.refreshTransport = { request in
+            requestRanOnMainThread = Thread.isMainThread
+            requestStarted.fulfill()
+            _ = releaseRequest.wait(timeout: .now() + 10)
+            return (SAAWSLoginTestFixtures.successResponse, 200)
+        }
+
+        try withLoginProfile { _ in
+            let mainQueueRan = expectation(description: "main queue ran during the renewal")
+            let tokenDelivered = expectation(description: "token delivered")
+            var completionRanOnMainThread = false
+            var token: String?
+
+            AWSIAMAuthManager.generateAuthTokenInBackground(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: nil,
+                parentWindow: nil
+            ) { generatedToken, _ in
+                completionRanOnMainThread = Thread.isMainThread
+                token = generatedToken
+                tokenDelivered.fulfill()
+            }
+
+            wait(for: [requestStarted], timeout: 5)
+            DispatchQueue.main.async { mainQueueRan.fulfill() }
+            wait(for: [mainQueueRan], timeout: 2)
+
+            releaseRequest.signal()
+            wait(for: [tokenDelivered], timeout: 5)
+
+            XCTAssertFalse(requestRanOnMainThread)
+            XCTAssertTrue(completionRanOnMainThread)
+            XCTAssertEqual(token?.contains("X-Amz-Credential=ASIANEW0000000000000"), true)
+        }
+    }
+
+    func testBackgroundTokenGenerationReportsAnEndedSessionWithTheProfileCommand() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        respond(status: 401, body: Data(#"{"error":"TOKEN_EXPIRED","message":"The refresh token has expired."}"#.utf8))
+
+        try withLoginProfile(named: "team dev") { _ in
+            let completed = expectation(description: "completion called")
+            var completionRanOnMainThread = false
+            var reportedError: NSError?
+
+            AWSIAMAuthManager.generateAuthTokenInBackground(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: "team dev",
+                parentWindow: nil
+            ) { token, error in
+                XCTAssertNil(token)
+                completionRanOnMainThread = Thread.isMainThread
+                reportedError = error
+                completed.fulfill()
+            }
+
+            wait(for: [completed], timeout: 5)
+
+            XCTAssertTrue(completionRanOnMainThread)
+            let error = try XCTUnwrap(reportedError)
+            XCTAssertEqual(error as Error as? AWSLoginAuthError, .sessionExpired)
+            XCTAssertTrue(error.localizedDescription.contains("`aws login --profile 'team dev'`"), error.localizedDescription)
+        }
+    }
+
+    func testBackgroundTokenGenerationReportsAFailingEndpoint() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        respond(status: 503, body: Data(#"{"error":"server_error","message":"Unavailable"}"#.utf8))
+
+        try withLoginProfile { _ in
+            let completed = expectation(description: "completion called")
+            var reportedError: NSError?
+
+            AWSIAMAuthManager.generateAuthTokenInBackground(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: nil,
+                parentWindow: nil
+            ) { _, error in
+                reportedError = error
+                completed.fulfill()
+            }
+
+            wait(for: [completed], timeout: 5)
+            XCTAssertEqual(reportedError?.localizedDescription,
+                           SAAWSLoginRefreshError.requestFailed("Unavailable").localizedDescription)
+        }
+    }
+
     // MARK: - Helpers
 
-    private func withLoginProfile(region: String? = "eu-west-1", _ body: (AWSCredentials) throws -> Void) throws {
+    private func withLoginProfile(named name: String = "default", region: String? = "eu-west-1", _ body: (AWSCredentials) throws -> Void) throws {
         var config = """
-        [default]
+        \(name == "default" ? "[default]" : "[profile \(name)]")
         login_session = \(loginSession)
         """
         if let region {
@@ -1473,7 +1575,8 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
         }
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: config) { _, _ in
-            try body(try AWSCredentials(profile: nil))
+            AWSIAMAuthManager.clearCachedCredentials(for: nil)
+            try body(try AWSCredentials(profile: name))
         }
     }
 

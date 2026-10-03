@@ -66,7 +66,7 @@ import OSLog
     private static let minimumFallbackLifetime: TimeInterval = 60
 
     /// Sends a renewal request and returns the response body and HTTP status code.
-    @nonobjc static var refreshTransport: (URLRequest) throws -> (Data, Int) = SAAWSLoginRefreshRequest.send
+    @nonobjc static var refreshTransport: (URLRequest) throws -> (Data, Int) = { try SAAWSLoginRefreshRequest.send($0) }
 
     /// Resolve temporary credentials for a profile configured with `login_session`,
     /// renewing them when they are about to expire.

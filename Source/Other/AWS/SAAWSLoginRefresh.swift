@@ -389,9 +389,11 @@ enum SAAWSLoginRefreshRequest {
         return request
     }
 
-    /// Sends `request` and blocks until it completes, returning the body and HTTP status code.
-    static func send(_ request: URLRequest) throws -> (Data, Int) {
-        let session = URLSession(configuration: .ephemeral)
+    /// Sends `request` and blocks until it completes or `deadline` seconds pass, returning the body and HTTP status code.
+    static func send(_ request: URLRequest,
+                     configuration: URLSessionConfiguration = .ephemeral,
+                     deadline: TimeInterval = SAAWSLoginRefreshRequest.timeout + 5) throws -> (Data, Int) {
+        let session = URLSession(configuration: configuration)
         defer { session.finishTasksAndInvalidate() }
 
         let outcome = SAAsyncResultBox<(Data, Int)>()
@@ -409,7 +411,7 @@ enum SAAWSLoginRefreshRequest {
         }
         task.resume()
 
-        if semaphore.wait(timeout: .now() + timeout + 5) == .timedOut {
+        if semaphore.wait(timeout: .now() + deadline) == .timedOut {
             task.cancel()
             throw SAAWSLoginRefreshError.requestFailed(URLError(.timedOut).localizedDescription)
         }
