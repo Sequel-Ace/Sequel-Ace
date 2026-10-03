@@ -859,13 +859,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
-    // We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
-    // so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
-    if ([tablesListInstance hasNonTableObjects]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Database Rename Unsupported", @"databsse rename unsupported message") message:[NSString stringWithFormat:NSLocalizedString(@"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.", @"databsse rename unsupported informative message"), selectedDatabase] callback:nil];
-        return;
-    }
-
+    // Tables and views are moved; SPDatabaseRename refuses a database holding
+    // triggers, routines or events with a message naming them.
     [databaseRenameNameField setStringValue:selectedDatabase];
     [renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
@@ -5006,14 +5001,36 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbActionRename setTablesList:tablesListInstance];
     [dbActionRename setConnection:[self getConnection]];
 
+    // A connection whose settings could not be restored was re-established
+    // before the rename returned; one that could not be re-established is
+    // not asked for the databases and tables to show.
     if ([dbActionRename renameDatabaseFrom:[self createDatabaseInfo] to:newDatabaseName]) {
-        [self setDatabases];
-        [self selectDatabase:newDatabaseName item:nil];
-        // inform observers that a new database was added
-        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        if ([dbActionRename connectionUsable]) {
+            [self setDatabases];
+            [self selectDatabase:newDatabaseName item:nil];
+            // inform observers that a new database was added
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
+        if ([dbActionRename warningDescription]) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[dbActionRename warningDescription] callback:nil];
+        }
     }
     else {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
+        NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName];
+        if ([dbActionRename failureDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename failureDescription]];
+        }
+        if ([dbActionRename warningDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename warningDescription]];
+        }
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:message callback:nil];
+        // A rename that stopped after the target was created leaves objects
+        // split across the two databases: show them where they are now.
+        if ([dbActionRename changedServer] && [dbActionRename connectionUsable]) {
+            [self setDatabases];
+            [tablesListInstance updateTables:self];
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
     }
 }
 
