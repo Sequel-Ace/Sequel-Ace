@@ -99,17 +99,28 @@
 	// case-sensitively.
 	NSString *carriedCharacterSet = [SAConnectionCharacterSets carriableNameForCharacterSet:theEncoding];
 	BOOL characterSetCanBeCarried = (carriedCharacterSet != nil);
-	NSString *characterSetToSet = carriedCharacterSet ?: [SAConnectionCharacterSets fallbackCharacterSet];
+	// The fallbacks are tried best first: utf8mb4 only arrived in MySQL 5.5, so a server too old
+	// for it is offered utf8 rather than left in a character set nothing can convert for.
+	NSArray<NSString *> *candidates = carriedCharacterSet
+		? @[carriedCharacterSet]
+		: [SAConnectionCharacterSets fallbackCharacterSets];
 	if (!characterSetCanBeCarried) {
-		SPLog(@"[setEncoding:]: no string encoding carries the character set '%@'; connecting in %@ instead.",
-		      theEncoding, characterSetToSet);
+		SPLog(@"[setEncoding:]: no string encoding carries the character set '%@'; connecting in one of %@ instead.",
+		      theEncoding, candidates);
 	}
 
 	// Run a query to set the connection encoding
-	[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [characterSetToSet mySQLTickQuotedString]]];
+	NSString *characterSetToSet = nil;
+	for (NSString *candidate in candidates) {
+		[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [candidate mySQLTickQuotedString]]];
+		if (![self queryErrored]) {
+			characterSetToSet = candidate;
+			break;
+		}
+	}
 
-	// If the query errored, no encoding change occurred - return failure.
-	if ([self queryErrored]) return NO;
+	// If every candidate errored, no encoding change occurred - return failure.
+	if (!characterSetToSet) return NO;
 
 	// Connection encoding was successfully set, update the instance settings.
 	encoding = [[NSString alloc] initWithString:characterSetToSet];
