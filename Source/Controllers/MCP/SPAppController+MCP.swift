@@ -639,7 +639,7 @@ extension SPAppController: SPMCPDataSource {
         // A streaming result owns the native connection lock. Drain it before
         // returning on every path, without KILL/reconnect or closing its handle.
         // This bounds memory, not server execution time or network transfer.
-        defer { (result as? SPMySQLStreamingResult)?.cancelResultLoad() }
+        defer { (result as? SPMySQLStreamingResult)?.cancelLoad() }
         if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
 
         // Non-result statements (INSERT, UPDATE, DELETE, ...) come back as nil or an
@@ -691,7 +691,7 @@ extension SPAppController: SPMCPDataSource {
         }
 
         if let stream = res as? SPMySQLStreamingResult {
-            stream.cancelResultLoad()
+            stream.cancelLoad()
             if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
         }
 
