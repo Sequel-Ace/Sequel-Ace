@@ -37,10 +37,14 @@
 #import "Locking.h"
 #import "Conversion.h"
 
+@class SAConnectionSessionAccess;
+
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
 // clang warn that the category's @implementation lacks their definitions).
 @interface SPMySQLConnection ()
+
+@property (readonly, strong) SAConnectionSessionAccess *sessionAccess;
 
 + (NSArray<NSString *> *)defaultSSLCipherList;
 + (NSArray<NSString *> *)legacySSLCipherList;
@@ -61,6 +65,7 @@
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster connectTimeout:(NSUInteger)connectTimeoutOrZero;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
 - (BOOL)_connectUsingConnectTimeout:(NSUInteger)connectTimeoutOrZero;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
@@ -70,7 +75,7 @@
 - (void)_updateConnectionVariables;
 - (BOOL)_serverIsProxySQL;
 - (void)_restoreConnectionVariables;
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier;
@@ -107,6 +112,12 @@
 @end
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;

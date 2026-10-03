@@ -109,6 +109,22 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 #pragma mark -
 #pragma mark Getters and Setters
 
+- (BOOL)lastQueryWasCancelled
+{
+	@synchronized (self) {
+		return lastQueryWasCancelled;
+	}
+}
+
+- (void)setLastQueryWasCancelled:(BOOL)cancelled
+{
+	// Some callers issue KILL through another connection and mark cancellation here.
+	@synchronized (self) {
+		if (cancelled) [self.sessionAccess recordQueryCancellation];
+		lastQueryWasCancelled = cancelled;
+	}
+}
+
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
@@ -346,6 +362,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		proxy = nil;
 		proxyStateChangeNotificationsIgnored = NO;
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
+		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -833,6 +850,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return NO;
 	}
 
+	// Reserve the cancellation handle while the native connection is locked.
+	NSError *socketError = nil;
+	if (![self.sessionAccess trackSocket:mySQLConnection->net.fd serverThreadID:mySQLConnection->thread_id error:&socketError]) {
+		[self _updateLastErrorMessage:socketError.localizedDescription];
+		mysql_close(mySQLConnection);
+		mySQLConnection = NULL;
+		state = SPMySQLDisconnected;
+		[self _unlockConnection];
+		return NO;
+	}
+
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
 
@@ -1201,12 +1229,28 @@ asm(".desc ___crashreporter_info__, 0x10");
 }
 
 /**
- * Re-establish the connection, on the time budget the attempt is entitled to.
+ * Re-establish the connection, on the time budget the attempt is entitled to, under the
+ * session's reconnect lease.
  * An attempt that follows a failed connection check runs on the check's limits instead of the
  * configured timeout: the interface is already waiting, and a route that has gone would
  * otherwise hold it for the whole timeout - or, with none configured, indefinitely.
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck
+{
+    BOOL restored = [self.sessionAccess reconnectAllowingRetries:canRetry operation:^BOOL {
+        return [self _performReconnectAllowingRetries:canRetry afterFailedCheck:afterFailedCheck];
+    }];
+    // Explicit disconnect can retire a completed session while this caller waits.
+    return restored && state == SPMySQLConnected && !userTriggeredDisconnect;
+}
+
+/**
+ * Re-establish the connection on the budget the attempt was given, inside the lease above.
+ * @param canRetry Whether the attempt may try again after a failure.
+ * @param afterFailedCheck Whether this follows a failed connection check, whose limits it then runs on.
+ * @return Whether the connection was re-established.
+ */
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck
 {
 
     SPLog(@"_reconnectAllowingRetries");
@@ -1225,30 +1269,6 @@ asm(".desc ___crashreporter_info__, 0x10");
     NSString *timeZoneIdentifierToRestore = nil;
 
 	@autoreleasepool {
-		// Check whether a reconnection attempt is already being made - if so, wait
-		// and return the status of that reconnection attempt.  This improves threaded
-		// use of the connection by preventing reconnect races.
-		if (reconnectingThread && !pthread_equal(reconnectingThread, pthread_self())) {
-
-			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
-			// takes less than the requested 0.1s, sleep instead.
-			while (reconnectingThread) {
-                SPLog(@"a reconnection attempt is already being made, waiting");
-
-				uint64_t loopIterationStart_t = _monotonicTime();
-
-				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.1) {
-					usleep(100000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
-				}
-			}
-
-			// Continue only if the reconnection being waited on was a background attempt
-			if (!(state == SPMySQLConnectionLostInBackground && canRetry)) {
-				return (state == SPMySQLConnected);
-			}
-		}
-
 		if ([[NSThread currentThread] isCancelled]) {
             SPLog(@"NSThread currentThread] isCancelled, returning");
 
@@ -1399,11 +1419,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-			reconnectSucceeded = YES;
-            [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+            reconnectSucceeded = [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
+            if (!reconnectSucceeded) {
+                // Never hand a session with the server's default time zone to a query.
+                // Preserve all saved state so the next use can retry restoration.
+                [self _disconnectPreservingProxyReconnect:YES];
+                state = SPMySQLConnectionLostInBackground;
+                reconnectingThread = NULL;
+                return NO;
+            }
             // When the connection is restored successfully, reset the relevant variables to prepare for the next time
             databaseToRestore = nil;
             encodingToRestore = nil;
@@ -1534,6 +1561,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
+		[self.sessionAccess clearSocket];
 		state = SPMySQLDisconnected;
 	}
 
@@ -1548,8 +1576,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return;
 	}
 
-	// If a query is active, cancel it
-	[self cancelCurrentQuery];
+    [self.sessionAccess cancelActiveQuery:^{ [self cancelCurrentQuery]; }];
 
 	state = SPMySQLDisconnecting;
 
@@ -1566,6 +1593,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _unlockConnection];
 	[self _cancelKeepAlives];
 	[self _lockConnection];
+	[self.sessionAccess clearSocket];
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.
@@ -1699,7 +1727,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self setEncodingUsesLatin1Transport:encodingUsesLatin1Transport];
 }
 
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier
@@ -1713,12 +1741,7 @@ asm(".desc ___crashreporter_info__, 0x10");
         [self setEncodingUsesLatin1Transport:useLatin1Transport];
     }
 
-    if ([timeZoneIdentifier length]) {
-        // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
-        // bypasses its equality guard and re-runs SET time_zone after reconnect.
-        self.timeZoneIdentifier = nil;
-        [self updateTimeZoneIdentifier:timeZoneIdentifier];
-    }
+    return [SASessionTimeZoneRestorer restoreTimeZoneIdentifier:timeZoneIdentifier onConnection:self];
 }
 
 /**

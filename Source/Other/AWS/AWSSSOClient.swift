@@ -46,9 +46,9 @@ import OSLog
         case .invalidProfile:
             return NSLocalizedString("The profile is not configured for AWS IAM Identity Center", comment: "sso error")
         case .tokenNotFound:
-            return NSLocalizedString("No cached AWS SSO session was found. Run `aws sso login` and try again.", comment: "sso error")
+            return NSLocalizedString("No cached AWS SSO session was found.", comment: "sso error")
         case .tokenExpired:
-            return NSLocalizedString("The cached AWS SSO token has expired. Run `aws sso login` and reconnect.", comment: "sso error")
+            return NSLocalizedString("The cached AWS SSO token has expired.", comment: "sso error")
         case .networkFailure:
             return NSLocalizedString("Network request to AWS IAM Identity Center failed", comment: "sso error")
         case .invalidResponse:

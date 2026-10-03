@@ -1183,6 +1183,39 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         XCTAssertTrue(onlyInspected(server), server.statements.joined(separator: "\n"))
     }
 
+    /// Verifies the trigger inventory binds the schema name on a case-sensitive server, so a
+    /// rename is not refused over triggers that belong to a differently cased database.
+    ///
+    /// `information_schema.TRIGGERS.TRIGGER_SCHEMA` is collated case-insensitively on MariaDB
+    /// (`utf8mb3_general_ci` on 11.8) whatever `lower_case_table_names` says, so a plain
+    /// comparison lists `foo`'s triggers while renaming `Foo` - and those are reported as
+    /// objects the rename cannot move. `TABLES`, `ROUTINES` and `VIEWS` follow the setting, and
+    /// so does MySQL for `TRIGGERS`, so only this one query asks to bind.
+    func testTheTriggerInventoryBindsTheSchemaNameWhereTheServerDoesNot() throws {
+        let server = makeServer(lowerCaseTableNames: "0")
+        // Answering only the bound form: an unbound query would go unanswered and the
+        // inspection would fail rather than silently reading another schema's triggers.
+        server.respond(to: "SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE BINARY TRIGGER_SCHEMA = 'shop'",
+                       rows: [["orders_audit", "orders"]])
+        let description = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(description.contains("trigger 'orders_audit' on table 'orders'"), description)
+        XCTAssertTrue(server.statements.contains("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE BINARY TRIGGER_SCHEMA = 'shop' ORDER BY TRIGGER_NAME"),
+                      server.statements.joined(separator: "\n"))
+        XCTAssertTrue(onlyInspected(server), server.statements.joined(separator: "\n"))
+    }
+
+    /// And where the server folds names it is left as it was: the names it stores are folded
+    /// already, so there is nothing to tell apart and nothing to bind.
+    func testTheTriggerInventoryIsUnchangedWhereTheServerFolds() throws {
+        let server = makeServer(lowerCaseTableNames: "2")
+        server.respond(to: "SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = 'shop'",
+                       rows: [["orders_audit", "orders"]])
+        let description = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+        XCTAssertTrue(description.contains("trigger 'orders_audit' on table 'orders'"), description)
+        XCTAssertFalse(server.statements.contains { $0.contains("BINARY TRIGGER_SCHEMA") },
+                       server.statements.joined(separator: "\n"))
+    }
+
     /// Verifies a failed information_schema query stops the inspection and
     /// the rename, so no object can be dropped unseen: an account that can
     /// read neither mysql.proc nor, for want of a global SELECT or

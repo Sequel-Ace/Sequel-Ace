@@ -830,8 +830,13 @@ final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingRes
         let databaseWarning = try row(from: databaseWarningsResult)
         XCTAssertEqual(databaseWarning.count > 1 ? databaseWarning[1] as? String : nil, "1008")
 
+        // Count at the outer SELECT: MariaDB 13 counts only the limited rows
+        // when SQL_CALC_FOUND_ROWS is attached to a UNION branch. A derived
+        // table keeps this regression focused on preserving session diagnostics.
         _ = connection.queryString(
-            "SELECT SQL_CALC_FOUND_ROWS value FROM assertion_diagnostics UNION ALL SELECT 2 UNION ALL SELECT 3 LIMIT 1",
+            "SELECT SQL_CALC_FOUND_ROWS value FROM " +
+                "(SELECT value FROM assertion_diagnostics UNION ALL SELECT 2 UNION ALL SELECT 3) " +
+                "AS found_rows_values LIMIT 1",
             assertingDatabase: unicodeDatabase
         )
         assertQuerySucceeded(connection)
