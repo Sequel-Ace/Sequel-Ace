@@ -380,6 +380,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		reconnectionRetryAttempts = 0;
 		lastDelegateDecisionForLostConnection = SPMySQLConnectionLostDisconnect;
 		delegateDecisionLock = [[NSLock alloc] init];
+		valueEscaper = [[SAConnectionEscaper alloc] init];
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];
@@ -780,12 +781,19 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
+		[valueEscaper forgetSession];
 		[self _unlockConnection];
 		return NO;
 	}
 
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
+	// What the new session reports is recorded for the escaper, which escapes from this rather
+	// than from the connection's own handle.
+	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+	                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+	                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                            isHandshake:YES];
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -828,6 +836,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// a query, ensure the connection is still up afterwards (!)
 	[self _updateConnectionVariables];
 	if (state != SPMySQLConnected) return NO;
+
+	// What a session starts with is only known once it has run a statement: a server's
+	// init_connect runs after the handshake has been answered, and can turn
+	// NO_BACKSLASH_ESCAPES on for every session without the global mode saying so. The escaping
+	// mode is taken from here, so that a session forgotten at teardown falls back to the mode the
+	// session after it will start under rather than to what the handshake alone showed.
+	[self _lockConnection];
+	if (mySQLConnection) {
+		[valueEscaper recordStartingModeWithNoBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0];
+	}
+	[self _unlockConnection];
 
 	// Now connection is established and verified, reset the counter
 	reconnectionRetryAttempts = 0;
@@ -1020,7 +1039,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
     //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL
     if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus) {
-        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
+        opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
         connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
     }
@@ -1441,6 +1460,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	mySQLConnection = NULL;
 	serverVersionNumber = 0;
 	state = SPMySQLDisconnected;
+	// The session is gone, so what it reported goes with it: until the next one shakes hands,
+	// values follow the character set on record, which that session will be set up with.
+	[valueEscaper forgetSession];
 	[self _unlockConnection];
 
 	// If using a connection proxy, disconnect that too
@@ -1497,6 +1519,47 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// So even though we told the server that the client uses utf8 and the results
 	// should be encoded in utf8, too, the character got lost.
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
+
+	// What a session still needs once it has reported its variables - that the server will
+	// report later character set changes, and that the one it is in can be converted for - is
+	// worked out by SASessionStartupPlan. Only the statements it returns are run here.
+	SASessionStartupPlan *startupPlan = [SASessionStartupPlan
+		planForReportedCharacterSet:retrievedEncoding
+		               trackingList:[variables objectForKey:@"session_track_system_variables"]
+		                      quote:^NSString *(NSString *value) { return [value mySQLTickQuotedString]; }
+		           serverIsProxySQL:^BOOL{ return [self _serverIsProxySQL]; }];
+	// The two statements are run apart because their outcomes mean different things: a failed
+	// tracking statement costs later changes being reported, which the session survives, while a
+	// failed SET NAMES decides which character set the session is actually in.
+	BOOL sessionReportsChanges = [startupPlan sessionReportsChanges];
+	if ([startupPlan trackingStatement]) {
+		[self queryString:[startupPlan trackingStatement]];
+		if ([self queryErrored]) {
+			sessionReportsChanges = NO;
+			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
+		}
+	}
+	// Where the session reports its changes, what it reports is the whole truth - the escaper
+	// does not have to tell a reported change from the name the session was connected with,
+	// which it cannot do when a change leads back to that name.
+	[valueEscaper recordSessionReportsChanges:sessionReportsChanges];
+	if ([startupPlan movesToAnotherCharacterSet]) {
+		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session.",
+		      retrievedEncoding);
+		// More than one candidate, best first: a server too old for utf8mb4 is offered utf8
+		// rather than left in a character set nothing can convert for.
+		retrievedEncoding = [startupPlan characterSetWithoutStatements];
+		for (SASessionCharacterSetMove *move in [startupPlan characterSetMoves]) {
+			[self queryString:[move statement]];
+			if (![self queryErrored]) {
+				retrievedEncoding = [move characterSet];
+				break;
+			}
+			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", [move statement], [self lastErrorMessage]);
+		}
+	} else {
+		retrievedEncoding = [startupPlan characterSet];
+	}
 
 	// Update instance variables
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];

@@ -32,6 +32,7 @@
 
 #import "Locking.h"
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Locking)
 
@@ -92,6 +93,19 @@
 	) {
 		SPLog(@"SPMySQLConnection: Discarding unretrieved results. This is currently normal when using CALL.");
 		[self _flushMultipleResultSets];
+	}
+
+	// Record what the session reports, now that everything the statement produced has been read.
+	// This is the only point at which that is true for every path: a statement's own result is
+	// read after the statement returns - stored at once, or streamed while this lock is held -
+	// and a session-state change the server reports arrives with the last of those packets. The
+	// connection is still held here, so nothing else can be using the handle, and no further
+	// lock is needed.
+	if (state == SPMySQLConnected && mySQLConnection) {
+		[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+		                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+		                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+		                            isHandshake:NO];
 	}
 
 	// Tell everyone that the connection is available again

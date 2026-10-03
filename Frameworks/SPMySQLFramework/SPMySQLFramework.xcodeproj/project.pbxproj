@@ -94,8 +94,17 @@
 		9615D85B2D5EDF530095F55A /* mysql_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8462D5EDF530095F55A /* mysql_version.h */; };
 		9615D85C2D5EDF530095F55A /* mysqld_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8472D5EDF530095F55A /* mysqld_error.h */; };
 		96A5DDB32D63C8AE0079105E /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 96A5DDB22D63C89A0079105E /* libc++.tbd */; };
+		99FFE998C628789B5E2C3859 /* SAOfflineEscapingHandleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E4BA293FE174E85D1A15B4 /* SAOfflineEscapingHandleTests.swift */; };
+		C40B82A61D9E44E7B3F26A15 /* SAConnectionCharacterSetsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E55D1C38A47F0921BE4D370 /* SAConnectionCharacterSetsTests.swift */; };
+		D52A9E314C87B06FA3E19D48 /* SASessionStateTrackingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81B6D5042FA937C15BE8A26 /* SASessionStateTrackingTests.swift */; };
+		28C6B90F4A7D315E86F2D140 /* SASessionStartupPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41E8A37C5D902B6F18CA7E53 /* SASessionStartupPlanTests.swift */; };
+		F21D5A8C6E4039B7AC185D62 /* SAEscapingBoundaryIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9E74C1D05A28F6914BE7A3 /* SAEscapingBoundaryIntegrationTests.swift */; };
 		A296B829FB2005B17DB7EA5E /* SADatabaseAssertionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */; };
 		AB48E5C81EBB3D12966CCEC1 /* SAByteStringDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B177FE6ABE7EBC554A5905A4 /* SAByteStringDecoderTests.swift */; };
+		B92F8A45F3BC77529ECDCB10 /* SAOfflineEscapingHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */; };
+		B7AC94D227A75501D3967BD6 /* SAConnectionCharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */; };
+		A3E7C91D5B284F06A1D7E340 /* SASessionStateTracking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */; };
+		6A3F8D21C94E5B70821DA463 /* SASessionStartupPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C27E54B3F18A06D7B45C2E9 /* SASessionStartupPlan.swift */; };
 		D10000332F8C000600C4C14A /* SACleartextAuthPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */; };
 		D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386B159A6D535F0686530898 /* SADatabaseAssertion.swift */; };
 		FD4211952918779400941BFE /* SPMySQLGeometryDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */; };
@@ -206,6 +215,11 @@
 		58C7C1E714DB6E8600436315 /* Field Definitions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "Field Definitions.m"; path = "Source/SPMySQLResult Categories/Field Definitions.m"; sourceTree = "<group>"; };
 		58D2A4CF16EDF1C6002EB401 /* SPMySQLEmptyResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLEmptyResult.h; path = Source/SPMySQLEmptyResult.h; sourceTree = "<group>"; };
 		58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLEmptyResult.m; path = Source/SPMySQLEmptyResult.m; sourceTree = "<group>"; };
+		73E4BA293FE174E85D1A15B4 /* SAOfflineEscapingHandleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAOfflineEscapingHandleTests.swift; sourceTree = "<group>"; };
+		6E55D1C38A47F0921BE4D370 /* SAConnectionCharacterSetsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCharacterSetsTests.swift; sourceTree = "<group>"; };
+		E81B6D5042FA937C15BE8A26 /* SASessionStateTrackingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionStateTrackingTests.swift; sourceTree = "<group>"; };
+		41E8A37C5D902B6F18CA7E53 /* SASessionStartupPlanTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionStartupPlanTests.swift; sourceTree = "<group>"; };
+		3B9E74C1D05A28F6914BE7A3 /* SAEscapingBoundaryIntegrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEscapingBoundaryIntegrationTests.swift; sourceTree = "<group>"; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* SPMySQL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SPMySQL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libmysqlclient.24.dylib; sourceTree = "<group>"; };
@@ -226,6 +240,10 @@
 		9615D8472D5EDF530095F55A /* mysqld_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
 		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
+		DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAOfflineEscapingHandle.swift; path = Source/SAOfflineEscapingHandle.swift; sourceTree = "<group>"; };
+		1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionCharacterSets.swift; path = Source/SAConnectionCharacterSets.swift; sourceTree = "<group>"; };
+		7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SASessionStateTracking.swift; path = Source/SASessionStateTracking.swift; sourceTree = "<group>"; };
+		9C27E54B3F18A06D7B45C2E9 /* SASessionStartupPlan.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SASessionStartupPlan.swift; path = Source/SASessionStartupPlan.swift; sourceTree = "<group>"; };
 		FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLGeometryDataTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -345,6 +363,10 @@
 				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
 				D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */,
 				A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */,
+				DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */,
+				1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */,
+				7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */,
+				9C27E54B3F18A06D7B45C2E9 /* SASessionStartupPlan.swift */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
@@ -358,6 +380,11 @@
 				FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */,
 				20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */,
 				B177FE6ABE7EBC554A5905A4 /* SAByteStringDecoderTests.swift */,
+				73E4BA293FE174E85D1A15B4 /* SAOfflineEscapingHandleTests.swift */,
+				6E55D1C38A47F0921BE4D370 /* SAConnectionCharacterSetsTests.swift */,
+				E81B6D5042FA937C15BE8A26 /* SASessionStateTrackingTests.swift */,
+				41E8A37C5D902B6F18CA7E53 /* SASessionStartupPlanTests.swift */,
+				3B9E74C1D05A28F6914BE7A3 /* SAEscapingBoundaryIntegrationTests.swift */,
 				D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */,
 			);
 			name = "Unit Tests";
@@ -716,6 +743,11 @@
 				507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */,
 				A296B829FB2005B17DB7EA5E /* SADatabaseAssertionTests.swift in Sources */,
 				AB48E5C81EBB3D12966CCEC1 /* SAByteStringDecoderTests.swift in Sources */,
+				99FFE998C628789B5E2C3859 /* SAOfflineEscapingHandleTests.swift in Sources */,
+				C40B82A61D9E44E7B3F26A15 /* SAConnectionCharacterSetsTests.swift in Sources */,
+				D52A9E314C87B06FA3E19D48 /* SASessionStateTrackingTests.swift in Sources */,
+				28C6B90F4A7D315E86F2D140 /* SASessionStartupPlanTests.swift in Sources */,
+				F21D5A8C6E4039B7AC185D62 /* SAEscapingBoundaryIntegrationTests.swift in Sources */,
 				D10000332F8C000600C4C14A /* SACleartextAuthPolicyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -753,6 +785,10 @@
 				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
 				D10000312F8C000600C4C14A /* SACleartextAuthPolicy.swift in Sources */,
 				444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */,
+				B92F8A45F3BC77529ECDCB10 /* SAOfflineEscapingHandle.swift in Sources */,
+				B7AC94D227A75501D3967BD6 /* SAConnectionCharacterSets.swift in Sources */,
+				A3E7C91D5B284F06A1D7E340 /* SASessionStateTracking.swift in Sources */,
+				6A3F8D21C94E5B70821DA463 /* SASessionStartupPlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

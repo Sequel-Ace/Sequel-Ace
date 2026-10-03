@@ -1313,18 +1313,23 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         mysqlEncoding = @"utf8mb4";
     }
 
-    // Set the connection encoding
-    if (![mySQLConnection setEncoding:mysqlEncoding]) {
+    // Set the connection encoding. A NO here means the character set asked for is not the one
+    // in use, which happens two ways: the statement failed and the session is unchanged, or
+    // the connection has no string encoding for it and moved to one it can convert values
+    // with. Only the first is a failure; the second leaves a working session on another
+    // character set, which the menu and the stored value have to follow.
+    if (![mySQLConnection setEncoding:mysqlEncoding] && [mySQLConnection queryErrored]) {
         NSLog(@"Error: could not set encoding to %@ nor fall back to database encoding on MySQL %@", mysqlEncoding, [self mySQLVersion]);
         return;
     }
+    NSString *encodingInUse = [mySQLConnection encoding];
     [mySQLConnection setEncodingUsesLatin1Transport:useLatin1Transport];
 
     // Update the selected menu item
     if (useLatin1Transport) {
-        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[NSString stringWithFormat:@"%@-", mysqlEncoding]]];
+        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[NSString stringWithFormat:@"%@-", encodingInUse]]];
     } else {
-        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:mysqlEncoding]];
+        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:encodingInUse]];
     }
 
     // Update the stored connection encoding to prevent switches
