@@ -329,6 +329,57 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertTrue(whereClause(of: controller).contains("5"))
     }
 
+
+    /// Verifies a restored row that has since been enabled is not unchecked again when the editor
+    /// rebuilds its checkbox - which it does on a criteria reload, as after a custom filter is
+    /// removed in "Edit Filters…".
+    ///
+    /// The mark a restored row carries exists so that tracking resumes when the checkbox is built
+    /// anew before the row has been edited. It therefore has to go the moment the row stops
+    /// waiting, or a later rebuild would take the row back to unchecked with the user's value
+    /// still in it. The test before this one reloads before the first edit; this one reloads after.
+    func testARestoredRowEnabledBeforeACriteriaReloadStaysEnabled() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: saved)
+        editor.reloadCriteria()
+        XCTAssertEqual(checkbox(in: editor)?.state, .off, "it is still waiting")
+
+        // the user types, which enables the row
+        type("5", into: editor, of: controller)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("5"))
+
+        // removing a custom filter invalidates the criteria and rebuilds every display value
+        editor.reloadCriteria()
+
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on, "the row the user enabled stays enabled")
+        XCTAssertTrue(whereClause(of: controller).contains("5"), "and keeps producing its clause")
+    }
+
+    /// Verifies the same for a row whose checkbox the user clicked rather than typing into it.
+    func testARestoredRowCheckedByHandStaysCheckedAcrossACriteriaReload() throws {
+        let (controller, editor) = try makeBoundController()
+        call(controller, "addStarterFilterExpression")
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: saved)
+        editor.reloadCriteria()
+        let box = try XCTUnwrap(checkbox(in: editor))
+        XCTAssertEqual(box.state, .off)
+
+        // the user checks it themselves
+        box.state = .on
+        controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
+
+        editor.reloadCriteria()
+
+        XCTAssertEqual(checkbox(in: editor)?.state, .on, "the user's own choice survives the rebuild")
+    }
+
     /// Verifies the persisted marker is a plain plist key that older readers ignore, and that an unchecked
     /// empty row saved by an older version - without the marker - restores as a plain unchecked row that
     /// typing does not check.

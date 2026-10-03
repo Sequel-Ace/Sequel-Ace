@@ -80,18 +80,36 @@ enum SARuleFilterContextMenu {
     /// The seeded row's checkbox while the row waits for its first edit.
     @objc public private(set) weak var checkbox: NSButton?
 
+    /// Clears the mark a restored row carries, run when tracking ends for good.
+    private var clearRestoredMark: (() -> Void)?
+
     /// Tracks `checkbox` as the seeded row's and unchecks it.
     ///
-    /// - Parameter checkbox: The row's enable checkbox.
-    @objc(beginWithCheckbox:)
-    public func begin(with checkbox: NSButton) {
+    /// - Parameters:
+    ///   - checkbox: The row's enable checkbox.
+    ///   - clearRestoredMark: Clears the mark a restored row carries, called
+    ///     once tracking ends. A restored row keeps that mark so that tracking
+    ///     resumes whenever its checkbox is built again - the editor rebuilds
+    ///     it on a reload, before the row has been edited - which is also why
+    ///     the mark has to go the moment the row stops waiting. Without that,
+    ///     a later rebuild would uncheck a row the user has since enabled.
+    @objc(beginWithCheckbox:clearingRestoredMark:)
+    public func begin(with checkbox: NSButton, clearingRestoredMark clearRestoredMark: (() -> Void)?) {
         checkbox.state = .off
         self.checkbox = checkbox
+        self.clearRestoredMark = clearRestoredMark
     }
 
     /// Stops tracking, e.g. because the user clicked the row's checkbox.
     @objc public func forget() {
+        endTracking()
+    }
+
+    /// Stops tracking and lets a restored row forget that it was ever waiting.
+    private func endTracking() {
         checkbox = nil
+        clearRestoredMark?()
+        clearRestoredMark = nil
     }
 
     /// Whether `value` is the tracked checkbox.
@@ -152,7 +170,7 @@ enum SARuleFilterContextMenu {
         let tracked = self.row(in: editor)
         guard tracked != NSNotFound, row == tracked, let checkbox else { return false }
         checkbox.state = .on
-        self.checkbox = nil
+        endTracking()
         return true
     }
 }

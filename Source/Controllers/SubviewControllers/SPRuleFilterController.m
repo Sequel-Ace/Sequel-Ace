@@ -622,8 +622,16 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setState:([node initialState] ? NSControlStateValueOn : NSControlStateValueOff)];
 			[check setTarget:self];
 			[check setAction:@selector(_checkboxClicked:)];
-			// A restored starter row waits for its first edit again.
-			if ([node pendingStarter]) [self.pendingStarter beginWithCheckbox:check];
+			// A restored starter row waits for its first edit again. The mark stays on the node
+			// so that tracking resumes whenever the checkbox is built anew - the editor rebuilds
+			// it on a reload - and goes once the row stops waiting, so a later rebuild cannot
+			// uncheck a row the user has enabled since.
+			if ([node pendingStarter]) {
+				__weak EnableNode *markedNode = node;
+				[self.pendingStarter beginWithCheckbox:check clearingRestoredMark:^{
+					[markedNode setPendingStarter:NO];
+				}];
+			}
 			return check;
 		}
 		case RuleNodeTypeColumn: {
@@ -1504,7 +1512,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	id checkbox = [[filterRuleEditor displayValuesForRow:0] firstObject];
 	if (![checkbox isKindOfClass:[NSButton class]]) return;
-	[self.pendingStarter beginWithCheckbox:checkbox];
+	// a row seeded now carries no restored mark; the saved filter records the waiting state
+	[self.pendingStarter beginWithCheckbox:checkbox clearingRestoredMark:nil];
 	[self _updateButtonStates];
 	[self _updateFilterPreview];
 }
@@ -1925,6 +1934,10 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		if ([[serialized objectForKey:SerFilterExprPendingStarter] boolValue]) {
 			// Unchecked through the tracker when its checkbox is created. The node itself stays like a
 			// fresh row's, so reloading the criteria (after "Edit Filters…") keeps the row and its checkbox.
+			// At most one row carries this: it is written for the one checkbox being tracked, and only
+			// one is. A hand-edited filter naming several would leave all but the last of them unchecked
+			// on every reload, which is the kind of nonsense such a filter can hold anyway - an unknown
+			// column in it refuses the whole expression a few lines above.
 			[enabler setInitialState:YES];
 			[enabler setPendingStarter:YES];
 		}
