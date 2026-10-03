@@ -245,7 +245,14 @@ public final class SAConnectionEscaper: NSObject {
                                                               sessionIsBeingReplaced: sessionIsBeingReplaced) else {
             return -1
         }
-        let noBackslashEscapes = sessionUsesNoBackslashEscapes
+        // A session being replaced is followed in neither respect: the next session starts in the
+        // mode sessions start in on this server - which an `init_connect` can set - and a value
+        // built now may well be sent on it. Escaping it in the outgoing session's mode would put
+        // backslashes in a literal the next session reads them literally in, so the quote after
+        // one would end the string.
+        let noBackslashEscapes = sessionIsBeingReplaced
+            ? sessionsStartWithNoBackslashEscapes
+            : sessionUsesNoBackslashEscapes
         if handle == nil || handleCharacterSet != characterSet || handleUsesNoBackslashEscapes != noBackslashEscapes {
             handle = SAOfflineEscapingHandle.handle(
                 forCharacterSet: characterSet,

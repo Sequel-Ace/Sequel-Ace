@@ -390,4 +390,25 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
                        "for latin1 the second byte is a backslash and has to be doubled")
     }
 
+    /// A session being replaced is followed in its escaping mode no more than in its character
+    /// set: the next session starts in the mode this server starts sessions in, and a value built
+    /// now may be sent on it. Escaping with backslashes for a session that reads them literally
+    /// would let the quote after one end the literal.
+    func testASessionBeingReplacedUsesTheModeSessionsStartIn() throws {
+        let escaper = SAConnectionEscaper()
+        // The server starts sessions without backslash escapes - an init_connect, say - and this
+        // session was then switched out of that mode.
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, openTransaction: false, isHandshake: true)
+        escaper.recordStartingMode(noBackslashEscapes: true)
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        let quote = Data("it's".utf8)
+        let forTheOldSession = try XCTUnwrap(escape(quote, with: escaper, onRecord: "utf8mb4", sessionIsBeingReplaced: false))
+        XCTAssertEqual(forTheOldSession, Data("it\\'s".utf8), "the session itself takes backslash escapes")
+
+        let forTheReplacement = try XCTUnwrap(escape(quote, with: escaper, onRecord: "utf8mb4", sessionIsBeingReplaced: true))
+        XCTAssertEqual(forTheReplacement, Data("it''s".utf8),
+                       "the replacement session starts without them, so the quote is doubled")
+    }
+
 }
