@@ -369,4 +369,25 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
                        "a session being replaced follows the record, so the lead byte is protected")
     }
 
+    /// Latin1 transport with a server that reports nothing - behind a proxy that does not carry
+    /// the session-state tracking, where the record is the only guide. The transport character
+    /// set is what the server reads a value in, so that is what the record has to carry: escaping
+    /// `BF 5C` for GBK leaves it untouched, and latin1 reads the `5C` as a backslash that escapes
+    /// the closing quote.
+    func testLatin1TransportIsEscapedForLatin1WhenNothingIsReported() throws {
+        let escaper = SAConnectionEscaper()
+        // A session that only ever reports the character set it was connected with, as one
+        // without state tracking does.
+        escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+
+        let gbkCharacter = Data([0xBF, 0x5C])
+        let forTheName = try XCTUnwrap(escape(gbkCharacter, with: escaper, onRecord: "gbk"))
+        XCTAssertEqual(forTheName, gbkCharacter, "for GBK the pair is one character and stays as it is")
+
+        // What the connection passes once latin1 transport is on.
+        let forTheTransport = try XCTUnwrap(escape(gbkCharacter, with: escaper, onRecord: "latin1"))
+        XCTAssertEqual(forTheTransport, Data([0xBF, 0x5C, 0x5C]),
+                       "for latin1 the second byte is a backslash and has to be doubled")
+    }
+
 }

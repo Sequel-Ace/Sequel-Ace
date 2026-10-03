@@ -112,10 +112,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// set on record, so a value built now - which may well be sent on that next session - follows
 	// the record rather than what the old session last reported. Without this the safeguard had
 	// no caller that ever enabled it.
+	// Latin1 transport sets the session's client character set to latin1 while `encoding` keeps
+	// the name the connection was put on, so the transport character set is what the server
+	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
+	// as two latin1 ones, the second of which escapes the closing quote.
+	NSString *transportCharacterSet = encodingUsesLatin1Transport ? @"latin1" : encoding;
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1
-	                               characterSetOnRecord:encoding
+	                               characterSetOnRecord:transportCharacterSet
 	                             sessionIsBeingReplaced:(state == SPMySQLDisconnecting)];
 	if (escapedLength < 0) {
 		// A value that cannot be escaped for this character set is not written. Before, an
