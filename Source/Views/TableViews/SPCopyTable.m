@@ -525,9 +525,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 /*
  * Return selected rows as a series of UPDATE `foo` SET `bar` = baz WHERE ... statements, one per
- * row, each matching on the row's primary key. Returns nil if the rows carry nothing to identify
- * them by, or if every column they do carry is part of that key.
- * If no selected table name is given `<table>` will be used instead.
+ * row, each matching on the row's primary key. Returns nil — and beeps — if the rows' origin and
+ * complete key cannot be established, or if every column they carry is part of that key.
  */
 - (NSString *)rowsAsSqlUpdatesOnlySelectedRows:(BOOL)onlySelected{
 
@@ -538,14 +537,21 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSArray *tbColumns = [self _sqlColumnsSkippingAutoIncrement:NO skippingGenerated:YES];
 	if (!tbColumns) return nil;
 
-	NSIndexSet *keyColumnIndexes = [self _keyColumnIndexesOfSqlColumns:tbColumns];
+	// The statements must name the table the rows actually came from and match on that table's
+	// complete key: the projection's own flags say nothing about key parts the SELECT left out,
+	// and its headers can be aliases rather than column names at all.
+	SAUpdateCopyOrigin *origin = [self _updateOriginOfSqlColumns:tbColumns];
+	if (!origin) {
+		NSBeep();
+		return nil;
+	}
 
 	NSArray *rows = [self _sqlLiteralsForRowsOnlySelectedRows:onlySelected columns:tbColumns];
 	if (!rows) return nil;
 
-	NSString *result = [SASQLStatementBuilder updateStatementsForTable:selectedTable
-	                                                           columns:[self _headersOfSqlColumns:tbColumns]
-	                                                  keyColumnIndexes:keyColumnIndexes
+	NSString *result = [SASQLStatementBuilder updateStatementsForTable:origin.table
+	                                                           columns:origin.columns
+	                                                  keyColumnIndexes:origin.keyColumnIndexes
 	                                                              rows:rows];
 	if (!result) NSBeep();
 
@@ -676,30 +682,116 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 }
 
 /**
- * Indexes, among the columns the statement includes, of those identifying a row. The content view
- * marks them with "isprimarykey"; a result set in the query editor carries the server's
- * PRI_KEY_FLAG instead, the same split the auto_increment lookup above has to make.
+ * The field metadata of the columns the statement includes, in the order their values are
+ * produced by -_sqlLiteralsForRow:columns:.
  */
-- (NSIndexSet *)_keyColumnIndexesOfSqlColumns:(NSArray *)tbColumns
+- (NSArray *)_includedFieldDefinitionsOfSqlColumns:(NSArray *)tbColumns
 {
-	NSMutableIndexSet *keyColumnIndexes = [NSMutableIndexSet indexSet];
-	NSUInteger includedIndex = 0;
+	NSMutableArray *includedFieldDefinitions = [[NSMutableArray alloc] initWithCapacity:[tbColumns count]];
 
 	for (id data in tbColumns) {
 		if ([data isKindOfClass:[NSNull class]]) continue;
-
-		NSUInteger colMapping = [[data objectForKey:kColMapping] unsignedIntValue];
-		NSDictionary *field = [columnDefinitions safeObjectAtIndex:colMapping];
-		id isKey = [field safeObjectForKey:@"isprimarykey"] ?: [field safeObjectForKey:@"PRI_KEY_FLAG"];
-
-		if ([isKey respondsToSelector:@selector(boolValue)] && [isKey boolValue]) {
-			[keyColumnIndexes addIndex:includedIndex];
-		}
-
-		includedIndex++;
+		NSUInteger colMapping = [[data objectForKey:kColMapping] unsignedIntegerValue];
+		[includedFieldDefinitions safeAddObject:[columnDefinitions safeObjectAtIndex:colMapping]];
 	}
 
-	return keyColumnIndexes;
+	return includedFieldDefinitions;
+}
+
+/**
+ * Where each column the statement includes came from, per the server's field metadata — the
+ * origin column name rather than any alias the SELECT gave it.
+ */
+- (NSArray<SAFieldOrigin *> *)_fieldOriginsOfSqlColumns:(NSArray *)tbColumns
+{
+	return [SASQLStatementBuilder fieldOriginsFromFieldDefinitions:[self _includedFieldDefinitionsOfSqlColumns:tbColumns]
+	                                                         table:selectedTable
+	                                                       database:selectedDatabase];
+}
+
+/**
+ * The origin an UPDATE of these rows can safely target: the single table they came from, that
+ * table's origin names for the projected columns, and the indexes of the complete key to match
+ * rows on. Returns nil — and the UPDATE copy must be refused — whenever that cannot be
+ * established: fields with no origin column (expressions), a projection spanning tables, or a
+ * partially-projected composite key, whose match would update more rows than the one it was
+ * built from.
+ */
+- (SAUpdateCopyOrigin *)_updateOriginOfSqlColumns:(NSArray *)tbColumns
+{
+	NSArray *includedFieldDefinitions = [self _includedFieldDefinitionsOfSqlColumns:tbColumns];
+	NSArray<SAFieldOrigin *> *fields = [SASQLStatementBuilder fieldOriginsFromFieldDefinitions:includedFieldDefinitions
+	                                                                                     table:selectedTable
+	                                                                                   database:selectedDatabase];
+	if (![fields count]) return nil;
+
+	NSString *originTable = [fields[0] table];
+	NSString *originDatabase = [fields[0] database];
+
+	// Which metadata the rows carry decides where the table's complete key comes from: a query
+	// result may project only part of the table, so its key parts have to be asked of the
+	// server, while table content metadata covers the whole table and marks every key part.
+	NSArray<NSString *> *tableKeyColumns = nil;
+	NSDictionary *firstFieldDefinition = [includedFieldDefinitions firstObject];
+	if ([firstFieldDefinition objectForKey:@"org_name"] != nil) {
+		tableKeyColumns = [self _tableKeyColumnsOfTable:originTable database:originDatabase];
+	}
+	else {
+		tableKeyColumns = [self _primaryKeyColumnNamesOfColumnDefinitions];
+	}
+
+	if (![tableKeyColumns count]) return nil;
+
+	return [SASQLStatementBuilder updateOriginForFields:fields tableKeyColumns:tableKeyColumns];
+}
+
+/**
+ * The names of every primary key column of the table whose metadata columnDefinitions holds,
+ * in the order the table defines them. Returns an empty array for a table with no key.
+ */
+- (NSArray<NSString *> *)_primaryKeyColumnNamesOfColumnDefinitions
+{
+	NSMutableArray<NSString *> *keyColumns = [[NSMutableArray alloc] init];
+
+	for (NSDictionary *field in columnDefinitions) {
+		if ([[field safeObjectForKey:@"isprimarykey"] boolValue]) {
+			NSString *name = [field safeObjectForKey:@"name"];
+			if (![name length]) return nil;
+			[keyColumns safeAddObject:name];
+		}
+	}
+
+	return keyColumns;
+}
+
+/**
+ * The names of the primary key columns of a table on the server, looked up live, in the order
+ * the key defines them. Returns nil if the connection or the server cannot answer, which leaves
+ * any UPDATE copy that depends on it refused.
+ */
+- (NSArray<NSString *> *)_tableKeyColumnsOfTable:(NSString *)table database:(NSString *)database
+{
+	if (!mySQLConnection || ![table length] || ![database length]) return nil;
+
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE "
+		 @"WHERE TABLE_SCHEMA = %@ AND TABLE_NAME = %@ AND CONSTRAINT_NAME = 'PRIMARY' "
+		 @"ORDER BY ORDINAL_POSITION",
+		[mySQLConnection escapeAndQuoteString:database],
+		[mySQLConnection escapeAndQuoteString:table]];
+
+	SPMySQLResult *keyResult = [mySQLConnection queryString:query assertingDatabaseContext:database];
+	if ([mySQLConnection queryErrored]) return nil;
+
+	NSMutableArray<NSString *> *keyColumns = [[NSMutableArray alloc] init];
+	NSArray *row = nil;
+	while ((row = [keyResult getRowAsArray])) {
+		NSString *columnName = [row safeObjectAtIndex:0];
+		if (![columnName length]) return nil;
+		[keyColumns safeAddObject:columnName];
+	}
+
+	return keyColumns;
 }
 
 /**
@@ -1320,14 +1412,13 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	}
 
 	// Copying as SQL UPDATE additionally needs a key to match the rows on, and something outside
-	// that key left to set
+	// that key left to set. Menu items validate on every pass and must not talk to the server,
+	// so this can only judge the projection's own shape — whether its key is the origin table's
+	// complete key is decided when the copy runs, which refuses with a beep when it is not.
 	if (menuItemTag == SPEditMenuCopyAsSQLUpdate) {
 		if (columnDefinitions == nil || [self numberOfSelectedRows] == 0) return NO;
 
-		NSArray *tbColumns = [self _sqlColumnsSkippingAutoIncrement:NO skippingGenerated:YES];
-		NSUInteger keyCount = [[self _keyColumnIndexesOfSqlColumns:tbColumns] count];
-
-		return (keyCount > 0 && [[self _headersOfSqlColumns:tbColumns] count] > keyCount);
+		return [SASQLStatementBuilder updateCopyPlausibleForFields:[self _fieldOriginsOfSqlColumns:[self _sqlColumnsSkippingAutoIncrement:NO skippingGenerated:YES]]];
 	}
 
 	return NO;

@@ -18,6 +18,47 @@ import Foundation
 /// A literal is passed in exactly as it will appear in the statement: `42`, `'O''Hara'`,
 /// `X'0a1b'`, `b'1010'`. The one value given meaning here is `NULL`, because MySQL matches it with
 /// `IS NULL` rather than `=` and a `WHERE` clause built the naive way would silently match no rows.
+
+/// Where one column of a result came from, as the server reports it.
+///
+/// `name` is the origin column — the one the server actually read — not the alias the SELECT may
+/// have given it; `table` and `database` are where that column lives. Fields with no origin, such
+/// as expressions, carry empty strings here, and the UPDATE eligibility checks refuse them.
+@objcMembers public final class SAFieldOrigin: NSObject {
+
+    /// The origin column name, or the empty string when the field reports none.
+    public var name: String = ""
+
+    /// The origin table name, or the empty string when the field reports none.
+    public var table: String = ""
+
+    /// The origin database name, or the empty string when the field reports none.
+    public var database: String = ""
+
+    /// Whether the server flagged the field as part of its table's key (`PRI_KEY_FLAG` in query
+    /// results, `isprimarykey` in table metadata).
+    public var primaryKeyFlagged: Bool = false
+}
+
+/// What an UPDATE copy should update, once the rows have been established safe to update.
+@objcMembers public final class SAUpdateCopyOrigin: NSObject {
+
+    /// The single origin table every projected column came from.
+    public let table: String
+
+    /// The origin name of every projected column, in projection order.
+    public let columns: [String]
+
+    /// The indexes, into `columns`, of the columns forming the origin table's complete key.
+    public let keyColumnIndexes: IndexSet
+
+    fileprivate init(table: String, columns: [String], keyColumnIndexes: IndexSet) {
+        self.table = table
+        self.columns = columns
+        self.keyColumnIndexes = keyColumnIndexes
+    }
+}
+
 @objcMembers public final class SASQLStatementBuilder: NSObject {
 
     /// Stands in for the table name when the rows did not come from one, as with a join in the
@@ -109,6 +150,121 @@ import Foundation
 
             return "UPDATE \(quotedTable) SET \(assignments)\nWHERE \(conditions);\n"
         }.joined()
+    }
+
+    // MARK: - UPDATE origin eligibility
+
+    /// Builds the origin facts an UPDATE copy needs from the field metadata the rows came with.
+    ///
+    /// Each field dictionary is used as-is: query results carry the server's `org_name`,
+    /// `org_table`, `db` and `PRI_KEY_FLAG`; table metadata instead carries `name` and
+    /// `isprimarykey`, with `table` and `database` standing in for the origin the metadata
+    /// is about. A field that reports no origin at all — an expression such as
+    /// `SELECT COUNT(*)` — extracts an empty name, which the eligibility checks refuse.
+    ///
+    /// The order of the returned origins matches the order of the field definitions given.
+    @objc(fieldOriginsFromFieldDefinitions:table:database:)
+    public class func fieldOrigins(fromFieldDefinitions fieldDefinitions: [Any]?, table: String?, database: String?) -> [SAFieldOrigin] {
+
+        guard let fieldDefinitions else { return [] }
+
+        return fieldDefinitions.map { rawField in
+
+            let field = rawField as? [String: Any] ?? [:]
+
+            // Query-result metadata wins where present: org_name is the column the server
+            // actually read, where `name` would only be the alias the SELECT gave it.
+            let orgName = field["org_name"] as? String
+            let name = orgName ?? (field["name"] as? String) ?? ""
+            let originTable = (field["org_table"] as? String) ?? table ?? ""
+            let originDatabase = (field["db"] as? String) ?? database ?? ""
+
+            let keyFlag = field["PRI_KEY_FLAG"] ?? field["isprimarykey"]
+            let primaryKeyFlagged = (keyFlag as? NSNumber)?.boolValue
+                ?? (keyFlag as? NSString)?.boolValue
+                ?? false
+
+            let origin = SAFieldOrigin()
+            origin.name = name
+            origin.table = originTable
+            origin.database = originDatabase
+            origin.primaryKeyFlagged = primaryKeyFlagged
+            return origin
+        }
+    }
+
+    /// Decides whether rows can be safely emitted as UPDATE statements, and if so what to
+    /// update: the one origin table they came from, the origin (never aliased) name of each
+    /// projected column, and the indexes of the columns to match rows on.
+    ///
+    /// "Safely" means the projection is tied to a single origin table and carries that
+    /// table's **complete** primary key, as given by `tableKeyColumns` — the origin table's
+    /// key column names from table metadata or `information_schema`, never a guess from the
+    /// projection's own flags. A partially-projected composite key would match more rows
+    /// than the one it was built from, an alias is not the name of any column to assign or
+    /// match, and a projection spanning tables or carrying expressions cannot be tied to
+    /// one row source at all. Any of those returns `nil`, and the UPDATE copy must not be
+    /// offered then.
+    ///
+    /// - Returns: The origin, or `nil` if the rows cannot be updated safely.
+    @objc(updateOriginForFields:tableKeyColumns:)
+    public class func updateOrigin(forFields fields: [SAFieldOrigin], tableKeyColumns: [String]) -> SAUpdateCopyOrigin? {
+
+        guard !fields.isEmpty, !tableKeyColumns.isEmpty else { return nil }
+
+        // Every projected field must name a real column of one real table.
+        guard fields.allSatisfy({ !$0.name.isEmpty && !$0.table.isEmpty && !$0.database.isEmpty }) else { return nil }
+
+        // And they must all come from the same table of the same database — otherwise the
+        // rows have no single origin to update.
+        let originTable = fields[0].table
+        let originDatabase = fields[0].database
+        guard fields.allSatisfy({ $0.table == originTable && $0.database == originDatabase }) else { return nil }
+
+        // A repeated origin column would produce `SET x = …, x = …`, which the server rejects.
+        let names = fields.map(\.name)
+        guard Set(names).count == names.count else { return nil }
+
+        // The table's complete key must be present, each part on a field the server itself
+        // flagged as key — a flagless field that merely shares the name means the two
+        // metadata sources disagree, which is not something to copy statements over.
+        var keyColumnIndexes = IndexSet()
+        for keyColumn in tableKeyColumns {
+            guard let index = names.firstIndex(of: keyColumn) else { return nil }
+            guard fields[index].primaryKeyFlagged else { return nil }
+            keyColumnIndexes.insert(index)
+        }
+
+        // With nothing outside the key, there is nothing to assign.
+        guard keyColumnIndexes.count < fields.count else { return nil }
+
+        return SAUpdateCopyOrigin(table: originTable, columns: names, keyColumnIndexes: keyColumnIndexes)
+    }
+
+    /// The cheaper question menu validation asks: could these fields plausibly support an
+    /// UPDATE copy, judged only from the projection's own metadata?
+    ///
+    /// Menu items validate on every display and must not talk to the server, so this cannot
+    /// require the origin table's complete key — establishing that in the query editor takes
+    /// an `information_schema` lookup, which `-updateOriginForFields:tableKeyColumns:` does
+    /// at copy time instead. An item that passes here can still be refused there; an item
+    /// that fails here can never succeed.
+    @objc(updateCopyPlausibleForFields:)
+    public class func updateCopyPlausible(forFields fields: [SAFieldOrigin]) -> Bool {
+
+        guard !fields.isEmpty else { return false }
+
+        guard fields.allSatisfy({ !$0.name.isEmpty && !$0.table.isEmpty && !$0.database.isEmpty }) else { return false }
+
+        let originTable = fields[0].table
+        let originDatabase = fields[0].database
+        guard fields.allSatisfy({ $0.table == originTable && $0.database == originDatabase }) else { return false }
+
+        let names = fields.map(\.name)
+        guard Set(names).count == names.count else { return false }
+
+        let flaggedCount = fields.filter(\.primaryKeyFlagged).count
+        return flaggedCount > 0 && flaggedCount < fields.count
     }
 
     // MARK: - Helpers
