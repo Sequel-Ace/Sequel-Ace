@@ -180,7 +180,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
     /// Verifies seeded starter children are dropped, and a starter-only root collapses to the rule.
     func testExtendingMarkedRootDropsSeededRows() {
-        let starter = expression(column: "a", values: [""])
+        let starter = seededExpression(column: "a")
         let rule = expression(column: "c", values: ["3"])
 
         let replaced = SARuleFilterRootConjunction.extendingMarkedRoot(rootGroup(children: [starter], isConjunction: false), withRule: rule)
@@ -195,7 +195,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
     /// Verifies a missing or untouched starter tree is replaced by the new rule.
     func testAppendingReplacesMissingOrStarterTree() {
         let rule = expression(column: "a", values: ["1"])
-        let starter = expression(column: "a", values: [""])
+        let starter = seededExpression(column: "a")
 
         XCTAssertEqual(dictionary(SARuleFilterRootConjunction.appending(rule: rule, to: nil, rootIsConjunction: true)), dictionary(rule))
         XCTAssertEqual(dictionary(SARuleFilterRootConjunction.appending(rule: rule, to: starter, rootIsConjunction: false)), dictionary(rule))
@@ -325,20 +325,21 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
     // MARK: - isUntouchedStarterTree
 
-    /// Verifies only a lone expression with all-empty arguments counts as the seeded starter row.
+    /// Verifies only an explicitly marked unchecked expression counts as the seeded starter row.
     func testUntouchedStarterTreeDetection() {
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(nil))
-        XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: [""])))
+        XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(seededExpression(column: "a")))
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: [""])))
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: ["1"])))
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", comparison: "IS NULL", values: [])), "zero-argument operators are real rules")
-        XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [expression(column: "a", values: [""])], isConjunction: false)), "an OR-wrapped seeded row is still just the starter")
+        XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [seededExpression(column: "a")], isConjunction: false)), "an OR-wrapped seeded row is still just the starter")
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [expression(column: "a", values: [""]), expression(column: "b", values: ["1"])], isConjunction: true)))
         XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [], isConjunction: true)))
     }
 
     /// Verifies appending strips seeded starter rows and keeps the OR wrapper when replacing the seeded row.
     func testAppendingReplacesStarterInsideOrRoot() {
-        let starter = expression(column: "a", values: [""])
+        let starter = seededExpression(column: "a")
         let rule = expression(column: "b", values: ["2"])
 
         let replaced = SARuleFilterRootConjunction.appending(rule: rule, to: rootGroup(children: [starter], isConjunction: false), rootIsConjunction: false)
@@ -359,7 +360,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
     func testAddingGroupReplacesStarterOnlyEditor() {
         let starter = expression(column: "a", values: [""])
 
-        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: starter, to: expression(column: "a", values: [""]), rootIsConjunction: true)
+        let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: starter, to: seededExpression(column: "a"), rootIsConjunction: true)
 
         XCTAssertEqual(tree["isConjunction"] as? Bool, true)
         let kids = children(of: tree)
@@ -401,7 +402,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
     func testAddingGroupDropsSeededRowWhileFolding() {
         let a = expression(column: "a", values: ["1"])
         let b = expression(column: "b", values: ["2"])
-        let seeded = expression(column: "a", values: [""])
+        let seeded = seededExpression(column: "a")
 
         let tree = SARuleFilterRootConjunction.treeAddingGroup(starter: expression(column: "c", values: [""]), to: rootGroup(children: [seeded, a, b], isConjunction: false), rootIsConjunction: false)
 
@@ -421,6 +422,53 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(dictionary(kids.first ?? [:]), dictionary(a))
         XCTAssertEqual(kids.last?["isConjunction"] as? Bool, false)
         XCTAssertEqual(children(of: kids.last ?? [:]).map(dictionary), [dictionary(starter)])
+    }
+
+    /// Exercises the production serialize/restore -> append/group graph with
+    /// checked empty comparisons, deliberately disabled rows, and a marked
+    /// seed. Both popup choices must preserve every user predicate.
+    func testGroupAndAppendPreserveControllerShapedEmptyPredicates() {
+        let checked = controllerExpression(column: "name", values: [""], enabled: true)
+        let disabled = controllerExpression(column: "archived_name", values: [""], enabled: false)
+        let nullRule = controllerExpression(column: "deleted_at", comparison: "IS NULL", values: [], enabled: true)
+        let real = [checked, disabled, nullRule]
+        let added = controllerExpression(column: "id", values: ["42"], enabled: true)
+        for isConjunction in [true, false] {
+            let serialized = SARuleFilterRootConjunction.serializedRoot(items: [seededExpression(column: "first")] + real, isConjunction: isConjunction)
+            let restored = SARuleFilterRootConjunction.restorePlan(for: serialized)
+            let roundTrip = SARuleFilterRootConjunction.serializedRoot(items: restored.items, isConjunction: restored.isConjunction)
+            let appended = SARuleFilterRootConjunction.appending(rule: added, to: roundTrip, rootIsConjunction: restored.isConjunction)
+            XCTAssertEqual(children(of: appended).map(dictionary), (real + [added]).map(dictionary))
+            XCTAssertEqual(appended["isConjunction"] as? Bool, isConjunction)
+
+            let grouped = SARuleFilterRootConjunction.treeAddingGroup(starter: added, to: roundTrip, rootIsConjunction: restored.isConjunction)
+            XCTAssertEqual(grouped["isConjunction"] as? Bool, !isConjunction)
+            XCTAssertEqual(children(of: children(of: grouped).first ?? [:]).map(dictionary), real.map(dictionary))
+            XCTAssertEqual(children(of: grouped).first?["isConjunction"] as? Bool, isConjunction)
+            XCTAssertEqual(dictionary(children(of: grouped).last ?? [:]), dictionary(added))
+        }
+    }
+
+    /// A lone empty comparison is also a real row, including old session
+    /// shapes without enabled/pendingStarter. Adding a group cannot replace it.
+    func testSingleEmptyPredicatesSurviveGroupAndAppend() {
+        let added = controllerExpression(column: "id", values: ["42"], enabled: true)
+        let predicates = [
+            controllerExpression(column: "name", values: [""], enabled: true),
+            controllerExpression(column: "name", values: [""], enabled: false),
+            expression(column: "name", values: [""]),
+        ]
+        for isConjunction in [true, false] {
+            for predicate in predicates {
+                let current = SARuleFilterRootConjunction.serializedRoot(items: [predicate], isConjunction: isConjunction)
+                let appended = SARuleFilterRootConjunction.appending(rule: added, to: current, rootIsConjunction: isConjunction)
+                XCTAssertEqual(children(of: appended).map(dictionary), [predicate, added].map(dictionary))
+                let grouped = SARuleFilterRootConjunction.treeAddingGroup(starter: added, to: current, rootIsConjunction: isConjunction)
+                XCTAssertEqual(dictionary(children(of: grouped).first ?? [:]), dictionary(predicate))
+                XCTAssertEqual(children(of: children(of: grouped).last ?? [:]).map(dictionary), [dictionary(added)])
+                XCTAssertEqual(grouped["isConjunction"] as? Bool, isConjunction)
+            }
+        }
     }
 
     // MARK: - Persisted-format compatibility (fixtures)
@@ -581,7 +629,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
     /// Verifies -addEmptyFilterGroup replaces the seeded starter row instead of leaving "a = ''" beside the new group.
     func testControllerReplacesUntouchedStarterWhenAddingGroup() throws {
         let controller = try makeController(columns: ["a", "b"])
-        restore(expression(column: "a", values: [""]), into: controller)
+        restore(seededExpression(column: "a"), into: controller)
 
         controller.perform(NSSelectorFromString("addEmptyFilterGroup"))
 
@@ -635,6 +683,21 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
             "filterComparison": comparison,
             "filterValues": values,
         ]
+    }
+
+    /// Current controller serialization records checkbox state explicitly.
+    private func controllerExpression(column: String, comparison: String = "=", values: [String], enabled: Bool) -> [String: Any] {
+        var node = expression(column: column, comparison: comparison, values: values)
+        node["enabled"] = enabled
+        node["filterType"] = "string"
+        return node
+    }
+
+    /// Shape emitted for the unchecked seeded row, before its first edit.
+    private func seededExpression(column: String) -> [String: Any] {
+        var node = controllerExpression(column: column, values: [""], enabled: false)
+        node["pendingStarter"] = true
+        return node
     }
 
     /// Builds a serialized group node in the controller's dictionary shape – a nested compound row,
