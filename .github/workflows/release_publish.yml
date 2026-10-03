@@ -327,6 +327,12 @@ jobs:
               fi
             fi
           fi
+          # Handoff and public-asset validation above proved these ZIPs durable.
+          # Continuation still checks Cloud identity, but does not need its downloads.
+          artifact_arguments=()
+          if [[ "${handoff_state}" == "artifacts_verified" || "${handoff_state}" == "archived" ]]; then
+            artifact_arguments+=(--artifacts-already-verified)
+          fi
           production_readiness="not_checked"
           production_reason=""
           assigned_build=""
@@ -346,6 +352,7 @@ jobs:
             fi
             bundle exec ruby fastlane/bin/sa-release cloud-status \
               "${production_arguments[@]}" \
+              ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
               --output "${state_directory}/production-status.json"
             production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
             production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
@@ -367,6 +374,7 @@ jobs:
               fi
               bundle exec ruby fastlane/bin/sa-release cloud-status \
                 "${alpha_arguments[@]}" \
+                ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
                 --output "${state_directory}/alpha-status.json"
               alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
               alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
@@ -720,6 +728,7 @@ jobs:
       - name: Recheck exact Cloud readiness once
         id: cloud
         env:
+          VERIFIED_HANDOFF_STATE: ${{ steps.context.outputs.state }}
           ALPHA_RUN_ID: ${{ needs.discover.outputs.alpha_run_id }}
           EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
           EXPECTED_CHANNEL: ${{ needs.discover.outputs.channel }}
@@ -735,6 +744,10 @@ jobs:
           SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
         run: |
           set -euo pipefail
+          artifact_arguments=()
+          if [[ "${VERIFIED_HANDOFF_STATE}" == "artifacts_verified" || "${VERIFIED_HANDOFF_STATE}" == "archived" ]]; then
+            artifact_arguments+=(--artifacts-already-verified)
+          fi
           bundle exec ruby fastlane/bin/sa-release cloud-status \
             --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}" \
             --app-id "1518036000" \
@@ -743,6 +756,7 @@ jobs:
             --build "${EXPECTED_BUILD}" \
             --run-id "${PRODUCTION_RUN_ID}" \
             --commit "${EXPECTED_COMMIT}" \
+            ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
             --output production-cloud-run.json
           production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' production-cloud-run.json)"
           alpha_readiness="not_required"
@@ -755,6 +769,7 @@ jobs:
               --allow-any-build \
               --run-id "${ALPHA_RUN_ID}" \
               --commit "${EXPECTED_COMMIT}" \
+              ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
               --output alpha-cloud-run.json
             alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' alpha-cloud-run.json)"
           elif [[ "${EXPECTED_CHANNEL}" == "beta" ]]; then
