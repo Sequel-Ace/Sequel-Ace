@@ -4271,3 +4271,6 @@
 
 /* Connection error: the cleartext authentication plugin requires TLS */
 "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
+
+/* aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error */
+"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace renewed your AWS console sign-in session but could not save it: %@";

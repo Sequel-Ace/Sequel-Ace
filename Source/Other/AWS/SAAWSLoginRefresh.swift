@@ -39,6 +39,7 @@ enum SAAWSLoginRefreshError: Error, LocalizedError, Equatable {
     case invalidSigningKey
     case invalidResponse
     case requestFailed(String)
+    case cacheWriteFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -58,6 +59,8 @@ enum SAAWSLoginRefreshError: Error, LocalizedError, Equatable {
             return NSLocalizedString("AWS returned an unexpected response while renewing your console sign-in session.", comment: "aws login refresh error: malformed response")
         case .requestFailed(let detail):
             return String(format: NSLocalizedString("Sequel Ace could not renew your AWS console sign-in session: %@", comment: "aws login refresh error: request failed; %@ is the underlying error"), detail)
+        case .cacheWriteFailed(let detail):
+            return String(format: NSLocalizedString("Sequel Ace renewed your AWS console sign-in session but could not save it: %@", comment: "aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error"), detail)
         }
     }
 }

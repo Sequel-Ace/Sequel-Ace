@@ -64,7 +64,7 @@ enum SAAWSSignInCommand {
 
         if let refreshError = error as? SAAWSLoginRefreshError {
             switch refreshError {
-            case .credentialsChanged, .grantRejected, .regionUnavailable, .writeAccessRequired, .invalidSigningKey:
+            case .credentialsChanged, .grantRejected, .regionUnavailable, .writeAccessRequired, .invalidSigningKey, .cacheWriteFailed:
                 return login(profile: profile)
             case .insufficientPermissions, .invalidResponse, .requestFailed:
                 return nil

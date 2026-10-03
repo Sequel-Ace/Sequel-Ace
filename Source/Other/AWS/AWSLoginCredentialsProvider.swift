@@ -186,6 +186,7 @@ import OSLog
             log.info("Renewed console sign-in credentials")
         } catch {
             log.error("Could not write the renewed console sign-in session: \(error.localizedDescription)", privacy: .visible)
+            throw SAAWSLoginRefreshError.cacheWriteFailed(error.localizedDescription)
         }
 
         return credentials

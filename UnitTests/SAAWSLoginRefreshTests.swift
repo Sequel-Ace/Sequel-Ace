@@ -417,6 +417,7 @@ final class SAAWSSignInCommandTests: XCTestCase {
         XCTAssertEqual(SAAWSSignInCommand.command(for: AWSLoginAuthError.sessionExpired, profile: "dev"), "aws login --profile dev")
         XCTAssertEqual(SAAWSSignInCommand.command(for: AWSLoginAuthError.cacheNotFound, profile: "dev"), "aws login --profile dev")
         XCTAssertEqual(SAAWSSignInCommand.command(for: SAAWSLoginRefreshError.grantRejected, profile: "dev"), "aws login --profile dev")
+        XCTAssertEqual(SAAWSSignInCommand.command(for: SAAWSLoginRefreshError.cacheWriteFailed("full"), profile: "dev"), "aws login --profile dev")
         XCTAssertEqual(SAAWSSignInCommand.command(for: AWSSSOClientError.tokenExpired, profile: "dev"), "aws sso login --profile dev")
 
         XCTAssertNil(SAAWSSignInCommand.command(for: AWSLoginAuthError.invalidProfile, profile: "dev"))

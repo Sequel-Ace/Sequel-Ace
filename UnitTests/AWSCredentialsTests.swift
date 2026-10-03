@@ -1426,6 +1426,25 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
         XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
     }
 
+    func testRenewedSessionThatCannotBeSavedIsReported() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
+            self.requests.append(request)
+            try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: self.cacheDirectory.path)
+            return (SAAWSLoginTestFixtures.successResponse, 200)
+        }
+
+        try withLoginProfile { profile in
+            XCTAssertThrowsError(try AWSLoginCredentialsProvider.resolveCredentials(for: profile)) { error in
+                guard case .cacheWriteFailed = error as? SAAWSLoginRefreshError else {
+                    return XCTFail("Expected cacheWriteFailed, got \(error)")
+                }
+            }
+        }
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "oldRefreshToken")
+    }
+
     func testCacheWithoutRefreshTokenReportsSessionExpiredOnceExpired() throws {
         var contents = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60))
         contents.removeValue(forKey: "refreshToken")
