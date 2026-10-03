@@ -239,8 +239,6 @@
 		9615D8462D5EDF530095F55A /* mysql_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_version.h; sourceTree = "<group>"; };
 		9615D8472D5EDF530095F55A /* mysqld_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
 		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
-		A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAByteStringDecoder.swift; path = Source/SAByteStringDecoder.swift; sourceTree = "<group>"; };
-		B177FE6ABE7EBC554A5905A4 /* SAByteStringDecoderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAByteStringDecoderTests.swift; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAOfflineEscapingHandle.swift; path = Source/SAOfflineEscapingHandle.swift; sourceTree = "<group>"; };
 		1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionCharacterSets.swift; path = Source/SAConnectionCharacterSets.swift; sourceTree = "<group>"; };
