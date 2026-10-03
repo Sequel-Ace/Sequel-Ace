@@ -1802,7 +1802,8 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
                 username: "db_admin",
                 region: nil,
                 profile: "team dev",
-                parentWindow: nil
+                parentWindow: nil,
+                shouldContinue: { true }
             ) { token, error in
                 XCTAssertNil(token)
                 completionRanOnMainThread = Thread.isMainThread

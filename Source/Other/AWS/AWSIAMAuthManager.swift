@@ -667,13 +667,9 @@ extension AWSIAMAuthManager {
                     parentWindow: parentWindow, shouldContinue: shouldContinue
                 )
                 resolvedError = nil
-            } catch let error as AWSIAMAuthError {
-                token = nil
-                resolvedError = NSError(domain: "AWSIAMAuthErrorDomain", code: error.rawValue,
-                                        userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
             } catch {
                 token = nil
-                resolvedError = error as NSError
+                resolvedError = presentableError(error, profile: profile)
             }
             DispatchQueue.main.async {
                 guard shouldContinue() else { return }
