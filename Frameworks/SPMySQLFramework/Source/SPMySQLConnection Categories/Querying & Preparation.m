@@ -510,6 +510,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 					break;
 			}
 
+			// Read again now the result is in hand: with CLIENT_DEPRECATE_EOF the server's final
+			// status arrives with the result, and before that libmysqlclient provisionally marks
+			// a SELECT as being in a transaction while autocommit is off.
+			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+			                            isHandshake:NO];
+
 			// Update the error message, if appropriate, to reflect result store errors or overall success
 			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 			theErrorID = mysql_errno(mySQLConnection);

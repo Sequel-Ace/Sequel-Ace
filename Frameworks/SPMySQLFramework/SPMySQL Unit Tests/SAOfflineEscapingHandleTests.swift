@@ -115,7 +115,7 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         // a statement puts it back
         escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
 
-        var source: [UInt8] = [0xBF, 0x27]
+        let source: [UInt8] = [0xBF, 0x27]
         var destination = [UInt8](repeating: 0, count: 16)
         let written = source.withUnsafeBytes { bytes in
             destination.withUnsafeMutableBytes { out in
@@ -127,6 +127,44 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertGreaterThan(written, 0)
         // GBK-safe: the lead byte is escaped as well, so the quote cannot be swallowed
         XCTAssertEqual(Array(destination[0..<written]), [0x5C, 0xBF, 0x5C, 0x27])
+    }
+
+
+    /// Checks that a reconnect starts the character-set tracking over.
+    ///
+    /// A session that reported a change says nothing about the one that replaces it: a reconnect
+    /// can land on a server that does not report changes, and carrying the evidence over would
+    /// let the handshake name override what the connection sets afterwards.
+    func testAReconnectStartsTheCharacterSetTrackingOver() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        // the new session reports only its handshake, as a server that does not report changes does
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+
+        // the connection switched this session to GBK, which the record carries
+        let source: [UInt8] = [0xBF, 0x27]
+        var destination = [UInt8](repeating: 0, count: 16)
+        let written = source.withUnsafeBytes { bytes in
+            destination.withUnsafeMutableBytes { out in
+                escaper.escape(bytes.baseAddress, length: source.count, into: out.baseAddress!,
+                               characterSetOnRecord: "gbk", sessionIsBeingReplaced: false)
+            }
+        }
+
+        XCTAssertGreaterThan(written, 0)
+        XCTAssertEqual(Array(destination[0..<written]), [0x5C, 0xBF, 0x5C, 0x27], "escaped for the record, which is GBK")
+    }
+
+    /// Checks that forgetting a session also forgets what it reported.
+    func testForgettingASessionForgetsItsTracking() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+        escaper.forgetSession()
+
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk", session: nil, handshake: nil, sessionReportsChanges: false, sessionIsBeingReplaced: false), "gbk")
     }
 
     /// The connection's escaper follows what the session reports.

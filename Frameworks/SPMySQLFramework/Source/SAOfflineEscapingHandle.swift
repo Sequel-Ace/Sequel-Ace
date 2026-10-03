@@ -175,6 +175,10 @@ public final class SAConnectionEscaper: NSObject {
         if isHandshake {
             handshakeCharacterSet = characterSet
             sessionsStartWithNoBackslashEscapes = noBackslashEscapes
+            // What the session before reported says nothing about this one: a reconnect can land
+            // on a server that does not report changes, and carrying the flag over would let the
+            // handshake name override what the connection sets afterwards.
+            sessionReportsCharacterSetChanges = false
         }
         if !isHandshake, let characterSet, let handshakeCharacterSet,
            characterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
@@ -214,6 +218,7 @@ public final class SAConnectionEscaper: NSObject {
         sessionCharacterSet = nil
         sessionUsesNoBackslashEscapes = sessionsStartWithNoBackslashEscapes
         sessionHasOpenTransaction = false
+        sessionReportsCharacterSetChanges = false
     }
 
     /// Escapes bytes for a string literal.
