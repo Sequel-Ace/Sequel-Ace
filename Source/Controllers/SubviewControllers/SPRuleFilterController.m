@@ -1601,6 +1601,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (!enabled || ![columns count]) return NO;
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
+	// Keep the starter marker before enabling the reused checkbox clears it.
+	NSDictionary *currentFilter = [self serializedFilter];
 	// The untouched starter row is replaced below, but the rule editor keeps the replaced row's
 	// checkbox for the new one; check it first so the dropped filter is not born unchecked.
 	[self _enablePendingStarterInRow:[self.pendingStarter rowInEditor:filterRuleEditor]];
@@ -1613,7 +1615,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// Filtering is not kicked off – the user confirms via the Apply
 	// Filters button or by pressing Return in any argument field.
 	NSDictionary *combined = [SARuleFilterRootConjunction appendingRule:newRule
-	                                                                 to:[self serializedFilter]
+	                                                                 to:currentFilter
 	                                                  rootIsConjunction:rootIsConjunction];
 
 	[self restoreSerializedFilters:combined];
