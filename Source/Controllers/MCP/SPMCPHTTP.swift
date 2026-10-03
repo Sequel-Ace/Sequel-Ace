@@ -494,3 +494,29 @@ enum SAMCPCSV {
     }
 }
 
+
+/// Pagination for a result that must be consumed without rewriting its SQL.
+/// SQL-paginated callers pass zero offset so it is never applied twice.
+enum SAMCPResultPage {
+    static func rowLimit(requested: Int, cap: Int) -> Int {
+        requested > 0 ? min(requested, cap) : cap
+    }
+
+    /// Returns whether one more row exists after the requested page. Skipped
+    /// rows never enter the output, and only one lookahead row is consumed.
+    static func consumeRows<Row>(maxRows: Int, offset: Int = 0,
+                                 nextRow: () -> Row?, appendRow: (Row) -> Void) -> Bool {
+        var toSkip = max(0, offset)
+        var remaining = max(0, maxRows)
+        while let row = nextRow() {
+            if toSkip > 0 {
+                toSkip -= 1
+                continue
+            }
+            guard remaining > 0 else { return true }
+            appendRow(row)
+            remaining -= 1
+        }
+        return false
+    }
+}

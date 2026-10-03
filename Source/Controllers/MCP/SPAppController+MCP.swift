@@ -548,6 +548,7 @@ extension SPAppController: SPMCPDataSource {
         let cap = mcpMaxResultRows
         var finalSQL = bound
         var maxRows = cap
+        var readOffset = 0
         // Rewrite only when comment stripping agrees under both backslash
         // modes. Otherwise preserve the SQL and use the read-side cap, just as
         // for executable comments (which read-only validation already rejects).
@@ -564,16 +565,22 @@ extension SPAppController: SPMCPDataSource {
                 } else {
                     // No trailing LIMIT: append one so the database stops at the cap.
                     // The +1 lets us detect that more rows existed (truncation).
-                    let effectiveLimit = limit > 0 ? min(limit, cap) : cap
+                    let effectiveLimit = SAMCPResultPage.rowLimit(requested: limit, cap: cap)
                     maxRows = effectiveLimit
                     let off = max(0, offset)
                     finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
                 }
             }
+        } else {
+            // Keep the original SQL, including any limit it already contains,
+            // and paginate its result while consuming it instead of rewriting.
+            maxRows = SAMCPResultPage.rowLimit(requested: limit, cap: cap)
+            readOffset = max(0, offset)
         }
 
         return mcpDBSync {
-            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id, maxRows: maxRows)
+            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id,
+                                  maxRows: maxRows, offset: readOffset)
         }
     }
 
@@ -643,7 +650,7 @@ extension SPAppController: SPMCPDataSource {
     // Callers that can bound the query at the SQL level should also push a
     // `LIMIT maxRows + 1` so the database does not materialise an unbounded result.
     // Caller holds mcpDBQueue.
-    private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows) -> [String: Any] {
+    private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows, offset: Int = 0) -> [String: Any] {
         let result = conn.queryString(sql)
         if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
 
@@ -675,9 +682,8 @@ extension SPAppController: SPMCPDataSource {
             return candidate
         }
         var rows: [[String: Any]] = []
-        var truncated = false
-        while let row = res.getRowAsArray() {
-            if rows.count >= maxRows { truncated = true; break }   // a further row exists beyond the cap
+        let truncated = SAMCPResultPage.consumeRows(maxRows: maxRows, offset: offset,
+                                                    nextRow: { res.getRowAsArray() }) { row in
             var safeRow: [String: Any] = [:]
             for (i, key) in columns.enumerated() {
                 let val: Any = i < row.count ? row[i] : NSNull()
