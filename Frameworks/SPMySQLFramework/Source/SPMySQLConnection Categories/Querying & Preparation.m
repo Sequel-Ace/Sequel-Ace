@@ -115,7 +115,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// Escape starting one character in. The session's own handle is not used: work nobody waits for
 	// any more can still be using it, or close it, while this runs. The escaper follows what the
 	// session last reported - its character set and its NO_BACKSLASH_ESCAPES mode - and, for a
-	// session about to be replaced, the character set on record, which the next session uses.
+	// session about to be replaced, what the session that replaces it will be in: the character set
+	// on record, which its handshake uses, and the mode sessions start in on this server.
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                            length:cDataLength
 	                                              into:escBuffer+1

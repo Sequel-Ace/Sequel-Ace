@@ -148,6 +148,25 @@ public final class SAConnectionEscaper: NSObject {
         return characterSetOnRecord ?? sessionCharacterSet
     }
 
+    /// Decides which escaping mode a value is escaped in.
+    ///
+    /// A value for a session that is about to be replaced is sent on the session that replaces it,
+    /// which starts in the server's own mode - so that is the mode it is escaped in, the same
+    /// session the character set above is taken for. A mode the outgoing session was switched to
+    /// does not outlive it, and the two modes are not interchangeable: a value escaped for
+    /// `NO_BACKSLASH_ESCAPES` leaves its backslashes as they came, and a session without that mode
+    /// reads a trailing one as escaping the quote that follows it.
+    /// - Parameters:
+    ///   - sessionUsesNoBackslashEscapes: Whether the session last reported the mode.
+    ///   - sessionsStartWithNoBackslashEscapes: Whether a session starts in the mode on this server.
+    ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
+    /// - Returns: Whether to escape for `NO_BACKSLASH_ESCAPES`.
+    static func noBackslashEscapesForEscaping(session sessionUsesNoBackslashEscapes: Bool,
+                                              sessionsStart sessionsStartWithNoBackslashEscapes: Bool,
+                                              sessionIsBeingReplaced: Bool) -> Bool {
+        sessionIsBeingReplaced ? sessionsStartWithNoBackslashEscapes : sessionUsesNoBackslashEscapes
+    }
+
     /// Records what the session reports. Called while the connection is held.
     /// - Parameters:
     ///   - characterSet: The session's character set as the client library names it.
@@ -221,7 +240,10 @@ public final class SAConnectionEscaper: NSObject {
                                                               sessionIsBeingReplaced: sessionIsBeingReplaced) else {
             return -1
         }
-        let noBackslashEscapes = sessionUsesNoBackslashEscapes
+        let noBackslashEscapes = Self.noBackslashEscapesForEscaping(
+            session: sessionUsesNoBackslashEscapes,
+            sessionsStart: sessionsStartWithNoBackslashEscapes,
+            sessionIsBeingReplaced: sessionIsBeingReplaced)
         if handle == nil || handleCharacterSet != characterSet || handleUsesNoBackslashEscapes != noBackslashEscapes {
             handle = SAOfflineEscapingHandle.handle(
                 forCharacterSet: characterSet,

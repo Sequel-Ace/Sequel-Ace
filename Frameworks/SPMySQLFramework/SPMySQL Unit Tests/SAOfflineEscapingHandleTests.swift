@@ -134,6 +134,52 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(escape(Data([0x5C, 0x27]), with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x5C, 0x5C, 0x27]))
     }
 
+    /// A value for a session that is about to be replaced is escaped in the mode the session that
+    /// replaces it starts in - the same session the character set on record is taken for. A mode the
+    /// outgoing session was switched to does not outlive it, and sending a value escaped for
+    /// `NO_BACKSLASH_ESCAPES` on a session without it lets a backslash escape the quote behind it.
+    func testAValueForAReplacementSessionIsEscapedInTheModeThatSessionStartsIn() {
+        let escaper = SAConnectionEscaper()
+        let value = Data([0x5C, 0x27])
+        // The server's own mode, as the first statement of a session reports it.
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        // A statement switched this session to NO_BACKSLASH_ESCAPES.
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, openTransaction: false, isHandshake: false)
+
+        XCTAssertEqual(escape(value, with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x27, 0x27]),
+                       "on this session, the mode it is in")
+        XCTAssertEqual(escape(value, with: escaper, onRecord: "utf8mb4", sessionIsBeingReplaced: true),
+                       Data([0x5C, 0x5C, 0x5C, 0x27]),
+                       "for the session that replaces it, the mode that one starts in")
+    }
+
+    /// And where the server itself starts sessions in `NO_BACKSLASH_ESCAPES`, that is the mode the
+    /// replacement session is in, whatever the outgoing one was switched to.
+    func testAServerThatStartsSessionsInTheModeKeepsIt() {
+        let escaper = SAConnectionEscaper()
+        let value = Data([0x5C, 0x27])
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: true, openTransaction: false, isHandshake: true)
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+
+        XCTAssertEqual(escape(value, with: escaper, onRecord: "utf8mb4"), Data([0x5C, 0x5C, 0x5C, 0x27]))
+        XCTAssertEqual(escape(value, with: escaper, onRecord: "utf8mb4", sessionIsBeingReplaced: true),
+                       Data([0x5C, 0x27, 0x27]))
+    }
+
+    /// The mode is chosen for the session the value will be sent on, as the character set is.
+    func testTheModeIsChosenForTheSessionTheValueIsSentOn() {
+        for sessionsStart in [true, false] {
+            for session in [true, false] {
+                XCTAssertEqual(SAConnectionEscaper.noBackslashEscapesForEscaping(
+                    session: session, sessionsStart: sessionsStart, sessionIsBeingReplaced: true),
+                               sessionsStart, "a replaced session hands the value to the next one")
+                XCTAssertEqual(SAConnectionEscaper.noBackslashEscapesForEscaping(
+                    session: session, sessionsStart: sessionsStart, sessionIsBeingReplaced: false),
+                               session, "otherwise the value stays on this session")
+            }
+        }
+    }
+
     /// A mode a closed session was switched to does not outlive it; values follow the server's own mode.
     func testAClosedSessionsSwitchedModeDoesNotOutliveIt() {
         let escaper = SAConnectionEscaper()
