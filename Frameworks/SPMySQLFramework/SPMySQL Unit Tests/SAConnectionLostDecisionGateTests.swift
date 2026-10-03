@@ -131,4 +131,43 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
         XCTAssertEqual(gate.decision(askingWith: { 1 }), 1)
         XCTAssertEqual(gate.decision(askingWith: { 0 }), 0)
     }
+    /// Checks that a question whose asking ends without an answer does not leave the others waiting.
+    ///
+    /// The asking thread publishes its question before it asks. If it then ended without an answer
+    /// - cancelled while waiting for the main thread, say - the threads waiting on that question
+    /// would wait for one that is never coming, and the connection would never ask again.
+    func testWaitingThreadsAreReleasedWhenTheAskingEndsWithoutAnAnswer() {
+        let gate = SAConnectionLostDecisionGate()
+        let asking = expectation(description: "the question is published")
+        let waited = expectation(description: "the waiting thread was released")
+
+        DispatchQueue.global().async {
+            _ = gate.decision {
+                asking.fulfill()
+                // long enough for the other thread to find the question and wait on it
+                Thread.sleep(forTimeInterval: 0.2)
+                return 7
+            }
+        }
+
+        wait(for: [asking], timeout: 2)
+
+        DispatchQueue.global().async {
+            let answer = gate.decision { XCTFail("the second thread must not ask"); return 1 }
+            XCTAssertEqual(answer, 7, "it takes the answer of the question it waited on")
+            waited.fulfill()
+        }
+
+        wait(for: [waited], timeout: 2)
+
+        // and the gate is free for the next question
+        XCTAssertEqual(gate.decision { 3 }, 3)
+    }
+
+    /// Checks that the fallback is the answer that gives the connection up.
+    func testTheFallbackAnswerGivesTheConnectionUp() {
+        XCTAssertEqual(SAConnectionLostDecisionGate.fallbackAnswer, Int(SPMySQLConnectionLostDisconnect.rawValue))
+    }
+
+
 }

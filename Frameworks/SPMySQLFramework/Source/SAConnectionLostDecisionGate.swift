@@ -55,16 +55,30 @@ public final class SAConnectionLostDecisionGate: NSObject {
         openQuestion = question
         condition.unlock()
 
+        // The question is published before it is asked, so the answer reaches the threads waiting
+        // for it however this returns. Were the asking to end without one - a thread cancelled
+        // while it waits for the main thread, say - the others would wait on a question nobody is
+        // going to answer any more, and this connection would never ask again.
+        var asked: Int?
+        defer {
+            condition.lock()
+            question.answer = asked ?? SAConnectionLostDecisionGate.fallbackAnswer
+            openQuestion = nil
+            condition.broadcast()
+            condition.unlock()
+        }
+
         let answer = ask()
-
-        condition.lock()
-        question.answer = answer
-        openQuestion = nil
-        condition.broadcast()
-        condition.unlock()
-
+        asked = answer
         return answer
     }
+
+    /// The answer the waiting threads are given when the asking ended without one.
+    ///
+    /// It is the value `SPMySQLConnectionLostDisconnect` carries - the answer the connection used
+    /// to start from before anybody was asked - which gives up the connection rather than keeping
+    /// a thread waiting on a question that will not be answered.
+    static let fallbackAnswer = 0
 
     /// How many threads are waiting for the answer to the question that is open now.
     var threadsWaitingForAnswer: Int {
