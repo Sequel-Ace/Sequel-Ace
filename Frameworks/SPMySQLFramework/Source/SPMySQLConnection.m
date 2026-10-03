@@ -775,6 +775,17 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_connect
 {
+	// An attempt entitled to the connection's configured timeout.
+	return [self _connectUsingConnectTimeout:0];
+}
+
+/**
+ * Establish the connection, with a connect timeout the caller may limit.
+ * A reconnect that follows a failed connection check passes the limit its budget allows;
+ * zero means the connection's configured timeout applies, as it does everywhere else.
+ */
+- (BOOL)_connectUsingConnectTimeout:(NSUInteger)connectTimeoutOrZero
+{
     SPLog(@"_connect");
 
 	// If a connection is already active in some form, throw an exception
@@ -798,7 +809,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _lockConnection];
 
 	// Attempt the connection
-	mySQLConnection = [self _makeRawMySQLConnectionWithEncoding:encoding isMasterConnection:YES];
+	mySQLConnection = [self _makeRawMySQLConnectionWithEncoding:encoding isMasterConnection:YES connectTimeout:connectTimeoutOrZero];
 
 	// If the connection failed, reset state and return
 	if (!mySQLConnection) {
@@ -882,6 +893,18 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster
 {
+	// A connection on the configured timeout.
+	return [self _makeRawMySQLConnectionWithEncoding:encodingName isMasterConnection:isMaster connectTimeout:0];
+}
+
+/**
+ * Make a client-library connection, with a connect timeout the caller may limit.
+ * Zero means the connection's configured timeout applies. A reconnect that follows a failed
+ * check passes what its budget allows, so a route that has gone cannot hold the interface for
+ * the configured timeout - or, with none configured, indefinitely.
+ */
+- (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster connectTimeout:(NSUInteger)connectTimeoutOrZero
+{
 	if ([[NSThread currentThread] isCancelled]) return NULL;
 
 	// Set up the MySQL connection object
@@ -909,8 +932,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Set the connection timeout. A side connection, which only asks the server to kill a query,
 	// keeps a short limit of its own instead of waiting out the configured one.
 	// An attempt that may not take the configured timeout - a reconnect after a failed check -
-	// carries its own through attemptConnectTimeout.
-	NSUInteger masterConnectTimeout = attemptConnectTimeout > 0 ? attemptConnectTimeout : timeout;
+	// is given its own by the caller.
+	NSUInteger masterConnectTimeout = connectTimeoutOrZero > 0 ? connectTimeoutOrZero : timeout;
 	NSUInteger connectTimeout = isMaster
 		? masterConnectTimeout
 		: [SAConnectionCheckBudget sideConnectionConnectTimeoutForConfiguredTimeout:timeout];
@@ -1169,12 +1192,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
+	// The budget travels with the attempt rather than in shared state: a second thread
+	// entering this method would otherwise overwrite the limit of an attempt already running.
 	SAConnectionAttemptBudget *attemptBudget = [SAConnectionCheckBudget
 		attemptBudgetForConfiguredTimeout:timeout userEndedWait:NO afterFailedCheck:afterFailedCheck];
-	// _connect reads this; it is cleared however this method returns, so a later attempt that is
-	// entitled to the configured timeout gets it.
-	attemptConnectTimeout = [attemptBudget overridesConfiguredTimeout] ? [attemptBudget connectTimeout] : 0;
-	@try {
+	NSUInteger attemptConnectTimeout = [attemptBudget overridesConfiguredTimeout] ? [attemptBudget connectTimeout] : 0;
 	BOOL reconnectSucceeded = NO;
     NSString *timeZoneIdentifierToRestore = nil;
 
@@ -1332,7 +1354,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If not using a proxy, or if the proxy successfully connected, trigger a connection
 		if (![[NSThread currentThread] isCancelled] && (!proxy || [proxy state] == SPMySQLProxyConnected)) {
-			[self _connect];
+			[self _connectUsingConnectTimeout:attemptConnectTimeout];
 		} else if ([[NSThread currentThread] isCancelled] && proxy) {
 			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
 		}
@@ -1387,11 +1409,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	reconnectingThread = NULL;
 	return reconnectSucceeded;
-	} @finally {
-		// Whatever this attempt did - including the early returns while the connection is
-		// locked - the next one is entitled to the configured timeout again.
-		attemptConnectTimeout = 0;
-	}
 }
 
 /**
