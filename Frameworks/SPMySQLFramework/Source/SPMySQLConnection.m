@@ -1081,6 +1081,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self _updateLastSqlstate:_stringForCStringWithEncoding(mysql_sqlstate(theConnection),NSISOLatin1StringEncoding)];
 		}
 
+		// The handle keeps its options and its own allocations after a failed attempt, so it
+		// is closed here rather than left behind.
+		mysql_close(theConnection);
+
 		return NULL;
 	}
 
