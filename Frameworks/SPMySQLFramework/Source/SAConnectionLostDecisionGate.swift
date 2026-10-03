@@ -73,6 +73,44 @@ public final class SAConnectionLostDecisionGate: NSObject {
         return answer
     }
 
+    /// The answer to a question this thread asks itself, for the thread the question is put to
+    /// the user on.
+    ///
+    /// That thread can never wait: it is the one that produces every answer, so waiting for one
+    /// would wait for itself. It still goes through the gate, so a thread that arrives while its
+    /// question is open shares that answer instead of queueing a second dialog behind it. And
+    /// when a question is already open - a background thread asked, and the user is answering it
+    /// on this very thread, which is how this can be reached at all - no second question is put;
+    /// the fallback is returned rather than stacking one dialog on another.
+    /// - Parameter ask: Puts the question to the user and returns the answer.
+    /// - Returns: The answer given here, or the fallback when a question was already open.
+    @objc(decisionAskingHereWith:)
+    public func decisionAskingHere(with ask: () -> Int) -> Int {
+        condition.lock()
+        if openQuestion != nil {
+            condition.unlock()
+            return SAConnectionLostDecisionGate.fallbackAnswer
+        }
+        let question = SAQuestion()
+        openQuestion = question
+        condition.unlock()
+
+        // Published before it is asked, for the same reason as in `decision(askingWith:)`:
+        // whatever happens, the threads waiting on it are released.
+        var asked: Int?
+        defer {
+            condition.lock()
+            question.answer = asked ?? SAConnectionLostDecisionGate.fallbackAnswer
+            openQuestion = nil
+            condition.broadcast()
+            condition.unlock()
+        }
+
+        let answer = ask()
+        asked = answer
+        return answer
+    }
+
     /// The answer the waiting threads are given when the asking ended without one.
     ///
     /// It is the value `SPMySQLConnectionLostDisconnect` carries - the answer the connection used

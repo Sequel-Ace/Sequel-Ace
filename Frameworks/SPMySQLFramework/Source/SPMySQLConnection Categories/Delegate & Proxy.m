@@ -158,10 +158,15 @@ static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
  */
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection
 {
-	// If on the main thread, ask the delegate directly. That is the thread the question is put
-	// to the user on, so it never waits for anybody else's answer.
+	// If on the main thread, ask without waiting. That is the thread the question is put to the
+	// user on, so it can never wait for an answer - it is the thread that produces them. It still
+	// goes through the gate, so a background thread that loses the connection while this question
+	// is open shares the answer instead of queueing a dialog behind it; and if a question is
+	// already open, the gate answers rather than letting a second dialog stack on the first.
 	if ([NSThread isMainThread]) {
-		return [self _askDelegateForLostConnectionDecision];
+		return (SPMySQLConnectionLostDecision)[delegateDecisionGate decisionAskingHereWith:^NSInteger{
+			return [self _askDelegateForLostConnectionDecision];
+		}];
 	}
 
 	// Otherwise the question goes to the main thread, and threads that lose the connection at the
@@ -202,12 +207,18 @@ static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
 
 /**
  * Puts the lost-connection question to the delegate and keeps the answer for whoever waits on it.
+ *
+ * The delegate puts the question to the user, which runs a modal loop, and that loop can bring
+ * the connection back here - a timer or an event that uses it and finds it gone. So the lock is
+ * taken only to store the answer, never across the asking: holding it over a modal loop that can
+ * re-enter this method deadlocks the main thread against itself.
  */
 - (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision
 {
+	SPMySQLConnectionLostDecision theDecision = [delegate connectionLost:self];
+
 	[delegateDecisionLock lock];
-	lastDelegateDecisionForLostConnection = [delegate connectionLost:self];
-	SPMySQLConnectionLostDecision theDecision = lastDelegateDecisionForLostConnection;
+	lastDelegateDecisionForLostConnection = theDecision;
 	[delegateDecisionLock unlock];
 
 	return theDecision;

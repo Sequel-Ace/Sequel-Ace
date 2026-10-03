@@ -177,6 +177,79 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
     }
 
     /// Checks that the fallback is the answer that gives the connection up.
+    // MARK: - The thread the question is put to the user on
+
+    /// It asks without waiting, and its answer is its own.
+    func testTheAskingThreadGetsItsOwnAnswer() {
+        let gate = SAConnectionLostDecisionGate()
+        XCTAssertEqual(gate.decisionAskingHere(with: { 7 }), 7)
+    }
+
+    /// Its question goes through the gate, so a thread that loses the connection while the
+    /// question is open shares that answer instead of queueing a dialog behind it.
+    func testAThreadArrivingDuringThatQuestionSharesItsAnswer() {
+        let gate = SAConnectionLostDecisionGate()
+        let joined = expectation(description: "the other thread took the answer")
+        let questionIsOpen = DispatchSemaphore(value: 0)
+        let otherHasJoined = DispatchSemaphore(value: 0)
+        var shared = -1
+
+        DispatchQueue.global().async {
+            questionIsOpen.wait()
+            otherHasJoined.signal()
+            shared = gate.decision(askingWith: {
+                XCTFail("a question was open, so this thread must not ask its own")
+                return 99
+            })
+            joined.fulfill()
+        }
+
+        let answered = gate.decisionAskingHere(with: { () -> Int in
+            questionIsOpen.signal()
+            otherHasJoined.wait()
+            // Wait until that thread is actually waiting on this question, so the test does not
+            // depend on how fast it gets there.
+            while gate.threadsWaitingForAnswer < 1 {
+                usleep(1000)
+            }
+            return 4
+        })
+
+        wait(for: [joined], timeout: 5)
+        XCTAssertEqual(answered, 4)
+        XCTAssertEqual(shared, 4, "the thread that arrived during the question must take its answer")
+    }
+
+    /// A second question from the same thread, while the first is still open, is not put to the
+    /// user: that is the nested case - a background thread asked, and the user is answering on
+    /// this thread, which then loses the connection itself. Stacking a dialog there would wait
+    /// for an answer this thread is the only one able to give.
+    func testANestedQuestionOnThatThreadIsNotPutAgain() {
+        let gate = SAConnectionLostDecisionGate()
+        var nestedWasAsked = false
+
+        let answered = gate.decisionAskingHere(with: { () -> Int in
+            let nested = gate.decisionAskingHere(with: { () -> Int in
+                nestedWasAsked = true
+                return 5
+            })
+            XCTAssertEqual(nested, SAConnectionLostDecisionGate.fallbackAnswer,
+                           "the nested call gets the fallback rather than a second dialog")
+            return 3
+        })
+
+        XCTAssertFalse(nestedWasAsked, "no second question may reach the user")
+        XCTAssertEqual(answered, 3)
+    }
+
+    /// Once that question is answered, a later loss is asked about again.
+    func testALaterLossIsAskedAboutAgain() {
+        let gate = SAConnectionLostDecisionGate()
+        XCTAssertEqual(gate.decisionAskingHere(with: { 1 }), 1)
+        XCTAssertEqual(gate.decisionAskingHere(with: { 2 }), 2)
+        XCTAssertEqual(gate.decision(askingWith: { 6 }), 6)
+    }
+
     func testTheFallbackAnswerGivesTheConnectionUp() {
         XCTAssertEqual(SAConnectionLostDecisionGate.fallbackAnswer, Int(SPMySQLConnectionLostDisconnect.rawValue))
     }
