@@ -432,13 +432,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 		// If the query succeeded, no need to re-attempt.
 		if (!queryStatus) {
-			// The statement may have changed the character set or the escaping mode, and a SET
-			// has no result columns at all, so this is recorded for every statement that went
-			// through rather than only for those that came back with a result.
-			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
-			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
-			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-			                            isHandshake:NO];
+			// What the session reports is recorded where the connection is released, once
+			// everything the statement produced has been read: a change the server reports
+			// arrives with the last of those packets, which at this point is still unread.
 			theErrorMessage = nil;
 			theErrorID = 0;
 			theSqlstate = nil;
