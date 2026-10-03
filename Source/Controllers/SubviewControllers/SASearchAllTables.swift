@@ -318,3 +318,34 @@ enum SASearchAllTablesFilterBuilder {
         return SARuleFilterRootConjunction.serializedRoot(items: rows, isConjunction: rows.count == 1)
     }
 }
+
+/// What the content tab should do with its filter when Search in All Tables
+/// shows a table that is already selected and already showing its content.
+@objc public enum SAShowTableFilterAction: Int {
+    /// Restore the serialized filter in the rule editor and filter with it.
+    case applySerializedFilter
+    /// Replace the filter applied to the shown content with none: `nil` means
+    /// "open without a filter", so a filter left applied would hide the
+    /// reported matches while reporting success.
+    case clearActiveFilter
+    /// Nothing is applied and nothing was asked for, so the shown content is
+    /// already correct and reloading would only reset pagination.
+    case leaveContentAsIs
+}
+
+/// Decision for -[SPTableContent showTable:withSerializedFilter:] when the
+/// table is already selected with its content showing, kept in Swift so it is
+/// shared with the Unit Tests target.
+@objc public final class SAShowTableFilterPolicy: NSObject {
+    /// `nil` serialized filter settings mean "open without a filter" (a match
+    /// the rule editor cannot represent), not "keep the current filter": the
+    /// settings only leave the content as it is when no filter is applied.
+    @objc(actionForSelectedShowingContentWithSerializedFilter:activeFilterApplied:)
+    public static func actionForSelectedShowingContent(
+        hasSerializedFilter: Bool,
+        activeFilterApplied: Bool
+    ) -> SAShowTableFilterAction {
+        if hasSerializedFilter { return .applySerializedFilter }
+        return activeFilterApplied ? .clearActiveFilter : .leaveContentAsIs
+    }
+}

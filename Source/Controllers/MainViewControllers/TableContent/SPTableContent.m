@@ -3797,10 +3797,21 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	BOOL isSelectedTable = [tableName isEqualToString:[tableDocumentInstance table]];
 
 	if (isSelectedTable && [tableDocumentInstance currentlySelectedView] == SPTableViewContent) {
-		if (filterSettings) {
-			[ruleFilterController restoreSerializedFilters:filterSettings];
-			[self setRuleEditorVisible:YES animate:YES];
-			[self filterTable:ruleFilterController];
+		switch ([SAShowTableFilterPolicy actionForSelectedShowingContentWithSerializedFilter:(filterSettings != nil) activeFilterApplied:(activeFilter != SPTableContentFilterSourceNone)]) {
+			case SAShowTableFilterActionApplySerializedFilter:
+				[ruleFilterController restoreSerializedFilters:filterSettings];
+				[self setRuleEditorVisible:YES animate:YES];
+				[self filterTable:ruleFilterController];
+				break;
+			// nil settings mean "open without a filter" (a match the rule editor
+			// cannot represent), so an already-applied filter is cleared and the
+			// content reloaded unfiltered instead of hiding the reported matches.
+			case SAShowTableFilterActionClearActiveFilter:
+				[ruleFilterController setColumns:dataColumns];
+				[self filterTable:nil];
+				break;
+			case SAShowTableFilterActionLeaveContentAsIs:
+				break;
 		}
 		return YES;
 	}

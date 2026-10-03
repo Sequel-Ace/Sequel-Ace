@@ -205,6 +205,37 @@ final class SASearchAllTablesTests: XCTestCase {
             "no filter rather than one that shows only some of the matching rows")
     }
 
+    /// An already-selected table showing its content keeps its filter only
+    /// when no filter is applied: `nil` settings mean "open without a filter",
+    /// so a filter left applied would hide the reported matches.
+    func testShowTablePolicyClearsAppliedFilterForNilSettings() {
+        XCTAssertEqual(SAShowTableFilterPolicy.actionForSelectedShowingContent(hasSerializedFilter: false, activeFilterApplied: true),
+                       .clearActiveFilter)
+        XCTAssertEqual(SAShowTableFilterPolicy.actionForSelectedShowingContent(hasSerializedFilter: true, activeFilterApplied: true),
+                       .applySerializedFilter)
+        XCTAssertEqual(SAShowTableFilterPolicy.actionForSelectedShowingContent(hasSerializedFilter: true, activeFilterApplied: false),
+                       .applySerializedFilter)
+        XCTAssertEqual(SAShowTableFilterPolicy.actionForSelectedShowingContent(hasSerializedFilter: false, activeFilterApplied: false),
+                       .leaveContentAsIs, "nothing to clear, so the shown content is not reloaded")
+    }
+
+    /// An unsupported search literal serializes to `nil`, and showing such a
+    /// result on the already-selected table with a filter applied clears that
+    /// filter instead of leaving it active over the unfiltered content.
+    func testUnsupportedSearchLiteralClearsFilterOfSelectedTable() {
+        let table = SASearchAllTablesTable(name: "t", isView: false, columns: [
+            SASearchAllTablesColumn(name: "path", kind: .text),
+        ])
+        let match = SASearchAllTablesMatch(table: "t", matchingRows: 1, columnMatches: [("path", 1)])
+        let text = #"C:\temp"# // the rule editor would read `\t` as a tab
+
+        XCTAssertNil(SASearchAllTablesFilterBuilder.serializedFilter(for: match, table: table, text: text, mode: .contains))
+        XCTAssertEqual(SAShowTableFilterPolicy.actionForSelectedShowingContent(
+            hasSerializedFilter: SASearchAllTablesFilterBuilder.serializedFilter(for: match, table: table, text: text, mode: .contains) != nil,
+            activeFilterApplied: true),
+                       .clearActiveFilter)
+    }
+
     /// The filter shown for a result must select the same rows as the search:
     /// after the rule filter applies its own escaping, the LIKE pattern has to
     /// be the one the search sent (`%50\%\_off\\x%` for `50%_off\x`).
