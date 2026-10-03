@@ -1191,6 +1191,12 @@ class WorkflowRecoveryTest < Minitest::Test
     end
   end
 
+  def test_pr_ci_verifies_oras_checksums_against_upstream
+    workflow = YAML.load_file(repo_path(".github/workflows/ci_pr_tests.yml"))
+    steps = workflow.fetch("jobs").fetch("release_tools").fetch("steps")
+    assert steps.any? { |step| step["run"] == "bundle exec ruby Scripts/verify-oras-checksums.rb" }
+  end
+
   def test_oras_pin_contract_accepts_dependency_updates
     step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
     current = assert_oras_installation_pinned(step)

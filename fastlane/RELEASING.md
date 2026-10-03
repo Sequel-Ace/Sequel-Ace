@@ -380,6 +380,9 @@ CLI download version, and archive checksums; see the
 [release orchestrator](../.github/workflows/release.yml) and
 [artifact publisher](../.github/workflows/release_publish.yml). Tests validate
 these pinning and consistency requirements without fixing a particular version.
+PR CI also runs `bundle exec ruby Scripts/verify-oras-checksums.rb` to compare
+configured checksums with the upstream release manifest for the workflow's CLI
+version. This network check is separate from the offline unit suite.
 Linux-only orchestration jobs use
 the checksum-pinned Linux amd64 archive; hosted-Mac feasibility and artifact
 verification jobs use the checksum-pinned Darwin archive for the runner's exact
