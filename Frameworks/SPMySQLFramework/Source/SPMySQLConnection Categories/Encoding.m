@@ -94,11 +94,12 @@
 		return YES;
 	}
 
-	// A character set without a string encoding to carry it is not run as the session's.
-	BOOL characterSetCanBeCarried = [SAConnectionCharacterSets canCarryValuesForCharacterSet:theEncoding];
-	NSString *characterSetToSet = characterSetCanBeCarried
-		? theEncoding
-		: [SAConnectionCharacterSets fallbackCharacterSet];
+	// A character set without a string encoding to carry it is not run as the session's. The
+	// name comes back in the spelling the encoding table is keyed by, which it matches
+	// case-sensitively.
+	NSString *carriedCharacterSet = [SAConnectionCharacterSets carriableNameForCharacterSet:theEncoding];
+	BOOL characterSetCanBeCarried = (carriedCharacterSet != nil);
+	NSString *characterSetToSet = carriedCharacterSet ?: [SAConnectionCharacterSets fallbackCharacterSet];
 	if (!characterSetCanBeCarried) {
 		SPLog(@"[setEncoding:]: no string encoding carries the character set '%@'; connecting in %@ instead.",
 		      theEncoding, characterSetToSet);

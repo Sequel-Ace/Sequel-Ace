@@ -1507,7 +1507,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// converting them, so the session is moved to a character set that can be carried. The
 	// server converts between a table's own character set and the session's, so this puts no
 	// data out of reach. A server too old to know the fallback keeps what it reported.
-	if (![SAConnectionCharacterSets canCarryValuesForCharacterSet:retrievedEncoding]) {
+	NSString *carriedEncoding = [SAConnectionCharacterSets carriableNameForCharacterSet:retrievedEncoding];
+	if (carriedEncoding) {
+		// In the spelling the encoding table is keyed by, which it matches case-sensitively.
+		retrievedEncoding = carriedEncoding;
+	} else {
 		NSString *fallback = [SAConnectionCharacterSets fallbackCharacterSet];
 		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session to %@.",
 		      retrievedEncoding, fallback);

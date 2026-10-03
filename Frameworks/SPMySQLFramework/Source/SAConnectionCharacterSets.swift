@@ -37,16 +37,29 @@ public final class SAConnectionCharacterSets: NSObject {
         "koi8_ru", "koi8_ukr", "latin1_de", "usa7", "win1250", "win1251", "win1251ukr",
     ]
 
+    /// The name to run a session under, for a character set values can be converted for.
+    ///
+    /// The name comes back in the spelling the encoding table is keyed by, which matches it
+    /// case-sensitively: a session set up as `LATIN5` would otherwise pass this check and then
+    /// find no encoding, leaving its values converted as UTF-8.
+    /// - Parameter name: The character set's MySQL name, in any case.
+    /// - Returns: The name to use, or nil when this framework has no string encoding for it.
+    @objc(carriableNameForCharacterSet:)
+    public static func carriableName(forCharacterSet name: String?) -> String? {
+        guard let name, !name.isEmpty else {
+            return nil
+        }
+        let normalized = name.lowercased()
+        return carriable.contains(normalized) ? normalized : nil
+    }
+
     /// Whether values can be converted for a character set, so that it is safe to run a session
     /// in it.
     /// - Parameter name: The character set's MySQL name.
     /// - Returns: `true` when this framework has a string encoding that carries it.
     @objc(canCarryValuesForCharacterSet:)
     public static func canCarryValues(forCharacterSet name: String?) -> Bool {
-        guard let name, !name.isEmpty else {
-            return false
-        }
-        return carriable.contains(name.lowercased())
+        return carriableName(forCharacterSet: name) != nil
     }
 
     /// The character sets whose string encoding is only reachable through CoreFoundation, so

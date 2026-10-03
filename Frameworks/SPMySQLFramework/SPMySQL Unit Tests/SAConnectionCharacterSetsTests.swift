@@ -67,6 +67,22 @@ final class SAConnectionCharacterSetsTests: XCTestCase {
         XCTAssertTrue(SAConnectionCharacterSets.canCarryValues(forCharacterSet: "Latin1"))
     }
 
+    /// The name handed back is the one the encoding table is keyed by, which matches it
+    /// case-sensitively. A session set up under the caller's spelling would otherwise pass the
+    /// check and then find no encoding, leaving its values converted as UTF-8.
+    func testTheNameComesBackInTheSpellingTheEncodingTableUses() {
+        for spelling in ["LATIN5", "Latin5", "latin5"] {
+            XCTAssertEqual(SAConnectionCharacterSets.carriableName(forCharacterSet: spelling), "latin5")
+        }
+        XCTAssertNil(SAConnectionCharacterSets.carriableName(forCharacterSet: "SWE7"))
+        XCTAssertNil(SAConnectionCharacterSets.carriableName(forCharacterSet: nil))
+
+        // The spelling that comes back resolves to a real encoding; the caller's may not.
+        let carried = SAConnectionCharacterSets.carriableName(forCharacterSet: "LATIN5")
+        XCTAssertNotEqual(encoding(for: carried ?? ""), .utf8)
+        XCTAssertEqual(encoding(for: "LATIN5"), .utf8, "the table is case-sensitive, which is why the name is normalised")
+    }
+
     /// The fallback is one every server offering more than the pre-4.1 character sets has.
     func testTheFallbackIsUTF8() {
         XCTAssertEqual(SAConnectionCharacterSets.fallbackCharacterSet, "utf8mb4")
