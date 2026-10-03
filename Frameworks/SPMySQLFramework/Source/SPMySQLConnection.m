@@ -1501,6 +1501,23 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// should be encoded in utf8, too, the character got lost.
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
 
+	// Escaping follows what the session reports, and the client library only learns of a
+	// SET NAMES through the server's session-state tracking. A server that does not list
+	// character_set_client there leaves such a statement invisible, and values would go on
+	// being escaped for the character set this connection last set itself. The variable is
+	// settable per session, so the tracking is turned on here rather than assumed. Its value
+	// comes from the SHOW VARIABLES above, so this costs no extra round trip when nothing
+	// needs changing; a server without the variable simply errors and is left as it is.
+	NSString *trackingList = [SASessionStateTracking
+		trackingListToSetGivenCurrentList:[variables objectForKey:@"session_track_system_variables"]];
+	if (trackingList) {
+		[self queryString:[NSString stringWithFormat:@"SET SESSION session_track_system_variables = %@",
+		                   [trackingList mySQLTickQuotedString]]];
+		if ([self queryErrored]) {
+			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
+		}
+	}
+
 	// The session can end up in a character set that was never asked for - a server default,
 	// or an init_connect that runs SET NAMES - and this framework has no string encoding for
 	// every one of them. Reading such a session's bytes as UTF-8 reinterprets them instead of
