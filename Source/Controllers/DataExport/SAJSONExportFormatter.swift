@@ -26,6 +26,8 @@ import Foundation
 ///   Unicode, so arbitrary bytes cannot be embedded as text without loss.
 /// - Strings in numeric columns → unquoted number, but only if the text is a valid JSON number
 ///   (a `ZEROFILL` value such as `007` stays a string so nothing is lost).
+/// - Strings in text columns, and strings whose column types are unknown → JSON string. A value's
+///   database type is never guessed from its text: a VARCHAR `1e3` must not become a JSON number.
 /// - Everything else → JSON string.
 ///
 /// Kept free of project ObjC types so the Unit Tests target can compile it.
@@ -39,9 +41,9 @@ final class SAJSONExportFormatter {
     /// - Parameters:
     ///   - columnNames: The result's column names, used as object keys. Repeated names (a query
     ///     selecting `a.id, b.id`) get a `_2`, `_3`, ... suffix so no key is overwritten.
-    ///   - numericColumns: Per column, whether it holds numbers. Pass `nil` when the column types are
-    ///     unknown (query and filtered results); any cell that reads as a JSON number is then written
-    ///     unquoted, as the CSV exporter does for the same sources.
+    ///   - numericColumns: Per column, whether it holds numbers (see `numericColumnFlags(_:)`).
+    ///     Pass `nil` when the column types are unknown; strings are then written as strings —
+    ///     a cell's database type is never guessed from its text.
     ///   - tableKey: The table name to key this table's array by when several tables share a file,
     ///     or `nil` to write a bare array.
     ///   - prettyPrint: Indent the output; otherwise each row is written compactly on its own line.
@@ -112,6 +114,22 @@ final class SAJSONExportFormatter {
         }
     }
 
+    // MARK: - Column metadata
+
+    /// Whether a column whose field definition carries this `typegrouping` holds a number.
+    /// BIT is excluded: its values are bit strings such as "0101".
+    static func isNumericTypeGrouping(_ grouping: String?) -> Bool {
+        grouping == "integer" || grouping == "float"
+    }
+
+    /// Per-column numeric flags from a result's field definitions — a streaming result's
+    /// `fieldDefinitions()`, a custom-query result store's, or the table metadata's `columns`,
+    /// all of which carry `typegrouping`. Missing or empty definitions yield all `false`, so
+    /// strings keep their string type.
+    static func numericColumnFlags(_ definitions: [[String: Any]]) -> [Bool] {
+        definitions.map { SAJSONExportFormatter.isNumericTypeGrouping($0["typegrouping"] as? String) }
+    }
+
     // MARK: - Values
 
     private func value(_ cell: Any, column: Int) -> String {
@@ -121,7 +139,7 @@ final class SAJSONExportFormatter {
         case let data as Data:
             return SAJSONExportFormatter.quoted(data.base64EncodedString())
         case let string as String:
-            let columnIsNumeric = numericColumns.map { column < $0.count && $0[column] } ?? true
+            let columnIsNumeric = numericColumns.map { column < $0.count && $0[column] } ?? false
             return columnIsNumeric && SAJSONExportFormatter.isJSONNumber(string) ? string : SAJSONExportFormatter.quoted(string)
         default:
             return SAJSONExportFormatter.quoted(String(describing: cell))

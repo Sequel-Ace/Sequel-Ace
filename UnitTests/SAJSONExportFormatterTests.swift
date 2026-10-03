@@ -81,12 +81,82 @@ final class SAJSONExportFormatterTests: XCTestCase {
         XCTAssertEqual(text, "[\n{\"id\":1,\"price\":19.99,\"zip\":\"00501\",\"code\":\"123\",\"note\":null,\"blob\":\"AP8Q\"}\n]\n")
     }
 
-    func testUnknownColumnTypesWriteNumericLookingTextAsNumbers() {
-        // Query and filtered results carry no column types; like the CSV exporter, text that reads as
-        // a number is written as one. Text that is not a valid JSON number stays a string.
+    func testUnknownColumnTypesKeepStringsAsStrings() {
+        // When the column types are unknown, a cell's database type is never guessed from its
+        // text: a VARCHAR "1e3" must not become the JSON number 1e3.
         let text = document(columns: ["a", "b", "c", "d"], numeric: nil, rows: [["42", "-1.5e3", "007", "abc"]], pretty: false)
 
-        XCTAssertEqual(text, "[\n{\"a\":42,\"b\":-1.5e3,\"c\":\"007\",\"d\":\"abc\"}\n]\n")
+        XCTAssertEqual(text, "[\n{\"a\":\"42\",\"b\":\"-1.5e3\",\"c\":\"007\",\"d\":\"abc\"}\n]\n")
+    }
+
+    // MARK: - Column metadata
+
+    func testNumericColumnFlagsFromFieldDefinitions() {
+        // Streaming results and custom-query result stores provide field definitions with
+        // typegrouping; BIT is excluded (its values are bit strings such as "0101")
+        let definitions: [[String: Any]] = [
+            ["name": "id", "typegrouping": "integer"],
+            ["name": "price", "typegrouping": "float"],
+            ["name": "flags", "typegrouping": "bit"],
+            ["name": "note", "typegrouping": "strings"],
+            ["name": "created", "typegrouping": "datetime"],
+            ["name": "anything"],             // no typegrouping key
+            ["name": "odd", "typegrouping": 7], // not a string
+        ]
+        XCTAssertEqual(SAJSONExportFormatter.numericColumnFlags(definitions),
+                       [true, true, false, false, false, false, false])
+
+        // Missing or empty metadata leaves every column a string
+        XCTAssertEqual(SAJSONExportFormatter.numericColumnFlags([]), [])
+    }
+
+    func testSameValuesKeepTheirTypeAcrossTableQueryAndFilteredExports() {
+        // The same schema and row reach the exporter by three paths: a table export reads its
+        // field definitions from the streaming result, a query export from the result store, and
+        // a filtered export from the table metadata's columns. All three carry typegrouping, so
+        // all three must agree: numeric columns emit numbers, text columns keep their strings.
+        let columns = ["code", "zip", "qty", "price"]
+        let row: [Any] = ["1e3", "94103", "7", "19.99"]
+
+        let streamingDefinitions: [[String: Any]] = [
+            ["name": "code", "typegrouping": "strings", "charsetnr": 255],
+            ["name": "zip", "typegrouping": "strings", "charsetnr": 255],
+            ["name": "qty", "typegrouping": "integer", "charsetnr": 63],
+            ["name": "price", "typegrouping": "float", "charsetnr": 63],
+        ]
+        let resultStoreDefinitions: [[String: Any]] = [
+            ["name": "code", "typegrouping": "strings"],
+            ["name": "zip", "typegrouping": "strings"],
+            ["name": "qty", "typegrouping": "integer"],
+            ["name": "price", "typegrouping": "float"],
+        ]
+        let tableMetadataColumns: [[String: Any]] = [
+            ["name": "code", "typegrouping": "strings", "type": "varchar"],
+            ["name": "zip", "typegrouping": "strings", "type": "varchar"],
+            ["name": "qty", "typegrouping": "integer", "type": "int"],
+            ["name": "price", "typegrouping": "float", "type": "decimal"],
+        ]
+
+        let expected = "[\n{\"code\":\"1e3\",\"zip\":\"94103\",\"qty\":7,\"price\":19.99}\n]\n"
+        for definitions in [streamingDefinitions, resultStoreDefinitions, tableMetadataColumns] {
+            let flags = SAJSONExportFormatter.numericColumnFlags(definitions)
+            XCTAssertEqual(document(columns: columns, numeric: flags, rows: [row], pretty: false), expected)
+        }
+
+        // Parsed back: text columns stay strings (no type change), numeric columns are numbers
+        let parsed = parse(expected) as? [[String: Any]]
+        XCTAssertEqual(parsed?.first?["code"] as? String, "1e3")
+        XCTAssertEqual(parsed?.first?["zip"] as? String, "94103")
+        XCTAssertEqual(parsed?.first?["qty"] as? Int, 7)
+        XCTAssertEqual(parsed?.first?["price"] as? Double, 19.99)
+    }
+
+    func testZerofillAndInvalidNumbersStayStringsEvenInNumericColumns() {
+        // Nothing is lost to make a value numeric: text that is not a valid JSON number keeps
+        // its exact spelling
+        let text = document(columns: ["a", "b"], numeric: [true, true], rows: [["007", "1e"]], pretty: false)
+
+        XCTAssertEqual(text, "[\n{\"a\":\"007\",\"b\":\"1e\"}\n]\n")
     }
 
     func testOtherObjectsAreWrittenAsTheirDescription() {
@@ -106,7 +176,7 @@ final class SAJSONExportFormatterTests: XCTestCase {
                        ["id", "name", "id_2", "id_2_2", "id_3"])
 
         // A query selecting a.id, b.id keeps both values
-        let text = document(columns: ["id", "id"], numeric: nil, rows: [["1", "2"]], pretty: false)
+        let text = document(columns: ["id", "id"], numeric: [true, true], rows: [["1", "2"]], pretty: false)
         XCTAssertEqual(text, "[\n{\"id\":1,\"id_2\":2}\n]\n")
         XCTAssertEqual((parse(text) as? [[String: Any]])?.first?.count, 2)
     }

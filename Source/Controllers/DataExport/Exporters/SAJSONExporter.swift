@@ -25,6 +25,12 @@ import Foundation
     /// Rows to export, the first row being the column names. `nil` for a table export.
     var jsonDataArray: [Any]?
 
+    /// Per-column field definitions for a data-array export — the custom-query result store's or the
+    /// table metadata's, both of which carry `typegrouping`. They keep text columns as strings even
+    /// when their values read as numbers. `nil` for a table export (the streaming result supplies its
+    /// own definitions) or when the source provides none; strings then stay strings.
+    var jsonColumnDefinitions: [[String: Any]]?
+
     /// The table to export when `jsonDataArray` is `nil`.
     var jsonTableName: String?
 
@@ -64,6 +70,7 @@ import Foundation
         if let dataArray {
             fieldNames = ((dataArray.first as? [Any]) ?? []).map { "\($0)" }
             totalRows = dataArray.count - 1
+            numericColumns = SAJSONExportFormatter.numericColumnFlags(jsonColumnDefinitions ?? [])
         } else {
             let quotedTableName = (tableName as NSString).backtickQuoted() ?? tableName
             let count = connection.getFirstField(fromQuery: "SELECT COUNT(1) FROM \(quotedTableName)", assertingDatabase: databaseName)
@@ -86,13 +93,9 @@ import Foundation
             }
 
             fieldNames = (streamingResult.fieldNames() as? [String]) ?? []
-            // The result's own field types say which columns are numeric (BIT is excluded: its
-            // values are bit strings such as "0101")
+            // The result's own field types say which columns are numeric
             let fieldDefinitions = (streamingResult.fieldDefinitions() as? [[String: Any]]) ?? []
-            numericColumns = fieldDefinitions.map {
-                let grouping = $0["typegrouping"] as? String
-                return grouping == "integer" || grouping == "float"
-            }
+            numericColumns = SAJSONExportFormatter.numericColumnFlags(fieldDefinitions)
             characterSets = fieldDefinitions.map { ($0["charsetnr"] as? NSNumber)?.intValue ?? 63 }
         }
 

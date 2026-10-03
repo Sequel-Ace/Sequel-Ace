@@ -1961,6 +1961,15 @@ set_input:
 	}
 	else {
 		[jsonExporter setJsonDataArray:dataArray];
+
+		// Pass the source's column definitions so the JSON exporter knows each column's type:
+		// number-shaped VARCHAR values (e.g. "1e3") must stay JSON strings.
+		if (exportSource == SPFilteredExport) {
+			[jsonExporter setJsonColumnDefinitions:[tableContentInstance dataColumnDefinitions]];
+		}
+		else if (exportSource == SPQueryExport) {
+			[jsonExporter setJsonColumnDefinitions:[customQueryInstance dataColumnDefinitions]];
+		}
 	}
 
 	[jsonExporter setJsonPrettyPrint:([exportJSONPrettyPrintCheck state] == NSControlStateValueOn)];
