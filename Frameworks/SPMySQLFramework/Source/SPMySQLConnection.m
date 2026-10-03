@@ -576,7 +576,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// to keep reconnecting, or whether to disconnect.
 	if (!connectionVerified) {
         SPLog(@"!connectionVerified, calling _reconnectAllowingRetries");
-		connectionVerified = [self _reconnectAllowingRetries:YES];
+		// The check just failed, so this attempt runs on the check's limits rather than the
+		// configured timeout - the interface is waiting on it.
+		connectionVerified = [self _reconnectAllowingRetries:YES afterFailedCheck:YES];
 	}
 
 	// Update the connection tracking use variable if the connection was confirmed,
@@ -588,6 +590,13 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	return connectionVerified;
 }
 
+/**
+ * Whether a connection used this recently is worth verifying before it is used again.
+ * A check costs a round trip, so one is only made when the connection has been idle long
+ * enough that the route may have gone while nothing was looking, and only while nothing else
+ * holds the connection - an active query is traffic of its own, and the thread running it owns
+ * the connection structure.
+ */
 - (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime
 {
 	if (state != SPMySQLConnected || !mySQLConnection) return NO;
@@ -899,8 +908,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Set the connection timeout. A side connection, which only asks the server to kill a query,
 	// keeps a short limit of its own instead of waiting out the configured one.
+	// An attempt that may not take the configured timeout - a reconnect after a failed check -
+	// carries its own through attemptConnectTimeout.
+	NSUInteger masterConnectTimeout = attemptConnectTimeout > 0 ? attemptConnectTimeout : timeout;
 	NSUInteger connectTimeout = isMaster
-		? timeout
+		? masterConnectTimeout
 		: [SAConnectionCheckBudget sideConnectionConnectTimeoutForConfiguredTimeout:timeout];
 	mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&connectTimeout);
 
@@ -1051,7 +1063,7 @@ asm(".desc ___crashreporter_info__, 0x10");
     // same way again, and credentials the server refused, or that may already have gone out over
     // TLS before the connection was lost, must not be sent a second time unencrypted.
     if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
-        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
+        opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
         connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
     }
@@ -1142,9 +1154,27 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
+	// An attempt nobody asked for keeps the connection's configured timeout.
+	return [self _reconnectAllowingRetries:canRetry afterFailedCheck:NO];
+}
+
+/**
+ * Re-establish the connection, on the time budget the attempt is entitled to.
+ * An attempt that follows a failed connection check runs on the check's limits instead of the
+ * configured timeout: the interface is already waiting, and a route that has gone would
+ * otherwise hold it for the whole timeout - or, with none configured, indefinitely.
+ */
+- (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck
+{
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
+	SAConnectionAttemptBudget *attemptBudget = [SAConnectionCheckBudget
+		attemptBudgetForConfiguredTimeout:timeout userEndedWait:NO afterFailedCheck:afterFailedCheck];
+	// _connect reads this; it is cleared however this method returns, so a later attempt that is
+	// entitled to the configured timeout gets it.
+	attemptConnectTimeout = [attemptBudget overridesConfiguredTimeout] ? [attemptBudget connectTimeout] : 0;
+	@try {
 	BOOL reconnectSucceeded = NO;
     NSString *timeZoneIdentifierToRestore = nil;
 
@@ -1206,7 +1236,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _lockConnection];
 
 		// If no network is present, wait for a short time for one to become available
-		[self _waitForNetworkConnectionWithTimeout:10];
+		[self _waitForNetworkConnectionWithTimeout:[attemptBudget networkWait]];
 
 		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
@@ -1216,6 +1246,11 @@ asm(".desc ___crashreporter_info__, 0x10");
             SPLog(@"we have a proxy");
 
 			uint64_t loopIterationStart_t, proxyWaitStart_t;
+			// The proxy's own connection is part of the attempt, so it shares its budget. A
+			// budget of zero carries the configured timeout's "no limit" through unchanged.
+			NSUInteger proxyWaitLimit = [attemptBudget overridesConfiguredTimeout]
+				? [attemptBudget connectTimeout]
+				: timeout;
 
 			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
 			// to allow it to disconnect.
@@ -1229,7 +1264,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 					loopIterationStart_t = _monotonicTime();
 
 					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
+					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > proxyWaitLimit) break;
 
 					// Allow events to process for 0.25s, sleeping to completion on early return
 					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
@@ -1263,7 +1298,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				}
 
 				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
+				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (proxyWaitLimit + 1)) {
                     SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
 					[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:YES];
 					break;
@@ -1352,6 +1387,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	reconnectingThread = NULL;
 	return reconnectSucceeded;
+	} @finally {
+		// Whatever this attempt did - including the early returns while the connection is
+		// locked - the next one is entitled to the configured timeout again.
+		attemptConnectTimeout = 0;
+	}
 }
 
 /**

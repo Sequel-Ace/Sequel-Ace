@@ -95,6 +95,9 @@
 
 	// Timeout and keep-alive
 	NSUInteger timeout;
+	// The connect timeout one attempt runs on when it may not take the configured one -
+	// a reconnect after a failed check. Zero means the configured timeout applies.
+	NSUInteger attemptConnectTimeout;
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
 	CGFloat keepAliveInterval;

@@ -98,6 +98,17 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
     }
 
     /// The check stays well below the default timeout.
+    /// The connection carries the budget into the attempt. Without this the budget is a table
+    /// nothing reads: the ping is bounded and the reconnect that follows it is not, which is the
+    /// whole of what a dropped route costs.
+    func testTheConnectionTakesABudgetIntoTheAttempt() {
+        let connection = SPMySQLConnection()
+        XCTAssertTrue(connection.responds(to: Selector(("_reconnectAllowingRetries:afterFailedCheck:"))),
+                      "the reconnect has to be reachable with a budget, or the limits apply to the ping alone")
+        XCTAssertTrue(connection.responds(to: Selector(("_reconnectAllowingRetries:"))),
+                      "the plain form stays, for every attempt entitled to the configured timeout")
+    }
+
     func testCheckStaysWellBelowTheDefaultTimeout() {
         let worstCase = Double(SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: 30))
             + SAConnectionCheckBudget.networkWait(forConfiguredTimeout: 30)
