@@ -226,6 +226,37 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
                        "back to the mode a new session starts in, so the quote is doubled")
     }
 
+
+    /// Checks that the mode a session starts under can be set after the handshake.
+    ///
+    /// A server's `init_connect` runs once the handshake has been answered, so it can turn
+    /// NO_BACKSLASH_ESCAPES on for every session while the handshake status and the global mode
+    /// say nothing about it. The connection records the effective mode after its startup
+    /// statements, and that is what a forgotten session falls back to - the mode the session
+    /// after it will start under.
+    func testTheStartingModeCanBeSetAfterTheHandshake() throws {
+        let escaper = SAConnectionEscaper()
+        // the handshake does not show it yet
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        // the connection's startup statements reveal it
+        escaper.recordStartingMode(noBackslashEscapes: true)
+
+        escaper.forgetSession()
+
+        let source = Array("it's".utf8)
+        var destination = [UInt8](repeating: 0, count: 32)
+        let written = source.withUnsafeBytes { bytes in
+            destination.withUnsafeMutableBytes { out in
+                escaper.escape(bytes.baseAddress, length: source.count, into: out.baseAddress!,
+                               characterSetOnRecord: "utf8mb4", sessionIsBeingReplaced: false)
+            }
+        }
+
+        XCTAssertGreaterThan(written, 0)
+        XCTAssertEqual(String(decoding: destination[0..<written], as: UTF8.self), "it''s",
+                       "the quote is doubled, as it must be for the session that follows")
+    }
+
     /// The connection's escaper follows what the session reports.
     func testTheEscaperFollowsWhatTheSessionReports() {
         let escaper = SAConnectionEscaper()
