@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SPMySQL
 
 enum SPMCPHTTP {
 
@@ -103,9 +104,10 @@ enum SPMCPReadOnlyGuard {
 
     /// `true` if running `EXPLAIN <sql>` would execute the statement rather than just
     /// plan it. EXPLAIN ANALYZE runs its target, and the ANALYZE/FORMAT modifiers may
-    /// appear in any order (e.g. `FORMAT=TREE ANALYZE UPDATE ...`), so scan the whole
-    /// modifier region - not just the prefix - for ANALYZE. An executable /*! */
-    /// comment is also treated as unsafe.
+    /// appear in any order (e.g. `FORMAT=TREE ANALYZE UPDATE ...`). ANALYZE is a
+    /// reserved word in MySQL and MariaDB, so outside quotes it can only be that
+    /// modifier: any unquoted ANALYZE word counts. An executable /*! */ comment is also
+    /// treated as unsafe.
     static func explainWouldExecute(_ sql: String) -> Bool {
         if hasExecutableComment(sql) { return true }
         // As in isReadOnly, the statement is read with and without backslash
@@ -114,19 +116,48 @@ enum SPMCPReadOnlyGuard {
         return backslashReadings.contains { explainWouldExecute(sql, backslashEscapes: $0) }
     }
 
+    /// Whether the statement holds an unquoted ANALYZE word under one reading of
+    /// backslashes.
+    ///
+    /// The tokens come from the SQL classifier's tokenizer, which works on Unicode
+    /// scalars and keeps every quoted operand - `'...'`, `"..."`, `` `...` ``,
+    /// `@'...'` - in one token, so a quoted ANALYZE never counts. Every token is
+    /// looked at, rather than stopping at the statement's first keyword: text the
+    /// comment stripper leaves in but the server reads as a comment can then only
+    /// cause a rejection, never hide the modifier. Words are split once more at
+    /// characters that cannot be part of an unquoted identifier, so ANALYZE glued to
+    /// punctuation is found too.
+    ///
+    /// - Parameters:
+    ///   - sql: The statement after EXPLAIN.
+    ///   - backslashEscapes: Whether a backslash escapes the next character in
+    ///     quoted strings.
+    /// - Returns: Whether EXPLAIN would execute the statement.
     private static func explainWouldExecute(_ sql: String, backslashEscapes: Bool) -> Bool {
         let stripped = stripCommentsQuoteAware(sql, backslashEscapes: backslashEscapes)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        // The statement body starts at one of these keywords; ANALYZE/FORMAT before
-        // it are EXPLAIN modifiers.
-        let statementStarters: Set<String> = ["SELECT", "WITH", "INSERT", "UPDATE", "DELETE",
-                                              "REPLACE", "VALUES", "TABLE", "CALL", "DO", "HANDLER"]
-        for raw in stripped.uppercased().split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" || $0 == "\r" }) {
-            let head = String(raw.split(separator: "=").first ?? raw)   // "FORMAT=TREE" -> "FORMAT"
-            if statementStarters.contains(head) { return false }
-            if head == "ANALYZE" { return true }
+        let analyze = Array("ANALYZE".unicodeScalars)
+        let tokens = SPCustomQuerySQLClassifier.sqlTokens(from: stripped.uppercased(), backslashEscapes: backslashEscapes)
+        return tokens.contains { token in
+            // Quoted operands and user variables are never the modifier.
+            guard let first = token.unicodeScalars.first, !"'\"`@".unicodeScalars.contains(first) else {
+                return false
+            }
+            return token.unicodeScalars
+                .split(whereSeparator: { !isUnquotedIdentifierScalar($0) })
+                .contains { Array($0) == analyze }
         }
-        return false
+    }
+
+    /// Whether `scalar` continues a possibly qualified unquoted name: an ASCII
+    /// letter or digit, `_`, `$`, any character beyond ASCII, or the `.` between
+    /// qualifiers. The dot keeps `t.ANALYZE` whole: after a dot MySQL reads even a
+    /// reserved word as an identifier.
+    ///
+    /// - Parameter scalar: The character to check.
+    /// - Returns: Whether it continues the name.
+    private static func isUnquotedIdentifierScalar(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value >= 0x80 || scalar == "_" || scalar == "$" || scalar == "."
+            || ("A"..."Z").contains(scalar) || ("a"..."z").contains(scalar) || ("0"..."9").contains(scalar)
     }
 
     /// `true` if `sql` contains an executable comment whose body the server runs:
@@ -178,15 +209,18 @@ enum SPMCPReadOnlyGuard {
             // `FROM/**/t` -> `FROMt`), which matters because the stripped SQL is also
             // what run_query executes for capped reads.
             if c == "#" {                                        // # comment to end of line
-                while i < n && chars[i] != "\n" { i += 1 }
+                while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { i += 1 }
                 out.append(" ")
                 continue
             }
-            // -- comment: the second dash must be followed by whitespace/control or EOL
+            // -- comment: the second dash must be followed by whitespace, a control
+            // character or the end, as MySQL's lexer requires (my_isspace or
+            // my_iscntrl: 0x00-0x20 and 0x7F). Accepting fewer - a vertical tab or form
+            // feed, say - would leave text in that the server skips as a comment.
             if c == "-" && i + 1 < n && chars[i + 1] == "-" {
                 let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
-                    while i < n && chars[i] != "\n" { i += 1 }
+                if i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(next) {
+                    while i < n && !SASQLCommentSyntax.endsLineComment(chars[i]) { i += 1 }
                     out.append(" ")
                     continue
                 }
@@ -202,6 +236,96 @@ enum SPMCPReadOnlyGuard {
             i += 1
         }
         return out
+    }
+
+    /// Substitutes each unquoted `?` in `sql` with the literal that `literal`
+    /// renders for the next element of `params`. Quote- and comment-aware: a `?`
+    /// inside a string literal or a comment is not a placeholder and is copied
+    /// verbatim, so a `?` parked in a comment cannot turn param data into
+    /// executable SQL (it just fails the placeholder/param count check).
+    ///
+    /// The scan walks Unicode scalars, as `stripCommentsQuoteAware` does, so a
+    /// combining mark right after a quote cannot hide the delimiter. Whether a
+    /// backslash escapes the next character depends on the connection's
+    /// `NO_BACKSLASH_ESCAPES`, which the binder does not know, so the
+    /// placeholders are found under both readings; a query in which the two
+    /// disagree is refused instead of being bound in a way the server may read
+    /// differently.
+    /// Returns `(nil, message)` when the placeholder and param counts differ or
+    /// the placeholders depend on the backslash reading.
+    static func bindPlaceholders(in sql: String, params: [Any], literal: (Any) -> String) -> (String?, String?) {
+        let scalars = Array(sql.unicodeScalars)
+        let placeholders = placeholderOffsets(in: scalars, backslashEscapes: true)
+        guard placeholders == placeholderOffsets(in: scalars, backslashEscapes: false) else {
+            return (nil, "The ? placeholders depend on whether a backslash escapes a quote (NO_BACKSLASH_ESCAPES); write the string literals without backslash escapes")
+        }
+        if placeholders.count > params.count { return (nil, "More ? placeholders than params provided") }
+        if placeholders.count < params.count { return (nil, "More params than ? placeholders provided") }
+        var out = String.UnicodeScalarView()
+        var copied = 0
+        for (offset, param) in zip(placeholders, params) {
+            out.append(contentsOf: scalars[copied..<offset])
+            out.append(contentsOf: literal(param).unicodeScalars)
+            copied = offset + 1
+        }
+        out.append(contentsOf: scalars[copied...])
+        return (String(out), nil)
+    }
+
+    /// The positions of the `?` placeholders in a query: outside string
+    /// literals, quoted identifiers and comments.
+    ///
+    /// - Parameters:
+    ///   - scalars: The query's Unicode scalars.
+    ///   - backslashEscapes: Whether a backslash escapes the next character in
+    ///     a `'…'` or `"…"` literal, as it does unless NO_BACKSLASH_ESCAPES is set.
+    /// - Returns: The scalar offsets of the placeholders, in order.
+    private static func placeholderOffsets(in scalars: [Unicode.Scalar], backslashEscapes: Bool) -> [Int] {
+        var offsets: [Int] = []
+        var quote: Unicode.Scalar?
+        let n = scalars.count
+        var i = 0
+        while i < n {
+            let c = scalars[i]
+            if let q = quote {
+                if c == "\\" && backslashEscapes && q != "`" {    // backslash escape in a string literal
+                    i += 2
+                    continue
+                }
+                if c == q {
+                    if i + 1 < n && scalars[i + 1] == q {          // doubled-quote escape
+                        i += 2
+                        continue
+                    }
+                    quote = nil
+                }
+                i += 1
+                continue
+            }
+            // A `?` inside a comment is not a placeholder.
+            if c == "#" {                                         // # to end of line
+                while i < n && !SASQLCommentSyntax.endsLineComment(scalars[i]) { i += 1 }
+                continue
+            }
+            if c == "-" && i + 1 < n && scalars[i + 1] == "-"
+                && (i + 2 >= n || SASQLCommentSyntax.isCommentWhitespace(scalars[i + 2])) {   // -- (needs whitespace/EOL after)
+                while i < n && !SASQLCommentSyntax.endsLineComment(scalars[i]) { i += 1 }
+                continue
+            }
+            if c == "/" && i + 1 < n && scalars[i + 1] == "*" {   // /* ... */ block comment
+                i += 2
+                while i < n && !(scalars[i] == "*" && i + 1 < n && scalars[i + 1] == "/") { i += 1 }
+                i += 2
+                continue
+            }
+            if c == "'" || c == "\"" || c == "`" {
+                quote = c
+            } else if c == "?" {
+                offsets.append(i)
+            }
+            i += 1
+        }
+        return offsets
     }
 }
 
@@ -316,3 +440,44 @@ struct HTTPRequest {
         return nil
     }
 }
+
+/// Formats the fields of the CSV files `export_results` writes.
+enum SAMCPCSV {
+    /// Escapes one CSV field.
+    ///
+    /// A spreadsheet reads a cell that starts with `=`, `+`, `-`, `@`, a tab or a
+    /// carriage return as a formula, and the exported data can be
+    /// attacker-influenced (prompt injection), so such a cell gets a leading single
+    /// quote and is read as text. A plain number is left as it is: `-5` or
+    /// `+1.5E3` cannot be a formula, and quoting it would turn every negative
+    /// number in the export into text.
+    ///
+    /// - Parameter value: The field's text.
+    /// - Returns: The field as it goes into the file, enclosed in double quotes
+    ///   when it holds a comma, a double quote or a line break.
+    static func escapedField(_ value: String) -> String {
+        var field = value
+        // Unicode scalars, not Characters: Swift folds "\r\n" into one Character,
+        // which would hide a leading carriage return.
+        if let first = field.unicodeScalars.first, "=+-@\t\r".unicodeScalars.contains(first), !isPlainNumber(field) {
+            field = "'" + field
+        }
+        if field.containsAnyUnicodeScalar(of: ",\"\n\r") {
+            // .literal: without it a quote followed by a combining mark is not
+            // found, stays single and ends the field early.
+            return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"", options: .literal) + "\""
+        }
+        return field
+    }
+
+    /// Whether `value` is a plain decimal number in ASCII digits - an optional
+    /// sign, digits with an optional fraction, an optional exponent - as MySQL
+    /// returns numeric columns.
+    ///
+    /// - Parameter value: The field's text.
+    /// - Returns: Whether the whole value is such a number.
+    private static func isPlainNumber(_ value: String) -> Bool {
+        value.range(of: #"\A[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?\z"#, options: .regularExpression) != nil
+    }
+}
+

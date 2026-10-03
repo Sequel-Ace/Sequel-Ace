@@ -516,7 +516,12 @@ extension SPAppController: SPMCPDataSource {
         guard let ci = mcpResolveConnection(connID) else { return mcpNoConnectionError() }
         let conn = ci.conn
 
-        // Bind ? placeholders to escaped literals (injection-safe).
+        // Bind ? placeholders to escaped literals (injection-safe). Without params nothing
+        // is bound - the SQL is the one the read-only guard validated, and a plain SELECT is
+        // still stripped of its comments and capped below - so a ? left in it is answered by
+        // the server as a syntax error. Scanning it anyway would refuse queries the server
+        // runs fine, where a ? only looks live under one backslash reading (see
+        // SPMCPReadOnlyGuard.bindPlaceholders).
         var bound = sql
         if !params.isEmpty {
             let (result, err) = mcpBindParams(params, intoSQL: sql, connection: conn)
@@ -581,6 +586,7 @@ extension SPAppController: SPMCPDataSource {
         guard let re = try? NSRegularExpression(pattern: pattern) else { return nil }
         let ns = sql as NSString
         guard let m = re.firstMatch(in: sql, range: NSRange(location: 0, length: ns.length)) else { return nil }
+        /// Returns the text of capture group `i`, or nil if the group did not participate in the match.
         func group(_ i: Int) -> String? {
             let r = m.range(at: i)
             return r.location == NSNotFound ? nil : ns.substring(with: r)
@@ -603,69 +609,16 @@ extension SPAppController: SPMCPDataSource {
 
     /// Substitutes each unquoted ? in `sql` with the next param as an escaped SQL
     /// literal. Returns (nil, error) if the placeholder and param counts differ.
-    /// Quote- and comment-aware: a `?` inside a string literal or a comment is NOT a
-    /// placeholder and is copied verbatim, so a `?` parked in a comment cannot turn
-    /// param data into executable SQL (it just fails the placeholder/param count check).
+    /// The quote- and comment-aware scan lives in `SPMCPReadOnlyGuard.bindPlaceholders`
+    /// so it is covered by the read-only guard tests; only the literal rendering
+    /// needs the connection.
     private func mcpBindParams(_ params: [Any], intoSQL sql: String, connection conn: SPMySQLConnection) -> (String?, String?) {
-        var out = ""
-        var pIndex = 0
-        var quote: Character?
-        let chars: [Character] = Array(sql)
-        let n = chars.count
-        var i = 0
-        while i < n {
-            let c = chars[i]
-            if let q = quote {
-                out.append(c)
-                if c == "\\" && q != "`" {                       // backslash escape in a string literal
-                    if i + 1 < n { out.append(chars[i + 1]); i += 1 }
-                } else if c == q {
-                    if i + 1 < n && chars[i + 1] == q {           // doubled-quote escape
-                        out.append(q); i += 1
-                    } else {
-                        quote = nil
-                    }
-                }
-                i += 1
-                continue
-            }
-            // Comments are copied verbatim; a `?` inside one is not a placeholder.
-            if c == "#" {                                        // # to end of line
-                while i < n && chars[i] != "\n" { out.append(chars[i]); i += 1 }
-                continue
-            }
-            if c == "-" && i + 1 < n && chars[i + 1] == "-" {    // -- (needs whitespace/EOL after)
-                let next = i + 2 < n ? chars[i + 2] : " "
-                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
-                    while i < n && chars[i] != "\n" { out.append(chars[i]); i += 1 }
-                    continue
-                }
-            }
-            if c == "/" && i + 1 < n && chars[i + 1] == "*" {    // /* ... */ block comment
-                out.append("/"); out.append("*"); i += 2
-                while i < n {
-                    if i + 1 < n && chars[i] == "*" && chars[i + 1] == "/" {
-                        out.append("*"); out.append("/"); i += 2; break
-                    }
-                    out.append(chars[i]); i += 1
-                }
-                continue
-            }
-            if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
-            if c == "?" {
-                if pIndex >= params.count { return (nil, "More ? placeholders than params provided") }
-                out.append(mcpSQLLiteral(for: params[pIndex], connection: conn))
-                pIndex += 1
-                i += 1
-                continue
-            }
-            out.append(c)
-            i += 1
-        }
-        if pIndex != params.count { return (nil, "More params than ? placeholders provided") }
-        return (out, nil)
+        SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { self.mcpSQLLiteral(for: $0, connection: conn) }
     }
 
+    /// Renders a bound parameter as an SQL literal: `NULL` for NSNull, the plain
+    /// string value for numbers, and a connection-escaped quoted string for
+    /// strings and any other value (via its description).
     private func mcpSQLLiteral(for value: Any, connection conn: SPMySQLConnection) -> String {
         if value is NSNull { return "NULL" }
         if let num = value as? NSNumber { return num.stringValue }
@@ -978,9 +931,16 @@ extension SPAppController: SPMCPDataSource {
 
     // MARK: - CSV helpers
 
+    /// Builds the CSV text of a query result: a header row with the column names,
+    /// then one line per row, every field escaped by `SAMCPCSV.escapedField`.
+    ///
+    /// - Parameters:
+    ///   - columns: The column names, in order.
+    ///   - rows: The rows, keyed by column name; `nil` and `NSNull` become empty fields.
+    /// - Returns: The CSV text.
     private func csvString(fromColumns columns: [String], rows: [[String: Any]]) -> String {
         var csv = ""
-        csv += columns.map { csvEscape($0) }.joined(separator: ",") + "\n"
+        csv += columns.map { SAMCPCSV.escapedField($0) }.joined(separator: ",") + "\n"
         for row in rows {
             var vals: [String] = []
             for col in columns {
@@ -993,26 +953,10 @@ extension SPAppController: SPMCPDataSource {
                 } else {
                     strVal = "\(val!)"
                 }
-                vals.append(csvEscape(strVal))
+                vals.append(SAMCPCSV.escapedField(strVal))
             }
             csv += vals.joined(separator: ",") + "\n"
         }
         return csv
-    }
-
-    private func csvEscape(_ value: String) -> String {
-        var v = value
-        // Guard against CSV/formula injection: spreadsheet apps treat a cell that
-        // starts with = + - @ (or a leading tab/CR) as a formula. Prefix such cells
-        // with a single quote so they are read as literal text. The export data can
-        // be attacker-influenced (prompt injection), so neutralise it here.
-        if let first = v.first, "=+-@\t\r".contains(first) {
-            v = "'" + v
-        }
-        if v.contains(",") || v.contains("\"") || v.contains("\n") || v.contains("\r") {
-            let escaped = v.replacingOccurrences(of: "\"", with: "\"\"")
-            return "\"\(escaped)\""
-        }
-        return v
     }
 }

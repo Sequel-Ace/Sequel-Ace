@@ -721,6 +721,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_transient_publisher_failures_leave_the_remote_handoff_retryable
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
+                     .split("- name: Preserve verified artifacts privately before public attachment", 2).first
     recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
     terminal = recovery.split("- name: Preserve terminal artifact-verification failure", 2).fetch(1)
                        .split("- name: Preserve retryable state after a transient publisher failure", 2).first
@@ -733,6 +735,10 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
+    assert_includes verify, "mark_terminal_failure_if_cloud_complete"
+    assert_includes verify, 'fetch("execution_progress") == "COMPLETE"'
+    assert_equal 3, verify.scan("mark_terminal_failure_if_cloud_complete").length
+    assert_includes verify, "the exact handoff remains retryable"
   end
 
   def test_publisher_revalidates_every_exact_identity_before_artifact_writes
