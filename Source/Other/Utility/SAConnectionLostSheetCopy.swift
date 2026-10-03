@@ -52,15 +52,15 @@ import Foundation
 
     // MARK: - Copy
 
-    /// Builds the sheet copy, naming the AWS CLI command to run when a connection
-    /// using AWS IAM authentication could not generate a new auth token.
-    @objc(sheetCopyForAWSIAMTokenError:isAWSIAMConnection:)
-    static func make(awsIAMTokenError error: NSError?, isAWSIAMConnection: Bool) -> SAConnectionLostSheetCopy {
+    /// Builds the sheet copy, naming the AWS CLI command that renews `awsProfile`'s session
+    /// when a connection using AWS IAM authentication could not generate a new auth token.
+    @objc(sheetCopyForAWSIAMTokenError:isAWSIAMConnection:awsProfile:)
+    static func make(awsIAMTokenError error: NSError?, isAWSIAMConnection: Bool, awsProfile: String?) -> SAConnectionLostSheetCopy {
         guard isAWSIAMConnection, let error = error else {
             return SAConnectionLostSheetCopy(title: defaultTitle, message: defaultMessage)
         }
 
-        if let command = awsSignInCommand(for: error as Error) {
+        if let command = awsSignInCommand(for: error as Error, profile: awsProfile) {
             return SAConnectionLostSheetCopy(title: awsSignInTitle,
                                              message: String(format: awsSignInMessageFormat, command))
         }
@@ -72,9 +72,24 @@ import Foundation
                                                          description.isEmpty ? unknownErrorDescription : description))
     }
 
-    /// Returns the AWS CLI command that renews the session for this error, or nil
-    /// when the error is not a lapsed session.
-    static func awsSignInCommand(for error: Error) -> String? {
+    /// Returns the AWS CLI command that renews `profile`'s session for this error, or nil
+    /// when the error is not a lapsed session. An empty profile means the `default` profile.
+    static func awsSignInCommand(for error: Error, profile: String?) -> String? {
+        guard let command = awsSignInCommand(for: error) else { return nil }
+
+        let trimmedProfile = profile?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return command + " --profile " + shellQuoted(trimmedProfile.isEmpty ? "default" : trimmedProfile)
+    }
+
+    /// `value` quoted for a POSIX shell, or unchanged when it holds only characters a shell takes literally.
+    static func shellQuoted(_ value: String) -> String {
+        guard value.isEmpty || value.range(of: "[^A-Za-z0-9_@%+=:,./-]", options: .regularExpression) != nil else {
+            return value
+        }
+        return "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    private static func awsSignInCommand(for error: Error) -> String? {
         if let loginError = error as? AWSLoginAuthError {
             return signInCommand(forConsoleSignIn: loginError)
         }

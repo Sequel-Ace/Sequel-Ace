@@ -5965,7 +5965,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Display the connection error sheet and wait for the return code
         SAConnectionLostSheetCopy *sheetCopy = [SAConnectionLostSheetCopy sheetCopyForAWSIAMTokenError:[connectionController lastAWSIAMTokenErrorForConnection:connection]
-                                                                                   isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)];
+                                                                                   isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)
+                                                                                           awsProfile:[connectionController awsProfile]];
 
         connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
             ? SPMySQLConnectionLostReconnect
