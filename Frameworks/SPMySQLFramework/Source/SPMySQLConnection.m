@@ -1501,6 +1501,22 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// should be encoded in utf8, too, the character got lost.
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
 
+	// The session can end up in a character set that was never asked for - a server default,
+	// or an init_connect that runs SET NAMES - and this framework has no string encoding for
+	// every one of them. Reading such a session's bytes as UTF-8 reinterprets them instead of
+	// converting them, so the session is moved to a character set that can be carried. The
+	// server converts between a table's own character set and the session's, so this puts no
+	// data out of reach. A server too old to know the fallback keeps what it reported.
+	if (![SAConnectionCharacterSets canCarryValuesForCharacterSet:retrievedEncoding]) {
+		NSString *fallback = [SAConnectionCharacterSets fallbackCharacterSet];
+		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session to %@.",
+		      retrievedEncoding, fallback);
+		[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [fallback mySQLTickQuotedString]]];
+		if (![self queryErrored]) {
+			retrievedEncoding = fallback;
+		}
+	}
+
 	// Update instance variables
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[encoding cStringUsingEncoding:stringEncoding]];

@@ -30,6 +30,8 @@
 
 #import "Encoding.h"
 #import "SPMySQLStringAdditions.h"
+#import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Encoding)
 
@@ -77,6 +79,11 @@
  * Set the name of the encoding - the MySQL character set - that the connection
  * should use.  If an encoding not recognised by the server is supplied, NO is
  * returned.
+ * NO is also returned for a character set this framework has no string encoding for.
+ * The connection is then put on a character set it can convert values for, so that it
+ * stays usable: the requested one would otherwise have its bytes read as UTF-8, which
+ * reinterprets them rather than converting them.  No data goes out of reach that way,
+ * because the server converts between a table's own character set and the session's.
  * Calling this resets whether the connection should use Latin1 transport to NO.
  */
 - (BOOL)setEncoding:(NSString *)theEncoding
@@ -87,19 +94,30 @@
 		return YES;
 	}
 
+	// A character set without a string encoding to carry it is not run as the session's.
+	BOOL characterSetCanBeCarried = [SAConnectionCharacterSets canCarryValuesForCharacterSet:theEncoding];
+	NSString *characterSetToSet = characterSetCanBeCarried
+		? theEncoding
+		: [SAConnectionCharacterSets fallbackCharacterSet];
+	if (!characterSetCanBeCarried) {
+		SPLog(@"[setEncoding:]: no string encoding carries the character set '%@'; connecting in %@ instead.",
+		      theEncoding, characterSetToSet);
+	}
+
 	// Run a query to set the connection encoding
-	[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [theEncoding mySQLTickQuotedString]]];
+	[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [characterSetToSet mySQLTickQuotedString]]];
 
 	// If the query errored, no encoding change occurred - return failure.
 	if ([self queryErrored]) return NO;
 
-	// Connection encoding was successfully set, update the instance settings,
-	// and return success.
-	encoding = [[NSString alloc] initWithString:theEncoding];
-	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[theEncoding UTF8String]];
+	// Connection encoding was successfully set, update the instance settings.
+	encoding = [[NSString alloc] initWithString:characterSetToSet];
+	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetToSet UTF8String]];
 	encodingUsesLatin1Transport = NO;
 
-	return YES;
+	// The session is usable either way, but the character set asked for is only in use when
+	// this framework could carry it.
+	return characterSetCanBeCarried;
 }
 
 /**
@@ -223,19 +241,30 @@
 	} else if (!strcmp(mysqlCharset, "tis620")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatinThai);
 	} else if (!strcmp(mysqlCharset, "euckr")) {
-		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_KR);
+		// CP949 (UHC), the extended form MySQL uses: plain EUC-KR cannot read 8824 of the
+		// sequences the server accepts here.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSKorean);
 	} else if (!strcmp(mysqlCharset, "koi8u")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingKOI8_U);
 	} else if (!strcmp(mysqlCharset, "gb2312")) {
-		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_2312_80);
+		// EUC-CN, not the bare GB 2312-80 standard: that one has no ASCII range at all, so
+		// converting a value to it yielded no bytes and the value could not be used.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_CN);
 	} else if (!strcmp(mysqlCharset, "greek")) {
-		return NSWindowsCP1253StringEncoding;
+		// ISO 8859-7, not Windows-1253: the two disagree over 22 of the bytes the server
+		// defines. The remaining difference is A1/A2, where MySQL keeps the 1987 edition's
+		// modifier letters and macOS follows the 2003 revision's quotation marks.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatinGreek);
 	} else if (!strcmp(mysqlCharset, "cp1250")) {
 		return NSWindowsCP1250StringEncoding;
 	} else if (!strcmp(mysqlCharset, "gbk")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGBK_95);
+	} else if (!strcmp(mysqlCharset, "gb18030")) {
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_18030_2000);
 	} else if (!strcmp(mysqlCharset, "latin5")) {
-		return NSWindowsCP1254StringEncoding;
+		// ISO 8859-9, not Windows-1254: the two disagree over 25 of the bytes the server
+		// defines, all of them in the 80-9F range Windows fills with punctuation.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin5);
 	} else if (!strcmp(mysqlCharset, "ucs2")) {
 		return NSUnicodeStringEncoding;
 	} else if (!strcmp(mysqlCharset, "cp866")) {
