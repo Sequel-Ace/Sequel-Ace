@@ -105,22 +105,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	NSUInteger mallocSize = (cDataLength * 2) + 2;
 	char *escBuffer = (char *)malloc(mallocSize);
 
-	// Use mysql_real_escape_string to perform the escape, starting one character in
-	NSUInteger escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
-
-	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
-	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
-	if (escapedLength == (unsigned long)-1) {
-		NSUInteger theErrorID = mysql_errno(mySQLConnection);
-		if (theErrorID == CR_INSECURE_API_ERR) {
-			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
-		} else {
-			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
-			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
-			free(escBuffer);
-			return nil;
-		}
+	// Escape starting one character in. The session's own handle is not used: work nobody waits
+	// for any more can still be using it, or close it, while this runs. The escaper follows what
+	// the session last reported - its character set and its NO_BACKSLASH_ESCAPES mode.
+	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
+	                                             length:cDataLength
+	                                               into:escBuffer+1
+	                               characterSetOnRecord:encoding
+	                             sessionIsBeingReplaced:NO];
+	if (escapedLength < 0) {
+		// A value that cannot be escaped for this character set is not written. Before, an
+		// unexpected error raised an assertion, which ends the application in a debug build and
+		// is ignored in a release one - the latter then went on with an unescaped buffer.
+		SPLog(@"[escapeString:includingQuotes]: the value could not be escaped for character set %@", encoding);
+		free(escBuffer);
+		return nil;
 	}
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
@@ -503,6 +502,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding connection:self];
 					break;
 			}
+
+			// The statement may have changed the character set or the escaping mode; values are
+			// escaped the way the session reports it reads them now.
+			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+			                            isHandshake:NO];
 
 			// Update the error message, if appropriate, to reflect result store errors or overall success
 			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
