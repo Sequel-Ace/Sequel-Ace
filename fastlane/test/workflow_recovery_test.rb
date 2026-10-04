@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "yaml"
+require "open3"
 
 class WorkflowRecoveryTest < Minitest::Test
   def test_status_uses_protected_api_credentials_without_release_mutations_or_serialization
@@ -695,6 +697,83 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, "Live handoff validation failed transiently; recovery remains armed."
   end
 
+  def test_verified_archive_continuation_does_not_query_cloud_downloads
+    workflow = YAML.load_file(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.dig("jobs", "discover", "steps").find do |step|
+      step["name"] == "Inspect exact Cloud runs once"
+    end.fetch("run")
+    # Run the actual readiness and action-selection shell with the real CLI and
+    # CloudRunStatus. The earlier handoff checks remain covered by their suites.
+    shell = discovery[discovery.index("# Handoff and public-asset validation above")..]
+    assert_operator discovery.index("validate-publish-handoff"), :<, discovery.index("artifact_arguments=()")
+    assert_operator discovery.index("github-public-assets-status"), :<, discovery.index("artifact_arguments=()")
+    recheck = workflow.dig("jobs", "publish", "steps").find do |step|
+      step["name"] == "Recheck exact Cloud readiness once"
+    end
+    assert_equal "${{ steps.context.outputs.state }}", recheck.fetch("env").fetch("VERIFIED_HANDOFF_STATE")
+
+    Dir.mktmpdir do |directory|
+      fixture = File.join(directory, "cloud-fixture.rb")
+      File.write(fixture, <<~'RUBY')
+        require "sequel_ace_release"
+        client = Object.new
+        client.define_singleton_method(:find_cloud_run) do |**args|
+          { "id" => args.fetch(:run_id), "number" => 20105,
+            "execution_progress" => "COMPLETE", "completion_status" => "SUCCEEDED" }
+        end
+        client.define_singleton_method(:cloud_builds_for_run) do |run_id|
+          [{ "id" => "app-build", "app_id" => run_id == "alpha-run" ? "1594104035" : "1518036000",
+             "version" => "5.3.2", "platform" => "MAC_OS", "build" => 20105 }]
+        end
+        client.define_singleton_method(:run_artifacts) do |run_id|
+          File.open(ENV.fetch("ARTIFACT_CALLS"), "a") { |file| file.puts(run_id) }
+          raise "Verified continuation queried an expired Cloud download" if ENV.fetch("VERIFIED_HANDOFF_STATE") != "cloud_running"
+          []
+        end
+        cli = SequelAceRelease::CLI.new(out: $stdout, err: $stderr, env: ENV)
+        cli.define_singleton_method(:app_store_client) { client }
+        exit cli.run(ARGV)
+      RUBY
+      prefix = <<~'SH'
+        set -euo pipefail
+        bundle() { "${RUBY_BIN}" -I"${RELEASE_LIB}" "${FIXTURE_CLI}" "${@:4}"; }
+      SH
+      %w[production beta].each do |channel|
+        %w[cloud_running artifacts_verified archived].each do |state|
+          calls = File.join(directory, "calls")
+          FileUtils.rm_f(calls)
+          output = File.join(directory, "output")
+          File.write(output, "")
+          env = {
+            "RUBY_BIN" => RbConfig.ruby, "RELEASE_LIB" => repo_path("fastlane/lib"), "FIXTURE_CLI" => fixture,
+            "ARTIFACT_CALLS" => calls, "VERIFIED_HANDOFF_STATE" => state,
+            "GITHUB_OUTPUT" => output, "GITHUB_STEP_SUMMARY" => File.join(directory, "summary"),
+            "terminal_integrity_failure" => "false", "manual_assets_pending" => "false",
+            "handoff_state" => state, "channel" => channel, "version" => "5.3.2", "build" => "20105",
+            "release_tag" => "#{channel}/5.3.2-20105", "commit" => "a" * 40,
+            "archive_ref" => "fixture-archive", "production_run_id" => "production-run", "alpha_run_id" => "alpha-run",
+            "SA_PRODUCTION_WORKFLOW_ID" => "production-workflow", "SA_ALPHA_WORKFLOW_ID" => "alpha-workflow",
+            "state_directory" => directory,
+            "EXPECTED_CHANNEL" => channel, "EXPECTED_VERSION" => "5.3.2", "EXPECTED_BUILD" => "20105",
+            "EXPECTED_TAG" => "#{channel}/5.3.2-20105", "EXPECTED_COMMIT" => "a" * 40,
+            "PRODUCTION_RUN_ID" => "production-run", "ALPHA_RUN_ID" => "alpha-run"
+          }
+          _stdout, stderr, status = Open3.capture3(env, "bash", "-c", prefix + shell, chdir: directory)
+          assert status.success?, "#{channel} #{state}: #{stderr}"
+          assert_includes File.read(output), "action=#{state == 'cloud_running' ? 'pending' : 'continue'}"
+          if state == "cloud_running"
+            assert_equal ["production-run"], File.readlines(calls, chomp: true)
+          else
+            refute_path_exists calls
+            _stdout, stderr, status = Open3.capture3(env, "bash", "-c", prefix + recheck.fetch("run"), chdir: directory)
+            assert status.success?, "recheck #{channel} #{state}: #{stderr}"
+            refute_path_exists calls
+          end
+        end
+      end
+    end
+  end
+
   def test_publisher_shell_uses_environment_indirection_for_external_values
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
     download = workflow.split("- name: Download exact Xcode Cloud artifacts", 2).fetch(1)
@@ -721,6 +800,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_transient_publisher_failures_leave_the_remote_handoff_retryable
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
+                     .split("- name: Preserve verified artifacts privately before public attachment", 2).first
     recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
     terminal = recovery.split("- name: Preserve terminal artifact-verification failure", 2).fetch(1)
                        .split("- name: Preserve retryable state after a transient publisher failure", 2).first
@@ -733,6 +814,10 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
+    assert_includes verify, "mark_terminal_failure_if_cloud_complete"
+    assert_includes verify, 'fetch("execution_progress") == "COMPLETE"'
+    assert_equal 3, verify.scan("mark_terminal_failure_if_cloud_complete").length
+    assert_includes verify, "the exact handoff remains retryable"
   end
 
   def test_publisher_revalidates_every_exact_identity_before_artifact_writes
@@ -1074,38 +1159,82 @@ class WorkflowRecoveryTest < Minitest::Test
   end
 
   def test_release_workflows_use_commit_and_checksum_pinned_oras
-    action = "oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d"
-    arm64_checksum = "f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c"
-    amd64_checksum = "aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48"
+    expected_platforms = {
+      "release.yml" => { "linux_amd64" => 1 },
+      "release_alpha_retry.yml" => { "linux_amd64" => 1 },
+      "release_artifact_retry.yml" => { "linux_amd64" => 1 },
+      "release_finalize.yml" => { "linux_amd64" => 1 },
+      "release_status.yml" => { "linux_amd64" => 1 },
+      "release_feasibility.yml" => { "darwin_arm64" => 1, "darwin_amd64" => 1 },
+      "release_publish.yml" => { "linux_amd64" => 5, "darwin_arm64" => 1, "darwin_amd64" => 1 }
+    }
+    installations = []
+    workflows_using_oras = Dir.glob(repo_path(".github/workflows/*.{yml,yaml}"))
+                              .select { |path| File.read(path).include?("oras-project/setup-oras") }
+                              .map { |path| File.basename(path) }
+    assert_equal expected_platforms.keys.sort, workflows_using_oras.sort
 
-    linux_checksum = "9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59"
-    %w[release.yml release_alpha_retry.yml release_finalize.yml].each do |filename|
-      workflow = File.read(repo_path(".github/workflows/#{filename}"))
-
-      assert_equal 1, workflow.scan(action).length
-      assert_includes workflow, "oras_1.3.3_linux_amd64.tar.gz"
-      assert_includes workflow, linux_checksum
-      refute_includes workflow, "oras_1.3.3_darwin_"
-      refute_includes workflow, "brew install oras"
+    expected_platforms.each do |filename, platforms|
+      configured = oras_installation_steps(filename).map { |step| assert_oras_installation_pinned(step) }
+      assert_equal platforms, configured.map { |install| install.fetch(:platform) }.tally, filename
+      refute_includes File.read(repo_path(".github/workflows/#{filename}")), "brew install oras"
+      installations.concat(configured)
     end
 
-    feasibility = File.read(repo_path(".github/workflows/release_feasibility.yml"))
-    assert_equal 2, feasibility.scan(action).length
-    assert_includes feasibility, "oras_1.3.3_darwin_arm64.tar.gz"
-    assert_includes feasibility, arm64_checksum
-    assert_includes feasibility, "oras_1.3.3_darwin_amd64.tar.gz"
-    assert_includes feasibility, amd64_checksum
-    refute_includes feasibility, "brew install oras"
+    assert_equal 1, installations.map { |install| install.fetch(:action) }.uniq.length,
+                 "All ORAS installations must use the same immutable action revision"
+    assert_equal 1, installations.map { |install| install.fetch(:version) }.uniq.length,
+                 "All ORAS installations must use the same configured CLI version"
+    installations.group_by { |install| install.fetch(:platform) }.each do |platform, configured|
+      assert_equal 1, configured.map { |install| install.values_at(:url, :checksum) }.uniq.length,
+                   "#{platform} downloads must use matching URLs and checksums across workflows"
+    end
+  end
 
-    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 7, publisher.scan(action).length
-    assert_includes publisher, "oras_1.3.3_linux_amd64.tar.gz"
-    assert_includes publisher, linux_checksum
-    assert_includes publisher, "oras_1.3.3_darwin_arm64.tar.gz"
-    assert_includes publisher, arm64_checksum
-    assert_includes publisher, "oras_1.3.3_darwin_amd64.tar.gz"
-    assert_includes publisher, amd64_checksum
-    refute_includes publisher, "brew install oras"
+  def test_pr_ci_verifies_oras_checksums_against_upstream
+    workflow = YAML.load_file(repo_path(".github/workflows/ci_pr_tests.yml"))
+    steps = workflow.fetch("jobs").fetch("release_tools").fetch("steps")
+    assert steps.any? { |step| step["run"] == "bundle exec ruby Scripts/verify-oras-checksums.rb" }
+  end
+
+  def test_oras_pin_contract_accepts_dependency_updates
+    step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
+    current = assert_oras_installation_pinned(step)
+    major, minor, = current.fetch(:version).split(".").map(&:to_i)
+    updated_version = [major, minor + 1, 0].join(".")
+    step["uses"] = "oras-project/setup-oras@#{Digest::SHA1.hexdigest('updated action revision')}"
+    step.fetch("with")["url"] = current.fetch(:url).gsub(current.fetch(:version), updated_version)
+    step.fetch("with")["checksum"] = Digest::SHA256.hexdigest("updated CLI archive")
+
+    updated = assert_oras_installation_pinned(step)
+    assert_equal updated_version, updated.fetch(:version)
+    refute_equal current.fetch(:action), updated.fetch(:action)
+    refute_equal current.fetch(:checksum), updated.fetch(:checksum)
+  end
+
+  def test_oras_pin_contract_rejects_floating_or_short_action_references
+    %w[main latest deadbeef].each do |reference|
+      step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
+      step["uses"] = "oras-project/setup-oras@#{reference}"
+      assert_raises(Minitest::Assertion) { assert_oras_installation_pinned(step) }
+    end
+  end
+
+  def test_oras_pin_contract_rejects_untrusted_or_mismatched_downloads
+    original = oras_installation_steps("release.yml").fetch(0)
+    current = assert_oras_installation_pinned(original)
+    mutations = [
+      ["checksum", nil],
+      ["checksum", "not-a-sha256"],
+      ["url", current.fetch(:url).sub("github.com", "example.com")],
+      ["url", current.fetch(:url).sub("/v#{current.fetch(:version)}/", "/v#{current.fetch(:version)}-different/")],
+      ["url", current.fetch(:url).sub("linux_amd64", "unsupported_architecture")]
+    ]
+    mutations.each do |key, value|
+      step = Marshal.load(Marshal.dump(original))
+      step.fetch("with")[key] = value
+      assert_raises(Minitest::Assertion) { assert_oras_installation_pinned(step) }
+    end
   end
 
   def test_publisher_executes_the_immutable_event_revision
@@ -1504,6 +1633,26 @@ class WorkflowRecoveryTest < Minitest::Test
   end
 
   private
+
+  def oras_installation_steps(filename)
+    YAML.load_file(repo_path(".github/workflows/#{filename}")).fetch("jobs").values
+        .flat_map { |job| job.fetch("steps", []) }
+        .select { |step| step["uses"].to_s.start_with?("oras-project/setup-oras") }
+  end
+
+  def assert_oras_installation_pinned(step)
+    action = step["uses"]
+    assert_match(/\Aoras-project\/setup-oras@[0-9a-f]{40}\z/, action.to_s,
+                 "ORAS setup must use a full immutable action commit")
+    inputs = step.fetch("with", {})
+    url = inputs["url"]
+    checksum = inputs["checksum"]
+    # Read the version from the workflow; Dependabot updates must not require fixture edits.
+    download = %r{\Ahttps://github\.com/oras-project/oras/releases/download/v(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)/oras_\1_(linux_amd64|darwin_arm64|darwin_amd64)\.tar\.gz\z}.match(url.to_s)
+    refute_nil download, "ORAS must use an official archive with matching directory and filename versions"
+    assert_match(/\A[0-9a-f]{64}\z/, checksum.to_s, "Each ORAS archive must have a SHA-256 checksum")
+    { action: action, version: download[1], platform: download[2], url: url, checksum: checksum }
+  end
 
   def repo_path(relative_path)
     File.expand_path("../..", __dir__) + "/#{relative_path}"

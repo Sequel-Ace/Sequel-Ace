@@ -1,3 +1,69 @@
+## [6.0.2](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.2+%28*%29%22&expanded=true)
+
+### Added
+
+
+### Fixed
+- Recover artifacts from an existing successful release build ([0a6371101](https://github.com/Sequel-Ace/Sequel-Ace/commit/0a63711017b902aca97e38e8c0b1e638769f324b), [#2707](https://github.com/Sequel-Ace/Sequel-Ace/pull/2707))
+
+### Changed
+- Rename Database reads only its own triggers on a case-sensitive server ([bcb89437e](https://github.com/Sequel-Ace/Sequel-Ace/commit/bcb89437e2e7edd65d0fe3ccf9fd594d421dda1a), [#2732](https://github.com/Sequel-Ace/Sequel-Ace/pull/2732))
+- Update the setup-oras action to v2.0.2 ([2f8ad51e3](https://github.com/Sequel-Ace/Sequel-Ace/commit/2f8ad51e34cd6b70c8585907e6b304d202e5f712), [#2734](https://github.com/Sequel-Ace/Sequel-Ace/pull/2734))
+- Preserve the session time zone when reconnect restoration fails ([5070dd696](https://github.com/Sequel-Ace/Sequel-Ace/commit/5070dd696433fe3825584de9867e4ece2190777d), [#2715](https://github.com/Sequel-Ace/Sequel-Ace/pull/2715))
+- Repair Pages build timeout and refresh documentation dependencies ([3159fe4e8](https://github.com/Sequel-Ace/Sequel-Ace/commit/3159fe4e8eda875febde148801d98761e46f07c1), [#2733](https://github.com/Sequel-Ace/Sequel-Ace/pull/2733))
+- Keep Unicode-distinct display-format cache scopes independent ([1367c20ed](https://github.com/Sequel-Ace/Sequel-Ace/commit/1367c20ed85ca46d68c36eecacbb17bc01917526), [#2730](https://github.com/Sequel-Ace/Sequel-Ace/pull/2730))
+- Resume verified release archives without expired Cloud downloads ([a279a9e4d](https://github.com/Sequel-Ace/Sequel-Ace/commit/a279a9e4d482979e87c112ef69fd76d9e530f06b), [#2731](https://github.com/Sequel-Ace/Sequel-Ace/pull/2731))
+- Renew aws login credentials so connections stay signed in ([635903ce8](https://github.com/Sequel-Ace/Sequel-Ace/commit/635903ce8eaaf2c649f833295feecc5041655457), [#2717](https://github.com/Sequel-Ace/Sequel-Ace/pull/2717))
+- Generate a fresh AWS IAM auth token when reconnecting ([0f4e8fa8c](https://github.com/Sequel-Ace/Sequel-Ace/commit/0f4e8fa8c4298118d129cab6e89c594b3bcc4d61), [#2683](https://github.com/Sequel-Ace/Sequel-Ace/pull/2683))
+- Make the filter bar's WHERE preview and seeded row behave as they look ([376b6a057](https://github.com/Sequel-Ace/Sequel-Ace/commit/376b6a057b5e4c5adddf9af7a1117d7dab72748c), [#2710](https://github.com/Sequel-Ace/Sequel-Ace/pull/2710))
+- Stop New Connection Window from hanging and crashing ([4ca29694d](https://github.com/Sequel-Ace/Sequel-Ace/commit/4ca29694d94f1ff67164ed7be9a4e4a65c1319ea), [#2725](https://github.com/Sequel-Ace/Sequel-Ace/pull/2725))
+- Rename Database keeps the source database when not every object moved ([cec37be7f](https://github.com/Sequel-Ace/Sequel-Ace/commit/cec37be7fded35b75794495cf5a4b51f90faebb7), [#2667](https://github.com/Sequel-Ace/Sequel-Ace/pull/2667))
+- Keep EXPLAIN ANALYZE out of MCP read-only mode across line breaks and comments ([f95236882](https://github.com/Sequel-Ace/Sequel-Ace/commit/f95236882bd9ae550ab08832d22cf55c4e9c25e2), [#2698](https://github.com/Sequel-Ace/Sequel-Ace/pull/2698))
+- Keep negative numbers numeric in MCP CSV exports and quote CRLF fields ([a518f5883](https://github.com/Sequel-Ace/Sequel-Ace/commit/a518f58832ffe0acf8b616657a3fbe79df7607f2), [#2697](https://github.com/Sequel-Ace/Sequel-Ace/pull/2697))
+- Require TLS for connections using the cleartext auth plugin ([617f8479d](https://github.com/Sequel-Ace/Sequel-Ace/commit/617f8479deeda828b92050fbb53be058ac3b120a), [#2682](https://github.com/Sequel-Ace/Sequel-Ace/pull/2682))
+- Rearrange import dialog elements ([e633ffd74](https://github.com/Sequel-Ace/Sequel-Ace/commit/e633ffd74722ab75d84723f8d09c94a890ec8c14), [#2678](https://github.com/Sequel-Ace/Sequel-Ace/pull/2678))
+- A UUID cell edited to hyphens only is rejected instead of saved as an empty value ([d85887a63](https://github.com/Sequel-Ace/Sequel-Ace/commit/d85887a637de7c57fb8daa4ff99aa2b6479a0897), [#2674](https://github.com/Sequel-Ace/Sequel-Ace/pull/2674))
+- Count string length in code points and parse dates with a fixed calendar ([4cc5837a7](https://github.com/Sequel-Ace/Sequel-Ace/commit/4cc5837a71a2918fa3a0531af1fbc21216f1322d), [#2673](https://github.com/Sequel-Ace/Sequel-Ace/pull/2673))
+- Stop the content view reloading itself without end after a column mismatch ([2062d7070](https://github.com/Sequel-Ace/Sequel-Ace/commit/2062d7070da4961c905f4d6945b20c745638682c), [#2718](https://github.com/Sequel-Ace/Sequel-Ace/pull/2718))
+- Keep the SQLite display-format and pinned-table managers from crashing or racing ([7f20a3415](https://github.com/Sequel-Ace/Sequel-Ace/commit/7f20a341531bc08854f406f1341dada424563a7d), [#2672](https://github.com/Sequel-Ace/Sequel-Ace/pull/2672))
+- Line comments end at CRLF line endings in the Swift comment strippers ([89af476f4](https://github.com/Sequel-Ace/Sequel-Ace/commit/89af476f4dbfd60fbe4bca5a0e2d5725f95bcf6a), [#2662](https://github.com/Sequel-Ace/Sequel-Ace/pull/2662))
+- Update Rubyzip and compatible Fastlane dependencies ([042c16088](https://github.com/Sequel-Ace/Sequel-Ace/commit/042c160886481f01055637ec9bbc476e1aae9bfc), [#2714](https://github.com/Sequel-Ace/Sequel-Ace/pull/2714))
+- Wake artifact recovery through authenticated completion ([e488a283f](https://github.com/Sequel-Ace/Sequel-Ace/commit/e488a283fe3247d275560320e4ea71f3b4d74c7f), [#2708](https://github.com/Sequel-Ace/Sequel-Ace/pull/2708))
+- Restore reusable workflow environment secret resolution ([564df828d](https://github.com/Sequel-Ace/Sequel-Ace/commit/564df828d9509867fdcffbca878de73dbdd8332d), [#2706](https://github.com/Sequel-Ace/Sequel-Ace/pull/2706))
+- Check release credentials and retry early artifacts ([71895e580](https://github.com/Sequel-Ace/Sequel-Ace/commit/71895e5804191ccbf3b0afd491911eb3e4ed3655), [#2702](https://github.com/Sequel-Ace/Sequel-Ace/pull/2702))
+- Retry validated stale public-feed reads during finalization ([b340af6c9](https://github.com/Sequel-Ace/Sequel-Ace/commit/b340af6c94563e422c583ad4dd84344cbac1ce48), [#2703](https://github.com/Sequel-Ace/Sequel-Ace/pull/2703))
+- Wait for stapled notarized artifacts before publishing ([152423f38](https://github.com/Sequel-Ace/Sequel-Ace/commit/152423f38766b372d05cbfb6f287084f3aa7cbc1), [#2704](https://github.com/Sequel-Ace/Sequel-Ace/pull/2704))
+
+### Removed
+- Remove embedded Apple Menlo font ([f03a9d853](https://github.com/Sequel-Ace/Sequel-Ace/commit/f03a9d8536b1107b5febb038f6a731a0ede2b31c), [#2721](https://github.com/Sequel-Ace/Sequel-Ace/pull/2721))
+
+### Infra
+- Bump ruby/setup-ruby from 1.324.0 to 1.327.0 ([997eb58f9](https://github.com/Sequel-Ace/Sequel-Ace/commit/997eb58f9361b9d9925c1e1f0180edc92b1a9b3d), [#2716](https://github.com/Sequel-Ace/Sequel-Ace/pull/2716))
+
+## [6.0.1](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.1+%28*%29%22&expanded=true)
+
+### Added
+- Add self-service release dispatch with sole form approval ([dc6d2dbd4](https://github.com/Sequel-Ace/Sequel-Ace/commit/dc6d2dbd4c9fe8a3b64e1b97c0c5755f237a005c), [#2686](https://github.com/Sequel-Ace/Sequel-Ace/pull/2686))
+
+### Fixed
+
+
+### Changed
+- Finalize live App Store releases without submission scheduling checks ([8144cfc5d](https://github.com/Sequel-Ace/Sequel-Ace/commit/8144cfc5d29c7b7217381e6d969fe2150ab27992), [#2700](https://github.com/Sequel-Ace/Sequel-Ace/pull/2700))
+- Restore AWS RDS IAM and cleartext plugin authentication ([a73a15421](https://github.com/Sequel-Ace/Sequel-Ace/commit/a73a1542152f6bca052c75ade330a0242e5b0253), [#2679](https://github.com/Sequel-Ace/Sequel-Ace/pull/2679))
+- Stop reporting a Local Network denial for every error that mentions "network" ([67c33cefc](https://github.com/Sequel-Ace/Sequel-Ace/commit/67c33cefceffff74805f35239703299142136c28), [#2696](https://github.com/Sequel-Ace/Sequel-Ace/pull/2696))
+- SSH tunnel: default back to Distributed Objects and let the assistant fall back ([630278130](https://github.com/Sequel-Ace/Sequel-Ace/commit/6302781302b6149cc41ea4d5c4a4b4acbc222552), [#2699](https://github.com/Sequel-Ace/Sequel-Ace/pull/2699))
+- Make the new release form human-facing ([59d0aa260](https://github.com/Sequel-Ace/Sequel-Ace/commit/59d0aa260d770fc9720e1d67c4b9296e2d00d6b8), [#2687](https://github.com/Sequel-Ace/Sequel-Ace/pull/2687))
+- Make release state inspectable and recovery predictable ([cc324e736](https://github.com/Sequel-Ace/Sequel-Ace/commit/cc324e7362d828a63f9e78d732a91fbb81757940), [#2685](https://github.com/Sequel-Ace/Sequel-Ace/pull/2685))
+- Accept ready Xcode Cloud artifacts when run status lags ([380e0652c](https://github.com/Sequel-Ace/Sequel-Ace/commit/380e0652c1ac17599382f0772969d515ca7413f6), [#2684](https://github.com/Sequel-Ace/Sequel-Ace/pull/2684))
+
+### Removed
+
+
+### Infra
+- Bump ruby/setup-ruby from 1.321.0 to 1.324.0 ([0dc7896bc](https://github.com/Sequel-Ace/Sequel-Ace/commit/0dc7896bcf8126818524c7a4a1d8af1dc54b4ad9), [#2694](https://github.com/Sequel-Ace/Sequel-Ace/pull/2694))
+- Bump actions/upload-artifact from 4.6.2 to 7.0.1 ([01adb8a7e](https://github.com/Sequel-Ace/Sequel-Ace/commit/01adb8a7e2b1a60d0f1632aa8e8a6012176c9db5), [#2695](https://github.com/Sequel-Ace/Sequel-Ace/pull/2695))
+
 ## [6.0.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.0+%28*%29%22&expanded=true)
 
 ### Added

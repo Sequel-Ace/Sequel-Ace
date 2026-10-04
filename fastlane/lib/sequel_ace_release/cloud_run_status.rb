@@ -4,12 +4,13 @@ module SequelAceRelease
   class CloudRunStatus
     READINESS_STATES = %w[pending ready failed].freeze
     RUN_ID_PATTERN = /\A[A-Za-z0-9-]+\z/.freeze
+    NOTARIZED_ARTIFACT_TYPE = "STAPLED_NOTARIZED_ARCHIVE".freeze
 
     def initialize(client:)
       @client = client
     end
 
-    def readiness(workflow_id:, app_id:, version:, tag:, commit:, build: nil, run_id: nil)
+    def readiness(workflow_id:, app_id:, version:, tag:, commit:, build: nil, run_id: nil, require_downloadable_artifact: true)
       requested_run_id = run_id.to_s.empty? ? nil : run_id
       if requested_run_id && !requested_run_id.to_s.match?(RUN_ID_PATTERN)
         raise ValidationError, "requested Xcode Cloud build-run ID is malformed"
@@ -25,6 +26,10 @@ module SequelAceRelease
 
       unless run["id"].to_s.match?(RUN_ID_PATTERN)
         raise ValidationError, "Xcode Cloud returned a malformed build-run ID"
+      end
+
+      if requested_run_id && run["id"] != requested_run_id
+        raise ValidationError, "Xcode Cloud returned a different build-run ID"
       end
 
       if expected_build
@@ -63,19 +68,22 @@ module SequelAceRelease
         true
       end
       if matching_build
-        unless run_complete
-          # Apple's UI and artifacts can be ready before ciBuildRuns updates
-          # executionProgress. The exact build plus a downloadable artifact is
-          # sufficient to start the verifier; the artifact itself still has to
-          # pass every release check before publication.
-          unless downloadable_artifact?(run.fetch("id"))
-            return run.merge("readiness" => "pending", "reason" => "run_in_progress")
-          end
+        # Archive completion and export downloads can precede notarization.
+        # First-time collection requires Apple's stapled artifact even for a complete run;
+        # logs, xcarchives, and unstapled Developer ID exports cannot admit a verifier.
+        if require_downloadable_artifact && !downloadable_notarized_artifact?(run.fetch("id"))
+          return run.merge("readiness" => "pending", "reason" => "notarized_artifact_not_ready")
         end
 
         return run.merge(
           "readiness" => "ready",
-          "reason" => run_complete ? "exact_build_ready" : "exact_build_and_artifact_ready",
+          "reason" => if !require_downloadable_artifact
+                        "verified_artifacts_exact_build_ready"
+                      elsif run_complete
+                        "exact_build_ready"
+                      else
+                        "exact_build_and_artifact_ready"
+                      end,
           "app_store_build_id" => matching_build.fetch("id"),
           "app_version" => matching_build.fetch("version"),
           "app_build" => matching_build.fetch("build")
@@ -98,9 +106,10 @@ module SequelAceRelease
       { "readiness" => "pending", "reason" => reason }
     end
 
-    def downloadable_artifact?(run_id)
+    def downloadable_notarized_artifact?(run_id)
       @client.run_artifacts(run_id).any? do |artifact|
-        artifact.dig("attributes", "downloadUrl").to_s.start_with?("https://")
+        artifact.dig("attributes", "fileType") == NOTARIZED_ARTIFACT_TYPE &&
+          artifact.dig("attributes", "downloadUrl").to_s.start_with?("https://")
       end
     rescue APIError => error
       raise unless error.message.include?("HTTP 404")

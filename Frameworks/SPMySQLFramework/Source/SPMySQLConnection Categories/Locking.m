@@ -32,6 +32,7 @@
 
 #import "Locking.h"
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Locking)
 
@@ -93,6 +94,8 @@
 		SPLog(@"SPMySQLConnection: Discarding unretrieved results. This is currently normal when using CALL.");
 		[self _flushMultipleResultSets];
 	}
+
+	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];

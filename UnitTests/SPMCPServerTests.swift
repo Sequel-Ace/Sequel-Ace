@@ -188,6 +188,11 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT a FROM t UNION SELECT b FROM u",
             "/* leading comment */ SELECT 1",
             "-- a comment\nSELECT 1",
+            "-- a comment\r\nSELECT 1",
+            "--\r\nSELECT 1",
+            "--\u{0C}form feed\nSELECT 1",
+            "--\u{0B}vertical tab\nSELECT 1",
+            "# a comment\r\nSHOW TABLES",
             "SELECT COUNT(*) FROM t WHERE name = 'Bob'",
         ], "read")
     }
@@ -254,11 +259,17 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "stacked")
     }
 
+    /// Verifies that writes placed behind block, `--` or `#` comments, with LF or
+    /// CRLF line endings, are rejected by the read-only guard.
     func testCommentHiddenWritesRejected() {
         assertRejected([
             "/* x */ DELETE FROM t",
             "-- c\nUPDATE t SET x = 1",
             "# c\nDROP TABLE t",
+            "-- c\r\nUPDATE t SET x = 1",
+            "--\r\nDELETE FROM t",
+            "# c\r\nDROP TABLE t",
+            "SELECT 1 -- c\r\n; DROP TABLE t",
             "/* multi\nline */ INSERT INTO t VALUES (1)",
         ], "comment-hidden")
     }
@@ -332,12 +343,71 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
     func testCommentStripInsertsWhitespace() {
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1/* */AS x"), "SELECT 1 AS x")
         XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT * FROM/**/t"), "SELECT * FROM t")
+        // A line comment ends at the line feed of a CRLF line ending; the
+        // carriage return before it belongs to the comment and a lone CR does
+        // not end it, as in MySQL.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 -- c\r\nFROM t"), "SELECT 1  \nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 # c\rFROM t"), "SELECT 1  ")
+        // A bare `--` directly followed by CRLF starts a comment as well: the
+        // stripped query must keep its SELECT prefix so run_query caps it.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("--\r\nSELECT 1"), " \nSELECT 1")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\r\nFROM t"), "SELECT 1  \nFROM t")
+        // MySQL accepts any control character after `--`, e.g. a form feed;
+        // `--x` is not a comment.
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --\u{0C}c\nFROM t"), "SELECT 1  \nFROM t")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1 --x\nFROM t"), "SELECT 1 --x\nFROM t")
         // Still caught: INTO/**/OUTFILE -> INTO OUTFILE keeps the keyword intact.
         XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
         // Still allowed: a comment between other tokens is just whitespace.
         XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly("SELECT/**/1 AS a"))
     }
 
+    // The placeholder binder scans comments itself: a `?` inside a comment is
+    // copied verbatim and never bound, while a live `?` behind a comment is bound
+    // whether the comment ends with LF or CRLF.
+    func testPlaceholderBindingSkipsCommentsAcrossLineEndings() {
+        /// Binds `params` into `sql`, rendering each value as `<value>`; returns the bound SQL or an error.
+        func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
+            SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
+        }
+
+        XCTAssertEqual(bind("SELECT ? -- ?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("SELECT ? -- ?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> -- ?\r\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("SELECT ? --\u{0C}?\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> --\u{0C}?\nFROM t WHERE x = <2>")
+        // DEL is a MySQL control character: even an unmatched quote in the
+        // comment must not hide the live placeholder after its line ending.
+        XCTAssertEqual(bind("SELECT ? --\u{7F}'?\r\nFROM t WHERE x = ?", [1, 2]).0, "SELECT <1> --\u{7F}'?\r\nFROM t WHERE x = <2>")
+        XCTAssertEqual(bind("--\r\nSELECT ? # ?\r\nFROM t WHERE y = ?", ["a", "b"]).0, "--\r\nSELECT <a> # ?\r\nFROM t WHERE y = <b>")
+        XCTAssertEqual(bind("SELECT '?' /* ? */ FROM t WHERE x = ?", [3]).0, "SELECT '?' /* ? */ FROM t WHERE x = <3>")
+        // A commented `?` must not absorb a param: the counts then disagree.
+        XCTAssertNotNil(bind("SELECT ? -- ?\r\nFROM t", [1, 2]).1)
+        XCTAssertNotNil(bind("SELECT ?, ?", [1]).1)
+    }
+
+    // The binder walks Unicode scalars, so a combining mark after an opening
+    // quote does not hide it, and it refuses placeholders whose position
+    // depends on NO_BACKSLASH_ESCAPES instead of guessing the reading.
+    func testPlaceholderBindingUsesScalarsAndBothBackslashReadings() {
+        /// Binds `params` into `sql`, rendering each value as `<value>`; returns the bound SQL or an error.
+        func bind(_ sql: String, _ params: [Any]) -> (String?, String?) {
+            SPMCPReadOnlyGuard.bindPlaceholders(in: sql, params: params) { "<\($0)>" }
+        }
+
+        // `'` + U+0301 is one Character but two scalars: the `?` stays inside the literal.
+        XCTAssertNotNil(bind("SELECT '\u{301}?'", [1]).1)
+        XCTAssertEqual(bind("SELECT '\u{301}?' WHERE x = ?", [1]).0, "SELECT '\u{301}?' WHERE x = <1>")
+        // The quote after the backslash escapes or closes the literal depending on the mode.
+        XCTAssertNotNil(bind("SELECT 'a\\' , ?", [1]).1)
+        XCTAssertNotNil(bind("SELECT 'a\\', ? -- '", [1]).1)
+        // Backslashes that do not change where a literal ends stay bindable.
+        XCTAssertEqual(bind("SELECT 'a\\\\b', ?", [1]).0, "SELECT 'a\\\\b', <1>")
+        XCTAssertEqual(bind("SELECT `a\\`, ?", [1]).0, "SELECT `a\\`, <1>")
+        XCTAssertEqual(bind("SELECT 'it''s', ?", [1]).0, "SELECT 'it''s', <1>")
+    }
+
+    /// Verifies that EXPLAIN ANALYZE over a write is rejected, including behind
+    /// the MySQL 8.3+ `FOR SCHEMA`/`FOR DATABASE`, `INTO @var` and `FORMAT`
+    /// modifiers.
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([
@@ -437,6 +507,79 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT 'ANALYZE' AS label",         // ANALYZE only inside a string literal
         ] {
             XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql)")
+        }
+    }
+
+    /// Verifies that ANALYZE is found whatever whitespace separates it from its
+    /// neighbours, a CRLF pair included. Swift folds "\r\n" into one Character that
+    /// equals neither "\n" nor "\r", so a split on those alone kept
+    /// "ANALYZE\r\nUPDATE" as one word and let an executing EXPLAIN through the
+    /// read-only guard.
+    func testExplainWouldExecuteDetectsAnalyzeAcrossLineEndings() {
+        for sql in [
+            "ANALYZE\r\nUPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "FORMAT=TREE\r\nANALYZE\r\nDELETE a FROM a JOIN b ON a.id = b.id",
+            "ANALYZE\nUPDATE t SET x = 1",
+            "ANALYZE\rUPDATE t SET x = 1",
+            "ANALYZE\u{0B}UPDATE t SET x = 1",   // vertical tab, whitespace to MySQL
+            "ANALYZE\u{0C}UPDATE t SET x = 1",   // form feed, whitespace to MySQL
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+        XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute("FORMAT=TREE\r\nSELECT 1\r\nFROM t"))
+    }
+
+    /// Verifies that text the comment stripper keeps but the server reads as a comment
+    /// cannot hide the modifier: a `--` followed by a vertical tab or form feed starts a
+    /// comment for MySQL, and a SELECT inside it used to end the scan before the real
+    /// ANALYZE on the next line.
+    func testExplainWouldExecuteLooksPastTextTheServerIgnores() {
+        for sql in [
+            "--\u{0B}SELECT\nANALYZE UPDATE a, b SET a.x = b.x WHERE a.id = b.id",
+            "--\u{0C} SELECT 1\nANALYZE DELETE a FROM a JOIN b ON a.id = b.id",
+            // An unmatched quote in such a comment used to open a string that swallowed ANALYZE.
+            "--\u{0B}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{7F}'\nANALYZE UPDATE t SET x = 1",
+            "--\u{01}\"\nANALYZE UPDATE t SET x = 1",
+            "ANALYZE(SELECT 1)",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that ANALYZE inside a quoted operand, whatever whitespace surrounds it,
+    /// does not count: MySQL 8.3 allows `EXPLAIN FORMAT=JSON INTO @'name'`, and a name
+    /// or string may hold any text.
+    func testExplainWouldExecuteIgnoresAnalyzeInsideQuotedOperands() {
+        for sql in [
+            "FORMAT=JSON INTO @'plan\r\nANALYZE\r\ncopy' SELECT 1",
+            "SELECT `analyze` FROM t",
+            "SELECT \"ANALYZE\" AS label",
+            "SELECT 'it''s ANALYZE time' AS label",
+            // After a dot MySQL reads a reserved word as an identifier.
+            "SELECT t.ANALYZE FROM t",
+            "SELECT * FROM db.analyze",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+    }
+
+    /// Verifies that string introducers and hex or bit literals behave like any other
+    /// quoted operand: ANALYZE inside them does not count, and an ANALYZE modifier next
+    /// to them is still found.
+    func testExplainWouldExecuteHandlesStringIntroducers() {
+        for sql in [
+            "SELECT N'ANALYZE', X'414E414C595A45', B'01', _utf8mb4'analyze' AS a",
+            "SELECT _latin1'it''s ANALYZE' COLLATE latin1_bin",
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql.debugDescription)")
+        }
+        for sql in [
+            "ANALYZE SELECT N'x'",
+            "FORMAT=TREE ANALYZE UPDATE t SET a = _utf8mb4'b', c = X'00'",
+            "ANALYZE UPDATE t SET a = 'x\\'",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql.debugDescription)")
         }
     }
 }
@@ -621,5 +764,188 @@ final class SAMCPToolDefinitionsTests: XCTestCase {
             XCTAssertEqual(annotations["destructiveHint"] as? Bool, writes, "\(name(of: tool)) destructiveHint")
             XCTAssertEqual(annotations["openWorldHint"] as? Bool, false, "\(name(of: tool)) openWorldHint")
         }
+    }
+}
+
+/// The CSV export must keep numbers as numbers while still neutralising cells a
+/// spreadsheet would run as a formula.
+final class SAMCPCSVTests: XCTestCase {
+
+    /// Verifies that plain numbers, negative ones included, are written unchanged.
+    func testNumbersStayNumbers() {
+        for number in ["-5", "-12.50", "+3", "-1.5E+10", "-2e-3", "-.5", "-0", "42", "-7."] {
+            XCTAssertEqual(SAMCPCSV.escapedField(number), number, number)
+        }
+    }
+
+    /// Verifies that anything a spreadsheet could run as a formula is prefixed with a
+    /// single quote, including values that only start like a number.
+    func testFormulasAreNeutralised() {
+        XCTAssertEqual(SAMCPCSV.escapedField("=1+1"), "'=1+1")
+        XCTAssertEqual(SAMCPCSV.escapedField("@SUM(A1:A2)"), "'@SUM(A1:A2)")
+        XCTAssertEqual(SAMCPCSV.escapedField("-2+3"), "'-2+3")
+        XCTAssertEqual(SAMCPCSV.escapedField("+cmd|' /C calc'!A0"), "'+cmd|' /C calc'!A0")
+        XCTAssertEqual(SAMCPCSV.escapedField("-1e5x"), "'-1e5x")
+        XCTAssertEqual(SAMCPCSV.escapedField("- 5"), "'- 5")
+        XCTAssertEqual(SAMCPCSV.escapedField("-"), "'-")
+        // Digits outside ASCII are not a number MySQL returns.
+        XCTAssertEqual(SAMCPCSV.escapedField("-\u{0663}"), "'-\u{0663}")
+    }
+
+    /// Verifies that a leading tab or carriage return is neutralised, also when the
+    /// carriage return starts a CRLF pair, which Swift treats as one Character.
+    func testLeadingControlCharactersAreNeutralised() {
+        XCTAssertEqual(SAMCPCSV.escapedField("\tfoo"), "'\tfoo")
+        XCTAssertEqual(SAMCPCSV.escapedField("\r=cmd"), "\"'\r=cmd\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("\r\n=cmd"), "\"'\r\n=cmd\"")
+    }
+
+    /// Verifies that fields holding a separator, a double quote or a line break are
+    /// enclosed in double quotes, a CRLF pair included.
+    func testFieldsAreQuotedWhenNeeded() {
+        XCTAssertEqual(SAMCPCSV.escapedField("plain"), "plain")
+        XCTAssertEqual(SAMCPCSV.escapedField("a,b"), "\"a,b\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("say \"hi\""), "\"say \"\"hi\"\"\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("line\nbreak"), "\"line\nbreak\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("a\r\nb"), "\"a\r\nb\"")
+        XCTAssertEqual(SAMCPCSV.escapedField("-5,0"), "\"'-5,0\"")
+    }
+
+    /// Verifies that a double quote followed by a combining mark is found and doubled.
+    /// Compared as Characters the two form one cluster that is not a quote, so the
+    /// field used to stay unquoted with a bare quote inside.
+    func testQuoteFollowedByACombiningMarkIsEscaped() {
+        XCTAssertEqual(SAMCPCSV.escapedField("a\"\u{301}b"), "\"a\"\"\u{301}b\"")
+    }
+}
+
+/// `containsAnyUnicodeScalar(of:)` is the shared answer to Swift folding "\r\n" (and a
+/// quote plus a combining mark) into one Character that `contains` does not match.
+final class SAStringUnicodeScalarSearchTests: XCTestCase {
+
+    /// Verifies that line breaks are found alone and inside a CRLF pair, and only then.
+    func testLineBreaksAreFoundInEveryForm() {
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\n"))
+        XCTAssertTrue("a\r\nb".containsAnyUnicodeScalar(of: "\r"))
+        XCTAssertTrue("a\nb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertTrue("a\rb".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("a\tb c".containsAnyUnicodeScalar(of: "\n\r"))
+        XCTAssertFalse("".containsAnyUnicodeScalar(of: "\n\r"))
+    }
+
+    /// Verifies that any listed scalar is found, also when it is merged into a cluster
+    /// with the next one.
+    func testAnyListedScalarIsFound() {
+        XCTAssertTrue("a\"\u{301}b".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertTrue("x,y".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ",\""))
+        XCTAssertFalse("xy".containsAnyUnicodeScalar(of: ""))
+        XCTAssertTrue("ab".prefix(1).containsAnyUnicodeScalar(of: "a"))
+        XCTAssertFalse("ab".prefix(1).containsAnyUnicodeScalar(of: "b"))
+    }
+}
+
+
+
+/// The query executor must not change a validated read while applying its cap.
+final class SAMCPResultLimitSQLTests: XCTestCase {
+    func testValidNoBackslashEscapesReadKeepsItsOriginalSQL() {
+        let sql = "SELECT 'a\\' AS a, 'b#c' AS b"
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware(sql, backslashEscapes: false), sql)
+        XCTAssertNotEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware(sql), sql)
+        XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql),
+                     "the executor must retain the query and enforce only its read-side cap")
+    }
+
+    func testAmbiguousDashAndBlockMarkersAreNotRewritten() {
+        for marker in ["-- ", "/*"] {
+            let sql = "SELECT 'a\\' AS a, 'b" + marker + "c' AS b"
+            XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+            XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql), marker)
+        }
+    }
+
+    func testOrdinaryCommentsCanStillBeStrippedAndCapped() {
+        let sql = "/* leading */ SELECT 'a\\\\b#c' AS value -- trailing\r\n"
+        let stripped = SPMCPReadOnlyGuard.sqlForResultLimiting(sql)
+        XCTAssertEqual(stripped?.trimmingCharacters(in: .whitespacesAndNewlines), "SELECT 'a\\\\b#c' AS value")
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+    }
+
+    func testExecutableCommentsAreNeverRewrittenForLimiting() {
+        for sql in ["SELECT 1 /*! UNION SELECT 2 */", "SELECT 1 /*M! UNION SELECT 2 */"] {
+            XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql))
+            XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly(sql))
+        }
+    }
+}
+
+final class SAMCPResultPageTests: XCTestCase {
+    func testToolPageComposesWithEachSQLLimitWindow() {
+        for sql in ["SELECT value LIMIT 20 OFFSET 5", "SELECT value LIMIT 5, 20"] {
+            let page = SAMCPResultPage.sqlPageWithinTrailingLimit(sql, requested: 2, offset: 3, cap: 10)
+            XCTAssertEqual(page?.sql, "SELECT value LIMIT 3 OFFSET 8")
+            XCTAssertEqual(page?.maxRows, 2)
+        }
+        let finalPage = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 20", requested: 10, offset: 18, cap: 10)
+        XCTAssertEqual(finalPage?.sql, "SELECT value LIMIT 2 OFFSET 18")
+        XCTAssertEqual(finalPage?.maxRows, 2)
+    }
+
+    func testSQLWindowCapsFetchAndHandlesAnOffsetBeyondItsEnd() {
+        let capped = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 1000000", requested: Int.max, offset: 0, cap: 10000)
+        XCTAssertEqual(capped?.sql, "SELECT value LIMIT 10001 OFFSET 0")
+        XCTAssertEqual(capped?.maxRows, 10000)
+        let empty = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2 OFFSET 5", requested: 2, offset: 3, cap: 10)
+        XCTAssertEqual(empty?.sql, "SELECT value LIMIT 0 OFFSET 8")
+        XCTAssertEqual(empty?.maxRows, 0)
+    }
+
+    func testSQLWindowPreservesMeaningOnIntegerOverflowAndNegativeToolOffset() {
+        let oversized = "SELECT value LIMIT 18446744073709551615"
+        XCTAssertTrue(SAMCPResultPage.hasTrailingLimit(oversized))
+        XCTAssertNil(SAMCPResultPage.sqlPageWithinTrailingLimit(oversized, requested: 2, offset: 0, cap: 10))
+        XCTAssertNil(SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2 OFFSET \(Int.max)", requested: 2, offset: 1, cap: 10))
+        XCTAssertEqual(SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2", requested: 2, offset: -1, cap: 10)?.sql, "SELECT value LIMIT 2 OFFSET 0")
+    }
+
+    func testUnmodifiedQueryResultHonorsLimitOffsetAndOneLookahead() {
+        var index = 0
+        var rows: [Int] = []
+        let truncated = SAMCPResultPage.consumeRows(
+            maxRows: SAMCPResultPage.rowLimit(requested: 2, cap: 10), offset: 2,
+            nextRow: { guard index < 20 else { return nil }; defer { index += 1 }; return index },
+            appendRow: { rows.append($0) }
+        )
+        XCTAssertEqual(rows, [2, 3])
+        XCTAssertTrue(truncated)
+        XCTAssertEqual(index, 5, "offset plus limit plus one lookahead, not the whole result")
+    }
+
+    func testEmptyAndExactPagesAreNotReportedAsTruncated() {
+        for offset in [0, 2, 20] {
+            var iterator = [0, 1].makeIterator()
+            var rows: [Int] = []
+            let truncated = SAMCPResultPage.consumeRows(maxRows: 2, offset: offset,
+                                                        nextRow: { iterator.next() },
+                                                        appendRow: { rows.append($0) })
+            XCTAssertEqual(rows, offset == 0 ? [0, 1] : [])
+            XCTAssertFalse(truncated)
+        }
+    }
+
+    func testLimitsRemainCappedAndNegativeOffsetsStartAtZero() {
+        XCTAssertEqual(SAMCPResultPage.rowLimit(requested: Int.max, cap: 3), 3)
+        XCTAssertEqual(SAMCPResultPage.rowLimit(requested: 0, cap: 3), 3)
+        XCTAssertEqual(SAMCPResultPage.rowLimit(requested: -1, cap: 3), 3)
+        var iterator = [0, 1, 2, 3, 4].makeIterator()
+        var rows: [Int] = []
+        let truncated = SAMCPResultPage.consumeRows(
+            maxRows: SAMCPResultPage.rowLimit(requested: Int.max, cap: 3), offset: -20,
+            nextRow: { iterator.next() }, appendRow: { rows.append($0) }
+        )
+        XCTAssertEqual(rows, [0, 1, 2])
+        XCTAssertTrue(truncated)
     }
 }

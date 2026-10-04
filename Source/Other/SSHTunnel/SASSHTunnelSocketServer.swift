@@ -66,6 +66,12 @@ import Foundation
     private let listeningDescriptor: Int32
     private let handler: Handler
     private let peerPolicy: PeerPolicy
+    /// Where a refused connection is reported. The default goes to the app's
+    /// log, which is invisible in the tunnel's own debug window — that window
+    /// only shows ssh's stderr, so app-side refusals never reached the users
+    /// reporting issue #2689. `SPSSHTunnel` passes a sink that also appends
+    /// to `debugMessages`.
+    private let log: (String) -> Void
     private let acceptQueue = DispatchQueue(label: "com.sequel-ace.ssh-tunnel.socket.accept")
     private let serviceQueue = DispatchQueue(label: "com.sequel-ace.ssh-tunnel.socket.serve", attributes: .concurrent)
     private var acceptSource: DispatchSourceRead?
@@ -94,14 +100,44 @@ import Foundation
         name.range(of: "^(s-[0-9a-f]{8}|ssh-[0-9a-f]{10})\\.sock$", options: .regularExpression) != nil
     }
 
+    /// Paths this process is currently serving. The sweep skips them: they
+    /// are live by definition, and probing one makes its server accept a
+    /// connection from the app rather than the assistant, which its peer
+    /// policy then rejects. That rejection is now user-visible, so a second
+    /// tunnel starting would report a failure against a perfectly healthy
+    /// first tunnel. Two *different* installs cannot collide here — release
+    /// and Beta have separate bundle identifiers and so separate containers.
+    private static let liveSocketPaths = LivePaths()
+
+    final class LivePaths {
+        private let lock = NSLock()
+        private var paths: Set<String> = []
+
+        func insert(_ path: String) {
+            lock.lock(); defer { lock.unlock() }
+            paths.insert(path)
+        }
+
+        func remove(_ path: String) {
+            lock.lock(); defer { lock.unlock() }
+            paths.remove(path)
+        }
+
+        func contains(_ path: String) -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            return paths.contains(path)
+        }
+    }
+
     /// Removes sockets a previous app process left behind (a crash or a
     /// kill skips `close()`): anything in the naming scheme that refuses a
-    /// connection. A live socket accepts, so it is left alone — its server
-    /// just sees one empty connection.
+    /// connection. Sockets this process is serving are skipped outright; any
+    /// other live socket accepts and is left alone.
     static func sweepStaleSockets(in directory: String) {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
         for name in names where isOwnSocketName(name) {
             let candidate = (directory as NSString).appendingPathComponent(name)
+            if liveSocketPaths.contains(candidate) { continue }
             guard var address = try? SASSHTunnelSocketIO.address(for: candidate),
                   let fd = SASSHTunnelSocketIO.makeSocket() else { continue }
             let connected = withUnsafePointer(to: &address) { pointer in
@@ -120,15 +156,24 @@ import Foundation
     /// Objective-C entry: serve a tunnel's `SASSHTunnelAuthService`, admitting
     /// only a connecting process that is Apple-signed, of this app's team and
     /// named as the tunnel assistant.
-    @objc convenience init(service: SASSHTunnelAuthService) throws {
-        try self.init(handler: service.handle, peerPolicy: SASSHTunnelPeerValidator.assistantPeerPolicy())
+    /// `diagnosticSink` receives every reason a connection was refused, so
+    /// the tunnel can put them where the user can see them.
+    /// Selector spelled out: Swift's default bridging for a throwing init
+    /// puts `error:` before the trailing argument.
+    @objc(initWithService:diagnosticSink:error:)
+    convenience init(service: SASSHTunnelAuthService, diagnosticSink: @escaping (String) -> Void) throws {
+        try self.init(handler: service.handle,
+                      peerPolicy: SASSHTunnelPeerValidator.assistantPeerPolicy(log: diagnosticSink),
+                      log: diagnosticSink)
     }
 
     init(directories: [String] = SASSHTunnelSocketServer.candidateDirectories(),
          handler: @escaping Handler,
-         peerPolicy: @escaping PeerPolicy = { _ in true }) throws {
+         peerPolicy: @escaping PeerPolicy = { _ in true },
+         log: @escaping (String) -> Void = { NSLog("%@", $0) }) throws {
         self.handler = handler
         self.peerPolicy = peerPolicy
+        self.log = log
 
         // Pick the first directory whose path leaves room for the name.
         var chosen: (String, sockaddr_un)?
@@ -169,6 +214,7 @@ import Foundation
         }
         SASSHTunnelSocketIO.setBlocking(fd, false)
         listeningDescriptor = fd
+        Self.liveSocketPaths.insert(path)
         super.init()
 
         let source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: acceptQueue)
@@ -176,6 +222,7 @@ import Foundation
         source.setCancelHandler {
             Darwin.close(fd)
             unlink(path)
+            Self.liveSocketPaths.remove(path)
         }
         source.resume()
         acceptSource = source
@@ -207,19 +254,22 @@ import Foundation
             }
             SASSHTunnelSocketIO.configure(client)
             SASSHTunnelSocketIO.setBlocking(client, true)
-            serviceQueue.async { [handler, peerPolicy] in
-                Self.serve(client, handler: handler, peerPolicy: peerPolicy)
+            serviceQueue.async { [handler, peerPolicy, log] in
+                Self.serve(client, handler: handler, peerPolicy: peerPolicy, log: log)
             }
         }
     }
 
     // MARK: - Serving one connection
 
-    private static func serve(_ client: Int32, handler: Handler, peerPolicy: PeerPolicy) {
+    private static func serve(_ client: Int32,
+                              handler: Handler,
+                              peerPolicy: PeerPolicy,
+                              log: (String) -> Void) {
         defer { Darwin.close(client) }
 
         guard peerPolicy(client) else {
-            NSLog("SSH tunnel: rejected an askpass connection that failed peer validation")
+            log("SSH tunnel: rejected an askpass connection that failed peer validation")
             return
         }
 
@@ -227,20 +277,20 @@ import Foundation
         _ = setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
 
         guard let line = SASSHTunnelSocketIO.readLine(client) else {
-            NSLog("SSH tunnel: askpass connection sent no request")
+            log("SSH tunnel: askpass connection sent no request")
             return
         }
         let request: SASSHTunnelAuthRequest
         do {
             request = try SASSHTunnelAuthWire.decodeRequest(line)
         } catch {
-            NSLog("SSH tunnel: askpass request not understood (%@)", "\(error)")
+            log("SSH tunnel: askpass request not understood (\(error))")
             return
         }
 
         let response = handler(request)
         if !SASSHTunnelSocketIO.writeAll(client, SASSHTunnelAuthWire.encode(response)) {
-            NSLog("SSH tunnel: could not deliver the askpass reply (errno %d)", errno)
+            log("SSH tunnel: could not deliver the askpass reply (errno \(errno))")
         }
     }
 }

@@ -188,6 +188,23 @@ jobs:
             exit 1
           }
 
+      - name: Check protected environment credentials
+        env:
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for credential in SA_RELEASE_GITHUB_APP_PRIVATE_KEY SA_ASC_KEY_ID SA_ASC_PRIVATE_KEY SA_ASC_ISSUER_ID; do
+            if [[ -z "${!credential}" ]]; then
+              echo "::error::Missing ${credential} in the called job's sequel-ace-release environment. Check environment configuration, secret availability, and the caller's inheritance workaround for actions/runner#4453." >&2
+              missing=1
+            fi
+          done
+          [[ "${missing}" == "0" ]]
+
       - name: Mint repository-scoped release App token
         id: app_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -249,7 +266,7 @@ jobs:
           printf 'BUNDLE_APP_CONFIG=%s\n' "${bundle_config_directory}" >> "${GITHUB_ENV}"
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -258,7 +275,7 @@ jobs:
         run: git diff --quiet -- .bundle/config
 
       - name: Install checksum-pinned ORAS on Linux
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59

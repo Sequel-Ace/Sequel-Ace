@@ -18,7 +18,6 @@ import Foundation
     @objc let errorTitle: String?
     @objc let errorMessage: String?
     @objc let errorDetail: String?
-    @objc let isLocalNetworkDenied: Bool
 
     // Diagnostic fields for controller-side error formatting
     @objc let lastErrorID: UInt
@@ -41,7 +40,6 @@ import Foundation
         self.errorTitle = nil
         self.errorMessage = nil
         self.errorDetail = nil
-        self.isLocalNetworkDenied = false
         self.lastErrorID = 0
         self.rawErrorMessage = ""
         self.sshDebugMessages = ""
@@ -52,8 +50,20 @@ import Foundation
         super.init()
     }
 
+    /// Creates the result of a failed attempt. Whether the failure comes from a
+    /// denied Local Network permission is not decided here: the error message
+    /// cannot tell, so the connection controller probes the host instead.
+    ///
+    /// - Parameters:
+    ///   - errorTitle: The title of the error shown to the user.
+    ///   - errorMessage: The error message.
+    ///   - errorDetail: Further detail, if any.
+    ///   - lastErrorID: The MySQL error number of the attempt.
+    ///   - rawErrorMessage: The MySQL error message of the attempt.
+    ///   - sshDebugMessages: The SSH tunnel's output, for tunnel failures.
+    ///   - connectionType: The kind of connection that failed.
+    ///   - socketPath: The socket path, for socket connections.
     @objc init(errorTitle: String, errorMessage: String?, errorDetail: String?,
-               isLocalNetworkDenied: Bool = false,
                lastErrorID: UInt = 0, rawErrorMessage: String = "",
                sshDebugMessages: String = "",
                connectionType: SAConnectionType = .tcpIP, socketPath: String = "") {
@@ -62,7 +72,6 @@ import Foundation
         self.errorTitle = errorTitle
         self.errorMessage = errorMessage
         self.errorDetail = errorDetail
-        self.isLocalNetworkDenied = isLocalNetworkDenied
         self.lastErrorID = lastErrorID
         self.rawErrorMessage = rawErrorMessage
         self.sshDebugMessages = sshDebugMessages
@@ -397,7 +406,6 @@ import Foundation
                     errorDetail: errorID == 1045
                         ? NSLocalizedString("Please check your username and password and try again.", comment: "")
                         : nil,
-                    isLocalNetworkDenied: errorString.lowercased().contains("network"),
                     lastErrorID: errorID,
                     rawErrorMessage: errorString,
                     sshDebugMessages: tunnel?.debugMessages() ?? "",
