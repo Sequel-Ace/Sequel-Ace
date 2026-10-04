@@ -851,9 +851,12 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 			}
 			// Use the argumentForRow to retrieve the missing information
 			// TODO - this could be preloaded for all selected rows rather than cell-by-cell
+			// Fetch by the column's real name from the metadata — kHeader is the display header,
+			// which is UI text rather than a name the server necessarily knows.
+			NSString *fetchColumn = [[columnDefinitions safeObjectAtIndex:colMapping] safeObjectForKey:@"name"] ?: [data safeObjectForKey:kHeader];
 			cellData = [mySQLConnection getFirstFieldFromQuery:
 						[NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
-							[[data safeObjectForKey:kHeader] backtickQuotedString],
+							[fetchColumn backtickQuotedString],
 							[selectedTable backtickQuotedString],
 							whereArgument] assertingDatabase:selectedDatabase];
 		}
