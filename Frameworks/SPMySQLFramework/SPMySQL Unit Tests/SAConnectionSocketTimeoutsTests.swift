@@ -38,12 +38,44 @@ final class SAConnectionSocketTimeoutsTests: XCTestCase {
         XCTAssertEqual(readOption(descriptor, IPPROTO_TCP, TCP_RXT_CONNDROPTIME), SAConnectionSocketTimeouts.retransmitDropTime)
     }
 
-    /// The limits end a connection well before the connection timeout.
-    func testTheLimitsEndAConnectionWellBeforeTheConnectionTimeout() {
+    /// A quiet session is kept across an ordinary handover, and still ends rather than lingering
+    /// until the server's own timeout.
+    ///
+    /// The keepalive limits decide only quiet sockets, and dropping one of those costs any
+    /// transaction it has open while nobody is waiting on it - so they are tolerant. Wi-Fi roams
+    /// and VPN reconnects routinely take longer than half a minute; a session has to outlast that.
+    func testAQuietSessionOutlastsAnOrdinaryHandover() {
         let keepAliveTotal = SAConnectionSocketTimeouts.keepAliveIdle
             + SAConnectionSocketTimeouts.keepAliveInterval * SAConnectionSocketTimeouts.keepAliveCount
-        XCTAssertLessThan(keepAliveTotal, 30)
-        XCTAssertLessThan(SAConnectionSocketTimeouts.retransmitDropTime, 30)
+        XCTAssertGreaterThanOrEqual(keepAliveTotal, 60, "an ordinary handover must not cost the session")
+        XCTAssertEqual(keepAliveTotal, 110, "60 s quiet, then five questions ten seconds apart")
+        XCTAssertLessThan(keepAliveTotal, 300, "and it still ends, well inside the server's wait_timeout")
+    }
+
+    /// Each limit is at or above the baseline the maintainers settled on.
+    func testTheLimitsMeetTheAgreedBaseline() {
+        XCTAssertGreaterThanOrEqual(SAConnectionSocketTimeouts.keepAliveIdle, 60)
+        XCTAssertGreaterThanOrEqual(SAConnectionSocketTimeouts.keepAliveInterval, 10)
+        XCTAssertGreaterThanOrEqual(SAConnectionSocketTimeouts.keepAliveCount, 5)
+        XCTAssertGreaterThanOrEqual(SAConnectionSocketTimeouts.retransmitDropTime, 60)
+    }
+
+    /// The two kinds of limit are not interchangeable, and only one of them bounds a query that is
+    /// waiting for its reply.
+    ///
+    /// `retransmitDropTime` ends the wait for data that was sent and never acknowledged, which is
+    /// the route-disappeared case. It restarts with every acknowledgement, so a slow or lossy link
+    /// - where acknowledgements arrive late but do arrive - is not mistaken for a dead one. The
+    /// keepalive limits never see that case at all.
+    func testTheWaitForAReplyIsBoundedSeparatelyFromAQuietSession() {
+        XCTAssertLessThan(SAConnectionSocketTimeouts.retransmitDropTime,
+                          SAConnectionSocketTimeouts.keepAliveIdle
+                            + SAConnectionSocketTimeouts.keepAliveInterval * SAConnectionSocketTimeouts.keepAliveCount,
+                          "unacknowledged data is given up on sooner than a session that is merely quiet")
+        // And the explicit checks, which do not destroy a session to find out it is gone, stay
+        // shorter than either: that is what notices a dead route promptly.
+        XCTAssertLessThan(Int32(SAConnectionCheckBudget.pingLimit), SAConnectionSocketTimeouts.keepAliveIdle)
+        XCTAssertLessThan(Int32(SAConnectionCheckBudget.connectLimit), SAConnectionSocketTimeouts.retransmitDropTime)
     }
 
     /// A local socket is left unchanged.
