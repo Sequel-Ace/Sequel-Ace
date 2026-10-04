@@ -149,6 +149,7 @@ static unsigned short getRandomPort(void);
 			// users paste into bug reports (issue #2689). Mirror them there.
 			__weak SPSSHTunnel *weakSelf = self;
 			socketServer = [[SASSHTunnelSocketServer alloc] initWithService:authService
+			                                                  assistantPath:[[NSBundle mainBundle] pathForAuxiliaryExecutable:@"SequelAceTunnelAssistant"]
 			                                                 diagnosticSink:^(NSString *message) {
 				NSLog(@"%@", message);
 				[weakSelf addDebugMessage:message];
