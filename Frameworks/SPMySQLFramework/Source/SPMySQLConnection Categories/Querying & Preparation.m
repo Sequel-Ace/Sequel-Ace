@@ -790,6 +790,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
 	// Repeat as long as there are results
 	while (!mysql_next_result(mySQLConnection)) {
+		// Each packet brings its own session-state items and replaces the one before, so a report
+		// is collected as it goes past rather than looked for once at the end.
+		characterSetReportedInAResultPacket = characterSetReportedInAResultPacket || [self _currentResultPacketReportsTheCharacterSet];
+
 		MYSQL_RES *eachResult = mysql_use_result(mySQLConnection);
 
 		// Ensure the result is really a result

@@ -58,4 +58,29 @@ final class SASessionStateTrackingTests: XCTestCase {
         XCTAssertEqual(SASessionStateTracking.trackingListToSet(givenCurrentList: "time_zone,,"),
                        "time_zone,character_set_client")
     }
+    /// The server sends system-variable items as name, value, name, value, and only the names
+    /// say which variable was reported.
+    func testOnlyTheNamesAreRead() {
+        XCTAssertTrue(SASessionStateTracking.characterSetIsNamed(in: ["character_set_client", "gbk"]))
+        XCTAssertTrue(SASessionStateTracking.characterSetIsNamed(in: [
+            "time_zone", "SYSTEM", "character_set_client", "utf8mb4",
+        ]))
+        XCTAssertFalse(SASessionStateTracking.characterSetIsNamed(in: ["time_zone", "SYSTEM"]))
+        XCTAssertFalse(SASessionStateTracking.characterSetIsNamed(in: []))
+    }
+
+    /// A value that happens to read like the name is not one: it sits where a value sits.
+    func testAValueIsNotMistakenForAName() {
+        XCTAssertFalse(SASessionStateTracking.characterSetIsNamed(in: ["time_zone", "character_set_client"]))
+        XCTAssertTrue(SASessionStateTracking.characterSetIsNamed(in: [
+            "time_zone", "character_set_client", "character_set_client", "gbk",
+        ]), "and the real name after it still counts")
+    }
+
+    /// A packet that ends on a name without its value is still read for what it names.
+    func testATrailingNameStillCounts() {
+        XCTAssertTrue(SASessionStateTracking.characterSetIsNamed(in: ["character_set_client"]))
+        XCTAssertTrue(SASessionStateTracking.characterSetIsNamed(in: ["time_zone", "SYSTEM", "character_set_client"]))
+    }
+
 }

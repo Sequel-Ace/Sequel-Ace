@@ -82,6 +82,12 @@
 		SPLog(@"SPMySQLConnection: Tried to unlock the connection, but it wasn't locked.");
 	}
 
+	// Each packet carries its own session-state items, and fetching the next one replaces them -
+	// so a report that came with an earlier result would be gone by the time the session is
+	// recorded. This packet's is taken now, and the ones the flush below walks past are added to
+	// it as it goes.
+	characterSetReportedInAResultPacket = characterSetReportedInAResultPacket || [self _currentResultPacketReportsTheCharacterSet];
+
 	// Since we connected with CLIENT_MULTI_RESULT, we must make sure there are not more results!
 	// This is still a bit of a dirty hack
 	if (
@@ -106,8 +112,9 @@
 		                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
 		                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
 		                            isHandshake:NO
-		                characterSetWasReported:[self _lastStatementReportedTheCharacterSet]];
+		                characterSetWasReported:characterSetReportedInAResultPacket];
 	}
+	characterSetReportedInAResultPacket = NO;
 	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
@@ -115,39 +122,35 @@
 }
 
 /**
- * Whether the statement just run came back with the server's own report of the session's
- * character set.
+ * Whether the result packet the connection is on carries the server's own report of the
+ * session's character set.
  *
- * The client library keeps the session-state items the last OK packet carried, and
- * character_set_client is the one that matters here. Asking it is the only way to tell a report
- * that arrived from one that did not: the character set's *name* cannot, because a session whose
- * report has stopped following keeps naming the character set it was last told about, which can
- * be the same name a later report would carry.
+ * The client library keeps the session-state items of one OK packet, and asking it is the only
+ * way to tell a report that arrived from one that did not: the character set's *name* cannot,
+ * because a session whose reports have stopped keeps naming what it was last told, which can be
+ * the same name a later report would carry.
  *
- * Only valid while the connection is held and before the next statement, which is where it is
- * called from.
+ * Only the items are pulled out here; what they mean is `SASessionStateTracking`'s. Valid only
+ * while the connection is held and before the next packet is fetched.
  */
-- (BOOL)_lastStatementReportedTheCharacterSet
+- (BOOL)_currentResultPacketReportsTheCharacterSet
 {
 	if (state != SPMySQLConnected || !mySQLConnection) {
 		return NO;
 	}
 
-	// The items come as name, value, name, value; only the names are looked at.
+	NSMutableArray<NSString *> *items = [NSMutableArray array];
 	const char *item = NULL;
 	size_t length = 0;
-	BOOL isName = YES;
 	int more = mysql_session_track_get_first(mySQLConnection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length);
 	while (more == 0) {
-		if (isName && item && length == strlen("character_set_client")
-		    && strncmp(item, "character_set_client", length) == 0) {
-			return YES;
-		}
-		isName = !isName;
+		NSString *text = item ? [[NSString alloc] initWithBytes:item length:length encoding:NSUTF8StringEncoding] : nil;
+		[items addObject:text ?: @""];
 		more = mysql_session_track_get_next(mySQLConnection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length);
 	}
 
-	return NO;
+	return [SASessionStateTracking characterSetIsNamedInItems:items];
 }
+
 
 @end

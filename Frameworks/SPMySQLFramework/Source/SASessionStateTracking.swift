@@ -51,4 +51,23 @@ public final class SASessionStateTracking: NSObject {
         }
         return (listed + missing).joined(separator: ",")
     }
+    /// Whether a run of session-state items names the character set statements are read in.
+    ///
+    /// The server sends system-variable items as name, value, name, value, and only the names
+    /// are looked at. `character_set_client` is the one that matters: it is what a statement is
+    /// parsed in, and an item carrying it is the only thing that shows this session's changes
+    /// reach the client at all - the name the client library holds cannot, because a session
+    /// whose reports have stopped keeps naming whatever it was last told.
+    /// - Parameter items: One OK packet's items, in the order the server sent them.
+    /// - Returns: Whether `character_set_client` is among the names.
+    @objc(characterSetIsNamedInItems:)
+    public static func characterSetIsNamed(in items: [String]) -> Bool {
+        for (position, item) in items.enumerated() where position % 2 == 0 {
+            if item == "character_set_client" {
+                return true
+            }
+        }
+        return false
+    }
+
 }

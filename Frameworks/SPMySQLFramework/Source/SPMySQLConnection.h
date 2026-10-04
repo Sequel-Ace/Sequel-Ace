@@ -108,6 +108,10 @@
 	// The character set the server reads statements in, which `character_set_results` - what the
 	// record above follows, because results are decoded with it - does not have to agree with.
 	NSString *sqlInputEncoding;
+	// Whether any result packet of the statement being finished carried the server's report of
+	// the session's character set. Collected across packets, because fetching one replaces the
+	// items of the one before.
+	BOOL characterSetReportedInAResultPacket;
 	NSStringEncoding stringEncoding;
 	BOOL encodingUsesLatin1Transport, encodingUsesLatin1TransportToRestore;
 	NSString *previousEncoding;

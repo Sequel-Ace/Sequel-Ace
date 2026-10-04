@@ -183,6 +183,61 @@ final class SAEscapingBoundaryIntegrationTests: XCTestCase {
                        "and stores its own bytes")
     }
 
+    /// A character set change reported in the *first* of several result packets is not lost when
+    /// the ones after it are drained.
+    ///
+    /// Each packet carries its own session-state items and fetching the next replaces them, so a
+    /// report looked for once at the end misses one that came with an earlier result. The name
+    /// alone cannot stand in for it here: the session is first caught out on `gbk`, and the
+    /// report that puts it back carries `gbk` again, which is the same name it was frozen on.
+    func testACharacterSetChangeInTheFirstPacketIsNotLost() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured. Set SPMYSQL_TEST_SOCKET or SPMYSQL_TEST_HOST to run this integration regression.")
+        }
+        connection.addClientFlags(multiStatements)
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the escaping boundary regression.")
+        }
+        defer { connection.disconnect() }
+
+        let database = "sa_escaping_\(UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_"))"
+        connection.queryString("CREATE DATABASE \(database)")
+        try XCTSkipIf(connection.queryErrored(), "Cannot create a database for the regression.")
+        defer { connection.queryString("DROP DATABASE IF EXISTS \(database)") }
+        connection.queryString("USE \(database)")
+        connection.queryString("CREATE TABLE v (id INT PRIMARY KEY, value VARBINARY(100))")
+        try XCTSkipIf(connection.queryErrored(), "Cannot create the table for the regression.")
+
+        // The session reports, and the connection moves it to gbk.
+        XCTAssertTrue(connection.setEncoding("gbk"), "the session has to start on gbk")
+
+        // The tracking is turned off by hand, and the connection moves the session to latin1.
+        // That statement is not reported, so the client library stays on gbk and the escaper
+        // catches the report out.
+        connection.queryString("SET SESSION session_track_system_variables = ''")
+        try XCTSkipIf(connection.queryErrored(), "Cannot turn the session tracking off.")
+        XCTAssertTrue(connection.setEncoding("latin1"), "the connection has to be able to move the session")
+
+        // The tracking comes back, and a multi-statement puts the session on gbk again. The
+        // report is in the first packet; what follows is drained before the session is read, and
+        // the name it carries is the very one the report was caught out on.
+        connection.queryString("SET SESSION session_track_system_variables = 'character_set_client'")
+        try XCTSkipIf(connection.queryErrored(), "Cannot turn the session tracking back on.")
+        connection.queryString("SET NAMES gbk; DO 0")
+        XCTAssertFalse(connection.queryErrored(), "the multi-statement itself has to succeed")
+
+        let literal = try XCTUnwrap(connection.escapeAndQuoteString(dangerousValue),
+                                    "the value has to be escapable")
+        connection.queryString("INSERT INTO v (id, value) VALUES (1, \(literal))")
+        XCTAssertFalse(connection.queryErrored(),
+                       "a literal escaped for the session's character set parses; one escaped for the record does not")
+        let stored = connection.getFirstField(fromQuery: "SELECT HEX(value) FROM v WHERE id = 1")
+        let storedHex = (stored as? Data).map { String(decoding: $0) } ?? (stored as? String)
+        XCTAssertEqual(storedHex?.uppercased(),
+                       try XCTUnwrap(dangerousValue.data(using: .windowsCP1252)).hexString,
+                       "the stored bytes have to be the value's own")
+    }
+
     // MARK: - Helpers
 
     /// A value whose bytes end in a backslash before the closing quote, which is the shape a
