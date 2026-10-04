@@ -441,4 +441,23 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(escaped, Data([0x5C, 0xBF, 0x5C, 0x27]), "escaped for the record, gbk")
     }
 
+    /// Where the server does not report character-set changes, what the session reports is what
+    /// the client itself last set - so the record and the reported name are the same belief, and
+    /// the flag cannot change the answer. This is why a `SET NAMES` typed on such a server is
+    /// invisible either way: a limitation of the client's own view, not of trusting the report.
+    func testWithoutReportingTheFlagCannotChangeTheAnswer() {
+        for recordAndSession in ["latin1", "gbk", "utf8mb4", "sjis"] {
+            for reports in [true, false] {
+                XCTAssertEqual(
+                    SAConnectionEscaper.characterSetForEscaping(onRecord: recordAndSession,
+                                                                session: recordAndSession,
+                                                                handshake: recordAndSession,
+                                                                sessionReportsChanges: reports,
+                                                                sessionIsBeingReplaced: false),
+                    recordAndSession,
+                    "a session still on the name the client set reads the same either way")
+            }
+        }
+    }
+
 }
