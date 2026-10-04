@@ -122,8 +122,10 @@ final class SASessionLeaseQuestionTests: XCTestCase {
         // below, answered there, and the session let go before the timer ever asked for it - the
         // test would then pass without the wait ever having to carry the question.
         let theTimerIsWaiting = DispatchSemaphore(value: 0)
+        let theOwnerHoldsTheSession = DispatchSemaphore(value: 0)
         Thread.detachNewThread {
             _ = access.reconnect(allowingRetries: true) {
+                theOwnerHoldsTheSession.signal()
                 XCTAssertEqual(theTimerIsWaiting.wait(timeout: .now() + 10), .success,
                                "the timer has to reach the session's wait first")
                 self.performSelector(onMainThread: #selector(self.answerTheQuestion),
@@ -141,6 +143,10 @@ final class SASessionLeaseQuestionTests: XCTestCase {
             }
             theOwnerLetGo.fulfill()
         }
+
+        // Not before the owner has the session: a timer that got in first would be let in
+        // rightly, and would then look like one let into a session still being restored.
+        XCTAssertEqual(theOwnerHoldsTheSession.wait(timeout: .now() + 10), .success)
 
         var theTimerRan = false
         var theOwnerHadFinished = false
