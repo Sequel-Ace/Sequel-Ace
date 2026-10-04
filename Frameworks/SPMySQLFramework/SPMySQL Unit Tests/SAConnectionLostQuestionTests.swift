@@ -136,7 +136,7 @@ final class SAConnectionLostQuestionTests: XCTestCase {
         host.answer = 1
         host.whileAsking = {
             let nested = SAConnectionLostQuestion.decision(throughGate: gate, isMainThread: true, host: nestedHost)
-            XCTAssertEqual(nested, SAConnectionLostDecisionGate.fallbackAnswer)
+            XCTAssertEqual(nested, SAConnectionLostDecisionGate.questionPendingAnswer)
         }
 
         _ = SAConnectionLostQuestion.decision(throughGate: gate, isMainThread: true, host: host)

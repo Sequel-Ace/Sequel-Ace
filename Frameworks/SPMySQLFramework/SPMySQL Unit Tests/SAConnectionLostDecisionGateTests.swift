@@ -233,8 +233,8 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
                 nestedWasAsked = true
                 return 5
             })
-            XCTAssertEqual(nested, SAConnectionLostDecisionGate.fallbackAnswer,
-                           "the nested call gets the fallback rather than a second dialog")
+            XCTAssertEqual(nested, SAConnectionLostDecisionGate.questionPendingAnswer,
+                           "the nested call is told nothing was decided, not that the connection is to be given up")
             return 3
         })
 
@@ -252,6 +252,44 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
 
     func testTheFallbackAnswerGivesTheConnectionUp() {
         XCTAssertEqual(SAConnectionLostDecisionGate.fallbackAnswer, Int(SPMySQLConnectionLostDisconnect.rawValue))
+    }
+
+    /// A question that cannot be asked because one is open on this thread is not an answer, and
+    /// above all not the answer that gives the connection up.
+    ///
+    /// The connection sets its own disconnect flag on `SPMySQLConnectionLostDisconnect`, and that
+    /// flag makes every later reconnect return at once - including the one the user asks for by
+    /// choosing Reconnect in the question that is still open. A timer or event reaching
+    /// `checkConnection` during that question's modal loop runs on this same thread, so this is
+    /// not a theoretical path.
+    func testAPendingQuestionIsNotAnAnswer() {
+        XCTAssertEqual(SAConnectionLostDecisionGate.questionPendingAnswer,
+                       Int(SPMySQLConnectionLostDecisionPending.rawValue))
+        XCTAssertNotEqual(SAConnectionLostDecisionGate.questionPendingAnswer,
+                          Int(SPMySQLConnectionLostDisconnect.rawValue))
+        XCTAssertNotEqual(SAConnectionLostDecisionGate.questionPendingAnswer,
+                          Int(SPMySQLConnectionLostReconnect.rawValue))
+    }
+
+    /// A thread that waited for an answer nobody gave still gives the connection up: it has lost
+    /// its connection, where the nested caller above has not lost anything yet.
+    func testAWaiterStillGetsTheFallbackWhenTheAskingEndsWithoutAnAnswer() {
+        let gate = SAConnectionLostDecisionGate()
+        let joined = expectation(description: "the waiter was released")
+        var waited = 99
+        _ = gate.decisionAskingHere(with: { () -> Int in
+            DispatchQueue.global().async {
+                waited = gate.decision(askingWith: { 7 })
+                joined.fulfill()
+            }
+            while gate.threadsWaitingForAnswer < 1 {
+                usleep(1000)
+            }
+            // The asking ends without an answer, as a cancelled thread would leave it.
+            return SAConnectionLostDecisionGate.fallbackAnswer
+        })
+        wait(for: [joined], timeout: 5)
+        XCTAssertEqual(waited, SAConnectionLostDecisionGate.fallbackAnswer)
     }
 
 

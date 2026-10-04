@@ -89,7 +89,11 @@ public final class SAConnectionLostDecisionGate: NSObject {
         condition.lock()
         if openQuestion != nil {
             condition.unlock()
-            return SAConnectionLostDecisionGate.fallbackAnswer
+            // Nothing is decided here: the thread that opened the question is the one that can
+            // answer it, and this is that thread. It must not come back as the fallback, which
+            // is the value "disconnect" carries - that sets the connection's own disconnect flag,
+            // and the Reconnect the user then chooses in the open question would return at once.
+            return SAConnectionLostDecisionGate.questionPendingAnswer
         }
         let question = SAQuestion()
         openQuestion = question
@@ -117,6 +121,14 @@ public final class SAConnectionLostDecisionGate: NSObject {
     /// to start from before anybody was asked - which gives up the connection rather than keeping
     /// a thread waiting on a question that will not be answered.
     static let fallbackAnswer = 0
+
+    /// The answer for a question that cannot be asked because one is already open on this thread.
+    ///
+    /// It is the value `SPMySQLConnectionLostDecisionPending` carries, which asks the caller to do
+    /// nothing and leave the open question to decide. Kept apart from ``fallbackAnswer``: a thread
+    /// that waited for an answer nobody gave has lost its connection and gives it up, while this
+    /// one has not lost anything yet.
+    static let questionPendingAnswer = -1
 
     /// How many threads are waiting for the answer to the question that is open now.
     var threadsWaitingForAnswer: Int {

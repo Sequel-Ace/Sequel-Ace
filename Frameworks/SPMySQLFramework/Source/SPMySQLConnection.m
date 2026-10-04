@@ -1470,6 +1470,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 			}
 
 			switch (connectionLostDecision) {
+					// A question about this connection is already open on this thread, so nothing
+					// was decided here. The thread that opened it decides; this attempt only
+					// reports that it did not reconnect, and must not set the disconnect flag -
+					// that would answer the open question behind the user's back.
+				case SPMySQLConnectionLostDecisionPending:
+					break;
+
 				case SPMySQLConnectionLostDisconnect:
 					[self _updateLastErrorMessage:NSLocalizedString(@"User triggered disconnection", @"User triggered disconnection")];
 					userTriggeredDisconnect = YES;
