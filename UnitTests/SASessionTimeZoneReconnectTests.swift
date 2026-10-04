@@ -86,6 +86,23 @@ private final class SAStaleReconnectResultConnection: SPMySQLConnection {
 }
 
 final class SASessionTimeZoneReconnectTests: XCTestCase {
+
+    /// Asks whether the connection is connected away from the main thread.
+    ///
+    /// A session lost in the background is restored on the first use that can afford to wait for
+    /// the network. Asking on the main thread is not one of those, so the restore the lazy path
+    /// performs is reached from another thread.
+    private func isConnectedAwayFromTheMainThread(_ connection: SPMySQLConnection) -> Bool {
+        var answer = false
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            answer = connection.isConnected()
+            finished.signal()
+        }
+        XCTAssertEqual(finished.wait(timeout: .now() + 10), .success,
+                       "the restore must not outlast the test")
+        return answer
+    }
     func testReconnectRevalidatesSuccessfulCompletionAgainstLiveState() {
         let connection = SAStaleReconnectResultConnection()
         connection.useKeepAlive = false
@@ -140,8 +157,9 @@ final class SASessionTimeZoneReconnectTests: XCTestCase {
         XCTAssertEqual(connection.value(forKey: "state") as? UInt, UInt(SPMySQLConnectionLostInBackground.rawValue))
         XCTAssertEqual(connection.lastErrorID(), 1298)
 
-        // The next use takes the real lazy-reconnect path and retries the same preference.
-        XCTAssertTrue(connection.isConnected())
+        // The next use that can wait takes the real lazy-reconnect path and retries the same
+        // preference.
+        XCTAssertTrue(isConnectedAwayFromTheMainThread(connection))
         XCTAssertEqual(connection.serverTimeZone, "Europe/London")
         XCTAssertEqual(connection.statements.count, 2)
         XCTAssertEqual(connection.restoredDatabase, "reporting")
@@ -156,8 +174,29 @@ final class SASessionTimeZoneReconnectTests: XCTestCase {
 
         XCTAssertFalse(connection.reconnect())
         XCTAssertEqual(connection.timeZoneIdentifier, "Europe/London")
-        XCTAssertTrue(connection.isConnected())
+        XCTAssertTrue(isConnectedAwayFromTheMainThread(connection))
         XCTAssertEqual(connection.serverTimeZone, "Europe/London")
+    }
+
+    /// Asking on the main thread does not hold the interface for the restore, and does not lose it.
+    func testAskingOnTheMainThreadLeavesTheRestoreToTheNextUseThatCanWait() {
+        let connection = connection()
+        defer { connection.disconnect() }
+        connection.failNextTimeZoneUpdate = true
+        XCTAssertFalse(connection.reconnect())
+        let statementsAfterTheFailedRestore = connection.statements.count
+
+        XCTAssertTrue(Thread.isMainThread)
+        XCTAssertTrue(connection.isConnected(), "the connection still counts as connected")
+        XCTAssertEqual(connection.statements.count, statementsAfterTheFailedRestore,
+                       "but nothing was sent, so the interface did not wait for the network")
+        XCTAssertEqual(connection.value(forKey: "state") as? UInt,
+                       UInt(SPMySQLConnectionLostInBackground.rawValue),
+                       "and the session is still the one to be restored")
+
+        XCTAssertTrue(isConnectedAwayFromTheMainThread(connection))
+        XCTAssertEqual(connection.serverTimeZone, "Europe/London")
+        XCTAssertEqual(connection.statements.count, statementsAfterTheFailedRestore + 1)
     }
 
     func testRepeatedFailuresKeepPreferenceUntilRestorationSucceeds() {
