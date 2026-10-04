@@ -122,6 +122,12 @@
 	// If every candidate errored, no encoding change occurred - return failure.
 	if (!characterSetToSet) return NO;
 
+	// What the statement above shows about this session's reporting: it went out through the
+	// query path, so the client library followed it only if the session reported it. A session
+	// that still names the character set from before does not report its changes, whatever its
+	// variable list said - and from here the record is the better guide than the stale handle.
+	[valueEscaper recordCharacterSetSetByConnection:characterSetToSet];
+
 	// Connection encoding was successfully set, update the instance settings.
 	encoding = [[NSString alloc] initWithString:characterSetToSet];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetToSet UTF8String]];

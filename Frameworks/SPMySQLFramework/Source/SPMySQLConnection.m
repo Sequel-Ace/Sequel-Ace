@@ -1574,6 +1574,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self queryString:[move statement]];
 			if (![self queryErrored]) {
 				retrievedEncoding = [move characterSet];
+				// The move settles what the variable list only suggested: whether this session's
+				// changes are reported to the client at all.
+				[valueEscaper recordCharacterSetSetByConnection:retrievedEncoding];
 				break;
 			}
 			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", [move statement], [self lastErrorMessage]);

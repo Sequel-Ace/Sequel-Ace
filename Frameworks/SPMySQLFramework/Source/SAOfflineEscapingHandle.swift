@@ -218,6 +218,51 @@ public final class SAConnectionEscaper: NSObject {
         }
     }
 
+    /// Records what a `SET NAMES` this connection just ran shows about the session's reporting.
+    ///
+    /// The variable list a server gives is not proof that its notifications reach this client -
+    /// behind a proxy the list can describe the backend, and a user can turn the tracking off
+    /// again. A character set the connection sets itself settles it for nothing: the statement
+    /// goes out through the query path, so the client library learns of it only if the session
+    /// reports it. A session that reports the name just set reports its changes; one that still
+    /// names the character set from before does not, whatever its variable list said.
+    ///
+    /// This matters because the two differ exactly here. `setEncoding:` leaves the connection's
+    /// record right and the client's handle stale, so trusting the handle would escape values for
+    /// the character set the session was in before - `BF 27` as latin1 while the session reads
+    /// GBK, where `BF 5C` is one character and the quote is left to end the literal.
+    /// - Parameter characterSet: The character set the connection just set.
+    @objc(recordCharacterSetSetByConnection:)
+    public func recordCharacterSetSetByConnection(_ characterSet: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        sessionReportsCharacterSetChanges = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
+    }
+
+    /// Whether two character-set names mean the same character set.
+    ///
+    /// `utf8` and `utf8mb3` are one character set under two names, and a server that renamed it -
+    /// MySQL 8 reports `utf8mb3` for a session set with `SET NAMES utf8` - must not be taken for a
+    /// server whose report did not follow.
+    /// - Parameters:
+    ///   - reported: The name the session reports, if any.
+    ///   - requested: The name that was asked for.
+    /// - Returns: Whether they name the same character set.
+    static func namesTheSameCharacterSet(_ reported: String?, _ requested: String) -> Bool {
+        guard let reported else {
+            return false
+        }
+        return Self.canonicalCharacterSetName(reported) == Self.canonicalCharacterSetName(requested)
+    }
+
+    /// One name for a character set that has two.
+    /// - Parameter name: The name as a server or this framework spells it.
+    /// - Returns: The name to compare by, lowercased, with `utf8mb3` under `utf8`.
+    private static func canonicalCharacterSetName(_ name: String) -> String {
+        let lowered = name.lowercased()
+        return lowered == "utf8mb3" ? "utf8" : lowered
+    }
+
     /// Records the escaping mode a new session started in, once it has run a statement - after
     /// anything the server runs when a session starts, which the handshake's answer does not show
     /// yet. The next session is taken to start in it too.

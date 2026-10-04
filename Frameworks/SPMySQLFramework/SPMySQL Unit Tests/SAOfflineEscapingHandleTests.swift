@@ -441,11 +441,11 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertEqual(escaped, Data([0x5C, 0xBF, 0x5C, 0x27]), "escaped for the record, gbk")
     }
 
-    /// Where the server does not report character-set changes, what the session reports is what
-    /// the client itself last set - so the record and the reported name are the same belief, and
-    /// the flag cannot change the answer. This is why a `SET NAMES` typed on such a server is
-    /// invisible either way: a limitation of the client's own view, not of trusting the report.
-    func testWithoutReportingTheFlagCannotChangeTheAnswer() {
+    /// Where the session's name, the handshake and the record all agree, the flag cannot change
+    /// the answer - which is the case a `SET NAMES` typed by the user leaves behind on a server
+    /// that does not report it. Where the connection sets the character set itself they do not
+    /// agree, and the test below covers that.
+    func testWhereNothingDisagreesTheFlagCannotChangeTheAnswer() {
         for recordAndSession in ["latin1", "gbk", "utf8mb4", "sjis"] {
             for reports in [true, false] {
                 XCTAssertEqual(
@@ -458,6 +458,41 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
                     "a session still on the name the client set reads the same either way")
             }
         }
+    }
+
+    /// A character set the connection sets itself settles whether the session reports its
+    /// changes, for nothing: the statement goes out through the query path, so the client library
+    /// follows it only if the session reported it.
+    func testSettingTheCharacterSetSettlesWhetherTheSessionReports() {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        escaper.recordSessionReportsChanges(true)
+
+        // A session that followed the statement reports its changes.
+        escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: false)
+        escaper.recordCharacterSetSetByConnection("gbk")
+        XCTAssertEqual(escape(Data([0xBF, 0x27]), with: escaper, onRecord: "gbk"), Data([0x5C, 0xBF, 0x5C, 0x27]))
+
+        // One that still names the character set from before does not, whatever it claimed.
+        let unreported = SAConnectionEscaper()
+        unreported.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true)
+        unreported.recordSessionReportsChanges(true)
+        unreported.recordCharacterSetSetByConnection("gbk")
+        // The record is now gbk and the handle is still latin1; the value follows the record.
+        XCTAssertEqual(escape(Data([0xBF, 0x27]), with: unreported, onRecord: "gbk"), Data([0x5C, 0xBF, 0x5C, 0x27]),
+                       "the stale handle must not decide")
+    }
+
+    /// `utf8` and `utf8mb3` are one character set under two names, so a server that renamed it in
+    /// its report is not taken for one whose report did not follow.
+    func testTheRenamedUTF8CountsAsTheSameCharacterSet() {
+        XCTAssertTrue(SAConnectionEscaper.namesTheSameCharacterSet("utf8mb3", "utf8"))
+        XCTAssertTrue(SAConnectionEscaper.namesTheSameCharacterSet("utf8", "utf8mb3"))
+        XCTAssertTrue(SAConnectionEscaper.namesTheSameCharacterSet("UTF8MB3", "utf8"))
+        XCTAssertTrue(SAConnectionEscaper.namesTheSameCharacterSet("gbk", "GBK"))
+        XCTAssertFalse(SAConnectionEscaper.namesTheSameCharacterSet("utf8", "utf8mb4"))
+        XCTAssertFalse(SAConnectionEscaper.namesTheSameCharacterSet("latin1", "gbk"))
+        XCTAssertFalse(SAConnectionEscaper.namesTheSameCharacterSet(nil, "gbk"))
     }
 
 }
