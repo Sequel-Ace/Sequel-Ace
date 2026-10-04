@@ -75,18 +75,18 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
     /// A session that is being replaced is escaped for the record; otherwise a reported change wins.
     func testTheCharacterSetForEscapingFollowsTheSessionWhereItChanged() {
         // A statement changed the character set; the session reports it.
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "utf8mb4", session: "gbk", handshake: "utf8mb4", sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "utf8mb4", session: "gbk", handshake: "utf8mb4", aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
         // Latin1 transport: the client character set was changed for the session.
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "utf8mb4", session: "latin1", handshake: "utf8mb4", sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "latin1")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "utf8mb4", session: "latin1", handshake: "utf8mb4", aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "latin1")
         // A server that does not report changes: the record follows the connection's own changes.
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk", session: "utf8mb4", handshake: "utf8mb4", sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk", session: "utf8mb4", handshake: "utf8mb4", aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
         // Names differing only in case are the same character set.
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "UTF8MB4", handshake: "utf8mb4", sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "latin1")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "UTF8MB4", handshake: "utf8mb4", aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "latin1")
         // A session about to be replaced follows the record.
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "utf8mb4", handshake: "latin1", sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: true), "latin1")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "utf8mb4", handshake: "latin1", aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: true), "latin1")
         // Nothing recorded yet.
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: nil, session: "utf8mb4", handshake: nil, sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "utf8mb4")
-        XCTAssertNil(SAConnectionEscaper.characterSetForEscaping(onRecord: nil, session: nil, handshake: nil, sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false))
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: nil, session: "utf8mb4", handshake: nil, aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "utf8mb4")
+        XCTAssertNil(SAConnectionEscaper.characterSetForEscaping(onRecord: nil, session: nil, handshake: nil, aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false))
     }
 
 
@@ -98,11 +98,11 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
     /// `BF 27` for latin1 while the session reads GBK leaves the quote unescaped, because GBK
     /// takes `BF 5C` as one character.
     func testAReportedChangeKeepsTheSessionAuthoritativeEvenBackAtTheHandshakeName() {
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "gbk", handshake: "gbk", sessionReportsChanges: true, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "gbk", handshake: "gbk", aCharacterSetHasBeenReported: true, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
         // a server that never reported a change still leaves the record in charge
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "gbk", handshake: "gbk", sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "latin1")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "gbk", handshake: "gbk", aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "latin1")
         // and a session about to be replaced still follows the record
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "gbk", handshake: "gbk", sessionReportsChanges: true, sessionReportIsStale: false, sessionIsBeingReplaced: true), "latin1")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: "gbk", handshake: "gbk", aCharacterSetHasBeenReported: true, sessionReportIsStale: false, sessionIsBeingReplaced: true), "latin1")
     }
 
     /// Checks the whole sequence through the escaper: a session connected in GBK, switched to
@@ -164,7 +164,7 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false, characterSetWasReported: false)
         escaper.forgetSession()
 
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk", session: nil, handshake: nil, sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk", session: nil, handshake: nil, aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: false), "gbk")
     }
 
 
@@ -288,7 +288,7 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
 
         escaper.forgetSession()
         XCTAssertEqual(escape(value, with: escaper, onRecord: "latin1"), Data([0xBF, 0x5C, 0x27]))
-        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: nil, handshake: nil, sessionReportsChanges: false, sessionReportIsStale: false, sessionIsBeingReplaced: true), "latin1")
+        XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "latin1", session: nil, handshake: nil, aCharacterSetHasBeenReported: false, sessionReportIsStale: false, sessionIsBeingReplaced: true), "latin1")
     }
 
     /// A new session's escaping mode replaces the one the closed session had.
@@ -412,22 +412,37 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
     }
 
     /// Codex's case: a session that reports a change leading back to the name it was connected
-    /// with. The escaper cannot see that as a change, so being told that the session reports is
-    /// what keeps it following the session rather than a record it has moved away from.
+    /// with. The escaper cannot see that as a change by the name alone, so the report the server
+    /// sent with the statement is what keeps it following the session rather than a record the
+    /// session has moved away from.
     func testAReportedChangeBackToTheHandshakeNameIsFollowed() throws {
         let escaper = SAConnectionEscaper()
         escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true, characterSetWasReported: false)
+        // The connection moved the record to gbk, then a raw SET NAMES took the session back to
+        // latin1 - the name it started in - and the server reported it.
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false, characterSetWasReported: true)
+
+        // BF 27 escaped for latin1 adds the backslash before the quote; escaped for gbk the BF
+        // would be taken as a lead byte and protected instead.
+        let value = Data([0xBF, 0x27])
+        XCTAssertEqual(try XCTUnwrap(escape(value, with: escaper, onRecord: "gbk")), Data([0xBF, 0x5C, 0x27]),
+                       "the server reported latin1, so latin1 is what it is escaped for")
+    }
+
+    /// Without that report the same names mean something else entirely: reporting being switched
+    /// on says nothing about a character set that was set before it was, which is what an
+    /// `init_connect` leaves behind. The record is then the only ground truth, and escaping for a
+    /// multi-byte character set on a single-byte session merely adds a backslash, where the
+    /// reverse can let a quote out of its literal.
+    func testTrackingBeingOnIsNotAReport() throws {
+        let escaper = SAConnectionEscaper()
+        escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true, characterSetWasReported: false)
         escaper.recordSessionReportsChanges(true)
-        // The connection moved the record to gbk while the session was not reporting, then a
-        // raw SET NAMES took the session back to latin1 - the name it started in.
         escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false, characterSetWasReported: false)
 
-        // BF 27 escaped for latin1 doubles the backslash it adds; for gbk the BF would be taken
-        // as a lead byte and protected instead, leaving the quote loose on a latin1 session.
-        let value = Data([0xBF, 0x27])
-        let escaped = try XCTUnwrap(escape(value, with: escaper, onRecord: "gbk"))
-        XCTAssertEqual(escaped, Data([0xBF, 0x5C, 0x27]),
-                       "the session says latin1 and reports its changes, so latin1 is what it is escaped for")
+        XCTAssertEqual(try XCTUnwrap(escape(Data([0xBF, 0x27]), with: escaper, onRecord: "gbk")),
+                       Data([0x5C, 0xBF, 0x5C, 0x27]),
+                       "nothing was reported, so the record decides")
     }
 
     /// Without being told, the same sequence falls back to the record - which is why the
@@ -452,7 +467,7 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
                     SAConnectionEscaper.characterSetForEscaping(onRecord: recordAndSession,
                                                                 session: recordAndSession,
                                                                 handshake: recordAndSession,
-                                                                sessionReportsChanges: reports,
+                                                                aCharacterSetHasBeenReported: reports,
                                                                 sessionReportIsStale: false,
                                                                 sessionIsBeingReplaced: false),
                     recordAndSession,
@@ -565,13 +580,13 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertNil(SAConnectionEscaper.characterSetForEscaping(onRecord: nil,
                                                                  session: "latin1",
                                                                  handshake: "utf8mb4",
-                                                                 sessionReportsChanges: true,
+                                                                 aCharacterSetHasBeenReported: true,
                                                                  sessionReportIsStale: true,
                                                                  sessionIsBeingReplaced: false))
         XCTAssertEqual(SAConnectionEscaper.characterSetForEscaping(onRecord: "gbk",
                                                                    session: "latin1",
                                                                    handshake: "utf8mb4",
-                                                                   sessionReportsChanges: true,
+                                                                   aCharacterSetHasBeenReported: true,
                                                                    sessionReportIsStale: true,
                                                                    sessionIsBeingReplaced: false), "gbk",
                        "stale outranks a report that claims to be followed")

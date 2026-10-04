@@ -118,6 +118,15 @@ public final class SAConnectionEscaper: NSObject {
     /// with. Until then there is no telling a server that does not report changes from one
     /// that does and happens to report the same name.
     private var sessionReportsCharacterSetChanges = false
+    /// Whether the server has actually reported a character set for this session.
+    ///
+    /// Kept apart from the flag above, which only says that reporting is *switched on*. The
+    /// connection switches it on itself when a session starts without it, and that says nothing
+    /// about the character set the session is already in: an `init_connect` can have set it before
+    /// anything was reported, so the name the client library holds is the handshake's and was
+    /// never reported at all. Until a report has arrived, what the session reported in its
+    /// variables is the only ground truth there is.
+    private var aCharacterSetHasBeenReported = false
     /// A reported name a `SET NAMES` of the connection's own proved the session does not follow.
     ///
     /// Kept apart from the flag above because it has to survive the next statement: the fallback
@@ -144,6 +153,8 @@ public final class SAConnectionEscaper: NSObject {
     ///   - characterSetOnRecord: The connection's character set on record.
     ///   - sessionCharacterSet: The character set the session last reported, if known.
     ///   - handshakeCharacterSet: The character set the session was connected with, if known.
+    ///   - aCharacterSetHasBeenReported: Whether the server has actually reported a character set
+    ///     for this session - not merely that reporting is switched on.
     ///   - sessionReportIsStale: Whether a `SET NAMES` of the connection's own showed that the
     ///     session does not follow what it reports.
     ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
@@ -151,7 +162,7 @@ public final class SAConnectionEscaper: NSObject {
     static func characterSetForEscaping(onRecord characterSetOnRecord: String?,
                                         session sessionCharacterSet: String?,
                                         handshake handshakeCharacterSet: String?,
-                                        sessionReportsChanges: Bool,
+                                        aCharacterSetHasBeenReported: Bool,
                                         sessionReportIsStale: Bool,
                                         sessionIsBeingReplaced: Bool) -> String? {
         if sessionIsBeingReplaced {
@@ -171,7 +182,7 @@ public final class SAConnectionEscaper: NSObject {
         // is where the connection's own last change went, and that can be another character set
         // entirely: escaping `BF 27` for latin1 while the session reads GBK leaves the quote
         // unescaped, since GBK takes `BF 5C` as one character.
-        if sessionReportsChanges, let sessionCharacterSet {
+        if aCharacterSetHasBeenReported, let sessionCharacterSet {
             return sessionCharacterSet
         }
         if let sessionCharacterSet, let handshakeCharacterSet,
@@ -201,6 +212,7 @@ public final class SAConnectionEscaper: NSObject {
             // on a server that does not report changes, and carrying the flag over would let the
             // handshake name override what the connection sets afterwards.
             sessionReportsCharacterSetChanges = false
+            aCharacterSetHasBeenReported = false
             staleSessionCharacterSet = nil
         }
         // The server said so itself, which settles it: the client library only learns a character
@@ -210,6 +222,7 @@ public final class SAConnectionEscaper: NSObject {
         // protocol's own answer is asked for rather than inferred.
         if characterSetWasReported {
             sessionReportsCharacterSetChanges = true
+            aCharacterSetHasBeenReported = true
             staleSessionCharacterSet = nil
         }
         // A report that has moved off the name caught out is a report again: the client's view
@@ -227,6 +240,7 @@ public final class SAConnectionEscaper: NSObject {
             // it cannot see a change back to the handshake name, which is why being told is
             // better.
             sessionReportsCharacterSetChanges = true
+            aCharacterSetHasBeenReported = true
         }
         sessionCharacterSet = characterSet
         sessionUsesNoBackslashEscapes = noBackslashEscapes
@@ -277,6 +291,9 @@ public final class SAConnectionEscaper: NSObject {
         defer { lock.unlock() }
         let sessionFollowed = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
         sessionReportsCharacterSetChanges = sessionFollowed
+        if sessionFollowed {
+            aCharacterSetHasBeenReported = true
+        }
         staleSessionCharacterSet = sessionFollowed ? nil : sessionCharacterSet
     }
 
@@ -325,6 +342,7 @@ public final class SAConnectionEscaper: NSObject {
         handshakeCharacterSet = nil
         sessionCharacterSet = nil
         staleSessionCharacterSet = nil
+        aCharacterSetHasBeenReported = false
         sessionUsesNoBackslashEscapes = sessionsStartWithNoBackslashEscapes
         sessionHasOpenTransaction = false
         sessionReportsCharacterSetChanges = false
@@ -350,7 +368,7 @@ public final class SAConnectionEscaper: NSObject {
         guard let characterSet = Self.characterSetForEscaping(onRecord: characterSetOnRecord,
                                                               session: sessionCharacterSet,
                                                               handshake: handshakeCharacterSet,
-                                                              sessionReportsChanges: sessionReportsCharacterSetChanges,
+                                                              aCharacterSetHasBeenReported: aCharacterSetHasBeenReported,
                                                               sessionReportIsStale: staleSessionCharacterSet != nil,
                                                               sessionIsBeingReplaced: sessionIsBeingReplaced) else {
             return -1
