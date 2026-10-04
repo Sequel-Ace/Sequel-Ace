@@ -61,6 +61,13 @@ import OSLog
     /// Counts the changes to `migratedLegacyPinnedTableTokens`, so a writer of
     /// the migration record can tell whether a newer record exists.
     private var recordGeneration = 0
+    /// The named groups and the groups' collapse state; tables outside every
+    /// named group belong to the global pinned section. Guarded by `stateLock`.
+    private var groupState = SAPinnedGroupState()
+
+    /// The schema version this manager writes: 1 created `PinnedTables`, 2 adds
+    /// the pin's group and the `PinnedTableGroups` table.
+    private static let currentSchemaVersion = 2
 
     /// SQLite's primary result code for a violated constraint; a pin another
     /// manager on the same file stored already fails with it, and so does a pin
@@ -86,11 +93,13 @@ import OSLog
         var problem: SASQLiteStoreProblem?
         var openedQueue: FMDatabaseQueue?
         var storedPins: [String: [String: [String]]]?
+        var storedGroups = SAPinnedGroupState()
         if let databasePath {
             openedQueue = Self.openStore(at: databasePath, traceExecution: traceExecution, problem: &problem)
             if let openedQueue {
                 let loaded = Self.loadPinnedTablesHistory(from: openedQueue, traceExecution: traceExecution)
                 storedPins = loaded.pins
+                storedGroups = loaded.groups
                 if loaded.pins == nil {
                     problem = SASQLiteStoreProblem(kind: .cannotUse, path: databasePath, reason: loaded.failure)
                 }
@@ -104,6 +113,7 @@ import OSLog
         queue = storedPins == nil ? nil : openedQueue
         storeWasLoaded = storedPins != nil
         pinnedTablesDatabaseDictionary = storedPins ?? [:]
+        groupState = storedPins == nil ? SAPinnedGroupState() : storedGroups
         super.init()
         if let problem {
             problems.report(problem)
@@ -136,44 +146,68 @@ import OSLog
     /// and records the new version. Returns the description of the step that
     /// failed, which is logged, or `nil` when the store is ready.
     private static func setupPinnedTablesDatabase(in queue: FMDatabaseQueue, traceExecution: Bool) -> String? {
+        // Every step up to `currentSchemaVersion` and the version itself are written
+        // in one transaction: when a step fails, nothing is committed, the version
+        // stays where it was and the store is reported as unusable instead of
+        // being marked as upgraded.
         let schemaBlock: (FMDatabase, Int) throws -> Int = { db, schemaVersion in
-            db.beginTransaction()
-
-            guard schemaVersion < 1 else {
-                log.info("schemaVersion >= 1, not creating database")
-                db.commit()
+            guard schemaVersion < currentSchemaVersion else {
+                log.info("schemaVersion >= \(currentSchemaVersion), nothing to migrate")
                 return schemaVersion
             }
-            log.info("schemaVersion < 1, creating database")
-
-            // IF NOT EXISTS: a launch that died between creating the table and
-            // writing the version below leaves the table in place at version 0.
-            // Creating it again would fail and switch persistence off for good,
-            // so the existing table is taken over here and the version written
-            // again; a table with another schema fails the column check below,
-            // leaves the file as it was and the store unused.
-            let createTableSQL = "CREATE TABLE IF NOT EXISTS PinnedTables ("
-                    + "    id                   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    + "    hostName             TEXT NOT NULL,"
-                    + "    databaseName         TEXT NOT NULL,"
-                    + "    pinnedTableName      TEXT NOT NULL,"
-                    + "    CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))"
+            guard db.beginTransaction() else {
+                throw db.lastError()
+            }
 
             do {
-                try db.executeUpdate(createTableSQL, values: nil)
-                try db.executeUpdate("CREATE INDEX IF NOT EXISTS host_db_idx ON PinnedTables (hostName, databaseName)", values: nil)
-                // A table taken over has to be one this manager can read;
-                // otherwise nothing is committed and no version is written.
-                let columns = try db.executeQuery("SELECT id, hostName, databaseName, pinnedTableName FROM PinnedTables LIMIT 0", values: nil)
-                columns.close()
+                if schemaVersion < 1 {
+                    log.info("schemaVersion < 1, creating database")
+                    // IF NOT EXISTS: a launch that died between creating the table and
+                    // writing the version leaves the table in place at version 0.
+                    // Creating it again would fail and switch persistence off for good,
+                    // so the existing table is taken over here; a table with another
+                    // schema fails the column check below, leaves the file as it was
+                    // and the store unused.
+                    let createTableSQL = "CREATE TABLE IF NOT EXISTS PinnedTables ("
+                            + "    id                   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                            + "    hostName             TEXT NOT NULL,"
+                            + "    databaseName         TEXT NOT NULL,"
+                            + "    pinnedTableName      TEXT NOT NULL,"
+                            + "    CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))"
+                    try db.executeUpdate(createTableSQL, values: nil)
+                    try db.executeUpdate("CREATE INDEX IF NOT EXISTS host_db_idx ON PinnedTables (hostName, databaseName)", values: nil)
+                    // A table taken over has to be one this manager can read;
+                    // otherwise nothing is committed and no version is written.
+                    let columns = try db.executeQuery("SELECT id, hostName, databaseName, pinnedTableName FROM PinnedTables LIMIT 0", values: nil)
+                    columns.close()
+                }
+
+                if schemaVersion < 2 {
+                    log.info("schemaVersion < 2, adding pinned table groups")
+                    // The empty group name is the historical, global pinned section, so
+                    // every pin stored before groups existed stays where it was.
+                    if try !Self.table(named: "PinnedTables", hasColumn: "groupName", in: db) {
+                        try db.executeUpdate("ALTER TABLE PinnedTables ADD COLUMN groupName TEXT NOT NULL DEFAULT ''", values: nil)
+                    }
+                    try db.executeUpdate("CREATE TABLE IF NOT EXISTS PinnedTableGroups ("
+                            + "    hostName      TEXT NOT NULL,"
+                            + "    databaseName  TEXT NOT NULL,"
+                            + "    groupName     TEXT NOT NULL,"
+                            + "    isCollapsed   INTEGER NOT NULL DEFAULT 0,"
+                            + "    CONSTRAINT host_db_group UNIQUE (hostName, databaseName, groupName))", values: nil)
+                    try db.executeUpdate("CREATE INDEX IF NOT EXISTS host_db_group_idx ON PinnedTableGroups (hostName, databaseName)", values: nil)
+                }
+
+                try db.executeUpdate("PRAGMA user_version = \(currentSchemaVersion)", values: nil)
+                guard db.commit() else {
+                    throw db.lastError()
+                }
             } catch {
                 db.rollback()
                 throw error
             }
-
-            db.commit()
-            log.info("database created successfully")
-            return schemaVersion + 1
+            log.info("database is at schema version \(currentSchemaVersion)")
+            return currentSchemaVersion
         }
 
         var failure: String? = nil
@@ -189,15 +223,7 @@ import OSLog
                 }
                 rs.close()
 
-                let newSchemaVersion = try schemaBlock(db, startingSchemaVersion)
-
-                if newSchemaVersion != startingSchemaVersion, newSchemaVersion > 0 {
-                    let query = "PRAGMA user_version = " + String(newSchemaVersion)
-                    log.debug("query = \(query)")
-                    try db.executeUpdate(query, values: nil)
-                } else {
-                    log.info("db schema did not need an update")
-                }
+                _ = try schemaBlock(db, startingSchemaVersion)
             } catch {
                 log.error("Preparing \(dbFileName) failed: \(error.localizedDescription). Pinned tables are not persisted.")
                 failure = error.localizedDescription
@@ -207,22 +233,36 @@ import OSLog
         return failure
     }
 
-    /// Reads every pin from the store, latest first per host and database.
+    /// Whether `tableName` has a column called `columnName`.
+    private static func table(named tableName: String, hasColumn columnName: String, in db: FMDatabase) throws -> Bool {
+        let rs = try db.executeQuery("PRAGMA table_info(\(tableName))", values: nil)
+        defer { rs.close() }
+        while rs.next() {
+            if rs.string(forColumn: "name")?.caseInsensitiveCompare(columnName) == .orderedSame {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Reads every pin and group from the store, latest first per host and database.
     ///
     /// - Parameters:
     ///   - queue: The open store; it is closed here.
     ///   - traceExecution: Whether SQLite logs every statement.
-    /// - Returns: The pins, or `pins == nil` when the store cannot be read, with
+    /// - Returns: The pins and groups, or `pins == nil` when the store cannot be read, with
     ///   `failure` describing the error where there is one. Every failure is logged.
-    private static func loadPinnedTablesHistory(from queue: FMDatabaseQueue, traceExecution: Bool) -> (pins: [String: [String: [String]]]?, failure: String?) {
+    private static func loadPinnedTablesHistory(from queue: FMDatabaseQueue, traceExecution: Bool) -> (pins: [String: [String: [String]]]?, groups: SAPinnedGroupState, failure: String?) {
         var pins: [String: [String: [String]]]? = nil
+        var groups = SAPinnedGroupState()
         var failure: String? = nil
         queue.inDatabase { db in
             do {
                 db.traceExecution = traceExecution
                 // select by id desc to get latest first
-                let rs = try db.executeQuery("SELECT hostName, databaseName, pinnedTableName FROM PinnedTables order by id desc", values: nil)
+                let rs = try db.executeQuery("SELECT hostName, databaseName, pinnedTableName, groupName FROM PinnedTables order by id desc", values: nil)
                 var loaded: [String: [String: [String]]] = [:]
+                var loadedGroups = SAPinnedGroupState()
 
                 while rs.next() {
                     // A row without one of these is a damaged or foreign
@@ -237,16 +277,36 @@ import OSLog
                         return
                     }
                     loaded[hostName, default: [:]][databaseName, default: []].append(pinnedTableName)
+                    let groupName = SAPinnedTableGroupPlanner.normalizedGroupName(rs.string(forColumn: "groupName") ?? "")
+                    if groupName.isNotEmpty {
+                        loadedGroups.addGroup(groupName, hostName: hostName, databaseName: databaseName)
+                        loadedGroups.setGroup(groupName, forTable: pinnedTableName, hostName: hostName, databaseName: databaseName)
+                    }
                 }
                 rs.close()
+
+                let groupRows = try db.executeQuery("SELECT hostName, databaseName, groupName, isCollapsed FROM PinnedTableGroups", values: nil)
+                while groupRows.next() {
+                    guard let hostName = groupRows.string(forColumn: "hostName"),
+                          let databaseName = groupRows.string(forColumn: "databaseName"),
+                          let groupName = groupRows.string(forColumn: "groupName") else {
+                        groupRows.close()
+                        log.error("Reading \(dbFileName) failed: a group has no host, database or name. Pinned tables start empty.")
+                        return
+                    }
+                    loadedGroups.addGroup(groupName, hostName: hostName, databaseName: databaseName)
+                    loadedGroups.setCollapsed(groupRows.bool(forColumn: "isCollapsed"), group: groupName, hostName: hostName, databaseName: databaseName)
+                }
+                groupRows.close()
                 pins = loaded
+                groups = loadedGroups
             } catch {
                 log.error("Reading \(dbFileName) failed: \(error.localizedDescription). Pinned tables start empty.")
                 failure = error.localizedDescription
             }
         }
         queue.close()
-        return (pins, failure)
+        return (pins, groups, failure)
     }
 
     /// Returns the tables pinned for `hostName` and `databaseName`; empty when
@@ -366,6 +426,7 @@ import OSLog
                 return
             }
             pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.removeAll(where: { $0 == tableToUnpin })
+            groupState.removeTable(tableToUnpin, hostName: hostName, databaseName: databaseName)
 
             guard let queue else {
                 return
@@ -456,5 +517,353 @@ import OSLog
     /// - Returns: nothing
     private func logDBError(_ error: Error) {
         Self.log.error("Query failed: \(error.localizedDescription)")
+    }
+}
+
+// MARK: - Pinned table groups
+
+/// One section of the pinned tables: the global section (empty `groupName`) or a
+/// named group, with its tables in display order.
+@objc(SAPinnedTableSection) final class SAPinnedTableSection: NSObject {
+    @objc let groupName: String
+    @objc let tableNames: [String]
+    @objc let isCollapsed: Bool
+
+    init(groupName: String, tableNames: [String], isCollapsed: Bool) {
+        self.groupName = groupName
+        self.tableNames = tableNames
+        self.isCollapsed = isCollapsed
+        super.init()
+    }
+}
+
+/// The named groups per host and database, which group each pinned table is in,
+/// and which groups are collapsed. A table that is in no group is in the global
+/// section. A value type, so a change can be prepared, written to the store and
+/// only then published.
+struct SAPinnedGroupState {
+    private var names: [String: [String: Set<String>]] = [:]
+    private var tableGroups: [String: [String: [String: String]]] = [:]
+    private var collapsed: [String: [String: Set<String>]] = [:]
+
+    func groupNames(hostName: String, databaseName: String) -> Set<String> {
+        names[hostName]?[databaseName] ?? []
+    }
+
+    /// The group of a table; empty for the global section.
+    func group(ofTable tableName: String, hostName: String, databaseName: String) -> String {
+        tableGroups[hostName]?[databaseName]?[tableName] ?? ""
+    }
+
+    func isCollapsed(group: String, hostName: String, databaseName: String) -> Bool {
+        collapsed[hostName]?[databaseName]?.contains(group) ?? false
+    }
+
+    mutating func addGroup(_ group: String, hostName: String, databaseName: String) {
+        names[hostName, default: [:]][databaseName, default: []].insert(group)
+    }
+
+    /// Removes a group; its tables return to the global section.
+    mutating func removeGroup(_ group: String, hostName: String, databaseName: String) {
+        names[hostName]?[databaseName]?.remove(group)
+        collapsed[hostName]?[databaseName]?.remove(group)
+        for (table, tableGroup) in tableGroups[hostName]?[databaseName] ?? [:] where tableGroup == group {
+            tableGroups[hostName]?[databaseName]?[table] = nil
+        }
+    }
+
+    mutating func renameGroup(_ group: String, to newGroup: String, hostName: String, databaseName: String) {
+        let wasCollapsed = isCollapsed(group: group, hostName: hostName, databaseName: databaseName)
+        for (table, tableGroup) in tableGroups[hostName]?[databaseName] ?? [:] where tableGroup == group {
+            tableGroups[hostName]?[databaseName]?[table] = newGroup
+        }
+        names[hostName]?[databaseName]?.remove(group)
+        collapsed[hostName]?[databaseName]?.remove(group)
+        addGroup(newGroup, hostName: hostName, databaseName: databaseName)
+        setCollapsed(wasCollapsed, group: newGroup, hostName: hostName, databaseName: databaseName)
+    }
+
+    /// Puts a table in a group; the empty group is the global section.
+    mutating func setGroup(_ group: String, forTable tableName: String, hostName: String, databaseName: String) {
+        if group.isEmpty {
+            tableGroups[hostName]?[databaseName]?[tableName] = nil
+        } else {
+            tableGroups[hostName, default: [:]][databaseName, default: [:]][tableName] = group
+        }
+    }
+
+    mutating func removeTable(_ tableName: String, hostName: String, databaseName: String) {
+        tableGroups[hostName]?[databaseName]?[tableName] = nil
+    }
+
+    mutating func renameTable(_ tableName: String, to newTableName: String, hostName: String, databaseName: String) {
+        let group = self.group(ofTable: tableName, hostName: hostName, databaseName: databaseName)
+        removeTable(tableName, hostName: hostName, databaseName: databaseName)
+        setGroup(group, forTable: newTableName, hostName: hostName, databaseName: databaseName)
+    }
+
+    mutating func setCollapsed(_ isCollapsed: Bool, group: String, hostName: String, databaseName: String) {
+        if isCollapsed {
+            collapsed[hostName, default: [:]][databaseName, default: []].insert(group)
+        } else {
+            collapsed[hostName]?[databaseName]?.remove(group)
+        }
+    }
+}
+
+extension SQLitePinnedTableManager {
+
+    /// The pinned tables as sections for the table list: the global section first
+    /// when it holds tables, then every named group - empty ones too - in order.
+    @objc(pinnedTableSectionsWithHostName:databaseName:)
+    func pinnedTableSections(hostName: String, databaseName: String) -> [SAPinnedTableSection] {
+        stateLock.withLock {
+            let pins = pinnedTablesDatabaseDictionary[hostName]?[databaseName] ?? []
+            var tablesByGroup: [String: [String]] = [:]
+            for table in pins {
+                tablesByGroup[groupState.group(ofTable: table, hostName: hostName, databaseName: databaseName), default: []].append(table)
+            }
+            var sections: [SAPinnedTableSection] = []
+            if let globalTables = tablesByGroup[""], globalTables.isNotEmpty {
+                sections.append(SAPinnedTableSection(groupName: "", tableNames: SAPinnedTableGroupPlanner.orderedTableNames(globalTables), isCollapsed: false))
+            }
+            let groups = SAPinnedTableGroupPlanner.orderedGroupNames(Array(groupState.groupNames(hostName: hostName, databaseName: databaseName)))
+            for group in groups {
+                sections.append(SAPinnedTableSection(
+                    groupName: group,
+                    tableNames: SAPinnedTableGroupPlanner.orderedTableNames(tablesByGroup[group] ?? []),
+                    isCollapsed: groupState.isCollapsed(group: group, hostName: hostName, databaseName: databaseName)))
+            }
+            return sections
+        }
+    }
+
+    /// The names of the groups, in display order.
+    @objc(pinnedTableGroupNamesWithHostName:databaseName:)
+    func pinnedTableGroupNames(hostName: String, databaseName: String) -> [String] {
+        stateLock.withLock {
+            SAPinnedTableGroupPlanner.orderedGroupNames(Array(groupState.groupNames(hostName: hostName, databaseName: databaseName)))
+        }
+    }
+
+    /// The group a pinned table is in: the empty string for the global section,
+    /// `nil` when the table is not pinned.
+    @objc(groupNameForPinnedTableWithHostName:databaseName:tableName:)
+    func groupNameForPinnedTable(hostName: String, databaseName: String, tableName: String) -> String? {
+        stateLock.withLock {
+            guard pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.contains(tableName) == true else {
+                return nil
+            }
+            return groupState.group(ofTable: tableName, hostName: hostName, databaseName: databaseName)
+        }
+    }
+
+    @objc(isPinnedTableGroupCollapsedWithHostName:databaseName:groupName:)
+    func isPinnedTableGroupCollapsed(hostName: String, databaseName: String, groupName: String) -> Bool {
+        stateLock.withLock {
+            groupState.isCollapsed(group: groupName, hostName: hostName, databaseName: databaseName)
+        }
+    }
+
+    /// Pins the tables that are not pinned yet into `groupName`, and moves the pinned
+    /// ones to it; the empty name is the global section. The group is created when
+    /// needed. All of it is stored in one transaction and published only once the
+    /// store has it.
+    ///
+    /// - Returns: `false` when nothing changed because the name is not usable as a
+    ///   group name or the store refused the change.
+    @objc(movePinnedTablesWithHostName:databaseName:tableNames:toGroupName:)
+    @discardableResult
+    func movePinnedTables(hostName: String, databaseName: String, tableNames: [String], toGroupName groupName: String) -> Bool {
+        let group = SAPinnedTableGroupPlanner.normalizedGroupName(groupName)
+        let tables = tableNames.reduce(into: [String]()) { if !$0.contains($1) && $1.isNotEmpty { $0.append($1) } }
+        return stateLock.withLock {
+            let pinned = Set(pinnedTablesDatabaseDictionary[hostName]?[databaseName] ?? [])
+            var next = groupState
+            if group.isNotEmpty {
+                next.addGroup(group, hostName: hostName, databaseName: databaseName)
+            }
+            let changed = tables.filter {
+                !pinned.contains($0) || groupState.group(ofTable: $0, hostName: hostName, databaseName: databaseName) != group
+            }
+            let groupIsNew = group.isNotEmpty && !groupState.groupNames(hostName: hostName, databaseName: databaseName).contains(group)
+            guard changed.isNotEmpty || groupIsNew else {
+                return true
+            }
+            guard writeLocked({ db in
+                if group.isNotEmpty {
+                    try db.executeUpdate("INSERT OR IGNORE INTO PinnedTableGroups (hostName, databaseName, groupName) VALUES (?, ?, ?)",
+                            values: [hostName, databaseName, group])
+                }
+                for table in changed {
+                    try db.executeUpdate("INSERT OR IGNORE INTO PinnedTables (hostName, databaseName, pinnedTableName, groupName) VALUES (?, ?, ?, ?)",
+                            values: [hostName, databaseName, table, group])
+                    try db.executeUpdate("UPDATE PinnedTables SET groupName=? WHERE hostName=? AND databaseName=? AND pinnedTableName=?",
+                            values: [group, hostName, databaseName, table])
+                }
+            }) else {
+                return false
+            }
+            for table in changed {
+                if !pinned.contains(table) {
+                    addToPinnedTablesDatabaseDictionary(hostName: hostName, databaseName: databaseName, tableToPin: table)
+                }
+                next.setGroup(group, forTable: table, hostName: hostName, databaseName: databaseName)
+            }
+            groupState = next
+            return true
+        }
+    }
+
+    /// Creates an empty group. Returns `false` for an unusable name or when the store refused it.
+    @objc(createPinnedTableGroupWithHostName:databaseName:groupName:)
+    @discardableResult
+    func createPinnedTableGroup(hostName: String, databaseName: String, groupName: String) -> Bool {
+        let group = SAPinnedTableGroupPlanner.normalizedGroupName(groupName)
+        guard group.isNotEmpty else {
+            return false
+        }
+        return movePinnedTables(hostName: hostName, databaseName: databaseName, tableNames: [], toGroupName: group)
+    }
+
+    /// Renames a group, keeping its tables and collapse state. Returns `false` when
+    /// the group does not exist, the new name is empty or taken, or the store refused it.
+    @objc(renamePinnedTableGroupWithHostName:databaseName:groupName:toGroupName:)
+    @discardableResult
+    func renamePinnedTableGroup(hostName: String, databaseName: String, groupName: String, toGroupName newGroupName: String) -> Bool {
+        let group = SAPinnedTableGroupPlanner.normalizedGroupName(groupName)
+        let newGroup = SAPinnedTableGroupPlanner.normalizedGroupName(newGroupName)
+        guard group.isNotEmpty, newGroup.isNotEmpty else {
+            return false
+        }
+        return stateLock.withLock {
+            let existing = groupState.groupNames(hostName: hostName, databaseName: databaseName)
+            guard existing.contains(group), group == newGroup || !existing.contains(newGroup) else {
+                return false
+            }
+            guard group != newGroup else {
+                return true
+            }
+            guard writeLocked({ db in
+                try db.executeUpdate("UPDATE PinnedTableGroups SET groupName=? WHERE hostName=? AND databaseName=? AND groupName=?",
+                        values: [newGroup, hostName, databaseName, group])
+                try db.executeUpdate("UPDATE PinnedTables SET groupName=? WHERE hostName=? AND databaseName=? AND groupName=?",
+                        values: [newGroup, hostName, databaseName, group])
+            }) else {
+                return false
+            }
+            groupState.renameGroup(group, to: newGroup, hostName: hostName, databaseName: databaseName)
+            return true
+        }
+    }
+
+    /// Deletes a group. Its tables stay pinned and return to the global section.
+    @objc(deletePinnedTableGroupWithHostName:databaseName:groupName:)
+    @discardableResult
+    func deletePinnedTableGroup(hostName: String, databaseName: String, groupName: String) -> Bool {
+        let group = SAPinnedTableGroupPlanner.normalizedGroupName(groupName)
+        return stateLock.withLock {
+            guard group.isNotEmpty, groupState.groupNames(hostName: hostName, databaseName: databaseName).contains(group) else {
+                return false
+            }
+            guard writeLocked({ db in
+                try db.executeUpdate("UPDATE PinnedTables SET groupName='' WHERE hostName=? AND databaseName=? AND groupName=?",
+                        values: [hostName, databaseName, group])
+                try db.executeUpdate("DELETE FROM PinnedTableGroups WHERE hostName=? AND databaseName=? AND groupName=?",
+                        values: [hostName, databaseName, group])
+            }) else {
+                return false
+            }
+            groupState.removeGroup(group, hostName: hostName, databaseName: databaseName)
+            return true
+        }
+    }
+
+    /// Stores whether a group is shown collapsed. Returns `false` when the group does
+    /// not exist or the store refused the change.
+    @objc(setPinnedTableGroupCollapsedWithHostName:databaseName:groupName:isCollapsed:)
+    @discardableResult
+    func setPinnedTableGroupCollapsed(hostName: String, databaseName: String, groupName: String, isCollapsed: Bool) -> Bool {
+        let group = SAPinnedTableGroupPlanner.normalizedGroupName(groupName)
+        return stateLock.withLock {
+            guard group.isNotEmpty, groupState.groupNames(hostName: hostName, databaseName: databaseName).contains(group) else {
+                return false
+            }
+            guard writeLocked({ db in
+                try db.executeUpdate("UPDATE PinnedTableGroups SET isCollapsed=? WHERE hostName=? AND databaseName=? AND groupName=?",
+                        values: [isCollapsed ? 1 : 0, hostName, databaseName, group])
+            }) else {
+                return false
+            }
+            groupState.setCollapsed(isCollapsed, group: group, hostName: hostName, databaseName: databaseName)
+            return true
+        }
+    }
+
+    /// Follows a renamed table: the pin keeps its place and its group. When the new
+    /// name is pinned already, the old pin is dropped.
+    @objc(renamePinnedTableWithHostName:databaseName:from:to:)
+    @discardableResult
+    func renamePinnedTable(hostName: String, databaseName: String, from oldTableName: String, to newTableName: String) -> Bool {
+        stateLock.withLock {
+            let pinned = pinnedTablesDatabaseDictionary[hostName]?[databaseName] ?? []
+            guard oldTableName != newTableName, pinned.contains(oldTableName) else {
+                return false
+            }
+            let newIsPinned = pinned.contains(newTableName)
+            guard writeLocked({ db in
+                if newIsPinned {
+                    try db.executeUpdate("DELETE FROM PinnedTables WHERE hostName=? AND databaseName=? AND pinnedTableName=?",
+                            values: [hostName, databaseName, oldTableName])
+                } else {
+                    try db.executeUpdate("UPDATE PinnedTables SET pinnedTableName=? WHERE hostName=? AND databaseName=? AND pinnedTableName=?",
+                            values: [newTableName, hostName, databaseName, oldTableName])
+                }
+            }) else {
+                return false
+            }
+            if newIsPinned {
+                pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.removeAll { $0 == oldTableName }
+                groupState.removeTable(oldTableName, hostName: hostName, databaseName: databaseName)
+            } else if let index = pinned.firstIndex(of: oldTableName) {
+                pinnedTablesDatabaseDictionary[hostName]?[databaseName]?[index] = newTableName
+                groupState.renameTable(oldTableName, to: newTableName, hostName: hostName, databaseName: databaseName)
+            }
+            return true
+        }
+    }
+
+    /// Runs `body` in one transaction; the caller holds `stateLock`. Nothing is
+    /// kept when it fails.
+    ///
+    /// - Returns: `false` when the store refused the change, which is reported to
+    ///   `problems`; `true` otherwise, including when there is no store at all.
+    private func writeLocked(_ body: (FMDatabase) throws -> Void) -> Bool {
+        guard let queue else {
+            return true
+        }
+        var stored = true
+        queue.inDatabase { db in
+            db.traceExecution = traceExecution
+            guard db.beginTransaction() else {
+                logDBError(db.lastError())
+                problems.report(SASQLiteStoreProblem(kind: .cannotSave, path: databasePath, reason: db.lastErrorMessage()))
+                stored = false
+                return
+            }
+            do {
+                try body(db)
+                guard db.commit() else {
+                    throw db.lastError()
+                }
+            } catch {
+                db.rollback()
+                logDBError(error)
+                problems.report(SASQLiteStoreProblem(kind: .cannotSave, path: databasePath, reason: error.localizedDescription))
+                stored = false
+            }
+        }
+        queue.close()
+        return stored
     }
 }

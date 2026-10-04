@@ -278,6 +278,179 @@ extension SASQLiteDisplayFormatManagerTests {
     }
 }
 
+// MARK: - SQLitePinnedTableManager groups
+
+/// Groups of pinned tables: the schema step that adds them, their operations and
+/// that a refused write changes nothing.
+final class SASQLitePinnedTableGroupTests: XCTestCase {
+    private var directory: URL!
+    private var prefsSuiteName: String!
+    private var prefs: UserDefaults!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SASQLitePinnedTableGroupTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        prefsSuiteName = "SASQLitePinnedTableGroupTests-\(UUID().uuidString)"
+        prefs = try XCTUnwrap(UserDefaults(suiteName: prefsSuiteName))
+    }
+
+    override func tearDownWithError() throws {
+        prefs.removePersistentDomain(forName: prefsSuiteName)
+        prefs = nil
+        try? FileManager.default.removeItem(at: directory)
+        directory = nil
+        try super.tearDownWithError()
+    }
+
+    private var storePath: String {
+        directory.appendingPathComponent("pinnedTables.db").path
+    }
+
+    private func makeManager() -> SQLitePinnedTableManager {
+        SQLitePinnedTableManager(databasePath: storePath, prefs: prefs)
+    }
+
+    private func sections(_ manager: SQLitePinnedTableManager, host: String = "conn", database: String = "db") -> [String: [String]] {
+        Dictionary(uniqueKeysWithValues: manager.pinnedTableSections(hostName: host, databaseName: database).map { ($0.groupName, $0.tableNames) })
+    }
+
+    /// A version 1 store keeps its pins, which land in the global section, and gets the version 2 schema.
+    func testVersionOneStoreIsUpgradedWithPinsInTheGlobalSection() throws {
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, hostName TEXT NOT NULL, databaseName TEXT NOT NULL, pinnedTableName TEXT NOT NULL, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))",
+            "INSERT INTO PinnedTables (hostName, databaseName, pinnedTableName) VALUES ('conn', 'db', 'orders')",
+            "PRAGMA user_version = 1",
+        ])
+
+        let manager = makeManager()
+        XCTAssertTrue(manager.isPersistent)
+        XCTAssertEqual(try schemaVersion(ofSQLiteFile: storePath), 2)
+        XCTAssertEqual(sections(manager), ["": ["orders"]])
+        XCTAssertEqual(manager.groupNameForPinnedTable(hostName: "conn", databaseName: "db", tableName: "orders"), "")
+        XCTAssertNil(manager.groupNameForPinnedTable(hostName: "conn", databaseName: "db", tableName: "users"))
+    }
+
+    /// A failed upgrade leaves the version where it was and does not use the store.
+    func testFailedUpgradeDoesNotAdvanceTheSchemaVersion() throws {
+        // A table of another schema is called PinnedTableGroups, so the index on its columns fails after the new column was added.
+        try makeSQLiteFile(at: storePath, statements: [
+            "CREATE TABLE PinnedTables (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, hostName TEXT NOT NULL, databaseName TEXT NOT NULL, pinnedTableName TEXT NOT NULL, CONSTRAINT host_db_table UNIQUE (hostName, databaseName, pinnedTableName))",
+            "CREATE TABLE PinnedTableGroups (unrelated TEXT)",
+            "PRAGMA user_version = 1",
+        ])
+
+        let manager = makeManager()
+        XCTAssertFalse(manager.isPersistent)
+        XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotUse)
+        XCTAssertEqual(try schemaVersion(ofSQLiteFile: storePath), 1)
+        XCTAssertEqual(try columnNames(inSQLiteFile: storePath, table: "PinnedTables"), ["id", "hostName", "databaseName", "pinnedTableName"], "the column added before the failure was rolled back")
+    }
+
+    /// Groups, their tables and their collapse state survive reopening the store.
+    func testGroupsPersistAcrossManagers() {
+        let manager = makeManager()
+        manager.pinTable(hostName: "conn", databaseName: "db", tableToPin: "customers")
+        XCTAssertTrue(manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders", "users"], toGroupName: "  Reporting "))
+        XCTAssertTrue(manager.createPinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "Empty"))
+        XCTAssertTrue(manager.setPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "Reporting", isCollapsed: true))
+
+        let reopened = makeManager()
+        XCTAssertEqual(sections(reopened), ["": ["customers"], "Empty": [], "Reporting": ["orders", "users"]])
+        XCTAssertTrue(reopened.isPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "Reporting"))
+        XCTAssertFalse(reopened.isPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "Empty"))
+        XCTAssertEqual(reopened.pinnedTableSections(hostName: "conn", databaseName: "db").map(\.groupName), ["", "Empty", "Reporting"])
+    }
+
+    /// Tables move between groups and out of them, and stay pinned throughout.
+    func testTablesMoveBetweenGroupsAndBackToTheGlobalSection() {
+        let manager = makeManager()
+        manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders", "users"], toGroupName: "A")
+        manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["users"], toGroupName: "B")
+        XCTAssertEqual(sections(manager), ["A": ["orders"], "B": ["users"]])
+
+        manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "")
+        XCTAssertEqual(sections(manager), ["": ["orders"], "A": [], "B": ["users"]])
+        XCTAssertEqual(Set(manager.getPinnedTables(hostName: "conn", databaseName: "db")), ["orders", "users"])
+        XCTAssertEqual(sections(makeManager()), sections(manager))
+    }
+
+    func testRenameKeepsTablesAndCollapseStateAndRefusesATakenName() {
+        let manager = makeManager()
+        manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "A")
+        manager.createPinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "B")
+        manager.setPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A", isCollapsed: true)
+
+        XCTAssertFalse(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"))
+        XCTAssertFalse(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "  "))
+        XCTAssertTrue(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "Renamed"))
+
+        for candidate in [manager, makeManager()] {
+            XCTAssertEqual(sections(candidate), ["B": [], "Renamed": ["orders"]])
+            XCTAssertTrue(candidate.isPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "Renamed"))
+            XCTAssertFalse(candidate.isPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A"))
+        }
+    }
+
+    func testDeletingAGroupKeepsItsTablesPinnedGlobally() {
+        let manager = makeManager()
+        manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders", "users"], toGroupName: "A")
+        XCTAssertTrue(manager.deletePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A"))
+        XCTAssertFalse(manager.deletePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A"))
+
+        for candidate in [manager, makeManager()] {
+            XCTAssertEqual(sections(candidate), ["": ["orders", "users"]])
+        }
+    }
+
+    /// A pinned table that is renamed keeps its group and its place.
+    func testRenamingAPinnedTableKeepsItsGroup() {
+        let manager = makeManager()
+        manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "A")
+        manager.pinTable(hostName: "conn", databaseName: "db", tableToPin: "users")
+
+        XCTAssertTrue(manager.renamePinnedTable(hostName: "conn", databaseName: "db", from: "orders", to: "orders_v2"))
+        XCTAssertFalse(manager.renamePinnedTable(hostName: "conn", databaseName: "db", from: "never pinned", to: "x"))
+        for candidate in [manager, makeManager()] {
+            XCTAssertEqual(sections(candidate), ["": ["users"], "A": ["orders_v2"]])
+        }
+    }
+
+    /// A group rename or delete the store refuses changes nothing in memory either.
+    func testRefusedGroupWritesAreNotPublished() throws {
+        let seeding = makeManager()
+        seeding.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "A")
+        try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: storePath)
+
+        let manager = makeManager()
+        XCTAssertTrue(manager.isPersistent)
+        XCTAssertFalse(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"))
+        XCTAssertFalse(manager.deletePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A"))
+        XCTAssertFalse(manager.setPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A", isCollapsed: true))
+        XCTAssertFalse(manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: ""))
+        XCTAssertEqual(sections(manager), ["A": ["orders"]])
+        XCTAssertFalse(manager.isPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A"))
+        XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
+    }
+
+    /// Without a store the groups still work for the session.
+    func testGroupsWorkInMemoryWithoutAStore() {
+        let manager = SQLitePinnedTableManager(databasePath: nil, prefs: prefs)
+        XCTAssertTrue(manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "A"))
+        XCTAssertEqual(sections(manager), ["A": ["orders"]])
+        XCTAssertTrue(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"))
+        XCTAssertEqual(sections(manager), ["B": ["orders"]])
+    }
+
+    /// A table called like a group header is an ordinary pinned table.
+    func testTableNamedLikeAHeaderStaysAnOrdinaryPin() {
+        let manager = makeManager()
+        manager.pinTable(hostName: "conn", databaseName: "db", tableToPin: "PINNED — x")
+        XCTAssertEqual(sections(manager), ["": ["PINNED — x"]])
+    }
+}
+
 // MARK: - SQLitePinnedTableManager
 
 /// Pins must stay consistent when several threads pin, unpin and migrate at
@@ -1046,4 +1219,22 @@ private func rowCount(inSQLiteFile path: String, table: String) throws -> Int {
         return -1
     }
     return Int(rs.int(forColumnIndex: 0))
+}
+
+/// The names of the columns of `table` of the SQLite file at `path`, in order.
+private func columnNames(inSQLiteFile path: String, table: String) throws -> [String] {
+    let db = FMDatabase(path: path)
+    guard db.open() else {
+        throw db.lastError()
+    }
+    defer { db.close() }
+    let rs = try db.executeQuery("PRAGMA table_info(\(table))", values: nil)
+    defer { rs.close() }
+    var names: [String] = []
+    while rs.next() {
+        if let name = rs.string(forColumn: "name") {
+            names.append(name)
+        }
+    }
+    return names
 }

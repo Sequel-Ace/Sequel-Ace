@@ -75,8 +75,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type;
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type;
 - (NSString *)_pinnedTablesConnectionIdentifier;
+- (NSArray *)_selectedPinnedTableNames;
+- (void)_configurePinMenus;
+- (BOOL)_isTablePinned:(NSString *)tableName;
 
 @property (readwrite, strong) SQLitePinnedTableManager *_SQLitePinnedTableManager ;
+@property (readwrite, strong) SAPinnedTableGroupsController *_pinnedGroupsController;
 
 @end
 
@@ -86,6 +90,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark Initialisation
 
 @synthesize _SQLitePinnedTableManager;
+@synthesize _pinnedGroupsController;
 @synthesize databaseDataInstance;
 
 - (instancetype)init
@@ -111,6 +116,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
 		_SQLitePinnedTableManager = SQLitePinnedTableManager.sharedInstance;
+		_pinnedGroupsController = [[SAPinnedTableGroupsController alloc] initWithManager:_SQLitePinnedTableManager];
+		__weak SPTablesList *weakSelf = self;
+		_pinnedGroupsController.onChange = ^{
+			SPTablesList *strongSelf = weakSelf;
+			if (!strongSelf) return;
+			[[NSNotificationCenter defaultCenter] postNotificationName:strongSelf->pinnedTableNotificationName object:nil];
+		};
 	}
 	
 	return self;
@@ -151,7 +163,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 												 name:SPDocumentTaskEndNotification
 											   object:tableDocumentInstance];
 	
-	[tablesListView registerForDraggedTypes:@[SADragPasteboard.navigatorTableDataType]];
+	[tablesListView registerForDraggedTypes:@[SADragPasteboard.navigatorTableDataType, SAPinnedTableGroupsController.pinnedTableType]];
+	[tablesListView setDraggingSourceOperationMask:(NSDragOperationMove | NSDragOperationCopy) forLocal:YES];
 
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
@@ -725,7 +738,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
   
   if (selectedTableName) {
     [selectedTables addObject:selectedTableName];
-    isPinned = [pinnedTables containsObject:selectedTableName];
+    isPinned = [self _isTablePinned:selectedTableName];
   } else {
     selectedTables = [NSMutableArray arrayWithArray:[filteredTables objectsAtIndexes:indexes]];
     isPinned = [[sender title] isEqualToString:@"Unpin Tables"];
@@ -742,6 +755,37 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
   [tablesListView deselectAll:self];
   [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
   // actual pin toggle will happen when notification is received and processed
+}
+
+#pragma mark -
+#pragma mark Pinned table groups (thin bridge to SAPinnedTableGroupsController)
+
+- (BOOL)_isTablePinned:(NSString *)tableName
+{
+    return [_SQLitePinnedTableManager groupNameForPinnedTableWithHostName:[self _pinnedTablesConnectionIdentifier]
+                                                              databaseName:[tableDocumentInstance database] ?: @""
+                                                                 tableName:tableName] != nil;
+}
+
+- (NSArray *)_selectedPinnedTableNames
+{
+    if (selectedTableName) return @[selectedTableName];
+
+    NSMutableArray *selectedTables = [NSMutableArray array];
+    [[tablesListView selectedRowIndexes] enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+        if ([[self->filteredTableTypes safeObjectAtIndex:index] integerValue] != SPTableTypeNone) {
+            [selectedTables addObject:[self->filteredTables objectAtIndex:index]];
+        }
+    }];
+    return selectedTables;
+}
+
+- (void)_configurePinMenus
+{
+    [_pinnedGroupsController configureMenuItems:@[pinTableMenuItem, pinTableContextMenuItem]
+                                     tableNames:[self _selectedPinnedTableNames]
+                           connectionIdentifier:[self _pinnedTablesConnectionIdentifier]
+                                   databaseName:[tableDocumentInstance database] ?: @""];
 }
 
 
@@ -894,7 +938,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
       // If at least one selected table is not pinned, show the "Pin Tables" menu item
       BOOL isGroupPinned = YES;
       for (NSUInteger index = [indexes firstIndex]; index != NSNotFound; index = [indexes indexGreaterThanIndex:index]) {
-        if (![pinnedTables containsObject:[filteredTables objectAtIndex:index]]) {
+        if (![self _isTablePinned:[filteredTables objectAtIndex:index]]) {
           SPLog(@"Found table %@ isn't pinned", [filteredTables objectAtIndex:index]);
           isGroupPinned = NO;
           break;
@@ -1006,6 +1050,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[[tableSubMenu itemAtIndex:10] setHidden:NO];
 		[[tableSubMenu itemAtIndex:11] setHidden:NO];
 
+		[self _configurePinMenus];
+
 		return;
 	}
 
@@ -1037,7 +1083,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// according to the table types
 	NSMenu *tableSubMenu = [[[NSApp mainMenu] itemWithTag:SPMainMenuTable] submenu];
 
-    BOOL isCurrentSelectionPinned = [pinnedTables containsObject: selectedTableName];
+    BOOL isCurrentSelectionPinned = [self _isTablePinned:selectedTableName];
 
 	// Enable/disable the various menu items depending on the selected item. Also update their titles.
 	// Note, that this should ideally be moved to menu item validation as opposed to using fixed item positions.
@@ -1257,6 +1303,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
 		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Function Syntax",@"Table List : Context Menu : copy CREATE FUNCTION syntax")];
 	}
+
+	[self _configurePinMenus];
 }
 
 - (void)deselectAllTables
@@ -1898,6 +1946,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return NO;
 	}
 
+	// A header row has no table type; only then can its title be a pinned group header.
+	if ([[filteredTableTypes safeObjectAtIndex:rowIndex] integerValue] == SPTableTypeNone) {
+		[_pinnedGroupsController toggleCollapsedForHeaderTitle:[filteredTables objectAtIndex:rowIndex]
+		                                          pinnedHeader:NSLocalizedString(@"PINNED", @"header for pinned tables")
+		                                  connectionIdentifier:[self _pinnedTablesConnectionIdentifier]
+		                                          databaseName:[tableDocumentInstance database] ?: @""];
+		return NO;
+	}
+
 	if ([filteredTableTypes count] == 0) {
 		return (rowIndex != 0 );
 	}
@@ -1986,9 +2043,25 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 }
 
+/**
+ * Tables can be dragged onto the pinned headers to pin them in a group or move them between groups.
+ */
+- (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
+{
+	if (row < 0 || row >= (NSInteger)[filteredTables count]) return nil;
+	if ([[filteredTableTypes safeObjectAtIndex:row] integerValue] == SPTableTypeNone) return nil;
+	return [SAPinnedTableGroupsController pasteboardItemForTableName:[filteredTables objectAtIndex:row]];
+}
+
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
 {
 	NSPasteboard *pboard = [info draggingPasteboard];
+
+	if ([[pboard types] containsObject:SAPinnedTableGroupsController.pinnedTableType]) {
+		SAPinnedDropTarget *target = [SAPinnedTableGroupsController dropTargetForRow:row isDropOn:(operation == NSTableViewDropOn) titles:filteredTables types:filteredTableTypes pinnedHeader:NSLocalizedString(@"PINNED", @"header for pinned tables")];
+		if (!target) return NO;
+		return [_pinnedGroupsController acceptDropOfPasteboard:pboard groupName:target.groupName connectionIdentifier:[self _pinnedTablesConnectionIdentifier] databaseName:[tableDocumentInstance database] ?: @""];
+	}
 
 	// tables were dropped coming from the Navigator
 	if ( [[pboard types] containsObject:SADragPasteboard.navigatorTableDataType] ) {
@@ -2009,6 +2082,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 - (NSDragOperation)tableView:(NSTableView *)aTableView validateDrop:(id < NSDraggingInfo >)info proposedRow:(NSInteger)row proposedDropOperation:(NSTableViewDropOperation)operation
 {
+	if ([[[info draggingPasteboard] types] containsObject:SAPinnedTableGroupsController.pinnedTableType]) {
+		SAPinnedDropTarget *target = [SAPinnedTableGroupsController dropTargetForRow:row isDropOn:(operation == NSTableViewDropOn) titles:filteredTables types:filteredTableTypes pinnedHeader:NSLocalizedString(@"PINNED", @"header for pinned tables")];
+		if (!target) return NSDragOperationNone;
+		[tablesListView setDropRow:target.headerRow dropOperation:NSTableViewDropOn];
+		return NSDragOperationMove;
+	}
+
 	[tablesListView setDropRow:row dropOperation:NSTableViewDropAbove];
 	
 	return NSDragOperationCopy;
@@ -2106,7 +2186,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     [pinnedTables removeAllObjects];
     NSString * pinnedHeader = NSLocalizedString(@"PINNED", @"header for pinned tables");
     while ([tables count] > 0) {
-        if ([[tableTypes objectAtIndex:0] isEqual:@(SPTableTypeNone)] && [[tables objectAtIndex:0] isNotEqualTo:pinnedHeader]) {
+        if ([[tableTypes objectAtIndex:0] isEqual:@(SPTableTypeNone)] && ![SAPinnedTableGroupsController isPinnedHeaderTitle:[tables objectAtIndex:0] pinnedHeader:pinnedHeader]) {
             break;
         }
         [tables removeObjectAtIndex:0];
@@ -2127,19 +2207,19 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
                                           toConnectionIdentifier:connectionIdentifier
                                                     databaseName:databaseName];
 
-    NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:connectionIdentifier databaseName:databaseName];
-    if (tablesToPin.count > 0) {
-        [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
+    // Sections come back in display order; inserting them in reverse keeps that order at the top of the list.
+    NSString *pinnedHeader = NSLocalizedString(@"PINNED", @"header for pinned tables");
+    NSArray<SAPinnedTableSection *> *sections = [_SQLitePinnedTableManager pinnedTableSectionsWithHostName:connectionIdentifier databaseName:databaseName];
+    for (SAPinnedTableSection *section in [sections reverseObjectEnumerator]) {
+        [tables insertObject:[SAPinnedTableGroupsController headerTitleForGroupName:section.groupName pinnedHeader:pinnedHeader] atIndex:0];
         [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
-        NSSortDescriptor* sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO selector:@selector(localizedCompare:)];
-        NSArray* sortedPinnedTables = [tablesToPin sortedArrayUsingDescriptors:@[sortDescriptor]];
-        // sorted in descending alphabetical order because of how the data is subsequently added to tables array
-        for (NSString *tableToPin in sortedPinnedTables) {
-            if ([tables indexOfObject:tableToPin] == NSNotFound) {
-                continue;
-            }
+        if (section.isCollapsed) continue;
+        // tableNames is in display order; each table goes in right below its header, so go backwards
+        for (NSString *tableToPin in [section.tableNames reverseObjectEnumerator]) {
+            NSUInteger originalTableIndex = [tables indexOfObject:tableToPin];
+            if (originalTableIndex == NSNotFound) continue;
             [pinnedTables addObject:tableToPin];
-            SPTableType tableType = (SPTableType) [tableTypes[[tables indexOfObject:tableToPin]] integerValue];
+            SPTableType tableType = (SPTableType) [tableTypes[originalTableIndex] integerValue];
             [tables insertObject:tableToPin atIndex:1];
             [tableTypes insertObject:@(tableType) atIndex:1];
         }
@@ -2151,11 +2231,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     NSString *databaseName = [tableDocumentInstance database];
     NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
 
-    if ([pinnedTables containsObject:originalTableName]) {
-        [_SQLitePinnedTableManager unpinTableWithHostName:connectionIdentifier databaseName:databaseName tableToUnpin:originalTableName];
-        if (![pinnedTables containsObject:newTableName]) {
-            [_SQLitePinnedTableManager pinTableWithHostName:connectionIdentifier databaseName:databaseName tableToPin:newTableName];
-        }
+    // The pin keeps its place and its group; the manager changes both stores in one step.
+    if ([_SQLitePinnedTableManager renamePinnedTableWithHostName:connectionIdentifier databaseName:databaseName from:originalTableName to:newTableName]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
     }
     
@@ -2166,7 +2243,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     NSString *databaseName = [tableDocumentInstance database];
     NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
 
-    if ([pinnedTables containsObject:tableName]) {
+    if ([self _isTablePinned:tableName]) {
         [_SQLitePinnedTableManager unpinTableWithHostName:connectionIdentifier databaseName:databaseName tableToUnpin:tableName];
         [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
     }
@@ -2255,9 +2332,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		for (i = 0; i < [tables count]; i++) {
 			tableType = [[tableTypes objectAtIndex:i] integerValue];
 			if (tableType == SPTableTypeNone) {
-				if ([tables[i] isEqualTo:pinnedHeader]) { // pinned tables start
+				if ([SAPinnedTableGroupsController isPinnedHeaderTitle:tables[i] pinnedHeader:pinnedHeader]) { // pinned tables start, or the next group
 					isPinnedTablesSection = 1;
-					[filteredTables addObject:pinnedHeader];
+					[filteredTables addObject:tables[i]];
 					[filteredTableTypes addObject:@(SPTableTypeNone)];
 				}
 				else { // pinned tables end

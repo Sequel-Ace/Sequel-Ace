@@ -590,6 +590,56 @@ final class PinnedTableMigrationPlannerTests: XCTestCase {
     }
 }
 
+final class SAPinnedTableGroupPlannerTests: XCTestCase {
+
+    func testGroupNamesAreNormalizedAndOrdered() {
+        XCTAssertEqual(SAPinnedTableGroupPlanner.normalizedGroupName("  Reporting \n"), "Reporting")
+        XCTAssertEqual(SAPinnedTableGroupPlanner.normalizedGroupName(" \n "), "")
+        XCTAssertEqual(
+            SAPinnedTableGroupPlanner.orderedGroupNames([" zeta", "", "Alpha", "alpha", " \n"]),
+            ["alpha", "Alpha", "zeta"]
+        )
+    }
+
+    /// Names that compare equal ignoring case have one order, whatever order they arrive in.
+    func testOrderIsDeterministicForNamesDifferingOnlyInCase() {
+        let names = ["beta", "Beta", "BETA", "alpha"]
+        let expected = SAPinnedTableGroupPlanner.orderedGroupNames(names)
+        XCTAssertEqual(expected.first, "alpha")
+        XCTAssertEqual(Set(expected), Set(names))
+        for permutation in [names.reversed(), [names[1], names[3], names[0], names[2]], [names[2], names[0], names[1], names[3]]] {
+            XCTAssertEqual(SAPinnedTableGroupPlanner.orderedGroupNames(Array(permutation)), expected)
+            XCTAssertEqual(SAPinnedTableGroupPlanner.orderedTableNames(Array(permutation)), expected)
+        }
+    }
+
+    func testDropTargetsTheSectionTheDropIsIn() {
+        // PINNED, orders, PINNED — A, users, TABLES, PINNED — fake (a table), customers
+        let titles = ["PINNED", "orders", "PINNED — A", "users", "TABLES", "PINNED — fake", "customers"]
+        let isHeader = [true, false, true, false, true, false, false]
+        func target(_ row: Int, on: Bool) -> (Int, String)? {
+            SAPinnedTableGroupPlanner.dropTarget(row: row, isDropOn: on, titles: titles, isHeader: isHeader, pinnedHeader: "PINNED").map { ($0.headerRow, $0.groupName) }
+        }
+        XCTAssertEqual(target(0, on: true)?.1, "")
+        XCTAssertEqual(target(1, on: true)?.0, 0)
+        XCTAssertEqual(target(2, on: true)?.1, "A")
+        XCTAssertEqual(target(3, on: true)?.1, "A")
+        XCTAssertEqual(target(4, on: false)?.1, "A", "just below the last table of a group")
+        XCTAssertNil(target(4, on: true), "the TABLES header is not a pinned section")
+        XCTAssertNil(target(6, on: true), "a table named like a header is not a header")
+        XCTAssertNil(SAPinnedTableGroupPlanner.dropTarget(row: 0, isDropOn: true, titles: [], isHeader: [], pinnedHeader: "PINNED").map { $0.headerRow })
+    }
+
+    func testHeaderTitleRoundTrips() {
+        XCTAssertEqual(SAPinnedTableGroupPlanner.headerTitle(pinnedHeader: "PINNED", groupName: ""), "PINNED")
+        let title = SAPinnedTableGroupPlanner.headerTitle(pinnedHeader: "PINNED", groupName: "Reporting")
+        XCTAssertEqual(title, "PINNED — Reporting")
+        XCTAssertEqual(SAPinnedTableGroupPlanner.groupName(fromHeaderTitle: title, pinnedHeader: "PINNED"), "Reporting")
+        XCTAssertNil(SAPinnedTableGroupPlanner.groupName(fromHeaderTitle: "PINNED", pinnedHeader: "PINNED"))
+        XCTAssertNil(SAPinnedTableGroupPlanner.groupName(fromHeaderTitle: "orders", pinnedHeader: "PINNED"))
+    }
+}
+
 final class SPOptimizedFieldTypeEstimatorTests: XCTestCase {
 
     func testNormalizedFieldType() {
