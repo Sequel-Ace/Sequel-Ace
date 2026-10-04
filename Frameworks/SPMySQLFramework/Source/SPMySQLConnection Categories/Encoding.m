@@ -116,9 +116,13 @@
 		      theEncoding, candidates);
 	}
 
-	// Run a query to set the connection encoding
+	// Run a query to set the connection encoding. The count of the session's reports is taken
+	// before each attempt, so the report that comes back with it can be told apart from one
+	// another thread's statement brought.
 	NSString *characterSetToSet = nil;
+	NSUInteger reportsBeforeTheChange = 0;
 	for (NSString *candidate in candidates) {
+		reportsBeforeTheChange = [valueEscaper reportsSoFar];
 		[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [candidate mySQLTickQuotedString]]];
 		if (![self queryErrored]) {
 			characterSetToSet = candidate;
@@ -133,7 +137,7 @@
 	// query path, so the client library followed it only if the session reported it. A session
 	// that still names the character set from before does not report its changes, whatever its
 	// variable list said - and from here the record is the better guide than the stale handle.
-	[valueEscaper recordCharacterSetSetByConnection:characterSetToSet];
+	[valueEscaper recordCharacterSetSetByConnection:characterSetToSet reportsBefore:reportsBeforeTheChange];
 
 	// Connection encoding was successfully set, update the instance settings. SET NAMES sets what
 	// the server reads statements in along with what it sends results in, so the two agree again.

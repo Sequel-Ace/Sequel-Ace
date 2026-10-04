@@ -126,6 +126,14 @@ public final class SAConnectionEscaper: NSObject {
     /// never reported at all. Until a report has arrived, what the session reported in its
     /// variables is the only ground truth there is.
     private var aCharacterSetHasBeenReported = false
+    /// How many times a session has reported its state, which is once per statement.
+    ///
+    /// A character set the connection sets itself is judged by the report its own statement
+    /// brought back, and that judgement is made after the statement has let go of the connection -
+    /// so another thread's statement can land in between. Counting the reports tells the two
+    /// apart: one more than before the statement is this statement's, and any other number means
+    /// something else has been through, where the comparison says nothing.
+    private var sessionReportCount: UInt = 0
     /// A reported name a `SET NAMES` of the connection's own proved the session does not follow.
     ///
     /// Kept apart from the flag above because it has to survive the next statement: the fallback
@@ -204,6 +212,7 @@ public final class SAConnectionEscaper: NSObject {
                               isHandshake: Bool, characterSetWasReported: Bool) {
         lock.lock()
         defer { lock.unlock() }
+        sessionReportCount &+= 1
         if isHandshake {
             handshakeCharacterSet = characterSet
             sessionsStartWithNoBackslashEscapes = noBackslashEscapes
@@ -243,6 +252,14 @@ public final class SAConnectionEscaper: NSObject {
         sessionHasOpenTransaction = openTransaction
     }
 
+    /// How many reports the session has made, taken before a character set is set so the report
+    /// that follows can be told apart from another thread's.
+    @objc public var reportsSoFar: UInt {
+        lock.lock()
+        defer { lock.unlock() }
+        return sessionReportCount
+    }
+
     /// Whether the session last reported an open transaction.
     @objc public var sessionReportedOpenTransaction: Bool {
         lock.lock()
@@ -263,11 +280,21 @@ public final class SAConnectionEscaper: NSObject {
     /// record right and the client's handle stale, so trusting the handle would escape values for
     /// the character set the session was in before - `BF 27` as latin1 while the session reads
     /// GBK, where `BF 5C` is one character and the quote is left to end the literal.
-    /// - Parameter characterSet: The character set the connection just set.
-    @objc(recordCharacterSetSetByConnection:)
-    public func recordCharacterSetSetByConnection(_ characterSet: String) {
+    /// - Parameters:
+    ///   - characterSet: The character set the connection just set.
+    ///   - reportsBefore: ``reportsSoFar`` as it stood before the statement ran.
+    @objc(recordCharacterSetSetByConnection:reportsBefore:)
+    public func recordCharacterSetSetByConnection(_ characterSet: String, reportsBefore: UInt) {
         lock.lock()
         defer { lock.unlock() }
+        // Only this statement's own report says anything about whether the session follows. If
+        // another statement has been through since - a `SET NAMES` on another thread, a retry
+        // after a reconnect - the name on record belongs to that one, and comparing it with what
+        // was set here would mark a fresh report stale and send the next value out for the
+        // character set this statement asked for rather than the one the session is in.
+        guard sessionReportCount == reportsBefore &+ 1 else {
+            return
+        }
         let sessionFollowed = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
         if sessionFollowed {
             aCharacterSetHasBeenReported = true

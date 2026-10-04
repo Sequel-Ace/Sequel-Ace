@@ -1568,12 +1568,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// rather than left in a character set nothing can convert for.
 		retrievedEncoding = [startupPlan characterSetWithoutStatements];
 		for (SASessionCharacterSetMove *move in [startupPlan characterSetMoves]) {
+			NSUInteger reportsBeforeTheMove = [valueEscaper reportsSoFar];
 			[self queryString:[move statement]];
 			if (![self queryErrored]) {
 				retrievedEncoding = [move characterSet];
 				// The move settles what the variable list only suggested: whether this session's
-				// changes are reported to the client at all.
-				[valueEscaper recordCharacterSetSetByConnection:retrievedEncoding];
+				// changes are reported to the client at all. Judged by the report this statement
+				// brought back, not by whatever the escaper holds once it has let go.
+				[valueEscaper recordCharacterSetSetByConnection:retrievedEncoding reportsBefore:reportsBeforeTheMove];
 				break;
 			}
 			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", [move statement], [self lastErrorMessage]);
