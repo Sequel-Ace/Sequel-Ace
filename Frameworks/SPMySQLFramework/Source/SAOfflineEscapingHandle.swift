@@ -118,6 +118,14 @@ public final class SAConnectionEscaper: NSObject {
     /// with. Until then there is no telling a server that does not report changes from one
     /// that does and happens to report the same name.
     private var sessionReportsCharacterSetChanges = false
+    /// A reported name a `SET NAMES` of the connection's own proved the session does not follow.
+    ///
+    /// Kept apart from the flag above because it has to survive the next statement: the fallback
+    /// in ``recordSession(characterSet:noBackslashEscapes:openTransaction:isHandshake:)`` reads a
+    /// reported name that differs from the handshake as a reported change, and a stale name
+    /// usually does differ - so without this the flag would come straight back on and the stale
+    /// name would decide after all.
+    private var staleSessionCharacterSet: String?
     private var sessionHasOpenTransaction = false
     private var handleCharacterSet: String?
     private var handleUsesNoBackslashEscapes = false
@@ -136,14 +144,25 @@ public final class SAConnectionEscaper: NSObject {
     ///   - characterSetOnRecord: The connection's character set on record.
     ///   - sessionCharacterSet: The character set the session last reported, if known.
     ///   - handshakeCharacterSet: The character set the session was connected with, if known.
+    ///   - sessionReportIsStale: Whether a `SET NAMES` of the connection's own showed that the
+    ///     session does not follow what it reports.
     ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
     /// - Returns: The character set to escape for, or nil if there is none.
     static func characterSetForEscaping(onRecord characterSetOnRecord: String?,
                                         session sessionCharacterSet: String?,
                                         handshake handshakeCharacterSet: String?,
                                         sessionReportsChanges: Bool,
+                                        sessionReportIsStale: Bool,
                                         sessionIsBeingReplaced: Bool) -> String? {
         if sessionIsBeingReplaced {
+            return characterSetOnRecord
+        }
+        // A report the connection has caught out decides nothing, neither as the guide nor
+        // through the fallback below, which would read it as a change because a stale name
+        // usually differs from the handshake. The record is where the connection's own changes
+        // went, so it is the only thing left that knows what the session is in. Without a record
+        // there is nothing to escape for, and the value is refused rather than escaped wrongly.
+        if sessionReportIsStale {
             return characterSetOnRecord
         }
         // Once this server has been seen reporting a change, what it reports is the guide - also
@@ -179,8 +198,15 @@ public final class SAConnectionEscaper: NSObject {
             // on a server that does not report changes, and carrying the flag over would let the
             // handshake name override what the connection sets afterwards.
             sessionReportsCharacterSetChanges = false
+            staleSessionCharacterSet = nil
         }
-        if !isHandshake, let characterSet, let handshakeCharacterSet,
+        // A report that has moved off the name caught out is a report again: the client's view
+        // followed something, so what it says can be believed from here.
+        if let stale = staleSessionCharacterSet, let characterSet,
+           !Self.namesTheSameCharacterSet(characterSet, stale) {
+            staleSessionCharacterSet = nil
+        }
+        if !isHandshake, staleSessionCharacterSet == nil, let characterSet, let handshakeCharacterSet,
            characterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
             // A reported name that differs from the one the session was connected with can only
             // have come from the server reporting a change. This is the fallback for a session
@@ -236,7 +262,9 @@ public final class SAConnectionEscaper: NSObject {
     public func recordCharacterSetSetByConnection(_ characterSet: String) {
         lock.lock()
         defer { lock.unlock() }
-        sessionReportsCharacterSetChanges = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
+        let sessionFollowed = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
+        sessionReportsCharacterSetChanges = sessionFollowed
+        staleSessionCharacterSet = sessionFollowed ? nil : sessionCharacterSet
     }
 
     /// Whether two character-set names mean the same character set.
@@ -283,6 +311,7 @@ public final class SAConnectionEscaper: NSObject {
         defer { lock.unlock() }
         handshakeCharacterSet = nil
         sessionCharacterSet = nil
+        staleSessionCharacterSet = nil
         sessionUsesNoBackslashEscapes = sessionsStartWithNoBackslashEscapes
         sessionHasOpenTransaction = false
         sessionReportsCharacterSetChanges = false
@@ -309,6 +338,7 @@ public final class SAConnectionEscaper: NSObject {
                                                               session: sessionCharacterSet,
                                                               handshake: handshakeCharacterSet,
                                                               sessionReportsChanges: sessionReportsCharacterSetChanges,
+                                                              sessionReportIsStale: staleSessionCharacterSet != nil,
                                                               sessionIsBeingReplaced: sessionIsBeingReplaced) else {
             return -1
         }
