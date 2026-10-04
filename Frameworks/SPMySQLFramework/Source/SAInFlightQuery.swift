@@ -100,6 +100,16 @@ public final class SAInFlightQuery: NSObject {
         waitingServerThread = 0
     }
 
+    /// Whether this query is still the one waiting on the server. Never waits.
+    /// - Parameter generation: The number of the query to ask about.
+    /// - Returns: Whether that query is the one waiting.
+    @objc(generationIsWaiting:)
+    public func generationIsWaiting(_ generation: UInt) -> Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return generation != 0 && waitingGeneration == generation
+    }
+
     /// Reserves a waiting query for a kill request, so that no other query can start waiting in
     /// the same session until the request has gone out.
     /// - Parameter generation: The number of the query to kill.

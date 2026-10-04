@@ -957,6 +957,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		return;
 	}
 
+	// The query that was to be stopped has finished if it is no longer the one waiting. Reaching
+	// the server can take a while, and another query can have taken the connection by now; what
+	// follows would end that one's session and roll back a transaction nobody asked to stop.
+	if (![inFlightQuery generationIsWaiting:theQueryBeingStopped]) return;
+
 	// A full reconnect is required at this point to force a cancellation.  As the
 	// connection may have finished processing the query at this point (depending how
 	// long the connection attempt took), check whether we can skip the reconnect.

@@ -75,6 +75,27 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(peerSawTheSocketClose())
     }
 
+    /// Only the query that is waiting says it is waiting.
+    ///
+    /// A stop whose kill request took a while asks this before it ends the session: by then the
+    /// query it meant can have finished and another can hold the connection, and ending that
+    /// one's session would roll back work nobody asked to stop.
+    func testOnlyTheWaitingQuerySaysItIsWaiting() {
+        XCTAssertFalse(inFlightQuery.generationIsWaiting(5), "nothing waits before the first query")
+
+        inFlightQuery.beginWaiting(forGeneration: 5, onSocket: descriptors[0], serverThread: 42)
+        XCTAssertTrue(inFlightQuery.generationIsWaiting(5))
+        XCTAssertFalse(inFlightQuery.generationIsWaiting(4))
+        XCTAssertFalse(inFlightQuery.generationIsWaiting(0), "no query has that number")
+
+        inFlightQuery.endWaiting(forGeneration: 5)
+        XCTAssertFalse(inFlightQuery.generationIsWaiting(5), "it has finished")
+
+        inFlightQuery.beginWaiting(forGeneration: 6, onSocket: descriptors[0], serverThread: 42)
+        XCTAssertFalse(inFlightQuery.generationIsWaiting(5), "and the one after it is not it")
+        XCTAssertTrue(inFlightQuery.generationIsWaiting(6))
+    }
+
     /// A stale end does not end the query that followed.
     func testAStaleEndDoesNotEndTheQueryThatFollowed() {
         inFlightQuery.beginWaiting(forGeneration: 6, onSocket: descriptors[0], serverThread: 42)
