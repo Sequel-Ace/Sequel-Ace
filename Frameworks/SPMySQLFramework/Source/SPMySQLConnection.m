@@ -124,6 +124,22 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 #pragma mark -
 #pragma mark Getters and Setters
 
+- (BOOL)lastQueryWasCancelled
+{
+	@synchronized (self) {
+		return lastQueryWasCancelled;
+	}
+}
+
+- (void)setLastQueryWasCancelled:(BOOL)cancelled
+{
+	// Some callers issue KILL through another connection and mark cancellation here.
+	@synchronized (self) {
+		if (cancelled) [self.sessionAccess recordQueryCancellation];
+		lastQueryWasCancelled = cancelled;
+	}
+}
+
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
@@ -361,6 +377,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		proxy = nil;
 		proxyStateChangeNotificationsIgnored = NO;
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
+		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -893,6 +910,18 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	}
 }
 
+/**
+ * Records that a cancellation ended the native read, so the session's next use recovers.
+ *
+ * The decision to end it is the cancellation's - it holds the grace period and knows whether the
+ * server accepted the kill for a session with a transaction open. What the session's own
+ * bookkeeping needs is the consequence.
+ */
+- (void)noteNativeReadEndedByCancellation
+{
+	[self.sessionAccess noteCancellationEndedTheNativeRead];
+}
+
 @end
 
 #pragma mark -
@@ -953,6 +982,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
+		[self _unlockConnection];
+		return NO;
+	}
+
+	// Reserve the cancellation handle while the native connection is locked.
+	NSError *socketError = nil;
+	if (![self.sessionAccess trackSocket:mySQLConnection->net.fd serverThreadID:mySQLConnection->thread_id error:&socketError]) {
+		[self _updateLastErrorMessage:socketError.localizedDescription];
+		mysql_close(mySQLConnection);
+		mySQLConnection = NULL;
+		state = SPMySQLDisconnected;
 		[self _unlockConnection];
 		return NO;
 	}
@@ -1137,7 +1177,26 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (password) {
 		thePassword = [password cStringUsingEncoding:connectEncodingNS];
 	} else if ([delegate respondsToSelector:@selector(keychainPasswordForConnection:)]) {
-        thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
+		NSString *delegatePassword = [delegate keychainPasswordForConnection:self];
+
+		// A non-empty delegate message abandons the attempt without contacting the server.
+		if (!delegatePassword && [delegate respondsToSelector:@selector(credentialErrorMessageForConnection:)]) {
+			NSString *credentialError = [delegate credentialErrorMessageForConnection:self];
+
+			if ([credentialError length]) {
+				if (isMaster) {
+					[self _updateLastErrorMessage:credentialError];
+					[self _updateLastErrorID:CR_UNKNOWN_ERROR];
+					[self _updateLastSqlstate:@"HY000"];
+				}
+
+				mysql_close(theConnection);
+
+				return NULL;
+			}
+		}
+
+		thePassword = [delegatePassword cStringUsingEncoding:connectEncodingNS];
 	}
 
 	// If set to use a socket and a socket was supplied, use it; otherwise, search for a socket to use
@@ -1189,32 +1248,53 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (mysql_options(theConnection, MYSQL_OPT_TLS_CIPHERSUITES, (const void *)theTLSCipherSuites)) {
 			SPLog(@"Failed to set default TLS 1.3 cipher suites; continuing with libmysqlclient defaults.");
 		}
-		enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_REQUIRED;
-		if(mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode)) {
-			if(isMaster) {
-				[self _updateLastErrorMessage:@"libmysqlclient is missing support for MYSQL_OPT_SSL_MODE"];
-				[self _updateLastSqlstate:@"HY000"];
-				[self _updateLastErrorID:2026];
-			}
-			return NULL;
-		}
-    } else {
-        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_PREFERRED;
-        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
     }
 
-    // A failed attempt frees every option that was set on this handle unless the client asks
-    // to keep them, and the retry below has to run on the same connection timeout as the
-    // attempt before it rather than on the system default.
+	// An attempt that requires TLS is abandoned when the mode cannot be applied, as
+	// libmysqlclient otherwise falls back to SSL_MODE_PREFERRED and its plaintext fallback.
+	BOOL requiresTLS = [SACleartextAuthPolicy requiresTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL];
+	enum mysql_ssl_mode opt_ssl_mode = requiresTLS ? SSL_MODE_REQUIRED : SSL_MODE_PREFERRED;
+
+	if (mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode) && requiresTLS) {
+		if (isMaster) {
+			[self _updateLastErrorMessage:@"libmysqlclient is missing support for MYSQL_OPT_SSL_MODE"];
+			[self _updateLastSqlstate:@"HY000"];
+			[self _updateLastErrorID:CR_SSL_CONNECTION_ERROR];
+		}
+
+		mysql_close(theConnection);
+
+		return NULL;
+	}
+
+    // A failed attempt frees every option set on this handle unless the client asks to keep them,
+    // so the retry below would run without the timeouts set above - on the system default, which
+    // is what the side connection's limits are there to avoid.
     unsigned long connectClientFlags = [self clientFlags] | CLIENT_REMEMBER_OPTIONS;
 
+    uint64_t connectStart_t = _monotonicTime();
     MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
 
     //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL.
-    // Only a failed TLS negotiation is: a host that never answered fails the same way again, and
-    // credentials the server refused, or that may already have gone out over TLS before the
-    // connection was lost, must not be sent a second time unencrypted.
-    if(!useSSL && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
+    // Only a failed TLS negotiation is retried that way: a host that never answered fails the
+    // same way again, and credentials the server refused, or that may already have gone out over
+    // TLS before the connection was lost, must not be sent a second time unencrypted.
+    if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus && [SAConnectionRetryPolicy shouldRetryWithoutTLSAfterErrorID:mysql_errno(theConnection)]) {
+        // On what is left of the attempt's budget, not on a second helping of it: the flag above
+        // keeps the timeout's value rather than a deadline, so a TLS negotiation that used the
+        // whole budget would otherwise be followed by an attempt entitled to all of it again.
+        NSNumber *retryConnectTimeout = [SAConnectionRetryPolicy retryConnectTimeoutForConnectTimeout:connectTimeout
+                                                                                        secondsSpent:_timeIntervalSinceMonotonicTime(connectStart_t)];
+        if (retryConnectTimeout) {
+            NSUInteger retryTimeout = [retryConnectTimeout unsignedIntegerValue];
+            if (retryTimeout > 0) {
+                mysql_options(theConnection, MYSQL_OPT_CONNECT_TIMEOUT, (const void *)&retryTimeout);
+            }
+            opt_ssl_mode = SSL_MODE_DISABLED;
+            mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
+            connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
+        }
+    }
         enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
         connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, connectClientFlags);
@@ -1248,6 +1328,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self _updateLastErrorID:mysql_errno(theConnection)];
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			[self _updateLastSqlstate:_stringForCStringWithEncoding(mysql_sqlstate(theConnection),NSISOLatin1StringEncoding)];
+
+			// Replaces the reported TLS failure with the reason the attempt required TLS.
+			if (enableClearTextPlugin && !useSSL && mysql_errno(theConnection) == CR_SSL_CONNECTION_ERROR) {
+				[self _updateLastErrorMessage:NSLocalizedString(@"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.", @"cleartext authentication plugin requires TLS error")];
+			}
 		}
 
 		// The handle keeps its options and its own allocations after a failed attempt, so it
@@ -1320,6 +1405,15 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
+    BOOL restored = [self.sessionAccess reconnectAllowingRetries:canRetry operation:^BOOL {
+        return [self _performReconnectAllowingRetries:canRetry];
+    }];
+    // Explicit disconnect can retire a completed session while this caller waits.
+    return restored && state == SPMySQLConnected && !userTriggeredDisconnect;
+}
+
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry
+{
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
@@ -1327,30 +1421,6 @@ asm(".desc ___crashreporter_info__, 0x10");
     NSString *timeZoneIdentifierToRestore = nil;
 
 	@autoreleasepool {
-		// Check whether a reconnection attempt is already being made - if so, wait
-		// and return the status of that reconnection attempt.  This improves threaded
-		// use of the connection by preventing reconnect races.
-		if (reconnectingThread && !pthread_equal(reconnectingThread, pthread_self())) {
-
-			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
-			// takes less than the requested 0.1s, sleep instead.
-			while (reconnectingThread) {
-                SPLog(@"a reconnection attempt is already being made, waiting");
-
-				uint64_t loopIterationStart_t = _monotonicTime();
-
-				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.1) {
-					usleep(100000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
-				}
-			}
-
-			// Continue only if the reconnection being waited on was a background attempt
-			if (!(state == SPMySQLConnectionLostInBackground && canRetry)) {
-				return (state == SPMySQLConnected);
-			}
-		}
-
 		if ([[NSThread currentThread] isCancelled]) {
             SPLog(@"NSThread currentThread] isCancelled, returning");
 
@@ -1522,7 +1592,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-            [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+            BOOL sessionRestored = [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
@@ -1538,6 +1608,13 @@ asm(".desc ___crashreporter_info__, 0x10");
                     self.timeZoneIdentifier = timeZoneIdentifierToRestore;
                 }
                 [self _recoverFromCancelledReconnectMayDisconnect:YES];
+            } else if (!sessionRestored) {
+                // Never hand a session with the server's default time zone to a query.
+                // Preserve all saved state so the next use can retry restoration.
+                [self _disconnectPreservingProxyReconnect:YES];
+                state = SPMySQLConnectionLostInBackground;
+                reconnectingThread = NULL;
+                return NO;
             } else {
                 reconnectSucceeded = YES;
 
@@ -1840,6 +1917,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self _noteUncommittedWorkLostWithSession];
 			[self _unlockConnection];
 		}
+		[self.sessionAccess clearSocket];
 		state = SPMySQLDisconnected;
 	}
 
@@ -1855,8 +1933,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 
 	// If a query is active, cancel it - without recording a request to stop it: a retry that is
-	// reconnecting would otherwise find that request and stop, although nobody asked it to.
-	[self _cancelCurrentQueryRecordingRequest:NO];
+	// reconnecting would otherwise find that request and stop, although nobody asked it to. Through
+	// the session's own marker, so this teardown counts as cancelling the native read rather than
+	// the caller whose reconnect is doing the tearing down.
+	[self.sessionAccess cancelActiveQuery:^{ [self _cancelCurrentQueryRecordingRequest:NO]; }];
 
 	state = SPMySQLDisconnecting;
 
@@ -1880,6 +1960,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _noteUncommittedWorkLostWithSession];
 	}
 
+	[self.sessionAccess clearSocket];
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.
@@ -2012,7 +2093,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self setEncodingUsesLatin1Transport:encodingUsesLatin1Transport];
 }
 
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier
@@ -2026,12 +2107,7 @@ asm(".desc ___crashreporter_info__, 0x10");
         [self setEncodingUsesLatin1Transport:useLatin1Transport];
     }
 
-    if ([timeZoneIdentifier length]) {
-        // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
-        // bypasses its equality guard and re-runs SET time_zone after reconnect.
-        self.timeZoneIdentifier = nil;
-        [self updateTimeZoneIdentifier:timeZoneIdentifier];
-    }
+    return [SASessionTimeZoneRestorer restoreTimeZoneIdentifier:timeZoneIdentifier onConnection:self];
 }
 
 /**

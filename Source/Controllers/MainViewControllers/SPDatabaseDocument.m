@@ -135,6 +135,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void) closeAndDisconnect;
 
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection;
+- (NSString *)credentialErrorMessageForConnection:(SPMySQLConnection *)connection;
 - (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection;
 
 @end
@@ -306,11 +307,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Hide the activity list
     [self setActivityPaneHidden:@1];
-
-    // Load additional nibs, keeping track of the top-level objects to allow correct release
-    NSArray *connectionDialogTopLevelObjects = nil;
-    NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ConnectionErrorDialog" bundle:[NSBundle mainBundle]];
-    [nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects];
 
     // The task progress window, indicator and layer are loaded and configured
     // by SATaskController (created in -initWithWindowController:).
@@ -863,13 +859,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
-    // We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
-    // so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
-    if ([tablesListInstance hasNonTableObjects]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Database Rename Unsupported", @"databsse rename unsupported message") message:[NSString stringWithFormat:NSLocalizedString(@"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.", @"databsse rename unsupported informative message"), selectedDatabase] callback:nil];
-        return;
-    }
-
+    // Tables and views are moved; SPDatabaseRename refuses a database holding
+    // triggers, routines or events with a message naming them.
     [databaseRenameNameField setStringValue:selectedDatabase];
     [renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
@@ -5022,14 +5013,36 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbActionRename setTablesList:tablesListInstance];
     [dbActionRename setConnection:[self getConnection]];
 
+    // A connection whose settings could not be restored was re-established
+    // before the rename returned; one that could not be re-established is
+    // not asked for the databases and tables to show.
     if ([dbActionRename renameDatabaseFrom:[self createDatabaseInfo] to:newDatabaseName]) {
-        [self setDatabases];
-        [self selectDatabase:newDatabaseName item:nil];
-        // inform observers that a new database was added
-        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        if ([dbActionRename connectionUsable]) {
+            [self setDatabases];
+            [self selectDatabase:newDatabaseName item:nil];
+            // inform observers that a new database was added
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
+        if ([dbActionRename warningDescription]) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[dbActionRename warningDescription] callback:nil];
+        }
     }
     else {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
+        NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName];
+        if ([dbActionRename failureDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename failureDescription]];
+        }
+        if ([dbActionRename warningDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename warningDescription]];
+        }
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:message callback:nil];
+        // A rename that stopped after the target was created leaves objects
+        // split across the two databases: show them where they are now.
+        if ([dbActionRename changedServer] && [dbActionRename connectionUsable]) {
+            [self setDatabases];
+            [tablesListInstance updateTables:self];
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
     }
 }
 
@@ -5972,7 +5985,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection
 {
-    return [connectionController passwordForConnectionRequest];
+    return [connectionController passwordForConnectionRequestForConnection:connection];
+}
+
+/**
+ * Invoked when the current connection could not supply a password, to describe why.
+ */
+- (NSString *)credentialErrorMessageForConnection:(SPMySQLConnection *)connection
+{
+    if ([connectionController type] != SPAWSIAMConnection) return nil;
+
+    return [[connectionController lastAWSIAMTokenErrorForConnection:connection] localizedDescription];
 }
 
 /**
@@ -6031,19 +6054,21 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // and we are not terminating
     if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
 
-        SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
+        SPLog(@"not terminating, parentWindow isVisible, showing connection lost sheet");
         // Ensure the window isn't miniaturized
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];
         }
         [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
 
-        // Display the connection error dialog and wait for the return code
-        [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
-        connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
+        // Display the connection error sheet and wait for the return code
+        SAConnectionLostSheetCopy *sheetCopy = [SAConnectionLostSheetCopy sheetCopyForAWSIAMTokenError:[connectionController lastAWSIAMTokenErrorForConnection:connection]
+                                                                                   isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)
+                                                                                           awsProfile:[connectionController awsProfile]];
 
-        [NSApp endSheet:connectionErrorDialog];
-        [connectionErrorDialog orderOut:nil];
+        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
+            ? SPMySQLConnectionLostReconnect
+            : SPMySQLConnectionLostDisconnect;
 
         [taskController resetQueryTimer];
 
@@ -6073,14 +6098,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
     });
-}
-
-/**
- * Invoked when user dismisses the error sheet displayed as a result of the current connection being lost.
- */
-- (IBAction)closeErrorConnectionSheet:(id)sender
-{
-    [NSApp stopModalWithCode:[sender tag]];
 }
 
 /**

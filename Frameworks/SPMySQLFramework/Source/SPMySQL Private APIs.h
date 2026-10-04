@@ -37,10 +37,14 @@
 #import "Locking.h"
 #import "Conversion.h"
 
+@class SAConnectionSessionAccess;
+
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
 // clang warn that the category's @implementation lacks their definitions).
 @interface SPMySQLConnection ()
+
+@property (readonly, strong) SAConnectionSessionAccess *sessionAccess;
 
 + (NSArray<NSString *> *)defaultSSLCipherList;
 + (NSArray<NSString *> *)legacySSLCipherList;
@@ -56,6 +60,7 @@
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 /** Whether a recently used connection's socket already reports a lost peer. */
@@ -78,7 +83,7 @@
 - (void)_updateConnectionVariables;
 - (BOOL)_serverIsProxySQL;
 - (void)_restoreConnectionVariables;
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier;
@@ -130,6 +135,11 @@
 - (void)_noteUncommittedWorkLostWithSession;
 /** Whether a statement is refused because a session before it was dropped with uncommitted work, using up that report; the connection must be held. */
 - (BOOL)_refusesStatementForLostUncommittedWork:(NSString *)query;
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;

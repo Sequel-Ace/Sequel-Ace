@@ -10,6 +10,43 @@
 import Foundation
 @_implementationOnly import MySQLClient
 
+/// MySQL's rules for where `#` and `--` comments start and end, shared by the
+/// comment strippers in this framework (`SADatabaseAssertion`) and in the app
+/// (`SPCustomQuerySQLClassifier`, the MCP read-only guard and placeholder
+/// binder) so every scanner recognises the same comments. Each predicate has a
+/// `Unicode.Scalar` form for scanners that walk scalars and a `Character` form
+/// for scanners that walk Characters.
+public enum SASQLCommentSyntax {
+
+    /// Whether a scalar may follow `--` for it to start a comment: MySQL's
+    /// lexer requires a space or control character there (tab, newline,
+    /// carriage return, form feed, vertical tab and DEL).
+    public static func isCommentWhitespace(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value <= 0x20 || scalar.value == 0x7F
+    }
+
+    /// `Character` form of `isCommentWhitespace(_:)`; "\r\n" qualifies.
+    public static func isCommentWhitespace(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { isCommentWhitespace($0) }
+    }
+
+    /// Whether a scalar ends a `#` or `-- ` comment. MySQL ends them at a line
+    /// feed only; a lone carriage return stays part of the comment. In a CRLF
+    /// line ending the carriage return and the line feed are separate scalars,
+    /// so the line feed ends the comment.
+    public static func endsLineComment(_ scalar: Unicode.Scalar) -> Bool {
+        scalar == "\n"
+    }
+
+    /// `Character` form of `endsLineComment(_:)`. Swift folds "\r\n" into a
+    /// single `Character`, so a comparison with "\n" alone never matches a CRLF
+    /// line ending and the comment would swallow the rest of the query, hiding
+    /// e.g. a `USE`, `DROP DATABASE` or `DELETE` that the server executes.
+    public static func endsLineComment(_ character: Character) -> Bool {
+        character == "\n" || character == "\r\n"
+    }
+}
+
 @objcMembers
 public final class SADatabaseAssertionError: NSObject {
     public let errorID: UInt
@@ -680,6 +717,11 @@ final class SADatabaseAssertion: NSObject {
         ) != nil
     }
 
+    /// Returns the change a query makes to the connection's default database:
+    /// `.selected` for `USE`, `.dropped` for `DROP DATABASE`/`DROP SCHEMA`, or
+    /// nil when the default database is left untouched. Comments are stripped
+    /// first, under the server's executable-comment gates, so an ordinary
+    /// comment can neither hide the keyword nor fake one.
     static func databaseContextChange(
         _ query: String,
         serverVersion: Int,
@@ -708,6 +750,9 @@ final class SADatabaseAssertion: NSObject {
         return nil
     }
 
+    /// Cheap pre-check before comment stripping: returns true when the query
+    /// starts, after leading whitespace, with a comment or with the keyword
+    /// `USE` or `DROP`, so it might select or drop a database.
     static func queryCouldChangeDatabaseContext(_ query: String) -> Bool {
         guard let start = query.firstIndex(where: { !$0.isWhitespace }) else {
             return false
@@ -725,6 +770,8 @@ final class SADatabaseAssertion: NSObject {
     // Keep this implementation's lexical rules and executable-comment gates
     // mirrored in SPCustomQuerySQLClassifier.swift. The framework invalidates
     // connection assertion state; the app copy derives a batch's database.
+    // Where `#` and `--` comments start and end comes from SASQLCommentSyntax,
+    // which both use.
     static func stripSQLComments(
         _ source: String,
         serverVersion: Int,
@@ -764,7 +811,7 @@ final class SADatabaseAssertion: NSObject {
             if character == "#" {
                 result.append(" ")
                 index += 1
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !SASQLCommentSyntax.endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue
@@ -774,10 +821,10 @@ final class SADatabaseAssertion: NSObject {
                index + 1 < characters.count,
                characters[index + 1] == "-",
                (index + 2 == characters.count
-                || characters[index + 2].unicodeScalars.allSatisfy({ $0.value <= 0x20 })) {
+                || SASQLCommentSyntax.isCommentWhitespace(characters[index + 2])) {
                 result.append(" ")
                 index += 2
-                while index < characters.count, characters[index] != "\n" {
+                while index < characters.count, !SASQLCommentSyntax.endsLineComment(characters[index]) {
                     index += 1
                 }
                 continue

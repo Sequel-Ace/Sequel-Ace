@@ -33,6 +33,7 @@
 #import "Locking.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Locking)
 
@@ -107,6 +108,7 @@
 	// Whatever held the connection is no longer waiting on the server, and a cancellation can
 	// reach it until now.
 	[inFlightQuery endWaitingForGeneration:queryGeneration];
+	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
 	[inFlightQuery noteConnectionHeldByCurrentThread:NO];

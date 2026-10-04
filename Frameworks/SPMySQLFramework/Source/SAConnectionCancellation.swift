@@ -49,6 +49,11 @@ public protocol SAConnectionCancellationHost: AnyObject {
     /// Closes the session the connection holds, if it holds one; the connection then counts as lost.
     @objc(closeSessionIfConnected)
     func closeSessionIfConnected()
+
+    /// Records that the native read was ended here, so the session's next use recovers rather
+    /// than carrying on with a read that was cut off.
+    @objc(noteNativeReadEndedByCancellation)
+    func noteNativeReadEndedByCancellation()
 }
 
 /// A mark the current thread carries while it runs a piece of work; runs can nest, and the mark
@@ -260,11 +265,16 @@ public final class SAConnectionCancellation: NSObject {
     /// Closes the socket of the query with this number, if it is still waiting on the server.
     /// - Parameter generation: The query that was asked to stop.
     private func closeSocket(ifGenerationIsWaiting generation: UInt) {
-        inFlightQuery.closeSocket(ifGenerationIsWaiting: generation) { [weak self] in
+        let theSocketWasClosed = inFlightQuery.closeSocket(ifGenerationIsWaiting: generation) { [weak self] in
             // The query ends because it was asked to, so it counts as cancelled rather than
             // failed, and the attempt that follows does not make anybody wait again.
             self?.host?.markRunningQueryCancelled()
             self?.host?.noteUserEndedWait()
+        }
+        if theSocketWasClosed {
+            // The session's own bookkeeping has to know: a read cut off here cannot be carried on
+            // with, and the next use has to recover rather than pick it up.
+            host?.noteNativeReadEndedByCancellation()
         }
     }
 

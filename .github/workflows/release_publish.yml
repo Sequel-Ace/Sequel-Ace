@@ -211,7 +211,7 @@ jobs:
 
       - name: Install checksum-pinned ORAS on Linux
         if: steps.authorization.outputs.enabled == 'true'
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
@@ -327,6 +327,12 @@ jobs:
               fi
             fi
           fi
+          # Handoff and public-asset validation above proved these ZIPs durable.
+          # Continuation still checks Cloud identity, but does not need its downloads.
+          artifact_arguments=()
+          if [[ "${handoff_state}" == "artifacts_verified" || "${handoff_state}" == "archived" ]]; then
+            artifact_arguments+=(--artifacts-already-verified)
+          fi
           production_readiness="not_checked"
           production_reason=""
           assigned_build=""
@@ -346,6 +352,7 @@ jobs:
             fi
             bundle exec ruby fastlane/bin/sa-release cloud-status \
               "${production_arguments[@]}" \
+              ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
               --output "${state_directory}/production-status.json"
             production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
             production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
@@ -367,6 +374,7 @@ jobs:
               fi
               bundle exec ruby fastlane/bin/sa-release cloud-status \
                 "${alpha_arguments[@]}" \
+                ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
                 --output "${state_directory}/alpha-status.json"
               alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
               alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
@@ -449,7 +457,7 @@ jobs:
           bundler-cache: true
 
       - name: Install checksum-pinned ORAS on Linux
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
@@ -542,7 +550,7 @@ jobs:
           bundler-cache: true
 
       - name: Install checksum-pinned ORAS on Linux
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
@@ -646,21 +654,21 @@ jobs:
 
       - name: Install checksum-pinned ORAS on Apple silicon
         if: runner.os == 'macOS' && runner.arch == 'ARM64'
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
           checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
 
       - name: Install checksum-pinned ORAS on Intel
         if: runner.os == 'macOS' && runner.arch == 'X64'
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
           checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
 
       - name: Install checksum-pinned ORAS on Linux
         if: runner.os == 'Linux'
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
@@ -720,6 +728,7 @@ jobs:
       - name: Recheck exact Cloud readiness once
         id: cloud
         env:
+          VERIFIED_HANDOFF_STATE: ${{ steps.context.outputs.state }}
           ALPHA_RUN_ID: ${{ needs.discover.outputs.alpha_run_id }}
           EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
           EXPECTED_CHANNEL: ${{ needs.discover.outputs.channel }}
@@ -735,6 +744,10 @@ jobs:
           SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
         run: |
           set -euo pipefail
+          artifact_arguments=()
+          if [[ "${VERIFIED_HANDOFF_STATE}" == "artifacts_verified" || "${VERIFIED_HANDOFF_STATE}" == "archived" ]]; then
+            artifact_arguments+=(--artifacts-already-verified)
+          fi
           bundle exec ruby fastlane/bin/sa-release cloud-status \
             --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}" \
             --app-id "1518036000" \
@@ -743,6 +756,7 @@ jobs:
             --build "${EXPECTED_BUILD}" \
             --run-id "${PRODUCTION_RUN_ID}" \
             --commit "${EXPECTED_COMMIT}" \
+            ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
             --output production-cloud-run.json
           production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' production-cloud-run.json)"
           alpha_readiness="not_required"
@@ -755,6 +769,7 @@ jobs:
               --allow-any-build \
               --run-id "${ALPHA_RUN_ID}" \
               --commit "${EXPECTED_COMMIT}" \
+              ${artifact_arguments[@]+"${artifact_arguments[@]}"} \
               --output alpha-cloud-run.json
             alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' alpha-cloud-run.json)"
           elif [[ "${EXPECTED_CHANNEL}" == "beta" ]]; then
@@ -1143,7 +1158,7 @@ jobs:
           bundler-cache: true
 
       - name: Install checksum-pinned ORAS on Linux
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59

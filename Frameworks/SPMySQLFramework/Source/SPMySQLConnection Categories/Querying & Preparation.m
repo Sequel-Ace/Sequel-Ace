@@ -354,7 +354,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			databaseContextIsRequired:databaseContextIsRequired];
 		}];
 	}
+    return [self.sessionAccess performQuery:^id {
+        return [self _queryString:theQueryString
+                   usingEncoding:theEncoding
+                  withResultType:theReturnType
+               assertingDatabase:databaseName
+       databaseContextIsRequired:databaseContextIsRequired];
+    } recover:^BOOL {
+        return [self _reconnectAllowingRetries:YES];
+    }];
+}
 
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired
+{
 	double queryExecutionTime;
 	NSString *theErrorMessage;
 	NSUInteger theErrorID;
@@ -472,19 +488,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	unsigned long long theAffectedRowCount = (unsigned long long)~0;
 	do {
 		BOOL databaseAssertionFailed = NO;
+		BOOL queryWasCancelled = ![self.sessionAccess beginNativeQuery];
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query. If the caller supplied an expected database, assert it
 		// under the same lock as the query so another thread cannot interleave a
 		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
-		queryStatus = 0;
+		queryStatus = queryWasCancelled ? 1 : 0;
 
 		// Waiting on the server starts here; a cancellation that finds the server gone can end
-		// this wait, and only this one, until it is marked as over.
-		[inFlightQuery beginWaitingForGeneration:thisQueryGeneration onSocket:mySQLConnection->net.fd serverThread:mySQLConnection->thread_id];
+		// this wait, and only this one, until it is marked as over. A query the session's own
+		// bookkeeping has already given up on is never sent, so there is nothing to wait for.
+		if (!queryWasCancelled) {
+			[inFlightQuery beginWaitingForGeneration:thisQueryGeneration onSocket:mySQLConnection->net.fd serverThread:mySQLConnection->thread_id];
+		}
 
-		SADatabaseAssertionError *databaseAssertionError = [databaseAssertionState
+		SADatabaseAssertionError *databaseAssertionError = queryWasCancelled ? nil : [databaseAssertionState
 			assertDatabase:databaseName
 			required:databaseContextIsRequired
 			onMySQLConnection:mySQLConnection
@@ -567,7 +587,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			}
 
 			// Prevent retries if the query was cancelled or not a connection error
-			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+			if (self.sessionAccess.currentQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
 		}
@@ -589,6 +609,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			return nil;
 		}
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
+		if (self.sessionAccess.currentQueryWasCancelled) {
+			queryStatus = 1;
+			break;
+		}
 
 		// Reconnecting ran queries of their own, each starting from its own number. What holds the
 		// connection now is this query again.
@@ -691,6 +715,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// If the query was cancelled, override the error state
+	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -885,23 +910,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
-
-	// Check whether a query is actually being performed - if not, return
-	if ([self _tryLockConnection]) {
-		[self _unlockConnection];
-		return;
-	}
-
-	// Mark that the last query was cancelled to prevent query retries from occurring
-	lastQueryWasCancelled = YES;
-
 	// Also as a request for the query that is running now. A query that is reconnecting before its
 	// retry resets its own mark once the reconnect is done, and finds the request instead - under
 	// the number of whichever of its queries was running.
 	if (recordRequest) [inFlightQuery requestCancellationOfGeneration:[inFlightQuery latestGeneration]];
 
+	// The kill goes through the session's own cancellation bookkeeping, so the lease reserves it
+	// and hands the session to nothing else while the request is out. What to do when the server
+	// cannot be reached is decided here rather than there: the grace period and the question of
+	// an open transaction live on this side.
+	__block BOOL theServerKilledTheQuery = NO;
+	[self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
+		theServerKilledTheQuery = [self _killQueryOverSideConnectionForGeneration:0];
+		return theServerKilledTheQuery;
+	}];
+
 	// If the server could be reached and killed the query, the active query was cancelled.
-	if ([self _killQueryOverSideConnectionForGeneration:0]) return;
+	if (theServerKilledTheQuery) return;
 
 	// A full reconnect is required at this point to force a cancellation.  As the
 	// connection may have finished processing the query at this point (depending how
