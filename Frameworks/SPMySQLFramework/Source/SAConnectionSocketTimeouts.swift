@@ -18,28 +18,44 @@ import Foundation
 /// because a read timeout is not an option here: it would also cut short the long queries people
 /// run on purpose.
 ///
-/// These limits distinguish the two cases instead. A peer that answers keeps the connection alive
-/// however long its query runs, because answering a keepalive probe costs the server nothing and
-/// happens even while a statement is still executing. A peer that answers nothing at all loses the
-/// connection in seconds, which turns a frozen window into the question the user can act on.
+/// These limits distinguish the two cases instead, and they are not interchangeable.
+/// ``retransmitDropTime`` ends the wait for a reply to data that was sent and never acknowledged -
+/// the route-disappeared-mid-query case this exists for. The keepalive limits only decide sockets
+/// that are *quiet*: genuinely idle, or waiting to read a reply whose request the server did
+/// acknowledge.
+///
+/// So the keepalive limits are deliberately tolerant. An idle session that is dropped loses any
+/// transaction it has open, and an ordinary Wi-Fi or VPN handover can take longer than a brief
+/// cutoff would allow; keeping that session across the handover takes precedence over noticing an
+/// idle failure quickly, because nobody is waiting on an idle session. A query that is waiting is
+/// bounded by the explicit checks instead - a ping on the check budget, the liveness probe, and a
+/// wait the user can end - which do not destroy a session to find out that it is gone.
 @objc(SAConnectionSocketTimeouts)
 public final class SAConnectionSocketTimeouts: NSObject {
 
     /// How long a connection may be quiet before the kernel starts asking whether the peer is there, in seconds.
-    public static let keepAliveIdle: Int32 = 10
+    ///
+    /// Tolerant on purpose: see the note above on why a quiet session is not hurried.
+    public static let keepAliveIdle: Int32 = 60
 
     /// How long the kernel waits between those questions, in seconds.
-    public static let keepAliveInterval: Int32 = 3
+    public static let keepAliveInterval: Int32 = 10
 
     /// How many unanswered questions end the connection.
-    public static let keepAliveCount: Int32 = 3
+    ///
+    /// With the two above, a session that answers nothing while quiet is kept for 110 seconds -
+    /// long enough to outlast an ordinary handover, and still an end rather than the server's
+    /// `wait_timeout` hours later.
+    public static let keepAliveCount: Int32 = 5
 
     /// How long the kernel retransmits unacknowledged data before dropping the connection, in seconds.
     ///
     /// This is the limit that ends the wait for a reply to a query that was sent onto a route which
     /// no longer exists. A server that is merely slow keeps acknowledging what it received, so its
-    /// connection is never affected by this.
-    public static let retransmitDropTime: Int32 = 10
+    /// connection is never affected by this - and on a lossy link, where acknowledgements do
+    /// arrive but late, the timer restarts with each one, so a bad connection is not mistaken for a
+    /// dead one.
+    public static let retransmitDropTime: Int32 = 60
 
     /// Applies the limits to a connection's socket.
     /// - Parameter descriptor: The connection's socket descriptor.
