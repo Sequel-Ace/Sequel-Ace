@@ -688,6 +688,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         try access.trackSocket(sockets[0], serverThreadID: 42)
         access.beginNativeQuery()
         access.cancelQuery { _ in false }
+        // Closing the socket and noting that the read was cut off are the caller's under the
+        // division settled on #2676: it holds the grace period, and it knows whether the server
+        // accepted the kill for a session with a transaction open. SAConnectionCancellation does
+        // both against the in-flight query's own duplicate; these two lines stand for it.
+        XCTAssertEqual(Darwin.shutdown(sockets[0], SHUT_RDWR), 0)
+        access.noteCancellationEndedTheNativeRead()
         var byte: UInt8 = 0
         XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
         let recovered = DispatchSemaphore(value: 0)
@@ -711,6 +717,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         try access.trackSocket(sockets[0], serverThreadID: 42)
         access.beginNativeQuery()
         access.cancelQuery { _ in false }
+        // Closing the socket and noting that the read was cut off are the caller's under the
+        // division settled on #2676: it holds the grace period, and it knows whether the server
+        // accepted the kill for a session with a transaction open. SAConnectionCancellation does
+        // both against the in-flight query's own duplicate; these two lines stand for it.
+        XCTAssertEqual(Darwin.shutdown(sockets[0], SHUT_RDWR), 0)
+        access.noteCancellationEndedTheNativeRead()
         access.endNativeQuery()
         _ = access.performQuery({
             XCTAssertTrue(access.currentQueryWasCancelled)
@@ -797,9 +809,16 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         access.beginNativeQuery()
         Darwin.close(sockets[0])
         sockets[0] = -1
-        access.cancelQuery { _ in false }
-        var byte: UInt8 = 0
-        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
+        // The handle is a duplicate, so the original going does not retire it: the cancellation
+        // is still the current one and still names the session to kill. Closing the socket is
+        // the caller's, against a duplicate it holds itself, so nothing is closed from here.
+        var killedThread: UInt = 0
+        access.cancelQuery {
+            killedThread = $0
+            XCTAssertTrue(access.cancellationIsCurrent)
+            return false
+        }
+        XCTAssertEqual(killedThread, 42)
         access.endNativeQuery()
         access.clearSocket()
         access.cancelQuery { _ in XCTFail("A cleared socket cannot be cancelled"); return false }
@@ -827,6 +846,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         XCTAssertEqual(errno, EAGAIN)
         access.beginNativeQuery()
         access.cancelQuery { thread in XCTAssertEqual(thread, 42); return false }
+        // Closing the socket and noting that the read was cut off are the caller's under the
+        // division settled on #2676: it holds the grace period, and it knows whether the server
+        // accepted the kill for a session with a transaction open. SAConnectionCancellation does
+        // both against the in-flight query's own duplicate; these two lines stand for it.
+        XCTAssertEqual(Darwin.shutdown(replacement[0], SHUT_RDWR), 0)
+        access.noteCancellationEndedTheNativeRead()
         access.endNativeQuery()
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), 0)
     }

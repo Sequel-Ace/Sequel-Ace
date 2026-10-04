@@ -36,6 +36,12 @@ public final class SAInFlightQuery: NSObject {
         let owner: UInt
     }
 
+    deinit {
+        if waitingSocket >= 0 {
+            Darwin.close(waitingSocket)
+        }
+    }
+
     private let requestLock = NSLock()
     private var cancellationRequests: [SACancellationRequest] = []
     private var storedLatestGeneration: UInt = 0
@@ -47,19 +53,32 @@ public final class SAInFlightQuery: NSObject {
     ///
     /// If a kill request is on its way to the server, this waits until it has arrived: the request
     /// names a server session, and this query would otherwise be the one it hits.
+    ///
+    /// The socket is kept as a duplicate of its own. The native library closes its descriptor when
+    /// a query fails or the connection is torn down, and the number can then be handed to whatever
+    /// opens the next one; shutting the original down after that would end an unrelated
+    /// connection. A duplicate cannot be recycled while it is held, so the only socket this can
+    /// ever shut down is the one the query was waiting on.
     /// - Parameters:
     ///   - generation: The number of the query, as the connection counts them.
     ///   - socket: The socket it waits on.
     ///   - serverThread: The server's number for the session the query runs in.
     @objc(beginWaitingForGeneration:onSocket:serverThread:)
     public func beginWaiting(forGeneration generation: UInt, onSocket socket: Int32, serverThread: UInt) {
+        // Outside the lock: duplicating does not touch anything this type keeps.
+        let duplicate = socket >= 0 ? fcntl(socket, F_DUPFD_CLOEXEC, 0) : -1
         condition.lock()
         defer { condition.unlock() }
         while killInProgress {
             condition.wait()
         }
+        if waitingSocket >= 0 {
+            Darwin.close(waitingSocket)
+        }
         waitingGeneration = generation
-        waitingSocket = socket
+        // A duplicate that could not be made leaves nothing to shut down, which is the safe way
+        // round: the query is then stopped the way one whose socket is already gone is stopped.
+        waitingSocket = duplicate
         waitingServerThread = serverThread
     }
 
@@ -74,6 +93,9 @@ public final class SAInFlightQuery: NSObject {
             return
         }
         waitingGeneration = 0
+        if waitingSocket >= 0 {
+            Darwin.close(waitingSocket)
+        }
         waitingSocket = -1
         waitingServerThread = 0
     }

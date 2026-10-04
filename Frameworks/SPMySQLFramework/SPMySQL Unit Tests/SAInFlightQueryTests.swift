@@ -38,6 +38,34 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertTrue(peerSawTheSocketClose())
     }
 
+    /// The socket a query waits on is kept as a duplicate, so the number going back into
+    /// circulation cannot turn the shutdown on somebody else's connection.
+    ///
+    /// The native library closes its descriptor when a query fails or the connection is torn
+    /// down, and the number is then free for whatever opens the next one - here a second socket
+    /// pair, which the kernel hands the lowest free number. Only the query's own socket may end.
+    func testTheWaitingSocketIsNotTheNumberThatGoesBackIntoCirculation() throws {
+        inFlightQuery.beginWaiting(forGeneration: 7, onSocket: descriptors[0], serverThread: 42)
+
+        // What the native library does when the query fails: its own descriptor goes.
+        let releasedNumber = descriptors[0]
+        Darwin.close(descriptors[0])
+        descriptors[0] = -1
+
+        var unrelated: [Int32] = [-1, -1]
+        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &unrelated) == 0, "no local socket pair available")
+        defer { unrelated.filter { $0 >= 0 }.forEach { Darwin.close($0) } }
+        try XCTSkipUnless(unrelated[0] == releasedNumber, "the freed number was not handed out again")
+
+        XCTAssertTrue(inFlightQuery.closeSocket(ifGenerationIsWaiting: 7, beforeClosing: {}))
+
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(unrelated[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), -1,
+                       "the connection that was given the number must be untouched")
+        XCTAssertEqual(errno, EAGAIN)
+        XCTAssertTrue(peerSawTheSocketClose(), "and the query's own socket ended")
+    }
+
     /// A query that stopped waiting is left alone.
     func testAQueryThatStoppedWaitingIsLeftAlone() {
         inFlightQuery.beginWaiting(forGeneration: 5, onSocket: descriptors[0], serverThread: 42)
