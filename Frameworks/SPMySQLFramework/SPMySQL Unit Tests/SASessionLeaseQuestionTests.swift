@@ -22,8 +22,10 @@ import XCTest
 final class SASessionLeaseQuestionTests: XCTestCase {
 
     /// How long the owner waits for its answer before giving up, so a wait that cannot end fails
-    /// the test instead of holding the suite.
-    private let answerLimit = DispatchTime.now() + 10
+    /// the test instead of holding the suite. Measured from the moment it starts waiting: XCTest
+    /// builds every test instance before it runs any of them, so a limit fixed here would already
+    /// have passed by the time a later test reaches it.
+    private var answerLimit: DispatchTime { .now() + 10 }
 
     /// Answered on the main thread, from wherever the main thread happens to be.
     private var theQuestionReachedTheMainThread = false
@@ -72,9 +74,13 @@ final class SASessionLeaseQuestionTests: XCTestCase {
                 if self.theAnswerIsBack.wait(timeout: self.answerLimit) != .success {
                     theOwnerWaitedInVain = true
                 }
+                // Still inside the lease: the session is restored, and anything let in from here
+                // on is let into a finished one. Noted after `reconnect` returns it would be
+                // noted after the session was already free, and a caller that correctly got in
+                // first would look like one that got in too early.
+                ownerHasFinished.withLock { theOwnerHasFinished = true }
                 return true
             }
-            ownerHasFinished.withLock { theOwnerHasFinished = true }
             theOwnerLetGo.fulfill()
         }
         XCTAssertEqual(theQuestionIsOut.wait(timeout: .now() + 5), .success)
@@ -111,24 +117,37 @@ final class SASessionLeaseQuestionTests: XCTestCase {
         var theOwnerHasFinished = false
         var theOwnerWaitedInVain = false
 
+        // The owner takes the session, then waits for the timer to be in the access's wait before
+        // it puts its question. Put first, the question would be delivered by the plain loop
+        // below, answered there, and the session let go before the timer ever asked for it - the
+        // test would then pass without the wait ever having to carry the question.
+        let theTimerIsWaiting = DispatchSemaphore(value: 0)
         Thread.detachNewThread {
             _ = access.reconnect(allowingRetries: true) {
+                XCTAssertEqual(theTimerIsWaiting.wait(timeout: .now() + 10), .success,
+                               "the timer has to reach the session's wait first")
                 self.performSelector(onMainThread: #selector(self.answerTheQuestion),
                                      with: nil, waitUntilDone: false)
                 theQuestionIsOut.signal()
                 if self.theAnswerIsBack.wait(timeout: self.answerLimit) != .success {
                     theOwnerWaitedInVain = true
                 }
+                // Still inside the lease: the session is restored, and anything let in from here
+                // on is let into a finished one. Noted after `reconnect` returns it would be
+                // noted after the session was already free, and a caller that correctly got in
+                // first would look like one that got in too early.
+                ownerHasFinished.withLock { theOwnerHasFinished = true }
                 return true
             }
-            ownerHasFinished.withLock { theOwnerHasFinished = true }
             theOwnerLetGo.fulfill()
         }
-        XCTAssertEqual(theQuestionIsOut.wait(timeout: .now() + 5), .success)
 
         var theTimerRan = false
         var theOwnerHadFinished = false
         let entersTheConnection = Timer(timeInterval: 0.01, repeats: false) { _ in
+            // Signalled on the step before the wait, so the owner's question arrives while the
+            // main thread is inside it and can only be delivered by the wait itself.
+            theTimerIsWaiting.signal()
             _ = access.performQuery {
                 theTimerRan = true
                 theOwnerHadFinished = ownerHasFinished.withLock { theOwnerHasFinished }
@@ -136,11 +155,13 @@ final class SASessionLeaseQuestionTests: XCTestCase {
             }
         }
         RunLoop.current.add(entersTheConnection, forMode: .default)
-        let giveUp = Date(timeIntervalSinceNow: 15)
+        let giveUp = Date(timeIntervalSinceNow: 20)
         while !theTimerRan && Date() < giveUp {
             RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
         }
         entersTheConnection.invalidate()
+        XCTAssertEqual(theQuestionIsOut.wait(timeout: .now() + 5), .success,
+                       "the question must have gone out")
 
         XCTAssertTrue(theTimerRan, "the timer's work must reach the connection")
         XCTAssertFalse(theOwnerWaitedInVain, "and the question must not be stranded by it")
