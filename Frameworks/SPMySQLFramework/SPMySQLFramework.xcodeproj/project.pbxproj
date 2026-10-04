@@ -74,6 +74,7 @@
 		58D2A4D116EDF1C6002EB401 /* SPMySQLEmptyResult.h in Headers */ = {isa = PBXBuildFile; fileRef = 58D2A4CF16EDF1C6002EB401 /* SPMySQLEmptyResult.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
+		8F1D23709992210921446FB2 /* SASessionTimeZoneRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 520C9C590EC8299AB14401A5 /* SASessionTimeZoneRestorer.swift */; };
 		9615D1592D4C18CB0095F55A /* libmysqlclient.24.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */; };
 		9615D15A2D4C18F80095F55A /* libmysqlclient.24.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9615D15D2D4C26DD0095F55A /* libcrypto.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */; };
@@ -98,6 +99,7 @@
 		AB48E5C81EBB3D12966CCEC1 /* SAByteStringDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B177FE6ABE7EBC554A5905A4 /* SAByteStringDecoderTests.swift */; };
 		D10000332F8C000600C4C14A /* SACleartextAuthPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */; };
 		D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386B159A6D535F0686530898 /* SADatabaseAssertion.swift */; };
+		D98F5A539AA9F0D44CBC47D7 /* SAConnectionSessionAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E5A2DF9CE656661F40AD5F /* SAConnectionSessionAccess.swift */; };
 		FD4211952918779400941BFE /* SPMySQLGeometryDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */; };
 /* End PBXBuildFile section */
 
@@ -152,6 +154,7 @@
 		507FF1D51BC0D7D300104523 /* SPMySQL Unit Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SPMySQL Unit Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		507FF1D81BC0D7D300104523 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPMySQLStringAdditions_Tests.m; sourceTree = "<group>"; };
+		520C9C590EC8299AB14401A5 /* SASessionTimeZoneRestorer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SASessionTimeZoneRestorer.swift; path = Source/SASessionTimeZoneRestorer.swift; sourceTree = "<group>"; };
 		580A331C14D75CF7000D6933 /* SPMySQLGeometryData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLGeometryData.h; path = Source/SPMySQLGeometryData.h; sourceTree = "<group>"; };
 		580A331D14D75CF7000D6933 /* SPMySQLGeometryData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLGeometryData.m; path = Source/SPMySQLGeometryData.m; sourceTree = "<group>"; };
 		583C734917A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLStreamingResultStoreDelegate.h; path = Source/SPMySQLStreamingResultStoreDelegate.h; sourceTree = "<group>"; };
@@ -226,6 +229,7 @@
 		9615D8472D5EDF530095F55A /* mysqld_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
 		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
+		D3E5A2DF9CE656661F40AD5F /* SAConnectionSessionAccess.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionSessionAccess.swift; path = Source/SAConnectionSessionAccess.swift; sourceTree = "<group>"; };
 		FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLGeometryDataTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -345,6 +349,8 @@
 				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
 				D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */,
 				A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */,
+				520C9C590EC8299AB14401A5 /* SASessionTimeZoneRestorer.swift */,
+				D3E5A2DF9CE656661F40AD5F /* SAConnectionSessionAccess.swift */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
@@ -753,6 +759,8 @@
 				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
 				D10000312F8C000600C4C14A /* SACleartextAuthPolicy.swift in Sources */,
 				444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */,
+				8F1D23709992210921446FB2 /* SASessionTimeZoneRestorer.swift in Sources */,
+				D98F5A539AA9F0D44CBC47D7 /* SAConnectionSessionAccess.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -780,7 +788,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20114;
+				DYLIB_CURRENT_VERSION = 20115;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -821,7 +829,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20114;
+				DYLIB_CURRENT_VERSION = 20115;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -871,7 +879,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				ENABLE_TESTABILITY = YES;
@@ -925,7 +933,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1077,7 +1085,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1120,7 +1128,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20114;
+				DYLIB_CURRENT_VERSION = 20115;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -1210,7 +1218,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1250,7 +1258,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20114;
+				DYLIB_CURRENT_VERSION = 20115;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1299,7 +1307,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1339,7 +1347,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20114;
+				DYLIB_CURRENT_VERSION = 20115;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;

@@ -503,6 +503,7 @@
 		5BA8A1F0564883162D4A80F2 /* SAUserManagerPrivilegeNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF5C9FD78A565D5260B38E55 /* SAUserManagerPrivilegeNormalizer.swift */; };
 		5DB3C7CF73628DF0DA31F02E /* SATableListCellRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AA6EC7ADA69D8FCD7F2CAF /* SATableListCellRenderer.swift */; };
 		60111925195F940E7252B376 /* SAHelpViewerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6549DFDEB75EC2BCCFA93A85 /* SAHelpViewerModelTests.swift */; };
+		60366FD008586E2EC4AC275A /* SASessionTimeZoneReconnectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 619373C347EA990F09910DB0 /* SASessionTimeZoneReconnectTests.swift */; };
 		6220954A97524B17D37B4D09 /* SAKeychainNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */; };
 		623A1F89625ADE681E60B97C /* SAKeychainProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B2B2C637F5D0AF5FE35EEF /* SAKeychainProviding.swift */; };
 		624E13DFBB2F343500B94705 /* SADatabaseScopedValueCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81815809CB9EBE53E9D2AA2A /* SADatabaseScopedValueCacheTests.swift */; };
@@ -1459,6 +1460,7 @@
 		5AF0C4000000000000000001 /* SAConnectionInfo+Favorite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SAConnectionInfo+Favorite.swift"; sourceTree = "<group>"; };
 		5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfoFavoriteTests.swift; sourceTree = "<group>"; };
 		5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SPMCPFavorite.swift; sourceTree = "<group>"; };
+		619373C347EA990F09910DB0 /* SASessionTimeZoneReconnectTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionTimeZoneReconnectTests.swift; sourceTree = "<group>"; };
 		61984CED94C89FF3D0CEA884 /* SATablesListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATablesListView.swift; sourceTree = "<group>"; };
 		644FFD84B58CEAE73585045B /* SAKeyboardShortcut.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAKeyboardShortcut.swift; sourceTree = "<group>"; };
 		6549DFDEB75EC2BCCFA93A85 /* SAHelpViewerModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAHelpViewerModelTests.swift; sourceTree = "<group>"; };
@@ -2966,6 +2968,7 @@
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 				49A74A9F19E546A0AB95B7AA /* SATableReloadRetryPolicyTests.swift */,
 				7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */,
+				619373C347EA990F09910DB0 /* SASessionTimeZoneReconnectTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3823,6 +3826,7 @@
 				F2DC12897FE531483FA55474 /* SATableReloadRetryPolicy.swift in Sources */,
 				2DEA028C8FA0650277377586 /* SATableReloadRetryPolicyTests.swift in Sources */,
 				33C3E41F77A1BEF1D611A511 /* SACodePointLengthAndMySQLDateTests.swift in Sources */,
+				60366FD008586E2EC4AC275A /* SASessionTimeZoneReconnectTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4387,7 +4391,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -4708,7 +4712,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -5047,7 +5051,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -5130,7 +5134,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20114;
+				CURRENT_PROJECT_VERSION = 20115;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
