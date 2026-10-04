@@ -187,8 +187,11 @@ public final class SAConnectionEscaper: NSObject {
     ///   - noBackslashEscapes: Whether the session is in `NO_BACKSLASH_ESCAPES` mode.
     ///   - openTransaction: Whether the session has a transaction open.
     ///   - isHandshake: Whether the session has just been connected.
-    @objc(recordSessionCharacterSet:noBackslashEscapes:openTransaction:isHandshake:)
-    public func recordSession(characterSet: String?, noBackslashEscapes: Bool, openTransaction: Bool, isHandshake: Bool) {
+    ///   - characterSetWasReported: Whether the server reported its character set with the
+    ///     statement just run, as the client library's session-state tracking shows.
+    @objc(recordSessionCharacterSet:noBackslashEscapes:openTransaction:isHandshake:characterSetWasReported:)
+    public func recordSession(characterSet: String?, noBackslashEscapes: Bool, openTransaction: Bool,
+                              isHandshake: Bool, characterSetWasReported: Bool) {
         lock.lock()
         defer { lock.unlock() }
         if isHandshake {
@@ -200,8 +203,18 @@ public final class SAConnectionEscaper: NSObject {
             sessionReportsCharacterSetChanges = false
             staleSessionCharacterSet = nil
         }
+        // The server said so itself, which settles it: the client library only learns a character
+        // set this way, so a report that came with a tracking item is this session's, whatever it
+        // names. The name alone cannot tell this apart - a session caught out on `gbk` that is
+        // moved back to `gbk` reports the same name it did while frozen - which is why the
+        // protocol's own answer is asked for rather than inferred.
+        if characterSetWasReported {
+            sessionReportsCharacterSetChanges = true
+            staleSessionCharacterSet = nil
+        }
         // A report that has moved off the name caught out is a report again: the client's view
-        // followed something, so what it says can be believed from here.
+        // followed something, so what it says can be believed from here. Kept for a server whose
+        // tracking the client library cannot show us.
         if let stale = staleSessionCharacterSet, let characterSet,
            !Self.namesTheSameCharacterSet(characterSet, stale) {
             staleSessionCharacterSet = nil

@@ -821,7 +821,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
 	                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
 	                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-	                            isHandshake:YES];
+	                            isHandshake:YES
+	                // A handshake carries no tracking item of its own; what the session reports
+	                // becomes known once its first statement has run.
+	                characterSetWasReported:NO];
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();

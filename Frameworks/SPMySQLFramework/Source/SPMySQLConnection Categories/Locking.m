@@ -105,12 +105,49 @@
 		[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
 		                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
 		                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-		                            isHandshake:NO];
+		                            isHandshake:NO
+		                characterSetWasReported:[self _lastStatementReportedTheCharacterSet]];
 	}
 	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];
+}
+
+/**
+ * Whether the statement just run came back with the server's own report of the session's
+ * character set.
+ *
+ * The client library keeps the session-state items the last OK packet carried, and
+ * character_set_client is the one that matters here. Asking it is the only way to tell a report
+ * that arrived from one that did not: the character set's *name* cannot, because a session whose
+ * report has stopped following keeps naming the character set it was last told about, which can
+ * be the same name a later report would carry.
+ *
+ * Only valid while the connection is held and before the next statement, which is where it is
+ * called from.
+ */
+- (BOOL)_lastStatementReportedTheCharacterSet
+{
+	if (state != SPMySQLConnected || !mySQLConnection) {
+		return NO;
+	}
+
+	// The items come as name, value, name, value; only the names are looked at.
+	const char *item = NULL;
+	size_t length = 0;
+	BOOL isName = YES;
+	int more = mysql_session_track_get_first(mySQLConnection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length);
+	while (more == 0) {
+		if (isName && item && length == strlen("character_set_client")
+		    && strncmp(item, "character_set_client", length) == 0) {
+			return YES;
+		}
+		isName = !isName;
+		more = mysql_session_track_get_next(mySQLConnection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length);
+	}
+
+	return NO;
 }
 
 @end

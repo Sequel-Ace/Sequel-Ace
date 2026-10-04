@@ -35,5 +35,6 @@
 - (void)_lockConnection;
 - (BOOL)_tryLockConnection;
 - (void)_unlockConnection;
+- (BOOL)_lastStatementReportedTheCharacterSet;
 
 @end
