@@ -47,16 +47,25 @@ final class SAConnectionRetryPolicyTests: XCTestCase {
         XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 0)?.uintValue, 10)
         // Half of it gone.
         XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 4)?.uintValue, 6)
-        // A part second does not buy a whole one back.
-        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 4.7)?.uintValue, 5)
+        // Rounded up to the whole seconds the client counts in.
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 4.7)?.uintValue, 6)
+    }
+
+    /// A budget of one second still gets its retry. That is what an attempt is given just after
+    /// the user has ended a wait, and rounding the remainder down would suppress the retry on
+    /// every real attempt, since every one of them takes some time.
+    func testASecondsBudgetStillGetsItsRetry() {
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 1, secondsSpent: 0.05)?.uintValue, 1)
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 1, secondsSpent: 0.95)?.uintValue, 1)
+        XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 1, secondsSpent: 1))
     }
 
     /// Once the budget is gone the retry is not made at all: the first attempt reached the
     /// server's TLS, so the question is more use to the user than another wait.
     func testTheRetryIsSkippedOnceTheBudgetIsGone() {
         XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 10))
-        XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 9.5),
-                     "less than a second left is not worth an attempt")
+        XCTAssertEqual(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 9.5)?.uintValue, 1,
+                       "part of a second left is still an attempt")
         XCTAssertNil(SAConnectionRetryPolicy.retryConnectTimeout(forConnectTimeout: 10, secondsSpent: 40),
                      "and an attempt that overran its budget gets nothing")
     }

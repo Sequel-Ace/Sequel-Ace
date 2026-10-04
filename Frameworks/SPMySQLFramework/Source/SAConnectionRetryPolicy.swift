@@ -54,10 +54,13 @@ public final class SAConnectionRetryPolicy: NSObject {
             return NSNumber(value: UInt(0))
         }
         let remaining = Double(connectTimeoutOrZero) - max(0, secondsSpent)
-        guard remaining >= 1 else {
+        guard remaining > 0 else {
             return nil
         }
-        return NSNumber(value: UInt(remaining.rounded(.down)))
+        // Rounded up, because the client counts in whole seconds and rounding down would suppress
+        // the retry outright on a budget of one second - which is what an attempt gets just after
+        // the user has ended a wait. Overshooting by under a second is the lesser cost.
+        return NSNumber(value: UInt(remaining.rounded(.up)))
     }
 
 }
