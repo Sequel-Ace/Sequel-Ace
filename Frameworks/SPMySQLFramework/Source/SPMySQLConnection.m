@@ -1552,21 +1552,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 		               trackingList:[variables objectForKey:@"session_track_system_variables"]
 		                      quote:^NSString *(NSString *value) { return [value mySQLTickQuotedString]; }
 		           serverIsProxySQL:^BOOL{ return [self _serverIsProxySQL]; }];
-	// The two statements are run apart because their outcomes mean different things: a failed
-	// tracking statement costs later changes being reported, which the session survives, while a
-	// failed SET NAMES decides which character set the session is actually in.
-	BOOL sessionReportsChanges = [startupPlan sessionReportsChanges];
+	// Asking the server to report later changes to the character set. Whether it took is not
+	// recorded anywhere: what the escaper needs is a change the server actually reported, which
+	// it is told about when one arrives, and this statement only decides whether any ever will.
 	if ([startupPlan trackingStatement]) {
 		[self queryString:[startupPlan trackingStatement]];
 		if ([self queryErrored]) {
-			sessionReportsChanges = NO;
 			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
 		}
 	}
-	// Where the session reports its changes, what it reports is the whole truth - the escaper
-	// does not have to tell a reported change from the name the session was connected with,
-	// which it cannot do when a change leads back to that name.
-	[valueEscaper recordSessionReportsChanges:sessionReportsChanges];
 	if ([startupPlan movesToAnotherCharacterSet]) {
 		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session.",
 		      retrievedEncoding);

@@ -114,18 +114,6 @@ final class SASessionStartupPlanTests: XCTestCase {
                        "and a server that refuses both keeps what it reported")
     }
 
-    /// Whether the session reports its changes afterwards, which is what frees the escaper from
-    /// guessing at them.
-    func testThePlanSaysWhetherTheSessionWillReport() {
-        XCTAssertTrue(plan(reported: "utf8mb4", tracking: "character_set_client").sessionReportsChanges,
-                      "already reporting")
-        XCTAssertTrue(plan(reported: "utf8mb4", tracking: "").sessionReportsChanges,
-                      "will report once the statement has run")
-        XCTAssertTrue(plan(reported: "utf8mb4", tracking: "*").sessionReportsChanges,
-                      "tracking everything covers it")
-        XCTAssertFalse(plan(reported: "utf8mb4", tracking: "", isProxySQL: true).sessionReportsChanges,
-                       "behind ProxySQL nothing is sent, so nothing is reported")
-    }
 
     /// The name comes back in the spelling the encoding table is keyed by, which matches
     /// case-sensitively.

@@ -117,7 +117,6 @@ public final class SAConnectionEscaper: NSObject {
     /// Set once the session reported a character set other than the one it was connected
     /// with. Until then there is no telling a server that does not report changes from one
     /// that does and happens to report the same name.
-    private var sessionReportsCharacterSetChanges = false
     /// Whether the server has actually reported a character set for this session.
     ///
     /// Kept apart from the flag above, which only says that reporting is *switched on*. The
@@ -211,7 +210,6 @@ public final class SAConnectionEscaper: NSObject {
             // What the session before reported says nothing about this one: a reconnect can land
             // on a server that does not report changes, and carrying the flag over would let the
             // handshake name override what the connection sets afterwards.
-            sessionReportsCharacterSetChanges = false
             aCharacterSetHasBeenReported = false
             staleSessionCharacterSet = nil
         }
@@ -221,7 +219,6 @@ public final class SAConnectionEscaper: NSObject {
         // moved back to `gbk` reports the same name it did while frozen - which is why the
         // protocol's own answer is asked for rather than inferred.
         if characterSetWasReported {
-            sessionReportsCharacterSetChanges = true
             aCharacterSetHasBeenReported = true
             staleSessionCharacterSet = nil
         }
@@ -239,7 +236,6 @@ public final class SAConnectionEscaper: NSObject {
             // that was never told it reports - behind a proxy, or on a server that refused - and
             // it cannot see a change back to the handshake name, which is why being told is
             // better.
-            sessionReportsCharacterSetChanges = true
             aCharacterSetHasBeenReported = true
         }
         sessionCharacterSet = characterSet
@@ -252,23 +248,6 @@ public final class SAConnectionEscaper: NSObject {
         lock.lock()
         defer { lock.unlock() }
         return sessionHasOpenTransaction
-    }
-
-    /// Records that this session reports its character set changes, so what it reports is the
-    /// whole truth.
-    ///
-    /// Known from the server's own `session_track_system_variables`, which the connection reads
-    /// and completes when it starts a session. Without it the escaper can only notice a reported
-    /// name that differs from the one the session was connected with - which misses a change
-    /// back to that name, and so would keep following a record the session has moved away from.
-    /// - Parameter reportsChanges: Whether the session reports changes to `character_set_client`.
-    @objc(recordSessionReportsChanges:)
-    public func recordSessionReportsChanges(_ reportsChanges: Bool) {
-        lock.lock()
-        defer { lock.unlock() }
-        if reportsChanges {
-            sessionReportsCharacterSetChanges = true
-        }
     }
 
     /// Records what a `SET NAMES` this connection just ran shows about the session's reporting.
@@ -290,7 +269,6 @@ public final class SAConnectionEscaper: NSObject {
         lock.lock()
         defer { lock.unlock() }
         let sessionFollowed = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
-        sessionReportsCharacterSetChanges = sessionFollowed
         if sessionFollowed {
             aCharacterSetHasBeenReported = true
         }
@@ -345,7 +323,6 @@ public final class SAConnectionEscaper: NSObject {
         aCharacterSetHasBeenReported = false
         sessionUsesNoBackslashEscapes = sessionsStartWithNoBackslashEscapes
         sessionHasOpenTransaction = false
-        sessionReportsCharacterSetChanges = false
     }
 
     /// Escapes bytes for a string literal.

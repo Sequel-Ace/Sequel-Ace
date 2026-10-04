@@ -437,7 +437,8 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
     func testTrackingBeingOnIsNotAReport() throws {
         let escaper = SAConnectionEscaper()
         escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true, characterSetWasReported: false)
-        escaper.recordSessionReportsChanges(true)
+        // Statements run, the tracking is on, and none of them reports a character set - which is
+        // what a session set up by an init_connect before the tracking existed looks like.
         escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: false, characterSetWasReported: false)
 
         XCTAssertEqual(try XCTUnwrap(escape(Data([0xBF, 0x27]), with: escaper, onRecord: "gbk")),
@@ -482,7 +483,6 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
     func testSettingTheCharacterSetSettlesWhetherTheSessionReports() {
         let escaper = SAConnectionEscaper()
         escaper.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true, characterSetWasReported: false)
-        escaper.recordSessionReportsChanges(true)
 
         // A session that followed the statement reports its changes.
         escaper.recordSession(characterSet: "gbk", noBackslashEscapes: false, openTransaction: false, isHandshake: false, characterSetWasReported: false)
@@ -492,7 +492,6 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         // One that still names the character set from before does not, whatever it claimed.
         let unreported = SAConnectionEscaper()
         unreported.recordSession(characterSet: "latin1", noBackslashEscapes: false, openTransaction: false, isHandshake: true, characterSetWasReported: false)
-        unreported.recordSessionReportsChanges(true)
         unreported.recordCharacterSetSetByConnection("gbk")
         // The record is now gbk and the handle is still latin1; the value follows the record.
         XCTAssertEqual(escape(Data([0xBF, 0x27]), with: unreported, onRecord: "gbk"), Data([0x5C, 0xBF, 0x5C, 0x27]),

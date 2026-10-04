@@ -61,23 +61,13 @@ public final class SASessionStartupPlan: NSObject {
     /// Whether the character set reported cannot be carried, so the session is being moved.
     @objc public var movesToAnotherCharacterSet: Bool { !characterSetMoves.isEmpty }
 
-    /// Whether the session reports its character set changes once ``trackingStatement`` has run -
-    /// or already did, so none was needed.
-    ///
-    /// Where this holds, what the session reports is the whole truth and no guessing about it is
-    /// needed. Where it does not - behind a proxy that does not carry the tracking, or on a
-    /// server that refuses the statement - the connection falls back to noticing a reported name
-    /// that differs from the one it connected with.
-    @objc public let sessionReportsChanges: Bool
 
     private init(trackingStatement: String?,
                  characterSetMoves: [SASessionCharacterSetMove],
                  characterSet: String,
-                 characterSetWithoutStatements: String,
-                 sessionReportsChanges: Bool) {
+                 characterSetWithoutStatements: String) {
         self.trackingStatement = trackingStatement
         self.characterSetMoves = characterSetMoves
-        self.sessionReportsChanges = sessionReportsChanges
         self.characterSet = characterSet
         self.characterSetWithoutStatements = characterSetWithoutStatements
         super.init()
@@ -105,9 +95,6 @@ public final class SASessionStartupPlan: NSObject {
                             quote: (String) -> String,
                             serverIsProxySQL: () -> Bool) -> SASessionStartupPlan {
         var trackingStatement: String?
-        // Already reporting, unless something has to be set for it - and then only if the
-        // statement is one this server will take.
-        var sessionReportsChanges = SASessionStateTracking.trackingListToSet(givenCurrentList: trackingList) == nil
 
         // Escaping follows what the session reports, and the client library only learns of a
         // SET NAMES through the server's session-state tracking. A server that does not list
@@ -116,7 +103,6 @@ public final class SASessionStartupPlan: NSObject {
         if let tracking = SASessionStateTracking.trackingListToSet(givenCurrentList: trackingList),
            !serverIsProxySQL() {
             trackingStatement = "SET SESSION session_track_system_variables = \(quote(tracking))"
-            sessionReportsChanges = true
         }
 
         // A session can end up in a character set that was never asked for - a server default, or
@@ -132,8 +118,7 @@ public final class SASessionStartupPlan: NSObject {
             return SASessionStartupPlan(trackingStatement: trackingStatement,
                                         characterSetMoves: [],
                                         characterSet: carried,
-                                        characterSetWithoutStatements: carried,
-                                        sessionReportsChanges: sessionReportsChanges)
+                                        characterSetWithoutStatements: carried)
         }
 
         let moves = SAConnectionCharacterSets.fallbackCharacterSets.map {
@@ -142,7 +127,6 @@ public final class SASessionStartupPlan: NSObject {
         return SASessionStartupPlan(trackingStatement: trackingStatement,
                                     characterSetMoves: moves,
                                     characterSet: moves[0].characterSet,
-                                    characterSetWithoutStatements: reported,
-                                    sessionReportsChanges: sessionReportsChanges)
+                                    characterSetWithoutStatements: reported)
     }
 }
