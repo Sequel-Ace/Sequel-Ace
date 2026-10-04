@@ -152,7 +152,8 @@ import Security
         profile: String?,
         accessKey: String?,
         secretKey: String?,
-        parentWindow: NSWindow?
+        parentWindow: NSWindow?,
+        shouldContinue: (() -> Bool)? = nil
     ) throws -> String {
         // Determine region
         var effectiveRegion = region?
@@ -175,7 +176,8 @@ import Security
         let credentials = try loadCredentialsFromProfile(
             effectiveProfile,
             region: effectiveRegion,
-            parentWindow: parentWindow
+            parentWindow: parentWindow,
+            shouldContinue: shouldContinue
         )
 
         // Generate the authentication token
@@ -199,7 +201,8 @@ import Security
     private static func loadCredentialsFromProfile(
         _ profileName: String,
         region: String,
-        parentWindow: NSWindow?
+        parentWindow: NSWindow?,
+        shouldContinue: (() -> Bool)? = nil
     ) throws -> AWSCredentials {
         // Load base credentials from profile
         let baseCredentials: AWSCredentials
@@ -245,7 +248,8 @@ import Security
                 baseCredentials: baseCredentials,
                 profileName: profileName,
                 region: region,
-                parentWindow: parentWindow
+                parentWindow: parentWindow,
+                shouldContinue: shouldContinue
             )
         } else {
             // Role assumption without MFA
@@ -350,7 +354,8 @@ import Security
         baseCredentials: AWSCredentials,
         profileName: String,
         region: String,
-        parentWindow: NSWindow?
+        parentWindow: NSWindow?,
+        shouldContinue: (() -> Bool)? = nil
     ) throws -> AWSCredentials {
         guard let roleArn = baseCredentials.roleArn,
               let mfaSerial = baseCredentials.mfaSerial else {
@@ -361,7 +366,8 @@ import Security
         guard let mfaToken = AWSMFATokenDialog.promptForMFAToken(
             profile: profileName,
             mfaSerial: mfaSerial,
-            parentWindow: parentWindow
+            parentWindow: parentWindow,
+            shouldContinue: shouldContinue ?? { true }
         ) else {
             throw AWSIAMAuthError.mfaCancelled
         }
@@ -637,6 +643,40 @@ import Security
 // MARK: - Objective-C Compatibility
 
 extension AWSIAMAuthManager {
+
+    /// Resolve profile credentials away from the UI thread; deliver the result on main.
+    @objc(generateAuthTokenInBackgroundWithHostname:port:username:region:profile:parentWindow:shouldContinue:completion:)
+    static func generateAuthTokenInBackground(
+        hostname: String,
+        port: Int,
+        username: String,
+        region: String?,
+        profile: String?,
+        parentWindow: NSWindow?,
+        shouldContinue: @escaping () -> Bool = { true },
+        completion: @escaping (String?, NSError?) -> Void
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard DispatchQueue.main.sync(execute: shouldContinue) else { return }
+            let token: String?
+            let resolvedError: NSError?
+            do {
+                token = try generateAuthToken(
+                    hostname: hostname, port: port, username: username,
+                    region: region, profile: profile, accessKey: nil, secretKey: nil,
+                    parentWindow: parentWindow, shouldContinue: shouldContinue
+                )
+                resolvedError = nil
+            } catch {
+                token = nil
+                resolvedError = presentableError(error, profile: profile)
+            }
+            DispatchQueue.main.async {
+                guard shouldContinue() else { return }
+                completion(token, resolvedError)
+            }
+        }
+    }
 
     /// Objective-C compatible method that returns nil on error
     /// Note: Uses a different method name to avoid selector conflicts with the throwing version
