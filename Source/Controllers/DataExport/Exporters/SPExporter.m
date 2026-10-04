@@ -36,6 +36,7 @@
 
 @synthesize connection;
 @synthesize serverSupport = serverSupport;
+@synthesize databaseName;
 @synthesize exportProgressValue;
 @synthesize exportProcessIsRunning;
 @synthesize exportUsingLowMemoryBlockingStreaming;
@@ -119,13 +120,6 @@
 {
     if([self exportOutputFile].fileHandleError == nil){
         [[self exportOutputFile] writeData:[input dataUsingEncoding:[self exportOutputEncoding]]];
-    }
-}
-
-- (void)writeUTF8String:(NSString *)input
-{
-    if([self exportOutputFile].fileHandleError == nil){
-        [[self exportOutputFile] writeData:[input dataUsingEncoding:NSUTF8StringEncoding]];
     }
 }
 

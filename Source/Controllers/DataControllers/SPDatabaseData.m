@@ -42,6 +42,8 @@
 @interface SPDatabaseData ()
 
 - (NSString *)_getSingleVariableValue:(NSString *)variable;
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName;
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query;
 - (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
 - (NSArray *)_fallbackCharacterSetEncodings;
@@ -72,8 +74,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 	if ((self = [super init])) {
 		characterSetEncoding = nil;
 		defaultCollationForCharacterSet = nil;
-		defaultCollation = nil;
-		defaultCharacterSetEncoding = nil;
+		defaultCharacterSetCache = [[SADatabaseScopedValueCache alloc] init];
+		defaultCollationCache = [[SADatabaseScopedValueCache alloc] init];
 		serverDefaultCollation = nil;
 		serverDefaultCharacterSetEncoding = nil;
 
@@ -111,8 +113,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		// in future queries
 		characterSetEncoding = nil;
 		defaultCollationForCharacterSet = nil;
-		defaultCharacterSetEncoding = nil;
-		defaultCollation = nil;
+		[defaultCharacterSetCache reset];
+		[defaultCollationCache reset];
 		serverDefaultCharacterSetEncoding = nil;
 		serverDefaultCollation = nil;
 
@@ -338,14 +340,12 @@ copy_return:
  *
  * This method is thread-safe.
  */
-- (NSString *)getDatabaseDefaultCharacterSet
+- (NSString *)getDatabaseDefaultCharacterSetForDatabase:(NSString *)databaseName
 {
 	@synchronized(charsetCollationLock) {
-		if (!defaultCharacterSetEncoding) {
-			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database"];
-		}
-
-		return [defaultCharacterSetEncoding copy];
+		return [[defaultCharacterSetCache valueForDatabase:databaseName loader:^NSString *(NSString *assertedDatabase) {
+			return [self _getSingleVariableValue:@"character_set_database" assertingDatabase:assertedDatabase];
+		}] copy];
 	}
 }
 
@@ -356,14 +356,12 @@ copy_return:
  *
  * This method is thread-safe.
  */
-- (NSString *)getDatabaseDefaultCollation
+- (NSString *)getDatabaseDefaultCollationForDatabase:(NSString *)databaseName
 {
 	@synchronized(charsetCollationLock) {
-		if (!defaultCollation) {
-			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
-		}
-
-		return [defaultCollation copy];
+		return [[defaultCollationCache valueForDatabase:databaseName loader:^NSString *(NSString *assertedDatabase) {
+			return [self _getSingleVariableValue:@"collation_database" assertingDatabase:assertedDatabase];
+		}] copy];
 	}
 }
 
@@ -443,7 +441,20 @@ copy_return:
  */
 - (NSString *)_getSingleVariableValue:(NSString *)variable
 {
-	SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]]];;
+	return [self _getSingleVariableValue:variable assertingDatabase:nil databaseContextIsRequired:NO];
+}
+
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName
+{
+	return [self _getSingleVariableValue:variable assertingDatabase:databaseName databaseContextIsRequired:YES];
+}
+
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName databaseContextIsRequired:(BOOL)databaseContextIsRequired
+{
+	NSString *query = [NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]];
+	SPMySQLResult *result = databaseContextIsRequired
+		? [connection queryString:query assertingDatabaseContext:databaseName]
+		: [connection queryString:query];
 
 	[result setReturnDataAsStrings:YES];
 

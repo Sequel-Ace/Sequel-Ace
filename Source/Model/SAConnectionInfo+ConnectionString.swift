@@ -84,8 +84,11 @@ extension SAConnectionInfo {
                 queryItems.append(URLQueryItem(name: "aws_profile", value: awsProfile))
             }
 
-        case .tcpIP:
-            // tcpip is the default, only add if needed for clarity
+        case .tcpIP, .vault:
+            // tcpip is the default, only add if needed for clarity.
+            // Vault carries no type of its own in a connection string and has
+            // always round-tripped as tcpip - the same deliberate quirk recorded
+            // on SAFavoriteDuplicateMatcher.typeTag(forString:).
             break
 
         @unknown default:
@@ -140,7 +143,7 @@ extension SPFavoriteNode {
 
             // Fetch password from keychain if requested
             if includePassword {
-                let keychain = SPKeychain()
+                let keychain = SAKeychainAccess.make()
                 let favoriteID = favoriteDict[SPFavoriteIDKey] as? NSNumber ?? NSNumber(value: -1)
                 let favoriteName = favoriteDict[SPFavoriteNameKey] as? String ?? ""
                 let host = favoriteDict[SPFavoriteHostKey] as? String ?? ""
@@ -150,10 +153,10 @@ extension SPFavoriteNode {
                 // Normalize host for keychain lookup (socket connections use "localhost")
                 let hostForKeychain = (typeTag == 1) ? "localhost" : host
 
-                let keychainName = keychain.name(forFavoriteName: favoriteName, id: "\(favoriteID)")
-                let keychainAccount = keychain.account(forUser: user, host: hostForKeychain, database: database)
+                let keychainName = keychain.name(favoriteName: favoriteName, id: "\(favoriteID)")
+                let keychainAccount = keychain.account(user: user, host: hostForKeychain, database: database)
 
-                if let password = keychain.getPasswordForName(keychainName, account: keychainAccount), !password.isEmpty {
+                if let password = keychain.password(name: keychainName, account: keychainAccount), !password.isEmpty {
                     components.password = password
                 }
             }
@@ -200,14 +203,14 @@ extension SPFavoriteNode {
             // Fetch SSH password from keychain if requested
             if includePassword, let sshUser = favoriteDict[SPFavoriteSSHUserKey] as? String, !sshUser.isEmpty,
                let sshHost = favoriteDict[SPFavoriteSSHHostKey] as? String, !sshHost.isEmpty {
-                let keychain = SPKeychain()
+                let keychain = SAKeychainAccess.make()
                 let favoriteID = favoriteDict[SPFavoriteIDKey] as? NSNumber ?? NSNumber(value: -1)
                 let favoriteName = favoriteDict[SPFavoriteNameKey] as? String ?? ""
 
-                let keychainName = keychain.nameForSSH(forFavoriteName: favoriteName, id: "\(favoriteID)")
-                let keychainAccount = keychain.account(forSSHUser: sshUser, sshHost: sshHost)
+                let keychainName = keychain.sshName(favoriteName: favoriteName, id: "\(favoriteID)")
+                let keychainAccount = keychain.sshAccount(user: sshUser, host: sshHost)
 
-                if let sshPassword = keychain.getPasswordForName(keychainName, account: keychainAccount), !sshPassword.isEmpty {
+                if let sshPassword = keychain.password(name: keychainName, account: keychainAccount), !sshPassword.isEmpty {
                     queryItems.append(URLQueryItem(name: "ssh_password", value: sshPassword))
                 }
             }

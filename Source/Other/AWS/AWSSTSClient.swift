@@ -288,8 +288,7 @@ import OSLog
             assertionFailure("AWSSTSClient.assumeRole should not be called from the main thread")
         }
 
-        var result: AWSCredentials?
-        var asyncError: Error?
+        let outcome = SAAsyncResultBox<AWSCredentials>()
 
         let semaphore = DispatchSemaphore(value: 0)
 
@@ -297,7 +296,7 @@ import OSLog
         DispatchQueue.global(qos: .userInitiated).async {
             Task {
                 do {
-                    result = try await assumeRole(
+                    let assumedCredentials = try await assumeRole(
                         roleArn: roleArn,
                         roleSessionName: roleSessionName,
                         mfaSerialNumber: mfaSerialNumber,
@@ -306,8 +305,9 @@ import OSLog
                         region: region,
                         credentials: credentials
                     )
+                    outcome.succeed(assumedCredentials)
                 } catch {
-                    asyncError = error
+                    outcome.fail(error)
                 }
                 semaphore.signal()
             }
@@ -325,7 +325,10 @@ import OSLog
             return nil
         }
 
-        if let asyncError = asyncError {
+        switch outcome.result {
+        case .success(let assumedCredentials):
+            return assumedCredentials
+        case .failure(let asyncError):
             if let stsError = asyncError as? AWSSTSClientError {
                 error?.pointee = NSError(
                     domain: "AWSSTSClientErrorDomain",
@@ -336,9 +339,11 @@ import OSLog
                 error?.pointee = asyncError as NSError
             }
             return nil
+        case nil:
+            // Neither a result nor an error: the task never completed. Legacy
+            // behavior was to return nil without touching the error pointer.
+            return nil
         }
-
-        return result
     }
 
     /// Convenience method for MFA role assumption.

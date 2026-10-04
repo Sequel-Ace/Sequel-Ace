@@ -89,6 +89,20 @@ struct SAConnectionInfo {
     var sshKeyLocationEnabled: Int = 0
     var sshKeyLocation: String = ""
     var sshPort: String = ""
+
+    /// The explicit command-line port override. A blank value returns zero so
+    /// OpenSSH can resolve the port from its configuration; invalid values fail.
+    var sshPortOverride: Int? {
+        let trimmedPort = sshPort.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPort.isEmpty else {
+            return 0
+        }
+        guard let port = Int(trimmedPort), (1...65535).contains(port) else {
+            return nil
+        }
+        return port
+    }
+
     var sshRemoteSocketPath: String = ""
 
     // MARK: Keychain
@@ -105,6 +119,8 @@ struct SAConnectionInfo {
 /// An `@objc`-compatible reference type wrapping `SAConnectionInfo` for use from Objective-C.
 /// ObjC code can create, populate, and pass this object; Swift code can read `.info` to get the value type.
 @objc class SAConnectionInfoObjC: NSObject {
+
+    @objc static let keychainPasswordPlaceholder = "SequelAceSecretPassword"
 
     var info: SAConnectionInfo
 
@@ -144,6 +160,30 @@ struct SAConnectionInfo {
 
         @unknown default:
             return fallbackHost
+        }
+    }
+
+    /// Returns whether SPMySQLConnection should request the saved password from its delegate.
+    /// AWS IAM auth tokens expire 15 minutes after they are generated, so they are always
+    /// requested per connection attempt rather than stored on the connection.
+    @objc(shouldDeferMySQLPasswordToDelegateForInfo:password:delegateAvailable:)
+    class func shouldDeferMySQLPasswordToDelegate(
+        for info: SAConnectionInfoObjC,
+        password: String,
+        delegateAvailable: Bool
+    ) -> Bool {
+        guard delegateAvailable else {
+            return false
+        }
+
+        switch info.type {
+        case .awsIAM:
+            return true
+        case .vault:
+            return false
+        case .tcpIP, .socket, .sshTunnel:
+            return !info.connectionKeychainItemName.isEmpty
+                && password == keychainPasswordPlaceholder
         }
     }
 

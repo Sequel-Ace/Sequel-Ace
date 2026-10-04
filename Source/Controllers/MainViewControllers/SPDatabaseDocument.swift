@@ -66,21 +66,21 @@ extension SPDatabaseDocument {
 
         // Restore accessory view settings if possible
         if let save_password = sessionData?["save_password"] as? Bool {
-            saveConnectionSavePassword.state = save_password ? .on : .off
+            saveConnectionSavePassword?.state = save_password ? .on : .off
         }
         if let auto_connect = sessionData?["auto_connect"] as? Bool {
-            saveConnectionAutoConnect.state = auto_connect ? .on : .off
+            saveConnectionAutoConnect?.state = auto_connect ? .on : .off
         }
         if let encrypted = sessionData?["encrypted"] as? Bool {
-            saveConnectionEncrypt.state = encrypted ? .on : .off
+            saveConnectionEncrypt?.state = encrypted ? .on : .off
         }
         if let include_session = sessionData?["include_session"] as? Bool {
-            saveConnectionIncludeData.state = include_session ? .on : .off
+            saveConnectionIncludeData?.state = include_session ? .on : .off
         }
         if let save_editor_content = sessionData?["save_editor_content"] as? Bool {
-            saveConnectionIncludeQuery.state = save_editor_content ? .on : .off
+            saveConnectionIncludeQuery?.state = save_editor_content ? .on : .off
         } else {
-            saveConnectionIncludeQuery.state = .on
+            saveConnectionIncludeQuery?.state = .on
         }
     }
 }

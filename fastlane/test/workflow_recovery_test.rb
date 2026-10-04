@@ -1,0 +1,1660 @@
+# frozen_string_literal: true
+
+require "test_helper"
+require "yaml"
+require "open3"
+
+class WorkflowRecoveryTest < Minitest::Test
+  def test_status_uses_protected_api_credentials_without_release_mutations_or_serialization
+    workflow = File.read(repo_path(".github/workflows/release_status.yml"))
+    assert_includes workflow, "contents: read"
+    assert_includes workflow, "packages: read"
+    assert_includes workflow, "environment: sequel-ace-release"
+    assert_includes workflow, "SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}"
+    assert_includes workflow, "release-status"
+    assert_includes workflow, "Archive tag mismatch"
+    refute_includes workflow, "group: sequel-ace-release"
+    refute_includes workflow, "contents: write"
+    refute_includes workflow, "create-github-app-token"
+    assert_operator workflow.index("Authorize exact read-only inspection"), :<, workflow.index("actions/checkout@")
+    assert_operator workflow.index('"refs/heads/main"'), :<, workflow.index("SA_ASC_PRIVATE_KEY:")
+  end
+
+  def test_delayed_manual_publisher_requires_exact_live_submission_before_settling
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    duplicate = workflow.split('if [[ "${locally_eligible}" != "true" ]]; then', 2).last
+                        .split('manifest_path="${archive_directory}/manifest.json"', 2).first
+    assert_includes duplicate, '"${handoff_state}" == "submitted"'
+    assert_includes duplicate, "validate-publish-handoff"
+    assert_includes duplicate, ".app_store.submitted == true and .app_store.metadata_valid == true"
+    assert_operator duplicate.index("validate-publish-handoff"), :<, duplicate.index("action=settled")
+    refute_includes duplicate, "sa-release submit"
+  end
+
+  def test_release_wait_uses_job_token_then_refreshes_app_tokens_for_mutations
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    wait_step = workflow.index("- name: Wait for exact-head release PR checks")
+    merge_token_step = workflow.index("- name: Refresh release App token before merging")
+    merge_step = workflow.index("- name: Recheck and merge the release PR")
+    cleanup_token_step = workflow.index("- name: Refresh release App token for failure cleanup")
+    cleanup_step = workflow.index("- name: Reconcile a failed release branch")
+
+    assert wait_step
+    assert merge_token_step
+    assert merge_step
+    assert cleanup_token_step
+    assert cleanup_step
+    assert_operator wait_step, :<, merge_token_step
+    assert_operator merge_token_step, :<, merge_step
+    assert_operator cleanup_token_step, :<, cleanup_step
+    assert_includes workflow[wait_step...merge_token_step], "SA_GITHUB_TOKEN: ${{ github.token }}"
+    assert_includes workflow[merge_step...cleanup_token_step], "SA_GITHUB_TOKEN: ${{ steps.merge_app_token.outputs.token }}"
+    assert_includes workflow[cleanup_step..], "steps.cleanup_app_token.outputs.token || github.token"
+  end
+
+  def test_only_exact_release_mutations_request_workflows_write
+    branch_permissions = [
+      ["permission-actions", "read"],
+      ["permission-checks", "read"],
+      ["permission-contents", "write"],
+      ["permission-pull-requests", "write"]
+    ]
+    cleanup_permissions = [
+      ["permission-contents", "write"],
+      ["permission-pull-requests", "write"]
+    ]
+    release_mutation_permissions = [
+      ["permission-contents", "write"],
+      ["permission-workflows", "write"]
+    ]
+    expected_permissions = {
+      ".github/workflows/release.yml:Mint repository-scoped release App token" => branch_permissions,
+      ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
+      ".github/workflows/release.yml:Mint exact-target release tag token" => release_mutation_permissions,
+      ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
+      ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
+      ".github/workflows/release_feasibility.yml:Mint a fresh release App token for the GitHub probe" => cleanup_permissions,
+      ".github/workflows/release_feasibility.yml:Refresh release App token for probe cleanup" => cleanup_permissions,
+      ".github/workflows/release_finalize.yml:Mint exact-target release mutation token" => release_mutation_permissions,
+      ".github/workflows/release_publish.yml:Mint exact-target public asset token" => [["permission-contents", "write"]]
+    }
+    observed_steps = []
+
+    %w[
+      release.yml
+      release_alpha_retry.yml
+      release_feasibility.yml
+      release_finalize.yml
+      release_publish.yml
+    ].each do |filename|
+      path = ".github/workflows/#{filename}"
+      workflow = File.read(repo_path(path))
+      token_steps = workflow.split(/(?=^      - name: )/).select do |step|
+        step.include?("actions/create-github-app-token@")
+      end
+      refute_empty token_steps
+
+      token_steps.each do |step|
+        name = step.match(/^- name: (.+)$/)&.captures&.first ||
+               step.match(/^      - name: (.+)$/)&.captures&.first
+        refute_nil name
+        label = "#{path}:#{name}"
+        observed_steps << label
+        permissions = step.lines.filter_map do |line|
+          match = line.match(/^\s+(permission-[a-z-]+):\s+(\S+)\s*$/)
+          [match[1], match[2]] if match
+        end
+        assert_equal expected_permissions.fetch(label).sort, permissions.sort,
+                     "#{label} must request exactly its allowlisted App permissions"
+      end
+    end
+
+    assert_equal expected_permissions.keys.sort, observed_steps.sort
+  end
+
+  def test_automated_recovery_never_edits_maintainer_release_notes
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+    [release, alpha, publisher].each do |workflow|
+      refute_includes workflow, "gh release edit"
+      refute_includes workflow, "--notes-file"
+      refute_includes workflow, "failure_release_token"
+    end
+    assert_includes release, "maintainer-edited GitHub release notes were left unchanged"
+    assert_includes alpha, "maintainer-edited GitHub release notes were left unchanged"
+    assert_includes publisher, "maintainer-edited GitHub release notes were left unchanged"
+    assert_includes publisher, "archive-release-to-ghcr.sh push"
+
+    exact_create_token = release.split("- name: Mint exact-target release tag token", 2).fetch(1)
+                                .split("- name: Select the initial GitHub release publisher", 2).first
+    finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    exact_finalize_token = finalizer.split("- name: Mint exact-target release mutation token", 2).fetch(1)
+                                    .split("- name: Finalize only exact App Store-live releases", 2).first
+    refute_includes exact_create_token, "continue-on-error: true"
+    refute_includes exact_finalize_token, "continue-on-error: true"
+  end
+
+  def test_user_publisher_credential_is_scoped_only_to_live_selection_and_initial_creation
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    selector = release.split("- name: Select the initial GitHub release publisher", 2).fetch(1)
+                      .split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).first
+    user_creation = release.split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).fetch(1)
+                           .split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).first
+    app_creation = release.split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).fetch(1)
+                          .split("- name: Record the exact GitHub prerelease identity", 2).first
+
+    assert_equal 2, release.scan(/^\s+SA_RELEASE_GITHUB_PUBLISHER_TOKEN:/).length
+    assert_equal 2, release.scan(/secrets\.SA_RELEASE_GITHUB_PUBLISHER_TOKEN/).length
+    assert_includes user_creation,
+                    'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
+    assert_includes user_creation, "if: steps.release_publisher.outputs.mode == 'user'"
+    assert_includes user_creation, 'SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}'
+    assert_includes selector,
+                    'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
+    assert_includes selector, "github-release-publisher-mode"
+    assert_includes selector, "live credential capability"
+    refute_includes app_creation, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    assert_includes app_creation, "steps.release_publisher.outputs.mode == 'app'"
+    assert_includes app_creation, "steps.release_publisher.outputs.mode == 'existing'"
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}'
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_INSTALLATION_ID: ${{ steps.release_mutation_token.outputs.installation-id }}'
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_SLUG: ${{ steps.release_mutation_token.outputs.app-slug }}'
+    [user_creation, app_creation].each do |creation|
+      %w[CHANNEL VERSION BUILD ITERATION TARGET_SHA].each do |name|
+        assert_includes creation, "RELEASE_#{name}: " + '${{'
+      end
+      creation_run = creation.split("run: |", 2).fetch(1)
+      refute_includes creation_run, '${{'
+      %w[CHANNEL VERSION BUILD ITERATION TARGET_SHA].each do |name|
+        assert_includes creation_run, '"${RELEASE_' + name + '}"'
+      end
+    end
+    archive = release.split("- name: Durably archive the release identity before Cloud runs", 2).fetch(1)
+                     .split("- name: Arm event-driven artifact publication for the exact handoff", 2).first
+    assert_includes archive, "release-publisher.json"
+
+    %w[release_alpha_retry.yml release_finalize.yml release_publish.yml release_feasibility.yml].each do |filename|
+      refute_includes File.read(repo_path(".github/workflows/#{filename}")),
+                      "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    end
+  end
+
+  def test_release_wake_adapter_mints_only_an_exact_repository_variables_token
+    [
+      [".github/workflows/release.yml", "Arm event-driven artifact publication for the exact handoff"],
+      [".github/workflows/release_alpha_retry.yml", "Arm event-driven artifact publication for the exact Alpha retry"],
+      [".github/workflows/release_publish.yml", "Arm the exact production finalization wake state"],
+      [".github/workflows/release_publish.yml", "Arm the reconciled production finalization wake state"],
+      [".github/workflows/release_publish.yml", "Clear only the exact settled handoff"],
+      [".github/workflows/release_finalize.yml", "Clear only the exact settled finalization wake state"]
+    ].each do |path, consumer_name|
+      workflow = File.read(repo_path(path))
+      consumer = workflow.split("- name: #{consumer_name}", 2).fetch(1)
+                         .split(/^\s{6}- name: /, 2).first
+
+      refute_includes workflow, "Mint release App token for artifact wake state"
+      assert_includes consumer, "Scripts/release-artifact-wake-state.sh"
+      assert_includes consumer, "GITHUB_REPOSITORY_ID: ${{ github.repository_id }}"
+      assert_includes consumer, "SA_RELEASE_GITHUB_APP_CLIENT_ID"
+      assert_includes consumer, "SA_RELEASE_GITHUB_APP_PRIVATE_KEY"
+      refute_includes consumer, "GH_TOKEN:"
+    end
+
+    adapter = File.read(repo_path("Scripts/release-artifact-wake-state.sh"))
+    assert_includes adapter, 'permissions:{actions_variables:"write"}'
+    assert_includes adapter, 'repository_ids:[$id]'
+    assert_includes adapter, '.permissions.actions_variables == "write"'
+    assert_includes adapter, '.repositories | type == "array" and length == 1'
+    assert_includes adapter, "--method DELETE installation/token"
+    assert_includes adapter, "SA_RELEASE_PENDING_ARTIFACT_TAG"
+    assert_includes adapter, "SA_RELEASE_PENDING_FINALIZATION_TAG"
+    assert_includes adapter, "Unsupported release wake-state variable"
+  end
+
+  def test_release_workflows_keep_failure_evidence_out_of_the_mutable_body
+    workflows = %w[release.yml release_alpha_retry.yml release_publish.yml].map do |filename|
+      File.read(repo_path(".github/workflows/#{filename}"))
+    end
+
+    workflows.each do |workflow|
+      refute_includes workflow, "Workflow evidence: ${RUN_URL}"
+      refute_includes workflow, "failed-release-body.md"
+      refute_includes workflow, "recovered-release-body.md"
+      refute_includes workflow, "retry-failed-release-body.md"
+    end
+  end
+
+  def test_cloud_target_is_reconciled_again_after_checks_and_before_merge_or_tag
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    wait_step = workflow.index("- name: Wait for exact-head release PR checks")
+    fresh_token = workflow.index("- name: Refresh release App token before merging")
+    reconcile_again = workflow.index("- name: Revalidate Production Cloud build immediately before merge or tag")
+    merge_step = workflow.index("- name: Recheck and merge the release PR")
+    tag_step = workflow.index("- name: Create the tag-backed GitHub prerelease")
+
+    assert_operator wait_step, :<, fresh_token
+    assert_operator fresh_token, :<, reconcile_again
+    assert_operator reconcile_again, :<, merge_step
+    assert_operator merge_step, :<, tag_step
+    final_gate = workflow[reconcile_again...merge_step]
+    tag_refresh = final_gate.index("git fetch --force --prune")
+    base_revalidation = final_gate.index("refreshed_base_sha")
+    changelog_base_revalidation = final_gate.index("refreshed_changelog_base_sha")
+    reconciliation = final_gate.index("sa-release reconcile-build")
+    assert_operator tag_refresh, :<, base_revalidation
+    assert_operator base_revalidation, :<, changelog_base_revalidation
+    assert_operator changelog_base_revalidation, :<, reconciliation
+    assert_includes final_gate, "APPROVED_BASE_SHA"
+    assert_includes final_gate, "APPROVED_CHANGELOG_BASE_SHA"
+    assert_includes final_gate, "--expected-target-build"
+    refute_includes final_gate, "release-plan.json"
+    refute_includes final_gate, "source_build="
+    refute_includes final_gate, "--source-build"
+    assert_includes final_gate, "mv pre-merge-reconciliation.json reconciliation.json"
+  end
+
+  def test_release_build_is_api_derived_without_a_ui_number_input
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+
+    refute_includes workflow, "production_cloud_next_build"
+    refute_includes workflow, "--cloud-next-build"
+    refute_includes workflow, "--observed-cloud-next-build"
+    assert_equal 2, workflow.scan("sa-release reconcile-build").length
+    assert_includes workflow, '--workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}"'
+    assert_includes workflow, '"production_build_evidence" => reconciliation.fetch("production_build_evidence")'
+
+    initial = workflow.split("- name: Reconcile the authoritative Production Cloud build", 2).fetch(1)
+                      .split("- name: Create the initial release manifest", 2).first
+    final = workflow.split("- name: Revalidate Production Cloud build immediately before merge or tag", 2).fetch(1)
+                    .split("- name: Recheck and merge the release PR", 2).first
+    [initial, final].each do |reconciliation|
+      assert_includes reconciliation, '--channel "${RELEASE_CHANNEL}"'
+      assert_includes reconciliation, '--target-version "${RELEASE_VERSION}"'
+    end
+  end
+
+  def test_a_higher_assigned_number_dispatches_only_a_validated_forward_recovery
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+
+    assert_includes publisher, 'failure_reason == \'cloud_build_number_advanced\''
+    refute_includes publisher, 'failure_reason == \'cloud_build_number_regressed\' &&'
+    recovery_job = publisher.split("  forward_build_recovery:", 2).fetch(1)
+                            .split("  publish:", 2).first
+    assert_includes recovery_job, "actions: write"
+    assert_includes recovery_job, "validate-forward-recovery"
+    assert_operator recovery_job.index("validate-forward-recovery"), :<,
+                    recovery_job.index("actions/workflows/release.yml/dispatches")
+    assert_includes recovery_job, '"mode" => "resume"'
+    assert_includes recovery_job, '"recovery_tag" => recovery.fetch("predecessor_tag")'
+    assert_includes recovery_job, '"approval_sha256" => approval.fetch("sha256")'
+    recovery_validation = recovery_job.split("- name: Revalidate the durable failure and dispatch the next RC", 2).fetch(1)
+    assert_includes recovery_validation, 'RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}'
+    assert_includes recovery_validation, 'RELEASE_VERSION: ${{ needs.discover.outputs.version }}'
+    run_body = recovery_validation.split("run: |", 2).fetch(1)
+    refute_includes run_body, '${{ needs.discover.outputs.channel }}'
+    refute_includes run_body, '${{ needs.discover.outputs.version }}'
+
+    assert_includes release, 'RELEASE_ACTOR: ${{ github.actor }}'
+    assert_includes release, '"${RELEASE_ACTOR}" == "github-actions[bot]"'
+    assert_includes release, "validate-forward-recovery"
+    assert_includes release, 'reconciliation.fetch("production_cloud_runs").find'
+    assert_includes release, 'run.fetch("id") == recovery.fetch("cloud_run_id")'
+    assert_includes release, 'exact_run.fetch("number") == recovery.fetch("cloud_assigned_build")'
+    assert_includes release, '--base-sha "${{ steps.recovery.outputs.operational_main_sha }}"'
+    assert_includes release, "forward_build_recovery"
+  end
+
+  def test_release_preparation_uses_the_approved_cumulative_changelog_base
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    preparation = workflow.split("- name: Prepare explicit release files", 2).fetch(1)
+                          .split("- name: Create verified release bot commit and PR", 2).first
+
+    assert_includes preparation, '--base-tag "${{ inputs.previous_tag }}"'
+    assert_includes preparation, '--expected-base-sha "${{ steps.plan.outputs.base_sha }}"'
+    assert_includes preparation, '--changelog-base-tag "${{ steps.plan.outputs.changelog_base_tag }}"'
+    assert_includes preparation, '--expected-changelog-base-sha "${{ steps.plan.outputs.changelog_base_sha }}"'
+  end
+
+  def test_cancelled_release_runs_branch_and_prerelease_recovery
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    cleanup_token = release[/\s+if: .*\n\s+id: cleanup_app_token/, 0]
+    cleanup_step = release.split("- name: Reconcile a failed release branch", 2).fetch(1).lines.first(2).join
+    prerelease_step = release.split("- name: Preserve failed release state without editing release notes", 2).fetch(1)
+                             .split("continue-on-error:", 2).first
+    alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    alpha_step = alpha.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1)
+                      .split("continue-on-error:", 2).first
+
+    assert_includes cleanup_token, "failure() || cancelled()"
+    assert_includes cleanup_step, "failure() || cancelled()"
+    assert_includes prerelease_step, "failure() || cancelled()"
+    assert_includes alpha_step, "failure() || cancelled()"
+  end
+
+  def test_tag_only_recovery_treats_an_already_deleted_release_branch_as_absent
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    cleanup = workflow.split("- name: Delete a recovered merged release branch", 2).fetch(1)
+                      .split("- name: Prepare explicit release files", 2).first
+
+    assert_includes cleanup, "client.delete_branch(ENV.fetch(\"RELEASE_BRANCH\"), allow_absent: true)"
+    refute_includes cleanup, "HTTP 404"
+  end
+
+  def test_mutating_workflows_authorize_the_rerun_initiator
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    assert_operator release.scan("github.triggering_actor").length, :>=, 2
+    assert_includes release, '--triggering-actor "${GUARD_TRIGGERING_ACTOR}"'
+    assert_includes release, "Unauthorized release rerun initiator."
+
+    {
+      ".github/workflows/release_alpha_retry.yml" => "Unauthorized release rerun initiator.",
+      ".github/workflows/release_feasibility.yml" => "Unauthorized feasibility rerun initiator.",
+      ".github/workflows/release_finalize.yml" => "Unauthorized finalizer rerun initiator.",
+      ".github/workflows/release_publish.yml" => "Unauthorized artifact-publisher rerun initiator."
+    }.each do |path, rejection|
+      workflow = File.read(repo_path(path))
+      assert_includes workflow, "github.triggering_actor"
+      assert_includes workflow, rejection
+    end
+  end
+
+  def test_transient_workflow_evidence_cannot_pollute_release_commit_paths
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    release_exclusion = release.index("- name: Exclude transient release evidence from git status")
+    release_plan = release.index("- name: Decode and validate the approved plan")
+    assert_operator release_exclusion, :<, release_plan
+    assert_includes release[release_exclusion...release_plan], "/release-plan.json"
+    assert_includes release[release_exclusion...release_plan], "/manifest.json"
+    assert_includes release[release_exclusion...release_plan], "/release-publisher.json"
+    overlap = release.split("- name: Refuse overlapping asynchronous release handoffs", 2).fetch(1)
+                     .split("- name: Recheck release authorization with the tested guard", 2).first
+    assert_includes overlap, 'prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"'
+    refute_includes overlap, "> existing-release-prereleases.txt"
+
+    feasibility = File.read(repo_path(".github/workflows/release_feasibility.yml"))
+    feasibility_exclusion = feasibility.index("- name: Exclude transient feasibility evidence from git status")
+    feasibility_probe = feasibility.index("- name: Create the verified GitHub App commit and disposable PR")
+    assert_operator feasibility_exclusion, :<, feasibility_probe
+    assert_includes feasibility[feasibility_exclusion...feasibility_probe], "/feasibility/"
+  end
+
+  def test_release_keeps_bundler_configuration_outside_the_tracked_worktree
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    external_config = workflow.index("- name: Keep Bundler configuration outside the tracked worktree")
+    ruby_setup = workflow.index("- name: Set up Ruby and locked gems")
+    config_check = workflow.index("- name: Verify Bundler left tracked configuration unchanged")
+    preparation = workflow.index("- name: Prepare explicit release files")
+
+    assert_operator external_config, :<, ruby_setup
+    assert_operator ruby_setup, :<, config_check
+    assert_operator config_check, :<, preparation
+
+    setup = workflow[external_config...ruby_setup]
+    assert_includes setup, 'mktemp -d "${RUNNER_TEMP}/sequel-ace-bundle-config.XXXXXX"'
+    assert_includes setup, 'cp .bundle/config "${bundle_config_directory}/config"'
+    assert_includes setup, %q(printf 'BUNDLE_APP_CONFIG=%s\n' "${bundle_config_directory}" >> "${GITHUB_ENV}")
+    assert_includes workflow[config_check...preparation], "git diff --quiet -- .bundle/config"
+  end
+
+  def test_ambiguous_app_store_submission_is_polled_before_failure_recording
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+    reconcile = recovery.index("reconcile-submission")
+    record = recovery.index("- name: Preserve confirmed submission evidence")
+
+    refute_nil reconcile
+    refute_nil record
+    assert_operator reconcile, :<, record
+    assert_includes recovery[reconcile...record], "--wait-seconds 900"
+    assert_includes recovery[reconcile...record], "--poll-interval 15"
+    assert_includes recovery[record..], "--submission reconciled-submission.json"
+    assert_includes recovery, "runs-on: ubuntu-latest"
+  end
+
+  def test_cloud_and_notarization_waits_are_split_from_mutating_handoffs
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    alpha_retry = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+
+    [release, alpha_retry].each do |workflow|
+      refute_includes workflow, "sa-release wait-cloud"
+      refute_includes workflow, "sleep "
+      assert_includes workflow, "Release Artifact Publisher"
+      assert_includes workflow, "runs-on: ubuntu-latest"
+      refute_includes workflow, "runs-on: macos-15"
+    end
+    assert_includes release, "Durably archive the release identity before Cloud runs"
+    assert_includes alpha_retry, "Archive the exact Alpha retry handoff"
+    assert_operator release.index("Durably archive the release identity before Cloud runs"), :<,
+                    release.index("Arm event-driven artifact publication for the exact handoff")
+    assert_operator alpha_retry.index("Archive the exact Alpha retry handoff"), :<,
+                    alpha_retry.index("Arm event-driven artifact publication for the exact Alpha retry")
+    assert_includes publisher, 'cron: "11,41 * * * *"'
+    assert_includes publisher, "check_run:"
+    assert_includes publisher, "types:\n      - completed"
+    assert_includes publisher, "status: {}"
+    assert_includes publisher, "workflow_run:"
+    assert_includes publisher, "SA_RELEASE_PENDING_ARTIFACT_TAG"
+    assert_includes publisher, "github.event.check_run.app.slug == 'xcode-cloud'"
+    assert_includes publisher, "github.event.check_run.app.id == 117084"
+    assert_includes publisher, "github.event_name == 'status'"
+    assert_includes publisher, "runs-on: ubuntu-latest"
+    assert_includes publisher, "sa-release cloud-status"
+    refute_includes publisher, "sa-release wait-cloud"
+    refute_includes publisher, "sleep "
+    publish_job = publisher.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
+    cloud_failure = publisher.split("  cloud_failure:", 2).fetch(1).split("  publish:", 2).first
+    assert_includes publish_job, "needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue'"
+    refute_includes publish_job, "action == 'fail'"
+    assert_includes publish_job, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes cloud_failure, "if: needs.discover.outputs.action == 'fail'"
+    assert_includes cloud_failure, "runs-on: ubuntu-latest"
+    assert_includes publisher, "selected_action=\"pending\""
+    assert_includes publisher, "settle_artifact_wake_state:"
+    assert_includes publisher, "release-artifact-wake-state.sh clear"
+    production_gate = alpha_retry.index("- name: Resolve the existing exact Production build without waiting")
+    retry_mutation = alpha_retry.index("- name: Reuse or start one Alpha-only Xcode Cloud retry")
+    assert_operator production_gate, :<, retry_mutation
+  end
+
+  def test_new_releases_refuse_an_active_asynchronous_handoff
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization_start = workflow.index("- name: Enforce release authorization")
+    authorization_end = workflow.index("- name: Prove the frozen release SHA is on dispatch main")
+    checkout = workflow.index("- name: Check out immutable dispatch tooling")
+    authorization = workflow[authorization_start...authorization_end]
+    overlap = workflow.index("- name: Refuse overlapping asynchronous release handoffs")
+    approval = workflow.index("- name: Recheck release authorization with the tested guard")
+    gate = workflow[overlap...approval]
+
+    assert_operator authorization_start, :<, checkout
+    assert_operator overlap, :<, approval
+    assert_includes gate, "%w[cloud_running artifacts_verified archived submitted finalizing]"
+    assert_includes gate, "%w[cloud_running artifacts_verified]"
+    assert_includes gate, "ReleaseNaming.new"
+    assert_includes gate, "still has an active asynchronous handoff"
+    assert_includes authorization, "SA_RELEASE_PENDING_ARTIFACT_TAG is not configured."
+    assert_includes authorization, "A release is still awaiting artifact publication"
+    assert_includes authorization, 'automatic_forward_recovery="false"'
+    assert_includes authorization, 'automatic_forward_recovery="true"'
+    assert_includes authorization,
+                    '( "${automatic_forward_recovery}" != "true" || "${PENDING_ARTIFACT_TAG}" != "${RECOVERY_TAG}" )'
+    assert_includes authorization, "SA_RELEASE_PENDING_FINALIZATION_TAG is not configured."
+    assert_includes authorization,
+                    '[[ -n "${PENDING_ARTIFACT_TAG}" ]] || { echo "SA_RELEASE_PENDING_ARTIFACT_TAG is not configured." >&2; exit 1; }'
+    assert_includes authorization,
+                    '[[ -n "${PENDING_FINALIZATION_TAG}" ]] || { echo "SA_RELEASE_PENDING_FINALIZATION_TAG is not configured." >&2; exit 1; }'
+    assert_operator authorization.index("SA_RELEASE_PENDING_ARTIFACT_TAG is not configured."), :<,
+                    authorization.index("A release is still awaiting artifact publication")
+    assert_operator authorization.index("SA_RELEASE_PENDING_FINALIZATION_TAG is not configured."), :<,
+                    authorization.index("A production release is still awaiting finalization")
+    pending_artifact_branch = authorization.split(
+      'if [[ "${PENDING_ARTIFACT_TAG}" != "none" &&',
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    pending_finalization_branch = authorization.split(
+      'if [[ -n "${PENDING_FINALIZATION_TAG}" && "${PENDING_FINALIZATION_TAG}" != "none" ]]',
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes pending_artifact_branch, "exit 1"
+    assert_includes pending_finalization_branch, "exit 1"
+    assert_includes gate, "SequelAceRelease::VersionFiles.new.current"
+    assert_includes gate, 'puts "#{source.fetch("version")}-#{source.fetch("build")}"'
+    assert_includes gate, "ReleasePublisher.authorized?"
+    assert_includes gate, "release_author"
+    assert_includes gate, "release_author_id"
+    assert_includes gate, "id: author_id"
+    assert_includes gate, "has unreadable private handoff state; refusing to overlap it"
+    assert_includes gate, 'if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${work_directory}"'
+    refute_includes gate, "if Scripts/archive-release-to-ghcr.sh pull"
+    authorization_check = gate.index("ReleasePublisher.authorized?")
+    archive_pull = gate.index("Scripts/archive-release-to-ghcr.sh pull")
+    assert_operator authorization_check, :<, archive_pull
+    publisher_authorization_branch = gate.split(
+      "if ! bundle exec ruby -I fastlane/lib -rsequel_ace_release -e",
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes publisher_authorization_branch,
+                    'authorized?(tag: ARGV.fetch(0), login: ARGV.fetch(1), id: author_id, created_at: ARGV.fetch(3))'
+    assert_includes publisher_authorization_branch,
+                    '"${release_tag}" "${release_author}" "${release_author_id}" "${release_created_at}"'
+    assert_includes publisher_authorization_branch, "continue"
+    unreadable_archive_branch = gate.split(
+      'if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${work_directory}"',
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes unreadable_archive_branch, "exit 1"
+    production_filter = gate.index('release_tag}" != "production/${source_release_suffix}')
+    beta_filter = gate.index('release_tag}" != "beta/${source_release_suffix}')
+    assert_operator production_filter, :<, archive_pull
+    assert_operator beta_filter, :<, archive_pull
+    active_handoff_branch = gate.split('if [[ "${active}" == "true" ]]', 2)
+                                .fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes active_handoff_branch, "exit 1"
+  end
+
+  def test_publisher_uses_authenticated_xcode_checks_with_a_variable_gated_recovery_poll
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery_job = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    authorization = discovery_job.split("- name: Authorize the asynchronous publisher", 2).fetch(1)
+                                 .split("- name: Check out immutable release tooling", 2).first
+    candidate = discovery_job.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+
+    assert_includes discovery_job, "github.event_name == 'workflow_dispatch'"
+    assert_includes discovery_job, "startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'production/')"
+    assert_includes discovery_job, "startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'beta/')"
+    assert_includes discovery_job, "github.event.check_run.app.slug == 'xcode-cloud'"
+    assert_includes discovery_job, "github.event.check_run.app.id == 117084"
+    assert_includes discovery_job, "github.event_name == 'status'"
+    assert_includes discovery_job, "github.event.context == 'Sequel Ace | Sequel Ace Release'"
+    assert_includes discovery_job, "github.event.context == 'Sequel Ace Beta | Sequel Ace Beta'"
+    assert_includes discovery_job, "checks: read"
+    assert_includes authorization, '[[ "${SOURCE_CHECK_APP_ID}" == "117084" && "${SOURCE_CHECK_APP_SLUG}" == "xcode-cloud" ]]'
+    assert_includes authorization, "Sequel Ace | Sequel Ace Release | Archive - macOS"
+    assert_includes authorization, "Sequel Ace Beta | Sequel Ace Beta | Archive - macOS"
+    assert_includes authorization, '[[ "${SOURCE_CHECK_STATUS}" == "completed" && -n "${SOURCE_CHECK_CONCLUSION}" ]]'
+    assert_includes authorization, '[[ "${SOURCE_STATUS_STATE}" == "success" || "${SOURCE_STATUS_STATE}" == "failure" || "${SOURCE_STATUS_STATE}" == "error" ]]'
+    assert_includes authorization, "/apps/1518036000/ci/builds/"
+    assert_includes authorization, "/apps/1594104035/ci/builds/"
+    assert_includes authorization, 'commits/${SOURCE_STATUS_SHA}/check-runs?per_page=100'
+    assert_includes authorization, '.app.id == 117084 and .app.slug == \"xcode-cloud\"'
+    assert_includes authorization, '[[ "${matching_check_count}" -ge 1 ]]'
+    assert_includes candidate, 'release_tag="${REQUESTED_TAG:-${PENDING_TAG}}"'
+    refute_includes candidate, "releases?per_page=100"
+    refute_includes candidate, "while IFS="
+  end
+
+  def test_artifact_wake_state_is_cleared_only_after_durable_settlement
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    settlement = workflow.split("  settle_artifact_wake_state:", 2).fetch(1)
+
+    assert_includes settlement, "needs.discover.outputs.action == 'settled'"
+    assert_includes settlement, "needs.cloud_failure.result == 'success'"
+    assert_includes settlement, "needs.discover.outputs.failure_reason != 'cloud_build_number_advanced'"
+    assert_includes settlement, "needs.publish.result == 'success'"
+    assert_includes settlement, "needs.recover_publish_failure.outputs.polling_needed == 'false'"
+    assert_includes settlement, "permissions:\n      contents: read"
+    assert_includes settlement, 'release-artifact-wake-state.sh clear "${SETTLED_TAG}"'
+    refute_includes settlement, "needs.discover.outputs.action == 'pending'"
+
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+                       .split("  settle_artifact_wake_state:", 2).first
+    assert_includes recovery, "polling_needed: ${{ steps.polling.outputs.polling_needed }}"
+    assert_includes recovery, 'echo "polling_needed=false"'
+    assert_includes recovery, 'echo "polling_needed=true"'
+  end
+
+  def test_forward_recovery_keeps_the_predecessor_armed_until_the_child_handoff_replaces_it
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    arm = release.split("- name: Arm event-driven artifact publication for the exact handoff", 2).fetch(1)
+                 .split("- name: Preserve a recoverable handoff", 2).first
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+    settlement = publisher.split("  settle_artifact_wake_state:", 2).fetch(1)
+
+    assert_includes arm, 'EXPECTED_PREDECESSOR_TAG: ${{ inputs.recovery_tag }}'
+    assert_includes arm, 'arguments+=("${EXPECTED_PREDECESSOR_TAG}")'
+    assert_includes arm, 'release-artifact-wake-state.sh "${arguments[@]}"'
+    assert_includes settlement, "failure_reason != 'cloud_build_number_advanced'"
+  end
+
+  def test_unsuccessful_or_cancelled_wake_state_steps_preserve_the_durable_cloud_running_handoff
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    release_arm = release.split("- name: Arm event-driven artifact publication for the exact handoff", 2).fetch(1)
+                         .split("- name: Preserve a recoverable handoff", 2).first
+    release_recovery = release.split("- name: Preserve a recoverable handoff when wake-state arming fails", 2).fetch(1)
+                              .split("- name: Record asynchronous Cloud handoff", 2).first
+
+    assert_includes release_arm, "id: artifact_wake"
+    assert_includes release_recovery, "failure() || cancelled()"
+    assert_includes release_recovery, "steps.initial_archive.outcome == 'success'"
+    assert_includes release_recovery, "steps.artifact_wake.outcome != 'success'"
+    assert_includes release_recovery, "remains \\`cloud_running\\`"
+    assert_includes release, "steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success'"
+    refute_includes release, "steps.artifact_wake.outcome == 'failure'"
+    refute_includes release_recovery, "record-failure"
+
+    alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    alpha_arm = alpha.split("- name: Arm event-driven artifact publication for the exact Alpha retry", 2).fetch(1)
+                     .split("- name: Preserve a recoverable Alpha handoff", 2).first
+    alpha_recovery = alpha.split("- name: Preserve a recoverable Alpha handoff when wake-state arming fails", 2).fetch(1)
+                          .split("- name: Record asynchronous Alpha retry handoff", 2).first
+    assert_includes alpha, "id: retry_archive"
+    assert_includes alpha_arm, "id: artifact_wake"
+    assert_includes alpha_recovery, "failure() || cancelled()"
+    assert_includes alpha_recovery, "steps.retry_archive.outcome == 'success'"
+    assert_includes alpha_recovery, "steps.artifact_wake.outcome != 'success'"
+    assert_includes alpha_recovery, "remains \\`cloud_running\\`"
+    assert_includes alpha, "steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success'"
+    refute_includes alpha, "steps.artifact_wake.outcome == 'failure'"
+    refute_includes alpha_recovery, "record-failure"
+  end
+
+  def test_publisher_never_inspects_alpha_until_production_is_ready
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+                        .split("  cloud_failure:", 2).first
+
+    assert_includes discovery, '[[ "${channel}" == "beta" && "${production_readiness}" == "ready" ]]'
+    assert_includes discovery, 'elif [[ "${production_readiness}" == "ready" && "${alpha_readiness}" == "failed" ]]'
+    refute_includes discovery, '"${production_readiness}" != "failed"'
+  end
+
+  def test_publisher_writes_discovery_state_outside_the_pulled_archive
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+                        .split("  cloud_failure:", 2).first
+
+    assert_includes discovery, 'archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"'
+    assert_includes discovery, 'state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-state.XXXXXX")"'
+    assert_includes discovery, 'manifest_path="${archive_directory}/manifest.json"'
+    assert_includes discovery, '--manifest "${manifest_path}"'
+    assert_includes discovery, '--output "${state_directory}/context.json"'
+    assert_includes discovery, '--output "${state_directory}/production-status.json"'
+    assert_includes discovery, '--output "${state_directory}/alpha-status.json"'
+    refute_includes discovery, '--output "${archive_directory}/'
+  end
+
+  def test_publisher_keeps_the_exact_wake_state_armed_when_its_archive_is_unreadable
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+                        .split("  cloud_failure:", 2).first
+
+    assert_includes discovery, 'if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}"'
+    assert_includes discovery, "has no readable private handoff archive; recovery remains armed."
+    refute_includes discovery, "it was skipped."
+    refute_includes discovery, "unreadable=$((unreadable + 1))"
+  end
+
+  def test_publisher_settles_a_locally_terminal_wake_tag_but_fails_an_explicit_recovery
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+                        .split("  cloud_failure:", 2).first
+    local_gate = discovery.index('locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release')
+    requested = discovery.index('if [[ -n "${REQUESTED_TAG}" ]]', local_gate)
+    settled = discovery.index('echo "action=settled"', requested)
+    terminal_exit = discovery.index("exit 0", settled)
+    live_validation = discovery.index("bundle exec ruby fastlane/bin/sa-release validate-publish-handoff", terminal_exit)
+
+    assert local_gate
+    assert requested
+    assert settled
+    assert terminal_exit
+    assert live_validation
+    assert_operator local_gate, :<, requested
+    assert_operator requested, :<, settled
+    assert_operator settled, :<, terminal_exit
+    assert_operator terminal_exit, :<, live_validation
+    assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication; inspect release_status.yml."
+    assert_includes discovery, "recovery wake state can be cleared."
+    assert_includes discovery, "PublishHandoff::ELIGIBLE_STATES"
+    assert_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
+    assert_includes discovery, '--integrity-failure-marker "${integrity_marker}"'
+    assert_includes discovery, "Live handoff validation failed transiently; recovery remains armed."
+  end
+
+  def test_verified_archive_continuation_does_not_query_cloud_downloads
+    workflow = YAML.load_file(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.dig("jobs", "discover", "steps").find do |step|
+      step["name"] == "Inspect exact Cloud runs once"
+    end.fetch("run")
+    # Run the actual readiness and action-selection shell with the real CLI and
+    # CloudRunStatus. The earlier handoff checks remain covered by their suites.
+    shell = discovery[discovery.index("# Handoff and public-asset validation above")..]
+    assert_operator discovery.index("validate-publish-handoff"), :<, discovery.index("artifact_arguments=()")
+    assert_operator discovery.index("github-public-assets-status"), :<, discovery.index("artifact_arguments=()")
+    recheck = workflow.dig("jobs", "publish", "steps").find do |step|
+      step["name"] == "Recheck exact Cloud readiness once"
+    end
+    assert_equal "${{ steps.context.outputs.state }}", recheck.fetch("env").fetch("VERIFIED_HANDOFF_STATE")
+
+    Dir.mktmpdir do |directory|
+      fixture = File.join(directory, "cloud-fixture.rb")
+      File.write(fixture, <<~'RUBY')
+        require "sequel_ace_release"
+        client = Object.new
+        client.define_singleton_method(:find_cloud_run) do |**args|
+          { "id" => args.fetch(:run_id), "number" => 20105,
+            "execution_progress" => "COMPLETE", "completion_status" => "SUCCEEDED" }
+        end
+        client.define_singleton_method(:cloud_builds_for_run) do |run_id|
+          [{ "id" => "app-build", "app_id" => run_id == "alpha-run" ? "1594104035" : "1518036000",
+             "version" => "5.3.2", "platform" => "MAC_OS", "build" => 20105 }]
+        end
+        client.define_singleton_method(:run_artifacts) do |run_id|
+          File.open(ENV.fetch("ARTIFACT_CALLS"), "a") { |file| file.puts(run_id) }
+          raise "Verified continuation queried an expired Cloud download" if ENV.fetch("VERIFIED_HANDOFF_STATE") != "cloud_running"
+          []
+        end
+        cli = SequelAceRelease::CLI.new(out: $stdout, err: $stderr, env: ENV)
+        cli.define_singleton_method(:app_store_client) { client }
+        exit cli.run(ARGV)
+      RUBY
+      prefix = <<~'SH'
+        set -euo pipefail
+        bundle() { "${RUBY_BIN}" -I"${RELEASE_LIB}" "${FIXTURE_CLI}" "${@:4}"; }
+      SH
+      %w[production beta].each do |channel|
+        %w[cloud_running artifacts_verified archived].each do |state|
+          calls = File.join(directory, "calls")
+          FileUtils.rm_f(calls)
+          output = File.join(directory, "output")
+          File.write(output, "")
+          env = {
+            "RUBY_BIN" => RbConfig.ruby, "RELEASE_LIB" => repo_path("fastlane/lib"), "FIXTURE_CLI" => fixture,
+            "ARTIFACT_CALLS" => calls, "VERIFIED_HANDOFF_STATE" => state,
+            "GITHUB_OUTPUT" => output, "GITHUB_STEP_SUMMARY" => File.join(directory, "summary"),
+            "terminal_integrity_failure" => "false", "manual_assets_pending" => "false",
+            "handoff_state" => state, "channel" => channel, "version" => "5.3.2", "build" => "20105",
+            "release_tag" => "#{channel}/5.3.2-20105", "commit" => "a" * 40,
+            "archive_ref" => "fixture-archive", "production_run_id" => "production-run", "alpha_run_id" => "alpha-run",
+            "SA_PRODUCTION_WORKFLOW_ID" => "production-workflow", "SA_ALPHA_WORKFLOW_ID" => "alpha-workflow",
+            "state_directory" => directory,
+            "EXPECTED_CHANNEL" => channel, "EXPECTED_VERSION" => "5.3.2", "EXPECTED_BUILD" => "20105",
+            "EXPECTED_TAG" => "#{channel}/5.3.2-20105", "EXPECTED_COMMIT" => "a" * 40,
+            "PRODUCTION_RUN_ID" => "production-run", "ALPHA_RUN_ID" => "alpha-run"
+          }
+          _stdout, stderr, status = Open3.capture3(env, "bash", "-c", prefix + shell, chdir: directory)
+          assert status.success?, "#{channel} #{state}: #{stderr}"
+          assert_includes File.read(output), "action=#{state == 'cloud_running' ? 'pending' : 'continue'}"
+          if state == "cloud_running"
+            assert_equal ["production-run"], File.readlines(calls, chomp: true)
+          else
+            refute_path_exists calls
+            _stdout, stderr, status = Open3.capture3(env, "bash", "-c", prefix + recheck.fetch("run"), chdir: directory)
+            assert status.success?, "recheck #{channel} #{state}: #{stderr}"
+            refute_path_exists calls
+          end
+        end
+      end
+    end
+  end
+
+  def test_publisher_shell_uses_environment_indirection_for_external_values
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    download = workflow.split("- name: Download exact Xcode Cloud artifacts", 2).fetch(1)
+                       .split("- name: Verify, launch, quit, and package distributable apps", 2).first
+    verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
+                     .split("- name: Preserve verified artifacts privately before public attachment", 2).first
+    attach = workflow.split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).fetch(1)
+                     .split("- name: Revalidate exact public artifacts", 2).first
+
+    assert_includes download, '--run-id "${PRODUCTION_RUN_ID}"'
+    assert_includes download, '--run-id "${ALPHA_RUN_ID}"'
+    assert_includes verify, 'RELEASE_TAG: ${{ needs.discover.outputs.tag }}'
+    assert_equal 2, verify.scan('--release-tag "${RELEASE_TAG}"').length
+    assert_includes verify, '--output-zip "artifacts/public/${PRODUCTION_ASSET}"'
+    assert_includes verify, '--output-zip "artifacts/public/${ALPHA_ASSET}"'
+    assert_includes attach, '--tag "${RELEASE_TAG}"'
+    assert_includes attach, '--file "release-archive/artifacts/public/${PRODUCTION_ASSET}"'
+    assert_includes attach, '--file "release-archive/artifacts/public/${ALPHA_ASSET}"'
+    [download, verify, attach].each do |step|
+      run_body = step.split("run: |", 2).fetch(1)
+      refute_includes run_body, "${{"
+    end
+  end
+
+  def test_transient_publisher_failures_leave_the_remote_handoff_retryable
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
+                     .split("- name: Preserve verified artifacts privately before public attachment", 2).first
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+    terminal = recovery.split("- name: Preserve terminal artifact-verification failure", 2).fetch(1)
+                       .split("- name: Preserve retryable state after a transient publisher failure", 2).first
+    transient = recovery.split("- name: Preserve retryable state after a transient publisher failure", 2).fetch(1)
+
+    assert_includes terminal, "sa-release record-failure"
+    assert_includes terminal, "terminal_failure == 'artifact_verification'"
+    assert_equal 6, workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length
+    assert_equal 10, workflow.scan("--integrity-failure-marker").length
+    refute_includes transient, "sa-release record-failure"
+    refute_includes transient, "archive-release-to-ghcr.sh push"
+    assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
+    assert_includes verify, "mark_terminal_failure_if_cloud_complete"
+    assert_includes verify, 'fetch("execution_progress") == "COMPLETE"'
+    assert_equal 3, verify.scan("mark_terminal_failure_if_cloud_complete").length
+    assert_includes verify, "the exact handoff remains retryable"
+  end
+
+  def test_publisher_revalidates_every_exact_identity_before_artifact_writes
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    pull = workflow.index("- name: Pull and revalidate the exact private handoff")
+    cloud = workflow.index("- name: Recheck exact Cloud readiness once")
+    download = workflow.index("- name: Download exact Xcode Cloud artifacts")
+    verified_archive = workflow.index("- name: Preserve verified artifacts privately before public attachment")
+    inspect = workflow.index("- name: Inspect public artifact compatibility")
+    attach = workflow.index("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload")
+    revalidate = workflow.index("- name: Revalidate exact public artifacts")
+    archive = workflow.index("- name: Seal verified public artifacts in the private archive")
+    submit = workflow.index("- name: Stage, verify, and submit the production App Store version")
+
+    assert_operator pull, :<, cloud
+    assert_operator cloud, :<, download
+    assert_operator download, :<, verified_archive
+    assert_operator verified_archive, :<, inspect
+    assert_operator inspect, :<, attach
+    assert_operator attach, :<, revalidate
+    assert_operator revalidate, :<, archive
+    assert_operator attach, :<, archive
+    assert_operator archive, :<, submit
+    assert_includes workflow[pull...cloud], "validate-publish-handoff"
+    assert_includes workflow[pull...cloud], "--notes release-archive/app-store-notes.txt"
+    assert_includes workflow[cloud...download], '--run-id "${PRODUCTION_RUN_ID}"'
+    assert_includes workflow[cloud...download], '--run-id "${ALPHA_RUN_ID}"'
+    upload = workflow[attach...revalidate]
+    assert_equal 2, upload.scan("--manifest release-archive/manifest.json").length
+    assert_equal 2, upload.scan("--notes release-archive/app-store-notes.txt").length
+    submit_section = workflow[submit..].split("- name: Refresh the private archive with submission evidence", 2).first
+    assert_includes submit_section, "SA_GITHUB_TOKEN: ${{ github.token }}"
+  end
+
+  def test_publisher_replaces_archive_artifacts_before_copying_verified_outputs
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    archive = workflow.split("- name: Preserve verified artifacts privately before public attachment", 2).fetch(1)
+                      .split("- name: Mint exact-target public asset token", 2).first
+    remove = archive.index("/bin/rm -rf release-archive/artifacts")
+    copy = archive.index("/usr/bin/ditto artifacts release-archive/artifacts")
+
+    assert remove
+    assert copy
+    assert_operator remove, :<, copy
+  end
+
+  def test_legacy_web_upload_wait_is_durable_and_does_not_restart_a_mac_runner
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    publish = workflow.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
+
+    assert_includes discovery, '"${handoff_state}" == "artifacts_verified"'
+    assert_includes discovery, "github-public-assets-status"
+    assert_includes discovery, 'public_asset_mode}" == "manual_web_upload"'
+    assert_includes discovery, 'manual_assets_pending="true"'
+    assert_includes discovery, 'selected_action="pending"'
+    assert_includes discovery, 'selected_action="continue"'
+    assert_includes discovery, 'if [[ "${handoff_state}" == "cloud_running" ]]'
+    assert_includes discovery, "no Mac runner was started"
+    manual_wait = discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
+    api_ready = discovery.index('elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready"')
+    refute_nil manual_wait
+    refute_nil api_ready
+    mac_publish = discovery.index('selected_action="publish"', api_ready)
+    refute_nil mac_publish
+    api_continuation = discovery.index('selected_action="continue"', mac_publish)
+    refute_nil api_continuation
+    pending_fallback = discovery.index('selected_action="pending"', api_continuation)
+    refute_nil pending_fallback
+    assert_operator manual_wait, :<, api_ready
+    assert_operator api_ready, :<, mac_publish
+    assert_operator mac_publish, :<, api_continuation
+    assert_operator api_continuation, :<, pending_fallback
+    assert_includes publish, "Continue verified release through APIs"
+    assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes publish, "Install checksum-pinned ORAS on Linux"
+    assert_includes publish, 'when "continue" then ["artifacts_verified", "archived"]'
+    assert_includes publish, "Preserve verified artifacts privately before public attachment"
+    assert_includes publish, "Record the required legacy-compatible browser upload handoff"
+    assert_includes publish, "event-driven wake state remains armed"
+    assert_includes publish, "if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'"
+    assert_equal 3,
+                 publish.scan("if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'").length
+    refute_includes publish, "if: steps.context.outputs.state != 'archived'"
+  end
+
+  def test_terminal_github_asset_integrity_uses_ubuntu_recovery_without_polling_forever
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    publish = workflow.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+
+    assert_includes discovery, 'terminal_integrity_failure="true"'
+    assert_includes discovery, 'if [[ "${terminal_integrity_failure}" == "true" ]]'
+    assert_includes discovery, 'selected_action="continue"'
+    assert_includes discovery, "will be preserved through the Ubuntu recovery path; no Mac runner was started"
+    assert_includes discovery, "Public asset inspection failed transiently; recovery remains armed."
+    assert_operator discovery.index('if [[ "${terminal_integrity_failure}" == "true" ]]'), :<,
+                    discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
+    assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes publish, "--integrity-failure-marker terminal-artifact-verification-failure"
+    assert_includes recovery, "terminal_failure == 'artifact_verification'"
+    assert_includes recovery, "EXPECTED_TERMINAL_FAILURE"
+    assert_includes recovery, "recovery-terminal-artifact-verification-failure"
+    assert_includes recovery, "github-public-assets-status"
+    assert_includes recovery, "recovery-public-assets.json"
+    assert_includes recovery, "could not be reproduced"
+    assert_operator recovery.index("validate-publish-handoff"), :<,
+                    recovery.index("github-public-assets-status")
+    assert_includes recovery, "independently reproduced before preservation"
+    assert_includes recovery, "polling_needed=false"
+  end
+
+  def test_api_asset_upload_is_profile_gated_and_uses_the_dedicated_release_app
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    inspect = workflow.split("- name: Inspect public artifact compatibility", 2).fetch(1)
+                      .split("- name: Mint exact-target public asset token", 2).first
+    token = workflow.split("- name: Mint exact-target public asset token", 2).fetch(1)
+                    .split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).first
+    upload = workflow.split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).fetch(1)
+                     .split("- name: Revalidate exact public artifacts", 2).first
+
+    assert_includes inspect, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    assert_includes token, "actions/create-github-app-token@"
+    assert_includes token, "steps.public_assets_before.outputs.mode == 'api_upload'"
+    assert_includes token, "permission-contents: write"
+    assert_includes upload, "steps.public_assets_before.outputs.mode == 'api_upload'"
+    assert_includes upload, 'SA_GITHUB_TOKEN: ${{ steps.public_asset_token.outputs.token }}'
+    refute_includes upload, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    cutover = "2027-08-14T00:00:00Z"
+    refute_includes inspect, cutover,
+                     "public asset inspection must not hardcode the profile cutover date"
+    refute_includes upload, cutover,
+                     "API asset upload must not hardcode the profile cutover date"
+  end
+
+  def test_submission_and_wake_settlement_require_verified_public_assets
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    submission = workflow.split("- name: Stage, verify, and submit the production App Store version", 2).fetch(1)
+                         .split("- name: Refresh the private archive with submission evidence", 2).first
+    settlement = workflow.split("  settle_artifact_wake_state:", 2).fetch(1)
+
+    assert_includes submission, "steps.public_assets.outputs.ready == 'true'"
+    assert_includes settlement, "needs.publish.outputs.public_assets_ready == 'true'"
+    assert_includes workflow, "--state artifacts_verified"
+    assert_includes workflow, "--state archived"
+    assert_operator workflow.index("--state artifacts_verified"), :<,
+                    workflow.index("--state archived")
+  end
+
+  def test_publisher_reconciles_an_existing_exact_submission_before_retrying_mutation
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    submission = workflow.split("- name: Stage, verify, and submit the production App Store version", 2).fetch(1)
+                         .split("- name: Refresh the private archive with submission evidence", 2).first
+    reconcile = submission.index("reconcile-submission")
+    mutate = submission.index("sa-release submit")
+
+    assert_operator reconcile, :<, mutate
+    assert_includes submission, 'if [[ "${already_submitted}" == "true" ]]'
+    assert_includes submission, "pre-submit-reconciliation.json"
+  end
+
+  def test_cleanup_array_expansion_is_safe_under_macos_bash_nounset
+    safe_expansion = '${reconcile_arguments[@]+"${reconcile_arguments[@]}"}'
+    assert_includes File.read(repo_path(".github/workflows/release.yml")), safe_expansion
+    assert_includes File.read(repo_path(".github/workflows/release_feasibility.yml")), safe_expansion
+
+    assert system(
+      "/bin/bash", "-c",
+      'set -u; reconcile_arguments=(); printf "%s" ${reconcile_arguments[@]+"${reconcile_arguments[@]}"}'
+    )
+  end
+
+  def test_finalizer_continues_when_an_archive_manifest_is_unreadable_or_mismatched
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    assert_includes workflow, 'if ! state="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release'
+    assert_includes workflow, 'manifest.fetch("tag") == ARGV.fetch(1)'
+    assert_includes workflow, 'manifest.fetch("target_version") == ARGV.fetch(2)'
+    assert_includes workflow, 'manifest.fetch("canonical_build").to_s == ARGV.fetch(3)'
+    assert_includes workflow, '"${archive_directory}/manifest.json" "${release_tag}" "${version}" "${build}"'
+    assert_includes workflow, "private release archive has no valid matching manifest identity"
+    assert_includes workflow, "pending=$((pending + 1))"
+    assert_includes workflow, "continue"
+  end
+
+  def test_finalizer_treats_archive_refresh_failures_as_pending
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+
+    assert_includes workflow, 'if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${finalizing_archive_evidence}"; then'
+    assert_includes workflow, "could not archive finalization validation"
+    assert_includes workflow, "GitHub is finalized but the live archive refresh failed"
+    assert_operator workflow.scan("pending=$((pending + 1))").length, :>=, 6
+    assert_operator workflow.scan("continue").length, :>=, 5
+  end
+
+  def test_finalizer_archives_terminal_integrity_evidence_without_terminalizing_transport_failures
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_equal 2, execution.scan('--integrity-failure-marker "${integrity_marker}"').length
+    assert_includes execution, 'finalization-integrity-failure.json'
+    assert_includes execution, '"schema_version" => 1'
+    assert_includes execution, '%w[validation transition].include?'
+    assert_includes execution, 'Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}"'
+    assert_includes execution, 'if [[ -z "${REQUESTED_TAG}" ]]'
+    assert_includes execution, "an authorized exact-tag recovery is required after repair"
+    assert_includes execution, "Retrying archived terminal"
+    assert_equal 3, execution.scan("preserve_finalization_integrity_failure").length
+    assert_includes execution, "terminal pre-transition evidence could not be archived"
+    assert_includes execution, "terminal public-transition evidence could not be archived"
+    assert_includes execution, 'echo "- Terminal integrity failures: ${terminal}"'
+    assert_includes execution, 'echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"'
+    assert_includes execution, 'if [[ -n "${REQUESTED_TAG}" && "${terminal}" -gt 0 ]]'
+    assert_includes execution, "Requested recovery ended with archived terminal integrity evidence."
+
+    validation = execution.index("--validate-only")
+    refute_nil validation
+    clear_obsolete = execution.index('/bin/rm -f "${terminal_evidence}"', validation)
+    refute_nil clear_obsolete
+    finalizing = execution.index("--state finalizing", clear_obsolete)
+    refute_nil finalizing
+    assert_operator validation, :<, clear_obsolete
+    assert_operator clear_obsolete, :<, finalizing
+  end
+
+  def test_finalizer_polls_every_six_hours_with_an_authorized_manual_fallback
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+
+    assert_includes workflow, "schedule:"
+    assert_includes workflow, 'cron: "17 */6 * * *"'
+    refute_includes workflow, "repository_dispatch:"
+    assert_includes workflow, "workflow_dispatch:"
+    assert_includes workflow, "Optional exact production tag for authorized recovery"
+    assert_includes workflow, 'REQUESTED_TAG: ${{ inputs.release_tag }}'
+    assert_includes workflow, "Malformed requested production tag."
+    assert_includes workflow, 'RELEASE_EVENT: ${{ github.event_name }}'
+    assert_includes workflow, '"${RELEASE_EVENT}" == "workflow_dispatch"'
+    assert_includes workflow, "Unauthorized scheduled-finalizer rerun initiator."
+    assert_includes workflow, "scheduled six-hour poll"
+    refute_includes workflow, "SA_WEBHOOK_GITHUB_APP_BOT"
+    refute_includes workflow, "EVENT_APP_ID"
+  end
+
+  def test_manual_finalizer_can_repair_the_exact_post_transition_archive
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_includes discovery, 'candidate="${REQUESTED_TAG}"'
+    assert_includes discovery, 'candidate="${RELEASE_PENDING_TAG}"'
+    assert_includes discovery, 'gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${candidate_encoded}"'
+    assert_includes discovery, ".author.id == 10710367"
+    assert_includes discovery, ".author.id == 315153817"
+    assert_includes discovery, ".draft == false"
+    refute_includes discovery, "2027-08-14"
+    refute_includes discovery, "$build >= 20109"
+    refute_includes execution, 'if .prerelease then "prerelease" else "stable" end'
+    refute_includes execution, "only the wake state needs settlement"
+    assert_includes execution, 'manifest.fetch("tag") == ARGV.fetch(1)'
+    assert_includes execution, 'manifest.fetch("target_version") == ARGV.fetch(2)'
+    assert_includes execution, 'manifest.fetch("canonical_build").to_s == ARGV.fetch(3)'
+    assert_includes execution, "GitHub is finalized but the live archive refresh failed"
+    assert_includes execution, "--state finalizing"
+    assert_includes execution, "--state live"
+    assert_includes workflow, "Clear only the exact settled finalization wake state"
+    assert_includes workflow, "SA_RELEASE_PENDING_FINALIZATION_TAG"
+  end
+
+  def test_scheduled_finalizer_skips_expensive_work_when_disabled_or_empty
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    finalizer = workflow.split("  finalize:", 2).fetch(1)
+
+    assert_includes discovery, "runs-on: ubuntu-latest"
+    assert_includes discovery, "environment: sequel-ace-release"
+    assert_includes discovery, 'if [[ "${RELEASE_ENABLED}" != "true" ]]'
+    assert_includes discovery, "the scheduled finalizer did no work"
+    assert_includes discovery, "has_candidates=false"
+    assert_includes discovery, 'RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}'
+    assert_includes discovery, 'if [[ -z "${candidate}" && "${RELEASE_PENDING_TAG}" != "none" ]]'
+    assert_includes discovery, "No production release is awaiting finalization."
+    refute_includes discovery, "gh api --paginate"
+    refute_includes discovery, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
+    assert_includes discovery, ".author.id == 10710367"
+    refute_includes discovery, "gh release list"
+    refute_includes discovery, "--json tagName,isPrerelease,author,createdAt"
+    assert_includes finalizer, "needs: discover"
+    assert_includes finalizer, "needs.discover.outputs.enabled == 'true'"
+    assert_includes finalizer, "needs.discover.outputs.has_candidates == 'true'"
+    assert_includes finalizer, "Verify Production App Store Connect access"
+  end
+
+  def test_finalizer_executes_the_immutable_event_revision
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    checkout = workflow.split("- name: Check out release tooling", 2).fetch(1)
+                       .split("- name: Set up Ruby and locked gems", 2).first
+
+    assert_includes checkout, 'ref: ${{ github.sha }}'
+    refute_includes checkout, "ref: main"
+  end
+
+  def test_release_checkout_is_preceded_by_a_complete_sha_ancestry_proof
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization = workflow.index("- name: Enforce release authorization")
+    ancestry = workflow.index("- name: Prove the frozen release SHA is on dispatch main")
+    app_token = workflow.index("- name: Mint repository-scoped release App token")
+    checkout = workflow.index("- name: Check out immutable dispatch tooling")
+    proof = workflow[ancestry...app_token]
+
+    assert_operator authorization, :<, ancestry
+    assert_operator ancestry, :<, app_token
+    assert_operator app_token, :<, checkout
+    assert_includes workflow[authorization...ancestry], '[[ "${EXPECTED_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]'
+    assert_includes proof, '/compare/${EXPECTED_SHA}...${DISPATCH_SHA}'
+    assert_includes proof, '"${comparison_status}" == "identical" || "${comparison_status}" == "ahead"'
+  end
+
+  def test_release_start_fails_before_checkout_while_a_production_finalization_is_pending
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization = workflow.split("- name: Enforce release authorization", 2).fetch(1)
+                            .split("- name: Prove the frozen release SHA is on dispatch main", 2).first
+
+    assert_includes authorization,
+                    'PENDING_FINALIZATION_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}'
+    assert_includes authorization, '"${PENDING_FINALIZATION_TAG}" != "none"'
+    assert_includes authorization, "A production release is still awaiting finalization"
+  end
+
+  def test_exact_resume_executes_trusted_current_tooling_but_keeps_the_release_plan_frozen
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    checkout = workflow.split("- name: Check out immutable dispatch tooling", 2).fetch(1)
+                       .split("- name: Exclude transient release evidence from git status", 2).first
+    plan = workflow.split("- name: Decode and validate the approved plan", 2).fetch(1)
+                   .split("- name: Reconcile the authoritative Production Cloud build", 2).first
+
+    assert_includes checkout, 'ref: ${{ github.sha }}'
+    refute_includes checkout, 'ref: ${{ inputs.expected_main_sha }}'
+    assert_includes plan, '--main-ref "${{ inputs.expected_main_sha }}"'
+  end
+
+  def test_release_workflows_use_commit_and_checksum_pinned_oras
+    expected_platforms = {
+      "release.yml" => { "linux_amd64" => 1 },
+      "release_alpha_retry.yml" => { "linux_amd64" => 1 },
+      "release_artifact_retry.yml" => { "linux_amd64" => 1 },
+      "release_finalize.yml" => { "linux_amd64" => 1 },
+      "release_status.yml" => { "linux_amd64" => 1 },
+      "release_feasibility.yml" => { "darwin_arm64" => 1, "darwin_amd64" => 1 },
+      "release_publish.yml" => { "linux_amd64" => 5, "darwin_arm64" => 1, "darwin_amd64" => 1 }
+    }
+    installations = []
+    workflows_using_oras = Dir.glob(repo_path(".github/workflows/*.{yml,yaml}"))
+                              .select { |path| File.read(path).include?("oras-project/setup-oras") }
+                              .map { |path| File.basename(path) }
+    assert_equal expected_platforms.keys.sort, workflows_using_oras.sort
+
+    expected_platforms.each do |filename, platforms|
+      configured = oras_installation_steps(filename).map { |step| assert_oras_installation_pinned(step) }
+      assert_equal platforms, configured.map { |install| install.fetch(:platform) }.tally, filename
+      refute_includes File.read(repo_path(".github/workflows/#{filename}")), "brew install oras"
+      installations.concat(configured)
+    end
+
+    assert_equal 1, installations.map { |install| install.fetch(:action) }.uniq.length,
+                 "All ORAS installations must use the same immutable action revision"
+    assert_equal 1, installations.map { |install| install.fetch(:version) }.uniq.length,
+                 "All ORAS installations must use the same configured CLI version"
+    installations.group_by { |install| install.fetch(:platform) }.each do |platform, configured|
+      assert_equal 1, configured.map { |install| install.values_at(:url, :checksum) }.uniq.length,
+                   "#{platform} downloads must use matching URLs and checksums across workflows"
+    end
+  end
+
+  def test_pr_ci_verifies_oras_checksums_against_upstream
+    workflow = YAML.load_file(repo_path(".github/workflows/ci_pr_tests.yml"))
+    steps = workflow.fetch("jobs").fetch("release_tools").fetch("steps")
+    assert steps.any? { |step| step["run"] == "bundle exec ruby Scripts/verify-oras-checksums.rb" }
+  end
+
+  def test_oras_pin_contract_accepts_dependency_updates
+    step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
+    current = assert_oras_installation_pinned(step)
+    major, minor, = current.fetch(:version).split(".").map(&:to_i)
+    updated_version = [major, minor + 1, 0].join(".")
+    step["uses"] = "oras-project/setup-oras@#{Digest::SHA1.hexdigest('updated action revision')}"
+    step.fetch("with")["url"] = current.fetch(:url).gsub(current.fetch(:version), updated_version)
+    step.fetch("with")["checksum"] = Digest::SHA256.hexdigest("updated CLI archive")
+
+    updated = assert_oras_installation_pinned(step)
+    assert_equal updated_version, updated.fetch(:version)
+    refute_equal current.fetch(:action), updated.fetch(:action)
+    refute_equal current.fetch(:checksum), updated.fetch(:checksum)
+  end
+
+  def test_oras_pin_contract_rejects_floating_or_short_action_references
+    %w[main latest deadbeef].each do |reference|
+      step = Marshal.load(Marshal.dump(oras_installation_steps("release.yml").fetch(0)))
+      step["uses"] = "oras-project/setup-oras@#{reference}"
+      assert_raises(Minitest::Assertion) { assert_oras_installation_pinned(step) }
+    end
+  end
+
+  def test_oras_pin_contract_rejects_untrusted_or_mismatched_downloads
+    original = oras_installation_steps("release.yml").fetch(0)
+    current = assert_oras_installation_pinned(original)
+    mutations = [
+      ["checksum", nil],
+      ["checksum", "not-a-sha256"],
+      ["url", current.fetch(:url).sub("github.com", "example.com")],
+      ["url", current.fetch(:url).sub("/v#{current.fetch(:version)}/", "/v#{current.fetch(:version)}-different/")],
+      ["url", current.fetch(:url).sub("linux_amd64", "unsupported_architecture")]
+    ]
+    mutations.each do |key, value|
+      step = Marshal.load(Marshal.dump(original))
+      step.fetch("with")[key] = value
+      assert_raises(Minitest::Assertion) { assert_oras_installation_pinned(step) }
+    end
+  end
+
+  def test_publisher_executes_the_immutable_event_revision
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    assert_equal 6, workflow.scan('ref: ${{ github.sha }}').length
+    refute_includes workflow, "ref: main"
+    assert_includes workflow, 'SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}'
+    assert_includes workflow, '[[ "${SOURCE_HEAD_BRANCH}" == "main" ]]'
+    assert_includes workflow, 'SOURCE_WORKFLOW_PATH: ${{ github.event.workflow_run.path }}'
+    assert_includes workflow, '"${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml"'
+    assert_includes workflow, '"${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml"'
+    refute_includes workflow, "github.event.workflow_run.name"
+    refute_includes workflow, 'SOURCE_WORKFLOW: ${{'
+  end
+
+  def test_supporting_release_workflows_execute_the_dispatch_revision
+    %w[release_alpha_retry.yml release_feasibility.yml].each do |filename|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+      checkout = workflow.split("- name: Check out release tooling", 2).fetch(1)
+                         .split("- name: Set up Ruby and locked gems", 2).first
+
+      assert_includes checkout, 'ref: ${{ github.sha }}'
+      refute_includes checkout, "ref: main"
+    end
+  end
+
+  def test_apple_and_archive_credentials_are_scoped_to_consuming_steps
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    release_job_env = release.split("environment: sequel-ace-release", 2).fetch(1)
+                             .split("steps:", 2).first
+    refute_includes release_job_env, "SA_ASC_KEY_ID"
+    refute_includes release_job_env, "SA_ASC_PRIVATE_KEY"
+    assert_includes release_job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
+
+    reconcile = release.split("- name: Reconcile the authoritative Production Cloud build", 2).fetch(1)
+                       .split("- name: Create the initial release manifest", 2).first
+    assert_includes reconcile, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
+    assert_includes reconcile, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+
+    finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    finalizer_job = finalizer.split("  finalize:", 2).fetch(1)
+    finalizer_job_env = finalizer_job.split("environment: sequel-ace-release", 2).fetch(1)
+                                     .split("steps:", 2).first
+    refute_includes finalizer_job_env, "SA_ASC_KEY_ID"
+    refute_includes finalizer_job_env, "SA_ASC_PRIVATE_KEY"
+    refute_includes finalizer_job_env, "GHCR_TOKEN"
+    refute_includes finalizer_job_env, "SA_GITHUB_TOKEN"
+    assert_includes finalizer_job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
+
+    access = finalizer.split("- name: Verify Production App Store Connect access", 2).fetch(1)
+                      .split("- name: Mint exact-target release mutation token", 2).first
+    assert_includes access, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
+    assert_includes access, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+
+    finalize = finalizer.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+    assert_includes finalize, 'GHCR_TOKEN: ${{ github.token }}'
+    github_token_assignments = finalize.scan(/^\s+SA_GITHUB_TOKEN:\s+(.+)$/).flatten
+    assert_equal ['${{ steps.release_mutation_token.outputs.token }}'], github_token_assignments
+    assert_includes finalize, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+
+    %w[release_alpha_retry.yml release_feasibility.yml].each do |filename|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+      job_env = workflow.split("environment: sequel-ace-release", 2).fetch(1)
+                        .split("steps:", 2).first
+
+      refute_includes job_env, "SA_ASC_KEY_ID"
+      refute_includes job_env, "SA_ASC_PRIVATE_KEY"
+      refute_includes job_env, "GHCR_TOKEN"
+      assert_includes job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
+    end
+  end
+
+  def test_finalizer_uses_only_the_exact_production_wake_tag_and_stable_publisher_ids
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_includes discovery, 'RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}'
+    assert_includes discovery, 'candidate="${REQUESTED_TAG}"'
+    assert_includes discovery, 'candidate="${RELEASE_PENDING_TAG}"'
+    assert_includes discovery, '^production/[0-9]+'
+    assert_includes discovery, 'releases/tags/${candidate_encoded}'
+    assert_includes discovery, ".draft == false"
+    assert_includes discovery, ".author.id == 10710367"
+    assert_includes discovery, ".author.id == 315153817"
+    refute_includes discovery, ".author.login"
+    refute_includes discovery, "fromdateiso8601"
+    refute_includes discovery, "20109"
+
+    assert_includes execution, 'candidate="${REQUESTED_TAG}"'
+    assert_includes execution, 'candidate="${RELEASE_PENDING_TAG}"'
+    assert_includes execution, 'releases/tags/${candidate_encoded}'
+    refute_includes execution, 'if .prerelease then "prerelease" else "stable" end'
+    assert_includes execution, ".draft == false"
+    assert_includes execution, ".author.id == 10710367"
+    assert_includes execution, ".author.id == 315153817"
+    refute_includes execution, "gh api --paginate"
+    refute_includes execution, "gh release list"
+    assert_operator execution.index('releases/tags/${candidate_encoded}'), :<, execution.index("--validate-only")
+    refute_includes workflow, "resolve-app-store-version"
+  end
+
+  def test_pr_jobs_do_not_persist_the_checkout_token
+    workflow = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
+    assert_equal 2, workflow.scan("persist-credentials: false").length
+  end
+
+  def test_fastlane_app_store_mutations_require_the_release_gate
+    fastfile = File.read(repo_path("fastlane/Fastfile"))
+    stage_lane = fastfile.split("lane :stage_app_store_release", 2).fetch(1)
+                         .split("lane :submit_app_store_release", 2).first
+    submit_lane = fastfile.split("lane :submit_app_store_release", 2).fetch(1)
+                          .split("lane :generate_changelog_locally", 2).first
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+
+    assert_includes stage_lane, "require_release_automation_enabled!"
+    assert_includes submit_lane, "require_release_automation_enabled!"
+    assert_includes fastfile, 'ENV["SA_ASC_REQUIRE_ISSUER"] == "1"'
+    assert_includes fastfile, "SA_ASC_ISSUER_ID is required for the configured Team API key"
+    assert_includes workflow, "SA_RELEASE_AUTOMATION_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}"
+  end
+
+  def test_fastlane_prepare_adapter_passes_both_approved_bases
+    fastfile = File.read(repo_path("fastlane/Fastfile"))
+    prepare_lane = fastfile.split("lane :prepare_release_files", 2).fetch(1)
+                           .split("lane :stage_app_store_release", 2).first
+
+    assert_includes prepare_lane, '"--expected-base-sha", expected_base_sha'
+    assert_includes prepare_lane, '"--changelog-base-tag", changelog_base_tag'
+    assert_includes prepare_lane, '"--expected-changelog-base-sha", expected_changelog_base_sha'
+  end
+
+  def test_finalizer_archives_live_validation_before_the_public_transition
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    validation = workflow.index("--validate-only")
+    finalizing = workflow.index("--state finalizing")
+    archive = workflow.index('Scripts/archive-release-to-ghcr.sh push "${archive_ref}"', finalizing)
+    public_transition = workflow.index('--output "${state_directory}/finalization.json"')
+    live = workflow.index("--state live")
+
+    assert validation
+    assert finalizing
+    assert archive
+    assert public_transition
+    assert live
+    assert_operator validation, :<, finalizing
+    assert_operator finalizing, :<, archive
+    assert_operator validation, :<, archive
+    assert_operator archive, :<, public_transition
+    assert_operator public_transition, :<, live
+  end
+
+  def test_finalizer_keeps_generated_state_outside_the_pulled_archive
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_includes execution, 'archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-finalize-archive.XXXXXX")"'
+    assert_includes execution, 'state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-finalize-state.XXXXXX")"'
+    assert_includes execution, '--manifest "${archive_directory}/manifest.json"'
+    assert_includes execution, '--output "${state_directory}/finalization-validation.json"'
+    assert_includes execution, '--output "${state_directory}/finalization.json"'
+    assert_includes execution, '"${state_directory}/finalization-evidence.json" "${archive_directory}/"'
+    refute_includes execution, '--output "${archive_directory}/'
+  end
+
+  def test_feasibility_wait_and_cleanup_do_not_reuse_the_probe_app_token
+    workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
+    create_token = workflow.index("- name: Mint a fresh release App token for the GitHub probe")
+    create_probe = workflow.index("- name: Create the verified GitHub App commit and disposable PR")
+    wait_checks = workflow.index("- name: Wait for exact-head feasibility PR checks")
+    cleanup_token = workflow.index("- name: Refresh release App token for probe cleanup")
+    cleanup_probe = workflow.index("- name: Close and delete only the exact feasibility probe")
+
+    assert_operator create_token, :<, create_probe
+    assert_operator create_probe, :<, wait_checks
+    assert_operator wait_checks, :<, cleanup_token
+    assert_operator cleanup_token, :<, cleanup_probe
+    assert_includes workflow[wait_checks...cleanup_token], "SA_GITHUB_TOKEN: ${{ github.token }}"
+    assert_includes workflow[cleanup_probe..], "steps.probe_cleanup_token.outputs.token || github.token"
+  end
+
+  def test_feasibility_fails_closed_unless_the_exact_ghcr_probe_version_is_deleted_via_rest
+    workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
+    probe = workflow.split("- name: Prove private GHCR round trip and visibility", 2).fetch(1)
+                    .split("- name: Delete the exact GHCR feasibility probe", 2).first
+    cleanup = workflow.split("- name: Delete the exact GHCR feasibility probe", 2).fetch(1)
+                      .split("- name: Confirm publishing remains disabled after all gates pass", 2).first
+    branch_marker = 'if [[ "${package_version_count}" -eq 1 ]]; then'
+    snapshot_index = cleanup.index('package_versions_file="$(mktemp')
+    initial_inventory_index = cleanup.index('gh api --paginate "${package_endpoint}/versions?per_page=100"', snapshot_index)
+    branch_index = cleanup.index(branch_marker)
+    readback_index = cleanup.index('package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"')
+
+    refute_nil snapshot_index
+    refute_nil initial_inventory_index
+    refute_nil branch_index
+    refute_nil readback_index
+    assert_operator snapshot_index, :<, initial_inventory_index
+    assert_operator initial_inventory_index, :<, branch_index
+    assert_operator branch_index, :<, readback_index
+
+    deletion_branches = cleanup[branch_index...readback_index]
+    sole_version_branch, version_branch_with_end = deletion_branches.split("\n          else\n", 2)
+    version_branch = version_branch_with_end.split("\n          fi\n", 2).first
+    delete_targets = lambda do |branch|
+      branch.lines
+            .map(&:strip)
+            .select { |line| line.start_with?('"${package_endpoint}') }
+            .map { |line| line.sub(/\s+\\\z/, "") }
+    end
+
+    assert_equal ['"${package_endpoint}"'], delete_targets.call(sole_version_branch)
+    assert_equal ['"${package_endpoint}/versions/${probe_version_id}"'], delete_targets.call(version_branch)
+    assert_operator sole_version_branch.index('gh api --paginate "${package_endpoint}/versions?per_page=100"'),
+                    :<,
+                    sole_version_branch.index("gh api --method DELETE")
+
+    assert_includes probe, "id: ghcr_probe"
+    refute_includes probe, "oras manifest delete"
+    assert_includes cleanup, "if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}"
+    assert_includes cleanup, 'probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"'
+    assert_includes cleanup, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
+    assert_includes cleanup, 'package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"'
+    assert_includes cleanup, 'package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.json.XXXXXX")"'
+    assert_includes cleanup, "| jq -sc 'sort_by(.id)'"
+    assert_includes cleanup, %q!package_version_count="$(jq -r 'length' "${package_versions_file}")"!
+    assert_includes cleanup, "probe_version_rows=\"$("
+    assert_includes cleanup, "Expected exactly one GHCR package version for the feasibility probe tag."
+    assert_includes cleanup, "IFS=$'\\t' read -r probe_version_id probe_version_tags"
+    assert_includes cleanup, '"${probe_version_tags}" == "${probe_tag}"'
+    assert_includes cleanup, '"${package_version_count}" -eq 1'
+    assert_includes cleanup, 'confirmed_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-confirmed-versions.json.XXXXXX")"'
+    refute_includes cleanup, "XXXXXX.json"
+    assert_includes cleanup, 'cmp -s "${package_versions_file}" "${confirmed_versions_file}"'
+    assert_includes cleanup, "GHCR package versions changed before whole-package probe cleanup."
+    assert_includes cleanup, 'deleted_entire_package=1'
+    assert_includes cleanup, 'package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"'
+    assert_includes cleanup, %q!package_readback_status="$(awk 'NR == 1 { print $2 }' <<< "${package_readback_headers}")"!
+    assert_includes cleanup, '"${deleted_entire_package}" -eq 1 && "${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404"'
+    assert_includes cleanup, '"${deleted_entire_package}" -eq 0 && "${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200"'
+    assert_includes cleanup, 'gh api --paginate "${package_endpoint}/versions?per_page=100"'
+    assert_includes cleanup, '.[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id'
+    assert_includes cleanup, 'remaining_probe_versions=""'
+    assert_includes cleanup, 'Unexpected GHCR package read-back after probe cleanup (whole_package=${deleted_entire_package}, status=${package_readback_status:-unavailable}).'
+    refute_includes cleanup, "--slurp"
+    assert_includes cleanup, '[[ -z "${remaining_probe_versions}" ]]'
+    refute_includes cleanup, "oras manifest delete"
+  end
+
+  def test_feasibility_binds_a_reusable_alpha_run_to_an_explicit_ancestor_sha
+    workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
+    source_input = workflow.split("      alpha_source_sha:", 2).fetch(1)
+                           .split("\n\npermissions:", 2).first
+    artifact_step = workflow.split("- name: Download and verify the real Alpha notarization artifact", 2).fetch(1)
+                            .split("- name: Mint a fresh release App token for the GitHub probe", 2).first
+
+    assert_includes source_input, "required: true"
+    assert_includes source_input, "type: string"
+    assert_includes workflow, 'ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}'
+    assert_includes workflow, 'ALPHA_SOURCE_SHA: ${{ inputs.alpha_source_sha }}'
+    assert_includes workflow, 'SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}'
+    assert_includes workflow, '[[ "${ALPHA_SOURCE_SHA}" =~ ^[0-9a-fA-F]{40}$ ]]'
+    assert_includes workflow, 'canonical_alpha_source_sha="$(git rev-parse --verify "${ALPHA_SOURCE_SHA}^{commit}")"'
+    assert_includes workflow, '[[ "${canonical_alpha_source_sha}" =~ ^[0-9a-f]{40}$ ]]'
+    assert_includes workflow, 'git merge-base --is-ancestor "${canonical_alpha_source_sha}" "${current_sha}"'
+    assert_includes workflow, 'printf \'ALPHA_SOURCE_SHA=%s\\n\' "${canonical_alpha_source_sha}" >> "${GITHUB_ENV}"'
+    assert_includes artifact_step, 'run["source_commit"] == ARGV.fetch(2)'
+    assert_includes artifact_step, '"${ALPHA_BUILD_RUN_ID}" "${SA_ALPHA_WORKFLOW_ID}" "${ALPHA_SOURCE_SHA}"'
+    assert_includes artifact_step, '--run-id "${ALPHA_BUILD_RUN_ID}"'
+    assert_includes workflow, "Alpha run does not match the pinned source commit"
+    refute_includes artifact_step, '${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}'
+    refute_includes artifact_step, '--run-id "${{ inputs.alpha_build_run_id }}"'
+  end
+
+  def test_alpha_retry_failure_leaves_the_exact_durable_handoff_unchanged
+    workflow = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    failure_step = workflow.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1)
+
+    refute_includes failure_step, "sa-release record-failure"
+    refute_includes failure_step, "archive-release-to-ghcr.sh push"
+    refute_includes failure_step, "GHCR_TOKEN"
+    assert_includes failure_step, "exact durable failed-Alpha handoff was left unchanged"
+    assert_includes failure_step, "maintainer-edited GitHub release notes were left unchanged"
+  end
+
+  def test_alpha_failure_preservation_requires_authorization_and_archive_validation
+    workflow = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    authorization = workflow.split("- name: Enforce narrow Alpha-retry authorization", 2).fetch(1)
+                            .split("- name: Mint repository-scoped release App token", 2).first
+    validation = workflow.split("- name: Pull and validate the preserved beta release state", 2).fetch(1)
+                         .split("- name: Reuse or start one Alpha-only Xcode Cloud retry", 2).first
+    failure_header = workflow.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1)
+                             .split("continue-on-error:", 2).first
+
+    assert_includes authorization, "id: authorization"
+    assert_includes authorization, 'echo "authorized=true" >> "${GITHUB_OUTPUT}"'
+    assert_includes validation, 'file.puts("validated=true")'
+    assert_operator validation.index("archive_ref ="), :<, validation.index('file.puts("validated=true")')
+    assert_operator validation.index("naming.public_artifacts"), :<, validation.index('file.puts("validated=true")')
+    refute_includes validation, 'release["body"]'
+    refute_includes validation, "release_notes_sha256"
+    refute_includes validation, "app-store-notes.txt"
+    assert_includes failure_header, "steps.authorization.outputs.authorized == 'true'"
+    assert_includes failure_header, "steps.release.outputs.validated == 'true'"
+  end
+
+  def test_alpha_retry_accepts_a_newer_live_failure_and_binds_it_to_the_durable_predecessor
+    workflow = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    validation = workflow.split("- name: Pull and validate the preserved beta release state", 2).fetch(1)
+                         .split("- name: Resolve the existing exact Production build without waiting", 2).first
+    cloud_start = workflow.index("- name: Reuse or start one Alpha-only Xcode Cloud retry")
+    validation_start = workflow.index("- name: Pull and validate the preserved beta release state")
+
+    assert_operator validation_start, :<, cloud_start
+    assert_includes validation, 'manifest.fetch("state") == "failed"'
+    assert_includes validation, 'failure["component"] == "alpha"'
+    assert_includes validation, 'failure["cloud_run_id"].to_s.match?'
+    assert_includes validation, 'file.puts("archived_failed_alpha_run_id='
+    refute_includes validation, 'failure["cloud_run_id"] == ENV.fetch("FAILED_ALPHA_RUN_ID")'
+
+    archive = workflow.split("- name: Archive the exact Alpha retry handoff", 2).fetch(1)
+                      .split("- name: Record asynchronous Alpha retry handoff", 2).first
+    assert_includes archive, 'ARCHIVED_FAILED_ALPHA_RUN_ID: ${{ steps.release.outputs.archived_failed_alpha_run_id }}'
+    assert_includes archive, 'AUTHORIZED_FAILED_ALPHA_RUN_ID: ${{ inputs.failed_alpha_run_id }}'
+    assert_includes archive, 'alpha_retry.fetch("retried_failed_run_id") == authorized'
+    assert_includes archive, '"alpha_retry_predecessor" => predecessor'
+  end
+
+  def test_api_only_release_jobs_do_not_allocate_macos_runners
+    %w[release.yml release_alpha_retry.yml release_finalize.yml].each do |filename|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+      assert_includes workflow, "runs-on: ubuntu-latest"
+      refute_includes workflow, "runs-on: macos-15"
+    end
+
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+    assert_includes publisher, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    refute_includes publisher, "runs-on: macos-15"
+
+    ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
+    assert_equal 1, ci.scan("runs-on: macos-26").length
+    assert_equal 1, ci.scan("runs-on: macos-15").length
+    assert_includes ci, "GitHub-hosted public-repository runner label"
+
+    Dir.glob(repo_path(".github/workflows/*.{yml,yaml}")).each do |path|
+      workflow = File.read(path)
+      refute_match(/runs-on:\s*(?:\[[^\]]*)?self-hosted/, workflow,
+                   "#{File.basename(path)} must not allocate a private self-hosted runner")
+    end
+  end
+
+  def test_merged_but_untagged_recovery_validates_and_targets_the_exact_release_ancestor
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    context = workflow.index("- name: Resolve naming and the merged-but-untagged recovery path")
+    validation = workflow.index("- name: Validate the recovered release target against live main")
+    branch_cleanup = workflow.index("- name: Delete a recovered merged release branch")
+    release_target = workflow.index("- name: Resolve the exact release target commit")
+    prerelease = workflow.index("- name: Create the tag-backed GitHub prerelease")
+
+    assert_operator context, :<, validation
+    assert_operator validation, :<, branch_cleanup
+    assert_operator branch_cleanup, :<, release_target
+    assert_operator release_target, :<, prerelease
+    assert_includes workflow[context...validation], "source_release_commit_sha"
+    assert_includes workflow[validation...branch_cleanup], "github-validate-release-target"
+    assert_includes workflow[release_target...prerelease], 'SOURCE_RELEASE_COMMIT_SHA: ${{ steps.release_context.outputs.source_release_commit_sha }}'
+    assert_includes workflow[release_target...prerelease], 'File.read("release-target-validation.json")'
+  end
+
+  def test_only_merged_but_untagged_resume_may_start_from_an_ancestor_of_dispatch_main
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization = workflow.split("- name: Enforce release authorization", 2).fetch(1)
+                            .split("- name: Mint repository-scoped release App token", 2).first
+    context = workflow.split("- name: Resolve naming and the merged-but-untagged recovery path", 2).fetch(1)
+                      .split("- name: Validate the recovered release target against live main", 2).first
+
+    assert_includes authorization, '"${RELEASE_MODE}" != "resume"'
+    assert_includes authorization, "Prove the frozen release SHA is on dispatch main"
+    assert_includes authorization, '/compare/${EXPECTED_SHA}...${DISPATCH_SHA}'
+    assert_includes context, "dispatch_main_advanced && !resume_without_pr"
+    assert_includes context, 'source_release_commit_sha == ENV.fetch("APPROVED_MAIN_SHA")'
+  end
+
+  def test_tag_without_release_resume_is_reconciled_before_skipping_the_pr
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    context = workflow.split("- name: Resolve naming and the merged-but-untagged recovery path", 2).fetch(1)
+                      .split("- name: Validate the recovered release target against live main", 2).first
+    target = workflow.split("- name: Resolve the exact release target commit", 2).fetch(1)
+                     .split("- name: Create the tag-backed GitHub prerelease", 2).first
+
+    assert_equal 2, workflow.scan('--recover-release-channel "${RELEASE_CHANNEL}"').length
+    assert_equal 2, workflow.scan('--recover-release-version "${RELEASE_VERSION}"').length
+    assert_equal 2, workflow.scan('"${recovery_args[@]}"').length
+    assert_includes context, "%w[resume_after_merge resume_after_tag].include?(recovery_reason)"
+    assert_includes target, 'ENV.fetch("RECONCILIATION_REASON")'
+  end
+
+  private
+
+  def oras_installation_steps(filename)
+    YAML.load_file(repo_path(".github/workflows/#{filename}")).fetch("jobs").values
+        .flat_map { |job| job.fetch("steps", []) }
+        .select { |step| step["uses"].to_s.start_with?("oras-project/setup-oras") }
+  end
+
+  def assert_oras_installation_pinned(step)
+    action = step["uses"]
+    assert_match(/\Aoras-project\/setup-oras@[0-9a-f]{40}\z/, action.to_s,
+                 "ORAS setup must use a full immutable action commit")
+    inputs = step.fetch("with", {})
+    url = inputs["url"]
+    checksum = inputs["checksum"]
+    # Read the version from the workflow; Dependabot updates must not require fixture edits.
+    download = %r{\Ahttps://github\.com/oras-project/oras/releases/download/v(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)/oras_\1_(linux_amd64|darwin_arm64|darwin_amd64)\.tar\.gz\z}.match(url.to_s)
+    refute_nil download, "ORAS must use an official archive with matching directory and filename versions"
+    assert_match(/\A[0-9a-f]{64}\z/, checksum.to_s, "Each ORAS archive must have a SHA-256 checksum")
+    { action: action, version: download[1], platform: download[2], url: url, checksum: checksum }
+  end
+
+  def repo_path(relative_path)
+    File.expand_path("../..", __dir__) + "/#{relative_path}"
+  end
+end

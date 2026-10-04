@@ -34,6 +34,8 @@
 @class SPContentFilterManager;
 @class SPRuleFilterDropBox;
 
+NS_ASSUME_NONNULL_BEGIN
+
 NSString * const SPRuleFilterHeightChangedNotification;
 
 @interface SPRuleFilterController : NSObject {
@@ -44,6 +46,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
 	IBOutlet NSView *tableContentViewBelow;
 	IBOutlet NSButton *filterButton;
 	IBOutlet NSButton *addFilterButton;
+	IBOutlet NSPopUpButton *rootConjunctionPopUp;
 
 	NSMutableArray *columns;
 	NSMutableDictionary *contentFilters;
@@ -59,7 +62,8 @@ NSString * const SPRuleFilterHeightChangedNotification;
 	SEL action;
 
 	BOOL enabled;
-	
+	BOOL rootIsConjunction;
+
 	NSUInteger opNodeCacheVersion;
 	BOOL isDoingChangeCausedOutsideOfRuleEditor;
 	NSInteger previousRowCount;
@@ -88,7 +92,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (void)setColumns:(NSArray *)dataColumns;
+- (void)setColumns:(nullable NSArray *)dataColumns;
 
 /**
  * Converts the current filter expression displayed in the UI into an
@@ -103,7 +107,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
+- (nullable NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
 
 /**
  * Returns the current filter configuration in a serialized form that can be exported and
@@ -123,7 +127,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (void)restoreSerializedFilters:(NSDictionary *)serialized;
+- (void)restoreSerializedFilters:(nullable NSDictionary *)serialized;
 
 /**
  * Create a serialized filter from a given column, operator and operand.
@@ -158,6 +162,17 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * MUST BE CALLED ON THE UI THREAD!
  */
 - (void)addFilterExpression;
+
+/**
+ * Adds the starter row the table content seeds when the editor appears or another table is selected.
+ * The row starts unchecked: it is an empty template, not a filter, so the WHERE preview must not show
+ * it as `column = ''` while the table is unfiltered. The first edit of the row - a value typed, a column
+ * or operator picked, or a click on the drop zone's "add a filter" prompt - checks it; a click on its
+ * checkbox is the user's own decision and is left alone.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (void)addStarterFilterExpression;
 
 /**
  * Append a fully-populated rule (column, a sensible default operator for
@@ -211,6 +226,26 @@ NSString * const SPRuleFilterHeightChangedNotification;
 - (void)addEmptyFilterRow;
 
 /**
+ * Appends a nested AND/OR group (with one empty rule inside) as a new
+ * top-level row. The group uses the opposite of the root conjunction, so
+ * the default "AND" top level gets an OR group and vice versa. Equivalent
+ * to ⌥-clicking a row's "+" button in the rule editor, but discoverable.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (void)addEmptyFilterGroup;
+
+/**
+ * How the top-level rows of the rule editor are combined: YES for AND
+ * (the default), NO for OR. Shown as the AND/OR popup next to the Apply
+ * button. Reset to YES whenever the columns are reconfigured; restored
+ * from the serialized filter by -restoreSerializedFilters:.
+ *
+ * SHOULD be called on the UI thread, or results may be inconsistent!
+ */
+@property (assign, nonatomic) BOOL rootIsConjunction;
+
+/**
  * The always-visible "Drop a value here, or click to add a filter" zone placed
  * below the rule editor. Exposed so the container's layout code can
  * position it.
@@ -230,10 +265,12 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * SHOULD be called on the UI thread, or results may be inconsistent!
  */
-@property (unsafe_unretained, nonatomic) id target;
-@property (assign, nonatomic) SEL action;
+@property (unsafe_unretained, nonatomic, nullable) id target;
+@property (assign, nonatomic, nullable) SEL action;
 
 - (BOOL)isEnabled;
 - (void)setEnabled:(BOOL)enabled;
 
 @end
+
+NS_ASSUME_NONNULL_END

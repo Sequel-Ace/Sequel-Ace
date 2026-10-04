@@ -73,3 +73,5 @@ extern NSString * const SPMySQLMultiLineStringType;
 extern NSString * const SPMySQLMultiPolygonType;
 extern NSString * const SPMySQLGeometryCollectionType;
 extern NSString * const SPMySQLJsonType;
+extern NSString * const SPMySQLInet4Type;
+extern NSString * const SPMySQLInet6Type;

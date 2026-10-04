@@ -28,10 +28,321 @@ import Cocoa
     @objc(replaceFilterAtRow:forColumn:value:isNull:)
     func replaceFilter(at row: Int, forColumn columnName: String, value: String?, isNull: Bool) -> Bool
 
-    /// Insert an empty filter row (same as clicking the "+" button).
+    /// Insert an empty filter row (same as clicking the "+" button), or check
+    /// an unchecked row without a value when there is one instead of adding a
+    /// second empty row (see `SARuleFilterPendingStarter.reusableEmptyRow`).
     /// Used when the user clicks the drop box instead of dropping onto it.
     @objc(addEmptyFilterRow)
     func addEmptyFilterRow()
+
+    /// Append a nested AND/OR group holding one empty filter row – the
+    /// discoverable equivalent of ⌥-clicking a row's "+" button.
+    /// Used by the context menus and by ⌥-clicking the drop box.
+    @objc(addEmptyFilterGroup)
+    func addEmptyFilterGroup()
+}
+
+/// Context menu shared by the rule editor and its drop box. It exists to
+/// surface the nested-group feature: `NSRuleEditor` only offers it via
+/// ⌥-click on a row's "+" button, which nobody discovers on their own.
+enum SARuleFilterContextMenu {
+    /// Builds a fresh menu whose items send `addEmptyFilterRow` /
+    /// `addEmptyFilterGroup` to `handler` (held weakly by the menu items).
+    static func menu(for handler: SPFilterRuleEditorDropHandler) -> NSMenu {
+        let menu = NSMenu()
+        let addFilter = NSMenuItem(
+            title: NSLocalizedString("Add Filter", comment: "table Content : rule filter editor : context menu : add filter row"),
+            action: #selector(SPFilterRuleEditorDropHandler.addEmptyFilterRow),
+            keyEquivalent: ""
+        )
+        addFilter.target = handler
+        menu.addItem(addFilter)
+        let addGroup = NSMenuItem(
+            title: NSLocalizedString("Add AND/OR Group", comment: "table Content : rule filter editor : context menu : add nested AND/OR group"),
+            action: #selector(SPFilterRuleEditorDropHandler.addEmptyFilterGroup),
+            keyEquivalent: ""
+        )
+        addGroup.target = handler
+        menu.addItem(addGroup)
+        return menu
+    }
+}
+
+/// Tracks the filter row the content view seeds when another table is
+/// selected. The row starts unchecked: it is an empty template, not a filter,
+/// and a checked one made the WHERE preview show `column = ''` while the table
+/// was unfiltered. Its first edit checks it; a click on its checkbox is the
+/// user's own decision and ends the tracking. Only a weak reference to the
+/// row's checkbox is kept, so a removed or replaced row simply stops being
+/// tracked; the controller records the state in the saved filter so a restored
+/// row is tracked again.
+@objc public final class SARuleFilterPendingStarter: NSObject {
+    /// The seeded row's checkbox while the row waits for its first edit.
+    @objc public private(set) weak var checkbox: NSButton?
+
+    /// Clears the mark a restored row carries, run when tracking ends for good.
+    private var clearRestoredMark: (() -> Void)?
+
+    /// Tracks `checkbox` as the seeded row's and unchecks it.
+    ///
+    /// - Parameters:
+    ///   - checkbox: The row's enable checkbox.
+    ///   - clearRestoredMark: Clears the mark a restored row carries, called
+    ///     once tracking ends. A restored row keeps that mark so that tracking
+    ///     resumes whenever its checkbox is built again - the editor rebuilds
+    ///     it on a reload, before the row has been edited - which is also why
+    ///     the mark has to go the moment the row stops waiting. Without that,
+    ///     a later rebuild would uncheck a row the user has since enabled.
+    @objc(beginWithCheckbox:clearingRestoredMark:)
+    public func begin(with checkbox: NSButton, clearingRestoredMark clearRestoredMark: (() -> Void)?) {
+        checkbox.state = .off
+        self.checkbox = checkbox
+        self.clearRestoredMark = clearRestoredMark
+    }
+
+    /// Stops tracking, e.g. because the user clicked the row's checkbox.
+    @objc public func forget() {
+        endTracking()
+    }
+
+    /// Stops tracking and lets a restored row forget that it was ever waiting.
+    private func endTracking() {
+        checkbox = nil
+        clearRestoredMark?()
+        clearRestoredMark = nil
+    }
+
+    /// Whether `value` is the tracked checkbox.
+    ///
+    /// - Parameter value: A display value of the rule editor.
+    /// - Returns: Whether it is the seeded row's checkbox.
+    @objc public func isCheckbox(_ value: Any?) -> Bool {
+        guard let checkbox, let button = value as? NSButton else { return false }
+        return button === checkbox
+    }
+
+    /// The tracked row's index, or `NSNotFound` when there is none any more.
+    ///
+    /// - Parameter editor: The rule editor holding the row.
+    /// - Returns: The row index.
+    @objc(rowInEditor:)
+    public func row(in editor: NSRuleEditor) -> Int {
+        guard let checkbox else { return NSNotFound }
+        let row = editor.row(forDisplayValue: checkbox)
+        guard row != NSNotFound, row >= 0 else {
+            self.checkbox = nil
+            return NSNotFound
+        }
+        return row
+    }
+
+    /// The first top-level row that is an unchecked, empty filter - it has
+    /// value fields and nothing is typed into any of them - or `NSNotFound`.
+    /// "Add Filter" checks such a row instead of adding a second empty one next
+    /// to it, whether it is the seeded starter row or a row the user unchecked
+    /// again. An unchecked row with a value, or one whose operator takes none
+    /// (`IS NULL`), is a filter set aside and is left alone.
+    ///
+    /// - Parameter editor: The rule editor to search.
+    /// - Returns: The row index.
+    @objc(reusableEmptyRowInEditor:)
+    public static func reusableEmptyRow(in editor: NSRuleEditor) -> Int {
+        for row in 0..<editor.numberOfRows where editor.parentRow(forRow: row) == -1 && editor.rowType(forRow: row) == .simple {
+            let values = editor.displayValues(forRow: row)
+            guard let checkbox = values.first as? NSButton, checkbox.state == .off else { continue }
+            let fields = values.compactMap { $0 as? NSTextField }
+            if !fields.isEmpty && fields.allSatisfy({ $0.stringValue.isEmpty }) {
+                return row
+            }
+        }
+        return NSNotFound
+    }
+
+    /// Checks the tracked row when `row` is that row and stops tracking it:
+    /// editing the row means filtering by it.
+    ///
+    /// - Parameters:
+    ///   - row: The row that is being edited.
+    ///   - editor: The rule editor holding it.
+    /// - Returns: Whether the tracked row was checked.
+    @objc(enableIfRow:inEditor:)
+    public func enableIfRow(_ row: Int, in editor: NSRuleEditor) -> Bool {
+        let tracked = self.row(in: editor)
+        guard tracked != NSNotFound, row == tracked, let checkbox else { return false }
+        checkbox.state = .on
+        endTracking()
+        return true
+    }
+}
+
+/// Keeps the rule editor's visibility setter free of model mutations when it
+/// is only reapplying an already-visible state during table reloads.
+@objc public final class SARuleFilterVisibilityPolicy: NSObject {
+    /// A starter rule belongs to the first application of a saved visible
+    /// preference (including after a blank-state reset), an explicit
+    /// hidden-to-visible transition, or a switch to another table. Reapplying
+    /// `visible` while rebuilding the current table must be idempotent, even
+    /// when the transiently rebuilt model is empty.
+    @objc(shouldAddStarterRuleWithVisibilityWasApplied:wasVisible:willBeVisible:tableChanged:editorIsEmpty:)
+    public static func shouldAddStarterRule(
+        visibilityWasApplied: Bool,
+        wasVisible: Bool,
+        willBeVisible: Bool,
+        tableChanged: Bool,
+        editorIsEmpty: Bool
+    ) -> Bool {
+        return (!visibilityWasApplied || !wasVisible || tableChanged) && willBeVisible && editorIsEmpty
+    }
+}
+
+/// Presentation strings and checks for a group row's AND/OR choice, kept in
+/// Swift so the Objective-C rule-editor delegate only forwards to it.
+@objc public final class SARuleFilterConjunctionRowPresentation: NSObject {
+    /// The static label shown after a group row's AND/OR popup, clarifying
+    /// that the choice combines the group's own conditions.
+    @objc public static var explainerText: String {
+        return NSLocalizedString("combines the conditions in this group", comment: "table Content : rule filter editor : compound row : label after the AND/OR popup")
+    }
+
+    /// Whether the string is one of the two conjunction choices (as opposed
+    /// to the explainer label, which is also rendered from a plain string).
+    @objc(isConjunctionChoice:)
+    public static func isConjunctionChoice(_ value: String?) -> Bool {
+        return value == "AND" || value == "OR"
+    }
+}
+
+/// What `-[SPRuleFilterController ruleEditorRowsDidChange:]` should do about
+/// the container size after the rule editor reported a rows change.
+@objc public enum SARuleFilterResizeAction: Int {
+    /// The row count did not change – nothing to resize.
+    case none
+    /// Resize right away.
+    case immediate
+    /// Resize after `SARuleFilterResizePolicy.deferredResizeDelay`.
+    case deferred
+}
+
+/// Decides when the filter container follows a rows change in the rule editor.
+///
+/// `NSRuleEditor` posts its rows-did-change notification several times per
+/// click on "+" / "−", and not every post means the number of rows changed.
+/// Scheduling a delayed resize for each of them (the pre-2026 behaviour)
+/// stacked delay and container animations on top of the rule editor's own row
+/// animation, which made the buttons feel like they hang. The policy turns a
+/// (row count, previous row count) pair into a single action:
+///
+/// * unchanged count → nothing;
+/// * growing → resize immediately, so the container makes room while the
+///   rule editor animates the new row in (both animations run concurrently);
+/// * shrinking → wait for the rule editor's removal animation first, because
+///   resizing the container underneath it makes the remaining rows jump.
+///
+/// The caller is expected to cancel any pending deferred resize before acting
+/// on the returned action, so one gesture ends in one resize.
+@objc public final class SARuleFilterResizePolicy: NSObject {
+    /// Delay for `.deferred`, matching the rule editor's row-removal animation.
+    @objc public static let deferredResizeDelay: TimeInterval = 0.2
+
+    /// Picks the resize action for a rows-did-change notification.
+    ///
+    /// - Parameters:
+    ///   - rowCount: The rule editor's row count after the change.
+    ///   - previousRowCount: The row count the controller last acted on.
+    /// - Returns: `.none` when the count is unchanged, `.immediate` when rows
+    ///   were added, `.deferred` when rows were removed.
+    @objc(actionForRowCount:previousRowCount:)
+    public static func action(rowCount: Int, previousRowCount: Int) -> SARuleFilterResizeAction {
+        if rowCount == previousRowCount {
+            return .none
+        }
+        return rowCount > previousRowCount ? .immediate : .deferred
+    }
+}
+
+/// Immutable layout values consumed by the legacy table-content controller.
+/// Keeping the policy in Swift makes the Objective-C call site a thin view
+/// trampoline and gives the preference combinations direct unit coverage.
+@objc public final class SARuleFilterDropZoneLayoutMetrics: NSObject {
+    @objc public let dropZoneVisible: Bool
+    @objc public let dropZoneReservedHeight: CGFloat
+    @objc public let ruleEditorOriginY: CGFloat
+    @objc public let containerRequestedHeight: CGFloat
+
+    fileprivate init(
+        dropZoneVisible: Bool,
+        dropZoneReservedHeight: CGFloat,
+        ruleEditorOriginY: CGFloat,
+        containerRequestedHeight: CGFloat
+    ) {
+        self.dropZoneVisible = dropZoneVisible
+        self.dropZoneReservedHeight = dropZoneReservedHeight
+        self.ruleEditorOriginY = ruleEditorOriginY
+        self.containerRequestedHeight = containerRequestedHeight
+    }
+}
+
+/// Controls whether the optional filter drop zone participates in layout.
+/// Missing preferences deliberately preserve the existing visible behavior for
+/// users upgrading from versions that predate the setting.
+@objc public final class SARuleFilterDropZoneLayoutPolicy: NSObject {
+    private static let preferenceKey = "RuleFilterShowDropZone"
+
+    @objc(defaultsKey)
+    public static var defaultsKey: String {
+        return preferenceKey
+    }
+
+    @objc(metricsWithEditorVisible:editorHasRows:requestedHeight:dropZoneHeight:userDefaults:)
+    public static func metrics(
+        editorVisible: Bool,
+        editorHasRows: Bool,
+        requestedHeight: CGFloat,
+        dropZoneHeight: CGFloat,
+        userDefaults: UserDefaults
+    ) -> SARuleFilterDropZoneLayoutMetrics {
+        let showDropZone = userDefaults.object(forKey: preferenceKey).map { _ in
+            userDefaults.bool(forKey: preferenceKey)
+        } ?? true
+
+        return metrics(
+            editorVisible: editorVisible,
+            editorHasRows: editorHasRows,
+            requestedHeight: requestedHeight,
+            dropZoneHeight: dropZoneHeight,
+            showDropZonePreference: showDropZone
+        )
+    }
+
+    /// Height of the bottom bar when the drop zone is hidden: just enough for
+    /// the button row (Apply/Add Filter + AND/OR popup, 27 pt plus padding).
+    private static let buttonBarHeight: CGFloat = 31
+
+    static func metrics(
+        editorVisible: Bool,
+        editorHasRows: Bool,
+        requestedHeight: CGFloat,
+        dropZoneHeight: CGFloat,
+        showDropZonePreference: Bool
+    ) -> SARuleFilterDropZoneLayoutMetrics {
+        let effectiveEditorHasRows = editorVisible && editorHasRows
+        let dropZoneVisible = editorVisible && showDropZonePreference
+
+        // The bottom bar (drop zone, AND/OR popup, Apply/Add Filter buttons)
+        // is always reserved while the filter UI is visible: the rule editor
+        // rows span the full width above it and must never overlap it. With
+        // the drop zone hidden the bar shrinks to the plain button row.
+        let bottomBarHeight = editorVisible ? (dropZoneVisible ? max(dropZoneHeight, 0) : buttonBarHeight) : 0
+        let ruleEditorTopMargin: CGFloat = effectiveEditorHasRows ? 1 : 0
+        let ruleEditorHeight = effectiveEditorHasRows ? max(requestedHeight, 29) + ruleEditorTopMargin : 0
+
+        return SARuleFilterDropZoneLayoutMetrics(
+            dropZoneVisible: dropZoneVisible,
+            dropZoneReservedHeight: bottomBarHeight,
+            ruleEditorOriginY: bottomBarHeight + ruleEditorTopMargin,
+            containerRequestedHeight: editorVisible ? bottomBarHeight + ruleEditorHeight : 0
+        )
+    }
 }
 
 /// `NSRuleEditor` subclass that extends the content-tab filter with
@@ -59,6 +370,16 @@ import Cocoa
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([Self.rowDropType])
+    }
+
+    /// Right-click on a row's background (the controls inside a row keep
+    /// their own menus) offers the same add-row / add-group actions as the
+    /// drop box, so the nested-group feature is reachable without ⌥-click.
+    override public func menu(for event: NSEvent) -> NSMenu? {
+        guard let handler = self.delegate as? SPFilterRuleEditorDropHandler else {
+            return super.menu(for: event)
+        }
+        return SARuleFilterContextMenu.menu(for: handler)
     }
 
     override public func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
@@ -90,7 +411,17 @@ import Cocoa
         }
         let value = plist[SPCellValuePasteboard.rowValueKey] as? String
         let isNull = (plist[SPCellValuePasteboard.rowValueKindKey] as? String) == SPCellValuePasteboard.rowValueKindNull
-        return handler.replaceFilter(at: row, forColumn: columnName, value: value, isNull: isNull)
+        // The handler addresses top-level (root) children, but `row` is the
+        // flat visible index, which also counts the subrows of nested groups
+        // - map it to the ordinal among top-level rows before handing over.
+        return handler.replaceFilter(at: topLevelOrdinal(forRow: row), forColumn: columnName, value: value, isNull: isNull)
+    }
+
+    /// The position of a top-level row among the top-level rows only - i.e.
+    /// the index of the corresponding root child in the serialized tree.
+    /// (`row` itself must be a top-level row.)
+    private func topLevelOrdinal(forRow row: Int) -> Int {
+        return (0..<row).reduce(0) { $0 + (parentRow(forRow: $1) == -1 ? 1 : 0) }
     }
 
     override public func concludeDragOperation(_ sender: NSDraggingInfo?) {
@@ -132,11 +463,12 @@ import Cocoa
         let index = Int(floor(y / rowH))
         guard index >= 0, index < numberOfRows else { return nil }
         // Drop target must be a top-level simple rule: a compound
-        // (AND / OR) row can't be "replaced" with a single expression,
-        // and a nested subrow would require tree-walking the serialized
-        // filter to map the visible index to a child index. Both cases
-        // are rejected; the user can use the drop box to append a new
-        // rule instead.
+        // (AND / OR) row can't be "replaced" with a single expression, and
+        // a nested subrow belongs to its group, not to the root. Both are
+        // rejected; the user can use the drop box to append a new rule
+        // instead. A plain top-level row next to a nested group IS a valid
+        // target - performDragOperation maps the visible index to the root
+        // child ordinal for the handler.
         guard parentRow(forRow: index) == -1 else { return nil }
         guard rowType(forRow: index) == .simple else { return nil }
         return index

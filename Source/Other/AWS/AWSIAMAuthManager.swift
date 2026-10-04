@@ -152,7 +152,8 @@ import Security
         profile: String?,
         accessKey: String?,
         secretKey: String?,
-        parentWindow: NSWindow?
+        parentWindow: NSWindow?,
+        shouldContinue: (() -> Bool)? = nil
     ) throws -> String {
         // Determine region
         var effectiveRegion = region?
@@ -175,7 +176,8 @@ import Security
         let credentials = try loadCredentialsFromProfile(
             effectiveProfile,
             region: effectiveRegion,
-            parentWindow: parentWindow
+            parentWindow: parentWindow,
+            shouldContinue: shouldContinue
         )
 
         // Generate the authentication token
@@ -199,7 +201,8 @@ import Security
     private static func loadCredentialsFromProfile(
         _ profileName: String,
         region: String,
-        parentWindow: NSWindow?
+        parentWindow: NSWindow?,
+        shouldContinue: (() -> Bool)? = nil
     ) throws -> AWSCredentials {
         // Load base credentials from profile
         let baseCredentials: AWSCredentials
@@ -218,7 +221,7 @@ import Security
 
         // Console sign-in (`aws login`) profiles resolve cached temporary credentials.
         // Static keys and role assumption outrank console sign-in, matching the AWS CLI.
-        if baseCredentials.isLoginProfile && !baseCredentials.isValid && !baseCredentials.requiresRoleAssumption {
+        if AWSLoginCredentialsProvider.resolvesThroughConsoleSignIn(baseCredentials) {
             return try resolveLoginCredentials(baseCredentials, profileName: profileName)
         }
 
@@ -245,7 +248,8 @@ import Security
                 baseCredentials: baseCredentials,
                 profileName: profileName,
                 region: region,
-                parentWindow: parentWindow
+                parentWindow: parentWindow,
+                shouldContinue: shouldContinue
             )
         } else {
             // Role assumption without MFA
@@ -350,7 +354,8 @@ import Security
         baseCredentials: AWSCredentials,
         profileName: String,
         region: String,
-        parentWindow: NSWindow?
+        parentWindow: NSWindow?,
+        shouldContinue: (() -> Bool)? = nil
     ) throws -> AWSCredentials {
         guard let roleArn = baseCredentials.roleArn,
               let mfaSerial = baseCredentials.mfaSerial else {
@@ -361,7 +366,8 @@ import Security
         guard let mfaToken = AWSMFATokenDialog.promptForMFAToken(
             profile: profileName,
             mfaSerial: mfaSerial,
-            parentWindow: parentWindow
+            parentWindow: parentWindow,
+            shouldContinue: shouldContinue ?? { true }
         ) else {
             throw AWSIAMAuthError.mfaCancelled
         }
@@ -638,6 +644,40 @@ import Security
 
 extension AWSIAMAuthManager {
 
+    /// Resolve profile credentials away from the UI thread; deliver the result on main.
+    @objc(generateAuthTokenInBackgroundWithHostname:port:username:region:profile:parentWindow:shouldContinue:completion:)
+    static func generateAuthTokenInBackground(
+        hostname: String,
+        port: Int,
+        username: String,
+        region: String?,
+        profile: String?,
+        parentWindow: NSWindow?,
+        shouldContinue: @escaping () -> Bool = { true },
+        completion: @escaping (String?, NSError?) -> Void
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard DispatchQueue.main.sync(execute: shouldContinue) else { return }
+            let token: String?
+            let resolvedError: NSError?
+            do {
+                token = try generateAuthToken(
+                    hostname: hostname, port: port, username: username,
+                    region: region, profile: profile, accessKey: nil, secretKey: nil,
+                    parentWindow: parentWindow, shouldContinue: shouldContinue
+                )
+                resolvedError = nil
+            } catch {
+                token = nil
+                resolvedError = presentableError(error, profile: profile)
+            }
+            DispatchQueue.main.async {
+                guard shouldContinue() else { return }
+                completion(token, resolvedError)
+            }
+        }
+    }
+
     /// Objective-C compatible method that returns nil on error
     /// Note: Uses a different method name to avoid selector conflicts with the throwing version
     @objc(generateAuthTokenWithHostname:port:username:region:profile:accessKey:secretKey:parentWindow:error:)
@@ -663,16 +703,265 @@ extension AWSIAMAuthManager {
                 secretKey: secretKey,
                 parentWindow: parentWindow
             )
-        } catch let authError as AWSIAMAuthError {
-            errorPointer?.pointee = NSError(
+        } catch {
+            errorPointer?.pointee = presentableError(error, profile: profile)
+            return nil
+        }
+    }
+
+    /// Generates an IAM authentication token on a background queue and calls `completion` on the
+    /// main queue with the token, or with an error naming the AWS CLI command for `profile` when
+    /// signing in again resolves it. An MFA prompt, when the profile needs one, runs on the main queue.
+    @objc(generateAuthTokenWithHostname:port:username:region:profile:parentWindow:completion:)
+    static func generateAuthTokenInBackground(
+        hostname: String,
+        port: Int,
+        username: String,
+        region: String?,
+        profile: String?,
+        parentWindow: NSWindow?,
+        completion: @escaping (String?, NSError?) -> Void
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let token: String?
+            let tokenError: NSError?
+
+            do {
+                token = try generateAuthToken(
+                    hostname: hostname,
+                    port: port,
+                    username: username,
+                    region: region,
+                    profile: profile,
+                    accessKey: nil,
+                    secretKey: nil,
+                    parentWindow: parentWindow
+                )
+                tokenError = nil
+            } catch {
+                token = nil
+                tokenError = presentableError(error, profile: profile)
+            }
+
+            DispatchQueue.main.async {
+                completion(token, tokenError)
+            }
+        }
+    }
+
+    /// `error` as an NSError for display, naming the AWS CLI command for `profile` when signing in again resolves it.
+    private static func presentableError(_ error: Error, profile: String?) -> NSError {
+        if let authError = error as? AWSIAMAuthError {
+            return NSError(
                 domain: "AWSIAMAuthErrorDomain",
                 code: authError.rawValue,
                 userInfo: [NSLocalizedDescriptionKey: authError.localizedDescription]
             )
-            return nil
-        } catch let otherError {
-            errorPointer?.pointee = otherError as NSError
-            return nil
         }
+        return SAAWSSignInCommand.presentableError(error, profile: profile)
+    }
+}
+
+// MARK: - Region Picker
+
+/// Supplies the region picker with current catalog data before its first popup.
+@objc protocol SAAWSRegionComboBoxPreparationDelegate: AnyObject {
+    @objc(prepareAWSRegionComboBox:completion:)
+    func prepareAWSRegionComboBox(_ comboBox: SAAWSRegionComboBox, completion: @escaping () -> Void)
+}
+
+/// Defers the first popup until a user-initiated AWS region refresh completes.
+/// This keeps application startup network-free without presenting a stale popup.
+@objc final class SAAWSRegionComboBox: NSComboBox {
+    @objc weak var preparationDelegate: SAAWSRegionComboBoxPreparationDelegate?
+
+    private(set) var hasPreparedPopup = false
+    private(set) var shouldOpenPopupAfterPreparation = false
+    private var isPreparingPopup = false
+    private var interveningInputMonitor: Any?
+
+    private lazy var preparationIndicator: NSProgressIndicator = {
+        let indicator = NSProgressIndicator()
+        indicator.controlSize = .small
+        indicator.style = .spinning
+        indicator.isDisplayedWhenStopped = false
+        addSubview(indicator)
+        return indicator
+    }()
+
+    override func mouseDown(with event: NSEvent) {
+        guard shouldPreparePopup(for: event), preparePopupIfNeeded() else {
+            super.mouseDown(with: event)
+            return
+        }
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        if preparePopupIfNeeded() {
+            return true
+        }
+        return super.accessibilityPerformShowMenu()
+    }
+
+    /// Starts first-use preparation and reports whether the initiating popup should wait.
+    @objc(preparePopupIfNeeded)
+    func preparePopupIfNeeded() -> Bool {
+        guard !hasPreparedPopup else {
+            return false
+        }
+        guard !isPreparingPopup else {
+            return true
+        }
+        guard let preparationDelegate else {
+            return false
+        }
+
+        isPreparingPopup = true
+        shouldOpenPopupAfterPreparation = true
+        monitorForInterveningInput()
+        preparationIndicator.startAnimation(nil)
+        needsLayout = true
+
+        preparationDelegate.prepareAWSRegionComboBox(self) { [weak self] in
+            if Thread.isMainThread {
+                self?.finishPreparingPopup()
+            }
+            else {
+                DispatchQueue.main.async {
+                    self?.finishPreparingPopup()
+                }
+            }
+        }
+        return true
+    }
+
+    override func layout() {
+        super.layout()
+
+        let indicatorSize: CGFloat = 12
+        let inset: CGFloat = 7
+        let x: CGFloat
+        if userInterfaceLayoutDirection == .rightToLeft {
+            x = bounds.minX + inset
+        }
+        else {
+            x = bounds.maxX - inset - indicatorSize
+        }
+
+        preparationIndicator.frame = NSRect(
+            x: x,
+            y: bounds.midY - indicatorSize / 2,
+            width: indicatorSize,
+            height: indicatorSize
+        )
+    }
+
+    /// Cancels the delayed popup while allowing the catalog refresh to finish.
+    func cancelPendingPopupOpening() {
+        shouldOpenPopupAfterPreparation = false
+    }
+
+    func shouldPreparePopup(for event: NSEvent) -> Bool {
+        guard !hasPreparedPopup,
+              event.type == .leftMouseDown,
+              let cell else {
+            return false
+        }
+
+        let hit = cell.hitTest(for: event, in: bounds, of: self)
+        return hit.contains(.trackableArea) && !hit.contains(.editableTextArea)
+    }
+
+    private func monitorForInterveningInput() {
+        interveningInputMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]
+        ) { [weak self] event in
+            self?.cancelPendingPopupOpening()
+            return event
+        }
+    }
+
+    private func stopMonitoringInterveningInput() {
+        guard let interveningInputMonitor else {
+            return
+        }
+
+        NSEvent.removeMonitor(interveningInputMonitor)
+        self.interveningInputMonitor = nil
+    }
+
+    private func finishPreparingPopup() {
+        guard isPreparingPopup else {
+            return
+        }
+
+        let shouldOpenPopup = shouldOpenPopupAfterPreparation
+        isPreparingPopup = false
+        hasPreparedPopup = true
+        shouldOpenPopupAfterPreparation = false
+        stopMonitoringInterveningInput()
+        preparationIndicator.stopAnimation(nil)
+
+        guard shouldOpenPopup,
+              let window,
+              NSApp.isActive,
+              window.isKeyWindow,
+              !isHiddenOrHasHiddenAncestor,
+              isEnabled else {
+            return
+        }
+
+        let buttonX: CGFloat
+        if userInterfaceLayoutDirection == .rightToLeft {
+            buttonX = bounds.minX + 8
+        }
+        else {
+            buttonX = bounds.maxX - 8
+        }
+
+        let location = convert(NSPoint(x: buttonX, y: bounds.midY), to: nil)
+        let timestamp = ProcessInfo.processInfo.systemUptime
+        guard let mouseDown = NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: location,
+            modifierFlags: [],
+            timestamp: timestamp,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 1,
+            pressure: 1
+        ),
+        let mouseUp = NSEvent.mouseEvent(
+            with: .leftMouseUp,
+            location: location,
+            modifierFlags: [],
+            timestamp: timestamp + 0.01,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 1,
+            pressure: 0
+        ) else {
+            return
+        }
+
+        NSApp.postEvent(mouseUp, atStart: false)
+        NSApp.sendEvent(mouseDown)
+    }
+
+    deinit {
+        stopMonitoringInterveningInput()
+    }
+}
+
+/// Routes the combo box cell's accessibility menu action through first-use preparation.
+@objc final class SAAWSRegionComboBoxCell: NSComboBoxCell {
+    override func accessibilityPerformShowMenu() -> Bool {
+        if let comboBox = controlView as? SAAWSRegionComboBox,
+           comboBox.preparePopupIfNeeded() {
+            return true
+        }
+        return super.accessibilityPerformShowMenu()
     }
 }

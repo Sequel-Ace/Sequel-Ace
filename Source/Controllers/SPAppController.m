@@ -56,13 +56,11 @@
 
 #import "sequel-ace-Swift.h"
 
-@import FirebaseCore;
-@import FirebaseAnalytics;
-@import FirebaseCrashlytics;
-
 static const double SPDelayBeforeCheckingForNewReleases = 10;
 
-@interface SPAppController ()
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPAppController () <NSMenuItemValidation>
 @property (strong) IBOutlet NSMenu *mainMenu;
 
 - (void)_copyDefaultThemes;
@@ -72,7 +70,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)openSessionBundleAtPath:(NSString *)filePath;
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
 - (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck;
-- (void)removeCheckForUpdatesMenuItem;
 - (void)addCheckForUpdatesMenuItem;
 - (void)checkForNewVersionFromMenu;
 
@@ -110,14 +107,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@"tmp"] withIntermediateDirectories:true attributes:nil error:nil];
         [fileManager createDirectoryAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".keys"] withIntermediateDirectories:true attributes:nil error:nil];
 
-        //Handle Appearance on macOS 10.14+
-        if (@available(macOS 10.14, *)) {
-            //Switch Appearance on Application startup (prevent Appearance blink)
-            [self switchAppearance];
+        //Apply the appearance preference on startup (prevents an appearance blink);
+        //the former @available(macOS 10.14) wrapper was dead code, target is 13.5+
+        [self switchAppearance];
 
-            //Register an observer to switch Appearance at runtime
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
-        }
+        //Register an observer to re-apply it when defaults change at runtime
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
         [NSApp setDelegate:self];
     }
     return self;
@@ -143,24 +138,21 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)defaultsChanged:(NSNotification *)notification {
     [self switchAppearance];
+    SPMainQSync(^{
+        [SAAnalyticsConsentPolicy applyAnalyticsConsent];
+    });
 }
 
 /**
- * Called when need to switch application appearance - on startup and when userDefaults changed
+ * Applies the appearance preference - on startup and when userDefaults change.
+ * NSUserDefaultsDidChangeNotification fires for every defaults write anywhere
+ * in the app, so SAAppearancePreference caches the applied selection and only
+ * pushes real changes to NSApp. (The former @available(10.14) check was dead
+ * code - the deployment target is 13.5.)
  */
 - (void)switchAppearance {
     SPMainQSync(^{
-        if (@available(macOS 10.14, *)) {
-            NSInteger appearance = [[NSUserDefaults standardUserDefaults] integerForKey:SPAppearance];
-
-            if (appearance == 1) {
-                NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-            } else if (appearance == 2) {
-                NSApp.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-            } else {
-                NSApp.appearance = nil;
-            }
-        }
+        [SAAppearancePreference applyIfChanged];
     });
 }
 
@@ -202,12 +194,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
-    [FIRApp configure];
+    [SAAnalyticsConsentPolicy requestConsentIfNeeded];
+    [SAAnalyticsConsentPolicy applyAnalyticsConsent];
 
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    BOOL analyticsEnabled = [prefs boolForKey:SPSaveApplicationUsageAnalytics];
-    [FIRAnalytics setAnalyticsCollectionEnabled:analyticsEnabled];
-    [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:analyticsEnabled];
 
 
     // this reRequests access to all bookmarks
@@ -269,8 +259,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Add menu item to check for updates
     [self addCheckForUpdatesMenuItem];
 
-    [prefs addObserver:self forKeyPath:SPShowUpdateAvailable options:NSKeyValueObservingOptionNew context:NULL];
-
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(duplicateConnectionToTab:) name:SPDocumentDuplicateTabNotification object:nil];
@@ -299,10 +287,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
     }
 
-    // Note: standalone connection window (SAConnectionWindowController) is available
-    // programmatically but not yet exposed in the menu to avoid confusion with the
-    // existing "New Connection Window" XIB menu item. Menu item can be added once
-    // the standalone window fully replaces the embedded connection flow.
+    // The standalone connection window now hosts the SwiftUI connection screen
+    // and produces a document indistinguishable from the embedded flow's: the
+    // destination document's connection controller is populated from the
+    // details, the connection gets the document as its delegate, and AWS IAM /
+    // Vault resolve their credentials before connecting. Worth reaching now.
+    //
+    // It sits alongside the XIB's document-based flow rather than replacing it:
+    // this one opens a connection screen with no document behind it, and only
+    // creates a tab once a connection succeeds.
+    [self installStandaloneConnectionMenuItem];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
@@ -310,22 +304,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (void)addCheckForUpdatesMenuItem {
-    if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
+    if (NSBundle.mainBundle.isMASVersion == NO) {
         SPLog(@"Adding menu item to check for updates");
         NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];
     }
-}
-
-- (void)removeCheckForUpdatesMenuItem {
-
-    [mainMenu.itemArray enumerateObjectsUsingBlock:^(NSMenuItem *item2, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([item2.title isEqualToString:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...")]) {
-            SPLog(@"Removing menu item to check for updates");
-            [mainMenu removeItemAtIndex:idx];
-            *stop = YES;
-        }
-    }];
 }
 
 - (void)checkForNewVersionFromMenu{
@@ -335,23 +318,17 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck {
 
     SPLog(@"isFromMenuCheck %d", isFromMenuCheck);
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
-        SPLog(@"checking for updates");
-        executeOnLowPrioQueueAfterADelay(^{
-            [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
-        }, delay);
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if (![SAGitHubReleaseCheckPolicy shouldCheckWithIsUserInitiated:isFromMenuCheck
+                                            automaticChecksEnabled:[defaults boolForKey:SPShowUpdateAvailable]
+                                                isAppStoreInstall:NSBundle.mainBundle.isMASVersion]) {
+        return;
     }
-}
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
-    if ([keyPath isEqualToString:SPShowUpdateAvailable]) {
-        if([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == YES){
-            [self addCheckForUpdatesMenuItem];
-        }
-        else if([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == NO){
-            [self removeCheckForUpdatesMenuItem];
-        }
-    }
+    SPLog(@"checking for updates");
+    executeOnLowPrioQueueAfterADelay(^{
+        [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
+    }, delay);
 }
 
 - (void)externalApplicationWantsToOpenADatabaseConnection:(NSNotification *)notification {
@@ -1701,7 +1678,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [self removeObserver:self forKeyPath:SPShowUpdateAvailable];
     if(SecureBookmarkManager.sharedInstance != nil) {
         [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
     }

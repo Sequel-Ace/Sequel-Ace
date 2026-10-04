@@ -51,3 +51,216 @@ final class SAForeignKeyReferenceRuleSupportTests: XCTestCase {
         return Set(columns.compactMap { $0 as? String })
     }
 }
+
+final class SAFieldRemovalTaskTests: XCTestCase {
+    func testSuccessfulRemovalRunsBothQueriesThenRefreshes() {
+        let task = makeTask()
+        var events: [String] = []
+
+        task.run(
+            foreignKeyQuery: {
+                events.append("foreign key query")
+                return .succeeded
+            },
+            fieldQuery: {
+                events.append("field query")
+                return .succeeded
+            },
+            foreignKeyFailure: {
+                XCTFail("A successful foreign-key query must not report a failure")
+            },
+            fieldFailure: {
+                XCTFail("A successful field query must not report a failure")
+            },
+            schemaRefresh: {
+                events.append("schema refresh")
+            },
+            completion: {
+                events.append("completion")
+            }
+        )
+
+        XCTAssertEqual(events, [
+            "foreign key query",
+            "field query",
+            "schema refresh",
+            "completion"
+        ])
+    }
+
+    func testFailuresAdvanceInOrderWithoutRefreshing() {
+        let task = makeTask()
+        var events: [String] = []
+
+        task.run(
+            foreignKeyQuery: {
+                events.append("foreign key query")
+                return .failed
+            },
+            fieldQuery: {
+                events.append("field query")
+                return .failed
+            },
+            foreignKeyFailure: {
+                events.append("foreign key failure")
+            },
+            fieldFailure: {
+                events.append("field failure")
+            },
+            schemaRefresh: {
+                XCTFail("Failed queries must not refresh schema state")
+            },
+            completion: {
+                events.append("completion")
+            }
+        )
+
+        XCTAssertEqual(events, [
+            "foreign key query",
+            "foreign key failure",
+            "field query",
+            "field failure",
+            "completion"
+        ])
+    }
+
+    func testCancellationBeforeAdmissionSkipsQueries() {
+        let task = makeTask()
+        var didComplete = false
+
+        task.cancel()
+        task.run(
+            foreignKeyQuery: {
+                XCTFail("Cancellation must prevent foreign-key query admission")
+                return .failed
+            },
+            fieldQuery: {
+                XCTFail("Cancellation must prevent field query admission")
+                return .failed
+            },
+            foreignKeyFailure: {
+                XCTFail("A skipped foreign-key query must not report a failure")
+            },
+            fieldFailure: {
+                XCTFail("A skipped field query must not report a failure")
+            },
+            schemaRefresh: {
+                XCTFail("No schema refresh is needed when no query was admitted")
+            },
+            completion: {
+                didComplete = true
+            }
+        )
+
+        XCTAssertTrue(didComplete)
+    }
+
+    func testCancelledForeignKeyQuerySkipsFieldAndRefreshesPossibleChanges() {
+        let task = makeTask()
+        var events: [String] = []
+
+        task.run(
+            foreignKeyQuery: {
+                events.append("foreign key query")
+                return .cancelled
+            },
+            fieldQuery: {
+                XCTFail("A cancelled foreign-key query must prevent the field query")
+                return .failed
+            },
+            foreignKeyFailure: {
+                XCTFail("Cancellation must not be reported as a query failure")
+            },
+            fieldFailure: {
+                XCTFail("The skipped field query must not report a failure")
+            },
+            schemaRefresh: {
+                events.append("schema refresh")
+            },
+            completion: {
+                events.append("completion")
+            }
+        )
+
+        XCTAssertEqual(events, [
+            "foreign key query",
+            "schema refresh",
+            "completion"
+        ])
+    }
+
+    func testAdmittedQueryCancellationRunsOffMainAndCannotReachRefreshQuery() {
+        let task = makeTask(foreignKeyName: nil)
+        let queryStarted = expectation(description: "field query started")
+        let cancellationAttempted = expectation(description: "query cancellation attempted")
+        let taskCompleted = expectation(description: "field removal task completed")
+        let cancellationAfterRefresh = expectation(description: "no cancellation after schema refresh")
+        cancellationAfterRefresh.isInverted = true
+
+        let allowQueryToFinish = DispatchSemaphore(value: 0)
+        let stateLock = NSLock()
+        var refreshStarted = false
+        var cancellationWasReported = false
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            task.run(
+                foreignKeyQuery: {
+                    XCTFail("A task without a foreign key must skip that query")
+                    return .failed
+                },
+                fieldQuery: {
+                    queryStarted.fulfill()
+                    allowQueryToFinish.wait()
+                    return .cancelled
+                },
+                foreignKeyFailure: {
+                    XCTFail("A skipped foreign-key query must not report a failure")
+                },
+                fieldFailure: {
+                    XCTFail("Cancellation must not be reported as a field failure")
+                },
+                schemaRefresh: {
+                    stateLock.lock()
+                    refreshStarted = true
+                    stateLock.unlock()
+                },
+                completion: {
+                    XCTAssertTrue(Thread.isMainThread)
+                    taskCompleted.fulfill()
+                }
+            )
+        }
+
+        wait(for: [queryStarted], timeout: 2)
+        task.cancel()
+        task.requestQueryCancellation {
+            XCTAssertFalse(Thread.isMainThread)
+
+            stateLock.lock()
+            let didStartRefresh = refreshStarted
+            let shouldReportFirstAttempt = !cancellationWasReported
+            cancellationWasReported = true
+            stateLock.unlock()
+
+            if didStartRefresh {
+                cancellationAfterRefresh.fulfill()
+            }
+            if shouldReportFirstAttempt {
+                cancellationAttempted.fulfill()
+                allowQueryToFinish.signal()
+            }
+        }
+
+        wait(for: [cancellationAttempted, taskCompleted], timeout: 2)
+        wait(for: [cancellationAfterRefresh], timeout: 0.1)
+    }
+
+    private func makeTask(foreignKeyName: String? = "fk_child_parent") -> SAFieldRemovalTask {
+        SAFieldRemovalTask(
+            field: "parent_id",
+            foreignKeyName: foreignKeyName,
+            table: "child",
+            database: "test"
+        )
+    }
+}

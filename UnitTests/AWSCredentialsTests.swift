@@ -5,6 +5,7 @@
 //  Unit tests for AWS credentials, STS validation, and IAM auth integration.
 //
 
+import AppKit
 import XCTest
 
 final class AWSCredentialsTests: XCTestCase {
@@ -508,6 +509,75 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         }
     }
 
+    func testCancelledAttemptDoesNotPresentMFADialog() {
+        let check = {
+            XCTAssertTrue(Thread.isMainThread)
+            var checkedLiveness = false
+            let token = AWSMFATokenDialog.promptForMFAToken(
+                profile: "offline-mfa", mfaSerial: "offline-mfa-device", parentWindow: nil,
+                shouldContinue: {
+                    XCTAssertTrue(Thread.isMainThread)
+                    checkedLiveness = true
+                    return false
+                }
+            )
+            XCTAssertTrue(checkedLiveness)
+            XCTAssertNil(token)
+        }
+        if Thread.isMainThread { check() } else { DispatchQueue.main.sync(execute: check) }
+    }
+
+    func testBackgroundTokenGenerationReturnsBeforeMainQueueCallback() throws {
+        let runOnMain: () throws -> Void = {
+            let credentialsContents = """
+            [default]
+            aws_access_key_id = AKIADEFAULT0000000000
+            aws_secret_access_key = offline-test-secret
+            """
+
+            try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+                var returnedFromMethod = false
+                var callbackCalled = false
+                var token: String?
+                var callbackError: NSError?
+
+                AWSIAMAuthManager.generateAuthTokenInBackground(
+                    hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+                    port: 3306,
+                    username: "db_admin",
+                    region: nil,
+                    profile: nil,
+                    parentWindow: nil
+                ) { result, error in
+                    XCTAssertTrue(Thread.isMainThread)
+                    XCTAssertTrue(returnedFromMethod, "The API must return before invoking its callback")
+                    token = result
+                    callbackError = error
+                    callbackCalled = true
+                }
+
+                returnedFromMethod = true
+                XCTAssertFalse(callbackCalled, "Completion should be queued after the method returns")
+
+                let deadline = Date().addingTimeInterval(5)
+                while !callbackCalled && Date() < deadline {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+
+                XCTAssertTrue(callbackCalled, "Expected the main-queue completion")
+                XCTAssertNil(callbackError)
+                XCTAssertTrue(token?.contains("DBUser=db_admin") == true)
+                XCTAssertTrue(token?.contains("X-Amz-Credential=AKIADEFAULT0000000000") == true)
+            }
+        }
+
+        if Thread.isMainThread {
+            try runOnMain()
+        } else {
+            try DispatchQueue.main.sync(execute: runOnMain)
+        }
+    }
+
     func testGenerateAuthTokenUsesDefaultProfileWhenProvidedProfileIsWhitespace() throws {
         let credentialsContents = """
         [default]
@@ -827,9 +897,114 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         XCTAssertTrue(regions.isEmpty)
     }
 
+    func testRegionComboBoxDefersFirstPopupUntilPreparationCompletes() throws {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.preparationDelegate = delegate
+        let popupButtonEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 192))
+
+        XCTAssertTrue(comboBox.shouldPreparePopup(for: popupButtonEvent))
+
+        comboBox.mouseDown(with: popupButtonEvent)
+
+        XCTAssertEqual(delegate.preparationCount, 1)
+        XCTAssertFalse(comboBox.hasPreparedPopup)
+        XCTAssertTrue(comboBox.shouldOpenPopupAfterPreparation)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
+        XCTAssertFalse(comboBox.shouldPreparePopup(for: popupButtonEvent))
+    }
+
+    func testRegionComboBoxCancelsDeferredPopupAfterInterveningInput() throws {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.preparationDelegate = delegate
+        let popupButtonEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 192))
+
+        comboBox.mouseDown(with: popupButtonEvent)
+        comboBox.cancelPendingPopupOpening()
+
+        XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
+    }
+
+    func testRegionComboBoxDefersPopupPreparationWithoutMouseInput() {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.preparationDelegate = delegate
+
+        XCTAssertTrue(comboBox.preparePopupIfNeeded())
+        XCTAssertEqual(delegate.preparationCount, 1)
+        XCTAssertFalse(comboBox.hasPreparedPopup)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.preparePopupIfNeeded())
+    }
+
+    func testRegionComboBoxCellRoutesAccessibilityMenuThroughPreparation() {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let cell = SAAWSRegionComboBoxCell()
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.cell = cell
+        comboBox.preparationDelegate = delegate
+
+        XCTAssertTrue(cell.accessibilityPerformShowMenu())
+        XCTAssertEqual(delegate.preparationCount, 1)
+        XCTAssertFalse(comboBox.hasPreparedPopup)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+    }
+
+    func testRegionComboBoxDoesNotRefreshWhenEditingItsText() throws {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let textFieldEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 8))
+
+        XCTAssertFalse(comboBox.shouldPreparePopup(for: textFieldEvent))
+    }
+
+    private func comboBoxMouseDownEvent(x: CGFloat) -> NSEvent? {
+        NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: NSPoint(x: x, y: 13),
+            modifierFlags: [],
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            eventNumber: 1,
+            clickCount: 1,
+            pressure: 1
+        )
+    }
+
     private func clearRegionCatalogCache() {
         UserDefaults.standard.removeObject(forKey: RegionCacheKeys.regions)
         UserDefaults.standard.removeObject(forKey: RegionCacheKeys.timestamp)
+    }
+}
+
+private final class SAAWSRegionComboBoxPreparationDelegateStub: NSObject, SAAWSRegionComboBoxPreparationDelegate {
+    private(set) var preparationCount = 0
+    private var completion: (() -> Void)?
+
+    func prepareAWSRegionComboBox(_ comboBox: SAAWSRegionComboBox, completion: @escaping () -> Void) {
+        preparationCount += 1
+        self.completion = completion
+    }
+
+    func completePreparation() {
+        completion?()
+        completion = nil
     }
 }
 
@@ -1067,6 +1242,200 @@ final class AWSSSOClientTests: XCTestCase {
             from: try AWSSSOClient.parseRoleCredentials(fromJSON: Data(json.utf8))
         )
     }
+
+    func testFetchRoleCredentialsSendsEncodedGETAndBearerHeader() async throws {
+        let session = makeOfflineSession()
+        defer { session.invalidateAndCancel() }
+        let credentials = try await AWSSSOClient.fetchRoleCredentials(
+            accountID: "123456789012 +&/?",
+            roleName: "Developer +&/Access",
+            accessToken: "offline-test-bearer",
+            region: "eu-west-1",
+            session: session
+        )
+
+        XCTAssertEqual(credentials.accessKeyId, "ASIAOFFLINE000000000")
+        XCTAssertEqual(credentials.secretAccessKey, "offline-secret")
+        XCTAssertEqual(credentials.sessionToken, "offline-session-token")
+        XCTAssertEqual(credentials.expiration, Date(timeIntervalSince1970: 4_102_444_800))
+    }
+
+    func testFetchRoleCredentialsMapsPortalErrorsAndTransportFailures() async {
+        let cases: [(String, AWSSSOClientError)] = [
+            ("expired", .tokenExpired),
+            ("denied", .accessDenied),
+            ("malformed", .invalidResponse),
+            ("timeout", .requestTimeout),
+            ("network-failure", .networkFailure)
+        ]
+
+        for (roleName, expectedError) in cases {
+            let session = makeOfflineSession()
+            do {
+                _ = try await AWSSSOClient.fetchRoleCredentials(
+                    accountID: "123456789012",
+                    roleName: roleName,
+                    accessToken: "offline-test-bearer",
+                    region: "eu-west-1",
+                    session: session
+                )
+                XCTFail("Expected \(expectedError) for \(roleName)")
+            } catch let error as AWSSSOClientError {
+                XCTAssertEqual(error, expectedError, "Unexpected error for \(roleName)")
+            } catch {
+                XCTFail("Unexpected error for \(roleName): \(error)")
+            }
+            session.invalidateAndCancel()
+        }
+    }
+
+    func testResolveCredentialsUsesSessionAndLegacyCacheKeysAndSSORegion() async throws {
+        let config = """
+        [sso-session modern-org]
+        sso_start_url = https://modern.awsapps.com/start
+        sso_region = eu-west-1
+
+        [profile modern]
+        sso_session = modern-org
+        sso_account_id = 123456789012
+        sso_role_name = DeveloperAccess
+        region = us-east-1
+
+        [profile legacy]
+        sso_start_url = https://legacy.awsapps.com/start
+        sso_region = eu-west-1
+        sso_account_id = 123456789012
+        sso_role_name = ReadOnly
+        region = us-east-1
+        """
+
+        var modernProfile: AWSCredentials?
+        var legacyProfile: AWSCredentials?
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: config) { _, _ in
+            modernProfile = try AWSCredentials(profile: "modern")
+            legacyProfile = try AWSCredentials(profile: "legacy")
+        }
+
+        let modern = try XCTUnwrap(modernProfile)
+        let legacy = try XCTUnwrap(legacyProfile)
+        let cacheDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SequelAce-SSOOfflineCache-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: cacheDirectory) }
+
+        for cacheKey in ["modern-org", "https://legacy.awsapps.com/start"] {
+            let token = """
+            { "accessToken": "offline-test-bearer", "expiresAt": "2999-01-01T00:00:00Z" }
+            """
+            try token.write(
+                to: cacheDirectory.appendingPathComponent(AWSSSOClient.cacheFileName(forKey: cacheKey)),
+                atomically: true,
+                encoding: .utf8
+            )
+        }
+
+        for profile in [modern, legacy] {
+            let session = makeOfflineSession()
+            defer { session.invalidateAndCancel() }
+            let resolved = try await AWSSSOClient.resolveCredentials(
+                for: profile,
+                cacheDirectory: cacheDirectory.path,
+                session: session
+            )
+            XCTAssertEqual(resolved.accessKeyId, "ASIAOFFLINE000000000")
+            XCTAssertEqual(resolved.sessionToken, "offline-session-token")
+        }
+    }
+
+    private func makeOfflineSession() -> URLSession {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SAOfflineSSOURLProtocol.self]
+        return URLSession(configuration: configuration)
+    }
+}
+
+/// A fail-closed URLProtocol fixture. Its response is selected from request data,
+/// so each URLSession has isolated behavior and no process-wide mutable fixture state.
+private final class SAOfflineSSOURLProtocol: URLProtocol {
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              request.httpMethod == "GET",
+              url.scheme == "https",
+              url.host == "portal.sso.eu-west-1.amazonaws.com",
+              components.path == "/federation/credentials",
+              request.httpBody == nil,
+              request.value(forHTTPHeaderField: "x-amz-sso_bearer_token") == "offline-test-bearer",
+              !url.absoluteString.contains("offline-test-bearer") else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        guard query["account_id"] != nil, query["role_name"] != nil else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        let roleName = query["role_name"] ?? ""
+        let rawQuery = components.percentEncodedQuery ?? ""
+        switch roleName {
+        case "timeout":
+            client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
+        case "network-failure":
+            client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
+        case "expired":
+            respond(statusCode: 401, body: Data(), url: url)
+        case "denied":
+            respond(statusCode: 403, body: Data(), url: url)
+        case "malformed":
+            respond(statusCode: 200, body: Data("not-json".utf8), url: url)
+        default:
+            let validEncodedQuery: Bool
+            if roleName == "Developer +&/Access" {
+                validEncodedQuery = query["account_id"] == "123456789012 +&/?"
+                    && rawQuery.contains("%2B") && rawQuery.contains("%26")
+            } else {
+                validEncodedQuery = query["account_id"] == "123456789012"
+                    && ["DeveloperAccess", "ReadOnly"].contains(roleName)
+            }
+            guard validEncodedQuery else {
+                respond(statusCode: 400, body: Data(), url: url)
+                return
+            }
+            let body = Data("""
+            { "roleCredentials": {
+              "accessKeyId": "ASIAOFFLINE000000000",
+              "secretAccessKey": "offline-secret",
+              "sessionToken": "offline-session-token",
+              "expiration": 4102444800000
+            } }
+            """.utf8)
+            respond(statusCode: 200, body: body, url: url)
+        }
+    }
+
+    override func stopLoading() {}
+
+    private func respond(statusCode: Int, body: Data, url: URL) {
+        guard let response = HTTPURLResponse(
+            url: url,
+            statusCode: statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "application/json"]
+        ) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
 }
 
 private enum AWSTestEnvironment {
@@ -1140,5 +1509,389 @@ private func assertThrowsError<T: Error & Equatable>(
         XCTAssertEqual(error, expectedError, file: file, line: line)
     } catch {
         XCTFail("Expected \(T.self), got \(error)", file: file, line: line)
+    }
+}
+
+final class AWSLoginCredentialsRenewalTests: XCTestCase {
+
+    private let loginSession = "arn:aws:iam::123456789012:user/dev"
+    private var cacheDirectory: URL!
+    private var cacheFile: URL!
+    private var originalTransport: ((URLRequest) throws -> (Data, Int))!
+    private var requests: [URLRequest] = []
+
+    override func setUpWithError() throws {
+        cacheDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SequelAce-LoginRenewal-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        cacheFile = cacheDirectory.appendingPathComponent(AWSLoginCredentialsProvider.cacheFileName(forLoginSession: loginSession))
+
+        setenv("AWS_LOGIN_CACHE_DIRECTORY", cacheDirectory.path, 1)
+        originalTransport = AWSLoginCredentialsProvider.refreshTransport
+        requests = []
+    }
+
+    override func tearDownWithError() throws {
+        AWSLoginCredentialsProvider.refreshTransport = originalTransport
+        unsetenv("AWS_LOGIN_CACHE_DIRECTORY")
+        try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cacheDirectory.path)
+        try? FileManager.default.removeItem(at: cacheDirectory)
+    }
+
+    func testFreshCredentialsAreUsedWithoutRenewal() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(600)))
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIAOLD0000000000000")
+        }
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testExpiringCredentialsAreRenewedInTheIssuingRegionAndWrittenBack() throws {
+        let original = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(120))
+        try writeCache(original)
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile(region: "eu-west-1") { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIANEW0000000000000")
+            XCTAssertEqual(credentials.sessionToken, "newSessionToken")
+        }
+
+        let request = try XCTUnwrap(requests.first)
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(request.url?.absoluteString, "https://eu-north-1.signin.aws.amazon.com/v1/token")
+        XCTAssertNotNil(request.value(forHTTPHeaderField: "DPoP"))
+        let body = try XCTUnwrap(try JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: String])
+        XCTAssertEqual(body["refreshToken"], "oldRefreshToken")
+
+        let cached = try readCache()
+        let accessToken = try XCTUnwrap(cached["accessToken"] as? [String: String])
+        XCTAssertEqual(accessToken["accessKeyId"], "ASIANEW0000000000000")
+        XCTAssertEqual(accessToken["accountId"], "123456789012")
+        XCTAssertEqual(cached["refreshToken"] as? String, "newRefreshToken")
+        XCTAssertEqual(cached["idToken"] as? String, original["idToken"] as? String)
+        XCTAssertEqual(cached["dpopKey"] as? String, SAAWSLoginTestFixtures.sec1Key)
+        XCTAssertEqual(cached["futureField"] as? String, "kept")
+
+        let permissions = try FileManager.default.attributesOfItem(atPath: cacheFile.path)[.posixPermissions] as? NSNumber
+        XCTAssertEqual(permissions?.intValue, 0o600)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: cacheDirectory.path), [cacheFile.lastPathComponent])
+    }
+
+    func testRenewalUsesTheProfileRegionWithoutAnIdentityToken() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(120), issuer: nil))
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile(region: "eu-west-1") { profile in
+            _ = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+        }
+
+        XCTAssertEqual(requests.first?.url?.absoluteString, "https://eu-west-1.signin.aws.amazon.com/v1/token")
+    }
+
+    func testRenewalWithoutAnyRegionFailsOnceExpired() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60), issuer: nil))
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile(region: nil) { profile in
+            assertThrowsError(SAAWSLoginRefreshError.regionUnavailable,
+                              from: try AWSLoginCredentialsProvider.resolveCredentials(for: profile))
+        }
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testEndedSessionReportsSessionExpiredAndKeepsTheCache() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        respond(status: 401, body: Data(#"{"error":"TOKEN_EXPIRED","message":"The refresh token has expired."}"#.utf8))
+
+        try withLoginProfile { profile in
+            assertThrowsError(AWSLoginAuthError.sessionExpired,
+                              from: try AWSLoginCredentialsProvider.resolveCredentials(for: profile))
+        }
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "oldRefreshToken")
+    }
+
+    func testFailedRenewalFallsBackToCredentialsThatAreStillValid() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(180)))
+        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
+            self.requests.append(request)
+            throw SAAWSLoginRefreshError.requestFailed("offline")
+        }
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIAOLD0000000000000")
+        }
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "oldRefreshToken")
+    }
+
+    func testReadOnlyCacheDirectoryIsNeverRenewed() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: cacheDirectory.path)
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile { profile in
+            assertThrowsError(SAAWSLoginRefreshError.writeAccessRequired,
+                              from: try AWSLoginCredentialsProvider.resolveCredentials(for: profile))
+        }
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testReadOnlyCacheDirectoryKeepsUsingCredentialsThatAreStillValid() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(180)))
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: cacheDirectory.path)
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIAOLD0000000000000")
+        }
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testRenewalByAnotherProcessIsNotOverwrittenAndItsCredentialsAreUsed() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(120)))
+        renewElsewhereDuringRequest(expiresIn: 900)
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIACLI0000000000000")
+            XCTAssertEqual(credentials.sessionToken, "cliSessionToken")
+        }
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
+    }
+
+    func testRenewalByAnotherProcessThatIsAboutToExpireUsesTheRenewedCredentials() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(120)))
+        renewElsewhereDuringRequest(expiresIn: 60)
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIANEW0000000000000")
+        }
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
+    }
+
+    func testFailedRenewalUsesCredentialsAnotherProcessRenewedMeanwhile() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        renewElsewhereDuringRequest(expiresIn: 900, status: 400,
+                                    body: Data(#"{"error":"INVALID_REQUEST","message":"The provided authorization grant is invalid"}"#.utf8))
+
+        try withLoginProfile { profile in
+            let credentials = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+            XCTAssertEqual(credentials.accessKeyId, "ASIACLI0000000000000")
+        }
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "cliRefreshToken")
+    }
+
+    func testRenewedSessionThatCannotBeSavedIsReported() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
+            self.requests.append(request)
+            try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: self.cacheDirectory.path)
+            return (SAAWSLoginTestFixtures.successResponse, 200)
+        }
+
+        try withLoginProfile { profile in
+            XCTAssertThrowsError(try AWSLoginCredentialsProvider.resolveCredentials(for: profile)) { error in
+                guard case .cacheWriteFailed = error as? SAAWSLoginRefreshError else {
+                    return XCTFail("Expected cacheWriteFailed, got \(error)")
+                }
+            }
+        }
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(try readCache()["refreshToken"] as? String, "oldRefreshToken")
+    }
+
+    func testCacheWithoutRefreshTokenReportsSessionExpiredOnceExpired() throws {
+        var contents = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60))
+        contents.removeValue(forKey: "refreshToken")
+        try writeCache(contents)
+        respond(status: 200, body: SAAWSLoginTestFixtures.successResponse)
+
+        try withLoginProfile { profile in
+            assertThrowsError(AWSLoginAuthError.sessionExpired,
+                              from: try AWSLoginCredentialsProvider.resolveCredentials(for: profile))
+        }
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testNeedsWriteAccessGrantOnlyForReadOnlyConsoleSignInCaches() throws {
+        try withLoginProfile { profile in
+            XCTAssertFalse(AWSLoginCredentialsProvider.needsWriteAccessGrant(for: profile))
+
+            try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: cacheDirectory.path)
+            XCTAssertTrue(AWSLoginCredentialsProvider.needsWriteAccessGrant(for: profile))
+        }
+
+        let staticKeys = """
+        [default]
+        aws_access_key_id = AKIASTATIC00000000000
+        aws_secret_access_key = staticSecret
+        """
+        let config = """
+        [default]
+        login_session = \(loginSession)
+        """
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: staticKeys, config: config) { _, _ in
+            XCTAssertFalse(AWSLoginCredentialsProvider.needsWriteAccessGrant(for: try AWSCredentials(profile: nil)))
+        }
+    }
+
+    func testBackgroundTokenGenerationKeepsTheMainQueueResponsiveDuringASlowRenewal() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        let requestStarted = expectation(description: "renewal request started")
+        let releaseRequest = DispatchSemaphore(value: 0)
+        var requestRanOnMainThread = true
+        AWSLoginCredentialsProvider.refreshTransport = { request in
+            requestRanOnMainThread = Thread.isMainThread
+            requestStarted.fulfill()
+            _ = releaseRequest.wait(timeout: .now() + 10)
+            return (SAAWSLoginTestFixtures.successResponse, 200)
+        }
+
+        try withLoginProfile { _ in
+            let mainQueueRan = expectation(description: "main queue ran during the renewal")
+            let tokenDelivered = expectation(description: "token delivered")
+            var completionRanOnMainThread = false
+            var token: String?
+
+            AWSIAMAuthManager.generateAuthTokenInBackground(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: nil,
+                parentWindow: nil
+            ) { generatedToken, _ in
+                completionRanOnMainThread = Thread.isMainThread
+                token = generatedToken
+                tokenDelivered.fulfill()
+            }
+
+            wait(for: [requestStarted], timeout: 5)
+            DispatchQueue.main.async { mainQueueRan.fulfill() }
+            wait(for: [mainQueueRan], timeout: 2)
+
+            releaseRequest.signal()
+            wait(for: [tokenDelivered], timeout: 5)
+
+            XCTAssertFalse(requestRanOnMainThread)
+            XCTAssertTrue(completionRanOnMainThread)
+            XCTAssertEqual(token?.contains("X-Amz-Credential=ASIANEW0000000000000"), true)
+        }
+    }
+
+    func testBackgroundTokenGenerationReportsAnEndedSessionWithTheProfileCommand() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        respond(status: 401, body: Data(#"{"error":"TOKEN_EXPIRED","message":"The refresh token has expired."}"#.utf8))
+
+        try withLoginProfile(named: "team dev") { _ in
+            let completed = expectation(description: "completion called")
+            var completionRanOnMainThread = false
+            var reportedError: NSError?
+
+            AWSIAMAuthManager.generateAuthTokenInBackground(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: "team dev",
+                parentWindow: nil,
+                shouldContinue: { true }
+            ) { token, error in
+                XCTAssertNil(token)
+                completionRanOnMainThread = Thread.isMainThread
+                reportedError = error
+                completed.fulfill()
+            }
+
+            wait(for: [completed], timeout: 5)
+
+            XCTAssertTrue(completionRanOnMainThread)
+            let error = try XCTUnwrap(reportedError)
+            XCTAssertEqual(error as Error as? AWSLoginAuthError, .sessionExpired)
+            XCTAssertTrue(error.localizedDescription.contains("`aws login --profile 'team dev'`"), error.localizedDescription)
+        }
+    }
+
+    func testBackgroundTokenGenerationReportsAFailingEndpoint() throws {
+        try writeCache(SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(-60)))
+        respond(status: 503, body: Data(#"{"error":"server_error","message":"Unavailable"}"#.utf8))
+
+        try withLoginProfile { _ in
+            let completed = expectation(description: "completion called")
+            var reportedError: NSError?
+
+            AWSIAMAuthManager.generateAuthTokenInBackground(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: nil,
+                parentWindow: nil
+            ) { _, error in
+                reportedError = error
+                completed.fulfill()
+            }
+
+            wait(for: [completed], timeout: 5)
+            XCTAssertEqual(reportedError?.localizedDescription,
+                           SAAWSLoginRefreshError.requestFailed("Unavailable").localizedDescription)
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func withLoginProfile(named name: String = "default", region: String? = "eu-west-1", _ body: (AWSCredentials) throws -> Void) throws {
+        var config = """
+        \(name == "default" ? "[default]" : "[profile \(name)]")
+        login_session = \(loginSession)
+        """
+        if let region {
+            config += "\nregion = \(region)"
+        }
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: config) { _, _ in
+            AWSIAMAuthManager.clearCachedCredentials(for: nil)
+            try body(try AWSCredentials(profile: name))
+        }
+    }
+
+    private func renewElsewhereDuringRequest(expiresIn: TimeInterval, status: Int = 200, body: Data = SAAWSLoginTestFixtures.successResponse) {
+        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
+            self.requests.append(request)
+            var renewedElsewhere = SAAWSLoginTestFixtures.cacheContents(expiresAt: Date().addingTimeInterval(expiresIn))
+            renewedElsewhere["accessToken"] = [
+                "accessKeyId": "ASIACLI0000000000000",
+                "secretAccessKey": "cliSecret",
+                "sessionToken": "cliSessionToken",
+                "accountId": "123456789012",
+                "expiresAt": SAAWSLoginSession.formatTimestamp(Date().addingTimeInterval(expiresIn))
+            ]
+            renewedElsewhere["refreshToken"] = "cliRefreshToken"
+            try self.writeCache(renewedElsewhere)
+            return (body, status)
+        }
+    }
+
+    private func respond(status: Int, body: Data) {
+        AWSLoginCredentialsProvider.refreshTransport = { [unowned self] request in
+            self.requests.append(request)
+            return (body, status)
+        }
+    }
+
+    private func writeCache(_ contents: [String: Any]) throws {
+        try JSONSerialization.data(withJSONObject: contents).write(to: cacheFile)
+    }
+
+    private func readCache() throws -> [String: Any] {
+        try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: cacheFile)) as? [String: Any])
     }
 }

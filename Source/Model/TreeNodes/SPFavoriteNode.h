@@ -30,6 +30,8 @@
 
 #import "SPNamedNode.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * @class SPFavoriteNode SPFavoriteNode.h
  *
@@ -45,7 +47,7 @@
 /**
  * @property nodeFavorite The actual favorite dictionary
  */
-@property (readwrite, strong) NSMutableDictionary *nodeFavorite;
+@property (readwrite, strong, nullable) NSMutableDictionary *nodeFavorite;
 
 - (instancetype)initWithDictionary:(NSMutableDictionary *)dictionary;
 
@@ -57,3 +59,5 @@
 @interface SPFavoriteNode (ConnectionString)
 - (NSString * _Nullable)toConnectionString:(BOOL)includePassword;
 @end
+
+NS_ASSUME_NONNULL_END

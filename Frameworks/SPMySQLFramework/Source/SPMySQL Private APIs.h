@@ -37,29 +37,44 @@
 #import "Locking.h"
 #import "Conversion.h"
 
-@interface SPMySQLConnection (PrivateAPI)
+@class SAConnectionSessionAccess;
 
-- (BOOL)_connect;
-- (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
-- (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
-- (BOOL)_reconnectAfterBackgroundConnectionLoss;
-- (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
-- (void)_disconnect;
-- (void)_updateConnectionVariables;
-- (BOOL)_serverIsProxySQL;
-- (void)_restoreConnectionVariables;
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
-                                              encoding:(NSString *)encodingName
-                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
-                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier;
-- (void)_validateThreadSetup;
-+ (void)_removeThreadVariables:(NSNotification *)aNotification;
+// Class extension: these are implemented in the main @implementation block of
+// SPMySQLConnection.m (declaring them on the PrivateAPI category would make
+// clang warn that the category's @implementation lacks their definitions).
+@interface SPMySQLConnection ()
+
+@property (readonly, strong) SAConnectionSessionAccess *sessionAccess;
+
 + (NSArray<NSString *> *)defaultSSLCipherList;
 + (NSArray<NSString *> *)legacySSLCipherList;
 + (NSString *)_defaultSSLCipherListString;
 + (NSString *)_defaultTLSSuiteListString;
 + (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
 + (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
+
+@end
+
+@interface SPMySQLConnection (PrivateAPI)
+
+- (BOOL)_connect;
+- (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
+- (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry;
+- (BOOL)_reconnectAfterBackgroundConnectionLoss;
+- (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
+- (BOOL)_abortCancelledReconnectWhileLocked;
+- (void)_disconnect;
+- (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect;
+- (void)_updateConnectionVariables;
+- (BOOL)_serverIsProxySQL;
+- (void)_restoreConnectionVariables;
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier;
+- (void)_validateThreadSetup;
++ (void)_removeThreadVariables:(NSNotification *)aNotification;
 
 @end
 
@@ -88,6 +103,12 @@
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
 
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired;
+
 - (void)_flushMultipleResultSets;
 - (void)_updateLastErrorInfos;
 - (void)_updateLastErrorMessage:(NSString *)theErrorMessage;
@@ -100,7 +121,6 @@
 @interface SPMySQLResult (Private_API)
 
 - (NSString *)_stringWithBytes:(const void *)bytes length:(NSUInteger)length;
-- (NSString *)_lossyStringWithBytes:(const void *)bytes length:(NSUInteger)length wasLossy:(BOOL *)outLossy;
 - (void)_setQueryExecutionTime:(double)theExecutionTime;
 
 @end

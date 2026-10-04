@@ -88,6 +88,7 @@ enum trackingAreaIDs
 		
 		//set ourselves as observer of selectedTag (need to mark view dirty)
 		[self addObserver:self forKeyPath:@"selectedTag" options:0 context:nil];
+		observingSelfSelectedTag = YES;
 	}
 	
 	return self;
@@ -96,6 +97,11 @@ enum trackingAreaIDs
 - (void)bind:(NSString *)binding toObject:(id)observableObject withKeyPath:(NSString *)keyPath options:(NSDictionary *)options
 {
 	if ([binding isEqualToString:@"selectedTag"]) {
+		// Drop any previous registration first so re-binding cannot leak an observation
+		id previousObserver = observer;
+		if (previousObserver) {
+			[previousObserver removeObserver:self forKeyPath:observerKeyPath];
+		}
 		[observableObject addObserver:self forKeyPath:keyPath options:0 context:nil];
 		observer = observableObject;
 		observerKeyPath = [keyPath copy];
@@ -103,6 +109,21 @@ enum trackingAreaIDs
 	else {
 		[super bind:binding toObject:observableObject withKeyPath:keyPath options:options];
 	}
+}
+
+- (void)unbind:(NSString *)binding
+{
+	if ([binding isEqualToString:@"selectedTag"]) {
+		id boundObserver = observer;
+		if (boundObserver) {
+			[boundObserver removeObserver:self forKeyPath:observerKeyPath];
+			observer = nil;
+			observerKeyPath = nil;
+		}
+		return;
+	}
+
+	[super unbind:binding];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -267,7 +288,7 @@ enum trackingAreaIDs
 			NSBezierPath *left = [NSBezierPath bezierPath];
 			
 			[left setLineWidth:3.0];
-			[left setLineCapStyle:NSButtLineCapStyle];
+			[left setLineCapStyle:NSLineCapStyleButt];
 			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0, colorSquareRect.origin.y +  4.0)];
 			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y + 12.0)];
 			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y +  4.0)];
@@ -296,7 +317,7 @@ enum trackingAreaIDs
 				[NSColor colorWithCalibratedWhite:1.0 alpha:0.0], 0.6, nil];
 	circlePath = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(dotRect, 1.0, 1.0)];
 	[circlePath appendBezierPath:[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(dotRect.origin.x+1.0, dotRect.origin.y-2.0, dotRect.size.width-2.0, dotRect.size.height)]];
-	[circlePath setWindingRule:NSEvenOddWindingRule];
+	[circlePath setWindingRule:NSWindingRuleEvenOdd];
 	[grad drawInBezierPath:circlePath angle:-90.0];
 	
 	// top center gloss
@@ -313,7 +334,7 @@ enum trackingAreaIDs
 	NSGradient *grad3 = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedWhite:0.0 alpha:0.12]
 											 endingColor:[NSColor colorWithCalibratedWhite:0.0 alpha:0.46]];
 	[circlePath appendBezierPath:[NSBezierPath bezierPathWithOvalInRect:NSInsetRect(dotRect, 1.0, 1.0)]];
-	[circlePath setWindingRule:NSEvenOddWindingRule];
+	[circlePath setWindingRule:NSWindingRuleEvenOdd];
 	[grad3 drawInBezierPath:circlePath angle:-90.0];
 }
 
@@ -416,6 +437,23 @@ enum trackingAreaIDs
 
 // -------------------------------------------------------------------------------
 //	dealloc:
+//
+//	The KVO registrations made in initWithFrame: and bind: must not outlive this
+//	view - a dangling observation crashes the next change notification (#2033).
 // -------------------------------------------------------------------------------
+- (void)dealloc
+{
+	// The xib instantiates these views through NSCustomView placeholders, which call
+	// initWithFrame:, so the self-observation is registered there; the flag guards
+	// against any init path that skips it.
+	if (observingSelfSelectedTag) {
+		[self removeObserver:self forKeyPath:@"selectedTag"];
+	}
+
+	id boundObserver = observer;
+	if (boundObserver) {
+		[boundObserver removeObserver:self forKeyPath:observerKeyPath];
+	}
+}
 
 @end

@@ -133,6 +133,8 @@
 	<false/>
 	<key>DisplayTableViewColumnTypes</key>
 	<true/>
+	<key>DisplayConnectionColorInTitlebar</key>
+	<false/>
 	<key>EditInSheetEnabled</key>
 	<false/>
 	<key>FavoriteColorList</key>
@@ -200,6 +202,8 @@
 	<key>ReloadAfterRemovingRow</key>
 	<false/>
 	<key>ResetAutoIncrementAfterDeletionOfAllRows</key>
+	<true/>
+	<key>RuleFilterShowDropZone</key>
 	<true/>
 	<key>SelectLastFavoriteUsed</key>
 	<true/>

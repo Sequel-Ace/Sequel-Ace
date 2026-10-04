@@ -87,6 +87,53 @@ import Foundation
         return operators
     }
 
+    /// Every `ContentFilters.plist` group holding built-in operator definitions.
+    @objc public static let filterDefinitionGroups = ["number", "date", "string", "spatial", "bit"]
+
+    /// Maps a column type grouping to its rule-filter type: the key saved as
+    /// `filterType` in serialized filters (`.spf`, `contentFilterV2`) and under
+    /// which user-defined content filters are stored.
+    ///
+    /// `bit` columns keep the `number` type, so filters saved by older
+    /// versions restore unchanged and existing custom number filters stay
+    /// available on them; only their built-in definitions differ (see
+    /// `filterDefinitionGroup(forTypeGrouping:)`).
+    ///
+    /// - Parameter typeGrouping: Type grouping from the column definition.
+    /// - Returns: The filter type, or an empty string for an unknown grouping.
+    @objc(ruleFilterGroupForTypeGrouping:)
+    public static func ruleFilterGroup(forTypeGrouping typeGrouping: String?) -> String {
+        switch typeGrouping {
+        case "date":
+            return "date"
+        case "string", "binary", "textdata", "blobdata", "enum":
+            return "string"
+        case "bit", "integer", "float":
+            return "number"
+        case "geometry":
+            return "spatial"
+        default:
+            return ""
+        }
+    }
+
+    /// Maps a column type grouping to the `ContentFilters.plist` group whose
+    /// built-in operator definitions the rule filter offers for it.
+    ///
+    /// `bit` columns use the `bit` definitions: the same operators as
+    /// `number`, but value comparisons go through
+    /// `CAST('<value>' AS DECIMAL(65,30))`. A quoted comparison finds no row on
+    /// an indexed `BIT` column and compares values above 2^53 as floating
+    /// point; the decimal cast is exact up to 2^64 and keeps negative and
+    /// fractional bounds intact.
+    ///
+    /// - Parameter typeGrouping: Type grouping from the column definition.
+    /// - Returns: The definition group, or an empty string for an unknown grouping.
+    @objc(filterDefinitionGroupForTypeGrouping:)
+    public static func filterDefinitionGroup(forTypeGrouping typeGrouping: String?) -> String {
+        typeGrouping == "bit" ? "bit" : ruleFilterGroup(forTypeGrouping: typeGrouping)
+    }
+
     /// Enumerates every advertised `(typeGrouping, operator)` pair for tests.
     ///
     /// Round-trip tests use this to verify each advertised operator exists in

@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+require "sequel_ace_release"
+
+exit SequelAceRelease::CLI.run(ARGV)

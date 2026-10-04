@@ -90,7 +90,7 @@
 	else
 		rectMaxSize = size.width;
 
-	CGContextRef currentContext = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+	CGContextRef currentContext = [[NSGraphicsContext currentContext] CGContext];
 	[NSGraphicsContext saveGraphicsState];
 
 	if (_shadow) [_shadow set];
@@ -113,7 +113,7 @@
 		CGFloat lineStart = 0.234375f * rectMaxSize; // should be 7.5 for 32x32
 		CGFloat lineEnd = 0.421875f * rectMaxSize;  // should be 13.5 for 32x32
 		[path setLineWidth:lineWidth];
-		[path setLineCapStyle:NSRoundLineCapStyle];
+		[path setLineCapStyle:NSLineCapStyleRound];
 		[path moveToPoint:NSMakePoint(0,lineStart)];
 		[path lineToPoint:NSMakePoint(0,lineEnd)];
 
@@ -252,7 +252,7 @@
 
 - (void)setStyle:(NSProgressIndicatorStyle)style
 {
-    if (NSProgressIndicatorSpinningStyle != style) {
+    if (NSProgressIndicatorStyleSpinning != style) {
         NSAssert(NO, @"Non-spinning styles not available.");
     }
 }

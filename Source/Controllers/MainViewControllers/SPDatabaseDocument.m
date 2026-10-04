@@ -35,7 +35,6 @@
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
 #import "SPFileHandle.h"
-#import "SPKeychain.h"
 #import "SPTableContent.h"
 #import "SPCustomQuery.h"
 #import "SPDataImport.h"
@@ -74,14 +73,11 @@
 #import "SPAppController.h"
 #import "SPTableTriggers.h"
 #import "SPTableStructure.h"
-#import "SPPrintAccessory.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
-#import "SPHelpViewerController.h"
-#import "SPPrintUtility.h"
 #import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
@@ -97,8 +93,9 @@ static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
 static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
-@interface SPDatabaseDocument () <SADatabaseSelectionDelegate>
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPDatabaseDocument () <SADatabaseSelectionDelegate, NSToolbarItemValidation>
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 
@@ -108,6 +105,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
 @property (nonatomic, weak, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
+
+// Whether the NSUserDefaults KVO observers are currently registered (#2033)
+@property (assign) BOOL preferenceObserversRegistered;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
@@ -131,6 +131,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void) closeAndDisconnect;
 
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection;
+- (NSString *)credentialErrorMessageForConnection:(SPMySQLConnection *)connection;
 - (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection;
 
 @end
@@ -208,9 +209,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         gotoDatabaseController = nil;
 
         isProcessing = NO;
-
-        printWebView = [[WebView alloc] init];
-        [printWebView setFrameLoadDelegate:self];
 
         prefs = [NSUserDefaults standardUserDefaults];
         undoManager = [[NSUndoManager alloc] init];
@@ -306,11 +304,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Hide the activity list
     [self setActivityPaneHidden:@1];
 
-    // Load additional nibs, keeping track of the top-level objects to allow correct release
-    NSArray *connectionDialogTopLevelObjects = nil;
-    NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ConnectionErrorDialog" bundle:[NSBundle mainBundle]];
-    [nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects];
-
     // The task progress window, indicator and layer are loaded and configured
     // by SATaskController (created in -initWithWindowController:).
 
@@ -362,19 +355,48 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Go backward or forward in the history depending on the menu item selected.
  */
 - (void)backForwardInHistory:(id)sender {
+    switch ([sender tag]) {
+        case 0: // Go backward
+            [self goBackInHistory];
+            break;
+        case 1: // Go forward
+            [self goForwardInHistory];
+            break;
+    }
+}
+
+/**
+ * Go back one step in the table history, after ending any editing and saving as required.
+ */
+- (void)goBackInHistory {
+    // Nothing to navigate to - leave any in-progress editing alone
+    if (![spHistoryControllerInstance countPrevious]) {
+        return;
+    }
+
     // Ensure history navigation is permitted - trigger end editing and any required saves
     if (![self couldCommitCurrentViewActions]) {
         return;
     }
 
-    switch ([sender tag]) {
-        case 0: // Go backward
-            [spHistoryControllerInstance goBackInHistory];
-            break;
-        case 1: // Go forward
-            [spHistoryControllerInstance goForwardInHistory];
-            break;
+    [spHistoryControllerInstance goBackInHistory];
+}
+
+/**
+ * Go forward one step in the table history, after ending any editing and saving as required.
+ */
+- (void)goForwardInHistory {
+    // Nothing to navigate to - leave any in-progress editing alone
+    if (![spHistoryControllerInstance countForward]) {
+        return;
     }
+
+    // Ensure history navigation is permitted - trigger end editing and any required saves
+    if (![self couldCommitCurrentViewActions]) {
+        return;
+    }
+
+    [spHistoryControllerInstance goForwardInHistory];
 }
 
 #pragma mark -
@@ -487,12 +509,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self updateWindowTitle:self];
 
     NSString *serverDisplayName = [[self.parentWindowController window] title];
-    NSUserNotification *notification = [[NSUserNotification alloc] init];
-    notification.title = @"Connected";
-    notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Connected to %@", @"description for connected notification"), serverDisplayName];
-    notification.soundName = NSUserNotificationDefaultSoundName;
-
-    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    [SANotificationCenter.shared postNotificationWithTitle:@"Connected" body:[NSString stringWithFormat:NSLocalizedString(@"Connected to %@", @"description for connected notification"), serverDisplayName]];
 
     // Init Custom Query editor with the stored queries in a spf file if given.
     [spfDocData setObject:@NO forKey:@"save_editor_content"];
@@ -711,8 +728,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     //to the db.opt file regardless if they were explicity given or not.
     //So there is no longer a "Default" option.
 
-    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSet];
-    NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollation];
+    NSString *databaseName = [self database];
+    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName];
+    NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName];
 
     // Setup the charset and collation dropdowns
     [alterDatabaseCharsetHelper setDatabaseData:databaseDataInstance];
@@ -751,7 +769,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
      */
     NSLog(@"=================");
 
-    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables"];
+    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables" assertingDatabase:[self database]];
 
     NSArray *tableRow;
     while ((tableRow = [showTablesQuery getRowAsArray]) != nil) {
@@ -762,13 +780,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             NSLog(@"Scanning %@", table);
 
 
-            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]]] getRowAsDictionary];
+            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]] assertingDatabase:[self database]] getRowAsDictionary];
             NSInteger rowCountEstimate = [tableStatus[@"Rows"] integerValue];
             NSLog(@"Estimated row count: %li", rowCountEstimate);
 
 
 
-            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO];
+            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO assertingDatabase:[self database]];
             //NSDate *lastProgressUpdate = [NSDate date];
             time_t lastProgressUpdate = time(NULL);
             NSInteger rowCount = 0;
@@ -837,13 +855,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return;
     }
 
-    // We currently don't support moving any objects other than tables (i.e. views, functions, procs, etc.) from one database to another
-    // so inform the user and don't allow them to proceed. Copy/duplicate is more appropriate in this case, but with the same limitation.
-    if ([tablesListInstance hasNonTableObjects]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Database Rename Unsupported", @"databsse rename unsupported message") message:[NSString stringWithFormat:NSLocalizedString(@"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.", @"databsse rename unsupported informative message"), selectedDatabase] callback:nil];
-        return;
-    }
-
+    // Tables and views are moved; SPDatabaseRename refuses a database holding
+    // triggers, routines or events with a message naming them.
     [databaseRenameNameField setStringValue:selectedDatabase];
     [renameDatabaseMessageField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Rename database '%@' to:", @"rename database message"), selectedDatabase]];
 
@@ -962,28 +975,34 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         {
             dbName = [eachRow firstObject];
         }
-
-        SPMainQSync(^{
-            // TODO: there have been crash reports because dbName == nil at this point. When could that happen?
-            if([dbName unboxNull]) {
-                if([dbName respondsToSelector:@selector(isEqualToString:)]) {
-                    if(![dbName isEqualToString:self->selectedDatabase]) {
-                        self->selectedDatabase = [[NSString alloc] initWithString:dbName];
-                        [self->chooseDatabaseButton selectItemWithTitle:self->selectedDatabase];
-                        [self updateWindowTitle:self];
-                    }
-                }
-
-            } else {
-
-                [self->chooseDatabaseButton selectItemAtIndex:0];
-                [self updateWindowTitle:self];
-            }
-        });
+        [self setCurrentDatabaseFromQueryContext:[dbName unboxNull] ? dbName : nil];
     }
 
     //query finished
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:self];
+}
+
+/**
+ * Commit a database context already derived from successful queries.
+ *
+ * This method MAY be called from UI and background threads. It deliberately
+ * does not query the shared connection: another operation may have selected a
+ * different database after the caller's final statement completed.
+ */
+- (void)setCurrentDatabaseFromQueryContext:(NSString *)databaseName
+{
+    NSString *databaseSnapshot = [databaseName copy];
+    mySQLConnection.database = databaseSnapshot;
+
+    SPMainQSync(^{
+        self->selectedDatabase = databaseSnapshot;
+        if ([databaseSnapshot length]) {
+            [self->chooseDatabaseButton selectItemWithTitle:databaseSnapshot];
+        } else {
+            [self->chooseDatabaseButton selectItemAtIndex:0];
+        }
+        [self updateWindowTitle:self];
+    });
 }
 
 - (BOOL)navigatorSchemaPathExistsForDatabase:(NSString*)dbname
@@ -1422,7 +1441,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     _supportsEncoding = YES;
 
-    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:[self database]];
 
 
 
@@ -1506,7 +1525,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        SPMySQLResult *theResult = [mySQLConnection queryString:query];
+        SPMySQLResult *theResult = [mySQLConnection queryString:query assertingDatabase:[self database]];
         [theResult setReturnDataAsStrings:YES];
 
         // Check for errors, only displaying if the connection hasn't been terminated
@@ -1548,12 +1567,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [pb setString:createSyntax forType:NSPasteboardTypeString];
 
         // Table syntax copied notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        notification.title = @"Syntax Copied";
-        notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]];
-        notification.soundName = NSUserNotificationDefaultSoundName;
-
-        [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+        [SANotificationCenter.shared postNotificationWithTitle:@"Syntax Copied" body:[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]]];
 
         return;
     }
@@ -1590,7 +1604,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1648,7 +1662,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1707,7 +1721,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1765,7 +1779,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1823,7 +1837,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1882,7 +1896,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
@@ -1956,12 +1970,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [pb setString:createSyntax forType:NSPasteboardTypeString];
 
         // Table syntax copied notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        notification.title = @"Syntax Copied";
-        notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]];
-        notification.soundName = NSUserNotificationDefaultSoundName;
-
-        [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+        [SANotificationCenter.shared postNotificationWithTitle:@"Syntax Copied" body:[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]]];
     }
 }
 
@@ -2128,11 +2137,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     _isConnected = NO;
 
     // Disconnected notification
-    NSUserNotification *notification = [[NSUserNotification alloc] init];
-    notification.title = @"Disconnected";
-    notification.soundName = NSUserNotificationDefaultSoundName;
-
-    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    [SANotificationCenter.shared postNotificationWithTitle:@"Disconnected" body:nil];
 }
 
 /**
@@ -2353,9 +2358,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     SPCreateDatabaseInfo *dbInfo = [[SPCreateDatabaseInfo alloc] init];
 
-    [dbInfo setDatabaseName:[self database]];
-    [dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSet]];
-    [dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollation]];
+    NSString *databaseName = [self database];
+    [dbInfo setDatabaseName:databaseName];
+    [dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName]];
+    [dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName]];
 
     return dbInfo;
 }
@@ -2782,25 +2788,25 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if (![[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
 
-        // Convert the content selection to encoded data
+        // Convert the content selection to encoded data. The non-secure keyed
+        // format (object under the "data" key) is the spf wire format older
+        // versions read and write — keep it byte-compatible.
         if ([[spfData objectForKey:@"session"] objectForKey:@"contentSelection"]) {
             NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[spfData objectForKey:@"session"]];
-            NSMutableData *dataToEncode = [[NSMutableData alloc] init];
-            NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode];
+            NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:NO];
             [archiver encodeObject:[sessionInfo objectForKey:@"contentSelection"] forKey:@"data"];
             [archiver finishEncoding];
-            [sessionInfo setObject:dataToEncode forKey:@"contentSelection"];
+            [sessionInfo setObject:[archiver encodedData] forKey:@"contentSelection"];
             [spfData setObject:sessionInfo forKey:@"session"];
         }
 
         [spfStructure setObject:spfData forKey:@"data"];
     }
     else {
-        NSMutableData *dataToEncrypt = [[NSMutableData alloc] init];
-        NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt];
+        NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:NO];
         [archiver encodeObject:spfData forKey:@"data"];
         [archiver finishEncoding];
-        [spfStructure setObject:[dataToEncrypt dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
+        [spfStructure setObject:[[archiver encodedData] dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
     }
 
     // Convert to plist
@@ -3184,9 +3190,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
 
-    if (state == SAWindowConnectionStateConnected) {
-        [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
-    }
+    // Always update, so that a window which is no longer connected drops the
+    // favourite colour again. A nil colour clears both the tab line and the
+    // title bar tint (#1856); leaving the tint behind would keep a window that
+    // is back on the connection view looking like a live production session.
+    NSColor *favoriteColor = (state == SAWindowConnectionStateConnected)
+        ? [[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]]
+        : nil;
+
+    [self.parentWindowController updateWindowAccessoryWithColor:favoriteColor isSSL:[self.connectionController isConnectedViaSSL]];
 }
 
 #pragma mark -
@@ -3253,6 +3265,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setTarget:self];
         [toolbarItem setAction:@selector(clearConsole:)];
 
+    } else if ([itemIdentifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
+        return [SARecordViewToolbarSupport makeToolbarItemWithTarget:self];
+
     } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
         // Use data-driven SAViewMode for view-switching toolbar items
         for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
@@ -3315,14 +3330,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableStructure,
         SPMainToolbarTableContent,
         SPMainToolbarCustomQuery,
+        [SARecordViewToolbarSupport itemIdentifier],
         SPMainToolbarTableInfo,
         SPMainToolbarTableRelations,
         SPMainToolbarTableTriggers,
         SPMainToolbarUserManager,
-        NSToolbarCustomizeToolbarItemIdentifier,
         NSToolbarFlexibleSpaceItemIdentifier,
-        NSToolbarSpaceItemIdentifier,
-        NSToolbarSeparatorItemIdentifier
+        NSToolbarSpaceItemIdentifier
     ];
 }
 
@@ -3359,7 +3373,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarCustomQuery,
         SPMainToolbarTableInfo,
         SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers
+        SPMainToolbarTableTriggers,
+        [SARecordViewToolbarSupport itemIdentifier]
     ];
 
 }
@@ -3372,6 +3387,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isConnected || _isWorkingLevel) return NO;
 
     NSString *identifier = [toolbarItem itemIdentifier];
+
+    if ([identifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
+        return [SARecordViewToolbarSupport hostIdentifierForTabIndex:[self currentlySelectedView]] != nil;
+    }
 
     // Show console item
     if ([identifier isEqualToString:SPMainToolbarShowConsole]) {
@@ -3719,7 +3738,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     NSDictionary *connection = nil;
     NSInteger connectionType = -1;
-    SPKeychain *keychain = nil;
+    id<SAKeychainProviding> keychain = nil;
 
     // If this document already has a connection, don't proceed.
     if (mySQLConnection) return NO;
@@ -3728,7 +3747,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     connection = [NSDictionary dictionaryWithDictionary:[stateDetails objectForKey:@"connection"]];
     if (!connection) return NO;
 
-    if ([connection objectForKey:@"kcid"]) keychain = [[SPKeychain alloc] init];
+    if ([connection objectForKey:@"kcid"]) keychain = [SAKeychainAccess make];
 
     [self updateWindowTitle:self];
 
@@ -3947,12 +3966,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([[spf objectForKey:@"data"] isKindOfClass:[NSDictionary class]])
         data = [NSMutableDictionary dictionaryWithDictionary:[spf objectForKey:@"data"]];
 
-    // If a content selection data key exists in the session, decode it
+    // If a content selection data key exists in the session, decode it.
+    // Existing spf files were written with non-secure keyed archiving, so the
+    // reader must keep accepting that format.
     if ([[[data objectForKey:@"session"] objectForKey:@"contentSelection"] isKindOfClass:[NSData class]]) {
         NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[data objectForKey:@"session"]];
-        NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]];
-        [sessionInfo setObject:[unarchiver decodeObjectForKey:@"data"] forKey:@"contentSelection"];
+        NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:[sessionInfo objectForKey:@"contentSelection"] error:nil];
+        unarchiver.requiresSecureCoding = NO;
+        id contentSelection = [unarchiver decodeObjectForKey:@"data"];
         [unarchiver finishDecoding];
+        if (contentSelection) {
+            [sessionInfo setObject:contentSelection forKey:@"contentSelection"];
+        } else {
+            [sessionInfo removeObjectForKey:@"contentSelection"];
+        }
         [data setObject:sessionInfo forKey:@"session"];
     }
 
@@ -3960,9 +3987,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSData *decryptdata = nil;
         decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]];
         if (decryptdata != nil && [decryptdata length]) {
-            NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata];
-            data = [NSMutableDictionary dictionaryWithDictionary:(NSDictionary *)[unarchiver decodeObjectForKey:@"data"]];
+            NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:decryptdata error:nil];
+            unarchiver.requiresSecureCoding = NO;
+            id decoded = [unarchiver decodeObjectForKey:@"data"];
             [unarchiver finishDecoding];
+            // Leave data nil on failure or a non-dictionary root so the
+            // wrong-format/password alert below fires.
+            data = [decoded isKindOfClass:[NSDictionary class]]
+                ? [NSMutableDictionary dictionaryWithDictionary:decoded]
+                : nil;
         }
         if (data == nil) {
             [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"Wrong data format or password.", @"wrong data format or password") callback:nil];
@@ -4403,7 +4436,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 // Get create syntax
                 SPMySQLResult *queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
                                                                            itemTypeStr,
-                                                                           [item backtickQuotedString]]];
+                                                                           [item backtickQuotedString]] assertingDatabase:[self database]];
                 [queryResult setReturnDataAsStrings:YES];
 
                 if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -4483,7 +4516,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
                 }
 
-                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
+                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
                 [theResult setReturnDataAsStrings:YES];
                 if ([mySQLConnection queryErrored]) {
                     [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [mySQLConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -4964,14 +4997,36 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [dbActionRename setTablesList:tablesListInstance];
     [dbActionRename setConnection:[self getConnection]];
 
+    // A connection whose settings could not be restored was re-established
+    // before the rename returned; one that could not be re-established is
+    // not asked for the databases and tables to show.
     if ([dbActionRename renameDatabaseFrom:[self createDatabaseInfo] to:newDatabaseName]) {
-        [self setDatabases];
-        [self selectDatabase:newDatabaseName item:nil];
-        // inform observers that a new database was added
-        [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        if ([dbActionRename connectionUsable]) {
+            [self setDatabases];
+            [self selectDatabase:newDatabaseName item:nil];
+            // inform observers that a new database was added
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
+        if ([dbActionRename warningDescription]) {
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:[dbActionRename warningDescription] callback:nil];
+        }
     }
     else {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName] callback:nil];
+        NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to rename the database '%@' to '%@'.", @"unable to rename database message informative message"), [self database], newDatabaseName];
+        if ([dbActionRename failureDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename failureDescription]];
+        }
+        if ([dbActionRename warningDescription]) {
+            message = [NSString stringWithFormat:@"%@\n\n%@", message, [dbActionRename warningDescription]];
+        }
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to rename database", @"unable to rename database message") message:message callback:nil];
+        // A rename that stopped after the target was created leaves objects
+        // split across the two databases: show them where they are now.
+        if ([dbActionRename changedServer] && [dbActionRename connectionUsable]) {
+            [self setDatabases];
+            [tablesListInstance updateTables:self];
+            [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
+        }
     }
 }
 
@@ -5281,11 +5336,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)_addPreferenceObservers
 {
-    // Register observers for when the DisplayTableViewVerticalGridlines preference changes
+    if (_preferenceObserversRegistered) return;
+    _preferenceObserversRegistered = YES;
+
+    // Register observers for when the DisplayTableViewVerticalGridlines preference changes.
+    // The table subview controllers (structure, content, query, relations) register their own
+    // observers and unregister them in their own dealloc - see #2033.
     [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
-    [prefs addObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
-    [prefs addObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
-    [prefs addObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPEditInSheetEnabled options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -5301,13 +5358,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)_removePreferenceObservers
 {
+    if (!_preferenceObserversRegistered) return;
+    _preferenceObserversRegistered = NO;
+
     [prefs removeObserver:self forKeyPath:SPConsoleEnableLogging];
     [prefs removeObserver:self forKeyPath:SPEditInSheetEnabled];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
-
-    [prefs removeObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
-    [prefs removeObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
-    [prefs removeObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 
     [prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPConsoleEnableLogging];
     [prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines];
@@ -5430,6 +5486,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)viewTriggers {
     [self switchToViewMode:SAViewModeTriggers];
+}
+
+- (void)toggleRecordView:(id)sender
+{
+    NSString *hostIdentifier = [SARecordViewToolbarSupport hostIdentifierForTabIndex:[self currentlySelectedView]];
+    if ([hostIdentifier isEqualToString:SPMainToolbarTableContent]) {
+        [tableContentInstance toggleRecordView];
+    } else if ([hostIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
+        [customQueryInstance toggleRecordView];
+    }
+    if (hostIdentifier) [self.mainToolbar setSelectedItemIdentifier:hostIdentifier];
 }
 
 /**
@@ -5856,7 +5923,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection
 {
-    return [connectionController passwordForConnectionRequest];
+    return [connectionController passwordForConnectionRequestForConnection:connection];
+}
+
+/**
+ * Invoked when the current connection could not supply a password, to describe why.
+ */
+- (NSString *)credentialErrorMessageForConnection:(SPMySQLConnection *)connection
+{
+    if ([connectionController type] != SPAWSIAMConnection) return nil;
+
+    return [[connectionController lastAWSIAMTokenErrorForConnection:connection] localizedDescription];
 }
 
 /**
@@ -5896,19 +5973,21 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // and we are not terminating
     if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
 
-        SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
+        SPLog(@"not terminating, parentWindow isVisible, showing connection lost sheet");
         // Ensure the window isn't miniaturized
         if ([[self.parentWindowController window] isMiniaturized]) {
             [[self.parentWindowController window] deminiaturize:self];
         }
         [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
 
-        // Display the connection error dialog and wait for the return code
-        [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
-        connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
+        // Display the connection error sheet and wait for the return code
+        SAConnectionLostSheetCopy *sheetCopy = [SAConnectionLostSheetCopy sheetCopyForAWSIAMTokenError:[connectionController lastAWSIAMTokenErrorForConnection:connection]
+                                                                                   isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)
+                                                                                           awsProfile:[connectionController awsProfile]];
 
-        [NSApp endSheet:connectionErrorDialog];
-        [connectionErrorDialog orderOut:nil];
+        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
+            ? SPMySQLConnectionLostReconnect
+            : SPMySQLConnectionLostDisconnect;
 
         [taskController resetQueryTimer];
 
@@ -5931,14 +6010,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
     });
-}
-
-/**
- * Invoked when user dismisses the error sheet displayed as a result of the current connection being lost.
- */
-- (IBAction)closeErrorConnectionSheet:(id)sender
-{
-    [NSApp stopModalWithCode:[sender tag]];
 }
 
 /**
@@ -5988,30 +6059,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark - SPPrintController
 
 /**
- * WebView delegate method.
- */
-- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame {
-
-
-    NSPrintOperation *op = [SPPrintUtility preparePrintOperationWithView:[[[printWebView mainFrame] frameView] documentView] printView:printWebView];
-
-    /* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
-     * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
-     * during tasks, launching the sheet before calling -endTask first would result in the following flow:
-     * - toolbar item caches database chooser state as disabled (because of the active task)
-     * - sheet is shown
-     * - endTask reenables database chooser (has no effect because of the open sheet)
-     * - user dismisses sheet after some time
-     * - toolbar item restores cached state and disables database chooser again
-     * => Inconsistent UI: database chooser disabled when it should actually be enabled
-     */
-    if ([self isWorking]) [self endTask];
-
-    [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
-}
-
-/**
- * Loads the print document interface. The actual printing is done in the doneLoading delegate.
+ * Starts generating the print document. The actual printing runs once the
+ * generated HTML has been rendered offscreen.
  */
 - (void)printDocument {
     // Only display warning for the 'Table Content' view
@@ -6069,13 +6118,30 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Loads the supplied HTML string in the print WebView.
+ * Renders the supplied HTML string in an offscreen web view and runs the
+ * resulting print operation once loading finishes.
  */
 - (void)loadPrintWebViewWithHTMLString:(NSString *)HTMLString
 {
-    [[printWebView mainFrame] loadHTMLString:HTMLString baseURL:nil];
+    if (!printRenderer) printRenderer = [[SAHTMLPrintRenderer alloc] init];
 
+    [printRenderer printHTMLString:HTMLString completionHandler:^(NSPrintOperation *op) {
+        /* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
+         * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
+         * during tasks, launching the sheet before calling -endTask first would result in the following flow:
+         * - toolbar item caches database chooser state as disabled (because of the active task)
+         * - sheet is shown
+         * - endTask reenables database chooser (has no effect because of the open sheet)
+         * - user dismisses sheet after some time
+         * - toolbar item restores cached state and disables database chooser again
+         * => Inconsistent UI: database chooser disabled when it should actually be enabled
+         */
+        if ([self isWorking]) [self endTask];
 
+        if (!op) return;
+
+        [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
+    }];
 }
 
 /**
@@ -6232,7 +6298,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [engine setObject:[[extendedTableInfoInstance onMainThread] tableInformationForPrinting] forKey:@"i"];
 
         [printData setObject:heading forKey:@"heading"];
-        [printData setObject:[[NSUnarchiver unarchiveObjectWithData:[prefs objectForKey:SPCustomQueryEditorFont]] fontName] forKey:@"font"];
+        NSFont *printFont = [SAArchiving fontFromData:[prefs objectForKey:SPCustomQueryEditorFont]]
+            ?: [NSFont userFixedPitchFontOfSize:[NSFont systemFontSize]]
+            ?: [NSFont systemFontOfSize:[NSFont systemFontSize]];
+        [printData setObject:[printFont fontName] forKey:@"font"];
 
         NSString *HTMLString = [engine processTemplateInFileAtPath:[[NSBundle mainBundle] pathForResource:SPHTMLTableInfoPrintTemplate ofType:@"html"] withVariables:printData];
 
@@ -6341,7 +6410,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
             [connectionController setDelegate:nil];
-            [printWebView setFrameLoadDelegate:nil];
+            [printRenderer invalidate];
         }
     }
 }
@@ -6349,6 +6418,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 
 - (void)dealloc {
+    // Safety net for #2033: if the document is released without the
+    // SPDocumentWillClose path having run (documentWillClose:), the
+    // NSUserDefaults KVO registrations would dangle and crash the next
+    // preference write deep inside CFPrefs. The registration flag makes
+    // this a no-op when documentWillClose: already cleaned up.
+    [self _removePreferenceObservers];
+
     NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 

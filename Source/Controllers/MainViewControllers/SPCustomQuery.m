@@ -54,7 +54,6 @@
 #import "SPAppController.h"
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
-#import "SPHelpViewerController.h"
 #import "SPBundleManager.h"
 
 #import <pthread.h>
@@ -99,17 +98,25 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)_updateProgress;
 @end
 
-@interface SPCustomQuery ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPCustomQuery () <NSMenuItemValidation, NSFontChanging, SATextViewDelegate>
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
+- (NSInteger)_recordViewSelectedRow;
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID;
+- (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
+- (void)_updateRecordView;
 - (void)_updateColumnHeadersForCurrentPreference;
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes;
 - (void)documentWillClose:(NSNotification *)notification;
 - (void)queryFavoritesHaveBeenUpdated:(NSNotification *)notification;
 - (void)historyItemsHaveBeenUpdated:(NSNotification *)notification;
 - (void)helpWindowClosedByUser:(NSNotification *)notification;
+- (void)presentQueryFavoriteSaveSheetForQuery:(NSString *)query;
 
 @property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
+@property (assign) BOOL recordViewNeedsSelectionRestoreRefresh;
+@property (assign) BOOL suppressRecordViewTaskRefresh;
 
 @end
 
@@ -124,6 +131,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 // ivars instead of letting clang autosynthesize fresh `_name` ivars that xib
 // outlets wouldn't reach.
 @synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize tablesListInstance = tablesListInstance;
 @synthesize textView = textView;
 @synthesize currentQueryRange = currentQueryRange;
 @synthesize sortColumn = sortColumn;
@@ -273,87 +281,50 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 }
 
 /**
- * Insert the choosen favorite query in the query textView or save query to favorites or opens window to edit favorites
+ * Present the SwiftUI save sheet. The completion block intentionally retains
+ * the controller for the sheet's lifetime; the parent releases it afterwards.
+ */
+- (void)presentQueryFavoriteSaveSheetForQuery:(NSString *)query
+{
+    NSWindow *parentWindow = [tableDocumentInstance parentWindowControllerWindow];
+    NSURL *fileURL = [tableDocumentInstance fileURL];
+    if (!parentWindow || !fileURL) return;
+
+    SAQueryFavoriteSaveWindowController *saveController = [[SAQueryFavoriteSaveWindowController alloc]
+        initWithQuery:query
+        fileURL:fileURL
+        defaultSaveGlobally:[tableDocumentInstance isUntitled]];
+    [parentWindow beginSheet:[saveController window] completionHandler:^(__unused NSModalResponse returnCode) {
+        (void)[saveController window];
+    }];
+}
+
+/**
+ * Insert the chosen favorite query in the query text view, save a query to
+ * favorites, or open the favorites manager.
  */
 - (IBAction)chooseQueryFavorite:(id)sender
 {
-    if ([queryFavoritesButton indexOfSelectedItem] == 1) {
-        
-        // This should never evaluate to true as we are now performing menu validation, meaning the 'Save Query to Favorites' menu item will
-        // only be enabled if the query text view has at least one character present.
+    NSInteger selectedItem = [queryFavoritesButton indexOfSelectedItem];
+
+    if (selectedItem == 1 || selectedItem == 2) {
+        // Menu validation normally prevents this path for an empty editor.
         if ([[textView string] isEqualToString:@""]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Empty query", @"empty query message") message:NSLocalizedString(@"Cannot save an empty query.", @"empty query informative message") callback:nil];
             return;
         }
-        
-        if ([tableDocumentInstance isUntitled]) {
-            [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
-        }
-        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
-            if (returnCode == NSModalResponseOK) {
-                
-                // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-                // as it may not have been fully initialized yet.
-                NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
-                
-                // What should be saved
-                NSString *queryToBeAddded;
-                if ([self->textView selectedRange].length) { // First check for a selection
-                    queryToBeAddded = [[self->textView string] substringWithRange:[self->textView selectedRange]];
-                } else if (self->currentQueryRange.length) { // then for a current query
-                    queryToBeAddded = [[self->textView string] substringWithRange:self->currentQueryRange];
-                } else { // otherwise take the entire string
-                    queryToBeAddded = [self->textView string];
-                }
-                
-                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
-                    [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
-                    
-                    [self->prefs setObject:favorites forKey:SPQueryFavorites];
-                } else {
-                    [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
-                }
-                [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
-                [self queryFavoritesHaveBeenUpdated:nil];
-                [self->queryFavoriteNameTextField setStringValue:@""];
+
+        NSString *queryToSave = [textView string];
+        if (selectedItem == 1) {
+            if ([textView selectedRange].length) {
+                queryToSave = [[textView string] substringWithRange:[textView selectedRange]];
+            } else if (currentQueryRange.length) {
+                queryToSave = [[textView string] substringWithRange:currentQueryRange];
             }
-        }];
-        
-    }
-    if ([queryFavoritesButton indexOfSelectedItem] == 2) {
-        
-        // This should never evaluate to true as we are now performing menu validation, meaning the 'Save Query to Favorites' menu item will only be enabled if the query text view has at least one character present.
-        if ([[textView string] isEqualToString:@""]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Empty query", @"empty query message") message:NSLocalizedString(@"Cannot save an empty query.", @"empty query informative message") callback:nil];
-            return;
         }
-        
-        if ([tableDocumentInstance isUntitled]) {
-            [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
-        }
-        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
-            if (returnCode == NSModalResponseOK) {
-                
-                // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-                // as it may not have been fully initialized yet.
-                NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
-                
-                // What should be saved
-                NSString *queryToBeAddded = [self->textView string];
-                
-                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
-                    [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
-                    
-                    [self->prefs setObject:favorites forKey:SPQueryFavorites];
-                } else {
-                    [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
-                }
-                [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
-                [self queryFavoritesHaveBeenUpdated:nil];
-                [self->queryFavoriteNameTextField setStringValue:@""];
-            }
-        }];
-    } else if ([queryFavoritesButton indexOfSelectedItem] == 3) {
+
+        [self presentQueryFavoriteSaveSheetForQuery:queryToSave];
+    } else if (selectedItem == 3) {
         
         favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
         
@@ -654,7 +625,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSValue *encodedCallbackMethod = nil;
     if (customQueryCallbackMethod)
         encodedCallbackMethod = [NSValue valueWithBytes:&customQueryCallbackMethod objCType:@encode(SEL)];
-    NSDictionary *taskArguments = [NSDictionary dictionaryWithObjectsAndKeys:queries, @"queries", encodedCallbackMethod, @"callback", nil];
+    NSMutableDictionary *taskArguments = [NSMutableDictionary dictionaryWithObjectsAndKeys:queries, @"queries", nil];
+    if (encodedCallbackMethod) [taskArguments setObject:encodedCallbackMethod forKey:@"callback"];
+
+    NSString *databaseName = [tableDocumentInstance database];
+    if ([databaseName length]) [taskArguments setObject:databaseName forKey:@"database"];
     
     // If a helper thread is already running, execute inline - otherwise detach a new thread for the queries
     if ([NSThread isMainThread]) {
@@ -765,7 +740,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         SPMySQLStreamingResultStore *resultStore    = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
+        NSString                    *databaseName   = [taskArguments objectForKey:@"database"];
         NSString                    *taskButtonString;
+        BOOL databaseNamesAreCaseSensitive = NO;
+        BOOL databaseNameCaseSensitivityWasLoaded = NO;
+        NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
+        NSString *serverVersionString = [mySQLConnection serverVersionString];
+        BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
         
         NSUInteger __block i, totalQueriesRun = 0, totalAffectedRows = 0;
         double executionTime = 0;
@@ -829,9 +810,24 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             
             // store trimmed queries for usedQueries and history
             [tempQueries addObject:query];
+
+            // Only a case-only DROP comparison needs lower_case_table_names.
+            // Load it immediately before that DROP so the user statement, not
+            // this metadata lookup, remains the source for SHOW WARNINGS,
+            // ROW_COUNT(), and FOUND_ROWS().
+            if (!databaseNameCaseSensitivityWasLoaded
+                && [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+                                                                         currentDatabase:databaseName
+                                                                            serverVersion:serverVersion
+                                                                          serverIsMariaDB:serverIsMariaDB]) {
+                id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+                databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+                databaseNameCaseSensitivityWasLoaded = YES;
+            }
             
             // Run the query, timing execution (note this also includes network and overhead)
-            resultStore = [mySQLConnection resultStoreFromQueryString:query];
+            resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabaseContext:databaseName];
             executionTime += [resultStore queryExecutionTime];
             totalQueriesRun++;
             
@@ -851,18 +847,23 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
                 NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                NSString *resultDatabaseName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"db"];
                 for(id field in cqColumnDefinition) {
                     if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
                         resultTableName = nil;
-                        break;
                     }
+                    if(![[field objectForKey:@"db"] isEqualToString:resultDatabaseName]) {
+                        resultDatabaseName = nil;
+                    }
+                    if(!resultTableName && !resultDatabaseName) break;
                 }
-                
+
                 // Init copyTable with necessary information for copying selected rows as SQL INSERT
                 [customQueryView setTableInstance:self
                                     withTableData:resultData
                                       withColumns:cqColumnDefinition
                                     withTableName:resultTableName
+                                withDatabaseName:resultDatabaseName ?: databaseName
                                    withConnection:mySQLConnection];
                 
                 [self updateResultStore:resultStore];
@@ -961,6 +962,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
                     databaseWasChanged = YES;
                 }
+                NSString *updatedDatabaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+                                                                                          currentDatabase:databaseName
+                                                                   databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+                                                                                    serverVersion:serverVersion
+                                                                                    serverIsMariaDB:serverIsMariaDB];
+                if ([SASQLDatabaseContext databaseNameChangedFrom:databaseName to:updatedDatabaseName]) {
+                    databaseWasChanged = YES;
+                }
+                databaseName = updatedDatabaseName;
             }
 
             // write errors to console
@@ -974,8 +984,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [[tableDocumentInstance onMainThread] setDatabases];
             
             if (databaseWasChanged) {
-                // Reset the current database
-                [tableDocumentInstance refreshCurrentDatabase];
+                // Commit the context derived from this batch. Re-reading the
+                // shared session here can observe a later background query.
+                [tableDocumentInstance setCurrentDatabaseFromQueryContext:databaseName];
             }
             
             // Reload table list
@@ -988,7 +999,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         // Perform empty query if no query is given
         if ( !queryCount ) {
-            resultStore = [mySQLConnection resultStoreFromQueryString:@""];
+            resultStore = [mySQLConnection resultStoreFromQueryString:@"" assertingDatabaseContext:databaseName];
             [resultStore cancelResultLoad];
             [errors setStringOrNil:[mySQLConnection lastErrorMessage]];
         }
@@ -1060,22 +1071,21 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         [tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
         
-        NSUserNotificationCenter *defaultUNC = [NSUserNotificationCenter defaultUserNotificationCenter];
-        
         // If no results were returned, redraw the empty table and post notifications before returning.
         if ( ![resultData count] ) {
             [customQueryView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+            if (self.recordViewNeedsSelectionRestoreRefresh) {
+                self.recordViewNeedsSelectionRestoreRefresh = NO;
+                SPMainQSync(^{
+                    [self->recordViewController updateWithFields:@[] selectedRowCount:0];
+                });
+            }
             
             // Notify any listeners that the query has completed
             [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
             
             // Perform the notification for query completion
-            NSUserNotification *notification = [[NSUserNotification alloc] init];
-            notification.title = @"Query Finished";
-            notification.informativeText=[[errorText onMainThread] string];
-            notification.soundName = NSUserNotificationDefaultSoundName;
-            
-            [defaultUNC deliverNotification:notification];
+            [SANotificationCenter.shared postNotificationWithTitle:@"Query Finished" body:[[errorText onMainThread] string]];
             
             // Set up the callback if present
             if ([taskArguments objectForKey:@"callback"]) {
@@ -1100,12 +1110,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
         
         // Query finished notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        notification.title = @"Query Finished";
-        notification.informativeText=[[errorText onMainThread] string];
-        notification.soundName = NSUserNotificationDefaultSoundName;
-        
-        [defaultUNC deliverNotification:notification];
+        [SANotificationCenter.shared postNotificationWithTitle:@"Query Finished" body:[[errorText onMainThread] string]];
         
         // Set up the callback if present
         if ([taskArguments objectForKey:@"callback"]) {
@@ -1124,6 +1129,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             if (reloadingExistingResult) {
                 [[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:customQueryView];
             }
+            if (self.recordViewNeedsSelectionRestoreRefresh) {
+                [self _updateRecordView];
+                self.recordViewNeedsSelectionRestoreRefresh = NO;
+            }
         });
     }
 }
@@ -1134,6 +1143,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore
 {
+    SPMainQSync(^{
+        [self->recordViewController clear];
+    });
     pthread_mutex_lock(&resultDataLock);
     // Remove all items from the table
     SPMainQSync(^{
@@ -1732,6 +1744,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     if ([resultData dataDownloaded]) {
         [self clearQueryLoadTimer];
+        if (!self.recordViewNeedsSelectionRestoreRefresh) {
+            [self _updateRecordView];
+        }
     }
     
     // Check whether a table update is required, based on whether new rows are
@@ -1884,6 +1899,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (void) updateTableView
 {
+    [recordViewController clear];
     NSArray *theColumns;
     NSTableColumn *theCol;
     BOOL showColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
@@ -2079,7 +2095,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                               [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                               [tableForColumn backtickQuotedString],
-                                                              fieldIDQueryStr]];
+                                                              fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
     
     if ([mySQLConnection queryErrored]) {
         [tableDocumentInstance endTask];
@@ -2099,7 +2115,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                    [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                    [tableForColumn backtickQuotedString],
-                                                   fieldIDQueryStr]];
+                                                   fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
         
         if ([mySQLConnection queryErrored]) {
             [tableDocumentInstance endTask];
@@ -2144,7 +2160,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     // Get the primary key if there is one, using any columns present within it
     SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]] assertingDatabase:database];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
     for (NSDictionary *eachRow in theResult) {
@@ -2222,7 +2238,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSString *columnName = [columnDefinition objectForKey:@"org_name"];
     
     // Check if the IDstring identifies the current field bijectively and get the WHERE clause
-    NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+    NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[customQueryView columnWithIdentifier:[aTableColumn identifier]]];
     fieldIDQueryString = [editStatus objectAtIndex:1];
     NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
     
@@ -2262,7 +2278,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         SPLog(@"queryStr: %@", queryStr);
 
         if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
-            [mySQLConnection queryString:queryStr];
+            [mySQLConnection queryString:queryStr assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
             // Check for errors while UPDATE
             if ([mySQLConnection queryErrored]) {
@@ -2282,12 +2298,20 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
             // On success reload table data by executing the last query if reloading is enabled
             if ([prefs boolForKey:SPReloadAfterEditingRow]) {
+                [recordViewController clear];
+                self.recordViewNeedsSelectionRestoreRefresh = YES;
                 reloadingExistingResult = YES;
                 [self storeCurrentResultViewForRestoration];
                 [self performQueries:@[lastExecutedQuery] withCallback:NULL];
             } else {
                 // otherwise, just update the data in the data storage
                 [resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                NSInteger visibleColumn = [customQueryView columnWithIdentifier:[aTableColumn identifier]];
+                if (visibleColumn >= 0) {
+                    [customQueryView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex]
+                                               columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)visibleColumn]];
+                }
+                [self _updateRecordView];
             }
         }
         else{
@@ -2313,7 +2337,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                   primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
                                 primaryButtonHandler:^{
                     SPLog(@"User clicked Yes, exec queries");
-                    [self->mySQLConnection queryString:queryStr];
+                    [self->mySQLConnection queryString:queryStr assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
                     // Check for errors while UPDATE
                     if ([self->mySQLConnection queryErrored]) {
@@ -2333,12 +2357,20 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
                     // On success reload table data by executing the last query if reloading is enabled
                     if ([self->prefs boolForKey:SPReloadAfterEditingRow]) {
+                        [self->recordViewController clear];
+                        self.recordViewNeedsSelectionRestoreRefresh = YES;
                         self->reloadingExistingResult = YES;
                         [self storeCurrentResultViewForRestoration];
                         [self performQueries:@[self->lastExecutedQuery] withCallback:NULL];
                     } else {
                         // otherwise, just update the data in the data storage
                         [self->resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                        NSInteger visibleColumn = [self->customQueryView columnWithIdentifier:[aTableColumn identifier]];
+                        if (visibleColumn >= 0) {
+                            [self->customQueryView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex]
+                                                            columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)visibleColumn]];
+                        }
+                        [self _updateRecordView];
                     }
                 }
                                  cancelButtonHandler:^{
@@ -2354,6 +2386,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
 #pragma mark -
 #pragma mark TableView datasource methods
+
+- (BOOL)isWorking
+{
+    return isWorking;
+}
 
 /**
  * Returns the number of rows in the result set table view.
@@ -2409,7 +2446,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     if (aTableView == customQueryView) {
         NSUInteger columnIndex = [[tableColumn identifier] integerValue];
         // if a user enters the field by keyboard navigation they might want to copy the contents without invoking the field editor sheet first
-        BOOL forEditing = ([customQueryView editedColumn] == (NSInteger)columnIndex && [customQueryView editedRow] == rowIndex);
+        BOOL forEditing = ([SACellFilterColumnIdentifier storageIndexForVisibleColumn:[customQueryView editedColumn] inTableView:customQueryView] == (NSInteger)columnIndex && [customQueryView editedRow] == rowIndex);
         return [self _resultDataItemAtRow:rowIndex columnIndex:[[tableColumn identifier] integerValue] preserveNULLs:NO asPreview:(forEditing != YES)];
     }
     
@@ -2598,20 +2635,36 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 #pragma mark -
 #pragma mark TableView Drag & Drop datasource methods
 
-- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+/**
+ * Give each dragged result row its own pasteboard item. The rows' combined
+ * tab-delimited text is attached to the drag as a whole in
+ * -tableView:draggingSession:willBeginAtPoint:forRowIndexes: below, because it
+ * is one blob for the selection and this method only ever sees one row.
+ */
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
-    if ( aTableView == customQueryView ) {
-        NSString *tmp = [customQueryView draggedRowsAsTabString];
-        if ( nil != tmp )
-        {
-            [pboard declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
-            [pboard setString:tmp forType:NSPasteboardTypeString];
-            [pboard setString:tmp forType:NSPasteboardTypeTabularText];
-            return YES;
-        }
-        return NO;
-    } else {
-        return NO;
+    if (aTableView != customQueryView) return nil;
+
+    // Refuse the drag outright when there is nothing selected to write, the way
+    // the previous whole-drag writer refused an empty payload.
+    if (![[customQueryView selectedRowIndexes] count]) return nil;
+
+    return [SADragPasteboard dragRowItemForRow:row];
+}
+
+/**
+ * Attach the selection as tab-delimited text, which is what receivers outside
+ * the app read.
+ */
+- (void)tableView:(NSTableView *)aTableView draggingSession:(NSDraggingSession *)session willBeginAtPoint:(NSPoint)screenPoint forRowIndexes:(NSIndexSet *)rowIndexes
+{
+    if (aTableView != customQueryView) return;
+
+    // Selection-derived, exactly as before: -draggedRowsAsTabString reads
+    // -selectedRowIndexes, and the old writer ignored the indexes it was passed.
+    NSString *tmp = [customQueryView draggedRowsAsTabString];
+    if ([tmp length]) {
+        [SADragPasteboard attachDragString:tmp toPasteboard:[session draggingPasteboard]];
     }
 }
 
@@ -2778,7 +2831,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                 editedColumn++;
             }
             
-            NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+            NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[customQueryView columnWithIdentifier:[aTableColumn identifier]]];
             isFieldEditable = ([[editStatus objectAtIndex:0] integerValue] == 1) ? YES : NO;
             
             NSString *fieldType = nil;
@@ -2852,6 +2905,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 {
     // Check our notification object is our table content view
     if ([aNotification object] != customQueryView) return;
+
+    [self _updateRecordView];
     
     NSArray *triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
     for(NSString* cmdPath in triggeredCommands) {
@@ -2890,6 +2945,15 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             }
         }
     }
+}
+
+/**
+ * Refreshes the record view so its field order follows columns moved by dragging.
+ */
+- (void)tableViewColumnDidMove:(NSNotification *)aNotification
+{
+    if ([aNotification object] != customQueryView) return;
+    [self _updateRecordView];
 }
 
 /**
@@ -3079,14 +3143,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 #pragma mark TextField delegate methods
 
 /**
- * Called whenever the user changes the name of the new query favorite or
- * the user changed the query favorite search string.
+ * Called whenever the user changes a query favorites/history search string.
  */
 - (void)controlTextDidChange:(NSNotification *)notification
 {
-    if ([notification object] == queryFavoriteNameTextField)
-        [saveQueryFavoriteButton setEnabled:[[queryFavoriteNameTextField stringValue] length]];
-    else if ([notification object] == queryFavoritesSearchField){
+    if ([notification object] == queryFavoritesSearchField){
         [self filterQueryFavorites:nil];
     }
     else if ([notification object] == queryHistorySearchField) {
@@ -3311,6 +3372,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
     isWorking = NO;
+    if (!self.recordViewNeedsSelectionRestoreRefresh && !self.suppressRecordViewTaskRefresh) {
+        [self _updateRecordView];
+    }
     
     // Only proceed if this view is selected.
     if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery])
@@ -3377,7 +3441,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
     } else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
-        if ([customQueryView numberOfColumns] != [cqColumnDefinition count]) {
+        if ((NSUInteger)[customQueryView numberOfColumns] != [cqColumnDefinition count]) {
             [self updateTableView];
         } else {
             [self _updateColumnHeadersForCurrentPreference];
@@ -3613,7 +3677,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     isFieldEditable = shouldBeginEditing;
     
     // Open the field editor sheet if required
-    if ([customQueryView shouldUseFieldEditorForRow:row column:column checkWithLock:NULL])
+    if ([customQueryView shouldUseFieldEditorForRow:row column:[SACellFilterColumnIdentifier storageIndexForVisibleColumn:column inTableView:customQueryView] checkWithLock:NULL])
     {
         
         [customQueryView setFieldEditorSelectedRange:[aFieldEditor selectedRange]];
@@ -3704,6 +3768,60 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     [queryInfoPaneSplitView setCollapsibleSubviewIndex:1];
     [queryInfoPaneSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
+
+    recordViewController = [[SARecordViewController alloc] init];
+    NSView *queryResultPane = [customQueryScrollView superview];
+    [recordViewController installOverlayInView:queryResultPane
+                                        resizingView:customQueryScrollView
+                                   shortcutTableView:customQueryView
+                                        bottomInset:0
+                                           topInset:23
+                                       autosaveName:@"SARecordViewQueryWidth"];
+
+    __weak __typeof__(self) weakSelf = self;
+    [recordViewController setShowHandler:^{
+        [weakSelf _updateRecordView];
+    }];
+    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordViewSelectedRow];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
+        if (row < 0 || !column) return NO;
+
+        if (![strongSelf tableView:strongSelf->customQueryView shouldEditTableColumn:column row:row]) return NO;
+        NSInteger columnIndex = [strongSelf->customQueryView columnWithIdentifier:[column identifier]];
+        return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
+    } validate:^NSString *(NSInteger fieldID, NSString *value) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return nil;
+
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
+        return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
+    } commit:^BOOL(NSInteger fieldID, NSString *value) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordViewSelectedRow];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
+        if (row < 0 || !column) return NO;
+
+        NSInteger columnIndex = [[column identifier] integerValue];
+        if ([strongSelf->customQueryView shouldUseFieldEditorForRow:row column:columnIndex checkWithLock:NULL]) return NO;
+
+        id objectValue = value;
+        NSFormatter *formatter = [[column dataCell] formatter];
+        if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
+            NSBeep();
+            return NO;
+        }
+
+        strongSelf.suppressRecordViewTaskRefresh = YES;
+        [strongSelf tableView:strongSelf->customQueryView setObjectValue:objectValue forTableColumn:column row:row];
+        strongSelf.suppressRecordViewTaskRefresh = NO;
+        return NO;
+    }];
     
     // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
     [textView setTextContainerInset:NSMakeSize(0.0f, 2.0f)];
@@ -3740,8 +3858,14 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
+}
+
+- (void)toggleRecordView
+{
+    [recordViewController toggle];
 }
 
 #pragma mark -
@@ -3758,7 +3882,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
 {
-#warning duplicate code with SPTableContent.m tableView:objectValueForTableColumn:…
+    // TODO (#2607): duplicate code with SPTableContent.m tableView:objectValueForTableColumn:…
     id value = nil;
     
     // While the table is being loaded, additional validation is required - data
@@ -3797,6 +3921,84 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return value;
 }
 
+- (NSInteger)_recordViewSelectedRow
+{
+    NSInteger selectedRow = [customQueryView selectedRow];
+    if (selectedRow < 0 || [customQueryView numberOfSelectedRows] != 1) return -1;
+
+    NSUInteger rowCount = 0;
+    if (isWorking) pthread_mutex_lock(&resultDataLock);
+    rowCount = [resultData count];
+    if (isWorking) pthread_mutex_unlock(&resultDataLock);
+
+    if ((NSUInteger)selectedRow >= rowCount) return -1;
+    return selectedRow;
+}
+
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID
+{
+    if (fieldID < 0) return nil;
+    return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:customQueryView];
+}
+
+- (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
+{
+    if ([value isKindOfClass:[SPMySQLGeometryData class]]) return [value wktString];
+    if ([value isNSNull]) return [prefs objectForKey:SPNullValue] ?: @"";
+    if ([value isSPNotLoaded]) return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+
+    NSFormatter *formatter = [[tableColumn dataCell] formatter];
+    if ([formatter isKindOfClass:[SABaseFormatter class]]) {
+        NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
+        if (formatted) return formatted;
+    }
+
+    if ([value isKindOfClass:[NSData class]]) {
+        NSString *stringValue = [(NSData *)value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+        return stringValue ?: [value description];
+    }
+
+    return value ? [value description] : @"";
+}
+
+- (void)_updateRecordView
+{
+    if (!recordViewController.isVisible) return;
+
+    NSUInteger selectedCount = [customQueryView numberOfSelectedRows];
+    NSInteger selectedRow = [customQueryView selectedRow];
+
+    if (isWorking || selectedRow < 0 || (selectedCount == 1 && (NSUInteger)selectedRow >= [resultData count])) {
+        [recordViewController updateWithFields:@[] selectedRowCount:0];
+        return;
+    }
+
+    if (selectedCount != 1) {
+        [recordViewController updateWithFields:@[] selectedRowCount:selectedCount];
+        return;
+    }
+
+    NSArray<NSTableColumn *> *tableColumns = [customQueryView tableColumns];
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[tableColumns count]];
+    for (NSUInteger fieldIndex = 0; fieldIndex < [tableColumns count]; fieldIndex++) {
+        NSTableColumn *tableColumn = [tableColumns objectAtIndex:fieldIndex];
+        NSInteger columnIndex = [[tableColumn identifier] integerValue];
+        if (columnIndex < 0) continue;
+
+        NSDictionary *columnDefinition = [cqColumnDefinition safeObjectAtIndex:(NSUInteger)columnIndex];
+        if (!columnDefinition || (NSUInteger)columnIndex >= [resultData columnCount]) continue;
+
+        id value = SPDataStorageObjectAtRowAndColumn(resultData, selectedRow, (NSUInteger)columnIndex);
+        [fields addObject:@{
+            @"id": @(columnIndex),
+            @"name": columnDefinition[@"name"] ?: @"",
+            @"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+        }];
+    }
+
+    [recordViewController updateWithFields:fields selectedRowCount:1];
+}
+
 //this method is called right before the UI objects are deallocated
 - (void)documentWillClose:(NSNotification *)notification {
     if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
@@ -3817,6 +4019,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
     [prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
+    [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
     [NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
     
     [self clearQueryLoadTimer];

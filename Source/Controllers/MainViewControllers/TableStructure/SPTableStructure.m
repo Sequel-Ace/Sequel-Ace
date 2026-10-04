@@ -109,11 +109,13 @@ struct _cmpMap {
  */
 static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntries);
 
-@interface SPTableStructure () {
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableStructure () <NSMenuItemValidation> {
 	TableSortHelper *fieldsSortHelper;
 }
 
-- (void)_removeFieldAndForeignKey:(NSNumber *)removeForeignKey;
+- (void)_removeFieldAndForeignKey:(SAFieldRemovalTask *)removalTask;
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
 - (BOOL)filterFieldsWithString:(NSString *)filterString;
 - (BOOL)sort:(NSMutableArray *)data withDescriptor:(NSSortDescriptor *)descriptor;
@@ -196,6 +198,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[tableSourceView setEmptyDoubleClickAction:@selector(addField:)];
 
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+	// Owned here rather than registered on our behalf by SPDatabaseDocument, so the
+	// registration cannot outlive this object (#2033)
+	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:nil];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableSourceView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -258,7 +263,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		SPMySQLMultiPointType,
 		SPMySQLMultiLineStringType,
 		SPMySQLMultiPolygonType,
-		SPMySQLGeometryCollectionType];
+		SPMySQLGeometryCollectionType,
+		@"--------",
+		SPMySQLInet4Type,
+		SPMySQLInet6Type,
+	];
 
 	[fieldValidation setFieldTypes:typeSuggestions];
 	
@@ -378,7 +387,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (!useFallbackEstimate) {
 		SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)",
 			[fieldName backtickQuotedString],
-			[selectedTable backtickQuotedString]]];
+			[selectedTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 
 		// Check for errors
 		if ([mySQLConnection queryErrored]) {
@@ -476,7 +485,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	[queryString appendFormat:@" FROM %@", [selectedTable backtickQuotedString]];
 
-	SPMySQLResult *result = [mySQLConnection queryString:queryString];
+	SPMySQLResult *result = [mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 	if ([mySQLConnection queryErrored] || !result) return nil;
 
 	[result setReturnDataAsStrings:YES];
@@ -684,6 +693,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	BOOL hasForeignKey = NO;
 	NSString *referencedTable = @"";
+	NSString *foreignKeyName = nil;
 
 	// Check to see whether the user is attempting to remove a field that has foreign key constraints and thus
 	// would result in an error if not dropped before removing the field.
@@ -694,6 +704,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			if ([column isEqualToString:field]) {
 				hasForeignKey = YES;
 				referencedTable = [constraint objectForKey:@"ref_table"];
+				foreignKeyName = [constraint objectForKey:@"name"] ?: @"";
 				break;
 			}
 		}
@@ -709,19 +720,23 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 		[self->tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
 
-		NSNumber *removeKey = [NSNumber numberWithBool:hasForeignKey];
+		// Capture the AppKit selection before handing the operation to the background thread.
+		SAFieldRemovalTask *removalTask = [[SAFieldRemovalTask alloc] initWithField:field
+																 foreignKeyName:foreignKeyName
+																		  table:self->selectedTable
+																	   database:[self->tableDocumentInstance database]];
 
 		if ([NSThread isMainThread]) {
 			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", self->tableDocumentInstance)
 									   target:self
 									 selector:@selector(_removeFieldAndForeignKey:)
-									   object:removeKey];
+									   object:removalTask];
 
 			[self->tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
-													callbackObject:self
-												  callbackFunction:NULL];
+													callbackObject:removalTask
+												  callbackFunction:@selector(cancel)];
 		} else {
-			[self _removeFieldAndForeignKey:removeKey];
+			[self _removeFieldAndForeignKey:removalTask];
 		}
 	} cancelButtonHandler:nil];
 }
@@ -834,7 +849,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// only int and float types can be AUTO_INCREMENT and right now BIGINT = 64 Bit (<= long long) is the largest type mysql supports
-	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
+	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]] assertingDatabase:[tableDocumentInstance database]];
 
 	if ([mySQLConnection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -992,7 +1007,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	autoIncrementIndex = nil;
 
 	// Execute query
-	[mySQLConnection queryString:queryString];
+	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
 	if (![mySQLConnection queryErrored]) {
 		isEditingRow = NO;
@@ -1236,7 +1251,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
             // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP, DATETIME and DATE must always be wrapped in quotes.
-            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE"]]) {
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE",@"INET4",@"INET6"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
                     [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
@@ -1386,7 +1401,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[indexesController setConnection:mySQLConnection];
 	
 	// Set up tableView
-	[tableSourceView registerForDraggedTypes:@[SPDefaultPasteboardDragType]];
+	[tableSourceView registerForDraggedTypes:@[SADragPasteboard.tableRowType]];
 }
 
 /**
@@ -1448,9 +1463,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
+	NSString *databaseName = [tableDocumentInstance database];
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]]];
+	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1563,69 +1579,56 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Removes a field from the current table and the dependent foreign key if specified.
  */
-- (void)_removeFieldAndForeignKey:(NSNumber *)removeForeignKey
+- (void)_removeFieldAndForeignKey:(SAFieldRemovalTask *)removalTask
 {
-	SPMainQSync(^{
-		@autoreleasepool {
-			// Remove the foreign key before the field if required
-			if ([removeForeignKey boolValue]) {
-				NSString *relationName = @"";
-				NSString *field = [[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"];
-
-				// Get the foreign key name
-				for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
-				{
-					for (NSString *column in [constraint safeObjectForKey:@"columns"])
-					{
-						if ([column isEqualToString:field]) {
-							relationName = [constraint safeObjectForKey:@"name"];
-							break;
-						}
-					}
-				}
-
-				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
-
-				// Check for errors, but only if the query wasn't cancelled
-				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
-					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
-					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
-					[[self onMainThread] showErrorSheetWith:errorDictionary];
-				}
+	@autoreleasepool {
+		SAFieldRemovalQueryResult (^queryResult)(void) = ^SAFieldRemovalQueryResult {
+			if ([self->mySQLConnection lastQueryWasCancelled]) {
+				return SAFieldRemovalQueryResultCancelled;
 			}
+			return [self->mySQLConnection queryErrored] ? SAFieldRemovalQueryResultFailed : SAFieldRemovalQueryResultSucceeded;
+		};
 
-			// Remove field
+		[removalTask runWithForeignKeyQuery:^SAFieldRemovalQueryResult {
+			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@",
+																		   [[removalTask table] backtickQuotedString],
+																		   [[removalTask foreignKeyName] backtickQuotedString]]
+									 assertingDatabase:[removalTask database]];
+			return queryResult();
+		} fieldQuery:^SAFieldRemovalQueryResult {
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
+																	   [[removalTask table] backtickQuotedString],
+																	   [[removalTask field] backtickQuotedString]]
+									 assertingDatabase:[removalTask database]];
+			return queryResult();
+		} foreignKeyFailure:^{
+			NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
+			[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
+			[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), [removalTask foreignKeyName], [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+			[[self onMainThread] showErrorSheetWith:errorDictionary];
+		} fieldFailure:^{
+			NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
+			[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
+			[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
+																  [removalTask field],
+																  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+			[[self onMainThread] showErrorSheetWith:errorDictionary];
+		} schemaRefresh:^{
+			[self->tableDataInstance resetAllData];
 
-			// Check for errors, but only if the query wasn't cancelled
-			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
-				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
-				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
-																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
-																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+			// Refresh relevant views
+			[self->tableDocumentInstance setStatusRequiresReload:YES];
+			[self->tableDocumentInstance setContentRequiresReload:YES];
+			[self->tableDocumentInstance setRelationsRequiresReload:YES];
 
-				[[self onMainThread] showErrorSheetWith:errorDictionary];
-			}
-			else {
-				[self->tableDataInstance resetAllData];
-
-				// Refresh relevant views
-				[self->tableDocumentInstance setStatusRequiresReload:YES];
-				[self->tableDocumentInstance setContentRequiresReload:YES];
-				[self->tableDocumentInstance setRelationsRequiresReload:YES];
-
-				[self loadTable:self->selectedTable];
-			}
-
+			[self loadTable:[removalTask table]];
+		} completion:^{
 			[self->tableDocumentInstance endTask];
 
 			// Preserve focus on table for keyboard navigation
 			[[self->tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:self->tableSourceView];
-		}
-	});
+		}];
+	}
 }
 
 #pragma mark -
@@ -1656,7 +1659,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Retrieve the indexes for the table
-	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]]];
+	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 
 	// If an error occurred, reset the interface and abort
 	if ([mySQLConnection queryErrored]) {
@@ -1991,7 +1994,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *columnEncoding = [rowData safeObjectForKey:@"encodingName"];
 		NSString *columnCollation = [rowData safeObjectForKey:@"collationName"]; // loadTable: has already inferred it, if not set explicit
 
-#warning Building the collation menu here is a big performance hog. This should be done in menuNeedsUpdate: below!
+		// TODO (#2608): building the collation menu here is a big performance hog; it should happen in menuNeedsUpdate: below
 		NSPopUpButtonCell *collationCell = [tableColumn dataCell];
 		[collationCell removeAllItems];
 		[collationCell addItemWithTitle:@"dummy"];
@@ -2203,6 +2206,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// If type is BLOB or TEXT reset DEFAULT since these field types don't allow a default
 			if ([[currentRow objectForKey:@"type"] hasSuffix:@"TEXT"] ||
 				[[currentRow objectForKey:@"type"] hasSuffix:@"BLOB"] ||
+				[[currentRow objectForKey:@"type"] hasPrefix:@"INET"] ||
 				[[currentRow objectForKey:@"type"] isEqualToString:@"JSON"] ||
 				[fieldValidation isFieldTypeGeometry:[currentRow objectForKey:@"type"]] ||
 				([fieldValidation isFieldTypeDate:[currentRow objectForKey:@"type"]] && ![[currentRow objectForKey:@"type"] isEqualToString:@"YEAR"]))
@@ -2235,22 +2239,22 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Begin a drag and drop operation from the table - copy a single dragged row to the drag pasteboard.
  */
-- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
 	// Make sure that the drag operation is started from the right table view
-	if (aTableView != tableSourceView) return NO;
+	if (aTableView != tableSourceView) return nil;
 
 	// Check whether a save of the current field row is required.
-	if (![self saveRowOnDeselect]) return NO;
+	if (![self saveRowOnDeselect]) return nil;
 
-	if ([rows count] == 1) {
-		[pboard declareTypes:@[SPDefaultPasteboardDragType] owner:nil];
-		[pboard setString:[NSString stringWithFormat:@"%lu",[rows firstIndex]] forType:SPDefaultPasteboardDragType];
+	// Reordering only handles a single field, and -acceptDrop: below reads one
+	// index off the pasteboard, so multi-row drags stay refused as before.
+	if ([SADragPasteboard refusesMultiRowDragForRow:row selectedRows:[aTableView selectedRowIndexes]]) return nil;
 
-		return YES;
-	}
-
-	return NO;
+	// Same payload as before the migration off
+	// -tableView:writeRowsWithIndexes:toPasteboard:, so -validateDrop:/-acceptDrop:
+	// keep reading the row index with -stringForType:.
+	return [SADragPasteboard itemWithRow:row forType:SADragPasteboard.tableRowType];
 }
 
 /**
@@ -2267,11 +2271,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSInteger originalRow;
 
 	// Ensure the drop is of the correct type
-	if (operation == NSTableViewDropAbove && row != -1 && [pboardTypes containsObject:SPDefaultPasteboardDragType]) {
+	if (operation == NSTableViewDropAbove && row != -1 && [pboardTypes containsObject:SADragPasteboard.tableRowType]) {
 
 		// Ensure the drag originated within this table
 		if ([info draggingSource] == tableView) {
-			originalRow = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
+			originalRow = [[[info draggingPasteboard] stringForType:SADragPasteboard.tableRowType] integerValue];
 
 			if (row != originalRow && row != (originalRow+1)) {
 				return NSDragOperationMove;
@@ -2291,7 +2295,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (tableView != tableSourceView) return NO;
 
 	// Extract the original row position from the pasteboard and retrieve the details
-	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
+	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SADragPasteboard.tableRowType] integerValue];
 	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
@@ -2311,7 +2315,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Run the query; report any errors, or reload the table on success
-	[mySQLConnection queryString:queryString];
+	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
 	if ([mySQLConnection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]] callback:nil];
@@ -2511,6 +2515,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		else if ([[tableColumn identifier] isEqualToString:@"length"]) {
 			[aCell setEnabled:([rowType hasSuffix:@"TEXT"] ||
 							   [rowType hasSuffix:@"BLOB"] ||
+							   [rowType hasPrefix:@"INET"] ||
 							   [rowType isEqualToString:@"JSON"] ||
 							   ([fieldValidation isFieldTypeDate:rowType] && ![[tableDocumentInstance serverSupport] supportsFractionalSeconds] && ![rowType isEqualToString:@"YEAR"]) ||
 							   [fieldValidation isFieldTypeGeometry:rowType]) ? NO : YES];
@@ -2721,7 +2726,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if([[menu menuId] isEqualToString:@"encodingPopupMenu"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
-		//NSString *databaseEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+		//NSString *databaseEncoding = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:[tableDocumentInstance database]];
 		//NSString *serverEncoding = [databaseDataInstance getServerDefaultCharacterSet];
 
 		struct _cmpMap defaultCmp[] = {
@@ -2749,7 +2754,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *encoding = [rowData objectForKey:@"encodingName"];
 		NSString *encodingDefaultCollation = [databaseDataInstance getDefaultCollationForEncoding:encoding];
 		NSString *tableCollation = [tableDataInstance statusValueForKey:@"Collation"];
-		//NSString *databaseCollation = [databaseDataInstance getDatabaseDefaultCollation];
+		//NSString *databaseCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:[tableDocumentInstance database]];
 		//NSString *serverCollation = [databaseDataInstance getServerDefaultCollation];
 
 		struct _cmpMap defaultCmp[] = {
@@ -2785,6 +2790,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (void)dealloc
 {
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
+	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
     NSLog(@"Dealloc called %s", __FILE_NAME__);

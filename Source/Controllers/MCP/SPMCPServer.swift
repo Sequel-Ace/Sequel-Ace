@@ -57,6 +57,9 @@ import Network
 
     /// Runs an arbitrary SQL statement, binding `params` to ? placeholders and
     /// optionally paginating a read query with limit/offset (limit 0 = no paging).
+    /// Without params nothing is bound (a plain SELECT is still stripped of its
+    /// comments and capped), and a ? left in the SQL is the server's syntax
+    /// error to report.
     func mcpRunQuery(_ sql: String, params: [Any], limit: Int, offset: Int, connection connID: String) -> [String: Any]
 
     /// Returns the EXPLAIN plan for a query (does not execute it).
@@ -116,7 +119,10 @@ import Network
     /// Start the server on `port`. Completion fires on the main queue.
     @objc public func start(port: UInt16, completion: @escaping (Bool, String?) -> Void) {
         // Tear down any existing listener, then bind the new one once the old port is released.
-        stop {
+        // `[self]` is explicit: this one-shot closure genuinely holds self for its
+        // duration, while the listener handlers it installs are weak on purpose
+        // because they outlive it.
+        stop { [self] in
             guard let nwPort = NWEndpoint.Port(rawValue: port) else {
                 DispatchQueue.main.async { completion(false, "Invalid port number") }
                 return
@@ -276,16 +282,20 @@ private extension SPMCPServer {
             return
         }
 
-        switch (request.method, request.path) {
-        case ("POST", "/mcp"):
+        switch SPMCPHTTP.route(method: request.method, path: request.path) {
+        case .streamableHTTP:
             handleStreamableHTTP(request: request, connection: connection)
-        case ("GET", "/sse"):
+        case .sse:
             handleSSE(request: request, connection: connection)
-        case ("POST", "/message"):
+        case .message:
             handleMessage(request: request, connection: connection)
-        case ("GET", "/health"):
+        case .health:
             sendHTTPResponse(connection: connection, status: 200, body: "OK", keepAlive: false)
-        default:
+        case .methodNotAllowed:
+            sendHTTPResponse(connection: connection, status: 405,
+                             body: "Method Not Allowed. POST to /mcp for the Streamable HTTP transport, or use GET /sse for the legacy SSE transport.",
+                             extraHeaders: ["Allow: POST"], keepAlive: false)
+        case .notFound:
             sendHTTPResponse(connection: connection, status: 404, body: "Not Found", keepAlive: false)
         }
     }
@@ -450,7 +460,7 @@ private extension SPMCPServer {
             return jsonRPCSuccess(id: id, result: initializeResult(protocolVersion: clientVersion))
 
         case "tools/list":
-            return jsonRPCSuccess(id: id, result: ["tools": toolDefinitions()])
+            return jsonRPCSuccess(id: id, result: ["tools": SAMCPToolDefinitions.all()])
 
         case "tools/call":
             let toolName  = params?["name"] as? String ?? ""
@@ -530,124 +540,6 @@ private extension SPMCPServer {
         ]
         if let id { response["id"] = id }
         return response
-    }
-}
-
-// MARK: - Tool definitions
-
-private extension SPMCPServer {
-
-    /// Returns the tool definitions advertised by tools/list.
-    func toolDefinitions() -> [[String: Any]] {
-        let conn: [String: Any] = ["type": "string", "description": "Optional connection id from list_connections; defaults to the active Sequel Ace tab."]
-        let db:   [String: Any] = ["type": "string", "description": "Database name"]
-        let tbl:  [String: Any] = ["type": "string", "description": "Table name"]
-
-        return [
-            makeTool(name: "list_connections",
-                     description: "List the database connections currently open in Sequel Ace (one per tab), with their id, host, current database, and which one is active.",
-                     properties: [:], required: []),
-            makeTool(name: "list_databases",
-                     description: "List all databases on a connection.",
-                     properties: ["connection": conn], required: []),
-            makeTool(name: "list_tables",
-                     description: "List all tables and views in a database.",
-                     properties: ["database": db, "connection": conn], required: ["database"]),
-            makeTool(name: "describe_table",
-                     description: "Return the columns, indexes, and foreign keys for a table.",
-                     properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
-            makeTool(name: "get_table_ddl",
-                     description: "Return the CREATE TABLE statement for a table.",
-                     properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
-            makeTool(name: "list_views",
-                     description: "List the views in a database.",
-                     properties: ["database": db, "connection": conn], required: ["database"]),
-            makeTool(name: "list_procedures",
-                     description: "List the stored procedures in a database.",
-                     properties: ["database": db, "connection": conn], required: ["database"]),
-            makeTool(name: "list_functions",
-                     description: "List the stored functions in a database.",
-                     properties: ["database": db, "connection": conn], required: ["database"]),
-            makeTool(name: "list_triggers",
-                     description: "List the triggers in a database.",
-                     properties: ["database": db, "connection": conn], required: ["database"]),
-            makeTool(name: "get_routine_definition",
-                     description: "Return the CREATE statement for a view, procedure, function, trigger, or event.",
-                     properties: [
-                        "database": db,
-                        "type": ["type": "string", "description": "One of: view, procedure, function, trigger, event"],
-                        "name": ["type": "string", "description": "Routine name"],
-                        "connection": conn
-                     ], required: ["database", "type", "name"]),
-            makeTool(name: "run_query",
-                     description: "Execute an SQL statement and return the results as JSON. Use ? placeholders with `params` for values (safer than string-building). For read queries you can paginate with `limit`/`offset`. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
-                     properties: [
-                        "sql": ["type": "string", "description": "SQL statement; use ? for bound parameters"],
-                        "params": ["type": "array", "description": "Values bound to ? placeholders, in order"],
-                        "limit": ["type": "integer", "description": "Optional row limit for read queries (paginates by wrapping the query)"],
-                        "offset": ["type": "integer", "description": "Optional row offset, used with limit"],
-                        "connection": conn
-                     ],
-                     required: ["sql"], readOnly: false),
-            makeTool(name: "explain_query",
-                     description: "Return the EXPLAIN plan for a query without executing it.",
-                     properties: ["sql": ["type": "string", "description": "SQL statement to explain"], "connection": conn],
-                     required: ["sql"]),
-            makeTool(name: "sample_table",
-                     description: "Return up to `limit` rows from a table (default 10, max 1000), starting at `offset`.",
-                     properties: [
-                        "database": db, "table": tbl,
-                        "limit": ["type": "integer", "description": "Maximum number of rows (default 10, max 1000)"],
-                        "offset": ["type": "integer", "description": "Row offset to start from (default 0)"],
-                        "connection": conn
-                     ], required: ["database", "table"]),
-            makeTool(name: "count_rows",
-                     description: "Return the exact row count of a table.",
-                     properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
-            makeTool(name: "kill_query",
-                     description: "Terminate a running server-side query or connection by its process id (from process_list). Not allowed in read-only mode.",
-                     properties: ["process_id": ["type": "integer", "description": "Process id to kill"], "connection": conn],
-                     required: ["process_id"], readOnly: false),
-            makeTool(name: "export_results",
-                     description: "Execute an SQL query and save the results to a file on the local machine.",
-                     properties: [
-                        "sql":    ["type": "string", "description": "SQL statement to execute"],
-                        "format": ["type": "string", "description": "Output format: 'json' (default) or 'csv'"],
-                        "path":   ["type": "string", "description": "Optional absolute file path. Defaults to the export folder in Sequel Ace preferences."],
-                        "connection": conn
-                     ], required: ["sql"], readOnly: false),
-            makeTool(name: "server_info",
-                     description: "Return the server version and key configuration variables for a connection.",
-                     properties: ["connection": conn], required: []),
-            makeTool(name: "table_sizes",
-                     description: "Return per-table row estimates and storage sizes for a database.",
-                     properties: ["database": db, "connection": conn], required: ["database"]),
-            makeTool(name: "process_list",
-                     description: "Return the server process list (SHOW FULL PROCESSLIST).",
-                     properties: ["connection": conn], required: [])
-        ]
-    }
-
-    /// Builds one tool definition with its input schema and annotations.
-    func makeTool(name: String, description: String, properties: [String: Any], required: [String], readOnly: Bool = true) -> [String: Any] {
-        // MCP tool annotations (2025-03-26): all tools are closed-world (they only
-        // touch the connected database); reads are non-destructive, run_query and
-        // export_results may modify data.
-        return [
-            "name": name,
-            "description": description,
-            "inputSchema": [
-                "type": "object",
-                "properties": properties,
-                "required": required
-            ],
-            "annotations": [
-                "title": name.replacingOccurrences(of: "_", with: " ").capitalized,
-                "readOnlyHint": readOnly,
-                "destructiveHint": !readOnly,
-                "openWorldHint": false
-            ]
-        ]
     }
 }
 
@@ -942,26 +834,34 @@ private extension SPMCPServer {
 private extension SPMCPServer {
 
     /// Sends a plain-text HTTP response with the given status code.
-    func sendHTTPResponse(connection: NWConnection, status: Int, body: String, keepAlive: Bool = false) {
+    func sendHTTPResponse(connection: NWConnection, status: Int, body: String, extraHeaders: [String] = [], keepAlive: Bool = false) {
         let statusLine: String
         switch status {
-        case 200: statusLine = "HTTP/1.1 200 OK"
-        case 202: statusLine = "HTTP/1.1 202 Accepted"
-        case 400: statusLine = "HTTP/1.1 400 Bad Request"
-        case 403: statusLine = "HTTP/1.1 403 Forbidden"
-        case 404: statusLine = "HTTP/1.1 404 Not Found"
-        case 413: statusLine = "HTTP/1.1 413 Payload Too Large"
-        default:  statusLine = "HTTP/1.1 \(status)"
+        case 200:
+            statusLine = "HTTP/1.1 200 OK"
+        case 202:
+            statusLine = "HTTP/1.1 202 Accepted"
+        case 400:
+            statusLine = "HTTP/1.1 400 Bad Request"
+        case 403:
+            statusLine = "HTTP/1.1 403 Forbidden"
+        case 404:
+            statusLine = "HTTP/1.1 404 Not Found"
+        case 405:
+            statusLine = "HTTP/1.1 405 Method Not Allowed"
+        case 413:
+            statusLine = "HTTP/1.1 413 Payload Too Large"
+        default:
+            statusLine = "HTTP/1.1 \(status)"
         }
         let bodyData  = body.data(using: .utf8) ?? Data()
         let connValue = keepAlive ? "keep-alive" : "close"
-        let response  = [
+        let response  = ([
             statusLine,
             "Content-Type: text/plain; charset=utf-8",
             "Content-Length: \(bodyData.count)",
-            "Connection: \(connValue)",
-            "", ""
-        ].joined(separator: "\r\n")
+            "Connection: \(connValue)"
+        ] + extraHeaders + ["", ""]).joined(separator: "\r\n")
 
         var responseData = response.data(using: .utf8)!
         responseData.append(bodyData)

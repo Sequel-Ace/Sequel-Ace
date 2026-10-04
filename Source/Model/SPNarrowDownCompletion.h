@@ -69,7 +69,8 @@
 
 	SPTextView *theView;
 
-	NSInteger maxWindowWidth;
+	CGFloat maxWindowWidth;
+	CGFloat tableContentWidth;
 	NSInteger spaceCounter;
 
 	NSMutableCharacterSet *textualInputCharacters;

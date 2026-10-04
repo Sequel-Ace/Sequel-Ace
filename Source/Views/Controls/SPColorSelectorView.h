@@ -50,8 +50,9 @@
 	NSInteger       hoverTag;       // indicated the currently tracked tag
 	BOOL			trackEntered;	// indicates we are currently inside a label tracking area
 	
-	id observer;                    // used for reverse notification with cocoa bindings
+	__weak id observer;             // used for reverse notification with cocoa bindings (weak: the bound object owns us via IBOutlet)
 	NSString *observerKeyPath;
+	BOOL observingSelfSelectedTag;  // whether the self-observation from initWithFrame: is registered
 	
 	IBOutlet id delegate;
 	

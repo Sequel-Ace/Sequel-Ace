@@ -74,12 +74,19 @@ import Foundation
 
     static func mysqlOnlineHelpURL(forTopic topic: String?, documentID: Int) -> URL? {
         let searchString = topic ?? ""
-        let urlString = "https://dev.mysql.com/doc/search/?d=\(documentID)&p=1&q=\(searchString)"
-            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-
-        guard let urlString, !urlString.isEmpty else {
+        // `urlQueryAllowed` leaves the query delimiters `&`, `=`, `+`, `?`, `#`
+        // unescaped, so a topic containing any of them would be spliced into the
+        // URL structure (truncating/mangling the `q` value). Remove them before
+        // percent-encoding the topic — same approach as mariaDBOnlineHelpURL.
+        var queryAllowedCharacters = CharacterSet.urlQueryAllowed
+        queryAllowedCharacters.remove(charactersIn: "&=+?#")
+        // `addingPercentEncoding` returns nil only for a malformed topic (e.g. an
+        // unpaired UTF-16 surrogate). Treat that as "no searchable URL" rather
+        // than silently producing a generic empty-`q` search.
+        guard let encodedSearchString = searchString.addingPercentEncoding(withAllowedCharacters: queryAllowedCharacters) else {
             return nil
         }
+        let urlString = "https://dev.mysql.com/doc/search/?d=\(documentID)&p=1&q=\(encodedSearchString)"
 
         return URL(string: urlString)
     }
@@ -98,7 +105,9 @@ import Foundation
         if !trimmedTopic.isEmpty {
             var queryAllowedCharacters = CharacterSet.urlQueryAllowed
             queryAllowedCharacters.remove(charactersIn: "&=+?#")
-            let encodedTopic = trimmedTopic.addingPercentEncoding(withAllowedCharacters: queryAllowedCharacters) ?? ""
+            guard let encodedTopic = trimmedTopic.addingPercentEncoding(withAllowedCharacters: queryAllowedCharacters) else {
+                return nil
+            }
 
             return URL(string: "https://mariadb.com/docs?q=\(encodedTopic)")
         }

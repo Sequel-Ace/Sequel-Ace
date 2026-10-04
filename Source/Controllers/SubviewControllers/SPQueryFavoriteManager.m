@@ -34,6 +34,7 @@
 #import "SPEncodingPopupAccessory.h"
 #import "SPQueryController.h"
 #import "SPDatabaseDocument.h"
+#import "SPCustomQuery.h"
 #import "SPConnectionController.h"
 #import "RegexKitLite.h"
 #import "SPTextView.h"
@@ -46,7 +47,9 @@
 #define SP_MULTIPLE_SELECTION_PLACEHOLDER_STRING NSLocalizedString(@"[multiple selection]", @"[multiple selection]")
 #define SP_NO_SELECTION_PLACEHOLDER_STRING       NSLocalizedString(@"[no selection]", @"[no selection]")
 
-@interface SPQueryFavoriteManager ()
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPQueryFavoriteManager () <NSMenuItemValidation, NSControlTextEditingDelegate, SATextViewDelegate>
 
 - (void)_initWithNoSelection;
 
@@ -54,10 +57,12 @@
 
 @implementation SPQueryFavoriteManager
 
+@synthesize tableDocumentInstance = tableDocumentInstance;
+
 /**
  * Initialize the manager with the supplied delegate.
  */
-- (instancetype)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(SPCustomQuery *)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"QueryFavoriteManager"])) {
 
@@ -70,7 +75,7 @@
 			NSLog(@"Query Favorite Manager was called without a delegate.");
 			return nil;
 		}
-		tableDocumentInstance = [managerDelegate valueForKeyPath:@"tableDocumentInstance"];
+		tableDocumentInstance = [managerDelegate tableDocumentInstance];
 		delegatesFileURL = [tableDocumentInstance fileURL];
 	}
 	
@@ -667,10 +672,7 @@
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[NSMutableData alloc] init];
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata];
-	[archiver encodeObject:rows forKey:@"indexdata"];
-	[archiver finishEncoding];
+	NSData *indexdata = [NSKeyedArchiver archivedDataWithRootObject:rows requiringSecureCoding:YES error:nil];
 	[pboard setData:indexdata forType:SPFavoritesPasteboardDragType];
 
 	return YES;
@@ -704,9 +706,10 @@
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]];
-	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
-	[unarchiver finishDecoding];
+	NSIndexSet *draggedIndexes = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSIndexSet class]
+	                                                               fromData:[[info draggingPasteboard] dataForType:SPFavoritesPasteboardDragType]
+	                                                                  error:nil];
+	if (!draggedIndexes) return NO;
 
 	// TODO: still rely on a NSArray but in the future rewrite it to use the NSIndexSet directly
 	NSMutableArray *draggedRows = [[NSMutableArray alloc] initWithCapacity:1];

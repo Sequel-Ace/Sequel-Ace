@@ -61,6 +61,8 @@
 	NSString *filterType;
 }
 
+@property (readonly, strong) SPDatabaseDocument *tableDocumentInstance;
+
 - (instancetype)initWithDatabaseDocument:(SPDatabaseDocument *)document forFilterType:(NSString *)compareType;
 
 // Accessors

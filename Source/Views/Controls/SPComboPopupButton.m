@@ -89,7 +89,7 @@
 {
 	NSRect boundsRect = [self bounds];
 	CGFloat boundingLinePosition = boundsRect.origin.x + boundsRect.size.width - lineOffset - 0.5;
-	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+	CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
 	CGFloat heightIndent = ([self isFlipped] ? 4.f : -4.f);
 
 	// Allow the NSPopupButton to draw the majority of the button, with one exception:
@@ -228,7 +228,8 @@
  */
 - (NSRect)drawTitle:(NSAttributedString *)title withFrame:(NSRect)frame inView:(NSView *)controlView
 {
-	frame.size.width -= 1;
+	[self setLineBreakMode:NSLineBreakByClipping];
+    frame.size.width = NSMaxX([controlView bounds]) - [(SPComboPopupButton *)controlView lineOffset] - frame.origin.x - 1;
 	return [super drawTitle:title withFrame:frame inView:controlView];
 }
 

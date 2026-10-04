@@ -90,7 +90,10 @@ static inline NSNumber *IsOn(id obj);
  */
 static inline void SetOnOff(NSNumber *ref,id obj);
 
-@interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol>
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol, NSMenuItemValidation, NSControlTextEditingDelegate>
+@property (readwrite, copy) NSString *exportDatabaseName;
 
 - (void)_switchTab;
 - (void)_checkForDatabaseChanges;
@@ -362,12 +365,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 - (void)displayExportFinishedNotification
 {
 	// Export finished notification
-	NSUserNotification *notification = [[NSUserNotification alloc] init];
-	notification.title = @"Export Finished";
-	notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Finished exporting to %@", @"description for finished exporting notification"), exportFilename];
-	notification.soundName = NSUserNotificationDefaultSoundName;
-
-	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+	[SANotificationCenter.shared postNotificationWithTitle:@"Export Finished" body:[NSString stringWithFormat:NSLocalizedString(@"Finished exporting to %@", @"description for finished exporting notification"), exportFilename]];
 }
 
 #pragma mark -
@@ -597,6 +595,7 @@ set_input:
 	// Finally get rid of all the exporters and files
 	[exportFiles removeAllObjects];
 	[exporters removeAllObjects];
+	self.exportDatabaseName = nil;
 }
 
 - (void)_hideExportProgress
@@ -1364,6 +1363,8 @@ set_input:
 
 	// Restore the connection encoding to it's pre-export value
 	[tableDocumentInstance setConnectionEncoding:[NSString stringWithFormat:@"%@%@", previousConnectionEncoding, (previousConnectionEncodingViaLatin1) ? @"-" : @""] reloadingViews:NO];
+
+	self.exportDatabaseName = nil;
 }
 
 /**
@@ -1476,6 +1477,8 @@ set_input:
 {
 	BOOL singleFileHandleSet = NO;
 	SPExportFile *singleExportFile = nil, *file = nil;
+	self.exportDatabaseName = [tableDocumentInstance database];
+	NSString *databaseName = self.exportDatabaseName;
 
 	// Change query logging mode
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
@@ -1560,7 +1563,7 @@ set_input:
 		SPSQLExporter *sqlExporter = [[SPSQLExporter alloc] initWithDelegate:self];
 
 		[sqlExporter setSqlDatabaseHost:[tableDocumentInstance host]];
-		[sqlExporter setSqlDatabaseName:[tableDocumentInstance database]];
+		[sqlExporter setSqlDatabaseName:databaseName];
 		[sqlExporter setSqlDatabaseVersion:[tableDocumentInstance mySQLVersion]];
 
 		[sqlExporter setSqlOutputIncludeUTF8BOM:[exportUseUTF8BOMButton state]];
@@ -1662,7 +1665,7 @@ set_input:
 		[dotExporter setDotTableData:tableDataInstance];
 		[dotExporter setDotForceLowerTableNames:[exportDotForceLowerTableNamesCheck state]];
 		[dotExporter setDotDatabaseHost:[tableDocumentInstance host]];
-		[dotExporter setDotDatabaseName:[tableDocumentInstance database]];
+		[dotExporter setDotDatabaseName:databaseName];
 		[dotExporter setDotDatabaseVersion:[tableDocumentInstance mySQLVersion]];
 
 		[dotExporter setDotExportTables:exportTables];
@@ -1672,7 +1675,7 @@ set_input:
 			[exportFilename setString:[self expandCustomFilenameFormatUsingTableName:nil]];
 		}
 		else {
-			[exportFilename setString:[tableDocumentInstance database]];
+			[exportFilename setString:databaseName];
 		}
 
 		// Only append the extension if necessary
@@ -1693,8 +1696,9 @@ set_input:
 	for (SPExporter *exporter in exporters)
 	{
 		[exporter setConnection:connection];
+		[exporter setDatabaseName:databaseName];
 		[exporter setServerSupport:[self serverSupport]];
-		[exporter setExportOutputEncoding:[connection stringEncoding]];
+		[exporter setExportOutputEncoding:[self outputEncodingForCurrentExportType]];
 		[exporter setExportMaxProgress:(NSInteger)[exportProgressIndicator bounds].size.width];
 		[exporter setExportUsingLowMemoryBlockingStreaming:([exportProcessLowMemoryButton state] == NSControlStateValueOn)];
 		[exporter setExportOutputCompressionFormat:(SPFileCompressionFormat)[exportOutputCompressionFormatPopupButton indexOfSelectedItem]];
@@ -1786,7 +1790,7 @@ set_input:
 		}
 		else {
 			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
-			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? [tableDocumentInstance database] : table)];
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? self.exportDatabaseName : table)];
 		}
 
 		// Only append the extension if necessary
@@ -1849,7 +1853,7 @@ set_input:
 		}
 		else {
 			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
-			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? [tableDocumentInstance database] : table)];
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? self.exportDatabaseName : table)];
 		}
 
 		// Only append the extension if necessary
@@ -1870,6 +1874,27 @@ set_input:
 }
 
 #pragma mark - SPExportFileUtilitiesPrivateAPI
+
+/**
+ * The encoding the exporters write their files in. SQL and DOT dumps are always UTF-8 (they switch
+ * the connection to utf8mb4 and, for SQL, declare it in the file), XML is UTF-8 because its prolog
+ * says so, and CSV follows the connection encoding. The decision itself lives in
+ * SAExportOutputEncoding so it can be unit tested.
+ */
+- (NSStringEncoding)outputEncodingForCurrentExportType
+{
+	SAExportOutputFormat format;
+
+	switch (exportType) {
+		case SPSQLExport: format = SAExportOutputFormatSql; break;
+		case SPXMLExport: format = SAExportOutputFormatXml; break;
+		case SPDotExport: format = SAExportOutputFormatDot; break;
+		case SPCSVExport:
+		default:          format = SAExportOutputFormatCsv; break;
+	}
+
+	return [SAExportOutputEncoding outputEncodingForFormat:format connectionEncoding:[connection stringEncoding]];
+}
 
 /**
  * Writes the CSV file header to the supplied export file.
@@ -1898,7 +1923,7 @@ set_input:
 					  NSLocalizedString(@"Host", @"export header host label"),
 					  [tableDocumentInstance host],
 					  NSLocalizedString(@"Database", @"export header database label"),
-					  [tableDocumentInstance database],
+					  self.exportDatabaseName,
 					  NSLocalizedString(@"Generation Time", @"export header generation time label"),
 					  [NSDate date],
 					  lineEnding,
@@ -1924,7 +1949,7 @@ set_input:
 	[header appendFormat:@"- %@ %@\n-\n", NSLocalizedString(@"Version", @"export header version label"), [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]];
 	[header appendFormat:@"- %@\n- %@\n-\n", SPLOCALIZEDURL_HOMEPAGE, SPDevURL];
 	[header appendFormat:@"- %@: %@ (MySQL %@)\n", NSLocalizedString(@"Host", @"export header host label"), [tableDocumentInstance host], [tableDocumentInstance mySQLVersion]];
-	[header appendFormat:@"- %@: %@\n", NSLocalizedString(@"Database", @"export header database label"), [tableDocumentInstance database]];
+	[header appendFormat:@"- %@: %@\n", NSLocalizedString(@"Database", @"export header database label"), self.exportDatabaseName];
 	[header appendFormat:@"- %@ Time: %@\n", NSLocalizedString(@"Generation Time", @"export header generation time label"), [NSDate date]];
 	[header appendString:@"-\n-->\n\n"];
 
@@ -1933,7 +1958,7 @@ set_input:
 		NSString *tag;
 
 		if (exportSource == SPTableExport) {
-			tag = [NSString stringWithFormat:@"<mysqldump xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<database name=\"%@\">\n\n", [[tableDocumentInstance database] HTMLEscapeString]];
+			tag = [NSString stringWithFormat:@"<mysqldump xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<database name=\"%@\">\n\n", [self.exportDatabaseName HTMLEscapeString]];
 		}
 		else {
 			NSString *queryString = (exportSource == SPFilteredExport) ? [tableContentInstance usedQuery] : [customQueryInstance usedQuery];
@@ -1944,7 +1969,7 @@ set_input:
 		[header appendString:tag];
 	}
 	else {
-		[header appendFormat:@"<%@>\n\n", [[tableDocumentInstance database] HTMLEscapeString]];
+		[header appendFormat:@"<%@>\n\n", [self.exportDatabaseName HTMLEscapeString]];
 	}
 
 	[file writeData:[header dataUsingEncoding:NSUTF8StringEncoding]];
@@ -2171,6 +2196,8 @@ set_input:
  * Re-open the export sheet without resetting the interface - for use on error.
  */
 - (void)_openExportSheet {
+    self.exportDatabaseName = nil;
+
     [[tableDocumentInstance parentWindowControllerWindow] beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
         // Perform the export
         if (returnCode == NSModalResponseOK) {
@@ -2346,7 +2373,7 @@ set_input:
 			break;
 		case SPTableExport:
 			filename = [NSString stringWithFormat:@"%@_%@",
-						[tableDocumentInstance database],
+						(self.exportDatabaseName ?: [tableDocumentInstance database]),
 						[[NSDate date] stringWithFormat:@"yyyy-MM-dd"
 												 locale:[NSLocale autoupdatingCurrentLocale]
 											   timeZone:[NSTimeZone localTimeZone]]];
@@ -2430,7 +2457,7 @@ set_input:
 
 			}
 			else if ([tokenContent isEqualToString:SPFileNameDatabaseTokenName]) {
-				[string appendStringOrNil:[tableDocumentInstance database]];
+				[string appendStringOrNil:(self.exportDatabaseName ?: [tableDocumentInstance database])];
 
 			}
 			else if ([tokenContent isEqualToString:SPFileNameTableTokenName]) {
@@ -2658,9 +2685,9 @@ set_input:
  */
 - (NSTokenStyle)tokenField:(NSTokenField *)tokenField styleForRepresentedObject:(id)representedObject
 {
-	if (IS_TOKEN(representedObject)) return NSDefaultTokenStyle;
+	if (IS_TOKEN(representedObject)) return NSTokenStyleDefault;
 
-	return NSPlainTextTokenStyle;
+	return NSTokenStyleNone;
 }
 
 - (BOOL)tokenField:(NSTokenField *)tokenField writeRepresentedObjects:(NSArray *)objects toPasteboard:(NSPasteboard *)pboard
@@ -3789,10 +3816,11 @@ set_input:
 				string = (exportSource == SPTableExport) ? @"</database>\n</mysqldump>\n" : @"</resultset>\n";;
 			}
 			else if ([exporter xmlFormat] == SPXMLExportPlainFormat) {
-				string = [NSString stringWithFormat:@"</%@>\n", [[tableDocumentInstance database] HTMLEscapeString]];
+				string = [NSString stringWithFormat:@"</%@>\n", [self.exportDatabaseName HTMLEscapeString]];
 			}
 
-			[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[connection stringEncoding]]];
+			// The closing tag has to match the body and the prolog, not the connection
+			[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[exporter exportOutputEncoding]]];
 			[[exporter exportOutputFile] close];
 		}
 
@@ -3810,10 +3838,11 @@ set_input:
 			string = (exportSource == SPTableExport) ? @"</database>\n</mysqldump>\n" : @"</resultset>\n";;
 		}
 		else if ([exporter xmlFormat] == SPXMLExportPlainFormat) {
-			string = [NSString stringWithFormat:@"</%@>\n", [[tableDocumentInstance database] HTMLEscapeString]];
+			string = [NSString stringWithFormat:@"</%@>\n", [self.exportDatabaseName HTMLEscapeString]];
 		}
 
-		[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[connection stringEncoding]]];
+		// The closing tag has to match the body and the prolog, not the connection
+		[[exporter exportOutputFile] writeData:[string dataUsingEncoding:[exporter exportOutputEncoding]]];
 		[[exporter exportOutputFile] close];
 
 		[self exportEnded];

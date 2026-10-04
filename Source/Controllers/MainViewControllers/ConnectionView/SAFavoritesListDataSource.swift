@@ -131,7 +131,7 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     /// Returns the children of `node` that are visible under the current filter.
     /// When no filter is active, returns all children unchanged.
     private func filteredChildren(of node: SPTreeNode) -> [SPTreeNode] {
-        let raw = (node.children ?? []).compactMap { $0 as? SPTreeNode }
+        let raw = node.children ?? []
         guard let visible = visibleNodes else { return raw }
         return raw.filter { visible.contains($0) }
     }
@@ -140,8 +140,8 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     @objc func restoreOutlineViewState(_ node: SPTreeNode, in outlineView: NSOutlineView) {
         guard node.isGroup else { return }
 
-        for child in node.children ?? [] {
-            guard let childNode = child as? SPTreeNode, childNode.isGroup else { continue }
+        for childNode in node.children ?? [] {
+            guard childNode.isGroup else { continue }
 
             // Top-level groups (parent is the synthetic root) live in the source-list
             // section and have no disclosure triangle; they must always be expanded

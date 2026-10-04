@@ -47,7 +47,14 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 #define SP_NAME_REQUIRED_PLACEHOLDER_STRING      NSLocalizedString(@"[name required]", @"displayed when new content filter has empty Name field (ContentFilterManager)")
 #define SP_FILE_PARSER_ERROR_TITLE_STRING        NSLocalizedString(@"Error while reading data file", @"error while reading data file")
 
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPContentFilterManager () <NSMenuItemValidation, NSControlTextEditingDelegate, SATextViewDelegate>
+@end
+
 @implementation SPContentFilterManager
+
+@synthesize tableDocumentInstance = tableDocumentInstance;
 
 /**
  * Initialize the manager with the supplied document
@@ -588,10 +595,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[NSMutableData alloc] init];
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata];
-	[archiver encodeObject:rows forKey:@"indexdata"];
-	[archiver finishEncoding];
+	NSData *indexdata = [NSKeyedArchiver archivedDataWithRootObject:rows requiringSecureCoding:YES error:nil];
 	[pboard setData:indexdata forType:SPContentFilterPasteboardDragType];
 
 	return YES;
@@ -624,9 +628,10 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]];
-	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
-	[unarchiver finishDecoding];
+	NSIndexSet *draggedIndexes = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSIndexSet class]
+	                                                               fromData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]
+	                                                                  error:nil];
+	if (!draggedIndexes) return NO;
 
 	// TODO: still rely on a NSArray but in the future rewrite it to use the NSIndexSet directly
 	NSMutableArray *draggedRows = [[NSMutableArray alloc] initWithCapacity:1];

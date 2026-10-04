@@ -72,7 +72,7 @@
     NSMutableString *metaString = [NSMutableString string];
     
     // Check that we have all the required info before starting the export
-    if ((![self dotExportTables]) || (![self dotTableData]) || ([[self dotExportTables] count] == 0)) {
+    if ((![self dotExportTables]) || (![self dotTableData]) || (![[self dotDatabaseName] length]) || ([[self dotExportTables] count] == 0)) {
         return;
     }
     
@@ -105,7 +105,7 @@
     [metaString appendString:@"\trankdir = LR;\n"];
     
     // Write information to the file
-    [self writeUTF8String:metaString];
+    [self writeString:metaString];
     
     NSMutableArray *fkInfo = [[NSMutableArray alloc] init];
     
@@ -127,7 +127,7 @@
         
         NSString *tableName = [[self dotExportTables] safeObjectAtIndex:i];
         NSString *tableLinkName = [self dotForceLowerTableNames] ? [tableName lowercaseString] : tableName;
-        NSDictionary *tableInfo = [[self dotTableData] informationForTable:tableName fromDatabase:nil];
+        NSDictionary *tableInfo = [[self dotTableData] informationForTable:tableName fromDatabase:[self dotDatabaseName]];
         
         // Set the current table
         [self setDotExportCurrentTable:tableName];
@@ -159,7 +159,7 @@
         [metaString appendString:@"\t\t];\n"];
         [metaString appendString:@"\t}\n"];
         
-        [self writeUTF8String:metaString];
+        [self writeString:metaString];
         
         // Check if any relations are available for the table
         NSArray *tableConstraints = [tableInfo objectForKey:@"constraints"];
@@ -217,7 +217,7 @@
     [metaString appendString:@"}\n"];
     
     // Write information to the file
-    [self writeUTF8String:metaString];
+    [self writeString:metaString];
     
     // Write data to disk
     [[self exportOutputFile] close];

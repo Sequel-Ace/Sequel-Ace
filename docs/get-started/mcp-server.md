@@ -46,8 +46,8 @@ The preference pane shows a live status line and the server endpoint URL with a 
 
 Every database tool accepts an optional `connection` id (from `list_connections`) to
 target a specific open tab; it defaults to the active tab. `run_query` also accepts a
-`params` array bound to `?` placeholders (injection-safe) and `limit`/`offset` for
-pagination. Table schemas are exposed as **MCP resources**, reusable **prompt
+`params` array bound to `?` placeholders (injection-safe), whose elements are strings,
+numbers, booleans, or null, and `limit`/`offset` for pagination. Table schemas are exposed as **MCP resources**, reusable **prompt
 templates** are provided (analyze schema, summarize table, optimize query), and the
 server offers **argument completion** for database, table, and connection names.
 

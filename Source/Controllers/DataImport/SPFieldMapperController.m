@@ -53,18 +53,21 @@ static NSString *SPTableViewSqlColumnID         = @"sql";
 static NSUInteger SPSourceColumnTypeText        = 0;
 static NSUInteger SPSourceColumnTypeInteger     = 1;
 
-@interface SPFieldMapperController ()
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPFieldMapperController () <NSMenuItemValidation, NSControlTextEditingDelegate>
 - (void)_setupFieldMappingPopUpMenus;
 @end
 
 @implementation SPFieldMapperController
 
 @synthesize sourcePath;
+@synthesize databaseName;
 
 #pragma mark -
 #pragma mark Initialisation
 
-- (instancetype)initWithDelegate:(id)managerDelegate
+- (instancetype)initWithDelegate:(SPDataImport *)managerDelegate
 {
 	if ((self = [super initWithWindowNibName:@"DataMigrationDialog"])) {
 
@@ -101,8 +104,8 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 		prefs = [NSUserDefaults standardUserDefaults];
 
-		tablesListInstance = [theDelegate valueForKeyPath:@"tablesListInstance"];
-		databaseDataInstance = [tablesListInstance valueForKeyPath:@"databaseDataInstance"];
+		tablesListInstance = [managerDelegate tablesListInstance];
+		databaseDataInstance = [tablesListInstance databaseDataInstance];
 
 		if(![prefs objectForKey:SPLastImportIntoNewTableType])
 			[prefs setObject:@"Default" forKey:SPLastImportIntoNewTableType];
@@ -129,8 +132,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Ask HansJB for more info.
 	NSPathControl *pc = [[NSPathControl alloc] initWithFrame:NSZeroRect];
 	[pc setURL:[NSURL fileURLWithPath:sourcePath]];
-	if([pc pathComponentCells])
-		[fileSourcePath setPathComponentCells:[pc pathComponentCells]];
+	[fileSourcePath setPathItems:[pc pathItems]];
 	[fileSourcePath setDoubleAction:@selector(goBackToFileChooserFromPathControl:)];
 
 	[onupdateTextView setDelegate:theDelegate];
@@ -412,7 +414,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[[fieldMappingTableColumnNames objectAtIndex:currentIndex] backtickQuotedString],
 				[fieldMappingTableTypes objectAtIndex:currentIndex]];
 
-			[mySQLConnection queryString:createString];
+			[mySQLConnection queryString:createString assertingDatabaseContext:databaseName];
 
 			if ([mySQLConnection queryErrored]) {
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -456,7 +458,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
 		}
 
-		[mySQLConnection queryString:createString];
+		[mySQLConnection queryString:createString assertingDatabaseContext:databaseName];
 
 		if ([mySQLConnection queryErrored]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -524,7 +526,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Retrieve the information for the newly selected table using a SPTableData instance
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
-	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:nil];
+	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:databaseName];
 	targetTableHasPrimaryKey = NO;
 	BOOL isReplacePossible = NO;
 
@@ -1996,7 +1998,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	column = [fieldMapperTableView editedColumn];
 
 	// TODO: jcs - using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
+	// Containment, not migration: this table is still cell-based, so the
+	// deprecated cell API is the only correct one until the view-based rewrite.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	BOOL isCellComplex = ([[fieldMapperTableView preparedCellAtColumn:column row:row] isKindOfClass:[NSComboBoxCell class]]) ? YES : NO;
+#pragma clang diagnostic pop
 
 	// Trap tab key
 	// -- for handling of blob fields and to check if it's editable look at [[self delegate] control:textShouldBeginEditing:]

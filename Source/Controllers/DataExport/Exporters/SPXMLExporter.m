@@ -88,6 +88,7 @@
     // Check to see if we have at least a table name or data array
     if ((![self xmlTableName] && ![self xmlDataArray]) ||
         ([[self xmlTableName] length] == 0 && [[self xmlDataArray] count] == 0) ||
+        ([self xmlTableName] && ![self xmlDataArray] && ![[self databaseName] length]) ||
         (([self xmlFormat] == SPXMLExportMySQLFormat) && ((![self xmlOutputIncludeStructure]) && (![self xmlOutputIncludeContent]))) ||
         (([self xmlFormat] == SPXMLExportPlainFormat) && (![self xmlNULLString])))
     {
@@ -104,17 +105,18 @@
     if ((![self xmlDataArray]) && [self xmlTableName]) {
 
         isTableExport = YES;
+        NSString *exportDatabaseName = [self databaseName];
 
-        totalRows       = [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self xmlTableName] backtickQuotedString]]] integerValue];
-        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self xmlTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming]];
+        totalRows       = [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self xmlTableName] backtickQuotedString]] assertingDatabase:exportDatabaseName] integerValue];
+        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self xmlTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming] assertingDatabase:exportDatabaseName];
 
         // Only include the structure if necessary
         if (([self xmlFormat] == SPXMLExportMySQLFormat) && [self xmlOutputIncludeStructure]) {
 
-            structureResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [[self xmlTableName] backtickQuotedString]]];
+            structureResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [[self xmlTableName] backtickQuotedString]] assertingDatabase:exportDatabaseName];
             NSMutableString *escapedTableName = [NSMutableString stringWithString:[[self xmlTableName] tickQuotedString]];
             [escapedTableName replaceOccurrencesOfString:@"\\" withString:@"\\\\\\\\" options:0 range:NSMakeRange(0, [escapedTableName length])];
-            statusResult    = [connection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", escapedTableName]];
+            statusResult    = [connection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", escapedTableName] assertingDatabase:exportDatabaseName];
 
             if ([structureResult numberOfRows] && [statusResult numberOfRows]) {
 
@@ -249,9 +251,10 @@
                 BOOL dataIsNULL = NO;
                 id data = [xmlRow safeObjectAtIndex:i];
 
-                // Retrieve the contents of this tag
+                // Retrieve the contents of this tag. Raw bytes came from the server in the connection
+                // encoding; the file itself is written in the output encoding (UTF-8, as the prolog declares).
                 if ([data isKindOfClass:[NSData class]]) {
-                    dataConversionString = [[NSString alloc] initWithData:data encoding:[self exportOutputEncoding]];
+                    dataConversionString = [[NSString alloc] initWithData:data encoding:[connection stringEncoding]];
 
                     if (dataConversionString == nil) {
                         dataConversionString = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];

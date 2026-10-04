@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "type": "ciBuildRuns",
+      "id": "run-redacted-20104",
+      "attributes": {
+        "number": 20104,
+        "executionProgress": "COMPLETE",
+        "completionStatus": "SUCCEEDED",
+        "sourceCommit": {
+          "commitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    }
+  ],
+  "links": {
+    "next": null
+  }
+}

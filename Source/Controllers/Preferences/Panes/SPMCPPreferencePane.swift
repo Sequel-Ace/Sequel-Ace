@@ -54,7 +54,7 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
 
     override func loadView() {
         let viewW: CGFloat = 564.0
-        let viewH: CGFloat = 254.0
+        let viewH: CGFloat = 272.0
         let root = NSView(frame: NSRect(x: 0, y: 0, width: viewW, height: viewH))
         root.autoresizingMask = [.width, .height]
 
@@ -77,7 +77,7 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
         let controlX: CGFloat = labelX + labelW + 12.0
         let controlW: CGFloat = viewW - 20.0 - controlX
         let chooseW: CGFloat  = 100.0
-        var y: CGFloat        = 218.0
+        var y: CGFloat        = 236.0
 
         // Server: enable, status, read-only
         let serverLabel = makeLabel(NSLocalizedString("Server:", comment: "MCP pref: server row label"),
@@ -175,10 +175,10 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
         root.addSubview(copyButton)
         y -= 24
 
-        let endpointHint = makeSmallLabel(NSLocalizedString("Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others).",
+        let endpointHint = makeSmallLabel(NSLocalizedString("Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp.",
                                                             comment: "MCP pref: endpoint hint"),
-                                          x: controlX, y: y - 14, width: controlW)
-        endpointHint.frame = NSRect(x: controlX, y: y - 14, width: controlW, height: 32)
+                                          x: controlX, y: y - 28, width: controlW)
+        endpointHint.frame = NSRect(x: controlX, y: y - 28, width: controlW, height: 46)
         endpointHint.autoresizingMask = ctrlMask
         root.addSubview(endpointHint)
 

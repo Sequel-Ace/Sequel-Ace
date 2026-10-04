@@ -31,10 +31,12 @@ import AppKit
     /// The window the progress panel should be centred over / parented to.
     func taskParentWindow() -> NSWindow?
 
-    /// Invoked when the user clicks the cancel button. The document cancels
+    /// Invoked when the user clicks the cancel button, after the per-task
+    /// cancellation callback has recorded the request. The document cancels
     /// the running query (directly, or via the database-structure connection
-    /// for speed). The per-task cancellation callback is invoked separately
-    /// by the controller after this returns.
+    /// for speed). This may be invoked again while a field-removal query that
+    /// won admission concurrently with cancellation is still unwinding; those
+    /// retries are delivered from the task's background cancellation queue.
     func taskControllerDidRequestCancellation()
 }
 
@@ -288,17 +290,23 @@ import AppKit
 
         taskCancelButton.isEnabled = false
 
-        // The document cancels the running query (using the database-structure
-        // connection where available, for speed - no connection overhead).
-        delegate?.taskControllerDidRequestCancellation()
-
         // The callback selector is documented (on enableTaskCancellation) to be
         // a no-argument, void-returning method; guard against a non-responding
-        // object rather than crashing.
+        // object rather than crashing. Record task-scoped cancellation before
+        // asking the connection to cancel so a worker cannot start its next
+        // query in between those two actions.
         if let callbackObject = taskCancellationCallbackObject,
            let callbackSelector = taskCancellationCallbackSelector,
            callbackObject.responds(to: callbackSelector) {
             callbackObject.perform(callbackSelector)
+        }
+
+        if let fieldRemovalTask = taskCancellationCallbackObject as? SAFieldRemovalTask {
+            fieldRemovalTask.requestQueryCancellation { [weak self] in
+                self?.delegate?.taskControllerDidRequestCancellation()
+            }
+        } else {
+            delegate?.taskControllerDidRequestCancellation()
         }
     }
 

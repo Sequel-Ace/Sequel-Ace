@@ -31,6 +31,8 @@
 
 #import "SPImageView.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPImageView
 
 /**
@@ -39,23 +41,12 @@
  */
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
 {
-	id<SPImageViewDelegate> delegateForUse = nil;
-
-	// If the delegate or the delegate's content instance doesn't implement processUpdatedImageData:,
-	// return the super's implementation
-	if (delegate) {
-		if ([delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
-			delegateForUse = delegate;
-		}
-#warning Private ivar accessed from outside (#2978)
-		else if ( [delegate valueForKey:@"tableContentInstance"]
-					&& [[delegate valueForKey:@"tableContentInstance"] respondsToSelector:@selector(processUpdatedImageData:)] ) {
-			delegateForUse = [delegate valueForKey:@"tableContentInstance"];
-		}
-	}
-	if (!delegateForUse) {
+	// If the delegate doesn't implement processUpdatedImageData:, return the super's implementation
+	if (![delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
 		return [super performDragOperation:sender];
 	}
+
+	id<SPImageViewDelegate> delegateForUse = delegate;
 
 	// If a filename is available, attempt to read it and pass it to the delegate
 	NSArray *droppedFileURLs = [[sender draggingPasteboard] readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
@@ -75,7 +66,7 @@
 		NSData *pngData = nil;
 		NSBitmapImageRep *draggedImage = [[NSBitmapImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSTIFFPboardType"]];
 		if (draggedImage) {
-			pngData = [draggedImage representationUsingType:NSPNGFileType properties:@{}];
+			pngData = [draggedImage representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];
@@ -88,14 +79,7 @@
 		NSData *pngData = nil;
 		NSPICTImageRep *draggedImage = [[NSPICTImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSPICTPboardType"]];
 		if (draggedImage) {
-			NSImage *convertImage = [[NSImage alloc] initWithSize:[draggedImage size]];
-			[convertImage lockFocus];
-			[draggedImage drawInRect:[draggedImage boundingBox]];
-			NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:[draggedImage boundingBox]];
-			if (bitmapImageRep) {
-				pngData = [bitmapImageRep representationUsingType:NSPNGFileType properties:@{}];
-			}
-			[convertImage unlockFocus];
+			pngData = [SAImageRenderer pngDataForImageRep:draggedImage];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];
@@ -111,23 +95,8 @@
 
 - (void)paste:(id)sender
 {
-	// [super paste:sender];
-	id<SPImageViewDelegate> delegateForUse = nil;
-
-	// If the delegate or the delegate's content instance doesn't implement processUpdatedImageData:,
-	// return the super's implementation
-	if (delegate) {
-		if ([delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
-			delegateForUse = delegate;
-		}
-#warning Private ivar accessed from outside (#2978)
-		else if ( [delegate valueForKey:@"tableContentInstance"]
-					&& [[delegate valueForKey:@"tableContentInstance"] respondsToSelector:@selector(processUpdatedImageData:)] ) {
-			delegateForUse = [delegate valueForKey:@"tableContentInstance"];
-		}
-	}
-	if (delegateForUse) {
-		[delegateForUse processPasteImageData];
+	if ([delegate respondsToSelector:@selector(processPasteImageData)]) {
+		[delegate processPasteImageData];
 	}
 }
 

@@ -59,6 +59,7 @@
 {	
 	SPMySQLConnection *connection;
 	SPServerSupport *serverSupport;
+	NSString *databaseName;
 	
 	double exportProgressValue;
 	double exportMaxProgress;
@@ -85,6 +86,11 @@
  * @property serverSupport Information about the features supported by this mysql version
  */
 @property(readwrite, strong) SPServerSupport *serverSupport;
+
+/**
+ * @property databaseName Immutable database context captured when the export is created
+ */
+@property(readwrite, copy) NSString *databaseName;
 
 /**
  * @property exportProgressValue The export's current progress value
@@ -142,14 +148,5 @@
  * @param input The string to write
  */
 - (void)writeString:(NSString *)input;
-
-/**
- * Write a string to the current output file using UTF-8 encoding
- * @param input The string to write
- */
-#warning This method mainly exists to shorten some old code which sometimes uses [self exportOutputEncoding] and sometimes NSUTF8StringEncoding. \
-	     In general there should be no need to have more than one encoding in a file. \
-         Someone needs to check if that was an oversight or intentional.
-- (void)writeUTF8String:(NSString *)input;
 
 @end

@@ -1,0 +1,11 @@
+framework module SPMySQL {
+    umbrella header "SPMySQL.h"
+
+    // These legacy collection categories are public for compatibility, but
+    // Sequel Ace defines app-specific categories with the same Objective-C names.
+    exclude header "SPMySQLArrayAdditions.h"
+    exclude header "SPMySQLMutableDictionaryAdditions.h"
+
+    export *
+    module * { export * }
+}

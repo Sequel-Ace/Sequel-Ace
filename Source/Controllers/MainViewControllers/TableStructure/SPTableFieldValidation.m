@@ -85,7 +85,7 @@
 	
 	if (![fieldTypes containsObject:type]) return YES;
 	
-	return ([fieldTypes indexOfObject:type] > 38);
+	return ([fieldTypes indexOfObject:type] > 38 && [fieldTypes indexOfObject:type] < 48);
 }
 
 /**

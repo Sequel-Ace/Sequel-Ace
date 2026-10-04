@@ -115,10 +115,10 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSInteger storageColumn = [self _storageColumnIndexForVisibleColumn:visibleColumn];
 	if(storageColumn == NSNotFound) return;
 
-	NSArray *columnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
-	if(storageColumn < 0 || storageColumn >= (NSInteger)[columnDefinitions count]) return;
+	NSArray *dataColumnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
+	if(storageColumn < 0 || storageColumn >= (NSInteger)[dataColumnDefinitions count]) return;
 
-	NSDictionary *columnDefinition = [columnDefinitions objectAtIndex:storageColumn];
+	NSDictionary *columnDefinition = [dataColumnDefinitions objectAtIndex:storageColumn];
 	NSString *columnName = [columnDefinition objectForKey:@"name"];
 	NSString *typeGrouping = [columnDefinition objectForKey:@"typegrouping"];
 	NSArray<SACellFilterMenuItemDescriptor *> *descriptors = [SACellFilterMenuBuilder menuItemDescriptorsWithColumnName:columnName
@@ -155,10 +155,16 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 - (BOOL)isCellEditingMode
 {
-	return ([[self delegate] isKindOfClass:[SPCustomQuery class]] 
-		|| ([[self delegate] isKindOfClass:[SPTableContent class]] 
-				&& [(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] 
-				&& [(SPTablesList*)([(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"]) tableType] == SPTableTypeView));
+	id delegate = [self delegate];
+
+	if ([delegate isKindOfClass:[SPCustomQuery class]]) return YES;
+
+	if ([delegate isKindOfClass:[SPTableContent class]]) {
+		SPTablesList *tablesList = [(SPTableContent *)delegate tablesListInstance];
+		return tablesList && [tablesList tableType] == SPTableTypeView;
+	}
+
+	return NO;
 }
 
 /**
@@ -167,7 +173,12 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 - (BOOL)isCellComplex {
 	// TODO: using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
+	// Containment, not migration: this table is still cell-based, so the
+	// deprecated cell API is the only correct one until the view-based rewrite.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	return (![[self preparedCellAtColumn:[self editedColumn] row:[self editedRow]] isKindOfClass:[SPTextAndLinkCell class]]);
+#pragma clang diagnostic pop
 }
 
 #pragma mark -
@@ -651,7 +662,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                                 [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
                                     [[data safeObjectForKey:kHeader] backtickQuotedString],
                                     [selectedTable backtickQuotedString],
-                                    whereArgument]];
+                                    whereArgument] assertingDatabase:selectedDatabase];
                 }
 
                 // Check for NULL value
@@ -664,10 +675,16 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                     // Check column type and insert the data accordingly
                     switch (colType) {
 
-                        // Convert numeric types to unquoted strings
-                        case 0:
-                            [rowValues safeAddObject:[cellData description]];
+                        // Numeric types unquoted, BIT values as binary literals
+                        case 0: {
+                            NSString *unquotedLiteral = [SPFieldTypeClassifier unquotedSQLLiteralForValue:cellData fieldTypeGroup:fieldTypeGroup fieldType:fieldType];
+                            if (!unquotedLiteral) {
+                                NSBeep();
+                                return nil;
+                            }
+                            [rowValues safeAddObject:unquotedLiteral];
                             break;
+                        }
 
                         // Quote string, text and blob types appropriately
                         case 1:
@@ -929,9 +946,10 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 /**
  * Init self with data coming from the table content view. Mainly used for copying data properly.
  */
-- (void) setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withConnection:(id)aMySqlConnection
+- (void)setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withDatabaseName:(NSString *)aDatabaseName withConnection:(id)aMySqlConnection
 {
 	selectedTable     = aTableName;
+	selectedDatabase  = aDatabaseName;
 	mySQLConnection   = aMySqlConnection;
 	tableInstance     = anInstance;
 	tableStorage	  = theTableStorage;
@@ -1187,6 +1205,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 		}
 	}
 
+	[SACellValueCopyCoordinator appendItemsToMenu:menu event:event table:self tableStorage:tableStorage columnDefinitions:columnDefinitions connection:mySQLConnection];
 	[self _appendCellFilterMenuToMenu:menu forEvent:event];
 
 	return menu;

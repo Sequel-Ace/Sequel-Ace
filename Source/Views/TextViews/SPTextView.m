@@ -35,6 +35,7 @@
 #import "SPQueryController.h"
 #import "SPTooltip.h"
 #import "SPTablesList.h"
+#import "SPExtendedTableInfo.h"
 #import "SPNavigatorController.h"
 #import "RegexKitLite.h"
 #import "SPAppController.h"
@@ -78,8 +79,9 @@
 
 #pragma mark -
 
-@interface SPTextView ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTextView () <NSFontChanging>
 NSInteger _alphabeticSort(id string1, id string2, void *reverse);
 - (void)_setTextSelectionColor:(NSColor *)newSelectionColor;
 - (void)_setTextSelectionColor:(NSColor *)newSelectionColor onBackgroundColor:(NSColor *)aBackgroundColor;
@@ -201,7 +203,11 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			BOOL canRetry = YES;
 		retry:
 			if(colorData && (color = [SAArchiving colorFromData:colorData])) {
+// The csItem table only lists void color setters, so no +1 object can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 				[self performSelector:item->m withObject:color];
+#pragma clang diagnostic pop
 			}
 			else if(canRetry) {
 				// #2963: previous versions of SP would accept invalid data (resulting in `nil`) and store it in prefs,
@@ -467,7 +473,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			if(!aDbName) {
 
 				// Try to suggest only items which are uniquely valid for the parsed string
-				NSArray *uniqueSchema = [[SPNavigatorController sharedNavigatorController] getUniqueDbIdentifierFor:[aTableName lowercaseString] andConnection:[[(NSObject*)[self delegate] valueForKeyPath:@"tableDocumentInstance"] connectionID]  ignoreFields:YES];
+				NSArray *uniqueSchema = [[SPNavigatorController sharedNavigatorController] getUniqueDbIdentifierFor:[aTableName lowercaseString] andConnection:[[self delegateDocument] connectionID] ignoreFields:YES];
 				NSInteger uniqueSchemaKind = [[uniqueSchema objectAtIndex:0] intValue];
 
 				// If no db name but table name check if table name is a valid name in the current selected db
@@ -1201,13 +1207,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	// If Extended Table Info tab is active delegate the print call to the SPDatabaseDocument
 	// if the user doesn't select anything in self
-	if([[[[self delegate] class] description] isEqualToString:@"SPExtendedTableInfo"] && ![self selectedRange].length) {
-		[[(NSObject*)[self delegate] valueForKeyPath:@"tableDocumentInstance"] printDocument:sender];
+	if([[self delegate] isKindOfClass:[SPExtendedTableInfo class]] && ![self selectedRange].length) {
+		[[self delegateDocument] printDocument];
 		return;
 	}
 
 	// This will scale the view to fit the page without centering it.
-	[[NSPrintInfo sharedPrintInfo] setHorizontalPagination:NSFitPagination];
+	[[NSPrintInfo sharedPrintInfo] setHorizontalPagination:NSPrintingPaginationModeFit];
 	[[NSPrintInfo sharedPrintInfo] setHorizontallyCentered:NO];
 	[[NSPrintInfo sharedPrintInfo] setVerticallyCentered:NO];
 
@@ -1306,8 +1312,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	if (rtf)
 	{
-		[pb declareTypes:@[NSRTFPboardType] owner:self];
-		[pb setData:rtf forType:NSRTFPboardType];
+		[pb declareTypes:@[NSPasteboardTypeRTF] owner:self];
+		[pb setData:rtf forType:NSPasteboardTypeRTF];
 	}
 }
 
@@ -1615,7 +1621,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// 		}
 		// 	}
 		// } else {
-		arr = [NSArray arrayWithArray:[[(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] allTableAndViewNames]];
+		arr = [NSArray arrayWithArray:[[self delegateTablesList] allTableAndViewNames]];
 		if(arr == nil) {
 			arr = @[];
 		}
@@ -1624,13 +1630,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// }
 	}
 	else if([kind isEqualToString:@"$SP_ASLIST_ALL_DATABASES"]) {
-		arr = [NSArray arrayWithArray:[[(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] allDatabaseNames]];
+		arr = [NSArray arrayWithArray:[[self delegateTablesList] allDatabaseNames]];
 		if(arr == nil) {
 			arr = @[];
 		}
 		for(id w in arr)
 			[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:w, @"display", @"database-small", @"image", @"", @"isRef", nil]];
-		arr = [NSArray arrayWithArray:[[(NSObject*)[self delegate] valueForKeyPath:@"tablesListInstance"] allSystemDatabaseNames]];
+		arr = [NSArray arrayWithArray:[[self delegateTablesList] allSystemDatabaseNames]];
 		if(arr == nil) {
 			arr = @[];
 		}
@@ -3629,15 +3635,15 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	}
 
 	// Insert selected items coming from the Navigator
-	if ( [[pboard types] containsObject:SPNavigatorPasteboardDragType] ) {
+	if ( [[pboard types] containsObject:SADragPasteboard.navigatorSchemaPathsType] ) {
 		NSPoint draggingLocation = [sender draggingLocation];
 		draggingLocation = [self convertPoint:draggingLocation fromView:nil];
 		NSUInteger characterIndex = [self characterIndexOfPoint:draggingLocation];
 		[self setSelectedRange:NSMakeRange(characterIndex,0)];
 
-		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[pboard dataForType:SPNavigatorPasteboardDragType]];
-		NSArray *draggedItems = [[NSArray alloc] initWithArray:(NSArray *)[unarchiver decodeObjectForKey:@"itemdata"]];
-		[unarchiver finishDecoding];
+		NSArray *draggedItems = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSString class], nil]
+		                                                             fromData:[pboard dataForType:SADragPasteboard.navigatorSchemaPathsType]
+		                                                                error:nil] ?: @[];
 
 		NSMutableString *dragString = [NSMutableString string];
 		NSMutableString *aPath = [NSMutableString string];

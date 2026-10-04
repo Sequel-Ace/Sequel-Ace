@@ -33,6 +33,7 @@
 #import "RegexKitLite.h"
 #import "SPTooltip.h"
 #import "SPGeometryDataView.h"
+#import "SPImageView.h"
 #import "SPCopyTable.h"
 #import "SPWindow.h"
 #include <objc/objc-runtime.h>
@@ -426,6 +427,11 @@ typedef enum {
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
 			[self refreshPHPSerializedEditorAvailability];
 			[self performSelector:@selector(openPHPSerializedEditorIfCurrentTextIsStructured) withObject:nil afterDelay:0.15];
+
+			// Only when no image was decoded, since that keeps its own segment selected.
+			if (image == nil) {
+				[self selectJsonSegmentIfValueIsJSON:stringValue];
+			}
 		}
 
 		editSheetWillBeInitialized = NO;
@@ -629,8 +635,13 @@ typedef enum {
         NSTextStorage *editTVtextStorage = [editTextView textStorage];
         NSString *editTVString = [editTVtextStorage string];
 
-		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
-			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVString characterCount] - (NSUInteger)maxLength)];
+		// Only the placeholder itself is exempt here: a part of it left in the sheet ("ULL", "NU") is
+		// not NULL and is measured like any other text.
+		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue]) {
+			// The limit counts code points; the selection is in UTF-16 units and
+			// must start between code points, not inside a surrogate pair.
+			NSUInteger keptLength = (NSUInteger)[editTVString utf16LengthOfFirstCodePoints:(NSInteger)maxLength];
+			[editTextView setSelectedRange:NSMakeRange(keptLength, [editTVString length] - keptLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
 			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxLength]];
 
@@ -715,6 +726,9 @@ typedef enum {
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
 
+		// clear the JSON preview so the JSON segment re-parses the loaded data
+		[jsonTextView setString:@""];
+
 		// set the image preview, string contents and hex representation
 		[editImage setImage:image];
 		if (image) { // If the image cell now contains a valid image, select the image view
@@ -790,6 +804,7 @@ typedef enum {
 		sheetEditData = [[NSData alloc] init];
 		[editTextView setString:@""];
 		[hexTextView setString:@""];
+		[jsonTextView setString:@""];
 		return;
 	}
 }
@@ -991,6 +1006,7 @@ typedef enum {
 			[editTextView setString:contents];
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
+		[jsonTextView setString:@""];
 	}
 
 	editSheetWillBeInitialized = NO;
@@ -1010,6 +1026,7 @@ typedef enum {
 		sheetEditData = [[NSData alloc] init];
 		[editTextView setString:@""];
 		[hexTextView setString:@""];
+		[jsonTextView setString:@""];
 		editSheetWillBeInitialized = NO;
 		return;
 	}
@@ -1025,6 +1042,7 @@ typedef enum {
 		[editTextView setString:contents];
 	if(![[hexTextView string] isEqualToString:@""])
 		[hexTextView setString:[sheetEditData dataToFormattedHexString]];
+	[jsonTextView setString:@""];
 	editSheetWillBeInitialized = NO;
 }
 
@@ -1226,7 +1244,8 @@ typedef enum {
 }
 
 /**
- * Validate editTextView for maximum text length except for NULL as value string
+ * Validate editTextView for maximum text length except for NULL as value string,
+ * or its start while it is typed
  */
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
@@ -1237,11 +1256,8 @@ typedef enum {
 
 	unsigned long long adjTextMaxTextLength = self.maxLengthDateWithOverride;
 
-	if (textView == editTextView && (adjTextMaxTextLength > 0) &&
-			![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]])
+	if (textView == editTextView && (adjTextMaxTextLength > 0))
 	{
-		NSInteger newLength;
-
 		// Auxilary to ensure that eg textViewDidChangeSelection:
 		// saves a non-space char + base char if that combination
 		// occurs at the end of a sequence of typing before saving
@@ -1253,6 +1269,13 @@ typedef enum {
 
 		// The exact change isn't known. Disallow the change to be safe.
 		if (r.location == NSNotFound) return NO;
+
+		// The NULL placeholder, and its start while it is typed, are exempt from
+		// the length rules and the display format, judged on the text the edit
+		// leaves - also when it replaces a selection.
+		if ([SAFieldEditorEditLimit isNullPlaceholderEditOfText:[[textView textStorage] string] replacingRange:r withString:replacementString nullValue:[prefs objectForKey:SPNullValue]]) {
+			return YES;
+		}
 
 		// Length checking while using the Input Manager (eg for Japanese)
 		if ([textView hasMarkedText] && (adjTextMaxTextLength > 0) && (r.location < adjTextMaxTextLength)) {
@@ -1275,51 +1298,32 @@ typedef enum {
 			}
 		}
 
-		// Calculate the length of the text after the change.
-		newLength = [[[textView textStorage] string] characterCount] + [replacementString characterCount] - r.length;
+		// Whether the edit fits is decided in code points - the text, the part
+		// the edit replaces and the insertion - and a FLOAT's decimal point is
+		// judged on the text the edit leaves (see SAFieldEditorEditLimit).
+		SAFieldEditorEditLimit *editLimit = [SAFieldEditorEditLimit evaluateEditOfText:[[textView textStorage] string] replacingRange:r withString:replacementString limit:(NSInteger)adjTextMaxTextLength fieldType:fieldType];
 
-		NSUInteger textLength = [[[textView textStorage] string] characterCount];
+		if (!editLimit.allowsEdit) {
+			NSString *fittingInsertion = editLimit.fittingInsertion;
 
-		unsigned long long originalMaxTextLength = adjTextMaxTextLength;
+			if (fittingInsertion) {
+				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), adjTextMaxTextLength]];
 
-		// For FLOAT fields ignore the decimal point in the text when comparing lengths
-		if ([[fieldType uppercaseString] isEqualToString:@"FLOAT"] &&
-				([[[textView textStorage] string] rangeOfString:@"."].location != NSNotFound)) {
-
-			if ((NSUInteger)newLength == (adjTextMaxTextLength + 1)) {
-				adjTextMaxTextLength++;
-				textLength--;
+				// Put what fits in place of the replaced range once the refused
+				// edit is over, through the text view, so it is checked again,
+				// can be undone and leaves the insertion point behind it.
+				dispatch_async(dispatch_get_main_queue(), ^{
+					if (NSMaxRange(r) <= [[textView string] length]) {
+						[textView insertText:fittingInsertion replacementRange:r];
+					}
+				});
 			}
-			else if ((NSUInteger)newLength > adjTextMaxTextLength) {
-				textLength--;
+			else {
+				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), adjTextMaxTextLength]];
 			}
-		}
-
-		// If it's too long, disallow the change but try
-		// to insert a text chunk partially to maxTextLength.
-		if ((NSUInteger)newLength > adjTextMaxTextLength) {
-			if ((adjTextMaxTextLength - textLength + [textView selectedRange].length) <= [replacementString characterCount]) {
-
-				NSString *tooltip = nil;
-
-				if (adjTextMaxTextLength - textLength + [textView selectedRange].length) {
-					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), adjTextMaxTextLength];
-				}
-				else {
-					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), adjTextMaxTextLength];
-				}
-
-				[SPTooltip showWithObject:tooltip];
-
-				[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)adjTextMaxTextLength - textLength +[textView selectedRange].length]]];
-			}
-
-			adjTextMaxTextLength = originalMaxTextLength;
 
 			return NO;
 		}
-
-		adjTextMaxTextLength = originalMaxTextLength;
 
 		if (self.displayFormatter) {
 			NSString *err = nil;
@@ -1359,6 +1363,8 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
+		// clear the JSON preview so the JSON segment re-parses the edited text
+		[jsonTextView setString:@""];
 
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
@@ -1478,6 +1484,28 @@ typedef enum {
 		[self showJsonText:hidden];
 		[self showImage:hidden];
 	}
+}
+
+/**
+ * Selects the JSON segment when the value is a JSON object or array.
+ *
+ * `_isJSON` only covers columns declared with MySQL's JSON type. JSON is just as often kept in a
+ * text column - MariaDB's `longtext ... CHECK (json_valid(<column>))`, for example - and those had
+ * to be switched to the JSON segment by hand on every open.
+ */
+- (void)selectJsonSegmentIfValueIsJSON:(NSString *)value {
+	if (![SAJSONValueDetector isJSONContainer:value]) {
+		return;
+	}
+
+	// The JSON segment reads raw data as UTF-8 whatever the connection encoding is, so data that only
+	// decodes to this value in another encoding (latin1 with an é, say) would show "Invalid JSON" there.
+	if ([sheetEditData isKindOfClass:[NSData class]] && ![value isEqualToString:[[NSString alloc] initWithData:sheetEditData encoding:NSUTF8StringEncoding]]) {
+		return;
+	}
+
+	[editSheetSegmentControl setSelectedSegment:JsonSegment];
+	[self segmentControllerChanged:editSheetSegmentControl];
 }
 
 - (void)showJsonText:(BOOL)show {

@@ -49,6 +49,181 @@ import AppKit
     }
 }
 
+/// Description of one copy action for the values in a clicked result column.
+@objcMembers public final class SACellValueCopyMenuItemDescriptor: NSObject {
+    public let title: String
+    public let text: String
+    public let isSQL: Bool
+    public let isEnabled: Bool
+
+    public init(title: String, text: String, isSQL: Bool, isEnabled: Bool) {
+        self.title = title
+        self.text = text
+        self.isSQL = isSQL
+        self.isEnabled = isEnabled
+        super.init()
+    }
+}
+
+/// Builds copy actions for one result column across the selected rows.
+@objcMembers public final class SACellValueCopyMenuBuilder: NSObject {
+    @objc(menuItemDescriptorsWithColumnName:rawValues:sqlLiterals:)
+    public static func menuItemDescriptors(columnName: String?, rawValues: [String], sqlLiterals: [String]?) -> [SACellValueCopyMenuItemDescriptor] {
+        guard !rawValues.isEmpty else { return [] }
+
+        return makeMenuItemDescriptors(
+            columnName: columnName,
+            rawValues: rawValues,
+            sqlText: sqlLiterals?.joined(separator: ", ") ?? "",
+            sqlIsEnabled: sqlLiterals?.count == rawValues.count
+        )
+    }
+
+    /// Builds copy actions whose SQL text is generated when the action runs.
+    ///
+    /// The caller supplies the number of values that can be converted later so
+    /// menu construction does not need to call connection-backed quoting APIs.
+    @nonobjc public static func deferredMenuItemDescriptors(
+        columnName: String?,
+        rawValues: [String],
+        sqlLiteralCount: Int?
+    ) -> [SACellValueCopyMenuItemDescriptor] {
+        guard !rawValues.isEmpty else { return [] }
+
+        return makeMenuItemDescriptors(
+            columnName: columnName,
+            rawValues: rawValues,
+            sqlText: "",
+            sqlIsEnabled: sqlLiteralCount == rawValues.count
+        )
+    }
+
+    /// Returns whether result-value copying should be skipped while a result is loading.
+    @nonobjc public static func shouldSuppressMenu(
+        tableContentIsWorking: Bool,
+        customQueryIsWorking: Bool
+    ) -> Bool {
+        tableContentIsWorking || customQueryIsWorking
+    }
+
+    private static func makeMenuItemDescriptors(
+        columnName: String?,
+        rawValues: [String],
+        sqlText: String,
+        sqlIsEnabled: Bool
+    ) -> [SACellValueCopyMenuItemDescriptor] {
+        let valueLabel = columnName.map { "'\($0)'" } ?? ""
+        let rawItem = SACellValueCopyMenuItemDescriptor(
+            title: String(format: NSLocalizedString("Copy %@ Values", comment: "copy selected values from the named result column"), valueLabel),
+            text: rawValues.joined(separator: "\n"),
+            isSQL: false,
+            isEnabled: true
+        )
+        let sqlItem = SACellValueCopyMenuItemDescriptor(
+            title: String(format: NSLocalizedString("Copy %@ Values as SQL", comment: "copy selected values from the named result column as SQL literals"), valueLabel),
+            text: sqlText,
+            isSQL: true,
+            isEnabled: sqlIsEnabled
+        )
+        return [rawItem, sqlItem]
+    }
+
+    @nonobjc public static func selectedRows(current: IndexSet, clickedRow: Int) -> IndexSet {
+        current.contains(clickedRow) ? current : IndexSet(integer: clickedRow)
+    }
+
+    /// Returns the SQL literal for one result value, as "Copy Values as SQL" writes it.
+    ///
+    /// - Parameters:
+    ///   - value: The cell value.
+    ///   - typeGrouping: Sequel Ace type grouping of the column.
+    ///   - fieldType: Declared column type.
+    ///   - quoteString: Escapes and quotes a string for the current connection.
+    ///   - quoteData: Escapes and quotes binary data for the current connection.
+    /// - Returns: The literal, or `nil` when the value cannot be represented.
+    @nonobjc public static func sqlLiteral(
+        value: Any,
+        typeGrouping: String?,
+        fieldType: String?,
+        quoteString: (String) -> String?,
+        quoteData: (Data) -> String?
+    ) -> String? {
+        if value is NSNull { return "NULL" }
+        if SPFieldTypeClassifier.shouldBeUnquoted(fieldTypeGroup: typeGrouping, fieldType: fieldType) {
+            return SPFieldTypeClassifier.unquotedSQLLiteral(for: value, fieldTypeGroup: typeGrouping, fieldType: fieldType)
+        }
+
+        if let data = value as? Data {
+            let isTextData = fieldType == "UUID" || typeGrouping == "textdata" || typeGrouping == "string"
+            if isTextData {
+                guard let string = String(data: data, encoding: .utf8) else { return nil }
+                return quoteString(string)
+            }
+            return quoteData(data)
+        }
+
+        return quoteString(String(describing: value))
+    }
+
+    /// Checks conversion failures that can be detected without a database connection.
+    @nonobjc public static func canPrepareSQLLiteral(
+        value: Any,
+        typeGrouping: String?,
+        fieldType: String?
+    ) -> Bool {
+        sqlLiteral(
+            value: value,
+            typeGrouping: typeGrouping,
+            fieldType: fieldType,
+            quoteString: { _ in "" },
+            quoteData: { _ in "" }
+        ) != nil
+    }
+}
+
+/// Owns the payload for a dynamically-created cell-value copy menu item.
+@objcMembers public final class SACellValueCopyAction: NSObject, NSMenuItemValidation {
+    private let descriptor: SACellValueCopyMenuItemDescriptor
+    private let textProvider: (() -> String?)?
+
+    public init(descriptor: SACellValueCopyMenuItemDescriptor) {
+        self.descriptor = descriptor
+        self.textProvider = nil
+        super.init()
+    }
+
+    /// Creates an action whose text is resolved only when the user selects it.
+    @nonobjc public init(descriptor: SACellValueCopyMenuItemDescriptor, textProvider: @escaping () -> String?) {
+        self.descriptor = descriptor
+        self.textProvider = textProvider
+        super.init()
+    }
+
+    public func copy(_ sender: Any?) {
+        guard descriptor.isEnabled else { return }
+        let text: String?
+        if let textProvider = textProvider {
+            text = textProvider()
+        } else {
+            text = descriptor.text
+        }
+        guard let text = text else { return }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        let types: [NSPasteboard.PasteboardType] = descriptor.isSQL ? [.string] : [.string, .tabularText]
+        pasteboard.declareTypes(types, owner: nil)
+        pasteboard.setString(text, forType: .string)
+        if !descriptor.isSQL {
+            pasteboard.setString(text, forType: .tabularText)
+        }
+    }
+
+    public func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        descriptor.isEnabled
+    }
+}
+
 /// Builds the filter submenu and its serializable item descriptors.
 ///
 /// This class keeps the type/operator matrix in Swift while exposing an
@@ -102,6 +277,12 @@ import AppKit
     /// value-bearing empty-string rules serialize with `filterValues: [""]`,
     /// the same shape the rule editor uses for half-touched placeholder rows.
     ///
+    /// `BIT` cells display as `0`/`1` digit strings, but the `bit` filter
+    /// definitions compare `CAST('<value>' AS DECIMAL(65,30))`, so their
+    /// argument is the decimal value (`00000101` filters by `5`, not by 101).
+    /// A `BIT` display value that is not a bit string can only be filtered by
+    /// NULL-ness.
+    ///
     /// - Parameters:
     ///   - columnName: Schema column name to filter.
     ///   - typeGrouping: Sequel Ace type grouping from `SPTableDataColumnDefinition`.
@@ -123,7 +304,16 @@ import AppKit
         // for these cases so the cell-filter feature never produces non-persistent rules.
         // `SPCopyTable.displayStringForRow` may return nil for stale or out-of-range
         // cells (see SPCopyTable.h:112-115), which would otherwise fall through here.
-        let effectiveIsNull = isNull || value == nil || value?.isEmpty == true
+        var effectiveIsNull = isNull || value == nil || value?.isEmpty == true
+        var argument = value
+
+        if !effectiveIsNull, SPFieldTypeClassifier.isBitField(fieldTypeGroup: typeGrouping, fieldType: nil) {
+            if let value, let decimal = SPFieldTypeClassifier.decimalString(forBitString: value) {
+                argument = decimal
+            } else {
+                effectiveIsNull = true
+            }
+        }
 
         let operators = SACellFilterOperator.operators(for: typeGrouping, cellIsNull: effectiveIsNull)
         guard !operators.isEmpty else {
@@ -135,7 +325,7 @@ import AppKit
                 title: op.menuTitle,
                 columnName: columnName,
                 operatorName: op.serializedName,
-                values: op.valueCount == 0 ? [] : [value ?? ""],
+                values: op.valueCount == 0 ? [] : [argument ?? ""],
                 isNull: effectiveIsNull
             )
         }

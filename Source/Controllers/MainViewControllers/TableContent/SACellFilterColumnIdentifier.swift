@@ -37,6 +37,29 @@ import AppKit
         return NSNumber(value: index)
     }
 
+    /// Resolves the storage index of the column shown at a visible position.
+    ///
+    /// Result tables let the user reorder columns by dragging, and the column
+    /// filter hides columns, so a visible position such as `editedColumn` is
+    /// not a storage index. Using one as the other makes editing checks read
+    /// the definition or the data of a different column.
+    ///
+    /// - Parameters:
+    ///   - visibleColumn: The column position as reported by the table view.
+    ///   - tableView: The table view the position belongs to.
+    /// - Returns: The storage index, or `-1` when the position is out of range
+    ///   or the column identifier is not a storage index.
+    @objc(storageIndexForVisibleColumn:inTableView:)
+    public static func storageIndex(forVisibleColumn visibleColumn: Int, in tableView: NSTableView) -> Int {
+        let tableColumns = tableView.tableColumns
+        guard visibleColumn >= 0,
+              visibleColumn < tableColumns.count,
+              let index = storageIndex(from: tableColumns[visibleColumn].identifier) else {
+            return -1
+        }
+        return index.intValue
+    }
+
     private static func rawValue(from identifier: Any?) -> String? {
         switch identifier {
         case let identifier as NSUserInterfaceItemIdentifier:

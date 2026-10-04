@@ -37,10 +37,11 @@
 
 @protocol SADatabaseDocumentProviding;
 @protocol SAConnectionDelegate;
-@protocol SAFavoritesListDelegate;
+@protocol SAKeychainProviding;
 @class SAConnectionViewCoordinator;
 @class SAFavoritesListDataSource;
 @class SAConnectionService;
+@class SAVaultRoleListController;
 
 @class SPDatabaseDocument,
 	   SPFavoritesController,
@@ -49,7 +50,6 @@
 	   SPFavoritesOutlineView,
        SPMySQLConnection,
 	   SPSplitView,
-	   SPKeychain,
 	   SPFavoriteNode,
 	   SPFavoriteTextFieldCell,
        SPColorSelectorView
@@ -61,13 +61,16 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
     SPConnectionTimeZoneModeUseFixedTZ
 };
 
-@interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate, SAFavoritesListDelegate>
+@interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
 {
 	__weak id dbDocument;
 	SPMySQLConnection *mySQLConnection;
 
-	SPKeychain *keychain;
+	id<SAKeychainProviding> keychain;
 	NSSplitView *databaseConnectionView;
+
+	NSMapTable<SPMySQLConnection *, NSError *> *awsIAMTokenErrorsByConnection;
+	NSLock *awsIAMTokenErrorLock;
 
 	NSOpenPanel *keySelectionPanel;
 	NSUserDefaults *prefs;
@@ -114,8 +117,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSString *vaultHost;
 	NSString *vaultPort;
 	NSString *vaultOIDCMount;
-	NSString *vaultCredentialsPath;
 	NSString *vaultLoginIdentifier;
+	// vaultCredentialsPath is now a computed property (no backing ivar)
+	NSString *vaultMount;
+	NSString *vaultCredentialsRole;
+	SAVaultRoleListController *vaultRoleListController;
 
 	// SSL details
 	NSInteger useSSL;
@@ -187,7 +193,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSTextField       *vaultHostField;
 	IBOutlet NSTextField       *vaultPortField;
 	IBOutlet NSTextField       *vaultOIDCMountField;
-	IBOutlet NSTextField       *vaultCredentialsPathField;
+	IBOutlet NSComboBox        *vaultCredentialsRoleComboBox;
+	IBOutlet NSButton          *vaultRefreshRolesButton;
+	IBOutlet NSProgressIndicator *vaultRolesProgressIndicator;
 	IBOutlet NSPopUpButton     *vaultTimeZoneField;
 	IBOutlet SPColorSelectorView *vaultColorField;
 	IBOutlet NSButton          *vaultSSLKeyFileButton;
@@ -284,6 +292,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *vaultHost;
 @property (readwrite, copy) NSString *vaultPort;
 @property (readwrite, copy) NSString *vaultOIDCMount;
+@property (readwrite, copy) NSString *vaultMount;
+@property (readwrite, copy) NSString *vaultCredentialsRole;
+/// Computed from vaultMount + vaultCredentialsRole; setter splits on load.
 @property (readwrite, copy) NSString *vaultCredentialsPath;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
@@ -318,7 +329,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
  * Returns the password to use for an actual MySQL connect/reconnect request.
  * For AWS IAM connections this generates a fresh token.
  */
-- (NSString *)passwordForConnectionRequest;
+- (NSString *)passwordForConnectionRequestForConnection:(SPMySQLConnection *)connection;
+- (nullable NSError *)lastAWSIAMTokenErrorForConnection:(SPMySQLConnection *)connection;
 
 // Connection processes
 - (IBAction)initiateConnection:(id)sender;
@@ -337,6 +349,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (NSArray<NSString *> *)awsAvailableProfiles;
 - (NSArray<NSString *> *)awsAvailableRegions;
 - (BOOL)isAWSDirectoryAuthorized;
+
+// Vault Authentication
+- (IBAction)refreshVaultRoles:(id)sender;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 
@@ -379,6 +394,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (void)mySQLConnectionEstablished;
 - (void)addConnectionToDocument;
+
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID NS_SWIFT_NAME(isAWSConnectionAttemptCurrent(_:));
 
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail;
 

@@ -57,6 +57,7 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 	id mySQLConnection;               // current MySQL connection
 	NSArray* columnDefinitions;       // array of NSDictionary containing info about columns
 	NSString* selectedTable;          // the name of the current selected table
+	NSString* selectedDatabase;       // the name of the current selected database
 	SPDataStorage* tableStorage;      // the underlying storage array holding the table data
 
 	NSUserDefaults *prefs;
@@ -173,7 +174,7 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 /*
  * Set all necessary data from the table content view.
  */
-- (void)setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withConnection:(id)aMySqlConnection;
+- (void)setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withDatabaseName:(NSString *)aDatabaseName withConnection:(id)aMySqlConnection;
 
 /*
  * Update the table storage location if necessary.

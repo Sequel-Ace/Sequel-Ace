@@ -27,4 +27,30 @@ final class SACellFilterColumnIdentifierTests: XCTestCase {
         XCTAssertNil(SACellFilterColumnIdentifier.storageIndex(from: " 12"))
         XCTAssertNil(SACellFilterColumnIdentifier.storageIndex(from: "-1"))
     }
+
+    /// Verifies a visible position resolves to the storage index of the column
+    /// shown there once columns were moved - e.g. a column dragged to the end
+    /// must not be checked with the definition of the column formerly there.
+    func testVisibleColumnResolvesStorageIndexAfterColumnsMoved() {
+        let table = NSTableView()
+        for index in 0..<4 {
+            table.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier(String(index))))
+        }
+
+        table.moveColumn(1, toColumn: 3)
+
+        XCTAssertEqual(SACellFilterColumnIdentifier.storageIndex(forVisibleColumn: 3, in: table), 1)
+        XCTAssertEqual(SACellFilterColumnIdentifier.storageIndex(forVisibleColumn: 1, in: table), 2)
+        XCTAssertEqual(SACellFilterColumnIdentifier.storageIndex(forVisibleColumn: 0, in: table), 0)
+    }
+
+    /// Verifies out-of-range positions and non-index identifiers resolve to -1.
+    func testVisibleColumnOutOfRangeOrInvalidIdentifierResolvesToMinusOne() {
+        let table = NSTableView()
+        table.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("abc")))
+
+        XCTAssertEqual(SACellFilterColumnIdentifier.storageIndex(forVisibleColumn: 0, in: table), -1)
+        XCTAssertEqual(SACellFilterColumnIdentifier.storageIndex(forVisibleColumn: -1, in: table), -1)
+        XCTAssertEqual(SACellFilterColumnIdentifier.storageIndex(forVisibleColumn: 1, in: table), -1)
+    }
 }

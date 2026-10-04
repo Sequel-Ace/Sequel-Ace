@@ -204,4 +204,23 @@ final class VaultOIDCHandlerTests: XCTestCase {
 
         XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "  "), "default-token")
     }
+
+    // MARK: - Exclusive login (process-wide OIDC port serialization)
+
+    func testExclusiveLoginGuardBlocksSecondConcurrentLogin() {
+        XCTAssertFalse(VaultOIDCHandler.isLoginInProgressForTesting())
+
+        // First claim succeeds and marks a login in progress.
+        XCTAssertTrue(VaultOIDCHandler.beginExclusiveLoginForTesting())
+        XCTAssertTrue(VaultOIDCHandler.isLoginInProgressForTesting())
+
+        // A second concurrent claim (another window / connect vs refresh) is refused.
+        XCTAssertFalse(VaultOIDCHandler.beginExclusiveLoginForTesting())
+
+        // Releasing frees the slot so the next login can claim it.
+        VaultOIDCHandler.endExclusiveLoginForTesting()
+        XCTAssertFalse(VaultOIDCHandler.isLoginInProgressForTesting())
+        XCTAssertTrue(VaultOIDCHandler.beginExclusiveLoginForTesting())
+        VaultOIDCHandler.endExclusiveLoginForTesting()
+    }
 }

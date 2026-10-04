@@ -4,6 +4,7 @@
 //
 
 import XCTest
+import SPMySQL
 
 final class SPCustomQuerySQLClassifierTests: XCTestCase {
 
@@ -46,16 +47,200 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze delete from t where id = 1"))
     }
 
+    /// MySQL 8.3+ accepts `INTO @var` and `FOR SCHEMA|DATABASE name` between
+    /// `EXPLAIN ANALYZE` and the statement; the statement behind them still
+    /// runs, so the modifiers must not hide a mutating verb.
+    func testExplainAnalyzeModifiersDoNotHideMutatingStatements() {
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app DELETE FROM t WHERE id = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR DATABASE app UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @plan UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=JSON INTO @plan FOR SCHEMA app DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE FOR SCHEMA app INSERT INTO t VALUES (1)"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze for schema app delete from t"))
+        // Truncated modifiers leave no statement to judge: stay conservative.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO"))
+        // Quoted operands may contain whitespace (or `=`), which the tokenizer
+        // splits on; a fragment of the name must not stand in for the statement.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan = result\" FOR SCHEMA `my db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @`plan result` INSERT INTO t VALUES (1)"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `it``s db` DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `a`` b` DELETE FROM t"))
+        // An unterminated quote swallows the rest: no statement, so no free pass.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db DELETE FROM t"))
+        // The statement may follow the closing quote without whitespace, a
+        // backslash escapes a quote inside a quoted variable name, and a
+        // quoted schema with whitespace precedes a multi-table DELETE.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`UPDATE `t` SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan\\' result' UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @\"plan\\\" result\" DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app schema` DELETE t FROM t JOIN u ON t.id = u.id"))
+        // The classifier cannot know whether NO_BACKSLASH_ESCAPES is set. Read
+        // that way, the quote after the backslash closes the operand and the
+        // write runs, so it warns; an operand closed the same way under both
+        // readings stays safe.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' UPDATE t SET c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA \"x\\\" DELETE FROM t WHERE c=\"v\""))
+        // The same holds for comment stripping: read without backslash
+        // escapes, the comment after the closed operand hides the write.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' # comment\nUPDATE t SET c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'x\\' -- comment\nDELETE FROM t WHERE c='v'"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA \"x\\\" /* comment */ INSERT INTO t VALUES (\"v\")"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'a\\\\b' /* comment */ SELECT * FROM t WHERE c = '#'"))
+        // A combining mark right after a quote must not hide the quote (Swift
+        // would merge the two into one Character); the server reads bytes.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `\u{301}app`UPDATE `t` SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'\u{301}x' # comment\nUPDATE t SET c = 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'\u{301}x' SELECT * FROM t"))
+        // The server needs no whitespace between INTO and the variable.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@plan UPDATE t SET c = 1"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@'plan result' DELETE FROM t"))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=JSON INTO@plan FOR SCHEMA app INSERT INTO t VALUES (1)"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO@plan SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `app`SELECT 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA `my db` SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @'plan result' SELECT * FROM t"))
+        // Reads behind the same modifiers stay safe; plain EXPLAIN never
+        // executes, and `FOR CONNECTION` is the explained subject itself.
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FOR SCHEMA app SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE INTO @plan SELECT * FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR SCHEMA app UPDATE t SET c = 1"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN INTO @plan FORMAT=JSON DELETE FROM t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FOR CONNECTION 5"))
+    }
+
+    /// Verifies that the `EXPLAIN` aliases `DESCRIBE` and `DESC` follow the same
+    /// rule: `ANALYZE` in front of a mutating statement executes it, so the
+    /// alias spelling must not skip the destructive warning.
     func testExplainAliasesUseTheSameAnalyzeSafetyRule() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESCRIBE ANALYZE DELETE FROM t WHERE id = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC ANALYZE UPDATE t SET c = 1"))
     }
 
+    /// Verifies that comments are treated as whitespace when classifying a
+    /// query, that quoted comment markers are kept, that executable comments
+    /// are unwrapped, and that keywords only match on whole-word boundaries.
     func testCommentsAreIgnoredButKeywordBoundariesRemainStrict() {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/* c */ EXPLAIN /* c */ ANALYZE /* c */ DELETE FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAINER ANALYZE DELETE FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("SELECTOR_TABLE"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("SELECT/* c */1"))
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT '-- value', `db#name`, \"/* value */\""),
+            "SELECT '-- value', `db#name`, \"/* value */\""
+        )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("/*!40101 USE executable_db */").trimmingCharacters(in: .whitespacesAndNewlines),
+            "USE executable_db"
+        )
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/*! EXPLAIN ANALYZE DELETE FROM t */")
+        )
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/*!99999 DELETE FROM future_table */")
+        )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1--"),
+            "SELECT 1 "
+        )
+    }
+
+    /// A `#` or `--` comment in CRLF text must end at the line feed; otherwise
+    /// it swallows the rest of the batch, hiding statements the server
+    /// executes. The carriage return before the line feed belongs to the
+    /// comment, as in MySQL.
+    func testLineCommentsEndAtCRLFLineEndings() {
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\r\nFROM t"),
+            "SELECT 1  \nFROM t"
+        )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 # c\r\nFROM t"),
+            "SELECT 1  \nFROM t"
+        )
+        // A bare `--` directly followed by CRLF starts a comment too.
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("--\r\nSELECT 1"),
+            " \nSELECT 1"
+        )
+        // MySQL ends a line comment at a line feed only; a lone carriage
+        // return stays part of the comment.
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1 -- c\rFROM t"),
+            "SELECT 1  "
+        )
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nDELETE FROM t"))
+        // A DEL-prefixed comment may contain an unmatched quote; the write
+        // and database change after it still execute on the server.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("--\u{7F}'\nDELETE FROM t"))
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "--\u{7F}'\nUSE new_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new_db"
+        )
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("-- c\r\nSELECT 1"))
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "-- selected\r\nUSE new_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new_db"
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "# rebuild\r\nDROP DATABASE old_db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true)
+        )
+    }
+
+    /// Verifies that executable comments with a version gate the server cannot
+    /// be matched against always require the destructive-query warning, since
+    /// either reading of the batch could be the one the server executes.
+    func testUnknownExecutableCommentGatesAlwaysRequireWarning() {
+        // On current servers the future-gated SELECT is ignored, so the DELETE
+        // is the real leading statement. Preserving only the comment body would
+        // incorrectly classify this as a safe SELECT.
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "/*!99999 SELECT */ DELETE FROM important_table"
+            )
+        )
+
+        // The inverse interpretation must also be considered: ignoring a gated
+        // destructive body is not safe when an unknown server may execute it.
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "/*!99999 DELETE FROM important_table */ SELECT 1"
+            )
+        )
+
+        // Even when both visible forms are reads, unknown gates are rejected
+        // instead of guessing which SQL token stream the server will execute.
+        let futureRead = "/*!99999 SELECT 1 */ SELECT 2"
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(futureRead))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable(futureRead))
+
+        // Supplying server context removes the ambiguity and retains the
+        // existing behavior for known inactive gates.
+        XCTAssertTrue(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                futureRead,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+
+        // MariaDB-only executable comments are also indeterminate when the
+        // caller has not supplied the server flavor.
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "/*M! SELECT 1 */ SELECT 2"
+            )
+        )
+
+        // Gate-looking text inside a string is data, not an executable comment.
+        XCTAssertTrue(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "SELECT '/*!99999 DELETE FROM important_table */'"
+            )
+        )
     }
 
     func testLeadingParenthesesAreUnwrappedConsistentlyWithExplainable() {
@@ -115,5 +300,543 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         // to a single space (sqlTokens splits on any whitespace scalar).
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN    SELECT  *  FROM  t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN\t\tSELECT * FROM t"))
+    }
+
+    func testDatabaseContextTracksUseStatementsWithCommentsAndQuotedNames() {
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "USE new_db; -- selected\n", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "/* before */ USE `new``db/*literal*/#name` /* after */", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new`db/*literal*/#name"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "USE hash_db # selected", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "hash_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "USE \"new\"\"db/*literal*/\"", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new\"db/*literal*/"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "USE`quoted_db`", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "quoted_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "USEFUL db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "/*!40101 USE versioned_db */", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "versioned_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*M!100100 USE maria_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "maria_db"
+        )
+    }
+
+    func testDatabaseContextHonorsExecutableCommentVersionAndServerFlavor() {
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!99999 USE future_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true
+            ),
+            "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*M!100100 USE maria_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true
+            ),
+            "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!80000 USE mysql_only_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!40101 USE shared_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "shared_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!999999999999999999999999 USE overflow_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true
+            ),
+            "old_db"
+        )
+    }
+
+    func testDatabaseContextClearsOnlyWhenDroppedNameMatchesUnderServerCaseRules() {
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE `app_db`", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP SCHEMA IF EXISTS app_db; -- rebuild", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE reporting", currentDatabase: "app_db", databaseNamesAreCaseSensitive: false),
+            "app_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE app_db_backup", currentDatabase: "app_db", databaseNamesAreCaseSensitive: false),
+            "app_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE app_db", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: true),
+            "App_DB"
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE app_db", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: false)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "/*! DROP DATABASE App_DB */", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE \"App_\"\"DB\"", currentDatabase: "App_\"DB", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE`app_db`", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE IF EXISTS`app_db`", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+    }
+
+    func testCaseSensitivityLookupIsRequiredOnlyForCaseAmbiguousDrops() {
+        for query in [
+            "SHOW WARNINGS",
+            "SELECT ROW_COUNT()",
+            "SELECT FOUND_ROWS()",
+            "USE app_db",
+            "DROP DATABASE app_db",
+            "DROP DATABASE reporting"
+        ] {
+            XCTAssertFalse(
+                requiresCaseSensitivityLookup(for: query, currentDatabase: "app_db"),
+                query
+            )
+        }
+
+        XCTAssertFalse(
+            requiresCaseSensitivityLookup(for: "DROP DATABASE app_db", currentDatabase: nil)
+        )
+        XCTAssertTrue(
+            requiresCaseSensitivityLookup(for: "DROP DATABASE app_db", currentDatabase: "App_DB")
+        )
+        XCTAssertTrue(
+            requiresCaseSensitivityLookup(
+                for: "/*!80000 DROP SCHEMA IF EXISTS `app_db` */",
+                currentDatabase: "App_DB"
+            )
+        )
+        XCTAssertFalse(
+            requiresCaseSensitivityLookup(
+                for: "/*!99999 DROP DATABASE app_db */",
+                currentDatabase: "App_DB"
+            )
+        )
+    }
+
+    func testDatabaseContextTracksCustomQueryAndImportBatchSequence() {
+        var databaseName: String? = "app_db"
+
+        databaseName = contextDatabaseName(
+            afterSuccessfulQuery: "INSERT INTO events VALUES (1)",
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
+        )
+        XCTAssertEqual(databaseName, "app_db")
+
+        databaseName = contextDatabaseName(
+            afterSuccessfulQuery: "DROP DATABASE app_db",
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
+        )
+        XCTAssertNil(databaseName)
+
+        databaseName = contextDatabaseName(
+            afterSuccessfulQuery: "CREATE DATABASE app_db",
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
+        )
+        XCTAssertNil(databaseName)
+
+        databaseName = contextDatabaseName(
+            afterSuccessfulQuery: "USE app_db; /* restored */",
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
+        )
+        XCTAssertEqual(databaseName, "app_db")
+    }
+
+    func testDatabaseContextPrefixGuardSkipsOrdinaryStatements() {
+        for query in [
+            "INSERT INTO t VALUES (1)",
+            "UPDATE t SET value = 1",
+            "DELETE FROM t",
+            "SELECT 1",
+            "USEFUL identifier",
+            "DROPLET identifier"
+        ] {
+            XCTAssertFalse(SASQLDatabaseContext.queryCouldChangeDatabaseContext(query), query)
+        }
+
+        for query in [
+            "USE target",
+            " use target",
+            "DROP DATABASE target",
+            "drop schema target",
+            "# comment\nUSE target",
+            "-- comment\nUSE target",
+            "/* comment */ USE target"
+        ] {
+            XCTAssertTrue(SASQLDatabaseContext.queryCouldChangeDatabaseContext(query), query)
+        }
+    }
+
+    func testMariaDBDoesNotTreatBracketsAsQuotedIdentifiers() {
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments(
+                "SELECT [/* comment */]",
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "SELECT [ ]"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "USE [new database]",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "old_db"
+        )
+    }
+
+    func testDatabaseContextDetectsSelectionAndDeselectionTransitions() {
+        XCTAssertFalse(SASQLDatabaseContext.databaseNameChanged(from: nil, to: nil))
+        XCTAssertFalse(SASQLDatabaseContext.databaseNameChanged(from: "app_db", to: "app_db"))
+        XCTAssertTrue(SASQLDatabaseContext.databaseNameChanged(from: nil, to: "app_db"))
+        XCTAssertTrue(SASQLDatabaseContext.databaseNameChanged(from: "app_db", to: nil))
+        XCTAssertTrue(SASQLDatabaseContext.databaseNameChanged(from: "app_db", to: "reporting"))
+    }
+
+    private func contextDatabaseName(
+        afterSuccessfulQuery query: String,
+        currentDatabase: String?,
+        databaseNamesAreCaseSensitive: Bool,
+        serverVersion: Int = 80_000,
+        serverIsMariaDB: Bool = false
+    ) -> String? {
+        SASQLDatabaseContext.databaseName(
+            afterSuccessfulQuery: query,
+            currentDatabase: currentDatabase,
+            databaseNamesAreCaseSensitive: databaseNamesAreCaseSensitive,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+    }
+
+    private func requiresCaseSensitivityLookup(
+        for query: String,
+        currentDatabase: String?,
+        serverVersion: Int = 80_000,
+        serverIsMariaDB: Bool = false
+    ) -> Bool {
+        SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+            for: query,
+            currentDatabase: currentDatabase,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+    }
+}
+
+final class SASQLDatabaseContextIntegrationTests: XCTestCase {
+
+    func testLiveDeferredCaseSensitivityLookupPreservesDiagnosticsAcrossCustomQueryActions() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured for the diagnostic-preservation regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the diagnostic-preservation regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let database = "sa_diagnostics_\(identifier)"
+
+        defer {
+            _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+            connection.disconnect()
+        }
+
+        _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+        assertQuerySucceeded(connection)
+        _ = connection.queryString(
+            "CREATE TABLE diagnostics (id INT PRIMARY KEY, value INT)",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        _ = connection.queryString(
+            "INSERT INTO diagnostics VALUES (1, 0)",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+
+        _ = connection.queryString(
+            "UPDATE diagnostics SET value = value + 1 WHERE id = 1",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertFalse(
+            SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+                for: "SELECT ROW_COUNT()",
+                currentDatabase: database,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT ROW_COUNT()", assertingDatabase: database) as? String,
+            "1"
+        )
+        assertQuerySucceeded(connection)
+
+        _ = connection.queryString(
+            "SELECT SQL_CALC_FOUND_ROWS value FROM diagnostics UNION ALL SELECT 2 UNION ALL SELECT 3 LIMIT 1",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertFalse(
+            SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+                for: "SELECT FOUND_ROWS()",
+                currentDatabase: database,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT FOUND_ROWS()", assertingDatabase: database) as? String,
+            "3"
+        )
+        assertQuerySucceeded(connection)
+
+        _ = connection.queryString(
+            "DROP TABLE IF EXISTS missing_diagnostics_table",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertFalse(
+            SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+                for: "SHOW WARNINGS",
+                currentDatabase: database,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+        let warningsResult = connection.queryString("SHOW WARNINGS", assertingDatabase: database)
+        assertQuerySucceeded(connection)
+        XCTAssertGreaterThan(warningsResult?.numberOfRows() ?? 0, 0)
+    }
+
+    func testLiveCustomQueryBatchFollowsSuccessfulUse() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured for the custom-query batch regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the custom-query batch regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let databaseA = "sa_batch_\(identifier)_a"
+        let databaseB = "sa_batch_\(identifier)_b"
+        let databases = [databaseA, databaseB]
+
+        defer {
+            for database in databases {
+                _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+            }
+            connection.disconnect()
+        }
+
+        for database in databases {
+            _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+            assertQuerySucceeded(connection)
+        }
+
+        // Mirror SPCustomQuery.performQueriesTask: each statement is asserted
+        // against the context derived from the preceding successful statement.
+        var databaseName: String? = databaseA
+        let queries = [
+            "CREATE TABLE before_use (value INT)",
+            "USE \(backtickQuoted(databaseB))",
+            "CREATE TABLE after_use (value INT)",
+            "INSERT INTO after_use VALUES (1)"
+        ]
+
+        for query in queries {
+            _ = connection.queryString(query, assertingDatabaseContext: databaseName)
+            assertQuerySucceeded(connection)
+            databaseName = SASQLDatabaseContext.databaseName(
+                afterSuccessfulQuery: query,
+                currentDatabase: databaseName,
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        }
+
+        XCTAssertEqual(databaseName, databaseB)
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'after_use'",
+                assertingDatabase: databaseA
+            ) as? String,
+            "0"
+        )
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM after_use",
+                assertingDatabase: databaseB
+            ) as? String,
+            "1"
+        )
+    }
+
+    func testLiveCrossDatabaseViewCopyUsesTargetContext() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured for the cross-database view-copy regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the cross-database view-copy regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let sourceDatabase = "sa_view_\(identifier)_source"
+        let targetDatabase = "sa_view_\(identifier)_target"
+        let databases = [sourceDatabase, targetDatabase]
+
+        defer {
+            for database in databases {
+                _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+            }
+            connection.disconnect()
+        }
+
+        for database in databases {
+            _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("CREATE TABLE items (value INT)", assertingDatabase: database)
+            assertQuerySucceeded(connection)
+        }
+        _ = connection.queryString("INSERT INTO items VALUES (1)", assertingDatabase: sourceDatabase)
+        assertQuerySucceeded(connection)
+        _ = connection.queryString("INSERT INTO items VALUES (2)", assertingDatabase: targetDatabase)
+        assertQuerySucceeded(connection)
+        _ = connection.queryString("CREATE VIEW source_view AS SELECT value FROM items", assertingDatabase: sourceDatabase)
+        assertQuerySucceeded(connection)
+
+        let createResult = connection.queryString("SHOW CREATE VIEW source_view", assertingDatabase: sourceDatabase)
+        assertQuerySucceeded(connection)
+        let createRow = try XCTUnwrap(createResult?.getRowAsArray() as? [Any])
+        let createStatement = try XCTUnwrap(createRow.count > 1 ? createRow[1] as? String : nil)
+        let bodyRange = try XCTUnwrap(createStatement.range(of: " AS "))
+        let viewBody = String(createStatement[bodyRange.lowerBound...])
+
+        // Mirror SPTablesList._copyTable's view branch: SHOW CREATE's body is
+        // unqualified, so asserting the target database is what binds it to
+        // the target's tables and creates the view in the requested schema.
+        _ = connection.queryString(
+            "CREATE VIEW copied_view \(viewBody)",
+            assertingDatabase: targetDatabase
+        )
+        assertQuerySucceeded(connection)
+
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT value FROM copied_view", assertingDatabase: targetDatabase) as? String,
+            "2"
+        )
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM information_schema.views WHERE table_schema = DATABASE() AND table_name = 'copied_view'",
+                assertingDatabase: sourceDatabase
+            ) as? String,
+            "0"
+        )
+    }
+
+    private func newLocalConnection() -> SPMySQLConnection? {
+        let environment = ProcessInfo.processInfo.environment
+        var socketPath = environment["SPMYSQL_TEST_SOCKET"]
+        let testHost = environment["SPMYSQL_TEST_HOST"]
+
+        if (socketPath?.isEmpty ?? true), (testHost?.isEmpty ?? true) {
+            socketPath = ["/tmp/mysql.sock", "/opt/homebrew/var/mysql/mysql.sock"]
+                .first(where: { FileManager.default.fileExists(atPath: $0) })
+        }
+
+        let connection = SPMySQLConnection()
+        let testUser = environment["SPMYSQL_TEST_USER"]
+        connection.username = testUser?.isEmpty == false ? testUser : "root"
+        connection.password = environment["SPMYSQL_TEST_PASSWORD"]
+        connection.useKeepAlive = false
+
+        if let testHost, !testHost.isEmpty {
+            connection.useSocket = false
+            connection.host = testHost
+            if let port = environment["SPMYSQL_TEST_PORT"].flatMap(UInt.init) {
+                connection.port = port
+            }
+        } else if let socketPath, !socketPath.isEmpty {
+            connection.useSocket = true
+            connection.socketPath = socketPath
+        } else {
+            return nil
+        }
+
+        return connection
+    }
+
+    private func assertQuerySucceeded(
+        _ connection: SPMySQLConnection,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertFalse(
+            connection.queryErrored(),
+            connection.lastErrorMessage() ?? "Unknown MySQL error",
+            file: file,
+            line: line
+        )
+    }
+
+    private func backtickQuoted(_ identifier: String) -> String {
+        "`\(identifier.replacingOccurrences(of: "`", with: "``"))`"
     }
 }

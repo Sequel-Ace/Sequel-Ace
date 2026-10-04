@@ -135,7 +135,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
     SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
 
-        NSString *tmp = [[NSString alloc] init];
+        NSString __unused *tmp = [[NSString alloc] init];
         // Put the code you want to measure the time of here.
         int const iterations = 100000;
         for (int i = 0; i < iterations; i++) {
@@ -456,7 +456,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
         double epoch = 1542957224;
         int const iterations = 100000;
 
-        int count = 0;
+        int __unused count = 0;
 
         for (int i = 0; i < iterations; i++) {
             @autoreleasepool {

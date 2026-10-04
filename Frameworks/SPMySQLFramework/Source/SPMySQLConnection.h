@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SPMySQLKeepAliveTimer;
+@class SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -81,6 +81,7 @@
 
 	// Currently selected database
 	NSString *database, *databaseToRestore;
+	SADatabaseAssertionState *databaseAssertionState;
 
 	// Delegate connection lost decisions
 	NSUInteger reconnectionRetryAttempts;

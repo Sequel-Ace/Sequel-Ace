@@ -30,12 +30,15 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPHelpViewerClient.h"
-#import "SPHelpViewerController.h"
 #import <SPMySQL/SPMySQL.h>
 #import "RegexKitLite.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
 #import "sequel-ace-Swift.h"
+
+NSString * const SPHelpViewerSearchTOC = @"contents";
+
+NSString * const SPUserClosedHelpViewerNotification = @"SPUserClosedHelpViewer";
 
 @interface SPHelpViewerClient () <SPHelpViewerDataSource>
 
@@ -54,7 +57,7 @@
 - (instancetype)init
 {
 	if (self = [super init]) {
-		controller = [[SPHelpViewerController alloc] init];
+		controller = [[SAHelpViewerWindowController alloc] init];
 		[controller setDataSource:self];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(helpViewerClosed:) name:SPUserClosedHelpViewerNotification object:controller];
 

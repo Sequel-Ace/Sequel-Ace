@@ -104,6 +104,11 @@ static NSString *_CellWillDismissNotification = @"NSComboBoxCellWillDismissNotif
 	[[NSNotificationCenter defaultCenter] removeObserver:self
 													name:_CellWillDismissNotification
 												  object:self];
+
+	// The cell's object value is final only after the popup event loop returns.
+	if([[self spDelegate] respondsToSelector:@selector(comboBoxCellDidDismissPopUp:)]) {
+		[[self spDelegate] comboBoxCellDidDismissPopUp:self];
+	}
 }
 
 - (void)sp_selectionDidChange:(NSNotification *)notification

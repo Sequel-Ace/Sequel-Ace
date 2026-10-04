@@ -29,9 +29,46 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SPHelpViewerController;
+@class SAHelpViewerWindowController;
 @class SPMySQLConnection;
 @class MGTemplateEngine;
+
+/**
+ * Magic search string the help viewer uses to request the table of contents.
+ */
+extern NSString * const SPHelpViewerSearchTOC;
+
+/**
+ * This notification is posted by the SAHelpViewerWindowController when the user
+ * triggered closing the help viewer window (or by -performClose:).
+ * The window is not guaranteed to be off screen already, when the notification is sent.
+ *
+ * It will NOT be sent when the window was closed or hidden by code (including app termination).
+ */
+extern NSString * const SPUserClosedHelpViewerNotification;
+
+@protocol SPHelpViewerDataSource <NSObject>
+
+@required
+/**
+ * When called with a search string this method should open the user's default browser
+ * with an URL to the MySQL online manual for the page that explains the search string.
+ */
+- (void)openOnlineHelpForTopic:(NSString *)searchString;
+
+/**
+ * This method is called by the help viewer's window controller when it wants to
+ * receive the HTML page to display in response to a search string.
+ *
+ * The implementation has to handle the magic search string SPHelpViewerSearchTOC to
+ * return a table of contents document.
+ */
+// Spelled out for Swift: the importer would otherwise drop the "String" suffix
+// and expose this as htmlHelpContents(forSearch:autoHelp:).
+- (NSString *)HTMLHelpContentsForSearchString:(NSString *)searchString autoHelp:(BOOL)autoHelp
+    NS_SWIFT_NAME(htmlHelpContents(forSearchString:autoHelp:));
+
+@end
 
 /**
  * This is the client side of the Help Viewer window, i.e. this class
@@ -47,7 +84,7 @@
  */
 @interface SPHelpViewerClient : NSObject
 {
-	SPHelpViewerController *controller;
+	SAHelpViewerWindowController *controller;
 
 	NSString *helpHTMLTemplate;
 	SPMySQLConnection *mySQLConnection;

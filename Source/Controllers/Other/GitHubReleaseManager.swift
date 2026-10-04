@@ -20,23 +20,26 @@ import OSLog
     private var project: String
     private var includeDraft: Bool
     private var includePrerelease: Bool
+    private var appVariant: SAGitHubReleaseAppVariant
     private var progressViewController: ProgressViewController?
     private var progressWindowController: ProgressWindowController?
     private var download: DownloadRequest?
     private var currentReleaseName: String = ""
     private var availableReleaseName: String = ""
-    private var currentRelease: GitHubElement?
-    private var availableRelease: GitHubElement?
-    private var releases: [GitHubElement] = []
+    private var currentRelease: SAGitHubRelease?
+    private var availableRelease: SAGitHubRelease?
+    private var releases: [SAGitHubRelease] = []
+    private var settlingRetry: DispatchWorkItem?
+    private var checkTracker = SAGitHubReleaseCheckTracker()
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
     private let manager = NetworkReachabilityManager(host: "www.google.com")
-    public var isFromMenuCheck: Bool = false
 
     struct Config {
         var user: String
         var project: String
         var includeDraft: Bool = false
         var includePrerelease: Bool = false
+        var appVariant: SAGitHubReleaseAppVariant = .production
     }
 
     private static var config: Config?
@@ -55,6 +58,7 @@ import OSLog
         project = config.project
         includeDraft = config.includeDraft
         includePrerelease = config.includePrerelease
+        appVariant = config.appVariant
 
         Log.debug("GitHubReleaseManager init")
 
@@ -62,25 +66,103 @@ import OSLog
 
     }
 
-    public func checkRelease(name: String) {
-        if name.count == 0 {
+    public func checkRelease(name: String, installedReleaseTag: String?, isUserInitiated: Bool) {
+        guard SAGitHubReleaseCheckPolicy.shouldCheck(
+            isUserInitiated: isUserInitiated,
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+            isAppStoreInstall: Bundle.main.isMASVersion
+        ) else {
+            Log.debug("Skipping unavailable GitHub release check")
+            return
+        }
+
+        if name.isEmpty {
             Log.error("name not valid")
             return
         }
 
+        guard let checkID = checkTracker.begin(isUserInitiated: isUserInitiated) else {
+            Log.debug("Keeping the active user-initiated GitHub release check")
+            return
+        }
+        settlingRetry?.cancel()
+        settlingRetry = nil
+        currentReleaseName = name
+        availableReleaseName = ""
+        currentRelease = nil
+        availableRelease = nil
+        releases = []
+
         Log.debug("checkRelease: \(name)")
 
         let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
+            + "?per_page=\(SAGitHubReleasePagination.pageSize)"
 
         Log.debug("GitHubReleaseManager.config = \(String(describing: GitHubReleaseManager.config))")
         Log.debug("urlStr = \(urlStr)")
 
-        AF.request(urlStr) { urlRequest in
+        guard let url = URL(string: urlStr) else {
+            Log.error("urlStr not valid")
+            checkTracker.finish(checkID)
+            return
+        }
+
+        requestReleasePage(at: url,
+                           accumulatedReleases: [],
+                           pagesFetched: 0,
+                           visitedPageURLs: [url],
+                           checkID: checkID,
+                           installedBuildName: name,
+                           installedReleaseTag: installedReleaseTag,
+                           isUserInitiated: isUserInitiated)
+    }
+
+    private func requestReleasePage(
+        at url: URL,
+        accumulatedReleases: [SAGitHubRelease],
+        pagesFetched: Int,
+        visitedPageURLs: Set<URL>,
+        checkID: UUID,
+        installedBuildName: String,
+        installedReleaseTag: String?,
+        isUserInitiated: Bool
+    ) {
+        guard SAGitHubReleaseCheckPolicy.shouldCheck(
+            isUserInitiated: isUserInitiated,
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+            isAppStoreInstall: Bundle.main.isMASVersion
+        ) else {
+            Log.debug("Stopping unavailable GitHub release pagination")
+            checkTracker.finish(checkID)
+            return
+        }
+
+        AF.request(url) { urlRequest in
             urlRequest.timeoutInterval = 60
             self.Log.debug("urlRequest: \(urlRequest)")
         }
         .validate() // check response code etc
-        .responseJSON { [self] response in
+        .responseData { [self] response in
+            guard checkTracker.isCurrent(checkID) else {
+                Log.debug("Ignoring a superseded GitHub release check response")
+                return
+            }
+            var shouldFinishCheck = true
+            defer {
+                if shouldFinishCheck {
+                    checkTracker.finish(checkID)
+                }
+            }
+
+            guard SAGitHubReleaseCheckPolicy.shouldCheck(
+                isUserInitiated: isUserInitiated,
+                automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+                isAppStoreInstall: Bundle.main.isMASVersion
+            ) else {
+                Log.debug("Ignoring unavailable GitHub release check response")
+                return
+            }
+
             switch response.result {
             case .success:
                 Log.info("Validation Successful")
@@ -91,17 +173,40 @@ import OSLog
                         return
                     }
 
-                    let json = try JSONSerialization.jsonObject(with: responseData, options: JSONSerialization.ReadingOptions())
-                    let jsonData = try JSONSerialization.data(withJSONObject: json, options: .fragmentsAllowed)
-                    let gitHub = try GitHub(data: jsonData)
+                    let page = try SAGitHubRelease.decodeList(from: responseData)
+                    let gitHub = accumulatedReleases + page
+                    let fetchedPageCount = pagesFetched + 1
 
-                    var releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
+                    if let nextPageURL = SAGitHubReleasePagination.nextPageURL(
+                        from: response.response?.value(forHTTPHeaderField: "Link"),
+                        pagesFetched: fetchedPageCount,
+                        visitedPageURLs: visitedPageURLs,
+                        releases: gitHub,
+                        installedBuildName: installedBuildName,
+                        installedReleaseTag: installedReleaseTag
+                    ) {
+                        Log.debug("requesting GitHub release page \(fetchedPageCount + 1)")
+                        shouldFinishCheck = false
+                        requestReleasePage(at: nextPageURL,
+                                           accumulatedReleases: gitHub,
+                                           pagesFetched: fetchedPageCount,
+                                           visitedPageURLs: visitedPageURLs.union([nextPageURL]),
+                                           checkID: checkID,
+                                           installedBuildName: installedBuildName,
+                                           installedReleaseTag: installedReleaseTag,
+                                           isUserInitiated: isUserInitiated)
+                        return
+                    }
+
+                    var releasesArray = gitHub.sorted(by: { (element0: SAGitHubRelease, element1: SAGitHubRelease) -> Bool in
                         element0 > element1
                     })
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
-                    if let currentReleaseTmp = releasesArray.first(where: { $0.name.hasPrefix(name) == true}) {
+                    if let currentReleaseTmp = releasesArray.first(where: {
+                        $0.matchesInstalledBuild(named: installedBuildName, releaseTag: installedReleaseTag)
+                    }) {
                         currentRelease = currentReleaseTmp
                         guard let currentReleaseName = currentRelease?.name else {
                             return
@@ -122,10 +227,50 @@ import OSLog
                         releasesArray.removeAll(where: { $0.prerelease == true })
                     }
 
-                    Log.debug("releasesArray count: \(releasesArray.count)")
+                    let now = Date()
+                    if let retryDelay = SAGitHubReleaseSettlingPolicy.retryDelay(
+                        at: now,
+                        currentRelease: currentRelease,
+                        candidateReleases: releasesArray
+                    ) {
+                        scheduleSettlingRetry(after: retryDelay,
+                                             installedBuildName: installedBuildName,
+                                             installedReleaseTag: installedReleaseTag,
+                                             isUserInitiated: isUserInitiated)
+                        return
+                    }
 
-                    releases = releasesArray
-                    availableRelease = releases.first
+                    Log.debug("removing releases without a compatible app zip")
+                    releasesArray.removeAll(where: { $0.compatibleAppZip(for: appVariant) == nil })
+
+                    if let retryDelay = SAGitHubReleaseSettlingPolicy.retryDelay(
+                        at: now,
+                        currentRelease: currentRelease,
+                        candidateReleases: releasesArray
+                    ) {
+                        scheduleSettlingRetry(after: retryDelay,
+                                             installedBuildName: installedBuildName,
+                                             installedReleaseTag: installedReleaseTag,
+                                             isUserInitiated: isUserInitiated)
+                        return
+                    }
+
+                    Log.debug("removing releases whose assets are still settling")
+                    releasesArray.removeAll(where: { $0.isSettled(at: now) == false })
+
+                    let rolloutSeed = isUserInitiated
+                        ? nil
+                        : SAGitHubReleaseRolloutPolicy.installationSeed(in: .standard)
+                    Log.debug("applying phased rollout to the newest GitHub update")
+                    availableRelease = SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+                        in: releasesArray,
+                        at: now,
+                        installationSeed: rolloutSeed,
+                        isUserInitiated: isUserInitiated
+                    )
+                    releases = availableRelease.map { [$0] } ?? []
+
+                    Log.debug("releases count after rollout gate: \(releases.count)")
 
                     guard
                         let currentReleaseTmp = currentRelease
@@ -144,10 +289,10 @@ import OSLog
                     if availableReleaseTmp > currentReleaseTmp {
                         availableReleaseName = availableReleaseTmp.name
                         Log.info("Found availableRelease: \(availableReleaseName)")
-                        _ = self.displayNewReleaseAvailableAlert()
+                        _ = self.displayNewReleaseAvailableAlert(isUserInitiated: isUserInitiated)
                     }
                     else {
-                        if isFromMenuCheck == false {
+                        if isUserInitiated == false {
                             Log.debug("From startup check, not menu check, so not showing no newer release alert")
                         }
                         else{
@@ -157,28 +302,69 @@ import OSLog
                     }
                 } catch {
                     Log.error("Error GitHub Exception: \(error.localizedDescription)")
-                    NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
+                    displayRequestFailureIfNeeded(error: error,
+                                                  statusCode: response.response?.statusCode,
+                                                  isUserInitiated: isUserInitiated)
                 }
 
             case let .failure(error):
                 Log.error("Error GitHub Failure: \(error.localizedDescription)")
-                NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
-                if (manager?.isReachable == false) {
+                if manager?.isReachable == false {
                     Log.error("manager?.isReachable == false")
                 }
+                displayRequestFailureIfNeeded(error: error.underlyingError ?? error,
+                                              statusCode: response.response?.statusCode,
+                                              isUserInitiated: isUserInitiated)
             }
         }
     }
 
-    private func displayNewReleaseAvailableAlert() -> Bool {
+    private func scheduleSettlingRetry(
+        after delay: TimeInterval,
+        installedBuildName: String,
+        installedReleaseTag: String?,
+        isUserInitiated: Bool
+    ) {
+        Log.info("A newer GitHub release is still settling; retrying in \(delay) seconds")
+        let operation = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: installedBuildName,
+            installedReleaseTag: installedReleaseTag,
+            isUserInitiated: isUserInitiated
+        ) { [weak self] name, releaseTag, isUserInitiated in
+            self?.checkRelease(name: name,
+                               installedReleaseTag: releaseTag,
+                               isUserInitiated: isUserInitiated)
+        }
+        let retry = DispatchWorkItem(block: operation)
+        settlingRetry = retry
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: retry)
+    }
+
+    private func displayRequestFailureIfNeeded(error: Error, statusCode: Int?, isUserInitiated: Bool) {
+        guard SAGitHubReleaseErrorPolicy.shouldPresentError(isUserInitiated: isUserInitiated,
+                                                           statusCode: statusCode,
+                                                           underlyingError: error) else {
+            Log.info("Ignoring non-actionable GitHub release check failure")
+            return
+        }
+
+        NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"),
+                                   message: error.localizedDescription)
+    }
+
+    private func displayNewReleaseAvailableAlert(isUserInitiated: Bool) -> Bool {
         Log.debug("displayNewReleaseAvailableAlert")
+
+        guard Bundle.main.isMASVersion == false else {
+            Log.error("Refusing to present a GitHub update to an App Store install")
+            return false
+        }
 
         let prefs: UserDefaults = UserDefaults.standard
         var localURL: URL
         let message: String
-        var asset: Asset?
 
-        if isFromMenuCheck == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
+        if isUserInitiated == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
             return false
         }
@@ -195,8 +381,9 @@ import OSLog
 
         localURL = url
 
-        if let availableAsset = availableRelease?.assets.first(where: { $0.browserDownloadURL.count > 0 }) {
-            asset = availableAsset
+        guard let asset = availableRelease?.compatibleAppZip(for: appVariant) else {
+            Log.error("release has no compatible app zip")
+            return false
         }
 
         message = NSLocalizedString("Version %@ is available. You are currently running %@",
@@ -205,15 +392,13 @@ import OSLog
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("A new version is available", comment: "A new version is available")
         alert.informativeText = message
-        if isFromMenuCheck == false {
+        if isUserInitiated == false {
             alert.showsSuppressionButton = true
         }
         alert.alertStyle = .informational
         alert.addButton(withTitle: NSLocalizedString("View", comment: "View button")).tag = GitHubReleaseManager.NSModalResponseView.rawValue
 
-        if asset != nil {
-            alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
-        }
+        alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button")).tag = NSApplication.ModalResponse.cancel.rawValue
 
         alert.beginSheetModal(for: mainWindow) { [self] (returnCode: NSApplication.ModalResponse) -> Void in
@@ -230,7 +415,7 @@ import OSLog
                 NSWorkspace.shared.open(localURL)
             case GitHubReleaseManager.NSModalResponseDownload:
                 self.Log.debug("user clicked download")
-                self.downloadNewRelease(asset: asset!) // already checked that this is not nil
+                self.downloadNewRelease(asset: asset)
             case NSApplication.ModalResponse.cancel:
                 self.Log.debug("user clicked cancel")
             default:
@@ -241,7 +426,7 @@ import OSLog
         return true
     }
 
-    private func downloadNewRelease(asset: Asset) {
+    private func downloadNewRelease(asset: SAGitHubReleaseAsset) {
         Log.debug("downloadNewRelease")
 
         Log.debug("asset.browserDownloadURL: \(asset.browserDownloadURL)")

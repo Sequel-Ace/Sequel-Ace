@@ -100,17 +100,47 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @end
 
-@interface SPTableContent () <SATableHeaderViewDelegate>
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation, SPComboBoxCellDelegate>
 
+@property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
+@property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
+@property (strong, nonatomic) SAComboBoxSelectionTracker *comboBoxSelectionTracker;
+@property (strong, nonatomic) SATableReloadCoordinator *reloadCoordinator;
+
+/** Abandons the row being edited, reporting whether one was abandoned. */
 - (BOOL)cancelRowEditing;
+/** Tears the content view down when its document window closes. */
 - (void)documentWillClose:(NSNotification *)notification;
+/** Starts a table reload without touching the automatic retry budget. */
+- (void)_startTableReload;
+/** Carries out one load of a table; -loadTable: tracks that it is running. */
+- (void)_loadTableContents:(NSString *)aTable;
+/** Starts a noted full reload once nothing else is loading. */
+- (void)_startPendingFullReloadIfIdle;
+/** Reports that a table's column list never matched the data it was sent. */
+- (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName;
 
+/** Resizes the filter rule editor to the height it asked for. */
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate;
+/** Follows the filter rule editor when its preferred size changes. */
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification;
+/** Re-lays out the content view after its size changed. */
 - (void)contentViewSizeChanged:(NSNotification *)notification;
+/** Shows or hides the rule filter editor. */
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate;
+/** Shows or hides the rule filter editor, noting whether the table changed. */
+- (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate tableChanged:(BOOL)tableChanged;
+/** Runs the query that saves the edited row, reporting whether it worked. */
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
+- (void)_updateRecordView;
+- (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
+- (NSInteger)_recordViewSelectedRow;
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID;
+- (void)_tableDataReloadDidFinish;
+- (void)_resumeDeferredComboBoxEdit;
 
 #pragma mark - SPTableContentDataSource_Private_API
 
@@ -119,6 +149,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 @end
 
 @implementation SPTableContent
+
+@synthesize tablesListInstance;
 
 #pragma mark -
 
@@ -133,6 +165,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		tableValues       = [[SPDataStorage alloc] init];
 		dataColumns       = [[NSMutableArray alloc] init];
 		oldRow            = [[NSMutableArray alloc] init];
+		_comboBoxSelectionTracker = [[SAComboBoxSelectionTracker alloc] init];
+		_reloadCoordinator = [[SATableReloadCoordinator alloc] init];
 
 		tableRowsCount         = 0;
 		previousTableRowsCount = 0;
@@ -167,6 +201,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		prefs = [NSUserDefaults standardUserDefaults];
 
 		showFilterRuleEditor = [prefs boolForKey:SPRuleFilterEditorLastVisibilityChoice];
+		ruleEditorVisibilityHasBeenApplied = NO;
 
 		usedQuery = @"";
 
@@ -211,6 +246,69 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
     [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
+    recordViewController = [[SARecordViewController alloc] init];
+    [recordViewController installOverlayInView:tableContentContainer
+                                         resizingView:[tableContentView enclosingScrollView]
+                                    shortcutTableView:tableContentView
+                                         bottomInset:25
+                                            topInset:0
+                                        autosaveName:@"SARecordViewContentWidth"];
+
+    __weak __typeof__(self) weakSelf = self;
+    [recordViewController setShowHandler:^{
+        [weakSelf _updateRecordView];
+    }];
+    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
+        SPTableContent *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordViewSelectedRow];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
+        if (row < 0 || !column) return NO;
+
+        if (![strongSelf tableView:strongSelf->tableContentView shouldEditTableColumn:column row:row]) return NO;
+        if ([strongSelf->tablesListInstance tableType] != SPTableTypeView) return YES;
+        NSInteger columnIndex = [strongSelf->tableContentView columnWithIdentifier:[column identifier]];
+        return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
+    } validate:^NSString *(NSInteger fieldID, NSString *value) {
+        SPTableContent *strongSelf = weakSelf;
+        if (!strongSelf) return nil;
+
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
+        return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
+    } commit:^BOOL(NSInteger fieldID, NSString *value) {
+        SPTableContent *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordViewSelectedRow];
+        NSTableColumn *column = [strongSelf _recordViewColumnForFieldID:fieldID];
+        if (row < 0 || !column) return NO;
+
+        NSInteger columnIndex = [[column identifier] integerValue];
+        if ([strongSelf->tableContentView shouldUseFieldEditorForRow:row column:columnIndex checkWithLock:NULL]) return NO;
+
+        NSFormatter *formatter = [[column dataCell] formatter];
+        NSDictionary *columnDefinition = [strongSelf->dataColumns safeObjectAtIndex:columnIndex];
+        BOOL isNull = [value isEqualToString:[strongSelf->prefs objectForKey:SPNullValue]] && [[columnDefinition objectForKey:@"null"] boolValue];
+        if (!isNull && ![formatter isKindOfClass:[SABaseFormatter class]] && [strongSelf cellValueIsDisplayedAsHexForColumn:columnIndex] && ![NSData sp_dataWithHexString:value]) {
+            NSBeep();
+            return NO;
+        }
+
+        id objectValue = value;
+        if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
+            NSBeep();
+            return NO;
+        }
+
+        strongSelf.suppressRecordViewTaskRefresh = YES;
+        [strongSelf tableView:strongSelf->tableContentView setObjectValue:objectValue forTableColumn:column row:row];
+        strongSelf.suppressRecordViewTaskRefresh = NO;
+        [strongSelf->tableContentView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:row]
+                                                 columnIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [[strongSelf->tableContentView tableColumns] count])]];
+        return NO;
+    }];
+
     if (self->columnFilterSearchField) {
         // Keep this control non-layer-backed to avoid expensive AppKit redraw paths on newer macOS versions.
         self->columnFilterSearchField.wantsLayer = NO;
@@ -227,6 +325,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
     [self->prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
     [self->prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+    [self->prefs addObserver:self forKeyPath:[SARuleFilterDropZoneLayoutPolicy defaultsKey] options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
     // Add observer to change view sizes with filter rule editor
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -261,6 +360,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 }
 
+- (void)toggleRecordView
+{
+	[recordViewController toggle];
+}
+
 #pragma mark -
 #pragma mark Table loading methods and information
 
@@ -271,6 +375,24 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  * @param aTable The to be loaded table name
  */
 - (void)loadTable:(NSString *)aTable
+{
+	[self.reloadCoordinator loadDidBegin];
+
+	[self _loadTableContents:aTable];
+
+	[self.reloadCoordinator loadDidEnd];
+
+	// The load is over and has put its details back, so a full reload it asked
+	// for along the way can now have a worker of its own.
+	[self _startPendingFullReloadIfIdle];
+}
+
+/**
+ * Carries out one load of aTable; the wrapper above tracks that it is running.
+ *
+ * @param aTable The to be loaded table name
+ */
+- (void)_loadTableContents:(NSString *)aTable
 {
 	// Abort the reload if the user is still editing a row
 	if (isEditingRow) return;
@@ -305,7 +427,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[self onMainThread] setTableDetails:tableDetails];
 
 	// Init copyTable with necessary information for copying selected rows as SQL INSERT
-	[tableContentView setTableInstance:self withTableData:tableValues withColumns:dataColumns withTableName:selectedTable withConnection:mySQLConnection];
+	[tableContentView setTableInstance:self withTableData:tableValues withColumns:dataColumns withTableName:selectedTable withDatabaseName:[tableDocumentInstance database] withConnection:mySQLConnection];
 
 	// Trigger a data refresh
 	[self loadTableValues];
@@ -330,6 +452,21 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Clear any details to restore now that they have been restored
 	[self clearDetailsToRestore];
+}
+
+/**
+ * Starts a noted full reload, unless something is still loading around it.
+ *
+ * A reload task runs its rounds in a loop of its own, and a load that is still
+ * restoring its details would clear the details the new reload saves, so both
+ * take the note themselves once they are through. As before, the reload runs
+ * within any document task the load belongs to.
+ */
+- (void)_startPendingFullReloadIfIdle
+{
+	if (![self.reloadCoordinator takeNoteWhenIdle]) return;
+
+	[[self onMainThread] _startTableReload];
 }
 
 /**
@@ -361,6 +498,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[toggleRuleFilterButton setEnabled:NO];
 	[toggleRuleFilterButton setState:NSControlStateValueOff];
 	[ruleFilterController setColumns:nil];
+	// The next valid table needs an initial visibility application even when it
+	// has the same name as the table whose model was just cleared.
+	ruleEditorVisibilityHasBeenApplied = NO;
 
 	// Disable pagination
 	[paginationPreviousButton setEnabled:NO];
@@ -404,6 +544,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	} else {
 		newTableName = [tableDetails objectForKey:@"name"];
 	}
+	BOOL tableChanged = ![selectedTable isEqualToString:newTableName];
+	// Column identifiers are storage indexes. Start the generation boundary
+	// before UI teardown can end editing and emit a callback from the old model.
+	[_comboBoxSelectionTracker tableColumnModelWillChange];
 
 	// Ensure the pagination view hides itself if visible, after a tiny delay for smoothness
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
@@ -413,7 +557,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Check the supplied table name.  If it matches the old one, a reload is being performed;
 	// reload the data in-place to maintain table state if possible.
-	if ([selectedTable isEqualToString:newTableName]) {
+	if (!tableChanged) {
 		previousTableRowsCount = tableRowsCount;
 
 		// Store the column widths for later restoration
@@ -424,6 +568,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Otherwise store the newly selected table name and reset the data
 	} else {
+
+		// Another table is a fresh start for the automatic reload budget.
+		[self.reloadCoordinator resetAll];
 
         if (newTableName){
             SPLog(@"new table: %@", newTableName);
@@ -538,11 +685,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[ruleFilterController restoreSerializedFilters:filtersToRestore];
 	// hide/show the rule filter editor, based on its previous state (so that it stays visible when switching tables, if someone has enabled it and vice versa)
 	if (showFilterRuleEditor) {
-		[self setRuleEditorVisible:YES animate:YES];
+		[self setRuleEditorVisible:YES animate:YES tableChanged:tableChanged];
 		[toggleRuleFilterButton setState:NSControlStateValueOn];
 	}
 	else {
-		[self setRuleEditorVisible:NO animate:YES];
+		[self setRuleEditorVisible:NO animate:YES tableChanged:tableChanged];
 		[toggleRuleFilterButton setState:NSControlStateValueOff];
 	}
 	[ruleFilterController setEnabled:enableInteraction];
@@ -568,10 +715,30 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 }
 
+/**
+ * Rebuild the content view's columns, showing every column of the table.
+ *
+ * @param savedColumnWidths The widths of a reloaded table's columns, keyed by header string
+ * @param font The font the table's cells are drawn in
+ */
 - (void)_buildTableColumns:(NSMutableDictionary *)savedColumnWidths withFont:(NSFont *)font {
     [self _buildTableColumns:savedColumnWidths withFont:font filterTerms:nil];
 }
 
+/**
+ * Rebuild the content view's columns from the current table's column definitions.
+ *
+ * Each column gets a header cell showing its name - with its type appended when that
+ * preference is set - a tooltip describing the definition and a data cell matching the
+ * column's type. Its width comes from savedColumnWidths, or else from the width stored
+ * for the table in SQLite. Finally the sort indicator is put back on the column that was
+ * sorted before, or sorting is cleared when that column is no longer shown.
+ *
+ * @param savedColumnWidths The widths of a reloaded table's columns, keyed by header string
+ * @param font The font the table's cells are drawn in; the header font is derived from it
+ * @param filterTerms Lowercase terms that limit the table to the columns whose name contains
+ *                    one of them, or nil to show every column
+ */
 - (void)_buildTableColumns:(NSMutableDictionary *)savedColumnWidths withFont:(NSFont *)font filterTerms:(NSArray *)filterTerms {
     NSString *nullValue = [prefs objectForKey:SPNullValue];
     BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
@@ -684,6 +851,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     if ([typegroup isEqualToString:@"enum"]) {
         cell = [[SPComboBoxCell alloc] initTextCell:@""];
+        [cell setSpDelegate:tc];
         [cell setButtonBordered:NO];
         [cell setBezeled:NO];
         [cell setDrawsBackground:NO];
@@ -711,11 +879,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         [cell setAlignment:NSTextAlignmentRight];
     }
 
-    // Set field length limit if field is a varchar to match varchar length
-    if ([typegroup isEqualToString:@"string"] || [typegroup isEqualToString:@"bit"]) {
-        [[cell formatter] setTextLimit:[colDefs[@"length"] integerValue]];
-    }
-
     // Set the line break mode and an NSFormatter subclass which displays line breaks nicely
     [cell setLineBreakMode:NSLineBreakByTruncatingTail];
     [cell setFont:tableFont];
@@ -727,6 +890,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         // default formatter
         [cell setFormatter:[SPDataCellFormatter new]];
         [[cell formatter] setFieldType:colDefs[@"type"]];
+    }
+
+    // Set field length limit if field is a varchar or a BIT to match its length.
+    // Only once the formatter is in place: set before it, the limit went to
+    // the cell's nil formatter and was lost. A display format override (UUID)
+    // validates its own text and takes no limit. For a BIT column the limit
+    // also switches on the formatter's 0/1-only check; typing NULL still works,
+    // as the start of the placeholder is let through.
+    if (([typegroup isEqualToString:@"string"] || [typegroup isEqualToString:@"bit"]) && [[cell formatter] isKindOfClass:[SPDataCellFormatter class]]) {
+        [(SPDataCellFormatter *)[cell formatter] setTextLimit:[colDefs[@"length"] integerValue]];
     }
 
     if ([typegroup isEqualToString:@"binary"]) {
@@ -753,6 +926,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void) clearTableValues
 {
+	[_comboBoxSelectionTracker tableDataWillChange];
+	if ([NSThread isMainThread]) {
+		[recordViewController clear];
+	} else {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self->recordViewController clear];
+		});
+	}
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	tableValues = [[SPDataStorage alloc] init];
@@ -771,10 +952,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If no table is selected, return
 	if (!selectedTable) return;
 
+	// Count this load as running, so a reload task finishing beside it does not
+	// take its note while it is still working. Filtering, paging, sorting and
+	// the refresh after an edit come straight here with no -loadTable: around
+	// them, and would otherwise look like no load at all.
+	[self.reloadCoordinator loadDidBegin];
+	// Conservatively block popup commits until this load either mutates the snapshot or finishes unchanged.
+	[_comboBoxSelectionTracker tableDataReloadWillBegin];
+
 	NSMutableString *queryString;
 	NSString *queryStringBeforeLimit = nil;
 	NSString *filterString;
 	SPMySQLStreamingResultStore *resultStore;
+	NSString *databaseName = [tableDocumentInstance database];
 	NSInteger rowsToLoad = [[tableDataInstance statusValueForKey:@"Rows"] integerValue];
 
 	[[countText onMainThread] setStringValue:NSLocalizedString(@"Loading table data...", @"Loading table data string")];
@@ -833,7 +1023,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Perform and process the query
 	[tableContentView performSelectorOnMainThread:@selector(noteNumberOfRowsChanged) withObject:nil waitUntilDone:YES];
 	[self setUsedQuery:queryString];
-	resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
+	resultStore = [mySQLConnection resultStoreFromQueryString:queryString assertingDatabase:databaseName];
 
 	// Ensure the number of columns are unchanged; if the column count has changed, abort the load
 	// and queue a full table reload.
@@ -847,6 +1037,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
     SPLog(@"[selectedItems count] = %lu", (unsigned long)[selectedItems count]);
 
 	BOOL fullTableReloadRequired = NO;
+	BOOL columnMismatchUnresolved = NO;
     // only do the column vs numfields check if selectedItems.count == 1
     // otherwise, when selecting two (or more) tables to export, the code falls into this block when it shouldn't
     // and cancels the current query, which always seems to fail, which then triggers the diabolical reconnect code
@@ -857,21 +1048,33 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[tableDocumentInstance disableTaskCancellation];
 		[mySQLConnection cancelCurrentQuery];
 		[resultStore cancelResultLoad];
-		fullTableReloadRequired = YES;
+
+		// A reload only helps while the column list can still change. If the list keeps
+		// disagreeing with the result - a dropping connection leaves it empty, and the
+		// query then selects every column - each reload asks for the next one, so the
+		// reloads are capped and the user is told instead.
+		if ([self.reloadCoordinator noteFullReloadForTable:selectedTable]) {
+			fullTableReloadRequired = YES;
+		} else {
+			SPLog(@"Column mismatch persists after %ld reloads, giving up", (long)[self.reloadCoordinator attemptCountForTable:selectedTable]);
+			columnMismatchUnresolved = YES;
+		}
+	} else if (selectedItems.count == 1 && resultStore) {
+		[self.reloadCoordinator resetForTable:selectedTable];
 	}
 
 	// Process the result into the data store
-	if (!fullTableReloadRequired && resultStore) {
+	if (!fullTableReloadRequired && !columnMismatchUnresolved && resultStore) {
 		[self updateResultStore:resultStore approximateRowCount:rowsToLoad];
 	}
 
 	// If the result is empty, and a late page is selected, reset the page
-	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
+	if (!fullTableReloadRequired && !columnMismatchUnresolved && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
 		contentPage = 1;
 		previousTableRowsCount = tableRowsCount;
 		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT 0,%ld", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
 		[self setUsedQuery:queryString];
-		resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
+		resultStore = [mySQLConnection resultStoreFromQueryString:queryString assertingDatabase:databaseName];
 		if (resultStore) {
 			[self updateResultStore:resultStore approximateRowCount:[prefs integerForKey:SPLimitResultsValue]];
 		}
@@ -978,6 +1181,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Notify listenters that the query has finished
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
+	if (self.deferRecordViewRefreshUntilTableLoadCompletes && !fullTableReloadRequired) {
+		self.deferRecordViewRefreshUntilTableLoadCompletes = NO;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self _updateRecordView];
+		});
+	}
+
 	if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
 			NSString *errorDetail;
@@ -1000,14 +1210,26 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	} 
 	else
 	{
-		// Trigger a full reload if required
+		// The reload was noted with the coordinator above rather than started here:
+		// running it from this worker would load inside the load that asked for
+		// it, and nest a further load inside that, without end.
         if (fullTableReloadRequired){
             SPLog(@"Trigger a full reload");
-            [self reloadTable:self];
 
+        } else if (columnMismatchUnresolved) {
+            [self _reportUnresolvedColumnMismatchForTable:selectedTable];
         }
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
+	[self _tableDataReloadDidFinish];
+
+	[self.reloadCoordinator loadDidEnd];
+
+	// Filtering, paging, sorting and the refresh after an edit load the values
+	// without a surrounding -loadTable:, so the note is taken here as well. With
+	// a -loadTable: around this load the count is still above zero here and that
+	// wrapper takes the note instead.
+	[self _startPendingFullReloadIfIdle];
 }
 
 /**
@@ -1021,6 +1243,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	tableLoadTargetRowCount = targetRowCount;
 
 	// Update the data storage, updating the current store if appropriate
+	// Invalidate at the mutation boundary. This covers a popup opened after a load started but before
+	// the streaming result replaced an existing store with another result of the same dimensions.
+	[_comboBoxSelectionTracker tableDataWillChange];
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	[tableValues setDataStorage:theResultStore updatingExisting:!![tableValues count]];
@@ -1252,6 +1477,24 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (IBAction)reloadTable:(id)sender
 {
+	// A reload asked for from outside starts the automatic budget over; the budget
+	// only bounds the reloads a load queues for itself after a column mismatch.
+	[self.reloadCoordinator resetForTable:selectedTable];
+	[self _startTableReload];
+}
+
+/**
+ * Starts a table reload without touching the automatic retry budget.
+ *
+ * Asked for on the main thread this detaches a worker of its own. A load that
+ * noted a full reload for itself starts it here only once that load is done,
+ * so the two never run into each other over the details they save and restore.
+ */
+- (void)_startTableReload
+{
+	// Reserve the reload before detaching its worker so popup callbacks cannot
+	// slip through between a schema-mismatch load and its queued full reload.
+	[_comboBoxSelectionTracker tableDataReloadWillBegin];
 	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Reloading data...", @"Reloading data task description")];
 
 	if ([NSThread isMainThread]) {
@@ -1261,11 +1504,39 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 }
 
+/**
+ * Tells the user that a table's column list kept disagreeing with the data the
+ * server returned, so its contents were not loaded and the reloads were stopped.
+ *
+ * @param tableName The table whose contents were left unloaded.
+ */
+- (void)_reportUnresolvedColumnMismatchForTable:(NSString *)tableName
+{
+	NSString *message = [NSString stringWithFormat:NSLocalizedString(@"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.", @"table column list mismatch informative message"), tableName ? tableName : @""];
+
+	// Asked for without waiting: the load has nothing left to do once it has given
+	// up, and its worker should not sit on the alert until the user dismisses it.
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Table contents not loaded", @"table contents not loaded message") message:message callback:nil];
+	});
+}
+
+/**
+ * Reloads the table, repeating the load while a round asks for another.
+ */
 - (void)reloadTableTask
 {
 	@autoreleasepool {
-		// Check whether a save of the current row is required, abort if pending changes couldn't be saved.
-		if ([[self onMainThread] saveRowOnDeselect]) {
+		[self.reloadCoordinator reloadTaskDidBegin];
+
+		// A load whose column list disagrees with the result asks for another full
+		// load. Those rounds run here one after another rather than one inside the
+		// next, so each load finishes - and puts back the details it saved - before
+		// the following one starts. -loadTableValues bounds how many there can be.
+		BOOL loadAgain = NO;
+		do {
+			// Check whether a save of the current row is required, abort if pending changes couldn't be saved.
+			if (![[self onMainThread] saveRowOnDeselect]) break;
 
 			// Save view details to restore safely if possible (except viewport, which will be
 			// preserved automatically, and can then be scrolled as the table loads)
@@ -1278,10 +1549,49 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// Load the table's data
 			[self loadTable:[tablesListInstance tableName]];
-		}
+
+			loadAgain = [self.reloadCoordinator takeNoteForReloadTask];
+		} while (loadAgain);
+
+		[self.reloadCoordinator reloadTaskDidEnd];
 
 		[tableDocumentInstance endTask];
+		[self _tableDataReloadDidFinish];
+
+		// A load running beside this task may have left a note the loop above
+		// never saw; it is started here rather than left behind.
+		[self _startPendingFullReloadIfIdle];
 	}
+}
+
+/**
+ * Releases the reload reserved for popup callbacks once the load is through.
+ */
+- (void)_tableDataReloadDidFinish
+{
+	if (![_comboBoxSelectionTracker tableDataReloadDidFinish]) return;
+
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self _resumeDeferredComboBoxEdit];
+	});
+}
+
+/**
+ * Resumes a popup edit that was put off while the table was loading.
+ */
+- (void)_resumeDeferredComboBoxEdit
+{
+	// An enclosing document task can outlive its data query. Its end
+	// notification calls this method again once table editing is safe.
+	if (isWorking) return;
+
+	SADeferredComboBoxEdit *edit = [_comboBoxSelectionTracker takeDeferredEditIfReady];
+	if (!edit) return;
+
+	[self tableView:tableContentView
+	  setObjectValue:edit.proposedValue
+	  forTableColumn:edit.tableColumn
+	  row:edit.row];
 }
 
 /**
@@ -1403,12 +1713,31 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate
 {
+	[self setRuleEditorVisible:show animate:animate tableChanged:NO];
+}
+
+- (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate tableChanged:(BOOL)tableChanged
+{
+	BOOL visibilityWasApplied = ruleEditorVisibilityHasBeenApplied;
+	BOOL wasVisible = showFilterRuleEditor;
+	BOOL editorIsEmpty = [ruleFilterController isEmpty];
+	BOOL shouldAddStarterRule = [SARuleFilterVisibilityPolicy shouldAddStarterRuleWithVisibilityWasApplied:visibilityWasApplied
+	                                                                                              wasVisible:wasVisible
+	                                                                                           willBeVisible:show
+	                                                                                             tableChanged:tableChanged
+	                                                                                           editorIsEmpty:editorIsEmpty];
+	showFilterRuleEditor = show;
+	ruleEditorVisibilityHasBeenApplied = YES;
+
 	// we can't change the state of the button here, because the mouse click already changed it
-	if((showFilterRuleEditor = show)) {
+	if(showFilterRuleEditor) {
 		[ruleFilterController setEnabled:YES];
-		// if it was the user who enabled the filter (indicated by the animation) add an empty row by default
-		if([ruleFilterController isEmpty]) {
-			[[ruleFilterController onMainThread] addFilterExpression];
+		// First application, an actual hidden-to-visible transition, and a
+		// switch to another table should seed the editor. Same-table refreshes
+		// only reapply the already-visible state and must remain idempotent.
+		if(shouldAddStarterRule) {
+			// Unchecked: an empty template is not a filter, and nothing is applied yet.
+			[[ruleFilterController onMainThread] addStarterFilterExpression];
 			// the sizing will be updated automatically by adding a row
 		}
 		else {
@@ -1662,7 +1991,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// Get the primary key if there is one, using any columns present within it
 	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-		[database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+		[database backtickQuotedString], [tableForColumn backtickQuotedString]] assertingDatabase:database];
 	[theResult setReturnDataAsStrings:YES];
 	NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
 	for (NSDictionary *eachRow in theResult) {
@@ -1786,6 +2115,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"You can only copy single rows.", @"message of panel when trying to copy multiple rows") callback:nil];
 		return;
 	}
+	NSString *databaseName = [tableDocumentInstance database];
 
 	// Row contents
 	tempRow = [tableValues rowContentsAtIndex:[tableContentView selectedRow]];
@@ -1800,12 +2130,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 		
 		// If we have indexes, use argumentForRow
-		queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [selectedTable backtickQuotedString], whereArgument]];
+		queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [selectedTable backtickQuotedString], whereArgument] assertingDatabase:databaseName];
 		dbDataRow = [queryResult getRowAsArray];
 	}
 
 	// Set autoincrement fields to NULL
-	queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
+	queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
 	
 	[queryResult setReturnDataAsStrings:YES];
 	
@@ -1946,13 +2276,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		SPLog(@"Cancel pressed returning without deleting rows");
 		return;
 	}
+	NSString *databaseName = [tableDocumentInstance database];
 
 	if (isDeleteAllRowsRequest) {
         // Check if the user is currently editing a row, and revert to ensure a somewhat
         // consistent state if deletion fails.
         if (isEditingRow) [self cancelRowEditing];
 
-        [mySQLConnection queryString:[NSString stringWithFormat:@"DELETE FROM %@", [selectedTable backtickQuotedString]]];
+		[mySQLConnection queryString:[NSString stringWithFormat:@"DELETE FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
         if ( ![mySQLConnection queryErrored] ) {
             maxNumRows = 0;
             tableRowsCount = 0;
@@ -2022,14 +2353,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             NSInteger numberOfRows = 0;
 
             // Get the number of rows in the table
-            NSString *returnedCount = [mySQLConnection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [selectedTable backtickQuotedString]]];
+			SPMySQLResult *countResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
+            NSString *returnedCount = [[countResult getRowAsArray] firstObject];
             if (returnedCount) {
                 numberOfRows = [returnedCount integerValue];
             }
 
             // Check for uniqueness via LIMIT numberOfRows-1,numberOfRows for speed
             if(numberOfRows > 0) {
-                [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [selectedTable backtickQuotedString], [primaryKeyFieldNames componentsJoinedAndBacktickQuoted], (long)(numberOfRows-1), (long)numberOfRows]];
+				[mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [selectedTable backtickQuotedString], [primaryKeyFieldNames componentsJoinedAndBacktickQuoted], (long)(numberOfRows-1), (long)numberOfRows] assertingDatabase:databaseName];
                 if ([mySQLConnection rowsAffectedByLastQuery] == 0)
                     primaryKeyFieldNames = nil;
             } else {
@@ -2045,7 +2377,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 //argumentForRow might return empty query, in which case we shouldn't execute the partial query
                 if([wherePart length]) {
-                    [mySQLConnection queryString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@", [selectedTable backtickQuotedString], wherePart]];
+					[mySQLConnection queryString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@", [selectedTable backtickQuotedString], wherePart] assertingDatabase:databaseName];
 
                     // Check for errors
                     if ( ![mySQLConnection rowsAffectedByLastQuery] || [mySQLConnection queryErrored]) {
@@ -2095,7 +2427,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 // Split deletion query into 256k chunks
                 if([deleteQuery length] > 256000) {
                     [deleteQuery appendString:@")"];
-                    [mySQLConnection queryString:deleteQuery];
+					[mySQLConnection queryString:deleteQuery assertingDatabase:databaseName];
 
                     // Remember affected rows for error checking
                     affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
@@ -2114,7 +2446,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             if(![deleteQuery hasSuffix:@"("]) {
                 // Replace final , by ) and delete the remaining rows
                 [deleteQuery setString:[NSString stringWithFormat:@"%@)", [deleteQuery substringToIndex:([deleteQuery length]-1)]]];
-                [mySQLConnection queryString:deleteQuery];
+				[mySQLConnection queryString:deleteQuery assertingDatabase:databaseName];
 
                 // Remember affected rows for error checking
                 affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
@@ -2143,7 +2475,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 // Split deletion query into 64k chunks
                 if([deleteQuery length] > 64000) {
-                    [mySQLConnection queryString:deleteQuery];
+					[mySQLConnection queryString:deleteQuery assertingDatabase:databaseName];
 
                     // Remember affected rows for error checking
                     affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
@@ -2163,7 +2495,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 // Remove final ' OR ' and delete the remaining rows
                 [deleteQuery setString:[deleteQuery substringToIndex:([deleteQuery length]-4)]];
-                [mySQLConnection queryString:deleteQuery];
+				[mySQLConnection queryString:deleteQuery assertingDatabase:databaseName];
 
                 // Remember affected rows for error checking
                 affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
@@ -2447,12 +2779,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *refTableName = [refDictionary objectForKey:@"table"];
 			NSString *refDatabaseName = [refDictionary objectForKey:@"database"];
 			BOOL targetColumnIsBinary = NO;
+			NSString *targetTypeGrouping = nil;
 
 			NSDictionary *refTableInfo = [self->tableDataInstance informationForTable:refTableName fromDatabase:refDatabaseName];
 			if (refTableInfo) {
 				for (NSDictionary *col in [refTableInfo objectForKey:@"columns"]) {
 					if ([[col objectForKey:@"name"] isEqualToString:refColumnName]) {
-						targetColumnIsBinary = [[col objectForKey:@"typegrouping"] isEqualToString:@"binary"];
+						targetTypeGrouping = [col objectForKey:@"typegrouping"];
+						targetColumnIsBinary = [targetTypeGrouping isEqualToString:@"binary"];
 						break;
 					}
 				}
@@ -2502,6 +2836,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					}
 				}
 			}
+
+			// A BIT target compares the decimal value, not the displayed bit string
+			targetFilterValue = [SPFieldTypeClassifier filterValueForValue:targetFilterValue targetTypeGrouping:targetTypeGrouping];
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -2574,7 +2911,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSUInteger i;
 	
 	// Run the query
-	[mySQLConnection queryString:queryString];
+	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
@@ -2965,7 +3302,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( !keys ) {
 		setLimit = NO;
 		keys = [[NSMutableArray alloc] init];
-		SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
+		SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 		if(!theResult) {
 			SPLog(@"no result from SHOW COLUMNS mysql query! Abort.");
 			return @"";
@@ -3148,7 +3485,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
 		[[columnDefinition objectForKey:@"db"] backtickQuotedString],
 		[tableForColumn backtickQuotedString],
-		fieldIDQueryStr]];
+		fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
 	if ([mySQLConnection queryErrored]) {
 		[tableDocumentInstance endTask];
@@ -3168,7 +3505,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
 			[[columnDefinition objectForKey:@"db"] backtickQuotedString],
 			[tableForColumn backtickQuotedString],
-			fieldIDQueryStr]];
+			fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
 		if ([mySQLConnection queryErrored]) {
 			[tableDocumentInstance endTask];
@@ -3240,6 +3577,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// Otherwise, in tables, save back to the row store
 			} else {
 				[tableValues replaceObjectInRow:row column:[[theTableColumn identifier] integerValue] withObject:[data copy]];
+				[self _updateRecordView];
 			}
 		}
 	}
@@ -3248,10 +3586,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// now would risk a dealloc while it is still our parent on the stack:
 	(void)(fieldEditor), fieldEditor = nil;
 
+	// This callback only runs for values routed through the field editor sheet.
+	// Re-entering inline editing here makes AppKit lay out the full value before
+	// it can be redirected back to the sheet, which can crash for large text.
 	[[tableContentView window] makeFirstResponder:tableContentView];
-
-	if(row > -1 && column > -1)
-		[tableContentView editColumn:column row:row withEvent:nil select:YES];
 }
 
 - (void)saveViewCellValue:(id)anObject forTableColumn:(NSTableColumn *)aTableColumn row:(NSUInteger)rowIndex
@@ -3282,7 +3620,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[self storeCurrentDetailsForRestoration];
 
 	// Check if the IDstring identifies the current field bijectively and get the WHERE clause
-	NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+	NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[tableContentView columnWithIdentifier:[aTableColumn identifier]]];
 	NSString *fieldIDQueryStr = [editStatus objectAtIndex:1];
 	NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 
@@ -3313,7 +3651,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[mySQLConnection queryString:
 			[NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
 				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString],
-				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryStr]];
+				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryStr]
+			assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
 		// Check for errors while UPDATE
 		if ([mySQLConnection queryErrored]) {
@@ -3361,6 +3700,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+	self.deferRecordViewRefreshUntilTableLoadCompletes = YES;
 	[tableDocumentInstance endTask];
 
 	[self loadTableValues];
@@ -3617,26 +3957,32 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate
 {
+	// Table loading calls this from its background task thread. Frames and
+	// animators may only be touched on main – off-main updates intermittently
+	// leave the container clipped after a table switch (rows visible, drop
+	// zone and button strip gone), so marshal the whole pass.
+	if (![NSThread isMainThread]) {
+		SPMainQSync(^{
+			[self updateFilterRuleEditorSize:requestedHeight animate:animate];
+		});
+		return;
+	}
+
 	NSRect contentAreaRect = [contentAreaContainer frame];
 	CGFloat availableHeight = contentAreaRect.size.height;
 	NSRect ruleEditorRect = [[[ruleFilterController view] enclosingScrollView] frame];
 
-	// Space reserved at the bottom of the filter container for the
-	// "Drop a value here, or click to add a filter" zone. The drop box sits
-	// below the rule editor's scroll view, shrinking the scroll view
-	// upward so both fit without overlapping the Apply / Add Filter
-	// buttons pinned to the right.
-	CGFloat dropBoxReserved = showFilterRuleEditor ? [ruleFilterController dropBoxReservedHeight] : 0;
-	// When the rule editor has no rules, collapse its scroll view so
-	// the filter container shrinks to just the drop box – leaving a
-	// tall empty band above the drop box would look abandoned.
-	BOOL ruleEditorHasRows = showFilterRuleEditor && ![ruleFilterController isEmpty];
-	CGFloat ruleEditorTopMargin = ruleEditorHasRows ? 1 : 0;
+	SARuleFilterDropZoneLayoutMetrics *layout = [SARuleFilterDropZoneLayoutPolicy metricsWithEditorVisible:showFilterRuleEditor
+	                                                                                       editorHasRows:![ruleFilterController isEmpty]
+	                                                                                      requestedHeight:requestedHeight
+	                                                                                       dropZoneHeight:[ruleFilterController dropBoxReservedHeight]
+	                                                                                         userDefaults:prefs];
+	CGFloat dropBoxReserved = [layout dropZoneReservedHeight];
 	ruleEditorRect.origin.x = 1;
-	ruleEditorRect.origin.y = dropBoxReserved + ruleEditorTopMargin;
+	ruleEditorRect.origin.y = [layout ruleEditorOriginY];
 
 	//adjust for the UI elements below the rule editor, but only if the view should not be hidden
-	CGFloat containerRequestedHeight = showFilterRuleEditor ? (dropBoxReserved + (ruleEditorHasRows ? MAX(requestedHeight, 29) + ruleEditorTopMargin : 0)) : 0;
+	CGFloat containerRequestedHeight = [layout containerRequestedHeight];
 
 	//the rule editor can ask for about one-third of the available space before we have it use it's scrollbar
 	CGFloat topContainerGivenHeight = MAX(MIN(containerRequestedHeight,(availableHeight / 3)), 1);
@@ -3658,15 +4004,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	ruleEditorRect.size.height = MAX(topContainerGivenHeight - ruleEditorRect.origin.y, 0);
 
 	// Drop box spans the full width minus the button zone on the right
-	// (Apply Filters / Add Filter both live at x=579 width=111 in the
-	// IB layout). Keeping it short-of-buttons avoids any overlap even
-	// when the rule editor grows to its full allotted height, and the
-	// padding on every side prevents the dashed border from abutting
-	// the rule editor above, the result-grid header below, or the
-	// window edges on the sides.
+	// (the AND/OR popup at x=458 width=118 plus Apply Filters / Add Filter
+	// at x=579 width=111 in the IB layout). Keeping it short-of-buttons
+	// avoids any overlap even when the rule editor grows to its full
+	// allotted height, and the padding on every side prevents the dashed
+	// border from abutting the rule editor above, the result-grid header
+	// below, or the window edges on the sides.
 	SPRuleFilterDropBox *dropBox = [ruleFilterController dropBoxView];
 	const CGFloat dropBoxLeftPadding = 10;
-	const CGFloat dropBoxRightReserve = 125;
+	const CGFloat dropBoxRightReserve = 250;
 	const CGFloat dropBoxBottomPadding = 7;
 	const CGFloat dropBoxTopPadding = 5;
 	// Also clamp the drop box height against the container's actual
@@ -3693,7 +4039,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         [[[ruleFilterController view] enclosingScrollView] setFrame:ruleEditorRect];
         if (dropBox) [dropBox setFrame:dropBoxRect];
 	}
-	[dropBox setHidden:!showFilterRuleEditor];
+	[dropBox setHidden:![layout dropZoneVisible]];
 
 	//disable rubberband scrolling as long as there is nothing to scroll
     NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
@@ -3707,7 +4053,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification
 {
 	if(showFilterRuleEditor) {
-		[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:YES];
+		// Never animate row-driven height changes: one gesture (add row,
+		// add group, restore) can post several of these back to back, and
+		// overlapping animator groups on the same views intermittently leave
+		// the container mid-flight - visible as jumping or a clipped drop
+		// zone. The show/hide toggle keeps its animation via its own path.
+		[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:NO];
 	}
 }
 
@@ -3814,6 +4165,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 #pragma mark -
 #pragma mark Task interaction
 
+- (BOOL)isWorking
+{
+	return isWorking;
+}
+
 /**
  * Disable all content interactive elements during an ongoing task.
  */
@@ -3843,6 +4199,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
 	isWorking = NO;
+	[self _resumeDeferredComboBoxEdit];
 
 	// Only proceed if this view is selected.
 	if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent])
@@ -3864,6 +4221,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[ruleFilterController setEnabled:(!![selectedTable length])];
 	[toggleRuleFilterButton setEnabled:(!![selectedTable length])];
 	tableRowsSelectable = YES;
+	if (!self.deferRecordViewRefreshUntilTableLoadCompletes && !self.suppressRecordViewTaskRefresh) {
+		[self _updateRecordView];
+	}
 }
 
 //this method is called right before the UI objects are deallocated
@@ -3873,6 +4233,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         if (tableDocumentInstance == document) {
             // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
             [self clearTableLoadTimer];
+            [_comboBoxSelectionTracker discardPendingSelection];
         }
     }
 }
@@ -3918,6 +4279,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// Display binary data as Hex
 		else if ([keyPath isEqualToString:SPDisplayBinaryDataAsHex] && [tableContentView numberOfRows] > 0) {
 			[tableContentView reloadData];
+			[self _updateRecordView];
 		}
 		else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
             NSDictionary *tableDetails = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -3927,6 +4289,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                                           [tableDataInstance getConstraints], @"constraints",
                                           nil];
             [[self onMainThread] setTableDetails:tableDetails];
+		}
+		else if ([keyPath isEqualToString:[SARuleFilterDropZoneLayoutPolicy defaultsKey]] && showFilterRuleEditor) {
+			[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:YES];
 		}
 	}
 	else {
@@ -3975,6 +4340,24 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 #pragma mark -
+#pragma mark Combo box delegate methods
+
+- (void)comboBoxCell:(SPComboBoxCell *)cell willPopUpWindow:(NSWindow *)window
+{
+	[_comboBoxSelectionTracker comboBoxWillOpenWithValue:[cell objectValue]];
+}
+
+- (void)comboBoxCellSelectionDidChange:(SPComboBoxCell *)cell
+{
+	[_comboBoxSelectionTracker comboBoxSelectionDidChange:[cell objectValueOfSelectedItem]];
+}
+
+- (void)comboBoxCellDidDismissPopUp:(SPComboBoxCell *)cell
+{
+	[_comboBoxSelectionTracker comboBoxDidCloseWithValue:[cell objectValue]];
+}
+
+#pragma mark -
 #pragma mark TableView datasource methods
 
 - (NSInteger)numberOfRowsInTableView:(SPCopyTable *)tableView
@@ -4009,7 +4392,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			if (!value) return @"...";
 		}
 		else {
-			if ([tableView editedColumn] == (NSInteger)columnIndex && [tableView editedRow] == rowIndex) {
+			if ([SACellFilterColumnIdentifier storageIndexForVisibleColumn:[tableView editedColumn] inTableView:tableView] == (NSInteger)columnIndex && [tableView editedRow] == rowIndex) {
 				value = [self _contentValueForTableColumn:columnIndex row:rowIndex asPreview:NO];
 			}
 			else {
@@ -4039,7 +4422,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 
 			// Unless we're editing, always retrieve the short string representation, truncating the value where necessary
-			if ([tableView editedColumn] == (NSInteger)columnIndex || [tableView editedRow] == rowIndex) {
+			if ([SACellFilterColumnIdentifier storageIndexForVisibleColumn:[tableView editedColumn] inTableView:tableView] == (NSInteger)columnIndex || [tableView editedRow] == rowIndex) {
 				return [value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
 			} else {
 				return [value shortStringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
@@ -4060,9 +4443,39 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 {
 	if (tableView == tableContentView) {
 		NSInteger columnIndex = [[tableColumn identifier] integerValue];
-		// If the current cell should have been edited in a sheet, do nothing - field closing will have already
-		// updated the field.
-		if ([tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL]) {
+		BOOL fieldEditorRequired = [tableContentView shouldUseFieldEditorForRow:rowIndex column:columnIndex checkWithLock:NULL];
+		NSCell *dataCell = tableColumn.dataCell;
+		SAComboBoxSelectionState popupSelectionState = SAComboBoxSelectionStateNotTracked;
+		if ([dataCell isKindOfClass:[NSComboBoxCell class]]) {
+			popupSelectionState = [_comboBoxSelectionTracker consumeSelectionMatching:object
+			                                                               tableColumn:tableColumn
+			                                                                       row:rowIndex];
+		} else {
+			[_comboBoxSelectionTracker discardPendingSelection];
+		}
+		id storedValue = nil;
+		id displayValue = nil;
+		if (fieldEditorRequired && popupSelectionState == SAComboBoxSelectionStateCurrent) {
+			NSInteger visibleColumnIndex = [tableContentView columnWithIdentifier:[tableColumn identifier]];
+			// The authenticated popup selection can still finish after its row has disappeared. Preserve the
+			// old handoff path's bounds safety before comparing against the current snapshot.
+			if (isWorking || rowIndex < 0 || columnIndex < 0 || visibleColumnIndex < 0
+				|| (NSUInteger)rowIndex >= [tableValues count]
+				|| (NSUInteger)columnIndex >= [tableValues columnCount]) {
+				return;
+			}
+			storedValue = [tableValues cellDataAtRow:(NSUInteger)rowIndex column:(NSUInteger)columnIndex];
+			displayValue = [tableContentView displayStringForRow:rowIndex column:visibleColumnIndex];
+		}
+		// Ignore callbacks produced while inline editing redirects to a sheet. A changed popup selection is the
+		// one inline action that must still commit. Compare its proposed value with both full stored and display
+		// representations so long strings, NULL placeholders, and formatter-backed values remain unchanged.
+		if ([SAFieldEditorCommitPolicy shouldIgnoreInlineCommitWithFieldEditorRequired:fieldEditorRequired
+		                                                                          cell:dataCell
+		                                                                proposedValue:object
+		                                                                    storedValue:storedValue
+		                                                                   displayValue:displayValue
+		                                                           popupSelectionState:popupSelectionState]) {
 			return;
 		}
 
@@ -4113,6 +4526,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		else {
 			[tableValues replaceObjectInRow:rowIndex column:columnIndex withObject:@""];
 		}
+		[self _updateRecordView];
 	}
 }
 
@@ -4145,6 +4559,91 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	return SPDataStorageObjectAtRowAndColumn(tableValues, rowIndex, columnIndex);
+}
+
+- (NSInteger)_recordViewSelectedRow
+{
+	NSInteger selectedRow = [tableContentView selectedRow];
+	if (selectedRow < 0 || [tableContentView numberOfSelectedRows] != 1) return -1;
+	if ((NSUInteger)selectedRow >= tableRowsCount) return -1;
+	return selectedRow;
+}
+
+- (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID
+{
+	if (fieldID < 0) return nil;
+	return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:tableContentView];
+}
+
+- (void)_updateRecordView
+{
+	if (!recordViewController.isVisible) return;
+
+	if (self.deferRecordViewRefreshUntilTableLoadCompletes) {
+		[recordViewController updateWithFields:@[] selectedRowCount:0];
+		return;
+	}
+
+	NSUInteger selectedCount = [tableContentView numberOfSelectedRows];
+	NSInteger selectedRow = [tableContentView selectedRow];
+
+	if (isWorking || selectedRow < 0 || (selectedCount == 1 && (NSUInteger)selectedRow >= tableRowsCount)) {
+		[recordViewController updateWithFields:@[] selectedRowCount:0];
+		return;
+	}
+
+	if (selectedCount != 1) {
+		[recordViewController updateWithFields:@[] selectedRowCount:selectedCount];
+		return;
+	}
+
+	NSArray *displayedTableColumns = [tableContentView tableColumns];
+	NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[displayedTableColumns count]];
+	for (NSUInteger fieldIndex = 0; fieldIndex < [displayedTableColumns count]; fieldIndex++) {
+		NSTableColumn *tableColumn = [displayedTableColumns objectAtIndex:fieldIndex];
+		NSInteger storageIndex = [[tableColumn identifier] integerValue];
+		if (storageIndex < 0) continue;
+
+		NSUInteger columnIndex = (NSUInteger)storageIndex;
+		if (columnIndex >= [dataColumns count] || columnIndex >= [tableValues columnCount]) continue;
+
+		NSDictionary *columnDefinition = [dataColumns safeObjectAtIndex:columnIndex];
+		id value = [self _contentValueForTableColumn:columnIndex row:selectedRow asPreview:NO];
+		[fields addObject:@{
+			@"id": @(storageIndex),
+			@"name": columnDefinition[@"name"] ?: [[tableColumn headerCell] stringValue] ?: @"",
+			@"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+		}];
+	}
+
+	[recordViewController updateWithFields:fields selectedRowCount:1];
+}
+
+- (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
+{
+	NSUInteger columnIndex = (NSUInteger)[[tableColumn identifier] integerValue];
+	if ([value isKindOfClass:[SPMySQLGeometryData class]]) {
+		return [value wktString];
+	}
+	if ([value isNSNull]) {
+		return [prefs objectForKey:SPNullValue] ?: @"";
+	}
+	if ([value isSPNotLoaded]) {
+		return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+	}
+	NSFormatter *formatter = [[tableColumn dataCell] formatter];
+	if ([formatter isKindOfClass:[SABaseFormatter class]]) {
+		NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
+		if (formatted) return formatted;
+	}
+	if ([value isKindOfClass:[NSData class]]) {
+		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
+			return [NSString stringWithFormat:@"0x%@", [(NSData *)value dataToHexString]];
+		}
+		NSString *stringValue = [(NSData *)value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+		return stringValue ?: [value description];
+	}
+	return value ? [value description] : @"";
 }
 
 #pragma mark - SPTableContentFilter
@@ -4224,6 +4723,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	[self updateCountText];
+	[self _updateRecordView];
 
 	NSArray *triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 
@@ -4271,6 +4771,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 		}
 	}
+}
+
+/**
+ * Refreshes the record view so its field order follows columns moved by dragging.
+ */
+- (void)tableViewColumnDidMove:(NSNotification *)notification
+{
+	if ([notification object] != tableContentView) return;
+	[self _updateRecordView];
 }
 
 /**
@@ -4337,7 +4846,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// Only get the data for the selected column, not all of them
 			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
 
-			SPMySQLResult *tempResult = [mySQLConnection queryString:query];
+			SPMySQLResult *tempResult = [mySQLConnection queryString:query assertingDatabase:[tableDocumentInstance database]];
 
 			if (![tempResult numberOfRows]) {
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.", @"message of panel when loading of row failed") callback:nil];
@@ -4346,8 +4855,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			NSArray *tempRow = [tempResult getRowAsArray];
 
-			[tableValues replaceObjectInRow:rowIndex column:[[tableContentView tableColumns] indexOfObject:tableColumn] withObject:[tempRow objectAtIndex:0]];
+			[tableValues replaceObjectInRow:rowIndex column:[[tableColumn identifier] integerValue] withObject:[tempRow objectAtIndex:0]];
 			[tableContentView reloadData];
+			[self _updateRecordView];
 		}
 
         // Field is not editable if it is a generated columun.
@@ -4369,7 +4879,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// Check for Views if field is editable
 			if ([tablesListInstance tableType] == SPTableTypeView) {
-				NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[tableColumn identifier] integerValue]];
+				NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[tableContentView columnWithIdentifier:[tableColumn identifier]]];
 				isFieldEditable = [[editStatus objectAtIndex:0] integerValue] == 1;
 			}
 
@@ -4447,88 +4957,86 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
+ * Give each dragged content row its own pasteboard item. The payloads that
+ * leave the app — the selection's text, and the clicked cell for the rule
+ * filter — are attached to the drag as a whole in
+ * -tableView:draggingSession:willBeginAtPoint:forRowIndexes: below.
+ */
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
+{
+	if (tableView != tableContentView) return nil;
+
+	// Refuse the drag outright when there is nothing selected to write, the way
+	// the previous whole-drag writer refused an empty payload.
+	if (![[tableContentView selectedRowIndexes] count]) return nil;
+
+	return [SADragPasteboard dragRowItemForRow:row];
+}
+
+/**
  * Enable drag from tableview
  */
-- (BOOL)tableView:(NSTableView *)tableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+- (void)tableView:(NSTableView *)tableView draggingSession:(NSDraggingSession *)session willBeginAtPoint:(NSPoint)screenPoint forRowIndexes:(NSIndexSet *)rowIndexes
 {
-	if (tableView == tableContentView) {
-		NSString *tmp;
+	if (tableView != tableContentView) return;
 
-		// By holding ⌘, ⇧, or/and ⌥ copies selected rows as SQL INSERTS
-		// otherwise \t delimited lines
-		if ([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagCommand|NSEventModifierFlagShift|NSEventModifierFlagOption)) {
-			tmp = [tableContentView rowsAsSqlInsertsOnlySelectedRows:YES];
-		}
-		else {
-			tmp = [tableContentView draggedRowsAsTabString];
-		}
+	NSString *tmp;
 
-		if (tmp && [tmp length])
-		{
-			// Also offer a single-cell pasteboard type so a drop onto the
-			// rule-filter input populates that one field with just the
-			// clicked cell's value, rather than the whole row's tab string.
-			// The clicked cell is the one captured by -[SPCopyTable mouseDown:]
-			// – -clickedRow / -clickedColumn are only valid during NSControl
-			// action dispatch, and NSApp.currentEvent here is the mouseDragged
-			// event that crossed the drag threshold rather than the original
-			// mouseDown, so it can resolve to a different cell if the pointer
-			// moved before the drag started.
-			NSString *cellValue = nil;
-			NSString *cellColumnName = nil;
-			BOOL cellIsNull = NO;
-			NSInteger clickedRow = [tableContentView mouseDownRow];
-			NSInteger clickedCol = [tableContentView mouseDownColumn];
-			if (clickedRow >= 0 && clickedCol >= 0) {
-				cellValue = [tableContentView displayStringForRow:clickedRow column:clickedCol];
-				cellIsNull = [tableContentView isNullAtRow:clickedRow column:clickedCol];
-
-				// Map the visible column back to a column definition (by its
-				// storage index, same mapping SPCopyTable uses) so the drop
-				// target gets the original schema column name the rule
-				// editor looks up against.
-				NSArray *viewColumns = [tableContentView tableColumns];
-				if ((NSUInteger)clickedCol < [viewColumns count]) {
-					NSInteger storageIndex = [[[viewColumns objectAtIndex:(NSUInteger)clickedCol] identifier] integerValue];
-					if (storageIndex >= 0 && (NSUInteger)storageIndex < [dataColumns count]) {
-						cellColumnName = [[dataColumns objectAtIndex:(NSUInteger)storageIndex] objectForKey:@"name"];
-					}
-				}
-			}
-
-			NSString *cellRowType = [SPCellValuePasteboard pasteboardRowTypeRaw];
-			// Only advertise the filter payload if we actually resolved a
-			// real cell: a known column AND either a non-nil display value
-			// or a positively-identified NULL. A nil display value for a
-			// non-NULL cell (stale row after reload, out-of-range storage
-			// index) would otherwise synthesize a spurious `col = ''`
-			// filter on drop.
-			BOOL publishCellPayload = [cellColumnName length] && (cellIsNull || cellValue != nil);
-			NSMutableArray<NSPasteboardType> *types = [NSMutableArray arrayWithObjects:NSPasteboardTypeTabularText, NSPasteboardTypeString, nil];
-			if (publishCellPayload) {
-				[types addObject:cellRowType];
-			}
-			[pboard declareTypes:types owner:nil];
-
-			[pboard setString:tmp forType:NSPasteboardTypeString];
-			[pboard setString:tmp forType:NSPasteboardTypeTabularText];
-			if (publishCellPayload) {
-				// Dropped onto the rule editor, the plist alone is enough to
-				// synthesize a fully-populated filter rule (column + default
-				// operator + value).
-				NSDictionary *rowPayload = @{
-					[SPCellValuePasteboard rowColumnNameKey]: cellColumnName,
-					[SPCellValuePasteboard rowValueKey]: cellValue ?: @"",
-					[SPCellValuePasteboard rowValueKindKey]: cellIsNull ? [SPCellValuePasteboard rowValueKindNull] : [SPCellValuePasteboard rowValueKindString],
-				};
-				[pboard setPropertyList:rowPayload forType:cellRowType];
-			}
-
-			return YES;
-		}
+	// By holding ⌘, ⇧, or/and ⌥ copies selected rows as SQL INSERTS
+	// otherwise \t delimited lines
+	if ([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagCommand|NSEventModifierFlagShift|NSEventModifierFlagOption)) {
+		tmp = [tableContentView rowsAsSqlInsertsOnlySelectedRows:YES];
+	}
+	else {
+		tmp = [tableContentView draggedRowsAsTabString];
 	}
 
-	return NO;
+	if (!(tmp && [tmp length])) return;
+
+	NSPasteboard *pboard = [session draggingPasteboard];
+	[SADragPasteboard attachDragString:tmp toPasteboard:pboard];
+
+	// Also offer a single-cell pasteboard type so a drop onto the
+	// rule-filter input populates that one field with just the
+	// clicked cell's value, rather than the whole row's tab string.
+	// The clicked cell is the one captured by -[SPCopyTable mouseDown:]
+	// – -clickedRow / -clickedColumn are only valid during NSControl
+	// action dispatch, and NSApp.currentEvent here is the mouseDragged
+	// event that crossed the drag threshold rather than the original
+	// mouseDown, so it can resolve to a different cell if the pointer
+	// moved before the drag started.
+	NSString *cellValue = nil;
+	NSString *cellColumnName = nil;
+	NSString *cellTypeGrouping = nil;
+	BOOL cellIsNull = NO;
+	NSInteger clickedRow = [tableContentView mouseDownRow];
+	NSInteger clickedCol = [tableContentView mouseDownColumn];
+	if (clickedRow >= 0 && clickedCol >= 0) {
+		cellValue = [tableContentView displayStringForRow:clickedRow column:clickedCol];
+		cellIsNull = [tableContentView isNullAtRow:clickedRow column:clickedCol];
+
+		// Map the visible column back to a column definition (by its
+		// storage index, same mapping SPCopyTable uses) so the drop
+		// target gets the original schema column name the rule
+		// editor looks up against.
+		NSArray *columnIdentifiers = [[tableContentView tableColumns] valueForKey:@"identifier"];
+		cellColumnName = [SADragPasteboard columnNameForClickedColumn:clickedCol
+		                                                  identifiers:columnIdentifiers
+		                                                  columnNames:[dataColumns valueForKey:@"name"]];
+		// Same storage-index lookup for the type grouping, so a BIT value can
+		// be published in the form the filter compares.
+		cellTypeGrouping = [SADragPasteboard columnNameForClickedColumn:clickedCol
+		                                                    identifiers:columnIdentifiers
+		                                                    columnNames:[dataColumns valueForKey:@"typegrouping"]];
+	}
+
+	// Dropped onto the rule editor, the plist alone is enough to synthesize a
+	// fully-populated filter rule (column + default operator + value); a nil
+	// payload means the cell did not resolve and must not be advertised.
+	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull typeGrouping:cellTypeGrouping];
+	if (rowPayload) {
+		[SADragPasteboard attachPropertyList:rowPayload forType:[SPCellValuePasteboard pasteboardRowTypeRaw] toPasteboard:pboard];
+	}
 }
 
 /**
@@ -4741,8 +5249,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Validate hex input
 	// We do this here because the textfield will still be selected with the pending changes if we bail out here
 	if(control == tableContentView) {
-      NSInteger columnIndex = [tableContentView editedColumn];
-      NSTableColumn *col = tableContentView.tableColumns[columnIndex];
+      NSInteger visibleColumn = [tableContentView editedColumn];
+      NSTableColumn *col = tableContentView.tableColumns[visibleColumn];
+      NSInteger columnIndex = [SACellFilterColumnIdentifier storageIndexForVisibleColumn:visibleColumn inTableView:tableContentView];
 
       if ([[col.dataCell formatter] isKindOfClass:[SABaseFormatter class]]) {
           return [[col.dataCell formatter] getObjectValue:nil forString:editor.string errorDescription:nil];
@@ -4789,7 +5298,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// or bypass if numberOfPossibleUpdateRows == 1
 	if ([tableContentView isCellEditingMode]) {
 
-		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:[[[[tableContentView tableColumns] safeObjectAtIndex: column] identifier] integerValue]];
+		NSArray *editStatus = [self fieldEditStatusForRow:row andColumn:column];
 		NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 		
 		NSPoint tblContentViewPoint = [tableContentView convertPoint:[tableContentView frameOfCellAtColumn:column row:row].origin toView:nil];
@@ -4825,7 +5334,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	// Open the field editor sheet if required
-	if ([tableContentView shouldUseFieldEditorForRow:row column:column checkWithLock:NULL])
+	if ([tableContentView shouldUseFieldEditorForRow:row column:[SACellFilterColumnIdentifier storageIndexForVisibleColumn:column inTableView:tableContentView] checkWithLock:NULL])
 	{
 		[tableContentView setFieldEditorSelectedRange:[aFieldEditor selectedRange]];
 
@@ -4915,6 +5424,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                                                                   colName:col.headerCell.stringValue
                                                                    format:format];
     [tableContentView reloadData];
+    [self _updateRecordView];
 }
 
 // Builds Menu with all display formats
@@ -5069,6 +5579,7 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 	[self _buildTableColumns:preservedColumnWidths withFont:tableFont filterTerms:columnFilterTerms];
 
 	[tableContentView reloadData];
+	[self _updateRecordView];
 }
 
 #pragma mark -
@@ -5083,6 +5594,7 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
+		[prefs removeObserver:self forKeyPath:[SARuleFilterDropZoneLayoutPolicy defaultsKey]];
 	}
 
 	// Cancel previous performSelector: requests on ourselves and the table view
@@ -5119,7 +5631,11 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 
 - (IBAction)paginationGoAction:(id)sender
 {
+// Target/action invocation: action methods return void, so nothing can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 	if(target && action) [target performSelector:action withObject:self];
+#pragma clang diagnostic pop
 }
 
 - (void)makeInputFirstResponder

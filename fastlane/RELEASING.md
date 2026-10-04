@@ -1,0 +1,1073 @@
+# Sequel Ace release operations
+
+This directory contains release infrastructure only. It is not part of any
+Xcode target, app bundle, Swift package, or shipped runtime. The canonical
+entry point is:
+
+```sh
+Scripts/release-tool help
+```
+
+The GitHub workflows call the same Ruby library and locked gems. Fastlane is a
+thin adapter for the App Store operations it already supports; it never chooses
+a build number, creates a git branch, stages files, commits, pushes, opens a PR,
+or creates a GitHub release.
+
+## Start a new release
+
+Choose **New Sequel Ace release** (`release_deploy.yml`) in GitHub Actions,
+then **Run workflow** on `main`. Do not use **Internal release engine (advanced
+recovery only)** to start an ordinary new release.
+
+The form asks for:
+
+- **Version:** e.g. `6.0.1`, without a build number.
+- **Channel:** `beta` or `production` (production submits to the App Store).
+- **Release notes:** plain text, e.g. `Fix SSH connections | Improve exports`.
+  Actions converts each change into exactly one `- ` App Store bullet, including
+  pasted Markdown bullets, numbered lists, and common rich-text bullets.
+  Blank lines are ignored; empty bullets and headings are rejected rather than
+  silently publishing them. Real multiline input through the CLI/API works too.
+  GitHub has no supported
+  textarea workflow input; use `|` to separate changes in its single-line form.
+- **Optional main commit check:** leave blank to freeze latest main at submission.
+  A supplied full SHA must match that revision; it never selects stale source.
+- **Preview only:** optional, off by default.
+
+Comparison tags, recovery state, base64 encoding, the approval SHA-256, and the
+`RELEASE channel version` confirmation are internal. You do not enter them.
+Only `Jason-Morcos` and `Kaspik` may initiate or rerun this workflow. Both the
+original actor and rerun initiator are checked before planning and before the
+credential-bearing engine job. Other writers may still see GitHub's Run workflow
+button, but their jobs are skipped. The bot-only archived forward-recovery path
+is not authority to start a new release.
+Leave preview off to deploy. Submitting the form is the sole approval; Actions
+generates the internal confirmation and approval digest itself. No second
+approval or mandatory preview is introduced. Environment reviewer/wait gates
+must not be added to this workflow's release environment.
+
+Actions freezes the selected main revision and calls the existing guarded
+release engine. The advanced interface below remains available for recovery.
+The GitHub body is always generated from your customer notes plus categorized
+changes, contributors, and comparison link; the form has no body override.
+The engine resolves credentials directly from its job-scoped
+`sequel-ace-release` environment. Environment secrets are not forwarded by the
+caller. However, the caller must retain `secrets: inherit` as a workaround for
+[actions/runner#4453](https://github.com/actions/runner/issues/4453): without it,
+GitHub can resolve every environment-only secret to an empty string in the
+called job even though its environment variables and branch policy are applied.
+This exact symptom was reproduced by form run `35611391949`; the standalone
+engine can access the same environment. Inheritance enables the reported
+resolution workaround; it does not move secrets out of the protected environment.
+Before minting a token, the engine checks that its required
+credentials are available and reports only missing names. If that check fails,
+inspect the called job's environment configuration and secret availability;
+do not duplicate credentials into repository or organization secrets.
+Local tests verify the wiring and fail-closed checks, not GitHub secret injection.
+Confirm the workaround through a hosted form run after merge. If a form run
+fails before mutation, recover its exact archived `dispatch_inputs` through the
+standalone internal engine; do not regenerate or broaden the approved plan.
+Actions preserves that generated body in the immutable plan and forward recovery.
+
+**Remaining limitation:** `legacy_updater_v1` still requires a compatible web
+upload of the notarized ZIPs. This is not yet a fully browser-free deployment.
+The publisher exposes only verified public ZIPs and checksums in its Actions
+artifact; extract that bundle and upload the inner ZIPs, not the outer bundle.
+The armed recovery schedule resumes after attachment without a second approval
+or dispatch. If that artifact is unavailable, use the existing private archive
+recovery procedure. Removing this transport limitation without breaking old
+clients remains unfinished work; do not describe the form as end-to-end automatic.
+
+## Safety model
+
+- `main` is frozen at the approved SHA. Any movement requires a new plan except
+  the tool's own failed release-preparation merge during a validated automatic
+  forward-build recovery.
+- Only `Jason-Morcos` and `Kaspik` may initiate a release. The Actions bot may
+  dispatch only a chained `mode=resume` recovery authenticated against the
+  failed release's private archive and original approval.
+- The advanced interface's typed confirmation is `RELEASE <channel> <version>`;
+  the normal New Sequel Ace release form generates it internally.
+- `SA_RELEASE_AUTOMATION_ENABLED` remains `false` until every feasibility gate
+  passes.
+- One `sequel-ace-release` concurrency group prevents overlapping preparation,
+  deployment, artifact publication, Alpha recovery, and finalization.
+- Both asynchronous wake-state variables must be configured. An unset or empty
+  `SA_RELEASE_PENDING_ARTIFACT_TAG` or
+  `SA_RELEASE_PENDING_FINALIZATION_TAG` is rejected before checkout and
+  intentionally blocks every release.
+- A non-`none` `SA_RELEASE_PENDING_FINALIZATION_TAG` blocks another release
+  start even between workflow runs, so a submitted production release cannot
+  be overlapped before its live or terminal checkpoint settles.
+- A non-`none` `SA_RELEASE_PENDING_ARTIFACT_TAG` likewise blocks another release
+  start. The sole exception is an Actions-bot `mode=resume` forward recovery
+  whose authenticated `recovery_tag` exactly equals the armed predecessor; the
+  child replaces that tag only after its own handoff is durably archived. The
+  archive fallback examines only an authorized prerelease whose exact version
+  and build still match every current source version file. This keeps a missing
+  or unreadable current handoff fail-closed without treating preserved,
+  superseded prereleases from before the automation archive as active releases.
+- The GitHub App may bypass the release PR's human-review requirement, but the
+  workflow still waits for the exact release commit's `Run Tests`,
+  `Release Tool Tests`, and every other observed check to finish acceptably.
+- A failed tag or prerelease is preserved. Never delete, move, or reuse it.
+- After prerelease creation, the GitHub release body is maintainer-owned
+  editorial content. Jason and Kaspik may edit it at any time without another
+  release approval and without blocking artifact publication, recovery, App
+  Store submission, or finalization. Automation never rewrites the body after
+  creation; the separately approved private `app-store-notes.txt` remains the
+  App Store metadata source.
+- New GitHub releases are created by `Jason-Morcos` while the protected
+  repository-only credential validates successfully, for compatibility with
+  installed Sequel Ace versions affected by [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555).
+  The existing release App is selected automatically when that credential is
+  absent or explicitly expired, and it still creates every tag and performs
+  every later release mutation.
+- Secrets, App Review credentials, private-key material, and full sensitive ASC
+  responses must never be written to a manifest or workflow log.
+- Hosted workflows put their transient JSON/evidence paths in the checkout's
+  private git exclude file, so only the allowlisted version files and changelog
+  can enter a generated release commit.
+
+## One-time GitHub setup
+
+1. Create a dedicated GitHub App owned by the Sequel Ace organization and
+   install it only on `Sequel-Ace/Sequel-Ace`.
+2. Grant repository permissions: Contents read/write, Pull requests read/write,
+   Actions read, Checks read, Metadata read, Variables read/write, and Workflows
+   read/write. Do not grant organization-wide access or subscribe it to events.
+   Variables write is used only to arm or clear the exact non-secret artifact
+   handoff tag. GitHub requires
+   Workflows write when creating or updating a release whose target commit has
+   workflow files that differ from current `main`; workflows request it only in
+   fresh, repository-scoped tokens used for those exact release mutations.
+3. Add the App as the release PR bypass actor. Keep required status checks in
+   force. If the repository cannot separately enforce checks for a bypass
+   actor, the workflow's exact-head check gate is mandatory and must not be
+   removed.
+4. Create environment `sequel-ace-release`, restrict its deployment branch to
+   `main`, and do not add a routine second approval.
+5. Restrict every manual dispatch and rerun to `Jason-Morcos` or `Kaspik`.
+   The workflows validate both GitHub's original `actor` and the current
+   `triggering_actor`; scheduled-finalizer reruns validate the latter as well.
+6. Add environment secrets:
+
+   | Name | Value |
+   | --- | --- |
+   | `SA_RELEASE_GITHUB_APP_PRIVATE_KEY` | Dedicated App PEM |
+   | `SA_RELEASE_GITHUB_PUBLISHER_TOKEN` | Fine-grained PAT owned by `Jason-Morcos`, selected-repository access to `Sequel-Ace/Sequel-Ace`, and Contents read/write only |
+   | `SA_ASC_KEY_ID` | Dedicated Team ASC key ID with the App Manager role |
+   | `SA_ASC_PRIVATE_KEY` | Base64-encoded `.p8` bytes |
+   | `SA_ASC_ISSUER_ID` | Team API issuer ID shown on App Store Connect's Integrations page |
+
+   The workflows set the non-secret environment flag
+   `SA_ASC_PRIVATE_KEY_BASE64=1` so `SA_ASC_PRIVATE_KEY` is decoded before use,
+   and `SA_ASC_REQUIRE_ISSUER=1` so a missing Team issuer fails closed instead
+   of being interpreted as an individual key. Set both flags for any guarded
+   local fallback that uses the encoded Team key.
+
+   The release App private key and publisher token must remain exclusive to
+   this protected environment. Do not copy the publisher token to either
+   release Mac. Both Macs plan and dispatch the same protected workflow, so
+   their local GitHub CLI OAuth sessions never become the release publisher.
+
+7. Add protected release-environment variables:
+
+   | Name | Initial value |
+   | --- | --- |
+   | `SA_RELEASE_GITHUB_APP_CLIENT_ID` | Dedicated release App client ID |
+   | `SA_RELEASE_AUTOMATION_ENABLED` | `false` |
+   | `SA_PRODUCTION_CLOUD_WORKFLOW_ID` | Production Xcode Cloud workflow ID |
+   | `SA_ALPHA_CLOUD_WORKFLOW_ID` | Alpha Xcode Cloud workflow ID |
+   | `SA_GHCR_ARCHIVE` | `ghcr.io/sequel-ace/sequel-ace-release-archive` |
+
+8. Add repository variables `SA_RELEASE_PENDING_ARTIFACT_TAG` and
+   `SA_RELEASE_PENDING_FINALIZATION_TAG`, both with initial value `none`. They
+   must be repository-scoped, rather than environment-scoped, because GitHub
+   evaluates scheduled discovery before opening the protected environment. The
+   former identifies one exact Cloud/artifact handoff; the latter identifies
+   one exact submitted production release awaiting App Store-live finalization.
+9. Require both `Run Tests` and `Release Tool Tests` on `main`.
+10. Confirm the GHCR package is private and linked to this repository. The
+   feasibility workflow verifies this again before enabling publishing.
+
+The GitHub App first creates the release branch at the frozen base SHA, then
+uses GraphQL `createCommitOnBranch` to make the complete release commit without
+custom author, committer, or signature fields. GitHub documents that commits
+created by this mutation are automatically signed; the tool requires a valid
+GitHub-generated signature before the PR is opened. See GitHub's documentation
+for [`createCommitOnBranch`](https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch),
+[GitHub App workflow authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow)
+and [bot signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#signature-verification-for-bots).
+
+### Release-publisher capability selection and compatibility
+
+Issue [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555) showed that
+already-installed Sequel Ace versions can reject GitHub's releases response
+when the newest release is authored by an unfamiliar publishing identity. The
+release system keeps that payload concern separate from publisher
+authentication and recovery:
+
+- The release App validates the frozen target and creates the exact tag.
+- A live selector first looks up the exact release tag with the short-lived
+  release App token. An existing release is recovered by its GitHub-controlled
+  numeric author identity without loading or needing a publisher credential.
+- For a new release, the selector validates the user publisher token against
+  `/user` and the exact repository. A valid token must belong to numeric user ID
+  `10710367`, currently report `Jason-Morcos`, and have push access to exactly
+  `Sequel-Ace/Sequel-Ace`; that release is created as Jason for compatibility
+  with installed clients.
+- If the protected user credential is absent, or the authenticated GitHub API
+  explicitly returns structured status `401 Bad credentials` because it expired
+  or was revoked, the selector chooses the dedicated release App. Error-message
+  text is never parsed as authority to change publisher. A wrong user, wrong
+  repository scope, permission mismatch, rate limit, transport failure, or
+  other ambiguous response fails closed instead of silently changing publisher.
+- App-mode creation requires the pinned action's live `app-slug` and
+  `installation-id`, immutable App ID `4541115`, configured client ID, exact
+  writable repository inventory, and release-author bot ID `315153817`. Account
+  names may change without invalidating an archived release because subsequent
+  authorization uses the stable numeric identity.
+- The selected `user` or `app` mode is passed explicitly to the creation
+  command. Only live selection and the conditional user-creation step receive
+  `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`; App-mode creation, existing-release
+  recovery, artifact publication, failure recovery, App Store submission, and
+  finalization do not.
+- The protected secret is a fine-grained personal access token owned by
+  `Jason-Morcos`, limited to the single repository, with Contents read/write
+  and no organization permissions. Metadata read access is implicit. The
+  release tag already exists, so Workflows write remains only on the short-lived
+  GitHub App token that creates the tag.
+
+GitHub documents fine-grained-token support and the Contents write permission
+for [creating a release](https://docs.github.com/en/rest/releases/releases#create-a-release).
+Follow GitHub's
+[fine-grained PAT permission model](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
+when provisioning the protected secret. Never print, persist, or
+archive the token value.
+
+There is no calendar cutoff, build floor, or guessed migration epoch. Jason is
+used while the narrowly scoped credential proves that capability; an absent or
+explicitly expired credential selects the existing App automatically. A rerun
+repeats the live selection, while an already-created exact release always keeps
+its immutable author. After a bot-authored release is read back successfully,
+the expired user secret may be removed. Renaming the existing App is optional
+and must not create a second GitHub App. The App-token output contract is
+documented by
+[`actions/create-github-app-token`](https://github.com/actions/create-github-app-token#outputs).
+
+The same installed clients also generated the release asset's `label` as a
+JSON-null-only value and generated the asset uploader from the same two-user
+enum as the release author. GitHub's supported
+[release-asset upload API](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)
+accepts `label` only as an optional string. A live upload with the parameter
+omitted is returned as `label: ""`; the update endpoint rejects a JSON `null`
+label, and GitHub's GraphQL release-asset schema has no mutation. Therefore no
+supported GitHub API can currently create an in-repository release asset that
+those clients can decode. Do not substitute an undocumented web endpoint.
+
+Asset handling is selected from the live release payload, not a semantic
+version, build floor, wall-clock date, or guessed migration state:
+
+- `legacy_updater_v1` applies when the release author is one of the two users
+  represented by the shipped decoder (`Jason-Morcos` or `Kaspik`). It validates
+  every release on the same bounded, anonymous 30-release feed page requested
+  by shipped clients, including each author and asset primitive required by
+  that decoder; exact
+  enum-constrained identity values; a JSON-null label; ZIP content type;
+  uploaded state; and the target asset's manifest checksum. Additional GitHub
+  fields are ignored. The exact target entry must also match the authenticated
+  release's updater-consumed title, public URL, draft/prerelease flags,
+  publication time, and downloadable asset identity; a stale anonymous cache
+  cannot satisfy a transition read-back merely by retaining the same ID/tag.
+- `github_api_v1` applies to any other publisher already authorized by the
+  separate release-publisher provenance gate. It validates only durable release
+  identity and asset integrity fields and deliberately ignores uploader, label,
+  unrelated feed entries, and newly added GitHub metadata. The exact target
+  must still be publicly visible with the authenticated title, URL, state,
+  author identity, asset identity, and checksums because every updater discovers
+  releases through the anonymous endpoint regardless of publisher profile.
+
+Consequently an existing compatible user-authored release stays recoverable
+regardless of its age, while an App-authored release uses the supported API
+path regardless of tag number or timestamp. Future publisher changes require a
+stable authenticated identity and payload-capability handling, not another date
+or build epoch.
+
+For a release classified as `legacy_updater_v1`, artifact publication is a
+bounded manual compatibility handoff:
+
+1. The hosted Mac downloads, verifies, launches, packages, and checksum-seals
+   the exact artifacts in private GHCR, then records manifest state
+   `artifacts_verified` before any public upload.
+2. The workflow exits successfully with the exact wake tag still armed. Its
+   Linux discovery job recognizes the pending UI handoff and does not start
+   another Mac runner.
+3. An agent using a listed compatible user's signed-in GitHub release editor
+   uploads the exact manifest-named ZIP or ZIPs. This is the last-resort UI
+   step; neither the publisher PAT nor a browser session is stored in Actions.
+4. The local release skill performs a supported REST read-back and requires the
+   exact release/tag to appear in a fully legacy-decodable anonymous 30-release
+   feed, complete author/uploader shapes, a JSON-null asset label,
+   `application/zip`, `uploaded`, and every manifest SHA-256. Only then may it
+   manually dispatch `release_publish.yml` for the exact tag. Discovery selects
+   the API-only `continue` action, which runs on Ubuntu and cannot allocate a
+   second hosted Mac.
+5. App Store submission, finalization, and wake-state clearing remain blocked
+   until the same compatibility validator passes again in Actions.
+
+The public feed request for every profile is intentionally unauthenticated
+because an authorized repository credential can see drafts that shipped clients
+cannot.
+An anonymous GitHub rate limit, transport error, or response that cannot be
+read as the feed array is a retryable failure: do not write the terminal
+integrity marker and do not mutate the release. A successfully parsed feed
+with a missing, duplicate, stale, or incompatible exact target is a terminal
+integrity failure and remains fail-closed, except for the narrowly validated
+pre-finalization title/flag propagation case described below. That case remains
+pending and never counts as successful finalization. Under `legacy_updater_v1`,
+any other entry that the shipped decoder cannot parse is also terminal. Linux discovery
+routes that marker through one Ubuntu-only recovery pass so private failure
+evidence is durable and the exact wake tag is cleared instead of polling the
+same terminal state.
+
+A supported API-only replacement may store the ZIP on a separate durable
+public host and leave the primary GitHub release asset-free, but that changes
+old clients from an in-app **Download** button to **View** and is not enabled by
+this contract. Releases classified as `github_api_v1` use the supported REST
+upload endpoint with a fresh release App token.
+
+Release-author provenance is a small stable-identity policy, not a migration
+timeline. GitHub's numeric user ID `10710367` and release-App bot ID `315153817`
+are authorized for well-formed production and beta tags. Login text is checked
+for a valid user or bot shape but is not used as a historical epoch, so a future
+account or App rename does not strand an otherwise immutable archived release.
+New publication still validates the live Jason login or the configured App
+identity before mutation. Payload compatibility is then derived independently
+from the actual release author and asset shapes exposed to shipped clients.
+
+The shared HTTP transport automatically retries read-only `GET` requests only.
+It never replays `POST`, `PATCH`, `PUT`, or `DELETE` mutations after a server or
+network failure because their remote outcome may be ambiguous.
+
+Long release-PR and feasibility-probe check polling uses the job-scoped
+`GITHUB_TOKEN`. Each workflow mints a fresh release App installation token
+immediately before an App-only mutation and independently refreshes it for
+failure cleanup. Every token explicitly requests only the permissions needed by
+that mutation. Because `actions/create-github-app-token` 3.2.0 does not expose
+GitHub's Variables permission, the fixed wake-state adapter directly requests a
+short-lived installation token limited to this repository ID and exactly
+`actions_variables: write`, verifies the returned repository and permission
+set, permits only the artifact and finalization wake-variable names, and revokes
+the token after use. In particular, Workflows write is absent
+from branch, PR, check, cleanup, and wake-state tokens and is present only on
+fresh tokens used for exact-target GitHub release mutations. This prevents both
+unnecessary privilege reuse and the one-hour App-token lifetime from stranding
+a PR or deterministic release branch during the two-hour check window. See GitHub's
+[repository-variable API](https://docs.github.com/en/rest/actions/variables#update-a-repository-variable).
+
+Release starts require the frozen SHA to equal the workflow-dispatch `main`
+SHA. Resume runs may use an older frozen SHA only after GitHub's compare API
+proves that complete object ID is an ancestor of dispatch `main`; this proof
+happens before any caller-selected commit is checked out or executed. The
+scheduled and manually dispatched finalizer checks out the immutable trigger
+SHA rather than resolving the mutable `main` branch after authorization.
+
+All release workflows that use the private archive install ORAS through
+`oras-project/setup-oras`, pinned to a full immutable commit and maintained by
+Dependabot. The workflow files are the source of truth for the action revision,
+CLI download version, and archive checksums; see the
+[release orchestrator](../.github/workflows/release.yml) and
+[artifact publisher](../.github/workflows/release_publish.yml). Tests validate
+these pinning and consistency requirements without fixing a particular version.
+PR CI also runs `bundle exec ruby Scripts/verify-oras-checksums.rb` to compare
+configured checksums with the upstream release manifest for the workflow's CLI
+version. This network check is separate from the offline unit suite.
+Linux-only orchestration jobs use
+the checksum-pinned Linux amd64 archive; hosted-Mac feasibility and artifact
+verification jobs use the checksum-pinned Darwin archive for the runner's exact
+architecture. The GHCR adapter packages layers from a private temporary working
+directory and passes only relative paths to ORAS. Pulls require a new or empty
+real destination and validate every tar member, PAX/GNU path override, symlink,
+and hard-link target before invoking the platform extractor. Extraction drops
+archived ownership and permission restoration, remains transactional, requires
+the archive manifest to match the separate OCI manifest layer, rejects
+hard-linked control/evidence files, rejects every symlink outside `artifacts/`,
+and requires artifact symlinks to resolve inside the extracted tree. Generated
+publisher/finalizer state is written in a separate trusted temporary directory.
+Do not disable these path controls or replace ORAS with an unpinned
+package-manager install.
+
+`.github/workflows/release.yml` deliberately stops after the exact merge, tag,
+prerelease, and `cloud_running` manifest have been pushed to private GHCR. It
+does not keep a macOS runner alive while Xcode Cloud builds or Apple notarizes.
+The release tool creates and verifies the lightweight Git tag through GitHub's
+Git-reference API before it publishes the prerelease. Do not let the Releases
+API synthesize a missing tag: that path can publish a release without emitting
+the tag-change event Xcode Cloud needs. An existing tag is reusable only when
+it is a lightweight ref that resolves directly to the exact release commit.
+The subsequent Releases API request repeats the complete approved commit as
+`target_commitish`, even when the tag already exists. This atomically binds the
+mutation to the approved target if the tag disappears between validation and
+the request. GitHub requires Contents write plus Workflows write when that
+target's workflow files differ from current `main`; the workflow mints a fresh,
+narrow token for this one mutation. The same narrowly scoped token pattern is
+used for finalization. See GitHub's
+[Create a release](https://docs.github.com/en/rest/releases/releases#create-a-release)
+and [Update a release](https://docs.github.com/en/rest/releases/releases#update-a-release)
+permission and `target_commitish` rules.
+Prerelease creation is idempotent: an existing release is reused only when its
+tag, title, draft flag, prerelease flag, author identity, and target commit
+match the approved release. A newly created release must return the exact
+approved initial body, but later maintainer edits are intentionally ignored on
+reuse. The direct-commit tag ref is revalidated immediately before and after
+both prerelease creation and reuse so a moved tag cannot be accepted. If
+explicit tag creation succeeds but GitHub has no release behind
+that tag, a newly approved `mode=resume` plan against the exact release commit
+reuses the same canonical build. The recovery validates the missing release
+and, if Cloud already consumed the tag, binds the exact Production workflow,
+tag, commit, and run before recreating the prerelease; it never bumps or retags.
+`.github/workflows/release_publish.yml` runs immediately after a successful
+handoff and when Xcode Cloud posts either its authenticated Archive check or
+terminal workflow commit status. It treats both only as wake-ups and still
+validates the exact private handoff against App Store Connect. GitHub's native
+[`check_run: completed` and `status` events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
+supply this connection; no webhook or relay is required. A schedule at minutes
+11 and 41 is retained only as lost-event or
+post-notarization recovery, and its Ubuntu job is created only while repository
+variable `SA_RELEASE_PENDING_ARTIFACT_TAG` contains one exact production or beta
+tag. Idle schedules and unrelated Xcode Cloud checks therefore allocate no
+runner and never download ORAS. The release or Alpha-retry workflow arms the
+variable only after its immutable handoff is in private GHCR; terminal or
+successful processing clears only that same tag, while transient failures leave
+it armed. A forward-RC child replaces its exact predecessor tag in one guarded
+write only after the new `cloud_running` archive is durable; the predecessor is
+not cleared if forward dispatch fails. The state adapter retries transient API
+failures. If arming fails or is cancelled after the durable archive exists,
+cleanup preserves that discoverable `cloud_running` handoff and prerelease for
+an exact manual publisher dispatch instead of marking it terminal. The Linux
+job performs one exact Cloud-status read through the protected App Store
+Connect Team API key and exits. App Store Connect is authoritative for the
+exact workflow, tag, commit, build relationship, and artifact; GitHub checks
+and statuses are wake-up hints and may lag the Apple UI or API. It starts the
+protected GitHub-hosted `macos-15` verification job after every required
+Production and Alpha run is related to the expected app build and exposes an
+HTTPS-downloadable `STAPLED_NOTARIZED_ARCHIVE`. This artifact gate applies even
+when the run reports complete/succeeded: logs, xcarchives, and ordinary Developer
+ID exports may be available before notarization finishes. Missing stapled output
+stays pending on Ubuntu with the exact wake tag armed. If Apple's run-progress
+field lags, the exact build plus that stapled artifact can still admit verification.
+The publisher then proves signing, stapling, notarization, and the artifact itself
+before any public attachment or App Store submission. Metadata readiness never
+replaces those byte-level checks. Once handoff, archive digests, and public assets
+validate an `artifacts_verified` or `archived` continuation, Cloud checks use
+`cloud-status --artifacts-already-verified`: exact run, app/version/build identity
+and terminal failure checks still apply, but expired or unavailable Cloud download
+resources cannot block reuse of the verified ZIPs. Initial `cloud_running`
+collection and other Cloud callers retain the downloadable stapled-artifact gate.
+The publisher repeats the artifact-type selection at download with
+`--notarized-only`. If the stapled resource is no longer downloadable, it fails
+before verification and preserves the retryable handoff instead of stamping a
+terminal artifact failure. Terminal releases already recorded by older tooling
+are not automatically reset or republished by this readiness change.
+Authorized manual recovery requires
+`PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
+The immediate continuation authenticates its source by the immutable workflow
+path from the `workflow_run` payload; GitHub's `workflow_run.name` contains the
+dynamic `run-name` and is not an authorization identity. Xcode Cloud check
+wake-ups require GitHub App ID `117084`, slug `xcode-cloud`, a terminal check,
+an exact known Archive-check name, and a valid head SHA. The later workflow
+status wake-up requires a terminal state, exact workflow context, matching
+Production or Alpha App Store Connect target URL, valid SHA, and at least one
+matching completed Archive check from the authenticated Xcode Cloud App.
+Scheduled and
+event discovery inspect only the exact tag held in the repository variable. An
+explicitly requested ineligible tag fails. Every eligible handoff still receives
+strict live validation, and any API or transport failure stops discovery while
+leaving recovery armed.
+Production is always resolved first; a pending Production run prevents an Alpha
+result from deciding the beta's fate. A completed unsuccessful Cloud run or an
+assigned Production build-number mismatch is recorded by a separate Ubuntu job,
+so failure handling never allocates a Mac. A higher assignment may dispatch the
+bounded forward-only RC recovery described below; a lower assignment is
+terminal.
+
+Every asynchronous continuation requires an authorized stable publisher identity
+and proves that the tagged commit remains on current `main` with no intervening
+release-file changes. The private App Store notes remain bound to the original
+approval and are not re-derived from the mutable GitHub release body. Archived
+continuations also compare
+every live GitHub asset digest with the verifier-produced SHA-256 in the
+private manifest and, under `legacy_updater_v1`, require every field and type
+needed by the shipped decoder plus its exact enum-constrained author, uploader,
+label, content-type, and state metadata. The release starter rejects
+unrecognized numeric publisher identities, while an unreadable
+authorized-publisher handoff fails closed instead of allowing a second release
+to overlap it.
+
+## One-time Apple setup
+
+Create a dedicated **Team API key** with the App Manager role from App Store
+Connect's Users and Access > Integrations page. A Team key is intentionally
+team-wide and cannot be limited to only these two apps, so its scope is broader
+than the previously planned individual-user key. The guarded workflows are
+hard-coded to operate on only:
+
+- Production app `1518036000`
+- Alpha app `1594104035`
+
+Store the key ID, issuer ID, and one-time private-key download only in the
+protected release environment. Configure Xcode Cloud in the UI because the
+public API does not expose the built-in Notarize post-action. The release
+process does not read or trust the UI's configured **Next Build Number**:
+
+- **Production:** scheme `Sequel Ace Release`; start on `production/*` and
+  `beta/*` tags; allow manual starts for only those same tag prefixes (not
+  branches or pull requests); add the built-in Notarize post-action.
+- **Alpha:** scheme `Sequel Ace Beta`; remove the every-push-to-`main` trigger;
+  retain manual `main`, schedule `main` nightly at 03:00
+  `America/Los_Angeles`, and start on `beta/*` tags; add the built-in Notarize
+  post-action and internal TestFlight distribution.
+
+Nightly and manual Alpha builds are tester-only App Store Connect deliveries.
+They never create or update a GitHub release and their build numbers remain
+informational. The `beta/*` trigger remains separate because a public beta
+requires both its Production and Alpha artifacts.
+
+After saving both workflows, manually start only Alpha from the current `main`
+commit. Record that Alpha build-run ID for the feasibility workflow. Do not
+manually start Production during setup.
+
+When changing Xcode Cloud start conditions through the App Store Connect API,
+read the complete workflow first and send every start-condition field that must
+remain enabled in the same update. Apple treats those attributes as a set; a
+partial update that supplies only `manualTagStartCondition` can clear the
+existing `tagStartCondition`. Always read back both conditions before creating
+a release tag.
+
+`.github/workflows/release_finalize.yml` checks for Production prereleases at
+minute 17 every six hours and also supports an authorized manual recovery run.
+Its first job uses an Ubuntu runner with read-only Contents permission. It exits
+successfully without loading Apple credentials when publishing is disabled or
+no Production prerelease exists. Only a real candidate starts the protected
+Ubuntu API job with App Store Connect and GHCR access; finalization does not
+need a Mac runner.
+
+An initial scheduled run is trusted only as immutable workflow code from
+protected `main`; any rerun must be initiated by `Jason-Morcos` or `Kaspik`.
+Manual dispatches validate both the original and current initiating actor. The
+protected API job rechecks the enable flag and `main` ref, proves the Team key still
+reads the Production app, then independently validates each candidate's exact
+App Store version/build, latest-version status, phased release, tag commit,
+archived manifest, and public checksums before changing GitHub. No public
+webhook endpoint, relay secret store, durable event ledger, or second GitHub App
+is required.
+
+Apple’s documented API exposes every Xcode Cloud build run and its assigned
+number, but not the configured next number. The deployment therefore derives
+the expected Production build as one greater than the highest build observed
+across canonical tags, the Production app in App Store Connect, and Production
+workflow runs. It never accepts a caller-entered or UI-observed build number.
+If the exact tagged run is assigned a higher number anyway, that authenticated
+run proves the Cloud counter jumped and can never move backward. The failed RC
+is preserved and a new RC advances to at least the assigned number plus one.
+
+The API client follows Apple's documented
+[Xcode Cloud build-run endpoint](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-ciworkflows-_id_-buildruns)
+and binds a release run to its workflow, source tag, commit, and related App
+Store build rather than selecting the newest result.
+
+## Release component responsibilities
+
+### Inspect before retrying
+
+Use the protected App Store Connect API key, not a logged-in browser, to check
+Apple state. From an authenticated maintainer CLI:
+
+```sh
+gh workflow run release_status.yml --ref main -f release_tag=production/6.0.0-20113
+```
+
+Read that run's summary or its `release-status` JSON artifact. The workflow is
+read-only and does not wait behind the publisher's concurrency group. It pulls
+the exact private handoff, queries ASC, and reports version existence, selected
+build, metadata validation against approved notes, phased/scheduled settings,
+and submission state. A green status job means inspection succeeded, not that
+the release completed. Missing/incomplete versions remain explicit. Raw Apple
+responses, review credentials, and signed download links are never published.
+No ASC key needs to be copied to a maintainer's Mac.
+
+For an already authorized local keyed runtime, the same read-only command is:
+
+```sh
+Scripts/release-tool release-status --manifest /private/path/manifest.json \
+  --notes /private/path/app-store-notes.txt
+```
+
+Check the exact GHCR manifest and existing queued/running publisher before
+dispatching recovery. `artifacts_verified` means the verified ZIP is already
+archived: inspect `github-public-assets-status` and the publisher summary, not
+just GitHub check colors. Do not rebuild or manually repackage it. A delayed
+manual publisher request for `submitted` succeeds without repeating writes
+only after live handoff, public-asset, exact App Store build, and metadata
+validation. Failed or other ineligible requests still stop explicitly.
+
+The planner exposes the legacy upload constraint under
+`operational_requirements`. If `legacy_updater_v1` is selected, surface its
+manual upload requirement before approval. API-only Apple status/submission
+does **not** solve GitHub's legacy `label: null` upload compatibility constraint.
+Do not promise browser-free publication or change publisher/compatibility policy
+without a separately authorized decision.
+
+Tooling repairs must end with an actual PR, not just a pushed branch: include
+the changes, concrete checks, remaining limitations, and the PR URL. Host
+instructions and their deployment belong to the host repository; no host policy
+or secrets belong in this public repository.
+
+- **Release starter (`release.yml`):** freezes the approved source and notes,
+  prepares and merges the release PR, creates the direct-commit tag and GitHub
+  prerelease, starts the exact Xcode Cloud run, and preserves the immutable
+  private handoff. It does not attach a public binary or submit App Store
+  metadata.
+- **Xcode Cloud:** builds the tagged source and runs Apple's configured
+  Notarize and TestFlight post-actions. Its UI is useful operator evidence, but
+  the publisher independently reads the exact run, build, and artifacts through
+  the App Store Connect API.
+- **Release Artifact Publisher (`release_publish.yml`):** owns the notarized
+  distributable after Cloud. It downloads the exact Cloud artifact; verifies
+  version/build, architectures, signing identity, notarization and stapling,
+  Gatekeeper, and launch/quit behavior; packages the updater ZIP; preserves it
+  in private GHCR; attaches the checksum-matched copy to the GitHub prerelease
+  (or records the required legacy-compatible browser upload); then stages,
+  validates, attaches, and submits the exact App Store build.
+- **Release finalizer (`release_finalize.yml`):** waits for App Store
+  `READY_FOR_DISTRIBUTION`, revalidates the archived and public artifacts, and
+  only then converts the GitHub prerelease to a final release.
+
+Therefore a successful Xcode Cloud page is not the end of artifact publication,
+and a missing GitHub asset is still publisher work. Conversely, a lagging
+GitHub check or Apple run-progress field must not force a rebuild when the exact
+App Store build and downloadable stapled-notarized Cloud artifact are already available.
+
+## Fastlane behavior and documentation
+
+Use Bundler for every invocation. The supported configuration follows the
+official documentation for:
+
+- [Fastlane setup](https://docs.fastlane.tools/getting-started/ios/setup/)
+- [`increment_version_number`](https://docs.fastlane.tools/actions/increment_version_number/)
+- [`increment_build_number`](https://docs.fastlane.tools/actions/increment_build_number/)
+- [`app_store_connect_api_key`](https://docs.fastlane.tools/actions/app_store_connect_api_key/)
+- [`upload_to_app_store`](https://docs.fastlane.tools/actions/upload_to_app_store/)
+
+The increment actions can accept explicit values, but the release tool updates
+the known project/plist locations itself and verifies their exact shape. No
+implicit increment is permitted. This matters because Xcode Cloud, not
+Fastlane, owns the next Production build number.
+
+`app_store_connect_api_key` receives the Team key with its required issuer ID.
+`upload_to_app_store` uses platform `osx`, the exact semantic version and build,
+`skip_binary_upload: true`, `skip_screenshots: true`, seven-day phased release,
+and `reset_ratings: false`. Both mutating Fastlane lanes independently require
+`SA_RELEASE_AUTOMATION_ENABLED=true`, so invoking Fastlane directly cannot
+bypass the feasibility gate.
+
+Submission is deliberately split:
+
+1. `stage_app_store_release` creates/updates metadata without submitting.
+2. The Ruby client attaches the exact processed build through the documented
+   App Store version/build relationship.
+3. The API reads back the exact localization, Promotional Text, ten complete
+   screenshots, review information, selected build, schedule, rating behavior,
+   and phased release.
+4. Only then does `submit_app_store_release` submit for review.
+
+If submission returns ambiguously, a separate Ubuntu recovery job polls the
+exact version and selected build for up to 15 minutes; the macOS publisher does
+not wait. An observed submitted state is accepted only when its selected build
+still matches the canonical Production build. If Apple still does not confirm
+submission, the durable `archived` handoff remains unchanged and retryable.
+
+## Planning and approval
+
+Fetch `main` and tags, then run a read-only plan. The notes file contains only
+the exact customer-facing App Store text, without a Markdown heading.
+
+```sh
+export SA_GITHUB_TOKEN="$(gh auth token)"
+Scripts/release-tool plan \
+  --channel production \
+  --target-version 5.3.2 \
+  --base-tag production/5.3.1-20104 \
+  --main-ref origin/main \
+  --app-store-notes /absolute/path/to/app-store-notes.txt \
+  --output /absolute/path/to/release-plan.json
+```
+
+Review the recommended SemVer, frozen SHA, complete change list, App Store
+notes, GitHub body, forward-only build policy, and approval SHA-256. The exact
+candidate build is derived later inside the protected workflow using the Team
+App Store Connect key. Patch is the default for fixes and infrastructure. Any
+`#added` change recommends minor.
+Major is never recommended automatically. A later beta for an already chosen
+semantic version recommends keeping that version while comparing only with the
+preceding beta. Its changelog is still regenerated cumulatively from the latest
+finalized Production release tag that is an ancestor of that beta, so a later
+beta cannot replace the version section with only its incremental changes.
+
+The approval hash includes the resolved commits behind both the release-note
+comparison tag and cumulative changelog base tag, the complete generated
+initial GitHub release-body digest, and the
+`highest-observed-production-build-plus-one-forward-only-v1` policy. Changing
+the frozen main SHA, App Store notes, generated initial GitHub body, either base
+tag or its resolved commit, channel, semantic version, or build policy requires
+a new plan and approval before the prerelease is created. Once created, edits
+to the live GitHub body require no workflow input or additional approval and do
+not change the separately approved App Store notes. The RC/beta iteration is
+runtime naming state rather than an approved product input, so an authenticated
+forward recovery can create RC 2 without weakening or regenerating the original
+approval.
+
+After Jason confirms the intended PR set is merged and approves the plan, use
+the private Codex skill to dispatch `.github/workflows/release.yml` with the
+plan's immutable values and exact approval hash. Base64-encode the approved
+App Store notes without line wrapping. That workflow ends once the immutable
+private handoff is durable. Monitor `Release Artifact Publisher` for the exact
+Cloud run; do not rerun `Release` merely because Cloud or notarization is still
+pending.
+
+## Build-number reconciliation
+
+For source `S`, let `H` be the highest build observed across canonical
+Production/Beta tags, the Production app's App Store Connect builds, and the
+Production workflow's API-visible runs. Both tag channels trigger the
+Production workflow; Alpha artifact numbers are never included.
+
+- Normal: the protected Ruby reconciler derives the explicit candidate as
+  `H + 1`. Fastlane lanes never calculate or increment it, and workflow inputs
+  cannot override it.
+- Declared source: `SAGitHubReleaseTag` is parsed as a release identity
+  (`channel/version/build/tag`) and must exactly agree with every source
+  version file. If that identity matches the requested release and `S == H +
+  1`, the workflow reuses the pre-incremented candidate without pretending a
+  no-op version-file rewrite was a release commit. If a deliberately declared
+  source is ahead of `H + 1`, the generated release PR records that identity
+  and converges its unconsumed version files to `H + 1`; App Store Connect and
+  Production Cloud remain authoritative, and no build-number gap is invented.
+- Forward self-healing: if App Store Connect or Production Cloud advances past
+  source, the workflow advances the prepared release to `H + 1`. The manifest
+  records the complete source identity, the highest exact Cloud run, the
+  expected target, actual consumed runs, and every externally consumed gap with
+  its durable Cloud or Production ASC evidence.
+- Result verification: the publisher finds the exact run by workflow, tag, and
+  commit before comparing its assigned number with the canonical tag build. A
+  match continues normally. A lower assigned number is a fatal regression and
+  can never trigger recovery. A higher number immediately becomes durable
+  forward-jump evidence; the current tag and prerelease remain failed and
+  immutable.
+- Automatic RC recovery: after durable failure evidence is archived, a
+  short-lived Ubuntu job revalidates the failed tag, release-App author, empty
+  asset set, unchanged release commit at current `main`, original approval hash,
+  and `assigned > expected`. The mutable GitHub body is not an authorization
+  input. Only then may the job's
+  narrowly scoped `GITHUB_TOKEN` (`actions: write`) dispatch `Release` in
+  `mode=resume`. GitHub documents that
+  [`workflow_dispatch` triggered by `GITHUB_TOKEN` creates a new run](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs).
+  The chained run recalculates `H + 1`, creates
+  a new release PR and RC iteration, and carries predecessor evidence forward.
+  Recovery is capped at three chained attempts to prevent an uncontrolled
+  loop. It never deletes, retags, or reuses the failed RC.
+- Resume after merge: if source already equals `H + 1`, has no tag, and Cloud
+  has not consumed it, ASC has no conflicting build, and the release-preparation
+  commit remains the newest first-parent commit that changed every protected
+  version file and `CHANGELOG.md`, reuse it. Unrelated commits may have advanced
+  `main`; the recovery approval must be planned against the exact release
+  commit, and `mode=resume` is the only mode allowed to start from that ancestor.
+  The recovery job executes the immutable workflow/tooling revision at the
+  authenticated dispatch SHA on protected `main`, so a recovery-only fix can be
+  used without changing the frozen release approval. Planning, build
+  reconciliation, protected-file validation, and the eventual tag target stay
+  pinned to the exact approved release commit.
+  When that commit is the generated release-PR merge, the planner uses its
+  first parent as the release-notes comparison head, reproducing the original
+  change range instead of listing the release-preparation PR itself.
+  Before any recovery mutation and again immediately before tagging, GitHub must
+  prove that exact commit is still an ancestor of live `main` and that no
+  protected release file changed after it.
+- Resume after tag: if the exact lightweight release tag resolves to the newest
+  release-preparation commit but its GitHub release is absent, `mode=resume`
+  reuses the source build. Cloud may either still report that build as next or
+  have exactly one run for it; the latter must identify the Production
+  workflow, exact tag, exact commit, and no later Production run. Any existing
+  GitHub release, mismatched tag/run, App Store build ahead of source, or Cloud
+  advancement beyond that one exact run aborts recovery.
+- Stop: source is ahead of `H + 1` without an exact declared release identity,
+  histories conflict, an exact tagged run is assigned below its canonical
+  build, the recovery chain is malformed, main changes after the failed release
+  commit, assets already exist, or the bounded recovery limit is reached.
+
+After release-PR checks finish, the workflow performs the same reconciliation
+again immediately before merge or recovered tag creation. It first force/prune
+refreshes the remote tag namespace and proves the approved comparison tag still
+resolves to its approved SHA, so a newly claimed build or moved tag is included
+in the final reconciliation. If the target moved, it aborts before either
+transition, closes the exact PR, and deletes only its verified release branch.
+The original approval remains valid for a later authenticated forward recovery;
+unrelated changes to `main` still require a fresh plan.
+
+Alpha numbers never enter this calculation. A failed Alpha-only beta build may
+be rerun against the same tag through
+`.github/workflows/release_alpha_retry.yml`. That workflow reuses the successful
+Production run, starts or reuses only an Alpha run, records the exact retry ID
+in the private handoff, and exits without waiting. The artifact publisher later
+requires both exact runs and both artifacts to verify without advancing source,
+tag, or canonical build. If the retry workflow itself fails after validation,
+it leaves the last exact failed-Alpha archive untouched so a later authorized
+retry can reuse it, and records its explanation only in the Actions summary.
+It never edits the maintainer-owned GitHub release body. If that unarchived
+retry itself later fails, the next authorized attempt can select its exact
+newer failed run while
+preserving the older durable run as predecessor evidence. The successful
+handoff records both IDs after independently validating the selected run's
+workflow, tag, commit, and terminal failure. A failed Production build consumes
+its number. Ordinary build failures remain preserved for an explicitly
+authorized resume; only a proven higher-number assignment receives the bounded
+automatic RC recovery described above.
+
+## Retry artifacts from an existing successful build
+
+If a publisher prematurely recorded failure before notarization completed,
+use `release_artifact_retry.yml` after inspecting the failed private manifest.
+Supply its SHA-256, exact production tag, existing release commit, exact
+successful Production Cloud run ID, and `RETRY ARTIFACTS <tag>` confirmation.
+This is an explicitly authorized same-build recovery, not a new RC or rebuild.
+Successful recovery wakes the publisher through its authenticated
+`workflow_run` completion event. It does not dispatch the human-only manual
+publisher entry point as `github-actions[bot]`; the armed schedule remains the
+fallback if the completion event is delayed or lost.
+
+The workflow requires unchanged live source/tag identity, no public assets or
+App Store version, and a completed successful run
+with the exact version/build and a downloadable stapled-notarized artifact.
+It preserves the original manifest bytes inside the private archive and records
+the failure, digest, actor, run, and recovery URL before rearming publication.
+Each later inspected failure can be authorized by its new fingerprint; recovery
+history and digest-named predecessor manifests remain preserved across retries.
+The normal publisher still performs every signing, notarization, architecture,
+launch, checksum, and App Store gate. Failed Cloud builds or build-number
+mismatches cannot use this recovery. A transient rearming failure leaves the
+validated `cloud_running` archive available for exact manual publisher dispatch.
+
+## Artifacts, App Store submission, and finalization
+
+- Production artifacts must be universal `arm64`/`x86_64`, carry bundle ID
+  `com.sequel-ace.sequel-ace`, be Developer ID signed by Moballo team
+  `NKQ4HJ66PX`, pass `codesign`, `stapler`, and Gatekeeper checks, launch, remain
+  alive briefly, and quit.
+- Beta requires both the Production artifact and the Alpha artifact. Alpha uses
+  bundle ID `com.sequel-ace.sequel-ace-beta`; its build is recorded only as
+  evidence.
+- Public names are generated by `ReleaseNaming`; do not rename them manually.
+- For `legacy_updater_v1`, the hosted Mac archives verified ZIPs before public
+  mutation and then stops if the exact GitHub assets are missing. The local
+  skill performs the last-resort compatible-user UI upload and a strict API
+  read-back before dispatching the API-only continuation. While that handoff is
+  pending, scheduled discovery stays on Ubuntu and never redownloads or
+  reverifies the artifacts. Once ready, the continuation also runs on Ubuntu;
+  only a `cloud_running` handoff can select the hosted Mac. `github_api_v1`
+  uses the supported REST asset API with a fresh GitHub App token scoped to
+  exactly `Sequel-Ace/Sequel-Ace`.
+- The release and Alpha-retry workflows never poll Cloud to completion. They
+  archive an immutable handoff and release their Ubuntu runners. Xcode Cloud's
+  authenticated GitHub check or terminal workflow status wakes the publisher; the
+  repository-variable-gated 30-minute schedule is recovery only. The publisher
+  checks once on Linux, then downloads, verifies, launches, packages, and
+  uploads on GitHub-hosted macOS only when the exact notarized run is ready.
+- Completed unsuccessful Cloud runs are terminal and are recorded on Ubuntu.
+  An exact Production run with a different assigned number is also classified
+  there before completion: higher invokes the authenticated forward-recovery
+  path, while lower remains terminal. Architecture, signing, notarization,
+  stapling, Gatekeeper, bundle metadata,
+  or launch verification failures are terminal only after every required Cloud
+  run reports complete. A verifier failure while Apple still reports a required
+  run in progress remains retryable so the Notarize post-action can finish.
+  Network, runner, download,
+  upload, registry, and API failures leave the remote manifest unchanged and
+  leave the exact wake tag armed so the next Xcode event or short recovery
+  check can retry it. Automated failure and recovery reporting is kept in the
+  private archive and Actions summaries; it never edits the GitHub release
+  body.
+- The complete Cloud artifacts, dSYMs, zips, checksums, notes, and redacted
+  manifest are pushed to the private GHCR OCI archive and pulled back for
+  checksum verification using GitHub's
+  [container registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
+  Pulled archive contents are treated as untrusted even after authentication;
+  all member paths and link targets are preflighted before extraction, control
+  files must be independent regular files, hard-link aliases may exist only
+  wholly inside `artifacts/`, symlinks must remain contained, and a refreshed
+  `artifacts/` tree replaces the old tree rather than copying through
+  archive-controlled destinations.
+- Production submission preserves current nonempty Promotional Text, changes no
+  screenshots, keeps ratings, enables seven-day phased release, and schedules
+  the first 09:00 America/Los_Angeles instant at least 72 hours away.
+- Immediately before every App Store metadata, build-selection, or review
+  mutation, submission revalidates the live GitHub tag, authorized-publisher
+  non-draft prerelease, exact public asset digests, and current-main ancestry
+  against the private archived manifest. The independently approved archived
+  App Store notes remain the metadata input; the mutable GitHub body is not a
+  gate. Every guard also
+  requires the exact release and assets to match in the anonymous feed; for
+  `legacy_updater_v1`, it additionally validates every visible entry against the
+  shipped decoder. A newly incompatible feed writes terminal integrity evidence
+  and stops before the next Apple mutation.
+- The current-main guard rejects any later plist or changelog change. It treats
+  project-file registration separately: the tagged commit and current main must
+  each independently retain every configured `CURRENT_PROJECT_VERSION` and
+  `DYLIB_CURRENT_VERSION` value at the archived canonical build. This permits
+  unrelated Xcode file registration after a tag, but a missing, added, or
+  changed release build setting remains a hard stop.
+- Beta never creates a customer App Store version.
+- Production submission arms `SA_RELEASE_PENDING_FINALIZATION_TAG` only after
+  the exact `submitted` archive is durable. The six-hour schedule does no
+  expensive work while that variable is `none`; otherwise it inspects only that
+  exact production tag. An authorized manual dispatch may name the same or a
+  different exact tag for recovery. Discovery accepts a prerelease or a stable
+  release because a public transition may have succeeded before a later
+  readback or archive checkpoint failed.
+- Every pulled private archive must pass the versioned manifest validator and
+  match the candidate's exact tag, semantic version, and canonical build before
+  any state decision. Scheduled and authorized exact-tag manual recovery both
+  repeat the complete Apple, tag, release, feed, asset, latest-release, and
+  archive validation. When a release is already stable, correctly titled, and
+  latest, that path is read-only rather than replaying the GitHub mutation.
+- The finalizer changes the GitHub title, prerelease flag, and latest flag only
+  after the exact ASC version is `READY_FOR_DISTRIBUTION`, remains Apple's
+  latest released Production version, keeps the exact selected build, has an
+  `ACTIVE` or `COMPLETE` phased release, and matches every public checksum in
+  the private manifest. It archives that validation as `finalizing` before the
+  public transition. The update repeats the exact tag and archived commit, then
+  revalidates the tag, authenticated release, anonymous release feed, assets,
+  and latest-release endpoint before accepting success.
+  `SCHEDULED` and the minimum release date are submission-only checks. Live
+  finalization and live status inspection use distribution and phased-release
+  state instead of requiring the version to retain its submission schedule;
+  selected-build, metadata, and ratings-preservation checks still apply.
+- Every transport failure, rate limit, unavailable archive, or failed
+  post-transition readback leaves the exact wake tag armed and the durable
+  archive at its last retryable checkpoint. The next scheduled run therefore
+  retries the same `finalizing` release even when GitHub already reports it as
+  stable; discovery does not assume the release is still a prerelease.
+  A feed that still has the exact previously validated title and prerelease
+  flag is pending propagation, not successful finalization. The validator must
+  verify every other identity, asset, checksum, and compatibility field against
+  the current authenticated release before treating that readback as retryable.
+  Recovery uses the exact release/commit-bound `finalizing` validation evidence;
+  it neither repeats a completed promotion nor accepts arbitrary stale metadata.
+- A successfully parsed incompatible release or anonymous feed writes versioned
+  finalization-integrity evidence into the private archive. The scheduled run
+  clears the wake tag after that evidence is durable so it does not repeat a
+  terminal failure; after the public payload is repaired, an authorized
+  exact-tag dispatch deliberately retries it. A successful recovery preflight
+  removes the obsolete marker before re-archiving `finalizing`; a still-terminal
+  manual recovery exits unsuccessfully.
+- After every final/latest/feed readback passes, the finalizer records `live`,
+  pushes that evidence to private GHCR, and clears only the matching wake tag.
+  If wake-state clearing alone fails, the next schedule repeats the complete
+  read-only validation of the already-stable release before retrying the exact
+  clear. Finalization outputs and logs stay outside the pulled archive; only
+  validated evidence files and the updated regular manifest are copied back.
+- The public transition always explicitly sends `draft: false`,
+  `prerelease: false`, and `make_latest: true`, even when the title and
+  prerelease flag already look final. It then re-reads both the exact release
+  and GitHub's latest release and fails unless both identify the expected final
+  release with its identity and assets unchanged. Finalization does not send a
+  release-body field, so maintainer edits are preserved.
+- Finalization also resolves the current production tag and requires it to
+  equal the archived release commit; a moved or recreated tag cannot become
+  latest.
+- A failure after App Store submission preserves `submitted` or `live` state
+  and never edits the maintainer-owned GitHub release body. If submission had
+  an ambiguous response, Ubuntu recovery reads back the exact ASC version and
+  build before changing durable state. The finalizer also accepts the last
+  durable `archived` manifest so a failed post-submission GHCR refresh can
+  self-heal through the same exact Apple and artifact checks. If reconciliation
+  itself fails or returns malformed evidence, the archive remains at its last
+  authenticated checkpoint rather than being terminalized by an infrastructure
+  error.
+- A failure before prerelease creation persists the verified release commit
+  before opening the PR. Cleanup closes any open PR and deletes the generated
+  branch only when its head still matches that exact commit (or the frozen main
+  SHA when commit creation did not finish). If GitHub accepted the commit but
+  its mutation response was lost, read-only reconciliation requires exactly one
+  child of frozen main and byte-exact allowlisted file blobs from GitHub's
+  [compare-commits API](https://docs.github.com/en/rest/commits/commits#compare-two-commits)
+  before cleanup, so a retry is not stranded by a stale deterministic branch.
+- The same exact branch/PR and prerelease recovery steps run for a GitHub
+  cancellation, preventing an operator cancel from stranding generated state.
+- Once Alpha-only recovery has verified and archived both beta artifacts, a
+  later artifact-handoff failure records its workflow evidence without
+  downgrading the durable `archived` manifest to `failed`.
+
+## Feasibility gate
+
+Run `.github/workflows/release_feasibility.yml` after the GitHub environment,
+App, API key, Cloud triggers, Notarize actions, and manual Alpha run are ready.
+Dispatch it with both the exact Alpha build-run ID and the full source commit
+SHA reported for that run. The pinned Alpha source may equal current `main` or
+be an ancestor of it; setup and unrelated app PRs can land while a one-time
+notarization probe is processing. The workflow proves that ancestry, then
+still requires the run's exact workflow/source identity and verifies the
+downloaded artifact against the version at current `main`. Do not burn another
+Alpha build merely to refresh this one-time evidence to a newer commit.
+It must prove:
+
+1. The hosted Mac downloads, verifies, opens, and quits 5.3.1 (20104).
+2. The Team Apple key reads both apps and both Cloud workflows.
+3. The exact Alpha run exposes a downloadable Moballo-signed notarized artifact.
+4. A disposable GitHub App PR uses the same GitHub-signed GraphQL commit path
+   as a release, has a verified bot commit and green checks, then closes without
+   merge.
+5. A private GHCR push/pull has matching checksums and private visibility.
+
+The GHCR probe is cleanup-sensitive: after the probe step is attempted, a
+separate unconditional cleanup step finds exactly one package version carrying
+only the run-specific tag and deletes it through GitHub's Packages REST API.
+GitHub refuses to delete the last tagged version through the version endpoint,
+so the workflow deletes the package endpoint only when two identical,
+paginated inventories prove that probe is the package's sole version and sole
+tag. Otherwise it deletes only the exact probe version. The workflow preserves
+any earlier failure and fails unless read-back is an exact package `404` after
+whole-package deletion or a live package with the probe tag absent after
+version deletion. Every other read-back result remains fatal. Do not use the
+OCI registry manifest-delete operation; GHCR reports that operation as
+unsupported.
+
+The workflow refuses to start unless `SA_RELEASE_AUTOMATION_ENABLED` is already
+`false`, and it does not enable publishing itself. After every gate passes and
+the GitHub/Xcode Cloud UI configuration is reviewed, manually change the
+variable to `true`. This keeps a failed or partial feasibility run incapable of
+enabling releases.
+
+## Local fallback
+
+Use Homebrew Ruby and an isolated Bundler path; do not use the system Ruby:
+
+```sh
+export BUNDLE_PATH="$(mktemp -d -t sequel-ace-release-bundle)"
+export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}"
+bundle install
+bundle exec rake -f fastlane/Rakefile test
+```
+
+`Scripts/release-tool` selects this keg-only Ruby and sets `BUNDLE_GEMFILE` to
+its own checkout even when invoked from another directory. The GHCR archive
+adapter uses a private temporary ORAS registry configuration by default and
+cleans it on exit, including failures. It does not depend on Docker Desktop's
+credential helper or modify global registry credentials. An explicit absolute
+`GHCR_REGISTRY_CONFIG` is caller-owned and is not removed.
+
+The same planner, reconciler, version editor, metadata gates, and artifact
+verifier work locally. Manual local notarization is not ready unless
+`security find-identity -v -p codesigning` shows a usable Moballo Developer ID
+Application identity. Stop rather than substituting an Apple Distribution or
+development identity.

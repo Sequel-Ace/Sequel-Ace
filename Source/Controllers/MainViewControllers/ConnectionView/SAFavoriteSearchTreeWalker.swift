@@ -45,7 +45,7 @@ enum SAFavoriteSearchTreeWalker {
                               into matched: inout Set<SPTreeNode>) -> Bool {
         if node.isGroup {
             var anyDescendantMatched = false
-            for child in (node.children ?? []).compactMap({ $0 as? SPTreeNode }) {
+            for child in (node.children ?? []) {
                 if visit(child, matcher: matcher, into: &matched) {
                     anyDescendantMatched = true
                 }

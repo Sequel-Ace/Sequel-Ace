@@ -116,6 +116,12 @@ const NSString * const SerFilterExprDefinition = @"_filterDefinition";
  * Is the filter expression enabled for filtering?
  */
 const NSString * const SerFilterExprEnabled = @"enabled";
+/**
+ * Expression Nodes only:
+ * Is this the row seeded for a newly selected table, still unchecked and waiting for its first edit?
+ * (see SARuleFilterPendingStarter). Absent means no.
+ */
+const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 
 #pragma mark -
 
@@ -188,6 +194,8 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 }
 @property (assign, nonatomic) BOOL initialState;
 @property (assign, nonatomic) BOOL allowsMixedState;
+/** Whether the row is the seeded starter row restored from a saved filter; its checkbox is tracked again. */
+@property (assign, nonatomic) BOOL pendingStarter;
 @end
 
 #pragma mark -
@@ -232,6 +240,11 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 @interface SPRuleFilterController () <NSRuleEditorDelegate, NSTextFieldDelegate, SPFilterRuleEditorDropHandler>
 
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
+/** The seeded starter row while it waits, unchecked, for its first edit; see -addStarterFilterExpression. */
+@property (strong, nonatomic) SARuleFilterPendingStarter *pendingStarter;
+
+/** Checks the unchecked starter row when `row` is that row, and updates the preview: editing it means filtering by it. */
+- (void)_enablePendingStarterInRow:(NSInteger)row;
 
 - (NSArray *)_compareTypesForColumn:(ColumnNode *)colNode;
 - (IBAction)_textFieldAction:(id)sender;
@@ -259,7 +272,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (IBAction)addFilter:(id)sender;
 - (void)_updateButtonStates;
 - (void)_doChangeToRuleEditorData:(void (^)(void))duringBlock;
+- (void)_invokeTarget:(id)aTarget action:(SEL)anAction withObject:(id)object;
+- (void)_invokeFilterTargetActionWithObject:(id)object;
 - (IBAction)_checkboxClicked:(id)sender;
+- (void)_updateFilterPreview;
+- (IBAction)_rootConjunctionPopUpChanged:(id)sender;
+- (void)_syncRootConjunctionPopUp;
 - (void)_updateCheckedStateUpwardsFromCompoundRow:(NSInteger)row;
 - (void)_updateCheckedStateForRow:(NSInteger)row to:(NSControlStateValue)newState;
 - (void)_updateCheckedStateDownwardsFromCompoundRow:(NSInteger)row to:(NSControlStateValue)newState;
@@ -284,6 +302,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		opNodeCacheVersion = 1;
 		isDoingChangeCausedOutsideOfRuleEditor = NO;
 		previousRowCount = 0;
+		rootIsConjunction = YES;
 
 		// Init default filters for Content Browser
 		contentFilters = [[NSMutableDictionary alloc] init];
@@ -322,10 +341,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			NSBeep();
 		}
 		else {
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"number"] count]] forKey:@"number"];
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"date"] count]] forKey:@"date"];
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"string"] count]] forKey:@"string"];
-			[numberOfDefaultFilters setObject:[NSNumber numberWithInteger:[[contentFilters objectForKey:@"spatial"] count]] forKey:@"spatial"];
+			for (NSString *group in [SACellFilterOperator filterDefinitionGroups]) {
+				[numberOfDefaultFilters setObject:@([[contentFilters objectForKey:group] count]) forKey:group];
+			}
 		}
 	}
 	return self;
@@ -337,6 +355,14 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _doChangeToRuleEditorData:^{
 		[self->filterRuleEditor bind:@"rows" toObject:self->_modelContainer withKeyPath:@"model" options:nil];
 	}];
+
+	[rootConjunctionPopUp setToolTip:NSLocalizedString(@"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.", @"table Content : rule filter editor : AND/OR popup : tooltip")];
+	// Static XIB titles are not localized at load time in this app (see the
+	// Refresh title in SPConnectionController.m for the established
+	// workaround) - apply the catalog strings here so translations show up.
+	[[[rootConjunctionPopUp menu] itemWithTag:1] setTitle:NSLocalizedString(@"AND (all conditions)", @"table Content : rule filter editor : AND/OR popup : combine with AND")];
+	[[[rootConjunctionPopUp menu] itemWithTag:0] setTitle:NSLocalizedString(@"OR (any condition)", @"table Content : rule filter editor : AND/OR popup : combine with OR")];
+	[self _syncRootConjunctionPopUp];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self
 	                                         selector:@selector(_contentFiltersHaveBeenUpdated:)
@@ -428,6 +454,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self->filterRuleEditor reloadCriteria];
 	}];
 
+	// the rows are gone, so the way they were combined is meaningless now;
+	// -restoreSerializedFilters: brings it back for a saved filter
+	[self setRootIsConjunction:YES];
+
 	// disable UI if no criteria exist (enable otherwise)
 	[self setEnabled:YES];
 }
@@ -443,6 +473,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		// compound rows are only for "AND"/"OR" groups
 		if(type == RuleNodeTypeEnable) {
 			return 2;
+		}
+		// the AND/OR choice is followed by a static explainer label, so the
+		// popup clearly refers to the group's own rows (not its neighbours)
+		if(type == RuleNodeTypeString && [self _isConjunctionChoiceNode:(StringNode *)criterion]) {
+			return 1;
 		}
 	}
 	else if(rowType == NSRuleEditorRowTypeSimple) {
@@ -501,6 +536,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				case 1: [node setValue:@"OR"]; break;
 			}
 			return node;
+		}
+		if(type == RuleNodeTypeString && [self _isConjunctionChoiceNode:(StringNode *)criterion]) {
+			return [SPRuleFilterController _conjunctionExplainerNode];
 		}
 	}
 	else if(rowType == NSRuleEditorRowTypeSimple) {
@@ -563,15 +601,37 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setTitle:NSLocalizedString(@"Enable Filter", @"table Content : rule filter editor : row : enable filter expression checkbox")];
 			[check setToolTip:NSLocalizedString(@"When unchecked this filter expression will not be applied", @"table Content : rule filter editor : row : enable filter expression checkbox : tooltip")];
 			// see +checkboxWithTitle:target:action: in 10.12+
-			[check setButtonType:NSSwitchButton];
+			[check setButtonType:NSButtonTypeSwitch];
 			[check setBezelStyle:NSBezelStyleRegularSquare];
 			[check setBordered:NO];
 			[check setImagePosition:NSImageOnly];
-			[check sizeToFit];
+			// -sizeToFit on a freshly created NSButton is shockingly expensive
+			// on macOS 26 (the cell measures through a full SwiftUI view
+			// graph, ~hundreds of ms) and made every "+" click lag. The
+			// checkbox is image-only and identical for every row, so measure
+			// once and reuse the size. (Main thread only, like all of this.)
+			static NSSize checkboxSize = {0, 0};
+			if (NSEqualSizes(checkboxSize, NSZeroSize)) {
+				[check sizeToFit];
+				checkboxSize = [check frame].size;
+			}
+			else {
+				[check setFrameSize:checkboxSize];
+			}
 			[check setAllowsMixedState:[node allowsMixedState]];
 			[check setState:([node initialState] ? NSControlStateValueOn : NSControlStateValueOff)];
 			[check setTarget:self];
 			[check setAction:@selector(_checkboxClicked:)];
+			// A restored starter row waits for its first edit again. The mark stays on the node
+			// so that tracking resumes whenever the checkbox is built anew - the editor rebuilds
+			// it on a reload - and goes once the row stops waiting, so a later rebuild cannot
+			// uncheck a row the user has enabled since.
+			if ([node pendingStarter]) {
+				__weak EnableNode *markedNode = node;
+				[self.pendingStarter beginWithCheckbox:check clearingRestoredMark:^{
+					[markedNode setPendingStarter:NO];
+				}];
+			}
 			return check;
 		}
 		case RuleNodeTypeColumn: {
@@ -631,7 +691,17 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[textField setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 			[[textField cell] setWraps:NO];
 			[[textField cell] setScrollable:YES];
-			[textField sizeToFit];
+			// Same -sizeToFit trap as the checkbox above: measure the (always
+			// identical) single-line height once, then reuse it. The width is
+			// overridden below anyway.
+			static CGFloat argumentFieldHeight = 0;
+			if (argumentFieldHeight <= 0) {
+				[textField sizeToFit];
+				argumentFieldHeight = [textField frame].size.height;
+			}
+			else {
+				[textField setFrameSize:NSMakeSize([textField frame].size.width, argumentFieldHeight)];
+			}
 			[textField setTarget:self];
 			[textField setAction:@selector(_textFieldAction:)];
 			[textField setDelegate:self]; // see -control:textView:doCommandBySelector:
@@ -689,6 +759,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (IBAction)_checkboxClicked:(id)sender
 {
+	// A click on the starter row's checkbox is the user's own choice; later edits must not undo it.
+	if ([self.pendingStarter isCheckbox:sender]) [self.pendingStarter forget];
+
 	NSInteger row = [filterRuleEditor rowForDisplayValue:sender];
 	NSControlStateValue newState = [(NSButton *)sender state];
 
@@ -708,6 +781,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
     [self _updateButtonStates];
+    [self _updateFilterPreview];
 }
 
 /**
@@ -873,13 +947,51 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 }
 
+/**
+ * Live-updates the WHERE preview while the user types in an argument field
+ * (the fields' delegate is this controller, see the ArgNode display value).
+ */
+- (void)controlTextDidChange:(NSNotification *)notification
+{
+	// Typing into the unchecked starter row means filtering by it.
+	[self _enablePendingStarterInRow:[filterRuleEditor rowForDisplayValue:[notification object]]];
+	[self _updateFilterPreview];
+}
+
+/**
+ * Shows the WHERE clause the current rules would produce in the drop zone,
+ * or restores the drop prompt when there is nothing (or nothing valid) to
+ * preview. Called after every change that can alter the clause: row changes,
+ * checkbox toggles, popup selections, typing, and restores.
+ */
+- (void)_updateFilterPreview
+{
+	SPMainQSync(^{
+		if (!self->dropBox) return;
+		NSString *clause = nil;
+		if (![self isEmpty]) {
+			NSError *err = nil;
+			clause = [self sqlWhereExpressionWithBinary:NO error:&err];
+			if (err) clause = nil;
+		}
+		[self->dropBox setPreviewClause:clause];
+	});
+}
+
 - (IBAction)_menuItemInRuleEditorClicked:(id)sender
 {
 	if(!sender) return; // NSRuleEditor will throw on nil
 
 	NSInteger row = [filterRuleEditor rowForDisplayValue:sender];
 
-	if(row == NSNotFound) return; // unknown display values
+	if(row == NSNotFound) {
+		// Not one of our menu items: NSRuleEditor sends its own action (with
+		// itself as sender) for criteria it handles natively - notably the
+		// AND/OR string popup of a compound row. The tree may have changed
+		// without a row-count change, so refresh the WHERE preview here.
+		[self _updateFilterPreview];
+		return;
+	}
 
 	RuleNode *criterion = [[(NSMenuItem *)sender representedObject] objectForKey:@"node"];
 
@@ -889,10 +1001,14 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		id _target = [[node settings] objectForKey:@"target"];
 		SEL _action = (SEL)[(NSValue *)[[node settings] objectForKey:@"action"] pointerValue];
 		if(_target && _action) {
-			[_target performSelector:_action withObject:sender];
+			[self _invokeTarget:_target action:_action withObject:sender];
 			return;
 		}
 	}
+
+	// Picking a column or operator in the unchecked starter row means filtering by it; a command
+	// such as "Edit Filters…" above does not change the row and does not count.
+	[self _enablePendingStarterInRow:row];
 
 	/* now comes the painful part, where we'd have to find out where exactly in the row this
 	 * displayValue should appear.
@@ -940,6 +1056,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self _doChangeToRuleEditorData:^{
 			[self->filterRuleEditor setCriteria:criteria andDisplayValues:displayValues forRowAtIndex:row];
 		}];
+
+		[self _updateFilterPreview];
 
 		// make the next possible object after the opnode the new next responder (since the previous one is gone now)
 		for (NSUInteger j = nodeIndex + 1; j < [displayValues count]; ++j) {
@@ -1012,7 +1130,28 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (IBAction)filterTable:(id)sender
 {
-	if(target && action) [target performSelector:action withObject:self];
+	[self _invokeFilterTargetActionWithObject:self];
+}
+
+/**
+ * Invokes a runtime-registered target/action pair. The registered actions are
+ * void IBAction-style methods, so there is no returned object for ARC to leak.
+ */
+- (void)_invokeTarget:(id)aTarget action:(SEL)anAction withObject:(id)object
+{
+	if(!aTarget || !anAction) return;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+	[aTarget performSelector:anAction withObject:object];
+#pragma clang diagnostic pop
+}
+
+/**
+ * Invokes the controller's filter target/action (see setTarget:/setAction:).
+ */
+- (void)_invokeFilterTargetActionWithObject:(id)object
+{
+	[self _invokeTarget:target action:action withObject:object];
 }
 
 - (void)resetFilter {
@@ -1025,7 +1164,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _doChangeToRuleEditorData:^{
 		[[self->_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
 	}];
-	if(target && action) [target performSelector:action withObject:nil];
+	[self setRootIsConjunction:YES];
+	[self _invokeFilterTargetActionWithObject:nil];
 }
 
 - (IBAction)addFilter:(id)sender
@@ -1037,30 +1177,57 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
     SPMainQSync(^{
         CGFloat wantsHeight = [self->filterRuleEditor rowHeight] * MAX([self->filterRuleEditor numberOfRows], 1);
+        // No-op resizes would still trigger a full container layout pass in
+        // SPTableContent - skip them, several notifications per gesture are normal.
+        if (wantsHeight == self->preferredHeight) return;
         [self setPreferredHeight:wantsHeight];
         [[NSNotificationCenter defaultCenter] postNotificationName:SPRuleFilterHeightChangedNotification object:self];
     });
 }
 
 
+/**
+ * NSRuleEditorRowsDidChangeNotification handler: keeps the container height, the button states and the
+ * checkbox states in sync with the rows, and resets the filter when the user removed the last row.
+ */
 - (void)ruleEditorRowsDidChange:(NSNotification *)notification 
 {
-	//TODO find a better way to trigger resize
-	// We can't do this here, because it will cause rows to jump around when removing them (the add case works fine, though)
-	[self performSelector:@selector(_resize) withObject:nil afterDelay:0.2];
-	//[self _resize];
+	// The rule editor is very liberal in the use of this notification: one click on "+"/"-" can post it
+	// several times, and not every post means the number of rows actually changed. SARuleFilterResizePolicy
+	// decides what to do; this method only carries it out (see the policy for the reasoning).
+	NSInteger newRowCount = [filterRuleEditor numberOfRows];
+	// The notification arrives on whatever thread mutated the rows (table
+	// loading clears/restores the model from its task thread). Cancelling and
+	// scheduling the deferred resize must happen on the main run loop, or the
+	// perform never fires and stale cancels hit the wrong thread.
+	switch([SARuleFilterResizePolicy actionForRowCount:newRowCount previousRowCount:previousRowCount]) {
+		case SARuleFilterResizeActionNone:
+			break;
+		case SARuleFilterResizeActionImmediate: {
+			SPMainQSync(^{
+				[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
+				[self _resize];
+			});
+			break;
+		}
+		case SARuleFilterResizeActionDeferred: {
+			SPMainQSync(^{
+				[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
+				[self performSelector:@selector(_resize) withObject:nil afterDelay:[SARuleFilterResizePolicy deferredResizeDelay]];
+			});
+			break;
+		}
+	}
 	[self _updateButtonStates];
 
 	// if a row has been added, we need to update the checkboxes to match again
 	[self _recalculateCheckboxStatesFromRow:-1];
+	[self _updateFilterPreview];
 
 	// if the user removed the last row in the editor by pressing "-" (and only then) we immediately want to trigger a filter reset.
-	// There are two problems with that:
-	// - The rule editor is very liberal in the use of this notification. Receiving it does not mean the number of rows actually did change
-	// - There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
-	NSInteger newRowCount = [filterRuleEditor numberOfRows];
+	// There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
 	if(!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0) {
-		if(target && action) [target performSelector:action withObject:nil];
+		[self _invokeFilterTargetActionWithObject:nil];
 	}
 	previousRowCount = newRowCount;
 }
@@ -1074,6 +1241,65 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[filterButton setEnabled:(enabled && !empty)];
 	[filterRuleEditor setEnabled:enabled];
 	[addFilterButton setEnabled:(enabled && empty)];
+	[rootConjunctionPopUp setHidden:empty];
+	[rootConjunctionPopUp setEnabled:(enabled && !empty)];
+}
+
+/**
+ * How the top-level rows are combined: YES for AND, NO for OR (see the header).
+ */
+- (BOOL)rootIsConjunction
+{
+	return rootIsConjunction;
+}
+
+/**
+ * Sets the root conjunction and mirrors it into the AND/OR popup.
+ */
+- (void)setRootIsConjunction:(BOOL)isConjunction
+{
+	rootIsConjunction = isConjunction;
+	[self _syncRootConjunctionPopUp];
+}
+
+/**
+ * Trampoline into SARuleFilterConjunctionRowPresentation: YES when the node is
+ * the AND/OR choice of a compound row (as opposed to the explainer label).
+ */
+- (BOOL)_isConjunctionChoiceNode:(StringNode *)node
+{
+	return [SARuleFilterConjunctionRowPresentation isConjunctionChoice:[node value]];
+}
+
+/**
+ * Trampoline into SARuleFilterConjunctionRowPresentation: the static label
+ * shown after a group row's AND/OR popup, wrapped in the rule-editor node type.
+ */
++ (StringNode *)_conjunctionExplainerNode
+{
+	StringNode *node = [[StringNode alloc] init];
+	[node setValue:[SARuleFilterConjunctionRowPresentation explainerText]];
+	return node;
+}
+
+/**
+ * Selects the popup item matching `rootIsConjunction` (no-op without a popup, e.g. in unit tests).
+ */
+- (void)_syncRootConjunctionPopUp
+{
+	// AND is tag 1, OR is tag 0 in the XIB
+	[rootConjunctionPopUp selectItemWithTag:(rootIsConjunction ? 1 : 0)];
+}
+
+/**
+ * Action of the AND/OR popup: stores the user's choice for the next serialization.
+ */
+- (IBAction)_rootConjunctionPopUpChanged:(id)sender
+{
+	// like the per-row enable checkbox this does not run the filter; the
+	// user confirms via Apply Filters (or Return in any argument field)
+	rootIsConjunction = ([rootConjunctionPopUp selectedTag] == 1);
+	[self _updateFilterPreview];
 }
 
 - (void)dealloc
@@ -1108,53 +1334,11 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	NSMutableArray *compareItems = [NSMutableArray array];
 	
-	NSString *compareType;
-	
-	if ( [fieldTypeGrouping isEqualToString:@"date"] ) {
-		compareType = @"date";
-
-		/*
-		 if ([fieldType isEqualToString:@"timestamp"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc]
-		 initWithDateFormat:@"%Y-%m-%d %H:%M:%S" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"datetime"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%Y-%m-%d %H:%M:%S" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"date"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%Y-%m-%d" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"time"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%H:%M:%S" allowNaturalLanguage:YES]];
-		 }
-		 if ([fieldType isEqualToString:@"year"]) {
-		 [argumentField setFormatter:[[NSDateFormatter alloc] initWithDateFormat:@"%Y" allowNaturalLanguage:YES]];
-		 }
-		 */
-
-		// TODO: A bug in the framework previously meant enum fields had to be treated as string fields for the purposes
-		// of comparison - this can now be split out to support additional comparison fucntionality if desired.
-	} 
-	else if ([fieldTypeGrouping isEqualToString:@"string"]   || [fieldTypeGrouping isEqualToString:@"binary"]
-		|| [fieldTypeGrouping isEqualToString:@"textdata"] || [fieldTypeGrouping isEqualToString:@"blobdata"]
-		|| [fieldTypeGrouping isEqualToString:@"enum"]) {
-
-		compareType = @"string";
-		// [argumentField setFormatter:nil];
-
-	} 
-	else if ([fieldTypeGrouping isEqualToString:@"bit"] || [fieldTypeGrouping isEqualToString:@"integer"]
-		|| [fieldTypeGrouping isEqualToString:@"float"]) {
-		compareType = @"number";
-		// [argumentField setFormatter:numberFormatter];
-
-	} 
-	else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-		compareType = @"spatial";
-
-	} 
-	else  {
-		compareType = @"";
+	// compareType is the saved filterType and the user-defined filter key;
+	// definitionGroup holds the built-in definitions (differs only for BIT).
+	NSString *compareType = [SACellFilterOperator ruleFilterGroupForTypeGrouping:fieldTypeGrouping];
+	NSString *definitionGroup = [SACellFilterOperator filterDefinitionGroupForTypeGrouping:fieldTypeGrouping];
+	if (![compareType length]) {
 		NSBeep();
 		NSLog(@"ERROR: unknown type for comparision: in %@", fieldTypeGrouping);
 	}
@@ -1164,10 +1348,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// [compareField addItemWithTitle:@"IS NOT NULL"];
 
 	// Remove user-defined filters first
-	if([numberOfDefaultFilters objectForKey:compareType]) {
-		NSUInteger cycles = [[contentFilters objectForKey:compareType] count] - [[numberOfDefaultFilters objectForKey:compareType] integerValue];
+	if([numberOfDefaultFilters objectForKey:definitionGroup]) {
+		NSUInteger cycles = [[contentFilters objectForKey:definitionGroup] count] - [[numberOfDefaultFilters objectForKey:definitionGroup] integerValue];
 		while(cycles > 0) {
-			[[contentFilters objectForKey:compareType] removeLastObject];
+			[[contentFilters objectForKey:definitionGroup] removeLastObject];
 			cycles--;
 		}
 	}
@@ -1176,22 +1360,22 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	// Load global user-defined content filters
 	if([prefs objectForKey:SPContentFilters]
-		&& [contentFilters objectForKey:compareType]
+		&& [contentFilters objectForKey:definitionGroup]
 		&& [[prefs objectForKey:SPContentFilters] objectForKey:compareType])
 	{
-		[[contentFilters objectForKey:compareType] addObjectsFromArray:[[prefs objectForKey:SPContentFilters] objectForKey:compareType]];
+		[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[[prefs objectForKey:SPContentFilters] objectForKey:compareType]];
 	}
 
 	// Load doc-based user-defined content filters
 	if([[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]]) {
 		id filters = [[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]];
 		if([filters objectForKey:compareType])
-			[[contentFilters objectForKey:compareType] addObjectsFromArray:[filters objectForKey:compareType]];
+			[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[filters objectForKey:compareType]];
 	}
 
 	NSUInteger i = 0;
-	if([contentFilters objectForKey:compareType]) {
-		for (id filter in [contentFilters objectForKey:compareType]) {
+	if([contentFilters objectForKey:definitionGroup]) {
+		for (id filter in [contentFilters objectForKey:definitionGroup]) {
 			// Create the tooltip
 			NSString *tooltip;
 			if ([filter objectForKey:@"Tooltip"])
@@ -1318,6 +1502,48 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self focusFirstInputField];
 }
 
+/**
+ * Adds the seeded starter row, unchecked and waiting for its first edit; see the header.
+ */
+- (void)addStarterFilterExpression
+{
+	[self addFilterExpression];
+	if ([filterRuleEditor numberOfRows] < 1) return;
+
+	id checkbox = [[filterRuleEditor displayValuesForRow:0] firstObject];
+	if (![checkbox isKindOfClass:[NSButton class]]) return;
+	// a row seeded now carries no restored mark; the saved filter records the waiting state
+	[self.pendingStarter beginWithCheckbox:checkbox clearingRestoredMark:nil];
+	[self _updateButtonStates];
+	[self _updateFilterPreview];
+}
+
+/**
+ * The tracker of the seeded starter row, created on first use.
+ */
+- (SARuleFilterPendingStarter *)pendingStarter
+{
+	if (!_pendingStarter) _pendingStarter = [[SARuleFilterPendingStarter alloc] init];
+	return _pendingStarter;
+}
+
+/**
+ * Checks the waiting starter row when `row` is that row and refreshes the checkbox states, the buttons and
+ * the WHERE preview; does nothing for any other row.
+ */
+- (void)_enablePendingStarterInRow:(NSInteger)row
+{
+	if (![self.pendingStarter enableIfRow:row inEditor:filterRuleEditor]) return;
+
+	[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:row]];
+	[self _updateButtonStates];
+	[self _updateFilterPreview];
+}
+
+/**
+ * Builds the serialized rule a dropped cell becomes: the column, its default operator for the value (or
+ * IS NULL) and the value; nil when the column is unknown.
+ */
 - (NSDictionary *)_makeSerializedRuleForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull
 {
 	if (![columnName length]) return nil;
@@ -1375,40 +1601,22 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (!enabled || ![columns count]) return NO;
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
+	// Keep the starter marker before enabling the reused checkbox clears it.
+	NSDictionary *currentFilter = [self serializedFilter];
+	// The untouched starter row is replaced below, but the rule editor keeps the replaced row's
+	// checkbox for the new one; check it first so the dropped filter is not born unchecked.
+	[self _enablePendingStarterInRow:[self.pendingStarter rowInEditor:filterRuleEditor]];
 
-	// Merge the new rule with any existing tree under a single AND
-	// group so it can be fed to -restoreSerializedFilters:. Filtering
-	// is not kicked off – the user confirms via the Apply Filters
-	// button or by pressing Return in any argument field.
-	NSDictionary *existing = [self serializedFilter];
-	NSDictionary *combined;
-	if (!existing) {
-		combined = newRule;
-	}
-	else if (SerIsUntouchedStarterRule(existing)) {
-		// The rule editor auto-creates one empty row on open; if the
-		// user's first action is a drag, that placeholder is still
-		// present. ANDing onto it produces "firstColumn = '' AND
-		// droppedColumn = value", which isn't what the user asked for.
-		// Replace the starter outright instead.
-		combined = newRule;
-	}
-	else if (SerIsGroup(existing) && [[existing objectForKey:SerFilterGroupIsConjunction] boolValue]) {
-		NSMutableArray *children = [NSMutableArray arrayWithArray:[existing objectForKey:SerFilterGroupChildren]];
-		[children addObject:newRule];
-		combined = @{
-			(NSString *)SerFilterClass: (NSString *)SerFilterClassGroup,
-			(NSString *)SerFilterGroupIsConjunction: @YES,
-			(NSString *)SerFilterGroupChildren: children,
-		};
-	}
-	else {
-		combined = @{
-			(NSString *)SerFilterClass: (NSString *)SerFilterClassGroup,
-			(NSString *)SerFilterGroupIsConjunction: @YES,
-			(NSString *)SerFilterGroupChildren: @[existing, newRule],
-		};
-	}
+	// Merge the new rule with any existing tree as a further top-level
+	// row (combined via the AND/OR popup) so it can be fed to
+	// -restoreSerializedFilters:. An untouched starter row – the one the
+	// rule editor auto-creates on open – is replaced outright, so a first
+	// drag doesn't produce "firstColumn = '' AND droppedColumn = value".
+	// Filtering is not kicked off – the user confirms via the Apply
+	// Filters button or by pressing Return in any argument field.
+	NSDictionary *combined = [SARuleFilterRootConjunction appendingRule:newRule
+	                                                                 to:currentFilter
+	                                                  rootIsConjunction:rootIsConjunction];
 
 	[self restoreSerializedFilters:combined];
 	return YES;
@@ -1419,47 +1627,58 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (!enabled || row < 0 || ![columns count]) return NO;
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
+	// Dropping onto the unchecked starter row replaces it with a filter the user wants; its reused
+	// checkbox must not leave that filter unchecked.
+	[self _enablePendingStarterInRow:row];
 
-	NSDictionary *existing = [self serializedFilter];
-	NSDictionary *combined;
-	if (!existing) {
-		combined = newRule;
-	}
-	else if (SerIsGroup(existing) && [[existing objectForKey:SerFilterGroupIsConjunction] boolValue]) {
-		NSArray *children = [existing objectForKey:SerFilterGroupChildren];
-		// Only handle flat AND groups here. Nested groups (e.g. AND
-		// wrapping an OR subgroup) break the 1:1 mapping between
-		// NSRuleEditor row index and the AND-children index; the rule
-		// editor inserts extra rows for the subgroup's own children,
-		// throwing off direct indexing. The drop target rejects in
-		// that case so the user can still append a fresh rule via the
-		// drop box.
-		for (NSDictionary *child in children) {
-			if (SerIsGroup(child)) return NO;
-		}
-		if ((NSUInteger)row >= [children count]) {
-			return NO;
-		}
-		NSMutableArray *newChildren = [NSMutableArray arrayWithArray:children];
-		[newChildren replaceObjectAtIndex:(NSUInteger)row withObject:newRule];
-		combined = @{
-			(NSString *)SerFilterClass: (NSString *)SerFilterClassGroup,
-			(NSString *)SerFilterGroupIsConjunction: @YES,
-			(NSString *)SerFilterGroupChildren: newChildren,
-		};
-	}
-	else if (row == 0) {
-		// Single-expression tree – drop index 0 replaces the whole thing.
-		combined = newRule;
-	}
-	else {
-		return NO;
-	}
+	// Only a single expression or a flat root group can be addressed by
+	// row index; nested groups break the 1:1 mapping between NSRuleEditor
+	// row index and top-level child index (the rule editor inserts extra
+	// rows for the subgroup's own children). The helper rejects those and
+	// the drop target does too, so the user can still append a fresh rule
+	// via the drop box.
+	NSDictionary *combined = [SARuleFilterRootConjunction replacingRule:newRule
+	                                                              atRow:row
+	                                                                 in:[self serializedFilter]
+	                                                  rootIsConjunction:rootIsConjunction];
+	if (!combined) return NO;
 
 	[self restoreSerializedFilters:combined];
 	return YES;
 }
 
+/**
+ * Appends a nested AND/OR group holding one empty starter rule (see the header).
+ */
+- (void)addEmptyFilterGroup
+{
+	if (!enabled || ![columns count]) return;
+
+	// The group needs one row to be visible – give it the same empty
+	// starter rule a fresh row would show (first column, "=", no value).
+	NSDictionary *starter = [self _makeSerializedRuleForColumn:[(ColumnNode *)[columns firstObject] name] value:@"" isNull:NO];
+	if (!starter) return;
+
+	// SARuleFilterRootConjunction decides the resulting tree: replace a lone
+	// seeded row, append a nested group beside a single row, or – with two or
+	// more rows – fold them into one group and flip the root so the action
+	// reads as "(a OR b) AND new" instead of "a OR b OR new".
+	NSDictionary *tree = [SARuleFilterRootConjunction treeAddingGroupWithStarter:starter
+	                                                                          to:[self serializedFilter]
+	                                                           rootIsConjunction:rootIsConjunction];
+	[self restoreSerializedFilters:tree];
+
+	// Focus the freshly added last row, like -addEmptyFilterRow does.
+	NSArray *model = [_modelContainer model];
+	if ([model count] > 0) {
+		[self _focusOnFieldInSubtree:[model lastObject]];
+	}
+}
+
+/**
+ * The drop zone's "add a filter" click: checks an unchecked row without a value when there is one - the
+ * waiting starter row or a row unchecked again - otherwise appends an empty row at the end.
+ */
 - (void)addEmptyFilterRow
 {
 	// Click-to-add on the drop box mirrors the in-row "+" behaviour by
@@ -1469,6 +1688,25 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// (backing the top-right "Add Filter" button) keeps its original
 	// insert-at-0 semantics.
 	if (!enabled || ![columns count]) return;
+
+	// An unchecked row without a value - the starter row, or one the user unchecked again - is the
+	// empty filter this click asks for: check it rather than adding a second one next to it.
+	NSInteger emptyRow = [SARuleFilterPendingStarter reusableEmptyRowInEditor:filterRuleEditor];
+	if (emptyRow != NSNotFound) {
+		if ([self.pendingStarter rowInEditor:filterRuleEditor] == emptyRow) [self.pendingStarter forget];
+		NSArray *values = [filterRuleEditor displayValuesForRow:emptyRow];
+		[(NSButton *)[values firstObject] setState:NSControlStateValueOn];
+		[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:emptyRow]];
+		[self _updateButtonStates];
+		[self _updateFilterPreview];
+		for (id value in values) {
+			if ([value isKindOfClass:[NSTextField class]]) {
+				[[(NSTextField *)value window] makeFirstResponder:value];
+				break;
+			}
+		}
+		return;
+	}
 
 	[self _doChangeToRuleEditorData:^{
 		NSInteger tailIndex = [self->filterRuleEditor numberOfRows];
@@ -1539,17 +1777,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSDictionary *sub = [self _serializeSubtree:item includingDefinition:includeDefinition withDisabled:includeDisabled];
 		_addIfNotNil(rootItems, sub);
 	}
-	//the root serialized filter can either be an AND of multiple root items or a single root item
-	if([rootItems count] == 1) {
-		return [rootItems objectAtIndex:0];
-	}
-	else {
-		return @{
-			SerFilterClass: SerFilterClassGroup,
-			SerFilterGroupIsConjunction: @YES,
-			SerFilterGroupChildren: rootItems,
-		};
-	}
+	//the root serialized filter can either be an AND/OR group of multiple root items or a single root item
+	return [SARuleFilterRootConjunction serializedRootWithItems:rootItems isConjunction:rootIsConjunction];
 }
 
 - (NSDictionary *)_serializeSubtree:(NSDictionary *)item includingDefinition:(BOOL)includeDefinition withDisabled:(BOOL)includeDisabled
@@ -1605,6 +1834,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			SerFilterExprValues: filterValues,
 			SerFilterExprEnabled: @(isEnabled),
 		};
+		// Keep the seeded starter row recognisable, so a reload or a return to this table restores
+		// it waiting for its first edit instead of as a plain unchecked row.
+		if ([self.pendingStarter isCheckbox:[displayValues objectAtIndex:0]]) {
+			NSMutableDictionary *marked = [out mutableCopy];
+			[marked setObject:@YES forKey:SerFilterExprPendingStarter];
+			out = marked;
+		}
 		if(includeDefinition) {
 			out = [NSMutableDictionary dictionaryWithDictionary:out];
 			[(NSMutableDictionary *)out setObject:[op filter] forKey:SerFilterExprDefinition];
@@ -1622,16 +1858,14 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 {
 	if(!serialized) return;
 
+	// a group at the root becomes the top-level rows plus the AND/OR popup, anything else is a single row
+	SARuleFilterRootRestorePlan *plan = [SARuleFilterRootConjunction restorePlanFor:serialized];
+	[self setRootIsConjunction:[plan isConjunction]];
+
 	NSMutableArray *newModel = [[NSMutableArray alloc] init];
 	@autoreleasepool {
-		// if the root object is an AND group directly restore its contents, otherwise restore the object
-		if(SerIsGroup(serialized) && [[serialized objectForKey:SerFilterGroupIsConjunction] boolValue]) {
-			for(NSDictionary *child in [serialized objectForKey:SerFilterGroupChildren]) {
-				_addIfNotNil(newModel, [self _restoreSerializedFilter:child]);
-			}
-		}
-		else {
-			_addIfNotNil(newModel, [self _restoreSerializedFilter:serialized]);
+		for(NSDictionary *item in [plan items]) {
+			_addIfNotNil(newModel, [self _restoreSerializedFilter:item]);
 		}
 	}
 
@@ -1643,6 +1877,7 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 
 	//finally update all checkboxes
 	[self _recalculateCheckboxStatesFromRow:-1];
+	[self _updateFilterPreview];
 }
 
 - (NSMutableDictionary *)_restoreSerializedFilter:(NSDictionary *)serialized
@@ -1658,13 +1893,15 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 
 		StringNode *criterion = [[StringNode alloc] init];
 		[criterion setValue:([[serialized objectForKey:SerFilterGroupIsConjunction] boolValue] ? @"AND" : @"OR")];
+		StringNode *explainer = [SPRuleFilterController _conjunctionExplainerNode];
 		// those have to be mutable arrays for the rule editor to work
-		NSMutableArray *criteria = [NSMutableArray arrayWithArray:@[checkbox,criterion]];
+		NSMutableArray *criteria = [NSMutableArray arrayWithArray:@[checkbox,criterion,explainer]];
 		[obj setObject:criteria forKey:@"criteria"];
 
 		id checkDisplayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:checkbox inRow:-1];
 		id displayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:criterion inRow:-1];
-		NSMutableArray *displayValues = [NSMutableArray arrayWithArray:@[checkDisplayValue,displayValue]];
+		id explainerDisplayValue = [self ruleEditor:filterRuleEditor displayValueForCriterion:explainer inRow:-1];
+		NSMutableArray *displayValues = [NSMutableArray arrayWithArray:@[checkDisplayValue,displayValue,explainerDisplayValue]];
 		[obj setObject:displayValues forKey:@"displayValues"];
 
 		NSArray *children = [serialized objectForKey:SerFilterGroupChildren];
@@ -1696,6 +1933,16 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 		// for backwards compatibility. this key was added later
 		//                        vvvvvvvvvvvvv
 		[enabler setInitialState:(!enabledValue || [enabledValue boolValue])];
+		if ([[serialized objectForKey:SerFilterExprPendingStarter] boolValue]) {
+			// Unchecked through the tracker when its checkbox is created. The node itself stays like a
+			// fresh row's, so reloading the criteria (after "Edit Filters…") keeps the row and its checkbox.
+			// At most one row carries this: it is written for the one checkbox being tracked, and only
+			// one is. A hand-edited filter naming several would leave all but the last of them unchecked
+			// on every reload, which is the kind of nonsense such a filter can hold anyway - an unknown
+			// column in it refuses the whole expression a few lines above.
+			[enabler setInitialState:YES];
+			[enabler setPendingStarter:YES];
+		}
 		[criteria addObject:enabler];
 
 		// add column
@@ -1802,36 +2049,6 @@ fail:
 BOOL SerIsGroup(NSDictionary *dict)
 {
 	return [SerFilterClassGroup isEqual:[dict objectForKey:SerFilterClass]];
-}
-
-/**
- * YES if @c dict is a single expression node whose argument values are
- * all empty strings – the shape produced by the rule editor's auto-added
- * starter row before the user has typed anything. Used by
- * -appendFilterForColumn:... to decide whether a drop should replace the
- * placeholder rather than AND a new rule onto it.
- */
-static BOOL SerIsUntouchedStarterRule(NSDictionary *dict)
-{
-	if (!dict || SerIsGroup(dict)) return NO;
-	if (![SerFilterClassExpression isEqual:[dict objectForKey:SerFilterClass]]) return NO;
-	NSArray *values = [dict objectForKey:SerFilterExprValues];
-	if (![values isKindOfClass:[NSArray class]]) return NO;
-	// A row counts as "untouched starter" only if at least one argument
-	// is present AND every argument is an empty NSString. Zero-argument
-	// operators such as IS NULL / IS NOT NULL serialize with an empty
-	// values array (count == 0); without the count guard they would be
-	// misclassified as starter and replaced on the next append/drop,
-	// silently dropping the user's NULL filter.
-	// Anything else (NSData, NSNull, NSNumber, or a non-empty string)
-	// is real data the user or a restore path put there – merging, not
-	// replacing, is the correct behavior.
-	if ([values count] == 0) return NO;
-	for (id v in values) {
-		if (![v isKindOfClass:[NSString class]]) return NO;
-		if ([(NSString *)v length]) return NO;
-	}
-	return YES;
 }
 
 /**
@@ -2165,6 +2382,7 @@ static BOOL SerIsUntouchedStarterRule(NSDictionary *dict)
 
 @synthesize initialState = initialState;
 @synthesize allowsMixedState = allowsMixedState;
+@synthesize pendingStarter = _pendingStarter;
 
 - (instancetype)init {
 	self = [super init];

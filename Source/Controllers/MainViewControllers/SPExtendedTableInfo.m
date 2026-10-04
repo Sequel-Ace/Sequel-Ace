@@ -60,7 +60,7 @@ static NSString *SPMySQLUpdateTimeField       = @"Update_time";
 static NSString *SPMySQLCollationField        = @"Collation";
 static NSString *SPMySQLCommentField          = @"Comment";
 
-@interface SPExtendedTableInfo ()
+@interface SPExtendedTableInfo () <SATextViewDelegate>
 
 - (void)_updateDisplayedInfo:(NSNotification *)aNotification;
 - (void)_changeCurrentTableTypeFrom:(NSString *)currentType to:(NSString *)newType;
@@ -71,6 +71,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
 @implementation SPExtendedTableInfo
 
 @synthesize connection;
+@synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize tablesListInstance = tablesListInstance;
 
 /**
  * Upon awakening bind the create syntax text view's background colour.
@@ -150,7 +152,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	if ([currentEncoding isEqualToString:newEncoding]) return;
 
 	// Alter table's character set encoding
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ CHARACTER SET = %@", [selectedTable backtickQuotedString], newEncoding]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ CHARACTER SET = %@", [selectedTable backtickQuotedString], newEncoding] assertingDatabase:[tableDocumentInstance database]];
 
 	if (![connection queryErrored]) {
 		// Reload the table's data
@@ -175,7 +177,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	if ([currentCollation isEqualToString:newCollation]) return;
 
 	// Alter table's character set collation
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COLLATE = %@", [selectedTable backtickQuotedString], newCollation]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COLLATE = %@", [selectedTable backtickQuotedString], newCollation] assertingDatabase:[tableDocumentInstance database]];
 
 	if (![connection queryErrored]) {
 		// Reload the table's data
@@ -561,7 +563,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 			NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]];
 
 				void (^executeCommentChange)(void) = ^{
-					[self->connection queryString:query];
+					[self->connection queryString:query assertingDatabase:[self->tableDocumentInstance database]];
 
 					if (![self->connection queryErrored]) {
 						// Reload the table's data
@@ -663,7 +665,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (void)_changeCurrentTableTypeFrom:(NSString *)currentType to:(NSString *)newType
 {
 	// Alter table's storage type
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [selectedTable backtickQuotedString], newType]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [selectedTable backtickQuotedString], newType] assertingDatabase:[tableDocumentInstance database]];
 	
 	if ([connection queryErrored]) {
 
@@ -701,7 +703,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 				 [key isEqualToString:SPMySQLUpdateTimeField]) {
 
 			// 2020-06-30 14:14:11 is one example
-			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDateFormatter.naturalLanguageFormatter dateFromString:value]];
+			value = [NSDateFormatter mysqlDateTimeString:value dateStyle:NSDateFormatterMediumStyle timeStyle:NSDateFormatterMediumStyle];
 		}
 		// Format numbers
 		else if ([key isEqualToString:SPMySQLRowsField] ||

@@ -62,8 +62,9 @@ typedef NS_ENUM(NSInteger, SPTriggerEventTag) {
 static SPTriggerActionTimeTag TagForActionTime(NSString *mysql);
 static SPTriggerEventTag TagForEvent(NSString *mysql);
 
-@interface SPTableTriggers ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableTriggers () <NSMenuItemValidation, NSControlTextEditingDelegate>
 - (void)_editTriggerAtIndex:(NSInteger)index;
 - (void)_toggleConfirmAddTriggerButtonEnabled;
 - (void)_refreshTriggerDataForcingCacheRefresh:(BOOL)clearAllCaches;
@@ -193,6 +194,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 - (IBAction)confirmAddTrigger:(id)sender
 {
 	[self closeTriggerSheet:self];
+	NSString *databaseName = [tableDocumentInstance database];
+	NSString *tableName = [tablesListInstance tableName];
 	
 	NSString *createTriggerStatementTemplate = @"CREATE TRIGGER %@ %@ %@ ON %@ FOR EACH ROW %@";
 
@@ -201,10 +204,10 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	if (isEdit && [(NSString *)[editedTrigger objectForKey:SPTriggerName] length] > 0)
 	{
 		NSString *queryDelete = [NSString stringWithFormat:@"DROP TRIGGER %@.%@",
-								 [[tableDocumentInstance database] backtickQuotedString],
+								 [databaseName backtickQuotedString],
 								 [[editedTrigger objectForKey:SPTriggerName] backtickQuotedString]];
 		
-		[connection queryString:queryDelete];
+		[connection queryString:queryDelete assertingDatabaseContext:databaseName];
 		
 		if ([connection queryErrored]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:^{
@@ -249,11 +252,11 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 					   [triggerName backtickQuotedString],
 					   triggerActionTime,
 					   triggerEvent,
-					   [[tablesListInstance tableName] backtickQuotedString],
+					   [tableName backtickQuotedString],
 					   triggerStatement];
 
 	// Execute query
-	[connection queryString:query];
+	[connection queryString:query assertingDatabaseContext:databaseName];
 
 	if (([connection queryErrored])) {
 		NSString *createTriggerError = [connection lastErrorMessage];
@@ -264,13 +267,13 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 					 [[editedTrigger objectForKey:SPTriggerName] backtickQuotedString],
 					 [editedTrigger objectForKey:SPTriggerActionTime],
 					 [editedTrigger objectForKey:SPTriggerEvent],
-					 [[tablesListInstance tableName] backtickQuotedString],
+					 [tableName backtickQuotedString],
 					 [editedTrigger objectForKey:SPTriggerStatement]];
 		
 			// If this attempt to re-create the trigger failed, then we're screwed as we've just lost the user's 
 			// data, but they had a backup and everything's cool, right? Should we be displaying an error here
 			// or will it interfere with the one above?
-			[connection queryString:query];
+			[connection queryString:query assertingDatabaseContext:databaseName];
 		}
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating trigger", @"error creating trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\nMySQL said: %@", @"error creating trigger informative message"), createTriggerError] callback:^{
 			[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
@@ -311,7 +314,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 				NSString *triggerName = [[self->triggerData objectAtIndex:row] objectForKey:SPTriggerName];
 				NSString *query = [NSString stringWithFormat:@"DROP TRIGGER %@.%@", [database backtickQuotedString], [triggerName backtickQuotedString]];
 
-				[self->connection queryString:query];
+				[self->connection queryString:query assertingDatabaseContext:database];
 
 				if ([self->connection queryErrored]) {
 					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [self->connection lastErrorMessage]] callback:nil];

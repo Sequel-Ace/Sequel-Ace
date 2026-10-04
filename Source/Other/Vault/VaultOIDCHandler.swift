@@ -17,6 +17,7 @@ import Security
 enum VaultOIDCError: Error, LocalizedError {
     case cancelled
     case noAvailablePort
+    case loginInProgress
     case callbackTimeout
     case malformedCallback(String)
     case vaultError(Error)
@@ -27,6 +28,8 @@ enum VaultOIDCError: Error, LocalizedError {
             return NSLocalizedString("Vault login was cancelled.", comment: "Vault OIDC cancelled")
         case .noAvailablePort:
             return NSLocalizedString("Could not bind a local port for the Vault OIDC callback.", comment: "Vault OIDC port error")
+        case .loginInProgress:
+            return NSLocalizedString("Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.", comment: "Vault OIDC login already in progress")
         case .callbackTimeout:
             return NSLocalizedString("Vault OIDC login timed out. Please try again.", comment: "Vault OIDC timeout")
         case .malformedCallback(let detail):
@@ -52,6 +55,31 @@ enum VaultOIDCError: Error, LocalizedError {
 
     private static let loginLock = NSLock()
     private static var activeLogins: [String: ActiveLogin] = [:]
+
+    // Process-wide serialization of the OIDC callback port. The listener binds a
+    // fixed port (8250), so only one login flow can run in the whole process at a
+    // time — across every connection window and across connect/test/refresh alike.
+    // login() claims this before binding the port and releases it on every exit,
+    // so a second concurrent attempt fails fast with a clear message instead of a
+    // cryptic EADDRINUSE (.noAvailablePort) or a timeout. Guarded by loginLock.
+    private static var loginInProgress = false
+
+    /// Atomically claim the exclusive OIDC login slot. Returns false if a login is
+    /// already in flight anywhere in this process.
+    private static func beginExclusiveLogin() -> Bool {
+        loginLock.lock()
+        defer { loginLock.unlock() }
+        if loginInProgress { return false }
+        loginInProgress = true
+        return true
+    }
+
+    /// Release the exclusive OIDC login slot claimed by beginExclusiveLogin().
+    private static func endExclusiveLogin() {
+        loginLock.lock()
+        loginInProgress = false
+        loginLock.unlock()
+    }
 
     /// Mark that a Vault connection is about to start OIDC work. This lets a
     /// very early UI cancel be recorded before login() has a semaphore to signal.
@@ -145,6 +173,14 @@ enum VaultOIDCError: Error, LocalizedError {
         clearActiveLogin(semaphore: semaphore, identifier: identifier)
     }
 
+    static func beginExclusiveLoginForTesting() -> Bool { return beginExclusiveLogin() }
+    static func endExclusiveLoginForTesting() { endExclusiveLogin() }
+    static func isLoginInProgressForTesting() -> Bool {
+        loginLock.lock()
+        defer { loginLock.unlock() }
+        return loginInProgress
+    }
+
     static func isActiveLoginCancelled(identifier: String) -> Bool {
         loginLock.lock()
         defer { loginLock.unlock() }
@@ -214,6 +250,13 @@ enum VaultOIDCError: Error, LocalizedError {
     /// completes (or cancels) login, or the timeout elapses.
     /// - Returns: The new Vault token.
     static func login(baseURL: URL, mount: String, identifier suppliedIdentifier: String? = nil) throws -> String {
+        // Claim the process-wide port slot before doing anything else, so a second
+        // concurrent login (another window, or connect vs. refresh) fails fast with
+        // a clear message rather than racing on the fixed callback port. Placed
+        // before identifier setup so a rejected attempt leaves no state behind.
+        guard beginExclusiveLogin() else { throw VaultOIDCError.loginInProgress }
+        defer { endExclusiveLogin() }
+
         let loginIdentifier = suppliedIdentifier?.isEmpty == false ? suppliedIdentifier! : prepareActiveLogin()
 
         // 1. Start the callback listener on the fixed port 8250 (vault-plugin-auth-jwt default).
@@ -565,6 +608,7 @@ extension VaultOIDCError: Equatable {
         switch (lhs, rhs) {
         case (.cancelled, .cancelled): return true
         case (.noAvailablePort, .noAvailablePort): return true
+        case (.loginInProgress, .loginInProgress): return true
         case (.callbackTimeout, .callbackTimeout): return true
         case (.malformedCallback(let a), .malformedCallback(let b)): return a == b
         case (.vaultError, .vaultError): return true

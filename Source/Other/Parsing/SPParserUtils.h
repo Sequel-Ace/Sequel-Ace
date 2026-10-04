@@ -34,8 +34,9 @@
 #include <stdio.h>
 
 /**
- * Return number of characters (NOT bytes) in a given UTF-8 encoded C string.
+ * Return the number of UTF-16 code units (matching NSString.length) in a
+ * UTF-8 byte span. The input does not need to be NUL-terminated.
  */
-size_t utf8strlen(const char * _s);
+size_t utf8strlen(const char *bytes, size_t byteLength);
 
 #endif /* defined(__SPParserUtils__) */

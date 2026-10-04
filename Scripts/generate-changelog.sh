@@ -22,9 +22,9 @@ if [[ ! -f "${CHANGELOG_FILE}" ]]; then
   exit 1
 fi
 
-temp_file="$(mktemp -t sequel-ace-changelog)"
-clean_changelog_file="$(mktemp -t sequel-ace-changelog-existing)"
-entries_file="$(mktemp -t sequel-ace-changelog-entries)"
+temp_file="$(mktemp "${TMPDIR:-/tmp}/sequel-ace-changelog.XXXXXX")"
+clean_changelog_file="$(mktemp "${TMPDIR:-/tmp}/sequel-ace-changelog-existing.XXXXXX")"
+entries_file="$(mktemp "${TMPDIR:-/tmp}/sequel-ace-changelog-entries.XXXXXX")"
 trap 'rm -f "${temp_file}" "${clean_changelog_file}" "${entries_file}"' EXIT
 
 find_last_release_ref() {
@@ -168,6 +168,11 @@ build_entries() {
 
     title="$(sanitize_message "${title}")"
     [[ -z "${title}" ]] && continue
+    # Cumulative beta ranges cross prior generated release commits. Keep that
+    # bookkeeping out of the user-facing version section.
+    if [[ "${title}" =~ ^Prepare[[:space:]][0-9]+\.[0-9]+\.[0-9]+[[:space:]]\([0-9]+\)[[:space:]]release$ ]]; then
+      continue
+    fi
 
     category="$(classify_subject "${title}")"
     short_hash="${commit_hash:0:9}"

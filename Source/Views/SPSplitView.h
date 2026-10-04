@@ -28,6 +28,9 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+// AllowSplitViewResizing, used by the delegate ivar below, lives here.
+#import "SPCompatibility.h"
+
 @class SPSplitViewAnimationRetainCycleBypass;
 
 @interface SPSplitView : NSSplitView <NSSplitViewDelegate>

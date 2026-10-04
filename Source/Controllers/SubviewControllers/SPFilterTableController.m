@@ -246,7 +246,11 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 - (IBAction)filterTable:(id)sender {
 	if (target && action && [target respondsToSelector:action]) {
+// Target/action invocation: action methods return void, so nothing can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 		[target performSelector:action withObject:self];
+#pragma clang diagnostic pop
 	}
 }
 

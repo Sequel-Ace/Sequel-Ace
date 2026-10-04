@@ -35,17 +35,15 @@ import Foundation
     }
 
     public var isMASVersion: Bool {
-        guard
-            let receiptURL: URL = appStoreReceiptURL
-        else {
-            return false
-        }
-
-        do {
-            let _: Data = try Data(contentsOf: receiptURL)
-            return true
-        } catch {
-            return false
+        // App Store and TestFlight builds carry a receipt. Treat an existing
+        // but unreadable receipt as App Store-originated so the GitHub updater
+        // fails closed instead of offering an incompatible direct download.
+        SAAppStoreReceiptPolicy.isAppStoreInstall(receiptURL: appStoreReceiptURL) { receiptURL in
+            var isDirectory = ObjCBool(false)
+            return FileManager.default.fileExists(
+                atPath: receiptURL.path,
+                isDirectory: &isDirectory
+            ) && !isDirectory.boolValue
         }
     }
 
@@ -61,16 +59,33 @@ import Foundation
         return "%@ (%@)".format(version, build)
     }
 
+    public var githubReleaseTag: String? {
+        guard
+            // Keep the key in sync with SequelAceRelease::Config::RELEASE_TAG_PLIST_KEY.
+            let value = object(forInfoDictionaryKey: "SAGitHubReleaseTag") as? String,
+            let version,
+            let identity = SAGitHubReleaseTagIdentity(value),
+            identity.version == version
+        else {
+            return nil
+        }
+
+        return value
+    }
+
     public func checkForNewVersion(isFromMenuCheck: Bool) {
 
         if isMASVersion == false {
+            let isBetaBuild = isSnapshotBuild
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
                                                                    project: "Sequel-Ace",
                                                                    includeDraft: false,
-                                                                   includePrerelease: isSnapshotBuild ? true : false))
+                                                                   includePrerelease: isBetaBuild,
+                                                                   appVariant: isBetaBuild ? .beta : .production))
 
-            GitHubReleaseManager.sharedInstance.isFromMenuCheck = isFromMenuCheck
-            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString)
+            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString,
+                                                             installedReleaseTag: githubReleaseTag,
+                                                             isUserInitiated: isFromMenuCheck)
         }
     }
 

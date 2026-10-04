@@ -7,8 +7,14 @@
 //  independently from SPDatabaseDocument, enabling the connection
 //  UI to be presented without creating a full document first.
 //
+//  Phase C3: the window now hosts the SwiftUI screen (SAFavoritesList +
+//  SAConnectionFormView) rather than the XIB-backed SPConnectionController,
+//  and connects through SAConnectionService directly. This is the first place
+//  the C1b/C2 views actually run.
+//
 
 import AppKit
+import SwiftUI
 
 /// A standalone window controller that presents the connection screen.
 ///
@@ -25,11 +31,27 @@ import AppKit
 
     // MARK: - Properties
 
-    /// The connection controller managing the favorites list and connection logic.
-    private var connectionController: SPConnectionController?
-
-    /// The connection service for direct (non-UI-controller) connection attempts.
+    /// The connection service backing every attempt from this window.
     private let connectionService = SAConnectionService()
+
+    /// The edited connection details, shared with the SwiftUI form.
+    private let formModel = SAConnectionFormModel()
+
+    /// The favorites tree, snapshotted for SwiftUI when the window opens.
+    private var favorites: [SAFavoriteItem] = []
+
+    /// The favorite currently selected in the sidebar.
+    private var selection: SAFavoriteItem.ID?
+
+    /// The in-flight Vault OIDC login, if any, so closing the window releases it.
+    private var activeVaultLoginIdentifier: String?
+
+    /// The window's connection attempts. Starting one cancels the previous
+    /// attempt's connection and drops every result still delivered for it, from
+    /// its credential leg or from its connection.
+    private lazy var attempts = SAConnectionAttemptSequence { [connectionService] in
+        connectionService.cancel()
+    }
 
     /// Set to true after a successful connection handoff to prevent
     /// windowWillClose from disconnecting the just-handed-off connection.
@@ -45,6 +67,9 @@ import AppKit
 
     /// The container view hosting the connection UI.
     private let containerView = NSView(frame: .zero)
+
+    /// The SwiftUI screen, once installed.
+    private var hostingView: NSView?
 
     // MARK: - Lifecycle
 
@@ -75,13 +100,11 @@ import AppKit
 
     override func windowDidLoad() {
         super.windowDidLoad()
-        setupConnectionController()
+        installConnectionScreen()
     }
 
     @objc override func showWindow(_ sender: Any?) {
-        if connectionController == nil {
-            setupConnectionController()
-        }
+        installConnectionScreen()
         super.showWindow(sender)
         window?.delegate = self
     }
@@ -90,18 +113,348 @@ import AppKit
     /// unless we've already handed off a successful connection.
     func windowWillClose(_ notification: Notification) {
         guard !connectionHandedOff else { return }
-        connectionController?.cancelConnection(nil)
         connectionService.cancel()
+
+        // Credential generation happens outside the service, so cancelling the
+        // service alone leaves a browser-based Vault login holding its slot.
+        // Superseding the attempt (rather than only cancelling the login) also
+        // invalidates its token: cancellation wakes generateCredentials with a
+        // failure, and without this the completion guard still accepted it —
+        // clearing the endpoint's cached credentials and presenting an error
+        // against a window that no longer exists.
+        _ = beginCredentialAttempt()
     }
 
-    // MARK: - Connection Controller Setup
+    // MARK: - Connection screen
 
-    private func setupConnectionController() {
-        guard connectionController == nil else { return }
+    /// Swaps the placeholder for the SwiftUI screen. Idempotent: `showWindow`
+    /// can be called repeatedly on the same controller.
+    private func installConnectionScreen() {
+        guard hostingView == nil else { return }
 
-        let controller = SPConnectionController(document: self)
-        controller?.connectionDelegate = self
-        connectionController = controller
+        favorites = Self.loadFavorites()
+
+        let screen = SAConnectionWindowView(
+            favorites: favorites,
+            model: formModel,
+            onSelect: { [weak self] item in self?.applySelection(item) },
+            onConnect: { [weak self] in self?.connectUsingForm() }
+        )
+
+        let hosting = NSHostingView(rootView: screen)
+        hosting.frame = containerView.bounds
+        hosting.autoresizingMask = [.width, .height]
+        placeholderSplitView.isHidden = true
+        containerView.addSubview(hosting)
+        hostingView = hosting
+    }
+
+    /// Snapshot of the favorites tree as the pure SwiftUI model.
+    private static func loadFavorites() -> [SAFavoriteItem] {
+        guard let root = SPFavoritesController.shared().favoritesTree else { return [] }
+        return SAFavoriteItem.tree(from: root)
+    }
+
+    /// Populates the form from the sidebar selection.
+    private func applySelection(_ item: SAFavoriteItem) {
+        selection = item.id
+
+        // Picking another row supersedes any credential work already running,
+        // so its result cannot be applied to the details now on screen.
+        _ = beginCredentialAttempt()
+
+        switch item.kind {
+        case .quickConnect:
+            formModel.loadQuickConnect()
+        case .group:
+            // A group is a nil favorite: -updateFavoriteSelection: sets
+            // `node = nil` for one and populates the form from that, so the
+            // previous favorite's details do not linger. Leaving them would let
+            // Connect fire against a favorite that is no longer highlighted.
+            formModel.load(favorite: nil)
+        case .favorite:
+            formModel.load(favorite: Self.favoriteDictionary(withID: item.favoriteID))
+        }
+    }
+
+    /// The favorite plist entry behind a sidebar row.
+    ///
+    /// Matched through `SAFavoriteItem.string(_:)`, the same normalization that
+    /// produced the item's `favoriteID` — the stored value is usually an
+    /// NSNumber, so comparing raw values would miss.
+    private static func favoriteDictionary(withID favoriteID: String?) -> NSDictionary? {
+        guard let favoriteID,
+              let root = SPFavoritesController.shared().favoritesTree else { return nil }
+
+        return allFavorites(under: root).first { favorite in
+            SAFavoriteItem.string(favorite[SPFavoriteIDKey]) == favoriteID
+        }
+    }
+
+    /// Every favorite dictionary in the tree, groups walked through.
+    private static func allFavorites(under node: SPTreeNode) -> [NSDictionary] {
+        if node.isGroup {
+            return (node.children ?? [])
+                .flatMap { allFavorites(under: $0) }
+        }
+
+        guard let favorite = (node.representedObject as? SPFavoriteNode)?.nodeFavorite else { return [] }
+        return [favorite as NSDictionary]
+    }
+
+    /// Validates and connects using whatever the form currently holds.
+    ///
+    /// AWS IAM and Vault do not authenticate with a typed password: the former
+    /// needs a generated RDS token, the latter a pair of ephemeral credentials
+    /// fetched over OIDC. `SAConnectionService` only configures transport flags,
+    /// so those have to be resolved here — the same work `-_resolvedMySQLPassword`
+    /// and the Vault block in `-initiateConnection:` do for the embedded form.
+    private func connectUsingForm() {
+        if let failure = formModel.validate() {
+            showConnectionError(title: failure.alertTitle, detail: failure.alertMessage)
+            return
+        }
+
+        // Snapshot now and carry it through: the Vault leg is asynchronous and can
+        // sit in a browser for minutes, during which the user may edit the form or
+        // pick another favorite. Re-reading formModel.info afterwards would pair
+        // one endpoint's ephemeral credentials with another's connection details.
+        var attempt = formModel.info
+
+        // -initiateConnection: trims the host — and the SSH host for tunnels —
+        // before doing anything else (SPConnectionController.m:537,541). Without
+        // it, pasted whitespace makes IAM sign a different hostname than the one
+        // the service later connects to, and the tunnel resolves a
+        // whitespace-bearing host and fails.
+        attempt.host = attempt.host.trimmingCharacters(in: .whitespacesAndNewlines)
+        if attempt.type == .sshTunnel {
+            attempt.sshHost = attempt.sshHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // A blank name gets the generated one, as the AppKit form commits while
+        // editing. Without it the tab title and a saved .spf fall back to
+        // user@host, disagreeing with the placeholder the form showed.
+        if attempt.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            attempt.name = SAConnectionFormHelpers.generateName(type: attempt.type,
+                                                                host: attempt.host,
+                                                                database: attempt.database,
+                                                                vaultHost: attempt.vaultHost,
+                                                                vaultCredentialsPath: attempt.vaultCredentialsPath) ?? ""
+        }
+
+        let attemptID = beginCredentialAttempt()
+
+        resolveCredentials(for: attempt, attempts.deliver(to: attemptID) { [weak self] result in
+            guard let self else { return }
+
+            switch result {
+            case .failure(let failure):
+                self.showConnectionError(title: failure.title, detail: failure.detail)
+
+            case .success(let credentials):
+                var resolved = attempt
+                resolved.user = credentials.user
+
+                // An AWS IAM token is only valid for this attempt, so it is passed to the
+                // service without being stored as the favorite's password.
+                if attempt.type != .awsIAM {
+                    resolved.password = credentials.password
+                }
+
+                self.connectDirectly(with: SAConnectionInfoObjC(info: resolved),
+                                     password: credentials.password,
+                                     sshPassword: resolved.sshPassword,
+                                     attemptID: attemptID)
+            }
+        })
+    }
+
+    /// Starts a new attempt, superseding any in flight and cancelling its
+    /// connection, and returns its identifier. Abandoning a Vault login also
+    /// cancels it rather than leaving it to hold the exclusive slot until it
+    /// times out.
+    private func beginCredentialAttempt() -> UInt {
+        cancelActiveVaultLogin()
+        return attempts.begin()
+    }
+
+    /// Releases an in-flight Vault OIDC login, if there is one.
+    private func cancelActiveVaultLogin() {
+        guard let identifier = activeVaultLoginIdentifier else { return }
+        VaultOIDCHandler.cancelActiveLogin(identifier: identifier)
+        activeVaultLoginIdentifier = nil
+    }
+
+    /// The username and password to actually connect with.
+    private struct SAResolvedCredentials {
+        let user: String
+        let password: String
+    }
+
+    private struct SACredentialFailure: Error {
+        let title: String
+        let detail: String?
+    }
+
+    /// Resolves type-specific credentials, calling back on the main queue.
+    private func resolveCredentials(for info: SAConnectionInfo,
+                                    _ completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
+        switch info.type {
+        case .awsIAM:
+            // Under the sandbox the credential loader cannot read ~/.aws without
+            // a security-scoped bookmark, and the only UI that creates one lives
+            // on SPConnectionController — which this window no longer builds. So
+            // a first-time IAM user would hit an opaque failure here.
+            guard ensureAWSDirectoryAuthorized() else {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS Access Not Authorized", comment: "AWS authorization required title"),
+                    detail: NSLocalizedString("Authorize access to your ~/.aws directory before connecting with an AWS IAM favorite.",
+                                              comment: "AWS authorization required message"))))
+                return
+            }
+            SAAWSDirectoryWriteAccessPrompt.requestWriteAccessIfNeeded(forProfile: info.awsProfile)
+            resolveAWSIAMToken(info: info, completion: completion)
+
+        case .vault:
+            resolveVaultCredentials(info: info, completion: completion)
+
+        case .tcpIP, .socket, .sshTunnel:
+            // The typed password is the credential. Reading a saved favorite's
+            // password out of the keychain is still not wired — the D1 decoder
+            // never carried passwords, and the lookup needs the account/service
+            // naming that lives in SPConnectionController.
+            completion(.success(SAResolvedCredentials(user: info.user, password: info.password)))
+        }
+    }
+
+    /// Ensures `~/.aws` is reachable under the sandbox, prompting for access if
+    /// not, and reports whether it is authorized afterwards.
+    ///
+    /// The AppKit equivalent is `-authorizeAWSDirectory:`, reachable from a
+    /// button on the IAM tab. This window has no such button, so the check runs
+    /// as part of connecting: without the bookmark the credential loader cannot
+    /// read the default profile and token generation fails opaquely.
+    private func ensureAWSDirectoryAuthorized() -> Bool {
+        if AWSDirectoryBookmarkManager.shared.isAWSDirectoryAuthorized { return true }
+
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+        // .aws is hidden, so the panel has to show hidden entries to reach it.
+        panel.showsHiddenFiles = true
+        panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
+        panel.message = NSLocalizedString("Select your .aws directory to enable AWS IAM authentication",
+                                          comment: "AWS directory selection message")
+        panel.prompt = NSLocalizedString("Authorize", comment: "AWS directory authorize button")
+
+        guard panel.runModal() == .OK, let url = panel.url else { return false }
+
+        // Same acceptance rule as -authorizeAWSDirectory:: the folder itself, or
+        // any folder holding the files the loader reads.
+        let path = url.path
+        let contents = FileManager.default
+        let looksLikeAWSDirectory = path.hasSuffix(".aws")
+            || contents.fileExists(atPath: (path as NSString).appendingPathComponent("credentials"))
+            || contents.fileExists(atPath: (path as NSString).appendingPathComponent("config"))
+
+        guard looksLikeAWSDirectory else { return false }
+
+        return AWSDirectoryBookmarkManager.shared.addAWSDirectoryBookmark(from: url)
+    }
+
+    /// Resolve credentials off main, keeping MFA presentation and completion on main.
+    private func resolveAWSIAMToken(
+        info: SAConnectionInfo,
+        completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void
+    ) {
+        let port = Int(info.port.trimmingCharacters(in: .whitespaces)) ?? 3306
+        let attemptID = attempts.currentAttemptID
+        let trimmedProfile = info.awsProfile.trimmingCharacters(in: .whitespacesAndNewlines)
+        AWSIAMAuthManager.generateAuthTokenInBackground(
+            hostname: info.host, port: port, username: info.user,
+            region: info.awsRegion,
+            profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
+            parentWindow: window,
+            shouldContinue: { [weak self] in
+                guard let self else { return false }
+                // The attempt sequence is main-thread-owned, while IAM token generation
+                // checks continuation from its credential worker as well as from main.
+                if Thread.isMainThread {
+                    return self.attempts.isCurrent(attemptID)
+                }
+                return DispatchQueue.main.sync { self.attempts.isCurrent(attemptID) }
+            }
+        ) { token, error in
+            if let error {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    detail: error.localizedDescription)))
+            } else if let token, !token.isEmpty {
+                completion(.success(SAResolvedCredentials(user: info.user, password: token)))
+            } else {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    detail: NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error"))))
+            }
+        }
+    }
+
+    /// Fetches ephemeral Vault credentials off the main queue: the OIDC leg can
+    /// open a browser and take up to two minutes, which must not block the UI.
+    private func resolveVaultCredentials(info: SAConnectionInfo,
+                                         completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
+        let host = info.vaultHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        let port = info.vaultPort.isEmpty ? "443" : info.vaultPort
+        let mount = info.vaultOIDCMount.isEmpty ? "oidc" : info.vaultOIDCMount
+        let credPath = info.vaultCredentialsPath
+        let loginIdentifier = VaultOIDCHandler.prepareActiveLogin()
+        // Remembered so windowWillClose can cancel it: the login holds an
+        // exclusive slot and a fixed callback listener, and abandoning it would
+        // block the next Vault attempt until the two-minute timeout.
+        activeVaultLoginIdentifier = loginIdentifier
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            var username: NSString?
+            var password: NSString?
+            var error: NSError?
+
+            let succeeded = VaultAuthManager.generateCredentials(
+                host: host,
+                port: port,
+                oidcMount: mount,
+                credPath: credPath,
+                loginIdentifier: loginIdentifier,
+                username: &username,
+                password: &password,
+                error: &error
+            )
+            VaultOIDCHandler.clearPreparedActiveLogin(identifier: loginIdentifier)
+
+            DispatchQueue.main.async {
+                if self.activeVaultLoginIdentifier == loginIdentifier {
+                    self.activeVaultLoginIdentifier = nil
+                }
+
+                guard succeeded,
+                      let username = username as String?, !username.isEmpty,
+                      let password = password as String?, !password.isEmpty else {
+                    // Drop whatever was cached for this endpoint, as the embedded
+                    // flow does, so a retry re-runs the OIDC leg rather than
+                    // reusing a half-formed result.
+                    VaultAuthManager.clearCachedCredentials(host: host, port: port,
+                                                            oidcMount: mount, credPath: credPath)
+                    completion(.failure(SACredentialFailure(
+                        title: NSLocalizedString("Vault Authentication Failed", comment: "Vault auth failed title"),
+                        detail: error?.localizedDescription)))
+                    return
+                }
+
+                completion(.success(SAResolvedCredentials(user: username, password: password)))
+            }
+        }
     }
 
     // MARK: - SAConnectionDelegate
@@ -110,19 +463,53 @@ import AppKit
         // 1. Create a new document tab via TabManager
         guard let appDelegate = NSApp.delegate as? SPAppController else { return }
         let tabManager = appDelegate.tabManager
-        let windowController = tabManager?.newWindowForTab()
+        // newWindowForTab() resolves the target through TabManager's mainWindow,
+        // which asserts that a managed database window is main whenever any
+        // exist. This window is not managed, so with it frontmost that assertion
+        // fires and crashes the Debug build on every successful handoff. Asking
+        // for a window sidesteps it, and matches what "New Connection Window"
+        // implies anyway.
+        let windowController = tabManager?.newWindowForWindow()
 
         guard let document = windowController?.databaseDocument else { return }
 
-        // 2. Hand off the established connection to the new document.
-        // setConnection: transitions the document out of connection mode
+        // 2. SSL can be requested and silently not granted: MySQL may lack SSL
+        // support, have it disabled, or have been given too little to negotiate
+        // with. -mySQLConnectionEstablished: warns in that case, and handing off
+        // without the same check leaves the user believing an unencrypted
+        // session is encrypted.
+        warnIfRequestedSSLWasNotEstablished(connection, info: info)
+
+        // 3. Populate the destination document's connection controller before
+        // handing the connection over. SPDatabaseDocument reads its title,
+        // database, host, user, port, colour and .spf serialization state from
+        // that controller, so without this the new tab looks connected but
+        // reads blank and saves empty connection details (Codex, #2572).
+        info.apply(to: document.connectionController())
+
+        // 4. The document must become the connection's delegate: neither
+        // SAConnectionService nor -setConnection: assigns one, and without it the
+        // framework falls back to its automatic retry with no query-error
+        // logging, no no-connection alert, no keychain password prompt on
+        // reconnect and no connection-loss decision UI.
+        connection.setDelegate(document)
+
+        // 5. Clear the stored AWS IAM token so the delegate generates a fresh one for
+        // every later connection attempt; the token expires 15 minutes after it is
+        // generated. This has to happen before -setConnection:, which clones the
+        // connection for the structure query and copies the password with it.
+        if info.type == .awsIAM {
+            connection.password = nil
+        }
+
+        // 6. setConnection: transitions the document out of connection mode
         // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
-        // 3. Mark handoff complete so windowWillClose doesn't cancel the connection
+        // 7. Mark handoff complete so windowWillClose doesn't cancel the connection
         connectionHandedOff = true
 
-        // 4. Close the standalone connection window
+        // 8. Close the standalone connection window
         close()
     }
 
@@ -131,6 +518,30 @@ import AppKit
         // so this delegate method is a no-op for that flow.
         // The connectDirectly path shows its own alert below.
         NSLog("Standalone connection failed: %@", error)
+    }
+
+    /// Warns when SSL was asked for but the server did not use it.
+    ///
+    /// Mirrors the check in `-mySQLConnectionEstablished:`, including which
+    /// types it applies to: SSH tunnels are excluded there, since their MySQL
+    /// leg runs inside the tunnel. AWS IAM counts as requesting SSL whether or
+    /// not the toggle is on, because it enables it implicitly.
+    private func warnIfRequestedSSLWasNotEstablished(_ connection: SPMySQLConnection,
+                                                     info: SAConnectionInfoObjC) {
+        let details = info.info
+        let requiresSSL = details.useSSL != 0 || details.type == .awsIAM
+        let checkedTypes: [SAConnectionType] = [.tcpIP, .socket, .awsIAM, .vault]
+
+        guard requiresSSL, checkedTypes.contains(details.type), !connection.isConnectedViaSSL() else {
+            return
+        }
+
+        NSAlert.createWarningAlert(
+            title: NSLocalizedString("SSL connection not established",
+                                         comment: "SSL requested but not used title"),
+            message: NSLocalizedString("You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.",
+                                       comment: "SSL connection requested but not established error detail"),
+            callback: nil)
     }
 
     /// Shows an error alert as a sheet on the standalone window.
@@ -151,14 +562,15 @@ import AppKit
 
     /// Connects directly using SAConnectionService, bypassing SPConnectionController.
     /// Use this for programmatic connections (e.g. from a SwiftUI favorites list).
-    @objc func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String) {
+    /// Connects for `attemptID`, handing off or reporting the result only while it is the newest attempt.
+    private func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String, attemptID: UInt) {
         connectionService.connect(
             with: info,
             preferences: .fromUserDefaults(),
             password: password,
             sshPassword: sshPassword,
-            parentWindow: window
-        ) { [weak self] result in
+            parentWindow: window,
+            completion: attempts.deliver(to: attemptID) { [weak self] (result: SAConnectionResult) in
             guard let self = self else { return }
 
             if result.databaseSelectionFailed, let connection = result.connection {
@@ -172,6 +584,11 @@ import AppKit
             if result.isSuccess, let connection = result.connection {
                 let wrappedInfo = SAConnectionInfoObjC(info: info.info)
                 self.connectionDidEstablish(connection, info: wrappedInfo)
+            } else if result.userCancelled {
+                // Cancelling the interactive SSH password prompt is not a
+                // failure; the embedded flow restores the UI silently and shows
+                // nothing, and the result carries no error title to show anyway.
+                return
             } else {
                 // Build a meaningful error from all available fields
                 let detail = [result.errorMessage, result.errorDetail]
@@ -183,6 +600,141 @@ import AppKit
                     detail: detail.isEmpty ? nil : detail
                 )
             }
+        })
+    }
+}
+
+// MARK: - Populating a document's connection controller
+
+extension SAConnectionInfoObjC {
+
+    /// Copies these details onto a document's `SPConnectionController`.
+    ///
+    /// The exact inverse of `-[SPConnectionController _buildConnectionInfo]`,
+    /// field for field and in the same order, so the two can be diffed against
+    /// each other when either gains a field. `SPDatabaseDocument` reads its
+    /// window title, tab label, selected database, favourite colour and `.spf`
+    /// serialization out of the controller, so a document handed a connection
+    /// without this looks connected while reading blank.
+    ///
+    /// `vaultMount` and `vaultCredentialsRole` are not set directly: the
+    /// controller derives them in its `setVaultCredentialsPath:` setter, which
+    /// splits the joined path across both ivars.
+    func apply(to controller: SPConnectionController?) {
+        guard let controller else { return }
+        let info = self.info
+
+        controller.type = info.type.rawValue
+        controller.name = info.name
+        controller.host = info.host
+        controller.user = info.user
+        controller.password = info.password
+        controller.database = info.database
+        controller.socket = info.socket
+        controller.port = info.port
+        controller.colorIndex = info.colorIndex
+        controller.useCompression = info.useCompression
+
+        controller.useSSL = info.useSSL
+        controller.sslKeyFileLocationEnabled = info.sslKeyFileLocationEnabled
+        controller.sslKeyFileLocation = info.sslKeyFileLocation
+        controller.sslCertificateFileLocationEnabled = info.sslCertificateFileLocationEnabled
+        controller.sslCertificateFileLocation = info.sslCertificateFileLocation
+        controller.sslCACertFileLocationEnabled = info.sslCACertFileLocationEnabled
+        controller.sslCACertFileLocation = info.sslCACertFileLocation
+
+        controller.sshHost = info.sshHost
+        controller.sshUser = info.sshUser
+        controller.sshPassword = info.sshPassword
+        controller.sshKeyLocationEnabled = info.sshKeyLocationEnabled
+        controller.sshKeyLocation = info.sshKeyLocation
+        controller.sshPort = info.sshPort
+        controller.sshRemoteSocketPath = info.sshRemoteSocketPath
+
+        controller.connectionKeychainID = info.connectionKeychainID
+        controller.connectionKeychainItemName = info.connectionKeychainItemName
+        controller.connectionKeychainItemAccount = info.connectionKeychainItemAccount
+        controller.connectionSSHKeychainItemName = info.connectionSSHKeychainItemName
+        controller.connectionSSHKeychainItemAccount = info.connectionSSHKeychainItemAccount
+
+        // Both enums are NSInteger-backed and share their case order
+        // (server / system / fixed), so the raw value carries across.
+        controller.timeZoneMode = SPConnectionTimeZoneMode(rawValue: info.timeZoneMode.rawValue) ?? .useServerTZ
+        controller.timeZoneIdentifier = info.timeZoneIdentifier
+
+        controller.allowDataLocalInfile = info.allowDataLocalInfile
+        controller.enableClearTextPlugin = info.enableClearTextPlugin
+        controller.requestServerPublicKey = info.requestServerPublicKey
+
+        controller.useAWSIAMAuth = info.useAWSIAMAuth
+        controller.awsRegion = info.awsRegion
+        controller.awsProfile = info.awsProfile
+
+        controller.vaultHost = info.vaultHost
+        controller.vaultPort = info.vaultPort
+        controller.vaultOIDCMount = info.vaultOIDCMount
+        controller.vaultCredentialsPath = info.vaultCredentialsPath
+    }
+}
+
+// MARK: - The SwiftUI screen
+
+/// The standalone window's content: the favorites sidebar beside the
+/// connection form. This is the first place C1b's `SAFavoritesList` and C2's
+/// `SAConnectionFormView` are actually hosted — until now both compiled but
+/// nothing instantiated them.
+private struct SAConnectionWindowView: View {
+
+    let favorites: [SAFavoriteItem]
+    @ObservedObject var model: SAConnectionFormModel
+
+    /// Called when the sidebar selection changes, so the host can populate the
+    /// form from the underlying favorite.
+    var onSelect: (SAFavoriteItem) -> Void
+
+    /// Called when the form's Connect button passes validation.
+    var onConnect: () -> Void
+
+    @State private var selection: SAFavoriteItem.ID?
+    @State private var searchQuery = ""
+
+    var body: some View {
+        HSplitView {
+            sidebar
+                .frame(minWidth: 200, idealWidth: 240, maxWidth: 360)
+
+            SAConnectionFormView(model: model) { _ in onConnect() }
+                .frame(minWidth: 420)
+        }
+        .onChange(of: selection) { newSelection in
+            guard let newSelection,
+                  let item = favorites.first(byID: newSelection) else { return }
+            onSelect(item)
+        }
+    }
+
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            SAFavoritesList(
+                items: favorites,
+                searchQuery: searchQuery,
+                selection: $selection,
+                // Double-clicking a favorite selects *and* connects, matching
+                // -nodeDoubleClicked: in the AppKit list.
+                onConnect: { item in
+                    onSelect(item)
+                    onConnect()
+                }
+            )
+
+            Divider()
+
+            TextField(text: $searchQuery, prompt: Text("Search", comment: "connection view : favorites search placeholder")) {
+                Text("Search", comment: "connection view : favorites search placeholder")
+            }
+            .labelsHidden()
+            .textFieldStyle(.roundedBorder)
+            .padding(8)
         }
     }
 }

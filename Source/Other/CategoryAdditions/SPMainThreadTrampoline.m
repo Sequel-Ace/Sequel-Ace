@@ -112,7 +112,12 @@
  */
 - (id)performSelector:(SEL)theSelector
 {
+// Forwarding shim: the trampoline cannot know the selector's ownership, same as
+// the NSObject API it overrides — callers own that contract, not this class
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 	if ([super respondsToSelector:theSelector]) return [super performSelector:theSelector];
+#pragma clang diagnostic pop
 
 	if (![trampolineObject respondsToSelector:theSelector]) [self doesNotRecognizeSelector:theSelector];
 
@@ -129,7 +134,11 @@
 - (id)performSelector:(SEL)theSelector withObject:(id)theObject
 {
 	if ([super respondsToSelector:theSelector]) {
+// Forwarding shim, same ownership contract as the overridden NSObject API
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 		return [super performSelector:theSelector withObject:theObject];
+#pragma clang diagnostic pop
 	}
 
 	if (![trampolineObject respondsToSelector:theSelector]) {

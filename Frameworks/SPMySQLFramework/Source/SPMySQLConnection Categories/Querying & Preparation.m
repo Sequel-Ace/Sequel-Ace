@@ -31,6 +31,17 @@
 #import "SPMySQLConnection.h"
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLArrayAdditions.h"
+#import <SPMySQL/SPMySQL-Swift.h>
+
+@interface SPMySQLConnection (Querying_and_Preparation_Internal)
+
+- (id)queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired;
+
+@end
 
 @implementation SPMySQLConnection (Querying_and_Preparation)
 
@@ -116,7 +127,17 @@
 	// any nul characters contained in the string.
 	NSData *escapedData;
 	if (includeQuotes) {
-#warning This code assumes that the encoding cData is in is still ASCII-compatible which may not be the case (e.g. for UTF16, EBCDIC)
+		// The quotes are written as single raw bytes, which relies on the connection
+		// encoding being ASCII-compatible.  That always holds: the server refuses ucs2,
+		// utf16, utf16le and utf32 as client character sets (SET NAMES fails, so
+		// stringEncoding is never updated to them), and every other charset MySQL
+		// offers is a superset of ASCII.  Assert the invariant rather than pay for a
+		// per-call conversion of the quote character.
+		NSAssert(stringEncoding != NSUTF16StringEncoding && stringEncoding != NSUTF16BigEndianStringEncoding
+		         && stringEncoding != NSUTF16LittleEndianStringEncoding && stringEncoding != NSUTF32StringEncoding
+		         && stringEncoding != NSUTF32BigEndianStringEncoding && stringEncoding != NSUTF32LittleEndianStringEncoding,
+		         @"escapeString: quoting requires an ASCII-compatible connection encoding");
+
 		// Add quotes if requested
 		escBuffer[0] = '\'';
 		escBuffer[escapedLength+1] = '\'';
@@ -196,7 +217,17 @@
  */
 - (SPMySQLResult *)queryString:(NSString *)theQueryString
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, SPMySQLResultAsResult);
+	return [self queryString:theQueryString assertingDatabase:nil];
+}
+
+- (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsResult assertingDatabase:databaseName];
+}
+
+- (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabaseContext:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
 }
 
 /**
@@ -206,7 +237,12 @@
  */
 - (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, SPMySQLResultAsFastStreamingResult);
+	return [self streamingQueryString:theQueryString assertingDatabase:nil];
+}
+
+- (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
 }
 
 /**
@@ -216,7 +252,17 @@
  */
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, SPMySQLResultAsStreamingResultStore);
+	return [self resultStoreFromQueryString:theQueryString assertingDatabase:nil];
+}
+
+- (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsStreamingResultStore assertingDatabase:databaseName];
+}
+
+- (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabaseContext:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsStreamingResultStore assertingDatabaseContext:databaseName];
 }
 
 /**
@@ -231,7 +277,12 @@
  */
 - (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, fullStreaming?SPMySQLResultAsLowMemStreamingResult:SPMySQLResultAsFastStreamingResult);
+	return [self streamingQueryString:theQueryString useLowMemoryBlockingStreaming:fullStreaming assertingDatabase:nil];
+}
+
+- (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:fullStreaming?SPMySQLResultAsLowMemStreamingResult:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
 }
 
 /**
@@ -245,6 +296,50 @@
  *          You MUST check the isCancelled flag before using the result!
  */
 - (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType
+{
+	return [self queryString:theQueryString usingEncoding:theEncoding withResultType:theReturnType assertingDatabase:nil];
+}
+
+- (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString
+	            usingEncoding:theEncoding
+	           withResultType:theReturnType
+	        assertingDatabase:databaseName
+	 databaseContextIsRequired:[databaseName length] > 0];
+}
+
+- (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType assertingDatabaseContext:(NSString *)databaseName
+{
+	return [self queryString:theQueryString
+	            usingEncoding:theEncoding
+	           withResultType:theReturnType
+	        assertingDatabase:databaseName
+	 databaseContextIsRequired:YES];
+}
+
+- (id)queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired
+{
+    return [self.sessionAccess performQuery:^id {
+        return [self _queryString:theQueryString
+                   usingEncoding:theEncoding
+                  withResultType:theReturnType
+               assertingDatabase:databaseName
+       databaseContextIsRequired:databaseContextIsRequired];
+    } recover:^BOOL {
+        return [self _reconnectAllowingRetries:YES];
+    }];
+}
+
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
 	double queryExecutionTime;
 	NSString *theErrorMessage;
@@ -308,21 +403,51 @@
 
 	// Lock the connection while it's actively in use
 	[self _lockConnection];
+	if (!databaseAssertionState) {
+		databaseAssertionState = [[SADatabaseAssertionState alloc] init];
+	}
 
-	unsigned long long theAffectedRowCount;
+	unsigned long long theAffectedRowCount = (unsigned long long)~0;
 	do {
+		BOOL databaseAssertionFailed = NO;
+		BOOL queryWasCancelled = ![self.sessionAccess beginNativeQuery];
 
 		// While recording the overall execution time (including network lag!), run
-		// the raw query
+		// the raw query. If the caller supplied an expected database, assert it
+		// under the same lock as the query so another thread cannot interleave a
+		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
-		queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
+		queryStatus = queryWasCancelled ? 1 : 0;
+		SADatabaseAssertionError *databaseAssertionError = queryWasCancelled ? nil : [databaseAssertionState
+			assertDatabase:databaseName
+			required:databaseContextIsRequired
+			onMySQLConnection:mySQLConnection
+			errorStringEncodingValue:stringEncoding
+			stringEncodingProvider:^NSUInteger(NSString *characterSetName) {
+				return [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetName UTF8String]];
+			}];
+
+		if (databaseAssertionError) {
+			queryStatus = 1;
+			databaseAssertionFailed = YES;
+			theErrorID = databaseAssertionError.errorID;
+			theErrorMessage = databaseAssertionError.message;
+			theSqlstate = databaseAssertionError.sqlState;
+		}
+
+		if (!queryStatus) {
+			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
+		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
 		lastConnectionUsedTime = _monotonicTime();
 		
-		// "An integer greater than zero indicates the number of rows affected or retrieved.
-		//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
-		//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
-		theAffectedRowCount = mysql_affected_rows(mySQLConnection);
+		if (!queryStatus) {
+			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
+			// "An integer greater than zero indicates the number of rows affected or retrieved.
+			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
+			//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
+			theAffectedRowCount = mysql_affected_rows(mySQLConnection);
+		}
 
 		// If the query succeeded, no need to re-attempt.
 		if (!queryStatus) {
@@ -334,14 +459,17 @@
 		// If the query failed, determine whether to reattempt the query
 		} else {
 
-			// Store the error state
-			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			theErrorID = mysql_errno(mySQLConnection);
-			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
-			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			// Store query errors here. Assertion errors are captured before the
+			// original character set is restored, so restoration cannot hide them.
+			if (!databaseAssertionFailed) {
+				theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+				theErrorID = mysql_errno(mySQLConnection);
+				// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
+				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			}
 
 			// Prevent retries if the query was cancelled or not a connection error
-			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+			if (self.sessionAccess.currentQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
 		}
@@ -356,6 +484,10 @@
 		}
 		[self _lockConnection];
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
+		if (self.sessionAccess.currentQueryWasCancelled) {
+			queryStatus = 1;
+			break;
+		}
 
 	} while (--queryAttemptsAllowed > 0);
 
@@ -410,6 +542,7 @@
 	}
 
 	// If the query was cancelled, override the error state
+	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -448,7 +581,12 @@
  */
 - (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString
 {
-	return [[self queryString:theQueryString] getAllRows];
+	return [self getAllRowsFromQuery:theQueryString assertingDatabase:nil];
+}
+
+- (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [[self queryString:theQueryString assertingDatabase:databaseName] getAllRows];
 }
 
 /**
@@ -457,7 +595,12 @@
  */
 - (id)getFirstFieldFromQuery:(NSString *)theQueryString
 {
-	return [[[self queryString:theQueryString] getRowAsArray] firstObject];
+	return [self getFirstFieldFromQuery:theQueryString assertingDatabase:nil];
+}
+
+- (id)getFirstFieldFromQuery:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [[[self queryString:theQueryString assertingDatabase:databaseName] getRowAsArray] firstObject];
 }
 
 #pragma mark -
@@ -558,73 +701,52 @@
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
+    [self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
+        lastQueryWasCancelled = YES;
 
-	// Check whether a query is actually being performed - if not, return
-	if ([self _tryLockConnection]) {
-		[self _unlockConnection];
-		return;
-	}
+        // The query cancellation cannot occur on the connection actively running a query
+        // so set up a new connection to run the KILL command.
+        MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
 
-	// Mark that the last query was cancelled to prevent query retries from occurring
-	lastQueryWasCancelled = YES;
+        // If the new connection was successfully set up, use it to run a KILL command.
+        if (killerConnection) {
+            if (!self.sessionAccess.cancellationIsCurrent) {
+                mysql_close(killerConnection);
+                return YES;
+            }
+            NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
 
-	// The query cancellation cannot occur on the connection actively running a query
-	// so set up a new connection to run the KILL command.
-	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
+            // Build the kill query
+            NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
+            if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+                [killQuery appendString:@" TIDB"];
+                NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
+            }
+            [killQuery appendFormat:@" QUERY %lu", connectionThreadId];
 
-	// If the new connection was successfully set up, use it to run a KILL command.
-	if (killerConnection) {
-		NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
+            // Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
+            // an explicit length, so no terminator is appended (see the main query path).
+            NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
 
-		// Build the kill query
-		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
-		if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-			[killQuery appendString:@" TIDB"];
-            NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
-		}
-		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
+            // Run the query
+            int killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
 
-		// Convert to a C string
-		NSUInteger killQueryCStringLength;
-		const char *killQueryCString = [SPMySQLConnection _cStringForString:killQuery usingEncoding:aStringEncoding returningLengthAs:&killQueryCStringLength];
+            // Close the temporary connection
+            mysql_close(killerConnection);
 
-		// Run the query
-		int killQueryStatus = mysql_real_query(killerConnection, killQueryCString, killQueryCStringLength);
-
-		// Close the temporary connection
-		mysql_close(killerConnection);
-
-		// If the kill query succeeded, the active query was cancelled.
-		if (killQueryStatus == 0) {
-			// Ensure the tracking bool is re-set to cover encompassed queries and return
-			lastQueryWasCancelled = YES;
-			return;
-		} else {
-            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
-		}
-	} else if (!userTriggeredDisconnect) {
-        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
-	}
-
-	// A full reconnect is required at this point to force a cancellation.  As the
-	// connection may have finished processing the query at this point (depending how
-	// long the connection attempt took), check whether we can skip the reconnect.
-	if ([self _tryLockConnection]) {
-		[self _unlockConnection];
-		return;
-	}
-
-	if (state == SPMySQLDisconnecting || state == SPMySQLDisconnected) return;
-
-	// Reset the connection with a reconnect.  Unlock the connection beforehand,
-	// to allow the reconnect, but lock it again afterwards to restore the expected
-	// state (query execution process should unlock as appropriate).
-	[self _unlockConnection];
-	[self _reconnectAllowingRetries:YES];
-	[self _lockConnection];
-
-	// Reset tracking bools to cover encompassed queries
-	lastQueryWasCancelled = YES;
+            // If the kill query succeeded, the active query was cancelled.
+            if (killQueryStatus == 0) {
+                // Ensure the tracking bool is re-set to cover encompassed queries and return
+                lastQueryWasCancelled = YES;
+                return YES;
+            } else {
+                SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, connectionThreadId);
+            }
+        } else if (!userTriggeredDisconnect) {
+            SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", connectionThreadId);
+        }
+        return NO;
+    }];
 }
 
 @end

@@ -48,8 +48,9 @@ static NSString *SPRelationFKColumnsKey  = @"fk_columns";
 static NSString *SPRelationOnUpdateKey   = @"on_update";
 static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
-@interface SPTableRelations ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableRelations () <NSMenuItemValidation>
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_updateAvailableTableColumns;
 - (BOOL)_serverRequiresStandardForeignKeyReferences;
@@ -91,6 +92,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[relationsTableView setEmptyDoubleClickAction:@selector(addRelation:)];
 
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+	// Owned here rather than registered on our behalf by SPDatabaseDocument, so the
+	// registration cannot outlive this object (#2033)
+	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:nil];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
 	[relationsTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -145,9 +149,10 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	
 	NSString *thisTable  = [tablesListInstance tableName];
 	NSString *thisColumn = [columnPopUpButton titleOfSelectedItem];
+	NSString *currentDatabase = [tableDocumentInstance database];
     NSString *thatDatabase = [refDatabasePopUpButton titleOfSelectedItem];
     if (!thatDatabase) {
-        thatDatabase = [tableDocumentInstance database];
+        thatDatabase = currentDatabase;
     }
     NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
     NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
@@ -185,7 +190,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	
 	// Execute query
-	[connection queryString:query];
+	[connection queryString:query assertingDatabaseContext:currentDatabase];
 
 	[dataProgressIndicator setHidden:YES];
 	[dataProgressIndicator stopAnimation:self];
@@ -316,7 +321,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 				NSString *relationName = [[self->relationData objectAtIndex:row] objectForKey:SPRelationNameKey];
 				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [thisTable backtickQuotedString], [relationName backtickQuotedString]];
 
-				[self->connection queryString:query];
+				[self->connection queryString:query assertingDatabase:[self->tableDocumentInstance database]];
 
 				if ([self->connection queryErrored]) {
 
@@ -584,7 +589,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[connection setEncoding:@"utf8mb4"];
 	}
 
-	SPMySQLResult *indexResult = [connection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", tableReference]];
+	SPMySQLResult *indexResult = [connection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", tableReference] assertingDatabase:database];
 	[indexResult setReturnDataAsStrings:YES];
 
 	if ([connection queryErrored]) {
@@ -749,6 +754,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
+	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
 }
 
