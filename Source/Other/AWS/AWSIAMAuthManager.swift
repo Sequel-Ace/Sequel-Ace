@@ -218,7 +218,7 @@ import Security
 
         // Console sign-in (`aws login`) profiles resolve cached temporary credentials.
         // Static keys and role assumption outrank console sign-in, matching the AWS CLI.
-        if baseCredentials.isLoginProfile && !baseCredentials.isValid && !baseCredentials.requiresRoleAssumption {
+        if AWSLoginCredentialsProvider.resolvesThroughConsoleSignIn(baseCredentials) {
             return try resolveLoginCredentials(baseCredentials, profileName: profileName)
         }
 
@@ -663,17 +663,62 @@ extension AWSIAMAuthManager {
                 secretKey: secretKey,
                 parentWindow: parentWindow
             )
-        } catch let authError as AWSIAMAuthError {
-            errorPointer?.pointee = NSError(
+        } catch {
+            errorPointer?.pointee = presentableError(error, profile: profile)
+            return nil
+        }
+    }
+
+    /// Generates an IAM authentication token on a background queue and calls `completion` on the
+    /// main queue with the token, or with an error naming the AWS CLI command for `profile` when
+    /// signing in again resolves it. An MFA prompt, when the profile needs one, runs on the main queue.
+    @objc(generateAuthTokenWithHostname:port:username:region:profile:parentWindow:completion:)
+    static func generateAuthTokenInBackground(
+        hostname: String,
+        port: Int,
+        username: String,
+        region: String?,
+        profile: String?,
+        parentWindow: NSWindow?,
+        completion: @escaping (String?, NSError?) -> Void
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let token: String?
+            let tokenError: NSError?
+
+            do {
+                token = try generateAuthToken(
+                    hostname: hostname,
+                    port: port,
+                    username: username,
+                    region: region,
+                    profile: profile,
+                    accessKey: nil,
+                    secretKey: nil,
+                    parentWindow: parentWindow
+                )
+                tokenError = nil
+            } catch {
+                token = nil
+                tokenError = presentableError(error, profile: profile)
+            }
+
+            DispatchQueue.main.async {
+                completion(token, tokenError)
+            }
+        }
+    }
+
+    /// `error` as an NSError for display, naming the AWS CLI command for `profile` when signing in again resolves it.
+    private static func presentableError(_ error: Error, profile: String?) -> NSError {
+        if let authError = error as? AWSIAMAuthError {
+            return NSError(
                 domain: "AWSIAMAuthErrorDomain",
                 code: authError.rawValue,
                 userInfo: [NSLocalizedDescriptionKey: authError.localizedDescription]
             )
-            return nil
-        } catch let otherError {
-            errorPointer?.pointee = otherError as NSError
-            return nil
         }
+        return SAAWSSignInCommand.presentableError(error, profile: profile)
     }
 }
 

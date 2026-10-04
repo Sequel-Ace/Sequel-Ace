@@ -1,3 +1,7 @@
 theme: jekyll-theme-tactile
 title: Sequel Ace
 description: MySQL/MariaDB database management for macOS
+
+# Resolve links locally instead of querying the Pages API during every build.
+url: "https://sequel-ace.com"
+baseurl: ""

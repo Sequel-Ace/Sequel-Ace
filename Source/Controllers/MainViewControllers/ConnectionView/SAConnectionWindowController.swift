@@ -46,12 +46,12 @@ import SwiftUI
     /// The in-flight Vault OIDC login, if any, so closing the window releases it.
     private var activeVaultLoginIdentifier: String?
 
-    /// Identifies the current credential attempt. Credential generation is
-    /// asynchronous and the form stays interactive, so a Vault login the user
-    /// abandoned can finish after a newer attempt has started; without this its
-    /// completion would call connectDirectly again, and SAConnectionService's
-    /// startAttempt() would invalidate the newer connection.
-    private var credentialAttemptID: UInt = 0
+    /// The window's connection attempts. Starting one cancels the previous
+    /// attempt's connection and drops every result still delivered for it, from
+    /// its credential leg or from its connection.
+    private lazy var attempts = SAConnectionAttemptSequence { [connectionService] in
+        connectionService.cancel()
+    }
 
     /// Set to true after a successful connection handoff to prevent
     /// windowWillClose from disconnecting the just-handed-off connection.
@@ -244,8 +244,8 @@ import SwiftUI
 
         let attemptID = beginCredentialAttempt()
 
-        resolveCredentials(for: attempt) { [weak self] result in
-            guard let self, self.credentialAttemptID == attemptID else { return }
+        resolveCredentials(for: attempt, attempts.deliver(to: attemptID) { [weak self] result in
+            guard let self else { return }
 
             switch result {
             case .failure(let failure):
@@ -254,22 +254,28 @@ import SwiftUI
             case .success(let credentials):
                 var resolved = attempt
                 resolved.user = credentials.user
-                resolved.password = credentials.password
+
+                // An AWS IAM token is only valid for this attempt, so it is passed to the
+                // service without being stored as the favorite's password.
+                if attempt.type != .awsIAM {
+                    resolved.password = credentials.password
+                }
 
                 self.connectDirectly(with: SAConnectionInfoObjC(info: resolved),
                                      password: credentials.password,
-                                     sshPassword: resolved.sshPassword)
+                                     sshPassword: resolved.sshPassword,
+                                     attemptID: attemptID)
             }
-        }
+        })
     }
 
-    /// Starts a new credential attempt, superseding any in flight, and returns
-    /// its identifier. Abandoning a Vault login also cancels it rather than
-    /// leaving it to hold the exclusive slot until it times out.
+    /// Starts a new attempt, superseding any in flight and cancelling its
+    /// connection, and returns its identifier. Abandoning a Vault login also
+    /// cancels it rather than leaving it to hold the exclusive slot until it
+    /// times out.
     private func beginCredentialAttempt() -> UInt {
         cancelActiveVaultLogin()
-        credentialAttemptID &+= 1
-        return credentialAttemptID
+        return attempts.begin()
     }
 
     /// Releases an in-flight Vault OIDC login, if there is one.
@@ -306,7 +312,8 @@ import SwiftUI
                                               comment: "AWS authorization required message"))))
                 return
             }
-            completion(resolveAWSIAMToken(info: info))
+            SAAWSDirectoryWriteAccessPrompt.requestWriteAccessIfNeeded(forProfile: info.awsProfile)
+            resolveAWSIAMToken(info: info, completion: completion)
 
         case .vault:
             resolveVaultCredentials(info: info, completion: completion)
@@ -357,37 +364,34 @@ import SwiftUI
         return AWSDirectoryBookmarkManager.shared.addAWSDirectoryBookmark(from: url)
     }
 
-    /// Generates the RDS auth token that stands in for the password. Stays on
-    /// the main queue because the profile flow can raise an MFA sheet.
-    private func resolveAWSIAMToken(info: SAConnectionInfo) -> Result<SAResolvedCredentials, SACredentialFailure> {
+    /// Generates the RDS auth token that stands in for the password on a
+    /// background queue, calling back on the main queue. An MFA prompt, when
+    /// the profile needs one, runs on the main queue.
+    private func resolveAWSIAMToken(info: SAConnectionInfo,
+                                    completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
         let port = Int(info.port.trimmingCharacters(in: .whitespaces)) ?? 3306
         let trimmedProfile = info.awsProfile.trimmingCharacters(in: .whitespacesAndNewlines)
+        let failureTitle = NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title")
 
-        do {
-            let token = try AWSIAMAuthManager.generateAuthToken(
-                hostname: info.host,
-                port: port,
-                username: info.user,
-                region: info.awsRegion,
-                // Matches -generateAWSIAMAuthTokenWithError:, which falls back to
-                // "default" rather than passing an empty profile name.
-                profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
-                accessKey: nil,
-                secretKey: nil,
-                parentWindow: window
-            )
-
-            guard !token.isEmpty else {
-                return .failure(SACredentialFailure(
-                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
-                    detail: NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error")))
+        AWSIAMAuthManager.generateAuthTokenInBackground(
+            hostname: info.host,
+            port: port,
+            username: info.user,
+            region: info.awsRegion,
+            // Matches -generateAWSIAMAuthTokenWithError:, which falls back to
+            // "default" rather than passing an empty profile name.
+            profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
+            parentWindow: window
+        ) { token, error in
+            guard let token, !token.isEmpty else {
+                completion(.failure(SACredentialFailure(
+                    title: failureTitle,
+                    detail: error?.localizedDescription
+                        ?? NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error"))))
+                return
             }
 
-            return .success(SAResolvedCredentials(user: info.user, password: token))
-        } catch {
-            return .failure(SACredentialFailure(
-                title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
-                detail: error.localizedDescription))
+            completion(.success(SAResolvedCredentials(user: info.user, password: token)))
         }
     }
 
@@ -484,14 +488,22 @@ import SwiftUI
         // reconnect and no connection-loss decision UI.
         connection.setDelegate(document)
 
-        // 5. setConnection: transitions the document out of connection mode
+        // 5. Clear the stored AWS IAM token so the delegate generates a fresh one for
+        // every later connection attempt; the token expires 15 minutes after it is
+        // generated. This has to happen before -setConnection:, which clones the
+        // connection for the structure query and copies the password with it.
+        if info.type == .awsIAM {
+            connection.password = nil
+        }
+
+        // 6. setConnection: transitions the document out of connection mode
         // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
-        // 6. Mark handoff complete so windowWillClose doesn't cancel the connection
+        // 7. Mark handoff complete so windowWillClose doesn't cancel the connection
         connectionHandedOff = true
 
-        // 7. Close the standalone connection window
+        // 8. Close the standalone connection window
         close()
     }
 
@@ -544,14 +556,15 @@ import SwiftUI
 
     /// Connects directly using SAConnectionService, bypassing SPConnectionController.
     /// Use this for programmatic connections (e.g. from a SwiftUI favorites list).
-    @objc func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String) {
+    /// Connects for `attemptID`, handing off or reporting the result only while it is the newest attempt.
+    private func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String, attemptID: UInt) {
         connectionService.connect(
             with: info,
             preferences: .fromUserDefaults(),
             password: password,
             sshPassword: sshPassword,
-            parentWindow: window
-        ) { [weak self] result in
+            parentWindow: window,
+            completion: attempts.deliver(to: attemptID) { [weak self] (result: SAConnectionResult) in
             guard let self = self else { return }
 
             if result.databaseSelectionFailed, let connection = result.connection {
@@ -581,7 +594,7 @@ import SwiftUI
                     detail: detail.isEmpty ? nil : detail
                 )
             }
-        }
+        })
     }
 }
 

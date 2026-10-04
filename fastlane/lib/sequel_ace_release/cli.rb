@@ -816,15 +816,18 @@ module SequelAceRelease
     end
 
     def cloud_status(arguments)
-      options = { allow_any_build: false }
+      options = { allow_any_build: false, require_downloadable_artifact: true }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release cloud-status --workflow-id ID --app-id ID --version VERSION --tag TAG --build BUILD --commit SHA"
+        value.banner = "Usage: sa-release cloud-status --workflow-id ID --app-id ID --version VERSION --tag TAG --build BUILD --commit SHA [--artifacts-already-verified]"
         value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
         value.on("--app-id ID") { |item| options[:app_id] = item }
         value.on("--version VERSION") { |item| options[:version] = item }
         value.on("--tag TAG") { |item| options[:tag] = item }
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--allow-any-build") { options[:allow_any_build] = true }
+        value.on("--artifacts-already-verified", "Inspect identity without downloading resources after archive verification") do
+          options[:require_downloadable_artifact] = false
+        end
         value.on("--run-id ID") { |item| options[:run_id] = item }
         value.on("--commit SHA") { |item| options[:commit] = item }
         value.on("--output FILE") { |item| options[:output] = item }
@@ -836,7 +839,7 @@ module SequelAceRelease
       Version.validate!(options[:version])
 
       result = CloudRunStatus.new(client: app_store_client).readiness(**options.slice(
-        :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit
+        :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit, :require_downloadable_artifact
       ))
       emit(result, options[:output])
     end

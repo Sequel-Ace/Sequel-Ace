@@ -164,6 +164,8 @@ struct SAConnectionInfo {
     }
 
     /// Returns whether SPMySQLConnection should request the saved password from its delegate.
+    /// AWS IAM auth tokens expire 15 minutes after they are generated, so they are always
+    /// requested per connection attempt rather than stored on the connection.
     @objc(shouldDeferMySQLPasswordToDelegateForInfo:password:delegateAvailable:)
     class func shouldDeferMySQLPasswordToDelegate(
         for info: SAConnectionInfoObjC,
@@ -174,12 +176,15 @@ struct SAConnectionInfo {
             return false
         }
 
-        guard info.type != .awsIAM, info.type != .vault else {
+        switch info.type {
+        case .awsIAM:
+            return true
+        case .vault:
             return false
+        case .tcpIP, .socket, .sshTunnel:
+            return !info.connectionKeychainItemName.isEmpty
+                && password == keychainPasswordPlaceholder
         }
-
-        return !info.connectionKeychainItemName.isEmpty
-            && password == keychainPasswordPlaceholder
     }
 
     // MARK: Basic Connection
