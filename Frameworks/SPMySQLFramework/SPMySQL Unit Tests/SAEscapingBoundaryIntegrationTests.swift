@@ -163,6 +163,14 @@ final class SAEscapingBoundaryIntegrationTests: XCTestCase {
         XCTAssertEqual(startupStored, ownBytes,
                        "the stored bytes have to be the value's own, not what a breakout left behind")
 
+        // Asking for the character set the record already names still has to move the session:
+        // the server reads statements in another one, so the two do not agree yet and there is
+        // work to do, however much the record looks right.
+        XCTAssertTrue(session.setEncoding("latin1"), "the session has to be moved, not reported as already there")
+        let alignedInput = session.getFirstField(fromQuery: "SELECT @@session.character_set_client") as? String
+        XCTAssertEqual(alignedInput, "latin1",
+                       "a successful setEncoding: has to leave the server reading statements in that character set")
+
         // A connection-owned change sets both, so the two agree again and escaping follows along.
         XCTAssertTrue(session.setEncoding("gbk"), "the connection has to be able to move the session")
         XCTAssertEqual(session.encoding(), "gbk", "and the record follows its own statement")

@@ -89,8 +89,15 @@
 - (BOOL)setEncoding:(NSString *)theEncoding
 {
 
-	// If the supplied encoding is already set, return success
-	if ([encoding isEqualToString:theEncoding] && !encodingUsesLatin1Transport) {
+	// If the supplied encoding is already set, return success. Both readings have to be it: the
+	// record follows what results come back in, and an init_connect can leave the character set
+	// the server reads statements in at something else. Returning success on the record alone
+	// would say the session is in this character set while it still reads statements in another,
+	// and the statement's own text - converted with the record's string encoding - would be
+	// parsed in that other one.
+	if ([encoding isEqualToString:theEncoding]
+	    && (!sqlInputEncoding || [sqlInputEncoding isEqualToString:theEncoding])
+	    && !encodingUsesLatin1Transport) {
 		return YES;
 	}
 
