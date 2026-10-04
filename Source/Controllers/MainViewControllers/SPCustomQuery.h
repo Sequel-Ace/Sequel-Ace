@@ -226,6 +226,7 @@
 - (NSIndexSet *)resultSelectedRowIndexes;
 - (NSRect)resultViewport;
 - (NSArray *)dataColumnDefinitions;
+- (NSArray *)exportDataColumnDefinitions;
 - (void)setResultSelectedRowIndexesToRestore:(NSIndexSet *)theIndexSet;
 - (void)setResultViewportToRestore:(NSRect)theViewport;
 - (void)storeCurrentResultViewForRestoration;

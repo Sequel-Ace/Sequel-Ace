@@ -3345,6 +3345,20 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return cqColumnDefinition;
 }
 
+/**
+ * The result's column definitions in the order currentDataResultWithNULLs: writes rows:
+ * the query table's column order. Each column's identifier is the result index of its
+ * cells — and of its definition — so reordered columns keep their own type.
+ */
+- (NSArray *)exportDataColumnDefinitions
+{
+    NSMutableArray *identifierIndexes = [NSMutableArray array];
+    for (NSTableColumn *column in [customQueryView tableColumns]) {
+        [identifierIndexes addObject:@([[column identifier] integerValue])];
+    }
+    return [SAJSONExportFormatter columnDefinitionsInExportOrder:cqColumnDefinition identifierIndexes:identifierIndexes];
+}
+
 #pragma mark -
 #pragma mark Task interaction
 

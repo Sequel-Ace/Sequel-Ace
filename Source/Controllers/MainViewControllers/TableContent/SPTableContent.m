@@ -5230,6 +5230,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	return dataColumns;
 }
 
+/**
+ * The table's column definitions in the order currentDataResultWithNULLs: writes rows:
+ * the table content view's column order. Each column's identifier is the storage index
+ * of its cells — and of its definition — so reordered columns keep their own type.
+ */
+- (NSArray *)exportDataColumnDefinitions
+{
+	NSMutableArray *identifierIndexes = [NSMutableArray array];
+	for (NSTableColumn *column in [tableContentView tableColumns]) {
+		[identifierIndexes addObject:@([[column identifier] integerValue])];
+	}
+	return [SAJSONExportFormatter columnDefinitionsInExportOrder:dataColumns identifierIndexes:identifierIndexes];
+}
+
 #pragma mark -
 #pragma mark Methods for Column Display Format
 

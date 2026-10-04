@@ -1963,12 +1963,14 @@ set_input:
 		[jsonExporter setJsonDataArray:dataArray];
 
 		// Pass the source's column definitions so the JSON exporter knows each column's type:
-		// number-shaped VARCHAR values (e.g. "1e3") must stay JSON strings.
+		// number-shaped VARCHAR values (e.g. "1e3") must stay JSON strings. They come in export
+		// order — the same table-column order currentDataResultWithNULLs writes rows in — so a
+		// column dragged to a new position keeps its own type flag.
 		if (exportSource == SPFilteredExport) {
-			[jsonExporter setJsonColumnDefinitions:[tableContentInstance dataColumnDefinitions]];
+			[jsonExporter setJsonColumnDefinitions:[tableContentInstance exportDataColumnDefinitions]];
 		}
 		else if (exportSource == SPQueryExport) {
-			[jsonExporter setJsonColumnDefinitions:[customQueryInstance dataColumnDefinitions]];
+			[jsonExporter setJsonColumnDefinitions:[customQueryInstance exportDataColumnDefinitions]];
 		}
 	}
 

@@ -24,14 +24,18 @@ import Foundation
 /// - `NSNull` → `null`
 /// - `Data` (BLOB / BINARY / VARBINARY columns, see `textCell`) → base64 string. JSON strings must be valid
 ///   Unicode, so arbitrary bytes cannot be embedded as text without loss.
-/// - Strings in numeric columns → unquoted number, but only if the text is a valid JSON number
-///   (a `ZEROFILL` value such as `007` stays a string so nothing is lost).
+/// - Strings in numeric columns → unquoted number, but only if the text is a canonical JSON
+///   number; anything else keeps its exact spelling as a JSON string — a `ZEROFILL` value such
+///   as `007` is not canonical and so keeps its padding. The digits are never rewritten in
+///   either direction: padding is neither added nor stripped.
 /// - Strings in text columns, and strings whose column types are unknown → JSON string. A value's
 ///   database type is never guessed from its text: a VARCHAR `1e3` must not become a JSON number.
 /// - Everything else → JSON string.
 ///
-/// Kept free of project ObjC types so the Unit Tests target can compile it.
-final class SAJSONExportFormatter {
+/// Inherits NSObject only to expose `columnDefinitionsInExportOrder(_:identifierIndexes:)` to the
+/// app's ObjC sources; otherwise kept free of project ObjC types so the Unit Tests target can
+/// compile it.
+final class SAJSONExportFormatter: NSObject {
 
     private let columnKeys: [String]
     private let numericColumns: [Bool]?
@@ -128,6 +132,24 @@ final class SAJSONExportFormatter {
     /// strings keep their string type.
     static func numericColumnFlags(_ definitions: [[String: Any]]) -> [Bool] {
         definitions.map { SAJSONExportFormatter.isNumericTypeGrouping($0["typegrouping"] as? String) }
+    }
+
+    /// Reorders a result's column definitions into export order.
+    ///
+    /// Query and filtered exports build each row in their table view's column order: every
+    /// table column's identifier is the storage index of its cells — and of its definition —
+    /// so dragging a column reorders headers and cells together. The definitions must follow
+    /// that same identifier order or each column's type flag lands on its neighbour's cells
+    /// (a VARCHAR `1e3` dragged before an INT `7` would export the text as a number and the
+    /// number as a string). Columns are addressed by index only — never matched by name — so
+    /// duplicate column aliases cannot be crossed.
+    ///
+    /// An identifier addressing no definition yields an empty entry, which flags the column
+    /// as text. `nil` or empty definitions return `nil` so the caller keeps the
+    /// string-preserving default.
+    @objc static func columnDefinitionsInExportOrder(_ definitions: [[String: Any]]?, identifierIndexes: [Int]) -> [[String: Any]]? {
+        guard let definitions, !definitions.isEmpty, !identifierIndexes.isEmpty else { return nil }
+        return identifierIndexes.map { definitions.indices.contains($0) ? definitions[$0] : [:] }
     }
 
     // MARK: - Values

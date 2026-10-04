@@ -159,6 +159,56 @@ final class SAJSONExportFormatterTests: XCTestCase {
         XCTAssertEqual(text, "[\n{\"a\":\"007\",\"b\":\"1e\"}\n]\n")
     }
 
+    func testColumnDefinitionsFollowExportedColumnOrder() {
+        // Query and filtered exports write rows in their table view's column order, keyed by
+        // each column's identifier (the result index). Dragging `code` before `qty` in
+        // SELECT 7 AS qty, '1e3' AS code reorders headers and cells together — the definitions
+        // must follow the identifiers or the VARCHAR would export as a number and the INT as
+        // a string.
+        let definitions: [[String: Any]] = [
+            ["name": "qty", "typegrouping": "integer"],
+            ["name": "code", "typegrouping": "strings"],
+        ]
+        let reordered = SAJSONExportFormatter.columnDefinitionsInExportOrder(definitions, identifierIndexes: [1, 0])
+        let flags = SAJSONExportFormatter.numericColumnFlags(reordered ?? [])
+
+        XCTAssertEqual(flags, [false, true])
+        let text = document(columns: ["code", "qty"], numeric: flags, rows: [["1e3", "7"]], pretty: false)
+        XCTAssertEqual(text, "[\n{\"code\":\"1e3\",\"qty\":7}\n]\n")
+
+        // Parsed back: the dragged VARCHAR stays a string, the INT is a number
+        let parsed = parse(text) as? [[String: Any]]
+        XCTAssertEqual(parsed?.first?["code"] as? String, "1e3")
+        XCTAssertEqual(parsed?.first?["qty"] as? Int, 7)
+    }
+
+    func testDuplicateAliasesKeepTheirOwnDefinitions() {
+        // Two columns can share a header (SELECT 1 AS a, '1' AS a); matching definitions by
+        // name would cross their types. Each column's identifier addresses its own definition.
+        let definitions: [[String: Any]] = [
+            ["name": "a", "typegrouping": "integer"],
+            ["name": "a", "typegrouping": "strings"],
+        ]
+
+        XCTAssertEqual(SAJSONExportFormatter.numericColumnFlags(
+            SAJSONExportFormatter.columnDefinitionsInExportOrder(definitions, identifierIndexes: [0, 1]) ?? []), [true, false])
+        XCTAssertEqual(SAJSONExportFormatter.numericColumnFlags(
+            SAJSONExportFormatter.columnDefinitionsInExportOrder(definitions, identifierIndexes: [1, 0]) ?? []), [false, true])
+    }
+
+    func testExportOrderHelperDegenerateInputs() {
+        // No metadata keeps the string-preserving default
+        XCTAssertNil(SAJSONExportFormatter.columnDefinitionsInExportOrder(nil, identifierIndexes: [0, 1]))
+        XCTAssertNil(SAJSONExportFormatter.columnDefinitionsInExportOrder([], identifierIndexes: [0]))
+        XCTAssertNil(SAJSONExportFormatter.columnDefinitionsInExportOrder([["name": "a", "typegrouping": "integer"]], identifierIndexes: []))
+
+        // An identifier addressing no definition yields an empty entry, which flags the
+        // column as text — never a neighbour's type
+        let orphan = SAJSONExportFormatter.columnDefinitionsInExportOrder(
+            [["name": "a", "typegrouping": "integer"]], identifierIndexes: [0, 2])
+        XCTAssertEqual(SAJSONExportFormatter.numericColumnFlags(orphan ?? []), [true, false])
+    }
+
     func testOtherObjectsAreWrittenAsTheirDescription() {
         let text = document(columns: ["n"], numeric: [true], rows: [[NSNumber(value: 5)]], pretty: false)
 
