@@ -43,6 +43,9 @@ import Foundation
 /// What an UPDATE copy should update, once the rows have been established safe to update.
 @objcMembers public final class SAUpdateCopyOrigin: NSObject {
 
+    /// The single origin database every projected column came from.
+    public let database: String
+
     /// The single origin table every projected column came from.
     public let table: String
 
@@ -52,7 +55,8 @@ import Foundation
     /// The indexes, into `columns`, of the columns forming the origin table's complete key.
     public let keyColumnIndexes: IndexSet
 
-    fileprivate init(table: String, columns: [String], keyColumnIndexes: IndexSet) {
+    fileprivate init(database: String, table: String, columns: [String], keyColumnIndexes: IndexSet) {
+        self.database = database
         self.table = table
         self.columns = columns
         self.keyColumnIndexes = keyColumnIndexes
@@ -122,6 +126,10 @@ import Foundation
     /// them their own value again is noise at best and a different row's identity at worst.
     ///
     /// - Parameters:
+    ///   - database: Database the rows came from, so the statement keeps naming it however far
+    ///     from home it is pasted — an unqualified table resolves against whatever database the
+    ///     statement runs in, which is not necessarily the one it was copied from. Pass `nil` to
+    ///     leave the table unqualified.
     ///   - table: Table to update, or `nil` to use `placeholderTableName`.
     ///   - columns: Column names, in the order the literals of each row appear.
     ///   - keyColumnIndexes: Indexes into `columns` of the columns identifying a row, usually its
@@ -129,8 +137,8 @@ import Foundation
     ///   - rows: One array of SQL literals per row, each the same length as `columns`.
     /// - Returns: The statements, or `nil` if the rows cannot be identified, if every column is a
     ///   key column and so nothing is left to set, or if a row is the wrong width.
-    @objc(updateStatementsForTable:columns:keyColumnIndexes:rows:)
-    public class func updateStatements(table: String?, columns: [String], keyColumnIndexes: IndexSet, rows: [[String]]) -> String? {
+    @objc(updateStatementsForDatabase:table:columns:keyColumnIndexes:rows:)
+    public class func updateStatements(database: String?, table: String?, columns: [String], keyColumnIndexes: IndexSet, rows: [[String]]) -> String? {
         guard !columns.isEmpty, !rows.isEmpty else { return nil }
         guard rows.allSatisfy({ $0.count == columns.count }) else { return nil }
 
@@ -138,7 +146,7 @@ import Foundation
         let settableIndexes = columns.indices.filter { !keyColumnIndexes.contains($0) }
         guard !keyIndexes.isEmpty, !settableIndexes.isEmpty else { return nil }
 
-        let quotedTable = quotedTableName(table)
+        let quotedTable = updateTargetName(database: database, table: table)
 
         return rows.map { row -> String in
             let assignments = settableIndexes
@@ -194,8 +202,9 @@ import Foundation
     }
 
     /// Decides whether rows can be safely emitted as UPDATE statements, and if so what to
-    /// update: the one origin table they came from, the origin (never aliased) name of each
-    /// projected column, and the indexes of the columns to match rows on.
+    /// update: the one origin table — in the one origin database — they came from, the origin
+    /// (never aliased) name of each projected column, and the indexes of the columns to match
+    /// rows on.
     ///
     /// "Safely" means the projection is tied to a single origin table and carries that
     /// table's **complete** primary key, as given by `tableKeyColumns` — the origin table's
@@ -238,7 +247,7 @@ import Foundation
         // With nothing outside the key, there is nothing to assign.
         guard keyColumnIndexes.count < fields.count else { return nil }
 
-        return SAUpdateCopyOrigin(table: originTable, columns: names, keyColumnIndexes: keyColumnIndexes)
+        return SAUpdateCopyOrigin(database: originDatabase, table: originTable, columns: names, keyColumnIndexes: keyColumnIndexes)
     }
 
     /// The cheaper question menu validation asks: could these fields plausibly support an
@@ -279,6 +288,16 @@ import Foundation
     private class func quotedTableName(_ table: String?) -> String {
         guard let table, !table.isEmpty else { return backtickQuoted(placeholderTableName) }
         return backtickQuoted(table)
+    }
+
+    /// The name an UPDATE statement targets: `db`.`table` where the origin database is known —
+    /// so the statement lands on the table it was copied from, not on whichever table of that
+    /// name the database it runs in happens to hold — `table` alone where it is not, and the
+    /// placeholder where there is no table to name at all.
+    private class func updateTargetName(database: String?, table: String?) -> String {
+        guard let table, !table.isEmpty else { return backtickQuoted(placeholderTableName) }
+        guard let database, !database.isEmpty else { return backtickQuoted(table) }
+        return backtickQuoted(database) + "." + backtickQuoted(table)
     }
 
     private class func joinBacktickQuoted(_ names: [String]) -> String {

@@ -104,6 +104,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
 
     func testEachRowBecomesItsOwnUpdateStatement() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "people",
             columns: ["id", "name"],
             keyColumnIndexes: IndexSet(integer: 0),
@@ -121,6 +122,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     /// best, and at worst rewrites a row's identity.
     func testKeyColumnsAreMatchedOnRatherThanAssigned() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "t",
             columns: ["id", "a", "b"],
             keyColumnIndexes: IndexSet(integer: 0),
@@ -132,6 +134,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
 
     func testACompositeKeyMatchesOnEveryKeyColumn() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "t",
             columns: ["tenant", "id", "a"],
             keyColumnIndexes: IndexSet([0, 1]),
@@ -145,6 +148,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     /// statement would run clean while doing nothing.
     func testANullKeyIsMatchedWithIsNull() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "t",
             columns: ["k", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
@@ -156,6 +160,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
 
     func testANullValueIsStillAssignedWithEquals() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "t",
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
@@ -167,6 +172,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
 
     func testUpdateIdentifiersAreBacktickQuotedAndInternalBackticksDoubled() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "we`ird",
             columns: ["i`d", "a`b"],
             keyColumnIndexes: IndexSet(integer: 0),
@@ -178,6 +184,48 @@ final class SASQLStatementBuilderTests: XCTestCase {
 
     func testUpdatesFromNoSingleTableGetAPlaceholderName() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
+            table: nil,
+            columns: ["id", "a"],
+            keyColumnIndexes: IndexSet(integer: 0),
+            rows: [["1", "'x'"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `<table>` SET `a` = 'x'\nWHERE `id` = 1;\n")
+    }
+
+    /// The statement keeps naming the database it was read from, so pasting it into a document
+    /// on another database cannot silently retarget it to that database's table of the same
+    /// name.
+    func testAnUpdateNamesTheOriginDatabaseBesideTheOriginTable() {
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: "B",
+            table: "people",
+            columns: ["id", "name"],
+            keyColumnIndexes: IndexSet(integer: 0),
+            rows: [["1", "'Ada'"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `B`.`people` SET `name` = 'Ada'\nWHERE `id` = 1;\n")
+    }
+
+    /// Both halves of a qualified target are identifiers in their own right.
+    func testBothPartsOfAQualifiedUpdateTargetAreBacktickQuoted() {
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: "we`ird",
+            table: "ta`ble",
+            columns: ["id", "a"],
+            keyColumnIndexes: IndexSet(integer: 0),
+            rows: [["1", "'x'"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `we``ird`.`ta``ble` SET `a` = 'x'\nWHERE `id` = 1;\n")
+    }
+
+    /// A database prefix on the placeholder would name a database the rows did not come from.
+    func testAnUpdateTargetWithNoTableStaysThePlaceholder() {
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: "mydb",
             table: nil,
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
@@ -192,6 +240,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     func testRowsWithoutAKeyYieldNoStatement() {
         XCTAssertNil(
             SASQLStatementBuilder.updateStatements(
+                database: nil,
                 table: "t",
                 columns: ["a", "b"],
                 keyColumnIndexes: IndexSet(),
@@ -203,6 +252,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     func testAKeyIndexOutsideTheColumnListIsIgnored() {
         XCTAssertNil(
             SASQLStatementBuilder.updateStatements(
+                database: nil,
                 table: "t",
                 columns: ["a"],
                 keyColumnIndexes: IndexSet(integer: 9),
@@ -215,6 +265,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     func testColumnsThatAreAllKeyYieldNoStatement() {
         XCTAssertNil(
             SASQLStatementBuilder.updateStatements(
+                database: nil,
                 table: "t",
                 columns: ["tenant", "id"],
                 keyColumnIndexes: IndexSet([0, 1]),
@@ -226,6 +277,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     func testNothingToUpdateYieldsNoStatement() {
         XCTAssertNil(
             SASQLStatementBuilder.updateStatements(
+                database: nil,
                 table: "t",
                 columns: [],
                 keyColumnIndexes: IndexSet(integer: 0),
@@ -234,6 +286,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
         )
         XCTAssertNil(
             SASQLStatementBuilder.updateStatements(
+                database: nil,
                 table: "t",
                 columns: ["id", "a"],
                 keyColumnIndexes: IndexSet(integer: 0),
@@ -245,6 +298,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     func testAnUpdateRowOfTheWrongWidthYieldsNoStatement() {
         XCTAssertNil(
             SASQLStatementBuilder.updateStatements(
+                database: nil,
                 table: "t",
                 columns: ["id", "a"],
                 keyColumnIndexes: IndexSet(integer: 0),
@@ -371,7 +425,10 @@ final class SASQLStatementBuilderTests: XCTestCase {
         )
         let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"])!
 
+        XCTAssertEqual(origin.database, "mydb")
+
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: origin.table,
             columns: origin.columns,
             keyColumnIndexes: origin.keyColumnIndexes,
@@ -379,6 +436,33 @@ final class SASQLStatementBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(sql, "UPDATE `people` SET `name` = 'Ada'\nWHERE `id` = 1;\n")
+    }
+
+    /// A document on database A reading `SELECT id, name FROM B.people`: the origin is B's
+    /// people, and the statement must say so, or pasting it into the A document would resolve
+    /// the unqualified name against A and update A.people.
+    func testAResultFromAnotherDatabaseUpdatesThatDatabasesTable() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("id", origin: "id", database: "B", keyFlagged: true),
+                queryField("name", origin: "name", database: "B"),
+            ],
+            table: nil,
+            database: nil
+        )
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"])!
+
+        XCTAssertEqual(origin.database, "B")
+
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: origin.database,
+            table: origin.table,
+            columns: origin.columns,
+            keyColumnIndexes: origin.keyColumnIndexes,
+            rows: [["1", "'Ada'"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `B`.`people` SET `name` = 'Ada'\nWHERE `id` = 1;\n")
     }
 
     /// Table content metadata decides by the same rules: its key columns are the table's own
@@ -472,6 +556,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
     /// character set — so the builder only has to match what it is given, as-is.
     func testABinaryKeyLiteralIsMatchedAsIs() {
         let sql = SASQLStatementBuilder.updateStatements(
+            database: nil,
             table: "t",
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),

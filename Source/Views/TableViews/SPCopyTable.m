@@ -524,9 +524,9 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 }
 
 /*
- * Return selected rows as a series of UPDATE `foo` SET `bar` = baz WHERE ... statements, one per
- * row, each matching on the row's primary key. Returns nil — and beeps — if the rows' origin and
- * complete key cannot be established, or if every column they carry is part of that key.
+ * Return selected rows as a series of UPDATE `db`.`foo` SET `bar` = baz WHERE ... statements, one
+ * per row, each matching on the row's primary key. Returns nil — and beeps — if the rows' origin
+ * and complete key cannot be established, or if every column they carry is part of that key.
  */
 - (NSString *)rowsAsSqlUpdatesOnlySelectedRows:(BOOL)onlySelected{
 
@@ -537,9 +537,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSArray *tbColumns = [self _sqlColumnsSkippingAutoIncrement:NO skippingGenerated:YES];
 	if (!tbColumns) return nil;
 
-	// The statements must name the table the rows actually came from and match on that table's
-	// complete key: the projection's own flags say nothing about key parts the SELECT left out,
-	// and its headers can be aliases rather than column names at all.
+	// The statements must name the table — qualified by its database — that the rows actually
+	// came from, and match on that table's complete key: the projection's own flags say nothing
+	// about key parts the SELECT left out, its headers can be aliases rather than column names at
+	// all, and an unqualified table would resolve against whatever database the statement is
+	// pasted into rather than the one it was read from.
 	SAUpdateCopyOrigin *origin = [self _updateOriginOfSqlColumns:tbColumns];
 	if (!origin) {
 		NSBeep();
@@ -549,10 +551,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSArray *rows = [self _sqlLiteralsForRowsOnlySelectedRows:onlySelected columns:tbColumns];
 	if (!rows) return nil;
 
-	NSString *result = [SASQLStatementBuilder updateStatementsForTable:origin.table
-	                                                           columns:origin.columns
-	                                                  keyColumnIndexes:origin.keyColumnIndexes
-	                                                              rows:rows];
+	NSString *result = [SASQLStatementBuilder updateStatementsForDatabase:origin.database
+	                                                                 table:origin.table
+	                                                              columns:origin.columns
+	                                                     keyColumnIndexes:origin.keyColumnIndexes
+	                                                                 rows:rows];
 	if (!result) NSBeep();
 
 	return result;
