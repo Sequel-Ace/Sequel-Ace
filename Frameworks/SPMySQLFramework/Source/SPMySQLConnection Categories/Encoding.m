@@ -128,8 +128,10 @@
 	// variable list said - and from here the record is the better guide than the stale handle.
 	[valueEscaper recordCharacterSetSetByConnection:characterSetToSet];
 
-	// Connection encoding was successfully set, update the instance settings.
+	// Connection encoding was successfully set, update the instance settings. SET NAMES sets what
+	// the server reads statements in along with what it sends results in, so the two agree again.
 	encoding = [[NSString alloc] initWithString:characterSetToSet];
+	sqlInputEncoding = [[NSString alloc] initWithString:characterSetToSet];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetToSet UTF8String]];
 	encodingUsesLatin1Transport = NO;
 

@@ -109,4 +109,30 @@ public final class SAConnectionCharacterSets: NSObject {
     @objc public static let fallbackCharacterSets = ["utf8mb4", "utf8"]
 
     @objc public static let fallbackCharacterSet = "utf8mb4"
+    /// The character set a value has to be escaped for, from the variables a session reports.
+    ///
+    /// Two of them matter and they are not the same thing: `character_set_results` is what the
+    /// server sends results in, and `character_set_client` what it reads statements in. `SET NAMES`
+    /// sets both, so they usually agree - but an `init_connect` can set one alone, and then they do
+    /// not. Escaping has to follow the one the statement is read in: escaping `BF 27` for latin1
+    /// while the server reads the statement as GBK gives `BF 5C 27`, GBK takes `BF 5C` as one
+    /// character, and the quote that follows ends the literal. Measured on MySQL 8.4 with
+    /// `init_connect = 'SET character_set_results = latin1'` and a session connected in GBK, where
+    /// `SELECT 'x<BF><5C><27> OR 1=1 -- '` returns a row rather than a string.
+    ///
+    /// The connection's own record follows `character_set_results`, because that is what results
+    /// are decoded with, and it keeps doing so; this is the second reading, for escaping only.
+    /// - Parameter variables: The session's variables, as the server reports them.
+    /// - Returns: The character set to escape for, normalised to the spelling the encoding table is
+    ///   keyed by, or nil where the session reports none of them.
+    @objc(sqlInputCharacterSetFromVariables:)
+    public static func sqlInputCharacterSet(fromVariables variables: [String: Any]) -> String? {
+        for name in ["character_set_client", "character_set", "character_set_results"] {
+            if let reported = variables[name] as? String, !reported.isEmpty {
+                return carriableName(forCharacterSet: reported) ?? reported
+            }
+        }
+        return nil
+    }
+
 }

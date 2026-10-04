@@ -105,6 +105,9 @@
 	// Encoding details - and also a record of any previous encoding to allow
 	// switching back and forth
 	NSString *encoding, *encodingToRestore;
+	// The character set the server reads statements in, which `character_set_results` - what the
+	// record above follows, because results are decoded with it - does not have to agree with.
+	NSString *sqlInputEncoding;
 	NSStringEncoding stringEncoding;
 	BOOL encodingUsesLatin1Transport, encodingUsesLatin1TransportToRestore;
 	NSString *previousEncoding;

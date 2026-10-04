@@ -227,4 +227,47 @@ final class SAConnectionCharacterSetsTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap("縗".data(using: encoding(for: "gbk"))), Data([0xBF, 0x5C]))
         XCTAssertEqual(try XCTUnwrap("デ".data(using: encoding(for: "sjis"))), Data([0x83, 0x66]))
     }
+    /// What a value is escaped for is the character set the server reads the statement in, which
+    /// the connection's record - following what results come back in - does not have to agree with.
+    func testTheEscapingCharacterSetIsTheOneStatementsAreReadIn() {
+        // The case this exists for: an init_connect set the results character set alone.
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: [
+            "character_set_client": "gbk",
+            "character_set_results": "latin1",
+            "character_set_connection": "gbk",
+        ]), "gbk")
+
+        // Where they agree, it makes no difference.
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: [
+            "character_set_client": "utf8mb4",
+            "character_set_results": "utf8mb4",
+        ]), "utf8mb4")
+    }
+
+    /// The older and the sparser servers, in the order they are asked.
+    func testTheOlderVariablesAreFallenBackOn() {
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: [
+            "character_set": "latin2", "character_set_results": "latin1",
+        ]), "latin2", "a 4.0 server has only the one")
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: [
+            "character_set_results": "latin1",
+        ]), "latin1", "with nothing better, what results come back in is the only guide")
+        XCTAssertNil(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: [:]))
+        XCTAssertNil(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: ["character_set_client": ""]))
+    }
+
+    /// The name comes back in the spelling the encoding table is keyed by, and a name that table
+    /// does not know is still returned - escaping can then refuse it knowingly.
+    func testTheNameComesBackNormalised() {
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: ["character_set_client": "GBK"]), "gbk")
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: ["character_set_client": "swe7"]), "swe7")
+    }
+
+    /// A dictionary that carries something other than a string does not bring the connection down.
+    func testANonStringValueIsIgnored() {
+        XCTAssertEqual(SAConnectionCharacterSets.sqlInputCharacterSet(fromVariables: [
+            "character_set_client": 7, "character_set_results": "latin1",
+        ]), "latin1")
+    }
+
 }

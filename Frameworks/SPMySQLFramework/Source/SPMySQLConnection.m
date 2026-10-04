@@ -1590,6 +1590,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[encoding cStringUsingEncoding:stringEncoding]];
 	encodingUsesLatin1Transport = NO;
 
+	// What the server reads statements in, which the record above does not have to agree with: the
+	// record follows character_set_results, because results are decoded with it, and an
+	// init_connect can set the two differently. Escaping follows this one instead - a value
+	// escaped for the results character set and read in another one is how a quote escapes out of
+	// its literal.
+	BOOL aMoveTookEffect = [startupPlan movesToAnotherCharacterSet]
+		&& ![retrievedEncoding isEqualToString:[startupPlan characterSetWithoutStatements]];
+	// A move ran SET NAMES, which sets all of them alike, so there is nothing left to disagree.
+	sqlInputEncoding = aMoveTookEffect
+		? [[NSString alloc] initWithString:retrievedEncoding]
+		: [SAConnectionCharacterSets sqlInputCharacterSetFromVariables:variables];
+
 	// Check the interactive timeout - if it's below five minutes, increase it to ten
 	// to improve timeout/keepalive behaviour.  Note that wait_timeout also has be
 	// increased; current versions effectively populate the wait timeout from the

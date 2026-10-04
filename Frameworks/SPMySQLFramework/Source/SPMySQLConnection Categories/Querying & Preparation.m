@@ -116,7 +116,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// the name the connection was put on, so the transport character set is what the server
 	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
 	// as two latin1 ones, the second of which escapes the closing quote.
-	NSString *transportCharacterSet = encodingUsesLatin1Transport ? @"latin1" : encoding;
+	// What the server will read this statement in, not what it sends results in: an init_connect
+	// can leave character_set_client and character_set_results different, and escaping for the
+	// wrong one of them lets a trailing byte swallow the backslash and the quote end the literal.
+	NSString *transportCharacterSet = encodingUsesLatin1Transport
+		? @"latin1"
+		: (sqlInputEncoding ?: encoding);
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1
