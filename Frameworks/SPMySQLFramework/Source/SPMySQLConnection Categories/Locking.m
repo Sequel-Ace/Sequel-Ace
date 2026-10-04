@@ -98,6 +98,17 @@
 		[self _flushMultipleResultSets];
 	}
 
+	// What a statement did to the session's transaction is reported in the packet that closes its
+	// result, after the rows, so the record taken when the statement was sent still describes the
+	// statement before it. Everything that held the connection passes through here with its result
+	// read, which is where that word has arrived. Stopping a query reads this record to decide
+	// whether its session may be closed, and a session wrongly thought to have no transaction open
+	// loses the uncommitted work it did have. Only the transaction is taken from here: what the
+	// session says about its character set is evidence of a change, counted where it is recorded.
+	if (mySQLConnection) {
+		[valueEscaper recordSessionOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0];
+	}
+
 	// A streaming result gets here only once its download is over. If stopping it was asked for
 	// meanwhile, it counts as cancelled even if it finished first - callers running a batch stop
 	// on this. The request can name the number of any of the query's attempts.

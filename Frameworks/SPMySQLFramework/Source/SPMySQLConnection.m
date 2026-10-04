@@ -1694,13 +1694,17 @@ asm(".desc ___crashreporter_info__, 0x10");
  * Off the main thread there is nothing to protect, and without a delegate there is nothing that
  * could show the wait or end it; the work then runs where it was asked for. Callers that hand
  * their work over have to ask first, because work that runs where it was asked for would
- * otherwise hand itself over again, and again.
+ * otherwise hand itself over again, and again. The decision itself is
+ * SAConnectionWorkCoordinator's, including why the thread setting the session up keeps its own
+ * queries.
  *
  * @return Whether handing work over would move it off the main thread.
  */
 - (BOOL)_workShouldRunOffMainThread
 {
-	return [NSThread isMainThread] && delegateSupportsConnectionCheckProgress;
+	return [SAConnectionWorkCoordinator workShouldRunOffMainThread:[NSThread isMainThread]
+	                                          delegateShowsTheWait:delegateSupportsConnectionCheckProgress
+	                                   threadIsSettingUpTheSession:[self _currentThreadIsReconnecting]];
 }
 
 /**

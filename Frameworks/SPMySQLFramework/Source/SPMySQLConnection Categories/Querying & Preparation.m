@@ -582,12 +582,18 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 			// A request to stop can arrive while the query is losing its connection, before anything
 			// has reached the server; it still means the statement must not be sent again.
-			if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
+			BOOL theUserAskedToStopThisQuery = [inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration
+			                                                                                    through:thisQueryGeneration];
+			if (theUserAskedToStopThisQuery) {
 				lastQueryWasCancelled = YES;
 			}
 
-			// Prevent retries if the query was cancelled or not a connection error
-			if (self.sessionAccess.currentQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+			// Prevent retries if the query was cancelled or not a connection error. A stop kept
+			// against the query's own number counts as much as one the session knows about:
+			// without it a query the user stopped goes on to check the connection, reconnect, and
+			// ask the user what to do about a connection they had just asked to be left alone.
+			if (theUserAskedToStopThisQuery || self.sessionAccess.currentQueryWasCancelled
+			    || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
 		}
@@ -714,8 +720,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastQueryWasCancelled = YES;
 	}
 
-	// If the query was cancelled, override the error state
-	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
+	// If the query was cancelled, override the error state. Either record of the stop counts: the
+	// session's own, and the one kept against the query's number for a stop that reached a query
+	// which was losing its connection at the time.
+	if (self.sessionAccess.currentQueryWasCancelled) {
+		lastQueryWasCancelled = YES;
+	}
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -913,7 +923,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Also as a request for the query that is running now. A query that is reconnecting before its
 	// retry resets its own mark once the reconnect is done, and finds the request instead - under
 	// the number of whichever of its queries was running.
-	if (recordRequest) [inFlightQuery requestCancellationOfGeneration:[inFlightQuery latestGeneration]];
+	// The query that is being stopped is named once, here. Looking it up again after the kill
+	// would name whichever query is latest by then - and if this one has finished meanwhile and
+	// another has taken its place, closing that one's socket would roll back work nobody asked
+	// to stop.
+	NSUInteger theQueryBeingStopped = [inFlightQuery latestGeneration];
+	if (recordRequest) [inFlightQuery requestCancellationOfGeneration:theQueryBeingStopped];
 
 	// The kill goes through the session's own cancellation bookkeeping, so the lease reserves it
 	// and hands the session to nothing else while the request is out. What to do when the server
@@ -934,7 +949,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// no transaction to spare, because the server accepted nothing. Without this the read waits
 	// out its own timeout and the reconnect below is what ends it, which is minutes rather than
 	// moments.
-	if ([inFlightQuery closeSocketIfGenerationIsWaiting:[inFlightQuery latestGeneration]
+	if ([inFlightQuery closeSocketIfGenerationIsWaiting:theQueryBeingStopped
 	                                      beforeClosing:^{
 		self->lastQueryWasCancelled = YES;
 	}]) {

@@ -334,4 +334,35 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? Int, 42)
     }
+
+    /// Work asked for away from the main thread runs where it was asked for.
+    func testWorkAwayFromTheMainThreadIsNotHandedOver() {
+        XCTAssertFalse(SAConnectionWorkCoordinator.workShouldRunOffMainThread(
+            isMainThread: false, delegateShowsTheWait: true, threadIsSettingUpTheSession: false))
+    }
+
+    /// Without a delegate there is nobody to show the wait, so there is nothing to gain.
+    func testWorkIsNotHandedOverWithNobodyToShowTheWait() {
+        XCTAssertFalse(SAConnectionWorkCoordinator.workShouldRunOffMainThread(
+            isMainThread: true, delegateShowsTheWait: false, threadIsSettingUpTheSession: false))
+    }
+
+    /// Main-thread work that would wait for a server is handed over.
+    func testMainThreadWorkIsHandedOver() {
+        XCTAssertTrue(SAConnectionWorkCoordinator.workShouldRunOffMainThread(
+            isMainThread: true, delegateShowsTheWait: true, threadIsSettingUpTheSession: false))
+    }
+
+    /// The thread setting the new session up keeps its own queries.
+    ///
+    /// It holds the session until its setup is done, so a setup query handed to another thread
+    /// would wait there for a session held by the thread waiting for that query.
+    func testTheThreadSettingUpTheSessionKeepsItsOwnQueries() {
+        XCTAssertFalse(SAConnectionWorkCoordinator.workShouldRunOffMainThread(
+            isMainThread: true, delegateShowsTheWait: true, threadIsSettingUpTheSession: true),
+                       "a main-thread reconnect's setup query must not be handed over")
+        XCTAssertFalse(SAConnectionWorkCoordinator.workShouldRunOffMainThread(
+            isMainThread: false, delegateShowsTheWait: true, threadIsSettingUpTheSession: true))
+    }
+
 }

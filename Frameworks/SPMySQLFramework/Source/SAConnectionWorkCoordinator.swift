@@ -182,6 +182,31 @@ public final class SAConnectionWorkCoordinator: NSObject {
         return outcome.beginSessionUse(sessionHasOpenTransaction: sessionHasOpenTransaction)
     }
 
+    /// Whether connection work asked for on this thread should be handed to a worker thread.
+    ///
+    /// Work that has to wait for a server is handed over so the interface keeps drawing while it
+    /// waits, and the delegate shows the wait and lets the user end it. Two things rule that out.
+    /// Away from the main thread there is nothing to keep drawing, and without a delegate there is
+    /// nothing to show the wait - the work then runs where it was asked for.
+    ///
+    /// And a thread that is setting the new session up keeps its own queries, whichever thread it
+    /// is. It holds the session while it does, and will not let go of it until its setup is done;
+    /// work handed to another thread would wait there for a session that is waiting for it.
+    /// - Parameters:
+    ///   - isMainThread: Whether the work was asked for on the main thread.
+    ///   - delegateShowsTheWait: Whether a delegate is there to show the wait and end it.
+    ///   - threadIsSettingUpTheSession: Whether this thread is the one reconnecting.
+    /// - Returns: Whether handing the work over would move it off the main thread, usefully.
+    @objc(workShouldRunOffMainThread:delegateShowsTheWait:threadIsSettingUpTheSession:)
+    public static func workShouldRunOffMainThread(isMainThread: Bool,
+                                                  delegateShowsTheWait: Bool,
+                                                  threadIsSettingUpTheSession: Bool) -> Bool {
+        guard !threadIsSettingUpTheSession else {
+            return false
+        }
+        return isMainThread && delegateShowsTheWait
+    }
+
     /// How the work running on the current thread has used the session; untouched for work that
     /// no coordinator runs.
     @objc public static var currentWorkSessionUse: SAWorkSessionUse {

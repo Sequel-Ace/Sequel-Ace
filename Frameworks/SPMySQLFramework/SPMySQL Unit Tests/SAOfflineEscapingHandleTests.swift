@@ -227,4 +227,29 @@ final class SAOfflineEscapingHandleTests: XCTestCase {
         XCTAssertNil(escape(Data("x".utf8), with: escaper, onRecord: "no-such-character-set"))
         XCTAssertEqual(escape(Data("x".utf8), with: escaper, onRecord: "utf8mb4"), Data("x".utf8))
     }
+
+    /// Asking the session again once its result has been read takes only the transaction.
+    ///
+    /// Whether a statement left a transaction open is reported in the packet that closes its
+    /// result, after the rows, so the session is asked again once the result has been read.
+    /// Only the transaction is taken from there: what the session says about its character set
+    /// and its escaping mode was already said when the statement went out, and taking it again
+    /// would make one statement look like two.
+    func testAskingAgainAfterAResultTakesOnlyTheTransaction() {
+        let escaper = SAConnectionEscaper()
+        let value = Data([0xBF, 0x27])
+        escaper.recordSession(characterSet: "utf8mb4", noBackslashEscapes: false,
+                              openTransaction: false, isHandshake: true)
+        escaper.recordSession(characterSet: "gbk", noBackslashEscapes: true,
+                              openTransaction: false, isHandshake: false)
+        let escapedBeforeTheResult = escape(value, with: escaper, onRecord: "latin1")
+        XCTAssertFalse(escaper.sessionReportedOpenTransaction)
+
+        escaper.recordSession(openTransaction: true)
+
+        XCTAssertTrue(escaper.sessionReportedOpenTransaction, "the transaction is taken")
+        XCTAssertEqual(escape(value, with: escaper, onRecord: "latin1"), escapedBeforeTheResult,
+                       "and nothing else about the session changed with it")
+    }
+
 }

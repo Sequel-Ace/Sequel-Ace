@@ -186,6 +186,22 @@ public final class SAConnectionEscaper: NSObject {
         sessionHasOpenTransaction = openTransaction
     }
 
+    /// Records only what the session reports about its transaction, leaving the rest as it was.
+    ///
+    /// A statement's reply says whether a transaction is open, but for one that returns rows that
+    /// word comes with the packet that closes the result, after the rows - so the record taken
+    /// when the statement was sent still describes the statement before it. The session is asked
+    /// again once the result has been read. Only the transaction is taken from there: what the
+    /// session says about its character set is evidence of a change, counted and weighed
+    /// elsewhere, and asking twice about one statement would count it twice.
+    /// - Parameter openTransaction: Whether the session has a transaction open.
+    @objc(recordSessionOpenTransaction:)
+    public func recordSession(openTransaction: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        sessionHasOpenTransaction = openTransaction
+    }
+
     /// Whether the session last reported an open transaction.
     @objc public var sessionReportedOpenTransaction: Bool {
         lock.lock()
