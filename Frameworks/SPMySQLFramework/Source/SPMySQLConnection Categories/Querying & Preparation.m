@@ -928,6 +928,20 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// If the server could be reached and killed the query, the active query was cancelled.
 	if (theServerKilledTheQuery) return;
 
+	// The server could not be reached, so the read will not end by itself: its socket is closed
+	// here, and at once. Nothing is waited for - the request came back a definite failure, where
+	// the stop path's grace period exists for a kill that may still be travelling - and there is
+	// no transaction to spare, because the server accepted nothing. Without this the read waits
+	// out its own timeout and the reconnect below is what ends it, which is minutes rather than
+	// moments.
+	if ([inFlightQuery closeSocketIfGenerationIsWaiting:[inFlightQuery latestGeneration]
+	                                      beforeClosing:^{
+		self->lastQueryWasCancelled = YES;
+	}]) {
+		[self noteNativeReadEndedByCancellation];
+		return;
+	}
+
 	// A full reconnect is required at this point to force a cancellation.  As the
 	// connection may have finished processing the query at this point (depending how
 	// long the connection attempt took), check whether we can skip the reconnect.
@@ -1140,6 +1154,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			}];
 		}
 	} else if (mySQLConnection && mySQLConnection->thread_id) {
+		// Opening the side connection takes time, and the session can have moved on to another
+		// query by now. Without a generation to reserve, the session's own reservation is what
+		// says whether the query this cancellation was for is still the one running - killing
+		// blind would end whichever query took its place.
+		if (!self.sessionAccess.cancellationIsCurrent) {
+			mysql_close(killerConnection);
+			return YES;
+		}
+
 		sendKill(mySQLConnection->thread_id);
 
 		// Ensure the tracking bool is re-set to cover encompassed queries

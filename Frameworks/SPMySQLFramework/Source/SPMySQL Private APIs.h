@@ -75,6 +75,8 @@
 - (void)_recoverFromCancelledReconnectMayDisconnect:(BOOL)mayDisconnect;
 /** Records cancelled connection work the same way a cancelled query is recorded. */
 - (void)_recordWorkAsCancelled;
+/** Records that a cancellation ended the native read, so the session's next use recovers. */
+- (void)noteNativeReadEndedByCancellation;
 - (BOOL)_abortCancelledReconnectWhileLocked;
 /** Whether the current thread is the one reconnecting, and so sets up the new session. */
 - (BOOL)_currentThreadIsReconnecting;
