@@ -86,8 +86,8 @@ final class SAEscapingBoundaryIntegrationTests: XCTestCase {
     /// stand in for the two variables - which is the state the escaper has to get right from the
     /// variable list alone.
     func testInputAndResultCharacterSetsAreFollowedSeparately() throws {
-        guard let privileged = newLocalConnection() else {
-            throw XCTSkip("No local MySQL connection configured. Set SPMYSQL_TEST_SOCKET or SPMYSQL_TEST_HOST to run this integration regression.")
+        guard let privileged = newDisposableServerConnection() else {
+            throw XCTSkip("This regression changes a global server setting, so it needs a server named for the purpose: a socket at \(Self.disposableServerSocket), or SPMYSQL_TEST_DISPOSABLE_SOCKET pointing at one.")
         }
         guard privileged.connect() else {
             throw XCTSkip("Local MySQL connection is unavailable for the character set regression.")
@@ -121,8 +121,8 @@ final class SAEscapingBoundaryIntegrationTests: XCTestCase {
             """)
         try XCTSkipIf(privileged.queryErrored(), "Cannot set init_connect for the regression.")
 
-        guard let session = newLocalConnection() else {
-            throw XCTSkip("No local MySQL connection configured.")
+        guard let session = newDisposableServerConnection() else {
+            throw XCTSkip("No disposable server configured.")
         }
         session.username = user
         session.password = "probe"
@@ -197,6 +197,32 @@ final class SAEscapingBoundaryIntegrationTests: XCTestCase {
         return hex?.uppercased()
     }
 
+
+    /// Where a server that may be reconfigured out from under its other sessions is expected.
+    ///
+    /// Named for the purpose on purpose: the regression below sets `init_connect`, which every
+    /// new session on that server then starts with, so it must never run against a server that
+    /// merely happens to be listening locally. A socket under this name can only exist because
+    /// someone put a throwaway server there.
+    static let disposableServerSocket = "/tmp/sa-escaping-regression.sock"
+
+    /// A connection to that server, or nil when none has been named.
+    private func newDisposableServerConnection() -> SPMySQLConnection? {
+        let environment = ProcessInfo.processInfo.environment
+        let named = environment["SPMYSQL_TEST_DISPOSABLE_SOCKET"]
+        let socketPath = (named?.isEmpty ?? true) ? Self.disposableServerSocket : named!
+        guard FileManager.default.fileExists(atPath: socketPath) else {
+            return nil
+        }
+        let connection = SPMySQLConnection()
+        let testUser = environment["SPMYSQL_TEST_USER"]
+        connection.username = testUser?.isEmpty == false ? testUser : "root"
+        connection.password = environment["SPMYSQL_TEST_PASSWORD"]
+        connection.useKeepAlive = false
+        connection.useSocket = true
+        connection.socketPath = socketPath
+        return connection
+    }
 
     private func newLocalConnection() -> SPMySQLConnection? {
         let environment = ProcessInfo.processInfo.environment
