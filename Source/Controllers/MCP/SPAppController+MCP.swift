@@ -692,7 +692,9 @@ extension SPAppController: SPMCPDataSource {
 
         if let stream = res as? SPMySQLStreamingResult {
             stream.cancelLoad()
-            if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
+            if !conn.isConnected() || conn.queryErrored() {
+                return ["error": conn.lastErrorMessage() ?? "Query error"]
+            }
         }
 
         var r: [String: Any] = [:]
