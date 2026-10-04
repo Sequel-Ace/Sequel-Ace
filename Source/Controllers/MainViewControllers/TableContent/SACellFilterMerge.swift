@@ -19,9 +19,9 @@ import Foundation
     /// Appends a new filter rule while removing rule-editor placeholder rows.
     ///
     /// Existing real filters are combined with the new rule under an AND group.
-    /// Empty starter rows and half-touched rows are dropped so right-clicking a
-    /// cell after choosing a column in the rule editor does not produce an
-    /// impossible `column = "" AND column = value` expression.
+    /// Only explicitly marked, unchecked starter rows are dropped. An empty
+    /// argument is a valid user condition (`column = ''`), whether enabled or
+    /// deliberately disabled, and must survive the merge.
     ///
     /// - Parameters:
     ///   - currentFilter: Serialized filter currently restored in the rule editor.
@@ -40,7 +40,7 @@ import Foundation
         }
 
         if isConjunctionGroup(filter: currentFilter), let children = currentFilter["children"] as? [[String: Any]] {
-            // Strip placeholder children (empty starter or value-empty half-touched rows) before appending
+            // Strip empty nodes and explicitly marked unchecked starter children before appending
             var realChildren = children.filter { !isEmpty(filter: $0) && !isUntouchedStarter(filter: $0) }
             realChildren.append(newFilter)
             if realChildren.count == 1 {
@@ -77,20 +77,21 @@ import Foundation
         return true
     }
 
-    /// A "starter" or "half-touched placeholder" row that the user added to the rule editor
-    /// but never filled in. Two shapes are recognized:
-    ///   - Original starter: empty column + empty filterValues entries.
-    ///   - Half-touched: column was picked but every filterValues entry is still an empty string.
-    /// In both cases the row contributes nothing to the query and should be stripped during merge
-    /// so that AND-appending a new cell filter does not produce an impossible WHERE clause.
+    /// Whether the controller explicitly identifies an unchecked, untouched
+    /// seeded row. Empty arguments alone never identify a placeholder: checked
+    /// and deliberately disabled user predicates can both compare with ''.
     ///
-    /// Zero-argument real operators (IS NULL / IS NOT NULL) serialize with `filterValues: []`
-    /// (count == 0) so the `!values.isEmpty` guard keeps them out of the placeholder bucket.
+    /// Zero-argument operators such as IS NULL remain real rules even if an
+    /// obsolete starter marker is present. A checked row also remains real.
     ///
     /// - Parameter filter: Serialized expression-node dictionary to inspect.
-    /// - Returns: `true` when every stored argument is an empty string.
+    /// - Returns: `true` only for a marked, unchecked row with nonempty,
+    ///   all-empty arguments.
     public static func isUntouchedStarter(filter: [String: Any]?) -> Bool {
-        guard let filter, filter["filterClass"] as? String == "expressionNode" else {
+        guard let filter,
+              filter["filterClass"] as? String == "expressionNode",
+              (filter["pendingStarter"] as? NSNumber)?.boolValue == true,
+              (filter["enabled"] as? NSNumber)?.boolValue != true else {
             return false
         }
 
