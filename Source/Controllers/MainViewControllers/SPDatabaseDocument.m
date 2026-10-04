@@ -109,7 +109,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 // Whether the NSUserDefaults KVO observers are currently registered (#2033)
 @property (assign) BOOL preferenceObserversRegistered;
 // Whether the user stopped the table load that is running; read by its task between its stages
-@property (atomic, assign) BOOL tableLoadStopRequested;
+@property (nonatomic, strong) SATableLoadStop *tableLoadStop;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
@@ -5676,7 +5676,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Loading a table can wait on a server that has stopped answering, so it can be stopped
     // like loading a table's contents already can. Stopping ends the whole load, not only the
     // query that is running when the button is pressed.
-    self.tableLoadStopRequested = NO;
+    if (!self.tableLoadStop) self.tableLoadStop = [[SATableLoadStop alloc] init];
+    [self.tableLoadStop loadIsStarting];
     [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
 
     // Update the tables list interface - also updates menus to reflect the selected table type
@@ -5716,9 +5717,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // stopped in turn; a load stopped again leaves the views as they are. The query editor needs
         // nothing of the table, and switching to it loads nothing.
         BOOL viewNeedsTheTable = (selectedTabViewIndex != SPTableViewCustomQuery && selectedTabViewIndex != SPTableViewInvalid);
-        if (self.tableLoadStopRequested && selectedTableName && viewNeedsTheTable) {
+        if (self.tableLoadStop.aStageWasLeftUndone && selectedTableName && viewNeedsTheTable) {
             [self loadTable:selectedTableName ofType:selectedTableType];
-            if (self.tableLoadStopRequested) {
+            if (self.tableLoadStop.aStageWasLeftUndone) {
                 [self endTask];
                 return;
             }
@@ -5771,7 +5772,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)_stopTableLoad
 {
-    self.tableLoadStopRequested = YES;
+    [self.tableLoadStop stopWasAskedFor];
     [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
 }
 
@@ -5806,14 +5807,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Cache status information on the working thread. A load the user stopped skips every stage
         // that asks the server for more, and only tidies up.
-        if (!self.tableLoadStopRequested) {
+        if ([self.tableLoadStop shouldRunNextStage]) {
             [tableDataInstance updateStatusInformationForCurrentTable];
         }
 
         // Check the current encoding against the table encoding to see whether
         // an encoding change and reset is required.  This also caches table information on
         // the working thread.
-        if ((selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) && !self.tableLoadStopRequested) {
+        if ((selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) && [self.tableLoadStop shouldRunNextStage]) {
 
             // tableEncoding == nil indicates that there was an error while retrieving table data
             tableEncoding = [tableDataInstance tableEncoding];
@@ -5832,7 +5833,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // A stopped load leaves the table's status and information unloaded on purpose; the views that
         // read them lazily must not ask the server for them after all.
-        if (self.tableLoadStopRequested) {
+        if (self.tableLoadStop.aStageWasLeftUndone) {
             [tableDataInstance recordLoadsStoppedForCurrentTable];
         }
 
@@ -5843,7 +5844,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [spHistoryControllerInstance restoreViewStates];
 
         // Load the currently selected view if looking at a table or view
-        if (tableEncoding && !self.tableLoadStopRequested && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable))
+        if (tableEncoding && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) && [self.tableLoadStop shouldRunNextStage])
         {
             NSInteger selectedTabViewIndex = [[self onMainThread] currentlySelectedView];
 
@@ -5882,20 +5883,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if (!triggersLoaded) [[tableTriggersInstance onMainThread] resetInterface];
 
         // A view's own load ends its own cancellation, which hides the button while this load goes on.
-        if (!self.tableLoadStopRequested) {
+        if (!self.tableLoadStop.stopWasAsked) {
             [self enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:self callbackFunction:@selector(_stopTableLoad)];
         }
 
         // If the table row counts an inaccurate and require updating, trigger an update - no
         // action will be performed if not necessary
-        if (!self.tableLoadStopRequested) {
+        if ([self.tableLoadStop shouldRunNextStage]) {
             [tableDataInstance updateAccurateNumberOfRowsForCurrentTableForcingUpdate:NO];
         }
 
         SPMainQSync(^{
             // Update the "Show Create Syntax" window if it's already opened
             // according to the selected table/view/proc/func - unless the load was stopped
-            if (!self.tableLoadStopRequested && [[self getCreateTableSyntaxWindow] isVisible]) {
+            if (!self.tableLoadStop.stopWasAsked && [[self getCreateTableSyntaxWindow] isVisible]) {
                 [self showCreateTableSyntax:self];
             }
         });
