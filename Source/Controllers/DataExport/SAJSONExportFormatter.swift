@@ -25,9 +25,12 @@ import Foundation
 /// - `Data` (BLOB / BINARY / VARBINARY columns, see `textCell`) → base64 string. JSON strings must be valid
 ///   Unicode, so arbitrary bytes cannot be embedded as text without loss.
 /// - Strings in numeric columns → unquoted number, but only if the text is a canonical JSON
-///   number; anything else keeps its exact spelling as a JSON string — a `ZEROFILL` value such
-///   as `007` is not canonical and so keeps its padding. The digits are never rewritten in
-///   either direction: padding is neither added nor stripped.
+///   number; anything else keeps its exact spelling as a JSON string. The digits are never
+///   rewritten in either direction: padding is neither added nor stripped.
+/// - `ZEROFILL` columns → always JSON strings. Their values are display text padded to the
+///   column's width, so the column keeps one type whether or not a value happens to fill its
+///   width — `123` in an `INT(3) ZEROFILL` column is exported as `"123"`, next to a padded
+///   `007`. The padding the server sent is preserved exactly as is.
 /// - Strings in text columns, and strings whose column types are unknown → JSON string. A value's
 ///   database type is never guessed from its text: a VARCHAR `1e3` must not become a JSON number.
 /// - Everything else → JSON string.
@@ -128,10 +131,22 @@ final class SAJSONExportFormatter: NSObject {
 
     /// Per-column numeric flags from a result's field definitions — a streaming result's
     /// `fieldDefinitions()`, a custom-query result store's, or the table metadata's `columns`,
-    /// all of which carry `typegrouping`. Missing or empty definitions yield all `false`, so
-    /// strings keep their string type.
+    /// all of which carry `typegrouping`. A `ZEROFILL` column is never numeric: its values are
+    /// display text and keep the same JSON type whether or not a value fills its width.
+    /// Missing or empty definitions yield all `false`, so strings keep their string type.
     static func numericColumnFlags(_ definitions: [[String: Any]]) -> [Bool] {
-        definitions.map { SAJSONExportFormatter.isNumericTypeGrouping($0["typegrouping"] as? String) }
+        definitions.map {
+            SAJSONExportFormatter.isNumericTypeGrouping($0["typegrouping"] as? String)
+                && !SAJSONExportFormatter.isZeroFillColumn($0)
+        }
+    }
+
+    /// Whether a field definition marks its column ZEROFILL. Result field definitions carry
+    /// `ZEROFILL_FLAG` (parsed from the server's field flags); the table metadata's columns
+    /// carry `zerofill` (parsed from the column definition text).
+    static func isZeroFillColumn(_ definition: [String: Any]) -> Bool {
+        let flag = definition["ZEROFILL_FLAG"] ?? definition["zerofill"]
+        return (flag as? NSNumber)?.boolValue == true
     }
 
     /// Reorders a result's column definitions into export order.

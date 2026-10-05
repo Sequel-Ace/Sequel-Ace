@@ -159,6 +159,40 @@ final class SAJSONExportFormatterTests: XCTestCase {
         XCTAssertEqual(text, "[\n{\"a\":\"007\",\"b\":\"1e\"}\n]\n")
     }
 
+    func testZeroFillColumnsStayStringsWhetherOrNotTheirValuesFillTheWidth() {
+        // A ZEROFILL column's values are display text padded to the column's width, so the
+        // column keeps one JSON type whether or not a value happens to fill its width: `123`
+        // in an INT(3) ZEROFILL column is exported as a string, next to a padded `007`.
+        // Result field definitions mark the column with ZEROFILL_FLAG; the table metadata's
+        // columns mark it with zerofill.
+        let columns = ["zpadded", "zfilled", "plain"]
+        let row: [Any] = ["007", "123", "45"]
+        let expected = "[\n{\"zpadded\":\"007\",\"zfilled\":\"123\",\"plain\":45}\n]\n"
+
+        let resultFieldDefinitions: [[String: Any]] = [
+            ["name": "zpadded", "typegrouping": "integer", "ZEROFILL_FLAG": true],
+            ["name": "zfilled", "typegrouping": "integer", "ZEROFILL_FLAG": true],
+            ["name": "plain", "typegrouping": "integer", "ZEROFILL_FLAG": false],
+        ]
+        let tableMetadataColumns: [[String: Any]] = [
+            ["name": "zpadded", "typegrouping": "integer", "zerofill": true],
+            ["name": "zfilled", "typegrouping": "integer", "zerofill": true],
+            ["name": "plain", "typegrouping": "integer", "zerofill": false],
+        ]
+
+        for definitions in [resultFieldDefinitions, tableMetadataColumns] {
+            let flags = SAJSONExportFormatter.numericColumnFlags(definitions)
+            XCTAssertEqual(flags, [false, false, true])
+            XCTAssertEqual(document(columns: columns, numeric: flags, rows: [row], pretty: false), expected)
+        }
+
+        // Parsed back: both ZEROFILL values are strings, the plain INT is a number
+        let parsed = parse(expected) as? [[String: Any]]
+        XCTAssertEqual(parsed?.first?["zpadded"] as? String, "007")
+        XCTAssertEqual(parsed?.first?["zfilled"] as? String, "123")
+        XCTAssertEqual(parsed?.first?["plain"] as? Int, 45)
+    }
+
     func testColumnDefinitionsFollowExportedColumnOrder() {
         // Query and filtered exports write rows in their table view's column order, keyed by
         // each column's identifier (the result index). Dragging `code` before `qty` in

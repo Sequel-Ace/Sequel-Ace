@@ -26,9 +26,10 @@ import Foundation
     var jsonDataArray: [Any]?
 
     /// Per-column field definitions for a data-array export — the custom-query result store's or the
-    /// table metadata's, both of which carry `typegrouping`. They keep text columns as strings even
-    /// when their values read as numbers. `nil` for a table export (the streaming result supplies its
-    /// own definitions) or when the source provides none; strings then stay strings.
+    /// table metadata's, both of which carry `typegrouping` and the ZEROFILL flag. They keep text
+    /// columns as strings even when their values read as numbers. `nil` for a table export (the
+    /// streaming result supplies its own definitions) or when the source provides none; strings then
+    /// stay strings.
     var jsonColumnDefinitions: [[String: Any]]?
 
     /// The table to export when `jsonDataArray` is `nil`.

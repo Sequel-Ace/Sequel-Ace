@@ -67,6 +67,8 @@ static NSString * const SPTableViewDropColumnID      = @"drop";
 static const NSString *SPSQLExportStructureEnabled  = @"SQLExportStructureEnabled";
 static const NSString *SPSQLExportContentEnabled    = @"SQLExportContentEnabled";
 static const NSString *SPSQLExportDropEnabled       = @"SQLExportDropEnabled";
+static const NSString *SPFilteredResultRows         = @"FilteredResultRows";
+static const NSString *SPQueryResultRows            = @"QueryResultRows";
 
 typedef enum
 {
@@ -1236,7 +1238,14 @@ set_input:
 		BOOL contentEnabled   = [[uiStateDict objectForKey:SPSQLExportContentEnabled] boolValue];
 		BOOL dropEnabled      = [[uiStateDict objectForKey:SPSQLExportDropEnabled] boolValue];
 
-		if (isCSV || isXML || isJSON || isHTML || isPDF || (isSQL && ((!structureEnabled) || (!dropEnabled)))) {
+		if (isJSON && ((exportSource == SPFilteredExport) || (exportSource == SPQueryExport))) {
+			// A query or filtered result exports whatever its result holds, so gate on
+			// availability — the headers row plus at least one data row, the same test that
+			// enables these sources in the Input popup — not on table selection: the table
+			// list is disabled for these sources and its checkboxes are not read.
+			enable = ([[uiStateDict objectForKey:(exportSource == SPFilteredExport) ? SPFilteredResultRows : SPQueryResultRows] integerValue] > 1);
+		}
+		else if (isCSV || isXML || isJSON || isHTML || isPDF || (isSQL && ((!structureEnabled) || (!dropEnabled)))) {
 			enable = NO;
 
 			// Only enable the button if at least one table is selected
@@ -1293,6 +1302,11 @@ set_input:
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeStructureCheck state]] forKey:SPSQLExportStructureEnabled];
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeContentCheck state]] forKey:SPSQLExportContentEnabled];
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeDropSyntaxCheck state]] forKey:SPSQLExportDropEnabled];
+
+	// Captured here on the main thread: _toggleExportButton: runs on a background thread and
+	// must not read the result arrays there.
+	[uiStateDict setObject:[NSNumber numberWithInteger:[[tableContentInstance currentResult] count]] forKey:SPFilteredResultRows];
+	[uiStateDict setObject:[NSNumber numberWithInteger:[[customQueryInstance currentResult] count]] forKey:SPQueryResultRows];
 
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController export button updater",tableDocumentInstance) target:self selector:@selector(_toggleExportButton:) object:uiStateDict];
 }
