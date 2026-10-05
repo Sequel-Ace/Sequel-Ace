@@ -552,8 +552,17 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				return nil;
 			}
 
-			theStatementReachedTheServer = YES;
+			// Only a handle that still has a transport can have sent anything. The client
+			// library clears it when a connection goes, and the framework can still think the
+			// connection is up - a result download that failed leaves exactly that. Sending on
+			// such a handle fails before a byte leaves, so the statement did not happen, and
+			// saying otherwise would both warn about a write that never went and keep the
+			// reconnect that recovers this case from running.
+			BOOL theHandleHadATransport = mySQLConnection->net.vio != NULL;
 			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
+			if (theHandleHadATransport) {
+				theStatementReachedTheServer = YES;
+			}
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
 		lastConnectionUsedTime = _monotonicTime();
