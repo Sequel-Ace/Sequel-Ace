@@ -209,11 +209,13 @@ final class SASessionLeaseQuestionTests: XCTestCase {
 
         var theCallbackReturned = false
         var theCallbacksWorkRan = false
+        var theSessionWasRefused = false
         let entersTheConnection = Timer(timeInterval: 0.05, repeats: false) { _ in
             _ = access.performQuery {
                 theCallbacksWorkRan = true
                 return nil
             }
+            theSessionWasRefused = access.theSessionWasRefusedToThisThread
             theCallbackReturned = true
         }
         // The answer comes after it, in the same mode - the order Jason-Morcos reproduced.
@@ -241,6 +243,8 @@ final class SASessionLeaseQuestionTests: XCTestCase {
                       + "answer can reach the owner")
         XCTAssertFalse(theCallbacksWorkRan,
                        "and it is turned away rather than let into the session being asked about")
+        XCTAssertTrue(theSessionWasRefused,
+                      "the refusal has to be distinguishable from work that ran and did nothing")
         XCTAssertFalse(theOwnerWaitedInVain, "so the owner is answered rather than timing out")
         wait(for: [theOwnerLetGo], timeout: 5)
     }

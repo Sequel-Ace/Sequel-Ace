@@ -158,6 +158,20 @@ import Darwin
         }
     }
 
+    /// Marks, for this thread only, that the session was refused rather than the work having
+    /// simply returned nothing.
+    private static let refusalMarker = "SAConnectionSessionAccess.theSessionWasRefused"
+
+    /// Whether this thread's last attempt was refused the session, rather than its work running
+    /// and returning nothing.
+    ///
+    /// Both come back as nothing, and a caller that cannot tell them apart would read a
+    /// statement that was never sent as one that ran and changed nothing. Asked right after a
+    /// call that came back empty, on the thread that made it.
+    @objc public var theSessionWasRefusedToThisThread: Bool {
+        (Thread.current.threadDictionary[Self.refusalMarker] as? Bool) ?? false
+    }
+
     /// Records that a question about this connection has gone to the main thread.
     ///
     /// The session stays held while it is asked - what is being asked about is this session -
@@ -236,6 +250,7 @@ import Darwin
     /// Waiting must remain cancellable: disconnect can be waiting for a keepalive
     /// thread to exit. The main thread also services SSH authentication/teardown.
     private func acquire() -> Bool {
+        Thread.current.threadDictionary[Self.refusalMarker] = false
         while !Thread.current.isCancelled {
             if sessionLock.try() {
                 let ready = socketLock.withLock { cancellingQuery == nil && activeNativeQuery == nil }
@@ -245,9 +260,11 @@ import Darwin
             // A question about this connection is out, and the main thread is what answers it.
             // Waiting here would hold up that answer, and the session is not let go until the
             // answer is in - neither side would ever move. The caller is told there is no
-            // session to be had instead, which is what the user is being asked about.
+            // session to be had instead, which is what the user is being asked about, and the
+            // refusal is marked so it is not read as work that ran and did nothing.
             if Thread.isMainThread,
                socketLock.withLock({ questionsAwaitingTheMainThread > 0 }) {
+                Thread.current.threadDictionary[Self.refusalMarker] = true
                 return false
             }
             let deadline = Date(timeIntervalSinceNow: 0.01)
