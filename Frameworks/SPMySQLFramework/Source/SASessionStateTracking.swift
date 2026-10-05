@@ -61,8 +61,7 @@ public final class SASessionStateTracking: NSObject {
     /// whose reports have stopped keeps naming whatever it was last told.
     /// - Parameter items: One OK packet's items, in the order the server sent them.
     /// - Returns: Whether `character_set_client` is among the names.
-    @objc(characterSetIsNamedInItems:)
-    public static func characterSetIsNamed(in items: [String]) -> Bool {
+    static func characterSetIsNamed(in items: [String]) -> Bool {
         for (position, item) in items.enumerated() where position % 2 == 0 {
             if item == "character_set_client" {
                 return true
