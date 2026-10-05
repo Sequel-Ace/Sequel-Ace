@@ -219,9 +219,15 @@ import Darwin
             }
             let deadline = Date(timeIntervalSinceNow: 0.01)
             if Thread.isMainThread {
-                // Default mode services main-queue work and the keepalive timer's
-                // synchronous main-thread setup/teardown even without a modal panel.
-                RunLoop.current.run(mode: .default, before: deadline)
+                // The mode the main thread is already running in, because that is the mode
+                // whatever this is waiting for will arrive in. Usually it is the default one,
+                // which services main-queue work and the keepalive timer's synchronous
+                // main-thread setup and teardown. While a question is up it is the modal
+                // panel's instead: the question runs a loop of its own, everything it delivers
+                // is delivered in that mode, and the answer the session is being held for is a
+                // source in it. Pumping only the default mode there would starve that answer,
+                // and the session would be held until its owner gave up waiting for it.
+                RunLoop.current.run(mode: RunLoop.current.currentMode ?? .default, before: deadline)
             }
             let remaining = deadline.timeIntervalSinceNow
             if remaining > 0 {

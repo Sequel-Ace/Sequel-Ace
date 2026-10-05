@@ -177,4 +177,60 @@ final class SASessionLeaseQuestionTests: XCTestCase {
         wait(for: [theOwnerLetGo], timeout: 5)
     }
 
+
+    /// The other ordering: the question is already open when something enters the connection.
+    ///
+    /// Here the modal loop is the outer one and the session's wait runs inside it, which is what
+    /// happens when a callback the modal session delivers asks the connection for something. The
+    /// answer is a source in the modal mode, so a wait that pumps only the default mode starves
+    /// it: the owner cannot be answered, and it holds the session until it gives up waiting.
+    func testACallbackDeliveredByTheOpenQuestionDoesNotStarveTheAnswer() throws {
+        let access = SAConnectionSessionAccess()
+        let theOwnerHoldsTheSession = DispatchSemaphore(value: 0)
+        let theOwnerLetGo = expectation(description: "the owner let the session go")
+        var theOwnerWaitedInVain = false
+
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: true) {
+                theOwnerHoldsTheSession.signal()
+                if self.theAnswerIsBack.wait(timeout: self.answerLimit) != .success {
+                    theOwnerWaitedInVain = true
+                }
+                return true
+            }
+            theOwnerLetGo.fulfill()
+        }
+        XCTAssertEqual(theOwnerHoldsTheSession.wait(timeout: .now() + 10), .success)
+
+        // The question is up: from here the main thread is in a loop of its own, in the mode a
+        // modal panel runs in, and everything it delivers is delivered in that mode.
+        var theCallbackRan = false
+        let entersTheConnection = Timer(timeInterval: 0.05, repeats: false) { _ in
+            _ = access.performQuery {
+                theCallbackRan = true
+                return nil
+            }
+        }
+        // The answer comes after it, in the same mode - the order Jason-Morcos reproduced.
+        var theAnswerIsIn = false
+        let answer = Timer(timeInterval: 0.15, repeats: false) { _ in
+            theAnswerIsIn = true
+            self.theAnswerIsBack.signal()
+        }
+        RunLoop.current.add(entersTheConnection, forMode: .modalPanel)
+        RunLoop.current.add(answer, forMode: .modalPanel)
+
+        let giveUp = Date(timeIntervalSinceNow: 20)
+        while !(theCallbackRan && theAnswerIsIn) && Date() < giveUp {
+            RunLoop.current.run(mode: .modalPanel, before: Date(timeIntervalSinceNow: 0.05))
+        }
+        entersTheConnection.invalidate()
+        answer.invalidate()
+
+        XCTAssertTrue(theAnswerIsIn, "the answer must not be starved by the caller's wait")
+        XCTAssertFalse(theOwnerWaitedInVain, "so the owner is answered rather than timing out")
+        XCTAssertTrue(theCallbackRan)
+        wait(for: [theOwnerLetGo], timeout: 5)
+    }
+
 }
