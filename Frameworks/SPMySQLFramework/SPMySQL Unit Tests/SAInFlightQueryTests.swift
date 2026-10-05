@@ -75,6 +75,57 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertFalse(peerSawTheSocketClose())
     }
 
+    /// A stop meant for a query that has finished leaves the socket of the query that replaced
+    /// it alone.
+    ///
+    /// Reaching the server with a kill request takes time. By the time it comes back, the query
+    /// it was meant for can have finished and a reconnect can have put another one on a socket
+    /// of its own. Ending that one would take a session nobody asked about, and roll back
+    /// whatever it had open.
+    func testAStopForAFinishedQueryLeavesItsSuccessorsSocketAlone() throws {
+        var replacement: [Int32] = [-1, -1]
+        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &replacement) == 0, "no local socket pair available")
+        defer { replacement.filter { $0 >= 0 }.forEach { Darwin.close($0) } }
+
+        inFlightQuery.beginWaiting(forGeneration: 5, onSocket: descriptors[0], serverThread: 42)
+        inFlightQuery.endWaiting(forGeneration: 5)
+        inFlightQuery.beginWaiting(forGeneration: 6, onSocket: replacement[0], serverThread: 43)
+
+        XCTAssertFalse(inFlightQuery.closeSocket(ifGenerationIsWaiting: 5, beforeClosing: {
+            XCTFail("a query that finished has nothing to prepare for")
+        }), "the stop was meant for a query that is no longer there")
+
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), -1,
+                       "the query that replaced it must be untouched")
+        XCTAssertEqual(errno, EAGAIN)
+        XCTAssertFalse(peerSawTheSocketClose(), "and so must the socket the first one had")
+
+        // And the one it is meant for still ends.
+        XCTAssertTrue(inFlightQuery.closeSocket(ifGenerationIsWaiting: 6, beforeClosing: {}))
+        XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), 0)
+    }
+
+    /// With two sockets in play, the one the waiting query is on is the one that ends.
+    ///
+    /// Generation alone does not say which socket was interrupted; this holds the second one up
+    /// against it, so that getting the right number but the wrong socket would show.
+    func testTheSocketThatEndsIsTheOneTheWaitingQueryIsOn() throws {
+        var other: [Int32] = [-1, -1]
+        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &other) == 0, "no local socket pair available")
+        defer { other.filter { $0 >= 0 }.forEach { Darwin.close($0) } }
+
+        inFlightQuery.beginWaiting(forGeneration: 7, onSocket: descriptors[0], serverThread: 42)
+
+        XCTAssertTrue(inFlightQuery.closeSocket(ifGenerationIsWaiting: 7, beforeClosing: {}))
+
+        XCTAssertTrue(peerSawTheSocketClose(), "the query's own socket ended")
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(other[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), -1,
+                       "and no other socket did")
+        XCTAssertEqual(errno, EAGAIN)
+    }
+
     /// Only the query that is waiting says it is waiting.
     ///
     /// A stop whose kill request took a while asks this before it ends the session: by then the
