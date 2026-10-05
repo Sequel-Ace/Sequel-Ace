@@ -889,7 +889,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 
                 NSString *errorString;
                 if ([mySQLConnection lastQueryWasCancelled]) {
-                    errorString = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
+                    // The connection says more than "cancelled" when it has more to say: a
+                    // statement that was already on its way to the server when it was stopped
+                    // may have been carried out, and replacing its error with the bare wording
+                    // here would hide that and invite the user to run it a second time. Its own
+                    // message already begins with this wording.
+                    NSString *theConnectionsAccount = [mySQLConnection lastErrorMessage];
+                    errorString = [theConnectionsAccount length]
+                        ? theConnectionsAccount
+                        : NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
                 } else {
                     errorString = [mySQLConnection lastErrorMessage];
                     
