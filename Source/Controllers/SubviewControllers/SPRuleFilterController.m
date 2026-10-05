@@ -1645,12 +1645,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (!enabled || row < 0 || ![columns count]) return NO;
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
-	// Only a single expression or a flat root group can be addressed by
-	// row index; nested groups break the 1:1 mapping between NSRuleEditor
-	// row index and top-level child index (the rule editor inserts extra
-	// rows for the subgroup's own children). The helper rejects those and
-	// the drop target does too, so the user can still append a fresh rule
-	// via the drop box.
+	// `row` addresses the root children, not rule editor rows. The helper takes it that way; it
+	// refuses only a `row` past the end and a target child that is itself a group - a group
+	// elsewhere in the tree is fine. The drop target refuses the same two and nothing else, so a
+	// plain top-level row beside a nested group is a valid target.
 	NSDictionary *combined = [SARuleFilterRootConjunction replacingRule:newRule
 	                                                              atRow:row
 	                                                                 in:[self serializedFilter]
@@ -1659,14 +1657,18 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	// Dropping onto a row that was waiting for its first edit replaces it with a filter the user
 	// wants: end the tracking, or the filter that takes its place is born waiting. (The restored
-	// row gets a checkbox of its own, not this one - measured.)
+	// row gets a checkbox of its own, not this one - the rule editor builds the display values
+	// for a restored row from scratch, see -_restoreSerializedFilter:.)
 	//
-	// Only now, because `row` is an ordinal among the top-level rows and the tracker addresses
-	// rule editor rows. The two differ as soon as a nested group sits above the dropped row - and
-	// a refused drop asking the tracker about the wrong row switched a waiting row on with no
-	// value in it, so `column = ''` became a filter. On the trees that get this far the two are
-	// the same number: the helper above accepts a lone expression or a flat root group, and in
-	// those every row is a top-level one.
+	// Only after the line above, which is what keeps a refused drop from changing anything: it
+	// used to ask the tracker first, and since `row` counts no subrows while the tracker counts
+	// all of them, a refused drop could switch an unrelated waiting row on with nothing in it -
+	// `column = ''` became a filter while the drop itself did nothing.
+	//
+	// The two numbers can still differ here, when a group sits above the dropped row. Asking
+	// about the wrong row then is harmless rather than right: `combined` was taken before this
+	// line, so the restore below puts every row back the way that snapshot has it. Worth knowing
+	// before moving either line.
 	[self _enablePendingStarterInRow:row];
 
 	[self restoreSerializedFilters:combined];

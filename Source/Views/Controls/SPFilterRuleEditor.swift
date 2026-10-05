@@ -92,6 +92,9 @@ enum SARuleFilterContextMenu {
         /// Clears the mark a restored row carries, run when this row's tracking ends.
         var clearRestoredMark: (() -> Void)?
 
+        /// - Parameters:
+        ///   - checkbox: The row's enable checkbox.
+        ///   - clearRestoredMark: Clears the mark a restored row carries.
         init(checkbox: NSButton, clearRestoredMark: (() -> Void)?) {
             self.checkbox = checkbox
             self.clearRestoredMark = clearRestoredMark

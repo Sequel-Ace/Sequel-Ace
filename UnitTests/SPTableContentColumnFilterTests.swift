@@ -315,8 +315,11 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertEqual(checkbox(in: editor)?.state, .off, "the set-aside IS NULL stays unchecked")
     }
 
-    /// Verifies a dropped value replaces the seeded row and comes out checked, although the rule editor
-    /// reuses the replaced row's checkbox; a drop that cannot become a rule leaves the row waiting.
+    /// Verifies a dropped value replaces the seeded row and comes out checked; a drop that cannot
+    /// become a rule leaves the row waiting.
+    ///
+    /// The replaced row gets a checkbox of its own: the rule editor builds the display values for
+    /// a restored row from scratch. What the drop paths end is the tracking, not the button.
     func testDroppedValuesAndTheSeededRow() throws {
         for isConjunction in [true, false] {
             let (controller, editor) = try makeBoundController()
