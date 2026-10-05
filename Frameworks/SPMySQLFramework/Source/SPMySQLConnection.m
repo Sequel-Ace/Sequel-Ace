@@ -1743,6 +1743,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	lastWorkWasAbandoned = NO;
 	lastAbandonedWorkMayHaveChangedData = NO;
 
+	// The session the work sets out on. What becomes of the work is about that session, and the
+	// wait below can return long after it: the work can finish and close its session, and
+	// something else can connect and open a transaction in the meantime.
+	NSUInteger theSessionTheWorkSetOutOn = self.sessionAccess.socketToken;
+
 	// The stamp is read on other threads than the one counting queries, so it comes from the
 	// in-flight record, which takes each number under its lock as soon as it is counted.
 	SAConnectionWorkOutcome *outcome = [connectionWorkCoordinator runWork:work
@@ -1785,7 +1790,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// before the work is kept instead, and only the stopped statement ends. The work recorded
 		// which of these it is before it first sent anything, so a transaction the stopped statement
 		// opens itself does not count.
-		if ([SAConnectionCancellation replacesSessionWhenWorkIsGivenUpWithSessionUse:[outcome sessionUse]]) {
+		// And only while it is still that session. One that replaced it in the meantime was
+		// never touched by this work: marking it would have the next query close a session
+		// nothing is wrong with, and roll back a transaction somebody else had just opened.
+		if ([SAConnectionCancellation replacesSessionWhenWorkIsGivenUpWithSessionUse:[outcome sessionUse]]
+		    && self.sessionAccess.socketToken == theSessionTheWorkSetOutOn) {
 			sessionMustBeReplacedBeforeUse = YES;
 		}
 
