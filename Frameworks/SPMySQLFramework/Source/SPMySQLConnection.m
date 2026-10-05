@@ -1741,6 +1741,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Whatever was abandoned before, this is the work the caller will ask about next.
 	lastWorkWasAbandoned = NO;
+	lastAbandonedWorkMayHaveChangedData = NO;
 
 	// The stamp is read on other threads than the one counting queries, so it comes from the
 	// in-flight record, which takes each number under its lock as soon as it is counted.
@@ -1768,19 +1769,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// The caller is told the same thing a cancelled query tells it, because that is what this
 	// is: callers that judge by the error state rather than by the result see it too.
 	if (![outcome finished]) {
-		[self _recordWorkAsCancelled];
-		lastWorkWasAbandoned = YES;
-
 		// Giving up on the waiting does not take back what was already sent. A statement that can
 		// change data, or commit, goes on running and the server may carry it out - so what became
 		// of it is not known, and saying only that the query was cancelled invites the caller to
 		// do it again. Row saving does exactly that: it keeps the edit and offers a retry, which
-		// is how a row comes to be inserted twice.
-		if ([outcome sentSomethingThatMayHaveChangedData]) {
-			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@",
-				NSLocalizedString(@"Query cancelled.", @"Query cancelled error"),
-				NSLocalizedString(@"It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again.", @"Note added to the error of a statement that was still running when the user stopped waiting for it")]];
-		}
+		// is how a row comes to be inserted twice. Noted before the outcome is recorded, because
+		// recording it is what composes the message.
+		lastAbandonedWorkMayHaveChangedData = [outcome sentSomethingThatMayHaveChangedData];
+		[self _recordWorkAsCancelled];
+		lastWorkWasAbandoned = YES;
 
 		// A session the work used outside a transaction is on its way out: the work closes it once it
 		// finishes, and may have changed it before. Nothing else uses it any more - a value escaped
@@ -1806,7 +1803,19 @@ asm(".desc ___crashreporter_info__, 0x10");
 - (void)_recordWorkAsCancelled
 {
 	lastQueryWasCancelled = YES;
-	[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+	NSString *theMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
+
+	// Work that had already sent something able to change data is not simply cancelled: giving
+	// up on the waiting does not take back what was sent, and the server may carry it out. The
+	// note is composed here because this runs twice for such work - once when the waiting ends,
+	// and again when the work finishes afterwards and is settled - and the second time would
+	// otherwise replace the first with a message that invites the caller to try again.
+	if (lastAbandonedWorkMayHaveChangedData) {
+		theMessage = [NSString stringWithFormat:@"%@\n\n%@", theMessage,
+			NSLocalizedString(@"It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again.", @"Note added to the error of a statement that was still running when the user stopped waiting for it")];
+	}
+
+	[self _updateLastErrorMessage:theMessage];
 	[self _updateLastErrorID:1317];
 	[self _updateLastSqlstate:@"70100"];
 }

@@ -1096,12 +1096,22 @@ final class SAStatementMayCommitTests: XCTestCase {
         }
     }
 
-    /// Turning autocommit on commits what was pending; the other session settings do not.
+    /// Setting autocommit commits what was pending, however it is written and wherever it
+    /// stands; the other session settings do not.
     func testAutocommitAloneAmongTheSessionSettings() {
         XCTAssertTrue(mayCommit("SET autocommit = 1"))
         XCTAssertTrue(mayCommit("set  AUTOCOMMIT=0"))
+        XCTAssertTrue(mayCommit("SET SESSION autocommit = 1"))
+        XCTAssertTrue(mayCommit("SET @@session.autocommit = 1"))
+        XCTAssertTrue(mayCommit("SET sql_mode = '', autocommit = 1"))
         XCTAssertFalse(mayCommit("SET NAMES utf8mb4"))
         XCTAssertFalse(mayCommit("SET time_zone = '+00:00'"))
+    }
+
+    /// What a procedure does cannot be read from the statement, so a call is taken to commit.
+    func testACallIsTakenToCommit() {
+        XCTAssertTrue(mayCommit("CALL do_the_thing()"))
+        XCTAssertTrue(mayCommit("  call  other.proc(1)"))
     }
 
     /// Ordinary statements, and the one that changes nothing either way.

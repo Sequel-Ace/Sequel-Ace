@@ -417,9 +417,10 @@ final class SADatabaseAssertion: NSObject {
     /// that start a transaction and commit whatever was pending, and the data-definition and
     /// administrative statements the server commits around. MySQL and MariaDB both document this
     /// set; `ROLLBACK` is left out, because a reply to it that never arrives leaves the same
-    /// state either way.
+    /// state either way. `CALL` is in it because what a procedure does cannot be read from the
+    /// statement, and a procedure may commit.
     static let keywordsThatMayCommit: Set<String> = [
-        "COMMIT", "BEGIN", "START",
+        "COMMIT", "BEGIN", "START", "CALL",
         "ALTER", "CREATE", "DROP", "RENAME", "TRUNCATE",
         "GRANT", "REVOKE",
         "LOCK", "UNLOCK",
@@ -453,15 +454,18 @@ final class SADatabaseAssertion: NSObject {
         if keywordsThatMayCommit.contains(keyword) {
             return true
         }
-        // Turning autocommit on commits whatever was pending.
+        // Setting autocommit commits whatever was pending. It can be written with a scope
+        // (`SET SESSION autocommit = 1`, `SET @@session.autocommit = 1`) and can stand among
+        // other assignments, so the whole statement is looked at rather than the word after SET.
+        // A string that merely contains the word costs an extra warning, which is the side to
+        // err on.
         guard keyword == "SET" else {
             return false
         }
         let statementCode = needsStripping
             ? statement
             : Substring(stripSQLComments(String(statement), serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
-        let afterSet = statementCode.dropFirst(keyword.count).drop { $0.isWhitespace }
-        return afterSet.prefix { isIdentifierCharacter($0) }.uppercased() == "AUTOCOMMIT"
+        return statementCode.range(of: "autocommit", options: .caseInsensitive) != nil
     }
 
     /// The words after `SET` that start a statement changing more than the session: a password, a

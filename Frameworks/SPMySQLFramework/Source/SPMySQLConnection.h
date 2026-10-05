@@ -117,6 +117,7 @@
 	// way out; and whether the character set on record was changed for the next session only, so
 	// the current one must not be used any more
 	BOOL lastWorkWasAbandoned;
+	BOOL lastAbandonedWorkMayHaveChangedData;
 	BOOL sessionMustBeReplacedBeforeUse;
 
 	// Whether the last session was closed while its proxy was left running
@@ -262,6 +263,7 @@
 
 - (BOOL)isConnected;
 - (BOOL)isConnectedViaSSL;
+/** Whether the connection answers, reconnecting once if it does not. */
 - (BOOL)checkConnection;
 /** Ends the interface's wait for connection work, and asks that work to stop. */
 - (void)cancelConnectionCheck;
