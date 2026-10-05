@@ -54,7 +54,9 @@
 + (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
 /** Records that a cancellation ended the native read, so the session's next use recovers. */
-- (void)noteNativeReadEndedByCancellation;
+- (void)noteNativeReadEndedByCancellationOnSocket:(NSUInteger)socketToken;
+/** Names the session a cancellation is about to close. */
+- (NSUInteger)sessionSocketToken;
 
 @end
 

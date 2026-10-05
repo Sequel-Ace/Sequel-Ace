@@ -917,9 +917,14 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  * server accepted the kill for a session with a transaction open. What the session's own
  * bookkeeping needs is the consequence.
  */
-- (void)noteNativeReadEndedByCancellation
+- (void)noteNativeReadEndedByCancellationOnSocket:(NSUInteger)socketToken
 {
-	[self.sessionAccess noteCancellationEndedTheNativeRead];
+	[self.sessionAccess noteCancellationEndedTheNativeReadOnSocket:socketToken];
+}
+
+- (NSUInteger)sessionSocketToken
+{
+	return self.sessionAccess.socketToken;
 }
 
 @end

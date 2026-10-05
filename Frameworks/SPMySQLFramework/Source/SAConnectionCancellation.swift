@@ -52,8 +52,13 @@ public protocol SAConnectionCancellationHost: AnyObject {
 
     /// Records that the native read was ended here, so the session's next use recovers rather
     /// than carrying on with a read that was cut off.
-    @objc(noteNativeReadEndedByCancellation)
-    func noteNativeReadEndedByCancellation()
+    @objc(noteNativeReadEndedByCancellationOnSocket:)
+    func noteNativeReadEndedByCancellation(onSocket socketToken: UInt)
+
+    /// Names the session a cancellation is about to close, so that what follows can tell it from
+    /// one that replaced it.
+    @objc(sessionSocketToken)
+    var sessionSocketToken: UInt { get }
 }
 
 /// A mark the current thread carries while it runs a piece of work; runs can nest, and the mark
@@ -265,6 +270,9 @@ public final class SAConnectionCancellation: NSObject {
     /// Closes the socket of the query with this number, if it is still waiting on the server.
     /// - Parameter generation: The query that was asked to stop.
     private func closeSocket(ifGenerationIsWaiting generation: UInt) {
+        // Taken before the socket goes, so it names the session being closed rather than
+        // whichever one has taken its place by the time this is reported.
+        let theSessionBeingClosed = host?.sessionSocketToken ?? 0
         let theSocketWasClosed = inFlightQuery.closeSocket(ifGenerationIsWaiting: generation) { [weak self] in
             // The query ends because it was asked to, so it counts as cancelled rather than
             // failed, and the attempt that follows does not make anybody wait again.
@@ -274,7 +282,7 @@ public final class SAConnectionCancellation: NSObject {
         if theSocketWasClosed {
             // The session's own bookkeeping has to know: a read cut off here cannot be carried on
             // with, and the next use has to recover rather than pick it up.
-            host?.noteNativeReadEndedByCancellation()
+            host?.noteNativeReadEndedByCancellation(onSocket: theSessionBeingClosed)
         }
     }
 

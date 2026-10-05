@@ -693,7 +693,7 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         // accepted the kill for a session with a transaction open. SAConnectionCancellation does
         // both against the in-flight query's own duplicate; these two lines stand for it.
         XCTAssertEqual(Darwin.shutdown(sockets[0], SHUT_RDWR), 0)
-        access.noteCancellationEndedTheNativeRead()
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
         var byte: UInt8 = 0
         XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
         let recovered = DispatchSemaphore(value: 0)
@@ -722,7 +722,7 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         // accepted the kill for a session with a transaction open. SAConnectionCancellation does
         // both against the in-flight query's own duplicate; these two lines stand for it.
         XCTAssertEqual(Darwin.shutdown(sockets[0], SHUT_RDWR), 0)
-        access.noteCancellationEndedTheNativeRead()
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
         access.endNativeQuery()
         _ = access.performQuery({
             XCTAssertTrue(access.currentQueryWasCancelled)
@@ -748,6 +748,46 @@ final class SAConnectionSessionAccessTests: XCTestCase {
             return true
         })
         XCTAssertEqual(access.performQuery { "later" } as? String, "later")
+    }
+
+    /// Telling the lease a read was cut off names the session it was cut off on, and a session
+    /// that replaced it in the meantime is left alone.
+    ///
+    /// Closing the socket and saying so are two steps, and a reconnect can put a new session in
+    /// place between them. Marking that one would send a session nothing is wrong with through a
+    /// reconnect it does not need, rolling back a transaction it had just opened.
+    func testRecoveryIsMarkedOnTheSessionThatWasCutOffAndNoOther() throws {
+        let access = SAConnectionSessionAccess()
+        var old = [Int32](repeating: -1, count: 2)
+        var replacement = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &old), 0)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &replacement), 0)
+        defer { for socket in old + replacement where socket >= 0 { Darwin.close(socket) } }
+
+        try access.trackSocket(old[0], serverThreadID: 41)
+        let theSessionThatWasCutOff = access.socketToken
+
+        // The reconnect gets in between the socket closing and the lease being told about it.
+        try access.trackSocket(replacement[0], serverThreadID: 42)
+        XCTAssertNotEqual(access.socketToken, theSessionThatWasCutOff)
+
+        access.noteCancellationEndedTheNativeRead(onSocket: theSessionThatWasCutOff)
+
+        // The replacement is usable as it stands: nothing was cut off on it.
+        var theReplacementRecovered = false
+        XCTAssertEqual(access.performQuery({ "next" },
+                                           recover: { theReplacementRecovered = true; return true }) as? String,
+                       "next")
+        XCTAssertFalse(theReplacementRecovered,
+                       "a session that replaced the one cut off has nothing to recover from")
+
+        // And the session that was cut off would have been marked, had it still been the one.
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
+        var theCutOffSessionRecovered = false
+        XCTAssertEqual(access.performQuery({ "later" },
+                                           recover: { theCutOffSessionRecovered = true; return true }) as? String,
+                       "later")
+        XCTAssertTrue(theCutOffSessionRecovered, "the session that was cut off does recover")
     }
 
     func testFailedKillDoesNotInterruptAQueryThatFinishedDuringConnectionSetup() throws {
@@ -851,7 +891,7 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         // accepted the kill for a session with a transaction open. SAConnectionCancellation does
         // both against the in-flight query's own duplicate; these two lines stand for it.
         XCTAssertEqual(Darwin.shutdown(replacement[0], SHUT_RDWR), 0)
-        access.noteCancellationEndedTheNativeRead()
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
         access.endNativeQuery()
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), 0)
     }

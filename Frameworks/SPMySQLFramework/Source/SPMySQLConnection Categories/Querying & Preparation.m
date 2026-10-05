@@ -990,11 +990,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// no transaction to spare, because the server accepted nothing. Without this the read waits
 	// out its own timeout and the reconnect below is what ends it, which is minutes rather than
 	// moments.
+	// Named before the socket goes, so what follows marks the session that was closed rather
+	// than one a reconnect has put in its place since.
+	NSUInteger theSessionBeingClosed = self.sessionAccess.socketToken;
 	if ([inFlightQuery closeSocketIfGenerationIsWaiting:theQueryBeingStopped
 	                                      beforeClosing:^{
 		self->lastQueryWasCancelled = YES;
 	}]) {
-		[self noteNativeReadEndedByCancellation];
+		[self noteNativeReadEndedByCancellationOnSocket:theSessionBeingClosed];
 		return;
 	}
 

@@ -98,15 +98,20 @@
 		[self _flushMultipleResultSets];
 	}
 
-	// What a statement did to the session's transaction is reported in the packet that closes its
-	// result, after the rows, so the record taken when the statement was sent still describes the
-	// statement before it. Everything that held the connection passes through here with its result
-	// read, which is where that word has arrived. Stopping a query reads this record to decide
-	// whether its session may be closed, and a session wrongly thought to have no transaction open
-	// loses the uncommitted work it did have. Only the transaction is taken from here: what the
-	// session says about its character set is evidence of a change, counted where it is recorded.
+	// What a statement did to the session is reported in the packet that closes its result, after
+	// the rows, so the record taken when the statement was sent still describes the statement
+	// before it. Everything that held the connection passes through here with its result read -
+	// and, for a CALL, with the results after it drained just above - which is where that word has
+	// arrived. It matters for all three: stopping a query reads the transaction to decide whether
+	// its session may be closed, and a session wrongly thought to have no transaction open loses
+	// the uncommitted work it did have; while a procedure that returned its rows under
+	// NO_BACKSLASH_ESCAPES, or in a character set of its own, leaves the escaper quoting the next
+	// value for a session that has since gone back to what it was.
 	if (mySQLConnection) {
-		[valueEscaper recordSessionOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0];
+		[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+		                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+		                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+		                            isHandshake:NO];
 	}
 
 	// A streaming result gets here only once its download is over. If stopping it was asked for

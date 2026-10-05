@@ -56,7 +56,10 @@ final class SAConnectionCancellationTests: XCTestCase {
         func recordWorkAsCancelled() { note("recorded") }
         /// Records that the session was closed.
         func closeSessionIfConnected() { note("closed") }
-        func noteNativeReadEndedByCancellation() { note("recoverNeeded") }
+        var sessionSocketToken: UInt = 1
+        func noteNativeReadEndedByCancellation(onSocket socketToken: UInt) {
+            note("recoverNeeded(\(socketToken))")
+        }
     }
 
     /// A connection stand-in whose kill request does not come back until the test lets it, as a
@@ -79,7 +82,8 @@ final class SAConnectionCancellationTests: XCTestCase {
         func releaseHeldConnection() {}
         func recordWorkAsCancelled() {}
         func closeSessionIfConnected() {}
-        func noteNativeReadEndedByCancellation() {}
+        var sessionSocketToken: UInt = 1
+        func noteNativeReadEndedByCancellation(onSocket socketToken: UInt) {}
     }
 
     private let host = SARecordingHost()

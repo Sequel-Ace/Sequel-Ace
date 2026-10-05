@@ -161,8 +161,18 @@ import Darwin
     ///
     /// The decision belongs to the caller, for the reasons above; what is kept here is the
     /// consequence - a read that was cut off cannot simply be carried on with.
-    @objc public func noteCancellationEndedTheNativeRead() {
-        socketLock.withLock { recoveryRequired = true }
+    ///
+    /// It is the session that was cut off that has to recover. A reconnect can put a new one in
+    /// place between the socket closing and this being told about it, and marking that one would
+    /// send a session nothing is wrong with through a reconnect it does not need - rolling back a
+    /// transaction it had just opened. The token names the session the caller closed.
+    /// - Parameter socketToken: ``socketToken`` as it was when the caller closed the socket.
+    @objc(noteCancellationEndedTheNativeReadOnSocket:)
+    public func noteCancellationEndedTheNativeRead(onSocket socketToken: UInt) {
+        socketLock.withLock {
+            guard socketGeneration == socketToken else { return }
+            recoveryRequired = true
+        }
     }
 
     /// Runs a query only after the current reconnect (including restoration) ends.
