@@ -4447,3 +4447,6 @@
 
 /* Note added to the error of a statement whose outcome could not be established */
 "The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again." = "The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.";
+
+/* Note added to the error of a statement that was still running when the user stopped waiting for it */
+"It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again." = "It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again.";

@@ -922,6 +922,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	[self.sessionAccess noteCancellationEndedTheNativeReadOnSocket:socketToken];
 }
 
+/**
+ * Names the session a cancellation is about to close, so that what follows it can tell that
+ * session from one a reconnect has put in its place since.
+ *
+ * @return The session access's socket token.
+ */
 - (NSUInteger)sessionSocketToken
 {
 	return self.sessionAccess.socketToken;
@@ -1765,6 +1771,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self _recordWorkAsCancelled];
 		lastWorkWasAbandoned = YES;
 
+		// Giving up on the waiting does not take back what was already sent. A statement that can
+		// change data, or commit, goes on running and the server may carry it out - so what became
+		// of it is not known, and saying only that the query was cancelled invites the caller to
+		// do it again. Row saving does exactly that: it keeps the edit and offers a retry, which
+		// is how a row comes to be inserted twice.
+		if ([outcome sentSomethingThatMayHaveChangedData]) {
+			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@",
+				NSLocalizedString(@"Query cancelled.", @"Query cancelled error"),
+				NSLocalizedString(@"It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again.", @"Note added to the error of a statement that was still running when the user stopped waiting for it")]];
+		}
+
 		// A session the work used outside a transaction is on its way out: the work closes it once it
 		// finishes, and may have changed it before. Nothing else uses it any more - a value escaped
 		// meanwhile is escaped for the session that replaces it. A session whose transaction was open
@@ -1896,6 +1913,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _disconnectPreservingProxyReconnect:NO];
 }
 
+/**
+ * Closes the connection, optionally leaving the proxy able to reconnect.
+ *
+ * @param preserveProxyReconnect Whether the proxy keeps its ability to reconnect afterwards.
+ */
 - (void)_disconnectPreservingProxyReconnect:(BOOL)preserveProxyReconnect
 {
     SPLog(@"_disconnect");

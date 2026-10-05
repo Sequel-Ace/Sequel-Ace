@@ -14,11 +14,13 @@ import XCTest
 final class SAUncertainWriteTests: XCTestCase {
 
     private func outcomeIsUnknown(reached: Bool = true, changesData: Bool = true,
-                                  connectionLoss: Bool = true, rollsBack: Bool = false) -> Bool {
+                                  connectionLoss: Bool = true, rollsBack: Bool = false,
+                                  mayCommit: Bool = false) -> Bool {
         SAUncertainWrite.outcomeIsUnknown(statementReachedTheServer: reached,
                                           changesData: changesData,
                                           errorIsConnectionLoss: connectionLoss,
-                                          sessionRollsItBack: rollsBack)
+                                          sessionRollsItBack: rollsBack,
+                                          statementMayCommit: mayCommit)
     }
 
     /// A write sent under autocommit whose reply never came: the one case nothing can settle.
@@ -50,5 +52,21 @@ final class SAUncertainWriteTests: XCTestCase {
     func testOneKnownReasonIsEnough() {
         XCTAssertFalse(outcomeIsUnknown(reached: false, changesData: false,
                                         connectionLoss: false, rollsBack: true))
+    }
+
+    /// A statement that can commit is unknown whenever its reply is lost, whatever the session
+    /// last said about its transaction.
+    ///
+    /// The flags describe the statement before this one: a COMMIT that may just have committed
+    /// would still be sitting behind an "open transaction" of its own making.
+    func testACommitIsNotSettledByTheFlagsItLeavesBehind() {
+        XCTAssertTrue(outcomeIsUnknown(rollsBack: true, mayCommit: true))
+        XCTAssertTrue(outcomeIsUnknown(changesData: false, rollsBack: true, mayCommit: true))
+    }
+
+    /// But it is still only in question once it has been sent and the reply is what went missing.
+    func testACommitThatWasNeverSentOrWasAnsweredIsSettled() {
+        XCTAssertFalse(outcomeIsUnknown(reached: false, mayCommit: true))
+        XCTAssertFalse(outcomeIsUnknown(connectionLoss: false, mayCommit: true))
     }
 }

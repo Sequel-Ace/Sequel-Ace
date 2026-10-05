@@ -190,6 +190,23 @@ public final class SADatabaseAssertionState: NSObject {
         )
     }
 
+    /// Whether a statement can commit a transaction, asked of a connected handle.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - rawConnection: The connected handle, for the server's version.
+    /// - Returns: Whether the statement can commit.
+    @objc(statementMayCommit:onMySQLConnection:)
+    public static func statementMayCommit(_ query: String, onMySQLConnection rawConnection: UnsafeMutableRawPointer) -> Bool {
+        let connection = rawConnection.assumingMemoryBound(to: MYSQL.self)
+        let serverVersion = Int(mysql_get_server_version(connection))
+        let serverInfo = mysql_get_server_info(connection).map { String(cString: $0) } ?? ""
+        return SADatabaseAssertion.statementMayCommit(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverInfo.range(of: "mariadb", options: .caseInsensitive) != nil
+        )
+    }
+
     @objc(recordSuccessfulQuery:onMySQLConnection:)
     public func recordSuccessfulQuery(
         _ query: String,
@@ -372,6 +389,11 @@ public final class SADatabaseAssertionState: NSObject {
         )
     }
 
+    /// Reads a string the client library returned, in the connection's string encoding.
+    /// - Parameters:
+    ///   - bytes: The library's string, or nil.
+    ///   - encodingValue: The connection's string encoding.
+    /// - Returns: The string, or nil if there was none or it did not decode.
     private func decodedCString(_ bytes: UnsafePointer<CChar>?, encodingValue: UInt) -> String? {
         guard let bytes else {
             return nil
@@ -390,6 +412,57 @@ final class SADatabaseAssertion: NSObject {
     static let keywordsLeavingDataAlone: Set<String> = [
         "SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "TABLE", "VALUES", "HELP", "SET", "USE", "KILL",
     ]
+
+    /// The first keywords of statements that can commit a transaction: `COMMIT` itself, the ones
+    /// that start a transaction and commit whatever was pending, and the data-definition and
+    /// administrative statements the server commits around. MySQL and MariaDB both document this
+    /// set; `ROLLBACK` is left out, because a reply to it that never arrives leaves the same
+    /// state either way.
+    static let keywordsThatMayCommit: Set<String> = [
+        "COMMIT", "BEGIN", "START",
+        "ALTER", "CREATE", "DROP", "RENAME", "TRUNCATE",
+        "GRANT", "REVOKE",
+        "LOCK", "UNLOCK",
+        "ANALYZE", "CHECK", "CHECKSUM", "OPTIMIZE", "REPAIR",
+        "FLUSH", "INSTALL", "UNINSTALL",
+    ]
+
+    /// Whether a statement can commit a transaction, so that losing the reply to it leaves what
+    /// became of that transaction unknown.
+    ///
+    /// What the session last reported about its transaction describes the statement before this
+    /// one, so it cannot settle this one: a `COMMIT` whose reply was lost may have committed, and
+    /// the flags would still show the transaction open. Only the first keyword counts, after
+    /// comments, as elsewhere here.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - serverVersion: The server's version number, for executable comments.
+    ///   - serverIsMariaDB: Whether the server is MariaDB, for executable comments.
+    /// - Returns: Whether the statement can commit.
+    static func statementMayCommit(_ query: String, serverVersion: Int, serverIsMariaDB: Bool) -> Bool {
+        guard let first = query.firstIndex(where: { !$0.isWhitespace }) else {
+            return false
+        }
+        let rest = query[first...]
+        let needsStripping = rest.first == "#" || rest.first == "(" || rest.hasPrefix("--") || rest.hasPrefix("/*")
+        let code = needsStripping
+            ? Substring(stripSQLComments(query, serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+            : rest
+        let statement = code.drop { $0.isWhitespace || $0 == "(" }
+        let keyword = statement.prefix { isIdentifierCharacter($0) }.uppercased()
+        if keywordsThatMayCommit.contains(keyword) {
+            return true
+        }
+        // Turning autocommit on commits whatever was pending.
+        guard keyword == "SET" else {
+            return false
+        }
+        let statementCode = needsStripping
+            ? statement
+            : Substring(stripSQLComments(String(statement), serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+        let afterSet = statementCode.dropFirst(keyword.count).drop { $0.isWhitespace }
+        return afterSet.prefix { isIdentifierCharacter($0) }.uppercased() == "AUTOCOMMIT"
+    }
 
     /// The words after `SET` that start a statement changing more than the session: a password, a
     /// user's default roles, the resource group of other threads, or - MariaDB's `SET STATEMENT … FOR` -

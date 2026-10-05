@@ -36,6 +36,7 @@ public final class SAConnectionWorkOutcome: NSObject {
     private var workHasFinished = false
     private var abandonedAtStamp: UInt?
     private var storedSessionUse = SAWorkSessionUse.untouched
+    private var hasSentSomethingThatMayHaveChangedData = false
 
     /// Whether the work finished before the waiting ended.
     @objc public var finished = false
@@ -61,19 +62,36 @@ public final class SAConnectionWorkOutcome: NSObject {
         return storedSessionUse
     }
 
+    /// Whether the work has sent a statement that can change data or commit.
+    ///
+    /// Giving up on such work does not undo what it sent: the statement goes on running, and the
+    /// server may carry it out. Told that its work was simply cancelled, a caller would offer to
+    /// do it again - which is how a row comes to be inserted twice.
+    @objc public var sentSomethingThatMayHaveChangedData: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return hasSentSomethingThatMayHaveChangedData
+    }
+
     /// Lets the work send something to the session, unless it has been given up on. Called by the
     /// worker while it holds the connection, before each statement.
     ///
     /// The first call records whether the session had a transaction open before the work sent
     /// anything. A statement the work sends can open a transaction and report it before the work
     /// is given up on; what counts for the stop is the transaction that was there before.
-    /// - Parameter sessionHasOpenTransaction: Whether the session has a transaction open right now.
+    /// - Parameters:
+    ///   - sessionHasOpenTransaction: Whether the session has a transaction open right now.
+    ///   - statementMayChangeData: Whether the statement about to be sent can change data or
+    ///     commit, which is what makes giving up on the work leave an unknown outcome behind.
     /// - Returns: Whether the work may send; false once it has been given up on.
-    func beginSessionUse(sessionHasOpenTransaction: Bool) -> Bool {
+    func beginSessionUse(sessionHasOpenTransaction: Bool, statementMayChangeData: Bool) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         guard abandonedAtStamp == nil else {
             return false
+        }
+        if statementMayChangeData {
+            hasSentSomethingThatMayHaveChangedData = true
         }
         if storedSessionUse == .untouched {
             storedSessionUse = sessionHasOpenTransaction ? .insideTransaction : .outsideTransaction
@@ -169,17 +187,27 @@ public final class SAConnectionWorkCoordinator: NSObject {
     ///
     /// Work a coordinator runs also records here whether a transaction was open before it first
     /// used the session. Work that runs where it was asked for is never given up on.
-    /// - Parameter sessionHasOpenTransaction: Whether the session has a transaction open right now.
+    /// - Parameters:
+    ///   - sessionHasOpenTransaction: Whether the session has a transaction open right now.
+    ///   - statementMayChangeData: Whether the statement about to be sent can change data.
     /// - Returns: Whether the work may send; false for work that has been given up on.
-    @objc(currentWorkMaySendWithOpenTransaction:)
-    public static func currentWorkMaySend(sessionHasOpenTransaction: Bool) -> Bool {
+    @objc(currentWorkMaySendWithOpenTransaction:statementMayChangeData:)
+    public static func currentWorkMaySend(sessionHasOpenTransaction: Bool,
+                                          statementMayChangeData: Bool) -> Bool {
         guard !currentWorkHasBeenAbandoned else {
             return false
         }
         guard let outcome = Thread.current.threadDictionary[runningWorkOutcomeKey] as? SAConnectionWorkOutcome else {
             return true
         }
-        return outcome.beginSessionUse(sessionHasOpenTransaction: sessionHasOpenTransaction)
+        return outcome.beginSessionUse(sessionHasOpenTransaction: sessionHasOpenTransaction,
+                                       statementMayChangeData: statementMayChangeData)
+    }
+
+    /// Whether the work running on the current thread has sent something that can change data.
+    @objc public static var currentWorkSentSomethingThatMayHaveChangedData: Bool {
+        let outcome = Thread.current.threadDictionary[runningWorkOutcomeKey] as? SAConnectionWorkOutcome
+        return outcome?.sentSomethingThatMayHaveChangedData ?? false
     }
 
     /// Whether connection work asked for on this thread should be handed to a worker thread.

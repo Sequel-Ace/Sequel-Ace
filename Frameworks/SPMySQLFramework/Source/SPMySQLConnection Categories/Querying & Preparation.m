@@ -446,7 +446,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// was reported as not having run. Nothing is recorded either: the connection's state belongs
 	// to whatever runs next. Work that goes ahead records whether a transaction was open before it
 	// first used the session; stopping it later decides by that.
-	if (![SAConnectionWorkCoordinator currentWorkMaySendWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
+	// What the statement can do is recorded with the send, so that work given up on later can
+	// say whether anything it sent may have taken effect.
+	BOOL theStatementMayChangeData = [SAOutsideStatements areRunningOnCurrentThread]
+		|| ![SADatabaseAssertionState statementLeavesDataAlone:theQueryString onMySQLConnection:mySQLConnection]
+		|| [SADatabaseAssertionState statementMayCommit:theQueryString onMySQLConnection:mySQLConnection];
+	if (![SAConnectionWorkCoordinator currentWorkMaySendWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                                                 statementMayChangeData:theStatementMayChangeData]) {
 		[self _unlockConnection];
 		return nil;
 	}
@@ -615,10 +621,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				                                                                                             autocommit:(theServerStatus & SERVER_STATUS_AUTOCOMMIT) != 0
 				                                                                                    autocommitAtConnect:sessionAutocommitAtConnect];
 			}
+			BOOL theStatementMayCommit = mySQLConnection
+				&& [SADatabaseAssertionState statementMayCommit:theQueryString onMySQLConnection:mySQLConnection];
 			whatBecameOfTheStatementIsUnknown = [SAUncertainWrite outcomeIsUnknownForStatementThatReachedTheServer:theStatementReachedTheServer
 			                                                                                          changesData:theStatementChangesData
 			                                                                                errorIsConnectionLoss:[SPMySQLConnection isErrorIDConnectionError:theErrorID]
-			                                                                                   sessionRollsItBack:theSessionRollsItBack];
+			                                                                                   sessionRollsItBack:theSessionRollsItBack
+			                                                                                    statementMayCommit:theStatementMayCommit];
+
+			// The statement is not sent again, so nothing else here establishes that the
+			// connection has gone. Left as it is, the handle keeps its freshly stamped
+			// last-used time and the liveness probe passes over a handle whose vio the client
+			// library has already cleared: every write for the next half minute would be sent
+			// into the same dead session and restart that window. It counts as lost, and the
+			// next use restores it.
+			if (whatBecameOfTheStatementIsUnknown && state == SPMySQLConnected) {
+				state = SPMySQLConnectionLostInBackground;
+			}
 
 			if (whatBecameOfTheStatementIsUnknown || theUserAskedToStopThisQuery
 			    || self.sessionAccess.currentQueryWasCancelled

@@ -219,7 +219,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         let statementsSent = DispatchSemaphore(value: 0)
         return run({
             for isOpen in transactionStates {
-                _ = SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: isOpen)
+                _ = SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: isOpen, statementMayChangeData: false)
             }
             statementsSent.signal()
             while !Thread.current.isCancelled {
@@ -256,7 +256,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
         let outcome = run({
             workWasStopped.wait()
-            maySendAfterTheStop = SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: true)
+            maySendAfterTheStop = SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: true, statementMayChangeData: false)
             askedAfterTheStop.signal()
             return nil
         }, whenSlow: { _ in
@@ -321,7 +321,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
     /// Work that no coordinator runs may always send and never records a use of the session.
     func testWorkOutsideACoordinatorMayAlwaysSend() {
-        XCTAssertTrue(SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: false))
+        XCTAssertTrue(SAConnectionWorkCoordinator.currentWorkMaySend(sessionHasOpenTransaction: false, statementMayChangeData: false))
         XCTAssertEqual(SAConnectionWorkCoordinator.currentWorkSessionUse, .untouched)
     }
 
@@ -363,6 +363,32 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
                        "a main-thread reconnect's setup query must not be handed over")
         XCTAssertFalse(SAConnectionWorkCoordinator.workShouldRunOffMainThread(
             isMainThread: false, delegateShowsTheWait: true, threadIsSettingUpTheSession: true))
+    }
+
+
+    /// Work that sent something able to change data says so, so that giving up on it is not
+    /// reported as though nothing had happened.
+    ///
+    /// Stopping the wait does not take back what was sent: the statement goes on running and the
+    /// server may carry it out. A caller told only that its query was cancelled offers to do it
+    /// again, which for a row save means inserting it twice.
+    func testWorkRemembersHavingSentSomethingThatMayHaveChangedData() {
+        let outcome = SAConnectionWorkOutcome()
+        XCTAssertFalse(outcome.sentSomethingThatMayHaveChangedData, "nothing has been sent yet")
+
+        XCTAssertTrue(outcome.beginSessionUse(sessionHasOpenTransaction: false,
+                                              statementMayChangeData: false))
+        XCTAssertFalse(outcome.sentSomethingThatMayHaveChangedData,
+                       "a statement that only reads leaves nothing behind")
+
+        XCTAssertTrue(outcome.beginSessionUse(sessionHasOpenTransaction: false,
+                                              statementMayChangeData: true))
+        XCTAssertTrue(outcome.sentSomethingThatMayHaveChangedData)
+
+        XCTAssertTrue(outcome.beginSessionUse(sessionHasOpenTransaction: false,
+                                              statementMayChangeData: false))
+        XCTAssertTrue(outcome.sentSomethingThatMayHaveChangedData,
+                      "and a read after it does not take that back")
     }
 
 }

@@ -35,12 +35,26 @@ public final class SAUncertainWrite: NSObject {
     ///     rather than because the server refused it. A server that answered said what happened.
     ///   - sessionRollsItBack: Whether losing the session takes the statement's work with it,
     ///     which the server does for a transaction that was open or autocommit that was off.
+    ///   - statementMayCommit: Whether the statement can commit a transaction. What the session
+    ///     last reported describes the statement before this one, so for a `COMMIT`, or for the
+    ///     data-definition statements the server commits around, those flags settle nothing: they
+    ///     would still show the transaction open that the statement may just have committed.
     /// - Returns: Whether the outcome is unknown.
-    @objc(outcomeIsUnknownForStatementThatReachedTheServer:changesData:errorIsConnectionLoss:sessionRollsItBack:)
+    @objc(outcomeIsUnknownForStatementThatReachedTheServer:changesData:errorIsConnectionLoss:sessionRollsItBack:statementMayCommit:)
     public static func outcomeIsUnknown(statementReachedTheServer: Bool,
                                         changesData: Bool,
                                         errorIsConnectionLoss: Bool,
-                                        sessionRollsItBack: Bool) -> Bool {
-        statementReachedTheServer && changesData && errorIsConnectionLoss && !sessionRollsItBack
+                                        sessionRollsItBack: Bool,
+                                        statementMayCommit: Bool) -> Bool {
+        guard statementReachedTheServer, errorIsConnectionLoss else {
+            return false
+        }
+        // A statement that can commit is unknown whenever its reply is lost. Nothing on this side
+        // speaks for it: the flags describe the statement before it, and the work it may have
+        // committed is not the session's to roll back any more.
+        if statementMayCommit {
+            return true
+        }
+        return changesData && !sessionRollsItBack
     }
 }

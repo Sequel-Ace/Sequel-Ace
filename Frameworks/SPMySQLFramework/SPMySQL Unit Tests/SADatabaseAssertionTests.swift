@@ -1064,3 +1064,51 @@ final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingRes
         "'\(value.replacingOccurrences(of: "'", with: "''"))'"
     }
 }
+
+/// Which statements can commit a transaction, so that losing the reply to one leaves what became
+/// of that transaction unknown.
+final class SAStatementMayCommitTests: XCTestCase {
+
+    private func mayCommit(_ query: String) -> Bool {
+        SADatabaseAssertion.statementMayCommit(query, serverVersion: 80400, serverIsMariaDB: false)
+    }
+
+    /// The explicit one, however it is written.
+    func testCommitItself() {
+        XCTAssertTrue(mayCommit("COMMIT"))
+        XCTAssertTrue(mayCommit("  commit ; "))
+        XCTAssertTrue(mayCommit("/* done */ COMMIT"))
+    }
+
+    /// Starting a transaction commits whatever was pending.
+    func testStartingATransaction() {
+        XCTAssertTrue(mayCommit("START TRANSACTION"))
+        XCTAssertTrue(mayCommit("BEGIN"))
+    }
+
+    /// The statements the server commits around.
+    func testImplicitlyCommittingStatements() {
+        for query in ["CREATE TABLE t (a INT)", "ALTER TABLE t ADD b INT", "DROP TABLE t",
+                      "TRUNCATE TABLE t", "RENAME TABLE t TO u", "GRANT SELECT ON *.* TO u",
+                      "REVOKE SELECT ON *.* FROM u", "LOCK TABLES t WRITE", "UNLOCK TABLES",
+                      "FLUSH PRIVILEGES", "OPTIMIZE TABLE t", "ANALYZE TABLE t"] {
+            XCTAssertTrue(mayCommit(query), query)
+        }
+    }
+
+    /// Turning autocommit on commits what was pending; the other session settings do not.
+    func testAutocommitAloneAmongTheSessionSettings() {
+        XCTAssertTrue(mayCommit("SET autocommit = 1"))
+        XCTAssertTrue(mayCommit("set  AUTOCOMMIT=0"))
+        XCTAssertFalse(mayCommit("SET NAMES utf8mb4"))
+        XCTAssertFalse(mayCommit("SET time_zone = '+00:00'"))
+    }
+
+    /// Ordinary statements, and the one that changes nothing either way.
+    func testStatementsThatCommitNothing() {
+        for query in ["SELECT 1", "UPDATE t SET a = 1", "INSERT INTO t VALUES (1)",
+                      "DELETE FROM t", "ROLLBACK", "SHOW TABLES", ""] {
+            XCTAssertFalse(mayCommit(query), query)
+        }
+    }
+}
