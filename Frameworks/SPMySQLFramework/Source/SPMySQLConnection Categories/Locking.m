@@ -139,17 +139,7 @@
 		return NO;
 	}
 
-	NSMutableArray<NSString *> *items = [NSMutableArray array];
-	const char *item = NULL;
-	size_t length = 0;
-	int more = mysql_session_track_get_first(mySQLConnection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length);
-	while (more == 0) {
-		NSString *text = item ? [[NSString alloc] initWithBytes:item length:length encoding:NSUTF8StringEncoding] : nil;
-		[items addObject:text ?: @""];
-		more = mysql_session_track_get_next(mySQLConnection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length);
-	}
-
-	return [SASessionStateTracking characterSetIsNamedInItems:items];
+	return [SASessionStateTracking characterSetIsNamedInTheCurrentResultPacketOf:mySQLConnection];
 }
 
 

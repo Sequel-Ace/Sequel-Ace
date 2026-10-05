@@ -8,6 +8,7 @@
 //
 
 import Foundation
+@_implementationOnly import MySQLClient
 
 /// Makes a session report the character set it is actually running in.
 ///
@@ -68,6 +69,34 @@ public final class SASessionStateTracking: NSObject {
             }
         }
         return false
+    }
+
+
+    /// Whether the result packet just read named the session's character set.
+    ///
+    /// The server reports a session-state change alongside the packet that closes a result, and
+    /// the client library keeps those items only until the next packet is read - so this is
+    /// asked once per result, while the connection is still held, and never afterwards. The
+    /// items alternate name and value; what they mean is decided by
+    /// ``characterSetIsNamed(in:)``, which this reads them for.
+    /// - Parameter rawConnection: The connected handle whose last packet is being looked at.
+    /// - Returns: Whether the character set was among the variables the packet named.
+    @objc(characterSetIsNamedInTheCurrentResultPacketOf:)
+    public static func characterSetIsNamedInTheCurrentResultPacket(of rawConnection: UnsafeMutableRawPointer) -> Bool {
+        let connection = rawConnection.assumingMemoryBound(to: MYSQL.self)
+        var items: [String] = []
+        var item: UnsafePointer<CChar>?
+        var length = 0
+        var more = mysql_session_track_get_first(connection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length)
+        while more == 0 {
+            if let item {
+                items.append(String(decoding: UnsafeRawBufferPointer(start: item, count: length), as: UTF8.self))
+            } else {
+                items.append("")
+            }
+            more = mysql_session_track_get_next(connection, SESSION_TRACK_SYSTEM_VARIABLES, &item, &length)
+        }
+        return characterSetIsNamed(in: items)
     }
 
 }
