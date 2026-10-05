@@ -162,14 +162,27 @@ import Darwin
     /// simply returned nothing.
     private static let refusalMarker = "SAConnectionSessionAccess.theSessionWasRefused"
 
-    /// Whether this thread's last attempt was refused the session, rather than its work running
-    /// and returning nothing.
+    /// Takes the record of whether the call this thread just made was refused the session,
+    /// rather than its work running and returning nothing.
     ///
     /// Both come back as nothing, and a caller that cannot tell them apart would read a
     /// statement that was never sent as one that ran and changed nothing. Asked right after a
     /// call that came back empty, on the thread that made it.
-    @objc public var theSessionWasRefusedToThisThread: Bool {
-        (Thread.current.threadDictionary[Self.refusalMarker] as? Bool) ?? false
+    ///
+    /// It speaks for that one call. Waiting for the session pumps the main thread's run loop,
+    /// and a query delivered in there can be refused while this one goes on to succeed; a
+    /// refusal from inside is cleared rather than left to answer for its caller. Reading it
+    /// takes it, so a refusal nobody asked about cannot answer for a later call either.
+    /// - Returns: Whether that call was refused.
+    @objc public func takeTheRefusalOfThisThreadsLastCall() -> Bool {
+        let refused = (Thread.current.threadDictionary[Self.refusalMarker] as? Bool) ?? false
+        forgetAnyRefusal()
+        return refused
+    }
+
+    /// Forgets a refusal recorded on this thread, so it cannot speak for a later call.
+    private func forgetAnyRefusal() {
+        Thread.current.threadDictionary[Self.refusalMarker] = false
     }
 
     /// Records that a question about this connection has gone to the main thread.
@@ -199,8 +212,13 @@ import Darwin
     @objc(performQuery:recover:)
     public func performQuery(_ operation: () -> Any?, recover: () -> Bool) -> Any? {
         guard acquire() else { return nil }
+        // Anything refused while this call waited was somebody else's call, delivered by the
+        // run loop this one pumped. It has been reported where it happened.
+        forgetAnyRefusal()
         socketLock.withLock { queryCancellationTokens.append(queryCancellationGeneration) }
         defer {
+            // And anything refused inside the work answers for itself, not for this call.
+            forgetAnyRefusal()
             socketLock.withLock { _ = queryCancellationTokens.popLast() }
             sessionLock.unlock()
         }
@@ -250,7 +268,7 @@ import Darwin
     /// Waiting must remain cancellable: disconnect can be waiting for a keepalive
     /// thread to exit. The main thread also services SSH authentication/teardown.
     private func acquire() -> Bool {
-        Thread.current.threadDictionary[Self.refusalMarker] = false
+        forgetAnyRefusal()
         while !Thread.current.isCancelled {
             if sessionLock.try() {
                 let ready = socketLock.withLock { cancellingQuery == nil && activeNativeQuery == nil }

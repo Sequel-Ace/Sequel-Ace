@@ -338,7 +338,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // keeps it apart from one that ran and changed nothing: callers read the row count and the
     // error together, and both would still describe the statement before this one - which is
     // how an edit that was never written comes to be treated as saved.
-    if (!theResult && self.sessionAccess.theSessionWasRefusedToThisThread) {
+    BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
+    if (!theResult && theSessionWasRefused) {
         lastQueryAffectedRowCount = 0;
         [self _updateLastErrorMessage:NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open")];
         [self _updateLastErrorID:2013];

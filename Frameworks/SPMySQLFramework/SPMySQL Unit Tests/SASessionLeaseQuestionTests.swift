@@ -215,7 +215,7 @@ final class SASessionLeaseQuestionTests: XCTestCase {
                 theCallbacksWorkRan = true
                 return nil
             }
-            theSessionWasRefused = access.theSessionWasRefusedToThisThread
+            theSessionWasRefused = access.takeTheRefusalOfThisThreadsLastCall()
             theCallbackReturned = true
         }
         // The answer comes after it, in the same mode - the order Jason-Morcos reproduced.
@@ -247,6 +247,49 @@ final class SASessionLeaseQuestionTests: XCTestCase {
                       "the refusal has to be distinguishable from work that ran and did nothing")
         XCTAssertFalse(theOwnerWaitedInVain, "so the owner is answered rather than timing out")
         wait(for: [theOwnerLetGo], timeout: 5)
+    }
+
+
+    /// A refusal speaks for the call it refused, and for no other.
+    ///
+    /// Waiting for the session pumps the main thread's run loop, so a query delivered in there
+    /// can be refused while the call that was waiting goes on to succeed. A mark left behind by
+    /// that one would make the outer call's own result read as refused - and a statement that
+    /// failed for a reason of its own would be reported as never sent.
+    func testARefusalSpeaksOnlyForTheCallItRefused() {
+        let access = SAConnectionSessionAccess()
+        XCTAssertFalse(access.takeTheRefusalOfThisThreadsLastCall(), "nothing has been refused yet")
+
+        // Refused: a question is out and this is the thread that answers it.
+        access.noteAQuestionWentToTheMainThread()
+        let theOwner = DispatchSemaphore(value: 0)
+        let theOwnerMayGo = DispatchSemaphore(value: 0)
+        let theOwnerLetGo = expectation(description: "the owner let the session go")
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: true) {
+                theOwner.signal()
+                _ = theOwnerMayGo.wait(timeout: .now() + 10)
+                return true
+            }
+            theOwnerLetGo.fulfill()
+        }
+        XCTAssertEqual(theOwner.wait(timeout: .now() + 10), .success)
+
+        var theWorkRan = false
+        _ = access.performQuery { theWorkRan = true; return nil }
+        XCTAssertFalse(theWorkRan)
+        XCTAssertTrue(access.takeTheRefusalOfThisThreadsLastCall(), "that call was refused")
+
+        theOwnerMayGo.signal()
+        wait(for: [theOwnerLetGo], timeout: 5)
+        access.noteTheQuestionWasAnswered()
+
+        // The next call gets in and fails for a reason of its own. The earlier refusal must not
+        // answer for it.
+        let result = access.performQuery { nil }
+        XCTAssertNil(result)
+        XCTAssertFalse(access.takeTheRefusalOfThisThreadsLastCall(),
+                       "the statement was sent; what it returned is its own")
     }
 
 }
