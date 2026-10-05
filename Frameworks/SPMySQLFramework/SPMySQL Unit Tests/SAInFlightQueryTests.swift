@@ -99,31 +99,40 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), -1,
                        "the query that replaced it must be untouched")
         XCTAssertEqual(errno, EAGAIN)
-        XCTAssertFalse(peerSawTheSocketClose(), "and so must the socket the first one had")
 
         // And the one it is meant for still ends.
         XCTAssertTrue(inFlightQuery.closeSocket(ifGenerationIsWaiting: 6, beforeClosing: {}))
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), 0)
     }
 
-    /// With two sockets in play, the one the waiting query is on is the one that ends.
+    /// A query that takes over from one still recorded as waiting ends its own socket, not the
+    /// one before it.
     ///
-    /// Generation alone does not say which socket was interrupted; this holds the second one up
-    /// against it, so that getting the right number but the wrong socket would show.
-    func testTheSocketThatEndsIsTheOneTheWaitingQueryIsOn() throws {
-        var other: [Int32] = [-1, -1]
-        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &other) == 0, "no local socket pair available")
-        defer { other.filter { $0 >= 0 }.forEach { Darwin.close($0) } }
+    /// Generation alone does not say which socket was interrupted. A record can still name the
+    /// query before this one - `endWaiting` does nothing when the number no longer matches, so a
+    /// query whose session was closed from under it leaves its record standing, and the next
+    /// query begins waiting on top of it. Keeping the earlier socket then would end a session
+    /// nobody asked about, under the right query's number.
+    func testAQueryTakingOverEndsItsOwnSocketAndNotTheOneBeforeIt() throws {
+        var earlier: [Int32] = [-1, -1]
+        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &earlier) == 0, "no local socket pair available")
+        defer { earlier.filter { $0 >= 0 }.forEach { Darwin.close($0) } }
 
+        // The earlier query's record is never ended - the shape left behind when its session was
+        // closed from under it - and the next query begins waiting on a socket of its own.
+        inFlightQuery.beginWaiting(forGeneration: 6, onSocket: earlier[0], serverThread: 41)
         inFlightQuery.beginWaiting(forGeneration: 7, onSocket: descriptors[0], serverThread: 42)
 
         XCTAssertTrue(inFlightQuery.closeSocket(ifGenerationIsWaiting: 7, beforeClosing: {}))
 
-        XCTAssertTrue(peerSawTheSocketClose(), "the query's own socket ended")
+        XCTAssertTrue(peerSawTheSocketClose(), "the query that is waiting had its socket ended")
         var byte: UInt8 = 0
-        XCTAssertEqual(recv(other[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), -1,
-                       "and no other socket did")
+        XCTAssertEqual(recv(earlier[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT), -1,
+                       "and the one before it was left alone")
         XCTAssertEqual(errno, EAGAIN)
+
+        // And the earlier number names nothing any more.
+        XCTAssertFalse(inFlightQuery.closeSocket(ifGenerationIsWaiting: 6, beforeClosing: {}))
     }
 
     /// Only the query that is waiting says it is waiting.
