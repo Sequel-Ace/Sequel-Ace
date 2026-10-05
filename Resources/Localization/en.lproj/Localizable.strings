@@ -4444,3 +4444,6 @@
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
+
+/* Note added to the error of a statement whose outcome could not be established */
+"The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again." = "The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.";

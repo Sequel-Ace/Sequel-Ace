@@ -433,6 +433,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger queryAttemptsAllowed = 1;
 	if (retryQueriesOnConnectionFailure) queryAttemptsAllowed++;
 	int queryStatus;
+	BOOL theStatementReachedTheServer = NO;
+	BOOL whatBecameOfTheStatementIsUnknown = NO;
 
 	// Lock the connection while it's actively in use
 	if (![self _lockUsableConnectionForQuery]) return nil;
@@ -542,6 +544,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				return nil;
 			}
 
+			theStatementReachedTheServer = YES;
 			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
@@ -592,7 +595,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			// against the query's own number counts as much as one the session knows about:
 			// without it a query the user stopped goes on to check the connection, reconnect, and
 			// ask the user what to do about a connection they had just asked to be left alone.
-			if (theUserAskedToStopThisQuery || self.sessionAccess.currentQueryWasCancelled
+			// A statement that reached the server and then lost its connection may have been
+			// carried out: the server was not able to say, and under autocommit there is no
+			// transaction for it to be rolled back with. Sending it again would run it twice as
+			// readily as not at all, so it is not sent again, and the caller is told that what
+			// became of it is unknown rather than that it failed.
+			unsigned int theServerStatus = mySQLConnection ? mySQLConnection->server_status : 0;
+			BOOL theStatementChangesData = [SAOutsideStatements areRunningOnCurrentThread]
+				|| !(mySQLConnection && [SADatabaseAssertionState statementLeavesDataAlone:theQueryString onMySQLConnection:mySQLConnection]);
+			whatBecameOfTheStatementIsUnknown = [SAUncertainWrite outcomeIsUnknownForStatementThatReachedTheServer:theStatementReachedTheServer
+			                                                                                          changesData:theStatementChangesData
+			                                                                                errorIsConnectionLoss:[SPMySQLConnection isErrorIDConnectionError:theErrorID]
+			                                                                                   sessionRollsItBack:[SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(theServerStatus & SERVER_STATUS_IN_TRANS) != 0
+			                                                                                                                                                                           autocommit:(theServerStatus & SERVER_STATUS_AUTOCOMMIT) != 0
+			                                                                                                                                                                  autocommitAtConnect:sessionAutocommitAtConnect]];
+
+			if (whatBecameOfTheStatementIsUnknown || theUserAskedToStopThisQuery
+			    || self.sessionAccess.currentQueryWasCancelled
 			    || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
@@ -718,6 +737,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// still counts as cancelled, as it always has - callers running a batch stop on this.
 	if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:originalQueryGeneration through:thisQueryGeneration]) {
 		lastQueryWasCancelled = YES;
+	}
+
+	// A statement whose outcome is unknown says so, where the caller already looks: every path
+	// that shows an error - the editor, saving a row, the import's list - carries it without
+	// needing to know about this at all.
+	if (whatBecameOfTheStatementIsUnknown) {
+		theErrorMessage = [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"",
+			NSLocalizedString(@"The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.", @"Note added to the error of a statement whose outcome could not be established")];
 	}
 
 	// If the query was cancelled, override the error state. Either record of the stop counts: the
