@@ -27,6 +27,7 @@ import Darwin
     private var nativeOnlyCancellationThreads: Set<ObjectIdentifier> = []
     private var queryCancellationGeneration: UInt = 0
     private var queryCancellationTokens: [UInt] = []
+    private var questionsAwaitingTheMainThread = 0
 
     /// Remember cancellation across setup queries run by the interrupted query's
     /// reconnect. Each nested query has its own token; it cannot erase its caller's.
@@ -157,6 +158,24 @@ import Darwin
         }
     }
 
+    /// Records that a question about this connection has gone to the main thread.
+    ///
+    /// The session stays held while it is asked - what is being asked about is this session -
+    /// but the answer can only come through the main thread. A main-thread caller that waited
+    /// for the session meanwhile would be the one holding that answer up, so from here until
+    /// the answer is in, such a caller is turned away instead of made to wait. Paired with
+    /// ``noteTheQuestionWasAnswered()``, and nested questions are counted.
+    @objc public func noteAQuestionWentToTheMainThread() {
+        socketLock.withLock { questionsAwaitingTheMainThread += 1 }
+    }
+
+    /// Records that the question is answered and the main thread is free to wait again.
+    @objc public func noteTheQuestionWasAnswered() {
+        socketLock.withLock {
+            if questionsAwaitingTheMainThread > 0 { questionsAwaitingTheMainThread -= 1 }
+        }
+    }
+
     /// Runs a query only after the current reconnect (including restoration) ends.
     @objc(performQuery:)
     public func performQuery(_ operation: () -> Any?) -> Any? {
@@ -200,6 +219,12 @@ import Darwin
         return succeeded
     }
 
+    /// Whether the session has to be recovered before it is used again, using up that record.
+    ///
+    /// Asked once by the reconnect that acts on it: a read that was cut off cannot be carried
+    /// on with, and the next use has to recover rather than pick it up. Taking the record is
+    /// what keeps a second reconnect from recovering a session that has already been restored.
+    /// - Returns: Whether recovery was required.
     private func takeRecoveryRequirement() -> Bool {
         socketLock.withLock {
             let required = recoveryRequired
@@ -217,17 +242,19 @@ import Darwin
                 if ready { return true }
                 sessionLock.unlock()
             }
+            // A question about this connection is out, and the main thread is what answers it.
+            // Waiting here would hold up that answer, and the session is not let go until the
+            // answer is in - neither side would ever move. The caller is told there is no
+            // session to be had instead, which is what the user is being asked about.
+            if Thread.isMainThread,
+               socketLock.withLock({ questionsAwaitingTheMainThread > 0 }) {
+                return false
+            }
             let deadline = Date(timeIntervalSinceNow: 0.01)
             if Thread.isMainThread {
-                // The mode the main thread is already running in, because that is the mode
-                // whatever this is waiting for will arrive in. Usually it is the default one,
-                // which services main-queue work and the keepalive timer's synchronous
-                // main-thread setup and teardown. While a question is up it is the modal
-                // panel's instead: the question runs a loop of its own, everything it delivers
-                // is delivered in that mode, and the answer the session is being held for is a
-                // source in it. Pumping only the default mode there would starve that answer,
-                // and the session would be held until its owner gave up waiting for it.
-                RunLoop.current.run(mode: RunLoop.current.currentMode ?? .default, before: deadline)
+                // Default mode services main-queue work and the keepalive timer's
+                // synchronous main-thread setup/teardown even without a modal panel.
+                RunLoop.current.run(mode: .default, before: deadline)
             }
             let remaining = deadline.timeIntervalSinceNow
             if remaining > 0 {

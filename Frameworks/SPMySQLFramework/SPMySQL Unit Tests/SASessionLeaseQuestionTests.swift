@@ -204,32 +204,44 @@ final class SASessionLeaseQuestionTests: XCTestCase {
 
         // The question is up: from here the main thread is in a loop of its own, in the mode a
         // modal panel runs in, and everything it delivers is delivered in that mode.
-        var theCallbackRan = false
+        access.noteAQuestionWentToTheMainThread()
+        defer { access.noteTheQuestionWasAnswered() }
+
+        var theCallbackReturned = false
+        var theCallbacksWorkRan = false
         let entersTheConnection = Timer(timeInterval: 0.05, repeats: false) { _ in
             _ = access.performQuery {
-                theCallbackRan = true
+                theCallbacksWorkRan = true
                 return nil
             }
+            theCallbackReturned = true
         }
         // The answer comes after it, in the same mode - the order Jason-Morcos reproduced.
-        var theAnswerIsIn = false
-        let answer = Timer(timeInterval: 0.15, repeats: false) { _ in
-            theAnswerIsIn = true
-            self.theAnswerIsBack.signal()
-        }
+        var theUserAnswered = false
+        let answer = Timer(timeInterval: 0.15, repeats: false) { _ in theUserAnswered = true }
         RunLoop.current.add(entersTheConnection, forMode: .modalPanel)
         RunLoop.current.add(answer, forMode: .modalPanel)
 
+        // The loop the question runs. What matters is where it ends: the owner is told the
+        // answer only once this returns, because production asks with
+        // `performSelectorOnMainThread:waitUntilDone:YES` and that call does not come back
+        // until `NSApp.runModal` has. Signalling from inside the loop instead would let the
+        // owner go while the loop was still running, which is not something that can happen.
         let giveUp = Date(timeIntervalSinceNow: 20)
-        while !(theCallbackRan && theAnswerIsIn) && Date() < giveUp {
+        while !theUserAnswered && Date() < giveUp {
             RunLoop.current.run(mode: .modalPanel, before: Date(timeIntervalSinceNow: 0.05))
         }
         entersTheConnection.invalidate()
         answer.invalidate()
+        theAnswerIsBack.signal()
 
-        XCTAssertTrue(theAnswerIsIn, "the answer must not be starved by the caller's wait")
+        XCTAssertTrue(theUserAnswered, "the question has to be answerable")
+        XCTAssertTrue(theCallbackReturned,
+                      "the callback has to return, so the loop it runs in can end and the "
+                      + "answer can reach the owner")
+        XCTAssertFalse(theCallbacksWorkRan,
+                       "and it is turned away rather than let into the session being asked about")
         XCTAssertFalse(theOwnerWaitedInVain, "so the owner is answered rather than timing out")
-        XCTAssertTrue(theCallbackRan)
         wait(for: [theOwnerLetGo], timeout: 5)
     }
 
