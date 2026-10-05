@@ -162,10 +162,10 @@
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "视图 '%@' 的定义持有一个 UTF-8 之外的字符串；重命名数据库不能重新创建它。没有任何改变。";
 
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
-"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "视图 '%1$@' 是通过字符集 '%2$@'; 重命名数据库只能通过UTF-8 创建的视图。 没有改变任何内容。";
 
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
-"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
+"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "从'%1$@' (%2$@)读取的其它数据库中的视图一旦被重命名后将停止工作。没有改变任何内容。";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[查询%1$ld中发生错误] %2$@\n";
@@ -278,19 +278,19 @@
 "Add" = "添加";
 
 /* table Content : rule filter editor : AND/OR popup : combine with AND */
-"AND (all conditions)" = "AND (all conditions)";
+"AND (all conditions)" = "和(所有条件)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
-"AND" = "AND";
+"AND" = "和";
 
 /* table Content : rule filter editor : context menu : add nested AND/OR group */
-"Add AND/OR Group" = "Add AND/OR Group";
+"Add AND/OR Group" = "添加AND/OR 组";
 
 /* menu item to add db */
 "Add Database..." = "添加数据库...";
 
 /* table Content : rule filter editor : context menu : add filter row */
-"Add Filter" = "Add Filter";
+"Add Filter" = "添加过滤器";
 
 /* Add Host */
 "Add Host" = "添加主机";
@@ -494,10 +494,10 @@
 "ALL PRIVILEGES" = "ALL PRIVILEGES";
 
 /* rename database: one privilege granted on a table, view or column, listed in the refusal; %1$@ the table or view, %2$@ the account as 'user'@'host' */
-"`%@` for %@" = "`%1$@` for %2$@";
+"`%@` for %@" = "%1$@的 %2$@";
 
 /* rename database: one privilege granted on a database, listed in the refusal; %1$@ the grant's database pattern, %2$@ the account as 'user'@'host' */
-"`%@`.* for %@" = "`%1$@`.* for %2$@";
+"`%@`.* for %@" = "%1$@`.* 适用于 %2$@";
 
 /* privilege operation all databases scope */
 "all databases" = "all databases";
@@ -512,10 +512,10 @@
 "change" = "change";
 
 /* rename database: a scheduled event, by name; listed among the objects that block the rename */
-"event '%@'" = "event '%@'";
+"event '%@'" = "事件 '%@'";
 
 /* rename database: a stored function, by name; listed among the objects that block the rename */
-"function '%@'" = "function '%@'";
+"function '%@'" = "函数 '%@'";
 
 /* grant privilege operation */
 "grant" = "grant";
@@ -527,16 +527,16 @@
 "Nonexistent Definer" = "Nonexistent Definer";
 
 /* rename database: why a view was not recreated */
-"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
+"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "它的定义是由视觉视觉返回的，但没有视觉条款。";
 
 /* rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename */
-"library '%@'" = "library '%@'";
+"library '%@'" = "库 '%@'";
 
 /* rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host' */
 "partial revoke on `%@`.* for %@" = "partial revoke on `%1$@`.* for %2$@";
 
 /* rename database: a stored procedure, by name; listed among the objects that block the rename */
-"procedure '%@'" = "procedure '%@'";
+"procedure '%@'" = "过程'%@'";
 
 /* revoke privilege operation */
 "revoke" = "revoke";
@@ -584,31 +584,31 @@
 "Show Create Routine" = "Show Create Routine";
 
 /* rename database: a table, by name */
-"table '%@'" = "table '%@'";
+"table '%@'" = "表 '%@'";
 
 /* rename database: escaping a value for a statement failed because the connection is unavailable; shown after 'Reading the objects of the database … failed:' or 'Moving … failed:' */
-"the connection could not quote a value for a statement (it was closed or is being re-established)." = "the connection could not quote a value for a statement (it was closed or is being re-established).";
+"the connection could not quote a value for a statement (it was closed or is being re-established)." = "连接无法引用语句的值 (它已经关闭或正在重新建立)。";
 
 /* rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:' */
-"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).";
+"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "连接没有返回结果，所以语句可能没有运行(连接丢失或关闭，或者查询被取消)。";
 
 /* rename database: why the views are not trusted and the source is kept */
-"the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
+"the connection was re-established while the views were recreated, so they may still point at the old database." = "重新建立连接时重新创建了视图，因此它们仍然可以指向旧数据库。";
 
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "此帐户不能完全列出数据库的库(它需要全局SELECT 或 SHOW_ROUTINE)。";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "此帐户不能完全列出数据库的例行程序 (它需要在 mysql.proc上选择SELECT 或 SHOW_ROUTINE)";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).";
+"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "此帐户不能列出数据库、 其表格和视图所授予的权限(它需要在 mysql.db、 mysql.tables_priv 和 mysql.user 上或global SELECT)。";
 
 /* rename database: why the views in other databases that might read from the source could not be checked; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing).";
+"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "此帐户不能完全列出其他数据库的视图(它需要全局SELECT和缺少信息_schema.VIEW_TABLE_USAGE 的视图)。";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";
@@ -716,28 +716,28 @@
 "Autodetect" = "自动检测";
 
 /* Preferences : General : Automatically check for updates checkbox */
-"Automatically check for updates" = "Automatically check for updates";
+"Automatically check for updates" = "自动检查更新";
 
 /* analytics consent dialog message */
-"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "允许 Sequel Ace 发送应用安装标识符、应用版本、macOS 和设备详细信息， 谷歌火星的大致区域、使用情况分析以及崩溃报告和诊断报告？\n\n开发者使用此数据来理解功能的采纳和诊断问题。 它不用于广告或追踪您在其他公司的应用或网站。 集合只在您选择分享分析时才开始，您可以随时在首选项中更改您的选择。";
 
 /* analytics consent deny button */
-"Don't Share" = "Don't Share";
+"Don't Share" = "不分享";
 
 /* analytics consent dialog title */
-"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+"Help Improve Sequel Ace" = "帮助改善Sequel Ace";
 
 /* analytics consent allow button */
-"Share Analytics" = "Share Analytics";
+"Share Analytics" = "分享分析";
 
 /* analytics consent privacy policy button */
 "Privacy Policy…" = "Privacy Policy…";
 
 /* about window privacy policy link */
-"Privacy Policy" = "Privacy Policy";
+"Privacy Policy" = "隐私政策";
 
 /* Preferences : General : analytics and crash reporting checkbox */
-"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+"Share usage analytics and crash reports with developers" = "与开发者分享使用情况分析和崩溃报告";
 
 /* background label for color table (Prefs > Editor) */
 "Background" = "背景";
@@ -907,19 +907,19 @@
 "collation connection: %@" = "连接使用字符序：%@";
 
 /* content tab : rule filter : drop zone tooltip */
-"Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+"Click to add a filter, ⌥-click to add an AND/OR group" = "点击添加筛选器，单击以添加AND/OR 组";
 
 /* general preferences : appearance : checkbox that colors the window title bar with the connected favorite's color */
-"Color the title bar with the connection color" = "Color the title bar with the connection color";
+"Color the title bar with the connection color" = "使用连接颜色为标题栏颜色";
 
 /* general preferences : appearance : tooltip for the title bar color checkbox */
-"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance.";
+"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "将标题栏、工具栏和标签栏与分配给连接最喜欢的颜色颜色 让我们能够轻松地说出一种发展的生产联系。";
 
 /* table Content : rule filter editor : compound row : label after the AND/OR popup */
-"combines the conditions in this group" = "combines the conditions in this group";
+"combines the conditions in this group" = "合并该组的条件";
 
 /* table Content : rule filter editor : AND/OR popup : tooltip */
-"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
+"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "将顶级过滤条件与 AND 或 OR 合并。在单击行的 + 按钮添加嵌套的AND/OR 组时按住配置。";
 
 /* comment label */
 "Comment" = "注释";
@@ -986,7 +986,7 @@
 "Continue to print?" = "是否继续打印？";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
-"Copy WHERE Clause" = "Copy WHERE Clause";
+"Copy WHERE Clause" = "复制 WHERE 条款";
 
 /* Copy as RTF */
 "Copy as RTF" = "拷贝为RTF";
@@ -1309,7 +1309,7 @@
 "Do you really want to shutdown the server?" = "确定要关闭服务器吗？";
 
 /* Document query favorite scope */
-"Document" = "Document";
+"Document" = "文件";
 
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "DTD标识符";
@@ -1381,7 +1381,7 @@
 "engine: %@" = "存储引擎：%@";
 
 /* Missing query favorite name alert message */
-"Enter a query name or choose a favorite to replace." = "Enter a query name or choose a favorite to replace.";
+"Enter a query name or choose a favorite to replace." = "输入查询名称或选择要替换的收藏夹。";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "填写以下连接信息，或从个人收藏中选择：";
@@ -1581,10 +1581,10 @@
 "Favorite" = "个人收藏";
 
 /* Stale query favorite replacement alert title */
-"Favorite Changed" = "Favorite Changed";
+"Favorite Changed" = "喜欢的更改";
 
 /* Query favorite replacement picker accessibility label */
-"Favorite to replace" = "Favorite to replace";
+"Favorite to replace" = "最喜欢的替换";
 
 /* favorites label */
 "Favorites" = "个人收藏";
@@ -2148,10 +2148,10 @@
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
 /* table Content : rule filter editor : AND/OR popup : combine with OR */
-"OR (any condition)" = "OR (any condition)";
+"OR (any condition)" = "或(任何条件)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
-"OR" = "OR";
+"OR" = "或";
 
 "OK" = "好";
 
@@ -2225,7 +2225,7 @@
 "optional" = "选填";
 
 /* Query favorite replacement picker label */
-"Or replace an existing favorite:" = "Or replace an existing favorite:";
+"Or replace an existing favorite:" = "或者替换已有的收藏：";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "无法识别传入的参数。只接受字符串或两个元素的数组作为参数。";
@@ -2289,7 +2289,7 @@
 "Query logging is currently disabled" = "查询记录已被禁用";
 
 /* Query favorite save sheet name label */
-"Query Name:" = "Query Name:";
+"Query Name:" = "查询名称：";
 
 /* query result print heading */
 "Query Result" = "查询结果";
@@ -2557,7 +2557,7 @@
 "Save Current Query to Favorites" = "将当前查询添加到个人收藏";
 
 /* Query favorite save sheet global checkbox */
-"Save globally" = "Save globally";
+"Save globally" = "全局保存";
 
 /* save page as menu item title */
 "Save Page As…" = "页面另存为…";
@@ -2566,7 +2566,7 @@
 "Save Queries…" = "保存查询…";
 
 /* Query favorite save sheet title */
-"Save Query Favorite" = "Save Query Favorite";
+"Save Query Favorite" = "保存查询收藏";
 
 /* Save Query… */
 "Save Query…" = "保存查询…";
@@ -2887,7 +2887,7 @@
 "Table Content" = "表内容";
 
 /* table contents not loaded message */
-"Table contents not loaded" = "Table contents not loaded";
+"Table contents not loaded" = "未加载表内容";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "表内容（CSV）";
@@ -2968,13 +2968,13 @@
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "包‘%@’未包含区分已安装的包所必需的的UUID。";
 
 /* rename database: a trigger, by name and table; listed among the objects that block the rename */
-"trigger '%@' on table '%@'" = "trigger '%1$@' on table '%2$@'";
+"trigger '%@' on table '%@'" = "触发表上的%1$@''%2$@";
 
 /* rename database: the server reported no error message */
-"unknown error" = "unknown error";
+"unknown error" = "未知错误";
 
 /* rename database: a view, by name */
-"view '%@'" = "view '%@'";
+"view '%@'" = "查看 '%@'";
 
 "‘%@’ Bundle contains legacy components" = "包‘%@’含有旧版组件";
 
@@ -2987,7 +2987,7 @@
 "The color theme ‘%@’ already exists." = "颜色主题‘%@’已存在";
 
 /* table column list mismatch informative message */
-"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.";
+"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "'%@'的列表与服务器返回的数据不匹配，重新加载表并未解决。 这通常意味着当表格信息被读取时连接已丢失。\n\n检查连接，然后重新加载表格。";
 
 /* the connection is busy. please wait and try again tooltip */
 "The connection is busy. Please wait and try again." = "连接忙，请稍后重试。";
@@ -3041,10 +3041,10 @@
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "您选择的设置文件导出于%1$ld版本，但只有以下版本的设置文件可以被导入：%2$@。\n\n请用向后兼容的方式存储设置文件或更新您的Sequel Ace版本。";
 
 /* Query favorite replacement explanation */
-"The selected favorite keeps its name and location." = "The selected favorite keeps its name and location.";
+"The selected favorite keeps its name and location." = "所选收藏夹保留其名称和位置。";
 
 /* Stale query favorite replacement alert message */
-"The selected favorite was changed or removed in another window. Choose it again before saving." = "The selected favorite was changed or removed in another window. Choose it again before saving.";
+"The selected favorite was changed or removed in another window. Choose it again before saving." = "所选收藏已更改或在另一个窗口中删除。保存前再次选择它。";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "所选文件包含“%1$@”数据类型，但需要的类型是“%2$@”。请更换文件。";
@@ -3805,16 +3805,16 @@
 "Copy" = "Copy";
 
 /* MCP pref: endpoint hint */
-"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp.";
+"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "将此URL添加到任何 MCP 客户端 (Claude, Cursor, Cline, VS Code)。 这是可流的 HTTP 端点；仅SSE的客户端应该使用 /sse 而不是 /mcp。";
 
 /* AWS console sign-in (aws login) error: profile is missing login_session configuration */
 "The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
 
 /* AWS console sign-in (aws login) error: no cached session on disk */
-"No cached AWS console sign-in session was found." = "No cached AWS console sign-in session was found.";
+"No cached AWS console sign-in session was found." = "没有找到缓存的 AWS 控制台登录会话。";
 
 /* AWS console sign-in (aws login) error: the sign-in session can no longer be renewed */
-"Your AWS console sign-in session has ended." = "Your AWS console sign-in session has ended.";
+"Your AWS console sign-in session has ended." = "您的 AWS 控制台登录会话已结束。";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
@@ -3823,10 +3823,10 @@
 "The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
 
 /* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
-"No cached AWS SSO session was found." = "No cached AWS SSO session was found.";
+"No cached AWS SSO session was found." = "没有找到缓存的 AWS SSO 会话。";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The cached AWS SSO token has expired." = "The cached AWS SSO token has expired.";
+"The cached AWS SSO token has expired." = "缓存的 AWS SSO 令牌已过期。";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
 "Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
@@ -4255,169 +4255,169 @@
 "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel.";
 
 /* Vault roles refresh button title */
-"Refresh" = "Refresh";
+"Refresh" = "刷新";
 
 /* vault role refresh in progress title */
-"Vault role refresh in progress" = "Vault role refresh in progress";
+"Vault role refresh in progress" = "私密库角色正在刷新";
 
 /* vault role refresh in progress message */
-"Wait for the Vault role list to finish loading before connecting." = "Wait for the Vault role list to finish loading before connecting.";
+"Wait for the Vault role list to finish loading before connecting." = "等待私密库角色列表在连接前完成加载。";
 
 /* vault creds path required connect message */
-"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "连接需要一个密码库凭证路径。填写挂载和角色，或将完整路径粘贴到角色字段。";
 
 /* vault creds path required save message */
-"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "保存 Vault 收藏夹需要一个 Vault 凭据路径。 填写挂载和角色，或将完整路径粘贴到角色字段。";
 
 /* Vault roles refresh – missing mount */
-"Enter a Vault mount first" = "Enter a Vault mount first";
+"Enter a Vault mount first" = "请先输入保险库挂载";
 
 /* Vault roles refresh – missing mount detail */
-"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.";
+"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "角色列表从 <mount>/ 角色读取。填入保险库挂载字段，然后刷新。";
 
 /* Vault roles refresh – login confirm */
-"Sign in to Vault?" = "Sign in to Vault?";
+"Sign in to Vault?" = "登录保险库吗？";
 
 /* Vault roles refresh – login confirm detail */
-"Listing roles requires authenticating to Vault, which will open your web browser." = "Listing roles requires authenticating to Vault, which will open your web browser.";
+"Listing roles requires authenticating to Vault, which will open your web browser." = "列出角色需要身份验证到 Vault，这将打开您的浏览器。";
 
 /* Vault roles refresh – empty */
-"No Vault roles found" = "No Vault roles found";
+"No Vault roles found" = "未找到私密库角色";
 
 /* Vault roles refresh – empty detail */
-"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.";
+"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "此挂载没有返回数据库角色。请检查密码库挂载路径，您的令牌可以列出角色，或者手动键入角色。";
 
 /* Vault roles refresh – failure */
-"Could not load Vault roles" = "Could not load Vault roles";
+"Could not load Vault roles" = "无法加载密码库角色";
 
 /* Vault roles refresh – failure detail */
-"Unknown error. You can still type the role manually." = "Unknown error. You can still type the role manually.";
+"Unknown error. You can still type the role manually." = "未知错误。您仍然可以手动输入角色。";
 
 /* Vault OIDC login already in progress */
-"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "另一个密码库登录已在进行中。完成或取消它(包括在其他窗口中)，然后重试。";
 
 /* aws login refresh error: the user's AWS password or credentials changed */
-"Your AWS sign-in credentials changed after you signed in." = "Your AWS sign-in credentials changed after you signed in.";
+"Your AWS sign-in credentials changed after you signed in." = "您的AWS 登录凭据在您登录后更改。";
 
 /* aws login refresh error: missing IAM permission */
-"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.";
+"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS 不允许Sequel Ace 续订您的控制台登录会话。您的IAM身份需要签名：CreateOAuth2Token 权限。";
 
 /* aws login refresh error: AWS rejected the refresh token */
-"AWS rejected the renewal of your console sign-in session." = "AWS rejected the renewal of your console sign-in session.";
+"AWS rejected the renewal of your console sign-in session." = "AWS 拒绝续订您的控制台登录会话。";
 
 /* aws login refresh error: no region for the sign-in session */
-"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace could not tell which AWS region your console sign-in session belongs to.";
+"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace无法告诉您的控制台登录会话所属的AWS区域。";
 
 /* aws login refresh error: the .aws folder is read-only for Sequel Ace */
-"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window.";
+"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "您的 AWS 控制台登录凭据已过期。若要自动更新它们，请先更新您的登录凭据。 ws 文件夹，当您从连接窗口连接时，它会询问该文件夹。";
 
 /* aws login refresh error: the cached DPoP key cannot be read */
-"The cached AWS console sign-in session has an unreadable signing key." = "The cached AWS console sign-in session has an unreadable signing key.";
+"The cached AWS console sign-in session has an unreadable signing key." = "缓存的 AWS 控制台登录会话有一个不可读的签名密钥。";
 
 /* aws login refresh error: malformed response */
-"AWS returned an unexpected response while renewing your console sign-in session." = "AWS returned an unexpected response while renewing your console sign-in session.";
+"AWS returned an unexpected response while renewing your console sign-in session." = "AWS 在更新您的控制台登录会话时返回了意外的响应。";
 
 /* aws login refresh error: request failed; %@ is the underlying error */
-"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
+"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace无法更新您的 AWS 控制台登录会话： %@";
 
 /* AWS directory write access panel message */
-"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically.";
+"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "允许 Sequel Ace 更新您的 .aws 文件夹，以便它可以自动更新您的 AWS 控制台登录(aws 登录) 凭据。";
 
 /* AWS directory write access panel button */
-"Allow" = "Allow";
+"Allow" = "允许";
 
 /* Connection lost sheet: default title */
-"Connection Lost" = "Connection Lost";
+"Connection Lost" = "连接丢失";
 
 /* Connection lost sheet: default message */
-"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace appears to have lost the connection to the server, or the server has stopped responding.";
+"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace似乎失去了与服务器的连接，或者服务器已停止响应。";
 
 /* Connection lost sheet: title when the AWS session has lapsed */
-"AWS Sign-In Required" = "AWS Sign-In Required";
+"AWS Sign-In Required" = "需要AWS 登录";
 
 /* Connection lost sheet: message when the AWS session has lapsed; %@ is an AWS CLI command */
-"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect.";
+"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace失去了与服务器的连接，无法重新连接，直到您再次登录AWS。\n\n在终端中，运行 `%@`，然后点击重新连接。";
 
 /* Connection lost sheet: message when an AWS IAM token could not be generated; %@ is the AWS error description */
 "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect.";
 
 /* Connection lost sheet: fallback AWS error description */
-"Unknown AWS IAM error" = "Unknown AWS IAM error";
+"Unknown AWS IAM error" = "未知AWS IAM 错误";
 
 /* Connection lost sheet: reconnect button */
-"Reconnect" = "Reconnect";
+"Reconnect" = "重新连接";
 
 /* Connection lost sheet: close connection button */
-"Close connection" = "Close connection";
+"Close connection" = "关闭连接";
 
 /* SQLite store problem alert title: the pinned-tables store is unusable */
-"Pinned tables are not being saved" = "Pinned tables are not being saved";
+"Pinned tables are not being saved" = "置顶的表未保存";
 
 /* SQLite store problem alert title: the display-format store is unusable */
-"Column display formats are not being saved" = "Column display formats are not being saved";
+"Column display formats are not being saved" = "未保存列显示格式";
 
 /* SQLite store problem: what an unusable pinned-tables store means for the user */
-"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept.";
+"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "您置顶的表格仍然停留在顶部，直到您退出 Sequel Ace，但它们没有被保存。";
 
 /* SQLite store problem: what an unusable display-format store means for the user */
-"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Display formats you choose still work until you quit Sequel Ace, but they are not kept.";
+"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "在退出序列之前显示您选择的格式，但它们没有被保留。";
 
 /* SQLite store problem: the folder for the app's data files is missing */
-"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace could not find or create its data folder in Application Support.";
+"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace无法在应用程序支持中找到或创建其数据文件夹。";
 
 /* SQLite store problem: the data file could not be opened; the argument is its path */
-"Sequel Ace could not open the file “%@”." = "Sequel Ace could not open the file “%@”.";
+"Sequel Ace could not open the file “%@”." = "Sequel Ace无法打开文件“%@”。";
 
 /* SQLite store problem: the data file could not be prepared or read; the arguments are its path and the error */
-"Sequel Ace could not use the file “%1$@”: %2$@" = "Sequel Ace could not use the file “%1$@”: %2$@";
+"Sequel Ace could not use the file “%1$@”: %2$@" = "序列无法使用文件“%1$@”： %2$@";
 
 /* SQLite store problem: the data file holds entries that cannot be read; the argument is its path */
-"Sequel Ace could not read the file “%@”." = "Sequel Ace could not read the file “%@”.";
+"Sequel Ace could not read the file “%@”." = "Sequel Ace无法读取文件“%@”。";
 
 /* SQLite store problem: a change could not be written to the data file; the arguments are its path and the error */
-"Sequel Ace could not save to the file “%1$@”: %2$@" = "Sequel Ace could not save to the file “%1$@”: %2$@";
+"Sequel Ace could not save to the file “%1$@”: %2$@" = "序列无法保存到文件“%1$@”： %2$@";
 
 /* SQLite store problem: advice for a file or folder that cannot be written to */
-"Make sure the file and its folder can be written to." = "Make sure the file and its folder can be written to.";
+"Make sure the file and its folder can be written to." = "请确保文件及其文件夹可以被写入。";
 
 /* SQLite store problem: advice for a damaged data file */
-"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts.";
+"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "如果文件损坏，请退出 Sequel Ace 并将文件移出其文件夹； Sequel Ace在下次启动时创建一个新的一个。";
 
 /* button that reveals a file in Finder */
-"Show in Finder" = "Show in Finder";
+"Show in Finder" = "在 Finder 中显示";
 
 /* AWS sign-in recovery; %@ is an AWS CLI command */
-"Run `%@` in Terminal, then try again." = "Run `%@` in Terminal, then try again.";
+"Run `%@` in Terminal, then try again." = "在终端中运行%@，然后再试一次。";
 
 /* AWS IAM credentials status message */
-"Getting AWS credentials..." = "Getting AWS credentials...";
+"Getting AWS credentials..." = "正在获取 AWS 凭据...";
 
 /* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
-"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "点击查看过滤器菜单：添加过滤器或AND/ROR 组，或复制WHERE 条款";
 
 /* Connection error: the cleartext authentication plugin requires TLS */
-"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
+"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "此连接启用了清除文本身份验证插件，该插件用纯文本发送密码，因此只能通过 TLS 进行。 无法与服务器建立TLS，也没有发送密码。";
 
 /* aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error */
-"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace renewed your AWS console sign-in session but could not save it: %@";
+"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace更新了您的 AWS 控制台登录会话，但无法保存它: %@";
 
 /* rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature */
-"the column '%@' is missing" = "the column '%@' is missing";
+"the column '%@' is missing" = "缺少列 '%@'";
 
 /* rename database: a column the recreated view presents that the source view did not; %@ is the column's signature */
-"the column '%@' was added" = "the column '%@' was added";
+"the column '%@' was added" = "列'%@' 已添加";
 
 /* rename database: a column of a recreated view that changed; %1$@ the column as it was, %2$@ as it is now */
-"'%@' became '%@'" = "'%1$@' became '%2$@'";
+"'%@' became '%@'" = "'%1$@' 改为 '%2$@'";
 
 /* rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view */
-"the columns of the view '%@' were not listed before the move." = "the columns of the view '%@' were not listed before the move.";
+"the columns of the view '%@' were not listed before the move." = "在移动前没有列出视图 '%@' 的列表。";
 
 /* rename database: a recreated view whose columns information_schema did not report; %@ is the view */
-"the columns of the recreated view '%@' were not listed." = "the columns of the recreated view '%@' were not listed.";
+"the columns of the recreated view '%@' were not listed." = "重新创建视图 '%@'的列没有列出。";
 
 /* rename database: a recreated view's column signature differs from the source view's, so the source database is kept; %1$@ view, %2$@ target database, %3$@ source database, %4$@ what changed, %5$@ and %6$@ source database */
-"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "The view '%1$@' does not present the same columns in '%2$@' as it did in '%3$@' (%4$@), so its results could differ. The objects were moved, and '%5$@' was kept; check the view and remove '%6$@' yourself once you are satisfied.";
+"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "视图 '%1$@' 不会在 '%2$@' 中显示与'%3$@' (%4$@) 相同的列， 这样它的结果就会不同。 对象被移动，'%5$@'被保留；一旦您满意，请检查视图并移除%6$@。";
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
