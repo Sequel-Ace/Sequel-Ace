@@ -253,22 +253,43 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertEqual(editor.numberOfRows, 2, "with no row waiting, the click adds one as before")
     }
 
-    /// Verifies that "add a filter" also reuses the row after the user unchecked it again, rather than
-    /// adding a second empty row next to it.
-    func testAddingAFilterReusesARowUncheckedAgain() throws {
+    /// Verifies that the row a new AND/OR group is seeded with waits like the first row does,
+    /// instead of putting `column = ''` into the WHERE preview the moment the group appears.
+    func testANewGroupsSeededRowWaitsRatherThanFiltering() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+        type("5", into: editor, of: controller)
+        let before = whereClause(of: controller)
+        XCTAssertFalse(before.isEmpty, "the first row is a filter once it has a value")
+
+        call(controller, "addEmptyFilterGroup")
+
+        XCTAssertEqual(whereClause(of: controller), before,
+                       "the group's seeded row adds nothing until it is filled in")
+    }
+
+    /// Verifies that a row the user switched on and then unchecked again is a filter set aside:
+    /// "add a filter" leaves it alone and adds a row.
+    ///
+    /// Its value being the empty string makes no difference, and from the editor's state alone
+    /// there is no telling the two apart - an empty value field looks the same whether the user
+    /// meant `column = ''` or never typed anything. Reusing it switched a filter the user had put
+    /// away back on and put the cursor in it, so the next keystroke replaced it.
+    func testAddingAFilterLeavesARowUncheckedAgainAlone() throws {
         let (controller, editor) = try makeBoundController()
         controller.setValue(true, forKey: "enabled")
         call(controller, "addStarterFilterExpression")
 
         call(controller, "addEmptyFilterRow")
         let box = try XCTUnwrap(checkbox(in: editor))
-        XCTAssertEqual(box.state, .on)
+        XCTAssertEqual(box.state, .on, "the seeded row is the one this click checks")
         box.state = .off
         controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
 
         call(controller, "addEmptyFilterRow")
-        XCTAssertEqual(editor.numberOfRows, 1)
-        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertEqual(editor.numberOfRows, 2, "the filter set aside is left where it is")
+        XCTAssertEqual(box.state, .off, "and stays off")
     }
 
     /// Verifies that an unchecked row with a value, and one whose operator takes no value, are filters set

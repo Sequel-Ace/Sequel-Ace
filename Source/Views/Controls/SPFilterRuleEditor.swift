@@ -136,26 +136,35 @@ enum SARuleFilterContextMenu {
         return row
     }
 
-    /// The first top-level row that is an unchecked, empty filter - it has
-    /// value fields and nothing is typed into any of them - or `NSNotFound`.
-    /// "Add Filter" checks such a row instead of adding a second empty one next
-    /// to it, whether it is the seeded starter row or a row the user unchecked
-    /// again. An unchecked row with a value, or one whose operator takes none
-    /// (`IS NULL`), is a filter set aside and is left alone.
+    /// The seeded starter row, while it is still the empty template it was seeded as, or
+    /// `NSNotFound`.
     ///
-    /// - Parameter editor: The rule editor to search.
+    /// "Add Filter" checks that row instead of adding a second empty one beside it. Only the
+    /// seeded row counts. A row the user switched on once was a filter, and unchecking it sets
+    /// that filter aside - including one whose value is the empty string, which from the
+    /// editor's state alone looks exactly like a row nothing was ever typed into. Reusing it
+    /// switched a filter the user had put away back on and put the cursor in it, so the next
+    /// keystroke replaced it.
+    ///
+    /// - Parameter editor: The rule editor holding the row.
     /// - Returns: The row index.
     @objc(reusableEmptyRowInEditor:)
-    public static func reusableEmptyRow(in editor: NSRuleEditor) -> Int {
-        for row in 0..<editor.numberOfRows where editor.parentRow(forRow: row) == -1 && editor.rowType(forRow: row) == .simple {
-            let values = editor.displayValues(forRow: row)
-            guard let checkbox = values.first as? NSButton, checkbox.state == .off else { continue }
-            let fields = values.compactMap { $0 as? NSTextField }
-            if !fields.isEmpty && fields.allSatisfy({ $0.stringValue.isEmpty }) {
-                return row
-            }
+    public func reusableEmptyRow(in editor: NSRuleEditor) -> Int {
+        let row = self.row(in: editor)
+        guard row != NSNotFound,
+              editor.parentRow(forRow: row) == -1,
+              editor.rowType(forRow: row) == .simple else {
+            return NSNotFound
         }
-        return NSNotFound
+        let values = editor.displayValues(forRow: row)
+        guard let checkbox = values.first as? NSButton, checkbox.state == .off else {
+            return NSNotFound
+        }
+        let fields = values.compactMap { $0 as? NSTextField }
+        guard !fields.isEmpty, fields.allSatisfy({ $0.stringValue.isEmpty }) else {
+            return NSNotFound
+        }
+        return row
     }
 
     /// Checks the tracked row when `row` is that row and stops tracking it:
