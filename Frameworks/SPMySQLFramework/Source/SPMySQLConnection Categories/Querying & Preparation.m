@@ -433,6 +433,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger queryAttemptsAllowed = 1;
 	if (retryQueriesOnConnectionFailure) queryAttemptsAllowed++;
 	int queryStatus;
+	// Kept across attempts on purpose: once the statement has been handed to the server, that it
+	// reached it stays true however the attempt that follows ends.
 	BOOL theStatementReachedTheServer = NO;
 	BOOL whatBecameOfTheStatementIsUnknown = NO;
 
@@ -600,15 +602,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			// transaction for it to be rolled back with. Sending it again would run it twice as
 			// readily as not at all, so it is not sent again, and the caller is told that what
 			// became of it is unknown rather than that it failed.
-			unsigned int theServerStatus = mySQLConnection ? mySQLConnection->server_status : 0;
 			BOOL theStatementChangesData = [SAOutsideStatements areRunningOnCurrentThread]
 				|| !(mySQLConnection && [SADatabaseAssertionState statementLeavesDataAlone:theQueryString onMySQLConnection:mySQLConnection]);
+			// Only a session that is still there can be said to roll anything back. Without the
+			// handle there is no status to read, and reading one that is not there as "autocommit
+			// is off" would turn the case nothing is known about into the one case that needs no
+			// telling. What cannot be established does not count as established.
+			BOOL theSessionRollsItBack = NO;
+			if (mySQLConnection) {
+				unsigned int theServerStatus = mySQLConnection->server_status;
+				theSessionRollsItBack = [SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(theServerStatus & SERVER_STATUS_IN_TRANS) != 0
+				                                                                                             autocommit:(theServerStatus & SERVER_STATUS_AUTOCOMMIT) != 0
+				                                                                                    autocommitAtConnect:sessionAutocommitAtConnect];
+			}
 			whatBecameOfTheStatementIsUnknown = [SAUncertainWrite outcomeIsUnknownForStatementThatReachedTheServer:theStatementReachedTheServer
 			                                                                                          changesData:theStatementChangesData
 			                                                                                errorIsConnectionLoss:[SPMySQLConnection isErrorIDConnectionError:theErrorID]
-			                                                                                   sessionRollsItBack:[SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(theServerStatus & SERVER_STATUS_IN_TRANS) != 0
-			                                                                                                                                                                           autocommit:(theServerStatus & SERVER_STATUS_AUTOCOMMIT) != 0
-			                                                                                                                                                                  autocommitAtConnect:sessionAutocommitAtConnect]];
+			                                                                                   sessionRollsItBack:theSessionRollsItBack];
 
 			if (whatBecameOfTheStatementIsUnknown || theUserAskedToStopThisQuery
 			    || self.sessionAccess.currentQueryWasCancelled
@@ -739,14 +749,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastQueryWasCancelled = YES;
 	}
 
-	// A statement whose outcome is unknown says so, where the caller already looks: every path
-	// that shows an error - the editor, saving a row, the import's list - carries it without
-	// needing to know about this at all.
-	if (whatBecameOfTheStatementIsUnknown) {
-		theErrorMessage = [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"",
-			NSLocalizedString(@"The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.", @"Note added to the error of a statement whose outcome could not be established")];
-	}
-
 	// If the query was cancelled, override the error state. Either record of the stop counts: the
 	// session's own, and the one kept against the query's number for a stop that reached a query
 	// which was losing its connection at the time.
@@ -757,6 +759,18 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
 		theSqlstate = @"70100";
+	}
+
+	// A statement whose outcome is unknown says so, where the caller already looks: every path
+	// that shows an error - the editor, saving a row, the import's list - carries it without
+	// needing to know about this at all. Said last, so that it survives whatever else described
+	// the failure: a statement the user stopped as its connection went can still have been
+	// carried out, and "Query cancelled." on its own would read as though it had not been.
+	if (whatBecameOfTheStatementIsUnknown) {
+		NSString *theNote = NSLocalizedString(@"The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.", @"Note added to the error of a statement whose outcome could not be established");
+		theErrorMessage = [theErrorMessage length]
+			? [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage, theNote]
+			: theNote;
 	}
 
 	// A query nobody waited for finished anyway. Its caller was told it was cancelled, and what it
