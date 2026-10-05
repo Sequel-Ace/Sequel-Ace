@@ -511,7 +511,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// this wait, and only this one, until it is marked as over. A query the session's own
 		// bookkeeping has already given up on is never sent, so there is nothing to wait for.
 		if (!queryWasCancelled) {
-			[inFlightQuery beginWaitingForGeneration:thisQueryGeneration onSocket:mySQLConnection->net.fd serverThread:mySQLConnection->thread_id];
+			// Without a transport the number in the handle is a descriptor the client library
+			// has already closed, and the system may have given it to somebody else by now.
+			// Duplicating it would let a cancellation shut down an unrelated connection, and
+			// roll back whatever it had open. A query with nothing to wait on is recorded as
+			// waiting on nothing.
+			int theSocketToWaitOn = mySQLConnection->net.vio ? mySQLConnection->net.fd : -1;
+			[inFlightQuery beginWaitingForGeneration:thisQueryGeneration onSocket:theSocketToWaitOn serverThread:mySQLConnection->thread_id];
 		}
 
 		SADatabaseAssertionError *databaseAssertionError = queryWasCancelled ? nil : [databaseAssertionState
