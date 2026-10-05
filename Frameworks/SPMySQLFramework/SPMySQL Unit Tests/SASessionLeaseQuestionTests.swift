@@ -292,4 +292,51 @@ final class SASessionLeaseQuestionTests: XCTestCase {
                        "the statement was sent; what it returned is its own")
     }
 
+
+    /// A refused statement reports itself, and is not mistaken for one the user stopped.
+    ///
+    /// Each query clears what the one before it left, but a refused one never gets that far:
+    /// it is turned away before the statement is prepared. A stop recorded against an earlier
+    /// query would then still stand, and callers that read it alongside the error - the content
+    /// view among them - take a cancelled query to be one the user already knows about and stay
+    /// quiet. The write would be reported nowhere at all.
+    func testARefusedStatementIsNotTakenForOneTheUserStopped() throws {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        let access = try XCTUnwrap(connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess)
+
+        // What an earlier query left behind.
+        connection.setValue(true, forKey: "lastQueryWasCancelled")
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+
+        access.noteAQuestionWentToTheMainThread()
+        defer { access.noteTheQuestionWasAnswered() }
+        let theOwner = DispatchSemaphore(value: 0)
+        let theOwnerMayGo = DispatchSemaphore(value: 0)
+        let theOwnerLetGo = expectation(description: "the owner let the session go")
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: true) {
+                theOwner.signal()
+                _ = theOwnerMayGo.wait(timeout: .now() + 10)
+                return true
+            }
+            theOwnerLetGo.fulfill()
+        }
+        XCTAssertEqual(theOwner.wait(timeout: .now() + 10), .success)
+
+        XCTAssertNil(connection.queryString("UPDATE t SET a = 1"))
+
+        XCTAssertTrue(connection.queryErrored(), "the refusal is an error of its own")
+        XCTAssertFalse(connection.lastQueryWasCancelled,
+                       "and not a query the user stopped, which callers would say nothing about")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 0)
+
+        theOwnerMayGo.signal()
+        wait(for: [theOwnerLetGo], timeout: 5)
+    }
+
 }

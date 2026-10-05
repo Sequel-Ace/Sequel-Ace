@@ -340,6 +340,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // how an edit that was never written comes to be treated as saved.
     BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
     if (!theResult && theSessionWasRefused) {
+        // The statement never reached `_queryString:`, which is where each query clears what the
+        // one before it left. A stop recorded against an earlier query would otherwise still
+        // stand here, and callers that read it alongside the error - the content view among
+        // them - take a cancelled query to be one the user already knows about and say nothing.
+        lastQueryWasCancelled = NO;
         lastQueryAffectedRowCount = 0;
         [self _updateLastErrorMessage:NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open")];
         [self _updateLastErrorID:2013];
