@@ -68,78 +68,119 @@ enum SARuleFilterContextMenu {
     }
 }
 
-/// Tracks the filter row the content view seeds when another table is
-/// selected. The row starts unchecked: it is an empty template, not a filter,
-/// and a checked one made the WHERE preview show `column = ''` while the table
-/// was unfiltered. Its first edit checks it; a click on its checkbox is the
-/// user's own decision and ends the tracking. Only a weak reference to the
-/// row's checkbox is kept, so a removed or replaced row simply stops being
-/// tracked; the controller records the state in the saved filter so a restored
-/// row is tracked again.
+/// Tracks the filter rows that are seeded empty and wait for their first edit: the row the
+/// content view seeds when another table is selected, and the row each new AND/OR group
+/// brings. Such a row starts unchecked - it is an empty template, not a filter, and a checked
+/// one made the WHERE preview show `column = ''` while the table was unfiltered. Its first
+/// edit checks it; a click on its checkbox is the user's own decision and ends the tracking.
+///
+/// Every waiting row is tracked on its own. With a single tracked row, a group added before the
+/// one before it had been filled in took its place, and the row left behind no longer reacted
+/// to being edited - so its condition was missing from the WHERE clause.
+///
+/// Only a weak reference to each row's checkbox is kept, so a removed or replaced row simply
+/// stops being tracked; the controller records the state in the saved filter so a restored row
+/// is tracked again.
 @objc public final class SARuleFilterPendingStarter: NSObject {
-    /// The seeded row's checkbox while the row waits for its first edit.
-    @objc public private(set) weak var checkbox: NSButton?
 
-    /// Clears the mark a restored row carries, run when tracking ends for good.
-    private var clearRestoredMark: (() -> Void)?
+    /// One row waiting for its first edit.
+    private final class SAWaitingRow {
+        /// The row's enable checkbox, held weakly so a row that is gone stops being tracked
+        /// by itself.
+        weak var checkbox: NSButton?
 
-    /// Tracks `checkbox` as the seeded row's and unchecks it.
+        /// Clears the mark a restored row carries, run when this row's tracking ends.
+        var clearRestoredMark: (() -> Void)?
+
+        init(checkbox: NSButton, clearRestoredMark: (() -> Void)?) {
+            self.checkbox = checkbox
+            self.clearRestoredMark = clearRestoredMark
+        }
+
+        /// Ends this row's tracking and lets a restored row forget that it was ever waiting.
+        func endTracking() {
+            checkbox = nil
+            clearRestoredMark?()
+            clearRestoredMark = nil
+        }
+    }
+
+    /// The rows waiting for their first edit, in no particular order: "Add Filter" inserts at the
+    /// top, so the order rows began waiting in says nothing about where they sit. `waitingRows`
+    /// puts them in the order the editor shows them, which is what the callers ask about.
+    private var waiting: [SAWaitingRow] = []
+
+    /// Tracks `checkbox`'s row as waiting and unchecks it.
     ///
     /// - Parameters:
     ///   - checkbox: The row's enable checkbox.
-    ///   - clearRestoredMark: Clears the mark a restored row carries, called
-    ///     once tracking ends. A restored row keeps that mark so that tracking
-    ///     resumes whenever its checkbox is built again - the editor rebuilds
-    ///     it on a reload, before the row has been edited - which is also why
-    ///     the mark has to go the moment the row stops waiting. Without that,
-    ///     a later rebuild would uncheck a row the user has since enabled.
+    ///   - clearRestoredMark: Clears the mark a restored row carries, called once that row's
+    ///     tracking ends. A restored row keeps that mark so that tracking resumes whenever its
+    ///     checkbox is built again - the editor rebuilds it on a reload, before the row has been
+    ///     edited - which is also why the mark has to go the moment the row stops waiting.
+    ///     Without that, a later rebuild would uncheck a row the user has since enabled.
     @objc(beginWithCheckbox:clearingRestoredMark:)
     public func begin(with checkbox: NSButton, clearingRestoredMark clearRestoredMark: (() -> Void)?) {
         checkbox.state = .off
-        self.checkbox = checkbox
-        self.clearRestoredMark = clearRestoredMark
+        // A checkbox already tracked is the same row waiting again, so its mark stays: dropping
+        // the old entry without ending its tracking is what lets the next rebuild find it.
+        waiting.removeAll { $0.checkbox == nil || $0.checkbox === checkbox }
+        waiting.append(SAWaitingRow(checkbox: checkbox, clearRestoredMark: clearRestoredMark))
     }
 
-    /// Stops tracking, e.g. because the user clicked the row's checkbox.
-    @objc public func forget() {
-        endTracking()
+    /// Stops tracking the row `value` is the checkbox of, e.g. because the user clicked it.
+    ///
+    /// - Parameter value: A display value of the rule editor; anything else is ignored.
+    @objc(forgetCheckbox:)
+    public func forgetCheckbox(_ value: Any?) {
+        guard let button = value as? NSButton else { return }
+        var remaining: [SAWaitingRow] = []
+        var ended: [SAWaitingRow] = []
+        for entry in waiting {
+            guard let box = entry.checkbox else { continue }
+            if box === button { ended.append(entry) } else { remaining.append(entry) }
+        }
+        waiting = remaining
+        ended.forEach { $0.endTracking() }
     }
 
-    /// Stops tracking and lets a restored row forget that it was ever waiting.
-    private func endTracking() {
-        checkbox = nil
-        clearRestoredMark?()
-        clearRestoredMark = nil
+    /// Stops tracking `row`.
+    ///
+    /// - Parameters:
+    ///   - row: The row to stop tracking.
+    ///   - editor: The rule editor holding it.
+    @objc(forgetRow:inEditor:)
+    public func forgetRow(_ row: Int, in editor: NSRuleEditor) {
+        guard row != NSNotFound, row >= 0, row < editor.numberOfRows else { return }
+        forgetCheckbox(editor.displayValues(forRow: row).first)
     }
 
-    /// Whether `value` is the tracked checkbox.
+    /// Whether `value` is the checkbox of a row that is waiting.
     ///
     /// - Parameter value: A display value of the rule editor.
-    /// - Returns: Whether it is the seeded row's checkbox.
+    /// - Returns: Whether it is a waiting row's checkbox.
     @objc public func isCheckbox(_ value: Any?) -> Bool {
-        guard let checkbox, let button = value as? NSButton else { return false }
-        return button === checkbox
+        guard let button = value as? NSButton else { return false }
+        return waiting.contains { $0.checkbox === button }
     }
 
-    /// The tracked row's index, or `NSNotFound` when there is none any more.
+    /// The index of the first waiting row of the top-level list, or `NSNotFound` when there is
+    /// none.
+    ///
+    /// A row inside an AND/OR group is not one: the caller replaces a row of the top-level
+    /// list, which a nested row's index does not address.
     ///
     /// - Parameter editor: The rule editor holding the row.
     /// - Returns: The row index.
     @objc(rowInEditor:)
     public func row(in editor: NSRuleEditor) -> Int {
-        guard let checkbox else { return NSNotFound }
-        let row = editor.row(forDisplayValue: checkbox)
-        guard row != NSNotFound, row >= 0 else {
-            self.checkbox = nil
-            return NSNotFound
-        }
-        return row
+        return waitingRows(in: editor).first { editor.parentRow(forRow: $0.row) == -1 }?.row ?? NSNotFound
     }
 
-    /// The seeded starter row, while it is still the empty template it was seeded as, or
-    /// `NSNotFound`.
+    /// A seeded row of the top-level list, while it is still the empty template it was seeded
+    /// as, or `NSNotFound`.
     ///
-    /// "Add Filter" checks that row instead of adding a second empty one beside it. Only the
+    /// "Add Filter" checks that row instead of adding a second empty one beside it. Only a
     /// seeded row counts. A row the user switched on once was a filter, and unchecking it sets
     /// that filter aside - including one whose value is the empty string, which from the
     /// editor's state alone looks exactly like a row nothing was ever typed into. Reusing it
@@ -150,37 +191,62 @@ enum SARuleFilterContextMenu {
     /// - Returns: The row index.
     @objc(reusableEmptyRowInEditor:)
     public func reusableEmptyRow(in editor: NSRuleEditor) -> Int {
-        let row = self.row(in: editor)
-        guard row != NSNotFound,
-              editor.parentRow(forRow: row) == -1,
-              editor.rowType(forRow: row) == .simple else {
-            return NSNotFound
-        }
-        let values = editor.displayValues(forRow: row)
-        guard let checkbox = values.first as? NSButton, checkbox.state == .off else {
-            return NSNotFound
-        }
-        let fields = values.compactMap { $0 as? NSTextField }
-        guard !fields.isEmpty, fields.allSatisfy({ $0.stringValue.isEmpty }) else {
-            return NSNotFound
-        }
-        return row
+        return waitingRows(in: editor).first { isReusableEmptyRow($0.row, in: editor) }?.row ?? NSNotFound
     }
 
-    /// Checks the tracked row when `row` is that row and stops tracking it:
-    /// editing the row means filtering by it.
+    /// Checks `row` when it is one of the waiting rows and stops tracking it: editing a row
+    /// means filtering by it.
     ///
     /// - Parameters:
     ///   - row: The row that is being edited.
     ///   - editor: The rule editor holding it.
-    /// - Returns: Whether the tracked row was checked.
+    /// - Returns: Whether a waiting row was checked.
     @objc(enableIfRow:inEditor:)
     public func enableIfRow(_ row: Int, in editor: NSRuleEditor) -> Bool {
-        let tracked = self.row(in: editor)
-        guard tracked != NSNotFound, row == tracked, let checkbox else { return false }
-        checkbox.state = .on
-        endTracking()
+        guard row != NSNotFound, row >= 0,
+              let match = waitingRows(in: editor).first(where: { $0.row == row }) else { return false }
+        match.entry.checkbox?.state = .on
+        waiting.removeAll { $0 === match.entry }
+        match.entry.endTracking()
         return true
+    }
+
+    /// The waiting rows with their index in `editor`, lowest index first; the rows that are no
+    /// longer in the editor stop being tracked.
+    ///
+    /// Their mark is left alone: a row out of the editor is one being rebuilt as often as one
+    /// that is gone, and the mark is what lets the rebuilt one resume waiting.
+    ///
+    /// - Parameter editor: The rule editor holding the rows.
+    /// - Returns: The rows and their indexes.
+    private func waitingRows(in editor: NSRuleEditor) -> [(row: Int, entry: SAWaitingRow)] {
+        var alive: [SAWaitingRow] = []
+        var found: [(row: Int, entry: SAWaitingRow)] = []
+        for entry in waiting {
+            guard let box = entry.checkbox else { continue }
+            let row = editor.row(forDisplayValue: box)
+            guard row != NSNotFound, row >= 0 else { continue }
+            alive.append(entry)
+            found.append((row: row, entry: entry))
+        }
+        waiting = alive
+        return found.sorted { $0.row < $1.row }
+    }
+
+    /// Whether `row` is still the empty template a seeded row is.
+    ///
+    /// - Parameters:
+    ///   - row: The row to judge.
+    ///   - editor: The rule editor holding it.
+    /// - Returns: Whether "Add Filter" may use it.
+    private func isReusableEmptyRow(_ row: Int, in editor: NSRuleEditor) -> Bool {
+        guard editor.parentRow(forRow: row) == -1, editor.rowType(forRow: row) == .simple else {
+            return false
+        }
+        let values = editor.displayValues(forRow: row)
+        guard let checkbox = values.first as? NSButton, checkbox.state == .off else { return false }
+        let fields = values.compactMap { $0 as? NSTextField }
+        return !fields.isEmpty && fields.allSatisfy { $0.stringValue.isEmpty }
     }
 }
 
