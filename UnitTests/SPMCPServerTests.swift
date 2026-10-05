@@ -845,3 +845,107 @@ final class SAStringUnicodeScalarSearchTests: XCTestCase {
     }
 }
 
+
+
+/// The query executor must not change a validated read while applying its cap.
+final class SAMCPResultLimitSQLTests: XCTestCase {
+    func testValidNoBackslashEscapesReadKeepsItsOriginalSQL() {
+        let sql = "SELECT 'a\\' AS a, 'b#c' AS b"
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware(sql, backslashEscapes: false), sql)
+        XCTAssertNotEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware(sql), sql)
+        XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql),
+                     "the executor must retain the query and enforce only its read-side cap")
+    }
+
+    func testAmbiguousDashAndBlockMarkersAreNotRewritten() {
+        for marker in ["-- ", "/*"] {
+            let sql = "SELECT 'a\\' AS a, 'b" + marker + "c' AS b"
+            XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+            XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql), marker)
+        }
+    }
+
+    func testOrdinaryCommentsCanStillBeStrippedAndCapped() {
+        let sql = "/* leading */ SELECT 'a\\\\b#c' AS value -- trailing\r\n"
+        let stripped = SPMCPReadOnlyGuard.sqlForResultLimiting(sql)
+        XCTAssertEqual(stripped?.trimmingCharacters(in: .whitespacesAndNewlines), "SELECT 'a\\\\b#c' AS value")
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql))
+    }
+
+    func testExecutableCommentsAreNeverRewrittenForLimiting() {
+        for sql in ["SELECT 1 /*! UNION SELECT 2 */", "SELECT 1 /*M! UNION SELECT 2 */"] {
+            XCTAssertNil(SPMCPReadOnlyGuard.sqlForResultLimiting(sql))
+            XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly(sql))
+        }
+    }
+}
+
+final class SAMCPResultPageTests: XCTestCase {
+    func testToolPageComposesWithEachSQLLimitWindow() {
+        for sql in ["SELECT value LIMIT 20 OFFSET 5", "SELECT value LIMIT 5, 20"] {
+            let page = SAMCPResultPage.sqlPageWithinTrailingLimit(sql, requested: 2, offset: 3, cap: 10)
+            XCTAssertEqual(page?.sql, "SELECT value LIMIT 3 OFFSET 8")
+            XCTAssertEqual(page?.maxRows, 2)
+        }
+        let finalPage = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 20", requested: 10, offset: 18, cap: 10)
+        XCTAssertEqual(finalPage?.sql, "SELECT value LIMIT 2 OFFSET 18")
+        XCTAssertEqual(finalPage?.maxRows, 2)
+    }
+
+    func testSQLWindowCapsFetchAndHandlesAnOffsetBeyondItsEnd() {
+        let capped = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 1000000", requested: Int.max, offset: 0, cap: 10000)
+        XCTAssertEqual(capped?.sql, "SELECT value LIMIT 10001 OFFSET 0")
+        XCTAssertEqual(capped?.maxRows, 10000)
+        let empty = SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2 OFFSET 5", requested: 2, offset: 3, cap: 10)
+        XCTAssertEqual(empty?.sql, "SELECT value LIMIT 0 OFFSET 8")
+        XCTAssertEqual(empty?.maxRows, 0)
+    }
+
+    func testSQLWindowPreservesMeaningOnIntegerOverflowAndNegativeToolOffset() {
+        let oversized = "SELECT value LIMIT 18446744073709551615"
+        XCTAssertTrue(SAMCPResultPage.hasTrailingLimit(oversized))
+        XCTAssertNil(SAMCPResultPage.sqlPageWithinTrailingLimit(oversized, requested: 2, offset: 0, cap: 10))
+        XCTAssertNil(SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2 OFFSET \(Int.max)", requested: 2, offset: 1, cap: 10))
+        XCTAssertEqual(SAMCPResultPage.sqlPageWithinTrailingLimit("SELECT value LIMIT 2", requested: 2, offset: -1, cap: 10)?.sql, "SELECT value LIMIT 2 OFFSET 0")
+    }
+
+    func testUnmodifiedQueryResultHonorsLimitOffsetAndOneLookahead() {
+        var index = 0
+        var rows: [Int] = []
+        let truncated = SAMCPResultPage.consumeRows(
+            maxRows: SAMCPResultPage.rowLimit(requested: 2, cap: 10), offset: 2,
+            nextRow: { guard index < 20 else { return nil }; defer { index += 1 }; return index },
+            appendRow: { rows.append($0) }
+        )
+        XCTAssertEqual(rows, [2, 3])
+        XCTAssertTrue(truncated)
+        XCTAssertEqual(index, 5, "offset plus limit plus one lookahead, not the whole result")
+    }
+
+    func testEmptyAndExactPagesAreNotReportedAsTruncated() {
+        for offset in [0, 2, 20] {
+            var iterator = [0, 1].makeIterator()
+            var rows: [Int] = []
+            let truncated = SAMCPResultPage.consumeRows(maxRows: 2, offset: offset,
+                                                        nextRow: { iterator.next() },
+                                                        appendRow: { rows.append($0) })
+            XCTAssertEqual(rows, offset == 0 ? [0, 1] : [])
+            XCTAssertFalse(truncated)
+        }
+    }
+
+    func testLimitsRemainCappedAndNegativeOffsetsStartAtZero() {
+        XCTAssertEqual(SAMCPResultPage.rowLimit(requested: Int.max, cap: 3), 3)
+        XCTAssertEqual(SAMCPResultPage.rowLimit(requested: 0, cap: 3), 3)
+        XCTAssertEqual(SAMCPResultPage.rowLimit(requested: -1, cap: 3), 3)
+        var iterator = [0, 1, 2, 3, 4].makeIterator()
+        var rows: [Int] = []
+        let truncated = SAMCPResultPage.consumeRows(
+            maxRows: SAMCPResultPage.rowLimit(requested: Int.max, cap: 3), offset: -20,
+            nextRow: { iterator.next() }, appendRow: { rows.append($0) }
+        )
+        XCTAssertEqual(rows, [0, 1, 2])
+        XCTAssertTrue(truncated)
+    }
+}

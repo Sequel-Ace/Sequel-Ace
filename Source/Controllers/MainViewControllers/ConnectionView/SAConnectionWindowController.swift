@@ -364,34 +364,40 @@ import SwiftUI
         return AWSDirectoryBookmarkManager.shared.addAWSDirectoryBookmark(from: url)
     }
 
-    /// Generates the RDS auth token that stands in for the password on a
-    /// background queue, calling back on the main queue. An MFA prompt, when
-    /// the profile needs one, runs on the main queue.
-    private func resolveAWSIAMToken(info: SAConnectionInfo,
-                                    completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
+    /// Resolve credentials off main, keeping MFA presentation and completion on main.
+    private func resolveAWSIAMToken(
+        info: SAConnectionInfo,
+        completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void
+    ) {
         let port = Int(info.port.trimmingCharacters(in: .whitespaces)) ?? 3306
+        let attemptID = attempts.currentAttemptID
         let trimmedProfile = info.awsProfile.trimmingCharacters(in: .whitespacesAndNewlines)
-        let failureTitle = NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title")
-
         AWSIAMAuthManager.generateAuthTokenInBackground(
-            hostname: info.host,
-            port: port,
-            username: info.user,
+            hostname: info.host, port: port, username: info.user,
             region: info.awsRegion,
-            // Matches -generateAWSIAMAuthTokenWithError:, which falls back to
-            // "default" rather than passing an empty profile name.
             profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
-            parentWindow: window
-        ) { token, error in
-            guard let token, !token.isEmpty else {
-                completion(.failure(SACredentialFailure(
-                    title: failureTitle,
-                    detail: error?.localizedDescription
-                        ?? NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error"))))
-                return
+            parentWindow: window,
+            shouldContinue: { [weak self] in
+                guard let self else { return false }
+                // The attempt sequence is main-thread-owned, while IAM token generation
+                // checks continuation from its credential worker as well as from main.
+                if Thread.isMainThread {
+                    return self.attempts.isCurrent(attemptID)
+                }
+                return DispatchQueue.main.sync { self.attempts.isCurrent(attemptID) }
             }
-
-            completion(.success(SAResolvedCredentials(user: info.user, password: token)))
+        ) { token, error in
+            if let error {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    detail: error.localizedDescription)))
+            } else if let token, !token.isEmpty {
+                completion(.success(SAResolvedCredentials(user: info.user, password: token)))
+            } else {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    detail: NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error"))))
+            }
         }
     }
 
