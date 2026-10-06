@@ -57,6 +57,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_installCheckConstraintsSection;
+- (NSArray<NSNumber *> *)_serverVersionParts;
 - (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression enforced:(BOOL)enforced;
 - (void)_deleteCheckConstraintsNamed:(NSArray<NSString *> *)names;
 - (void)_updateAvailableTableColumns;
@@ -679,17 +680,23 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		if ([checkName length]) [takenConstraintNames addObject:[checkName lowercaseString]];
 	}
 
-	BOOL serverSupportsChecks = isTable && [connection isConnected]
-		&& [SACheckConstraintSupport serverSupportsCheckConstraintsWithMariaDB:[connection isMariaDB]
-		                                                                  major:(NSInteger)[connection serverMajorVersion]
-		                                                                  minor:(NSInteger)[connection serverMinorVersion]
-		                                                                release:(NSInteger)[connection serverReleaseVersion]];
+	BOOL serverSupportsChecks = NO;
+	BOOL supportsNotEnforced = NO;
 
-	BOOL supportsNotEnforced = serverSupportsChecks
-		&& [SACheckConstraintSupport serverSupportsNotEnforcedWithMariaDB:[connection isMariaDB]
-		                                                            major:(NSInteger)[connection serverMajorVersion]
-		                                                            minor:(NSInteger)[connection serverMinorVersion]
-		                                                          release:(NSInteger)[connection serverReleaseVersion]];
+	if (isTable && [connection isConnected]) {
+		BOOL isMariaDB = [connection isMariaDB];
+		NSArray<NSNumber *> *version = [self _serverVersionParts];
+
+		serverSupportsChecks = [SACheckConstraintSupport serverSupportsCheckConstraintsWithMariaDB:isMariaDB
+		                                                                                     major:[version[0] integerValue]
+		                                                                                     minor:[version[1] integerValue]
+		                                                                                   release:[version[2] integerValue]];
+		supportsNotEnforced = serverSupportsChecks
+			&& [SACheckConstraintSupport serverSupportsNotEnforcedWithMariaDB:isMariaDB
+			                                                            major:[version[0] integerValue]
+			                                                            minor:[version[1] integerValue]
+			                                                          release:[version[2] integerValue]];
+	}
 
 	[checkConstraintsController updateWithChecks:checks
 	                        serverSupportsChecks:serverSupportsChecks
@@ -726,6 +733,22 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 }
 
 /**
+ * The server's [major, minor, release]. For MariaDB 10+ the connection's own numbers read 5.5.5, because
+ * the server announces itself as "5.5.5-10.x.y-MariaDB", so the version string is used for those.
+ */
+- (NSArray<NSNumber *> *)_serverVersionParts
+{
+	// -isMariaDB refreshes the cached version string, so it has to run first
+	BOOL isMariaDB = [connection isMariaDB];
+
+	return [SACheckConstraintSupport effectiveVersionForServerVersionString:[connection serverVersionString]
+	                                                                mariaDB:isMariaDB
+	                                                                  major:(NSInteger)[connection serverMajorVersion]
+	                                                                  minor:(NSInteger)[connection serverMinorVersion]
+	                                                                release:(NSInteger)[connection serverReleaseVersion]];
+}
+
+/**
  * Adds a CHECK constraint. Returns an error message for the add sheet to display, or nil on success.
  */
 - (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression enforced:(BOOL)enforced
@@ -752,15 +775,17 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Delete check constraint", @"delete check constraint message") message:NSLocalizedString(@"Are you sure you want to delete the selected check constraints? This action cannot be undone.", @"delete selected check constraint informative message") primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 		NSString *thisTable = [self->tablesListInstance tableName];
+		BOOL isMariaDB = [self->connection isMariaDB];
+		NSArray<NSNumber *> *version = [self _serverVersionParts];
 
 		for (NSString *name in names)
 		{
 			NSString *query = [SACheckConstraintSupport dropStatementForTable:thisTable
 			                                                             name:name
-			                                                          mariaDB:[self->connection isMariaDB]
-			                                                            major:(NSInteger)[self->connection serverMajorVersion]
-			                                                            minor:(NSInteger)[self->connection serverMinorVersion]
-			                                                          release:(NSInteger)[self->connection serverReleaseVersion]];
+			                                                          mariaDB:isMariaDB
+			                                                            major:[version[0] integerValue]
+			                                                            minor:[version[1] integerValue]
+			                                                          release:[version[2] integerValue]];
 
 			[self->connection queryString:query assertingDatabase:[self->tableDocumentInstance database]];
 

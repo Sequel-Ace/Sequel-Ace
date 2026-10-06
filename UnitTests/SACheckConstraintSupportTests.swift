@@ -25,6 +25,43 @@ final class SACheckConstraintSupportTests: XCTestCase {
         XCTAssertFalse(supports(mariaDB: true, 10, 1, 48))
     }
 
+    // MARK: - Effective version
+
+    func testMariaDBHandshakePrefixIsIgnored() {
+        // The client library reports 5.5.5 for MariaDB 10+, so the string has to be used
+        XCTAssertEqual(effective("5.5.5-10.11.19-MariaDB-ubu2204", mariaDB: true, reported: (5, 5, 5)), [10, 11, 19])
+        XCTAssertEqual(effective("5.5.5-10.1.48-MariaDB-1~bionic", mariaDB: true, reported: (5, 5, 5)), [10, 1, 48])
+    }
+
+    func testMariaDBWithoutHandshakePrefix() {
+        XCTAssertEqual(effective("10.11.19-MariaDB", mariaDB: true, reported: (10, 11, 19)), [10, 11, 19])
+        XCTAssertEqual(effective("11.4.2-MariaDB-log", mariaDB: true, reported: (5, 5, 5)), [11, 4, 2])
+    }
+
+    func testOldMariaDBKeepsItsOwnVersion() {
+        // MariaDB 5.5.x is a real version, not the handshake prefix
+        XCTAssertEqual(effective("5.5.68-MariaDB", mariaDB: true, reported: (5, 5, 68)), [5, 5, 68])
+    }
+
+    func testMySQLNumbersAreReturnedUnchanged() {
+        XCTAssertEqual(effective("8.0.18", mariaDB: false, reported: (8, 0, 18)), [8, 0, 18])
+        // Even a string that looks like something else: only MariaDB is re-read
+        XCTAssertEqual(effective("5.5.5-10.11.19-MariaDB", mariaDB: false, reported: (5, 5, 5)), [5, 5, 5])
+    }
+
+    func testUnparseableMariaDBStringFallsBackToReportedNumbers() {
+        XCTAssertEqual(effective(nil, mariaDB: true, reported: (10, 6, 1)), [10, 6, 1])
+        XCTAssertEqual(effective("MariaDB", mariaDB: true, reported: (10, 6, 1)), [10, 6, 1])
+        XCTAssertEqual(effective("10.6-MariaDB", mariaDB: true, reported: (10, 6, 1)), [10, 6, 1])
+    }
+
+    func testCorrectedMariaDBVersionPassesTheSupportGate() {
+        let version = SACheckConstraintSupport.effectiveVersion(serverVersionString: "5.5.5-10.11.19-MariaDB", isMariaDB: true, major: 5, minor: 5, release: 5)
+
+        XCTAssertFalse(supports(mariaDB: true, 5, 5, 5), "the raw reported version is what hid the section")
+        XCTAssertTrue(supports(mariaDB: true, version[0].intValue, version[1].intValue, version[2].intValue))
+    }
+
     // MARK: - Statements
 
     func testAddStatementNamed() {
@@ -213,6 +250,12 @@ final class SACheckConstraintSupportTests: XCTestCase {
             expression: try XCTUnwrap(result[SACheckConstraintSupport.expressionKey] as? String, file: file, line: line),
             enforced: try XCTUnwrap(result[SACheckConstraintSupport.enforcedKey] as? NSNumber, file: file, line: line).boolValue
         )
+    }
+
+    private func effective(_ string: String?, mariaDB: Bool, reported: (Int, Int, Int)) -> [Int] {
+        SACheckConstraintSupport
+            .effectiveVersion(serverVersionString: string, isMariaDB: mariaDB, major: reported.0, minor: reported.1, release: reported.2)
+            .map(\.intValue)
     }
 
     private func supports(mariaDB: Bool, _ major: Int, _ minor: Int, _ release: Int) -> Bool {

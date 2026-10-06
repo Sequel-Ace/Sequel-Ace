@@ -31,6 +31,30 @@ import Foundation
         !isMariaDB && isVersion(major, minor, release, atLeast: (8, 0, 16))
     }
 
+    /// The real [major, minor, release] of the server.
+    ///
+    /// MariaDB 10+ announces itself as `5.5.5-10.11.19-MariaDB` in the handshake and
+    /// the MySQL client library reads the leading 5.5.5, so the connection's
+    /// major/minor/release numbers are wrong for every MariaDB 10.x and 11.x server.
+    /// For MariaDB the version is therefore read from the version string; MySQL's
+    /// own numbers are right and are returned unchanged.
+    @objc(effectiveVersionForServerVersionString:mariaDB:major:minor:release:)
+    static func effectiveVersion(serverVersionString: String?, isMariaDB: Bool, major: Int, minor: Int, release: Int) -> [NSNumber] {
+        let reported = [major, minor, release].map { NSNumber(value: $0) }
+        guard isMariaDB, var text = serverVersionString else { return reported }
+
+        let replicationPrefix = "5.5.5-"
+        if text.hasPrefix(replicationPrefix) {
+            text.removeFirst(replicationPrefix.count)
+        }
+
+        let parts = text.prefix { $0.isNumber || $0 == "." }.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count >= 3, let first = Int(parts[0]), let second = Int(parts[1]), let third = Int(parts[2]) else {
+            return reported
+        }
+        return [first, second, third].map { NSNumber(value: $0) }
+    }
+
     // MARK: - Statements
 
     @objc(addStatementForTable:name:expression:enforced:)
