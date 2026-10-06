@@ -117,6 +117,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)_removeFieldAndForeignKey:(SAFieldRemovalTask *)removalTask;
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
+- (NSArray<NSNumber *> *)_serverVersionParts;
 - (BOOL)filterFieldsWithString:(NSString *)filterString;
 - (BOOL)sort:(NSMutableArray *)data withDescriptor:(NSSortDescriptor *)descriptor;
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction;
@@ -710,11 +711,51 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
+	// CHECK constraints that use this field. The server drops a check that uses only this field along with
+	// the column, but refuses to drop a column that a check across several columns uses. So every dependent
+	// check is dropped in the same statement as the field, and listed in the confirmation below.
+	NSMutableArray<NSString *> *dependentCheckDescriptions = [NSMutableArray array];
+	NSMutableArray<NSString *> *additionalAlterClauses = [NSMutableArray array];
+	NSArray<NSNumber *> *serverVersion = [self _serverVersionParts];
+	NSArray *tableChecks = [tableDataInstance getCheckConstraints];
+
+	for (NSDictionary *check in [SACheckConstraintSupport checksReferencingColumn:field inChecks:tableChecks])
+	{
+		[dependentCheckDescriptions addObject:[check objectForKey:SACheckConstraintSupport.nameKey]];
+	}
+	[additionalAlterClauses addObjectsFromArray:[SACheckConstraintSupport dropClausesRemovingColumn:field
+	                                                                                         checks:tableChecks
+	                                                                                        mariaDB:[mySQLConnection isMariaDB]
+	                                                                                          major:[serverVersion[0] integerValue]
+	                                                                                          minor:[serverVersion[1] integerValue]
+	                                                                                        release:[serverVersion[2] integerValue]]];
+
+	// MariaDB keeps a column's own check in that column's definition. A check on another column that
+	// mentions this field can only go by redefining that column without it.
+	for (NSDictionary *otherRow in [self activeFieldsSource])
+	{
+		NSString *otherName = [otherRow objectForKey:@"name"];
+		NSString *otherDetails = [otherRow objectForKey:@"unparsed"];
+
+		if ([otherName isEqualToString:field] || ![otherDetails length]) continue;
+
+		if ([SACheckConstraintSupport columnDetails:otherDetails referencesColumn:field]) {
+			NSMutableDictionary *redefinedRow = [otherRow mutableCopy];
+			[redefinedRow setObject:[SACheckConstraintSupport strippingChecksReferencing:field fromColumnDetails:otherDetails] forKey:@"unparsed"];
+
+			[additionalAlterClauses addObject:[NSString stringWithFormat:@"CHANGE %@ %@", [otherName backtickQuotedString], [self _buildPartialColumnDefinitionString:redefinedRow]]];
+			[dependentCheckDescriptions addObject:[NSString stringWithFormat:NSLocalizedString(@"check on column ‘%@’", @"description of a check constraint declared on a column, used in the delete field confirmation"), otherName]];
+		}
+	}
+
 	NSString *alertMessage;
 	if (hasForeignKey) {
 		alertMessage = [NSString stringWithFormat:NSLocalizedString(@"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.", @"delete field and foreign key informative message"), referencedTable];
 	} else {
 		alertMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the field '%@'? This action cannot be undone.", @"delete field informative message"), field];
+	}
+	if ([dependentCheckDescriptions count]) {
+		alertMessage = [alertMessage stringByAppendingFormat:@"\n\n%@", [NSString stringWithFormat:NSLocalizedString(@"The following check constraints use this field and will be deleted with it: %@", @"delete field and check constraints informative message"), [dependentCheckDescriptions componentsJoinedByString:@", "]]];
 	}
 	[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Delete field '%@'?", @"delete field message"), field] message:alertMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 
@@ -725,6 +766,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 																 foreignKeyName:foreignKeyName
 																		  table:self->selectedTable
 																	   database:[self->tableDocumentInstance database]];
+		[removalTask setAdditionalAlterClauses:additionalAlterClauses];
 
 		if ([NSThread isMainThread]) {
 			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", self->tableDocumentInstance)
@@ -967,8 +1009,42 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
+	// A renamed column has to take the CHECK constraints that use it along, or the server rejects the
+	// rename: MariaDB because the column's own check (kept in its definition text) still names the old
+	// column, MySQL because a table-level check still uses it. See SACheckConstraintSupport.
+	NSArray<NSString *> *checkDropClauses = @[];
+	NSArray<NSString *> *checkAddClauses = @[];
+	NSString *oldColumnName = isEditingNewRow ? nil : [oldRow objectForKey:@"name"];
+	NSString *newColumnName = [theRow objectForKey:@"name"];
+
+	BOOL columnIsRenamed = ([oldColumnName length] && [newColumnName length] && ![oldColumnName isEqualToString:newColumnName]);
+
+	if (columnIsRenamed) {
+		NSString *unparsedDetails = [theRow objectForKey:@"unparsed"];
+
+		if ([unparsedDetails length]) {
+			NSMutableDictionary *rowCpy = [theRow mutableCopy];
+			[rowCpy setObject:[SACheckConstraintSupport renamingColumn:oldColumnName to:newColumnName inColumnDetails:unparsedDetails] forKey:@"unparsed"];
+			theRow = rowCpy;
+		}
+
+		NSArray<NSNumber *> *version = [self _serverVersionParts];
+		NSDictionary<NSString *, NSArray<NSString *> *> *clauses = [SACheckConstraintSupport renameClausesRenamingColumn:oldColumnName
+		                                                                                                              to:newColumnName
+		                                                                                                          checks:[tableDataInstance getCheckConstraints]
+		                                                                                                         mariaDB:[mySQLConnection isMariaDB]
+		                                                                                                           major:[version[0] integerValue]
+		                                                                                                           minor:[version[1] integerValue]
+		                                                                                                         release:[version[2] integerValue]];
+		checkDropClauses = clauses[@"drop"] ?: @[];
+		checkAddClauses = clauses[@"add"] ?: @[];
+	}
+
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable backtickQuotedString]];
 	[queryString appendString:@" "];
+	if ([checkDropClauses count]) {
+		[queryString appendFormat:@"%@, ", [checkDropClauses componentsJoinedByString:@", "]];
+	}
 	if (isEditingNewRow) {
 		[queryString appendString:@"ADD"];
 	}
@@ -1006,6 +1082,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	isCurrentExtraAutoIncrement = NO;
 	autoIncrementIndex = nil;
 
+	// Put back the table-level checks that were dropped for the rename, now using the new column name
+	if ([checkAddClauses count]) {
+		[queryString appendFormat:@"\n, %@", [checkAddClauses componentsJoinedByString:@", "]];
+	}
+
 	// Execute query
 	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
@@ -1016,6 +1097,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 		[tableDataInstance resetAllData];
 		[tableDocumentInstance setStatusRequiresReload:YES];
+
+		// Checks follow a rename (we re-add them on MySQL, the server rewrites them on MariaDB), so
+		// what the Relations tab lists is out of date
+		if (columnIsRenamed) {
+			[tableDocumentInstance setRelationsRequiresReload:YES];
+		}
 		[self loadTable:selectedTable];
 
 		// Mark the content table for refresh
@@ -1596,9 +1683,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 									 assertingDatabase:[removalTask database]];
 			return queryResult();
 		} fieldQuery:^SAFieldRemovalQueryResult {
-			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
+			// Any dependent check constraints are dropped in the same statement, since the server
+			// refuses to drop a column while a check across several columns still uses it
+			NSMutableArray<NSString *> *clauses = [NSMutableArray arrayWithArray:[removalTask additionalAlterClauses]];
+			[clauses addObject:[NSString stringWithFormat:@"DROP %@", [[removalTask field] backtickQuotedString]]];
+
+			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ %@",
 																	   [[removalTask table] backtickQuotedString],
-																	   [[removalTask field] backtickQuotedString]]
+																	   [clauses componentsJoinedByString:@", "]]
 									 assertingDatabase:[removalTask database]];
 			return queryResult();
 		} foreignKeyFailure:^{
@@ -1629,6 +1721,22 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[[self->tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:self->tableSourceView];
 		}];
 	}
+}
+
+/**
+ * The server's [major, minor, release]. For MariaDB 10+ the connection's own numbers read 5.5.5, because
+ * the server announces itself as "5.5.5-10.x.y-MariaDB", so the version string is used for those.
+ */
+- (NSArray<NSNumber *> *)_serverVersionParts
+{
+	// -isMariaDB refreshes the cached version string, so it has to run first
+	BOOL isMariaDB = [mySQLConnection isMariaDB];
+
+	return [SACheckConstraintSupport effectiveVersionForServerVersionString:[mySQLConnection serverVersionString]
+	                                                                mariaDB:isMariaDB
+	                                                                  major:(NSInteger)[mySQLConnection serverMajorVersion]
+	                                                                  minor:(NSInteger)[mySQLConnection serverMinorVersion]
+	                                                                release:(NSInteger)[mySQLConnection serverReleaseVersion]];
 }
 
 #pragma mark -

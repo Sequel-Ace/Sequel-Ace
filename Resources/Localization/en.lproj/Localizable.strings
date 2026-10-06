@@ -140,6 +140,9 @@
 /* check constraints : section title in the Relations tab */
 "Check Constraints" = "Check Constraints";
 
+/* description of a check constraint declared on a column, used in the delete field confirmation */
+"check on column ‘%@’" = "check on column ‘%@’";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
 
@@ -199,6 +202,9 @@
 
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
+
+/* delete field and check constraints informative message */
+"The following check constraints use this field and will be deleted with it: %@" = "The following check constraints use this field and will be deleted with it: %@";
 
 /* error deleting check constraint informative message */
 "The selected check constraint couldn't be deleted.\n\nMySQL said: %@" = "The selected check constraint couldn't be deleted.\n\nMySQL said: %@";

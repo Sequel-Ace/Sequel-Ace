@@ -62,6 +62,203 @@ final class SACheckConstraintSupportTests: XCTestCase {
         XCTAssertTrue(supports(mariaDB: true, version[0].intValue, version[1].intValue, version[2].intValue))
     }
 
+    // MARK: - Column references in expressions
+
+    func testRenamesBacktickedColumnInExpression() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("te_st", to: "teSt", inExpression: "`te_st` >= 0"),
+            "`teSt` >= 0"
+        )
+    }
+
+    func testRenamesEveryOccurrenceCaseInsensitively() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "aa", inExpression: "(`a` < `b`) and (`A` > 0)"),
+            "(`aa` < `b`) and (`aa` > 0)"
+        )
+    }
+
+    func testDoesNotRenameLookAlikeColumns() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inExpression: "`ab` + `ba` + `a_b` + `a`"),
+            "`ab` + `ba` + `a_b` + `z`"
+        )
+    }
+
+    func testDoesNotRenameInsideStringLiterals() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inExpression: "`a` <> 'says `a` here' and `a` <> \"and `a` too\""),
+            "`z` <> 'says `a` here' and `z` <> \"and `a` too\""
+        )
+    }
+
+    func testDoesNotRenameInsideEscapedLiterals() {
+        // How MySQL writes a string literal inside a CHECK in SHOW CREATE TABLE
+        let expression = #"`a` regexp _utf8mb4\'^`a`+\\(x\'"#
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inExpression: expression),
+            #"`z` regexp _utf8mb4\'^`a`+\\(x\'"#
+        )
+    }
+
+    func testRenameEscapesBackticksInTheNewName() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "we`ird", inExpression: "`a` > 0"),
+            "`we``ird` > 0"
+        )
+    }
+
+    func testRenameMatchesEscapedBackticksInTheOldName() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("we`ird", to: "ok", inExpression: "`we``ird` > 0"),
+            "`ok` > 0"
+        )
+    }
+
+    func testRenameLeavesUnbalancedBackticksAlone() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inExpression: "`a` > `b"),
+            "`z` > `b"
+        )
+    }
+
+    func testExpressionReferencesColumn() {
+        XCTAssertTrue(SACheckConstraintSupport.expression("`a` < `b`", referencesColumn: "b"))
+        XCTAssertTrue(SACheckConstraintSupport.expression("`A` > 0", referencesColumn: "a"))
+        XCTAssertFalse(SACheckConstraintSupport.expression("`ab` > 0", referencesColumn: "a"))
+        XCTAssertFalse(SACheckConstraintSupport.expression("`x` <> 'has `a` inside'", referencesColumn: "a"))
+    }
+
+    // MARK: - Inline checks in column details (MariaDB)
+
+    func testRenamesTheColumnInsideAnInlineCheck() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("te_st", to: "teSt", inColumnDetails: " CHECK (`te_st` >= 0)"),
+            " CHECK (`teSt` >= 0)"
+        )
+    }
+
+    func testOnlyRenamesInsideCheckGroups() {
+        // The REFERENCES column list is not a check and must keep its own names
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inColumnDetails: " REFERENCES `t` (`a`) CHECK (`a` > 0)"),
+            " REFERENCES `t` (`a`) CHECK (`z` > 0)"
+        )
+    }
+
+    func testCheckKeywordInsideALiteralIsIgnored() {
+        let details = " COMMENT 'CHECK (`a` > 0)' CHECK (`a` < 9)"
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inColumnDetails: details),
+            " COMMENT 'CHECK (`a` > 0)' CHECK (`z` < 9)"
+        )
+    }
+
+    func testCheckKeywordNeedsAWordBoundary() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.renamingColumn("a", to: "z", inColumnDetails: " NOCHECK (`a`) CHECKSUM (`a`)"),
+            " NOCHECK (`a`) CHECKSUM (`a`)"
+        )
+    }
+
+    func testColumnDetailsReferenceDetection() {
+        XCTAssertTrue(SACheckConstraintSupport.columnDetails(" CHECK (`b` > `a`)", referencesColumn: "a"))
+        XCTAssertFalse(SACheckConstraintSupport.columnDetails(" CHECK (`b` > 0)", referencesColumn: "a"))
+        XCTAssertFalse(SACheckConstraintSupport.columnDetails(" REFERENCES `t` (`a`)", referencesColumn: "a"))
+        XCTAssertFalse(SACheckConstraintSupport.columnDetails("", referencesColumn: "a"))
+    }
+
+    func testStrippingRemovesOnlyChecksThatReferenceTheColumn() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.strippingChecks(referencing: "a", fromColumnDetails: " CHECK (`b` > `a`) COLUMN_FORMAT FIXED"),
+            " COLUMN_FORMAT FIXED"
+        )
+        XCTAssertEqual(
+            SACheckConstraintSupport.strippingChecks(referencing: "a", fromColumnDetails: " CHECK (`b` > 0)"),
+            " CHECK (`b` > 0)"
+        )
+    }
+
+    // MARK: - Table-level checks around a column change
+
+    func testChecksReferencingAColumn() {
+        let checks = [
+            check("chk_ab", "`a` < `b`"),
+            check("chk_c", "`c` > 0"),
+            check("chk_upper", "`A` > 1")
+        ]
+
+        let matched = SACheckConstraintSupport.checks(referencing: "a", in: checks)
+        XCTAssertEqual(matched.compactMap { $0[SACheckConstraintSupport.nameKey] as? String }, ["chk_ab", "chk_upper"])
+    }
+
+    func testRenameClausesDropAndReAddOnMySQL() {
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("chk_ab", "`a` < `b`"), check("chk_c", "`c` > 0")],
+            isMariaDB: false, major: 8, minor: 0, release: 18
+        )
+
+        XCTAssertEqual(clauses["drop"], ["DROP CHECK `chk_ab`"])
+        XCTAssertEqual(clauses["add"], ["ADD CONSTRAINT `chk_ab` CHECK (`aa` < `b`)"])
+    }
+
+    func testRenameClausesUseDropConstraintFromMySQL8019() {
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("chk_ab", "`a` < `b`")],
+            isMariaDB: false, major: 8, minor: 4, release: 11
+        )
+
+        XCTAssertEqual(clauses["drop"], ["DROP CONSTRAINT `chk_ab`"])
+    }
+
+    func testRenameClausesKeepNotEnforced() {
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("chk_a", "`a` > 0", enforced: false)],
+            isMariaDB: false, major: 8, minor: 4, release: 11
+        )
+
+        XCTAssertEqual(clauses["add"], ["ADD CONSTRAINT `chk_a` CHECK (`aa` > 0) NOT ENFORCED"])
+    }
+
+    func testRenameClausesAreEmptyOnMariaDB() {
+        // MariaDB rewrites table-level checks itself when a column is renamed
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("chk_ab", "`a` < `b`")],
+            isMariaDB: true, major: 10, minor: 11, release: 19
+        )
+
+        XCTAssertEqual(clauses["drop"], [])
+        XCTAssertEqual(clauses["add"], [])
+    }
+
+    func testRenameClausesSkipChecksWithoutAName() {
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("", "`a` > 0")],
+            isMariaDB: false, major: 8, minor: 4, release: 11
+        )
+
+        XCTAssertEqual(clauses["drop"], [])
+        XCTAssertEqual(clauses["add"], [])
+    }
+
+    func testDropClausesForRemovingAColumnApplyToEveryServer() {
+        let checks = [check("chk_ab", "`a` < `b`"), check("chk_c", "`c` > 0")]
+
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: checks, isMariaDB: true, major: 10, minor: 11, release: 19),
+            ["DROP CONSTRAINT `chk_ab`"]
+        )
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: checks, isMariaDB: false, major: 8, minor: 0, release: 18),
+            ["DROP CHECK `chk_ab`"]
+        )
+    }
+
     // MARK: - Statements
 
     func testAddStatementNamed() {
@@ -250,6 +447,14 @@ final class SACheckConstraintSupportTests: XCTestCase {
             expression: try XCTUnwrap(result[SACheckConstraintSupport.expressionKey] as? String, file: file, line: line),
             enforced: try XCTUnwrap(result[SACheckConstraintSupport.enforcedKey] as? NSNumber, file: file, line: line).boolValue
         )
+    }
+
+    private func check(_ name: String, _ expression: String, enforced: Bool = true) -> [String: Any] {
+        [
+            SACheckConstraintSupport.nameKey: name,
+            SACheckConstraintSupport.expressionKey: expression,
+            SACheckConstraintSupport.enforcedKey: NSNumber(value: enforced)
+        ]
     }
 
     private func effective(_ string: String?, mariaDB: Bool, reported: (Int, Int, Int)) -> [Int] {
