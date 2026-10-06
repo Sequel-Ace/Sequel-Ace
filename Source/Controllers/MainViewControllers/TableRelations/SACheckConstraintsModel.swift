@@ -18,12 +18,16 @@ final class SACheckConstraintsModel: ObservableObject {
     @Published var selection: Set<SACheckConstraintItem.ID> = []
     @Published var isEnabled = true
 
+    /// Whether the server accepts NOT ENFORCED, which decides if the add sheet
+    /// offers the Enforced checkbox.
+    @Published var supportsNotEnforced = false
+
     /// Every constraint name already used by the table (foreign keys included),
     /// since MySQL keeps them in one namespace.
     private(set) var takenNames: [String] = []
 
     /// Returns a server error message on failure, nil on success.
-    var addHandler: ((_ name: String, _ expression: String) -> String?)?
+    var addHandler: ((_ name: String, _ expression: String, _ enforced: Bool) -> String?)?
     var deleteHandler: ((_ names: [String]) -> Void)?
     var refreshHandler: (() -> Void)?
 

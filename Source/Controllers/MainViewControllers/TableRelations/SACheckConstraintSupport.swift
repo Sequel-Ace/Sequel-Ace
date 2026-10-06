@@ -25,15 +25,22 @@ import Foundation
         return isVersion(major, minor, release, atLeast: (8, 0, 16))
     }
 
+    /// `NOT ENFORCED` is a MySQL 8.0.16+ feature; MariaDB has no equivalent.
+    @objc(serverSupportsNotEnforcedWithMariaDB:major:minor:release:)
+    static func serverSupportsNotEnforced(isMariaDB: Bool, major: Int, minor: Int, release: Int) -> Bool {
+        !isMariaDB && isVersion(major, minor, release, atLeast: (8, 0, 16))
+    }
+
     // MARK: - Statements
 
-    @objc(addStatementForTable:name:expression:)
-    static func addStatement(table: String, name: String, expression: String) -> String {
+    @objc(addStatementForTable:name:expression:enforced:)
+    static func addStatement(table: String, name: String, expression: String, enforced: Bool = true) -> String {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let constraint = trimmedName.isEmpty ? "" : "CONSTRAINT \(quoted(trimmedName)) "
         let body = expression.trimmingCharacters(in: .whitespacesAndNewlines)
+        let suffix = enforced ? "" : " NOT ENFORCED"
 
-        return "ALTER TABLE \(quoted(table)) ADD \(constraint)CHECK (\(body))"
+        return "ALTER TABLE \(quoted(table)) ADD \(constraint)CHECK (\(body))\(suffix)"
     }
 
     /// MySQL 8.0.16 - 8.0.18 only knows `DROP CHECK`; 8.0.19+ and MariaDB use

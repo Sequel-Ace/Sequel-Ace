@@ -7,12 +7,33 @@ struct SACheckConstraintsView: View {
     @ObservedObject var model: SACheckConstraintsModel
     @State private var isAddSheetPresented = false
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(NSLocalizedString("Check Constraints", comment: "check constraints : section title in the Relations tab"))
-                .font(.headline)
+    // Section title colour used for "INDEXES" in the Structure tab (see DBView.xib)
+    private static let titleColor = Color(nsColor: NSColor(calibratedRed: 0.36078432, green: 0.4313725531, blue: 0.50588238, alpha: 1))
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 0) {
+                Text(NSLocalizedString("Check Constraints", comment: "check constraints : section title in the Relations tab"))
+                    .textCase(.uppercase)
+                    .font(.system(size: NSFont.smallSystemFontSize, weight: .bold))
+                    .foregroundColor(Self.titleColor)
+
+                Spacer(minLength: 0)
+
+                // Same drag-handle image the Structure tab shows at the right of INDEXES, at its
+                // native 10x8 (the XIB's image cell scales it proportionally, never stretching it)
+                if let grabber = NSImage(named: "grabber-horizontal") {
+                    Image(nsImage: grabber)
+                }
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, 10)
+            .frame(height: 20)
+
+            // Inset like the foreign key table above it
             SACheckConstraintsTable(model: model)
+                .padding(.leading, 6)
+                .padding(.trailing, 3)
 
             // Same look and spacing as the foreign key buttons above (see DBView.xib)
             HStack(spacing: 5) {
@@ -40,8 +61,10 @@ struct SACheckConstraintsView: View {
                 }
                 .disabled(!model.isEnabled)
             }
+            .padding(.leading, 10)
+            .padding(.bottom, 10)
         }
-        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .sheet(isPresented: $isAddSheetPresented) {
             SACheckConstraintAddSheet(model: model) {
                 isAddSheetPresented = false
@@ -99,35 +122,185 @@ private struct SACheckConstraintsToolbarButton: NSViewRepresentable {
     }
 }
 
-private struct SACheckConstraintsTable: View {
+/// `SPTableView` is the class behind the foreign key and Indexes tables. Deleting
+/// is handled here because there is no menu item to route it through.
+private final class SACheckConstraintsNSTableView: SPTableView {
+    var onDelete: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        // Delete and forward delete; everything else (Return, Tab...) stays with SPTableView
+        if event.keyCode == 51 || event.keyCode == 117 {
+            onDelete?()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+}
+
+/// The constraint list, built like the foreign key and Indexes tables rather than
+/// with SwiftUI's `Table`: a cell-based `SPTableView` with alternating rows, the
+/// user's table font and the same row height. SwiftUI's version draws inset,
+/// rounded rows and larger text.
+private struct SACheckConstraintsTable: NSViewRepresentable {
     @ObservedObject var model: SACheckConstraintsModel
 
-    var body: some View {
-        Table(model.items, selection: $model.selection) {
-            TableColumn(NSLocalizedString("Name", comment: "check constraints : name column")) { item in
-                Text(item.name)
-            }
-            .width(min: 80, ideal: 160)
+    func makeCoordinator() -> Coordinator {
+        Coordinator(model: model)
+    }
 
-            TableColumn(NSLocalizedString("Expression", comment: "check constraints : expression column")) { item in
-                Text(item.expression)
-                    .font(.system(.body, design: .monospaced))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .help(item.expression)
-            }
+    func makeNSView(context: Context) -> NSScrollView {
+        let coordinator = context.coordinator
 
-            TableColumn(NSLocalizedString("Enforced", comment: "check constraints : enforced column")) { item in
-                Text(item.isEnforced
-                     ? NSLocalizedString("Yes", comment: "yes")
-                     : NSLocalizedString("No", comment: "no"))
-            }
-            .width(60)
+        let table = SACheckConstraintsNSTableView(frame: .zero)
+        table.focusRingType = .none
+        table.allowsExpansionToolTips = true
+        table.usesAlternatingRowBackgroundColors = true
+        table.allowsMultipleSelection = true
+        table.dataSource = coordinator
+        table.delegate = coordinator
+        table.onDelete = { [weak coordinator] in coordinator?.deleteSelection() }
+
+        let columns: [(id: String, title: String, width: CGFloat, minWidth: CGFloat, resizing: NSTableColumn.ResizingOptions)] = [
+            ("name", NSLocalizedString("Name", comment: "check constraints : name column"), 200, 80, .userResizingMask),
+            ("expression", NSLocalizedString("Expression", comment: "check constraints : expression column"), 300, 100, [.autoresizingMask, .userResizingMask]),
+            ("enforced", NSLocalizedString("Enforced", comment: "check constraints : enforced column"), 70, 50, .userResizingMask)
+        ]
+        for definition in columns {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(definition.id))
+            column.title = definition.title
+            column.width = definition.width
+            column.minWidth = definition.minWidth
+            column.resizingMask = definition.resizing
+
+            let cell = NSTextFieldCell()
+            cell.controlSize = .small
+            cell.lineBreakMode = .byTruncatingTail
+            column.dataCell = cell
+
+            table.addTableColumn(column)
         }
-        .onDeleteCommand {
+
+        coordinator.table = table
+        coordinator.applyAppearance()
+
+        let scrollView = NSScrollView()
+        scrollView.documentView = table
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .bezelBorder
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        context.coordinator.sync()
+    }
+
+    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+        private let model: SACheckConstraintsModel
+        weak var table: NSTableView?
+
+        private var items: [SACheckConstraintItem] = []
+        private var isSyncing = false
+        private var appliedFont: NSFont?
+        private var appliedGridlines: Bool?
+        private var defaultsObserver: NSObjectProtocol?
+
+        init(model: SACheckConstraintsModel) {
+            self.model = model
+            super.init()
+
+            // The foreign key table follows the font and gridline preferences live; so does this one
+            defaultsObserver = NotificationCenter.default.addObserver(
+                forName: UserDefaults.didChangeNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                self?.applyAppearance()
+            }
+        }
+
+        deinit {
+            if let defaultsObserver {
+                NotificationCenter.default.removeObserver(defaultsObserver)
+            }
+        }
+
+        /// Same font, row height and gridline handling as the foreign key table.
+        func applyAppearance() {
+            guard let table else { return }
+
+            let font = UserDefaults.getFont()
+            let gridlines = UserDefaults.standard.bool(forKey: SPDisplayTableViewVerticalGridlines)
+            guard font != appliedFont || gridlines != appliedGridlines else { return }
+            appliedFont = font
+            appliedGridlines = gridlines
+
+            table.gridStyleMask = gridlines ? .solidVerticalGridLineMask : []
+            table.rowHeight = 4 + NSAttributedString(string: "{ǞṶḹÜ∑zgyf", attributes: [.font: font]).size().height
+            for column in table.tableColumns {
+                (column.dataCell as? NSCell)?.font = font
+            }
+            table.reloadData()
+        }
+
+        /// Pushes the model's rows, selection and enabled state into the table.
+        func sync() {
+            guard let table else { return }
+
+            isSyncing = true
+            defer { isSyncing = false }
+
+            if items != model.items {
+                items = model.items
+                table.reloadData()
+            }
+            table.isEnabled = model.isEnabled
+
+            let wanted = IndexSet(items.indices.filter { model.selection.contains(items[$0].id) })
+            if table.selectedRowIndexes != wanted {
+                table.selectRowIndexes(wanted, byExtendingSelection: false)
+            }
+        }
+
+        func deleteSelection() {
             if model.canDelete {
                 model.deleteHandler?(model.selectedNames)
             }
+        }
+
+        // MARK: NSTableViewDataSource
+
+        func numberOfRows(in tableView: NSTableView) -> Int {
+            items.count
+        }
+
+        func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
+            guard items.indices.contains(row) else { return nil }
+            let item = items[row]
+
+            switch tableColumn?.identifier.rawValue {
+            case "name":
+                return item.name
+            case "expression":
+                return item.expression
+            case "enforced":
+                return item.isEnforced
+                    ? NSLocalizedString("Yes", comment: "yes")
+                    : NSLocalizedString("No", comment: "no")
+            default:
+                return nil
+            }
+        }
+
+        // MARK: NSTableViewDelegate
+
+        func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
+            false
+        }
+
+        func tableViewSelectionDidChange(_ notification: Notification) {
+            // Selection set by sync() must not be echoed back into the model mid-update
+            guard !isSyncing, let table else { return }
+
+            model.selection = Set(table.selectedRowIndexes.compactMap { items.indices.contains($0) ? items[$0].id : nil })
         }
     }
 }
@@ -138,6 +311,7 @@ private struct SACheckConstraintAddSheet: View {
 
     @State private var name = ""
     @State private var expression = ""
+    @State private var isEnforced = true
     @State private var serverError: String?
 
     var body: some View {
@@ -161,6 +335,10 @@ private struct SACheckConstraintAddSheet: View {
                 .frame(minHeight: 80)
                 .border(Color(nsColor: .separatorColor))
 
+            if model.supportsNotEnforced {
+                Toggle(NSLocalizedString("Enforced", comment: "check constraints : enforced column"), isOn: $isEnforced)
+            }
+
             if let serverError {
                 Text(serverError)
                     .font(.caption)
@@ -182,7 +360,10 @@ private struct SACheckConstraintAddSheet: View {
     }
 
     private func add() {
-        if let error = model.addHandler?(name, expression) {
+        // The checkbox is only offered where NOT ENFORCED exists; elsewhere the check is always enforced
+        let enforced = model.supportsNotEnforced ? isEnforced : true
+
+        if let error = model.addHandler?(name, expression, enforced) {
             serverError = error
         } else {
             close()

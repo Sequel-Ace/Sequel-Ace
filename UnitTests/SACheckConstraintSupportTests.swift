@@ -41,6 +41,27 @@ final class SACheckConstraintSupportTests: XCTestCase {
         )
     }
 
+    func testAddStatementNotEnforcedAppendsClause() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.addStatement(table: "t", name: "ck", expression: "a > 0", enforced: false),
+            "ALTER TABLE `t` ADD CONSTRAINT `ck` CHECK (a > 0) NOT ENFORCED"
+        )
+    }
+
+    func testAddStatementEnforcedHasNoSuffix() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.addStatement(table: "t", name: "ck", expression: "a > 0", enforced: true),
+            "ALTER TABLE `t` ADD CONSTRAINT `ck` CHECK (a > 0)"
+        )
+    }
+
+    func testNotEnforcedIsMySQLOnlyFrom8016() {
+        XCTAssertFalse(SACheckConstraintSupport.serverSupportsNotEnforced(isMariaDB: false, major: 8, minor: 0, release: 15))
+        XCTAssertTrue(SACheckConstraintSupport.serverSupportsNotEnforced(isMariaDB: false, major: 8, minor: 0, release: 16))
+        XCTAssertTrue(SACheckConstraintSupport.serverSupportsNotEnforced(isMariaDB: false, major: 9, minor: 0, release: 0))
+        XCTAssertFalse(SACheckConstraintSupport.serverSupportsNotEnforced(isMariaDB: true, major: 11, minor: 4, release: 2))
+    }
+
     func testAddStatementEscapesBackticksInIdentifiers() {
         XCTAssertEqual(
             SACheckConstraintSupport.addStatement(table: "we`ird", name: "c`k", expression: "a > 0"),

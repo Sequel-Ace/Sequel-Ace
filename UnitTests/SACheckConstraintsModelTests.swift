@@ -88,6 +88,10 @@ final class SACheckConstraintsModelTests: XCTestCase {
         XCTAssertFalse(model.canAdd(name: "ck_age", expression: "a > 0"))
     }
 
+    func testNotEnforcedIsNotOfferedUntilTheServerSupportsIt() {
+        XCTAssertFalse(SACheckConstraintsModel().supportsNotEnforced)
+    }
+
     // MARK: - Helpers
 
     private func check(_ name: String, _ expression: String, enforced: Bool = true) -> [String: Any] {

@@ -57,7 +57,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_installCheckConstraintsSection;
-- (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression;
+- (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression enforced:(BOOL)enforced;
 - (void)_deleteCheckConstraintsNamed:(NSArray<NSString *> *)names;
 - (void)_updateAvailableTableColumns;
 - (BOOL)_serverRequiresStandardForeignKeyReferences;
@@ -685,8 +685,15 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		                                                                  minor:(NSInteger)[connection serverMinorVersion]
 		                                                                release:(NSInteger)[connection serverReleaseVersion]];
 
+	BOOL supportsNotEnforced = serverSupportsChecks
+		&& [SACheckConstraintSupport serverSupportsNotEnforcedWithMariaDB:[connection isMariaDB]
+		                                                            major:(NSInteger)[connection serverMajorVersion]
+		                                                            minor:(NSInteger)[connection serverMinorVersion]
+		                                                          release:(NSInteger)[connection serverReleaseVersion]];
+
 	[checkConstraintsController updateWithChecks:checks
 	                        serverSupportsChecks:serverSupportsChecks
+	                         supportsNotEnforced:supportsNotEnforced
 	                                  takenNames:takenConstraintNames
 	                          interactionEnabled:![tableDocumentInstance isWorking]];
 
@@ -704,8 +711,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	checkConstraintsController = [[SACheckConstraintsController alloc] init];
 
 	__weak SPTableRelations *weakSelf = self;
-	checkConstraintsController.addHandler = ^NSString *(NSString *name, NSString *expression) {
-		return [weakSelf _addCheckConstraintNamed:name expression:expression];
+	checkConstraintsController.addHandler = ^NSString *(NSString *name, NSString *expression, BOOL enforced) {
+		return [weakSelf _addCheckConstraintNamed:name expression:expression enforced:enforced];
 	};
 	checkConstraintsController.deleteHandler = ^(NSArray<NSString *> *names) {
 		[weakSelf _deleteCheckConstraintsNamed:names];
@@ -721,9 +728,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 /**
  * Adds a CHECK constraint. Returns an error message for the add sheet to display, or nil on success.
  */
-- (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression
+- (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression enforced:(BOOL)enforced
 {
-	NSString *query = [SACheckConstraintSupport addStatementForTable:[tablesListInstance tableName] name:name expression:expression];
+	NSString *query = [SACheckConstraintSupport addStatementForTable:[tablesListInstance tableName] name:name expression:expression enforced:enforced];
 
 	[connection queryString:query assertingDatabase:[tableDocumentInstance database]];
 
