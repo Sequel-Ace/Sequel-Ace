@@ -51,7 +51,14 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPTableRelations () <NSMenuItemValidation>
+{
+	SACheckConstraintsController *checkConstraintsController;
+}
+
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
+- (void)_installCheckConstraintsSection;
+- (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression;
+- (void)_deleteCheckConstraintsNamed:(NSArray<NSString *> *)names;
 - (void)_updateAvailableTableColumns;
 - (BOOL)_serverRequiresStandardForeignKeyReferences;
 - (NSSet *)_singleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database;
@@ -118,6 +125,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 											 selector:@selector(endDocumentTaskForTab:)
 												 name:SPDocumentTaskEndNotification
 											   object:tableDocumentInstance];
+
+	[self _installCheckConstraintsSection];
 }
 
 #pragma mark -
@@ -413,6 +422,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[addRelationButton setEnabled:NO];
 	[refreshRelationsButton setEnabled:NO];
 	[removeRelationButton setEnabled:NO];
+	[checkConstraintsController setInteractionEnabled:NO];
 }
 
 /**
@@ -427,8 +437,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[addRelationButton setEnabled:YES];
 		[refreshRelationsButton setEnabled:YES];
 	}
-	
+
 	[removeRelationButton setEnabled:([relationsTableView numberOfSelectedRows] > 0)];
+	[checkConstraintsController setInteractionEnabled:YES];
 }
 
 #pragma mark -
@@ -656,9 +667,101 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 			
 			[takenConstraintNames addObject:[[constraint objectForKey:SPRelationNameKey] lowercaseString]];			
 		}
-	} 
-	
+	}
+
+	// CHECK constraints live in their own section, which is only shown where the server enforces them.
+	BOOL isTable = ([tablesListInstance tableType] == SPTableTypeTable);
+	NSArray *checks = isTable ? [tableDataInstance getCheckConstraints] : @[];
+
+	for (NSDictionary *check in checks)
+	{
+		NSString *checkName = [check objectForKey:SACheckConstraintSupport.nameKey];
+		if ([checkName length]) [takenConstraintNames addObject:[checkName lowercaseString]];
+	}
+
+	BOOL serverSupportsChecks = isTable && [connection isConnected]
+		&& [SACheckConstraintSupport serverSupportsCheckConstraintsWithMariaDB:[connection isMariaDB]
+		                                                                  major:(NSInteger)[connection serverMajorVersion]
+		                                                                  minor:(NSInteger)[connection serverMinorVersion]
+		                                                                release:(NSInteger)[connection serverReleaseVersion]];
+
+	[checkConstraintsController updateWithChecks:checks
+	                        serverSupportsChecks:serverSupportsChecks
+	                                  takenNames:takenConstraintNames
+	                          interactionEnabled:![tableDocumentInstance isWorking]];
+
 	[relationsTableView reloadData];
+}
+
+#pragma mark -
+#pragma mark Check constraints
+
+/**
+ * Creates the Check Constraints section and hands it the query-running callbacks.
+ */
+- (void)_installCheckConstraintsSection
+{
+	checkConstraintsController = [[SACheckConstraintsController alloc] init];
+
+	__weak SPTableRelations *weakSelf = self;
+	checkConstraintsController.addHandler = ^NSString *(NSString *name, NSString *expression) {
+		return [weakSelf _addCheckConstraintNamed:name expression:expression];
+	};
+	checkConstraintsController.deleteHandler = ^(NSArray<NSString *> *names) {
+		[weakSelf _deleteCheckConstraintsNamed:names];
+	};
+
+	[checkConstraintsController installBelowRelationsScrollView:[relationsTableView enclosingScrollView]
+	                                           relationsButtons:@[addRelationButton, removeRelationButton, refreshRelationsButton]];
+}
+
+/**
+ * Adds a CHECK constraint. Returns an error message for the add sheet to display, or nil on success.
+ */
+- (NSString *)_addCheckConstraintNamed:(NSString *)name expression:(NSString *)expression
+{
+	NSString *query = [SACheckConstraintSupport addStatementForTable:[tablesListInstance tableName] name:name expression:expression];
+
+	[connection queryString:query assertingDatabase:[tableDocumentInstance database]];
+
+	if ([connection queryErrored]) {
+		return [NSString stringWithFormat:NSLocalizedString(@"The specified check constraint could not be created.\n\nMySQL said: %@", @"error creating check constraint informative message"), [connection lastErrorMessage]];
+	}
+
+	[self _refreshRelationDataForcingCacheRefresh:YES];
+
+	return nil;
+}
+
+/**
+ * Drops the named CHECK constraints after confirmation.
+ */
+- (void)_deleteCheckConstraintsNamed:(NSArray<NSString *> *)names
+{
+	if (![names count]) return;
+
+	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Delete check constraint", @"delete check constraint message") message:NSLocalizedString(@"Are you sure you want to delete the selected check constraints? This action cannot be undone.", @"delete selected check constraint informative message") primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+		NSString *thisTable = [self->tablesListInstance tableName];
+
+		for (NSString *name in names)
+		{
+			NSString *query = [SACheckConstraintSupport dropStatementForTable:thisTable
+			                                                             name:name
+			                                                          mariaDB:[self->connection isMariaDB]
+			                                                            major:(NSInteger)[self->connection serverMajorVersion]
+			                                                            minor:(NSInteger)[self->connection serverMinorVersion]
+			                                                          release:(NSInteger)[self->connection serverReleaseVersion]];
+
+			[self->connection queryString:query assertingDatabase:[self->tableDocumentInstance database]];
+
+			if ([self->connection queryErrored]) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete check constraint", @"error deleting check constraint message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected check constraint couldn't be deleted.\n\nMySQL said: %@", @"error deleting check constraint informative message"), [self->connection lastErrorMessage]] callback:nil];
+				break;
+			}
+		}
+
+		[self _refreshRelationDataForcingCacheRefresh:YES];
+	} cancelButtonHandler:nil];
 }
 
 
