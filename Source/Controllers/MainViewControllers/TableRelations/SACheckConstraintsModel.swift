@@ -25,6 +25,7 @@ final class SACheckConstraintsModel: ObservableObject {
     /// Returns a server error message on failure, nil on success.
     var addHandler: ((_ name: String, _ expression: String) -> String?)?
     var deleteHandler: ((_ names: [String]) -> Void)?
+    var refreshHandler: (() -> Void)?
 
     var selectedNames: [String] {
         items.filter { selection.contains($0.id) }.map(\.name)

@@ -176,6 +176,9 @@
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
 "Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
 
+/* check constraints : refresh button tooltip */
+"Refresh check constraints" = "Refresh check constraints";
+
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
 

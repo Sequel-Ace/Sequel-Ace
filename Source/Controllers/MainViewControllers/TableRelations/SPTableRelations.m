@@ -710,6 +710,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	checkConstraintsController.deleteHandler = ^(NSArray<NSString *> *names) {
 		[weakSelf _deleteCheckConstraintsNamed:names];
 	};
+	checkConstraintsController.refreshHandler = ^{
+		[weakSelf refreshRelations:nil];
+	};
 
 	[checkConstraintsController installBelowRelationsScrollView:[relationsTableView enclosingScrollView]
 	                                           relationsButtons:@[addRelationButton, removeRelationButton, refreshRelationsButton]];

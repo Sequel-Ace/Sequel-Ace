@@ -14,22 +14,31 @@ struct SACheckConstraintsView: View {
 
             SACheckConstraintsTable(model: model)
 
-            HStack(spacing: 6) {
-                Button {
+            // Same look and spacing as the foreign key buttons above (see DBView.xib)
+            HStack(spacing: 5) {
+                SACheckConstraintsToolbarButton(
+                    image: NSImage.addTemplateName,
+                    help: NSLocalizedString("Add check constraint", comment: "check constraints : add button tooltip")
+                ) {
                     isAddSheetPresented = true
-                } label: {
-                    Image(systemName: "plus")
                 }
-                .help(NSLocalizedString("Add check constraint", comment: "check constraints : add button tooltip"))
                 .disabled(!model.isEnabled)
 
-                Button {
+                SACheckConstraintsToolbarButton(
+                    image: NSImage.removeTemplateName,
+                    help: NSLocalizedString("Delete selected check constraint(s)", comment: "check constraints : delete button tooltip")
+                ) {
                     model.deleteHandler?(model.selectedNames)
-                } label: {
-                    Image(systemName: "minus")
                 }
-                .help(NSLocalizedString("Delete selected check constraint(s)", comment: "check constraints : delete button tooltip"))
                 .disabled(!model.canDelete)
+
+                SACheckConstraintsToolbarButton(
+                    image: NSImage.refreshTemplateName,
+                    help: NSLocalizedString("Refresh check constraints", comment: "check constraints : refresh button tooltip")
+                ) {
+                    model.refreshHandler?()
+                }
+                .disabled(!model.isEnabled)
             }
         }
         .padding(.horizontal, 4)
@@ -37,6 +46,55 @@ struct SACheckConstraintsView: View {
             SACheckConstraintAddSheet(model: model) {
                 isAddSheetPresented = false
             }
+        }
+    }
+}
+
+/// The small square image button used under the foreign key table in
+/// DBView.xib. It wraps a real `NSButton` configured the same way, since a
+/// SwiftUI button draws the same template image heavier and larger.
+private struct SACheckConstraintsToolbarButton: NSViewRepresentable {
+    let image: NSImage.Name
+    let help: String
+    let action: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(action: action)
+    }
+
+    func makeNSView(context: Context) -> NSButton {
+        let button = NSButton()
+        button.bezelStyle = .smallSquare
+        button.setButtonType(.momentaryPushIn)
+        // The foreign key buttons draw as bare glyphs; without this a bezel is drawn around ours
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.image = NSImage(named: image)
+        button.contentTintColor = .labelColor
+        button.toolTip = help
+        button.target = context.coordinator
+        button.action = #selector(Coordinator.buttonClicked)
+        return button
+    }
+
+    func updateNSView(_ button: NSButton, context: Context) {
+        context.coordinator.action = action
+        button.isEnabled = context.environment.isEnabled
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSButton, context: Context) -> CGSize? {
+        CGSize(width: 25, height: 25)
+    }
+
+    final class Coordinator: NSObject {
+        var action: () -> Void
+
+        init(action: @escaping () -> Void) {
+            self.action = action
+        }
+
+        @objc func buttonClicked() {
+            action()
         }
     }
 }

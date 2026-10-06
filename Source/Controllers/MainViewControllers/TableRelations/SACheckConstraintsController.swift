@@ -12,8 +12,9 @@ import SwiftUI
 /// `addHandler` and `deleteHandler`.
 @objc final class SACheckConstraintsController: NSObject {
 
-    private static let sectionHeight: CGFloat = 190
-    private static let edgeMargin: CGFloat = 6
+    private static let sectionHeight: CGFloat = 320
+    // Matches the bottom margin of the foreign key buttons in DBView.xib
+    private static let edgeMargin: CGFloat = 10
     private static let buttonGap: CGFloat = 6
 
     private let model = SACheckConstraintsModel()
@@ -35,6 +36,11 @@ import SwiftUI
     @objc var deleteHandler: ((_ names: [String]) -> Void)? {
         get { model.deleteHandler }
         set { model.deleteHandler = newValue }
+    }
+
+    @objc var refreshHandler: (() -> Void)? {
+        get { model.refreshHandler }
+        set { model.refreshHandler = newValue }
     }
 
     /// Adds the (initially hidden) section to the view that contains the foreign
