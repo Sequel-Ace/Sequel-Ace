@@ -35,7 +35,13 @@ sass:
   style: compressed
 gist:
   noscript: false
+# Jekyll 3 replaces its default exclusions when this list is set.
 exclude:
   - CNAME
   - Gemfile
   - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/

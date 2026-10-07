@@ -37,6 +37,7 @@ jobs:
           Jekyll::PluginManager.require_from_bundler
           require "octokit"
           require "tmpdir"
+          require "fileutils"
 
           # Reproduce the timeout from run 37156403781 immediately if URL
           # generation ever falls back to the Pages API again.
@@ -57,5 +58,25 @@ jobs:
             raise "Incorrect stylesheet URL" unless html.include?('href="/assets/css/style.css?v=')
             raise "Missing compiled CSS" unless File.size?(File.join(destination, "assets/css/style.css"))
             raise "Missing getting started page" unless File.file?(File.join(destination, "get-started/index.html"))
+            raise "Bundler gems copied into site" if File.exist?(File.join(destination, "vendor"))
+          end
+
+          # Exercise dependency directories even when gems are cached outside docs.
+          Dir.mktmpdir("pages-vendor-source-") do |source|
+            FileUtils.cp("_config.yml", source)
+            File.write(File.join(source, "index.md"), "# Dependency exclusion fixture\n")
+            %w[node_modules vendor/bundle vendor/cache vendor/gems vendor/ruby].each do |root|
+              path = File.join(source, root, "dependency/lib/site_template/_posts")
+              FileUtils.mkdir_p(path)
+              File.write(File.join(path, "0000-00-00-welcome-to-jekyll.markdown.erb"), "---\ndate: <%= Time.now %>\n---\nDependency template\n")
+              File.write(File.join(source, root, "dependency.txt"), "Must not ship\n")
+            end
+            Dir.mktmpdir("pages-vendor-output-") do |destination|
+              Jekyll::Commands::Build.process("source" => source, "destination" => destination)
+              raise "Missing fixture page" unless File.file?(File.join(destination, "index.html"))
+              %w[node_modules vendor].each do |root|
+                raise "Published dependency files" if File.exist?(File.join(destination, root))
+              end
+            end
           end
           RUBY
