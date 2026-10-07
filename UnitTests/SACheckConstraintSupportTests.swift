@@ -235,6 +235,40 @@ final class SACheckConstraintSupportTests: XCTestCase {
         XCTAssertEqual(clauses["add"], [])
     }
 
+    func testRenameClausesDropAndReAddOnMariaDBBefore10213() {
+        // MDEV-13508: before 10.2.13 the server leaves the old column name in table-level checks
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("chk_ab", "`a` < `b`")],
+            isMariaDB: true, major: 10, minor: 2, release: 12
+        )
+
+        XCTAssertEqual(clauses["drop"], ["DROP CONSTRAINT `chk_ab`"])
+        XCTAssertEqual(clauses["add"], ["ADD CONSTRAINT `chk_ab` CHECK (`aa` < `b`)"])
+    }
+
+    func testRenameClausesAreEmptyFromMariaDB10213() {
+        let clauses = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa",
+            checks: [check("chk_ab", "`a` < `b`")],
+            isMariaDB: true, major: 10, minor: 2, release: 13
+        )
+
+        XCTAssertEqual(clauses["drop"], [])
+        XCTAssertEqual(clauses["add"], [])
+    }
+
+    func testWhichServersRewriteChecksOnRename() {
+        XCTAssertFalse(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: true, major: 10, minor: 2, release: 1))
+        XCTAssertFalse(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: true, major: 10, minor: 2, release: 12))
+        XCTAssertTrue(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: true, major: 10, minor: 2, release: 13))
+        XCTAssertTrue(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: true, major: 10, minor: 11, release: 19))
+        XCTAssertTrue(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: true, major: 11, minor: 4, release: 2))
+        // MySQL never does, whatever its version
+        XCTAssertFalse(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: false, major: 8, minor: 4, release: 11))
+        XCTAssertFalse(SACheckConstraintSupport.serverRewritesChecksOnRename(isMariaDB: false, major: 10, minor: 11, release: 19))
+    }
+
     func testRenameClausesSkipChecksWithoutAName() {
         let clauses = SACheckConstraintSupport.renameClauses(
             renamingColumn: "a", to: "aa",

@@ -731,8 +731,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	                                                                                        release:[serverVersion[2] integerValue]]];
 
 	// MariaDB keeps a column's own check in that column's definition. A check on another column that
-	// mentions this field can only go by redefining that column without it.
-	for (NSDictionary *otherRow in [self activeFieldsSource])
+	// mentions this field can only go by redefining that column without it. This scans every column,
+	// not -activeFieldsSource, which leaves out the columns a Structure filter currently hides.
+	for (NSDictionary *otherRow in tableFields)
 	{
 		NSString *otherName = [otherRow objectForKey:@"name"];
 		NSString *otherDetails = [otherRow objectForKey:@"unparsed"];
@@ -1011,9 +1012,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// A renamed column has to take the CHECK constraints that use it along, or the server rejects the
 	// rename: MariaDB because the column's own check (kept in its definition text) still names the old
-	// column, MySQL because a table-level check still uses it. See SACheckConstraintSupport.
+	// column, MySQL because a table-level check still uses it. MariaDB before 10.2.13 also leaves the old
+	// name in table-level checks and in other columns' checks (MDEV-13508). See SACheckConstraintSupport.
 	NSArray<NSString *> *checkDropClauses = @[];
-	NSArray<NSString *> *checkAddClauses = @[];
+	NSMutableArray<NSString *> *checkAddClauses = [NSMutableArray array];
 	NSString *oldColumnName = isEditingNewRow ? nil : [oldRow objectForKey:@"name"];
 	NSString *newColumnName = [theRow objectForKey:@"name"];
 
@@ -1037,7 +1039,29 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		                                                                                                           minor:[version[1] integerValue]
 		                                                                                                         release:[version[2] integerValue]];
 		checkDropClauses = clauses[@"drop"] ?: @[];
-		checkAddClauses = clauses[@"add"] ?: @[];
+		[checkAddClauses addObjectsFromArray:clauses[@"add"] ?: @[]];
+
+		// Where the server won't rewrite checks itself, another column's inline check that mentions the
+		// renamed column is redefined with the new name in the same statement
+		if ([mySQLConnection isMariaDB] && ![SACheckConstraintSupport serverRewritesChecksOnRenameWithMariaDB:YES
+		                                                                                              major:[version[0] integerValue]
+		                                                                                              minor:[version[1] integerValue]
+		                                                                                            release:[version[2] integerValue]]) {
+			for (NSDictionary *otherRow in tableFields)
+			{
+				NSString *otherName = [otherRow objectForKey:@"name"];
+				NSString *otherDetails = [otherRow objectForKey:@"unparsed"];
+
+				if ([otherName isEqualToString:oldColumnName] || ![otherDetails length]) continue;
+
+				if ([SACheckConstraintSupport columnDetails:otherDetails referencesColumn:oldColumnName]) {
+					NSMutableDictionary *redefinedRow = [otherRow mutableCopy];
+					[redefinedRow setObject:[SACheckConstraintSupport renamingColumn:oldColumnName to:newColumnName inColumnDetails:otherDetails] forKey:@"unparsed"];
+
+					[checkAddClauses addObject:[NSString stringWithFormat:@"CHANGE %@ %@", [otherName backtickQuotedString], [self _buildPartialColumnDefinitionString:redefinedRow]]];
+				}
+			}
+		}
 	}
 
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable backtickQuotedString]];
@@ -1082,7 +1106,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	isCurrentExtraAutoIncrement = NO;
 	autoIncrementIndex = nil;
 
-	// Put back the table-level checks that were dropped for the rename, now using the new column name
+	// Put back the table-level checks that were dropped for the rename, now using the new column name, and
+	// add any other columns redefined to carry the new name in their own checks
 	if ([checkAddClauses count]) {
 		[queryString appendFormat:@"\n, %@", [checkAddClauses componentsJoinedByString:@", "]];
 	}

@@ -214,19 +214,29 @@ import Foundation
         }
     }
 
+    /// Whether the server rewrites the column names inside a check when a column is renamed.
+    /// MariaDB only does from 10.2.13 (MDEV-13508): before that, `CHANGE` left the old name
+    /// in every check and the rename failed. MySQL refuses the rename outright.
+    @objc(serverRewritesChecksOnRenameWithMariaDB:major:minor:release:)
+    static func serverRewritesChecksOnRename(isMariaDB: Bool, major: Int, minor: Int, release: Int) -> Bool {
+        isMariaDB && isVersion(major, minor, release, atLeast: (10, 2, 13))
+    }
+
     /// ALTER TABLE clauses that keep table-level checks valid when `column` is renamed.
     /// Returns `["drop": [...], "add": [...]]`: the drop clauses go before the column
     /// change and the add clauses after it, in the same statement.
     ///
-    /// MySQL refuses to rename a column a check uses, so each such check is dropped and
-    /// re-added with the new name. MariaDB rewrites table-level checks itself, so it
-    /// needs nothing. Checks without a name cannot be dropped and are skipped.
+    /// Where the server won't do it (MySQL, and MariaDB before 10.2.13), each such check
+    /// is dropped and re-added with the new name. Elsewhere nothing is needed. Checks
+    /// without a name cannot be dropped and are skipped.
     @objc(renameClausesRenamingColumn:to:checks:mariaDB:major:minor:release:)
     static func renameClauses(renamingColumn column: String, to newName: String, checks: [[String: Any]], isMariaDB: Bool, major: Int, minor: Int, release: Int) -> [String: [String]] {
         var drop: [String] = []
         var add: [String] = []
 
-        guard !isMariaDB else { return ["drop": drop, "add": add] }
+        guard !serverRewritesChecksOnRename(isMariaDB: isMariaDB, major: major, minor: minor, release: release) else {
+            return ["drop": drop, "add": add]
+        }
 
         for check in self.checks(referencing: column, in: checks) {
             guard let name = check[nameKey] as? String, !name.isEmpty,
