@@ -33,7 +33,8 @@ jobs:
           PAGES_REPO_NWO: Sequel-Ace/Sequel-Ace
         run: |
           bundle exec ruby <<'RUBY'
-          require "github-pages"
+          require "jekyll"
+          Jekyll::PluginManager.require_from_bundler
           require "octokit"
           require "tmpdir"
 
@@ -44,6 +45,10 @@ jobs:
               raise Faraday::TimeoutError, "Pages API unavailable during site build"
             end
           end
+
+          # Prevent reintroducing CVE-2026-85396 through a transitive dependency.
+          zip = Bundler.locked_gems.specs.find { |spec| spec.name == "rubyzip" }
+          raise "Vulnerable rubyzip dependency" if zip && zip.version < Gem::Version.new("3.4.0")
 
           Dir.mktmpdir("sequel-ace-pages-") do |destination|
             Jekyll::Commands::Build.process("source" => Dir.pwd, "destination" => destination)

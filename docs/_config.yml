@@ -5,3 +5,37 @@ description: MySQL/MariaDB database management for macOS
 # Resolve links locally instead of querying the Pages API during every build.
 url: "https://sequel-ace.com"
 baseurl: ""
+
+# Preserve the github-pages defaults when building directly with Jekyll.
+plugins: &pages_plugins
+  - jekyll-coffeescript
+  - jekyll-commonmark-ghpages
+  - jekyll-gist
+  - jekyll-github-metadata
+  - jekyll-paginate
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-default-layout
+  - jekyll-titles-from-headings
+  - jekyll-seo-tag # Required by the Tactile theme.
+
+safe: true
+whitelist: *pages_plugins
+
+future: true
+kramdown:
+  input: GFM
+  hard_wrap: false
+  gfm_quirks: paragraph_end
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    default_lang: plaintext
+sass:
+  style: compressed
+gist:
+  noscript: false
+exclude:
+  - CNAME
+  - Gemfile
+  - Gemfile.lock
