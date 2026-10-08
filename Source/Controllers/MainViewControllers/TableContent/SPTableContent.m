@@ -3136,9 +3136,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         }
         NSString *whereArg = [self argumentForRow:-2];
         if(![whereArg length]) {
+            // Nil, not an empty string. An empty one means the other thing that can happen here -
+            // that only generated columns changed and there is nothing to write - and the caller
+            // answers that by finishing the edit and reloading the table. A WHERE condition that
+            // could not be built is a failure, and the row has to stay in editing: the key lookup
+            // runs a statement of its own, so stopping the wait for it leaves no condition, and
+            // reporting that as nothing to write discarded the edit and called it success.
             SPLog(@"Did not find plausible WHERE condition for UPDATE.");
-            NSBeep();
-            return [[NSMutableString alloc] initWithString:@""];
+            return nil;
         }
         [queryString appendFormat:@" WHERE %@", whereArg];
 	}

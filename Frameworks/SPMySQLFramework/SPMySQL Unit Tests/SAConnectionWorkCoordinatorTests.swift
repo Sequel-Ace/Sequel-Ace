@@ -391,4 +391,97 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
                       "and a read after it does not take that back")
     }
 
+    // MARK: - The hand-off itself, through the public query path
+
+    /// Stands in for the application: answers the lost-connection question on the main thread,
+    /// runs the test's own work while being asked, and shows the wait for connection work, which
+    /// is what makes the connection hand a main-thread query to its worker at all.
+    private final class WaitingDelegate: NSObject {
+        var whileBeingAsked: (() -> Void)?
+        private(set) var timesAsked = 0
+
+        @objc func connectionLost(_ connection: Any) -> SPMySQLConnectionLostDecision {
+            timesAsked += 1
+            whileBeingAsked?()
+            return SPMySQLConnectionLostDisconnect
+        }
+
+        @objc(connection:waitForConnectionWorkUntilFinished:)
+        func connection(_ connection: Any, waitForConnectionWorkUntilFinished isFinished: @escaping () -> Bool) {
+            while !isFinished() {
+                RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+            }
+        }
+    }
+
+    /// Verifies a main-thread query is refused before it is handed to the worker while a question
+    /// about the connection is still out to the main thread.
+    ///
+    /// The lease turns a main-thread caller away, but the hand-off happens first and the session
+    /// is then asked for on the worker, where that refusal no longer recognises the caller. The
+    /// worker runs one item at a time, so the query would queue behind whatever waits for the
+    /// answer while the main thread waits for the worker - and the answer cannot arrive until the
+    /// main thread returns. This drives the whole chain through the public `queryString:`: if the
+    /// query were enqueued, the question below could not return and the test would time out
+    /// rather than fail.
+    func testAMainThreadQueryIsRefusedBeforeItIsHandedToTheWorkerWhileTheQuestionIsOpen() throws {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        let delegate = WaitingDelegate()
+        connection.perform(NSSelectorFromString("setDelegate:"), with: delegate)
+        XCTAssertTrue(connection.value(forKey: "delegateSupportsConnectionCheckProgress") as? Bool ?? false,
+                      "the connection only hands work over when the delegate shows the wait")
+
+        // What the main thread finds when it comes back in while the question is open.
+        var theQueryCameBackEmpty: Bool?
+        var theConnectionReportedAnError: Bool?
+        var itWasNotTakenForAUserStop: Bool?
+        delegate.whileBeingAsked = {
+            theQueryCameBackEmpty = connection.queryString("UPDATE t SET a = 1") == nil
+            theConnectionReportedAnError = connection.queryErrored()
+            itWasNotTakenForAUserStop = !connection.lastQueryWasCancelled
+        }
+
+        // The question goes out the way the connection puts it, from a worker.
+        let theQuestionCameBack = expectation(description: "the question was answered")
+        let theDecision = NSSelectorFromString("_delegateDecisionForLostConnection")
+        XCTAssertTrue(connection.responds(to: theDecision))
+        Thread.detachNewThread {
+            connection.perform(theDecision)
+            theQuestionCameBack.fulfill()
+        }
+
+        // The hand-off waits on this thread's run loop, so it has to be run for the question to
+        // arrive - which is what the application's modal loop does.
+        let giveUp = Date(timeIntervalSinceNow: 20)
+        while delegate.timesAsked == 0 && Date() < giveUp {
+            RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.02))
+        }
+
+        XCTAssertEqual(delegate.timesAsked, 1, "the question reached the delegate")
+        XCTAssertEqual(theQueryCameBackEmpty, true, "the query was turned away")
+        XCTAssertEqual(theConnectionReportedAnError, true,
+                       "and said so, rather than looking like a statement that changed nothing")
+        XCTAssertEqual(itWasNotTakenForAUserStop, true,
+                       "a refusal is not a query the user stopped, which callers stay quiet about")
+
+        wait(for: [theQuestionCameBack], timeout: 20)
+    }
+
+    /// Verifies the policy itself: only the thread that answers is turned away, and only while a
+    /// question is out.
+    func testOnlyTheAnsweringThreadIsTurnedAwayAndOnlyWhileAQuestionIsOut() {
+        XCTAssertTrue(SAConnectionWorkCoordinator.mainThreadWorkMustBeRefused(
+            isMainThread: true, aQuestionAwaitsTheMainThread: true))
+        XCTAssertFalse(SAConnectionWorkCoordinator.mainThreadWorkMustBeRefused(
+            isMainThread: true, aQuestionAwaitsTheMainThread: false),
+            "with no question out the main thread hands its work over as before")
+        XCTAssertFalse(SAConnectionWorkCoordinator.mainThreadWorkMustBeRefused(
+            isMainThread: false, aQuestionAwaitsTheMainThread: true),
+            "a worker does not answer the question, so it may wait for the session")
+    }
 }

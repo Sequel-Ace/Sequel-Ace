@@ -368,24 +368,28 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// The main thread must not be the one waiting: the query runs on the connection's worker
 	// thread instead, and the interface keeps drawing while it does. The same call is made
 	// again from there, where this test no longer holds and the query simply runs.
+	// Either way the result passes the refusal check below: the hand-off can be refused too, and
+	// a statement turned away there has to report itself like one the lease turned away.
+	id theResult;
 	if ([self _workShouldRunOffMainThread]) {
-		return [self _runWorkKeepingInterfaceAlive:^id{
+		theResult = [self _runWorkKeepingInterfaceAlive:^id{
 			return [self queryString:theQueryString
 			           usingEncoding:theEncoding
 			          withResultType:theReturnType
 			       assertingDatabase:databaseName
 			databaseContextIsRequired:databaseContextIsRequired];
 		}];
+	} else {
+		theResult = [self.sessionAccess performQuery:^id {
+			return [self _queryString:theQueryString
+			           usingEncoding:theEncoding
+			          withResultType:theReturnType
+			       assertingDatabase:databaseName
+			databaseContextIsRequired:databaseContextIsRequired];
+		} recover:^BOOL {
+			return [self _reconnectAllowingRetries:YES];
+		}];
 	}
-    id theResult = [self.sessionAccess performQuery:^id {
-        return [self _queryString:theQueryString
-                   usingEncoding:theEncoding
-                  withResultType:theReturnType
-               assertingDatabase:databaseName
-       databaseContextIsRequired:databaseContextIsRequired];
-    } recover:^BOOL {
-        return [self _reconnectAllowingRetries:YES];
-    }];
 
     // A statement that was refused the session never reached the server. Saying so is what
     // keeps it apart from one that ran and changed nothing: callers read the row count and the

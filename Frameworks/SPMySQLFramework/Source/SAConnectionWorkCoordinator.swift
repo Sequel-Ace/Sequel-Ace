@@ -235,6 +235,26 @@ public final class SAConnectionWorkCoordinator: NSObject {
         return isMainThread && delegateShowsTheWait
     }
 
+    /// Whether work the main thread would hand to the worker has to be refused instead.
+    ///
+    /// A question about the connection is answered on the main thread, and the thread that asked
+    /// keeps the session until it has an answer. Handing the main thread's work to the worker
+    /// does not get around that. The worker runs one item at a time, so the work queues behind
+    /// whatever is already waiting for that answer, and the main thread then waits for the
+    /// worker - while the answer cannot arrive until the main thread returns. Both wait for each
+    /// other. ``SAConnectionSessionAccess`` turns a main-thread caller away for the same reason;
+    /// this is that refusal one step earlier, before anything is enqueued, because by the time
+    /// the session is asked for the caller is the worker and no longer looks like the main thread.
+    /// - Parameters:
+    ///   - isMainThread: Whether the caller is the thread the question is answered on.
+    ///   - aQuestionAwaitsTheMainThread: Whether a question is out to it and still unanswered.
+    /// - Returns: Whether to refuse the work rather than hand it over.
+    @objc(mainThreadWorkMustBeRefused:aQuestionAwaitsTheMainThread:)
+    public static func mainThreadWorkMustBeRefused(isMainThread: Bool,
+                                                   aQuestionAwaitsTheMainThread: Bool) -> Bool {
+        return isMainThread && aQuestionAwaitsTheMainThread
+    }
+
     /// How the work running on the current thread has used the session; untouched for work that
     /// no coordinator runs.
     @objc public static var currentWorkSessionUse: SAWorkSessionUse {

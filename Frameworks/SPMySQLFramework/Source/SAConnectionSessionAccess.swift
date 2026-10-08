@@ -198,6 +198,24 @@ import Darwin
         return refused
     }
 
+    /// Whether a question about the connection is out to the main thread and still unanswered.
+    ///
+    /// The thread that asked keeps the session until it has an answer. A caller that would hand
+    /// its work to another thread asks this first: handing it over does not get around the wait,
+    /// it only changes who waits, and the main thread is still the one that has to answer.
+    @objc public var aQuestionAwaitsTheMainThread: Bool {
+        socketLock.withLock { questionsAwaitingTheMainThread > 0 }
+    }
+
+    /// Records that this thread's call was refused the session, for a caller that turned it away
+    /// before it reached ``performQuery(_:recover:)``.
+    ///
+    /// The refusal has to read the same whichever side of a hand-off turned the call away: a
+    /// statement that was never sent must not be taken for one that ran and returned nothing.
+    @objc public func noteThisThreadsCallWasRefused() {
+        Thread.current.threadDictionary[Self.refusalMarker] = true
+    }
+
     /// Forgets a refusal recorded on this thread, so it cannot speak for a later call.
     private func forgetAnyRefusal() {
         Thread.current.threadDictionary[Self.refusalMarker] = false

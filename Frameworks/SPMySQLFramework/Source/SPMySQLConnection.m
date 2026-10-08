@@ -1741,6 +1741,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return work();
 	}
 
+	// Refused before anything is enqueued, not when the session is asked for: by then the caller
+	// is the worker and the lease's own refusal no longer recognises it as the main thread. See
+	// +mainThreadWorkMustBeRefused:aQuestionAwaitsTheMainThread: for why handing the work over
+	// does not get around the wait.
+	if ([SAConnectionWorkCoordinator mainThreadWorkMustBeRefused:[NSThread isMainThread]
+	                               aQuestionAwaitsTheMainThread:self.sessionAccess.aQuestionAwaitsTheMainThread]) {
+		[self.sessionAccess noteThisThreadsCallWasRefused];
+		return nil;
+	}
+
 	if (!connectionWorkCoordinator) {
 		connectionWorkCoordinator = [[SAConnectionWorkCoordinator alloc] init];
 	}
