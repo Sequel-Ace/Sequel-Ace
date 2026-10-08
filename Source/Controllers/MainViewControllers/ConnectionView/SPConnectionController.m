@@ -369,25 +369,6 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     return [self generateAWSIAMAuthTokenWithError:nil];
 }
 
-/**
- * Generates a fresh AWS IAM authentication token on a background queue and calls
- * the completion handler on the main queue with the token or the error.
- */
-- (void)generateAWSIAMAuthTokenWithCompletion:(void (^)(NSString *token, NSError *error))completion
-{
-    NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
-    NSString *trimmedProfileName = [[self awsProfile] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *profileName = [trimmedProfileName length] > 0 ? trimmedProfileName : @"default";
-
-    [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
-                                                port:dbPort
-                                            username:[self user]
-                                              region:[self awsRegion]
-                                             profile:profileName
-                                        parentWindow:[dbDocument parentWindowControllerWindow]
-                                          completion:completion];
-}
-
 - (NSString *)keychainPasswordForSSH
 {
     if (![self connectionKeychainItemName]) return nil;
@@ -583,11 +564,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                                                    password:[self password] ?: @""
                                                                                          delegateAvailable:self.connectionService.mySQLDelegate != nil];
 
-    // Resolve explicit passwords and generated credentials before entering the service.
-    // An AWS IAM token is generated on a background queue once the Cancel button is shown,
-    // and discarded when the delegate supplies one per connection attempt.
+    // Keep AWS token resolution in SAConnectionService so it can invalidate an
+    // earlier attempt before the credential phase and fence stale completions.
     BOOL isAWSIAMConnection = [self _isAWSIAMConnection];
     NSString *resolvedPassword = (deferMySQLPasswordToDelegate || isAWSIAMConnection) ? nil : [self _resolvedMySQLPassword];
+    if (!resolvedPassword && !deferMySQLPasswordToDelegate && !isAWSIAMConnection) return; // Password error already shown
 
     NSString *resolvedSSHPassword = [self _resolvedSSHPassword];
 
@@ -684,6 +665,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [strongSelf mySQLConnectionEstablished];
     };
 
+    if (isAWSIAMConnection) {
+        [self.connectionService connectAWSIAMWithController:self info:info preferences:preferences
+                                                     region:[self awsRegion] profile:[self awsProfile]
+                                                  attemptID:connectionAttemptID sshPassword:resolvedSSHPassword
+                                               parentWindow:[dbDocument parentWindowControllerWindow]
+                                                 completion:connectCompletion];
+        return;
+    }
+
     // Vault: fetch ephemeral credentials on a background thread so that a
     // browser-based OIDC flow (up to 120 s) does not block the main thread.
     // The service call is then dispatched back to the main thread.
@@ -766,34 +756,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                              completion:connectCompletion];
             });
         });
-        return;
-    }
-
-    // AWS IAM: generate the token on a background queue, then connect from the main queue.
-    if (isAWSIAMConnection) {
-        NSUInteger awsConnectionAttemptID = connectionAttemptID;
-        NSString *mySQLProgressText = [progressIndicatorText stringValue];
-        [progressIndicatorText setStringValue:NSLocalizedString(@"Getting AWS credentials...", @"AWS IAM credentials status message")];
-
-        [self generateAWSIAMAuthTokenWithCompletion:^(NSString *token, NSError *awsError) {
-            SPConnectionController *mainSelf = weakSelf;
-            if (!mainSelf || mainSelf->cancellingConnection || mainSelf->connectionAttemptID != awsConnectionAttemptID) return;
-
-            if (![token length]) {
-                [mainSelf failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
-                                     errorMessage:awsError ? awsError.localizedDescription : NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
-                                           detail:nil];
-                return;
-            }
-
-            [mainSelf->progressIndicatorText setStringValue:mySQLProgressText];
-            [mainSelf.connectionService connectWith:info
-                                        preferences:preferences
-                                           password:(deferMySQLPasswordToDelegate ? nil : token)
-                                        sshPassword:resolvedSSHPassword
-                                       parentWindow:[mainSelf->dbDocument parentWindowControllerWindow]
-                                         completion:connectCompletion];
-        }];
         return;
     }
 
@@ -3828,6 +3790,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     } else {
         dispatch_async(dispatch_get_main_queue(), presentFailure);
     }
+}
+
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID
+{
+    return !cancellingConnection && connectionAttemptID == attemptID;
 }
 
 /**

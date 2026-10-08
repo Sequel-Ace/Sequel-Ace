@@ -30,6 +30,7 @@
 
 #import "Delegate & Proxy.h"
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Delegate_and_Proxy)
 
@@ -180,7 +181,14 @@
 
         } while(0);
 
+		// The question goes to the main thread and this thread keeps the session until the
+		// answer is in. Anything that reaches the connection on the main thread meanwhile is
+		// turned away rather than made to wait: the main thread is what answers, so a caller
+		// waiting there would hold up the answer this thread is waiting for - and the answer
+		// cannot arrive until that caller returns. Both would wait for each other.
+		[self.sessionAccess noteAQuestionWentToTheMainThread];
 		[self performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection) withObject:nil waitUntilDone:YES];
+		[self.sessionAccess noteTheQuestionWasAnswered];
 		[delegateDecisionLock lock];
 		theDecision = lastDelegateDecisionForLostConnection;
 		[delegateDecisionLock unlock];
