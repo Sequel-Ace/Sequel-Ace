@@ -30,6 +30,8 @@
 
 #import "Encoding.h"
 #import "SPMySQLStringAdditions.h"
+#import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Encoding)
 
@@ -77,29 +79,76 @@
  * Set the name of the encoding - the MySQL character set - that the connection
  * should use.  If an encoding not recognised by the server is supplied, NO is
  * returned.
+ * NO is also returned for a character set this framework has no string encoding for.
+ * The connection is then put on a character set it can convert values for, so that it
+ * stays usable: the requested one would otherwise have its bytes read as UTF-8, which
+ * reinterprets them rather than converting them.  No data goes out of reach that way,
+ * because the server converts between a table's own character set and the session's.
  * Calling this resets whether the connection should use Latin1 transport to NO.
  */
 - (BOOL)setEncoding:(NSString *)theEncoding
 {
 
-	// If the supplied encoding is already set, return success
-	if ([encoding isEqualToString:theEncoding] && !encodingUsesLatin1Transport) {
+	// If the supplied encoding is already set, return success. Both readings have to be it: the
+	// record follows what results come back in, and an init_connect can leave the character set
+	// the server reads statements in at something else. Returning success on the record alone
+	// would say the session is in this character set while it still reads statements in another,
+	// and the statement's own text - converted with the record's string encoding - would be
+	// parsed in that other one.
+	if ([encoding isEqualToString:theEncoding]
+	    && (!sqlInputEncoding || [sqlInputEncoding isEqualToString:theEncoding])
+	    && !encodingUsesLatin1Transport) {
 		return YES;
 	}
 
-	// Run a query to set the connection encoding
-	[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [theEncoding mySQLTickQuotedString]]];
+	// A character set without a string encoding to carry it is not run as the session's. The
+	// name comes back in the spelling the encoding table is keyed by, which it matches
+	// case-sensitively.
+	NSString *carriedCharacterSet = [SAConnectionCharacterSets carriableNameForCharacterSet:theEncoding];
+	BOOL characterSetCanBeCarried = (carriedCharacterSet != nil);
+	// The fallbacks are tried best first: utf8mb4 only arrived in MySQL 5.5, so a server too old
+	// for it is offered utf8 rather than left in a character set nothing can convert for.
+	NSArray<NSString *> *candidates = carriedCharacterSet
+		? @[carriedCharacterSet]
+		: [SAConnectionCharacterSets fallbackCharacterSets];
+	if (!characterSetCanBeCarried) {
+		SPLog(@"[setEncoding:]: no string encoding carries the character set '%@'; connecting in one of %@ instead.",
+		      theEncoding, candidates);
+	}
 
-	// If the query errored, no encoding change occurred - return failure.
-	if ([self queryErrored]) return NO;
+	// Run a query to set the connection encoding. The count of the session's reports is taken
+	// before each attempt, so the report that comes back with it can be told apart from one
+	// another thread's statement brought.
+	NSString *characterSetToSet = nil;
+	NSUInteger reportsBeforeTheChange = 0;
+	for (NSString *candidate in candidates) {
+		reportsBeforeTheChange = [valueEscaper reportsSoFar];
+		[self queryString:[NSString stringWithFormat:@"SET NAMES %@", [candidate mySQLTickQuotedString]]];
+		if (![self queryErrored]) {
+			characterSetToSet = candidate;
+			break;
+		}
+	}
 
-	// Connection encoding was successfully set, update the instance settings,
-	// and return success.
-	encoding = [[NSString alloc] initWithString:theEncoding];
-	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[theEncoding UTF8String]];
+	// If every candidate errored, no encoding change occurred - return failure.
+	if (!characterSetToSet) return NO;
+
+	// What the statement above shows about this session's reporting: it went out through the
+	// query path, so the client library followed it only if the session reported it. A session
+	// that still names the character set from before does not report its changes, whatever its
+	// variable list said - and from here the record is the better guide than the stale handle.
+	[valueEscaper recordCharacterSetSetByConnection:characterSetToSet reportsBefore:reportsBeforeTheChange];
+
+	// Connection encoding was successfully set, update the instance settings. SET NAMES sets what
+	// the server reads statements in along with what it sends results in, so the two agree again.
+	encoding = [[NSString alloc] initWithString:characterSetToSet];
+	sqlInputEncoding = [[NSString alloc] initWithString:characterSetToSet];
+	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetToSet UTF8String]];
 	encodingUsesLatin1Transport = NO;
 
-	return YES;
+	// The session is usable either way, but the character set asked for is only in use when
+	// this framework could carry it.
+	return characterSetCanBeCarried;
 }
 
 /**
@@ -223,19 +272,30 @@
 	} else if (!strcmp(mysqlCharset, "tis620")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatinThai);
 	} else if (!strcmp(mysqlCharset, "euckr")) {
-		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_KR);
+		// CP949 (UHC), the extended form MySQL uses: plain EUC-KR cannot read 8824 of the
+		// sequences the server accepts here.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSKorean);
 	} else if (!strcmp(mysqlCharset, "koi8u")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingKOI8_U);
 	} else if (!strcmp(mysqlCharset, "gb2312")) {
-		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_2312_80);
+		// EUC-CN, not the bare GB 2312-80 standard: that one has no ASCII range at all, so
+		// converting a value to it yielded no bytes and the value could not be used.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_CN);
 	} else if (!strcmp(mysqlCharset, "greek")) {
-		return NSWindowsCP1253StringEncoding;
+		// ISO 8859-7, not Windows-1253: the two disagree over 22 of the bytes the server
+		// defines. The remaining difference is A1/A2, where MySQL keeps the 1987 edition's
+		// modifier letters and macOS follows the 2003 revision's quotation marks.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatinGreek);
 	} else if (!strcmp(mysqlCharset, "cp1250")) {
 		return NSWindowsCP1250StringEncoding;
 	} else if (!strcmp(mysqlCharset, "gbk")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGBK_95);
+	} else if (!strcmp(mysqlCharset, "gb18030")) {
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_18030_2000);
 	} else if (!strcmp(mysqlCharset, "latin5")) {
-		return NSWindowsCP1254StringEncoding;
+		// ISO 8859-9, not Windows-1254: the two disagree over 25 of the bytes the server
+		// defines, all of them in the 80-9F range Windows fills with punctuation.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin5);
 	} else if (!strcmp(mysqlCharset, "ucs2")) {
 		return NSUnicodeStringEncoding;
 	} else if (!strcmp(mysqlCharset, "cp866")) {
@@ -281,7 +341,8 @@
 	} else if (!strcmp(mysqlCharset, "win1251")) {
 		return NSWindowsCP1251StringEncoding;
 	} else if (!strcmp(mysqlCharset, "euc_kr")) {
-		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_KR);
+		// The pre-4.1 name for euckr, and the same extended CP949 the server means by it.
+		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSKorean);
 	} else if (!strcmp(mysqlCharset, "estonia")) {
 		return CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingISOLatin7);
 	} else if (!strcmp(mysqlCharset, "hungarian")) {
@@ -321,6 +382,13 @@
  */
 + (NSString *)mySQLCharsetForStringEncoding:(NSStringEncoding)aStringEncoding
 {
+	// The character sets a switch cannot take as a case label, because their encoding is only
+	// reachable through CoreFoundation.
+	NSString *namedCharacterSet = [SAConnectionCharacterSets characterSetNameForStringEncoding:aStringEncoding];
+	if (namedCharacterSet) {
+		return namedCharacterSet;
+	}
+
 	// Switch through the list of NSStringEncodings from NSString, returning the most
 	// appropriate encoding for each
 	switch (aStringEncoding) {
@@ -354,12 +422,6 @@
 
 		case NSWindowsCP1252StringEncoding:
 			return @"latin1";
-
-		case NSWindowsCP1253StringEncoding:
-			return @"greek";
-
-		case NSWindowsCP1254StringEncoding:
-			return @"latin5";
 
 		case NSWindowsCP1250StringEncoding:
 			return @"cp1250";

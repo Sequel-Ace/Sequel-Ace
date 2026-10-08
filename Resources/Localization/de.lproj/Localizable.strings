@@ -129,13 +129,13 @@
 "Creating the database '%@' failed: %@" = "Erstellen der Datenbank '%1$@' fehlgeschlagen: %2$@";
 
 /* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
-"Every object was moved to '%@', but dropping '%@' failed: %@" = "Jedes Objekt wurde nach '%1$@' verschoben, aber das Ablegen '%2$@' ist fehlgeschlagen: %3$@";
+"Every object was moved to '%@', but dropping '%@' failed: %@" = "Jedes Objekt wurde nach '%1$@' verschoben, aber das Löschen von '%2$@' ist fehlgeschlagen: %3$@";
 
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
-"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Verschieben von %1$@ ist fehlgeschlagen: %2$@ Die bisher bewegten Objekte sind in '%3$@'; '%4$@' wurde nicht fallen gelassen.";
+"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Verschieben von %1$@ ist fehlgeschlagen: %2$@ Die bisher verschobenen Objekte liegen in '%3$@'; '%4$@' wurde nicht gelöscht.";
 
 /* rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
-"Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Privilegien werden bereits gewährt oder teilweise für den neuen Namen '%1$@' aufgehoben (%2$@); die verschobenen Tabellen und Ansichten würden unter sie fallen. Nichts wurde geändert.";
+"Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Für den neuen Namen '%1$@' bestehen bereits Rechte oder teilweise Entzüge (%2$@); die verschobenen Tabellen und Ansichten fielen darunter. Es wurde nichts geändert.";
 
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
 "Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Lesen der Objekte der Datenbank '%1$@' fehlgeschlagen: %2$@ Nichts wurde geändert.";
@@ -144,7 +144,7 @@
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "Die Verbindung konnte nicht zu UTF-8 gewechselt werden, welche die Datenbank umbenennen muss, um die Ansichtsdefinitionen ohne Verlust zu verschieben. Es wurde nichts geändert.";
 
 /* rename database: the connection's settings could not be put back after the rename (or after refusing it) and reconnecting failed too; shown as a warning after a successful rename or appended to the failure */
-"The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries." = "Der Zeichensatz, die Sortierfolge oder der SQL-Modus der Verbindung konnte nach dem Umbenennen der Datenbank nicht wiederhergestellt werden, und die Wiederherstellung ist fehlgeschlagen; Verbinden Sie sich, bevor Sie weitere Abfragen ausführen.";
+"The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries." = "Der Zeichensatz, die Sortierung oder der SQL-Modus der Verbindung konnte nach dem Umbenennen der Datenbank nicht wiederhergestellt werden, und das erneute Herstellen ist fehlgeschlagen; stellen Sie die Verbindung neu her, bevor Sie weitere Abfragen ausführen.";
 
 /* rename database: the connection's character set, latin1 transport mode, collation or sql_mode could not be put back after the rename (or after refusing it), so it was reconnected; shown as a warning after a successful rename or appended to the failure */
 "The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established." = "Der Zeichensatz, die Sortierfolge oder der SQL-Modus der Verbindung konnte nach dem Umbenennen der Datenbank nicht wiederhergestellt werden, so dass die Verbindung wieder hergestellt wurde.";
@@ -153,19 +153,19 @@
 "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed." = "Die Sortierung der Verbindung konnte nicht gelesen werden, daher konnte sie nach dem Umbenennen nicht wiederhergestellt werden. Nichts wurde geändert.";
 
 /* rename database refused because the source holds triggers, routines or events; %@ lists them */
-"The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "Die Datenbank enthält Objekte, die die Datenbank nicht umbenennen kann: %@. Nichts wurde geändert.";
+"The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "Die Datenbank enthält Objekte, die „Datenbank umbenennen“ nicht verschieben kann: %@. Es wurde nichts geändert.";
 
 /* rename database refused because GRANTs on the source database or its tables or views, or a partial revoke for the database, would be lost; %@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
 "The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed." = "Die Datenbank hat Privilegien, die ihr gewährt wurden, ihre Tabellen oder ihre Ansichten, oder teilweise aufgehoben (%@), die Datenbank nicht umbenennen können. Nichts wurde geändert.";
 
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
-"The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "Die Definition der Ansicht '%@' enthält einen String außerhalb von UTF-8; Datenbank kann nicht korrekt umbenennen. Nichts wurde geändert.";
+"The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "Die Definition der Ansicht '%@' enthält eine Zeichenkette außerhalb von UTF-8; „Datenbank umbenennen“ kann sie nicht originalgetreu neu anlegen. Es wurde nichts geändert.";
 
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
-"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "Die Ansicht '%1$@' wurde durch den Zeichensatz '%2$@' erstellt; Datenbank umbenennen kann nur durch UTF-8 erstellte Ansichten wiederherstellen. Nichts wurde geändert.";
 
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
-"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
+"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Aufrufe in anderen Datenbanken lesen von '%1$@' (%2$@) und würden nicht mehr funktionieren, sobald sie umbenannt wurden. Nichts wurde geändert.";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[FEHLER in der Abfrage %1$ld] %2$@\n";
@@ -278,19 +278,19 @@
 "Add" = "Hinzufügen";
 
 /* table Content : rule filter editor : AND/OR popup : combine with AND */
-"AND (all conditions)" = "AND (all conditions)";
+"AND (all conditions)" = "AND (alle Bedingungen)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
 "AND" = "AND";
 
 /* table Content : rule filter editor : context menu : add nested AND/OR group */
-"Add AND/OR Group" = "Add AND/OR Group";
+"Add AND/OR Group" = "AND/ODER-Gruppe hinzufügen";
 
 /* menu item to add db */
 "Add Database..." = "Datenbank hinzufügen …";
 
 /* table Content : rule filter editor : context menu : add filter row */
-"Add Filter" = "Add Filter";
+"Add Filter" = "Filter hinzufügen";
 
 /* Add Host */
 "Add Host" = "Host hinzufügen";
@@ -494,10 +494,10 @@
 "ALL PRIVILEGES" = "Alle Rechte";
 
 /* rename database: one privilege granted on a table, view or column, listed in the refusal; %1$@ the table or view, %2$@ the account as 'user'@'host' */
-"`%@` for %@" = "`%1$@` for %2$@";
+"`%@` for %@" = "`%1$@` für %2$@";
 
 /* rename database: one privilege granted on a database, listed in the refusal; %1$@ the grant's database pattern, %2$@ the account as 'user'@'host' */
-"`%@`.* for %@" = "`%1$@`.* for %2$@";
+"`%@`.* for %@" = "`%1$@`.* für %2$@";
 
 /* privilege operation all databases scope */
 "all databases" = "allen Datenbanken";
@@ -512,10 +512,10 @@
 "change" = "Ändern";
 
 /* rename database: a scheduled event, by name; listed among the objects that block the rename */
-"event '%@'" = "event '%@'";
+"event '%@'" = "Ereignis '%@'";
 
 /* rename database: a stored function, by name; listed among the objects that block the rename */
-"function '%@'" = "function '%@'";
+"function '%@'" = "Funktion '%@'";
 
 /* grant privilege operation */
 "grant" = "Gewähren";
@@ -527,16 +527,16 @@
 "Nonexistent Definer" = "Nonexistent Definer";
 
 /* rename database: why a view was not recreated */
-"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
+"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "ihre von SHOW CREATE VIEW gelieferte Definition enthält keine VIEW-Klausel.";
 
 /* rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename */
-"library '%@'" = "library '%@'";
+"library '%@'" = "Bibliothek '%@'";
 
 /* rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host' */
-"partial revoke on `%@`.* for %@" = "partial revoke on `%1$@`.* for %2$@";
+"partial revoke on `%@`.* for %@" = "teilweise widerrufen auf `%1$@`.* für %2$@";
 
 /* rename database: a stored procedure, by name; listed among the objects that block the rename */
-"procedure '%@'" = "procedure '%@'";
+"procedure '%@'" = "Prozedur '%@'";
 
 /* revoke privilege operation */
 "revoke" = "Entziehen";
@@ -584,31 +584,31 @@
 "Show Create Routine" = "Erstellungs-Routine anzeigen";
 
 /* rename database: a table, by name */
-"table '%@'" = "table '%@'";
+"table '%@'" = "Tabelle '%@'";
 
 /* rename database: escaping a value for a statement failed because the connection is unavailable; shown after 'Reading the objects of the database … failed:' or 'Moving … failed:' */
-"the connection could not quote a value for a statement (it was closed or is being re-established)." = "the connection could not quote a value for a statement (it was closed or is being re-established).";
+"the connection could not quote a value for a statement (it was closed or is being re-established)." = "die Verbindung konnte einen Wert für eine Anweisung nicht maskieren (sie wurde geschlossen oder wird gerade neu aufgebaut).";
 
 /* rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:' */
-"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).";
+"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "die Verbindung lieferte kein Ergebnis, die Anweisung ist also möglicherweise nicht ausgeführt worden (die Verbindung ging verloren oder wurde geschlossen, oder die Abfrage wurde abgebrochen).";
 
 /* rename database: why the views are not trusted and the source is kept */
-"the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
+"the connection was re-established while the views were recreated, so they may still point at the old database." = "die Verbindung wurde neu aufgebaut, während die Ansichten neu angelegt wurden; sie zeigen möglicherweise noch auf die alte Datenbank.";
 
 /* fallback privilege operation account description */
 "the selected account" = "das ausgewählte Konto";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "dieses Konto kann die Bibliotheken der Datenbank nicht vollständig auflisten (es benötigt globales SELECT oder SHOW_ROUTINE).";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "dieses Konto kann die Routinen der Datenbank nicht vollständig auflisten (es benötigt SELECT auf mysql.proc oder globales SELECT oder SHOW_ROUTINE).";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).";
+"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "dieses Konto kann die Rechte auf die Datenbank, ihre Tabellen und Ansichten nicht auflisten (es benötigt SELECT auf mysql.db, mysql.tables_priv und mysql.user oder globales SELECT).";
 
 /* rename database: why the views in other databases that might read from the source could not be checked; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing).";
+"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "dieses Konto kann die Ansichten anderer Datenbanken nicht vollständig auflisten (es benötigt globales SELECT und SHOW VIEW, wo information_schema.VIEW_TABLE_USAGE fehlt).";
 
 /* fallback privileges operation description */
 "the selected privileges" = "den ausgewählten Zugriffsrechten";
@@ -716,28 +716,28 @@
 "Autodetect" = "Automatische Erkennung";
 
 /* Preferences : General : Automatically check for updates checkbox */
-"Automatically check for updates" = "Automatically check for updates";
+"Automatically check for updates" = "Automatisch nach Updates suchen";
 
 /* analytics consent dialog message */
-"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Soll Sequel Ace eine Installationskennung der App, die App-Version, Angaben zu macOS und zum Gerät, die ungefähre Region, Nutzungsdaten sowie Absturz- und Diagnoseberichte an Google Firebase senden?\n\nDie Entwickler nutzen diese Daten, um zu verstehen, welche Funktionen verwendet werden, und um Probleme zu untersuchen. Sie werden nicht für Werbung verwendet und nicht, um Sie über Apps oder Websites anderer Unternehmen hinweg zu verfolgen. Die Erfassung beginnt nur, wenn Sie „Daten senden“ wählen; Ihre Entscheidung können Sie jederzeit in den Einstellungen ändern.";
 
 /* analytics consent deny button */
-"Don't Share" = "Don't Share";
+"Don't Share" = "Nicht senden";
 
 /* analytics consent dialog title */
-"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+"Help Improve Sequel Ace" = "Sequel Ace verbessern helfen";
 
 /* analytics consent allow button */
-"Share Analytics" = "Share Analytics";
+"Share Analytics" = "Daten senden";
 
 /* analytics consent privacy policy button */
-"Privacy Policy…" = "Privacy Policy…";
+"Privacy Policy…" = "Datenschutzerklärung …";
 
 /* about window privacy policy link */
-"Privacy Policy" = "Privacy Policy";
+"Privacy Policy" = "Datenschutzerklärung";
 
 /* Preferences : General : analytics and crash reporting checkbox */
-"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+"Share usage analytics and crash reports with developers" = "Nutzungsdaten und Absturzberichte an die Entwickler senden";
 
 /* background label for color table (Prefs > Editor) */
 "Background" = "Hintergrund";
@@ -907,19 +907,19 @@
 "collation connection: %@" = "Kollation Verbindung: %@";
 
 /* content tab : rule filter : drop zone tooltip */
-"Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+"Click to add a filter, ⌥-click to add an AND/OR group" = "Klicken, um einen Filter hinzuzufügen; ⌥-Klick für eine AND/ODER-Gruppe";
 
 /* general preferences : appearance : checkbox that colors the window title bar with the connected favorite's color */
-"Color the title bar with the connection color" = "Color the title bar with the connection color";
+"Color the title bar with the connection color" = "Titelleiste in der Verbindungsfarbe einfärben";
 
 /* general preferences : appearance : tooltip for the title bar color checkbox */
-"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance.";
+"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Titelleiste, Werkzeugleiste und Tableiste in der Farbe des Verbindungsfavoriten einfärben, damit sich eine Produktivverbindung auf einen Blick von einer Entwicklungsverbindung unterscheiden lässt.";
 
 /* table Content : rule filter editor : compound row : label after the AND/OR popup */
-"combines the conditions in this group" = "combines the conditions in this group";
+"combines the conditions in this group" = "kombiniert die Bedingungen in dieser Gruppe";
 
 /* table Content : rule filter editor : AND/OR popup : tooltip */
-"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
+"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Verknüpft die Filterbedingungen der obersten Ebene mit AND oder OR. Mit gedrückter ⌥-Taste auf das +-Zeichen einer Zeile klicken, um eine verschachtelte AND/ODER-Gruppe hinzuzufügen.";
 
 /* comment label */
 "Comment" = "Kommentar";
@@ -986,7 +986,7 @@
 "Continue to print?" = "Druck fortsetzen?";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
-"Copy WHERE Clause" = "Copy WHERE Clause";
+"Copy WHERE Clause" = "WHERE-Klausel kopieren";
 
 /* Copy as RTF */
 "Copy as RTF" = "Als RTF kopieren";
@@ -1309,7 +1309,7 @@
 "Do you really want to shutdown the server?" = "Soll der Server wirklich abgeschaltet werden?";
 
 /* Document query favorite scope */
-"Document" = "Document";
+"Document" = "Dokument";
 
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "DTD-Bezeichner";
@@ -1381,7 +1381,7 @@
 "engine: %@" = "Suchmaschine";
 
 /* Missing query favorite name alert message */
-"Enter a query name or choose a favorite to replace." = "Enter a query name or choose a favorite to replace.";
+"Enter a query name or choose a favorite to replace." = "Geben Sie einen Abfragenamen ein oder wählen Sie einen zu ersetzenden Favoriten aus.";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "Verbindungsdetails unten eingeben oder aus den Favoriten wählen";
@@ -1581,10 +1581,10 @@
 "Favorite" = "Favorit";
 
 /* Stale query favorite replacement alert title */
-"Favorite Changed" = "Favorite Changed";
+"Favorite Changed" = "Favorit geändert";
 
 /* Query favorite replacement picker accessibility label */
-"Favorite to replace" = "Favorite to replace";
+"Favorite to replace" = "Zu ersetzender Favorit";
 
 /* favorites label */
 "Favorites" = "Favoriten";
@@ -2149,7 +2149,7 @@ Befehle werden anwendungsweit ausgeführt";
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
 /* table Content : rule filter editor : AND/OR popup : combine with OR */
-"OR (any condition)" = "OR (any condition)";
+"OR (any condition)" = "OR (beliebige Bedingung)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
 "OR" = "OR";
@@ -2226,7 +2226,7 @@ Befehle werden anwendungsweit ausgeführt";
 "optional" = "optional";
 
 /* Query favorite replacement picker label */
-"Or replace an existing favorite:" = "Or replace an existing favorite:";
+"Or replace an existing favorite:" = "Oder ersetzen Sie einen vorhandenen Favoriten:";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Die Verarbeitung des übergebenen Parameters schlug fehl. Nur Zeichenketten oder Arrays (mit 2 Elementen) sind zulässig.";
@@ -2290,7 +2290,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Query logging is currently disabled" = "Query Protokollierung derzeit abgeschaltet";
 
 /* Query favorite save sheet name label */
-"Query Name:" = "Query Name:";
+"Query Name:" = "Abfragename:";
 
 /* query result print heading */
 "Query Result" = "Query Ergebnis";
@@ -2558,7 +2558,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Save Current Query to Favorites" = "Aktuelle Query als Favorit speichern";
 
 /* Query favorite save sheet global checkbox */
-"Save globally" = "Save globally";
+"Save globally" = "Global speichern";
 
 /* save page as menu item title */
 "Save Page As…" = "Seite speichern als …";
@@ -2567,7 +2567,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Save Queries…" = "Abfragen speichern…";
 
 /* Query favorite save sheet title */
-"Save Query Favorite" = "Save Query Favorite";
+"Save Query Favorite" = "Abfrage-Favorit speichern";
 
 /* Save Query… */
 "Save Query…" = "Query speichern…";
@@ -2888,7 +2888,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Table Content" = "Tabellen-Inhalte";
 
 /* table contents not loaded message */
-"Table contents not loaded" = "Table contents not loaded";
+"Table contents not loaded" = "Tabelleninhalt nicht geladen";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "Tabelleninhalt (CSV)";
@@ -2969,13 +2969,13 @@ Befehle werden anwendungsweit ausgeführt";
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "Das Bundle '%' hat keine UUID, die zum Identifizieren installierter Bundles erforderlich ist.";
 
 /* rename database: a trigger, by name and table; listed among the objects that block the rename */
-"trigger '%@' on table '%@'" = "trigger '%1$@' on table '%2$@'";
+"trigger '%@' on table '%@'" = "auslösen '%1$@' in Tabelle '%2$@'";
 
 /* rename database: the server reported no error message */
-"unknown error" = "unknown error";
+"unknown error" = "unbekannter Fehler";
 
 /* rename database: a view, by name */
-"view '%@'" = "view '%@'";
+"view '%@'" = "Ansicht '%@'";
 
 "‘%@’ Bundle contains legacy components" = "'%'-Bundle enthält ältere Komponenten";
 
@@ -2988,7 +2988,7 @@ Befehle werden anwendungsweit ausgeführt";
 "The color theme ‘%@’ already exists." = "Das Farbthema '%' ist bereits vorhanden.";
 
 /* table column list mismatch informative message */
-"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.";
+"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "Die Spaltenliste für '%@' passte nicht zu den Daten, die der Server geliefert hat, und das erneute Laden der Tabelle hat das nicht behoben. Meist bedeutet das, dass die Verbindung abbrach, während die Tabelleninformationen gelesen wurden.\n\nPrüfen Sie die Verbindung und laden Sie die Tabelle dann neu.";
 
 /* the connection is busy. please wait and try again tooltip */
 "The connection is busy. Please wait and try again." = "Die Verbindung ist ausgelastet. Versuchen Sie es nach kurzer Wartezeit erneut.";
@@ -3042,10 +3042,10 @@ Befehle werden anwendungsweit ausgeführt";
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Die ausgewählten Exporteinstellungen wurden mit version %1$ld gespeichert, aber es können nur Einstellungen mit den folgenden Versionen importiert werden: %2.";
 
 /* Query favorite replacement explanation */
-"The selected favorite keeps its name and location." = "The selected favorite keeps its name and location.";
+"The selected favorite keeps its name and location." = "Der gewählte Favorit behält Namen und Ablageort.";
 
 /* Stale query favorite replacement alert message */
-"The selected favorite was changed or removed in another window. Choose it again before saving." = "The selected favorite was changed or removed in another window. Choose it again before saving.";
+"The selected favorite was changed or removed in another window. Choose it again before saving." = "Der gewählte Favorit wurde in einem anderen Fenster geändert oder entfernt. Wählen Sie ihn erneut, bevor Sie sichern.";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Die ausgewählte Datei enthält Daten vom Typ \"%1\", aber die Eingabe \"%2\" wird benötigt. Wählen Sie eine andere Datei aus.";
@@ -3806,16 +3806,16 @@ Befehle werden anwendungsweit ausgeführt";
 "Copy" = "Kopieren";
 
 /* MCP pref: endpoint hint */
-"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp.";
+"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "Fügen Sie diese URL in einem beliebigen MCP-Client (Claude, Cursor, Cline, VS Code) ein. Dies ist der Streamable-HTTP-Endpunkt; Clients, die nur SSE beherrschen, verwenden /sse anstelle von /mcp.";
 
 /* AWS console sign-in (aws login) error: profile is missing login_session configuration */
 "The profile is not configured for AWS console sign-in" = "Das Profil ist nicht für die AWS-Konsolenanmeldung konfiguriert";
 
 /* AWS console sign-in (aws login) error: no cached session on disk */
-"No cached AWS console sign-in session was found." = "No cached AWS console sign-in session was found.";
+"No cached AWS console sign-in session was found." = "Keine zwischengespeicherte AWS Konsolenanmeldung gefunden.";
 
 /* AWS console sign-in (aws login) error: the sign-in session can no longer be renewed */
-"Your AWS console sign-in session has ended." = "Your AWS console sign-in session has ended.";
+"Your AWS console sign-in session has ended." = "Ihre AWS-Konsolen-Anmeldung ist abgelaufen.";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "Die zwischengespeicherte AWS-Konsolenanmeldung konnte nicht gelesen werden";
@@ -3824,10 +3824,10 @@ Befehle werden anwendungsweit ausgeführt";
 "The profile is not configured for AWS IAM Identity Center" = "Das Profil ist nicht für AWS IAM Identity Center konfiguriert";
 
 /* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
-"No cached AWS SSO session was found." = "No cached AWS SSO session was found.";
+"No cached AWS SSO session was found." = "Keine zwischengespeicherte AWS SSO Sitzung gefunden.";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The cached AWS SSO token has expired." = "The cached AWS SSO token has expired.";
+"The cached AWS SSO token has expired." = "Das zwischengespeicherte AWS-SSO-Token ist abgelaufen.";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
 "Network request to AWS IAM Identity Center failed" = "Netzwerkanfrage an AWS IAM Identity Center fehlgeschlagen";
@@ -4256,169 +4256,172 @@ Befehle werden anwendungsweit ausgeführt";
 "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Möchten Sie das Passwort in die Verbindungszeichenfolge aufnehmen?\n\n⚠️ WARNUNG: Passwörter im Klartext weiterzugeben (Slack, E-Mail usw.) ist ein Sicherheitsrisiko!\n\nNehmen Sie das Passwort nur auf, wenn Sie es über einen sicheren Kanal weitergeben.";
 
 /* Vault roles refresh button title */
-"Refresh" = "Refresh";
+"Refresh" = "Aktualisieren";
 
 /* vault role refresh in progress title */
-"Vault role refresh in progress" = "Vault role refresh in progress";
+"Vault role refresh in progress" = "Vault-Rollen werden geladen";
 
 /* vault role refresh in progress message */
-"Wait for the Vault role list to finish loading before connecting." = "Wait for the Vault role list to finish loading before connecting.";
+"Wait for the Vault role list to finish loading before connecting." = "Warten Sie, bis die Vault-Rollenliste das Laden beendet hat, bevor die Verbindung hergestellt wird.";
 
 /* vault creds path required connect message */
-"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "Zum Verbinden ist ein Vault-Pfad für die Anmeldedaten nötig. Füllen Sie Mount und Rolle aus oder fügen Sie einen vollständigen Pfad in das Feld „Rolle“ ein.";
 
 /* vault creds path required save message */
-"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "Zum Sichern eines Vault-Favoriten ist ein Vault-Pfad für die Anmeldedaten nötig. Füllen Sie Mount und Rolle aus oder fügen Sie einen vollständigen Pfad in das Feld „Rolle“ ein.";
 
 /* Vault roles refresh – missing mount */
-"Enter a Vault mount first" = "Enter a Vault mount first";
+"Enter a Vault mount first" = "Geben Sie zuerst einen Vault-Mount an";
 
 /* Vault roles refresh – missing mount detail */
-"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.";
+"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "Die Liste der Rollen wird aus <mount>/roles gelesen. Füllen Sie das Feld „Vault-Mount“ aus und aktualisieren Sie dann.";
 
 /* Vault roles refresh – login confirm */
-"Sign in to Vault?" = "Sign in to Vault?";
+"Sign in to Vault?" = "Bei Vault anmelden?";
 
 /* Vault roles refresh – login confirm detail */
-"Listing roles requires authenticating to Vault, which will open your web browser." = "Listing roles requires authenticating to Vault, which will open your web browser.";
+"Listing roles requires authenticating to Vault, which will open your web browser." = "Zum Auflisten der Rollen ist eine Anmeldung bei Vault nötig; dabei öffnet sich Ihr Webbrowser.";
 
 /* Vault roles refresh – empty */
-"No Vault roles found" = "No Vault roles found";
+"No Vault roles found" = "Keine Vault-Rollen gefunden";
 
 /* Vault roles refresh – empty detail */
-"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.";
+"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "Für diesen Mount wurden keine Datenbankrollen zurückgegeben. Prüfen Sie den Vault-Mount-Pfad und ob Ihr Token Rollen auflisten darf, oder geben Sie die Rolle von Hand ein.";
 
 /* Vault roles refresh – failure */
-"Could not load Vault roles" = "Could not load Vault roles";
+"Could not load Vault roles" = "Vault-Rollen konnten nicht geladen werden";
 
 /* Vault roles refresh – failure detail */
-"Unknown error. You can still type the role manually." = "Unknown error. You can still type the role manually.";
+"Unknown error. You can still type the role manually." = "Unbekannter Fehler. Sie können die Rolle trotzdem manuell eingeben.";
 
 /* Vault OIDC login already in progress */
-"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Eine andere Vault-Anmeldung läuft bereits. Schließen Sie sie ab oder brechen Sie sie ab – auch in anderen Fenstern – und versuchen Sie es erneut.";
 
 /* aws login refresh error: the user's AWS password or credentials changed */
-"Your AWS sign-in credentials changed after you signed in." = "Your AWS sign-in credentials changed after you signed in.";
+"Your AWS sign-in credentials changed after you signed in." = "Ihre Anmeldedaten für AWS wurden nach der Anmeldung geändert.";
 
 /* aws login refresh error: missing IAM permission */
-"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.";
+"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS hat Sequel Ace nicht erlaubt, Ihre Konsolen-Anmeldung zu erneuern. Ihre IAM-Identität benötigt die Berechtigung signin:CreateOAuth2Token.";
 
 /* aws login refresh error: AWS rejected the refresh token */
-"AWS rejected the renewal of your console sign-in session." = "AWS rejected the renewal of your console sign-in session.";
+"AWS rejected the renewal of your console sign-in session." = "AWS hat die Erneuerung Ihrer Konsolenanmeldung abgelehnt.";
 
 /* aws login refresh error: no region for the sign-in session */
-"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace could not tell which AWS region your console sign-in session belongs to.";
+"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace konnte nicht feststellen, zu welcher AWS-Region Ihre Konsolen-Anmeldung gehört.";
 
 /* aws login refresh error: the .aws folder is read-only for Sequel Ace */
-"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window.";
+"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "Ihre AWS-Konsolen-Anmeldedaten sind abgelaufen. Um sie automatisch zu erneuern, benötigt Sequel Ace die Erlaubnis, Ihren Ordner „.aws“ zu aktualisieren; es fragt danach, wenn Sie sich aus dem Verbindungsfenster verbinden.";
 
 /* aws login refresh error: the cached DPoP key cannot be read */
-"The cached AWS console sign-in session has an unreadable signing key." = "The cached AWS console sign-in session has an unreadable signing key.";
+"The cached AWS console sign-in session has an unreadable signing key." = "Die zwischengespeicherte AWS Konsolenanmeldung hat einen unlesbaren Signaturschlüssel.";
 
 /* aws login refresh error: malformed response */
-"AWS returned an unexpected response while renewing your console sign-in session." = "AWS returned an unexpected response while renewing your console sign-in session.";
+"AWS returned an unexpected response while renewing your console sign-in session." = "AWS hat beim Erneuern Ihrer Konsolen-Anmeldung unerwartet geantwortet.";
 
 /* aws login refresh error: request failed; %@ is the underlying error */
-"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
+"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace konnte Ihre AWS-Konsolen-Anmeldung nicht erneuern: %@";
 
 /* AWS directory write access panel message */
-"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically.";
+"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Erlauben Sie Sequel Ace, Ihren Ordner „.aws“ zu aktualisieren, damit es Ihre AWS-Konsolen-Anmeldedaten (aws login) automatisch erneuern kann.";
 
 /* AWS directory write access panel button */
-"Allow" = "Allow";
+"Allow" = "Erlauben";
 
 /* Connection lost sheet: default title */
-"Connection Lost" = "Connection Lost";
+"Connection Lost" = "Verbindung verloren";
 
 /* Connection lost sheet: default message */
-"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace appears to have lost the connection to the server, or the server has stopped responding.";
+"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace scheint die Verbindung zum Server verloren zu haben oder der Server reagiert nicht mehr.";
 
 /* Connection lost sheet: title when the AWS session has lapsed */
-"AWS Sign-In Required" = "AWS Sign-In Required";
+"AWS Sign-In Required" = "AWS Anmeldung erforderlich";
 
 /* Connection lost sheet: message when the AWS session has lapsed; %@ is an AWS CLI command */
-"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect.";
+"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace hat die Verbindung zum Server verloren und kann sich erst wieder verbinden, wenn Sie sich erneut bei AWS anmelden.\n\nFühren Sie im Terminal `%@` aus und klicken Sie dann auf „Neu verbinden“.";
 
 /* Connection lost sheet: message when an AWS IAM token could not be generated; %@ is the AWS error description */
-"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect.";
+"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace hat die Verbindung zum Server verloren und konnte kein neues RDS-IAM-Authentifizierungs-Token erzeugen:\n%@\n\nKorrigieren Sie die AWS-Anmeldedaten und klicken Sie dann auf „Neu verbinden“.";
 
 /* Connection lost sheet: fallback AWS error description */
-"Unknown AWS IAM error" = "Unknown AWS IAM error";
+"Unknown AWS IAM error" = "Unbekannter AWS IAM Fehler";
 
 /* Connection lost sheet: reconnect button */
-"Reconnect" = "Reconnect";
+"Reconnect" = "Neu verbinden";
 
 /* Connection lost sheet: close connection button */
-"Close connection" = "Close connection";
+"Close connection" = "Verbindung schließen";
 
 /* SQLite store problem alert title: the pinned-tables store is unusable */
-"Pinned tables are not being saved" = "Pinned tables are not being saved";
+"Pinned tables are not being saved" = "Angepinnte Tabellen werden nicht gespeichert";
 
 /* SQLite store problem alert title: the display-format store is unusable */
-"Column display formats are not being saved" = "Column display formats are not being saved";
+"Column display formats are not being saved" = "Anzeigeformate für Spalten werden nicht gespeichert";
 
 /* SQLite store problem: what an unusable pinned-tables store means for the user */
-"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept.";
+"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "Angeheftete Tabellen bleiben bis zum Beenden von Sequel Ace oben, werden aber nicht behalten.";
 
 /* SQLite store problem: what an unusable display-format store means for the user */
-"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Display formats you choose still work until you quit Sequel Ace, but they are not kept.";
+"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Gewählte Anzeigeformate gelten bis zum Beenden von Sequel Ace, werden aber nicht behalten.";
 
 /* SQLite store problem: the folder for the app's data files is missing */
-"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace could not find or create its data folder in Application Support.";
+"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace konnte seinen Datenordner in „Application Support“ nicht finden oder anlegen.";
 
 /* SQLite store problem: the data file could not be opened; the argument is its path */
-"Sequel Ace could not open the file “%@”." = "Sequel Ace could not open the file “%@”.";
+"Sequel Ace could not open the file “%@”." = "Sequel Ace konnte die Datei „%@“ nicht öffnen.";
 
 /* SQLite store problem: the data file could not be prepared or read; the arguments are its path and the error */
-"Sequel Ace could not use the file “%1$@”: %2$@" = "Sequel Ace could not use the file “%1$@”: %2$@";
+"Sequel Ace could not use the file “%1$@”: %2$@" = "Sequel Ace konnte die Datei “%1$@” nicht verwenden: %2$@";
 
 /* SQLite store problem: the data file holds entries that cannot be read; the argument is its path */
-"Sequel Ace could not read the file “%@”." = "Sequel Ace could not read the file “%@”.";
+"Sequel Ace could not read the file “%@”." = "Sequel Ace konnte die Datei „%@“ nicht lesen.";
 
 /* SQLite store problem: a change could not be written to the data file; the arguments are its path and the error */
-"Sequel Ace could not save to the file “%1$@”: %2$@" = "Sequel Ace could not save to the file “%1$@”: %2$@";
+"Sequel Ace could not save to the file “%1$@”: %2$@" = "Sequel Ace konnte nicht in die Datei „%1$@“ sichern: %2$@";
 
 /* SQLite store problem: advice for a file or folder that cannot be written to */
-"Make sure the file and its folder can be written to." = "Make sure the file and its folder can be written to.";
+"Make sure the file and its folder can be written to." = "Stellen Sie sicher, dass die Datei und ihr Ordner beschreibbar sind.";
 
 /* SQLite store problem: advice for a damaged data file */
-"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts.";
+"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "Falls die Datei beschädigt ist, beenden Sie Sequel Ace und verschieben Sie die Datei aus ihrem Ordner heraus; Sequel Ace legt beim nächsten Start eine neue an.";
 
 /* button that reveals a file in Finder */
-"Show in Finder" = "Show in Finder";
+"Show in Finder" = "Im Finder anzeigen";
 
 /* AWS sign-in recovery; %@ is an AWS CLI command */
-"Run `%@` in Terminal, then try again." = "Run `%@` in Terminal, then try again.";
+"Run `%@` in Terminal, then try again." = "Führen Sie `%@` im Terminal aus und versuchen Sie es erneut.";
 
 /* AWS IAM credentials status message */
-"Getting AWS credentials..." = "Getting AWS credentials...";
+"Getting AWS credentials..." = "AWS-Anmeldeinformationen werden abgerufen...";
 
 /* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
-"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Klicken Sie für das Filtermenü: Fügen Sie einen Filter oder eine AND/OR-Gruppe hinzu oder kopieren Sie die WHERE-Klausel";
 
 /* Connection error: the cleartext authentication plugin requires TLS */
-"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
+"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "Für diese Verbindung ist das Cleartext-Authentifizierungs-Plugin aktiviert, das das Passwort im Klartext überträgt; sie wird daher nur über TLS aufgebaut. Mit dem Server konnte kein TLS aufgebaut werden, und es wurde kein Passwort gesendet.";
 
 /* aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error */
-"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace renewed your AWS console sign-in session but could not save it: %@";
+"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace hat Ihre AWS-Konsolen-Anmeldung erneuert, konnte sie aber nicht sichern: %@";
 
 /* rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature */
-"the column '%@' is missing" = "the column '%@' is missing";
+"the column '%@' is missing" = "die Spalte '%@' fehlt";
 
 /* rename database: a column the recreated view presents that the source view did not; %@ is the column's signature */
-"the column '%@' was added" = "the column '%@' was added";
+"the column '%@' was added" = "die Spalte '%@' wurde hinzugefügt";
 
 /* rename database: a column of a recreated view that changed; %1$@ the column as it was, %2$@ as it is now */
-"'%@' became '%@'" = "'%1$@' became '%2$@'";
+"'%@' became '%@'" = "'%1$@' wurde '%2$@'";
 
 /* rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view */
-"the columns of the view '%@' were not listed before the move." = "the columns of the view '%@' were not listed before the move.";
+"the columns of the view '%@' were not listed before the move." = "die Spalten der Ansicht '%@' wurden vor dem Verschieben nicht aufgelistet.";
 
 /* rename database: a recreated view whose columns information_schema did not report; %@ is the view */
-"the columns of the recreated view '%@' were not listed." = "the columns of the recreated view '%@' were not listed.";
+"the columns of the recreated view '%@' were not listed." = "die Spalten der neu erstellten Ansicht '%@' wurden nicht aufgelistet.";
 
 /* rename database: a recreated view's column signature differs from the source view's, so the source database is kept; %1$@ view, %2$@ target database, %3$@ source database, %4$@ what changed, %5$@ and %6$@ source database */
-"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "The view '%1$@' does not present the same columns in '%2$@' as it did in '%3$@' (%4$@), so its results could differ. The objects were moved, and '%5$@' was kept; check the view and remove '%6$@' yourself once you are satisfied.";
+"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "Die Ansicht '%1$@' enthält nicht die gleichen Spalten in '%2$@' wie in '%3$@' (%4$@), so dass ihre Ergebnisse sich unterscheiden können. Die Objekte wurden verschoben, und '%5$@' wurde beibehalten; überprüfe die Ansicht und entferne '%6$@' selbst, sobald du zufrieden bist.";
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
-"The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
+"The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "Die Spalten der neu erstellten Ansichten in '%1$@' konnten nicht mit denen in '%2$@': %3$@ Die Objekte wurden verschoben, und '%4$@' wurde beibehalten; überprüfe die Ansichten und entferne '%5$@' selbst, sobald du zufrieden bist.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "Die Verbindung kann nicht benutzt werden, während Sie gefragt werden, was Sie dagegen tun sollen. Beantworten Sie diese Frage und versuchen Sie es erneut.";

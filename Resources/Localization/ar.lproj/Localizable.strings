@@ -126,46 +126,46 @@
 "/* WARNING: No rows have been affected */\n" = "/* تحذير: لم يتأثر أي صف */\n";
 
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
-"Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
+"Creating the database '%@' failed: %@" = "فشل إنشاء قاعدة البيانات '%1$@': %2$@";
 
 /* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
-"Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%1$@', but dropping '%2$@' failed: %3$@";
+"Every object was moved to '%@', but dropping '%@' failed: %@" = "تم نقل كل كائن إلى '%1$@'، ولكن إسقاط '%2$@' فشل: %3$@";
 
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
-"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
+"Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "فشل النقل %1$@ : %2$@ الكائنات التي تم نقلها حتى الآن في '%3$@'; '%4$@' لم يتم إسقاطها.";
 
 /* rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
-"Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Privileges are already granted or partially revoked for the new name '%1$@' (%2$@); the moved tables and views would come under them. Nothing was changed.";
+"Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "تُمنح الامتيازات بالفعل أو تُلغى جزئيا للاسم الجديد '%1$@' (%2$@)؛ وستدرج في إطارها الجداول ووجهات النظر المنقولة. لم يتغير شيء.";
 
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
-"Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
+"Reading the objects of the database '%@' failed: %@ Nothing was changed." = "فشلت قراءة كائنات قاعدة البيانات '%1$@': %2$@ لم يتغير شيء.";
 
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
-"The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
+"The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "تعذر تحويل الاتصال إلى UTF-8، الذي يحتاج إعادة تسمية قاعدة البيانات إلى نقل تعاريف العرض دون خسارة. لم يتغير أي شيء.";
 
 /* rename database: the connection's settings could not be put back after the rename (or after refusing it) and reconnecting failed too; shown as a warning after a successful rename or appended to the failure */
-"The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries." = "The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries.";
+"The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries." = "لا يمكن استعادة مجموعة حروف الاتصال أو تجميع أو وضع SQL بعد إعادة تسمية قاعدة البيانات وفشل إعادة إنشائها؛ إعادة الاتصال قبل تشغيل المزيد من الاستفسارات.";
 
 /* rename database: the connection's character set, latin1 transport mode, collation or sql_mode could not be put back after the rename (or after refusing it), so it was reconnected; shown as a warning after a successful rename or appended to the failure */
-"The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established." = "The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established.";
+"The connection's character set, collation or SQL mode could not be restored after Rename Database, so the connection was re-established." = "لا يمكن استعادة مجموعة حروف الاتصال أو التجميع أو وضع SQL بعد إعادة تسمية قاعدة البيانات، لذلك تم إعادة إنشاء الاتصال.";
 
 /* rename database refused because @@collation_connection could not be read before switching the connection to UTF-8 */
-"The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed." = "The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed.";
+"The connection's collation could not be read, so it could not be restored after the rename. Nothing was changed." = "لا يمكن قراءة تصنيف الاتصال، لذلك لا يمكن استعادته بعد إعادة التسمية. لم يتغير أي شيء.";
 
 /* rename database refused because the source holds triggers, routines or events; %@ lists them */
-"The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "The database contains objects that Rename Database cannot move: %@. Nothing was changed.";
+"The database contains objects that Rename Database cannot move: %@. Nothing was changed." = "قاعدة البيانات تحتوي على عناصر لا يمكن إعادة تسمية قاعدة البيانات نقلها: %@. لم يتغير أي شيء.";
 
 /* rename database refused because GRANTs on the source database or its tables or views, or a partial revoke for the database, would be lost; %@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
-"The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed." = "The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed.";
+"The database has privileges granted on it, its tables or its views, or partially revoked on it (%@), which Rename Database cannot move. Nothing was changed." = "قاعدة البيانات لديها امتيازات ممنوحة عليها أو جداولها أو وجهات نظرها، أو تم إلغاؤها جزئيا (%@)، والتي لا يمكن إعادة تسمية قاعدة البيانات تحركها. لم يتغير شيء.";
 
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
-"The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
+"The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "تعريف العرض '%@' يحتوي على سلسلة خارج UTF-8؛ إعادة تسمية قاعدة البيانات لا يمكن إعادة إنشائها بإخلاص. لم يتغير أي شيء.";
 
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
-"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "العرض '%1$@' تم إنشاؤه من خلال مجموعة الحرف '%2$@'؛ إعادة تسمية قاعدة البيانات يمكن فقط إعادة إنشاء المشاهدات التي تم إنشاؤها من خلال UTF-8. لم يتغير شيء.";
 
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
-"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
+"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "وجهات النظر في قواعد البيانات الأخرى مقروءة من '%1$@' (%2$@) وستتوقف عن العمل بمجرد إعادة تسميتها. لم يتغير أي شيء.";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[خطأ في الاستعلام %1$ld] %2$@\n";
@@ -278,19 +278,19 @@
 "Add" = "إضافة";
 
 /* table Content : rule filter editor : AND/OR popup : combine with AND */
-"AND (all conditions)" = "AND (all conditions)";
+"AND (all conditions)" = "و (جميع الشروط)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
-"AND" = "AND";
+"AND" = "و";
 
 /* table Content : rule filter editor : context menu : add nested AND/OR group */
-"Add AND/OR Group" = "Add AND/OR Group";
+"Add AND/OR Group" = "إضافة مجموعة AND/OR";
 
 /* menu item to add db */
 "Add Database..." = "إضافة قاعدة بيانات...";
 
 /* table Content : rule filter editor : context menu : add filter row */
-"Add Filter" = "Add Filter";
+"Add Filter" = "إضافة فلتر";
 
 /* Add Host */
 "Add Host" = "إضافة مضيف";
@@ -494,10 +494,10 @@
 "ALL PRIVILEGES" = "ALL PRIVILEGES";
 
 /* rename database: one privilege granted on a table, view or column, listed in the refusal; %1$@ the table or view, %2$@ the account as 'user'@'host' */
-"`%@` for %@" = "`%1$@` for %2$@";
+"`%@` for %@" = "`%1$@` ل %2$@";
 
 /* rename database: one privilege granted on a database, listed in the refusal; %1$@ the grant's database pattern, %2$@ the account as 'user'@'host' */
-"`%@`.* for %@" = "`%1$@`.* for %2$@";
+"`%@`.* for %@" = "`%1$@`.* ل %2$@";
 
 /* privilege operation all databases scope */
 "all databases" = "all databases";
@@ -512,10 +512,10 @@
 "change" = "change";
 
 /* rename database: a scheduled event, by name; listed among the objects that block the rename */
-"event '%@'" = "event '%@'";
+"event '%@'" = "حدث '%@'";
 
 /* rename database: a stored function, by name; listed among the objects that block the rename */
-"function '%@'" = "function '%@'";
+"function '%@'" = "دالة '%@'";
 
 /* grant privilege operation */
 "grant" = "grant";
@@ -527,16 +527,16 @@
 "Nonexistent Definer" = "Nonexistent Definer";
 
 /* rename database: why a view was not recreated */
-"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
+"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "تعريفه المعاد من قبل SHOW CREATE VIEW لا يحتوي على شرط العرض.";
 
 /* rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename */
-"library '%@'" = "library '%@'";
+"library '%@'" = "مكتبة '%@'";
 
 /* rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host' */
-"partial revoke on `%@`.* for %@" = "partial revoke on `%1$@`.* for %2$@";
+"partial revoke on `%@`.* for %@" = "الإلغاء الجزئي على '%1$@`.* ل %2$@";
 
 /* rename database: a stored procedure, by name; listed among the objects that block the rename */
-"procedure '%@'" = "procedure '%@'";
+"procedure '%@'" = "الإجراء '%@'";
 
 /* revoke privilege operation */
 "revoke" = "revoke";
@@ -584,31 +584,31 @@
 "Show Create Routine" = "Show Create Routine";
 
 /* rename database: a table, by name */
-"table '%@'" = "table '%@'";
+"table '%@'" = "الجدول '%@'";
 
 /* rename database: escaping a value for a statement failed because the connection is unavailable; shown after 'Reading the objects of the database … failed:' or 'Moving … failed:' */
-"the connection could not quote a value for a statement (it was closed or is being re-established)." = "the connection could not quote a value for a statement (it was closed or is being re-established).";
+"the connection could not quote a value for a statement (it was closed or is being re-established)." = "ولم يتسن للصلة اقتباس قيمة لبيان (أُغلق أو يجري إعادة إنشاؤه).";
 
 /* rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:' */
-"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).";
+"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "لم تعد صلة الاتصال بأي نتيجة، لذلك ربما لم يتم تشغيل البيان (تم فقدان أو إغلاق الاتصال، أو تم إلغاء الاستفسار).";
 
 /* rename database: why the views are not trusted and the source is kept */
-"the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
+"the connection was re-established while the views were recreated, so they may still point at the old database." = "وأعيد إنشاء هذه الصلة إلى حين استجلاء وجهات النظر، بحيث أنها لا تزال تشير إلى قاعدة البيانات القديمة.";
 
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "لا يمكن لهذا الحساب أن يسرد مكتبات قاعدة البيانات بالكامل (يحتاج إلى تحديد عالمي أو SHOW_ROUTINE).";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "لا يمكن لهذا الحساب أن يسرد روتين قاعدة البيانات بالكامل (يحتاج إلى تحديد على mysql.proc، أو تحديد شامل أو SHOW_ROUTINE).";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).";
+"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "لا يمكن لهذا الحساب أن يسرد الامتيازات الممنوحة في قاعدة البيانات وجداوله وآرائه (يحتاج إلى تحديد على mysql.db, mysql.tables_priv and mysql.user, أو SELECT).";
 
 /* rename database: why the views in other databases that might read from the source could not be checked; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing).";
+"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "لا يمكن لهذا الحساب أن يسرد وجهات نظر قواعد البيانات الأخرى بالكامل (يحتاج إلى SELECT العالمية، و SHOW VIEW حيث لا تتوفر المعلومات_schema.VIEW_TABLE_USAGE ).";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";
@@ -716,28 +716,28 @@
 "Autodetect" = "الكشف التلقائي";
 
 /* Preferences : General : Automatically check for updates checkbox */
-"Automatically check for updates" = "Automatically check for updates";
+"Automatically check for updates" = "التحقق تلقائياً من وجود تحديثات";
 
 /* analytics consent dialog message */
-"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "السماح لـ Sequel Ace بإرسال معرف تثبيت التطبيق، إصدار التطبيقات، macOS وتفاصيل الجهاز، المنطقة التقريبية، تحليلات الاستخدام، وتقارير الأعطال والتشخيص إلى قاعدة جوجل فايرست؟\n\nيستخدم المطورين هذه البيانات لفهم مشاكل اعتماد الميزات وتشخيصها. لا يستخدم للإعلان أو لتتبعك عبر تطبيقات الشركات الأخرى أو مواقع الويب. تبدأ المجموعة فقط إذا اخترت تحليلات مشاركة، ويمكنك تغيير اختيارك في أي وقت في التفضيلات.";
 
 /* analytics consent deny button */
-"Don't Share" = "Don't Share";
+"Don't Share" = "لا تشارك";
 
 /* analytics consent dialog title */
-"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+"Help Improve Sequel Ace" = "المساعدة في تحسين آيس سيكيل";
 
 /* analytics consent allow button */
-"Share Analytics" = "Share Analytics";
+"Share Analytics" = "مشاركة التحليلات";
 
 /* analytics consent privacy policy button */
-"Privacy Policy…" = "Privacy Policy…";
+"Privacy Policy…" = "سياسة الخصوصية…";
 
 /* about window privacy policy link */
-"Privacy Policy" = "Privacy Policy";
+"Privacy Policy" = "سياسة الخصوصية";
 
 /* Preferences : General : analytics and crash reporting checkbox */
-"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+"Share usage analytics and crash reports with developers" = "مشاركة تحليلات الاستخدام وتقارير الأعطال مع المطورين";
 
 /* background label for color table (Prefs > Editor) */
 "Background" = "الخلفية";
@@ -907,19 +907,19 @@
 "collation connection: %@" = "اتصال التجميع: %@";
 
 /* content tab : rule filter : drop zone tooltip */
-"Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+"Click to add a filter, ⌥-click to add an AND/OR group" = "انقر لإضافة فلتر ، انقر فوق <unk> لإضافة مجموعة AND/OR";
 
 /* general preferences : appearance : checkbox that colors the window title bar with the connected favorite's color */
-"Color the title bar with the connection color" = "Color the title bar with the connection color";
+"Color the title bar with the connection color" = "لون شريط العنوان بلون الاتصال";
 
 /* general preferences : appearance : tooltip for the title bar color checkbox */
-"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance.";
+"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "لون شريط العناوين و شريط الأدوات و شريط التبويب مع اللون المعين إلى المفضلة لدى الاتصال، جعل من السهل معرفة وصلة الإنتاج من تطوير بصيغة نظرية.";
 
 /* table Content : rule filter editor : compound row : label after the AND/OR popup */
-"combines the conditions in this group" = "combines the conditions in this group";
+"combines the conditions in this group" = "يجمع بين الشروط في هذه المجموعة";
 
 /* table Content : rule filter editor : AND/OR popup : tooltip */
-"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
+"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "الجمع بين شروط الفلتر العلوي مع أو OR. اضغط <unk> أثناء النقر على زر الصف + لإضافة مجموعة AND/OR متداخلة.";
 
 /* comment label */
 "Comment" = "تعليق";
@@ -986,7 +986,7 @@
 "Continue to print?" = "هل تريد الاستمرار في الطباعة؟";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
-"Copy WHERE Clause" = "Copy WHERE Clause";
+"Copy WHERE Clause" = "نسخ شرط ما بعد";
 
 /* Copy as RTF */
 "Copy as RTF" = "نسخ كـ RTF";
@@ -1310,7 +1310,7 @@
 "Do you really want to shutdown the server?" = "هل تريد حقاً إغلاق الخادم؟";
 
 /* Document query favorite scope */
-"Document" = "Document";
+"Document" = "مستند";
 
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "معرف DTD";
@@ -1382,7 +1382,7 @@
 "engine: %@" = "محركة: %@";
 
 /* Missing query favorite name alert message */
-"Enter a query name or choose a favorite to replace." = "Enter a query name or choose a favorite to replace.";
+"Enter a query name or choose a favorite to replace." = "أدخل اسم استعلام أو اختر مفضلة للاستبدال.";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "أدخل تفاصيل الاتصال أدناه، أو اختر المفضلة";
@@ -1583,10 +1583,10 @@
 "Favorite" = "المفضلة";
 
 /* Stale query favorite replacement alert title */
-"Favorite Changed" = "Favorite Changed";
+"Favorite Changed" = "تم تغيير المفضلة";
 
 /* Query favorite replacement picker accessibility label */
-"Favorite to replace" = "Favorite to replace";
+"Favorite to replace" = "المفضلة للاستبدال";
 
 /* favorites label */
 "Favorites" = "المفضلة";
@@ -2150,10 +2150,10 @@
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
 /* table Content : rule filter editor : AND/OR popup : combine with OR */
-"OR (any condition)" = "OR (any condition)";
+"OR (any condition)" = "أو (أي شرط)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
-"OR" = "OR";
+"OR" = "أو";
 
 "OK" = "حسناً";
 
@@ -2227,7 +2227,7 @@
 "optional" = "اختياري";
 
 /* Query favorite replacement picker label */
-"Or replace an existing favorite:" = "Or replace an existing favorite:";
+"Or replace an existing favorite:" = "أو استبدل مفضلة موجودة:";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "المعامل الذي تم اجتيازه لا يمكن تفسيره. يسمح فقط بسلسلة أو مصفوفة (مع عنصرين).";
@@ -2291,7 +2291,7 @@
 "Query logging is currently disabled" = "تسجيل الاستعلام معطل حاليا";
 
 /* Query favorite save sheet name label */
-"Query Name:" = "Query Name:";
+"Query Name:" = "اسم الاستفسار:";
 
 /* query result print heading */
 "Query Result" = "نتيجة الاستعلام";
@@ -2559,7 +2559,7 @@
 "Save Current Query to Favorites" = "حفظ الاستعلام الحالي إلى المفضلة";
 
 /* Query favorite save sheet global checkbox */
-"Save globally" = "Save globally";
+"Save globally" = "حفظ عالميا";
 
 /* save page as menu item title */
 "Save Page As…" = "حفظ الصفحة ك…";
@@ -2568,7 +2568,7 @@
 "Save Queries…" = "حفظ الاستفسارات…";
 
 /* Query favorite save sheet title */
-"Save Query Favorite" = "Save Query Favorite";
+"Save Query Favorite" = "مفضلة حفظ الاستعلام";
 
 /* Save Query… */
 "Save Query…" = "حفظ الاستعلام…";
@@ -2889,7 +2889,7 @@
 "Table Content" = "محتوى الجدول";
 
 /* table contents not loaded message */
-"Table contents not loaded" = "Table contents not loaded";
+"Table contents not loaded" = "لم يتم تحميل محتويات الجدول";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "محتوى الجدول (CSV)";
@@ -2970,13 +2970,13 @@
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "الحزمة ‘%@’ لا تحتوي على UUID اللازم لتحديد الحزم المُثبّتة.";
 
 /* rename database: a trigger, by name and table; listed among the objects that block the rename */
-"trigger '%@' on table '%@'" = "trigger '%1$@' on table '%2$@'";
+"trigger '%@' on table '%@'" = "المشغل '%1$@' على الجدول '%2$@'";
 
 /* rename database: the server reported no error message */
-"unknown error" = "unknown error";
+"unknown error" = "خطأ غير معروف";
 
 /* rename database: a view, by name */
-"view '%@'" = "view '%@'";
+"view '%@'" = "عرض '%@'";
 
 "‘%@’ Bundle contains legacy components" = "الحزمة ‘%@’ تحتوي على مكونات قديمة";
 
@@ -3043,10 +3043,10 @@
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "إعدادات التصدير المحددة تم حفظها بالإصدار %1$ld، لكن يمكن استيراد الإعدادات فقط من الإصدارات التالية: %2$@.\n\nإما احفظ الإعدادات بطريقة متوافقة مع الإصدارات القديمة أو حدّث إصدار Sequel Ace لديك.";
 
 /* Query favorite replacement explanation */
-"The selected favorite keeps its name and location." = "The selected favorite keeps its name and location.";
+"The selected favorite keeps its name and location." = "المفضلة المختارة تحتفظ باسمها وموقعها.";
 
 /* Stale query favorite replacement alert message */
-"The selected favorite was changed or removed in another window. Choose it again before saving." = "The selected favorite was changed or removed in another window. Choose it again before saving.";
+"The selected favorite was changed or removed in another window. Choose it again before saving." = "تم تغيير أو حذف المفضلة المحددة في نافذة أخرى. اختر مرة أخرى قبل الحفظ.";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "الملف المحدد يحتوي على بيانات من النوع “%1$@”، لكن يُتطلّب النوع “%2$@”. الرجاء اختيار ملف مختلف.";
@@ -3807,16 +3807,16 @@
 "Copy" = "Copy";
 
 /* MCP pref: endpoint hint */
-"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp.";
+"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "أضف عنوان URL هذا إلى أي عميل MCP (Claude, Cursor, Clin، VS Code). هذه هي نقطة النهاية HTTP القابلة للبث؛ يجب على عملاء SSE-فقط أن يستخدموا /sse بدلاً من /mcp.";
 
 /* AWS console sign-in (aws login) error: profile is missing login_session configuration */
 "The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
 
 /* AWS console sign-in (aws login) error: no cached session on disk */
-"No cached AWS console sign-in session was found." = "No cached AWS console sign-in session was found.";
+"No cached AWS console sign-in session was found." = "لم يتم العثور على جلسة تسجيل دخول وحدة تحكم AWS مؤقتة.";
 
 /* AWS console sign-in (aws login) error: the sign-in session can no longer be renewed */
-"Your AWS console sign-in session has ended." = "Your AWS console sign-in session has ended.";
+"Your AWS console sign-in session has ended." = "انتهت جلسة تسجيل دخول وحدة تحكم AWS الخاصة بك.";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
@@ -3825,10 +3825,10 @@
 "The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
 
 /* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
-"No cached AWS SSO session was found." = "No cached AWS SSO session was found.";
+"No cached AWS SSO session was found." = "لم يتم العثور على جلسة AWS SSO.";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The cached AWS SSO token has expired." = "The cached AWS SSO token has expired.";
+"The cached AWS SSO token has expired." = "انتهت صلاحية الرمز المميز AWS SSO.";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
 "Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
@@ -4257,169 +4257,172 @@
 "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel.";
 
 /* Vault roles refresh button title */
-"Refresh" = "Refresh";
+"Refresh" = "تحديث";
 
 /* vault role refresh in progress title */
-"Vault role refresh in progress" = "Vault role refresh in progress";
+"Vault role refresh in progress" = "تحديث دور المخزن قيد التقدم";
 
 /* vault role refresh in progress message */
-"Wait for the Vault role list to finish loading before connecting." = "Wait for the Vault role list to finish loading before connecting.";
+"Wait for the Vault role list to finish loading before connecting." = "انتظر قائمة دور المخزن لإنهاء التحميل قبل الاتصال.";
 
 /* vault creds path required connect message */
-"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "مسار اعتماد المخزن مطلوب للاتصال. ملء التجميع والدور، أو لصق مسار كامل في حقل الدور.format@@0";
 
 /* vault creds path required save message */
-"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "مطلوب مسار اعتماد المخزن لحفظ المخزن المفضل. املأ في التجميع والدور، أو لصق مسار كامل في مجال الدور.format@@0";
 
 /* Vault roles refresh – missing mount */
-"Enter a Vault mount first" = "Enter a Vault mount first";
+"Enter a Vault mount first" = "أدخل تركيب المخزن أولاً";
 
 /* Vault roles refresh – missing mount detail */
-"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.";
+"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "قائمة الأدوار مقروءة من <mount>/ أدوار. قم بتعبئة الحقل التجميعي، ثم قم بالتحديث.";
 
 /* Vault roles refresh – login confirm */
-"Sign in to Vault?" = "Sign in to Vault?";
+"Sign in to Vault?" = "تسجيل الدخول إلى المستودع؟";
 
 /* Vault roles refresh – login confirm detail */
-"Listing roles requires authenticating to Vault, which will open your web browser." = "Listing roles requires authenticating to Vault, which will open your web browser.";
+"Listing roles requires authenticating to Vault, which will open your web browser." = "تتطلب أدوار القائمة المصادقة على المستودع، الذي سيفتح متصفح الويب الخاص بك.";
 
 /* Vault roles refresh – empty */
-"No Vault roles found" = "No Vault roles found";
+"No Vault roles found" = "لا توجد أدوار مخزن";
 
 /* Vault roles refresh – empty detail */
-"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.";
+"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "لم يتم إرجاع أي أدوار في قاعدة البيانات لهذا المبلغ. تحقق من مسار تحميل المستودع وأن الرمز المميز الخاص بك قد يسرد الأدوار، أو اكتب الدور يدويا.";
 
 /* Vault roles refresh – failure */
-"Could not load Vault roles" = "Could not load Vault roles";
+"Could not load Vault roles" = "تعذر تحميل أدوار المخزن";
 
 /* Vault roles refresh – failure detail */
-"Unknown error. You can still type the role manually." = "Unknown error. You can still type the role manually.";
+"Unknown error. You can still type the role manually." = "خطأ غير معروف. لا يزال يمكنك كتابة الدور يدوياً.";
 
 /* Vault OIDC login already in progress */
-"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "وهناك خزانة أخرى قيد التقدم بالفعل. إنهائها أو إلغائها (بما في ذلك في النوافذ الأخرى) وحاول مرة أخرى.";
 
 /* aws login refresh error: the user's AWS password or credentials changed */
-"Your AWS sign-in credentials changed after you signed in." = "Your AWS sign-in credentials changed after you signed in.";
+"Your AWS sign-in credentials changed after you signed in." = "تم تغيير بيانات اعتماد تسجيل الدخول الخاصة بك بعد تسجيل الدخول.";
 
 /* aws login refresh error: missing IAM permission */
-"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.";
+"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS لم يسمح لـ Sequel Ace بتجديد جلسة تسجيل الدخول الخاصة بك. هويتك IAM تحتاج إلى إذن الدخول:CreateOAuth2Token .";
 
 /* aws login refresh error: AWS rejected the refresh token */
-"AWS rejected the renewal of your console sign-in session." = "AWS rejected the renewal of your console sign-in session.";
+"AWS rejected the renewal of your console sign-in session." = "رفض AWS تجديد جلسة تسجيل دخول وحدة التحكم الخاصة بك.";
 
 /* aws login refresh error: no region for the sign-in session */
-"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace could not tell which AWS region your console sign-in session belongs to.";
+"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "لم يتمكن سيكل آسي من معرفة منطقة AWS التي تنتمي إليها جلسة تسجيل دخول وحدة التحكم الخاصة بك.";
 
 /* aws login refresh error: the .aws folder is read-only for Sequel Ace */
-"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window.";
+"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "انتهت صلاحية بيانات اعتماد تسجيل الدخول الخاصة بوحدة التحكم AWS. لتجديد هذه البيانات تلقائياً، يحتاج Sequel Ace إلى إذن لتحديث بياناتك. مجلد الأخبار، الذي يطلب منه عند الاتصال من نافذة الاتصال.";
 
 /* aws login refresh error: the cached DPoP key cannot be read */
-"The cached AWS console sign-in session has an unreadable signing key." = "The cached AWS console sign-in session has an unreadable signing key.";
+"The cached AWS console sign-in session has an unreadable signing key." = "جلسة تسجيل دخول وحدة تحكم AWS المخبأة لها مفتاح توقيع غير قابل للقراءة.";
 
 /* aws login refresh error: malformed response */
-"AWS returned an unexpected response while renewing your console sign-in session." = "AWS returned an unexpected response while renewing your console sign-in session.";
+"AWS returned an unexpected response while renewing your console sign-in session." = "أعادت AWS استجابة غير متوقعة أثناء تجديد جلسة تسجيل دخول وحدة التحكم الخاصة بك.";
 
 /* aws login refresh error: request failed; %@ is the underlying error */
-"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
+"Sequel Ace could not renew your AWS console sign-in session: %@" = "لم يتمكن Sequel Ace من تجديد جلسة تسجيل دخول وحدة تحكم AWS الخاصة بك: %@";
 
 /* AWS directory write access panel message */
-"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically.";
+"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "السماح لـ Sequel Ace بتحديث مجلد .aws الخاص بك حتى يتمكن من تجديد بيانات تسجيل دخول وحدة تحكم AWS الخاصة بك (عدم تسجيل الدخول) تلقائيا.";
 
 /* AWS directory write access panel button */
-"Allow" = "Allow";
+"Allow" = "السماح";
 
 /* Connection lost sheet: default title */
-"Connection Lost" = "Connection Lost";
+"Connection Lost" = "فقدان الاتصال";
 
 /* Connection lost sheet: default message */
-"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace appears to have lost the connection to the server, or the server has stopped responding.";
+"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "يبدو أن سيكيل آيس فقد الاتصال بالخادم، أو أن الخادم توقف عن الاستجابة.";
 
 /* Connection lost sheet: title when the AWS session has lapsed */
-"AWS Sign-In Required" = "AWS Sign-In Required";
+"AWS Sign-In Required" = "مطلوب تسجيل دخول AWS";
 
 /* Connection lost sheet: message when the AWS session has lapsed; %@ is an AWS CLI command */
-"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect.";
+"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "فقد سيكيل آيس الاتصال بالخادم ولا يمكن إعادة الاتصال حتى تقوم بتسجيل الدخول إلى AWS مرة أخرى.\n\nفي المحطة الطرفية، قم بتشغيل `%@`، ثم انقر فوق إعادة الاتصال.";
 
 /* Connection lost sheet: message when an AWS IAM token could not be generated; %@ is the AWS error description */
-"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect.";
+"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "فقد Sequel Ace الاتصال بالخادم ولم يتمكن من إنشاء رمز مصادقة RDS IAM جديد:\n%@\n\nإصلاح بيانات اعتماد AWS، ثم انقر فوق إعادة الاتصال.";
 
 /* Connection lost sheet: fallback AWS error description */
-"Unknown AWS IAM error" = "Unknown AWS IAM error";
+"Unknown AWS IAM error" = "خطأ AWS IAM غير معروف";
 
 /* Connection lost sheet: reconnect button */
-"Reconnect" = "Reconnect";
+"Reconnect" = "إعادة الاتصال";
 
 /* Connection lost sheet: close connection button */
-"Close connection" = "Close connection";
+"Close connection" = "إغلاق الاتصال";
 
 /* SQLite store problem alert title: the pinned-tables store is unusable */
-"Pinned tables are not being saved" = "Pinned tables are not being saved";
+"Pinned tables are not being saved" = "الجداول المثبتة لم يتم حفظها";
 
 /* SQLite store problem alert title: the display-format store is unusable */
-"Column display formats are not being saved" = "Column display formats are not being saved";
+"Column display formats are not being saved" = "لم يتم حفظ صيغ عرض العمود";
 
 /* SQLite store problem: what an unusable pinned-tables store means for the user */
-"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept.";
+"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "لا تزال الطاولات المثبّتة تبقى في الأعلى حتى تخرج من ثلج سيكل، لكنها لم يتم حفظها.";
 
 /* SQLite store problem: what an unusable display-format store means for the user */
-"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Display formats you choose still work until you quit Sequel Ace, but they are not kept.";
+"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "عرض الصيغ التي تختارها لا تزال تعمل حتى تخرج من ثلج سيكل، ولكن لم يتم الاحتفاظ بها.";
 
 /* SQLite store problem: the folder for the app's data files is missing */
-"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace could not find or create its data folder in Application Support.";
+"Sequel Ace could not find or create its data folder in Application Support." = "لم يتمكن Sequel Ace من العثور على أو إنشاء مجلد بياناته في دعم التطبيقات.";
 
 /* SQLite store problem: the data file could not be opened; the argument is its path */
-"Sequel Ace could not open the file “%@”." = "Sequel Ace could not open the file “%@”.";
+"Sequel Ace could not open the file “%@”." = "لم يتمكن Sequel Ace من فتح الملف \"%@\".";
 
 /* SQLite store problem: the data file could not be prepared or read; the arguments are its path and the error */
-"Sequel Ace could not use the file “%1$@”: %2$@" = "Sequel Ace could not use the file “%1$@”: %2$@";
+"Sequel Ace could not use the file “%1$@”: %2$@" = "لم يتمكن Sequel Ace من استخدام الملف \"%1$@\": %2$@";
 
 /* SQLite store problem: the data file holds entries that cannot be read; the argument is its path */
-"Sequel Ace could not read the file “%@”." = "Sequel Ace could not read the file “%@”.";
+"Sequel Ace could not read the file “%@”." = "لم يتمكن Sequel Ace من قراءة الملف \"%@\".";
 
 /* SQLite store problem: a change could not be written to the data file; the arguments are its path and the error */
-"Sequel Ace could not save to the file “%1$@”: %2$@" = "Sequel Ace could not save to the file “%1$@”: %2$@";
+"Sequel Ace could not save to the file “%1$@”: %2$@" = "لم يتمكن Sequel Ace من الحفظ في الملف \"%1$@\": %2$@";
 
 /* SQLite store problem: advice for a file or folder that cannot be written to */
-"Make sure the file and its folder can be written to." = "Make sure the file and its folder can be written to.";
+"Make sure the file and its folder can be written to." = "تأكد من أن الملف ومجلده يمكن كتابتهما إلى.";
 
 /* SQLite store problem: advice for a damaged data file */
-"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts.";
+"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "إذا تم تلف الملف، قم بإنهاء Sequel Ace ونقل الملف من مجلده؛ سيكل آيس يخلق واحدة جديدة في المرة القادمة التي يبدأ فيها.";
 
 /* button that reveals a file in Finder */
-"Show in Finder" = "Show in Finder";
+"Show in Finder" = "إظهار في الباحث";
 
 /* AWS sign-in recovery; %@ is an AWS CLI command */
-"Run `%@` in Terminal, then try again." = "Run `%@` in Terminal, then try again.";
+"Run `%@` in Terminal, then try again." = "تشغيل `%@` في المحطة الطرفية، ثم حاول مرة أخرى.";
 
 /* AWS IAM credentials status message */
-"Getting AWS credentials..." = "Getting AWS credentials...";
+"Getting AWS credentials..." = "الحصول على بيانات اعتماد AWS...";
 
 /* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
-"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "انقر لقائمة الفلاتر : إضافة عامل تصفية أو مجموعة AND/OR ، أو نسخ شرط WHERE";
 
 /* Connection error: the cleartext authentication plugin requires TLS */
-"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
+"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "هذا الاتصال لديه إضافة مصادقة النص التي تم تفعيلها، والتي ترسل كلمة المرور في نص عادي، لذلك يتم فقط عبر TLS. تعذر إنشاء TLS مع الخادم ولم يتم إرسال كلمة مرور.";
 
 /* aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error */
-"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace renewed your AWS console sign-in session but could not save it: %@";
+"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace جدد جلسة تسجيل دخول وحدة تحكم AWS الخاصة بك ولكن لم يتمكن من حفظها: %@";
 
 /* rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature */
-"the column '%@' is missing" = "the column '%@' is missing";
+"the column '%@' is missing" = "العمود '%@' مفقود";
 
 /* rename database: a column the recreated view presents that the source view did not; %@ is the column's signature */
-"the column '%@' was added" = "the column '%@' was added";
+"the column '%@' was added" = "تم إضافة العمود '%@'";
 
 /* rename database: a column of a recreated view that changed; %1$@ the column as it was, %2$@ as it is now */
-"'%@' became '%@'" = "'%1$@' became '%2$@'";
+"'%@' became '%@'" = "'%1$@' أصبح '%2$@'";
 
 /* rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view */
-"the columns of the view '%@' were not listed before the move." = "the columns of the view '%@' were not listed before the move.";
+"the columns of the view '%@' were not listed before the move." = "لم تكن أعمدة العرض '%@' مدرجة قبل النقل.";
 
 /* rename database: a recreated view whose columns information_schema did not report; %@ is the view */
-"the columns of the recreated view '%@' were not listed." = "the columns of the recreated view '%@' were not listed.";
+"the columns of the recreated view '%@' were not listed." = "لم يتم إدراج أعمدة العرض المعاد إنشاؤه '%@'.";
 
 /* rename database: a recreated view's column signature differs from the source view's, so the source database is kept; %1$@ view, %2$@ target database, %3$@ source database, %4$@ what changed, %5$@ and %6$@ source database */
-"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "The view '%1$@' does not present the same columns in '%2$@' as it did in '%3$@' (%4$@), so its results could differ. The objects were moved, and '%5$@' was kept; check the view and remove '%6$@' yourself once you are satisfied.";
+"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "العرض '%1$@' لا يقدم نفس الأعمدة في '%2$@' كما فعله في '%3$@' (%4$@)، لذلك يمكن أن تختلف نتائجه. تم نقل الأشياء، و '%5$@' تم حفظها؛ تحقق من العرض وأزيل '%6$@' بنفسك بمجرد رضاك.";
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
-"The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
+"The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "أعمدة المشاهدات المعاد إنشاؤها في '%1$@' لا يمكن مقارنتها مع تلك الواردة في '%2$@': %3$@ الكائنات تم نقلها، وتم الاحتفاظ بـ '%4$@'؛ تحقق من وجهات النظر وقم بإزالة '%5$@' بنفسك بمجرد رضاك.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "لا يمكن استخدام الاتصال بينما يتم سؤالك عما يجب فعله حيال ذلك. أجب على هذا السؤال، ثم حاول مرة أخرى.";

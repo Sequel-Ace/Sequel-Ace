@@ -203,7 +203,9 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * -appendFilterForColumn:value:isNull: but target an existing row
  * instead of appending. Filtering is not auto-run.
  *
- * @param row        0-indexed top-level row in the rule editor. For a
+ * @param row        0-indexed ordinal among the top-level rows, which
+ *                   counts none of a nested group's subrows - not a rule
+ *                   editor row index, which counts all of them. For a
  *                   tree that's a single expression, the only valid
  *                   index is 0. For an AND-group tree, the index maps
  *                   directly to a child of that group.

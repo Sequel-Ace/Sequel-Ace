@@ -253,22 +253,43 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertEqual(editor.numberOfRows, 2, "with no row waiting, the click adds one as before")
     }
 
-    /// Verifies that "add a filter" also reuses the row after the user unchecked it again, rather than
-    /// adding a second empty row next to it.
-    func testAddingAFilterReusesARowUncheckedAgain() throws {
+    /// Verifies that the row a new AND/OR group is seeded with waits like the first row does,
+    /// instead of putting `column = ''` into the WHERE preview the moment the group appears.
+    func testANewGroupsSeededRowWaitsRatherThanFiltering() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+        type("5", into: editor, of: controller)
+        let before = whereClause(of: controller)
+        XCTAssertFalse(before.isEmpty, "the first row is a filter once it has a value")
+
+        call(controller, "addEmptyFilterGroup")
+
+        XCTAssertEqual(whereClause(of: controller), before,
+                       "the group's seeded row adds nothing until it is filled in")
+    }
+
+    /// Verifies that a row the user switched on and then unchecked again is a filter set aside:
+    /// "add a filter" leaves it alone and adds a row.
+    ///
+    /// Its value being the empty string makes no difference, and from the editor's state alone
+    /// there is no telling the two apart - an empty value field looks the same whether the user
+    /// meant `column = ''` or never typed anything. Reusing it switched a filter the user had put
+    /// away back on and put the cursor in it, so the next keystroke replaced it.
+    func testAddingAFilterLeavesARowUncheckedAgainAlone() throws {
         let (controller, editor) = try makeBoundController()
         controller.setValue(true, forKey: "enabled")
         call(controller, "addStarterFilterExpression")
 
         call(controller, "addEmptyFilterRow")
         let box = try XCTUnwrap(checkbox(in: editor))
-        XCTAssertEqual(box.state, .on)
+        XCTAssertEqual(box.state, .on, "the seeded row is the one this click checks")
         box.state = .off
         controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
 
         call(controller, "addEmptyFilterRow")
-        XCTAssertEqual(editor.numberOfRows, 1)
-        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertEqual(editor.numberOfRows, 2, "the filter set aside is left where it is")
+        XCTAssertEqual(box.state, .off, "and stays off")
     }
 
     /// Verifies that an unchecked row with a value, and one whose operator takes no value, are filters set
@@ -294,8 +315,11 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertEqual(checkbox(in: editor)?.state, .off, "the set-aside IS NULL stays unchecked")
     }
 
-    /// Verifies a dropped value replaces the seeded row and comes out checked, although the rule editor
-    /// reuses the replaced row's checkbox; a drop that cannot become a rule leaves the row waiting.
+    /// Verifies a dropped value replaces the seeded row and comes out checked; a drop that cannot
+    /// become a rule leaves the row waiting.
+    ///
+    /// The replaced row gets a checkbox of its own: the rule editor builds the display values for
+    /// a restored row from scratch. What the drop paths end is the tracking, not the button.
     func testDroppedValuesAndTheSeededRow() throws {
         let (controller, editor) = try makeBoundController()
         controller.setValue(true, forKey: "enabled")
@@ -440,6 +464,120 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         XCTAssertTrue(whereClause(of: controller).contains("7"), whereClause(of: controller))
     }
 
+    /// Verifies that two groups added one after the other each bring a row that waits on its own,
+    /// so filling in the one added first filters by it.
+    ///
+    /// A single tracked row meant the later group's row took the earlier one's place: editing the
+    /// earlier row no longer checked it, so its condition was missing from the WHERE clause.
+    func testEachNewGroupsSeededRowWaitsOnItsOwn() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+        type("5", into: editor, of: controller)
+
+        call(controller, "addEmptyFilterGroup")
+        call(controller, "addEmptyFilterGroup")
+
+        let waiting = waitingRows(in: editor)
+        XCTAssertEqual(waiting.count, 2, "each group brought a row waiting for its first edit")
+        let earlier = try XCTUnwrap(waiting.first)
+
+        type("7", intoRow: earlier, in: editor, of: controller)
+
+        let box = try XCTUnwrap(editor.displayValues(forRow: earlier).first as? NSButton)
+        XCTAssertEqual(box.state, .on, "its first edit checks it")
+        XCTAssertTrue(whereClause(of: controller).contains("7"), whereClause(of: controller))
+    }
+
+    /// Verifies a saved filter holding more than one waiting row restores every one of them
+    /// waiting, so filling in the one that is not the last still filters by it.
+    ///
+    /// This is the path back to a table the user left with groups still unfilled. With a single
+    /// tracked row, the saved filter named only one of them and the rest came back as plain
+    /// unchecked rows.
+    func testASavedFilterRestoresEveryWaitingRow() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+        type("5", into: editor, of: controller)
+        call(controller, "addEmptyFilterGroup")
+        call(controller, "addEmptyFilterGroup")
+
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+        let marked = leaves(of: saved).filter { ($0["pendingStarter"] as? NSNumber)?.boolValue == true }
+        XCTAssertEqual(marked.count, 2, "the saved filter records both rows as waiting")
+
+        restore(saved, in: controller)
+
+        let waiting = waitingRows(in: editor)
+        XCTAssertEqual(waiting.count, 2, "and both come back waiting")
+        let earlier = try XCTUnwrap(waiting.first)
+
+        type("7", intoRow: earlier, in: editor, of: controller)
+
+        let box = try XCTUnwrap(editor.displayValues(forRow: earlier).first as? NSButton)
+        XCTAssertEqual(box.state, .on, "the restored row's first edit checks it")
+        XCTAssertTrue(whereClause(of: controller).contains("7"), whereClause(of: controller))
+    }
+
+    /// Verifies a drop the editor cannot address leaves every waiting row alone.
+    ///
+    /// The drop handler is handed an ordinal among the top-level rows, which counts none of a
+    /// nested group's subrows; the tracker addresses rule editor rows, which count all of them.
+    /// With two groups, dropping onto the second one is refused - a group is no rule - and the
+    /// refused ordinal is the first group's waiting row. Asking the tracker about it switched
+    /// that row on with nothing in it, so `column = \'\'` became a filter while the drop itself
+    /// did nothing.
+    func testARefusedDropLeavesAWaitingRowAlone() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addEmptyFilterGroup")
+        call(controller, "addEmptyFilterGroup")
+
+        // group, its waiting row, second group, its waiting row.
+        XCTAssertEqual(waitingRows(in: editor), [1, 3])
+        XCTAssertEqual(editor.rowType(forRow: 2), .compound, "ordinal 1 among the top-level rows")
+        XCTAssertEqual(whereClause(of: controller), "", "nothing filters yet")
+
+        XCTAssertFalse(replaceFilter(in: controller, atRow: 1, column: "id", value: "7"),
+                       "a group is no rule, so the drop is refused")
+
+        let box = try XCTUnwrap(editor.displayValues(forRow: 1).first as? NSButton)
+        XCTAssertEqual(box.state, .off, "the first group's waiting row was not switched on")
+        XCTAssertEqual(whereClause(of: controller), "", "and nothing became a filter")
+    }
+
+    /// Verifies switching a group on stops its waiting row waiting, so the row stays switched on.
+    ///
+    /// The group pushes its state down onto its rows directly. A row left tracked was unchecked
+    /// again the next time its checkbox was built, so returning to the table brought the group
+    /// back with the row switched off.
+    func testSwitchingAGroupOnStopsItsRowWaiting() throws {
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
+        type("5", into: editor, of: controller)
+        call(controller, "addEmptyFilterGroup")
+
+        let groupRow = try XCTUnwrap((0..<editor.numberOfRows).first { editor.rowType(forRow: $0) == .compound })
+        let childRow = try XCTUnwrap(waitingRows(in: editor).first)
+        XCTAssertEqual(editor.parentRow(forRow: childRow), groupRow, "the waiting row is the group's")
+
+        let groupBox = try XCTUnwrap(editor.displayValues(forRow: groupRow).first as? NSButton)
+        groupBox.state = .on
+        controller.perform(NSSelectorFromString("_checkboxClicked:"), with: groupBox)
+
+        let childBox = try XCTUnwrap(editor.displayValues(forRow: childRow).first as? NSButton)
+        XCTAssertEqual(childBox.state, .on, "the group switched its row on")
+
+        let saved = try XCTUnwrap(serializedFilter(of: controller))
+        XCTAssertTrue(leaves(of: saved).allSatisfy { ($0["pendingStarter"] as? NSNumber)?.boolValue != true },
+                      "no row is recorded as still waiting")
+
+        restore(saved, in: controller)
+        XCTAssertTrue(waitingRows(in: editor).isEmpty, "and none comes back unchecked and empty")
+    }
+
     // MARK: - Helpers
 
     /// An `SPRuleFilterController` for one integer column `id`, whose rule editor is set up and bound to the
@@ -494,9 +632,46 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         return function(controller, selector, column as NSString, value as NSString, false)
     }
 
+    /// Types `value` into `row`'s argument field, as the user would.
+    private func type(_ value: String, intoRow row: Int, in editor: NSRuleEditor, of controller: NSObject) {
+        guard let field = editor.displayValues(forRow: row).compactMap({ $0 as? NSTextField }).first else {
+            XCTFail("row \(row) has no argument field")
+            return
+        }
+        field.stringValue = value
+        controller.perform(NSSelectorFromString("controlTextDidChange:"),
+                           with: Notification(name: NSControl.textDidChangeNotification, object: field))
+    }
+
+    /// The indexes of the simple rows that are unchecked and hold no value - the rows a seeded
+    /// starter leaves behind, in editor order.
+    private func waitingRows(in editor: NSRuleEditor) -> [Int] {
+        return (0..<editor.numberOfRows).filter { row in
+            guard editor.rowType(forRow: row) == .simple else { return false }
+            let values = editor.displayValues(forRow: row)
+            guard let box = values.first as? NSButton, box.state == .off else { return false }
+            let fields = values.compactMap { $0 as? NSTextField }
+            return !fields.isEmpty && fields.allSatisfy { $0.stringValue.isEmpty }
+        }
+    }
+
+    /// Calls `-replaceFilterAtRow:forColumn:value:isNull:`, the drop of a cell onto a row. The
+    /// row is an ordinal among the top-level rows, as the rule editor hands it over.
+    private func replaceFilter(in controller: NSObject, atRow row: Int, column: String, value: String) -> Bool {
+        let selector = NSSelectorFromString("replaceFilterAtRow:forColumn:value:isNull:")
+        typealias SAReplaceFunction = @convention(c) (NSObject, Selector, Int, NSString, NSString?, Bool) -> Bool
+        let function = unsafeBitCast(controller.method(for: selector), to: SAReplaceFunction.self)
+        return function(controller, selector, row, column as NSString, value as NSString, false)
+    }
+
     /// Calls `-serializedFilter`.
     private func serializedFilter(of controller: NSObject) -> [String: Any]? {
         return controller.perform(NSSelectorFromString("serializedFilter"))?.takeUnretainedValue() as? [String: Any]
+    }
+
+    /// Calls `-restoreSerializedFilters:`, as returning to a table does.
+    private func restore(_ filter: [String: Any], in controller: NSObject) {
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: filter)
     }
 
     /// The expression leaves of a serialized filter tree.

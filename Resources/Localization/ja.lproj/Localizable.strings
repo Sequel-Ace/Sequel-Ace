@@ -162,10 +162,10 @@
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "ビューの定義 '%@' は文字列を UTF-8 の外に保持します。データベース名を変更することはできません。何も変更されませんでした。";
 
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
-"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+"The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "ビュー「%1$@」は文字セット 「%2$@」を介して作成されました。データベース名を変更するには、UTF-8を介して作成されたビューのみを再作成できます。 何も変更されていません。";
 
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
-"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
+"Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "他のデータベース内のビューは、'%1$@' (%2$@) から読み込まれ、名前を変更すると動作を停止します。何も変更されませんでした。";
 
 /* error text when multiple custom query failed */
 "[ERROR in query %ld] %@\n" = "[クエリ %1$ldのエラー] %2$@\n";
@@ -278,19 +278,19 @@
 "Add" = "追加";
 
 /* table Content : rule filter editor : AND/OR popup : combine with AND */
-"AND (all conditions)" = "AND (all conditions)";
+"AND (all conditions)" = "AND (すべての条件)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
 "AND" = "AND";
 
 /* table Content : rule filter editor : context menu : add nested AND/OR group */
-"Add AND/OR Group" = "Add AND/OR Group";
+"Add AND/OR Group" = "AND/OR グループを追加";
 
 /* menu item to add db */
 "Add Database..." = "データベースを追加…";
 
 /* table Content : rule filter editor : context menu : add filter row */
-"Add Filter" = "Add Filter";
+"Add Filter" = "フィルターを追加";
 
 /* Add Host */
 "Add Host" = "ホストを追加";
@@ -512,7 +512,7 @@
 "change" = "change";
 
 /* rename database: a scheduled event, by name; listed among the objects that block the rename */
-"event '%@'" = "event '%@'";
+"event '%@'" = "イベント '%@'";
 
 /* rename database: a stored function, by name; listed among the objects that block the rename */
 "function '%@'" = "function '%@'";
@@ -527,16 +527,16 @@
 "Nonexistent Definer" = "Nonexistent Definer";
 
 /* rename database: why a view was not recreated */
-"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "its definition returned by SHOW CREATE VIEW has no VIEW clause.";
+"its definition returned by SHOW CREATE VIEW has no VIEW clause." = "SHOW CREATE VIEWによって返された定義には、VIEW句はありません。";
 
 /* rename database: a stored JavaScript library (MySQL CREATE LIBRARY), by name; listed among the objects that block the rename */
-"library '%@'" = "library '%@'";
+"library '%@'" = "ライブラリ '%@'";
 
 /* rename database: one partial revoke restricting an account for the database, listed in the refusal; %1$@ the database, %2$@ the account as 'user'@'host' */
-"partial revoke on `%@`.* for %@" = "partial revoke on `%1$@`.* for %2$@";
+"partial revoke on `%@`.* for %@" = "`%1$@`.* for %2$@ で部分的に取り消します";
 
 /* rename database: a stored procedure, by name; listed among the objects that block the rename */
-"procedure '%@'" = "procedure '%@'";
+"procedure '%@'" = "プロシージャー'%@'";
 
 /* revoke privilege operation */
 "revoke" = "revoke";
@@ -584,31 +584,31 @@
 "Show Create Routine" = "Show Create Routine";
 
 /* rename database: a table, by name */
-"table '%@'" = "table '%@'";
+"table '%@'" = "テーブル '%@'";
 
 /* rename database: escaping a value for a statement failed because the connection is unavailable; shown after 'Reading the objects of the database … failed:' or 'Moving … failed:' */
-"the connection could not quote a value for a statement (it was closed or is being re-established)." = "the connection could not quote a value for a statement (it was closed or is being re-established).";
+"the connection could not quote a value for a statement (it was closed or is being re-established)." = "コネクションはステートメントの値を引用できませんでした (クローズまたは再確立されています)。";
 
 /* rename database: a statement got no result from the connection without an error; shown as the reason after 'Moving … failed:' or 'Reading the objects of the database … failed:' */
-"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled).";
+"the connection returned no result, so the statement may not have run (the connection was lost or closed, or the query was cancelled)." = "接続が結果を返さないため、ステートメントが実行されていない可能性があります (接続が失われたか閉じられたか、クエリがキャンセルされました)。";
 
 /* rename database: why the views are not trusted and the source is kept */
-"the connection was re-established while the views were recreated, so they may still point at the old database." = "the connection was re-established while the views were recreated, so they may still point at the old database.";
+"the connection was re-established while the views were recreated, so they may still point at the old database." = "ビューが再現された時に接続が再確立された 古いデータベースを指すかもしれない";
 
 /* fallback privilege operation account description */
 "the selected account" = "the selected account";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's libraries completely (it needs global SELECT or SHOW_ROUTINE)." = "このアカウントではデータベースのライブラリを完全に一覧表示することはできません(グローバルSELECTまたはSHOW_ROUTINEが必要です)。";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE).";
+"this account cannot list the database's routines completely (it needs SELECT on mysql.proc, or global SELECT or SHOW_ROUTINE)." = "このアカウントでは、データベースのルーチンを完全に一覧表示することはできません (mysql.procでSELECT、またはグローバルSELECTまたはSHOW_ROUTINEが必要です)。";
 
 /* rename database: why the source could not be inspected; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT).";
+"this account cannot list the privileges granted on the database, its tables and views (it needs SELECT on mysql.db, mysql.tables_priv and mysql.user, or global SELECT)." = "このアカウントでは、データベース、テーブル、ビューに付与された権限を一覧表示することはできません(mysql.db、mysql.tables_priv、mysql.user、またはglobalSELECTが必要です)。";
 
 /* rename database: why the views in other databases that might read from the source could not be checked; shown after 'Reading the objects of the database … failed:' */
-"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing).";
+"this account cannot list the views of other databases completely (it needs global SELECT, and SHOW VIEW where information_schema.VIEW_TABLE_USAGE is missing)." = "このアカウントでは他のデータベースのビューを完全に一覧表示することはできません（グローバルSELECTが必要であり、viewを表示するにはinformation_schema.VIEW_TABLE_USAGEがありません）。";
 
 /* fallback privileges operation description */
 "the selected privileges" = "the selected privileges";
@@ -716,28 +716,28 @@
 "Autodetect" = "自動検出";
 
 /* Preferences : General : Automatically check for updates checkbox */
-"Automatically check for updates" = "Automatically check for updates";
+"Automatically check for updates" = "自動的にアップデートを確認";
 
 /* analytics consent dialog message */
-"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+"Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Sequel Aceにアプリのインストール識別子、アプリのバージョン、macOSおよびデバイスの詳細の送信を許可する おおよその地域、使用状況分析、およびクラッシュおよび診断レポートを Google Firebaseに送信しますか?\n\nこのデータを使用して、機能の採用や問題の診断を行います。 広告や他社のアプリやウェブサイト間でのトラッキングには使用されません。 コレクションは、format@@0を選択した場合にのみ開始され、format@@1でいつでも選択を変更できます。";
 
 /* analytics consent deny button */
-"Don't Share" = "Don't Share";
+"Don't Share" = "共有しない";
 
 /* analytics consent dialog title */
-"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+"Help Improve Sequel Ace" = "続編エースの改善に協力する";
 
 /* analytics consent allow button */
-"Share Analytics" = "Share Analytics";
+"Share Analytics" = "分析を共有";
 
 /* analytics consent privacy policy button */
-"Privacy Policy…" = "Privacy Policy…";
+"Privacy Policy…" = "プライバシーポリシー…";
 
 /* about window privacy policy link */
-"Privacy Policy" = "Privacy Policy";
+"Privacy Policy" = "プライバシーポリシー";
 
 /* Preferences : General : analytics and crash reporting checkbox */
-"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+"Share usage analytics and crash reports with developers" = "使用状況の分析とクラッシュレポートを開発者と共有します";
 
 /* background label for color table (Prefs > Editor) */
 "Background" = "バックグラウンド";
@@ -907,19 +907,19 @@
 "collation connection: %@" = "照合順序接続: %@";
 
 /* content tab : rule filter : drop zone tooltip */
-"Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+"Click to add a filter, ⌥-click to add an AND/OR group" = "クリックしてフィルターを追加し、<unk> クリックしてAND/OR グループを追加します";
 
 /* general preferences : appearance : checkbox that colors the window title bar with the connected favorite's color */
-"Color the title bar with the connection color" = "Color the title bar with the connection color";
+"Color the title bar with the connection color" = "接続色でタイトルバーに色を付ける";
 
 /* general preferences : appearance : tooltip for the title bar color checkbox */
-"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance.";
+"Color the title bar, toolbar and tab bar with the color assigned to the connection's favorite, making it easy to tell a production connection from a development one at a glance." = "接続のお気に入りに割り当てられた色でタイトルバー、ツールバー、タブバーに色を付けます。 一見したところで生産物の繋がりがわかりやすくなります。";
 
 /* table Content : rule filter editor : compound row : label after the AND/OR popup */
-"combines the conditions in this group" = "combines the conditions in this group";
+"combines the conditions in this group" = "このグループの条件を組み合わせて";
 
 /* table Content : rule filter editor : AND/OR popup : tooltip */
-"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
+"Combine the top-level filter conditions with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "最上位のフィルタ条件と AND または OR を組み合わせます。行の + ボタンをクリックしながら<unk> を押したままに AND/OR グループを追加します。";
 
 /* comment label */
 "Comment" = "コメント";
@@ -986,7 +986,7 @@
 "Continue to print?" = "印刷を続けますか？";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
-"Copy WHERE Clause" = "Copy WHERE Clause";
+"Copy WHERE Clause" = "WHERE句をコピー";
 
 /* Copy as RTF */
 "Copy as RTF" = "RTFとしてコピー";
@@ -1309,7 +1309,7 @@
 "Do you really want to shutdown the server?" = "本当にサーバーをシャットダウンしますか？";
 
 /* Document query favorite scope */
-"Document" = "Document";
+"Document" = "ドキュメント";
 
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "DTD 識別子";
@@ -1381,7 +1381,7 @@
 "engine: %@" = "エンジン: %@";
 
 /* Missing query favorite name alert message */
-"Enter a query name or choose a favorite to replace." = "Enter a query name or choose a favorite to replace.";
+"Enter a query name or choose a favorite to replace." = "クエリ名を入力するか、お気に入りを選択して置き換えます。";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "以下に接続の詳細を入力するか、お気に入りを選択してください";
@@ -1581,10 +1581,10 @@
 "Favorite" = "お気に入り";
 
 /* Stale query favorite replacement alert title */
-"Favorite Changed" = "Favorite Changed";
+"Favorite Changed" = "お気に入りの変更";
 
 /* Query favorite replacement picker accessibility label */
-"Favorite to replace" = "Favorite to replace";
+"Favorite to replace" = "置き換えるお気に入り";
 
 /* favorites label */
 "Favorites" = "お気に入り";
@@ -2149,7 +2149,7 @@
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
 /* table Content : rule filter editor : AND/OR popup : combine with OR */
-"OR (any condition)" = "OR (any condition)";
+"OR (any condition)" = "または (任意の条件)";
 
 /* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
 "OR" = "OR";
@@ -2226,7 +2226,7 @@
 "optional" = "省略可能";
 
 /* Query favorite replacement picker label */
-"Or replace an existing favorite:" = "Or replace an existing favorite:";
+"Or replace an existing favorite:" = "または既存のお気に入りを置き換えてください:";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "渡されたパラメータを解釈できませんでした。文字列または配列（2つの要素を含む）のみが許可されます。";
@@ -2290,7 +2290,7 @@
 "Query logging is currently disabled" = "クエリのログは現在無効です";
 
 /* Query favorite save sheet name label */
-"Query Name:" = "Query Name:";
+"Query Name:" = "クエリ名:";
 
 /* query result print heading */
 "Query Result" = "クエリの結果";
@@ -2558,7 +2558,7 @@
 "Save Current Query to Favorites" = "現在のクエリをお気に入りに保存";
 
 /* Query favorite save sheet global checkbox */
-"Save globally" = "Save globally";
+"Save globally" = "グローバルに保存";
 
 /* save page as menu item title */
 "Save Page As…" = "ページを別名で保存…";
@@ -2567,7 +2567,7 @@
 "Save Queries…" = "クエリを保存…";
 
 /* Query favorite save sheet title */
-"Save Query Favorite" = "Save Query Favorite";
+"Save Query Favorite" = "クエリのお気に入りを保存";
 
 /* Save Query… */
 "Save Query…" = "クエリを保存…";
@@ -2888,7 +2888,7 @@
 "Table Content" = "テーブルの内容";
 
 /* table contents not loaded message */
-"Table contents not loaded" = "Table contents not loaded";
+"Table contents not loaded" = "テーブルの内容が読み込まれていません";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'table content as comma-separated' item */
 "Table Content (CSV)" = "テーブルの内容（CSV）";
@@ -2969,13 +2969,13 @@
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "バンドル数%@はインストールされたバンドルを識別するのに必要な UUID を持っていません。";
 
 /* rename database: a trigger, by name and table; listed among the objects that block the rename */
-"trigger '%@' on table '%@'" = "trigger '%1$@' on table '%2$@'";
+"trigger '%@' on table '%@'" = "テーブルの '%1$@' をトリガーする '%2$@'";
 
 /* rename database: the server reported no error message */
-"unknown error" = "unknown error";
+"unknown error" = "不明なエラー";
 
 /* rename database: a view, by name */
-"view '%@'" = "view '%@'";
+"view '%@'" = "ビュー'%@'";
 
 "‘%@’ Bundle contains legacy components" = "%@のバンドルにレガシーコンポーネントが含まれています";
 
@@ -2988,7 +2988,7 @@
 "The color theme ‘%@’ already exists." = "カラー '%@' は既に存在します。";
 
 /* table column list mismatch informative message */
-"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.";
+"The column list for '%@' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table." = "「%@」の列リストはサーバーが返したデータと一致しませんでした。テーブルを再読み込みしても解決できませんでした。 Aformat@@0\n\n接続を確認し、テーブルを再読み込みします。";
 
 /* the connection is busy. please wait and try again tooltip */
 "The connection is busy. Please wait and try again." = "接続中です。しばらくしてからもう一度お試しください。";
@@ -3042,10 +3042,10 @@
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "選択したエクスポート設定はバージョン%1$ldで保存されましたが、インポートできるのは次のバージョンの設定のみです：%2$@。\n\n下位互換性のある方法で設定を保存するか、SequelAceのバージョンを更新します。";
 
 /* Query favorite replacement explanation */
-"The selected favorite keeps its name and location." = "The selected favorite keeps its name and location.";
+"The selected favorite keeps its name and location." = "選択したお気に入りは、その名前と場所を保持します。";
 
 /* Stale query favorite replacement alert message */
-"The selected favorite was changed or removed in another window. Choose it again before saving." = "The selected favorite was changed or removed in another window. Choose it again before saving.";
+"The selected favorite was changed or removed in another window. Choose it again before saving." = "選択したお気に入りは別のウィンドウで変更または削除されました。保存する前にもう一度選択してください。";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "選択されたファイルには「%1$@」タイプのデータが含まれていますが、「%2$@」タイプが必要です。別のファイルを選択してください。";
@@ -3806,16 +3806,16 @@
 "Copy" = "Copy";
 
 /* MCP pref: endpoint hint */
-"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp.";
+"Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp." = "この URL を任意の MCP クライアント (Claude、Cursor、Cline、VS Code) に追加します。 これはStreamable HTTP エンドポイントです。SSE のみのクライアントは /mcp の代わりに /sse を使用する必要があります。";
 
 /* AWS console sign-in (aws login) error: profile is missing login_session configuration */
 "The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
 
 /* AWS console sign-in (aws login) error: no cached session on disk */
-"No cached AWS console sign-in session was found." = "No cached AWS console sign-in session was found.";
+"No cached AWS console sign-in session was found." = "キャッシュされたAWSコンソールサインインセッションが見つかりません。";
 
 /* AWS console sign-in (aws login) error: the sign-in session can no longer be renewed */
-"Your AWS console sign-in session has ended." = "Your AWS console sign-in session has ended.";
+"Your AWS console sign-in session has ended." = "AWSコンソールのサインインセッションが終了しました。";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
@@ -3824,10 +3824,10 @@
 "The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
 
 /* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
-"No cached AWS SSO session was found." = "No cached AWS SSO session was found.";
+"No cached AWS SSO session was found." = "キャッシュされたAWS SSOセッションが見つかりません。";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The cached AWS SSO token has expired." = "The cached AWS SSO token has expired.";
+"The cached AWS SSO token has expired." = "キャッシュされたAWS SSOトークンの有効期限が切れました。";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
 "Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
@@ -4256,169 +4256,172 @@
 "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel.";
 
 /* Vault roles refresh button title */
-"Refresh" = "Refresh";
+"Refresh" = "更新";
 
 /* vault role refresh in progress title */
-"Vault role refresh in progress" = "Vault role refresh in progress";
+"Vault role refresh in progress" = "Vaultの役割を更新中";
 
 /* vault role refresh in progress message */
-"Wait for the Vault role list to finish loading before connecting." = "Wait for the Vault role list to finish loading before connecting.";
+"Wait for the Vault role list to finish loading before connecting." = "接続する前に、Vaultロールリストの読み込みが完了するのを待ちます。";
 
 /* vault creds path required connect message */
-"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "接続にはVaultの資格情報パスが必要です。マウントとロールを入力するか、ロールフィールドにフルパスを貼り付けます。";
 
 /* vault creds path required save message */
-"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field.";
+"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "Vaultのお気に入りを保存するには、Vaultの資格情報パスが必要です。 マウントとロールを入力するか、format@@0フィールドにフルパスを貼り付けます。";
 
 /* Vault roles refresh – missing mount */
-"Enter a Vault mount first" = "Enter a Vault mount first";
+"Enter a Vault mount first" = "ヴォールトマウントを最初に入力してください";
 
 /* Vault roles refresh – missing mount detail */
-"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.";
+"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "ロールのリストは、 <mount>/rolesから読み込まれます。Vaultマウントフィールドに入力し、リフレッシュします。";
 
 /* Vault roles refresh – login confirm */
-"Sign in to Vault?" = "Sign in to Vault?";
+"Sign in to Vault?" = "Vaultにサインインしますか？";
 
 /* Vault roles refresh – login confirm detail */
-"Listing roles requires authenticating to Vault, which will open your web browser." = "Listing roles requires authenticating to Vault, which will open your web browser.";
+"Listing roles requires authenticating to Vault, which will open your web browser." = "リストロールにはVault認証が必要で、Webブラウザを開きます。";
 
 /* Vault roles refresh – empty */
-"No Vault roles found" = "No Vault roles found";
+"No Vault roles found" = "Vaultのロールが見つかりません";
 
 /* Vault roles refresh – empty detail */
-"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.";
+"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "このマウントに対してデータベースロールが返されませんでした。Vaultマウントパスとトークンがロールを一覧表示するか、手動でロールを入力するか確認してください。";
 
 /* Vault roles refresh – failure */
-"Could not load Vault roles" = "Could not load Vault roles";
+"Could not load Vault roles" = "Vaultのロールをロードできませんでした";
 
 /* Vault roles refresh – failure detail */
-"Unknown error. You can still type the role manually." = "Unknown error. You can still type the role manually.";
+"Unknown error. You can still type the role manually." = "不明なエラー。手動でロールを入力できます。";
 
 /* Vault OIDC login already in progress */
-"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
+"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "別のVaultサインインはすでに進行中です。完了またはキャンセルして（他のウィンドウを含む）、もう一度やり直してください。";
 
 /* aws login refresh error: the user's AWS password or credentials changed */
-"Your AWS sign-in credentials changed after you signed in." = "Your AWS sign-in credentials changed after you signed in.";
+"Your AWS sign-in credentials changed after you signed in." = "サインイン後にAWSのサインイン資格情報が変更されました。";
 
 /* aws login refresh error: missing IAM permission */
-"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.";
+"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWSは、コンソールのサインインセッションを更新することを続行することを許可しませんでした。IAMのIDには、サインイン:CreateOAuth2Token権限が必要です。";
 
 /* aws login refresh error: AWS rejected the refresh token */
-"AWS rejected the renewal of your console sign-in session." = "AWS rejected the renewal of your console sign-in session.";
+"AWS rejected the renewal of your console sign-in session." = "AWSはコンソールサインインセッションの更新を拒否しました。";
 
 /* aws login refresh error: no region for the sign-in session */
-"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace could not tell which AWS region your console sign-in session belongs to.";
+"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "コンソールのサインインセッションがどのAWSリージョンに属しているか、シーケンスエースが確認できませんでした。";
 
 /* aws login refresh error: the .aws folder is read-only for Sequel Ace */
-"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window.";
+"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "AWSコンソールのサインイン資格情報の有効期限が切れました。自動的に更新するには、Sequel Aceの更新権限が必要です。 接続ウィンドウから接続するときに要求されるwsフォルダ。";
 
 /* aws login refresh error: the cached DPoP key cannot be read */
-"The cached AWS console sign-in session has an unreadable signing key." = "The cached AWS console sign-in session has an unreadable signing key.";
+"The cached AWS console sign-in session has an unreadable signing key." = "キャッシュされた AWS コンソールサインインセッションには読み取り不可能な署名キーがあります。";
 
 /* aws login refresh error: malformed response */
-"AWS returned an unexpected response while renewing your console sign-in session." = "AWS returned an unexpected response while renewing your console sign-in session.";
+"AWS returned an unexpected response while renewing your console sign-in session." = "AWSはコンソールサインインセッションの更新中に予期しない応答を返しました。";
 
 /* aws login refresh error: request failed; %@ is the underlying error */
-"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
+"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel AceはAWSコンソールのサインインセッションを更新できませんでした: %@";
 
 /* AWS directory write access panel message */
-"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically.";
+"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "AWSコンソールのサインイン(aws ログイン)資格情報を自動的に更新できるように、Sequel Aceに.awsフォルダの更新を許可します。";
 
 /* AWS directory write access panel button */
-"Allow" = "Allow";
+"Allow" = "許可する";
 
 /* Connection lost sheet: default title */
-"Connection Lost" = "Connection Lost";
+"Connection Lost" = "接続が失われました";
 
 /* Connection lost sheet: default message */
-"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace appears to have lost the connection to the server, or the server has stopped responding.";
+"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "シーケンスエースがサーバーへの接続を失ったか、サーバーが応答を停止しました。";
 
 /* Connection lost sheet: title when the AWS session has lapsed */
-"AWS Sign-In Required" = "AWS Sign-In Required";
+"AWS Sign-In Required" = "AWSサインインが必要";
 
 /* Connection lost sheet: message when the AWS session has lapsed; %@ is an AWS CLI command */
-"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect.";
+"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "続編エースはサーバーへの接続を失い、再度AWSにサインインするまで再接続できません。\n\nターミナルで、`%@`を実行し、再接続をクリックします。";
 
 /* Connection lost sheet: message when an AWS IAM token could not be generated; %@ is the AWS error description */
-"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect.";
+"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "続編エースはサーバーへの接続を失い、新しいRDS IAM認証トークンを作成できませんでした:\n%@\n\nAWSの資格情報を修正します。 再接続をクリックします。";
 
 /* Connection lost sheet: fallback AWS error description */
-"Unknown AWS IAM error" = "Unknown AWS IAM error";
+"Unknown AWS IAM error" = "不明なAWS IAMエラー";
 
 /* Connection lost sheet: reconnect button */
-"Reconnect" = "Reconnect";
+"Reconnect" = "再接続";
 
 /* Connection lost sheet: close connection button */
-"Close connection" = "Close connection";
+"Close connection" = "接続を閉じる";
 
 /* SQLite store problem alert title: the pinned-tables store is unusable */
-"Pinned tables are not being saved" = "Pinned tables are not being saved";
+"Pinned tables are not being saved" = "ピン留めされたテーブルは保存されていません";
 
 /* SQLite store problem alert title: the display-format store is unusable */
-"Column display formats are not being saved" = "Column display formats are not being saved";
+"Column display formats are not being saved" = "列表示の書式は保存されていません";
 
 /* SQLite store problem: what an unusable pinned-tables store means for the user */
-"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept.";
+"Tables you pin still stay at the top until you quit Sequel Ace, but they are not kept." = "あなたが続編エースを終了するまで、テーブルはまだ上部に留まりますが、それらは保持されません。";
 
 /* SQLite store problem: what an unusable display-format store means for the user */
-"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Display formats you choose still work until you quit Sequel Ace, but they are not kept.";
+"Display formats you choose still work until you quit Sequel Ace, but they are not kept." = "Sequel Aceを終了するまで、選択したフォーマットを表示しますが、それらは保持されません。";
 
 /* SQLite store problem: the folder for the app's data files is missing */
-"Sequel Ace could not find or create its data folder in Application Support." = "Sequel Ace could not find or create its data folder in Application Support.";
+"Sequel Ace could not find or create its data folder in Application Support." = "続編エースは、Application Supportでそのデータフォルダを見つけたり作成したりできませんでした。";
 
 /* SQLite store problem: the data file could not be opened; the argument is its path */
-"Sequel Ace could not open the file “%@”." = "Sequel Ace could not open the file “%@”.";
+"Sequel Ace could not open the file “%@”." = "続編エースはファイルを開けませんでした「%@」。";
 
 /* SQLite store problem: the data file could not be prepared or read; the arguments are its path and the error */
-"Sequel Ace could not use the file “%1$@”: %2$@" = "Sequel Ace could not use the file “%1$@”: %2$@";
+"Sequel Ace could not use the file “%1$@”: %2$@" = "続編エースはファイル「%1$@」を使用できませんでした： %2$@";
 
 /* SQLite store problem: the data file holds entries that cannot be read; the argument is its path */
-"Sequel Ace could not read the file “%@”." = "Sequel Ace could not read the file “%@”.";
+"Sequel Ace could not read the file “%@”." = "続編エースはファイルを読み取れませんでした。「%@」。";
 
 /* SQLite store problem: a change could not be written to the data file; the arguments are its path and the error */
-"Sequel Ace could not save to the file “%1$@”: %2$@" = "Sequel Ace could not save to the file “%1$@”: %2$@";
+"Sequel Ace could not save to the file “%1$@”: %2$@" = "続編エースはファイルに保存できませんでした「%1$@」： %2$@";
 
 /* SQLite store problem: advice for a file or folder that cannot be written to */
-"Make sure the file and its folder can be written to." = "Make sure the file and its folder can be written to.";
+"Make sure the file and its folder can be written to." = "ファイルとそのフォルダが書き込まれることを確認してください。";
 
 /* SQLite store problem: advice for a damaged data file */
-"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts.";
+"If the file is damaged, quit Sequel Ace and move the file out of its folder; Sequel Ace creates a new one the next time it starts." = "ファイルが破損している場合は、Sequel Aceを終了し、ファイルをフォルダから移動します。 続編エースは次回起動時に新しいものを作成します。";
 
 /* button that reveals a file in Finder */
-"Show in Finder" = "Show in Finder";
+"Show in Finder" = "Finder に表示";
 
 /* AWS sign-in recovery; %@ is an AWS CLI command */
-"Run `%@` in Terminal, then try again." = "Run `%@` in Terminal, then try again.";
+"Run `%@` in Terminal, then try again." = "ターミナルで `%@` を実行し、もう一度やり直してください。";
 
 /* AWS IAM credentials status message */
-"Getting AWS credentials..." = "Getting AWS credentials...";
+"Getting AWS credentials..." = "AWS 資格情報を取得しています...";
 
 /* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
-"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "フィルターメニューをクリックします:フィルターまたはAND/ORグループを追加するか、WHERE句をコピーします";
 
 /* Connection error: the cleartext authentication plugin requires TLS */
-"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
+"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "この接続には、平文でパスワードを送信するクリアテキスト認証プラグインが有効になっているため、TLS経由でのみ行われます。 サーバーでTLSを確立できず、パスワードが送信されませんでした。";
 
 /* aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error */
-"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace renewed your AWS console sign-in session but could not save it: %@";
+"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "シーケンスエースはAWSコンソールのサインインセッションを更新しましたが保存できませんでした: %@";
 
 /* rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature */
-"the column '%@' is missing" = "the column '%@' is missing";
+"the column '%@' is missing" = "列 '%@' がありません";
 
 /* rename database: a column the recreated view presents that the source view did not; %@ is the column's signature */
-"the column '%@' was added" = "the column '%@' was added";
+"the column '%@' was added" = "列 '%@' が追加されました";
 
 /* rename database: a column of a recreated view that changed; %1$@ the column as it was, %2$@ as it is now */
-"'%@' became '%@'" = "'%1$@' became '%2$@'";
+"'%@' became '%@'" = "'%1$@' が '%2$@ ' になりました";
 
 /* rename database: a source view whose columns information_schema did not report, so the recreated view cannot be compared; %@ is the view */
-"the columns of the view '%@' were not listed before the move." = "the columns of the view '%@' were not listed before the move.";
+"the columns of the view '%@' were not listed before the move." = "ビューの列「%@」は移動前にリストされていません。";
 
 /* rename database: a recreated view whose columns information_schema did not report; %@ is the view */
-"the columns of the recreated view '%@' were not listed." = "the columns of the recreated view '%@' were not listed.";
+"the columns of the recreated view '%@' were not listed." = "再作成されたビュー '%@' の列は一覧表示されませんでした。";
 
 /* rename database: a recreated view's column signature differs from the source view's, so the source database is kept; %1$@ view, %2$@ target database, %3$@ source database, %4$@ what changed, %5$@ and %6$@ source database */
-"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "The view '%1$@' does not present the same columns in '%2$@' as it did in '%3$@' (%4$@), so its results could differ. The objects were moved, and '%5$@' was kept; check the view and remove '%6$@' yourself once you are satisfied.";
+"The view '%@' does not present the same columns in '%@' as it did in '%@' (%@), so its results could differ. The objects were moved, and '%@' was kept; check the view and remove '%@' yourself once you are satisfied." = "ビュー'%1$@' は、'%2$@' のように'%3$@' のように'%4$@'に同じ列は存在しません。 結果が異なる可能性があります オブジェクトは移動され、'%5$@' は保持されました。ビューを確認し、満足したら自分自身を '%6$@'削除します。";
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "接続は、何をすべきか尋ねられている間は使用できません。その質問に答えてから、もう一度やり直してください。";
