@@ -1124,6 +1124,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	[inFlightQuery endWaitingForGeneration:queryGeneration];
 
 	[self _noteUncommittedWorkLostWithSession];
+	// And the lease's own handle goes with it, before the handle it belongs to is released - the
+	// contract every other disconnect here follows. Left behind, it still names a server session
+	// that no longer exists, and whose number the server is free to give to another client: a
+	// cancellation arriving afterwards would find itself current and ask to kill that one's query.
+	[self.sessionAccess clearSocket];
 	if (mySQLConnection) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
