@@ -1195,13 +1195,42 @@ final class SADatabaseRenameExecutorTests: XCTestCase {
         let server = makeServer(lowerCaseTableNames: "0")
         // Answering only the bound form: an unbound query would go unanswered and the
         // inspection would fail rather than silently reading another schema's triggers.
-        server.respond(to: "SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE BINARY TRIGGER_SCHEMA = 'shop'",
+        server.respond(to: "SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE CAST(TRIGGER_SCHEMA AS BINARY) = 'shop'",
                        rows: [["orders_audit", "orders"]])
         let description = try XCTUnwrap(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
         XCTAssertTrue(description.contains("trigger 'orders_audit' on table 'orders'"), description)
-        XCTAssertTrue(server.statements.contains("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE BINARY TRIGGER_SCHEMA = 'shop' ORDER BY TRIGGER_NAME"),
+        XCTAssertTrue(server.statements.contains("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE CAST(TRIGGER_SCHEMA AS BINARY) = 'shop' ORDER BY TRIGGER_NAME"),
                       server.statements.joined(separator: "\n"))
         XCTAssertTrue(onlyInspected(server), server.statements.joined(separator: "\n"))
+    }
+
+    /// The `information_schema` privilege views are matched binary where the server keeps the
+    /// case of names.
+    ///
+    /// Their `TABLE_SCHEMA` is collated case-insensitively on MySQL and MariaDB alike, unlike the
+    /// binary `Db` of the `mysql` tables, so a plain comparison lists the grants of a separate
+    /// `shop` alongside those of `Shop` - and the rename is refused over a right the database
+    /// does not have. Only the bound form is answered here: an unbound query would go unanswered
+    /// and the inspection would fail rather than quietly reading another schema's grants.
+    func testThePrivilegeViewsBindTheSchemaNameWhereTheServerDoesNot() throws {
+        let server = makeServer(lowerCaseTableNames: "0")
+        server.fail("SELECT Table_name, User, Host FROM mysql.tables_priv", with: "SELECT command denied to user for table 'tables_priv'")
+        server.respond(to: privilegesQuery, rows: [["SELECT"]])
+        server.respond(to: partialRevokesQuery, rows: [["partial_revokes", "OFF"]])
+        server.respond(to: "SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE CAST('shop' AS BINARY) LIKE TABLE_SCHEMA ESCAPE '\\' ORDER BY TABLE_SCHEMA, GRANTEE", rows: [])
+        server.respond(to: "SELECT TABLE_NAME, GRANTEE FROM information_schema.TABLE_PRIVILEGES WHERE CAST(TABLE_SCHEMA AS BINARY) = 'shop' ORDER BY TABLE_NAME, GRANTEE", rows: [])
+        server.respond(to: "SELECT TABLE_NAME, GRANTEE FROM information_schema.COLUMN_PRIVILEGES WHERE CAST(TABLE_SCHEMA AS BINARY) = 'shop' ORDER BY TABLE_NAME, GRANTEE", rows: [])
+
+        XCTAssertNil(server.executor.rename("shop", to: "store", encoding: nil, collation: nil))
+
+        for statement in ["SELECT TABLE_SCHEMA, GRANTEE FROM information_schema.SCHEMA_PRIVILEGES WHERE CAST('shop' AS BINARY) LIKE TABLE_SCHEMA ESCAPE '\\' ORDER BY TABLE_SCHEMA, GRANTEE",
+                          "SELECT TABLE_NAME, GRANTEE FROM information_schema.TABLE_PRIVILEGES WHERE CAST(TABLE_SCHEMA AS BINARY) = 'shop' ORDER BY TABLE_NAME, GRANTEE"] {
+            XCTAssertTrue(server.statements.contains(statement), server.statements.joined(separator: "\n"))
+        }
+        for view in ["SCHEMA_PRIVILEGES", "TABLE_PRIVILEGES", "COLUMN_PRIVILEGES"] {
+            XCTAssertFalse(server.statements.contains { $0.contains("information_schema.\(view)") && !$0.contains("CAST") },
+                           "\(view) must not be matched without binding the name")
+        }
     }
 
     /// And where the server folds names it is left as it was: the names it stores are folded

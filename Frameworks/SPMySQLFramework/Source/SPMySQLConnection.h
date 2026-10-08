@@ -88,6 +88,9 @@
 	NSUInteger reconnectionRetryAttempts;
 	SPMySQLConnectionLostDecision lastDelegateDecisionForLostConnection;
 	NSLock *delegateDecisionLock;
+	// Escapes values from what the session last reported instead of from the connection's own
+	// handle, which work nobody waits for any more can be using or closing.
+	SAConnectionEscaper *valueEscaper;
 
 	// One lost-connection question at a time, and whether a modal window was showing last time
 	// anybody looked.
@@ -123,10 +126,6 @@
 	// Whether the last session was closed while its proxy was left running
 	BOOL sessionWasClosedWithoutItsProxy;
 
-	// What escapes values without touching the session; it is told what the session reports
-	// while the connection is held
-	SAConnectionEscaper *valueEscaper;
-
 	// Which query is running, so that anything acting on "the query" later can tell whether it
 	// is still the same one, and which query is waiting on the server right now
 	NSUInteger queryGeneration;
@@ -155,6 +154,13 @@
 	// Encoding details - and also a record of any previous encoding to allow
 	// switching back and forth
 	NSString *encoding, *encodingToRestore;
+	// The character set the server reads statements in, which `character_set_results` - what the
+	// record above follows, because results are decoded with it - does not have to agree with.
+	NSString *sqlInputEncoding;
+	// Whether any result packet of the statement being finished carried the server's report of
+	// the session's character set. Collected across packets, because fetching one replaces the
+	// items of the one before.
+	BOOL characterSetReportedInAResultPacket;
 	NSStringEncoding stringEncoding;
 	BOOL encodingUsesLatin1Transport, encodingUsesLatin1TransportToRestore;
 	NSString *previousEncoding;

@@ -4450,3 +4450,6 @@
 
 /* Note added to the error of a statement that was still running when the user stopped waiting for it */
 "It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again." = "It was still running when you stopped waiting, so it may or may not have been carried out. Check before running it again.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.";

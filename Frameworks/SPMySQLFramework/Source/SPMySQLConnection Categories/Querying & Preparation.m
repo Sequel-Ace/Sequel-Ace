@@ -112,17 +112,40 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	NSUInteger mallocSize = (cDataLength * 2) + 2;
 	char *escBuffer = (char *)malloc(mallocSize);
 
-	// Escape starting one character in. The session's own handle is not used: work nobody waits for
-	// any more can still be using it, or close it, while this runs. The escaper follows what the
-	// session last reported - its character set and its NO_BACKSLASH_ESCAPES mode - and, for a
-	// session about to be replaced, what the session that replaces it will be in: the character set
-	// on record, which its handshake uses, and the mode sessions start in on this server.
+	// Escape starting one character in. The session's own handle is not used: work nobody waits
+	// for any more can still be using it, or close it, while this runs. The escaper follows what
+	// the session last reported - its character set and its NO_BACKSLASH_ESCAPES mode.
+	// A session on its way out is being replaced: the next one is connected with the character
+	// set on record, so a value built now - which may well be sent on that next session - follows
+	// the record rather than what the old session last reported. Without this the safeguard had
+	// no caller that ever enabled it.
+	// Latin1 transport sets the session's client character set to latin1 while `encoding` keeps
+	// the name the connection was put on, so the transport character set is what the server
+	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
+	// as two latin1 ones, the second of which escapes the closing quote.
+	// What the server will read this statement in, not what it sends results in: an init_connect
+	// can leave character_set_client and character_set_results different, and escaping for the
+	// wrong one of them lets a trailing byte swallow the backslash and the quote end the literal.
+	NSString *transportCharacterSet = encodingUsesLatin1Transport
+		? @"latin1"
+		: (sqlInputEncoding ?: encoding);
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
-	                                            length:cDataLength
-	                                              into:escBuffer+1
-	                              characterSetOnRecord:encoding
-	                            sessionIsBeingReplaced:sessionMustBeReplacedBeforeUse];
+	                                             length:cDataLength
+	                                               into:escBuffer+1
+	                               characterSetOnRecord:transportCharacterSet
+	                             sessionIsBeingReplaced:NO];
+	// Not marked as being replaced. `SPMySQLDisconnecting` looks like the signal for it, but it
+	// does not say that the next statement runs on the replacement session:
+	// `_disconnectPreservingProxyReconnect:` releases the connection before closing the old
+	// handle, and `queryString:` still accepts a connection used a moment ago. A value escaped
+	// for the replacement and then run on the outgoing session is worse than the other way round,
+	// because the two escaping modes are not interchangeable: backslashes in a literal a
+	// `NO_BACKSLASH_ESCAPES` session reads leave the quote after one unescaped. Setting this needs
+	// the state that says the replacement is in hand, which #2676 introduces.
 	if (escapedLength < 0) {
+		// A value that cannot be escaped for this character set is not written. Before, an
+		// unexpected error raised an assertion, which ends the application in a debug build and
+		// is ignored in a release one - the latter then went on with an unescaped buffer.
 		SPLog(@"[escapeString:includingQuotes]: the value could not be escaped for character set %@", encoding);
 		free(escBuffer);
 		return nil;
@@ -354,7 +377,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			databaseContextIsRequired:databaseContextIsRequired];
 		}];
 	}
-    return [self.sessionAccess performQuery:^id {
+    id theResult = [self.sessionAccess performQuery:^id {
         return [self _queryString:theQueryString
                    usingEncoding:theEncoding
                   withResultType:theReturnType
@@ -363,6 +386,24 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     } recover:^BOOL {
         return [self _reconnectAllowingRetries:YES];
     }];
+
+    // A statement that was refused the session never reached the server. Saying so is what
+    // keeps it apart from one that ran and changed nothing: callers read the row count and the
+    // error together, and both would still describe the statement before this one - which is
+    // how an edit that was never written comes to be treated as saved.
+    BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
+    if (!theResult && theSessionWasRefused) {
+        // The statement never reached `_queryString:`, which is where each query clears what the
+        // one before it left. A stop recorded against an earlier query would otherwise still
+        // stand here, and callers that read it alongside the error - the content view among
+        // them - take a cancelled query to be one the user already knows about and say nothing.
+        lastQueryWasCancelled = NO;
+        lastQueryAffectedRowCount = 0;
+        [self _updateLastErrorMessage:NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open")];
+        [self _updateLastErrorID:2013];
+        [self _updateLastSqlstate:@"HY000"];
+    }
+    return theResult;
 }
 
 - (id)_queryString:(NSString *)theQueryString
@@ -574,12 +615,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
-			// The statement may have changed the character set or the escaping mode; values are
-			// escaped the way the session reports it reads them now.
-			[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
-			                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
-			                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-			                            isHandshake:NO];
 			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
@@ -589,6 +624,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 		// If the query succeeded, no need to re-attempt.
 		if (!queryStatus) {
+			// What the session reports is recorded where the connection is released, once
+			// everything the statement produced has been read: a change the server reports
+			// arrives with the last of those packets, which at this point is still unread.
 			theErrorMessage = nil;
 			theErrorID = 0;
 			theSqlstate = nil;
@@ -1288,6 +1326,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
 	// Repeat as long as there are results
 	while (!mysql_next_result(mySQLConnection)) {
+		// Each packet brings its own session-state items and replaces the one before, so a report
+		// is collected as it goes past rather than looked for once at the end.
+		characterSetReportedInAResultPacket = characterSetReportedInAResultPacket || [self _currentResultPacketReportsTheCharacterSet];
+
 		MYSQL_RES *eachResult = mysql_use_result(mySQLConnection);
 
 		// Ensure the result is really a result
