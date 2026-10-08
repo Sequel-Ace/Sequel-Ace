@@ -1,0 +1,401 @@
+//
+//  SAOfflineEscapingHandle.swift
+//  SPMySQLFramework
+//
+//  Copyright © 2026 Sequel-Ace. All rights reserved.
+//
+//  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
+//
+
+import Foundation
+@_implementationOnly import MySQLClient
+
+/// A client-library handle that escapes values for one character set, without a server.
+///
+/// It is never connected, so the client library changes its character set without asking a
+/// server, and it escapes in the mode (`NO_BACKSLASH_ESCAPES` or not) it is given.
+final class SAOfflineEscapingHandle {
+
+    private let handle: UnsafeMutablePointer<MYSQL>
+
+    /// Wraps a handle that is ready to escape with; it is closed with this object.
+    private init(handle: UnsafeMutablePointer<MYSQL>) {
+        self.handle = handle
+    }
+
+    /// Closes the handle.
+    deinit {
+        mysql_close(handle)
+    }
+
+    /// Makes a handle for a character set, with a given session status.
+    /// - Parameters:
+    ///   - characterSet: The MySQL name of the character set values are escaped for.
+    ///   - serverStatus: The session status bits the escaping follows.
+    /// - Returns: The handle, or nil if the client library does not know the character set.
+    static func handle(forCharacterSet characterSet: String, serverStatus: UInt32) -> SAOfflineEscapingHandle? {
+        guard let handle = mysql_init(nil) else {
+            return nil
+        }
+        guard mysql_set_character_set(handle, characterSet) == 0 else {
+            mysql_close(handle)
+            return nil
+        }
+        handle.pointee.server_status = serverStatus
+        return SAOfflineEscapingHandle(handle: handle)
+    }
+
+    /// Escapes bytes for a string literal, in the handle's character set and escaping mode.
+    ///
+    /// In `NO_BACKSLASH_ESCAPES` mode the client library refuses to escape with backslashes; quotes
+    /// are then doubled instead, for a literal in single quotes.
+    /// - Parameters:
+    ///   - source: The value, already in the handle's character set.
+    ///   - length: The number of bytes in the value.
+    ///   - destination: Room for at least twice the value's length and one more byte.
+    /// - Returns: The number of escaped bytes written, or -1 if the value could not be escaped.
+    func escape(_ source: UnsafeRawPointer?, length: Int, into destination: UnsafeMutableRawPointer) -> Int {
+        guard length > 0, let source else {
+            return 0
+        }
+        let from = source.assumingMemoryBound(to: CChar.self)
+        let to = destination.assumingMemoryBound(to: CChar.self)
+        let failed = UInt.max
+        var escaped = mysql_real_escape_string(handle, to, from, UInt(length))
+        if escaped == failed, mysql_errno(handle) == UInt32(CR_INSECURE_API_ERR) {
+            escaped = mysql_real_escape_string_quote(handle, to, from, UInt(length), CChar(UInt8(ascii: "'")))
+        }
+        return escaped == failed ? -1 : Int(escaped)
+    }
+
+    /// Escapes a value held in `Data`; see ``escape(_:length:into:)``.
+    /// - Parameter bytes: The value, already in the handle's character set.
+    /// - Returns: The escaped bytes, without surrounding quotes, or nil if they could not be escaped.
+    func escapedBytes(_ bytes: Data) -> Data? {
+        var output = [UInt8](repeating: 0, count: bytes.count * 2 + 1)
+        let length = bytes.withUnsafeBytes { source in
+            output.withUnsafeMutableBytes { destination -> Int in
+                guard let destination = destination.baseAddress else {
+                    return -1
+                }
+                return escape(source.baseAddress, length: bytes.count, into: destination)
+            }
+        }
+        return length < 0 ? nil : Data(output.prefix(length))
+    }
+
+    /// The character set the handle escapes for, as the client library names it.
+    var characterSetName: String {
+        return String(cString: mysql_character_set_name(handle))
+    }
+
+    /// Whether the handle escapes for a session in `NO_BACKSLASH_ESCAPES` mode.
+    var escapesWithoutBackslashes: Bool {
+        return handle.pointee.server_status & Self.noBackslashEscapesStatus != 0
+    }
+
+    /// The session status bit for `NO_BACKSLASH_ESCAPES`.
+    static let noBackslashEscapesStatus = UInt32(SERVER_STATUS_NO_BACKSLASH_ESCAPES.rawValue)
+}
+
+/// Escapes a connection's values without touching its session.
+///
+/// The session's own handle can be in use by work nobody waits for any more, or be closed by that
+/// work, while a value is escaped on another thread. So values are escaped with a handle of the
+/// connection's own that is never connected, set up again whenever the character set or the
+/// escaping mode changes. What the session reports - its character set, which the client library
+/// follows through session tracking, and its `NO_BACKSLASH_ESCAPES` mode - is recorded while the
+/// connection is held, after it connects and after every statement.
+@objc(SAConnectionEscaper)
+public final class SAConnectionEscaper: NSObject {
+
+    private let lock = NSLock()
+    private var handshakeCharacterSet: String?
+    private var sessionCharacterSet: String?
+    private var sessionUsesNoBackslashEscapes = false
+    private var sessionsStartWithNoBackslashEscapes = false
+    /// Set once the session reported a character set other than the one it was connected
+    /// with. Until then there is no telling a server that does not report changes from one
+    /// that does and happens to report the same name.
+    /// Whether the server has actually reported a character set for this session.
+    ///
+    /// Kept apart from the flag above, which only says that reporting is *switched on*. The
+    /// connection switches it on itself when a session starts without it, and that says nothing
+    /// about the character set the session is already in: an `init_connect` can have set it before
+    /// anything was reported, so the name the client library holds is the handshake's and was
+    /// never reported at all. Until a report has arrived, what the session reported in its
+    /// variables is the only ground truth there is.
+    private var aCharacterSetHasBeenReported = false
+    /// How many times a session has reported its state, which is once per statement.
+    ///
+    /// A character set the connection sets itself is judged by the report its own statement
+    /// brought back, and that judgement is made after the statement has let go of the connection -
+    /// so another thread's statement can land in between. Counting the reports tells the two
+    /// apart: one more than before the statement is this statement's, and any other number means
+    /// something else has been through, where the comparison says nothing.
+    private var sessionReportCount: UInt = 0
+    /// A reported name a `SET NAMES` of the connection's own proved the session does not follow.
+    ///
+    /// Kept apart from the flag above because it has to survive the next statement: the fallback
+    /// in ``recordSession(characterSet:noBackslashEscapes:openTransaction:isHandshake:)`` reads a
+    /// reported name that differs from the handshake as a reported change, and a stale name
+    /// usually does differ - so without this the flag would come straight back on and the stale
+    /// name would decide after all.
+    private var staleSessionCharacterSet: String?
+    private var sessionHasOpenTransaction = false
+    private var handleCharacterSet: String?
+    private var handleUsesNoBackslashEscapes = false
+    private var handle: SAOfflineEscapingHandle?
+
+    /// Decides which character set a value is escaped for.
+    ///
+    /// A session that is about to be replaced may follow a character set that is no longer the one
+    /// on record, which the next session's handshake uses; its values follow the record. Otherwise a
+    /// session whose character set differs from the one it was connected with has been told about a
+    /// change - by the connection, or by a statement the user ran - and the client library followed
+    /// it; that is what the session reads values in. A session still on its handshake character set
+    /// either had no change, or runs on a server that does not report changes, where the record,
+    /// which follows every change the connection makes, is the better guide.
+    /// - Parameters:
+    ///   - characterSetOnRecord: The connection's character set on record.
+    ///   - sessionCharacterSet: The character set the session last reported, if known.
+    ///   - handshakeCharacterSet: The character set the session was connected with, if known.
+    ///   - aCharacterSetHasBeenReported: Whether the server has actually reported a character set
+    ///     for this session - not merely that reporting is switched on.
+    ///   - sessionReportIsStale: Whether a `SET NAMES` of the connection's own showed that the
+    ///     session does not follow what it reports.
+    ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
+    /// - Returns: The character set to escape for, or nil if there is none.
+    static func characterSetForEscaping(onRecord characterSetOnRecord: String?,
+                                        session sessionCharacterSet: String?,
+                                        handshake handshakeCharacterSet: String?,
+                                        aCharacterSetHasBeenReported: Bool,
+                                        sessionReportIsStale: Bool,
+                                        sessionIsBeingReplaced: Bool) -> String? {
+        if sessionIsBeingReplaced {
+            return characterSetOnRecord
+        }
+        // A report the connection has caught out decides nothing, neither as the guide nor
+        // through the fallback below, which would read it as a change because a stale name
+        // usually differs from the handshake. The record is where the connection's own changes
+        // went, so it is the only thing left that knows what the session is in. Without a record
+        // there is nothing to escape for, and the value is refused rather than escaped wrongly.
+        if sessionReportIsStale {
+            return characterSetOnRecord
+        }
+        // Once this server has been seen reporting a change, what it reports is the guide - also
+        // when it reports the name the session was connected with again. A session that was
+        // switched away from that name and back would otherwise be escaped for the record, which
+        // is where the connection's own last change went, and that can be another character set
+        // entirely: escaping `BF 27` for latin1 while the session reads GBK leaves the quote
+        // unescaped, since GBK takes `BF 5C` as one character.
+        if aCharacterSetHasBeenReported, let sessionCharacterSet {
+            return sessionCharacterSet
+        }
+        if let sessionCharacterSet, let handshakeCharacterSet,
+           sessionCharacterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
+            return sessionCharacterSet
+        }
+        return characterSetOnRecord ?? sessionCharacterSet
+    }
+
+    /// Records what the session reports. Called while the connection is held.
+    /// - Parameters:
+    ///   - characterSet: The session's character set as the client library names it.
+    ///   - noBackslashEscapes: Whether the session is in `NO_BACKSLASH_ESCAPES` mode.
+    ///   - openTransaction: Whether the session has a transaction open.
+    ///   - isHandshake: Whether the session has just been connected.
+    ///   - characterSetWasReported: Whether the server reported its character set with the
+    ///     statement just run, as the client library's session-state tracking shows.
+    @objc(recordSessionCharacterSet:noBackslashEscapes:openTransaction:isHandshake:characterSetWasReported:)
+    public func recordSession(characterSet: String?, noBackslashEscapes: Bool, openTransaction: Bool,
+                              isHandshake: Bool, characterSetWasReported: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        sessionReportCount &+= 1
+        if isHandshake {
+            handshakeCharacterSet = characterSet
+            sessionsStartWithNoBackslashEscapes = noBackslashEscapes
+            // What the session before reported says nothing about this one: a reconnect can land
+            // on a server that does not report changes, and carrying the flag over would let the
+            // handshake name override what the connection sets afterwards.
+            aCharacterSetHasBeenReported = false
+            staleSessionCharacterSet = nil
+        }
+        // The server said so itself, which settles it: the client library only learns a character
+        // set this way, so a report that came with a tracking item is this session's, whatever it
+        // names. The name alone cannot tell this apart - a session caught out on `gbk` that is
+        // moved back to `gbk` reports the same name it did while frozen - which is why the
+        // protocol's own answer is asked for rather than inferred.
+        if characterSetWasReported {
+            aCharacterSetHasBeenReported = true
+            staleSessionCharacterSet = nil
+        }
+        // A report that has moved off the name caught out is a report again: the client's view
+        // followed something, so what it says can be believed from here. Kept for a server whose
+        // tracking the client library cannot show us.
+        if let stale = staleSessionCharacterSet, let characterSet,
+           !Self.namesTheSameCharacterSet(characterSet, stale) {
+            staleSessionCharacterSet = nil
+        }
+        if !isHandshake, staleSessionCharacterSet == nil, let characterSet, let handshakeCharacterSet,
+           characterSet.caseInsensitiveCompare(handshakeCharacterSet) != .orderedSame {
+            // A reported name that differs from the one the session was connected with can only
+            // have come from the server reporting a change. This is the fallback for a session
+            // that was never told it reports - behind a proxy, or on a server that refused - and
+            // it cannot see a change back to the handshake name, which is why being told is
+            // better.
+            aCharacterSetHasBeenReported = true
+        }
+        sessionCharacterSet = characterSet
+        sessionUsesNoBackslashEscapes = noBackslashEscapes
+        sessionHasOpenTransaction = openTransaction
+    }
+
+    /// How many reports the session has made, taken before a character set is set so the report
+    /// that follows can be told apart from another thread's.
+    @objc public var reportsSoFar: UInt {
+        lock.lock()
+        defer { lock.unlock() }
+        return sessionReportCount
+    }
+
+    /// Whether the session last reported an open transaction.
+    @objc public var sessionReportedOpenTransaction: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return sessionHasOpenTransaction
+    }
+
+    /// Records what a `SET NAMES` this connection just ran shows about the session's reporting.
+    ///
+    /// The variable list a server gives is not proof that its notifications reach this client -
+    /// behind a proxy the list can describe the backend, and a user can turn the tracking off
+    /// again. A character set the connection sets itself settles it for nothing: the statement
+    /// goes out through the query path, so the client library learns of it only if the session
+    /// reports it. A session that reports the name just set reports its changes; one that still
+    /// names the character set from before does not, whatever its variable list said.
+    ///
+    /// This matters because the two differ exactly here. `setEncoding:` leaves the connection's
+    /// record right and the client's handle stale, so trusting the handle would escape values for
+    /// the character set the session was in before - `BF 27` as latin1 while the session reads
+    /// GBK, where `BF 5C` is one character and the quote is left to end the literal.
+    /// - Parameters:
+    ///   - characterSet: The character set the connection just set.
+    ///   - reportsBefore: ``reportsSoFar`` as it stood before the statement ran.
+    @objc(recordCharacterSetSetByConnection:reportsBefore:)
+    public func recordCharacterSetSetByConnection(_ characterSet: String, reportsBefore: UInt) {
+        lock.lock()
+        defer { lock.unlock() }
+        // Only this statement's own report says anything about whether the session follows. If
+        // another statement has been through since - a `SET NAMES` on another thread, a retry
+        // after a reconnect - the name on record belongs to that one, and comparing it with what
+        // was set here would mark a fresh report stale and send the next value out for the
+        // character set this statement asked for rather than the one the session is in.
+        guard sessionReportCount == reportsBefore &+ 1 else {
+            return
+        }
+        let sessionFollowed = Self.namesTheSameCharacterSet(sessionCharacterSet, characterSet)
+        if sessionFollowed {
+            aCharacterSetHasBeenReported = true
+        }
+        staleSessionCharacterSet = sessionFollowed ? nil : sessionCharacterSet
+    }
+
+    /// Whether two character-set names mean the same character set.
+    ///
+    /// `utf8` and `utf8mb3` are one character set under two names, and a server that renamed it -
+    /// MySQL 8 reports `utf8mb3` for a session set with `SET NAMES utf8` - must not be taken for a
+    /// server whose report did not follow.
+    /// - Parameters:
+    ///   - reported: The name the session reports, if any.
+    ///   - requested: The name that was asked for.
+    /// - Returns: Whether they name the same character set.
+    static func namesTheSameCharacterSet(_ reported: String?, _ requested: String) -> Bool {
+        guard let reported else {
+            return false
+        }
+        return Self.canonicalCharacterSetName(reported) == Self.canonicalCharacterSetName(requested)
+    }
+
+    /// One name for a character set that has two.
+    /// - Parameter name: The name as a server or this framework spells it.
+    /// - Returns: The name to compare by, lowercased, with `utf8mb3` under `utf8`.
+    private static func canonicalCharacterSetName(_ name: String) -> String {
+        let lowered = name.lowercased()
+        return lowered == "utf8mb3" ? "utf8" : lowered
+    }
+
+    /// Records the escaping mode a new session started in, once it has run a statement - after
+    /// anything the server runs when a session starts, which the handshake's answer does not show
+    /// yet. The next session is taken to start in it too.
+    /// - Parameter noBackslashEscapes: Whether the session is in `NO_BACKSLASH_ESCAPES` mode.
+    @objc(recordStartingModeWithNoBackslashEscapes:)
+    public func recordStartingMode(noBackslashEscapes: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        sessionsStartWithNoBackslashEscapes = noBackslashEscapes
+    }
+
+    /// Forgets what a session reported, once that session is closed. Until the next session
+    /// connects, values follow the record, which that session's handshake uses, and the escaping mode
+    /// sessions start in - the server's own, which a mode the closed session was switched to does not
+    /// outlive.
+    @objc public func forgetSession() {
+        lock.lock()
+        defer { lock.unlock() }
+        handshakeCharacterSet = nil
+        sessionCharacterSet = nil
+        staleSessionCharacterSet = nil
+        aCharacterSetHasBeenReported = false
+        sessionUsesNoBackslashEscapes = sessionsStartWithNoBackslashEscapes
+        sessionHasOpenTransaction = false
+    }
+
+    /// Escapes bytes for a string literal.
+    /// - Parameters:
+    ///   - source: The value, already in the connection's string encoding.
+    ///   - length: The number of bytes in the value.
+    ///   - destination: Room for at least twice the value's length and one more byte.
+    ///   - characterSetOnRecord: The connection's character set on record.
+    ///   - sessionIsBeingReplaced: Whether the session is to be replaced before its next use.
+    /// - Returns: The number of escaped bytes written, or -1 if the value could not be escaped -
+    ///   when there is no character set to escape for, or the client library does not know it.
+    @objc(escapeBytes:length:into:characterSetOnRecord:sessionIsBeingReplaced:)
+    public func escape(_ source: UnsafeRawPointer?,
+                       length: Int,
+                       into destination: UnsafeMutableRawPointer,
+                       characterSetOnRecord: String?,
+                       sessionIsBeingReplaced: Bool) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let characterSet = Self.characterSetForEscaping(onRecord: characterSetOnRecord,
+                                                              session: sessionCharacterSet,
+                                                              handshake: handshakeCharacterSet,
+                                                              aCharacterSetHasBeenReported: aCharacterSetHasBeenReported,
+                                                              sessionReportIsStale: staleSessionCharacterSet != nil,
+                                                              sessionIsBeingReplaced: sessionIsBeingReplaced) else {
+            return -1
+        }
+        // A session being replaced is followed in neither respect: the next session starts in the
+        // mode sessions start in on this server - which an `init_connect` can set - and a value
+        // built now may well be sent on it. Escaping it in the outgoing session's mode would put
+        // backslashes in a literal the next session reads them literally in, so the quote after
+        // one would end the string.
+        let noBackslashEscapes = sessionIsBeingReplaced
+            ? sessionsStartWithNoBackslashEscapes
+            : sessionUsesNoBackslashEscapes
+        if handle == nil || handleCharacterSet != characterSet || handleUsesNoBackslashEscapes != noBackslashEscapes {
+            handle = SAOfflineEscapingHandle.handle(
+                forCharacterSet: characterSet,
+                serverStatus: noBackslashEscapes ? SAOfflineEscapingHandle.noBackslashEscapesStatus : 0
+            )
+            handleCharacterSet = characterSet
+            handleUsesNoBackslashEscapes = noBackslashEscapes
+        }
+        guard let handle else {
+            return -1
+        }
+        return handle.escape(source, length: length, into: destination)
+    }
+}

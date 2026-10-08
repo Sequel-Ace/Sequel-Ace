@@ -82,6 +82,12 @@
 		SPLog(@"SPMySQLConnection: Tried to unlock the connection, but it wasn't locked.");
 	}
 
+	// Each packet carries its own session-state items, and fetching the next one replaces them -
+	// so a report that came with an earlier result would be gone by the time the session is
+	// recorded. This packet's is taken now, and the ones the flush below walks past are added to
+	// it as it goes.
+	characterSetReportedInAResultPacket = characterSetReportedInAResultPacket || [self _currentResultPacketReportsTheCharacterSet];
+
 	// Since we connected with CLIENT_MULTI_RESULT, we must make sure there are not more results!
 	// This is still a bit of a dirty hack
 	if (
@@ -95,10 +101,46 @@
 		[self _flushMultipleResultSets];
 	}
 
+	// Record what the session reports, now that everything the statement produced has been read.
+	// This is the only point at which that is true for every path: a statement's own result is
+	// read after the statement returns - stored at once, or streamed while this lock is held -
+	// and a session-state change the server reports arrives with the last of those packets. The
+	// connection is still held here, so nothing else can be using the handle, and no further
+	// lock is needed.
+	if (state == SPMySQLConnected && mySQLConnection) {
+		[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+		                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+		                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+		                            isHandshake:NO
+		                characterSetWasReported:characterSetReportedInAResultPacket];
+	}
+	characterSetReportedInAResultPacket = NO;
 	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];
 }
+
+/**
+ * Whether the result packet the connection is on carries the server's own report of the
+ * session's character set.
+ *
+ * The client library keeps the session-state items of one OK packet, and asking it is the only
+ * way to tell a report that arrived from one that did not: the character set's *name* cannot,
+ * because a session whose reports have stopped keeps naming what it was last told, which can be
+ * the same name a later report would carry.
+ *
+ * Only the items are pulled out here; what they mean is `SASessionStateTracking`'s. Valid only
+ * while the connection is held and before the next packet is fetched.
+ */
+- (BOOL)_currentResultPacketReportsTheCharacterSet
+{
+	if (state != SPMySQLConnected || !mySQLConnection) {
+		return NO;
+	}
+
+	return [SASessionStateTracking characterSetIsNamedInTheCurrentResultPacketOf:mySQLConnection];
+}
+
 
 @end
