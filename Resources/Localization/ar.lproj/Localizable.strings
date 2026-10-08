@@ -4423,3 +4423,6 @@
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "أعمدة المشاهدات المعاد إنشاؤها في '%1$@' لا يمكن مقارنتها مع تلك الواردة في '%2$@': %3$@ الكائنات تم نقلها، وتم الاحتفاظ بـ '%4$@'؛ تحقق من وجهات النظر وقم بإزالة '%5$@' بنفسك بمجرد رضاك.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "لا يمكن استخدام الاتصال بينما يتم سؤالك عما يجب فعله حيال ذلك. أجب على هذا السؤال، ثم حاول مرة أخرى.";
