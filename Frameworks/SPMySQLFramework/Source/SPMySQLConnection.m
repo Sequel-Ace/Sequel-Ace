@@ -1513,8 +1513,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 					// the interface from hanging while nobody has been asked anything. A
 					// connection that legitimately needs longer - a slow proxy, or an
 					// authentication handshake with a thirty-second timeout - could otherwise
-					// never come back through this dialog.
-					reconnectSucceeded = [self _reconnectAllowingRetries:YES afterFailedCheck:NO];
+					// never come back through this dialog. Where there was nobody to ask, the
+					// decision above was the connection's own, and the attempt is still the
+					// failed check's: it keeps the check's limits.
+					reconnectSucceeded = [self _reconnectAllowingRetries:YES
+					                                   afterFailedCheck:[SAConnectionCheckBudget retryKeepsFailedCheckLimitsAfterFailedCheck:afterFailedCheck
+					                                                                                              decisionCameFromDelegate:delegateSupportsConnectionLost]];
 			}
 		}
 	}

@@ -205,6 +205,27 @@ public final class SAConnectionCheckBudget: NSObject {
                                          overridesConfiguredTimeout: false)
     }
 
+    /// Whether a reconnect that follows a failed attempt keeps the failed check's limits.
+    ///
+    /// An attempt the user asked for is theirs to wait for, and keeps the connection's configured
+    /// timeout: one that legitimately needs longer - a slow proxy, or an authentication handshake
+    /// with a thirty-second timeout - could otherwise never come back through that dialog. Nobody
+    /// is asked when the connection has no delegate to ask, though: it selects a reconnect on its
+    /// own, up to five times over, and those attempts are still the failed check's. They keep its
+    /// limits, or a check on a connection with no timeout configured would wait with no limit at
+    /// all - five times over - which is the wait the check exists to bound.
+    /// - Parameters:
+    ///   - afterFailedCheck: Whether the attempt that is retrying followed a failed connection
+    ///     check.
+    ///   - decisionCameFromDelegate: Whether a delegate answered what to do about the lost
+    ///     connection, rather than the connection deciding on its own.
+    /// - Returns: Whether the retry runs on the check's limits.
+    @objc(retryKeepsFailedCheckLimitsAfterFailedCheck:decisionCameFromDelegate:)
+    public static func retryKeepsFailedCheckLimits(afterFailedCheck: Bool,
+                                                   decisionCameFromDelegate: Bool) -> Bool {
+        return afterFailedCheck && !decisionCameFromDelegate
+    }
+
     /// Whether an attempt gets the short budget that follows the user ending a wait.
     /// - Parameter seconds: How long ago the user ended the wait.
     /// - Returns: `true` only for an attempt that starts within ``endedWaitWindow`` of it.
