@@ -300,7 +300,9 @@ final class SAConnectionCancellationTests: XCTestCase {
     /// stopped before it was sent, stopped while the connection was being checked, not allowed to
     /// send at all - used to leave the count describing the statement before it.
     func testAStatementThatNeverRanAffectsNoRows() throws {
-        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("no local MySQL connection configured")
+        }
         try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
         defer { connection.disconnect() }
 
@@ -471,7 +473,9 @@ final class SAConnectionCancellationTests: XCTestCase {
     /// transaction: closing the session then rolls that back without a word. The connection id is
     /// the proof either way - it changes exactly when the session is replaced.
     func testAMarkedSessionIsKeptWhileATransactionIsOpenInIt() throws {
-        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("no local MySQL connection configured")
+        }
         try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
         defer { connection.disconnect() }
 
@@ -502,7 +506,9 @@ final class SAConnectionCancellationTests: XCTestCase {
     /// Against a live server, because that is the only place the difference shows: without one,
     /// `setEncoding:` finds nothing to send to and both paths look the same from outside.
     func testTheStoredEncodingIsOnlyRecordedForASessionOnItsWayOut() throws {
-        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("no local MySQL connection configured")
+        }
         try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
         defer { connection.disconnect() }
 
@@ -524,7 +530,9 @@ final class SAConnectionCancellationTests: XCTestCase {
 
     /// Verifies a session that is staying is told about the restored encoding, as before.
     func testASessionThatIsStayingIsToldAboutTheRestoredEncoding() throws {
-        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("no local MySQL connection configured")
+        }
         try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
         defer { connection.disconnect() }
 
