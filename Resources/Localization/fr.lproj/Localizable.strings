@@ -4421,3 +4421,6 @@
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "Les colonnes des vues recréées dans '%1$@' n'ont pas pu être comparées à celles de '%2$@' : %3$@ Les objets ont été déplacés, et '%4$@' a été conservé; vérifiez les vues et supprimez vous-même '%5$@' une fois que vous êtes satisfait.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "La connexion ne peut pas être utilisée lorsque l'on vous demande ce qu'il faut faire. Répondez à cette question, puis réessayez.";
