@@ -242,19 +242,26 @@ final class SAConnectionCancellationTests: XCTestCase {
     func testAConnectionIsOnlyClosedWhereThatIsSafe() {
         XCTAssertEqual(recovery(cancelled: true, userDisconnected: false, connected: true, disconnected: false, mayDisconnect: false), .none)
     }
-
-    /// A stored character set is only put on record while the session is gone or on its way out.
-    func testStoredEncodingIsOnlyRecordedWhileTheSessionIsOnItsWayOut() {
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, sessionHasOpenTransaction: false))
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: true, sessionHasOpenTransaction: false))
-        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: false, hasNoUsableSession: false, sessionHasOpenTransaction: false))
+    /// Only a session that will not be used again has its stored encoding put back on record
+    /// alone; one still in use is told, or the record and the session would disagree.
+    func testOnlyASessionOnItsWayOutIsSpared() {
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(
+            sessionWillBeReplaced: true, hasNoUsableSession: false),
+            "a session marked to be replaced is not worth a statement")
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(
+            sessionWillBeReplaced: false, hasNoUsableSession: true),
+            "and there is nothing to tell when there is no session")
+        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(
+            sessionWillBeReplaced: false, hasNoUsableSession: false),
+            "a session still in use is told, or it reads statements in one character set while the record says another")
     }
 
-    /// A session with an open transaction is told the character set after its work was abandoned.
-    func testASessionWithAnOpenTransactionIsToldTheCharacterSet() {
-        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: false, sessionHasOpenTransaction: true))
-        // A session that is gone, or marked for replacement, is not told, transaction or not.
-        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(afterAbandonedWork: true, hasNoUsableSession: true, sessionHasOpenTransaction: true))
+    /// A mark acted on later does not close a session something else has opened a transaction in.
+    func testAMarkDoesNotCloseASessionWithWorkGoingOnInIt() {
+        XCTAssertTrue(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: false),
+                      "nothing is open, so the mark is acted on")
+        XCTAssertFalse(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: true),
+                       "closing it would roll back work somebody is still doing")
     }
 
     /// Only work that used the session outside a transaction leaves it to be replaced.
@@ -390,5 +397,113 @@ final class SAConnectionCancellationTests: XCTestCase {
                                                                  isConnected: connected,
                                                                  isDisconnected: disconnected,
                                                                  mayDisconnect: mayDisconnect)
+    }
+
+    // MARK: - Against a live server
+
+    /// Verifies a session a mark names is kept while a transaction is open in it, and replaced
+    /// once there is none.
+    ///
+    /// The mark is made when work nobody waited for is given up on, and acted on when the session
+    /// is next wanted. A query that took the connection over in between can have opened a
+    /// transaction: closing the session then rolls that back without a word. The connection id is
+    /// the proof either way - it changes exactly when the session is replaced.
+    func testAMarkedSessionIsKeptWhileATransactionIsOpenInIt() throws {
+        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
+        defer { connection.disconnect() }
+
+        let theSession = try XCTUnwrap(connection.getFirstField(fromQuery: "SELECT CONNECTION_ID()") as? String)
+
+        // Something else took the connection over and opened a transaction in it.
+        connection.queryString("START TRANSACTION")
+        XCTAssertFalse(connection.queryErrored())
+
+        // The mark from work that was given up on earlier is still standing.
+        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT CONNECTION_ID()") as? String, theSession,
+                       "the session was kept, so the open transaction was not rolled back")
+        XCTAssertTrue(connection.value(forKey: "sessionMustBeReplacedBeforeUse") as? Bool ?? false,
+                      "and the mark still stands, for once nothing is open in it")
+
+        connection.queryString("ROLLBACK")
+        XCTAssertFalse(connection.queryErrored())
+
+        XCTAssertNotEqual(connection.getFirstField(fromQuery: "SELECT CONNECTION_ID()") as? String, theSession,
+                          "with nothing open the mark is acted on and the session is replaced")
+    }
+
+    /// Verifies the stored encoding goes back on record without the session being told, when that
+    /// session is on its way out - and that a session still in use is told, as before.
+    ///
+    /// Against a live server, because that is the only place the difference shows: without one,
+    /// `setEncoding:` finds nothing to send to and both paths look the same from outside.
+    func testTheStoredEncodingIsOnlyRecordedForASessionOnItsWayOut() throws {
+        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
+        defer { connection.disconnect() }
+
+        XCTAssertTrue(connection.setEncoding("utf8mb4"))
+        connection.storeEncodingForRestoration()
+        XCTAssertTrue(connection.setEncoding("latin1"))
+
+        // This session is on its way out.
+        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.restoreStoredEncoding()
+
+        XCTAssertEqual(connection.value(forKey: "encoding") as? String, "utf8mb4",
+                       "the record is back, for the session that replaces this one")
+        connection.setValue(false, forKey: "sessionMustBeReplacedBeforeUse")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@character_set_client") as? String,
+                       "latin1",
+                       "and the session itself was not told, so nothing was sent to tell it")
+    }
+
+    /// Verifies a session that is staying is told about the restored encoding, as before.
+    func testASessionThatIsStayingIsToldAboutTheRestoredEncoding() throws {
+        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
+        defer { connection.disconnect() }
+
+        XCTAssertTrue(connection.setEncoding("utf8mb4"))
+        connection.storeEncodingForRestoration()
+        XCTAssertTrue(connection.setEncoding("latin1"))
+
+        connection.setValue(false, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.restoreStoredEncoding()
+
+        XCTAssertEqual(connection.value(forKey: "encoding") as? String, "utf8mb4")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@character_set_client") as? String,
+                       "utf8mb4",
+                       "the session was told, which is what keeps record and server in step")
+    }
+
+    /// A connection to the local server, if one is configured; see the escaping integration tests.
+    private func newLocalConnection() -> SPMySQLConnection? {
+        let environment = ProcessInfo.processInfo.environment
+        var socketPath = environment["SPMYSQL_TEST_SOCKET"]
+        let testHost = environment["SPMYSQL_TEST_HOST"]
+        if (socketPath?.isEmpty ?? true), (testHost?.isEmpty ?? true) {
+            socketPath = ["/tmp/mysql.sock", "/opt/homebrew/var/mysql/mysql.sock"]
+                .first(where: { FileManager.default.fileExists(atPath: $0) })
+        }
+        let connection = SPMySQLConnection()
+        let testUser = environment["SPMYSQL_TEST_USER"]
+        connection.username = testUser?.isEmpty == false ? testUser : "root"
+        connection.password = environment["SPMYSQL_TEST_PASSWORD"]
+        connection.useKeepAlive = false
+        if let testHost, !testHost.isEmpty {
+            connection.useSocket = false
+            connection.host = testHost
+            if let port = environment["SPMYSQL_TEST_PORT"].flatMap(UInt.init) {
+                connection.port = port
+            }
+            return connection
+        }
+        guard let socketPath, !socketPath.isEmpty else { return nil }
+        connection.useSocket = true
+        connection.socketPath = socketPath
+        return connection
     }
 }

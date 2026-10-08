@@ -1218,6 +1218,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		if (mySQLConnection && state != SPMySQLConnectionLostInBackground) {
 			if (!sessionMustBeReplacedBeforeUse) return YES;
 
+			// The mark can be much older than this moment, and a query that took the connection
+			// over in between can have opened a transaction of its own. The connection is held
+			// here, so the session's own answer is the one to go by. The mark is left standing:
+			// the session is still replaced once nothing is open in it.
+			if (![SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
+				return YES;
+			}
+
 			// The character set on record was changed for the next session only. This one is closed
 			// like the session of abandoned work, and the reconnect below sets up the next one.
 			[self _closeSessionOfAbandonedQuery];

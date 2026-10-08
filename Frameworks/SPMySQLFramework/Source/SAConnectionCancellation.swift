@@ -321,31 +321,43 @@ public final class SAConnectionCancellation: NSObject {
         host.closeSessionIfConnected()
     }
 
+    /// Whether the session a replacement mark names is closed now, or kept because something is
+    /// going on in it.
+    ///
+    /// The mark is made when work nobody waited for is given up on, and acted on when the session
+    /// is next wanted - which can be much later. A query that took the connection over in between
+    /// can have opened a transaction of its own: closing the session then rolls that work back
+    /// without a word, while whoever opened it is still going, and what the mark guards against is
+    /// not worth that. The mark stays, so the session is still replaced once nothing is open in it.
+    /// - Parameter sessionHasOpenTransaction: Whether the session reports a transaction open now.
+    /// - Returns: Whether to close it now.
+    @objc(markedSessionIsClosedNowWithOpenTransaction:)
+    public static func markedSessionIsClosedNow(sessionHasOpenTransaction: Bool) -> Bool {
+        return !sessionHasOpenTransaction
+    }
+
     /// Whether putting a stored character set back only has to change the connection's record of it.
     ///
-    /// A connection without a usable session - lost in the background, on its way between two
-    /// sessions, or marked for replacement - connects afresh with the character set on record. So
-    /// does one whose last work nobody waited for, unless that session has a transaction open:
-    /// telling the server would only wait behind the abandoned work for a session that is closed or
-    /// replaced anyway.
+    /// Telling the session means a `SET NAMES`, and a statement from the cleanup of stopped work
+    /// goes to the connection's worker: it starts the very wait the user has just ended, and on a
+    /// connection whose route has gone it waits out a timeout all over again. A session that will
+    /// not be used again is not worth that - the record is what the session replacing it connects
+    /// with, through its handshake.
     ///
-    /// Until that session is gone, its handle may still follow the temporary character set, so
-    /// values are not escaped with it: the connection escapes them for the character set on record,
-    /// which the next session's handshake uses. A session with an open transaction is kept, and is
-    /// told the character set as before.
+    /// Being the session of work that was given up on is not the same thing as being on the way
+    /// out. Work that sent nothing leaves its session in use, and putting the record back behind
+    /// the back of a session that still reads statements in the temporary character set would have
+    /// the next value escaped for one character set and read in another - which is the fault this
+    /// framework escapes from the session's reported state to avoid. The mark is what says a
+    /// session is being replaced, so the mark is what this asks about.
     /// - Parameters:
-    ///   - afterAbandonedWork: Whether the calling thread stopped waiting for the work it ran last.
-    ///   - hasNoUsableSession: Whether the connection has no session to tell.
-    ///   - sessionHasOpenTransaction: Whether the session last reported an open transaction.
+    ///   - sessionWillBeReplaced: Whether the session is marked to be replaced before it is used.
+    ///   - hasNoUsableSession: Whether there is no session to tell in the first place.
     /// - Returns: Whether the record alone is to be changed.
-    @objc(storedEncodingOnlyNeedsRecordingAfterAbandonedWork:hasNoUsableSession:sessionHasOpenTransaction:)
-    public static func storedEncodingOnlyNeedsRecording(afterAbandonedWork: Bool,
-                                                        hasNoUsableSession: Bool,
-                                                        sessionHasOpenTransaction: Bool) -> Bool {
-        if hasNoUsableSession {
-            return true
-        }
-        return afterAbandonedWork && !sessionHasOpenTransaction
+    @objc(storedEncodingOnlyNeedsRecordingWhenSessionWillBeReplaced:hasNoUsableSession:)
+    public static func storedEncodingOnlyNeedsRecording(sessionWillBeReplaced: Bool,
+                                                        hasNoUsableSession: Bool) -> Bool {
+        return hasNoUsableSession || sessionWillBeReplaced
     }
 
     /// Whether the session is marked for replacement when the work using it is given up on.

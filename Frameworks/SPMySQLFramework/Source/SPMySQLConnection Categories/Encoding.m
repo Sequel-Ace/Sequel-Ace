@@ -220,8 +220,37 @@
 		return;
 	}
 
+	// A session on its way out is not told anything. Telling it means a statement, and a statement
+	// from the cleanup of stopped work goes to the worker and starts the very wait the user has
+	// just ended. The record goes back instead, which is what the session replacing this one
+	// connects with; this one keeps the character set it was put in, so the escaper is left
+	// describing it as it still is.
+	//
+	// Only the mark and the state are read, both plain values: the native handle belongs to
+	// whoever holds the connection, and the worker of abandoned work can be closing it.
+	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingWhenSessionWillBeReplaced:sessionMustBeReplacedBeforeUse
+	                                                                     hasNoUsableSession:(state != SPMySQLConnected)]) {
+		[self _recordStoredEncodingWithoutTellingTheSession];
+		return;
+	}
+
 	[self setEncoding:previousEncoding];
 	[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
+}
+
+/**
+ * Puts the stored encoding back on record without sending anything.
+ *
+ * The four values `setEncoding:` keeps, set from the stored ones. What it does besides - the
+ * `SET NAMES`, and telling the escaper the session changed - is deliberately left out: this
+ * session has not changed, and will be replaced rather than told.
+ */
+- (void)_recordStoredEncodingWithoutTellingTheSession
+{
+	encoding = [[NSString alloc] initWithString:previousEncoding];
+	sqlInputEncoding = [[NSString alloc] initWithString:previousEncoding];
+	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[previousEncoding UTF8String]];
+	encodingUsesLatin1Transport = previousEncodingUsesLatin1Transport;
 }
 
 #pragma mark -
