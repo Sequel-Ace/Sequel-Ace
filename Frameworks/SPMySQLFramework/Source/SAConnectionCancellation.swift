@@ -329,11 +329,19 @@ public final class SAConnectionCancellation: NSObject {
     /// can have opened a transaction of its own: closing the session then rolls that work back
     /// without a word, while whoever opened it is still going, and what the mark guards against is
     /// not worth that. The mark stays, so the session is still replaced once nothing is open in it.
-    /// - Parameter sessionHasOpenTransaction: Whether the session reports a transaction open now.
+    /// A session the protocol cannot be trusted on is a different matter: a ping cut off before
+    /// its answer came may still get that answer, and the next statement would read it as its own
+    /// result. Keeping such a session to save a transaction would hand that transaction's caller
+    /// somebody else's reply. It goes, and the transaction is lost with it and reported like any
+    /// other loss.
+    /// - Parameters:
+    ///   - sessionHasOpenTransaction: Whether the session reports a transaction open now.
+    ///   - sessionIsProtocolInvalid: Whether an answer nobody read may still be on its way.
     /// - Returns: Whether to close it now.
-    @objc(markedSessionIsClosedNowWithOpenTransaction:)
-    public static func markedSessionIsClosedNow(sessionHasOpenTransaction: Bool) -> Bool {
-        return !sessionHasOpenTransaction
+    @objc(markedSessionIsClosedNowWithOpenTransaction:sessionIsProtocolInvalid:)
+    public static func markedSessionIsClosedNow(sessionHasOpenTransaction: Bool,
+                                                sessionIsProtocolInvalid: Bool) -> Bool {
+        return sessionIsProtocolInvalid || !sessionHasOpenTransaction
     }
 
     /// Whether putting a stored character set back only has to change the connection's record of it.

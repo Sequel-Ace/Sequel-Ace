@@ -1021,6 +1021,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	                // becomes known once its first statement has run.
 	                characterSetWasReported:NO];
 	sessionMustBeReplacedBeforeUse = NO;
+	sessionIsProtocolInvalid = NO;
 	sessionWasClosedWithoutItsProxy = NO;
 	sessionAutocommitAtConnect = (mySQLConnection->server_status & SERVER_STATUS_AUTOCOMMIT) != 0;
 
@@ -1832,6 +1833,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 - (void)_recordWorkAsCancelled
 {
 	lastQueryWasCancelled = YES;
+	// And nothing was affected, as far as anybody can say. The count still describes the statement
+	// before this one, and callers work out success from it: the content view's row deletion
+	// compares it with how many rows it meant to delete and, on a match, takes them off the screen
+	// without asking the error. A stopped DELETE would look like one that worked.
+	lastQueryAffectedRowCount = 0;
 	NSString *theMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 
 	// Work that had already sent something able to change data is not simply cancelled: giving

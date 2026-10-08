@@ -244,6 +244,9 @@ end_cleanup:
 	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
 	                                               pingSucceeded:keepAliveLastPingSuccess]) {
 		sessionMustBeReplacedBeforeUse = YES;
+		// Not merely better not reused: the answer to that ping may still arrive, so this session
+		// cannot be spoken on at all and goes even if a transaction is open in it.
+		sessionIsProtocolInvalid = YES;
 	}
 
 	// Clean up

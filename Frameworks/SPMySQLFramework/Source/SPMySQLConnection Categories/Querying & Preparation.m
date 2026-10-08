@@ -1222,7 +1222,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			// over in between can have opened a transaction of its own. The connection is held
 			// here, so the session's own answer is the one to go by. The mark is left standing:
 			// the session is still replaced once nothing is open in it.
-			if (![SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0]) {
+			if (![SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+			                                                         sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
 				return YES;
 			}
 

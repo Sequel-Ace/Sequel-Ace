@@ -256,12 +256,42 @@ final class SAConnectionCancellationTests: XCTestCase {
             "a session still in use is told, or it reads statements in one character set while the record says another")
     }
 
-    /// A mark acted on later does not close a session something else has opened a transaction in.
+    /// A mark acted on later does not close a session something else has opened a transaction in -
+    /// unless the protocol cannot be trusted on it, which no transaction is worth.
     func testAMarkDoesNotCloseASessionWithWorkGoingOnInIt() {
-        XCTAssertTrue(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: false),
+        XCTAssertTrue(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: false,
+                                                                        sessionIsProtocolInvalid: false),
                       "nothing is open, so the mark is acted on")
-        XCTAssertFalse(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: true),
+        XCTAssertFalse(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: true,
+                                                                         sessionIsProtocolInvalid: false),
                        "closing it would roll back work somebody is still doing")
+        XCTAssertTrue(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: true,
+                                                                        sessionIsProtocolInvalid: true),
+                      "a cut-off ping's answer would be read as the next statement's result, so it goes")
+        XCTAssertTrue(SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: false,
+                                                                        sessionIsProtocolInvalid: true))
+    }
+
+    /// A query given up on affects nothing, as far as anybody can say.
+    ///
+    /// The count still described the statement before it, and callers work out success from it:
+    /// the content view's row deletion compares it with how many rows it meant to delete and, on
+    /// a match, takes them off the screen without asking the error.
+    func testAQueryGivenUpOnAffectsNoRows() throws {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        connection.setValue(UInt64(7), forKey: "lastQueryAffectedRowCount")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 7, "what the statement before it did")
+
+        connection.perform(NSSelectorFromString("_recordWorkAsCancelled"))
+
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 0,
+                       "the stopped statement did not do that, and must not look as if it had")
     }
 
     /// Only work that used the session outside a transaction leaves it to be replaced.

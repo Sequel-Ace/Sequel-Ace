@@ -122,6 +122,10 @@
 	BOOL lastWorkWasAbandoned;
 	BOOL lastAbandonedWorkMayHaveChangedData;
 	BOOL sessionMustBeReplacedBeforeUse;
+	// And whether that session cannot be spoken on at all, rather than merely being better not
+	// reused: a ping cut off before its answer came may still get it, and the next statement would
+	// read that answer as its own result.
+	BOOL sessionIsProtocolInvalid;
 
 	// Whether the last session was closed while its proxy was left running
 	BOOL sessionWasClosedWithoutItsProxy;
