@@ -1279,7 +1279,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		if (!userTriggeredDisconnect) {
 			SPLog(@"SPMySQL Framework: query cancellation failed because connection failed");
 		}
-		return NO;
+		// A request another Stop for the same query already got the server to accept is still the
+		// answer. This caller not reaching the server - a connection limit, a refused login - says
+		// nothing about that one, and a failure reported here has the grace period close the
+		// socket of a query the server is already ending, rolling back a transaction open in its
+		// session. With no query named there is nothing to have been accepted.
+		return [inFlightQuery killOfGenerationWasAlreadyAccepted:generation];
 	}
 
 	NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];

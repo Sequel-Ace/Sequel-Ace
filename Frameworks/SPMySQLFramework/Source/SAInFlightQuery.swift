@@ -133,9 +133,7 @@ public final class SAInFlightQuery: NSObject {
         guard generation != 0 else {
             return SAKillReservation(serverThread: 0, killWasAlreadyAccepted: false)
         }
-        while generationOfKillUnderWay == generation {
-            condition.wait()
-        }
+        waitForTheKillOnItsWay(toGeneration: generation)
         if generationWithAcceptedKill == generation {
             return SAKillReservation(serverThread: 0, killWasAlreadyAccepted: true)
         }
@@ -144,6 +142,36 @@ public final class SAInFlightQuery: NSObject {
         }
         generationOfKillUnderWay = generation
         return SAKillReservation(serverThread: waitingServerThread, killWasAlreadyAccepted: false)
+    }
+
+    /// Whether the server has already accepted a request to kill this query, waiting for one that
+    /// is on its way.
+    ///
+    /// Asked by a caller that cannot send a request of its own - its side connection could not be
+    /// opened, because the server is at its connection limit or refused it. Reporting that as a
+    /// failed kill would have the grace period close the socket of a query the server is already
+    /// ending, and roll back a transaction open in its session.
+    /// - Parameter generation: The number of the query.
+    /// - Returns: Whether a request to kill it was accepted.
+    @objc(killOfGenerationWasAlreadyAccepted:)
+    public func killWasAlreadyAccepted(ofGeneration generation: UInt) -> Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        guard generation != 0 else {
+            return false
+        }
+        waitForTheKillOnItsWay(toGeneration: generation)
+        return generationWithAcceptedKill == generation
+    }
+
+    /// Waits for a kill request for this query that is on its way, so that what it got can be
+    /// read rather than guessed at. The lock is held on entry and let go of while waiting, as it
+    /// is for a query waiting to start.
+    /// - Parameter generation: The number of the query.
+    private func waitForTheKillOnItsWay(toGeneration generation: UInt) {
+        while generationOfKillUnderWay == generation {
+            condition.wait()
+        }
     }
 
     /// Gives back a reservation made by ``reservationForKill(ofGeneration:)``.

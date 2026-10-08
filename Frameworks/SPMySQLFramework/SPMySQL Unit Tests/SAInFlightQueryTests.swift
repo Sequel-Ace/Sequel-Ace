@@ -233,6 +233,33 @@ final class SAInFlightQueryTests: XCTestCase {
         XCTAssertTrue(later.killWasAlreadyAccepted)
     }
 
+    /// A caller that cannot reach the server at all reports what a request for the same query
+    /// already got, not a failure of its own - and waits for one still on its way.
+    func testAnAcceptedKillIsTheAnswerForACallerThatCannotAsk() {
+        inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
+        XCTAssertFalse(inFlightQuery.killWasAlreadyAccepted(ofGeneration: 8),
+                       "nothing has been accepted yet")
+
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
+
+        // While that request is on its way, the question is not answered early.
+        let answered = DispatchSemaphore(value: 0)
+        var accepted: Bool?
+        Thread.detachNewThread {
+            accepted = self.inFlightQuery.killWasAlreadyAccepted(ofGeneration: 8)
+            answered.signal()
+        }
+        XCTAssertEqual(answered.wait(timeout: .now() + 0.3), .timedOut)
+
+        inFlightQuery.endKill(forGeneration: 8, succeeded: true) {}
+        XCTAssertEqual(answered.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(accepted, true)
+
+        XCTAssertTrue(inFlightQuery.killWasAlreadyAccepted(ofGeneration: 8))
+        XCTAssertFalse(inFlightQuery.killWasAlreadyAccepted(ofGeneration: 9), "another query")
+        XCTAssertFalse(inFlightQuery.killWasAlreadyAccepted(ofGeneration: 0), "no query named")
+    }
+
     /// A request the server refused leaves the next one free to send its own.
     func testARequestAfterARefusedOneSendsItsOwn() {
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
