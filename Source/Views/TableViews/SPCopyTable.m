@@ -699,10 +699,17 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                             }
                         
                             if ([cellData isKindOfClass:nsDataClass]) {
-                                [rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:cellData]];
+                                NSString *escapedData = [mySQLConnection escapeAndQuoteData:cellData];
+                                if (!escapedData) {
+                                    NSBeep();
+                                    return nil;
+                                }
+                                [rowValues addObject:escapedData];
                             } else {
                                 // A value that could not be escaped would shift the ones after it
-                                // onto the wrong columns, so nothing is copied.
+                                // onto the wrong columns, so nothing is copied. Adding it with
+                                // -safeAddObject: is what hid that: it drops the value and keeps
+                                // the column, which is the same damage one row narrower.
                                 NSString *escapedValue = [mySQLConnection escapeAndQuoteString:[cellData description]];
                                 if (!escapedValue) {
                                     NSBeep();
@@ -713,9 +720,15 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                             break;
 
                         // GEOMETRY
-                        case 3:
-                            [rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:[cellData data]]];
+                        case 3: {
+                            NSString *escapedGeometry = [mySQLConnection escapeAndQuoteData:[cellData data]];
+                            if (!escapedGeometry) {
+                                NSBeep();
+                                return nil;
+                            }
+                            [rowValues addObject:escapedGeometry];
                             break;
+                        }
 
                         default:
                             NSBeep();
