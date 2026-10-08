@@ -55,11 +55,19 @@ import Foundation
     /// The indexes, into `columns`, of the columns forming the origin table's complete key.
     public let keyColumnIndexes: IndexSet
 
-    fileprivate init(database: String, table: String, columns: [String], keyColumnIndexes: IndexSet) {
+    /// The indexes, into `columns`, of the columns the origin table generates for itself.
+    ///
+    /// These stay in `columns` so that the row literals remain parallel to it, but the server
+    /// computes their values and rejects any attempt to assign them, so an UPDATE must leave
+    /// them out of `SET`.
+    public let generatedColumnIndexes: IndexSet
+
+    fileprivate init(database: String, table: String, columns: [String], keyColumnIndexes: IndexSet, generatedColumnIndexes: IndexSet) {
         self.database = database
         self.table = table
         self.columns = columns
         self.keyColumnIndexes = keyColumnIndexes
+        self.generatedColumnIndexes = generatedColumnIndexes
     }
 }
 
@@ -124,6 +132,8 @@ import Foundation
     ///
     /// Key columns are left out of `SET`: they are what the statement matches on, and assigning
     /// them their own value again is noise at best and a different row's identity at worst.
+    /// Generated columns are left out as well, for a blunter reason: the server computes them and
+    /// refuses a statement that assigns one.
     ///
     /// - Parameters:
     ///   - database: Database the rows came from, so the statement keeps naming it however far
@@ -134,16 +144,19 @@ import Foundation
     ///   - columns: Column names, in the order the literals of each row appear.
     ///   - keyColumnIndexes: Indexes into `columns` of the columns identifying a row, usually its
     ///     primary key.
+    ///   - generatedColumnIndexes: Indexes into `columns` of the columns the server generates, to
+    ///     be assigned by nobody. A generated column that is also a key column keeps matching
+    ///     rows in `WHERE`; it was never assignable in `SET` to begin with.
     ///   - rows: One array of SQL literals per row, each the same length as `columns`.
     /// - Returns: The statements, or `nil` if the rows cannot be identified, if every column is a
-    ///   key column and so nothing is left to set, or if a row is the wrong width.
-    @objc(updateStatementsForDatabase:table:columns:keyColumnIndexes:rows:)
-    public class func updateStatements(database: String?, table: String?, columns: [String], keyColumnIndexes: IndexSet, rows: [[String]]) -> String? {
+    ///   key or generated column and so nothing is left to set, or if a row is the wrong width.
+    @objc(updateStatementsForDatabase:table:columns:keyColumnIndexes:generatedColumnIndexes:rows:)
+    public class func updateStatements(database: String?, table: String?, columns: [String], keyColumnIndexes: IndexSet, generatedColumnIndexes: IndexSet, rows: [[String]]) -> String? {
         guard !columns.isEmpty, !rows.isEmpty else { return nil }
         guard rows.allSatisfy({ $0.count == columns.count }) else { return nil }
 
         let keyIndexes = keyColumnIndexes.filter { columns.indices.contains($0) }
-        let settableIndexes = columns.indices.filter { !keyColumnIndexes.contains($0) }
+        let settableIndexes = columns.indices.filter { !keyColumnIndexes.contains($0) && !generatedColumnIndexes.contains($0) }
         guard !keyIndexes.isEmpty, !settableIndexes.isEmpty else { return nil }
 
         let quotedTable = updateTargetName(database: database, table: table)
@@ -215,9 +228,15 @@ import Foundation
     /// one row source at all. Any of those returns `nil`, and the UPDATE copy must not be
     /// offered then.
     ///
+    /// `generatedColumns` names the origin table's generated columns, which the server computes
+    /// and refuses to be assigned. They are reported back as indexes rather than dropped,
+    /// because the caller's row literals are parallel to the projection and must stay that way;
+    /// only the `SET` clause has to skip them. A projection whose every non-key column is
+    /// generated leaves nothing to assign, and so cannot be updated at all.
+    ///
     /// - Returns: The origin, or `nil` if the rows cannot be updated safely.
-    @objc(updateOriginForFields:tableKeyColumns:)
-    public class func updateOrigin(forFields fields: [SAFieldOrigin], tableKeyColumns: [String]) -> SAUpdateCopyOrigin? {
+    @objc(updateOriginForFields:tableKeyColumns:generatedColumns:)
+    public class func updateOrigin(forFields fields: [SAFieldOrigin], tableKeyColumns: [String], generatedColumns: [String]) -> SAUpdateCopyOrigin? {
 
         guard !fields.isEmpty, !tableKeyColumns.isEmpty else { return nil }
 
@@ -244,20 +263,31 @@ import Foundation
             keyColumnIndexes.insert(index)
         }
 
-        // With nothing outside the key, there is nothing to assign.
-        guard keyColumnIndexes.count < fields.count else { return nil }
+        // The generated columns of the origin table, as positions in this projection. A
+        // generated column the projection left out simply has no position to report.
+        var generatedColumnIndexes = IndexSet()
+        for generatedColumn in generatedColumns {
+            if let index = names.firstIndex(of: generatedColumn) {
+                generatedColumnIndexes.insert(index)
+            }
+        }
 
-        return SAUpdateCopyOrigin(database: originDatabase, table: originTable, columns: names, keyColumnIndexes: keyColumnIndexes)
+        // With nothing outside the key and the generated columns, there is nothing to assign.
+        let settableCount = fields.indices.filter { !keyColumnIndexes.contains($0) && !generatedColumnIndexes.contains($0) }.count
+        guard settableCount > 0 else { return nil }
+
+        return SAUpdateCopyOrigin(database: originDatabase, table: originTable, columns: names, keyColumnIndexes: keyColumnIndexes, generatedColumnIndexes: generatedColumnIndexes)
     }
 
     /// The cheaper question menu validation asks: could these fields plausibly support an
     /// UPDATE copy, judged only from the projection's own metadata?
     ///
     /// Menu items validate on every display and must not talk to the server, so this cannot
-    /// require the origin table's complete key — establishing that in the query editor takes
-    /// an `information_schema` lookup, which `-updateOriginForFields:tableKeyColumns:` does
-    /// at copy time instead. An item that passes here can still be refused there; an item
-    /// that fails here can never succeed.
+    /// require the origin table's complete key, nor know which columns the origin table
+    /// generates — establishing either in the query editor takes an `information_schema`
+    /// lookup, which `-updateOriginForFields:tableKeyColumns:generatedColumns:` does at copy
+    /// time instead. An item that passes here can still be refused there; an item that fails
+    /// here can never succeed.
     @objc(updateCopyPlausibleForFields:)
     public class func updateCopyPlausible(forFields fields: [SAFieldOrigin]) -> Bool {
 

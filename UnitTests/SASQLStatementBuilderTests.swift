@@ -108,6 +108,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "people",
             columns: ["id", "name"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'Ada'"], ["2", "'Grace'"]]
         )
 
@@ -126,6 +127,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "t",
             columns: ["id", "a", "b"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'x'", "'y'"]]
         )
 
@@ -138,6 +140,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "t",
             columns: ["tenant", "id", "a"],
             keyColumnIndexes: IndexSet([0, 1]),
+            generatedColumnIndexes: IndexSet(),
             rows: [["7", "1", "'x'"]]
         )
 
@@ -152,6 +155,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "t",
             columns: ["k", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["NULL", "'x'"]]
         )
 
@@ -164,6 +168,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "t",
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "NULL"]]
         )
 
@@ -176,6 +181,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "we`ird",
             columns: ["i`d", "a`b"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'x'"]]
         )
 
@@ -188,6 +194,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: nil,
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'x'"]]
         )
 
@@ -203,6 +210,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "people",
             columns: ["id", "name"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'Ada'"]]
         )
 
@@ -216,6 +224,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "ta`ble",
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'x'"]]
         )
 
@@ -229,6 +238,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: nil,
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["1", "'x'"]]
         )
 
@@ -244,6 +254,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 table: "t",
                 columns: ["a", "b"],
                 keyColumnIndexes: IndexSet(),
+                generatedColumnIndexes: IndexSet(),
                 rows: [["'x'", "'y'"]]
             )
         )
@@ -256,6 +267,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 table: "t",
                 columns: ["a"],
                 keyColumnIndexes: IndexSet(integer: 9),
+                generatedColumnIndexes: IndexSet(),
                 rows: [["'x'"]]
             )
         )
@@ -269,6 +281,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 table: "t",
                 columns: ["tenant", "id"],
                 keyColumnIndexes: IndexSet([0, 1]),
+                generatedColumnIndexes: IndexSet(),
                 rows: [["7", "1"]]
             )
         )
@@ -281,6 +294,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 table: "t",
                 columns: [],
                 keyColumnIndexes: IndexSet(integer: 0),
+                generatedColumnIndexes: IndexSet(),
                 rows: [["1"]]
             )
         )
@@ -290,6 +304,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 table: "t",
                 columns: ["id", "a"],
                 keyColumnIndexes: IndexSet(integer: 0),
+                generatedColumnIndexes: IndexSet(),
                 rows: []
             )
         )
@@ -302,6 +317,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 table: "t",
                 columns: ["id", "a"],
                 keyColumnIndexes: IndexSet(integer: 0),
+                generatedColumnIndexes: IndexSet(),
                 rows: [["1", "'x'"], ["2"]]
             )
         )
@@ -391,7 +407,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"]))
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"], generatedColumns: []))
     }
 
     func testACompleteCompositeKeyYieldsTheKeyIndexes() {
@@ -405,7 +421,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"])
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"], generatedColumns: [])
 
         XCTAssertEqual(origin?.table, "people")
         XCTAssertEqual(origin?.columns, ["name", "id", "tenant"])
@@ -423,7 +439,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: nil,
             database: nil
         )
-        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"])!
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: [])!
 
         XCTAssertEqual(origin.database, "mydb")
 
@@ -432,6 +448,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: origin.table,
             columns: origin.columns,
             keyColumnIndexes: origin.keyColumnIndexes,
+            generatedColumnIndexes: origin.generatedColumnIndexes,
             rows: [["'Ada'", "1"]]
         )
 
@@ -450,7 +467,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: nil,
             database: nil
         )
-        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"])!
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: [])!
 
         XCTAssertEqual(origin.database, "B")
 
@@ -459,6 +476,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: origin.table,
             columns: origin.columns,
             keyColumnIndexes: origin.keyColumnIndexes,
+            generatedColumnIndexes: origin.generatedColumnIndexes,
             rows: [["1", "'Ada'"]]
         )
 
@@ -478,7 +496,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: "mydb"
         )
 
-        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"])
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"], generatedColumns: [])
 
         XCTAssertEqual(origin?.table, "people")
         XCTAssertEqual(origin?.columns, ["tenant", "name", "id"])
@@ -495,7 +513,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["a"]))
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["a"], generatedColumns: []))
     }
 
     /// `SELECT id AS a, id AS b FROM people` would assign to the same column twice, which the
@@ -511,7 +529,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"]))
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: []))
     }
 
     /// A column named like a key part that the projection's own metadata did not flag means
@@ -526,7 +544,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"]))
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: []))
     }
 
     func testAProjectionOfNothingButTheKeyYieldsNoUpdateOrigin() {
@@ -539,7 +557,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"]))
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["tenant", "id"], generatedColumns: []))
     }
 
     func testATableWithNoKeyYieldsNoUpdateOrigin() {
@@ -549,7 +567,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             database: nil
         )
 
-        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: []))
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: [], generatedColumns: []))
     }
 
     /// The caller produces the finished literal — quoting binary data needs the connection's
@@ -560,6 +578,7 @@ final class SASQLStatementBuilderTests: XCTestCase {
             table: "t",
             columns: ["id", "a"],
             keyColumnIndexes: IndexSet(integer: 0),
+            generatedColumnIndexes: IndexSet(),
             rows: [["X'0a1b'", "'x'"]]
         )
 
@@ -640,5 +659,138 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 )
             )
         )
+    }
+
+    // MARK: - Generated columns
+
+    /// The reported case, through the metadata shape a query result really carries:
+    /// `CREATE TABLE t (id INT PRIMARY KEY, a INT, b INT GENERATED ALWAYS AS (a+1) STORED)`
+    /// selected as `SELECT id, a, b`. Query metadata has no generated-column marker of its own,
+    /// so `b` survives into the projection; assigning it is what the server refuses, and so the
+    /// statement has to set `a` alone.
+    func testAGeneratedColumnOfAQueryResultIsNotAssigned() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("id", origin: "id", keyFlagged: true),
+                queryField("a", origin: "a"),
+                queryField("b", origin: "b"),
+            ],
+            table: nil,
+            database: nil
+        )
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: ["b"])!
+
+        // The column stays in the projection, so the row literals stay parallel to it.
+        XCTAssertEqual(origin.columns, ["id", "a", "b"])
+        XCTAssertEqual(origin.generatedColumnIndexes, IndexSet(integer: 2))
+
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: origin.database,
+            table: origin.table,
+            columns: origin.columns,
+            keyColumnIndexes: origin.keyColumnIndexes,
+            generatedColumnIndexes: origin.generatedColumnIndexes,
+            rows: [["1", "2", "3"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n")
+    }
+
+    /// A STORED generated column is allowed to be part of the primary key. It must go on
+    /// matching rows in `WHERE` — dropping it would widen the match — while still never being
+    /// assigned.
+    func testAGeneratedKeyColumnStillMatchesRowsWithoutBeingAssigned() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("id", origin: "id", keyFlagged: true),
+                queryField("a", origin: "a"),
+            ],
+            table: nil,
+            database: nil
+        )
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: ["id"])!
+
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: origin.database,
+            table: origin.table,
+            columns: origin.columns,
+            keyColumnIndexes: origin.keyColumnIndexes,
+            generatedColumnIndexes: origin.generatedColumnIndexes,
+            rows: [["1", "2"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n")
+    }
+
+    /// With the key on one side and generated columns on the other, there is no column left that
+    /// anybody is allowed to assign. Refusing the copy is the honest answer; emitting a statement
+    /// the server would reject is not.
+    func testAProjectionOfNothingButTheKeyAndGeneratedColumnsYieldsNoUpdateOrigin() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("id", origin: "id", keyFlagged: true),
+                queryField("b", origin: "b"),
+            ],
+            table: nil,
+            database: nil
+        )
+
+        XCTAssertNil(SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: ["b"]))
+    }
+
+    /// The origin table may generate a column the SELECT never asked for. It has no position in
+    /// this projection, so it has nothing to exclude and must not shift the indexes of the
+    /// columns that do.
+    func testAGeneratedColumnTheProjectionLeftOutChangesNothing() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                queryField("id", origin: "id", keyFlagged: true),
+                queryField("a", origin: "a"),
+            ],
+            table: nil,
+            database: nil
+        )
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: ["c"])!
+
+        XCTAssertEqual(origin.generatedColumnIndexes, IndexSet())
+
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: origin.database,
+            table: origin.table,
+            columns: origin.columns,
+            keyColumnIndexes: origin.keyColumnIndexes,
+            generatedColumnIndexes: origin.generatedColumnIndexes,
+            rows: [["1", "2"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n")
+    }
+
+    /// Table content metadata marks its generated columns, so they are dropped long before the
+    /// builder sees them and no column name is ever passed in. That path must keep producing
+    /// exactly what it did before generated columns were accounted for here at all.
+    func testTableContentMetadataNeedsNoGeneratedColumnNames() {
+        let fields = SASQLStatementBuilder.fieldOrigins(
+            fromFieldDefinitions: [
+                contentField("id", keyFlagged: true),
+                contentField("a"),
+            ],
+            table: "people",
+            database: "mydb"
+        )
+        let origin = SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: ["id"], generatedColumns: [])!
+
+        XCTAssertEqual(origin.generatedColumnIndexes, IndexSet())
+
+        let sql = SASQLStatementBuilder.updateStatements(
+            database: origin.database,
+            table: origin.table,
+            columns: origin.columns,
+            keyColumnIndexes: origin.keyColumnIndexes,
+            generatedColumnIndexes: origin.generatedColumnIndexes,
+            rows: [["1", "2"]]
+        )
+
+        XCTAssertEqual(sql, "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n")
     }
 }
