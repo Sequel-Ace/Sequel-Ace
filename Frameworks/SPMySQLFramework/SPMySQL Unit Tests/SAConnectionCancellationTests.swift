@@ -294,6 +294,38 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "the stopped statement did not do that, and must not look as if it had")
     }
 
+    /// A statement that never reached the server affects nothing either, whichever way out it took.
+    ///
+    /// Every early return in `_queryString:` - refused for uncommitted work the connection lost,
+    /// stopped before it was sent, stopped while the connection was being checked, not allowed to
+    /// send at all - used to leave the count describing the statement before it.
+    func testAStatementThatNeverRanAffectsNoRows() throws {
+        let connection = try XCTUnwrap(newLocalConnection(), "no local MySQL connection configured")
+        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
+        defer { connection.disconnect() }
+
+        let database = "sa_rows_\(UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_"))"
+        connection.queryString("CREATE DATABASE \(database)")
+        try XCTSkipIf(connection.queryErrored(), "cannot create a database for the regression")
+        defer { connection.queryString("DROP DATABASE IF EXISTS \(database)") }
+        connection.queryString("USE \(database)")
+        connection.queryString("CREATE TABLE t (id INT PRIMARY KEY)")
+        try XCTSkipIf(connection.queryErrored(), "cannot create a table for the regression")
+
+        connection.queryString("INSERT INTO t (id) VALUES (1), (2), (3)")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 3, "three rows went in")
+
+        // A statement the user stopped before it was sent: the stop is recorded against the next
+        // query's number, which is the shape the early returns take.
+        connection.setValue(true, forKey: "userTriggeredDisconnect")
+        defer { connection.setValue(false, forKey: "userTriggeredDisconnect") }
+
+        XCTAssertNil(connection.queryString("DELETE FROM t WHERE id IN (1, 2, 3)"),
+                     "the statement did not run")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 0,
+                       "and must not report what the INSERT before it did, which the row deletion would read as success")
+    }
+
     /// Only work that used the session outside a transaction leaves it to be replaced.
     func testOnlyWorkThatUsedTheSessionOutsideATransactionLeavesItToBeReplaced() {
         XCTAssertFalse(SAConnectionCancellation.replacesSessionWhenWorkIsGivenUp(sessionUse: .untouched))

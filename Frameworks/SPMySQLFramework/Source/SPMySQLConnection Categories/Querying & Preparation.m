@@ -421,6 +421,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
+	// And nothing is affected until this statement says so. Every way out of here that is not a
+	// statement the server answered - refused for uncommitted work it lost, stopped before it was
+	// sent, stopped while the connection was being checked, not allowed to send at all - would
+	// otherwise leave the count describing the statement before this one. Callers work success
+	// out from it: the content view's row deletion compares it with how many rows it meant to
+	// delete and, on a match, takes them off the screen without asking the error.
+	lastQueryAffectedRowCount = 0;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
