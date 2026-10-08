@@ -382,9 +382,10 @@ final class SASQLitePinnedTableGroupTests: XCTestCase {
         manager.createPinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "B")
         manager.setPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A", isCollapsed: true)
 
-        XCTAssertFalse(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"))
-        XCTAssertFalse(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "  "))
-        XCTAssertTrue(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "Renamed"))
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"), .duplicateName)
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "  "), .invalidName)
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "Missing", toGroupName: "C"), .invalidName)
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "Renamed"), .renamed)
 
         for candidate in [manager, makeManager()] {
             XCTAssertEqual(sections(candidate), ["B": [], "Renamed": ["orders"]])
@@ -421,15 +422,18 @@ final class SASQLitePinnedTableGroupTests: XCTestCase {
     func testRefusedGroupWritesAreNotPublished() throws {
         let seeding = makeManager()
         seeding.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "A")
+        seeding.createPinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "Taken")
         try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: storePath)
 
         let manager = makeManager()
         XCTAssertTrue(manager.isPersistent)
-        XCTAssertFalse(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"))
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"), .storageFailure)
+        // A taken name is still reported as such, not as a storage failure.
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "Taken"), .duplicateName)
         XCTAssertFalse(manager.deletePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A"))
         XCTAssertFalse(manager.setPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A", isCollapsed: true))
         XCTAssertFalse(manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: ""))
-        XCTAssertEqual(sections(manager), ["A": ["orders"]])
+        XCTAssertEqual(sections(manager), ["A": ["orders"], "Taken": []])
         XCTAssertFalse(manager.isPinnedTableGroupCollapsed(hostName: "conn", databaseName: "db", groupName: "A"))
         XCTAssertEqual(manager.problems.firstProblem?.kind, .cannotSave)
     }
@@ -439,7 +443,7 @@ final class SASQLitePinnedTableGroupTests: XCTestCase {
         let manager = SQLitePinnedTableManager(databasePath: nil, prefs: prefs)
         XCTAssertTrue(manager.movePinnedTables(hostName: "conn", databaseName: "db", tableNames: ["orders"], toGroupName: "A"))
         XCTAssertEqual(sections(manager), ["A": ["orders"]])
-        XCTAssertTrue(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"))
+        XCTAssertEqual(manager.renamePinnedTableGroup(hostName: "conn", databaseName: "db", groupName: "A", toGroupName: "B"), .renamed)
         XCTAssertEqual(sections(manager), ["B": ["orders"]])
     }
 

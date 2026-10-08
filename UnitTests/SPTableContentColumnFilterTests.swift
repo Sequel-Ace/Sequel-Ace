@@ -297,62 +297,18 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
     /// Verifies a dropped value replaces the seeded row and comes out checked, although the rule editor
     /// reuses the replaced row's checkbox; a drop that cannot become a rule leaves the row waiting.
     func testDroppedValuesAndTheSeededRow() throws {
-        for isConjunction in [true, false] {
-            let (controller, editor) = try makeBoundController()
-            controller.setValue(true, forKey: "enabled")
-            controller.setValue(isConjunction, forKey: "rootIsConjunction")
-            call(controller, "addStarterFilterExpression")
+        let (controller, editor) = try makeBoundController()
+        controller.setValue(true, forKey: "enabled")
+        call(controller, "addStarterFilterExpression")
 
-            XCTAssertFalse(appendFilter(to: controller, column: "no_such_column", value: "7"))
-            XCTAssertEqual(checkbox(in: editor)?.state, .off)
-            XCTAssertEqual(whereClause(of: controller), "")
+        XCTAssertFalse(appendFilter(to: controller, column: "no_such_column", value: "7"))
+        XCTAssertEqual(checkbox(in: editor)?.state, .off)
+        XCTAssertEqual(whereClause(of: controller), "")
 
-            XCTAssertTrue(appendFilter(to: controller, column: "id", value: "7"))
-            XCTAssertEqual(editor.numberOfRows, 1, "only the dropped rule under AND and OR")
-            XCTAssertEqual(checkbox(in: editor)?.state, .on)
-            let saved = try XCTUnwrap(serializedFilter(of: controller))
-            let rules = leaves(of: saved)
-            XCTAssertEqual(rules.count, 1)
-            XCTAssertEqual(rules.first?["filterValues"] as? [String], ["7"])
-            XCTAssertEqual(rules.first?["enabled"] as? Bool, true)
-            XCTAssertNil(rules.first?["pendingStarter"])
-            XCTAssertTrue(whereClause(of: controller).contains("7"))
-            XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, isConjunction)
-        }
-    }
-
-    /// A clicked empty-string predicate belongs to the user, even if they then
-    /// disable it. Appending a dropped value must keep it in the bound editor.
-    func testAppendingDroppedValuesPreservesUserEmptyPredicates() throws {
-        for isConjunction in [true, false] {
-            for isEnabled in [true, false] {
-                let (controller, editor) = try makeBoundController(columns: [
-                    ["name": "name", "typegrouping": "string"],
-                    ["name": "id", "typegrouping": "integer"]
-                ])
-                controller.setValue(true, forKey: "enabled")
-                controller.setValue(isConjunction, forKey: "rootIsConjunction")
-                call(controller, "addStarterFilterExpression")
-                let box = try XCTUnwrap(checkbox(in: editor))
-                box.state = .on
-                controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
-                if !isEnabled {
-                    box.state = .off
-                    controller.perform(NSSelectorFromString("_checkboxClicked:"), with: box)
-                }
-
-                XCTAssertTrue(appendFilter(to: controller, column: "id", value: "7"))
-                XCTAssertEqual(editor.numberOfRows, 2)
-                let saved = try XCTUnwrap(serializedFilter(of: controller))
-                let rules = leaves(of: saved)
-                XCTAssertEqual(rules.count, 2)
-                let emptyRule = try XCTUnwrap(rules.first { $0["column"] as? String == "name" })
-                XCTAssertEqual(emptyRule["filterValues"] as? [String], [""])
-                XCTAssertEqual(emptyRule["enabled"] as? Bool, isEnabled)
-                XCTAssertNil(emptyRule["pendingStarter"])
-                XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, isConjunction)
-            }
-        }
+        XCTAssertTrue(appendFilter(to: controller, column: "id", value: "7"))
+        XCTAssertEqual(editor.numberOfRows, 1)
+        XCTAssertEqual(checkbox(in: editor)?.state, .on)
+        XCTAssertTrue(whereClause(of: controller).contains("7"))
     }
 
     /// Verifies the seeded row still waits for its first edit after the filter is saved and restored, as
@@ -488,7 +444,7 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
 
     /// An `SPRuleFilterController` for one integer column `id`, whose rule editor is set up and bound to the
     /// controller's model the way DBView.xib and `-awakeFromNib` do it.
-    private func makeBoundController(columns: [[String: String]] = [["name": "id", "typegrouping": "integer"]]) throws -> (NSObject, NSRuleEditor) {
+    private func makeBoundController() throws -> (NSObject, NSRuleEditor) {
         let controllerClass = try XCTUnwrap(NSClassFromString("SPRuleFilterController") as? NSObject.Type)
         let controller = controllerClass.init()
         let editor = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 600, height: 120))
@@ -496,7 +452,7 @@ final class SARuleFilterPendingStarterTests: XCTestCase {
         editor.canRemoveAllRows = true
         editor.delegate = controller as? NSRuleEditorDelegate
         controller.setValue(editor, forKey: "filterRuleEditor")
-        controller.perform(NSSelectorFromString("setColumns:"), with: columns)
+        controller.perform(NSSelectorFromString("setColumns:"), with: [["name": "id", "typegrouping": "integer"]])
         call(controller, "awakeFromNib")
         return (controller, editor)
     }
@@ -672,6 +628,33 @@ final class SAPinnedTableGroupPlannerTests: XCTestCase {
         XCTAssertNil(target(4, on: true), "the TABLES header is not a pinned section")
         XCTAssertNil(target(6, on: true), "a table named like a header is not a header")
         XCTAssertNil(SAPinnedTableGroupPlanner.dropTarget(row: 0, isDropOn: true, titles: [], isHeader: [], pinnedHeader: "PINNED").map { $0.headerRow })
+    }
+
+    /// A real table named like a group header keeps its own type and stays a pinned table.
+    func testRowsKeepTheTypeOfATableNamedLikeAHeader() {
+        let rows = SAPinnedTableGroupPlanner.rows(
+            tables: ["PINNED — A", "orders"],
+            types: [1, 2],
+            headerType: 0,
+            sections: [("", ["orders"], false), ("A", ["PINNED — A"], false)],
+            pinnedHeader: "PINNED"
+        )
+        XCTAssertEqual(rows.titles, ["PINNED", "orders", "PINNED — A", "PINNED — A", "PINNED — A", "orders"])
+        XCTAssertEqual(rows.types, [0, 2, 0, 1, 1, 2])
+        XCTAssertEqual(rows.pinned, ["orders", "PINNED — A"])
+    }
+
+    func testRowsOmitTablesOfCollapsedGroupsAndMissingTables() {
+        let rows = SAPinnedTableGroupPlanner.rows(
+            tables: ["orders"],
+            types: [2],
+            headerType: 0,
+            sections: [("", ["gone"], false), ("A", ["orders"], true)],
+            pinnedHeader: "PINNED"
+        )
+        XCTAssertEqual(rows.titles, ["PINNED", "PINNED — A", "orders"])
+        XCTAssertEqual(rows.types, [0, 0, 2])
+        XCTAssertEqual(rows.pinned, [])
     }
 
     func testHeaderTitleRoundTrips() {

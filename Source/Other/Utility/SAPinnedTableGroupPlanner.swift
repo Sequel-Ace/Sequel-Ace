@@ -81,6 +81,43 @@ enum SAPinnedTableGroupPlanner {
         return nil
     }
 
+    /// The rows of the table list with the pinned sections on top: each section's header
+    /// followed by its tables unless collapsed, then the regular tables.
+    ///
+    /// The type of a pinned table is looked up among the regular tables only, never among
+    /// the headers, so a real table named like a header keeps its own type.
+    ///
+    /// - Parameters:
+    ///   - tables: The regular tables, in list order.
+    ///   - types: The type of each regular table.
+    ///   - headerType: The type header rows get.
+    ///   - sections: The pinned sections in display order.
+    ///   - pinnedHeader: The localized "PINNED" header.
+    /// - Returns: The titles and types of all rows, and the pinned tables that are shown.
+    static func rows(tables: [String], types: [Int], headerType: Int, sections: [(groupName: String, tableNames: [String], isCollapsed: Bool)], pinnedHeader: String) -> (titles: [String], types: [Int], pinned: [String]) {
+        var typesByName: [String: Int] = [:]
+        for (name, type) in zip(tables, types) {
+            typesByName[name] = type
+        }
+        var titles: [String] = []
+        var rowTypes: [Int] = []
+        var pinned: [String] = []
+        for section in sections {
+            titles.append(headerTitle(pinnedHeader: pinnedHeader, groupName: section.groupName))
+            rowTypes.append(headerType)
+            if section.isCollapsed { continue }
+            for name in section.tableNames {
+                guard let type = typesByName[name] else { continue }
+                titles.append(name)
+                rowTypes.append(type)
+                pinned.append(name)
+            }
+        }
+        titles.append(contentsOf: tables)
+        rowTypes.append(contentsOf: types)
+        return (titles, rowTypes, pinned)
+    }
+
     /// Case-insensitive and locale-aware first; names that compare equal that way
     /// (`Alpha`, `alpha`) are ordered by the case-sensitive comparison and finally by
     /// their code points, so the order never depends on the order they arrive in.

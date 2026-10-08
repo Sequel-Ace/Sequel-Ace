@@ -4473,5 +4473,11 @@
 /* Title of the alert shown when a group of pinned tables could not be renamed */
 "The group could not be renamed." = "The group could not be renamed.";
 
-/* Message of the alert shown when a group of pinned tables could not be renamed */
-"Another group may already have this name." = "Another group may already have this name.";
+/* Message of the alert shown when renaming a group of pinned tables to the name of another group */
+"Another group already has this name." = "Another group already has this name.";
+
+/* Message of the alert shown when renaming a group of pinned tables with an unusable name */
+"The name is empty or the group no longer exists." = "The name is empty or the group no longer exists.";
+
+/* Message of the alert shown when the store refused to save a renamed group of pinned tables */
+"The pinned tables could not be saved. Please try again." = "The pinned tables could not be saved. Please try again.";

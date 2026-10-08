@@ -191,10 +191,18 @@ import AppKit
                 initialName: groupName
               ) else { return }
 
-        if !manager.renamePinnedTableGroup(hostName: hostName, databaseName: databaseName, groupName: groupName, toGroupName: newName) {
+        let result = manager.renamePinnedTableGroup(hostName: hostName, databaseName: databaseName, groupName: groupName, toGroupName: newName)
+        if result != .renamed {
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("The group could not be renamed.", comment: "Title of the alert shown when a group of pinned tables could not be renamed")
-            alert.informativeText = NSLocalizedString("Another group may already have this name.", comment: "Message of the alert shown when a group of pinned tables could not be renamed")
+            switch result {
+            case .duplicateName:
+                alert.informativeText = NSLocalizedString("Another group already has this name.", comment: "Message of the alert shown when renaming a group of pinned tables to the name of another group")
+            case .invalidName:
+                alert.informativeText = NSLocalizedString("The name is empty or the group no longer exists.", comment: "Message of the alert shown when renaming a group of pinned tables with an unusable name")
+            default:
+                alert.informativeText = NSLocalizedString("The pinned tables could not be saved. Please try again.", comment: "Message of the alert shown when the store refused to save a renamed group of pinned tables")
+            }
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
             alert.runModal()
         }
@@ -256,7 +264,35 @@ import AppKit
     }
 }
 
+/// The rows of the table list once the pinned sections are on top.
+@objc(SAPinnedTableRows) final class SAPinnedTableRows: NSObject {
+    @objc let titles: [String]
+    @objc let types: [NSNumber]
+    /// The pinned tables that are shown (those of collapsed groups are not).
+    @objc let pinnedTables: [String]
+
+    init(titles: [String], types: [Int], pinnedTables: [String]) {
+        self.titles = titles
+        self.types = types.map { NSNumber(value: $0) }
+        self.pinnedTables = pinnedTables
+        super.init()
+    }
+}
+
 extension SAPinnedTableGroupsController {
+
+    /// Puts the pinned sections on top of the regular tables.
+    @objc(rowsForTables:types:sections:pinnedHeader:)
+    static func rows(forTables tables: [String], types: [NSNumber], sections: [SAPinnedTableSection], pinnedHeader: String) -> SAPinnedTableRows {
+        let result = SAPinnedTableGroupPlanner.rows(
+            tables: tables,
+            types: types.map { $0.intValue },
+            headerType: Int(SPTableTypeNone.rawValue),
+            sections: sections.map { ($0.groupName, $0.tableNames, $0.isCollapsed) },
+            pinnedHeader: pinnedHeader
+        )
+        return SAPinnedTableRows(titles: result.titles, types: result.types, pinnedTables: result.pinned)
+    }
 
     /// The pasteboard type of tables dragged to be pinned or moved between groups.
     @objc static let pinnedTableType = "com.sequel-ace.pasteboard.pinned-table"

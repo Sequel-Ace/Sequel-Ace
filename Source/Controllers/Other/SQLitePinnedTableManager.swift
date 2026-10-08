@@ -522,6 +522,17 @@ import OSLog
 
 // MARK: - Pinned table groups
 
+/// The outcome of renaming a group of pinned tables.
+enum SAPinnedGroupRenameResult: Equatable {
+    case renamed
+    /// Another group of the database already has the new name.
+    case duplicateName
+    /// The new name is empty or the group does not exist.
+    case invalidName
+    /// The store refused the write; nothing was changed.
+    case storageFailure
+}
+
 /// One section of the pinned tables: the global section (empty `groupName`) or a
 /// named group, with its tables in display order.
 @objc(SAPinnedTableSection) final class SAPinnedTableSection: NSObject {
@@ -726,23 +737,28 @@ extension SQLitePinnedTableManager {
         return movePinnedTables(hostName: hostName, databaseName: databaseName, tableNames: [], toGroupName: group)
     }
 
-    /// Renames a group, keeping its tables and collapse state. Returns `false` when
-    /// the group does not exist, the new name is empty or taken, or the store refused it.
-    @objc(renamePinnedTableGroupWithHostName:databaseName:groupName:toGroupName:)
-    @discardableResult
-    func renamePinnedTableGroup(hostName: String, databaseName: String, groupName: String, toGroupName newGroupName: String) -> Bool {
+    /// Renames a group, keeping its tables and collapse state.
+    ///
+    /// - Returns: `.renamed` on success (also when the name is unchanged), `.duplicateName`
+    ///   when another group already has the new name, `.invalidName` for an empty name or
+    ///   an unknown group, and `.storageFailure` when the store refused the write; nothing
+    ///   changes in memory in the last three cases.
+    func renamePinnedTableGroup(hostName: String, databaseName: String, groupName: String, toGroupName newGroupName: String) -> SAPinnedGroupRenameResult {
         let group = SAPinnedTableGroupPlanner.normalizedGroupName(groupName)
         let newGroup = SAPinnedTableGroupPlanner.normalizedGroupName(newGroupName)
         guard group.isNotEmpty, newGroup.isNotEmpty else {
-            return false
+            return .invalidName
         }
         return stateLock.withLock {
             let existing = groupState.groupNames(hostName: hostName, databaseName: databaseName)
-            guard existing.contains(group), group == newGroup || !existing.contains(newGroup) else {
-                return false
+            guard existing.contains(group) else {
+                return .invalidName
+            }
+            guard group == newGroup || !existing.contains(newGroup) else {
+                return .duplicateName
             }
             guard group != newGroup else {
-                return true
+                return .renamed
             }
             guard writeLocked({ db in
                 try db.executeUpdate("UPDATE PinnedTableGroups SET groupName=? WHERE hostName=? AND databaseName=? AND groupName=?",
@@ -750,10 +766,10 @@ extension SQLitePinnedTableManager {
                 try db.executeUpdate("UPDATE PinnedTables SET groupName=? WHERE hostName=? AND databaseName=? AND groupName=?",
                         values: [newGroup, hostName, databaseName, group])
             }) else {
-                return false
+                return .storageFailure
             }
             groupState.renameGroup(group, to: newGroup, hostName: hostName, databaseName: databaseName)
-            return true
+            return .renamed
         }
     }
 
