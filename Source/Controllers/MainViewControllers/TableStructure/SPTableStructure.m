@@ -1471,7 +1471,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  * Returns a dictionary describing the source of the table to be used for printing purposes. The object accessible
  * via the key 'structure' is an array of the tables fields, where the first element is always the field names
  * and each subsequent element is the field data. This is also true for the table's indexes, which are accessible
- * via the key 'indexes'. An array whose query failed has no field names at all.
+ * via the key 'indexes'. An array whose query failed has no field names at all, and a structure
+ * query that failed or was stopped returns both arrays empty without asking for the indexes.
  * The table is the one selected in the tables list: after a load that was stopped or failed, the one recorded
  * here can still be the table shown before.
  */
@@ -1490,6 +1491,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSString *databaseName = [tableDocumentInstance database];
 
 	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [printedTable backtickQuotedString]] assertingDatabase:databaseName];
+
+	// Without the columns there is nothing to print, so the indexes are not asked for either. On a
+	// connection whose route has gone, asking would start a second wait - after the user has
+	// already pressed Stop on the first.
+	if (!structureQueryResult || [mySQLConnection queryErrored] || [mySQLConnection lastQueryWasCancelled]) {
+		return @{@"structure": @[], @"indexes": @[]};
+	}
+
 	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [printedTable backtickQuotedString]] assertingDatabase:databaseName];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
