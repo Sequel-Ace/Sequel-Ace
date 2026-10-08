@@ -509,6 +509,75 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         }
     }
 
+    func testCancelledAttemptDoesNotPresentMFADialog() {
+        let check = {
+            XCTAssertTrue(Thread.isMainThread)
+            var checkedLiveness = false
+            let token = AWSMFATokenDialog.promptForMFAToken(
+                profile: "offline-mfa", mfaSerial: "offline-mfa-device", parentWindow: nil,
+                shouldContinue: {
+                    XCTAssertTrue(Thread.isMainThread)
+                    checkedLiveness = true
+                    return false
+                }
+            )
+            XCTAssertTrue(checkedLiveness)
+            XCTAssertNil(token)
+        }
+        if Thread.isMainThread { check() } else { DispatchQueue.main.sync(execute: check) }
+    }
+
+    func testBackgroundTokenGenerationReturnsBeforeMainQueueCallback() throws {
+        let runOnMain: () throws -> Void = {
+            let credentialsContents = """
+            [default]
+            aws_access_key_id = AKIADEFAULT0000000000
+            aws_secret_access_key = offline-test-secret
+            """
+
+            try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+                var returnedFromMethod = false
+                var callbackCalled = false
+                var token: String?
+                var callbackError: NSError?
+
+                AWSIAMAuthManager.generateAuthTokenInBackground(
+                    hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+                    port: 3306,
+                    username: "db_admin",
+                    region: nil,
+                    profile: nil,
+                    parentWindow: nil
+                ) { result, error in
+                    XCTAssertTrue(Thread.isMainThread)
+                    XCTAssertTrue(returnedFromMethod, "The API must return before invoking its callback")
+                    token = result
+                    callbackError = error
+                    callbackCalled = true
+                }
+
+                returnedFromMethod = true
+                XCTAssertFalse(callbackCalled, "Completion should be queued after the method returns")
+
+                let deadline = Date().addingTimeInterval(5)
+                while !callbackCalled && Date() < deadline {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+
+                XCTAssertTrue(callbackCalled, "Expected the main-queue completion")
+                XCTAssertNil(callbackError)
+                XCTAssertTrue(token?.contains("DBUser=db_admin") == true)
+                XCTAssertTrue(token?.contains("X-Amz-Credential=AKIADEFAULT0000000000") == true)
+            }
+        }
+
+        if Thread.isMainThread {
+            try runOnMain()
+        } else {
+            try DispatchQueue.main.sync(execute: runOnMain)
+        }
+    }
+
     func testGenerateAuthTokenUsesDefaultProfileWhenProvidedProfileIsWhitespace() throws {
         let credentialsContents = """
         [default]
@@ -1173,6 +1242,200 @@ final class AWSSSOClientTests: XCTestCase {
             from: try AWSSSOClient.parseRoleCredentials(fromJSON: Data(json.utf8))
         )
     }
+
+    func testFetchRoleCredentialsSendsEncodedGETAndBearerHeader() async throws {
+        let session = makeOfflineSession()
+        defer { session.invalidateAndCancel() }
+        let credentials = try await AWSSSOClient.fetchRoleCredentials(
+            accountID: "123456789012 +&/?",
+            roleName: "Developer +&/Access",
+            accessToken: "offline-test-bearer",
+            region: "eu-west-1",
+            session: session
+        )
+
+        XCTAssertEqual(credentials.accessKeyId, "ASIAOFFLINE000000000")
+        XCTAssertEqual(credentials.secretAccessKey, "offline-secret")
+        XCTAssertEqual(credentials.sessionToken, "offline-session-token")
+        XCTAssertEqual(credentials.expiration, Date(timeIntervalSince1970: 4_102_444_800))
+    }
+
+    func testFetchRoleCredentialsMapsPortalErrorsAndTransportFailures() async {
+        let cases: [(String, AWSSSOClientError)] = [
+            ("expired", .tokenExpired),
+            ("denied", .accessDenied),
+            ("malformed", .invalidResponse),
+            ("timeout", .requestTimeout),
+            ("network-failure", .networkFailure)
+        ]
+
+        for (roleName, expectedError) in cases {
+            let session = makeOfflineSession()
+            do {
+                _ = try await AWSSSOClient.fetchRoleCredentials(
+                    accountID: "123456789012",
+                    roleName: roleName,
+                    accessToken: "offline-test-bearer",
+                    region: "eu-west-1",
+                    session: session
+                )
+                XCTFail("Expected \(expectedError) for \(roleName)")
+            } catch let error as AWSSSOClientError {
+                XCTAssertEqual(error, expectedError, "Unexpected error for \(roleName)")
+            } catch {
+                XCTFail("Unexpected error for \(roleName): \(error)")
+            }
+            session.invalidateAndCancel()
+        }
+    }
+
+    func testResolveCredentialsUsesSessionAndLegacyCacheKeysAndSSORegion() async throws {
+        let config = """
+        [sso-session modern-org]
+        sso_start_url = https://modern.awsapps.com/start
+        sso_region = eu-west-1
+
+        [profile modern]
+        sso_session = modern-org
+        sso_account_id = 123456789012
+        sso_role_name = DeveloperAccess
+        region = us-east-1
+
+        [profile legacy]
+        sso_start_url = https://legacy.awsapps.com/start
+        sso_region = eu-west-1
+        sso_account_id = 123456789012
+        sso_role_name = ReadOnly
+        region = us-east-1
+        """
+
+        var modernProfile: AWSCredentials?
+        var legacyProfile: AWSCredentials?
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: config) { _, _ in
+            modernProfile = try AWSCredentials(profile: "modern")
+            legacyProfile = try AWSCredentials(profile: "legacy")
+        }
+
+        let modern = try XCTUnwrap(modernProfile)
+        let legacy = try XCTUnwrap(legacyProfile)
+        let cacheDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SequelAce-SSOOfflineCache-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: cacheDirectory) }
+
+        for cacheKey in ["modern-org", "https://legacy.awsapps.com/start"] {
+            let token = """
+            { "accessToken": "offline-test-bearer", "expiresAt": "2999-01-01T00:00:00Z" }
+            """
+            try token.write(
+                to: cacheDirectory.appendingPathComponent(AWSSSOClient.cacheFileName(forKey: cacheKey)),
+                atomically: true,
+                encoding: .utf8
+            )
+        }
+
+        for profile in [modern, legacy] {
+            let session = makeOfflineSession()
+            defer { session.invalidateAndCancel() }
+            let resolved = try await AWSSSOClient.resolveCredentials(
+                for: profile,
+                cacheDirectory: cacheDirectory.path,
+                session: session
+            )
+            XCTAssertEqual(resolved.accessKeyId, "ASIAOFFLINE000000000")
+            XCTAssertEqual(resolved.sessionToken, "offline-session-token")
+        }
+    }
+
+    private func makeOfflineSession() -> URLSession {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SAOfflineSSOURLProtocol.self]
+        return URLSession(configuration: configuration)
+    }
+}
+
+/// A fail-closed URLProtocol fixture. Its response is selected from request data,
+/// so each URLSession has isolated behavior and no process-wide mutable fixture state.
+private final class SAOfflineSSOURLProtocol: URLProtocol {
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              request.httpMethod == "GET",
+              url.scheme == "https",
+              url.host == "portal.sso.eu-west-1.amazonaws.com",
+              components.path == "/federation/credentials",
+              request.httpBody == nil,
+              request.value(forHTTPHeaderField: "x-amz-sso_bearer_token") == "offline-test-bearer",
+              !url.absoluteString.contains("offline-test-bearer") else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        guard query["account_id"] != nil, query["role_name"] != nil else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        let roleName = query["role_name"] ?? ""
+        let rawQuery = components.percentEncodedQuery ?? ""
+        switch roleName {
+        case "timeout":
+            client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
+        case "network-failure":
+            client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
+        case "expired":
+            respond(statusCode: 401, body: Data(), url: url)
+        case "denied":
+            respond(statusCode: 403, body: Data(), url: url)
+        case "malformed":
+            respond(statusCode: 200, body: Data("not-json".utf8), url: url)
+        default:
+            let validEncodedQuery: Bool
+            if roleName == "Developer +&/Access" {
+                validEncodedQuery = query["account_id"] == "123456789012 +&/?"
+                    && rawQuery.contains("%2B") && rawQuery.contains("%26")
+            } else {
+                validEncodedQuery = query["account_id"] == "123456789012"
+                    && ["DeveloperAccess", "ReadOnly"].contains(roleName)
+            }
+            guard validEncodedQuery else {
+                respond(statusCode: 400, body: Data(), url: url)
+                return
+            }
+            let body = Data("""
+            { "roleCredentials": {
+              "accessKeyId": "ASIAOFFLINE000000000",
+              "secretAccessKey": "offline-secret",
+              "sessionToken": "offline-session-token",
+              "expiration": 4102444800000
+            } }
+            """.utf8)
+            respond(statusCode: 200, body: body, url: url)
+        }
+    }
+
+    override func stopLoading() {}
+
+    private func respond(statusCode: Int, body: Data, url: URL) {
+        guard let response = HTTPURLResponse(
+            url: url,
+            statusCode: statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "application/json"]
+        ) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
 }
 
 private enum AWSTestEnvironment {
@@ -1539,7 +1802,8 @@ final class AWSLoginCredentialsRenewalTests: XCTestCase {
                 username: "db_admin",
                 region: nil,
                 profile: "team dev",
-                parentWindow: nil
+                parentWindow: nil,
+                shouldContinue: { true }
             ) { token, error in
                 XCTAssertNil(token)
                 completionRanOnMainThread = Thread.isMainThread

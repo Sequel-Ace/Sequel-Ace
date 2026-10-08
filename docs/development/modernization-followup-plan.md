@@ -717,8 +717,11 @@ what is actually next.
    `defaultTransport` back to Distributed Objects and the assistant now falls
    back on its own when the socket never reached the app. Deleting DO (#2623)
    would delete both that rollback and that fallback, so it cannot merge until
-   the socket is default again and has soaked for real — and the root cause of
-   #2689 is still unknown, so that is not the next release. The last five
+   the socket is default again and has soaked for real. The root cause of
+   #2689 is now known — the peer check required the assistant's product name
+   as its code-signing identifier, which only a development build carries —
+   and is fixed separately; re-flipping still waits on a shipped build proving
+   it. The last five
    accepted build warnings stay until it does.
 3. **Warnings residue** (optional, small) — the ten untracked lines listed in
    the state section: three xib binding transformers to

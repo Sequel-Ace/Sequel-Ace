@@ -1,3 +1,20 @@
 source "https://rubygems.org"
 
-gem "github-pages", "~> 232", group: :jekyll_plugins
+# Keep the Pages Jekyll version, packaged theme, and default plugins without
+# github-pages 232's unused remote-theme dependency (rubyzip < 3.0).
+gem "jekyll", "= 3.10.0"
+gem "jekyll-theme-tactile", "= 0.2.0"
+gem "kramdown-parser-gfm", "= 1.1.0"
+
+group :jekyll_plugins do
+  gem "jekyll-coffeescript", "= 1.2.2"
+  gem "jekyll-commonmark-ghpages", "= 0.5.1"
+  gem "jekyll-gist", "= 1.5.0"
+  gem "jekyll-github-metadata", "= 2.16.1"
+  gem "jekyll-paginate", "= 1.1.0"
+  gem "jekyll-relative-links", "= 0.6.1"
+  gem "jekyll-optional-front-matter", "= 0.3.2"
+  gem "jekyll-readme-index", "= 0.3.0"
+  gem "jekyll-default-layout", "= 0.1.5"
+  gem "jekyll-titles-from-headings", "= 0.5.3"
+end

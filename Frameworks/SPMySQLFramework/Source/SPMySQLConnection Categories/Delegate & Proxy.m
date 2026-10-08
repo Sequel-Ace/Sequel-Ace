@@ -183,7 +183,18 @@
  */
 - (void)askTheDelegateOnTheMainThread
 {
-	[self performSelectorOnMainThread:@selector(_askDelegateForLostConnectionDecision) withObject:nil waitUntilDone:YES];
+	// While the question is out, anything that reaches the connection on the main thread is
+	// turned away rather than made to wait: the main thread is what answers, so a caller waiting
+	// there would hold up the answer this thread waits for, and that answer cannot arrive until
+	// the caller returns. Both would wait for each other. The pair brackets the hand-off itself,
+	// so every path that asks is covered - this is the one place the question leaves this thread.
+	[self.sessionAccess noteAQuestionWentToTheMainThread];
+	@try {
+		[self performSelectorOnMainThread:@selector(_askDelegateForLostConnectionDecision) withObject:nil waitUntilDone:YES];
+	}
+	@finally {
+		[self.sessionAccess noteTheQuestionWasAnswered];
+	}
 }
 
 /**
