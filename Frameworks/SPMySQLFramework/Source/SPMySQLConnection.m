@@ -858,7 +858,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)killQueryOverSideConnectionForGeneration:(NSUInteger)generation
 {
-	return [self _killQueryOverSideConnectionForGeneration:generation];
+	// A named query carries its own session in the reservation the kill makes, so none is passed.
+	return [self _killQueryOverSideConnectionForGeneration:generation serverThread:0];
 }
 
 /**

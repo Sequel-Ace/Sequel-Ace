@@ -127,7 +127,7 @@
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
 
 /** Asks the server over a second connection to kill the query with this generation (0 for the running one). */
-- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation;
+- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation serverThread:(NSUInteger)serverThreadFromTheLease;
 /** Takes the connection for a query, reconnecting first if it was closed meanwhile. */
 - (BOOL)_lockUsableConnectionForQuery;
 /** Replaces a session marked to be replaced before its next use; NO if no usable session results. */

@@ -1060,7 +1060,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// an open transaction live on this side.
 	__block BOOL theServerKilledTheQuery = NO;
 	[self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
-		theServerKilledTheQuery = [self _killQueryOverSideConnectionForGeneration:0];
+		theServerKilledTheQuery = [self _killQueryOverSideConnectionForGeneration:0 serverThread:connectionThreadId];
 		return theServerKilledTheQuery;
 	}];
 
@@ -1265,9 +1265,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  *                   that is named is only killed while it is still waiting on the server: opening
  *                   the second connection takes time, and by the end of it the connection can be
  *                   running a different query in the same server session.
+ * @param serverThreadFromTheLease The server session to kill when no query is named, as the lease
+ *                   read it together with the socket it belongs to, under one lock. It is 0 for a
+ *                   named query, whose session the reservation gives.
  * @return Whether the server accepted the request.
  */
-- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation
+- (BOOL)_killQueryOverSideConnectionForGeneration:(NSUInteger)generation serverThread:(NSUInteger)serverThreadFromTheLease
 {
 	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
 
@@ -1301,15 +1304,23 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	if (generation) {
 		// The query is reserved while the request is on its way, so no other query can start in
 		// the same session meanwhile; nothing is locked while the request goes over the network.
-		NSUInteger serverThread = [inFlightQuery beginKillIfGenerationIsWaiting:generation];
-		if (serverThread) {
-			sendKill(serverThread);
+		SAKillReservation *reservation = [inFlightQuery reservationForKillOfGeneration:generation];
+		if (reservation.killWasAlreadyAccepted) {
+			// The server has the request already, from another Stop for the same query. Reporting
+			// a failure here instead - which is what sending nothing used to amount to - has the
+			// grace period close the query's socket, ending the session and rolling back a
+			// transaction open in it.
+			mysql_close(killerConnection);
+			return YES;
+		}
+		if (reservation.serverThread) {
+			sendKill(reservation.serverThread);
 			[inFlightQuery endKillForGeneration:generation succeeded:(killQueryStatus == 0) whileStillWaiting:^{
 				// Ensure the tracking bool is re-set to cover encompassed queries
 				self->lastQueryWasCancelled = YES;
 			}];
 		}
-	} else if (mySQLConnection && mySQLConnection->thread_id) {
+	} else if (serverThreadFromTheLease) {
 		// Opening the side connection takes time, and the session can have moved on to another
 		// query by now. Without a generation to reserve, the session's own reservation is what
 		// says whether the query this cancellation was for is still the one running - killing
@@ -1319,7 +1330,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			return YES;
 		}
 
-		sendKill(mySQLConnection->thread_id);
+		// The session comes from the lease, which read it with the socket it belongs to under one
+		// lock. Reading it from the handle here instead means reading the handle without holding
+		// the connection - the query's own thread can close the session and free it meanwhile -
+		// and after a reconnect that number names a different session.
+		sendKill(serverThreadFromTheLease);
 
 		// Ensure the tracking bool is re-set to cover encompassed queries
 		if (killQueryStatus == 0) lastQueryWasCancelled = YES;
