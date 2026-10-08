@@ -1,3 +1,31 @@
+## [6.0.3](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.3+%28*%29%22&expanded=true)
+
+### Added
+
+
+### Fixed
+- Resolve AWS SSO credentials off the UI thread ([e9450a477](https://github.com/Sequel-Ace/Sequel-Ace/commit/e9450a4778e02341d35e6b2310d9294f9a150dc0), [#2722](https://github.com/Sequel-Ace/Sequel-Ace/pull/2722))
+
+### Changed
+- Escape values from the session's reported state, not from its handle ([e82208236](https://github.com/Sequel-Ace/Sequel-Ace/commit/e82208236297de9dd814438fff00e7de59eab69c), [#2726](https://github.com/Sequel-Ace/Sequel-Ace/pull/2726))
+- Restore English source entry for connection question ([547368da2](https://github.com/Sequel-Ace/Sequel-Ace/commit/547368da234d47200c50bafb415f7072fa2513ed), [#2746](https://github.com/Sequel-Ace/Sequel-Ace/pull/2746))
+- New Crowdin updates ([daf9a6e95](https://github.com/Sequel-Ace/Sequel-Ace/commit/daf9a6e953be3d12ae37aed9733d852a533a3160), [#2745](https://github.com/Sequel-Ace/Sequel-Ace/pull/2745))
+- Don't let an open question and a main-thread caller wait for each other ([e4dbbca7d](https://github.com/Sequel-Ace/Sequel-Ace/commit/e4dbbca7dbbac4ec33a8d93897a70e6f1164c63d), [#2738](https://github.com/Sequel-Ace/Sequel-Ace/pull/2738))
+- Rename Database reads only its own grants, and a filter set aside stays set aside ([49ebe052b](https://github.com/Sequel-Ace/Sequel-Ace/commit/49ebe052bf071e7ab04e6eb1079b4bc6d34c9a63), [#2739](https://github.com/Sequel-Ace/Sequel-Ace/pull/2739))
+- New Crowdin updates ([22a2582b4](https://github.com/Sequel-Ace/Sequel-Ace/commit/22a2582b49ddc5927deb98c62e8f134fd6139a12), [#2741](https://github.com/Sequel-Ace/Sequel-Ace/pull/2741))
+- New Crowdin updates ([688353da1](https://github.com/Sequel-Ace/Sequel-Ace/commit/688353da1c78e321fd5e7b3d51a8f4f6b1687c8b), [#2737](https://github.com/Sequel-Ace/Sequel-Ace/pull/2737))
+- SSH tunnel: read the assistant's signing identifier instead of hardcoding it ([266eba35b](https://github.com/Sequel-Ace/Sequel-Ace/commit/266eba35b2990148b9dc87965956af714b65b047), [#2709](https://github.com/Sequel-Ace/Sequel-Ace/pull/2709))
+- Keep empty-string predicates when adding filter rules or groups ([dbf34f976](https://github.com/Sequel-Ace/Sequel-Ace/commit/dbf34f9768591cf549ca605e14d6745a33f908cb), [#2728](https://github.com/Sequel-Ace/Sequel-Ace/pull/2728))
+- Preserve mode-dependent MCP queries when limiting results ([9b2547df1](https://github.com/Sequel-Ace/Sequel-Ace/commit/9b2547df1a0e7ce4856bbafcb2328e36e773ae98), [#2727](https://github.com/Sequel-Ace/Sequel-Ace/pull/2727))
+- Reject incomplete NULL placeholders when committing BIT edits ([c8012fc8b](https://github.com/Sequel-Ace/Sequel-Ace/commit/c8012fc8b82443465bd5ed0aa0942c4c6da4439f), [#2729](https://github.com/Sequel-Ace/Sequel-Ace/pull/2729))
+- Ignore Xcode archive and result bundles ([e51ec23a7](https://github.com/Sequel-Ace/Sequel-Ace/commit/e51ec23a79782f911eb77af790d0e250f6b55b2f), [#2736](https://github.com/Sequel-Ace/Sequel-Ace/pull/2736))
+
+### Removed
+- Remove vulnerable rubyzip from Pages dependencies ([7d3490687](https://github.com/Sequel-Ace/Sequel-Ace/commit/7d34906872b19aed850f452b7b66fe923fe40033), [#2743](https://github.com/Sequel-Ace/Sequel-Ace/pull/2743))
+
+### Infra
+
+
 ## [6.0.2](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.2+%28*%29%22&expanded=true)
 
 ### Added
