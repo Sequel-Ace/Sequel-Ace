@@ -189,4 +189,42 @@ final class SAConnectionCheckSheetTests: XCTestCase {
     func testWaitsWithoutAWindowHoldNone() {
         XCTAssertEqual(SAConnectionCheckSheet.sheetStates(for: [wait(nil), wait(nil)]), [.waiting, .waiting])
     }
+
+    /// Verifies the wait's note goes on a sheet that is already up, rather than being left out.
+    ///
+    /// A window holds one sheet at a time. The work being waited for can have come from a sheet -
+    /// a save in User Manager - and showing nothing there left that sheet answering clicks the
+    /// wait keeps delivering, so another save could start inside the one still outstanding, with
+    /// no Stop Waiting button anywhere. A sheet can carry a sheet of its own.
+    func testTheWaitNoteGoesOnASheetThatIsAlreadyUp() {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil) }
+
+        XCTAssertTrue(SAConnectionCheckSheet.hostForWaitNote(on: window) === window,
+                      "with nothing up it goes on the window itself")
+
+        let somebodyElsesSheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100),
+                                          styleMask: [.titled], backing: .buffered, defer: false)
+        window.beginSheet(somebodyElsesSheet, completionHandler: nil)
+        XCTAssertTrue(window.attachedSheet === somebodyElsesSheet, "the other sheet has the window")
+
+        XCTAssertTrue(SAConnectionCheckSheet.hostForWaitNote(on: window) === somebodyElsesSheet,
+                      "so the note goes on that sheet, which holds it still and can be stopped")
+
+        window.endSheet(somebodyElsesSheet)
+        somebodyElsesSheet.orderOut(nil)
+        XCTAssertTrue(SAConnectionCheckSheet.hostForWaitNote(on: window) === window,
+                      "and the window takes it again once that sheet has gone")
+    }
+
+    /// Verifies a window that cannot show anything is not asked to.
+    func testAWindowThatIsNotThereGetsNoNote() {
+        XCTAssertNil(SAConnectionCheckSheet.hostForWaitNote(on: nil))
+        let hidden = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        XCTAssertFalse(hidden.isVisible)
+        XCTAssertNil(SAConnectionCheckSheet.hostForWaitNote(on: hidden))
+    }
 }

@@ -261,10 +261,32 @@ final class SAConnectionCheckSheet: NSObject {
         }
     }
 
+    /// The window a wait's note belongs on: the sheet that is already up, when there is one, and
+    /// the window itself otherwise.
+    ///
+    /// A window holds one sheet at a time, and the work being waited for can have come from a
+    /// sheet that is already up - a save in User Manager, say. Showing nothing there left that
+    /// sheet live: the wait goes on delivering events, so its buttons kept answering clicks and
+    /// another save could be started inside the one still outstanding, with no way to stop the
+    /// wait at all. A sheet can carry a sheet of its own, so the note goes on it, which both
+    /// holds it still and brings the Stop Waiting button with it.
+    ///
+    /// A wait that stepped aside for a question the connection has to ask is hidden rather than
+    /// presented, so the sheet found here is never one of those.
+    /// - Parameter window: The document window the wait belongs to.
+    /// - Returns: The window to put the note on, or nil when there is none to put it on.
+    @objc(hostForWaitNoteOnWindow:)
+    static func hostForWaitNote(on window: NSWindow?) -> NSWindow? {
+        guard let window, window.isVisible else {
+            return nil
+        }
+        return window.attachedSheet ?? window
+    }
+
     /// Builds the sheet and puts it on the window.
     /// - Parameter window: The window to show it on, if it can still show one.
     private func present(on window: NSWindow?) {
-        guard let window, window.isVisible, window.attachedSheet == nil, sheetController == nil else {
+        guard let host = Self.hostForWaitNote(on: window), sheetController == nil else {
             return
         }
 
@@ -281,9 +303,9 @@ final class SAConnectionCheckSheet: NSObject {
         }
 
         sheetController = controller
-        presentingWindow = window
+        presentingWindow = host
 
-        window.beginSheet(sheet, completionHandler: nil)
+        host.beginSheet(sheet, completionHandler: nil)
     }
 
     /// Takes the sheet down again.
