@@ -390,4 +390,40 @@ final class SAInFlightQueryTests: XCTestCase {
         var byte: UInt8 = 0
         return recv(descriptors[1], &byte, 1, MSG_PEEK | MSG_DONTWAIT) == 0
     }
+
+    /// Verifies something recorded about a session is only recorded while that session is still
+    /// the current one, and that the check and the recording cannot come apart.
+    ///
+    /// Reading the token and then acting on the answer is two steps: a reconnect finishing between
+    /// them would leave what was recorded about the session that has gone standing against the one
+    /// that replaced it - which is how a healthy session comes to be closed and somebody else's
+    /// transaction rolled back.
+    func testSomethingIsRecordedOnlyWhileItIsStillTheSameSession() throws {
+        var descriptors: [Int32] = [0, 0]
+        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0,
+                          "no local socket pair available")
+        defer { descriptors.forEach { Darwin.close($0) } }
+
+        let access = SAConnectionSessionAccess()
+        try access.trackSocket(descriptors[0], serverThreadID: 11)
+        let theSession = access.socketToken
+
+        var recorded = false
+        XCTAssertTrue(access.whileStillOnSocket(theSession, perform: { recorded = true }),
+                      "it is still that session")
+        XCTAssertTrue(recorded)
+
+        // A new session takes its place.
+        var replacement: [Int32] = [0, 0]
+        try XCTSkipUnless(socketpair(AF_UNIX, SOCK_STREAM, 0, &replacement) == 0,
+                          "no local socket pair available")
+        defer { replacement.forEach { Darwin.close($0) } }
+        try access.trackSocket(replacement[0], serverThreadID: 12)
+        XCTAssertNotEqual(access.socketToken, theSession, "the session has been replaced")
+
+        var recordedAgain = false
+        XCTAssertFalse(access.whileStillOnSocket(theSession, perform: { recordedAgain = true }),
+                       "the session it was about has gone")
+        XCTAssertFalse(recordedAgain, "and nothing is recorded against the one that replaced it")
+    }
 }

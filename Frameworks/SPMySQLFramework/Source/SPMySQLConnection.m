@@ -1809,9 +1809,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// And only while it is still that session. One that replaced it in the meantime was
 		// never touched by this work: marking it would have the next query close a session
 		// nothing is wrong with, and roll back a transaction somebody else had just opened.
-		if ([SAConnectionCancellation replacesSessionWhenWorkIsGivenUpWithSessionUse:[outcome sessionUse]]
-		    && self.sessionAccess.socketToken == theSessionTheWorkSetOutOn) {
-			sessionMustBeReplacedBeforeUse = YES;
+		// The check and the mark go together, under the lock a new session is put in place
+		// under: read apart, a reconnect finishing in between would leave the mark on the
+		// session that replaced this one.
+		if ([SAConnectionCancellation replacesSessionWhenWorkIsGivenUpWithSessionUse:[outcome sessionUse]]) {
+			[self.sessionAccess whileStillOnSocket:theSessionTheWorkSetOutOn perform:^{
+				self->sessionMustBeReplacedBeforeUse = YES;
+			}];
 		}
 
 		return nil;

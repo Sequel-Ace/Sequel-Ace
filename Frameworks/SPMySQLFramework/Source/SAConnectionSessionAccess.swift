@@ -87,6 +87,27 @@ import Darwin
         socketLock.withLock { socketGeneration }
     }
 
+    /// Runs `work` while `socketToken` still names the current session, under the lock a new
+    /// session is put in place under.
+    ///
+    /// Reading ``socketToken`` and then acting on the answer is not the same thing: a reconnect
+    /// can finish in between, and what was recorded about the session that has gone would be
+    /// recorded against the one that replaced it - which is how a healthy session comes to be
+    /// closed, and a transaction somebody else had just opened rolled back.
+    /// - Parameters:
+    ///   - socketToken: ``socketToken`` as it was when the caller started out.
+    ///   - work: What to record. It runs under the lock, so it must not wait for anything.
+    /// - Returns: Whether it ran, which is whether that session is still the current one.
+    @objc(whileStillOnSocket:perform:)
+    @discardableResult
+    public func whileStillOnSocket(_ socketToken: UInt, perform work: () -> Void) -> Bool {
+        socketLock.withLock {
+            guard socketGeneration == socketToken else { return false }
+            work()
+            return true
+        }
+    }
+
     /// Called with the native connection locked, before any statement is sent.
     /// The socket and server ID were published together from the same MYSQL handle.
     @discardableResult
