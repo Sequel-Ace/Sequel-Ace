@@ -28,7 +28,8 @@ public final class SAInFlightQuery: NSObject {
     private var waitingGeneration: UInt = 0
     private var waitingSocket: Int32 = -1
     private var waitingServerThread: UInt = 0
-    private var killInProgress = false
+    private var generationOfKillUnderWay: UInt = 0
+    private var generationWithAcceptedKill: UInt = 0
 
     /// A request to stop a query: the number it names, and the query that number belongs to.
     private struct SACancellationRequest {
@@ -69,7 +70,7 @@ public final class SAInFlightQuery: NSObject {
         let duplicate = socket >= 0 ? fcntl(socket, F_DUPFD_CLOEXEC, 0) : -1
         condition.lock()
         defer { condition.unlock() }
-        while killInProgress {
+        while generationOfKillUnderWay != 0 {
             condition.wait()
         }
         if waitingSocket >= 0 {
@@ -112,22 +113,40 @@ public final class SAInFlightQuery: NSObject {
 
     /// Reserves a waiting query for a kill request, so that no other query can start waiting in
     /// the same session until the request has gone out.
+    ///
+    /// A request for the same query that is already on its way is waited for rather than
+    /// duplicated, and its answer is given to this caller as its own: a second caller that
+    /// reported a failure it never observed would have the grace period close the socket of a
+    /// query the server had accepted the kill for - ending the session, and with it a transaction
+    /// open in it. A request the server refused leaves the next caller free to send its own.
+    ///
+    /// The lock is released while the request on its way is waited for, as it is for a query
+    /// waiting to start.
     /// - Parameter generation: The number of the query to kill.
-    /// - Returns: The server's number for that query's session, or 0 if the query is not waiting
-    ///   (or another kill request is already on its way). Anything but 0 must be followed by
+    /// - Returns: What this caller is to do, which is nothing at all when the query is no longer
+    ///   waiting. A reservation naming a server thread must be followed by
     ///   ``endKill(forGeneration:succeeded:whileStillWaiting:)``.
-    @objc(beginKillIfGenerationIsWaiting:)
-    public func beginKill(ifGenerationIsWaiting generation: UInt) -> UInt {
+    @objc(reservationForKillOfGeneration:)
+    public func reservationForKill(ofGeneration generation: UInt) -> SAKillReservation {
         condition.lock()
         defer { condition.unlock() }
-        guard generation != 0, waitingGeneration == generation, !killInProgress else {
-            return 0
+        guard generation != 0 else {
+            return SAKillReservation(serverThread: 0, killWasAlreadyAccepted: false)
         }
-        killInProgress = true
-        return waitingServerThread
+        while generationOfKillUnderWay == generation {
+            condition.wait()
+        }
+        if generationWithAcceptedKill == generation {
+            return SAKillReservation(serverThread: 0, killWasAlreadyAccepted: true)
+        }
+        guard waitingGeneration == generation, generationOfKillUnderWay == 0 else {
+            return SAKillReservation(serverThread: 0, killWasAlreadyAccepted: false)
+        }
+        generationOfKillUnderWay = generation
+        return SAKillReservation(serverThread: waitingServerThread, killWasAlreadyAccepted: false)
     }
 
-    /// Gives back a reservation made by ``beginKill(ifGenerationIsWaiting:)``.
+    /// Gives back a reservation made by ``reservationForKill(ofGeneration:)``.
     /// - Parameters:
     ///   - generation: The query the kill request was about.
     ///   - succeeded: Whether the server accepted the request.
@@ -141,7 +160,13 @@ public final class SAInFlightQuery: NSObject {
         if succeeded, generation != 0, waitingGeneration == generation {
             whileStillWaiting()
         }
-        killInProgress = false
+        // An acceptance is kept for whoever asks about the same query next: the statement is
+        // ending on the server's own time, and nothing that follows is to treat that as a
+        // failure. Numbers are never reused, so this can only ever match its own query.
+        if succeeded, generation != 0 {
+            generationWithAcceptedKill = generation
+        }
+        generationOfKillUnderWay = 0
         condition.broadcast()
     }
 
@@ -289,5 +314,32 @@ public final class SAInFlightQuery: NSObject {
             return false
         }
         return pthread_equal(connectionHolder, pthread_self()) != 0
+    }
+}
+
+/// What a caller that wants a waiting query killed is to do.
+///
+/// Asking to kill a query has three outcomes, and a single number could only ever report two of
+/// them: a request is to be sent, the server has already accepted one for the same query, or the
+/// query is no longer waiting and there is nothing to do. The middle one used to read as a
+/// failure, which the grace period acts on by closing the query's socket.
+@objc(SAKillReservation)
+public final class SAKillReservation: NSObject {
+
+    /// The server's number for the session to send the request for, or 0 when nothing is to be
+    /// sent.
+    @objc public let serverThread: UInt
+
+    /// Whether the server has already accepted a request to kill this query, so that this caller
+    /// sends nothing and reports that acceptance as its own answer.
+    @objc public let killWasAlreadyAccepted: Bool
+
+    /// - Parameters:
+    ///   - serverThread: The session to send the request for, or 0 for none.
+    ///   - killWasAlreadyAccepted: Whether a request for the same query was already accepted.
+    init(serverThread: UInt, killWasAlreadyAccepted: Bool) {
+        self.serverThread = serverThread
+        self.killWasAlreadyAccepted = killWasAlreadyAccepted
+        super.init()
     }
 }

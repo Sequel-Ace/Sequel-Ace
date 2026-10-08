@@ -179,11 +179,8 @@ final class SAInFlightQueryTests: XCTestCase {
     func testAKillOnlyConcernsTheQueryThatIsStillWaiting() {
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
 
-        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 7), 0)
-        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
-
-        // Only one request at a time is on its way.
-        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 0)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 7).serverThread, 0)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
 
         var marked = false
         inFlightQuery.endKill(forGeneration: 8, succeeded: true) { marked = true }
@@ -195,20 +192,72 @@ final class SAInFlightQueryTests: XCTestCase {
         var marked: [String] = []
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
 
-        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
         inFlightQuery.endKill(forGeneration: 8, succeeded: false) { marked.append("failed") }
 
-        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
         inFlightQuery.endWaiting(forGeneration: 8)
         inFlightQuery.endKill(forGeneration: 8, succeeded: true) { marked.append("late") }
 
         XCTAssertEqual(marked, [])
     }
 
+    /// A second request waits for the one on its way, and reports what the server told it rather
+    /// than a failure of its own: the grace period closes the socket of a query whose kill was not
+    /// accepted, which ends the session and rolls back a transaction open in it.
+    func testASecondRequestSharesTheAnswerOfTheOneOnItsWay() {
+        inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
+
+        // The thread a second Stop for the same query reaches this on.
+        let secondAnswered = DispatchSemaphore(value: 0)
+        var second: SAKillReservation?
+        Thread.detachNewThread {
+            second = self.inFlightQuery.reservationForKill(ofGeneration: 8)
+            secondAnswered.signal()
+        }
+
+        // Nothing is answered while the first request is still on its way.
+        XCTAssertEqual(secondAnswered.wait(timeout: .now() + 0.3), .timedOut)
+
+        inFlightQuery.endKill(forGeneration: 8, succeeded: true) {}
+        XCTAssertEqual(secondAnswered.wait(timeout: .now() + 2), .success)
+
+        // It sends nothing of its own, and the acceptance is its answer.
+        XCTAssertEqual(second?.serverThread, 0)
+        XCTAssertEqual(second?.killWasAlreadyAccepted, true)
+
+        // So is it for every request that follows, for as long as that query is the one waiting.
+        let later = inFlightQuery.reservationForKill(ofGeneration: 8)
+        XCTAssertEqual(later.serverThread, 0)
+        XCTAssertTrue(later.killWasAlreadyAccepted)
+    }
+
+    /// A request the server refused leaves the next one free to send its own.
+    func testARequestAfterARefusedOneSendsItsOwn() {
+        inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
+        inFlightQuery.endKill(forGeneration: 8, succeeded: false) {}
+
+        let next = inFlightQuery.reservationForKill(ofGeneration: 8)
+        XCTAssertEqual(next.serverThread, 17)
+        XCTAssertFalse(next.killWasAlreadyAccepted)
+    }
+
+    /// A query that is no longer waiting leaves nothing to do, and nothing to report.
+    func testAQueryThatStoppedWaitingHasNothingToKill() {
+        inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
+        inFlightQuery.endWaiting(forGeneration: 8)
+
+        let reservation = inFlightQuery.reservationForKill(ofGeneration: 8)
+        XCTAssertEqual(reservation.serverThread, 0)
+        XCTAssertFalse(reservation.killWasAlreadyAccepted)
+    }
+
     /// A new query waits until a kill has gone out.
     func testANewQueryWaitsUntilAKillHasGoneOut() {
         inFlightQuery.beginWaiting(forGeneration: 8, onSocket: descriptors[0], serverThread: 17)
-        XCTAssertEqual(inFlightQuery.beginKill(ifGenerationIsWaiting: 8), 17)
+        XCTAssertEqual(inFlightQuery.reservationForKill(ofGeneration: 8).serverThread, 17)
         inFlightQuery.endWaiting(forGeneration: 8)
 
         let nextQueryStarted = DispatchSemaphore(value: 0)
