@@ -518,7 +518,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// Releasing the connection can find a request to stop the query before; this one is refused,
 		// not cancelled, and its caller has to see why.
 		lastQueryWasCancelled = NO;
-		[self _updateLastErrorMessage:NSLocalizedString(@"The connection to the server was lost while a transaction was open or autocommit was off. The server rolled back whatever had not been committed, and the new connection commits each statement on its own. This statement was not run.", @"Error for the next statement a user runs after the connection was lost while a transaction was open or autocommit was off")];
+		[self _updateLastErrorMessage:NSLocalizedString(@"The connection to the server was lost while a transaction was open or autocommit was off. The server rolled back whatever had not been committed in transactional tables; changes to non-transactional tables such as MyISAM may have been kept, so check those before repeating them. The new connection commits each statement on its own. This statement was not run.", @"Error for the next statement a user runs after the connection was lost while a transaction was open or autocommit was off")];
 		[self _updateLastErrorID:2013];
 		[self _updateLastSqlstate:@"HY000"];
 		return nil;
@@ -760,7 +760,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		if ([self _refusesStatementForLostUncommittedWork:theQueryString]) {
 			[self _unlockConnection];
 			lastQueryWasCancelled = NO;
-			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed, and the new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
+			[self _updateLastErrorMessage:[NSString stringWithFormat:@"%@\n\n%@", theErrorMessage ?: @"", NSLocalizedString(@"A transaction was open or autocommit was off: the server rolled back whatever had not been committed in transactional tables, while changes to non-transactional tables such as MyISAM may have been kept. The new connection commits each statement on its own.", @"Note added to the error of a statement that lost the connection while a transaction was open or autocommit was off")]];
 			[self _updateLastErrorID:theErrorID];
 			[self _updateLastSqlstate:theSqlstate];
 			return nil;
