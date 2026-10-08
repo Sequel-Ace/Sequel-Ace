@@ -132,3 +132,53 @@ final class SAConnectionLostDecisionGateTests: XCTestCase {
         XCTAssertEqual(gate.decision(askingWith: { 0 }), 0)
     }
 }
+
+/// Puts the question about a lost connection, which the connection keeps to itself.
+@objc private protocol SALostConnectionAsking {
+    @objc(_delegateDecisionForLostConnection)
+    func askWhatToDoAboutTheLostConnection() -> SPMySQLConnectionLostDecision
+}
+
+/// Answers the question about a lost connection, and reports whether the lock that guards the
+/// stored answer was free while it was being asked. The question is a sheet, which runs a run loop
+/// of its own, so anything that reaches the connection on this thread meanwhile has to find that
+/// lock free - it is not recursive, and the thread that holds it is the one inside the sheet.
+private final class SAConnectionLostProbingDelegate: NSObject, SPMySQLConnectionDelegate {
+    /// The connection to read the lock from.
+    weak var connection: SPMySQLConnection?
+
+    /// Whether the lock was free while the question was out; nil until it was asked.
+    var lockWasFreeWhileAsking: Bool?
+
+    func connectionLost(_ connection: Any) -> SPMySQLConnectionLostDecision {
+        if let lock = self.connection?.value(forKey: "delegateDecisionLock") as? NSLock {
+            let taken = lock.try()
+            lockWasFreeWhileAsking = taken
+            if taken {
+                lock.unlock()
+            }
+        }
+        return SPMySQLConnectionLostDisconnect
+    }
+}
+
+/// The question about a lost connection is asked with nothing of the connection held.
+final class SAConnectionLostQuestionTests: XCTestCase {
+    func testTheQuestionIsAskedWithoutHoldingTheStoredAnswersLock() {
+        let connection = SPMySQLConnection()
+        let delegate = SAConnectionLostProbingDelegate()
+        delegate.connection = connection
+        connection.useKeepAlive = false
+        connection.setDelegate(delegate)
+        defer { connection.setDelegate(nil) }
+
+        // The question is put on the thread it is put to the user on, which is this one.
+        XCTAssertTrue(Thread.isMainThread)
+        let decision = unsafeBitCast(connection, to: SALostConnectionAsking.self)
+            .askWhatToDoAboutTheLostConnection()
+
+        XCTAssertEqual(decision, SPMySQLConnectionLostDisconnect, "the delegate's answer is what comes back")
+        XCTAssertEqual(delegate.lockWasFreeWhileAsking, true,
+                       "a question asked under that lock cannot be asked again from its own run loop")
+    }
+}

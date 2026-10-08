@@ -216,13 +216,18 @@ static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
  * Asks the delegate what to do about the lost connection, and keeps the answer as the last
  * decision under the lock that guards it.
  *
+ * The question itself is asked outside that lock. It is a sheet, which runs a run loop of its
+ * own, and anything that reaches this on the main thread while that loop is up would wait on a
+ * lock that is not recursive - held by the same thread, which cannot give it back until the
+ * question is answered. The lock is there for the stored answer, so it is held only around it.
+ *
  * @return The delegate's decision.
  */
 - (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision
 {
+	SPMySQLConnectionLostDecision theDecision = [delegate connectionLost:self];
 	[delegateDecisionLock lock];
-	lastDelegateDecisionForLostConnection = [delegate connectionLost:self];
-	SPMySQLConnectionLostDecision theDecision = lastDelegateDecisionForLostConnection;
+	lastDelegateDecisionForLostConnection = theDecision;
 	[delegateDecisionLock unlock];
 
 	return theDecision;
