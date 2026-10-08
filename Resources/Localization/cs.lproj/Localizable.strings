@@ -4424,3 +4424,6 @@ příkazy budou spuštěny pro každé textové vstupní pole";
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "Sloupce znovu vytvořených pohledů v '%1$@' nelze porovnat s těmi v '%2$@': %3$@ objekty byly přesunuty, a '%4$@' byl uschován; zkontrolujte pohledy a odstraňte '%5$@' sami, jakmile budete spokojeni.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "Připojení nelze použít, dokud se vás ptá, co s ním udělat. Odpovězte na tuto otázku a zkuste to znovu.";
