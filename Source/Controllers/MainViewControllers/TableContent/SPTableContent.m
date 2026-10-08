@@ -2057,14 +2057,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /**
  * Adds an empty row to the table-array and goes into edit mode.
  * Nothing is added while no columns are shown: a table always has a column, and a load that was
- * stopped or failed may still have the name of the table shown before it recorded.
+ * stopped or failed may still have the name of the table shown before it recorded. The view is
+ * asked as well as the table's own column list, because the column filter can leave the view with
+ * no columns at all while that list is unchanged - and the new row is edited by column number.
  */
 - (IBAction)addRow:(id)sender
 {
 	NSMutableArray *newRow = [NSMutableArray array];
 
 	// Check whether table editing is permitted (necessary as some actions - eg table double-click - bypass validation)
-	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable || ![dataColumns count]) return;
+	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable
+	    || ![dataColumns count] || ![tableContentView numberOfColumns]) return;
 
 	// Check whether a save of the current row is required.
 	if ( ![self saveRowOnDeselect] ) return;
@@ -4258,7 +4261,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return;
 
 	if ( ![[tableDataInstance statusValueForKey:@"Rows"] isNSNull] && selectedTable && [selectedTable length] && [tableDataInstance tableEncoding]) {
-		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable) && [dataColumns count]];
+		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable) && [dataColumns count] && [tableContentView numberOfColumns]];
 		[self updatePaginationState];
 		[reloadButton setEnabled:YES];
 	}
