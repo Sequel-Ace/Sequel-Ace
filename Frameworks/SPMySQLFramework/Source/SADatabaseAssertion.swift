@@ -418,7 +418,9 @@ final class SADatabaseAssertion: NSObject {
     /// administrative, replication-control and account-management statements the server commits
     /// around. MySQL and MariaDB both document this set; `ROLLBACK` is left out, because a reply
     /// to it that never arrives leaves the same state either way. `CALL` is in it because what a
-    /// procedure does cannot be read from the statement, and a procedure may commit. `SET` is not
+    /// procedure does cannot be read from the statement, and a procedure may commit; `EXECUTE` for
+    /// the same reason, since a prepared statement is as opaque as a procedure and
+    /// `PREPARE s FROM 'CREATE TABLE …'` makes it a data-definition statement. `SET` is not
     /// a keyword here because only some of its forms commit; see ``statementMayCommit(_:serverVersion:serverIsMariaDB:)``.
     ///
     /// A keyword that begins statements of which only some commit - `RESET`, where `RESET PERSIST`
@@ -426,7 +428,7 @@ final class SADatabaseAssertion: NSObject {
     /// that the outcome is unknown, where one wrongly taken not to commit tells the user their
     /// work was rolled back when the server may have kept it.
     static let keywordsThatMayCommit: Set<String> = [
-        "COMMIT", "BEGIN", "START", "CALL",
+        "COMMIT", "BEGIN", "START", "CALL", "EXECUTE",
         "ALTER", "CREATE", "DROP", "RENAME", "TRUNCATE",
         "GRANT", "REVOKE",
         "LOCK", "UNLOCK",

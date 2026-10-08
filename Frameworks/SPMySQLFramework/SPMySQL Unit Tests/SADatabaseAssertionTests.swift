@@ -1131,10 +1131,15 @@ final class SAStatementMayCommitTests: XCTestCase {
         XCTAssertFalse(mayCommit("SET time_zone = '+00:00'"))
     }
 
-    /// What a procedure does cannot be read from the statement, so a call is taken to commit.
-    func testACallIsTakenToCommit() {
+    /// What a procedure does cannot be read from the statement, so a call is taken to commit - and
+    /// a prepared statement is as opaque, since `PREPARE s FROM 'CREATE TABLE …'` makes its
+    /// `EXECUTE` a data-definition statement.
+    func testACallOrAPreparedStatementIsTakenToCommit() {
         XCTAssertTrue(mayCommit("CALL do_the_thing()"))
         XCTAssertTrue(mayCommit("  call  other.proc(1)"))
+        XCTAssertTrue(mayCommit("EXECUTE s"))
+        XCTAssertTrue(mayCommit("  execute s USING @a"))
+        XCTAssertFalse(mayCommit("DEALLOCATE PREPARE s"), "throwing the statement away commits nothing")
     }
 
     /// Ordinary statements, and the one that changes nothing either way.
