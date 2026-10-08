@@ -96,12 +96,38 @@ public final class SAConnectionCheckBudget: NSObject {
     /// behind it; this is the limit a check-triggered reconnect gets.
     public static let keepAlivePingMinimum: UInt = connectLimit
 
-    /// The ping timeout a keepalive uses on a connection with this timeout.
+    /// The ping timeout a keepalive gives a connection configured without one.
+    ///
+    /// What the keepalive has always given such a connection. "No timeout" is the setting of
+    /// someone who would rather wait than be cut off, and a ping cut off before its answer now
+    /// costs the session - and a transaction open in it - so this is not the place to shorten.
+    public static let keepAlivePingWithoutTimeout: UInt = 30
+
+    /// The ping timeout for a session whose uncommitted work a ping cut off would cost.
+    ///
+    /// A ping cut off before its answer costs the session, and the server rolls back whatever that
+    /// session had open. A timeout shorter than this floor is therefore not applied to such a ping:
+    /// a server that is only slow to answer would otherwise lose the user's work.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
     /// - Returns: The longer of the configured timeout and ``keepAlivePingMinimum``, in seconds.
+    @objc(pingTimeoutSparingUncommittedWorkForConfiguredTimeout:)
+    public static func pingTimeoutSparingUncommittedWork(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
+        max(configuredTimeout, keepAlivePingMinimum)
+    }
+
+    /// The ping timeout a keepalive uses on a connection with this timeout.
+    ///
+    /// The keepalive runs on a thread of its own and nobody waits for it, so a connection
+    /// configured without a timeout keeps the thirty seconds it has always had here rather than the
+    /// floor the bounded checks use.
+    /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
+    /// - Returns: ``keepAlivePingWithoutTimeout`` without a configured timeout, otherwise the
+    ///   longer of that timeout and ``keepAlivePingMinimum``, in seconds.
     @objc(keepAlivePingTimeoutForConfiguredTimeout:)
     public static func keepAlivePingTimeout(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
-        max(configuredTimeout, keepAlivePingMinimum)
+        configuredTimeout > 0
+            ? pingTimeoutSparingUncommittedWork(forConfiguredTimeout: configuredTimeout)
+            : keepAlivePingWithoutTimeout
     }
 
     /// The ping timeout a connection check uses on a connection with this timeout.
@@ -118,8 +144,10 @@ public final class SAConnectionCheckBudget: NSObject {
     /// than after the configured timeout. A session with a transaction open cannot afford that: a
     /// ping cut off before its answer costs the session, and the server rolls the transaction back,
     /// so a server that is only slow to answer would lose the user's uncommitted work. Such a
-    /// session gets ``keepAlivePingMinimum`` instead - the same floor the keepalive has had for the
-    /// same reason - and the wait that buys is bounded by the short reconnect that follows.
+    /// session gets ``keepAlivePingMinimum`` instead - the same floor the keepalive has for the
+    /// same reason - and the wait that buys is bounded by the short reconnect that follows. The
+    /// keepalive's thirty seconds for a connection configured without a timeout are not taken over
+    /// here: nobody waits for a keepalive, and somebody waits for this.
     /// - Parameters:
     ///   - configuredTimeout: The connection's configured timeout in seconds, zero for none.
     ///   - sessionHasOpenTransaction: Whether the session last reported a transaction open.
@@ -128,7 +156,7 @@ public final class SAConnectionCheckBudget: NSObject {
     public static func checkPingTimeout(forConfiguredTimeout configuredTimeout: UInt,
                                         sessionHasOpenTransaction: Bool) -> UInt {
         sessionHasOpenTransaction
-            ? keepAlivePingTimeout(forConfiguredTimeout: configuredTimeout)
+            ? pingTimeoutSparingUncommittedWork(forConfiguredTimeout: configuredTimeout)
             : pingTimeout(forConfiguredTimeout: configuredTimeout)
     }
 

@@ -80,9 +80,15 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         XCTAssertGreaterThan(SAConnectionCheckBudget.sideConnectionAnswerTimeout(), 0)
     }
 
-    /// A keepalive ping is never cut off sooner than the minimum, but may take a longer configured timeout.
-    func testAKeepalivePingGetsAtLeastTheMinimum() {
-        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 0), SAConnectionCheckBudget.keepAlivePingMinimum)
+    /// A keepalive ping is never cut off sooner than the minimum, but may take a longer configured
+    /// timeout - and a connection configured without one keeps the thirty seconds it has always
+    /// had here. Shortening that to the floor would cost a session with a transaction open its
+    /// work twenty seconds sooner than before, on the setting of somebody who said they would wait.
+    func testAKeepalivePingGetsAtLeastTheMinimumAndKeepsItsThirtySecondsWithoutATimeout() {
+        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 0), 30)
+        XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingWithoutTimeout, 30)
+        XCTAssertGreaterThan(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 0),
+                             SAConnectionCheckBudget.keepAlivePingMinimum)
         XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 3), SAConnectionCheckBudget.keepAlivePingMinimum)
         XCTAssertEqual(SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: 90), 90)
         // The default timeout stays as it is.
@@ -114,8 +120,13 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
                            SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: configured))
             XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: configured,
                                                                     sessionHasOpenTransaction: true),
-                           SAConnectionCheckBudget.keepAlivePingTimeout(forConfiguredTimeout: configured))
+                           SAConnectionCheckBudget.pingTimeoutSparingUncommittedWork(forConfiguredTimeout: configured))
         }
+        // The keepalive's thirty seconds for a connection without a configured timeout are not
+        // taken over here: somebody is waiting for this one.
+        XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: 0,
+                                                                sessionHasOpenTransaction: true),
+                       SAConnectionCheckBudget.keepAlivePingMinimum)
         // Concretely: a server that takes eight seconds to answer keeps a session that has work in
         // it, and loses one that has none.
         XCTAssertEqual(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: 30,
