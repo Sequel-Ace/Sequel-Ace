@@ -414,11 +414,17 @@ final class SADatabaseAssertion: NSObject {
     ]
 
     /// The first keywords of statements that can commit a transaction: `COMMIT` itself, the ones
-    /// that start a transaction and commit whatever was pending, and the data-definition and
-    /// administrative statements the server commits around. MySQL and MariaDB both document this
-    /// set; `ROLLBACK` is left out, because a reply to it that never arrives leaves the same
-    /// state either way. `CALL` is in it because what a procedure does cannot be read from the
-    /// statement, and a procedure may commit.
+    /// that start a transaction and commit whatever was pending, and the data-definition,
+    /// administrative, replication-control and account-management statements the server commits
+    /// around. MySQL and MariaDB both document this set; `ROLLBACK` is left out, because a reply
+    /// to it that never arrives leaves the same state either way. `CALL` is in it because what a
+    /// procedure does cannot be read from the statement, and a procedure may commit. `SET` is not
+    /// a keyword here because only some of its forms commit; see ``statementMayCommit(_:serverVersion:serverIsMariaDB:)``.
+    ///
+    /// A keyword that begins statements of which only some commit - `RESET`, where `RESET PERSIST`
+    /// does not - is kept in all the same: a statement wrongly taken to commit costs one warning
+    /// that the outcome is unknown, where one wrongly taken not to commit tells the user their
+    /// work was rolled back when the server may have kept it.
     static let keywordsThatMayCommit: Set<String> = [
         "COMMIT", "BEGIN", "START", "CALL",
         "ALTER", "CREATE", "DROP", "RENAME", "TRUNCATE",
@@ -426,6 +432,7 @@ final class SADatabaseAssertion: NSObject {
         "LOCK", "UNLOCK",
         "ANALYZE", "CHECK", "CHECKSUM", "OPTIMIZE", "REPAIR",
         "FLUSH", "INSTALL", "UNINSTALL",
+        "CACHE", "LOAD", "RESET", "PURGE", "CHANGE", "STOP",
     ]
 
     /// Whether a statement can commit a transaction, so that losing the reply to it leaves what
@@ -465,7 +472,14 @@ final class SADatabaseAssertion: NSObject {
         let statementCode = needsStripping
             ? statement
             : Substring(stripSQLComments(String(statement), serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
-        return statementCode.range(of: "autocommit", options: .caseInsensitive) != nil
+        if statementCode.range(of: "autocommit", options: .caseInsensitive) != nil {
+            return true
+        }
+        // `SET PASSWORD` is account management, which the server commits around like the rest of
+        // it. Unlike autocommit it is looked for where the statement puts the word rather than
+        // anywhere in the text: a value that merely contains it is a different statement.
+        let afterSet = statementCode.dropFirst(3).drop { $0.isWhitespace }
+        return afterSet.prefix { isIdentifierCharacter($0) }.uppercased() == "PASSWORD"
     }
 
     /// The words after `SET` that start a statement changing more than the session: a password, a

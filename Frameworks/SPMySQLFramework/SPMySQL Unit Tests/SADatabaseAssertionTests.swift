@@ -1096,6 +1096,29 @@ final class SAStatementMayCommitTests: XCTestCase {
         }
     }
 
+    /// The administrative, replication-control and account-management statements the server also
+    /// commits around. Each would otherwise be reported as a definite rollback when its reply is
+    /// lost, while the server had committed the transaction before running it.
+    func testTheAdministrativeAndReplicationStatements() {
+        for query in ["RESET MASTER", "PURGE BINARY LOGS TO 'log.000123'",
+                      "CHANGE REPLICATION SOURCE TO SOURCE_HOST='h'", "CHANGE MASTER TO MASTER_HOST='h'",
+                      "STOP REPLICA", "STOP SLAVE", "CACHE INDEX t IN hot_cache",
+                      "LOAD INDEX INTO CACHE t", "CHECK TABLE t", "REPAIR TABLE t",
+                      "CHECKSUM TABLE t", "INSTALL PLUGIN p SONAME 'p.so'", "UNINSTALL PLUGIN p"] {
+            XCTAssertTrue(mayCommit(query), query)
+        }
+    }
+
+    /// `SET PASSWORD` is account management, so it commits; a value that merely contains the word
+    /// is a different statement.
+    func testSettingAPasswordCommits() {
+        XCTAssertTrue(mayCommit("SET PASSWORD = 'secret'"))
+        XCTAssertTrue(mayCommit("set password for 'u'@'h' = 'secret'"))
+        XCTAssertTrue(mayCommit("SET  PASSWORD='secret'"))
+        XCTAssertFalse(mayCommit("SET @note = 'password'"))
+        XCTAssertFalse(mayCommit("SET sql_mode = 'ANSI'"))
+    }
+
     /// Setting autocommit commits what was pending, however it is written and wherever it
     /// stands; the other session settings do not.
     func testAutocommitAloneAmongTheSessionSettings() {
