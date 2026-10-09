@@ -43,6 +43,10 @@ module SequelAceRelease
       raise ValidationError, "App Store Connect private key is not valid base64"
     end
 
+    def workflow(workflow_id)
+      response_data("GET", "/v1/ciWorkflows/#{workflow_id}")
+    end
+
     def workflow_runs(workflow_id)
       resources = paginate("/v1/ciWorkflows/#{workflow_id}/buildRuns", {
         "limit" => 200,

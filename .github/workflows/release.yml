@@ -454,6 +454,11 @@ jobs:
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             "${recovery_args[@]}" \
             --output reconciliation.json
+          release_build="$(ruby -rjson -e 'puts JSON.parse(File.read("reconciliation.json")).fetch("target_build")')"
+          bundle exec ruby fastlane/bin/sa-release cloud-workflow-status \
+            --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
+            --tag "${RELEASE_CHANNEL}/${RELEASE_VERSION}-${release_build}" \
+            --require-automatic --output cloud-trigger-preflight.json
           if [[ "${{ steps.recovery.outputs.active }}" == "true" ]]; then
             ruby -rjson -e '
               reconciliation = JSON.parse(File.read("reconciliation.json"))
@@ -754,6 +759,23 @@ jobs:
             --output release-publisher.json
           ruby -rjson -e 'value = JSON.parse(File.read("release-publisher.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("mode=#{value.fetch("mode")}") }'
 
+      - name: Require automatic Cloud start immediately before creating the tag
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BUILD: ${{ steps.reconcile.outputs.build }}
+          PRODUCTION_WORKFLOW: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release cloud-workflow-status \
+            --workflow-id "${PRODUCTION_WORKFLOW}" \
+            --tag "${RELEASE_CHANNEL}/${RELEASE_VERSION}-${RELEASE_BUILD}" \
+            --require-automatic --output cloud-trigger-before-tag.json
+
       - name: Create the tag-backed GitHub prerelease as Jason-Morcos
         if: steps.release_publisher.outputs.mode == 'user'
         id: prerelease_user
@@ -823,7 +845,7 @@ jobs:
           bundle exec ruby fastlane/bin/sa-release update-manifest --manifest manifest.json --state cloud_running >/dev/null
           mkdir -p release-archive
           cp manifest.json release-plan.json approval.json app-store-notes.txt release-body.md reconciliation.json release-archive/
-          cp prerelease.json release-publisher.json release-target-evidence.json release-evidence.json release-archive/
+          cp prerelease.json release-publisher.json release-target-evidence.json release-evidence.json cloud-trigger-preflight.json cloud-trigger-before-tag.json release-archive/
           reference="${GHCR_REPOSITORY}:${{ steps.release_context.outputs.ghcr_tag }}"
           Scripts/archive-release-to-ghcr.sh push "${reference}" release-archive > initial-archive-evidence.json
           echo "reference=${reference}" >> "${GITHUB_OUTPUT}"
