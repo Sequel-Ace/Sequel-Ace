@@ -380,23 +380,36 @@ public final class SAConnectionCancellation: NSObject {
     /// nor losing what the user asked for is the answer: the record stays as it is, and the request
     /// travels to the session that replaces it.
     ///
+    /// Work that was given up on is the fourth such case, and it carries no mark: a session the
+    /// user stopped waiting for may still be busy with that statement, so a `SET NAMES` from the
+    /// cleanup would queue behind it and put the waiting sheet up again. Such a session is still
+    /// there only because it was kept - the abandoned work closes it otherwise - so what the user
+    /// asked for goes to its successor.
+    ///
     /// The transaction is the one the session last reported, which can lag the handle - reading the
     /// handle is what this path exists to avoid. A report of none therefore behaves as before; a
     /// report of one keeps the kept session's record intact.
     /// - Parameters:
     ///   - sessionWillBeReplaced: Whether the session is marked to be replaced before it is used.
-    ///   - hasNoUsableSession: Whether there is no session to tell in the first place.
+    ///   - hasNoUsableSession: Whether there is no session to tell in the first place, which
+    ///     includes one waiting to be recovered.
+    ///   - workWasAbandoned: Whether the work this cleanup follows was given up on, so its session
+    ///     may still be busy with it.
     ///   - sessionHasOpenTransaction: Whether the session last reported a transaction open.
     ///   - sessionIsProtocolInvalid: Whether the protocol on that session cannot be trusted, which
     ///     no transaction is worth keeping it for.
     /// - Returns: What to do.
-    @objc(restorationOfStoredEncodingWhenSessionWillBeReplaced:hasNoUsableSession:sessionHasOpenTransaction:sessionIsProtocolInvalid:)
+    @objc(restorationOfStoredEncodingWhenSessionWillBeReplaced:hasNoUsableSession:workWasAbandoned:sessionHasOpenTransaction:sessionIsProtocolInvalid:)
     public static func restorationOfStoredEncoding(sessionWillBeReplaced: Bool,
                                                    hasNoUsableSession: Bool,
+                                                   workWasAbandoned: Bool,
                                                    sessionHasOpenTransaction: Bool,
                                                    sessionIsProtocolInvalid: Bool) -> SAStoredEncodingRestoration {
         if hasNoUsableSession {
             return .recordItOnly
+        }
+        if workWasAbandoned {
+            return .noteItForTheNextSession
         }
         guard sessionWillBeReplaced else {
             return .tellTheSession

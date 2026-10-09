@@ -246,10 +246,12 @@ final class SAConnectionCancellationTests: XCTestCase {
     /// noted for the session that replaces this one.
     func testAStoredEncodingTakesTheWayThatMatchesTheSession() {
         func restoration(marked: Bool, noSession: Bool,
+                         abandoned: Bool = false,
                          transaction: Bool = false,
                          protocolInvalid: Bool = false) -> SAConnectionCancellation.SAStoredEncodingRestoration {
             SAConnectionCancellation.restorationOfStoredEncoding(sessionWillBeReplaced: marked,
                                                                  hasNoUsableSession: noSession,
+                                                                 workWasAbandoned: abandoned,
                                                                  sessionHasOpenTransaction: transaction,
                                                                  sessionIsProtocolInvalid: protocolInvalid)
         }
@@ -271,6 +273,17 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "except where the protocol cannot be trusted, which no transaction is worth keeping it for")
         XCTAssertEqual(restoration(marked: true, noSession: true, transaction: true), .recordItOnly,
                        "and a session that is not there cannot be kept")
+
+        // Work that was given up on carries no mark, and its session may still be busy with the
+        // statement: a `SET NAMES` from the cleanup would queue behind it and put the sheet up
+        // again. Such a session is only still there because it was kept.
+        XCTAssertEqual(restoration(marked: false, noSession: false, abandoned: true),
+                       .noteItForTheNextSession,
+                       "work that was given up on is told nothing, whether or not anything is marked")
+        XCTAssertEqual(restoration(marked: false, noSession: false, abandoned: true, transaction: true),
+                       .noteItForTheNextSession)
+        XCTAssertEqual(restoration(marked: false, noSession: true, abandoned: true), .recordItOnly,
+                       "unless its session is gone, where the record is what the next one starts from")
     }
 
     /// A mark acted on later does not close a session something else has opened a transaction in -
