@@ -549,6 +549,48 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "the session was told, which is what keeps record and server in step")
     }
 
+    /// A reconnect's pending restoration is corrected along with the record.
+    ///
+    /// What to restore is noted when a reconnect starts, so one that started while a temporary
+    /// character set was in force holds that temporary one - and a reconnect that was cancelled or
+    /// failed keeps that note for its next attempt. Putting the stored encoding back without saying
+    /// so leaves that attempt restoring the temporary character set instead of the user's: the
+    /// connection would say one and the session it comes back with would be in another.
+    func testRestoringTheStoredEncodingCorrectsAPendingReconnectToo() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("no local MySQL connection configured")
+        }
+        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
+        defer { connection.disconnect() }
+
+        XCTAssertTrue(connection.setEncoding("utf8mb4"))
+        connection.storeEncodingForRestoration()
+        XCTAssertTrue(connection.setEncoding("latin1"))
+
+        // A reconnect started while the temporary character set was in force and did not finish,
+        // so its note still says latin1.
+        connection.setValue("latin1", forKey: "encodingToRestore")
+
+        // The session on its way out, which is only recorded.
+        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.restoreStoredEncoding()
+        XCTAssertEqual(connection.value(forKey: "encodingToRestore") as? String, "utf8mb4",
+                       "the next reconnect must not restore the temporary character set")
+
+        // And the session that stays, which is told.
+        connection.setValue(false, forKey: "sessionMustBeReplacedBeforeUse")
+        XCTAssertTrue(connection.setEncoding("latin1"))
+        connection.setValue("latin1", forKey: "encodingToRestore")
+        connection.restoreStoredEncoding()
+        XCTAssertEqual(connection.value(forKey: "encodingToRestore") as? String, "utf8mb4")
+
+        // Nothing is invented where no reconnect is waiting to restore anything.
+        XCTAssertTrue(connection.setEncoding("latin1"))
+        connection.setValue(nil, forKey: "encodingToRestore")
+        connection.restoreStoredEncoding()
+        XCTAssertNil(connection.value(forKey: "encodingToRestore"))
+    }
+
     /// A connection to the local server, if one is configured; see the escaping integration tests.
     private func newLocalConnection() -> SPMySQLConnection? {
         let environment = ProcessInfo.processInfo.environment

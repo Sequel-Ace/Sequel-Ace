@@ -231,11 +231,35 @@
 	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingWhenSessionWillBeReplaced:sessionMustBeReplacedBeforeUse
 	                                                                     hasNoUsableSession:(state != SPMySQLConnected)]) {
 		[self _recordStoredEncodingWithoutTellingTheSession];
+	} else {
+		[self setEncoding:previousEncoding];
+		[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
+	}
+
+	[self _putTheRestoredEncodingOnAnyPendingReconnect];
+}
+
+/**
+ * Keeps a reconnect's pending restoration in step with the encoding just put back.
+ *
+ * A reconnect takes its record of what to restore when it starts, so one that started while a
+ * temporary encoding was in force holds that temporary one - and a reconnect that was cancelled or
+ * failed keeps that record for its next attempt. Putting the stored encoding back without saying
+ * so here leaves that attempt restoring the temporary encoding instead of the user's: the
+ * connection says one character set and the session it comes back with is in another.
+ *
+ * Nothing is created: no record means no reconnect is waiting to use one. The resulting values are
+ * taken rather than the stored ones, since a character set that cannot be carried is replaced by
+ * one that can.
+ */
+- (void)_putTheRestoredEncodingOnAnyPendingReconnect
+{
+	if (!encodingToRestore) {
 		return;
 	}
 
-	[self setEncoding:previousEncoding];
-	[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
+	encodingToRestore = [encoding copy];
+	encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
 }
 
 /**
