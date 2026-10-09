@@ -62,11 +62,9 @@ import Foundation
         "ALTER TABLE \(quoted(table)) \(addClause(name: name, expression: expression, enforced: enforced))"
     }
 
-    /// MySQL 8.0.16 - 8.0.18 only knows `DROP CHECK`; 8.0.19+ and MariaDB use
-    /// the generic `DROP CONSTRAINT`.
-    @objc(dropStatementForTable:name:mariaDB:major:minor:release:)
-    static func dropStatement(table: String, name: String, isMariaDB: Bool, major: Int, minor: Int, release: Int) -> String {
-        "ALTER TABLE \(quoted(table)) \(dropClause(name: name, isMariaDB: isMariaDB, major: major, minor: minor, release: release))"
+    @objc(dropStatementForTable:name:mariaDB:)
+    static func dropStatement(table: String, name: String, isMariaDB: Bool) -> String {
+        "ALTER TABLE \(quoted(table)) \(dropClause(name: name, isMariaDB: isMariaDB))"
     }
 
     /// The `ADD ... CHECK` part of an ALTER TABLE, so it can be combined with other clauses.
@@ -81,12 +79,14 @@ import Foundation
     }
 
     /// The `DROP CHECK` / `DROP CONSTRAINT` part of an ALTER TABLE.
-    @objc(dropClauseForName:mariaDB:major:minor:release:)
-    static func dropClause(name: String, isMariaDB: Bool, major: Int, minor: Int, release: Int) -> String {
-        let usesDropCheck = !isMariaDB && !isVersion(major, minor, release, atLeast: (8, 0, 19))
-        let verb = usesDropCheck ? "DROP CHECK" : "DROP CONSTRAINT"
-
-        return "\(verb) \(quoted(name))"
+    ///
+    /// MySQL always gets the constraint-specific `DROP CHECK`. A check can share its name
+    /// with a unique key or a foreign key of the same table, and the generic
+    /// `DROP CONSTRAINT` then fails with error 3939 because the name is ambiguous. MariaDB
+    /// has no `DROP CHECK` and uses `DROP CONSTRAINT`.
+    @objc(dropClauseForName:mariaDB:)
+    static func dropClause(name: String, isMariaDB: Bool) -> String {
+        "\(isMariaDB ? "DROP CONSTRAINT" : "DROP CHECK") \(quoted(name))"
     }
 
     /// Whether a name (compared case-insensitively) is already used, so the
@@ -243,7 +243,7 @@ import Foundation
                   let expression = check[expressionKey] as? String else { continue }
 
             let enforced = (check[enforcedKey] as? NSNumber)?.boolValue ?? true
-            drop.append(dropClause(name: name, isMariaDB: isMariaDB, major: major, minor: minor, release: release))
+            drop.append(dropClause(name: name, isMariaDB: isMariaDB))
             add.append(addClause(name: name, expression: renamingColumn(column, to: newName, inExpression: expression), enforced: enforced))
         }
         return ["drop": drop, "add": add]
@@ -251,11 +251,11 @@ import Foundation
 
     /// Drop clauses for the table-level checks that use `column`, which the server
     /// won't let go of until those checks are gone. Applies to every server.
-    @objc(dropClausesRemovingColumn:checks:mariaDB:major:minor:release:)
-    static func dropClauses(removingColumn column: String, checks: [[String: Any]], isMariaDB: Bool, major: Int, minor: Int, release: Int) -> [String] {
+    @objc(dropClausesRemovingColumn:checks:mariaDB:)
+    static func dropClauses(removingColumn column: String, checks: [[String: Any]], isMariaDB: Bool) -> [String] {
         self.checks(referencing: column, in: checks).compactMap { check in
             guard let name = check[nameKey] as? String, !name.isEmpty else { return nil }
-            return dropClause(name: name, isMariaDB: isMariaDB, major: major, minor: minor, release: release)
+            return dropClause(name: name, isMariaDB: isMariaDB)
         }
     }
 

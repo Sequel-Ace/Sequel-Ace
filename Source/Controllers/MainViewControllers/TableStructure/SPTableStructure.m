@@ -716,7 +716,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// check is dropped in the same statement as the field, and listed in the confirmation below.
 	NSMutableArray<NSString *> *dependentCheckDescriptions = [NSMutableArray array];
 	NSMutableArray<NSString *> *additionalAlterClauses = [NSMutableArray array];
-	NSArray<NSNumber *> *serverVersion = [self _serverVersionParts];
 	NSArray *tableChecks = [tableDataInstance getCheckConstraints];
 
 	for (NSDictionary *check in [SACheckConstraintSupport checksReferencingColumn:field inChecks:tableChecks])
@@ -725,10 +724,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	[additionalAlterClauses addObjectsFromArray:[SACheckConstraintSupport dropClausesRemovingColumn:field
 	                                                                                         checks:tableChecks
-	                                                                                        mariaDB:[mySQLConnection isMariaDB]
-	                                                                                          major:[serverVersion[0] integerValue]
-	                                                                                          minor:[serverVersion[1] integerValue]
-	                                                                                        release:[serverVersion[2] integerValue]]];
+	                                                                                        mariaDB:[mySQLConnection isMariaDB]]];
 
 	// MariaDB keeps a column's own check in that column's definition. A check on another column that
 	// mentions this field can only go by redefining that column without it. This scans every column,

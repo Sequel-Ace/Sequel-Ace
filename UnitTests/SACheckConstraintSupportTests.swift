@@ -203,14 +203,16 @@ final class SACheckConstraintSupportTests: XCTestCase {
         XCTAssertEqual(clauses["add"], ["ADD CONSTRAINT `chk_ab` CHECK (`aa` < `b`)"])
     }
 
-    func testRenameClausesUseDropConstraintFromMySQL8019() {
-        let clauses = SACheckConstraintSupport.renameClauses(
-            renamingColumn: "a", to: "aa",
-            checks: [check("chk_ab", "`a` < `b`")],
-            isMariaDB: false, major: 8, minor: 4, release: 11
-        )
+    func testRenameClausesUseDropCheckOnEveryMySQLVersion() {
+        for (major, minor, release) in [(8, 0, 16), (8, 0, 18), (8, 0, 19), (8, 4, 11), (9, 0, 0)] {
+            let clauses = SACheckConstraintSupport.renameClauses(
+                renamingColumn: "a", to: "aa",
+                checks: [check("chk_ab", "`a` < `b`")],
+                isMariaDB: false, major: major, minor: minor, release: release
+            )
 
-        XCTAssertEqual(clauses["drop"], ["DROP CONSTRAINT `chk_ab`"])
+            XCTAssertEqual(clauses["drop"], ["DROP CHECK `chk_ab`"], "MySQL \(major).\(minor).\(release)")
+        }
     }
 
     func testRenameClausesKeepNotEnforced() {
@@ -284,12 +286,48 @@ final class SACheckConstraintSupportTests: XCTestCase {
         let checks = [check("chk_ab", "`a` < `b`"), check("chk_c", "`c` > 0")]
 
         XCTAssertEqual(
-            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: checks, isMariaDB: true, major: 10, minor: 11, release: 19),
+            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: checks, isMariaDB: true),
             ["DROP CONSTRAINT `chk_ab`"]
         )
         XCTAssertEqual(
-            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: checks, isMariaDB: false, major: 8, minor: 0, release: 18),
+            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: checks, isMariaDB: false),
             ["DROP CHECK `chk_ab`"]
+        )
+    }
+
+    func testChecksSharingANameWithAnotherConstraintAreDroppedByTheCheckSpecificClause() {
+        // MySQL allows UNIQUE KEY ck (a) next to CONSTRAINT ck CHECK (a > 0), or a foreign key
+        // named like a check. DROP CONSTRAINT ck is ambiguous there (error 3939); DROP CHECK ck is not.
+        let shared = [check("ck", "`a` > 0")]
+
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: shared, isMariaDB: false),
+            ["DROP CHECK `ck`"]
+        )
+
+        let rename = SACheckConstraintSupport.renameClauses(
+            renamingColumn: "a", to: "aa", checks: shared,
+            isMariaDB: false, major: 8, minor: 4, release: 11
+        )
+        XCTAssertEqual(rename["drop"], ["DROP CHECK `ck`"])
+        XCTAssertEqual(rename["add"], ["ADD CONSTRAINT `ck` CHECK (`aa` > 0)"])
+
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropStatement(table: "t", name: "ck", isMariaDB: false),
+            "ALTER TABLE `t` DROP CHECK `ck`"
+        )
+    }
+
+    func testMariaDBKeepsDropConstraintBecauseItHasNoDropCheck() {
+        let shared = [check("ck", "`a` > 0")]
+
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropClauses(removingColumn: "a", checks: shared, isMariaDB: true),
+            ["DROP CONSTRAINT `ck`"]
+        )
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropStatement(table: "t", name: "ck", isMariaDB: true),
+            "ALTER TABLE `t` DROP CONSTRAINT `ck`"
         )
     }
 
@@ -337,17 +375,19 @@ final class SACheckConstraintSupportTests: XCTestCase {
         )
     }
 
-    func testDropStatementUsesDropCheckOnEarlyMySQL8() {
-        XCTAssertEqual(drop(mariaDB: false, 8, 0, 16), "ALTER TABLE `t` DROP CHECK `ck`")
-        XCTAssertEqual(drop(mariaDB: false, 8, 0, 18), "ALTER TABLE `t` DROP CHECK `ck`")
+    func testDropStatementUsesDropCheckOnMySQL() {
+        XCTAssertEqual(drop(mariaDB: false), "ALTER TABLE `t` DROP CHECK `ck`")
     }
 
-    func testDropStatementUsesDropConstraintFromMySQL8019AndOnMariaDB() {
-        XCTAssertEqual(drop(mariaDB: false, 8, 0, 19), "ALTER TABLE `t` DROP CONSTRAINT `ck`")
-        XCTAssertEqual(drop(mariaDB: false, 8, 4, 0), "ALTER TABLE `t` DROP CONSTRAINT `ck`")
-        XCTAssertEqual(drop(mariaDB: true, 10, 2, 1), "ALTER TABLE `t` DROP CONSTRAINT `ck`")
-        // Version 10.x must not be mistaken for an old MySQL.
-        XCTAssertEqual(drop(mariaDB: true, 10, 6, 0), "ALTER TABLE `t` DROP CONSTRAINT `ck`")
+    func testDropStatementUsesDropConstraintOnMariaDB() {
+        XCTAssertEqual(drop(mariaDB: true), "ALTER TABLE `t` DROP CONSTRAINT `ck`")
+    }
+
+    func testDropStatementEscapesBackticksInNames() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.dropStatement(table: "we`ird", name: "c`k", isMariaDB: false),
+            "ALTER TABLE `we``ird` DROP CHECK `c``k`"
+        )
     }
 
     func testNameCollisionIsCaseInsensitive() {
@@ -501,7 +541,7 @@ final class SACheckConstraintSupportTests: XCTestCase {
         SACheckConstraintSupport.serverSupportsCheckConstraints(isMariaDB: mariaDB, major: major, minor: minor, release: release)
     }
 
-    private func drop(mariaDB: Bool, _ major: Int, _ minor: Int, _ release: Int) -> String {
-        SACheckConstraintSupport.dropStatement(table: "t", name: "ck", isMariaDB: mariaDB, major: major, minor: minor, release: release)
+    private func drop(mariaDB: Bool) -> String {
+        SACheckConstraintSupport.dropStatement(table: "t", name: "ck", isMariaDB: mariaDB)
     }
 }

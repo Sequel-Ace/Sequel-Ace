@@ -776,16 +776,12 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Delete check constraint", @"delete check constraint message") message:NSLocalizedString(@"Are you sure you want to delete the selected check constraints? This action cannot be undone.", @"delete selected check constraint informative message") primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
 		NSString *thisTable = [self->tablesListInstance tableName];
 		BOOL isMariaDB = [self->connection isMariaDB];
-		NSArray<NSNumber *> *version = [self _serverVersionParts];
 
 		for (NSString *name in names)
 		{
 			NSString *query = [SACheckConstraintSupport dropStatementForTable:thisTable
 			                                                             name:name
-			                                                          mariaDB:isMariaDB
-			                                                            major:[version[0] integerValue]
-			                                                            minor:[version[1] integerValue]
-			                                                          release:[version[2] integerValue]];
+			                                                          mariaDB:isMariaDB];
 
 			[self->connection queryString:query assertingDatabase:[self->tableDocumentInstance database]];
 
