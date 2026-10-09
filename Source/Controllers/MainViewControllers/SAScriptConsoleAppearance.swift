@@ -111,7 +111,11 @@ struct SAScriptConsoleAppearance: Equatable {
         applyFontChange(in: .standard) { NSFontPanel.shared.convert($0) }
     }
 
+    /// No-op while the override is off: a font panel left open after the
+    /// checkbox was unticked must not overwrite the stored custom font with a
+    /// converted editor font.
     static func applyFontChange(in defaults: UserDefaults, convert: (NSFont) -> NSFont) {
+        guard defaults.bool(forKey: SAScriptConsoleAppearance.useCustomKey) else { return }
         let font = convert(SAScriptConsoleAppearance.resolve(from: defaults).font)
         defaults.set(SAArchiving.archivedData(forFont: font), forKey: SAScriptConsoleAppearance.customFontKey)
     }

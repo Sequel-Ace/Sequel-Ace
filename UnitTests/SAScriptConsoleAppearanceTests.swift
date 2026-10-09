@@ -159,6 +159,19 @@ final class SAScriptConsoleAppearanceTests: XCTestCase {
 
     // MARK: - Font panel
 
+    func testApplyFontChangeIsIgnoredWhileOverrideIsOff() {
+        storeEditorValues()
+        storeCustomValues()
+        defaults.set(false, forKey: Appearance.useCustomKey)
+        let before = defaults.data(forKey: Appearance.customFontKey)
+
+        SAScriptConsoleFontPanel.applyFontChange(in: defaults) { font in
+            NSFontManager.shared.convert(font, toSize: 20)
+        }
+
+        XCTAssertEqual(defaults.data(forKey: Appearance.customFontKey), before)
+    }
+
     func testApplyFontChangeConvertsCurrentCustomFontAndSavesIt() {
         storeEditorValues()
         storeCustomValues()
