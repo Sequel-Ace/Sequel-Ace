@@ -1641,9 +1641,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 				// Putting the question can take a while - it waits for another modal window to go -
 				// and the user can stop waiting in there. What came back is then the answer from
 				// before rather than a decision about this loss, so nothing is done with it: this
-				// attempt reports that it did not reconnect, and the cancelled reconnect's own
-				// recovery settles the state.
+				// attempt reports that it did not reconnect.
+				//
+				// The connect before it left the connection disconnected, and the recovery that
+				// turns that into a loss the next use reconnects from ran before the cancellation
+				// arrived. Without running it here the connection would answer "no connection" for
+				// good, even once the network is back - so it runs, as it does on the other paths
+				// a cancellation leaves through.
 				if ([[NSThread currentThread] isCancelled]) {
+					[self _recoverFromCancelledReconnectMayDisconnect:YES];
 					reconnectingThread = NULL;
 					return NO;
 				}
