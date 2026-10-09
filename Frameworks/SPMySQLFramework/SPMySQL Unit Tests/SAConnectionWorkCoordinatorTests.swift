@@ -418,12 +418,16 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
     /// about the connection is still out to the main thread.
     ///
     /// The lease turns a main-thread caller away, but the hand-off happens first and the session
-    /// is then asked for on the worker, where that refusal no longer recognises the caller. The
-    /// worker runs one item at a time, so the query would queue behind whatever waits for the
-    /// answer while the main thread waits for the worker - and the answer cannot arrive until the
-    /// main thread returns. This drives the whole chain through the public `queryString:`: if the
-    /// query were enqueued, the question below could not return and the test would time out
-    /// rather than fail.
+    /// is then asked for on the worker, where that refusal no longer recognises the caller. This
+    /// drives the whole chain through the public `queryString:`.
+    ///
+    /// The thread that asks holds the session while it asks, as a reconnect does - which is what
+    /// makes the two sides cross. Without the refusal the worker waits in the lease for a session
+    /// the asking thread is holding, the main thread waits for the worker inside the delegate's
+    /// own wait, and the answer that would release the session cannot arrive until the main thread
+    /// returns from being asked. Neither side moves, and the test hangs rather than failing an
+    /// assertion. Holding the session is therefore not decoration here: without it the worker
+    /// would take the free lease at once and nothing would be reproduced.
     func testAMainThreadQueryIsRefusedBeforeItIsHandedToTheWorkerWhileTheQuestionIsOpen() throws {
         let connection = SPMySQLConnection()
         connection.useKeepAlive = false
@@ -450,8 +454,14 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         let theQuestionCameBack = expectation(description: "the question was answered")
         let theDecision = NSSelectorFromString("_delegateDecisionForLostConnection")
         XCTAssertTrue(connection.responds(to: theDecision))
+        let access = connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess
+        XCTAssertNotNil(access, "the lease is what the two sides contend for")
         Thread.detachNewThread {
-            connection.perform(theDecision)
+            // Asked while holding the session, the way the reconnect that asks this question does.
+            _ = access?.performQuery {
+                connection.perform(theDecision)
+                return nil
+            }
             theQuestionCameBack.fulfill()
         }
 
