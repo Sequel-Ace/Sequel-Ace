@@ -178,12 +178,7 @@ extension SPCustomQuery {
         if summary.tableListNeedsReload || summary.databaseChanged {
             document.setDatabases()
             if summary.databaseChanged {
-                if let finalDatabase = summary.finalDatabase {
-                    document.setCurrentDatabaseFromQueryContext(finalDatabase)
-                } else {
-                    // The ObjC method accepts nil (no database selected) but is declared nonnull.
-                    _ = document.perform(NSSelectorFromString("setCurrentDatabaseFromQueryContext:"), with: nil)
-                }
+                document.setCurrentDatabaseFromQueryContext(summary.finalDatabase)
             }
             tablesListInstance?.updateTables(self)
         }
