@@ -2511,6 +2511,9 @@
 /* run all button */
 "Run All" = "Run All";
 
+/* Query editor run menu: run all statements and print every result as plain text */
+"Run All as Script" = "Run All as Script";
+
 /* Run All menu item title */
 "Run All Queries" = "Run All Queries";
 

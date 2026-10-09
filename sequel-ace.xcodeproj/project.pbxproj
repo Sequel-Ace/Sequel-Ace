@@ -516,6 +516,7 @@
 		6ABF364B03D0324617CFABCC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		6C5D707FD9947026F90C868A /* SASSHTunnelFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */; };
 		6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
+		6DEA8EFBCCA6567E457B10E2 /* SPCustomQuery+Script.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BCBDC308AB07FD3E701FE1 /* SPCustomQuery+Script.swift */; };
 		6E60DF55568BE1B2F63D74E3 /* SASSHTunnelFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97F8957A557F13C063625AE /* SASSHTunnelFailure.swift */; };
 		6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */; };
 		6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA9232734ABE200514FF1 /* SABundleRunner.m */; };
@@ -1499,6 +1500,7 @@
 		81815809CB9EBE53E9D2AA2A /* SADatabaseScopedValueCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCacheTests.swift; sourceTree = "<group>"; };
 		A19A2000000000000000E007 /* SQLiteManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SQLiteManagerTests.swift; sourceTree = "<group>"; };
 		8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainTestSupport.swift; sourceTree = "<group>"; };
+		84BCBDC308AB07FD3E701FE1 /* SPCustomQuery+Script.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SPCustomQuery+Script.swift"; sourceTree = "<group>"; };
 		87376FCB9BB22836AD5235F8 /* SAScriptStatementLocator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocator.swift; sourceTree = "<group>"; };
 		8831EFA5224011B700D10172 /* button_addTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_addTemplate.pdf; sourceTree = "<group>"; };
 		8831EFA92240128600D10172 /* button_removeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_removeTemplate.pdf; sourceTree = "<group>"; };
@@ -2002,6 +2004,7 @@
 				48C67458438228D42437126F /* SAScriptConsoleModel.swift */,
 				8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */,
 				25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */,
+				84BCBDC308AB07FD3E701FE1 /* SPCustomQuery+Script.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -4226,6 +4229,7 @@
 				9B56E248B4BB6212004570CA /* SAScriptConsoleModel.swift in Sources */,
 				CCF065F89382A9A33C1A2E3C /* SAScriptRunner.swift in Sources */,
 				ACDB8F22CA9B78276D639CD1 /* SAScriptConsoleView.swift in Sources */,
+				6DEA8EFBCCA6567E457B10E2 /* SPCustomQuery+Script.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
