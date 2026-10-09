@@ -1311,6 +1311,12 @@
 /* message of panel asking for confirmation for inserting large text from dragging action */
 "Do you really want to proceed with %@ of data?" = "Do you really want to proceed with %@ of data?";
 
+/* message of panel asking for confirmation for exec query */
+"Do you really want to proceed with these queries?\n\n %@" = "Do you really want to proceed with these queries?\n\n %@";
+
+/* message of panel asking for confirmation for exec query */
+"Do you really want to proceed with this query?\n\n %@" = "Do you really want to proceed with this query?\n\n %@";
+
 /* shutdown server : confirmation dialog : title */
 "Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
 
@@ -1546,6 +1552,9 @@
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclude BLOB";
+
+/* Execute SQL? */
+"Execute SQL?" = "Execute SQL?";
 
 /* execution privilege label (Navigator) */
 "Execution Privilege" = "Execution Privilege";
