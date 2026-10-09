@@ -6042,7 +6042,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SAConnectionCheckSheet *sheet = [[SAConnectionCheckSheet alloc] init];
 
     __weak id weakConnection = connection;
+    __weak SPDatabaseDocument *weakSelf = self;
     [sheet waitInWindow:[self parentWindowControllerWindow] untilFinished:isFinished whenCancelled:^{
+        // The user has said they will not wait. That ends this piece of work - and the stages a
+        // table load has left, if a load is what was waiting: each would start the same wait again
+        // on the same route. A press with no load running records nothing, since it is a stage
+        // asking that makes a press count.
+        [weakSelf.tableLoadStop stopWasAskedFor];
         [weakConnection cancelConnectionCheck];
     }];
 }
