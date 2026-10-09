@@ -240,6 +240,8 @@ jobs:
             /release-body.md \
             /requested-release-body.md \
             /reconciliation.json \
+            /cloud-trigger-preflight.json \
+            /cloud-trigger-before-tag.json \
             /manifest.json \
             /preparation.json \
             /release-pr.json \

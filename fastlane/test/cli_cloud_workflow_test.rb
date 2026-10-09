@@ -88,6 +88,26 @@ class CLICloudWorkflowTest < Minitest::Test
     refute JSON.parse(output).fetch("ready")
   end
 
+  def test_generated_trigger_reports_do_not_block_preparation_or_hide_source_changes
+    workflow = YAML.load_file(File.expand_path("../../.github/workflows/release.yml", __dir__))
+    steps = workflow.fetch("jobs").values.flat_map { |job| job.fetch("steps", []) }
+    exclude = steps.find { |step| step["name"] == "Exclude transient release evidence from git status" }.fetch("run")
+    Dir.mktmpdir do |directory|
+      _out, err, status = Open3.capture3("git", "init", "--quiet", directory)
+      assert status.success?, err
+      repository = SequelAceRelease::GitRepository.new(root: directory)
+      %w[cloud-trigger-preflight.json cloud-trigger-before-tag.json].each do |name|
+        File.write(File.join(directory, name), "{}")
+      end
+      assert_raises(SequelAceRelease::ValidationError) { repository.ensure_clean! }
+      _out, err, status = Open3.capture3("bash", "-c", exclude, chdir: directory)
+      assert status.success?, err
+      repository.ensure_clean!
+      File.write(File.join(directory, "Source.swift"), "// a source change")
+      assert_raises(SequelAceRelease::ValidationError) { repository.ensure_clean! }
+    end
+  end
+
   def test_status_collects_diagnostics_without_changing_cloud_configuration
     workflow = YAML.load_file(File.expand_path("../../.github/workflows/release_status.yml", __dir__))
     steps = workflow.fetch("jobs").fetch("inspect").fetch("steps")
