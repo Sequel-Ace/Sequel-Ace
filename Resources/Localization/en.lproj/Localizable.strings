@@ -4422,5 +4422,65 @@
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
 
+/* Table list pin menu: pin the selected tables in the global pinned section */
+"Pin Globally" = "Pin Globally";
+
+/* Table list pin menu: submenu listing the groups the selected tables can be pinned to */
+"Pin to Group" = "Pin to Group";
+
+/* Table list pin menu: ask for a name, then pin the selected tables in a new group */
+"New Pinned Group…" = "New Pinned Group…";
+
+/* Table list pin menu: stop pinning the selected tables */
+"Unpin" = "Unpin";
+
+/* Table list pin menu: take the selected tables out of their group; they stay pinned in the global section */
+"Remove from Group" = "Remove from Group";
+
+/* Table list pin menu: submenu to rename, collapse or delete a group of pinned tables */
+"Manage Pinned Groups" = "Manage Pinned Groups";
+
+/* Table list pin menu: rename a group of pinned tables */
+"Rename…" = "Rename…";
+
+/* Table list pin menu: show the tables of a collapsed group of pinned tables */
+"Expand" = "Expand";
+
+/* Table list pin menu: hide the tables of a group of pinned tables */
+"Collapse" = "Collapse";
+
+/* Table list pin menu: delete a group of pinned tables; its tables stay pinned in the global section */
+"Delete Group" = "Delete Group";
+
+/* Title of the dialog asking for the name of a new group of pinned tables */
+"New Pinned Group" = "New Pinned Group";
+
+/* Message of the dialog asking for the name of a new group of pinned tables */
+"Enter a name for the pinned-table group." = "Enter a name for the pinned-table group.";
+
+/* Button creating a new group of pinned tables */
+"Create" = "Create";
+
+/* Title of the dialog asking for the new name of a group of pinned tables */
+"Rename Pinned Group" = "Rename Pinned Group";
+
+/* Message of the dialog asking for the new name of a group of pinned tables */
+"Enter a new name for the pinned-table group." = "Enter a new name for the pinned-table group.";
+
+/* Button renaming a group of pinned tables */
+"Rename" = "Rename";
+
+/* Title of the alert shown when a group of pinned tables could not be renamed */
+"The group could not be renamed." = "The group could not be renamed.";
+
+/* Message of the alert shown when renaming a group of pinned tables to the name of another group */
+"Another group already has this name." = "Another group already has this name.";
+
+/* Message of the alert shown when renaming a group of pinned tables with an unusable name */
+"The name is empty or the group no longer exists." = "The name is empty or the group no longer exists.";
+
+/* Message of the alert shown when the store refused to save a renamed group of pinned tables */
+"The pinned tables could not be saved. Please try again." = "The pinned tables could not be saved. Please try again.";
+
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.";
