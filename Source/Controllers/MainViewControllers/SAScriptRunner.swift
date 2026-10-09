@@ -131,7 +131,9 @@ final class SAScriptRunner {
         defer { connection.retryQueriesOnConnectionFailure = true }
 
         for (index, statement) in statements.enumerated() {
-            if isCancelled {
+            // Only the token here: the connection's lastQueryWasCancelled can be
+            // stale from an earlier Stop until this run issues its first query.
+            if cancellation.isCancelled {
                 finishCancelled(&summary, result: nil)
                 break
             }
@@ -157,7 +159,9 @@ final class SAScriptRunner {
             summary.queriesRun += 1
             summary.executionTime += result?.queryExecutionTime() ?? 0
 
-            if isCancelled {
+            // queryString just reset lastQueryWasCancelled, so here it reflects
+            // a Stop of this statement only.
+            if cancellation.isCancelled || connection.lastQueryWasCancelled {
                 finishCancelled(&summary, result: result)
                 break
             }
@@ -174,19 +178,14 @@ final class SAScriptRunner {
             if result.numberOfFields() > 0 {
                 let columns = (result.fieldNames() as? [String]) ?? []
                 var rowCount: UInt64 = 0
-                var cancelledWhileStreaming = false
-                while let row = result.getRowAsArray() {
+                while !cancellation.isCancelled, let row = result.getRowAsArray() {
                     if rowCount == 0 {
                         output(SAScriptOutputFormatter.resultHeader(columns: columns))
                     }
                     output(SAScriptOutputFormatter.row(row.map(SAScriptCell.init(mysqlValue:))))
                     rowCount += 1
-                    if isCancelled {
-                        cancelledWhileStreaming = true
-                        break
-                    }
                 }
-                if cancelledWhileStreaming || isCancelled {
+                if cancellation.isCancelled {
                     finishCancelled(&summary, result: result)
                     break
                 }
@@ -226,10 +225,6 @@ final class SAScriptRunner {
 
         summary.finalDatabase = currentDatabase
         return summary
-    }
-
-    private var isCancelled: Bool {
-        cancellation.isCancelled || connection.lastQueryWasCancelled
     }
 
     /// Single exit path for every cancellation: drain/cancel any open
