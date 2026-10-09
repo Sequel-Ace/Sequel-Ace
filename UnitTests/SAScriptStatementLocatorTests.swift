@@ -77,5 +77,6 @@ final class SAScriptStatementLocatorTests: XCTestCase {
         XCTAssertTrue(SAScriptStatementLocator.isEmptyStatement("/* block */"))
         XCTAssertFalse(SAScriptStatementLocator.isEmptyStatement("-- note\nSELECT 1"))
         XCTAssertFalse(SAScriptStatementLocator.isEmptyStatement("SELECT 1"))
+        XCTAssertFalse(SAScriptStatementLocator.isEmptyStatement("/*!40101 SET NAMES utf8 */"))
     }
 }
