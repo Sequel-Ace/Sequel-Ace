@@ -75,6 +75,11 @@ extension SPCustomQuery {
 
     /// Show the grid again. Called by -performQueriesWithNoWarning:withCallback:.
     @objc func hideScriptConsole() {
+        // -performQueriesWithNoWarning: can be called off the main thread.
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.hideScriptConsole() }
+            return
+        }
         guard let attachment = existingScriptConsoleAttachment, !attachment.hostingView.isHidden else { return }
         attachment.hostingView.isHidden = true
         customQueryScrollView?.isHidden = false
