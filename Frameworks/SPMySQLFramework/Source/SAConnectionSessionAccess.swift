@@ -323,6 +323,17 @@ import Darwin
         return succeeded
     }
 
+    /// Whether the session has to be recovered before it is used again, without using that record
+    /// up.
+    ///
+    /// Asked where the only question is whether this session is worth sending anything to - the
+    /// cleanup that puts a stored character set back. A session waiting to be recovered is not: the
+    /// statement would take the reconnect with it, and start the very wait the user has just ended.
+    /// Using the record up is the reconnect's to do, not this question's.
+    @objc public var sessionNeedsRecovery: Bool {
+        socketLock.withLock { recoveryRequired }
+    }
+
     /// Whether the session has to be recovered before it is used again, using up that record.
     ///
     /// Asked once by the reconnect that acts on it: a read that was cut off cannot be carried

@@ -566,6 +566,40 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "the session was told, which is what keeps record and server in step")
     }
 
+    /// A session waiting to be recovered is told nothing either: a cancellation that closed its
+    /// socket leaves the state connected and the mark unset, so the record alone used to look like
+    /// a session worth sending a `SET NAMES` to - which takes the reconnect with it, and with that
+    /// the wait the user has just ended.
+    func testASessionWaitingToBeRecoveredIsNotToldAnything() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("no local MySQL connection configured")
+        }
+        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
+        defer { connection.disconnect() }
+
+        XCTAssertTrue(connection.setEncoding("utf8mb4"))
+        connection.storeEncodingForRestoration()
+        XCTAssertTrue(connection.setEncoding("latin1"))
+
+        let access = try XCTUnwrap(connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess)
+        XCTAssertFalse(access.sessionNeedsRecovery)
+
+        // What a cancellation that closed the socket leaves behind: the state stays connected and
+        // nothing is marked for replacement.
+        let theSessionBeforeTheRestore = access.socketToken
+        access.noteCancellationEndedTheNativeRead(onSocket: theSessionBeforeTheRestore)
+        XCTAssertTrue(access.sessionNeedsRecovery)
+        XCTAssertEqual(connection.value(forKey: "state") as? Int, Int(SPMySQLConnected.rawValue))
+        XCTAssertEqual(connection.value(forKey: "sessionMustBeReplacedBeforeUse") as? Bool, false)
+
+        connection.restoreStoredEncoding()
+
+        XCTAssertEqual(connection.value(forKey: "encoding") as? String, "utf8mb4",
+                       "the record goes back, for the session that recovery puts in place")
+        XCTAssertEqual(access.socketToken, theSessionBeforeTheRestore,
+                       "and nothing was sent, so no reconnect was taken along with it")
+    }
+
     /// A session kept for the transaction open in it keeps its own character set on record, and
     /// what the user asked for goes to the session that replaces it.
     ///

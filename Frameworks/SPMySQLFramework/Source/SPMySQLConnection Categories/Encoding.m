@@ -229,11 +229,15 @@
 	// set, so its record has to keep saying so, and what the user asked for travels to the session
 	// that replaces it. The decision is SAConnectionCancellation's; the three cases are its.
 	//
-	// Only plain values are read - the mark, the state, the transaction the session last reported
-	// and the protocol flag: the native handle belongs to whoever holds the connection, and the
-	// worker of abandoned work can be closing it.
+	// A session waiting to be recovered counts as none to tell: a cancellation that closed its
+	// socket leaves the state connected and the mark unset, and a statement would take the
+	// reconnect with it - the very wait the user has just ended.
+	//
+	// Only plain values are read - the mark, the state, the recovery record, the transaction the
+	// session last reported and the protocol flag: the native handle belongs to whoever holds the
+	// connection, and the worker of abandoned work can be closing it.
 	switch ([SAConnectionCancellation restorationOfStoredEncodingWhenSessionWillBeReplaced:sessionMustBeReplacedBeforeUse
-	                                                                    hasNoUsableSession:(state != SPMySQLConnected)
+	                                                                    hasNoUsableSession:(state != SPMySQLConnected || self.sessionAccess.sessionNeedsRecovery)
 	                                                             sessionHasOpenTransaction:[self sessionHasOpenTransaction]
 	                                                              sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
 		case SAStoredEncodingRestorationNoteItForTheNextSession:
