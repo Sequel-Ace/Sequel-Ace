@@ -199,7 +199,7 @@ extension SPCustomQuery {
         (errorText as? NSTextView)?.textColor = (hadErrors || summary.wasCancelled) ? .systemRed : .controlTextColor
         (errorText as? NSText)?.string = summary.wasCancelled
             ? NSLocalizedString("Query cancelled.", comment: "Query cancelled error")
-            : (hadErrors ? model.text.components(separatedBy: "\n").filter { $0.hasPrefix("ERROR ") }.joined(separator: "\n")
+            : (hadErrors ? summary.errorLines.joined(separator: "\n")
                          : NSLocalizedString("There were no errors.", comment: "text shown when query was successfull"))
         (affectedRowsText as? NSTextField)?.stringValue = statusLine(for: summary)
 

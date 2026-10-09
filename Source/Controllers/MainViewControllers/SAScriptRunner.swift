@@ -55,6 +55,8 @@ struct SAScriptRunSummary {
     var totalAffectedRows: UInt64 = 0
     var executionTime: Double = 0
     var errorCount = 0
+    /// Each `ERROR … at line N: …` line printed, without its trailing blank line.
+    var errorLines: [String] = []
     var wasCancelled = false
     var finalDatabase: String?
     var databaseChanged = false
@@ -176,8 +178,7 @@ final class SAScriptRunner {
             // A nil result means the query never ran (e.g. disconnected), even
             // when the connection recorded no error.
             guard let result, !connection.queryErrored() else {
-                summary.errorCount += 1
-                output(errorText(for: statement))
+                reportError(for: statement, in: &summary)
                 if continueOnError { continue }
                 break
             }
@@ -198,8 +199,7 @@ final class SAScriptRunner {
                 }
                 if connection.queryErrored() {
                     // An error while streaming rows (e.g. lost connection).
-                    summary.errorCount += 1
-                    output(errorText(for: statement))
+                    reportError(for: statement, in: &summary)
                     if continueOnError { continue }
                     break
                 }
@@ -240,6 +240,13 @@ final class SAScriptRunner {
         (result as? SPMySQLStreamingResult)?.cancelLoad()
         output(SAScriptOutputFormatter.cancelled)
         summary.wasCancelled = true
+    }
+
+    private func reportError(for statement: SAScriptStatement, in summary: inout SAScriptRunSummary) {
+        let text = errorText(for: statement)
+        output(text)
+        summary.errorCount += 1
+        summary.errorLines.append(text.trimmingCharacters(in: .newlines))
     }
 
     private func errorText(for statement: SAScriptStatement) -> String {
