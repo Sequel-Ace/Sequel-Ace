@@ -3,9 +3,11 @@
 //  Sequel Ace
 //
 //  The "Run All as Script" console that replaces the Query tab's result grid:
-//  a small toolbar over a monospaced, read-only NSTextView. The text view is
-//  fed incrementally from SAScriptConsoleModel.appended so multi-megabyte
-//  output never goes through SwiftUI diffing.
+//  a small toolbar over a read-only NSTextView. The text view is fed
+//  incrementally from SAScriptConsoleModel.appended so multi-megabyte output
+//  never goes through SwiftUI diffing. Its font and colours come from
+//  SAScriptConsoleAppearance (the Query Editor's by default) and follow
+//  preference changes live.
 //
 
 import AppKit
@@ -74,8 +76,8 @@ struct SAScriptConsoleView: View {
     }
 }
 
-/// Read-only, selectable, non-wrapping monospaced text view that appends
-/// output chunks as the model publishes them.
+/// Read-only, selectable, non-wrapping text view that appends output chunks
+/// as the model publishes them.
 private struct SAScriptConsoleTextView: NSViewRepresentable {
 
     let model: SAScriptConsoleModel
@@ -101,9 +103,6 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
         textView.allowsUndo = false
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true
-        textView.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
-        textView.textColor = .textColor
-        textView.backgroundColor = .textBackgroundColor
         textView.textContainerInset = NSSize(width: 4, height: 4)
 
         // No wrapping: rows are tab-separated lines; scroll horizontally instead.
@@ -117,6 +116,7 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
         scrollView.documentView = textView
 
         textView.string = model.text
+        context.coordinator.apply(SAScriptConsoleAppearance.resolve(from: .standard), to: textView)
         context.coordinator.bind(model: model, textView: textView)
         return scrollView
     }
@@ -125,18 +125,16 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
 
     final class Coordinator {
         private var subscriptions = Set<AnyCancellable>()
+        private var appearance = SAScriptConsoleAppearance.fallback
+        private var hasAppliedAppearance = false
 
         func bind(model: SAScriptConsoleModel, textView: NSTextView) {
             subscriptions.removeAll()
             model.appended
-                .sink { [weak textView] chunk in
-                    guard let textView, let storage = textView.textStorage else { return }
+                .sink { [weak self, weak textView] chunk in
+                    guard let self, let textView, let storage = textView.textStorage else { return }
                     let wasAtBottom = Coordinator.isScrolledToBottom(textView)
-                    let attributes: [NSAttributedString.Key: Any] = [
-                        .font: textView.font ?? NSFont.monospacedSystemFont(ofSize: 11, weight: .regular),
-                        .foregroundColor: NSColor.textColor,
-                    ]
-                    storage.append(NSAttributedString(string: chunk, attributes: attributes))
+                    storage.append(NSAttributedString(string: chunk, attributes: self.textAttributes))
                     if wasAtBottom {
                         textView.scrollToEndOfDocument(nil)
                     }
@@ -147,6 +145,37 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
                     textView?.string = ""
                 }
                 .store(in: &subscriptions)
+            // Preferences → Query Editor (font, colours, Script Output override).
+            // didChangeNotification fires for every default on any thread, so
+            // coalesce onto the main queue; apply(_:to:) skips unchanged looks.
+            NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+                .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
+                .sink { [weak self, weak textView] _ in
+                    guard let self, let textView else { return }
+                    self.apply(SAScriptConsoleAppearance.resolve(from: .standard), to: textView)
+                }
+                .store(in: &subscriptions)
+        }
+
+        /// Applies the font and colours to the view and restyles the text already shown.
+        func apply(_ newAppearance: SAScriptConsoleAppearance, to textView: NSTextView) {
+            guard !hasAppliedAppearance || newAppearance != appearance else { return }
+            appearance = newAppearance
+            hasAppliedAppearance = true
+            textView.font = newAppearance.font
+            textView.textColor = newAppearance.textColor
+            textView.backgroundColor = newAppearance.backgroundColor
+            textView.enclosingScrollView?.backgroundColor = newAppearance.backgroundColor
+            textView.typingAttributes = textAttributes
+            if let storage = textView.textStorage, storage.length > 0 {
+                storage.beginEditing()
+                storage.addAttributes(textAttributes, range: NSRange(location: 0, length: storage.length))
+                storage.endEditing()
+            }
+        }
+
+        private var textAttributes: [NSAttributedString.Key: Any] {
+            [.font: appearance.font, .foregroundColor: appearance.textColor]
         }
 
         private static func isScrolledToBottom(_ textView: NSTextView) -> Bool {
