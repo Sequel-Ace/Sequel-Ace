@@ -1637,6 +1637,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// If the delegate supports the decision process, ask it how to proceed
 			if (delegateSupportsConnectionLost) {
 				connectionLostDecision = [self _delegateDecisionForLostConnection];
+
+				// Putting the question can take a while - it waits for another modal window to go -
+				// and the user can stop waiting in there. What came back is then the answer from
+				// before rather than a decision about this loss, so nothing is done with it: this
+				// attempt reports that it did not reconnect, and the cancelled reconnect's own
+				// recovery settles the state.
+				if ([[NSThread currentThread] isCancelled]) {
+					reconnectingThread = NULL;
+					return NO;
+				}
 			}
 				// Otherwise default to reconnect, but only a set number of times to prevent a runaway loop
 			else {

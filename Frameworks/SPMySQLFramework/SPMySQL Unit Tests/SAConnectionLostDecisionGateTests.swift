@@ -162,6 +162,45 @@ private final class SAConnectionLostProbingDelegate: NSObject, SPMySQLConnection
     }
 }
 
+/// Counts how often it was asked about a lost connection.
+private final class SAConnectionLostCountingDelegate: NSObject, SPMySQLConnectionDelegate {
+    private(set) var timesAsked = 0
+
+    func connectionLost(_ connection: Any) -> SPMySQLConnectionLostDecision {
+        timesAsked += 1
+        return SPMySQLConnectionLostDisconnect
+    }
+}
+
+/// A question the user has already declined to wait for is not put to them.
+final class SAStoppedQuestionTests: XCTestCase {
+
+    /// Putting the question waits for another modal window to go, for up to five seconds, and the
+    /// user can stop waiting in there. Asking anyway shows a dialog about a wait they have ended -
+    /// and holds the session until it is answered.
+    func testAQuestionIsNotPutToSomebodyWhoHasStoppedWaiting() {
+        let connection = SPMySQLConnection()
+        let delegate = SAConnectionLostCountingDelegate()
+        connection.useKeepAlive = false
+        connection.setDelegate(delegate)
+        defer { connection.setDelegate(nil) }
+
+        let itCameBack = DispatchSemaphore(value: 0)
+        Thread.detachNewThread {
+            // What the user's Stop leaves behind on the thread that was going to ask.
+            Thread.current.cancel()
+            _ = unsafeBitCast(connection, to: SALostConnectionAsking.self)
+                .askWhatToDoAboutTheLostConnection()
+            itCameBack.signal()
+        }
+
+        XCTAssertEqual(itCameBack.wait(timeout: .now() + 5), .success,
+                       "it comes back instead of waiting out the modal checks")
+        XCTAssertEqual(delegate.timesAsked, 0,
+                       "and the user is not asked about a wait they have already ended")
+    }
+}
+
 /// The question about a lost connection is asked with nothing of the connection held.
 final class SAConnectionLostQuestionTests: XCTestCase {
     func testTheQuestionIsAskedWithoutHoldingTheStoredAnswersLock() {

@@ -156,6 +156,10 @@ static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
  * Ask the delegate for the connection lost decision.  This can be called from
  * any thread, and will call itself on the main thread if necessary, updating a global
  * variable which is then returned on the child thread.
+ *
+ * A thread the user has stopped waiting for is not made to put the question: what comes back is
+ * then the answer from before, which is nobody's decision about this loss. Callers have to check
+ * the cancellation themselves before acting on what this returns.
  */
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection
 {
@@ -178,9 +182,21 @@ static NSUInteger const SPMySQLConnectionModalWindowChecks = 50;
 		// window is up would stack the two. It waits for that window to go, but not for ever: a
 		// question that never comes is worse than one that comes while something else is open.
 		for (NSUInteger check = 0; check < SPMySQLConnectionModalWindowChecks; check++) {
+			if ([[NSThread currentThread] isCancelled]) break;
 			[self performSelectorOnMainThread:@selector(_recordWhetherAModalWindowIsShowing) withObject:nil waitUntilDone:YES];
 			if (!self->aModalWindowIsShowing) break;
 			usleep(100000);
+		}
+
+		// The user can stop waiting while that loop runs - it is up to five seconds long - and a
+		// question they have already declined to wait for is not put to them. Nothing is decided
+		// here either: the answer that comes back is the one from before, and the caller checks
+		// the same thing before acting on it, so it is never read.
+		if ([[NSThread currentThread] isCancelled]) {
+			[self->delegateDecisionLock lock];
+			SPMySQLConnectionLostDecision decisionFromBefore = self->lastDelegateDecisionForLostConnection;
+			[self->delegateDecisionLock unlock];
+			return decisionFromBefore;
 		}
 
 		// While the question is out, anything that reaches the connection on the main thread is
