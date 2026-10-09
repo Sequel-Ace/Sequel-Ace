@@ -5895,7 +5895,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // If the table row counts an inaccurate and require updating, trigger an update - no
         // action will be performed if not necessary
         if ([self.tableLoadStop shouldRunNextStage]) {
-            [tableDataInstance updateAccurateNumberOfRowsForCurrentTableForcingUpdate:NO];
+            // The last stage, so nothing after it would notice a press that arrives while this
+            // query runs and cuts it off. Without that the table looks fully loaded with a row
+            // count it never got, and the next switch to a view that needs it would not load it
+            // again. The count itself reports whether it got through.
+            BOOL theRowCountGotThrough = [tableDataInstance updateAccurateNumberOfRowsForCurrentTableForcingUpdate:NO];
+            [self.tableLoadStop noteStageEndedHavingCompleted:theRowCountGotThrough];
         }
 
         SPMainQSync(^{

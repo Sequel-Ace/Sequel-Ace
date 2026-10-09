@@ -27,6 +27,35 @@ final class SATableLoadStopTests: XCTestCase {
         XCTAssertTrue(stop.aStageWasLeftUndone, "so the table's information is not there")
     }
 
+    /// The last stage is let through and then cut off inside its own query. There is no gate after
+    /// it to read the press, so the stage itself has to say that it did not finish - otherwise the
+    /// table looks fully loaded with work that never happened.
+    func testAStageCutOffAfterItsGateCountsAsUndone() {
+        let stop = SATableLoadStop()
+        stop.loadIsStarting()
+
+        XCTAssertTrue(stop.shouldRunNextStage(), "the last stage is let through")
+        stop.stopWasAskedFor()
+        stop.noteStageEnded(havingCompleted: false)
+
+        XCTAssertTrue(stop.aStageWasLeftUndone, "so the table's information is not all there")
+    }
+
+    /// A stage that finished records nothing, which is what keeps a press arriving after the last
+    /// stage from costing a reload of a table that is sitting there complete.
+    func testAStageThatFinishedRecordsNothing() {
+        let stop = SATableLoadStop()
+        stop.loadIsStarting()
+
+        XCTAssertTrue(stop.shouldRunNextStage())
+        stop.noteStageEnded(havingCompleted: true)
+        stop.stopWasAskedFor()
+        stop.noteStageEnded(havingCompleted: true)
+
+        XCTAssertTrue(stop.stopWasAsked, "the press is still the press")
+        XCTAssertFalse(stop.aStageWasLeftUndone, "but it prevented nothing")
+    }
+
     /// A load that had already finished: the button is still live for the moment between the last
     /// stage and the end of the task, and a press in there prevented nothing.
     func testAnAlreadyCompletedLoadIsNotTakenForAStoppedOne() {

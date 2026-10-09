@@ -64,6 +64,23 @@ public final class SATableLoadStop: NSObject {
         return true
     }
 
+    /// Records how a stage that was let through ended.
+    ///
+    /// A press that arrives after a stage's gate said yes cuts that stage off inside its own
+    /// query, and no gate after it reads the press - the last stage has none. The table then looks
+    /// fully loaded while the work of that stage never finished, so the next switch to a view that
+    /// needs it would not load it again. A stage that completed records nothing, which is what
+    /// keeps a press arriving after the last stage from costing a reload.
+    /// - Parameter stageCompleted: Whether the stage finished its work.
+    @objc(noteStageEndedHavingCompleted:)
+    public func noteStageEnded(havingCompleted stageCompleted: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        if !stageCompleted {
+            aStageDidNotRun = true
+        }
+    }
+
     /// Whether the user asked to stop, whether or not anything was left to stop.
     ///
     /// For the parts of the load that only tidy up - putting the Stop button back, refreshing a
