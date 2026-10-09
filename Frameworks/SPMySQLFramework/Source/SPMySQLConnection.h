@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionEscaper, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionEscaper, SAConnectionLostDecisionGate, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -87,6 +87,11 @@
 	NSUInteger reconnectionRetryAttempts;
 	SPMySQLConnectionLostDecision lastDelegateDecisionForLostConnection;
 	NSLock *delegateDecisionLock;
+	// Threads that lose the connection at the same time share one answer instead of each
+	// opening its own dialog; the gate decides who asks and who waits for that answer.
+	SAConnectionLostDecisionGate *delegateDecisionGate;
+	// Set on the main thread while the lost-connection question waits for another modal window.
+	BOOL aModalWindowIsShowing;
 	// Escapes values from what the session last reported instead of from the connection's own
 	// handle, which work nobody waits for any more can be using or closing.
 	SAConnectionEscaper *valueEscaper;

@@ -46,6 +46,9 @@ typedef enum {
 // Decision on how to handle lost connections
 // Connection check constants
 typedef enum {
+	// Nothing was decided: a question about this connection is already open on this thread, so
+	// the thread that opened it decides and nothing is to be done here. Never a delegate's answer.
+	SPMySQLConnectionLostDecisionPending = -1,
 	SPMySQLConnectionLostDisconnect = 0,
 	SPMySQLConnectionLostReconnect  = 1
 } SPMySQLConnectionLostDecision;

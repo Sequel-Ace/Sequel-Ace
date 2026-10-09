@@ -20,7 +20,9 @@ private final class SASessionTimeZoneTestConnection: SPMySQLConnection {
     var restoredEncoding: String?
     var restoredLatin1Transport = false
 
-    @objc(_connect) func establishSession() -> Bool {
+    // The transport seam is the connect that carries the attempt's remaining timeout; `_connect`
+    // delegates to it, so overriding it here stands in for both entry points.
+    @objc(_connectUsingConnectTimeout:) func establishSession(_ connectTimeoutOrZero: UInt) -> Bool {
         setValue(SPMySQLConnected.rawValue, forKey: "state")
         setValue(nil, forKey: "queryErrorMessage")
         setValue(0, forKey: "queryErrorID")
@@ -76,8 +78,10 @@ private final class SASessionTimeZoneTestConnection: SPMySQLConnection {
 private final class SAStaleReconnectResultConnection: SPMySQLConnection {
     var disconnectBeforeReturning = false
 
-    @objc(_performReconnectAllowingRetries:)
-    func completedReconnect(_ allowRetries: Bool) -> Bool {
+    // The reconnect body now also carries whether it follows a failed connection check, which
+    // decides the budget it runs on.
+    @objc(_performReconnectAllowingRetries:afterFailedCheck:)
+    func completedReconnect(_ allowRetries: Bool, afterFailedCheck: Bool) -> Bool {
         if disconnectBeforeReturning {
             setValue(true, forKey: "userTriggeredDisconnect")
         }
