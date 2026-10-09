@@ -81,8 +81,14 @@ extension SPCustomQuery {
             return
         }
         guard let attachment = existingScriptConsoleAttachment, !attachment.hostingView.isHidden else { return }
+        // Check before hiding: AppKit moves focus away from a view being hidden.
+        let window = attachment.hostingView.window
+        let consoleHadFocus = (window?.firstResponder as? NSView)?.isDescendant(of: attachment.hostingView) ?? false
         attachment.hostingView.isHidden = true
         customQueryScrollView?.isHidden = false
+        if consoleHadFocus, let grid = customQueryScrollView?.documentView {
+            window?.makeFirstResponder(grid)
+        }
     }
 
     private func showScriptConsole() -> SAScriptConsoleAttachment? {
@@ -91,9 +97,30 @@ extension SPCustomQuery {
         let databaseName = tableDocumentInstance?.database() ?? ""
         let fileName = databaseName.isEmpty ? "script-output.txt" : "\(databaseName)-script-output.txt"
         attachment.hostingView.rootView = SAScriptConsoleView(model: attachment.model, defaultSaveFileName: fileName)
+        // Check before hiding: AppKit moves focus away from a view being hidden.
+        let window = attachment.hostingView.window
+        let gridHadFocus = customQueryScrollView.map { grid in
+            (window?.firstResponder as? NSView)?.isDescendant(of: grid) ?? false
+        } ?? false
         attachment.hostingView.isHidden = false
         customQueryScrollView?.isHidden = true
+        if gridHadFocus {
+            // The text view only exists once SwiftUI has laid out the hosting view.
+            DispatchQueue.main.async { [weak hostingView = attachment.hostingView] in
+                guard let hostingView, !hostingView.isHidden,
+                      let textView = Self.firstTextView(in: hostingView) else { return }
+                hostingView.window?.makeFirstResponder(textView)
+            }
+        }
         return attachment
+    }
+
+    private static func firstTextView(in view: NSView) -> NSTextView? {
+        for subview in view.subviews {
+            if let textView = subview as? NSTextView { return textView }
+            if let textView = firstTextView(in: subview) { return textView }
+        }
+        return nil
     }
 
     private var existingScriptConsoleAttachment: SAScriptConsoleAttachment? {
