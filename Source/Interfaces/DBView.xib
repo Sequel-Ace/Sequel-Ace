@@ -1662,8 +1662,8 @@ Gw
                                                                                                                     <action selector="runExplainQueryAction:" target="134" id="AE2-29-1A0"/>
                                                                                                                 </connections>
                                                                                                             </menuItem>
-                                                                                                            <menuItem title="Run All as Script" keyEquivalent="R" id="SAS-cr-1E0">
-                                                                                                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                                                                                            <menuItem title="Run All as Script" keyEquivalent="r" id="SAS-cr-1E0">
+                                                                                                                <modifierMask key="keyEquivalentModifierMask" shift="YES" option="YES" command="YES"/>
                                                                                                                 <connections>
                                                                                                                     <action selector="runAllAsScriptAction:" target="134" id="SAS-cr-1A0"/>
                                                                                                                 </connections>
