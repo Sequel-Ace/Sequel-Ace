@@ -2718,6 +2718,63 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	return currentResult;
 }
 
+/**
+ * The filtered rows as the store holds them, in the table content view's column order, the first
+ * row being the column names — the same shape -currentDataResultWithNULLs:hideBLOBs: returns, so
+ * the exporters can take either.
+ *
+ * JSON needs this because the display producer answers "what should the user see": it decodes
+ * bytes, renders an image BLOB as an <IMG> tag, applies a hex or display-format override and
+ * substitutes the NULL placeholder, none of which base64 can undo. Here NULL stays NSNull and
+ * bytes stay NSData. A cell the table never loaded keeps the display producer's marker; whether a
+ * filtered export should fetch it instead is a question that predates JSON.
+ */
+- (NSArray *)currentRawDataResult
+{
+	NSMutableArray *currentResult = [NSMutableArray array];
+	NSMutableArray *tempRow = [NSMutableArray array];
+
+	// Load table if not already done
+	if (![tableDocumentInstance contentLoaded]) {
+		[self loadTable:[tableDocumentInstance table]];
+	}
+
+	NSArray *tableColumns = [tableContentView tableColumns];
+
+	// Set field names as first line
+	for (NSTableColumn *aTableColumn in tableColumns)
+	{
+		[tempRow addObject:[[[aTableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
+	}
+
+	[currentResult addObject:[NSArray arrayWithArray:tempRow]];
+
+	// Add rows
+	for (NSInteger i = 0; i < [self numberOfRowsInTableView:tableContentView]; i++)
+	{
+		[tempRow removeAllObjects];
+
+		for (NSTableColumn *aTableColumn in tableColumns)
+		{
+			id o = SPDataStorageObjectAtRowAndColumn(tableValues, i, [[aTableColumn identifier] integerValue]);
+
+			if (!o || [o isNSNull]) {
+				[tempRow addObject:[NSNull null]];
+			}
+			else if ([o isSPNotLoaded]) {
+				[tempRow addObject:NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields")];
+			}
+			else {
+				[tempRow addObject:o];
+			}
+		}
+
+		[currentResult addObject:[NSArray arrayWithArray:tempRow]];
+	}
+
+	return currentResult;
+}
+
 #pragma mark -
 
 /**
@@ -5395,6 +5452,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (NSArray *)dataColumnDefinitions
 {
 	return dataColumns;
+}
+
+/**
+ * The table's column definitions in the order currentDataResultWithNULLs: writes rows:
+ * the table content view's column order. Each column's identifier is the storage index
+ * of its cells — and of its definition — so reordered columns keep their own type.
+ */
+- (NSArray *)exportDataColumnDefinitions
+{
+	NSMutableArray *identifierIndexes = [NSMutableArray array];
+	for (NSTableColumn *column in [tableContentView tableColumns]) {
+		[identifierIndexes addObject:@([[column identifier] integerValue])];
+	}
+	return [SAJSONExportFormatter columnDefinitionsInExportOrder:dataColumns identifierIndexes:identifierIndexes];
 }
 
 #pragma mark -
