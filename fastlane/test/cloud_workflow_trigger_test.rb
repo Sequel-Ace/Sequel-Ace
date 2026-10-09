@@ -84,7 +84,7 @@ class CloudWorkflowTriggerTest < Minitest::Test
   end
 
   def test_file_matchers_fail_closed_and_empty_rules_are_unrestricted
-    ["START_IF_ANY_FILE_MATCHES", "DO_NOT_START_IF_ALL_FILES_MATCH", "FUTURE_MODE"].each do |mode|
+    ["START_IF_ANY_FILE_MATCHES", "DO_NOT_START_IF_ALL_FILES_MATCH"].each do |mode|
       condition = { "source" => source, "filesAndFoldersRule" => { "mode" => mode, "matchers" => [] } }
       assert inspect_resource(resource("tagStartCondition" => condition)).fetch("ready")
       condition["filesAndFoldersRule"]["matchers"] = [{ "fileName" => "private-secret" }]
@@ -148,4 +148,16 @@ class CloudWorkflowTriggerTest < Minitest::Test
     end
     assert_empty client.reads
   end
+
+  def test_unknown_file_rule_mode_cannot_pass_even_without_matchers
+    payload = resource
+    payload["attributes"]["tagStartCondition"]["filesAndFoldersRule"] = {
+      "mode" => "FUTURE_MODE", "matchers" => []
+    }
+    report = inspect_resource(payload)
+    refute report.fetch("ready")
+    assert_includes report.fetch("reason"), "malformed"
+  end
+
+
 end

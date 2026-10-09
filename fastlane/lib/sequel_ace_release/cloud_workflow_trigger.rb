@@ -85,7 +85,7 @@ module SequelAceRelease
       end
       if files && !condition["filesAndFoldersRule"].nil?
         rule = condition["filesAndFoldersRule"]
-        return [report, malformed] unless rule.is_a?(Hash) && rule["mode"].is_a?(String) && !rule["mode"].empty? && rule["matchers"].is_a?(Array)
+        return [report, malformed] unless rule.is_a?(Hash) && %w[START_IF_ANY_FILE_MATCHES DO_NOT_START_IF_ALL_FILES_MATCH].include?(rule["mode"]) && rule["matchers"].is_a?(Array)
 
         report["files_and_folders_rule"] = { "mode" => rule["mode"], "matcher_count" => rule["matchers"].length }
       end
