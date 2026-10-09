@@ -54,15 +54,38 @@ class CLICloudWorkflowTest < Minitest::Test
     manifest = steps.index { |step| step["name"] == "Create the initial release manifest" }
     gate = steps.index { |step| step["name"] == "Require automatic Cloud start immediately before creating the tag" }
     assert_operator first, :<, manifest
-    assert_includes steps[first].fetch("run"), "--require-automatic"
+    assert_includes steps[first].fetch("run"), "trigger_args=(--require-automatic)"
     %w[prerelease_user prerelease_app].each do |id|
       assert_operator gate, :<, steps.index { |step| step["id"] == id }
     end
     command = steps[gate].fetch("run")
     assert_includes command, "cloud-workflow-status"
-    assert_includes command, "--require-automatic"
+    assert_includes command, "trigger_args=(--require-automatic)"
     refute_match(/retry-alpha|start_cloud_run|POST|PATCH/, command)
     assert_includes File.read(path), "cloud-trigger-before-tag.json release-archive/"
+  end
+
+  def test_existing_tag_recovery_does_not_require_a_new_automatic_event
+    workflow = YAML.load_file(File.expand_path("../../.github/workflows/release.yml", __dir__))
+    steps = workflow.fetch("jobs").values.flat_map { |job| job.fetch("steps", []) }
+    names = ["Reconcile the authoritative Production Cloud build", "Require automatic Cloud start immediately before creating the tag"]
+    names.each do |name|
+      run = steps.find { |step| step["name"] == name }.fetch("run")
+      # Execute the actual shell selection block for both recovery and a fresh
+      # release; later changes must not accidentally turn recovery into a gate.
+      block = run[/trigger_args=\(--require-automatic\).*?\nfi/m]
+      refute_nil block
+      variable = name.start_with?("Reconcile") ? "reconciliation_reason" : "RECONCILIATION_REASON"
+      %w[resume_after_tag advance].each do |reason|
+        script = block + "\nprintf \"%s\" \"${trigger_args[*]}\""
+        out, err, status = Open3.capture3({ variable => reason }, "bash", "-c", script)
+        assert status.success?, err
+        assert_equal(reason == "resume_after_tag" ? "" : "--require-automatic", out)
+      end
+    end
+    status, output, error = run_cli(args, enabled: false)
+    assert_equal 0, status, error
+    refute JSON.parse(output).fetch("ready")
   end
 
   def test_status_collects_diagnostics_without_changing_cloud_configuration

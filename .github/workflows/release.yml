@@ -455,10 +455,17 @@ jobs:
             "${recovery_args[@]}" \
             --output reconciliation.json
           release_build="$(ruby -rjson -e 'puts JSON.parse(File.read("reconciliation.json")).fetch("target_build")')"
+          reconciliation_reason="$(ruby -rjson -e 'puts JSON.parse(File.read("reconciliation.json")).fetch("reason")')"
+          trigger_args=(--require-automatic)
+          # The reconciler proves the exact existing tag/run before allowing
+          # resume_after_tag. That path creates no new tag event to validate.
+          if [[ "${reconciliation_reason}" == "resume_after_tag" ]]; then
+            trigger_args=()
+          fi
           bundle exec ruby fastlane/bin/sa-release cloud-workflow-status \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             --tag "${RELEASE_CHANNEL}/${RELEASE_VERSION}-${release_build}" \
-            --require-automatic --output cloud-trigger-preflight.json
+            "${trigger_args[@]}" --output cloud-trigger-preflight.json
           if [[ "${{ steps.recovery.outputs.active }}" == "true" ]]; then
             ruby -rjson -e '
               reconciliation = JSON.parse(File.read("reconciliation.json"))
@@ -769,12 +776,17 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
           RELEASE_BUILD: ${{ steps.reconcile.outputs.build }}
           PRODUCTION_WORKFLOW: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
+          RECONCILIATION_REASON: ${{ steps.reconcile.outputs.reason }}
         run: |
           set -euo pipefail
+          trigger_args=(--require-automatic)
+          if [[ "${RECONCILIATION_REASON}" == "resume_after_tag" ]]; then
+            trigger_args=()
+          fi
           bundle exec ruby fastlane/bin/sa-release cloud-workflow-status \
             --workflow-id "${PRODUCTION_WORKFLOW}" \
             --tag "${RELEASE_CHANNEL}/${RELEASE_VERSION}-${RELEASE_BUILD}" \
-            --require-automatic --output cloud-trigger-before-tag.json
+            "${trigger_args[@]}" --output cloud-trigger-before-tag.json
 
       - name: Create the tag-backed GitHub prerelease as Jason-Morcos
         if: steps.release_publisher.outputs.mode == 'user'

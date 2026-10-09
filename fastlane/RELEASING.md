@@ -586,7 +586,10 @@ restrictive file filters. Manual-start conditions alone do not satisfy this
 check. Apple tag patterns are exact names or prefixes; a literal `production/*`
 with `isPrefix: false` is not a wildcard.
 
-Both sanitized snapshots are preserved in the initial private release archive.
+The exact-tag recovery path (`resume_after_tag`) retains diagnostics but does
+not require a new automatic trigger: its existing tag and run are independently
+validated by reconciliation. Both sanitized snapshots are preserved in the
+initial private release archive.
 `release_status.yml` also reports the current automatic and manual conditions,
 workflow modification date, and whether the automatic condition matches the
 existing tag. It performs GET requests only, even if the trigger is missing.
