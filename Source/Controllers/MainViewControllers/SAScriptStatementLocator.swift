@@ -14,9 +14,18 @@ enum SAScriptStatementLocator {
     /// 1-based line number of `offset` in `text`. `\n`, `\r\n` and a lone
     /// `\r` each count as one line break. Offsets past the end are clamped.
     static func lineNumber(ofOffset offset: Int, in text: NSString) -> Int {
+        lineNumber(ofOffset: offset, in: text, from: 0, startLine: 1)
+    }
+
+    /// Line number of `offset` given that `startOffset` is on `startLine`:
+    /// counts only the line breaks in `[startOffset, offset)`, so callers
+    /// walking forward through a text can carry the previous position along
+    /// instead of rescanning from the start. `startOffset` must not fall
+    /// between the `\r` and `\n` of a CRLF pair.
+    static func lineNumber(ofOffset offset: Int, in text: NSString, from startOffset: Int, startLine: Int) -> Int {
         let end = min(max(offset, 0), text.length)
-        var line = 1
-        var index = 0
+        var line = startLine
+        var index = max(startOffset, 0)
         while index < end {
             let character = text.character(at: index)
             if character == 0x0A {
