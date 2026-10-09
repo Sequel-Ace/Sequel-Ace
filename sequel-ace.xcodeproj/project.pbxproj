@@ -593,6 +593,7 @@
 		A946E44AA14C458182205CFF /* CompletionTokens.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC962D651144EACA006170BD /* CompletionTokens.plist */; };
 		AA000001000000000000001B /* SAAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001A /* SAAboutView.swift */; };
 		AC8C26C73E9B45F473139262 /* SASSHTunnelAskpass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */; };
+		ACDB8F22CA9B78276D639CD1 /* SAScriptConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */; };
 		ADD8B19D3D629DE277D2163B /* SAImportProgressReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25047F243EB51288B9242EE3 /* SAImportProgressReporter.swift */; };
 		AED27D68E816948A2CE775B5 /* SAMarkedTextInputStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC23B8A2720007CC603932B3 /* SAMarkedTextInputStateTests.swift */; };
 		AEE918E2C7D542479969EFD1 /* SAAnalyticsConsentPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 702CD501171F1F6B4BDC3DDF /* SAAnalyticsConsentPolicyTests.swift */; };
@@ -1121,6 +1122,7 @@
 		1AF5A260250AC401009885DF /* SPBrackets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPBrackets.h; sourceTree = "<group>"; };
 		1FB59B1CBC3F48418228E1EC /* SATextViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATextViewDelegate.swift; sourceTree = "<group>"; };
 		25047F243EB51288B9242EE3 /* SAImportProgressReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAImportProgressReporter.swift; sourceTree = "<group>"; };
+		25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleView.swift; sourceTree = "<group>"; };
 		2617B1FEDA3776DCA242666C /* SAMarkedTextInputState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAMarkedTextInputState.swift; sourceTree = "<group>"; };
 		296DC89E0F8FD336002A3258 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = /System/Library/Frameworks/WebKit.framework; sourceTree = "<absolute>"; };
 		296DC8A50F909194002A3258 /* MGTemplateMarker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGTemplateMarker.h; sourceTree = "<group>"; };
@@ -1999,6 +2001,7 @@
 				87376FCB9BB22836AD5235F8 /* SAScriptStatementLocator.swift */,
 				48C67458438228D42437126F /* SAScriptConsoleModel.swift */,
 				8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */,
+				25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -4222,6 +4225,7 @@
 				9C1001FC7D0AFB7305DC982D /* SAScriptStatementLocator.swift in Sources */,
 				9B56E248B4BB6212004570CA /* SAScriptConsoleModel.swift in Sources */,
 				CCF065F89382A9A33C1A2E3C /* SAScriptRunner.swift in Sources */,
+				ACDB8F22CA9B78276D639CD1 /* SAScriptConsoleView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

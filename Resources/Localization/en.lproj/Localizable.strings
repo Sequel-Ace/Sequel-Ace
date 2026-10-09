@@ -982,8 +982,14 @@
  Continue button title */
 "Continue" = "Continue";
 
+/* Script console: checkbox to keep running a script after a statement fails */
+"Continue on error" = "Continue on error";
+
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
+
+/* Script console: button that copies all output to the clipboard */
+"Copy All" = "Copy All";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
 "Copy WHERE Clause" = "Copy WHERE Clause";
@@ -2558,6 +2564,9 @@
 
 /* Query favorite save sheet global checkbox */
 "Save globally" = "Save globally";
+
+/* Script console: button that saves all output to a text file */
+"Save Output…" = "Save Output…";
 
 /* save page as menu item title */
 "Save Page As…" = "Save Page As…";
