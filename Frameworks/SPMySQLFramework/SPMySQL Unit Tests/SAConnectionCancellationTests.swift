@@ -242,35 +242,18 @@ final class SAConnectionCancellationTests: XCTestCase {
     func testAConnectionIsOnlyClosedWhereThatIsSafe() {
         XCTAssertEqual(recovery(cancelled: true, userDisconnected: false, connected: true, disconnected: false, mayDisconnect: false), .none)
     }
-    /// Which of the three a stored character set takes: told to the session, recorded alone, or
-    /// noted for the session that replaces this one.
-    func testAStoredEncodingTakesTheWayThatMatchesTheSession() {
-        func restoration(marked: Bool, noSession: Bool,
-                         transaction: Bool = false,
-                         protocolInvalid: Bool = false) -> SAConnectionCancellation.SAStoredEncodingRestoration {
-            SAConnectionCancellation.restorationOfStoredEncoding(sessionWillBeReplaced: marked,
-                                                                 hasNoUsableSession: noSession,
-                                                                 sessionHasOpenTransaction: transaction,
-                                                                 sessionIsProtocolInvalid: protocolInvalid)
-        }
-
-        XCTAssertEqual(restoration(marked: false, noSession: false), .tellTheSession,
-                       "a session still in use is told, or it reads in one character set while the record says another")
-        XCTAssertEqual(restoration(marked: false, noSession: true), .recordItOnly,
-                       "there is nothing to tell when there is no session")
-        XCTAssertEqual(restoration(marked: true, noSession: false), .recordItOnly,
-                       "a marked session with nothing open in it goes, and is not worth a statement")
-
-        // The case the mark alone got wrong: a marked session with a transaction open is kept, and
-        // a kept session is still reading in the temporary character set.
-        XCTAssertEqual(restoration(marked: true, noSession: false, transaction: true),
-                       .noteItForTheNextSession,
-                       "a session that is kept keeps its record, and the request goes to its successor")
-        XCTAssertEqual(restoration(marked: true, noSession: false, transaction: true, protocolInvalid: true),
-                       .recordItOnly,
-                       "except where the protocol cannot be trusted, which no transaction is worth keeping it for")
-        XCTAssertEqual(restoration(marked: true, noSession: true, transaction: true), .recordItOnly,
-                       "and a session that is not there cannot be kept")
+    /// Only a session that will not be used again has its stored encoding put back on record
+    /// alone; one still in use is told, or the record and the session would disagree.
+    func testOnlyASessionOnItsWayOutIsSpared() {
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(
+            sessionWillBeReplaced: true, hasNoUsableSession: false),
+            "a session marked to be replaced is not worth a statement")
+        XCTAssertTrue(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(
+            sessionWillBeReplaced: false, hasNoUsableSession: true),
+            "and there is nothing to tell when there is no session")
+        XCTAssertFalse(SAConnectionCancellation.storedEncodingOnlyNeedsRecording(
+            sessionWillBeReplaced: false, hasNoUsableSession: false),
+            "a session still in use is told, or it reads statements in one character set while the record says another")
     }
 
     /// A mark acted on later does not close a session something else has opened a transaction in -
@@ -566,87 +549,6 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "the session was told, which is what keeps record and server in step")
     }
 
-    /// A session waiting to be recovered is told nothing either: a cancellation that closed its
-    /// socket leaves the state connected and the mark unset, so the record alone used to look like
-    /// a session worth sending a `SET NAMES` to - which takes the reconnect with it, and with that
-    /// the wait the user has just ended.
-    func testASessionWaitingToBeRecoveredIsNotToldAnything() throws {
-        guard let connection = newLocalConnection() else {
-            throw XCTSkip("no local MySQL connection configured")
-        }
-        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
-        defer { connection.disconnect() }
-
-        XCTAssertTrue(connection.setEncoding("utf8mb4"))
-        connection.storeEncodingForRestoration()
-        XCTAssertTrue(connection.setEncoding("latin1"))
-
-        let access = try XCTUnwrap(connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess)
-        XCTAssertFalse(access.sessionNeedsRecovery)
-
-        // What a cancellation that closed the socket leaves behind: the state stays connected and
-        // nothing is marked for replacement.
-        let theSessionBeforeTheRestore = access.socketToken
-        access.noteCancellationEndedTheNativeRead(onSocket: theSessionBeforeTheRestore)
-        XCTAssertTrue(access.sessionNeedsRecovery)
-        XCTAssertEqual(connection.value(forKey: "state") as? Int, Int(SPMySQLConnected.rawValue))
-        XCTAssertEqual(connection.value(forKey: "sessionMustBeReplacedBeforeUse") as? Bool, false)
-
-        connection.restoreStoredEncoding()
-
-        XCTAssertEqual(connection.value(forKey: "encoding") as? String, "utf8mb4",
-                       "the record goes back, for the session that recovery puts in place")
-        XCTAssertEqual(access.socketToken, theSessionBeforeTheRestore,
-                       "and nothing was sent, so no reconnect was taken along with it")
-    }
-
-    /// A session kept for the transaction open in it keeps its own character set on record, and
-    /// what the user asked for goes to the session that replaces it.
-    ///
-    /// The mark alone used to decide this, and a marked session with a transaction open is
-    /// deliberately kept rather than replaced - so the record was put back behind the back of a
-    /// session that went on reading in the temporary character set, and the next value was escaped
-    /// for one and read in the other.
-    func testASessionKeptForItsTransactionKeepsItsRecordAndHandsTheRequestOn() throws {
-        guard let connection = newLocalConnection() else {
-            throw XCTSkip("no local MySQL connection configured")
-        }
-        try XCTSkipUnless(connection.connect(), "local MySQL connection is unavailable")
-        defer {
-            connection.queryString("ROLLBACK")
-            connection.disconnect()
-        }
-
-        // A database, so that the note the reconnect reads has one to carry as well.
-        XCTAssertTrue(connection.selectDatabase("information_schema"))
-
-        XCTAssertTrue(connection.setEncoding("utf8mb4"))
-        connection.storeEncodingForRestoration()
-        XCTAssertTrue(connection.setEncoding("latin1"))
-
-        // A transaction the user has open, and a mark from work that was given up on. The session
-        // is kept for the transaction.
-        connection.queryString("START TRANSACTION")
-        try XCTSkipIf(connection.queryErrored(), "cannot open a transaction for the regression")
-        XCTAssertTrue(unsafeBitCast(connection, to: SASessionTransactionReporting.self).sessionHasOpenTransaction(),
-                      "the session reports the transaction, which is what the decision reads")
-        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
-        connection.setValue(nil, forKey: "encodingToRestore")
-
-        connection.restoreStoredEncoding()
-
-        XCTAssertEqual(connection.value(forKey: "encoding") as? String, "latin1",
-                       "the record keeps describing the session that is still being used")
-        connection.setValue(false, forKey: "sessionMustBeReplacedBeforeUse")
-        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@character_set_client") as? String,
-                       "latin1",
-                       "and the session was not told, so record and server agree")
-        XCTAssertEqual(connection.value(forKey: "encodingToRestore") as? String, "utf8mb4",
-                       "what the user asked for travels to the session that replaces this one")
-        XCTAssertEqual(connection.value(forKey: "databaseToRestore") as? String, "information_schema",
-                       "with the database, which the reconnect would otherwise skip capturing")
-    }
-
     /// A reconnect's pending restoration is corrected along with the record.
     ///
     /// What to restore is noted when a reconnect starts, so one that started while a temporary
@@ -716,11 +618,4 @@ final class SAConnectionCancellationTests: XCTestCase {
         connection.socketPath = socketPath
         return connection
     }
-}
-
-/// What the session last reported about a transaction in it - the plain value the restoration
-/// decision reads, rather than the handle it must not touch.
-@objc private protocol SASessionTransactionReporting {
-    @objc(sessionHasOpenTransaction)
-    func sessionHasOpenTransaction() -> Bool
 }

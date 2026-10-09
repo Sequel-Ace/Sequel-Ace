@@ -223,60 +223,20 @@
 	// A session on its way out is not told anything. Telling it means a statement, and a statement
 	// from the cleanup of stopped work goes to the worker and starts the very wait the user has
 	// just ended. The record goes back instead, which is what the session replacing this one
-	// connects with.
+	// connects with; this one keeps the character set it was put in, so the escaper is left
+	// describing it as it still is.
 	//
-	// A session that is kept is a different matter: it goes on reading in the temporary character
-	// set, so its record has to keep saying so, and what the user asked for travels to the session
-	// that replaces it. The decision is SAConnectionCancellation's; the three cases are its.
-	//
-	// A session waiting to be recovered counts as none to tell: a cancellation that closed its
-	// socket leaves the state connected and the mark unset, and a statement would take the
-	// reconnect with it - the very wait the user has just ended.
-	//
-	// Only plain values are read - the mark, the state, the recovery record, the transaction the
-	// session last reported and the protocol flag: the native handle belongs to whoever holds the
-	// connection, and the worker of abandoned work can be closing it.
-	switch ([SAConnectionCancellation restorationOfStoredEncodingWhenSessionWillBeReplaced:sessionMustBeReplacedBeforeUse
-	                                                                    hasNoUsableSession:(state != SPMySQLConnected || self.sessionAccess.sessionNeedsRecovery)
-	                                                             sessionHasOpenTransaction:[self sessionHasOpenTransaction]
-	                                                              sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
-		case SAStoredEncodingRestorationNoteItForTheNextSession:
-			[self _noteStoredEncodingForTheSessionThatReplacesThisOne];
-			return;
-
-		case SAStoredEncodingRestorationRecordItOnly:
-			[self _recordStoredEncodingWithoutTellingTheSession];
-			break;
-
-		case SAStoredEncodingRestorationTellTheSession:
-			[self setEncoding:previousEncoding];
-			[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
-			break;
+	// Only the mark and the state are read, both plain values: the native handle belongs to
+	// whoever holds the connection, and the worker of abandoned work can be closing it.
+	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingWhenSessionWillBeReplaced:sessionMustBeReplacedBeforeUse
+	                                                                     hasNoUsableSession:(state != SPMySQLConnected)]) {
+		[self _recordStoredEncodingWithoutTellingTheSession];
+	} else {
+		[self setEncoding:previousEncoding];
+		[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
 	}
 
 	[self _putTheRestoredEncodingOnAnyPendingReconnect];
-}
-
-/**
- * Notes the stored character set for the session that replaces this one, leaving this one alone.
- *
- * For a session that is kept because it has a transaction open: it is still reading in the
- * temporary character set, so its record stays as it is - changing it would have the next value
- * escaped for one character set and read in another - and the request travels to where the next
- * session is set up from.
- *
- * A reconnect takes that note when it starts and only if it has none, so a note already there is
- * the one it honours. The database is captured alongside, because the reconnect captures both
- * together and would skip its own capture once the note exists.
- */
-- (void)_noteStoredEncodingForTheSessionThatReplacesThisOne
-{
-	if (!encodingToRestore) {
-		databaseToRestore = [database copy];
-	}
-
-	encodingToRestore = [previousEncoding copy];
-	encodingUsesLatin1TransportToRestore = previousEncodingUsesLatin1Transport;
 }
 
 /**
