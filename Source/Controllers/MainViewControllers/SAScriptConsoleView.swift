@@ -85,11 +85,16 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = NSTextView.scrollableTextView()
+        // TextKit 1 with non-contiguous layout: scrollableTextView() is TextKit 2
+        // on macOS 13+, which handles very wide, non-wrapping documents and very
+        // long single lines poorly.
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
 
-        let textView = scrollView.documentView as! NSTextView
+        let textView = NSTextView(usingTextLayoutManager: false)
+        textView.layoutManager?.allowsNonContiguousLayout = true
         textView.isEditable = false
         textView.isSelectable = true
         textView.isRichText = false
@@ -103,9 +108,13 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
 
         // No wrapping: rows are tab-separated lines; scroll horizontally instead.
         textView.isHorizontallyResizable = true
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = [.width, .height]
+        textView.minSize = scrollView.contentSize
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = false
         textView.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        scrollView.documentView = textView
 
         textView.string = model.text
         context.coordinator.bind(model: model, textView: textView)
