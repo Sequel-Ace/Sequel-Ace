@@ -1059,13 +1059,18 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// cannot be reached is decided here rather than there: the grace period and the question of
 	// an open transaction live on this side.
 	__block BOOL theServerKilledTheQuery = NO;
-	[self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
+	BOOL thisCancellationHoldsTheQuery = [self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
 		theServerKilledTheQuery = [self _killQueryOverSideConnectionForGeneration:0 serverThread:connectionThreadId];
 		return theServerKilledTheQuery;
 	}];
 
 	// If the server could be reached and killed the query, the active query was cancelled.
 	if (theServerKilledTheQuery) return;
+
+	// Another cancellation for the same query holds it and its request may still be accepted. This
+	// one sent nothing, so it observed no failure, and what follows would act on one: closing the
+	// socket ends the session and rolls back a transaction open in it.
+	if (!thisCancellationHoldsTheQuery) return;
 
 	// The server could not be reached, so the read will not end by itself: its socket is closed
 	// here, and at once. Nothing is waited for - the request came back a definite failure, where

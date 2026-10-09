@@ -148,10 +148,24 @@ import Darwin
     /// Own cancellation through the auxiliary KILL, including its connection setup.
     /// Query admission and reconnect both wait for this lease to end. Failure only
     /// interrupts the socket: the next use recovers after the native result is done.
+    ///
+    /// - Parameter kill: Sends the request for the server session it is given, and reports whether
+    ///   the server accepted it. Not called when this cancellation does not own the query.
+    /// - Returns: Whether this cancellation is the one the query belongs to. `false` says another
+    ///   cancellation for the same query already holds it and its request may still be accepted -
+    ///   so the caller must leave that query's socket alone, where closing it would end the
+    ///   session and roll back a transaction open in it on the strength of a failure this call
+    ///   never observed. `true` when the request went out, and when there was no native statement
+    ///   to send one for.
+    @discardableResult
     @objc(cancelQueryUsingKill:)
-    public func cancelQuery(usingKill kill: (UInt) -> Bool) {
+    public func cancelQuery(usingKill kill: (UInt) -> Bool) -> Bool {
+        var anotherCancellationHoldsTheQuery = false
         let target = socketLock.withLock { () -> (query: UInt, socket: UInt, thread: UInt)? in
-            guard cancellingQuery == nil else { return nil }
+            guard cancellingQuery == nil else {
+                anotherCancellationHoldsTheQuery = true
+                return nil
+            }
             guard let query = activeNativeQuery,
                   cancellationSocket >= 0, serverThreadID != 0 else {
                 // A caller can stop during connection setup, before there is a
@@ -167,7 +181,7 @@ import Darwin
             queryCancellationGeneration &+= 1
             return (query, socketGeneration, serverThreadID)
         }
-        guard let target else { return }
+        guard let target else { return !anotherCancellationHoldsTheQuery }
         // What happens when the server cannot be reached is the caller's: it holds the grace
         // period the query is given before its socket is closed, and it knows whether the server
         // accepted the kill for a session with a transaction open - one that must be left to end
@@ -177,6 +191,7 @@ import Darwin
         socketLock.withLock {
             cancellingQuery = nil
         }
+        return true
     }
 
     /// Records that the caller ended the native read itself, so the next use recovers.
