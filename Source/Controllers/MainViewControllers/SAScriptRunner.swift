@@ -74,6 +74,27 @@ extension SAScriptCell {
     }
 }
 
+/// Passed as the task's cancellation callback object: SATaskController calls
+/// `cancel()` before cancelling the in-flight query, so the runner also notices
+/// a cancel that arrives between statements or while buffered rows are being
+/// emitted (when the connection has no query in flight to flag).
+@objc final class SAScriptCancellationToken: NSObject {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return cancelled
+    }
+
+    @objc func cancel() {
+        lock.lock()
+        cancelled = true
+        lock.unlock()
+    }
+}
+
 final class SAScriptRunner {
 
     // Same patterns -[SPCustomQuery performQueriesTask:] uses.
@@ -81,13 +102,16 @@ final class SAScriptRunner {
     private static let databaseChangeRegex = try! NSRegularExpression(pattern: "^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+.", options: [.caseInsensitive])
 
     private let connection: SPMySQLConnection
+    private let cancellation: SAScriptCancellationToken
     private let output: (String) -> Void
     private let progress: (_ index: Int, _ total: Int) -> Void
 
     init(connection: SPMySQLConnection,
+         cancellation: SAScriptCancellationToken,
          output: @escaping (String) -> Void,
          progress: @escaping (_ index: Int, _ total: Int) -> Void) {
         self.connection = connection
+        self.cancellation = cancellation
         self.output = output
         self.progress = progress
     }
@@ -107,6 +131,10 @@ final class SAScriptRunner {
         defer { connection.retryQueriesOnConnectionFailure = true }
 
         for (index, statement) in statements.enumerated() {
+            if isCancelled {
+                finishCancelled(&summary, result: nil)
+                break
+            }
             progress(index, statements.count)
             summary.executedStatements.append(statement.text)
             output(SAScriptOutputFormatter.statementHeader(statement.text))
@@ -129,34 +157,37 @@ final class SAScriptRunner {
             summary.queriesRun += 1
             summary.executionTime += result?.queryExecutionTime() ?? 0
 
-            if connection.lastQueryWasCancelled {
-                (result as? SPMySQLStreamingResult)?.cancelLoad()
-                output(SAScriptOutputFormatter.cancelled)
-                summary.wasCancelled = true
+            if isCancelled {
+                finishCancelled(&summary, result: result)
                 break
             }
 
-            if connection.queryErrored() {
+            // A nil result means the query never ran (e.g. disconnected), even
+            // when the connection recorded no error.
+            guard let result, !connection.queryErrored() else {
                 summary.errorCount += 1
                 output(errorText(for: statement))
                 if continueOnError { continue }
                 break
             }
 
-            if let result, result.numberOfFields() > 0 {
+            if result.numberOfFields() > 0 {
                 let columns = (result.fieldNames() as? [String]) ?? []
                 var rowCount: UInt64 = 0
+                var cancelledWhileStreaming = false
                 while let row = result.getRowAsArray() {
                     if rowCount == 0 {
                         output(SAScriptOutputFormatter.resultHeader(columns: columns))
                     }
                     output(SAScriptOutputFormatter.row(row.map(SAScriptCell.init(mysqlValue:))))
                     rowCount += 1
+                    if isCancelled {
+                        cancelledWhileStreaming = true
+                        break
+                    }
                 }
-                if connection.lastQueryWasCancelled {
-                    (result as? SPMySQLStreamingResult)?.cancelLoad()
-                    output(SAScriptOutputFormatter.cancelled)
-                    summary.wasCancelled = true
+                if cancelledWhileStreaming || isCancelled {
+                    finishCancelled(&summary, result: result)
                     break
                 }
                 if connection.queryErrored() {
@@ -197,11 +228,28 @@ final class SAScriptRunner {
         return summary
     }
 
+    private var isCancelled: Bool {
+        cancellation.isCancelled || connection.lastQueryWasCancelled
+    }
+
+    /// Single exit path for every cancellation: drain/cancel any open
+    /// streaming result so the connection is not left mid-result.
+    private func finishCancelled(_ summary: inout SAScriptRunSummary, result: SPMySQLResult?) {
+        (result as? SPMySQLStreamingResult)?.cancelLoad()
+        output(SAScriptOutputFormatter.cancelled)
+        summary.wasCancelled = true
+    }
+
     private func errorText(for statement: SAScriptStatement) -> String {
-        let sqlState = connection.lastSqlstate().flatMap { $0.isEmpty ? nil : $0 } ?? "HY000"
-        return SAScriptOutputFormatter.error(code: Int(connection.lastErrorID()),
-                                             sqlState: sqlState,
-                                             line: statement.line,
-                                             message: connection.lastErrorMessage() ?? "")
+        if connection.queryErrored() {
+            let sqlState = connection.lastSqlstate().flatMap { $0.isEmpty ? nil : $0 } ?? "HY000"
+            return SAScriptOutputFormatter.error(code: Int(connection.lastErrorID()),
+                                                 sqlState: sqlState,
+                                                 line: statement.line,
+                                                 message: connection.lastErrorMessage() ?? "")
+        }
+        // No result and no recorded error: synthesise mysql's CR_SERVER_GONE_ERROR.
+        let message = connection.lastErrorMessage().flatMap { $0.isEmpty ? nil : $0 } ?? "MySQL server has gone away"
+        return SAScriptOutputFormatter.error(code: 2006, sqlState: "HY000", line: statement.line, message: message)
     }
 }
