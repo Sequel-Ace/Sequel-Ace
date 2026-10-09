@@ -69,7 +69,8 @@
 		columns = [[NSMutableArray alloc] init];
 		columnNames = [[NSMutableArray alloc] init];
 		constraints = [[NSMutableArray alloc] init];
-		status = [[NSMutableDictionary alloc] init];
+		checkConstraints = [[NSMutableArray alloc] init];
+		status =[[NSMutableDictionary alloc] init];
 		primaryKeyColumns = [[NSMutableArray alloc] init];
 
 		triggers = nil;
@@ -198,6 +199,15 @@
 - (NSArray *) getConstraints
 {
 	return constraints;
+}
+
+/**
+ * Retrieve all CHECK constraints (name, expression, enforced), kept apart from
+ * the foreign key list so existing consumers of -getConstraints are unaffected.
+ */
+- (NSArray *) getCheckConstraints
+{
+	return checkConstraints;
 }
 
 /**
@@ -431,6 +441,7 @@
 	[columns removeAllObjects];
 	[columnNames removeAllObjects];
 	[constraints removeAllObjects];
+	[checkConstraints removeAllObjects];
 	tableHasAutoIncrementField = NO;
 	[primaryKeyColumns removeAllObjects];
 
@@ -487,6 +498,7 @@
 		[columns removeAllObjects];
 		[columnNames removeAllObjects];
 		[constraints removeAllObjects];
+		[checkConstraints removeAllObjects];
 		pthread_mutex_unlock(&dataProcessingLock);
 		return NO;
 	}
@@ -502,6 +514,7 @@
 		[columns removeAllObjects];
 		[columnNames removeAllObjects];
 		[constraints removeAllObjects];
+		[checkConstraints removeAllObjects];
 		pthread_mutex_unlock(&dataProcessingLock);
 		return NO;
 	}
@@ -547,6 +560,7 @@
     // (for example, from the exporters) clear the list of constraints to prevent the previous call's table
     // constraints being included in the table information (issue 1206).
     [constraints removeAllObjects];
+    [checkConstraints removeAllObjects];
 
     // Retrieve the CREATE TABLE syntax for the table
     SPMySQLResult *theResult;
@@ -757,8 +771,10 @@
 
 	for (NSUInteger i = 0; i < [fieldStrings count]; i++) {
 
-		// Take this field/key string, trim whitespace from both ends and remove comments
-		[fieldsParser setString:[[fieldStrings safeObjectAtIndex:i] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet]];
+		// Take this field/key string, trim whitespace from both ends and remove comments.
+		// The raw string is kept for CHECK parsing, which needs MySQL's /*!80016 NOT ENFORCED */ marker.
+		NSString *rawDefinition = [[fieldStrings safeObjectAtIndex:i] stringByTrimmingCharactersInSet:whitespaceAndNewlineSet];
+		[fieldsParser setString:rawDefinition];
 		[fieldsParser deleteComments];
 		if (![fieldsParser length]) {
 			continue;
@@ -808,6 +824,13 @@
 		// TODO: Otherwise it's a key definition, check, or other 'metadata'.  Would be useful to parse/display these!
 		} 
 		else {
+			// CHECK constraints are kept apart from the foreign key list
+			NSDictionary *checkDetails = [SACheckConstraintSupport parseDefinition:rawDefinition];
+			if (checkDetails) {
+				[checkConstraints addObject:checkDetails];
+				continue;
+			}
+
 			NSArray *parts = [fieldsParser splitStringByCharacter:' ' skippingBrackets:YES ignoringQuotedStrings:YES];
 
 			// Constraints
@@ -918,8 +941,6 @@
 					[constraints addObject:constraintDetails];
 				}
 				else {
-					//TODO: MariaDB 10.2.1+ (not Mysql) supports syntax:
-					//  CONSTRAINT [constraint_name] CHECK (expression)
 					SPLog(@"Skipping unrecognized CONSTRAINT in CREATE stmt: %@", fieldsParser);
 				}
 			}
@@ -1002,6 +1023,7 @@
 	[tableData setObject:[NSString stringWithString:encodingString] forKey:@"encoding"];
 	[tableData setObject:[NSArray arrayWithArray:tableColumns] forKey:@"columns"];
 	[tableData setObject:[NSArray arrayWithArray:constraints] forKey:@"constraints"];
+	[tableData setObject:[NSArray arrayWithArray:checkConstraints] forKey:@"checkConstraints"];
 
 	return tableData;
 }

@@ -346,8 +346,16 @@
 		51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */; };
+		A7BA2C000000000000000102 /* SACheckConstraintSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C000000000000000101 /* SACheckConstraintSupport.swift */; };
+		A7BA2C000000000000000105 /* SACheckConstraintsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C000000000000000104 /* SACheckConstraintsModel.swift */; };
+		A7BA2C000000000000000108 /* SACheckConstraintsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C000000000000000107 /* SACheckConstraintsView.swift */; };
+		A7BA2C00000000000000010A /* SACheckConstraintsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C000000000000000109 /* SACheckConstraintsController.swift */; };
 		51BB84032FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */; };
+		A7BA2C000000000000000103 /* SACheckConstraintSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C000000000000000101 /* SACheckConstraintSupport.swift */; };
+		A7BA2C000000000000000106 /* SACheckConstraintsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C000000000000000104 /* SACheckConstraintsModel.swift */; };
 		51BB84052FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */; };
+		A7BA2C00000000000000010C /* SACheckConstraintSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C00000000000000010B /* SACheckConstraintSupportTests.swift */; };
+		A7BA2C00000000000000010E /* SACheckConstraintsModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BA2C00000000000000010D /* SACheckConstraintsModelTests.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
@@ -1285,7 +1293,13 @@
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAForeignKeyReferenceRuleSupport.swift; sourceTree = "<group>"; };
+		A7BA2C000000000000000101 /* SACheckConstraintSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACheckConstraintSupport.swift; sourceTree = "<group>"; };
+		A7BA2C000000000000000104 /* SACheckConstraintsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACheckConstraintsModel.swift; sourceTree = "<group>"; };
+		A7BA2C000000000000000107 /* SACheckConstraintsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACheckConstraintsView.swift; sourceTree = "<group>"; };
+		A7BA2C000000000000000109 /* SACheckConstraintsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACheckConstraintsController.swift; sourceTree = "<group>"; };
 		51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAForeignKeyReferenceRuleSupportTests.swift; sourceTree = "<group>"; };
+		A7BA2C00000000000000010B /* SACheckConstraintSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACheckConstraintSupportTests.swift; sourceTree = "<group>"; };
+		A7BA2C00000000000000010D /* SACheckConstraintsModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACheckConstraintsModelTests.swift; sourceTree = "<group>"; };
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
 		51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAKeyedArchiveCompatTests.swift; sourceTree = "<group>"; };
@@ -1833,6 +1847,10 @@
 				387BBBA60FBCB6CB00B31746 /* SPTableRelations.h */,
 				387BBBA70FBCB6CB00B31746 /* SPTableRelations.m */,
 				51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */,
+				A7BA2C000000000000000101 /* SACheckConstraintSupport.swift */,
+				A7BA2C000000000000000104 /* SACheckConstraintsModel.swift */,
+				A7BA2C000000000000000107 /* SACheckConstraintsView.swift */,
+				A7BA2C000000000000000109 /* SACheckConstraintsController.swift */,
 			);
 			name = "Table Relations";
 			path = TableRelations;
@@ -2902,6 +2920,8 @@
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
 				51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */,
 				51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */,
+				A7BA2C00000000000000010B /* SACheckConstraintSupportTests.swift */,
+				A7BA2C00000000000000010D /* SACheckConstraintsModelTests.swift */,
 				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 				C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
@@ -3632,6 +3652,8 @@
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
 				51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */,
 				51BB84032FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
+				A7BA2C000000000000000103 /* SACheckConstraintSupport.swift in Sources */,
+				A7BA2C000000000000000106 /* SACheckConstraintsModel.swift in Sources */,
 				FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */,
 				51CC84022FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
@@ -3779,6 +3801,8 @@
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 				51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */,
 				51BB84052FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift in Sources */,
+				A7BA2C00000000000000010C /* SACheckConstraintSupportTests.swift in Sources */,
+				A7BA2C00000000000000010E /* SACheckConstraintsModelTests.swift in Sources */,
 				8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */,
 				28DF4018C826FF45D15D16E6 /* SPMCPServerTests.swift in Sources */,
 				26BBEDE8A7A7D1C9DA602D39 /* SPMCPHTTP.swift in Sources */,
@@ -3894,6 +3918,10 @@
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
 				51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
+				A7BA2C000000000000000102 /* SACheckConstraintSupport.swift in Sources */,
+				A7BA2C000000000000000105 /* SACheckConstraintsModel.swift in Sources */,
+				A7BA2C000000000000000108 /* SACheckConstraintsView.swift in Sources */,
+				A7BA2C00000000000000010A /* SACheckConstraintsController.swift in Sources */,
 				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
 				FA4FC2907FC19A9EA23B2465 /* SAKeychain.swift in Sources */,
 				239009D40D234AB74434A7F3 /* SAKeychainNaming.swift in Sources */,

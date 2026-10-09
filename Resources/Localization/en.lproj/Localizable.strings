@@ -125,20 +125,62 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* check constraints : add sheet : name already in use */
+"A constraint with this name already exists." = "A constraint with this name already exists.";
+
+/* check constraints : add sheet title */
+"Add Check Constraint" = "Add Check Constraint";
+
+/* check constraints : add button tooltip */
+"Add check constraint" = "Add check constraint";
+
+/* delete selected check constraint informative message */
+"Are you sure you want to delete the selected check constraints? This action cannot be undone." = "Are you sure you want to delete the selected check constraints? This action cannot be undone.";
+
+/* check constraints : section title in the Relations tab */
+"Check Constraints" = "Check Constraints";
+
+/* description of a check constraint declared on a column, used in the delete field confirmation */
+"check on column ‘%@’" = "check on column ‘%@’";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
+
+/* delete check constraint message */
+"Delete check constraint" = "Delete check constraint";
+
+/* check constraints : delete button tooltip */
+"Delete selected check constraint(s)" = "Delete selected check constraint(s)";
+
+/* check constraints : enforced column */
+"Enforced" = "Enforced";
 
 /* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
 "Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%1$@', but dropping '%2$@' failed: %3$@";
 
+/* check constraints : expression column */
+"Expression" = "Expression";
+
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
 "Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
+
+/* check constraints : name column */
+"Name" = "Name";
+
+/* check constraints : add sheet : name field placeholder */
+"Name (optional)" = "Name (optional)";
+
+/* no */
+"No" = "No";
 
 /* rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
 "Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Privileges are already granted or partially revoked for the new name '%1$@' (%2$@); the moved tables and views would come under them. Nothing was changed.";
 
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
 "Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
+
+/* check constraints : refresh button tooltip */
+"Refresh check constraints" = "Refresh check constraints";
 
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
@@ -161,8 +203,20 @@
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
 
+/* delete field and check constraints informative message */
+"The following check constraints use this field and will be deleted with it: %@" = "The following check constraints use this field and will be deleted with it: %@";
+
+/* error deleting check constraint informative message */
+"The selected check constraint couldn't be deleted.\n\nMySQL said: %@" = "The selected check constraint couldn't be deleted.\n\nMySQL said: %@";
+
+/* error creating check constraint informative message */
+"The specified check constraint could not be created.\n\nMySQL said: %@" = "The specified check constraint could not be created.\n\nMySQL said: %@";
+
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
 "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+
+/* error deleting check constraint message */
+"Unable to delete check constraint" = "Unable to delete check constraint";
 
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
 "Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
