@@ -148,7 +148,7 @@ final class SAScriptRunner {
             }
             progress(index, statements.count)
             summary.executedStatements.append(statement.text)
-            output(SAScriptOutputFormatter.statementHeader(statement.text))
+            output(SAScriptOutputFormatter.statementHeader(SAScriptOutputFormatter.echoText(for: statement.text)))
 
             if !caseSensitivityLoaded
                 && SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(for: statement.text,

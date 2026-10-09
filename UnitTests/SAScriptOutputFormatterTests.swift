@@ -85,4 +85,31 @@ final class SAScriptOutputFormatterTests: XCTestCase {
 
             """)
     }
+
+    // MARK: - Statement echo
+
+    func testEchoTextRemovesLeadingLineComments() {
+        XCTAssertEqual(SAScriptOutputFormatter.echoText(for: "-- Create the table\n# another note\nSELECT 1"), "SELECT 1")
+    }
+
+    func testEchoTextRemovesInlineBlockComment() {
+        XCTAssertEqual(SAScriptOutputFormatter.echoText(for: "SELECT /* c */ 1"), "SELECT   1")
+    }
+
+    func testEchoTextKeepsExecutableCommentBody() {
+        // stripSQLComments unwraps executable comments: the SQL inside the
+        // version gate is kept, the /*!40101 … */ wrapper is not.
+        let echo = SAScriptOutputFormatter.echoText(for: "/*!40101 SET NAMES utf8 */")
+        XCTAssertEqual(echo, "SET NAMES utf8")
+    }
+
+    func testEchoTextKeepsCommentMarkersInsideStrings() {
+        XCTAssertEqual(SAScriptOutputFormatter.echoText(for: "SELECT '-- not a comment', \"/* nor this */\""),
+                       "SELECT '-- not a comment', \"/* nor this */\"")
+    }
+
+    func testEchoTextFallsBackToOriginalWhenOnlyComments() {
+        XCTAssertEqual(SAScriptOutputFormatter.echoText(for: "-- only a note"), "-- only a note")
+        XCTAssertEqual(SAScriptOutputFormatter.echoText(for: "/* block */"), "/* block */")
+    }
 }

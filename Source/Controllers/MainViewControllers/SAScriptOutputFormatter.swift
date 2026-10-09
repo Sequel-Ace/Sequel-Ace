@@ -30,6 +30,15 @@ enum SAScriptOutputFormatter {
         "\(separator)\n\(statement)\n\(separator)\n\n"
     }
 
+    /// Text to echo for `statement`: the mysql client strips comments before
+    /// echoing, so do the same (the SQL sent to the server is unchanged). A
+    /// statement that is nothing but comments is echoed as written.
+    static func echoText(for statement: String) -> String {
+        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(statement)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return stripped.isEmpty ? statement : stripped
+    }
+
     /// Column-name line printed before the first row of a non-empty result.
     static func resultHeader(columns: [String]) -> String {
         columns.map(escape).joined(separator: "\t") + "\n"
