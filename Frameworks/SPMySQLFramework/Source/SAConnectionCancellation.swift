@@ -344,28 +344,67 @@ public final class SAConnectionCancellation: NSObject {
         return sessionIsProtocolInvalid || !sessionHasOpenTransaction
     }
 
-    /// Whether putting a stored character set back only has to change the connection's record of it.
+    /// What putting a stored character set back has to do.
+    ///
+    /// The record and the session are two different things, and the mistake to avoid is treating
+    /// them as one: the record says what character set the session in hand reads in, and the
+    /// reconnect's note says what the session that replaces it should read in.
+    @objc(SAStoredEncodingRestoration)
+    public enum SAStoredEncodingRestoration: Int {
+        /// Tell the session, which is what keeps it and its record in step.
+        case tellTheSession
+        /// Change the record alone. There is no session to tell, or the one there is goes before
+        /// anything uses it again, and the record is what the next one is set up from.
+        case recordItOnly
+        /// Leave the session and its record alone, and note the character set for the session that
+        /// replaces this one. This session is kept and goes on reading in the temporary character
+        /// set, so its record has to keep saying so.
+        case noteItForTheNextSession
+    }
+
+    /// What putting a stored character set back has to do with the session in hand.
     ///
     /// Telling the session means a `SET NAMES`, and a statement from the cleanup of stopped work
     /// goes to the connection's worker: it starts the very wait the user has just ended, and on a
     /// connection whose route has gone it waits out a timeout all over again. A session that will
-    /// not be used again is not worth that - the record is what the session replacing it connects
-    /// with, through its handshake.
+    /// not be used again is not worth that - the record is what the session replacing it is set up
+    /// from.
     ///
-    /// Being the session of work that was given up on is not the same thing as being on the way
-    /// out. Work that sent nothing leaves its session in use, and putting the record back behind
-    /// the back of a session that still reads statements in the temporary character set would have
-    /// the next value escaped for one character set and read in another - which is the fault this
-    /// framework escapes from the session's reported state to avoid. The mark is what says a
-    /// session is being replaced, so the mark is what this asks about.
+    /// Being marked for replacement is not the same as going, though, and that is the case this
+    /// has to tell apart: a marked session with a transaction open is deliberately kept
+    /// (``markedSessionIsClosedNow(sessionHasOpenTransaction:sessionIsProtocolInvalid:)``), because
+    /// closing it would roll that transaction back. Such a session goes on reading in the temporary
+    /// character set, so putting the record back behind its back would have the next value escaped
+    /// for one character set and read in another - the very fault this framework escapes from the
+    /// session's reported state to avoid. Neither telling it (a statement, and the wait with it)
+    /// nor losing what the user asked for is the answer: the record stays as it is, and the request
+    /// travels to the session that replaces it.
+    ///
+    /// The transaction is the one the session last reported, which can lag the handle - reading the
+    /// handle is what this path exists to avoid. A report of none therefore behaves as before; a
+    /// report of one keeps the kept session's record intact.
     /// - Parameters:
     ///   - sessionWillBeReplaced: Whether the session is marked to be replaced before it is used.
     ///   - hasNoUsableSession: Whether there is no session to tell in the first place.
-    /// - Returns: Whether the record alone is to be changed.
-    @objc(storedEncodingOnlyNeedsRecordingWhenSessionWillBeReplaced:hasNoUsableSession:)
-    public static func storedEncodingOnlyNeedsRecording(sessionWillBeReplaced: Bool,
-                                                        hasNoUsableSession: Bool) -> Bool {
-        return hasNoUsableSession || sessionWillBeReplaced
+    ///   - sessionHasOpenTransaction: Whether the session last reported a transaction open.
+    ///   - sessionIsProtocolInvalid: Whether the protocol on that session cannot be trusted, which
+    ///     no transaction is worth keeping it for.
+    /// - Returns: What to do.
+    @objc(restorationOfStoredEncodingWhenSessionWillBeReplaced:hasNoUsableSession:sessionHasOpenTransaction:sessionIsProtocolInvalid:)
+    public static func restorationOfStoredEncoding(sessionWillBeReplaced: Bool,
+                                                   hasNoUsableSession: Bool,
+                                                   sessionHasOpenTransaction: Bool,
+                                                   sessionIsProtocolInvalid: Bool) -> SAStoredEncodingRestoration {
+        if hasNoUsableSession {
+            return .recordItOnly
+        }
+        guard sessionWillBeReplaced else {
+            return .tellTheSession
+        }
+        return markedSessionIsClosedNow(sessionHasOpenTransaction: sessionHasOpenTransaction,
+                                        sessionIsProtocolInvalid: sessionIsProtocolInvalid)
+            ? .recordItOnly
+            : .noteItForTheNextSession
     }
 
     /// Whether the session is marked for replacement when the work using it is given up on.

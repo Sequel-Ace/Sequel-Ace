@@ -57,6 +57,8 @@
 - (void)noteNativeReadEndedByCancellationOnSocket:(NSUInteger)socketToken;
 /** Names the session a cancellation is about to close. */
 - (NSUInteger)sessionSocketToken;
+/** Whether the session last reported a transaction open in it. A plain value: no handle is read. */
+- (BOOL)sessionHasOpenTransaction;
 
 @end
 
