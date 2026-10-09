@@ -980,4 +980,3 @@ final class SABitLiteralTests: XCTestCase {
         }
     }
 }
-
