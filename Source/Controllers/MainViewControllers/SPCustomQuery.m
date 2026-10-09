@@ -1843,6 +1843,72 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return currentResult;
 }
 
+/**
+ * One cell of the result exactly as the store holds it: NSNull for NULL, NSData for bytes,
+ * NSString for text. Locks and bounds-checks as
+ * -_resultDataItemAtRow:columnIndex:preserveNULLs:asPreview: does, but converts nothing — how a
+ * cell should read is the writer's decision, and for bytes it cannot be taken back.
+ */
+- (id)_rawResultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column
+{
+    id value = nil;
+
+    if (isWorking) {
+        pthread_mutex_lock(&resultDataLock);
+
+        if (SPIntS2U(row) < [resultData count] && column < [resultData columnCount]) {
+            value = SPDataStorageObjectAtRowAndColumn(resultData, row, column);
+        }
+
+        pthread_mutex_unlock(&resultDataLock);
+    }
+    else {
+        value = SPDataStorageObjectAtRowAndColumn(resultData, row, column);
+    }
+
+    if (!value || [value isNSNull]) return [NSNull null];
+
+    if ([value isSPNotLoaded]) {
+        return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+    }
+
+    return value;
+}
+
+/**
+ * The result's rows as the store holds them, in the query table's column order, the first row
+ * being the column names — the same shape -currentDataResultWithNULLs:truncateDataFields: returns,
+ * so the exporters can take either. JSON needs this because it carries NULL as null and bytes as
+ * base64, both of which the display rows have already turned into text.
+ */
+- (NSArray *)currentRawDataResult
+{
+    NSMutableArray *currentResult = [NSMutableArray array];
+    NSMutableArray *tempRow = [NSMutableArray array];
+    NSArray *tableColumns = [customQueryView tableColumns];
+
+    for (NSTableColumn *tableColumn in tableColumns)
+    {
+        [tempRow addObject:[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]];
+    }
+
+    [currentResult addObject:[NSArray arrayWithArray:tempRow]];
+
+    for (NSInteger i = 0; i < [self numberOfRowsInTableView:customQueryView]; i++)
+    {
+        [tempRow removeAllObjects];
+
+        for (NSTableColumn *tableColumn in tableColumns)
+        {
+            [tempRow addObject:[self _rawResultDataItemAtRow:i columnIndex:[[tableColumn identifier] integerValue]]];
+        }
+
+        [currentResult addObject:[NSArray arrayWithArray:tempRow]];
+    }
+
+    return currentResult;
+}
+
 #pragma mark -
 #pragma mark Additional methods
 

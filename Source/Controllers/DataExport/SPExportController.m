@@ -1404,11 +1404,18 @@ set_input:
 	// Get the data depending on the source
 	switch (exportSource)
 	{
+		// JSON carries NULL as null and bytes as base64, so it needs the cells as the store holds
+		// them; the display producers have already turned both into text. Every other format writes
+		// display text and keeps taking the display rows unchanged.
 		case SPFilteredExport:
-			dataArray = [tableContentInstance currentDataResultWithNULLs:YES hideBLOBs:NO];
+			dataArray = (exportType == SPJSONExport)
+				? [tableContentInstance currentRawDataResult]
+				: [tableContentInstance currentDataResultWithNULLs:YES hideBLOBs:NO];
 			break;
 		case SPQueryExport:
-			dataArray = [customQueryInstance currentDataResultWithNULLs:YES truncateDataFields:NO];
+			dataArray = (exportType == SPJSONExport)
+				? [customQueryInstance currentRawDataResult]
+				: [customQueryInstance currentDataResultWithNULLs:YES truncateDataFields:NO];
 			break;
 		case SPTableExport:
 			// Create an array of tables to export

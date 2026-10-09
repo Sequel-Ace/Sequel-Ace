@@ -218,6 +218,7 @@
 // Accessors
 - (NSArray *)currentResult;
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs truncateDataFields:(BOOL)truncate;
+- (NSArray *)currentRawDataResult;
 - (NSUInteger)currentResultRowCount;
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore;
 

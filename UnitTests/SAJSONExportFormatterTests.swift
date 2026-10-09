@@ -10,6 +10,246 @@ import XCTest
 
 final class SAJSONExportFormatterTests: XCTestCase {
 
+    // MARK: - Binary contract
+
+    /// Which columns really hold bytes is read from the server's field metadata, the same way for
+    /// every export source, so the base64 contract cannot depend on which one produced the rows.
+    func testCharacterSetNumbersAreReadFromTheFieldDefinitions() {
+        let numbers = SAJSONExportFormatter.characterSetNumbers([
+            ["name": "note", "charsetnr": 255],
+            ["name": "payload", "charsetnr": 63],
+        ])
+
+        XCTAssertEqual(numbers, [255, 63])
+    }
+
+    /// Table metadata parsed from SHOW CREATE TABLE carries no charsetnr, so a column there falls
+    /// back to its type. The text types are text even though a binary collation makes their cells
+    /// arrive as bytes; everything else keeps its bytes, which base64 decodes back exactly.
+    ///
+    /// Every grouping either metadata source can carry is listed rather than a sample of them, so a
+    /// grouping left out of the decision shows up here instead of being inferred from the ones
+    /// covered. Both sources fall back to `blobdata` for a type they do not recognise, so an
+    /// unlisted grouping cannot reach the decision today.
+    func testAColumnWithoutACharacterSetNumberFallsBackToItsType() {
+        // Per grouping, whether its cells are text that a binary collation merely delivered as bytes
+        let groupings: [(grouping: String, isText: Bool)] = [
+            ("string", true), // CHAR / VARCHAR, collation aside
+            ("textdata", true), // TEXT, and MariaDB's JSON
+            ("blobdata", false), // BLOB
+            ("binary", false), // BINARY / VARBINARY
+            ("integer", false), // the rest never reach the exporter as bytes at all
+            ("float", false),
+            ("bit", false), // a bit string such as "0101"
+            ("date", false),
+            ("enum", false),
+            ("geometry", false), // listed for completeness: turned into WKT text before textCell
+        ]
+
+        for (grouping, isText) in groupings {
+            let expected = isText
+                ? SAJSONExportFormatter.unknownCharacterSetNumber
+                : SAJSONExportFormatter.binaryCharacterSetNumber
+            let reason = isText
+                ? "text, so its bytes belong in the file as a string"
+                : "bytes, which have to be kept for base64"
+            XCTAssertEqual(SAJSONExportFormatter.characterSetNumbers([["typegrouping": grouping]]),
+                           [expected],
+                           "a \(grouping) column holds \(reason)")
+        }
+
+        // A column addressing no definition keeps its bytes for the same reason.
+        XCTAssertEqual(SAJSONExportFormatter.characterSetNumbers([[:]]),
+                       [SAJSONExportFormatter.binaryCharacterSetNumber])
+    }
+
+    /// The server's own answer wins: a stated charsetnr decides whether a column holds bytes, and
+    /// the type is consulted only in its absence. The definitions below are deliberately
+    /// self-contradictory, which no real metadata is, so that the order itself is what gets pinned.
+    func testAStatedCharacterSetNumberWinsOverTheColumnType() {
+        let binary = SAJSONExportFormatter.binaryCharacterSetNumber
+        let definitions: [[String: Any]] = [
+            ["name": "code", "typegrouping": "string", "charsetnr": binary],
+            ["name": "payload", "typegrouping": "blobdata", "charsetnr": 255],
+        ]
+
+        let characterSets = SAJSONExportFormatter.characterSetNumbers(definitions)
+        XCTAssertEqual(characterSets, [binary, 255])
+
+        let formatter = SAJSONExportFormatter(columnNames: ["code", "payload"],
+                                              numericColumns: SAJSONExportFormatter.numericColumnFlags(definitions),
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        let producedRow: [Any] = [Data([0x41, 0x42]), Data("hej".utf8)]
+        let cells = producedRow.enumerated().map { column, cell in
+            SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSets[column], encoding: .utf8)
+        }
+
+        // The string-typed column kept its bytes and the blob-typed one became text: the opposite
+        // of what the groupings alone would have settled on.
+        XCTAssertEqual(formatter.row(cells, index: 0), "\n{\"code\":\"QUI=\",\"payload\":\"hej\"}")
+    }
+
+    /// The reported case's sibling, on the filtered path: its metadata is the table's own, which
+    /// carries no charsetnr. A VARCHAR with a binary collation arrives there as bytes and used to
+    /// be written as base64, but it is text and belongs in the file as a string. The BLOB beside
+    /// it is bytes and still becomes base64, so one source cannot settle both the same way.
+    func testBinaryCollationTextFromTableMetadataStaysText() {
+        let definitions: [[String: Any]] = [
+            ["name": "code", "typegrouping": "string"],
+            ["name": "payload", "typegrouping": "blobdata"],
+        ]
+
+        let characterSets = SAJSONExportFormatter.characterSetNumbers(definitions)
+        let formatter = SAJSONExportFormatter(columnNames: ["code", "payload"],
+                                              numericColumns: SAJSONExportFormatter.numericColumnFlags(definitions),
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        let producedRow: [Any] = [Data("hej".utf8), Data([0x41, 0x42])]
+        let cells = producedRow.enumerated().map { column, cell in
+            SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSets[column], encoding: .utf8)
+        }
+
+        XCTAssertEqual(formatter.row(cells, index: 0), "\n{\"code\":\"hej\",\"payload\":\"QUI=\"}")
+    }
+
+    /// The reported case, assembled from the metadata a query result really carries: the numeric
+    /// flags and the character sets come from the same definitions, so the BLOB column is
+    /// recognised as bytes and `X'4142'` reaches the file as base64 rather than as the text "AB"
+    /// the display producers used to hand the exporter.
+    func testAQueryResultsBlobColumnIsExportedAsBase64() {
+        let definitions: [[String: Any]] = [
+            ["name": "id", "typegrouping": "integer", "charsetnr": 63],
+            ["name": "payload", "typegrouping": "blobdata", "charsetnr": 63],
+        ]
+
+        let formatter = SAJSONExportFormatter(columnNames: ["id", "payload"],
+                                              numericColumns: SAJSONExportFormatter.numericColumnFlags(definitions),
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        let characterSets = SAJSONExportFormatter.characterSetNumbers(definitions)
+        let producedRow: [Any] = ["7", Data([0x41, 0x42])]
+        let cells = producedRow.enumerated().map { column, cell in
+            SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSets[column], encoding: .utf8)
+        }
+
+        XCTAssertEqual(formatter.row(cells, index: 0), "\n{\"id\":7,\"payload\":\"QUI=\"}")
+    }
+
+    /// Bytes that are not valid text in the connection encoding must survive the export. The
+    /// display producers replaced them, and that is exactly the loss base64 exists to avoid, so the
+    /// test decodes the output back and demands the original bytes.
+    func testInvalidBytesSurviveInsteadOfBeingReplaced() {
+        let invalid = Data([0xFF, 0xFE, 0x41])
+
+        let cell = SAJSONExportFormatter.textCell(invalid,
+                                                  characterSetNumber: SAJSONExportFormatter.binaryCharacterSetNumber,
+                                                  encoding: .utf8)
+
+        let formatter = SAJSONExportFormatter(columnNames: ["payload"],
+                                              numericColumns: [false],
+                                              tableKey: nil,
+                                              prettyPrint: false)
+        let json = formatter.row([cell], index: 0)
+
+        XCTAssertEqual(json, "\n{\"payload\":\"\(invalid.base64EncodedString())\"}")
+        XCTAssertEqual(Data(base64Encoded: invalid.base64EncodedString()), invalid)
+        XCTAssertFalse(json.contains("\u{FFFD}"))
+    }
+
+    /// An image BLOB was reduced to a thumbnail <IMG> tag by the filtered-export producer. Its
+    /// bytes must now reach the file whole.
+    func testAnImageBlobKeepsItsBytesRatherThanBecomingMarkup() {
+        let png = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+
+        let cell = SAJSONExportFormatter.textCell(png,
+                                                  characterSetNumber: SAJSONExportFormatter.binaryCharacterSetNumber,
+                                                  encoding: .utf8)
+
+        let formatter = SAJSONExportFormatter(columnNames: ["picture"],
+                                              numericColumns: [false],
+                                              tableKey: nil,
+                                              prettyPrint: false)
+        let json = formatter.row([cell], index: 0)
+
+        XCTAssertEqual(json, "\n{\"picture\":\"\(png.base64EncodedString())\"}")
+        XCTAssertFalse(json.localizedCaseInsensitiveContains("img"))
+    }
+
+    /// A text column whose collation merely sets the BINARY flag is not binary. Its bytes are text
+    /// and belong in the file as a JSON string, not as base64.
+    func testBytesOfANonBinaryColumnBecomeText() {
+        let cell = SAJSONExportFormatter.textCell(Data("hej".utf8), characterSetNumber: 255, encoding: .utf8)
+
+        let formatter = SAJSONExportFormatter(columnNames: ["note"],
+                                              numericColumns: [false],
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        XCTAssertEqual(formatter.row([cell], index: 0), "\n{\"note\":\"hej\"}")
+    }
+
+    /// Carrying raw cells must not cost the type contract settled earlier: a VARCHAR holding `1e3`
+    /// is still text, and its column is still not numeric, so it stays a quoted string.
+    func testANumericLookingVarcharStaysAStringOnTheRawPath() {
+        let definitions: [[String: Any]] = [
+            ["name": "code", "typegrouping": "string", "charsetnr": 255],
+        ]
+
+        let formatter = SAJSONExportFormatter(columnNames: ["code"],
+                                              numericColumns: SAJSONExportFormatter.numericColumnFlags(definitions),
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        let characterSets = SAJSONExportFormatter.characterSetNumbers(definitions)
+        let cell = SAJSONExportFormatter.textCell("1e3", characterSetNumber: characterSets[0], encoding: .utf8)
+
+        XCTAssertEqual(formatter.row([cell], index: 0), "\n{\"code\":\"1e3\"}")
+    }
+
+    /// The exporter composes the two pieces of metadata the same way for every data-array source:
+    /// the definitions are first put into export order, then read for their character sets. A
+    /// column dragged to a new position must therefore carry its own binary decision with it, or a
+    /// BLOB would be written as text and the text column beside it as base64.
+    func testAReorderedProjectionKeepsEachColumnsBinaryDecision() {
+        let definitions: [[String: Any]] = [
+            ["name": "note", "typegrouping": "string", "charsetnr": 255],
+            ["name": "payload", "typegrouping": "blobdata", "charsetnr": 63],
+        ]
+
+        // The BLOB dragged in front of the text column: identifiers are storage indexes.
+        let reordered = SAJSONExportFormatter.columnDefinitionsInExportOrder(definitions, identifierIndexes: [1, 0])!
+        let characterSets = SAJSONExportFormatter.characterSetNumbers(reordered)
+
+        XCTAssertEqual(characterSets, [63, 255])
+
+        let formatter = SAJSONExportFormatter(columnNames: ["payload", "note"],
+                                              numericColumns: SAJSONExportFormatter.numericColumnFlags(reordered),
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        let producedRow: [Any] = [Data([0x41, 0x42]), Data("hej".utf8)]
+        let cells = producedRow.enumerated().map { column, cell in
+            SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSets[column], encoding: .utf8)
+        }
+
+        XCTAssertEqual(formatter.row(cells, index: 0), "\n{\"payload\":\"QUI=\",\"note\":\"hej\"}")
+    }
+
+    /// NULL reaches the exporter as NSNull from the raw producers and must stay null, rather than
+    /// becoming the placeholder text the display producers substitute for it.
+    func testNullCellsStayNull() {
+        let formatter = SAJSONExportFormatter(columnNames: ["note"],
+                                              numericColumns: [false],
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        XCTAssertEqual(formatter.row([NSNull()], index: 0), "\n{\"note\":null}")
+    }
+
     /// Writes one table the way SAJSONExporter does: opening, rows, closing.
     private func document(columns: [String],
                           numeric: [Bool]?,
@@ -241,6 +481,18 @@ final class SAJSONExportFormatterTests: XCTestCase {
         let orphan = SAJSONExportFormatter.columnDefinitionsInExportOrder(
             [["name": "a", "typegrouping": "integer"]], identifierIndexes: [0, 2])
         XCTAssertEqual(SAJSONExportFormatter.numericColumnFlags(orphan ?? []), [true, false])
+    }
+
+    /// A row holding fewer cells than the result has columns still produces every key, so the
+    /// objects in the file all share one shape and a reader can address a column that a short row
+    /// did not reach.
+    func testColumnsBeyondAShortRowAreWrittenAsNull() {
+        let formatter = SAJSONExportFormatter(columnNames: ["id", "name", "note"],
+                                              numericColumns: [true, false, false],
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        XCTAssertEqual(formatter.row(["7"], index: 0), "\n{\"id\":7,\"name\":null,\"note\":null}")
     }
 
     func testOtherObjectsAreWrittenAsTheirDescription() {

@@ -149,6 +149,40 @@ final class SAJSONExportFormatter: NSObject {
         return (flag as? NSNumber)?.boolValue == true
     }
 
+    /// The `charsetnr` of the `binary` character set. A column with this id is the only kind that
+    /// really holds bytes; see `textCell(_:characterSetNumber:encoding:)`.
+    static let binaryCharacterSetNumber = 63
+
+    /// Stands in for a column whose character set the metadata does not carry but whose type says
+    /// it is not binary. No MySQL character set has this id.
+    static let unknownCharacterSetNumber = 0
+
+    /// The `typegrouping`s of columns that hold text yet can arrive as bytes, because a binary
+    /// collation (`utf8mb4_bin`, `VARCHAR(n) BINARY`, MariaDB's JSON type) sets the BINARY flag
+    /// SPMySQL reads to decide that. The other groupings either really are bytes or never reach
+    /// the exporter as bytes at all.
+    static let textTypeGroupings: Set<String> = ["string", "textdata"]
+
+    /// Per-column character set ids from a result's field definitions, used to decide which cells
+    /// are bytes to carry as base64 and which are text that merely arrived as bytes.
+    ///
+    /// Every export source goes through this, so a BLOB reaches the file as base64 whether its row
+    /// was streamed from a table or produced by a query or filtered result.
+    ///
+    /// The table metadata parsed from SHOW CREATE TABLE carries no `charsetnr`; only the server's
+    /// field metadata does. Such a column falls back to its `typegrouping`: a text type is text,
+    /// and everything else — including a type the metadata did not recognise — keeps its bytes.
+    /// Keeping bytes is the reversible answer, as base64 decodes back to them exactly, whereas
+    /// reading bytes as text succeeds on any input in a single-byte connection encoding and cannot
+    /// be undone.
+    static func characterSetNumbers(_ definitions: [[String: Any]]) -> [Int] {
+        definitions.map { definition in
+            if let number = (definition["charsetnr"] as? NSNumber)?.intValue { return number }
+            let isText = textTypeGroupings.contains(definition["typegrouping"] as? String ?? "")
+            return isText ? unknownCharacterSetNumber : binaryCharacterSetNumber
+        }
+    }
+
     /// Reorders a result's column definitions into export order.
     ///
     /// Query and filtered exports build each row in their table view's column order: every
@@ -159,9 +193,9 @@ final class SAJSONExportFormatter: NSObject {
     /// number as a string). Columns are addressed by index only — never matched by name — so
     /// duplicate column aliases cannot be crossed.
     ///
-    /// An identifier addressing no definition yields an empty entry, which flags the column
-    /// as text. `nil` or empty definitions return `nil` so the caller keeps the
-    /// string-preserving default.
+    /// An identifier addressing no definition yields an empty entry: its strings stay strings and
+    /// its bytes are kept for base64. `nil` or empty definitions return `nil`, so the caller keeps
+    /// the string-preserving default and every column's bytes are kept, which base64 undoes exactly.
     @objc static func columnDefinitionsInExportOrder(_ definitions: [[String: Any]]?, identifierIndexes: [Int]) -> [[String: Any]]? {
         guard let definitions, !definitions.isEmpty, !identifierIndexes.isEmpty else { return nil }
         return identifierIndexes.map { definitions.indices.contains($0) ? definitions[$0] : [:] }
@@ -188,11 +222,12 @@ final class SAJSONExportFormatter: NSObject {
     /// (`utf8mb4_bin`, and MariaDB's JSON type); only the `binary` character set holds raw bytes.
     /// - Parameters:
     ///   - cell: A value from the result set.
-    ///   - characterSetNumber: The column's character set id (`charsetnr`); 63 is `binary`.
+    ///   - characterSetNumber: The column's character set id (`charsetnr`);
+    ///     `binaryCharacterSetNumber` is `binary`.
     ///   - encoding: The connection encoding the text arrived in.
     /// - Returns: The text for non-binary columns, otherwise `cell` unchanged.
     static func textCell(_ cell: Any, characterSetNumber: Int, encoding: String.Encoding) -> Any {
-        guard let data = cell as? Data, characterSetNumber != 63,
+        guard let data = cell as? Data, characterSetNumber != binaryCharacterSetNumber,
               let text = String(data: data, encoding: encoding) else { return cell }
         return text
     }

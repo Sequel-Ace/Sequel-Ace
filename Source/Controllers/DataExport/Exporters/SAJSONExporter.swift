@@ -23,6 +23,10 @@ import Foundation
     weak var delegate: SAJSONExporterDelegate?
 
     /// Rows to export, the first row being the column names. `nil` for a table export.
+    ///
+    /// The cells must be raw — `NSNull` for NULL and the server's `Data` for bytes — as the query
+    /// and filtered sources' raw-cell producers deliver them. Display rows have already turned
+    /// both into text, which base64 cannot undo.
     var jsonDataArray: [Any]?
 
     /// Per-column field definitions for a data-array export — the custom-query result store's or the
@@ -71,7 +75,11 @@ import Foundation
         if let dataArray {
             fieldNames = ((dataArray.first as? [Any]) ?? []).map { "\($0)" }
             totalRows = dataArray.count - 1
-            numericColumns = SAJSONExportFormatter.numericColumnFlags(jsonColumnDefinitions ?? [])
+            // The rows still hold the server's bytes, so they need the same character set metadata
+            // the streamed rows below get to tell a binary column from a text one.
+            let definitions = jsonColumnDefinitions ?? []
+            numericColumns = SAJSONExportFormatter.numericColumnFlags(definitions)
+            characterSets = SAJSONExportFormatter.characterSetNumbers(definitions)
         } else {
             let quotedTableName = (tableName as NSString).backtickQuoted() ?? tableName
             let count = connection.getFirstField(fromQuery: "SELECT COUNT(1) FROM \(quotedTableName)", assertingDatabase: databaseName)
@@ -97,7 +105,7 @@ import Foundation
             // The result's own field types say which columns are numeric
             let fieldDefinitions = (streamingResult.fieldDefinitions() as? [[String: Any]]) ?? []
             numericColumns = SAJSONExportFormatter.numericColumnFlags(fieldDefinitions)
-            characterSets = fieldDefinitions.map { ($0["charsetnr"] as? NSNumber)?.intValue ?? 63 }
+            characterSets = SAJSONExportFormatter.characterSetNumbers(fieldDefinitions)
         }
 
         let stringEncoding = String.Encoding(rawValue: connection.stringEncoding())
@@ -138,12 +146,17 @@ import Foundation
                 }
                 guard let row else { return true }
 
+                // One pipeline for both sources: geometry as its WKT text, bytes decoded only
+                // where their column is not really binary, everything else untouched.
                 let cells = row.enumerated().map { column, cell -> Any in
                     if let geometry = cell as? SPMySQLGeometryData {
                         return geometry.wktString() as Any
                     }
-                    guard column < characterSets.count else { return cell }
-                    return SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSets[column], encoding: stringEncoding)
+                    // A column the definitions do not reach counts as binary, keeping its bytes.
+                    let characterSet = column < characterSets.count
+                        ? characterSets[column]
+                        : SAJSONExportFormatter.binaryCharacterSetNumber
+                    return SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSet, encoding: stringEncoding)
                 }
                 write(formatter.row(cells, index: rowsWritten))
                 return false
