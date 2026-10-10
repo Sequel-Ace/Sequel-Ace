@@ -1960,7 +1960,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Update the selected table name
 	
-	if (newTableName) selectedTable = [[NSString alloc] initWithString:newTableName];
+	if (newTableName) {
+		selectedTable = [[NSString alloc] initWithString:newTableName];
+	} else {
+		// Clearing the details clears the selection with it. Left standing, the name of the table
+		// shown before carries past the blank-view return below, and the actions that act on that
+		// table - the edit button among them - are enabled again on a view that no longer shows it.
+		selectedTable = nil;
+	}
 
 	[indexesController setTable:selectedTable];
 
