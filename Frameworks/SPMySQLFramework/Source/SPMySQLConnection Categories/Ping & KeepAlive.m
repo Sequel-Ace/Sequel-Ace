@@ -55,9 +55,20 @@ typedef struct {
 - (void)_keepAlive
 {
 	// Do nothing if not connected, if keepalive is disabled, or a keepalive is in
-	// progress. A session that is replaced before its next use is not kept alive either: a ping
-	// would only hold the connection, on a route that may have gone.
-	if (state != SPMySQLConnected || !useKeepAlive || sessionMustBeReplacedBeforeUse) return;
+	// progress.
+	if (state != SPMySQLConnected || !useKeepAlive) return;
+
+	// A session that is replaced before its next use is not kept alive either: a ping would only
+	// hold the connection, on a route that may have gone. A marked session that is *kept*, though,
+	// stays in normal use - the mark does not mean it goes, and one with a transaction open in it
+	// is deliberately kept rather than closed. Leaving that one unpinged is how the server's
+	// interactive_timeout, or a NAT's idle timeout, takes the uncommitted work that keeping it was
+	// for. It is pinged, on the floor that exists for exactly such a session.
+	if (sessionMustBeReplacedBeforeUse
+	    && [SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:[self sessionHasOpenTransaction]
+	                                                    sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
+		return;
+	}
 
 	// Check to see whether a ping is required.  First, compare the last query
 	// and keepalive times against the keepalive interval.

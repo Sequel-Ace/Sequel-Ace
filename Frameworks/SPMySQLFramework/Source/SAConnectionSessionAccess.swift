@@ -243,11 +243,6 @@ import Darwin
         socketLock.withLock { questionsAwaitingTheMainThread > 0 }
     }
 
-    /// Records that this thread's call was refused the session, for a caller that turned it away
-    /// before it reached ``performQuery(_:recover:)``.
-    ///
-    /// The refusal has to read the same whichever side of a hand-off turned the call away: a
-    /// statement that was never sent must not be taken for one that ran and returned nothing.
     /// Forgets a refusal this thread was told about earlier, so that what is read after this call
     /// can only describe the call that follows it.
     ///
@@ -259,6 +254,11 @@ import Darwin
         forgetAnyRefusal()
     }
 
+    /// Records that this thread's call was refused the session, for a caller that turned it away
+    /// before it reached ``performQuery(_:recover:)``.
+    ///
+    /// The refusal has to read the same whichever side of a hand-off turned the call away: a
+    /// statement that was never sent must not be taken for one that ran and returned nothing.
     @objc public func noteThisThreadsCallWasRefused() {
         Thread.current.threadDictionary[Self.refusalMarker] = true
     }
