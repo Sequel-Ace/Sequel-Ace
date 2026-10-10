@@ -13,6 +13,18 @@ import XCTest
 final class SAConnectionWorkCoordinatorTests: XCTestCase {
     private let coordinator = SAConnectionWorkCoordinator()
 
+    /// Waits for the work the way the application's wait sheet does.
+    ///
+    /// The coordinator gives up on work that is still running when the interface's wait returns,
+    /// and that is only 0.15 s after the hand-off. Trivial work can exceed it on a loaded machine -
+    /// starting the worker thread alone can - so a test that asks for the work's result says here
+    /// that it waits for it. A test about work being given up on keeps the default instead.
+    private static let waitingForTheWork: (_ isFinished: @escaping () -> Bool) -> Void = { isFinished in
+        while !isFinished() {
+            usleep(1_000)
+        }
+    }
+
     /// Runs work with a fixed operation stamp and an interface that never waits.
     private func run(_ work: @escaping () -> Any?,
                      stamp: @escaping () -> UInt = { 1 },
@@ -34,7 +46,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
     /// Work runs away from the calling thread.
     func testWorkRunsAwayFromTheCallingThread() {
         let callingThread = Thread.current
-        let outcome = run({ Thread.current == callingThread })
+        let outcome = run({ Thread.current == callingThread }, whenSlow: Self.waitingForTheWork)
 
         XCTAssertEqual(outcome.result as? Bool, false)
     }
@@ -178,7 +190,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         })
 
         // The thread the abandoned work sits on must not be the one the next work waits for.
-        let outcome = run({ "next" })
+        let outcome = run({ "next" }, whenSlow: Self.waitingForTheWork)
 
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? String, "next")
