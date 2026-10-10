@@ -172,6 +172,8 @@ final class SAScriptRunner {
                 reportError(for: statement, in: &summary)
             case .completed(let affectedRows, let stopRequested):
                 summary.totalAffectedRows += affectedRows
+                // The server committed the statement: record its side effects
+                // even when Stop raced its completion.
                 recordSideEffects(of: statement.text,
                                   currentDatabase: &currentDatabase,
                                   databaseNamesAreCaseSensitive: databaseNamesAreCaseSensitive,
@@ -213,13 +215,6 @@ final class SAScriptRunner {
             return (stopRequested ? .cancelled : .failed, time)
         }
 
-        // Drain/cancel an open streaming result so the connection is not
-        // left mid-result.
-        if stopRequested {
-            result.cancelLoad()
-            return (.cancelled, time)
-        }
-
         guard result.numberOfFields > 0 else {
             let affected = connection.scriptRowsAffectedByLastQuery
             let count = affected == UInt64.max ? 0 : affected
@@ -227,6 +222,12 @@ final class SAScriptRunner {
             return (.completed(affectedRows: count, stopRequested: stopRequested), time)
         }
 
+        // Drain/cancel an open streaming result so the connection is not
+        // left mid-result.
+        if stopRequested {
+            result.cancelLoad()
+            return (.cancelled, time)
+        }
         let columns = result.fieldNames
         var rowCount: UInt64 = 0
         while !cancellation.isCancelled, let row = result.nextRow() {

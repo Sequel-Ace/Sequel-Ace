@@ -85,7 +85,40 @@ final class SAScriptRunnerTests: XCTestCase {
         XCTAssertTrue(output.hasSuffix(SAScriptOutputFormatter.cancelled))
     }
 
-    // MARK: - Stop that interrupts a statement
+    // MARK: - R2: a statement that completed keeps its side-effect bookkeeping
+
+    func testUseThatCompletesWhileStopRacesStillTracksTheDatabase() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["USE other_db"] = .ok(affectedRows: 0)
+        connection.whileExecuting = { sql in
+            guard sql == "USE other_db" else { return }
+            // Stop arrives as the server finishes: token first, then the
+            // connection-level cancel that finds nothing left to kill.
+            token.cancel()
+            connection.scriptLastQueryWasCancelled = true
+        }
+        let (summary, output) = run(["USE other_db", "DELETE FROM t"], on: connection, token: token)
+
+        XCTAssertEqual(connection.submitted, ["USE other_db"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertTrue(summary.databaseChanged)
+        XCTAssertEqual(summary.finalDatabase, "other_db")
+        XCTAssertTrue(output.hasSuffix("Query OK, 0 rows affected\n\n" + SAScriptOutputFormatter.cancelled))
+    }
+
+    func testCreateTableThatCompletesWhileStopRacesStillReloadsTables() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["CREATE TABLE t (id INT)"] = .ok(affectedRows: 0)
+        connection.whileExecuting = { sql in if sql.hasPrefix("CREATE") { token.cancel() } }
+        let (summary, output) = run(["CREATE TABLE t (id INT)", "INSERT INTO t VALUES (1)"], on: connection, token: token)
+
+        XCTAssertEqual(connection.submitted, ["CREATE TABLE t (id INT)"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertTrue(summary.tableListNeedsReload)
+        XCTAssertTrue(output.hasSuffix("Query OK, 0 rows affected\n\n" + SAScriptOutputFormatter.cancelled))
+    }
 
     func testStatementInterruptedByStopIsNotTreatedAsCompleted() {
         let connection = FakeScriptConnection()
