@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
+		B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
+		9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */; };
 		03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
@@ -904,6 +907,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyle.swift; sourceTree = "<group>"; };
+		2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyleTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -2930,6 +2935,7 @@
 				D10000022F8C000600C4C14A /* SAAppearancePreference.swift */,
 				F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */,
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
+				D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3023,6 +3029,7 @@
 				B138F78DC06D7838CF975508 /* SAScriptConsoleModelTests.swift */,
 				21CD9E2C6AD84A05A062775B /* SAScriptConsoleAppearanceTests.swift */,
 				C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */,
+				2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3892,6 +3899,8 @@
 				E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */,
 				03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */,
 				AD162E31FB7300DB273BAFDD /* SAQueryAdmission.swift in Sources */,
+				B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */,
+				9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4264,6 +4273,7 @@
 				174C30F93D55F38CA6DC8A84 /* SAScriptStatementSplitter.swift in Sources */,
 				3C65C7519731B0BC8E835C73 /* SAScriptRunner+SPMySQL.swift in Sources */,
 				1320794935F5A2F109C879C4 /* SAQueryAdmission.swift in Sources */,
+				B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
