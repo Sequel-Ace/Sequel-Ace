@@ -4484,3 +4484,12 @@
 
 /* accessibility name of the button that shows or hides the table information panel */
 "Toggle information panel" = "Toggle information panel";
+
+/* header for table & views list */
+"Tables and views" = "Tables and views";
+
+/* header for procs & funcs list */
+"Procedures and functions" = "Procedures and functions";
+
+/* header for pinned tables */
+"Pinned" = "Pinned";

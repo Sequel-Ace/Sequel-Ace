@@ -10,6 +10,9 @@
 		B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
 		B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
 		1116723AD7F48B7A730F8592 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
+		9126CC1CEF2EA1DFE938CDDD /* SAClaudeSidebarChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */; };
+		BF671571BFEBD88F7DB7F406 /* SAClaudeSidebarChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */; };
+		718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */; };
 		CEC8F87DEDC9DC5F7BA60F91 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
 		4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */; };
 		9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */; };
@@ -914,6 +917,8 @@
 		2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyleTests.swift; sourceTree = "<group>"; };
 		05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGlyphsTests.swift; sourceTree = "<group>"; };
 		1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGlyphs.swift; sourceTree = "<group>"; };
+		E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSidebarChrome.swift; sourceTree = "<group>"; };
+		38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSidebarChromeTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -2942,6 +2947,7 @@
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
 				D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */,
 				1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */,
+				E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3037,6 +3043,7 @@
 				C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */,
 				2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */,
 				05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */,
+				38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3910,6 +3917,8 @@
 				9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */,
 				CEC8F87DEDC9DC5F7BA60F91 /* SAClaudeGlyphs.swift in Sources */,
 				4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */,
+				BF671571BFEBD88F7DB7F406 /* SAClaudeSidebarChrome.swift in Sources */,
+				718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4284,6 +4293,7 @@
 				1320794935F5A2F109C879C4 /* SAQueryAdmission.swift in Sources */,
 				B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */,
 				1116723AD7F48B7A730F8592 /* SAClaudeGlyphs.swift in Sources */,
+				9126CC1CEF2EA1DFE938CDDD /* SAClaudeSidebarChrome.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

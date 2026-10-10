@@ -67,8 +67,9 @@ import AppKit
         let comment = commentCell.stringValue
             .components(separatedBy: .newlines).joined(separator: " ")
             .replacingOccurrences(of: "\t", with: " ")
-        let color: NSColor = nameCell.interiorBackgroundStyle == .emphasized
-            ? .selectedControlTextColor : .secondaryLabelColor
+        // The Claude-style list selects with a soft grey pill, so comments keep
+        // the muted colour whether or not their row is selected.
+        let color: NSColor = SAClaudeStyle.textMuted
         commentCell.font = nameCell.font
         commentCell.alignment = .left
         commentCell.lineBreakMode = .byTruncatingTail

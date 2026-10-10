@@ -888,6 +888,68 @@ import AppKit
 
         return rows
     }
+
+    // MARK: - Claude look
+
+    /// Turns off the source-list look so AppKit stops drawing its own selection
+    /// and vibrancy, and sets the Claude sidebar background and row height.
+    @objc func applyClaudeStyle() {
+        style = .plain
+        selectionHighlightStyle = .regular
+        floatsGroupRows = false
+        usesAlternatingRowBackgroundColors = false
+        gridStyleMask = []
+        intercellSpacing = .zero
+        backgroundColor = SAClaudeStyle.sidebarBackground
+        rowHeight = SAClaudeStyle.rowHeight
+        if let scrollView = enclosingScrollView {
+            scrollView.drawsBackground = true
+            scrollView.backgroundColor = SAClaudeStyle.sidebarBackground
+        }
+        needsDisplay = true
+    }
+
+    /// Draws the selection as rounded pills, the same colour focused or not.
+    override func highlightSelection(inClipRect clipRect: NSRect) {
+        let rects = SAClaudeSelectionLayout.pillRects(selectedRows: Array(selectedRowIndexes),
+                                                      rowRect: { self.rect(ofRow: $0) },
+                                                      inset: SAClaudeStyle.pillInset)
+        SAClaudeStyle.selection.setFill()
+        for rect in rects where rect.intersects(clipRect) {
+            NSBezierPath(roundedRect: rect, xRadius: SAClaudeStyle.pillRadius, yRadius: SAClaudeStyle.pillRadius).fill()
+        }
+    }
+
+    /// Keeps cells on a normal background so they never switch to the
+    /// white-on-accent text of an emphasized selection.
+    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
+        let cell = super.preparedCell(atColumn: column, row: row)
+        cell?.backgroundStyle = .normal
+        return cell
+    }
+
+    /// Centres the name cell on one line of text and keeps it clear of the
+    /// pill's right padding; editing uses the same frame, so text doesn't jump.
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        SAClaudeSidebarGeometry.cellFrame(in: super.frameOfCell(atColumn: column, row: row),
+                                          textHeight: SAClaudeStyle.rowTextHeight)
+    }
+
+    /// Draws section headers ("Tables and views") in the Claude header style.
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        if delegate?.tableView?(self, isGroupRow: row) == true {
+            let title = preparedCell(atColumn: 0, row: row)?.stringValue ?? ""
+            SAClaudeSidebarChrome.drawHeader(title, inRowRect: rect(ofRow: row))
+            return
+        }
+        super.drawRow(row, clipRect: clipRect)
+    }
+
+    /// Redraws so dynamic colours and icons pick up a light/dark switch.
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
 }
 
 /// The search badge is purely informational; without this override the

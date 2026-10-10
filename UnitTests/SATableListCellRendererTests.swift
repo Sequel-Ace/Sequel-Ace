@@ -104,19 +104,21 @@ final class SATableListCellRendererTests: XCTestCase {
         XCTAssertEqual(paragraph?.lineBreakMode, .byTruncatingTail)
     }
 
-    func testSelectedCommentUsesReadableTextColor() {
+    /// The selection is a soft grey pill, never the emphasized accent bar, so a
+    /// comment uses the Claude muted text colour whether or not its row is selected.
+    func testSelectedCommentUsesMutedTextColor() {
         let name = EmphasizedNameCell(textCell: "orders")
         let comment = RecordingCommentCell(textCell: "Order details")
         render(name: name, comment: comment)
 
-        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, .selectedControlTextColor)
+        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textMuted)
     }
 
-    func testUnselectedCommentUsesSecondaryTextColor() {
+    func testUnselectedCommentUsesMutedTextColor() {
         let comment = RecordingCommentCell(textCell: "Order details")
         render(name: makeName("orders"), comment: comment)
 
-        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, .secondaryLabelColor)
+        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textMuted)
     }
 
     func testLayoutHandlesTinyWidthsAndNonzeroOrigins() {
