@@ -171,8 +171,9 @@ extension SPCustomQuery {
         (errorText as? NSTextView)?.textColor = .controlTextColor
         (errorText as? NSText)?.string = firstTask
         (affectedRowsText as? NSTextField)?.stringValue = ""
-        // The Stop button calls the token first, then cancels the in-flight query,
-        // so the runner also stops while printing buffered rows or between statements.
+        // Stop records cancellation on the token first, so the runner admits no
+        // further query, then routes the connection cancel through the token,
+        // which retries it while a query admitted before Stop is still running.
         let cancellation = SAScriptCancellationToken()
         document.enableTaskCancellation(withTitle: statements.count > 1
                                             ? NSLocalizedString("Stop queries", comment: "Stop queries string")

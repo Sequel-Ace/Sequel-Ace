@@ -40,6 +40,158 @@ final class SAScriptRunnerTests: XCTestCase {
         }
     }
 
+    // MARK: - R1: a Stop after the loop-top check must keep the next SQL off the wire
+
+    func testStopFromProgressCallbackNeverSubmitsTheNextStatement() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        let (summary, output) = run(["INSERT INTO t VALUES (1)", "DELETE FROM t"],
+                                    on: connection,
+                                    token: token,
+                                    onProgress: { index in if index == 1 { token.cancel() } })
+
+        XCTAssertEqual(connection.submitted, ["INSERT INTO t VALUES (1)"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertTrue(output.hasSuffix(SAScriptOutputFormatter.cancelled))
+        XCTAssertEqual(occurrences(of: SAScriptOutputFormatter.cancelled, in: output), 1)
+    }
+
+    func testStopWhileStatementHeaderIsPrintedNeverSubmitsTheStatement() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        let (summary, output) = run(["INSERT INTO t VALUES (1)", "DROP TABLE t"],
+                                    on: connection,
+                                    token: token,
+                                    onOutput: { text in if text.contains("DROP TABLE t") { token.cancel() } })
+
+        XCTAssertEqual(connection.submitted, ["INSERT INTO t VALUES (1)"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertFalse(summary.tableListNeedsReload)
+        XCTAssertTrue(output.hasSuffix(SAScriptOutputFormatter.cancelled))
+    }
+
+    func testStopDuringDatabaseCaseLookupNeverSubmitsTheDrop() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.whileExecuting = { sql in
+            if sql == "SELECT @@lower_case_table_names" { token.cancel() }
+        }
+        let (summary, output) = run(["DROP DATABASE SHOP"], on: connection, database: "shop", token: token)
+
+        XCTAssertEqual(connection.submitted, ["SELECT @@lower_case_table_names"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertFalse(summary.databaseChanged)
+        XCTAssertEqual(summary.finalDatabase, "shop")
+        XCTAssertTrue(output.hasSuffix(SAScriptOutputFormatter.cancelled))
+    }
+
+    // MARK: - Stop that interrupts a statement
+
+    func testStatementInterruptedByStopIsNotTreatedAsCompleted() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["DROP TABLE t"] = .error(code: 1317, sqlState: "70100", message: "Query execution was interrupted")
+        connection.whileExecuting = { sql in if sql == "DROP TABLE t" { token.cancel() } }
+        let (summary, output) = run(["DROP TABLE t", "SELECT 1"], on: connection, token: token)
+
+        XCTAssertEqual(connection.submitted, ["DROP TABLE t"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertFalse(summary.tableListNeedsReload)
+        XCTAssertEqual(summary.errorCount, 0)
+        XCTAssertFalse(output.contains("Query OK"))
+        XCTAssertTrue(output.hasSuffix(SAScriptOutputFormatter.cancelled))
+    }
+
+    func testStopWhileStreamingRowsCancelsTheLoad() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["SELECT a FROM t"] = .rows(columns: ["a"], rows: [[.text("1")], [.text("2")], [.text("3")]])
+        let (summary, output) = run(["SELECT a FROM t", "SELECT 2"],
+                                    on: connection,
+                                    token: token,
+                                    onOutput: { text in if text == "1\n" { token.cancel() } })
+
+        XCTAssertEqual(connection.submitted, ["SELECT a FROM t"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertEqual(connection.cancelledLoads, 1)
+        XCTAssertFalse(output.contains("in set"))
+        XCTAssertTrue(output.hasSuffix("a\n1\n" + SAScriptOutputFormatter.cancelled))
+    }
+
+    // MARK: - Token admission
+
+    func testAdmitQueryRunsTheOperationUntilCancelled() {
+        let token = SAScriptCancellationToken()
+        var runs = 0
+
+        XCTAssertEqual(token.admitQuery { () -> Int in runs += 1; return 7 }, 7)
+        token.cancel()
+        XCTAssertTrue(token.isCancelled)
+        XCTAssertNil(token.admitQuery { () -> Int in runs += 1; return 8 })
+        XCTAssertEqual(runs, 1)
+    }
+
+    func testRequestQueryCancellationRetriesWhileAQueryIsAdmittedAndStopsWhenItEnds() {
+        let token = SAScriptCancellationToken()
+        let queryStarted = expectation(description: "query admitted")
+        let secondAttempt = expectation(description: "cancellation retried")
+        let queryFinished = expectation(description: "query finished")
+        let allowQueryToFinish = DispatchSemaphore(value: 0)
+        let countLock = NSLock()
+        var attempts = 0
+
+        DispatchQueue.global().async {
+            _ = token.admitQuery { () -> Bool in
+                queryStarted.fulfill()
+                allowQueryToFinish.wait()
+                return true
+            }
+            queryFinished.fulfill()
+        }
+        wait(for: [queryStarted], timeout: 2)
+
+        token.cancel()
+        token.requestQueryCancellation {
+            XCTAssertFalse(Thread.isMainThread)
+            countLock.lock()
+            attempts += 1
+            let attempt = attempts
+            countLock.unlock()
+            // The first attempt models a cancel that reaches the connection
+            // before the admitted query does, so the query keeps running.
+            if attempt == 2 {
+                secondAttempt.fulfill()
+                allowQueryToFinish.signal()
+            }
+        }
+        wait(for: [secondAttempt, queryFinished], timeout: 2)
+
+        // admitQuery has returned, so any later attempt finds nothing admitted.
+        countLock.lock()
+        let attemptsWhenQueryEnded = attempts
+        countLock.unlock()
+        let noLaterAttempt = expectation(description: "no attempt after the query ended")
+        noLaterAttempt.isInverted = true
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
+            countLock.lock()
+            let later = attempts
+            countLock.unlock()
+            if later != attemptsWhenQueryEnded { noLaterAttempt.fulfill() }
+        }
+        wait(for: [noLaterAttempt], timeout: 0.3)
+    }
+
+    func testRequestQueryCancellationDoesNothingWithoutAnAdmittedQuery() {
+        let token = SAScriptCancellationToken()
+        let attempted = expectation(description: "cancellation attempted")
+        attempted.isInverted = true
+
+        token.cancel()
+        token.requestQueryCancellation { attempted.fulfill() }
+
+        wait(for: [attempted], timeout: 0.1)
+    }
+
     // MARK: - Helpers
 
     private func occurrences(of needle: String, in haystack: String) -> Int {

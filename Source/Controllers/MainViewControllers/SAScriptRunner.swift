@@ -65,24 +65,32 @@ protocol SAScriptQueryConnection: AnyObject {
     var scriptLastQueryWasCancelled: Bool { get }
 }
 
-/// Passed as the task's cancellation callback object: SATaskController calls
-/// `cancel()` before cancelling the in-flight query, so the runner also notices
-/// a cancel that arrives between statements or while buffered rows are being
-/// emitted (when the connection has no query in flight to flag).
-@objc final class SAScriptCancellationToken: NSObject {
-    private let lock = NSLock()
-    private var cancelled = false
+/// Passed as the task's cancellation callback object. SATaskController calls
+/// `cancel()` and then routes the connection-level cancel through
+/// `requestQueryCancellation(_:)`. Every query the runner starts goes through
+/// `admitQuery(_:)`, so once Stop is recorded no further SQL is submitted, and
+/// a query admitted just before Stop keeps being cancelled until it ends.
+@objc final class SAScriptCancellationToken: NSObject, SAQueryCancellationRequesting {
+    private let admission = SAQueryAdmission(
+        cancellationQueueLabel: "com.sequel-ace.script-query-cancellation"
+    )
 
     var isCancelled: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return cancelled
+        admission.isCancellationRequested
     }
 
     @objc func cancel() {
-        lock.lock()
-        cancelled = true
-        lock.unlock()
+        admission.requestCancellation()
+    }
+
+    /// Runs `operation`, which starts (and may stream) one query, unless Stop
+    /// was already requested; returns nil without running it in that case.
+    func admitQuery<T>(_ operation: () -> T) -> T? {
+        admission.admit(operation)
+    }
+
+    func requestQueryCancellation(_ cancellation: @escaping () -> Void) {
+        admission.requestQueryCancellation(cancellation)
     }
 }
 
@@ -120,14 +128,15 @@ final class SAScriptRunner {
         defer { connection.retryQueriesOnConnectionFailure = true }
 
         for (index, statement) in statements.enumerated() {
-            // Only the token here: the connection's lastQueryWasCancelled can be
-            // stale from an earlier Stop until this run issues its first query.
+            // A cheap early exit only: admission below is what guarantees no
+            // SQL is submitted after Stop. (Only the token here: the
+            // connection's lastQueryWasCancelled can be stale from an earlier
+            // Stop until this run issues its first query.)
             if cancellation.isCancelled {
-                finishCancelled(&summary, result: nil)
+                finishCancelled(&summary)
                 break
             }
             progress(index, statements.count)
-            summary.executedStatements.append(statement.text)
             output(SAScriptOutputFormatter.statementHeader(SAScriptOutputFormatter.echoText(for: statement.text)))
 
             if !caseSensitivityLoaded
@@ -135,86 +144,136 @@ final class SAScriptRunner {
                                                                                 currentDatabase: currentDatabase,
                                                                                 serverVersion: serverVersion,
                                                                                 serverIsMariaDB: serverIsMariaDB) {
-                let setting = connection.scriptFirstField(fromQuery: "SELECT @@lower_case_table_names", assertingDatabase: currentDatabase)
+                guard let setting = cancellation.admitQuery({
+                    connection.scriptFirstField(fromQuery: "SELECT @@lower_case_table_names", assertingDatabase: currentDatabase)
+                }) else {
+                    finishCancelled(&summary)
+                    break
+                }
                 // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
                 databaseNamesAreCaseSensitive = (setting as? NSString)?.integerValue == 0 || (setting as? NSNumber)?.intValue == 0
                 caseSensitivityLoaded = true
             }
 
-            let result = connection.runScriptStatement(statement.text, assertingDatabaseContext: currentDatabase)
+            // The statement stays admitted while its rows stream, so a Stop
+            // during a long result set still interrupts the query.
+            guard let execution = cancellation.admitQuery({ execute(statement, in: currentDatabase) }) else {
+                finishCancelled(&summary)
+                break
+            }
             summary.queriesRun += 1
-            summary.executionTime += result?.queryExecutionTime ?? 0
+            summary.executedStatements.append(statement.text)
+            summary.executionTime += execution.time
 
-            // queryString just reset lastQueryWasCancelled, so here it reflects
-            // a Stop of this statement only.
-            if cancellation.isCancelled || connection.scriptLastQueryWasCancelled {
-                finishCancelled(&summary, result: result)
-                break
-            }
-
-            // A nil result means the query never ran (e.g. disconnected), even
-            // when the connection recorded no error.
-            guard let result, !connection.scriptQueryErrored else {
+            switch execution.outcome {
+            case .cancelled:
+                finishCancelled(&summary)
+            case .failed:
                 reportError(for: statement, in: &summary)
-                if continueOnError { continue }
-                break
-            }
-
-            if result.numberOfFields > 0 {
-                let columns = result.fieldNames
-                var rowCount: UInt64 = 0
-                while !cancellation.isCancelled, let row = result.nextRow() {
-                    if rowCount == 0 {
-                        output(SAScriptOutputFormatter.resultHeader(columns: columns))
-                    }
-                    output(SAScriptOutputFormatter.row(row))
-                    rowCount += 1
+            case .completed(let affectedRows, let stopRequested):
+                summary.totalAffectedRows += affectedRows
+                recordSideEffects(of: statement.text,
+                                  currentDatabase: &currentDatabase,
+                                  databaseNamesAreCaseSensitive: databaseNamesAreCaseSensitive,
+                                  serverVersion: serverVersion,
+                                  serverIsMariaDB: serverIsMariaDB,
+                                  in: &summary)
+                if stopRequested {
+                    finishCancelled(&summary)
                 }
-                if cancellation.isCancelled {
-                    finishCancelled(&summary, result: result)
-                    break
-                }
-                if connection.scriptQueryErrored {
-                    // An error while streaming rows (e.g. lost connection).
-                    reportError(for: statement, in: &summary)
-                    if continueOnError { continue }
-                    break
-                }
-                output(SAScriptOutputFormatter.rowsInSetFooter(count: rowCount))
-                summary.totalAffectedRows += rowCount
-            } else {
-                let affected = connection.scriptRowsAffectedByLastQuery
-                let count = affected == UInt64.max ? 0 : affected
-                output(SAScriptOutputFormatter.queryOK(affectedRows: count))
-                summary.totalAffectedRows += count
             }
-
-            let fullRange = NSRange(location: 0, length: (statement.text as NSString).length)
-            if Self.tableListChangeRegex.firstMatch(in: statement.text, range: fullRange) != nil {
-                summary.tableListNeedsReload = true
-            }
-            if Self.databaseChangeRegex.firstMatch(in: statement.text, range: fullRange) != nil {
-                summary.databaseChanged = true
-            }
-            let updatedDatabase = SASQLDatabaseContext.databaseName(afterSuccessfulQuery: statement.text,
-                                                                    currentDatabase: currentDatabase,
-                                                                    databaseNamesAreCaseSensitive: databaseNamesAreCaseSensitive,
-                                                                    serverVersion: serverVersion,
-                                                                    serverIsMariaDB: serverIsMariaDB)
-            if SASQLDatabaseContext.databaseNameChanged(from: currentDatabase, to: updatedDatabase) {
-                summary.databaseChanged = true
-            }
-            currentDatabase = updatedDatabase
+            if summary.wasCancelled { break }
+            if case .failed = execution.outcome, !continueOnError { break }
         }
 
         summary.finalDatabase = currentDatabase
         return summary
     }
 
-    /// Single exit path for every cancellation: drain/cancel any open
-    /// streaming result so the connection is not left mid-result.
-    private func finishCancelled(_ summary: inout SAScriptRunSummary, result: SAScriptQueryResult?) {
-        result?.cancelLoad()
+    private enum StatementOutcome {
+        /// Interrupted (or its result discarded) by Stop; nothing to record.
+        case cancelled
+        /// Errored, or never ran; the connection holds the error state.
+        case failed
+        /// Completed on the server. `stopRequested` when Stop raced it.
+        case completed(affectedRows: UInt64, stopRequested: Bool)
+    }
+
+    /// Runs one statement and prints its result. Called inside admission.
+    private func execute(_ statement: SAScriptStatement, in database: String?) -> (outcome: StatementOutcome, time: Double) {
+        let result = connection.runScriptStatement(statement.text, assertingDatabaseContext: database)
+        let time = result?.queryExecutionTime ?? 0
+        // The query just reset lastQueryWasCancelled, so it reflects a Stop of
+        // this statement only.
+        let stopRequested = cancellation.isCancelled || connection.scriptLastQueryWasCancelled
+
+        // A nil result means the query never ran (e.g. disconnected), even
+        // when the connection recorded no error.
+        guard let result, !connection.scriptQueryErrored else {
+            return (stopRequested ? .cancelled : .failed, time)
+        }
+
+        // Drain/cancel an open streaming result so the connection is not
+        // left mid-result.
+        if stopRequested {
+            result.cancelLoad()
+            return (.cancelled, time)
+        }
+
+        guard result.numberOfFields > 0 else {
+            let affected = connection.scriptRowsAffectedByLastQuery
+            let count = affected == UInt64.max ? 0 : affected
+            output(SAScriptOutputFormatter.queryOK(affectedRows: count))
+            return (.completed(affectedRows: count, stopRequested: stopRequested), time)
+        }
+
+        let columns = result.fieldNames
+        var rowCount: UInt64 = 0
+        while !cancellation.isCancelled, let row = result.nextRow() {
+            if rowCount == 0 {
+                output(SAScriptOutputFormatter.resultHeader(columns: columns))
+            }
+            output(SAScriptOutputFormatter.row(row))
+            rowCount += 1
+        }
+        if cancellation.isCancelled {
+            result.cancelLoad()
+            return (.cancelled, time)
+        }
+        if connection.scriptQueryErrored {
+            // An error while streaming rows (e.g. lost connection).
+            return (.failed, time)
+        }
+        output(SAScriptOutputFormatter.rowsInSetFooter(count: rowCount))
+        return (.completed(affectedRows: rowCount, stopRequested: false), time)
+    }
+
+    private func recordSideEffects(of statement: String,
+                                   currentDatabase: inout String?,
+                                   databaseNamesAreCaseSensitive: Bool,
+                                   serverVersion: Int,
+                                   serverIsMariaDB: Bool,
+                                   in summary: inout SAScriptRunSummary) {
+        let fullRange = NSRange(location: 0, length: (statement as NSString).length)
+        if Self.tableListChangeRegex.firstMatch(in: statement, range: fullRange) != nil {
+            summary.tableListNeedsReload = true
+        }
+        if Self.databaseChangeRegex.firstMatch(in: statement, range: fullRange) != nil {
+            summary.databaseChanged = true
+        }
+        let updatedDatabase = SASQLDatabaseContext.databaseName(afterSuccessfulQuery: statement,
+                                                                currentDatabase: currentDatabase,
+                                                                databaseNamesAreCaseSensitive: databaseNamesAreCaseSensitive,
+                                                                serverVersion: serverVersion,
+                                                                serverIsMariaDB: serverIsMariaDB)
+        if SASQLDatabaseContext.databaseNameChanged(from: currentDatabase, to: updatedDatabase) {
+            summary.databaseChanged = true
+        }
+        currentDatabase = updatedDatabase
+    }
+
+    /// Single exit path for every cancellation.
+    private func finishCancelled(_ summary: inout SAScriptRunSummary) {
         output(SAScriptOutputFormatter.cancelled)
         summary.wasCancelled = true
     }
