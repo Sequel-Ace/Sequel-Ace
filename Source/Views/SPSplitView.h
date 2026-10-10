@@ -59,13 +59,13 @@
 
 // Collapsing/expanding
 - (void)setCollapsibleSubviewIndex:(NSUInteger)subviewIndex;
-- (void)setToggleCollapseButton:(NSButton *)aButton;
+- (void)setToggleCollapseButton:(nullable NSButton *)aButton;
 - (BOOL)isCollapsibleSubviewCollapsed;
-- (IBAction)toggleCollapse:(id)sender;
+- (IBAction)toggleCollapse:(nullable id)sender;
 - (void)setCollapsibleSubviewCollapsed:(BOOL)shouldCollapse animate:(BOOL)shouldAnimate;
 
 // Additional drag handle
-- (void)setAdditionalDragHandleView:(NSView *)aView;
+- (void)setAdditionalDragHandleView:(nullable NSView *)aView;
 
 // Constraints
 - (void)setMinSize:(CGFloat)newMinSize ofSubviewAtIndex:(NSUInteger)subviewIndex;
