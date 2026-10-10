@@ -286,7 +286,7 @@
                                         </connections>
                                     </button>
                                     <button toolTip="Save any changes and close the Bundle Editor (⌘S)" verticalHuggingPriority="750" fixedFrame="YES" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="859">
-                                        <rect key="frame" x="617" y="15" width="125" height="28"/>
+                                        <rect key="frame" x="627" y="15" width="115" height="28"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                         <buttonCell key="cell" type="push" title="Save" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="860">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -300,7 +300,7 @@
                                         </connections>
                                     </button>
                                     <button toolTip="Close the Bundle Editor without saving" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="817">
-                                        <rect key="frame" x="494" y="15" width="125" height="28"/>
+                                        <rect key="frame" x="504" y="15" width="115" height="28"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                         <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="818">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
