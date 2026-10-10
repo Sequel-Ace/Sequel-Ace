@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
 		B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
+		1116723AD7F48B7A730F8592 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
+		CEC8F87DEDC9DC5F7BA60F91 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
+		4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */; };
 		9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */; };
 		03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
@@ -909,6 +912,8 @@
 /* Begin PBXFileReference section */
 		D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyle.swift; sourceTree = "<group>"; };
 		2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyleTests.swift; sourceTree = "<group>"; };
+		05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGlyphsTests.swift; sourceTree = "<group>"; };
+		1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGlyphs.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -2936,6 +2941,7 @@
 				F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */,
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
 				D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */,
+				1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3030,6 +3036,7 @@
 				21CD9E2C6AD84A05A062775B /* SAScriptConsoleAppearanceTests.swift */,
 				C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */,
 				2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */,
+				05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3901,6 +3908,8 @@
 				AD162E31FB7300DB273BAFDD /* SAQueryAdmission.swift in Sources */,
 				B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */,
 				9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */,
+				CEC8F87DEDC9DC5F7BA60F91 /* SAClaudeGlyphs.swift in Sources */,
+				4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4274,6 +4283,7 @@
 				3C65C7519731B0BC8E835C73 /* SAScriptRunner+SPMySQL.swift in Sources */,
 				1320794935F5A2F109C879C4 /* SAQueryAdmission.swift in Sources */,
 				B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */,
+				1116723AD7F48B7A730F8592 /* SAClaudeGlyphs.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

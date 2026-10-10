@@ -4463,3 +4463,24 @@
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
+
+/* accessibility name of the view icon in the tables list */
+"View" = "View";
+
+/* accessibility name of the stored procedure icon in the tables list */
+"Procedure" = "Procedure";
+
+/* accessibility name of the stored function icon in the tables list */
+"Function" = "Function";
+
+/* accessibility name of the add table button below the tables list */
+"Add table" = "Add table";
+
+/* accessibility name of the table actions menu button below the tables list */
+"Table actions" = "Table actions";
+
+/* accessibility name of the refresh button below the tables list */
+"Refresh table list" = "Refresh table list";
+
+/* accessibility name of the button that shows or hides the table information panel */
+"Toggle information panel" = "Toggle information panel";
