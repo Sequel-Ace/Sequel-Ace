@@ -160,14 +160,20 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// global table font (which still applies to the content and query grids).
 	[(SATablesListView *)tablesListView applyClaudeStyle];
 	[tableListSplitView setCustomDividerColor:[SAClaudeStyle divider]];
+	[SAClaudeSidebarChrome styleSidebarSplitView:tableListSplitView];
 
 	// Claude-style bottom bar: quiet icon buttons with a rounded hover fill.
 	[SAClaudeSidebarChrome styleBarButton:toolbarAddButton glyph:SAClaudeGlyphAdd];
 	[SAClaudeSidebarChrome styleBarButton:toolbarActionsButton glyph:SAClaudeGlyphActions];
 	[SAClaudeSidebarChrome styleBarButton:toolbarReloadButton glyph:SAClaudeGlyphRefresh];
 	if (infoPanelToggleButton) [SAClaudeSidebarChrome styleBarButton:infoPanelToggleButton glyph:SAClaudeGlyphInfoPanel];
-	// The bar is the add button's superview; give it Claude's top divider.
-	if ([toolbarAddButton superview]) [SAClaudeSidebarChrome addTopDivider:[toolbarAddButton superview]];
+	// The bar's buttons sit directly in the sidebar pane: paint the whole pane
+	// in the sidebar colour and draw Claude's divider just above the bar.
+	NSView *sidebarPane = [toolbarAddButton superview];
+	if (sidebarPane) {
+		[SAClaudeSidebarChrome addSidebarBackground:sidebarPane];
+		[SAClaudeSidebarChrome addBarDivider:sidebarPane aboveView:toolbarAddButton];
+	}
 
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
 		[[column dataCell] setFont:[SAClaudeStyle rowFont]];
@@ -1932,14 +1938,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	// Cells are reused for tables without comments and for group headings.
 	[aCell setNote:@""];
-	[aCell setFont:[SAClaudeStyle rowFont]];
-	if (![aTableView isEnabled]) {
-		[aCell setTextColor:[SAClaudeStyle textMuted]];
-	} else if ([[aTableView selectedRowIndexes] containsIndex:rowIndex]) {
-		[aCell setTextColor:[SAClaudeStyle textPrimary]];
-	} else {
-		[aCell setTextColor:[SAClaudeStyle textSecondary]];
-	}
+	[SAClaudeSidebarChrome styleTablesListCell:aCell
+									  selected:[[aTableView selectedRowIndexes] containsIndex:rowIndex]
+									   enabled:[aTableView isEnabled]];
 
 	if (rowIndex > 0 && rowIndex < (NSInteger)[filteredTableTypes count] && [[aTableColumn identifier] isEqualToString:@"tables"]) {
 

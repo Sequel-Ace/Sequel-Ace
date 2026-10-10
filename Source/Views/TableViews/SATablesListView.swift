@@ -920,14 +920,6 @@ import AppKit
         }
     }
 
-    /// Keeps cells on a normal background so they never switch to the
-    /// white-on-accent text of an emphasized selection.
-    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
-        let cell = super.preparedCell(atColumn: column, row: row)
-        cell?.backgroundStyle = .normal
-        return cell
-    }
-
     /// Centres the name cell on one line of text and keeps it clear of the
     /// pill's right padding; editing uses the same frame, so text doesn't jump.
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
@@ -938,7 +930,7 @@ import AppKit
     /// Draws section headers ("Tables and views") in the Claude header style.
     override func drawRow(_ row: Int, clipRect: NSRect) {
         if delegate?.tableView?(self, isGroupRow: row) == true {
-            let title = preparedCell(atColumn: 0, row: row)?.stringValue ?? ""
+            let title = dataSource?.tableView?(self, objectValueFor: tableColumns.first, row: row) as? String ?? ""
             SAClaudeSidebarChrome.drawHeader(title, inRowRect: rect(ofRow: row))
             return
         }

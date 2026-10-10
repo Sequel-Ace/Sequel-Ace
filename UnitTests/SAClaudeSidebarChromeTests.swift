@@ -103,15 +103,87 @@ final class SAClaudeBarButtonTests: XCTestCase {
         XCTAssertNil(button.layer?.backgroundColor)
     }
 
-    /// Verifies the bar gets one 1pt divider along its top edge that tracks its width, added once.
-    func testTopDividerIsAddedOnce() {
-        let bar = NSView(frame: NSRect(x: 0, y: 0, width: 215, height: 25))
-        SAClaudeSidebarChrome.addTopDivider(to: bar)
-        SAClaudeSidebarChrome.addTopDivider(to: bar)
-        let lines = bar.subviews.compactMap { $0 as? SAClaudeDividerLine }
+    /// Verifies a non-flipped pane gets one 1pt divider just above the bar that tracks its width, added once.
+    func testBarDividerSitsAboveTheBarInANonFlippedPane() {
+        let pane = NSView(frame: NSRect(x: 0, y: 0, width: 214, height: 549))
+        let bar = NSButton(frame: NSRect(x: 0, y: 0, width: 25, height: 25))
+        pane.addSubview(bar)
+        SAClaudeSidebarChrome.addBarDivider(to: pane, above: bar)
+        SAClaudeSidebarChrome.addBarDivider(to: pane, above: bar)
+        let lines = pane.subviews.compactMap { $0 as? SAClaudeDividerLine }
         XCTAssertEqual(lines.count, 1)
-        XCTAssertEqual(lines.first?.frame, NSRect(x: 0, y: 24, width: 215, height: 1))
+        XCTAssertEqual(lines.first?.frame, NSRect(x: 0, y: 25, width: 214, height: 1))
+        XCTAssertEqual(lines.first?.autoresizingMask, [.width, .maxYMargin])
+    }
+
+    /// Verifies a flipped pane gets the divider on the bar's visual top edge, pinned to the bottom.
+    func testBarDividerSitsAboveTheBarInAFlippedPane() {
+        let pane = SAFlippedTestView(frame: NSRect(x: 0, y: 0, width: 214, height: 549))
+        let bar = NSButton(frame: NSRect(x: 0, y: 524, width: 25, height: 25))
+        pane.addSubview(bar)
+        SAClaudeSidebarChrome.addBarDivider(to: pane, above: bar)
+        SAClaudeSidebarChrome.addBarDivider(to: pane, above: bar)
+        let lines = pane.subviews.compactMap { $0 as? SAClaudeDividerLine }
+        XCTAssertEqual(lines.count, 1)
+        XCTAssertEqual(lines.first?.frame, NSRect(x: 0, y: 523, width: 214, height: 1))
         XCTAssertEqual(lines.first?.autoresizingMask, [.width, .minYMargin])
+    }
+
+    /// Verifies the divider line never takes clicks from the views under it.
+    func testDividerLineIgnoresClicks() {
+        let line = SAClaudeDividerLine(frame: NSRect(x: 0, y: 0, width: 100, height: 1))
+        XCTAssertNil(line.hitTest(NSPoint(x: 10, y: 0.5)))
+    }
+
+    /// Verifies a disabled bar button gets no hover fill.
+    func testDisabledButtonGetsNoHoverFill() throws {
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        button.appearance = NSAppearance(named: .darkAqua)
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .add)
+        button.isEnabled = false
+        let highlighter = try XCTUnwrap(SAClaudeHoverHighlighter.highlighter(for: button))
+        highlighter.setHovered(true)
+        XCTAssertNil(button.layer?.backgroundColor)
+    }
+
+    /// Verifies the hover fill is the light token under a light appearance.
+    func testLightHoverFill() throws {
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        button.appearance = NSAppearance(named: .aqua)
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .add)
+        try XCTUnwrap(SAClaudeHoverHighlighter.highlighter(for: button)).setHovered(true)
+        assertFill(of: button, is: 0xEAE9E4)
+    }
+
+    /// Verifies a hovered button re-resolves its fill when its appearance changes.
+    func testHoverFillFollowsAppearanceChange() throws {
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        container.appearance = NSAppearance(named: .darkAqua)
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        container.addSubview(button)
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .add)
+        try XCTUnwrap(SAClaudeHoverHighlighter.highlighter(for: button)).setHovered(true)
+        assertFill(of: button, is: 0x1E1E1D)
+        container.appearance = NSAppearance(named: .aqua)
+        assertFill(of: button, is: 0xEAE9E4)
+    }
+
+    /// Verifies the hover tracking stays active while a sheet holds key status.
+    func testHoverTrackingIsActiveInActiveApp() throws {
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .add)
+        let area = try XCTUnwrap(button.trackingAreas.first { $0.owner is SAClaudeHoverHighlighter })
+        XCTAssertTrue(area.options.contains(.activeInActiveApp))
+        XCTAssertFalse(area.options.contains(.activeInKeyWindow))
+    }
+
+    private func assertFill(of view: NSView, is hex: UInt32, file: StaticString = #filePath, line: UInt = #line) {
+        guard let fill = view.layer?.backgroundColor.flatMap({ NSColor(cgColor: $0)?.usingColorSpace(.sRGB) }) else {
+            return XCTFail("no hover fill", file: file, line: line)
+        }
+        XCTAssertEqual(fill.redComponent, CGFloat((hex >> 16) & 0xFF) / 255, accuracy: 0.01, file: file, line: line)
+        XCTAssertEqual(fill.greenComponent, CGFloat((hex >> 8) & 0xFF) / 255, accuracy: 0.01, file: file, line: line)
+        XCTAssertEqual(fill.blueComponent, CGFloat(hex & 0xFF) / 255, accuracy: 0.01, file: file, line: line)
     }
 
     /// Verifies a pull-down menu button shows the glyph through its first (title) item.
@@ -122,5 +194,78 @@ final class SAClaudeBarButtonTests: XCTestCase {
         SAClaudeSidebarChrome.styleBarButton(popup, glyph: .actions)
         XCTAssertEqual(popup.item(at: 0)?.image?.accessibilityDescription, "Table actions")
         XCTAssertNil(popup.item(at: 1)?.image)
+    }
+}
+
+/// A flipped container, for checking placement in flipped panes.
+private final class SAFlippedTestView: NSView {
+    override var isFlipped: Bool { true }
+}
+
+final class SAClaudeTablesListCellTests: XCTestCase {
+
+    private func styledCell(selected: Bool, enabled: Bool) -> NSTextFieldCell {
+        let cell = NSTextFieldCell(textCell: "orders")
+        cell.backgroundStyle = .emphasized
+        SAClaudeSidebarChrome.styleTablesListCell(cell, selected: selected, enabled: enabled)
+        return cell
+    }
+
+    /// Verifies an unselected row is secondary text in the row font on a normal background.
+    func testUnselectedRow() {
+        let cell = styledCell(selected: false, enabled: true)
+        XCTAssertEqual(cell.textColor, SAClaudeStyle.textSecondary)
+        XCTAssertEqual(cell.font, SAClaudeStyle.rowFont)
+        XCTAssertEqual(cell.backgroundStyle, .normal)
+    }
+
+    /// Verifies a selected row is primary text and never switches to emphasized (white) text.
+    func testSelectedRow() {
+        let cell = styledCell(selected: true, enabled: true)
+        XCTAssertEqual(cell.textColor, SAClaudeStyle.textPrimary)
+        XCTAssertEqual(cell.backgroundStyle, .normal)
+    }
+
+    /// Verifies a disabled list is muted, selected or not.
+    func testDisabledRow() {
+        XCTAssertEqual(styledCell(selected: false, enabled: false).textColor, SAClaudeStyle.textMuted)
+        XCTAssertEqual(styledCell(selected: true, enabled: false).textColor, SAClaudeStyle.textMuted)
+    }
+}
+
+final class SAClaudeSidebarPaneTests: XCTestCase {
+
+    /// Verifies the sidebar split view gets a 1pt (thin) divider instead of the 9pt thick one.
+    func testSidebarSplitViewIsThin() {
+        let split = NSSplitView(frame: NSRect(x: 0, y: 0, width: 214, height: 524))
+        split.dividerStyle = .thick
+        SAClaudeSidebarChrome.styleSidebarSplitView(split)
+        XCTAssertEqual(split.dividerStyle, .thin)
+        XCTAssertEqual(split.dividerThickness, 1)
+    }
+
+    /// Verifies the pane gets one background view, bottom-most, filling and tracking it.
+    func testSidebarBackgroundIsInsertedOnceAtTheBottom() {
+        let pane = NSView(frame: NSRect(x: 0, y: 0, width: 214, height: 549))
+        pane.addSubview(NSButton(frame: NSRect(x: 0, y: 0, width: 25, height: 25)))
+        SAClaudeSidebarChrome.addSidebarBackground(to: pane)
+        SAClaudeSidebarChrome.addSidebarBackground(to: pane)
+        XCTAssertEqual(pane.subviews.filter { $0 is SAClaudeSidebarBackgroundView }.count, 1)
+        let background = pane.subviews.first
+        XCTAssertTrue(background is SAClaudeSidebarBackgroundView)
+        XCTAssertEqual(background?.frame, pane.bounds)
+        XCTAssertEqual(background?.autoresizingMask, [.width, .height])
+        XCTAssertNil(background?.hitTest(NSPoint(x: 100, y: 300)))
+    }
+
+    /// Verifies the background paints the sidebar colour for the current appearance.
+    func testSidebarBackgroundPaintsTheSidebarColour() throws {
+        let view = SAClaudeSidebarBackgroundView(frame: NSRect(x: 0, y: 0, width: 4, height: 4))
+        view.appearance = NSAppearance(named: .darkAqua)
+        let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: rep)
+        let color = try XCTUnwrap(rep.colorAt(x: 1, y: 1)?.usingColorSpace(.sRGB))
+        XCTAssertEqual(color.redComponent, CGFloat(0x11) / 255, accuracy: 0.02)
+        XCTAssertEqual(color.alphaComponent, 1, accuracy: 0.01)
     }
 }

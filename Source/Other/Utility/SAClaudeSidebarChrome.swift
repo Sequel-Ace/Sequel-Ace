@@ -84,6 +84,8 @@ extension SAClaudeSidebarChrome {
 @objc final class SAClaudeHoverHighlighter: NSObject {
     private static var associationKey: UInt8 = 0
     private weak var view: NSView?
+    private var isHovered = false
+    private var appearanceObservation: NSKeyValueObservation?
 
     /// Attaches a highlighter to `view` (once) and rounds its layer.
     @objc static func attach(to view: NSView) {
@@ -92,9 +94,16 @@ extension SAClaudeSidebarChrome {
         highlighter.view = view
         view.wantsLayer = true
         view.layer?.cornerRadius = SAClaudeStyle.barButtonRadius
+        // Active in the active app, not only the key window, so a sheet
+        // taking key status mid-hover still delivers mouseExited.
         view.addTrackingArea(NSTrackingArea(rect: .zero,
-                                            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                            options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect],
                                             owner: highlighter, userInfo: nil))
+        // The fill is a resolved CGColor, so re-resolve it on a light/dark switch.
+        highlighter.appearanceObservation = view.observe(\.effectiveAppearance) { [weak highlighter] _, _ in
+            guard let highlighter, highlighter.isHovered else { return }
+            highlighter.setHovered(true)
+        }
         objc_setAssociatedObject(view, &associationKey, highlighter, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
@@ -107,10 +116,12 @@ extension SAClaudeSidebarChrome {
     @objc func mouseExited(with event: NSEvent) { setHovered(false) }
 
     /// Shows or clears the hover fill, resolved for the view's appearance.
+    /// A disabled control gets no fill.
     func setHovered(_ hovered: Bool) {
+        isHovered = hovered
         guard let view else { return }
         var fill: CGColor?
-        if hovered {
+        if hovered, (view as? NSControl)?.isEnabled ?? true {
             view.effectiveAppearance.performAsCurrentDrawingAppearance {
                 fill = SAClaudeStyle.hoverFill.cgColor
             }
@@ -138,15 +149,68 @@ extension SAClaudeSidebarChrome {
         SAClaudeHoverHighlighter.attach(to: button)
     }
 
-    /// Adds Claude's 1pt divider along the top edge of `bar` (once). The bar's
-    /// coordinates are not flipped, so the top edge is `maxY`.
-    @objc(addTopDivider:)
-    static func addTopDivider(to bar: NSView) {
-        guard !bar.subviews.contains(where: { $0 is SAClaudeDividerLine }) else { return }
-        let line = SAClaudeDividerLine(frame: NSRect(x: 0, y: bar.bounds.maxY - 1, width: bar.bounds.width, height: 1))
-        line.autoresizingMask = [.width, .minYMargin]
-        bar.addSubview(line)
+    /// Adds Claude's 1pt divider across `pane` just above the bottom bar
+    /// (once), pinned to the bar so it stays put as the pane resizes.
+    ///
+    /// - Parameters:
+    ///   - pane: The sidebar pane that holds the bar's buttons.
+    ///   - barView: One of the bar's buttons; the line sits on its top edge.
+    @objc(addBarDivider:aboveView:)
+    static func addBarDivider(to pane: NSView, above barView: NSView) {
+        guard !pane.subviews.contains(where: { $0 is SAClaudeDividerLine }) else { return }
+        let barFrame = pane.convert(barView.bounds, from: barView)
+        let y = pane.isFlipped ? barFrame.minY - 1 : barFrame.maxY
+        let line = SAClaudeDividerLine(frame: NSRect(x: 0, y: y, width: pane.bounds.width, height: 1))
+        // The flexible margin is the one away from the bar: the top margin,
+        // which is maxY when the pane is not flipped and minY when it is.
+        line.autoresizingMask = [.width, pane.isFlipped ? .minYMargin : .maxYMargin]
+        pane.addSubview(line)
     }
+
+    /// Paints the tables-list name cell for its row: the row font, primary
+    /// text when selected, secondary otherwise, muted while the list is
+    /// disabled; always on a normal background so a selected row never
+    /// switches to the white-on-accent text of an emphasized selection.
+    @objc(styleTablesListCell:selected:enabled:)
+    static func styleTablesListCell(_ cell: NSTextFieldCell, selected: Bool, enabled: Bool) {
+        cell.font = SAClaudeStyle.rowFont
+        cell.textColor = !enabled ? SAClaudeStyle.textMuted : selected ? SAClaudeStyle.textPrimary : SAClaudeStyle.textSecondary
+        cell.backgroundStyle = .normal
+    }
+
+    /// Gives the sidebar's list/info split view a 1pt divider, so its
+    /// divider colour draws as a hairline rather than a 9pt band.
+    @objc(styleSidebarSplitView:)
+    static func styleSidebarSplitView(_ split: NSSplitView) {
+        split.dividerStyle = .thin
+    }
+
+    /// Paints the whole sidebar pane (filter strip, bottom bar, drag-handle
+    /// area) in the sidebar colour by adding a background view beneath all
+    /// its other subviews (once).
+    @objc(addSidebarBackground:)
+    static func addSidebarBackground(to pane: NSView) {
+        guard !pane.subviews.contains(where: { $0 is SAClaudeSidebarBackgroundView }) else { return }
+        let background = SAClaudeSidebarBackgroundView(frame: pane.bounds)
+        background.autoresizingMask = [.width, .height]
+        pane.addSubview(background, positioned: .below, relativeTo: nil)
+    }
+}
+
+/// Fills its bounds with the Claude sidebar colour, redrawn for light/dark.
+/// Never takes clicks, so the views above it behave as before.
+@objc final class SAClaudeSidebarBackgroundView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        SAClaudeStyle.sidebarBackground.setFill()
+        dirtyRect.fill()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 /// A 1pt line in the Claude divider colour, redrawn for light/dark.
@@ -160,4 +224,7 @@ extension SAClaudeSidebarChrome {
         super.viewDidChangeEffectiveAppearance()
         needsDisplay = true
     }
+
+    /// Never takes clicks from the views under it.
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
