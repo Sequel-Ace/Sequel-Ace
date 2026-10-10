@@ -33,7 +33,7 @@ import AppKit
         switch glyph {
         case .database: return NSLocalizedString("Database", comment: "accessibility name of the database icon")
         case .table: return NSLocalizedString("Table", comment: "accessibility name of the table icon")
-        case .view: return NSLocalizedString("View", comment: "accessibility name of the view icon in the tables list")
+        case .view: return NSLocalizedString("ViewIconAccessibilityName", value: "View", comment: "accessibility name of the view icon in the tables list")
         case .procedure: return NSLocalizedString("Procedure", comment: "accessibility name of the stored procedure icon in the tables list")
         case .function: return NSLocalizedString("Function", comment: "accessibility name of the stored function icon in the tables list")
         case .add: return NSLocalizedString("Add table", comment: "accessibility name of the add table button below the tables list")

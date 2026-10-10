@@ -4465,7 +4465,7 @@
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
 
 /* accessibility name of the view icon in the tables list */
-"View" = "View";
+"ViewIconAccessibilityName" = "View";
 
 /* accessibility name of the stored procedure icon in the tables list */
 "Procedure" = "Procedure";
