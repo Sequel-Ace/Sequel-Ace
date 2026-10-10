@@ -41,6 +41,7 @@
 		173C837A11AAD2AE00B8B084 /* SPHTMLExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C837611AAD2AE00B8B084 /* SPHTMLExporter.m */; };
 		173C837B11AAD2AE00B8B084 /* SPPDFExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 173C837811AAD2AE00B8B084 /* SPPDFExporter.m */; };
 		1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */ = {isa = PBXBuildFile; fileRef = 1740FABA0FC4372F00CF3699 /* SPDatabaseData.m */; };
+		174C30F93D55F38CA6DC8A84 /* SAScriptStatementSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE098674353B0D5AC3C1A95C /* SAScriptStatementSplitter.swift */; };
 		174CE14210AB9281008F892B /* SPProcessListController.m in Sources */ = {isa = PBXBuildFile; fileRef = 174CE14110AB9281008F892B /* SPProcessListController.m */; };
 		176E14D115570FE300FAF326 /* SPBundleCommandRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 176E14D015570FE300FAF326 /* SPBundleCommandRunner.m */; };
 		177E792E0FCB54EC00E9E122 /* database-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 177E792B0FCB54EC00E9E122 /* database-small.png */; };
@@ -1660,6 +1661,7 @@
 		CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorTokensTests.swift; sourceTree = "<group>"; };
 		CB04CE94BAEDB4110C122697 /* SAQueryFavoriteSaveWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAQueryFavoriteSaveWindowController.swift; sourceTree = "<group>"; };
 		CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPMCPServer.swift; sourceTree = "<group>"; };
+		CE098674353B0D5AC3C1A95C /* SAScriptStatementSplitter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementSplitter.swift; sourceTree = "<group>"; };
 		CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorTests.swift; sourceTree = "<group>"; };
 		CF0000042F8C000600C4C14A /* SACellFilterOperator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperator.swift; sourceTree = "<group>"; };
 		CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorRoundTripTests.swift; sourceTree = "<group>"; };
@@ -2013,6 +2015,7 @@
 				25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */,
 				84BCBDC308AB07FD3E701FE1 /* SPCustomQuery+Script.swift */,
 				C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */,
+				CE098674353B0D5AC3C1A95C /* SAScriptStatementSplitter.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -4244,6 +4247,7 @@
 				6DEA8EFBCCA6567E457B10E2 /* SPCustomQuery+Script.swift in Sources */,
 				DF41CA70087EC426ED97F397 /* SAScriptConsoleAppearance.swift in Sources */,
 				ED9EAE14EC491D133641BF72 /* SAScriptConsoleAppearanceSection.swift in Sources */,
+				174C30F93D55F38CA6DC8A84 /* SAScriptStatementSplitter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
