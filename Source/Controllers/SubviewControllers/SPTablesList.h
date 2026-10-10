@@ -77,6 +77,7 @@
 	__weak IBOutlet NSTextField *copyTableToNewDatabaseMessageField;
 	IBOutlet NSPopUpButton *toolbarActionsButton;
 	IBOutlet NSButton *toolbarReloadButton;
+	IBOutlet NSButton *infoPanelToggleButton;
 	IBOutlet NSButton *addTableButton;
 	IBOutlet NSMenuItem *truncateTableButton;
 	IBOutlet SPSplitView *tableListSplitView;

@@ -161,6 +161,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[(SATablesListView *)tablesListView applyClaudeStyle];
 	[tableListSplitView setCustomDividerColor:[SAClaudeStyle divider]];
 
+	// Claude-style bottom bar: quiet icon buttons with a rounded hover fill.
+	[SAClaudeSidebarChrome styleBarButton:toolbarAddButton glyph:SAClaudeGlyphAdd];
+	[SAClaudeSidebarChrome styleBarButton:toolbarActionsButton glyph:SAClaudeGlyphActions];
+	[SAClaudeSidebarChrome styleBarButton:toolbarReloadButton glyph:SAClaudeGlyphRefresh];
+	if (infoPanelToggleButton) [SAClaudeSidebarChrome styleBarButton:infoPanelToggleButton glyph:SAClaudeGlyphInfoPanel];
+	// The bar is the add button's superview; give it Claude's top divider.
+	if ([toolbarAddButton superview]) [SAClaudeSidebarChrome addTopDivider:[toolbarAddButton superview]];
+
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
 		[[column dataCell] setFont:[SAClaudeStyle rowFont]];
 	}

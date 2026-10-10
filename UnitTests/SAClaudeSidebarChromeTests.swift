@@ -80,3 +80,47 @@ final class SAClaudeInfoRowTests: XCTestCase {
         XCTAssertEqual(paragraph?.tabStops.first?.location, 0)
     }
 }
+
+final class SAClaudeBarButtonTests: XCTestCase {
+
+    /// Verifies a bar button gets its glyph, no border, and the hover fill on hover only.
+    func testBarButtonStylingAndHover() throws {
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        button.appearance = NSAppearance(named: .darkAqua)
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .refresh)
+
+        XCTAssertFalse(button.isBordered)
+        XCTAssertEqual(button.imagePosition, .imageOnly)
+        XCTAssertEqual(button.image?.accessibilityDescription, "Refresh table list")
+        XCTAssertEqual(button.layer?.cornerRadius, SAClaudeStyle.barButtonRadius)
+        XCTAssertNil(button.layer?.backgroundColor)
+
+        let highlighter = try XCTUnwrap(SAClaudeHoverHighlighter.highlighter(for: button))
+        highlighter.setHovered(true)
+        let fill = try XCTUnwrap(button.layer?.backgroundColor.flatMap { NSColor(cgColor: $0)?.usingColorSpace(.sRGB) })
+        XCTAssertEqual(fill.redComponent, CGFloat(0x1E) / 255, accuracy: 0.01)
+        highlighter.setHovered(false)
+        XCTAssertNil(button.layer?.backgroundColor)
+    }
+
+    /// Verifies the bar gets one 1pt divider along its top edge that tracks its width, added once.
+    func testTopDividerIsAddedOnce() {
+        let bar = NSView(frame: NSRect(x: 0, y: 0, width: 215, height: 25))
+        SAClaudeSidebarChrome.addTopDivider(to: bar)
+        SAClaudeSidebarChrome.addTopDivider(to: bar)
+        let lines = bar.subviews.compactMap { $0 as? SAClaudeDividerLine }
+        XCTAssertEqual(lines.count, 1)
+        XCTAssertEqual(lines.first?.frame, NSRect(x: 0, y: 24, width: 215, height: 1))
+        XCTAssertEqual(lines.first?.autoresizingMask, [.width, .minYMargin])
+    }
+
+    /// Verifies a pull-down menu button shows the glyph through its first (title) item.
+    func testPullDownShowsGlyphOnItsFirstItem() {
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 35, height: 28), pullsDown: true)
+        popup.addItem(withTitle: "")
+        popup.addItem(withTitle: "Rename Table...")
+        SAClaudeSidebarChrome.styleBarButton(popup, glyph: .actions)
+        XCTAssertEqual(popup.item(at: 0)?.image?.accessibilityDescription, "Table actions")
+        XCTAssertNil(popup.item(at: 1)?.image)
+    }
+}

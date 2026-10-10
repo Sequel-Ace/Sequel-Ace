@@ -4437,6 +4437,7 @@ Gw
                 <outlet property="toolbarActionsButton" destination="7859" id="7943"/>
                 <outlet property="toolbarAddButton" destination="7850" id="7853"/>
                 <outlet property="toolbarReloadButton" destination="7954" id="7958"/>
+                <outlet property="infoPanelToggleButton" destination="7959" id="cLk-ip-tgl"/>
                 <outlet property="truncateTableButton" destination="7920" id="7946"/>
                 <outlet property="truncateTableContextMenuItem" destination="6184" id="7681"/>
             </connections>

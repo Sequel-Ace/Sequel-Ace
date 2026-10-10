@@ -298,6 +298,22 @@ final class SADatabaseListManagerTests: XCTestCase {
         XCTAssertEqual(popup.numberOfItems, firstCount)
         XCTAssertEqual(popup.titleOfSelectedItem, "mysql")
     }
+
+    /// Verifies every database item in the toolbar pop-up shows the clay database icon,
+    /// and the command items do not.
+    func testDatabaseItemsShowTheDatabaseIcon() {
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        _ = SADatabaseListManager.configurePopup(popup,
+                                                 databases: ["mysql", "shop_prod"],
+                                                 currentDatabase: "shop_prod",
+                                                 addDatabaseSelector: #selector(NSResponder.noResponder(for:)),
+                                                 refreshDatabasesSelector: #selector(NSResponder.noResponder(for:)))
+        XCTAssertNil(popup.item(at: 0)?.image, "Choose Database…")
+        for title in ["mysql", "shop_prod"] {
+            XCTAssertEqual(popup.item(withTitle: title)?.image?.accessibilityDescription, "Database", title)
+        }
+        XCTAssertNil(popup.item(withTitle: NSLocalizedString("Add Database...", comment: "menu item to add db"))?.image)
+    }
 }
 
 final class SATableListResultParserTests: XCTestCase {

@@ -314,14 +314,17 @@ import AppKit
         // Skip empty-string names defensively — mirrors the
         // -safeAddItemWith(title:) helper used by the original code,
         // inlined here so this file has no cross-file dependency.
+        let databaseIcon = SAClaudeGlyphs.image(.database, tint: SAClaudeStyle.tintDatabase)
         for database in partition.systemDatabases where !database.isEmpty {
             popup.addItem(withTitle: database)
+            popup.lastItem?.image = databaseIcon
         }
         if !partition.systemDatabases.isEmpty {
             popup.menu?.addItem(NSMenuItem.separator())
         }
         for database in partition.userDatabases where !database.isEmpty {
             popup.addItem(withTitle: database)
+            popup.lastItem?.image = databaseIcon
         }
 
         if let current = currentDatabase, !current.isEmpty {
