@@ -423,8 +423,11 @@ final class SADatabaseAssertion: NSObject {
     /// `PREPARE s FROM 'CREATE TABLE …'` makes it a data-definition statement. `SET` is not
     /// a keyword here because only some of its forms commit; see ``statementMayCommit(_:serverVersion:serverIsMariaDB:)``.
     ///
+    /// `XA` is in it for the same reason as `CALL`: `XA COMMIT` commits, in the two-phase form and
+    /// in `XA COMMIT … ONE PHASE`, and the keyword that starts the statement is `XA`.
+    ///
     /// A keyword that begins statements of which only some commit - `RESET`, where `RESET PERSIST`
-    /// does not - is kept in all the same: a statement wrongly taken to commit costs one warning
+    /// does not, or `XA START` - is kept in all the same: a statement wrongly taken to commit costs one warning
     /// that the outcome is unknown, where one wrongly taken not to commit tells the user their
     /// work was rolled back when the server may have kept it.
     static let keywordsThatMayCommit: Set<String> = [
@@ -434,7 +437,7 @@ final class SADatabaseAssertion: NSObject {
         "LOCK", "UNLOCK",
         "ANALYZE", "CHECK", "CHECKSUM", "OPTIMIZE", "REPAIR",
         "FLUSH", "INSTALL", "UNINSTALL",
-        "CACHE", "LOAD", "RESET", "PURGE", "CHANGE", "STOP",
+        "CACHE", "LOAD", "RESET", "PURGE", "CHANGE", "STOP", "XA",
     ]
 
     /// Whether a statement can commit a transaction, so that losing the reply to it leaves what

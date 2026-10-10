@@ -1142,6 +1142,13 @@ final class SAStatementMayCommitTests: XCTestCase {
         XCTAssertFalse(mayCommit("DEALLOCATE PREPARE s"), "throwing the statement away commits nothing")
     }
 
+    /// `XA COMMIT` commits, in both forms, and the keyword that starts it is `XA`.
+    func testAnXAStatementIsTakenToCommit() {
+        XCTAssertTrue(mayCommit("XA COMMIT 'x'"))
+        XCTAssertTrue(mayCommit("xa commit 'x' one phase"))
+        XCTAssertTrue(mayCommit("  XA  PREPARE 'x'"), "the keyword decides, as it does for RESET")
+    }
+
     /// Ordinary statements, and the one that changes nothing either way.
     func testStatementsThatCommitNothing() {
         for query in ["SELECT 1", "UPDATE t SET a = 1", "INSERT INTO t VALUES (1)",
