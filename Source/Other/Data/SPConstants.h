@@ -235,7 +235,8 @@ typedef enum
 typedef enum
 {
 	SPPrefFontChangeTargetGeneral = 1,
-	SPPrefFontChangeTargetEditor = 2
+	SPPrefFontChangeTargetEditor = 2,
+	SPPrefFontChangeTargetScriptConsole = 3
 } SPPreferenceFontChangeTarget;
 
 // Predefined localisable URLs

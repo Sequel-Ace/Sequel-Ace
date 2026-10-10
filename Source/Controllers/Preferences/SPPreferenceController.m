@@ -154,6 +154,9 @@
 			
 			[editorPreferencePane updateDisplayedEditorFontName];
 			break;
+		case SPPrefFontChangeTargetScriptConsole:
+			[SAScriptConsoleFontPanel applyFontPanelChange];
+			break;
 	}
 }
 

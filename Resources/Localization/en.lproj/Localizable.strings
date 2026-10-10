@@ -742,6 +742,9 @@
 /* background label for color table (Prefs > Editor) */
 "Background" = "Background";
 
+/* Preferences > Query Editor > Script Output: label for the script console background colour */
+"Background colour" = "Background colour";
+
 /* backtick quote label for color table (Prefs > Editor) */
 "Backtick Quote" = "Backtick Quote";
 
@@ -982,8 +985,14 @@
  Continue button title */
 "Continue" = "Continue";
 
+/* Script console: checkbox to keep running a script after a statement fails */
+"Continue on error" = "Continue on error";
+
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
+
+/* Script console: button that copies all output to the clipboard */
+"Copy All" = "Copy All";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
 "Copy WHERE Clause" = "Copy WHERE Clause";
@@ -1305,6 +1314,12 @@
 /* message of panel asking for confirmation for inserting large text from dragging action */
 "Do you really want to proceed with %@ of data?" = "Do you really want to proceed with %@ of data?";
 
+/* message of panel asking for confirmation for exec query */
+"Do you really want to proceed with these queries?\n\n %@" = "Do you really want to proceed with these queries?\n\n %@";
+
+/* message of panel asking for confirmation for exec query */
+"Do you really want to proceed with this query?\n\n %@" = "Do you really want to proceed with this query?\n\n %@";
+
 /* shutdown server : confirmation dialog : title */
 "Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
 
@@ -1541,6 +1556,9 @@
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclude BLOB";
 
+/* Execute SQL? */
+"Execute SQL?" = "Execute SQL?";
+
 /* execution privilege label (Navigator) */
 "Execution Privilege" = "Execution Privilege";
 
@@ -1676,6 +1694,9 @@
 
 /* title of panel when successfully flushed privs */
 "Flushed Privileges" = "Flushed Privileges";
+
+/* Preferences > Query Editor > Script Output: label for the script console font */
+"Font" = "Font";
 
 /* For BIT fields only “1” or “0” are allowed. */
 "For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
@@ -2475,6 +2496,9 @@
 /* delete all rows in table button */
 "Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
+/* Preferences > Query Editor > Script Output: button that copies the editor's font and colours into the script console settings */
+"Reset to Editor" = "Reset to Editor";
+
 /* Restoring session task description */
 "Restoring session..." = "Restoring session...";
 
@@ -2504,6 +2528,9 @@
 
 /* run all button */
 "Run All" = "Run All";
+
+/* Query editor run menu: run all statements and print every result as plain text */
+"Run All as Script" = "Run All as Script";
 
 /* Run All menu item title */
 "Run All Queries" = "Run All Queries";
@@ -2559,6 +2586,9 @@
 /* Query favorite save sheet global checkbox */
 "Save globally" = "Save globally";
 
+/* Script console: button that saves all output to a text file */
+"Save Output…" = "Save Output…";
+
 /* save page as menu item title */
 "Save Page As…" = "Save Page As…";
 
@@ -2579,6 +2609,9 @@
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
+
+/* Preferences > Query Editor: section title for the Run All as Script console's appearance */
+"Script Output" = "Script Output";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
@@ -2612,6 +2645,9 @@
 
 /* selection label for color table (Prefs > Editor) */
 "Selection" = "Selection";
+
+/* Preferences > Query Editor > Script Output: button that opens the font panel */
+"Select…" = "Select…";
 
 /* table structure : indexes : delete index : no columns error : description */
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
@@ -2954,6 +2990,9 @@
 
 /* text label for color table (Prefs > Editor) */
 "Text" = "Text";
+
+/* Preferences > Query Editor > Script Output: label for the script console text colour */
+"Text colour" = "Text colour";
 
 /* Text is too long. Maximum text length is set to %llu. */
 "Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
@@ -3368,6 +3407,9 @@
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Use 127.0.0.1";
+
+/* Preferences > Query Editor > Script Output: checkbox to stop the script console following the editor's font and colours */
+"Use custom font & colours for script output" = "Use custom font & colours for script output";
 
 /* use standard connection button */
 "Use Standard Connection" = "Use Standard Connection";
