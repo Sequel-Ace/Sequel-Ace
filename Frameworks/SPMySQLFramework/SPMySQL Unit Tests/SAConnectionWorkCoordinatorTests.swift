@@ -507,3 +507,38 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             "a worker does not answer the question, so it may wait for the session")
     }
 }
+
+/// Hands work over the way the connection does.
+@objc private protocol SAWorkHandOff {
+    @objc(_runWorkKeepingInterfaceAlive:)
+    func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any?
+}
+
+/// A refusal belongs to the call it was about.
+final class SARefusalMarkerTests: XCTestCase {
+
+    /// The mark is read by the statement path alone, and the connection's other work is turned
+    /// away by the same gate without reading it. Left standing, such a mark would be read by the
+    /// next statement on that thread and reported as that statement's own - a statement that was
+    /// never refused would say it was, and the cancellation the caller had recorded for it would
+    /// be cleared along the way.
+    func testWorkHandedOverForgetsARefusalThatWasNotAboutIt() throws {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        defer { connection.disconnect() }
+        let access = try XCTUnwrap(connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess)
+
+        // What an earlier call that was turned away leaves behind on this thread.
+        access.noteThisThreadsCallWasRefused()
+
+        var theWorkRan = false
+        _ = unsafeBitCast(connection, to: SAWorkHandOff.self).runWorkKeepingInterfaceAlive {
+            theWorkRan = true
+            return nil
+        }
+
+        XCTAssertTrue(theWorkRan, "with nobody to show the wait the work runs where it was asked for")
+        XCTAssertFalse(access.takeTheRefusalOfThisThreadsLastCall(),
+                       "and the mark from before is gone, so it cannot be read as this work's")
+    }
+}

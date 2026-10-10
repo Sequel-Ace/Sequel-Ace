@@ -1755,6 +1755,12 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work
 {
+	// Whatever this thread was told about an earlier refusal is not about this work. Only the
+	// statement path reads that mark, and the connection's other work - a check, a session
+	// replacement - comes through here too and reads nothing: a mark one of those left standing
+	// would be read by the next statement and reported as that statement's own.
+	[self.sessionAccess forgetAnyRefusalOfThisThread];
+
 	if (![self _workShouldRunOffMainThread]) {
 		return work();
 	}

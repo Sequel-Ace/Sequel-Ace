@@ -248,6 +248,17 @@ import Darwin
     ///
     /// The refusal has to read the same whichever side of a hand-off turned the call away: a
     /// statement that was never sent must not be taken for one that ran and returned nothing.
+    /// Forgets a refusal this thread was told about earlier, so that what is read after this call
+    /// can only describe the call that follows it.
+    ///
+    /// A refusal is marked on the thread that was turned away, and only the statement path reads
+    /// that mark. The connection's other work - a check, a session replacement - is turned away by
+    /// the same gate and reads nothing, so a mark left standing there would be read by the next
+    /// statement on that thread and reported as its own.
+    @objc public func forgetAnyRefusalOfThisThread() {
+        forgetAnyRefusal()
+    }
+
     @objc public func noteThisThreadsCallWasRefused() {
         Thread.current.threadDictionary[Self.refusalMarker] = true
     }
