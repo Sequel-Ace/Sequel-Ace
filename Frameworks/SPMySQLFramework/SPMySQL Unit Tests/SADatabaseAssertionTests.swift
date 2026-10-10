@@ -15,6 +15,55 @@ import XCTest
 final class SADatabaseAssertionTests: XCTestCase {
     private let latin1CharacterSet = Data("latin1".utf8)
 
+    /// Reads and session settings leave the data alone, whatever comments come first.
+    func testReadsAndSessionSettingsLeaveTheDataAlone() {
+        for query in ["SELECT 1", "  select * from t", "/* note */ SHOW TABLES", "-- note\nSELECT 1", "# note\nDESCRIBE t",
+                      "(SELECT 1) UNION (SELECT 2)", "SET NAMES utf8mb4", "USE `db`", "EXPLAIN SELECT 1", "KILL QUERY 5",
+                      "/*!40101 SET NAMES utf8mb4 */", "TABLE t", "desc t", "EXPLAIN FORMAT=JSON SELECT 1"] {
+            XCTAssertTrue(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
+    /// A SET that only changes the session leaves the data alone, whatever its values read.
+    func testSessionSettingsLeaveTheDataAlone() {
+        for query in ["SET CHARACTER SET utf8mb4", "SET CHARSET utf8mb4", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED",
+                      "SET SESSION TRANSACTION READ ONLY", "SET ROLE ALL", "SET @a = 1", "SET @a := 1, @b = 2;",
+                      "SET time_zone = @@GLOBAL.time_zone", "SET SQL_MODE='GLOBAL,PERSIST'", "SET FOREIGN_KEY_CHECKS = 0",
+                      "SET @@session.sql_mode = '', @@local.x = 1, @@wait_timeout = 10", "SET SESSION sql_mode = 'a,b'",
+                      "SET LOCAL x = 1", "set @x = (SELECT a, b = 1 FROM t)", "SET @`a b` = 'it''s'",
+                      "SET /* GLOBAL */ x = 1", "SET @@sql_mode = @@GLOBAL.sql_mode;;", "SET character_set_client = utf8mb4",
+                      "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_bin', @a = 1", "SET NAMES utf8mb4;", "SET CHARSET DEFAULT, x = 1"] {
+            XCTAssertTrue(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
+    /// A SET that changes more than the session is taken to change data.
+    func testSettingsBeyondTheSessionAreTakenToChangeData() {
+        for query in ["SET PASSWORD FOR 'u'@'h' = 'x'", "set password = 'x'", "SET GLOBAL max_allowed_packet = 1024",
+                      "SET GLOBAL max_allowed_packet = @@global.max_allowed_packet", "SET PERSIST max_connections = 10",
+                      "SET PERSIST_ONLY back_log = 100", "SET @@GLOBAL.max_connections = 10", "SET @@persist.x = 1",
+                      "SET @@ global . x = 1", "SET @a = 1, GLOBAL max_connections = 10", "SET /*!80000 GLOBAL */ x = 1",
+                      "SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED", "SET DEFAULT ROLE ALL TO u",
+                      "SET RESOURCE GROUP rg FOR 1", "SET STATEMENT max_statement_time = 1 FOR DELETE FROM t",
+                      "SET @a = 'x\\', GLOBAL y = 1 -- '", "SET @a = 1; DELETE FROM t", "SET x", "SET", "SET `x` = 1",
+                      "SET @ = 1", "SET @a = (1", "SET @a = 'open", "SET @@GTID_PURGED = '1', @@global.gtid_purged = '2'",
+                      "SET NAMES utf8mb4, GLOBAL max_connections = 10", "SET CHARACTER SET utf8, @@global.read_only = 1",
+                      "SET NAMES utf8mb4; DELETE FROM t", "SET CHARSET utf8, x", "SET NAMES 'open"] {
+            XCTAssertFalse(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
+    /// Anything else is taken to change data, including a write hidden behind a comment.
+    func testEverythingElseIsTakenToChangeData() {
+        for query in ["UPDATE t SET a = 1", "INSERT INTO t VALUES (1)", "delete from t", "COMMIT", "CALL p()",
+                      "WITH x AS (SELECT 1) DELETE FROM t", "/* SELECT */ UPDATE t SET a = 1", "/*!40101 UPDATE t SET a = 1 */",
+                      "SELECTED", "", "   ", "EXPLAIN ANALYZE DELETE t FROM t JOIN u", "explain  analyze select 1",
+                      "EXPLAIN /* note */ ANALYZE DELETE t FROM t JOIN u", "EXPLAIN -- note\nANALYZE DELETE t FROM t JOIN u",
+                      "EXPLAIN ANALYZE FORMAT=TREE SELECT 1"] {
+            XCTAssertFalse(SADatabaseAssertion.statementLeavesDataAlone(query, serverVersion: 80400, serverIsMariaDB: false), query)
+        }
+    }
+
     func testDisabledAssertionDoesNotConsultOrMutateSession() {
         let error = assertDatabase(
             "target",
@@ -1013,5 +1062,98 @@ final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingRes
 
     private func tickQuoted(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "''"))'"
+    }
+}
+
+/// Which statements can commit a transaction, so that losing the reply to one leaves what became
+/// of that transaction unknown.
+final class SAStatementMayCommitTests: XCTestCase {
+
+    private func mayCommit(_ query: String) -> Bool {
+        SADatabaseAssertion.statementMayCommit(query, serverVersion: 80400, serverIsMariaDB: false)
+    }
+
+    /// The explicit one, however it is written.
+    func testCommitItself() {
+        XCTAssertTrue(mayCommit("COMMIT"))
+        XCTAssertTrue(mayCommit("  commit ; "))
+        XCTAssertTrue(mayCommit("/* done */ COMMIT"))
+    }
+
+    /// Starting a transaction commits whatever was pending.
+    func testStartingATransaction() {
+        XCTAssertTrue(mayCommit("START TRANSACTION"))
+        XCTAssertTrue(mayCommit("BEGIN"))
+    }
+
+    /// The statements the server commits around.
+    func testImplicitlyCommittingStatements() {
+        for query in ["CREATE TABLE t (a INT)", "ALTER TABLE t ADD b INT", "DROP TABLE t",
+                      "TRUNCATE TABLE t", "RENAME TABLE t TO u", "GRANT SELECT ON *.* TO u",
+                      "REVOKE SELECT ON *.* FROM u", "LOCK TABLES t WRITE", "UNLOCK TABLES",
+                      "FLUSH PRIVILEGES", "OPTIMIZE TABLE t", "ANALYZE TABLE t"] {
+            XCTAssertTrue(mayCommit(query), query)
+        }
+    }
+
+    /// The administrative, replication-control and account-management statements the server also
+    /// commits around. Each would otherwise be reported as a definite rollback when its reply is
+    /// lost, while the server had committed the transaction before running it.
+    func testTheAdministrativeAndReplicationStatements() {
+        for query in ["RESET MASTER", "PURGE BINARY LOGS TO 'log.000123'",
+                      "CHANGE REPLICATION SOURCE TO SOURCE_HOST='h'", "CHANGE MASTER TO MASTER_HOST='h'",
+                      "STOP REPLICA", "STOP SLAVE", "CACHE INDEX t IN hot_cache",
+                      "LOAD INDEX INTO CACHE t", "CHECK TABLE t", "REPAIR TABLE t",
+                      "CHECKSUM TABLE t", "INSTALL PLUGIN p SONAME 'p.so'", "UNINSTALL PLUGIN p"] {
+            XCTAssertTrue(mayCommit(query), query)
+        }
+    }
+
+    /// `SET PASSWORD` is account management, so it commits; a value that merely contains the word
+    /// is a different statement.
+    func testSettingAPasswordCommits() {
+        XCTAssertTrue(mayCommit("SET PASSWORD = 'secret'"))
+        XCTAssertTrue(mayCommit("set password for 'u'@'h' = 'secret'"))
+        XCTAssertTrue(mayCommit("SET  PASSWORD='secret'"))
+        XCTAssertFalse(mayCommit("SET @note = 'password'"))
+        XCTAssertFalse(mayCommit("SET sql_mode = 'ANSI'"))
+    }
+
+    /// Setting autocommit commits what was pending, however it is written and wherever it
+    /// stands; the other session settings do not.
+    func testAutocommitAloneAmongTheSessionSettings() {
+        XCTAssertTrue(mayCommit("SET autocommit = 1"))
+        XCTAssertTrue(mayCommit("set  AUTOCOMMIT=0"))
+        XCTAssertTrue(mayCommit("SET SESSION autocommit = 1"))
+        XCTAssertTrue(mayCommit("SET @@session.autocommit = 1"))
+        XCTAssertTrue(mayCommit("SET sql_mode = '', autocommit = 1"))
+        XCTAssertFalse(mayCommit("SET NAMES utf8mb4"))
+        XCTAssertFalse(mayCommit("SET time_zone = '+00:00'"))
+    }
+
+    /// What a procedure does cannot be read from the statement, so a call is taken to commit - and
+    /// a prepared statement is as opaque, since `PREPARE s FROM 'CREATE TABLE …'` makes its
+    /// `EXECUTE` a data-definition statement.
+    func testACallOrAPreparedStatementIsTakenToCommit() {
+        XCTAssertTrue(mayCommit("CALL do_the_thing()"))
+        XCTAssertTrue(mayCommit("  call  other.proc(1)"))
+        XCTAssertTrue(mayCommit("EXECUTE s"))
+        XCTAssertTrue(mayCommit("  execute s USING @a"))
+        XCTAssertFalse(mayCommit("DEALLOCATE PREPARE s"), "throwing the statement away commits nothing")
+    }
+
+    /// `XA COMMIT` commits, in both forms, and the keyword that starts it is `XA`.
+    func testAnXAStatementIsTakenToCommit() {
+        XCTAssertTrue(mayCommit("XA COMMIT 'x'"))
+        XCTAssertTrue(mayCommit("xa commit 'x' one phase"))
+        XCTAssertTrue(mayCommit("  XA  PREPARE 'x'"), "the keyword decides, as it does for RESET")
+    }
+
+    /// Ordinary statements, and the one that changes nothing either way.
+    func testStatementsThatCommitNothing() {
+        for query in ["SELECT 1", "UPDATE t SET a = 1", "INSERT INTO t VALUES (1)",
+                      "DELETE FROM t", "ROLLBACK", "SHOW TABLES", ""] {
+            XCTAssertFalse(mayCommit(query), query)
+        }
     }
 }

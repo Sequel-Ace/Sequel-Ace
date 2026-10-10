@@ -172,6 +172,41 @@ public final class SADatabaseAssertionState: NSObject {
         return error
     }
 
+    /// Whether a statement only reads, or only sets up the session; see
+    /// ``SADatabaseAssertion/statementLeavesDataAlone(_:serverVersion:serverIsMariaDB:)``.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - rawConnection: The connected handle, for the server's version.
+    /// - Returns: Whether the statement leaves the data alone.
+    @objc(statementLeavesDataAlone:onMySQLConnection:)
+    public static func statementLeavesDataAlone(_ query: String, onMySQLConnection rawConnection: UnsafeMutableRawPointer) -> Bool {
+        let connection = rawConnection.assumingMemoryBound(to: MYSQL.self)
+        let serverVersion = Int(mysql_get_server_version(connection))
+        let serverInfo = mysql_get_server_info(connection).map { String(cString: $0) } ?? ""
+        return SADatabaseAssertion.statementLeavesDataAlone(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverInfo.range(of: "mariadb", options: .caseInsensitive) != nil
+        )
+    }
+
+    /// Whether a statement can commit a transaction, asked of a connected handle.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - rawConnection: The connected handle, for the server's version.
+    /// - Returns: Whether the statement can commit.
+    @objc(statementMayCommit:onMySQLConnection:)
+    public static func statementMayCommit(_ query: String, onMySQLConnection rawConnection: UnsafeMutableRawPointer) -> Bool {
+        let connection = rawConnection.assumingMemoryBound(to: MYSQL.self)
+        let serverVersion = Int(mysql_get_server_version(connection))
+        let serverInfo = mysql_get_server_info(connection).map { String(cString: $0) } ?? ""
+        return SADatabaseAssertion.statementMayCommit(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverInfo.range(of: "mariadb", options: .caseInsensitive) != nil
+        )
+    }
+
     @objc(recordSuccessfulQuery:onMySQLConnection:)
     public func recordSuccessfulQuery(
         _ query: String,
@@ -354,6 +389,11 @@ public final class SADatabaseAssertionState: NSObject {
         )
     }
 
+    /// Reads a string the client library returned, in the connection's string encoding.
+    /// - Parameters:
+    ///   - bytes: The library's string, or nil.
+    ///   - encodingValue: The connection's string encoding.
+    /// - Returns: The string, or nil if there was none or it did not decode.
     private func decodedCString(_ bytes: UnsafePointer<CChar>?, encodingValue: UInt) -> String? {
         guard let bytes else {
             return nil
@@ -367,6 +407,270 @@ public final class SADatabaseAssertionState: NSObject {
 }
 
 final class SADatabaseAssertion: NSObject {
+    /// The statements that leave the data a transaction holds alone: they read, or set up the session.
+    /// `SET` does so only in some of its forms; see ``setStatementOnlyChangesSession(_:)``.
+    static let keywordsLeavingDataAlone: Set<String> = [
+        "SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "TABLE", "VALUES", "HELP", "SET", "USE", "KILL",
+    ]
+
+    /// The first keywords of statements that can commit a transaction: `COMMIT` itself, the ones
+    /// that start a transaction and commit whatever was pending, and the data-definition,
+    /// administrative, replication-control and account-management statements the server commits
+    /// around. MySQL and MariaDB both document this set; `ROLLBACK` is left out, because a reply
+    /// to it that never arrives leaves the same state either way. `CALL` is in it because what a
+    /// procedure does cannot be read from the statement, and a procedure may commit; `EXECUTE` for
+    /// the same reason, since a prepared statement is as opaque as a procedure and
+    /// `PREPARE s FROM 'CREATE TABLE …'` makes it a data-definition statement. `SET` is not
+    /// a keyword here because only some of its forms commit; see ``statementMayCommit(_:serverVersion:serverIsMariaDB:)``.
+    ///
+    /// `XA` is in it for the same reason as `CALL`: `XA COMMIT` commits, in the two-phase form and
+    /// in `XA COMMIT … ONE PHASE`, and the keyword that starts the statement is `XA`.
+    ///
+    /// A keyword that begins statements of which only some commit - `RESET`, where `RESET PERSIST`
+    /// does not, or `XA START` - is kept in all the same: a statement wrongly taken to commit costs one warning
+    /// that the outcome is unknown, where one wrongly taken not to commit tells the user their
+    /// work was rolled back when the server may have kept it.
+    static let keywordsThatMayCommit: Set<String> = [
+        "COMMIT", "BEGIN", "START", "CALL", "EXECUTE",
+        "ALTER", "CREATE", "DROP", "RENAME", "TRUNCATE",
+        "GRANT", "REVOKE",
+        "LOCK", "UNLOCK",
+        "ANALYZE", "CHECK", "CHECKSUM", "OPTIMIZE", "REPAIR",
+        "FLUSH", "INSTALL", "UNINSTALL",
+        "CACHE", "LOAD", "RESET", "PURGE", "CHANGE", "STOP", "XA",
+    ]
+
+    /// Whether a statement can commit a transaction, so that losing the reply to it leaves what
+    /// became of that transaction unknown.
+    ///
+    /// What the session last reported about its transaction describes the statement before this
+    /// one, so it cannot settle this one: a `COMMIT` whose reply was lost may have committed, and
+    /// the flags would still show the transaction open. Only the first keyword counts, after
+    /// comments, as elsewhere here.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - serverVersion: The server's version number, for executable comments.
+    ///   - serverIsMariaDB: Whether the server is MariaDB, for executable comments.
+    /// - Returns: Whether the statement can commit.
+    static func statementMayCommit(_ query: String, serverVersion: Int, serverIsMariaDB: Bool) -> Bool {
+        guard let first = query.firstIndex(where: { !$0.isWhitespace }) else {
+            return false
+        }
+        let rest = query[first...]
+        let needsStripping = rest.first == "#" || rest.first == "(" || rest.hasPrefix("--") || rest.hasPrefix("/*")
+        let code = needsStripping
+            ? Substring(stripSQLComments(query, serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+            : rest
+        let statement = code.drop { $0.isWhitespace || $0 == "(" }
+        let keyword = statement.prefix { isIdentifierCharacter($0) }.uppercased()
+        if keywordsThatMayCommit.contains(keyword) {
+            return true
+        }
+        // Setting autocommit commits whatever was pending. It can be written with a scope
+        // (`SET SESSION autocommit = 1`, `SET @@session.autocommit = 1`) and can stand among
+        // other assignments, so the whole statement is looked at rather than the word after SET.
+        // A string that merely contains the word costs an extra warning, which is the side to
+        // err on.
+        guard keyword == "SET" else {
+            return false
+        }
+        let statementCode = needsStripping
+            ? statement
+            : Substring(stripSQLComments(String(statement), serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+        if statementCode.range(of: "autocommit", options: .caseInsensitive) != nil {
+            return true
+        }
+        // `SET PASSWORD` is account management, which the server commits around like the rest of
+        // it. Unlike autocommit it is looked for where the statement puts the word rather than
+        // anywhere in the text: a value that merely contains it is a different statement.
+        let afterSet = statementCode.dropFirst(3).drop { $0.isWhitespace }
+        return afterSet.prefix { isIdentifierCharacter($0) }.uppercased() == "PASSWORD"
+    }
+
+    /// The words after `SET` that start a statement changing more than the session: a password, a
+    /// user's default roles, the resource group of other threads, or - MariaDB's `SET STATEMENT … FOR` -
+    /// whatever the statement it runs changes.
+    private static let setFormsBeyondSession: Set<String> = ["PASSWORD", "DEFAULT", "RESOURCE", "STATEMENT"]
+
+    /// The words after `SET` that start a statement changing only the session, and nothing can follow.
+    private static let setFormsOfSession: Set<String> = ["TRANSACTION", "ROLE"]
+
+    /// The words after `SET` that start a character set setting, which assignments can follow.
+    private static let setCharacterSetForms: Set<String> = ["NAMES", "CHARSET", "CHARACTER"]
+
+    /// The scopes that make a variable assignment change the server rather than the session.
+    private static let scopesBeyondSession: Set<String> = ["GLOBAL", "PERSIST", "PERSIST_ONLY"]
+
+    /// Whether a statement only reads, or only sets up the session, so that running it on a new
+    /// session cannot stand in for work a lost transaction held.
+    ///
+    /// Only the first keyword counts, after comments; an executable comment the server would run
+    /// counts as code. Anything else - a statement starting with `WITH`, say, which can delete - is
+    /// taken to change data, and so is a `SET` that changes more than the session.
+    /// - Parameters:
+    ///   - query: The statement.
+    ///   - serverVersion: The server's version number, for executable comments.
+    ///   - serverIsMariaDB: Whether the server is MariaDB, for executable comments.
+    /// - Returns: Whether the statement leaves the data alone.
+    static func statementLeavesDataAlone(_ query: String, serverVersion: Int, serverIsMariaDB: Bool) -> Bool {
+        guard let first = query.firstIndex(where: { !$0.isWhitespace }) else {
+            return false
+        }
+        let rest = query[first...]
+        let needsStripping = rest.first == "#" || rest.first == "(" || rest.hasPrefix("--") || rest.hasPrefix("/*")
+        let code = needsStripping
+            ? Substring(stripSQLComments(query, serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+            : rest
+        let statement = code.drop { $0.isWhitespace || $0 == "(" }
+        let keyword = statement.prefix { isIdentifierCharacter($0) }.uppercased()
+        guard keywordsLeavingDataAlone.contains(keyword) else {
+            return false
+        }
+        guard keyword == "SET" || keyword == "EXPLAIN" || keyword == "DESCRIBE" || keyword == "DESC" else {
+            return true
+        }
+
+        // A comment can stand anywhere past the first keyword, so the rest is looked at without them.
+        let statementCode = needsStripping
+            ? statement
+            : Substring(stripSQLComments(String(statement), serverVersion: serverVersion, serverIsMariaDB: serverIsMariaDB))
+        if keyword == "SET" {
+            return setStatementOnlyChangesSession(statementCode)
+        }
+
+        // EXPLAIN ANALYZE runs the statement it explains, and that can be an UPDATE or a DELETE.
+        let afterKeyword = statementCode.dropFirst(keyword.count).drop { $0.isWhitespace }
+        return afterKeyword.prefix { isIdentifierCharacter($0) }.uppercased() != "ANALYZE"
+    }
+
+    /// Whether a `SET` statement only changes the session.
+    ///
+    /// `SET PASSWORD`, `SET DEFAULT ROLE`, `SET RESOURCE GROUP` and `SET STATEMENT … FOR` change more
+    /// than that, and so does an assignment to a `GLOBAL`, `PERSIST` or `PERSIST_ONLY` variable. Only
+    /// the variables assigned to count: `SET time_zone = @@GLOBAL.time_zone` reads the server's value
+    /// into the session. A statement with a backslash is taken to change more, as where its strings
+    /// end depends on the session's `NO_BACKSLASH_ESCAPES` mode.
+    /// - Parameter statement: The statement without comments, starting with `SET`.
+    /// - Returns: Whether the statement only changes the session.
+    static func setStatementOnlyChangesSession(_ statement: Substring) -> Bool {
+        guard !statement.contains("\\") else {
+            return false
+        }
+        let afterSet = statement.dropFirst(3).drop { $0.isWhitespace }
+        let form = afterSet.prefix { isIdentifierCharacter($0) }.uppercased()
+        if setFormsBeyondSession.contains(form) || scopesBeyondSession.contains(form) {
+            return false
+        }
+        if setFormsOfSession.contains(form) {
+            return true
+        }
+        if form == "SESSION" || form == "LOCAL" {
+            let scoped = afterSet.dropFirst(form.count).drop { $0.isWhitespace }
+            if scoped.prefix(while: { isIdentifierCharacter($0) }).uppercased() == "TRANSACTION" {
+                return true
+            }
+        }
+        let startsWithCharacterSet = setCharacterSetForms.contains(form)
+        guard let targets = setAssignmentTargets(afterSet, startingWithCharacterSet: startsWithCharacterSet) else {
+            return false
+        }
+        return targets.allSatisfy { assignmentTargetIsInSession($0) }
+    }
+
+    /// The variables a `SET` statement assigns to, one per assignment, or nil when an assignment has
+    /// none or the list cannot be read. Another statement after it makes the list unreadable too.
+    /// - Parameters:
+    ///   - statement: The statement after `SET`.
+    ///   - startingWithCharacterSet: Whether the list starts with `NAMES` or `CHARACTER SET`, which
+    ///     assigns to no variable and only changes the session.
+    /// - Returns: The text before each assignment's `=`.
+    private static func setAssignmentTargets(_ statement: Substring, startingWithCharacterSet: Bool) -> [Substring]? {
+        var assignments = statement
+        var characterSetPending = startingWithCharacterSet
+        var targets: [Substring] = []
+        var assignmentStart = assignments.startIndex
+        var targetEnd: Substring.Index?
+        var quote: Character?
+        var depth = 0
+        var index = assignments.startIndex
+        while index < assignments.endIndex {
+            let character = assignments[index]
+            if quote == nil, depth == 0, character == ";" {
+                let rest = assignments[assignments.index(after: index)...]
+                guard rest.allSatisfy({ $0.isWhitespace || $0 == ";" }) else {
+                    return nil
+                }
+                assignments = assignments[..<index]
+                break
+            }
+            if let activeQuote = quote {
+                // A doubled quote closes the string and opens it again, which comes to the same.
+                if character == activeQuote {
+                    quote = nil
+                }
+            } else if character == "'" || character == "\"" || character == "`" {
+                quote = character
+            } else if character == "(" {
+                depth += 1
+            } else if character == ")" {
+                depth -= 1
+                if depth < 0 {
+                    return nil
+                }
+            } else if depth == 0, character == "=", targetEnd == nil {
+                targetEnd = index
+            } else if depth == 0, character == "," {
+                if characterSetPending {
+                    characterSetPending = false
+                } else {
+                    guard let end = targetEnd else {
+                        return nil
+                    }
+                    targets.append(assignments[assignmentStart..<end])
+                }
+                assignmentStart = assignments.index(after: index)
+                targetEnd = nil
+            }
+            assignments.formIndex(after: &index)
+        }
+        guard quote == nil, depth == 0 else {
+            return nil
+        }
+        if characterSetPending {
+            return targets
+        }
+        guard let end = targetEnd else {
+            return nil
+        }
+        targets.append(assignments[assignmentStart..<end])
+        return targets
+    }
+
+    /// Whether an assignment's variable belongs to the session: a user variable, or a system variable
+    /// without a scope beyond the session. `SET GLOBAL a = 1, b = 2` sets both globally, but the first
+    /// assignment already decides that.
+    /// - Parameter target: The text before the assignment's `=`.
+    /// - Returns: Whether the assignment only changes the session.
+    private static func assignmentTargetIsInSession(_ target: Substring) -> Bool {
+        var variable = target.drop { $0.isWhitespace }
+        while let last = variable.last, last.isWhitespace || last == ":" {
+            variable = variable.dropLast()
+        }
+        if variable.hasPrefix("@@") {
+            let named = variable.dropFirst(2).drop { $0.isWhitespace }
+            let scope = named.prefix { isIdentifierCharacter($0) }
+            guard named.dropFirst(scope.count).drop(while: { $0.isWhitespace }).first == "." else {
+                return !scope.isEmpty
+            }
+            return !scopesBeyondSession.contains(scope.uppercased())
+        }
+        if variable.hasPrefix("@") {
+            return variable.count > 1
+        }
+        let scope = variable.prefix { isIdentifierCharacter($0) }
+        return !scope.isEmpty && !scopesBeyondSession.contains(scope.uppercased())
+    }
+
     enum DatabaseContextChange: Equatable {
         case selected(String)
         case dropped(String)

@@ -31,6 +31,7 @@
 // This class is private to the framework.
 
 #import "Locking.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import "SPMySQL Private APIs.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
@@ -46,6 +47,7 @@
 	[connectionLock lockWhenCondition:SPMySQLConnectionIdle];
 
 	// Set the condition to SPMySQLConnectionBusy
+	[inFlightQuery noteConnectionHeldByCurrentThread:YES];
 	[connectionLock unlockWithCondition:SPMySQLConnectionBusy];
 }
 
@@ -63,6 +65,7 @@
 	}
 
 	// We're allowed to use the connection; set it to busy, and return success
+	[inFlightQuery noteConnectionHeldByCurrentThread:YES];
 	[connectionLock unlockWithCondition:SPMySQLConnectionBusy];
 	return YES;
 }
@@ -115,9 +118,21 @@
 		                characterSetWasReported:characterSetReportedInAResultPacket];
 	}
 	characterSetReportedInAResultPacket = NO;
+
+	// A streaming result gets here only once its download is over. If stopping it was asked for
+	// meanwhile, it counts as cancelled even if it finished first - callers running a batch stop
+	// on this. The request can name the number of any of the query's attempts.
+	if ([inFlightQuery cancellationWasRequestedForGenerationsFrom:runningQueryFirstGeneration through:queryGeneration]) {
+		lastQueryWasCancelled = YES;
+	}
+
+	// Whatever held the connection is no longer waiting on the server, and a cancellation can
+	// reach it until now.
+	[inFlightQuery endWaitingForGeneration:queryGeneration];
 	[self.sessionAccess endNativeQuery];
 
 	// Tell everyone that the connection is available again
+	[inFlightQuery noteConnectionHeldByCurrentThread:NO];
 	[connectionLock unlockWithCondition:SPMySQLConnectionIdle];
 }
 

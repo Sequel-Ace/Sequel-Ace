@@ -2026,19 +2026,25 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 
 			// If the field is of type BIT then it needs a binary prefix
+			// A value that cannot be written into the statement - a BIT value that is not only 0 and
+			// 1, or one that could not be escaped - leaves the row unidentified rather than matched
+			// against "(null)".
+			NSString *argumentValue;
 			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+				argumentValue = [SPFieldTypeClassifier bitLiteralForValue:[aValue description]];
 			}
 			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+				argumentValue = [mySQLConnection escapeAndQuoteData:[aValue data]];
 			}
 			// BLOB/TEXT data
 			else if ([aValue isKindOfClass:[NSData class]]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
+				argumentValue = [mySQLConnection escapeAndQuoteData:aValue];
 			}
 			else {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
+				argumentValue = [mySQLConnection escapeAndQuoteString:aValue];
 			}
+			if (!argumentValue) return nil;
+			[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], argumentValue]];
 		}
 	}
 
@@ -2049,14 +2055,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
- * Adds an empty row to the table-array and goes into edit mode
+ * Adds an empty row to the table-array and goes into edit mode.
+ * Nothing is added while no columns are shown: a table always has a column, and a load that was
+ * stopped or failed may still have the name of the table shown before it recorded. The view is
+ * asked as well as the table's own column list, because the column filter can leave the view with
+ * no columns at all while that list is unchanged - and the new row is edited by column number.
  */
 - (IBAction)addRow:(id)sender
 {
 	NSMutableArray *newRow = [NSMutableArray array];
 
 	// Check whether table editing is permitted (necessary as some actions - eg table double-click - bypass validation)
-	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable) return;
+	if ([tableDocumentInstance isWorking] || [tablesListInstance tableType] != SPTableTypeTable
+	    || ![dataColumns count] || ![tableContentView numberOfColumns]) return;
 
 	// Check whether a save of the current row is required.
 	if ( ![self saveRowOnDeselect] ) return;
@@ -2990,6 +3001,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
         isSavingRow = NO;
 		return YES;
+	} else if (![tableDocumentInstance connectionIsOpen]) {
+
+		// The user closed the connection, and with it the window this row belongs to. There is
+		// nothing left to write the row to and nothing to decide. A connection that was merely
+		// lost does not count: the edit is kept for when it comes back.
+		[self cancelRowEditing];
+		[tableContentView reloadData];
+
+		isSavingRow = NO;
+		return NO;
 	} else { // Report errors which have occurred
 		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
@@ -3008,7 +3029,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /**
  * Figures out what query will be performed.
  *
- *  @return the query string, can be empty.
+ *  @return the query string, can be empty; nil if a value could not be escaped, because the
+ *          connection was not available.
 */
 - (NSMutableString *)deriveQueryString{
 		
@@ -3066,7 +3088,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				if ([[fieldDefinition objectForKey:@"isfunction"] boolValue] && desc == defaultFieldValue) {
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
-					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+					// A BIT value that is not only 0 and 1 is not written; the row stays in editing.
+					// An empty value stands for 0, as it always did.
+					fieldValue = [SPFieldTypeClassifier bitLiteralForValue:([desc length] ? desc : @"0")];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
 				} else if ([fieldTypeGroup isEqualToString:@"string"] && ([desc isEqualToString:@"UUID()"] || [desc isEqualToString:@"UUID_v4()"])) {
@@ -3083,6 +3107,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     // Store the key and value in the ordered arrays for saving (Except for generated columns).
     if (![fieldDefinition objectForKey:@"generatedalways"]) {
+      // A value that is missing would be left out and the values after it matched to the wrong
+      // columns, or written as NULL.
+      if (!fieldValue) return nil;
+
       [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
       [rowValuesToSave safeAddObject:fieldValue];
     }
@@ -3111,9 +3139,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         }
         NSString *whereArg = [self argumentForRow:-2];
         if(![whereArg length]) {
+            // Nil, not an empty string. An empty one means the other thing that can happen here -
+            // that only generated columns changed and there is nothing to write - and the caller
+            // answers that by finishing the edit and reloading the table. A WHERE condition that
+            // could not be built is a failure, and the row has to stay in editing: the key lookup
+            // runs a statement of its own, so stopping the wait for it leaves no condition, and
+            // reporting that as nothing to write discarded the edit and called it success.
             SPLog(@"Did not find plausible WHERE condition for UPDATE.");
-            NSBeep();
-            return [[NSMutableString alloc] initWithString:@""];
+            return nil;
         }
         [queryString appendFormat:@" WHERE %@", whereArg];
 	}
@@ -3152,10 +3185,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     isSavingRow = YES;
 
+	// A value that could not be prepared - the connection was not available, or the user stopped
+	// waiting for it - leaves the row being edited, so that nothing is written in its place.
+	NSString *derivedQueryString = [self deriveQueryString];
+	if (!derivedQueryString) {
+		NSBeep();
+		isSavingRow = NO;
+		return NO;
+	}
+
 	// check for new flag, if set to no, just exec queries
 	if ([prefs boolForKey:SPQueryWarningEnabled] == YES) {
 		
-		NSMutableString *queryString = [[NSMutableString alloc] initWithString:[self deriveQueryString]];
+		NSMutableString *queryString = [[NSMutableString alloc] initWithString:derivedQueryString];
 		NSMutableString *originalQueryString = [[NSMutableString alloc] initWithString:queryString];
 		
 		SPLog(@"queryStringLen: %lu", queryString.length);
@@ -3197,7 +3239,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 	else{
 		SPLog(@"warning before query pref == NO, just execute");
-        NSMutableString *queryString = [[NSMutableString alloc] initWithString:[self deriveQueryString]];
+        NSMutableString *queryString = [[NSMutableString alloc] initWithString:derivedQueryString];
         if (queryString.length > 0) {
             returnCode = [self _saveRowToTableWithQuery:queryString];
         } else {
@@ -3640,12 +3682,24 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"geometry"]) {
 				newObject = [(NSString*)anObject getGeomFromTextString];
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"bit"]) {
-				newObject = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+				// A BIT value that is not only 0 and 1 is not written, like one that cannot be escaped.
+				// An empty value stands for 0, as it always did.
+				newObject = [SPFieldTypeClassifier bitLiteralForValue:([desc length] ? desc : @"0")];
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 				newObject = @"NOW()";
 			} else {
 				newObject = [mySQLConnection escapeAndQuoteString:desc];
 			}
+		}
+
+		// The value could not be escaped - the connection was not available, or the user stopped
+		// waiting for it. Nothing is written in its place. A cell in a view is written at once and has
+		// no row edit to keep it in, so the user is told, and can copy the value to enter it again.
+		if (!newObject) {
+			[SAUnsentValueAlert showWarningWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't write field.\nThe value could not be prepared for sending to the server. Nothing was written.", @"message of panel when an edited cell value could not be prepared for writing, for example because the connection is not available") unsentValue:anObject];
+			[tableDocumentInstance endTask];
+			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+			return;
 		}
 
 		[mySQLConnection queryString:
@@ -4195,6 +4249,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 /**
  * Enable all content interactive elements after an ongoing task.
+ * Rows can only be added while the table's columns are shown; a reload stays available either way.
  */
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
@@ -4206,7 +4261,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return;
 
 	if ( ![[tableDataInstance statusValueForKey:@"Rows"] isNSNull] && selectedTable && [selectedTable length] && [tableDataInstance tableEncoding]) {
-		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable)];
+		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable) && [dataColumns count] && [tableContentView numberOfColumns]];
 		[self updatePaginationState];
 		[reloadButton setEnabled:YES];
 	}

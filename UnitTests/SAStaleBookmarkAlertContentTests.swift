@@ -5,6 +5,7 @@
 //  Covers the bounded launch-time stale bookmark alert content.
 //
 
+import AppKit
 import XCTest
 
 final class SAStaleBookmarkAlertContentTests: XCTestCase {
@@ -90,5 +91,32 @@ final class SAStaleBookmarkAlertContentTests: XCTestCase {
 
         XCTAssertEqual(heightConstraint.constant, 24)
         XCTAssertEqual(widthConstraint.constant, 193)
+    }
+}
+
+/// What the warning about a view cell value that was not written offers to copy, and how.
+final class SAUnsentValueAlertTests: XCTestCase {
+
+    /// Text and numbers are offered as text; binary data, NULL and nothing are not offered.
+    func testOnlyTextIsOfferedForCopying() {
+        XCTAssertEqual(SAUnsentValueAlert.text(of: "entered value"), "entered value")
+        XCTAssertEqual(SAUnsentValueAlert.text(of: NSString(string: "")), "")
+        XCTAssertEqual(SAUnsentValueAlert.text(of: NSNumber(value: 42)), "42")
+        XCTAssertNil(SAUnsentValueAlert.text(of: Data([0x00, 0xFF])))
+        XCTAssertNil(SAUnsentValueAlert.text(of: NSNull()))
+        XCTAssertNil(SAUnsentValueAlert.text(of: nil))
+    }
+
+    /// Copying replaces the pasteboard's contents with the text, unchanged.
+    func testCopyingPutsTheTextOnThePasteboard() {
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("SAUnsentValueAlertTests-\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+        pasteboard.clearContents()
+        pasteboard.setString("old", forType: .string)
+
+        let text = "line one\nline 'two' \\ with ünïcödé"
+        XCTAssertTrue(SAUnsentValueAlert.copy(text, to: pasteboard))
+        XCTAssertEqual(pasteboard.string(forType: .string), text)
+        XCTAssertEqual(pasteboard.pasteboardItems?.count, 1)
     }
 }

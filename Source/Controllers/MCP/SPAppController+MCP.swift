@@ -246,6 +246,18 @@ extension SPAppController: SPMCPDataSource {
         return ["error": "No matching database connection. Connect in Sequel Ace, or pass a valid connection id from list_connections."]
     }
 
+    /// Runs statements a client sent as such: after a transaction was lost with its session, the
+    /// connection refuses them like writes, since any of them can call a function that changes data.
+    /// - Parameters:
+    ///   - conn: The connection the statements go to.
+    ///   - statements: Sends the statements and returns the tool's result.
+    /// - Returns: What `statements` returned.
+    private func mcpRunClientStatements(on conn: SPMySQLConnection, _ statements: () -> [String: Any]) -> [String: Any] {
+        var result: [String: Any] = [:]
+        conn.runStatements(fromOutsideApplication: { result = statements() })
+        return result
+    }
+
     // Runs `block` on the serial DB queue and returns its result dictionary.
     private func mcpDBSync(_ block: () -> [String: Any]) -> [String: Any] {
         var result: [String: Any] = [:]
@@ -589,8 +601,10 @@ extension SPAppController: SPMCPDataSource {
         }
 
         return mcpDBSync {
-            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id,
-                                  maxRows: maxRows, offset: readOffset, streamResult: streamResult)
+            mcpRunClientStatements(on: conn) {
+                mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id,
+                                      maxRows: maxRows, offset: readOffset, streamResult: streamResult)
+            }
         }
     }
 
@@ -722,7 +736,9 @@ extension SPAppController: SPMCPDataSource {
         guard let ci = mcpResolveConnection(connID) else { return mcpNoConnectionError() }
         let conn = ci.conn
         return mcpDBSync {
-            mcpExecuteResultQuery("EXPLAIN \(trimmed)", onConnection: conn, connectionID: ci.id)
+            mcpRunClientStatements(on: conn) {
+                mcpExecuteResultQuery("EXPLAIN \(trimmed)", onConnection: conn, connectionID: ci.id)
+            }
         }
     }
 

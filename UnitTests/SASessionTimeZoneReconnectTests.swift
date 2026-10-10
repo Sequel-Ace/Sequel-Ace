@@ -86,6 +86,23 @@ private final class SAStaleReconnectResultConnection: SPMySQLConnection {
 }
 
 final class SASessionTimeZoneReconnectTests: XCTestCase {
+
+    /// Asks whether the connection is connected away from the main thread.
+    ///
+    /// A session lost in the background is restored on the first use that can afford to wait for
+    /// the network. Asking on the main thread is not one of those, so the restore the lazy path
+    /// performs is reached from another thread.
+    private func isConnectedAwayFromTheMainThread(_ connection: SPMySQLConnection) -> Bool {
+        var answer = false
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            answer = connection.isConnected()
+            finished.signal()
+        }
+        XCTAssertEqual(finished.wait(timeout: .now() + 10), .success,
+                       "the restore must not outlast the test")
+        return answer
+    }
     func testReconnectRevalidatesSuccessfulCompletionAgainstLiveState() {
         let connection = SAStaleReconnectResultConnection()
         connection.useKeepAlive = false
@@ -140,8 +157,9 @@ final class SASessionTimeZoneReconnectTests: XCTestCase {
         XCTAssertEqual(connection.value(forKey: "state") as? UInt, UInt(SPMySQLConnectionLostInBackground.rawValue))
         XCTAssertEqual(connection.lastErrorID(), 1298)
 
-        // The next use takes the real lazy-reconnect path and retries the same preference.
-        XCTAssertTrue(connection.isConnected())
+        // The next use that can wait takes the real lazy-reconnect path and retries the same
+        // preference.
+        XCTAssertTrue(isConnectedAwayFromTheMainThread(connection))
         XCTAssertEqual(connection.serverTimeZone, "Europe/London")
         XCTAssertEqual(connection.statements.count, 2)
         XCTAssertEqual(connection.restoredDatabase, "reporting")
@@ -156,8 +174,29 @@ final class SASessionTimeZoneReconnectTests: XCTestCase {
 
         XCTAssertFalse(connection.reconnect())
         XCTAssertEqual(connection.timeZoneIdentifier, "Europe/London")
-        XCTAssertTrue(connection.isConnected())
+        XCTAssertTrue(isConnectedAwayFromTheMainThread(connection))
         XCTAssertEqual(connection.serverTimeZone, "Europe/London")
+    }
+
+    /// Asking on the main thread does not hold the interface for the restore, and does not lose it.
+    func testAskingOnTheMainThreadLeavesTheRestoreToTheNextUseThatCanWait() {
+        let connection = connection()
+        defer { connection.disconnect() }
+        connection.failNextTimeZoneUpdate = true
+        XCTAssertFalse(connection.reconnect())
+        let statementsAfterTheFailedRestore = connection.statements.count
+
+        XCTAssertTrue(Thread.isMainThread)
+        XCTAssertTrue(connection.isConnected(), "the connection still counts as connected")
+        XCTAssertEqual(connection.statements.count, statementsAfterTheFailedRestore,
+                       "but nothing was sent, so the interface did not wait for the network")
+        XCTAssertEqual(connection.value(forKey: "state") as? UInt,
+                       UInt(SPMySQLConnectionLostInBackground.rawValue),
+                       "and the session is still the one to be restored")
+
+        XCTAssertTrue(isConnectedAwayFromTheMainThread(connection))
+        XCTAssertEqual(connection.serverTimeZone, "Europe/London")
+        XCTAssertEqual(connection.statements.count, statementsAfterTheFailedRestore + 1)
     }
 
     func testRepeatedFailuresKeepPreferenceUntilRestorationSucceeds() {
@@ -649,6 +688,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         try access.trackSocket(sockets[0], serverThreadID: 42)
         access.beginNativeQuery()
         access.cancelQuery { _ in false }
+        // Closing the socket and noting that the read was cut off are the caller's under the
+        // division settled on #2676: it holds the grace period, and it knows whether the server
+        // accepted the kill for a session with a transaction open. SAConnectionCancellation does
+        // both against the in-flight query's own duplicate; these two lines stand for it.
+        XCTAssertEqual(Darwin.shutdown(sockets[0], SHUT_RDWR), 0)
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
         var byte: UInt8 = 0
         XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
         let recovered = DispatchSemaphore(value: 0)
@@ -672,6 +717,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         try access.trackSocket(sockets[0], serverThreadID: 42)
         access.beginNativeQuery()
         access.cancelQuery { _ in false }
+        // Closing the socket and noting that the read was cut off are the caller's under the
+        // division settled on #2676: it holds the grace period, and it knows whether the server
+        // accepted the kill for a session with a transaction open. SAConnectionCancellation does
+        // both against the in-flight query's own duplicate; these two lines stand for it.
+        XCTAssertEqual(Darwin.shutdown(sockets[0], SHUT_RDWR), 0)
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
         access.endNativeQuery()
         _ = access.performQuery({
             XCTAssertTrue(access.currentQueryWasCancelled)
@@ -697,6 +748,46 @@ final class SAConnectionSessionAccessTests: XCTestCase {
             return true
         })
         XCTAssertEqual(access.performQuery { "later" } as? String, "later")
+    }
+
+    /// Telling the lease a read was cut off names the session it was cut off on, and a session
+    /// that replaced it in the meantime is left alone.
+    ///
+    /// Closing the socket and saying so are two steps, and a reconnect can put a new session in
+    /// place between them. Marking that one would send a session nothing is wrong with through a
+    /// reconnect it does not need, rolling back a transaction it had just opened.
+    func testRecoveryIsMarkedOnTheSessionThatWasCutOffAndNoOther() throws {
+        let access = SAConnectionSessionAccess()
+        var old = [Int32](repeating: -1, count: 2)
+        var replacement = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &old), 0)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &replacement), 0)
+        defer { for socket in old + replacement where socket >= 0 { Darwin.close(socket) } }
+
+        try access.trackSocket(old[0], serverThreadID: 41)
+        let theSessionThatWasCutOff = access.socketToken
+
+        // The reconnect gets in between the socket closing and the lease being told about it.
+        try access.trackSocket(replacement[0], serverThreadID: 42)
+        XCTAssertNotEqual(access.socketToken, theSessionThatWasCutOff)
+
+        access.noteCancellationEndedTheNativeRead(onSocket: theSessionThatWasCutOff)
+
+        // The replacement is usable as it stands: nothing was cut off on it.
+        var theReplacementRecovered = false
+        XCTAssertEqual(access.performQuery({ "next" },
+                                           recover: { theReplacementRecovered = true; return true }) as? String,
+                       "next")
+        XCTAssertFalse(theReplacementRecovered,
+                       "a session that replaced the one cut off has nothing to recover from")
+
+        // And the session that was cut off would have been marked, had it still been the one.
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
+        var theCutOffSessionRecovered = false
+        XCTAssertEqual(access.performQuery({ "later" },
+                                           recover: { theCutOffSessionRecovered = true; return true }) as? String,
+                       "later")
+        XCTAssertTrue(theCutOffSessionRecovered, "the session that was cut off does recover")
     }
 
     func testFailedKillDoesNotInterruptAQueryThatFinishedDuringConnectionSetup() throws {
@@ -758,9 +849,16 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         access.beginNativeQuery()
         Darwin.close(sockets[0])
         sockets[0] = -1
-        access.cancelQuery { _ in false }
-        var byte: UInt8 = 0
-        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
+        // The handle is a duplicate, so the original going does not retire it: the cancellation
+        // is still the current one and still names the session to kill. Closing the socket is
+        // the caller's, against a duplicate it holds itself, so nothing is closed from here.
+        var killedThread: UInt = 0
+        access.cancelQuery {
+            killedThread = $0
+            XCTAssertTrue(access.cancellationIsCurrent)
+            return false
+        }
+        XCTAssertEqual(killedThread, 42)
         access.endNativeQuery()
         access.clearSocket()
         access.cancelQuery { _ in XCTFail("A cleared socket cannot be cancelled"); return false }
@@ -788,6 +886,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         XCTAssertEqual(errno, EAGAIN)
         access.beginNativeQuery()
         access.cancelQuery { thread in XCTAssertEqual(thread, 42); return false }
+        // Closing the socket and noting that the read was cut off are the caller's under the
+        // division settled on #2676: it holds the grace period, and it knows whether the server
+        // accepted the kill for a session with a transaction open. SAConnectionCancellation does
+        // both against the in-flight query's own duplicate; these two lines stand for it.
+        XCTAssertEqual(Darwin.shutdown(replacement[0], SHUT_RDWR), 0)
+        access.noteCancellationEndedTheNativeRead(onSocket: access.socketToken)
         access.endNativeQuery()
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), 0)
     }
