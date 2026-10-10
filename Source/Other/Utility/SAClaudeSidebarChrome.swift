@@ -174,11 +174,15 @@ extension SAClaudeSidebarChrome {
     /// text when selected, secondary otherwise, muted while the list is
     /// disabled; always on a normal background so a selected row never
     /// switches to the white-on-accent text of an emphasized selection.
+    /// Never highlighted: NSTableView highlights the selected row's cell
+    /// before willDisplayCell, and a highlighted text cell fills a lighter box
+    /// behind its text. The pill is drawn by the list, not the cell.
     @objc(styleTablesListCell:selected:enabled:)
     static func styleTablesListCell(_ cell: NSTextFieldCell, selected: Bool, enabled: Bool) {
         cell.font = SAClaudeStyle.rowFont
         cell.textColor = !enabled ? SAClaudeStyle.textMuted : selected ? SAClaudeStyle.textPrimary : SAClaudeStyle.textSecondary
         cell.backgroundStyle = .normal
+        cell.isHighlighted = false
     }
 
     /// Gives the sidebar's list/info split view a 1pt divider, so its

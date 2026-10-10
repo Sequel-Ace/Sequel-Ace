@@ -253,6 +253,49 @@ final class SAClaudeTablesListCellTests: XCTestCase {
         XCTAssertEqual(styledCell(selected: false, enabled: false).textColor, SAClaudeStyle.textMuted)
         XCTAssertEqual(styledCell(selected: true, enabled: false).textColor, SAClaudeStyle.textMuted)
     }
+
+    /// Verifies the cell never stays highlighted (NSTableView highlights the
+    /// selected row's cell before willDisplayCell), selected or not.
+    func testStylingClearsHighlight() {
+        for selected in [true, false] {
+            let cell = NSTextFieldCell(textCell: "orders")
+            cell.isHighlighted = true
+            SAClaudeSidebarChrome.styleTablesListCell(cell, selected: selected, enabled: true)
+            XCTAssertFalse(cell.isHighlighted, "selected: \(selected)")
+        }
+    }
+
+    /// Verifies a styled cell that the table had highlighted draws no box of
+    /// its own behind the text: the pixel just after the name is still the
+    /// selection pill's colour (#343434 dark), not the cell's highlight (#464646).
+    func testHighlightedCellDrawsNoBoxOverTheSelection() throws {
+        let size = NSSize(width: 200, height: 24)
+        let view = NSView(frame: NSRect(origin: .zero, size: size))
+        view.appearance = NSAppearance(named: .darkAqua)
+        let cell = NSTextFieldCell(textCell: "orders")
+        cell.isBordered = false
+        cell.drawsBackground = false
+        cell.isHighlighted = true
+        cell.controlView = view
+        SAClaudeSidebarChrome.styleTablesListCell(cell, selected: true, enabled: true)
+
+        let rep = try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width), pixelsHigh: Int(size.height),
+                                                 bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                                 colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance {
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+            SAClaudeStyle.selection.setFill()
+            NSRect(origin: .zero, size: size).fill()
+            cell.draw(withFrame: NSRect(origin: .zero, size: size), in: view)
+            NSGraphicsContext.restoreGraphicsState()
+        }
+        let textEnd = Int(ceil(cell.attributedStringValue.size().width)) + Int(SAClaudeStyle.cellTextInset)
+        let color = try XCTUnwrap(rep.colorAt(x: textEnd + 3, y: Int(size.height) / 2)?.usingColorSpace(.sRGB))
+        XCTAssertEqual(color.redComponent, CGFloat(0x34) / 255, accuracy: 0.01)
+        XCTAssertEqual(color.greenComponent, CGFloat(0x34) / 255, accuracy: 0.01)
+        XCTAssertEqual(color.blueComponent, CGFloat(0x34) / 255, accuracy: 0.01)
+    }
 }
 
 final class SAClaudeSidebarPaneTests: XCTestCase {
