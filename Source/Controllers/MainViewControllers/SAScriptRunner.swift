@@ -209,24 +209,35 @@ final class SAScriptRunner {
         // this statement only.
         let stopRequested = cancellation.isCancelled || connection.scriptLastQueryWasCancelled
 
-        // A nil result means the query never ran (e.g. disconnected), even
-        // when the connection recorded no error.
-        guard let result, !connection.scriptQueryErrored else {
+        // A nil result means the query never ran, was interrupted or was
+        // refused (e.g. disconnected), even when the connection recorded no
+        // error; a non-nil result means the server reported success.
+        guard let result else {
             return (stopRequested ? .cancelled : .failed, time)
         }
 
         guard result.numberOfFields > 0 else {
+            // SPMySQL overrides the error state with 1317 "Query cancelled."
+            // when a Stop's cancel marker lands while the statement runs, even
+            // if it then completed; it still committed, so print it and keep
+            // its bookkeeping before honouring the Stop.
+            guard !connection.scriptQueryErrored || connection.scriptLastQueryWasCancelled else {
+                return (stopRequested ? .cancelled : .failed, time)
+            }
             let affected = connection.scriptRowsAffectedByLastQuery
             let count = affected == UInt64.max ? 0 : affected
             output(SAScriptOutputFormatter.queryOK(affectedRows: count))
             return (.completed(affectedRows: count, stopRequested: stopRequested), time)
         }
 
-        // Drain/cancel an open streaming result so the connection is not
-        // left mid-result.
+        // Drain/cancel an open streaming result (including one returned
+        // under the cancel marker) so the connection is not left mid-result.
         if stopRequested {
             result.cancelLoad()
             return (.cancelled, time)
+        }
+        if connection.scriptQueryErrored {
+            return (.failed, time)
         }
         let columns = result.fieldNames
         var rowCount: UInt64 = 0

@@ -120,6 +120,51 @@ final class SAScriptRunnerTests: XCTestCase {
         XCTAssertTrue(output.hasSuffix("Query OK, 0 rows affected\n\n" + SAScriptOutputFormatter.cancelled))
     }
 
+    func testUseThatSucceedsUnderTheCancelMarkerStillTracksTheDatabase() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["USE other_db"] = .ok(affectedRows: 0)
+        connection.cancelMarked = ["USE other_db"]
+        connection.whileExecuting = { sql in if sql == "USE other_db" { token.cancel() } }
+        let (summary, output) = run(["USE other_db", "DELETE FROM t"], on: connection, token: token)
+
+        XCTAssertEqual(connection.submitted, ["USE other_db"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertEqual(summary.errorCount, 0)
+        XCTAssertTrue(summary.databaseChanged)
+        XCTAssertEqual(summary.finalDatabase, "other_db")
+        XCTAssertTrue(output.hasSuffix("Query OK, 0 rows affected\n\n" + SAScriptOutputFormatter.cancelled))
+    }
+
+    func testCreateTableThatSucceedsUnderTheCancelMarkerStillReloadsTables() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["CREATE TABLE t (id INT)"] = .ok(affectedRows: 0)
+        connection.cancelMarked = ["CREATE TABLE t (id INT)"]
+        connection.whileExecuting = { sql in if sql.hasPrefix("CREATE") { token.cancel() } }
+        let (summary, output) = run(["CREATE TABLE t (id INT)", "INSERT INTO t VALUES (1)"], on: connection, token: token)
+
+        XCTAssertEqual(connection.submitted, ["CREATE TABLE t (id INT)"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertTrue(summary.tableListNeedsReload)
+        XCTAssertTrue(output.hasSuffix("Query OK, 0 rows affected\n\n" + SAScriptOutputFormatter.cancelled))
+    }
+
+    func testResultSetReturnedUnderTheCancelMarkerIsDiscarded() {
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["SELECT a FROM t"] = .rows(columns: ["a"], rows: [[.text("1")]])
+        connection.cancelMarked = ["SELECT a FROM t"]
+        connection.whileExecuting = { sql in if sql == "SELECT a FROM t" { token.cancel() } }
+        let (summary, output) = run(["SELECT a FROM t", "SELECT 2"], on: connection, token: token)
+
+        XCTAssertEqual(connection.submitted, ["SELECT a FROM t"])
+        XCTAssertTrue(summary.wasCancelled)
+        XCTAssertEqual(connection.cancelledLoads, 1)
+        XCTAssertFalse(output.contains("a\n1\n"))
+        XCTAssertTrue(output.hasSuffix(SAScriptOutputFormatter.cancelled))
+    }
+
     func testStatementInterruptedByStopIsNotTreatedAsCompleted() {
         let connection = FakeScriptConnection()
         let token = SAScriptCancellationToken()
@@ -203,15 +248,19 @@ final class SAScriptRunnerTests: XCTestCase {
         countLock.lock()
         let attemptsWhenQueryEnded = attempts
         countLock.unlock()
-        let noLaterAttempt = expectation(description: "no attempt after the query ended")
-        noLaterAttempt.isInverted = true
-        DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
+        // Two attempts in, the next retry would fire within ~0.1 s; look after
+        // 0.3 s, and always wait for the look itself so the check cannot pass
+        // vacuously on a slow machine.
+        let looked = expectation(description: "attempts re-read after the retry window")
+        var attemptsAfterWindow = -1
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) {
             countLock.lock()
-            let later = attempts
+            attemptsAfterWindow = attempts
             countLock.unlock()
-            if later != attemptsWhenQueryEnded { noLaterAttempt.fulfill() }
+            looked.fulfill()
         }
-        wait(for: [noLaterAttempt], timeout: 0.3)
+        wait(for: [looked], timeout: 5)
+        XCTAssertEqual(attemptsAfterWindow, attemptsWhenQueryEnded)
     }
 
     func testRequestQueryCancellationDoesNothingWithoutAnAdmittedQuery() {
@@ -292,6 +341,11 @@ private final class FakeScriptConnection: SAScriptQueryConnection {
     var outcomes: [String: Outcome] = [:]
     /// Called while a statement or lookup is "executing" on the server.
     var whileExecuting: ((String) -> Void)?
+    /// Statements whose Stop lands while they run: the server still reports
+    /// success (a non-nil result), but SPMySQL's cancel marker overrides the
+    /// connection state to error 1317 "Query cancelled." with
+    /// lastQueryWasCancelled set.
+    var cancelMarked: Set<String> = []
     /// Value returned for `SELECT @@lower_case_table_names`.
     var lowerCaseTableNames: Any? = "0"
 
@@ -310,20 +364,30 @@ private final class FakeScriptConnection: SAScriptQueryConnection {
     func runScriptStatement(_ statement: String, assertingDatabaseContext database: String?) -> SAScriptQueryResult? {
         begin(statement)
         whileExecuting?(statement)
+        let result: FakeScriptResult?
         switch outcomes[statement] ?? .ok(affectedRows: 1) {
         case .ok(let affectedRows):
             scriptRowsAffectedByLastQuery = affectedRows
-            return makeResult(columns: [], rows: [])
+            result = makeResult(columns: [], rows: [])
         case .rows(let columns, let rows):
             scriptRowsAffectedByLastQuery = UInt64(rows.count)
-            return makeResult(columns: columns, rows: rows)
+            result = makeResult(columns: columns, rows: rows)
         case .error(let code, let sqlState, let message):
-            scriptQueryErrored = true
-            scriptLastErrorID = code
-            scriptLastSqlstate = sqlState
-            scriptLastErrorMessage = message
-            return nil
+            recordError(code: code, sqlState: sqlState, message: message)
+            result = nil
         }
+        if cancelMarked.contains(statement) {
+            recordError(code: 1317, sqlState: "70100", message: "Query cancelled.")
+            scriptLastQueryWasCancelled = true
+        }
+        return result
+    }
+
+    private func recordError(code: Int, sqlState: String, message: String) {
+        scriptQueryErrored = true
+        scriptLastErrorID = code
+        scriptLastSqlstate = sqlState
+        scriptLastErrorMessage = message
     }
 
     func scriptFirstField(fromQuery query: String, assertingDatabase database: String?) -> Any? {
