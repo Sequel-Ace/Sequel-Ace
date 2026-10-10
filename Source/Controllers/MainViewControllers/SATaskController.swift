@@ -301,8 +301,10 @@ import AppKit
             callbackObject.perform(callbackSelector)
         }
 
-        if let fieldRemovalTask = taskCancellationCallbackObject as? SAFieldRemovalTask {
-            fieldRemovalTask.requestQueryCancellation { [weak self] in
+        // A callback object that admits its own queries retries the connection
+        // cancel until any query it admitted before Stop has been interrupted.
+        if let requester = taskCancellationCallbackObject as? SAQueryCancellationRequesting {
+            requester.requestQueryCancellation { [weak self] in
                 self?.delegate?.taskControllerDidRequestCancellation()
             }
         } else {

@@ -26,6 +26,7 @@
 		11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
 		11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */ = {isa = PBXBuildFile; fileRef = 11C2109D1180E70800758039 /* SPDatabaseRename.m */; };
+		1320794935F5A2F109C879C4 /* SAQueryAdmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7614D8428E92A133B5EC81 /* SAQueryAdmission.swift */; };
 		14F0CC5AC96DE9CCC0213237 /* SAUserManagerPrivilegeNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF5C9FD78A565D5260B38E55 /* SAUserManagerPrivilegeNormalizer.swift */; };
 		158CE2B8B92310647A1BF0B4 /* SAKeychainNamingCharacterizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D53166D77A40496B91F45A9 /* SAKeychainNamingCharacterizationTests.swift */; };
 		16C621C7049FAECBAC96972E /* SAKeyboardShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644FFD84B58CEAE73585045B /* SAKeyboardShortcut.swift */; };
@@ -599,6 +600,7 @@
 		AA000001000000000000001B /* SAAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001A /* SAAboutView.swift */; };
 		AC8C26C73E9B45F473139262 /* SASSHTunnelAskpass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */; };
 		ACDB8F22CA9B78276D639CD1 /* SAScriptConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */; };
+		AD162E31FB7300DB273BAFDD /* SAQueryAdmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7614D8428E92A133B5EC81 /* SAQueryAdmission.swift */; };
 		ADD8B19D3D629DE277D2163B /* SAImportProgressReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25047F243EB51288B9242EE3 /* SAImportProgressReporter.swift */; };
 		AED27D68E816948A2CE775B5 /* SAMarkedTextInputStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC23B8A2720007CC603932B3 /* SAMarkedTextInputStateTests.swift */; };
 		AEE918E2C7D542479969EFD1 /* SAAnalyticsConsentPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 702CD501171F1F6B4BDC3DDF /* SAAnalyticsConsentPolicyTests.swift */; };
@@ -1663,6 +1665,7 @@
 		C9F9270F162D38D70051CB2E /* toolbar-switch-to-table-info@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-info@2x.png"; sourceTree = "<group>"; };
 		C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse.png"; sourceTree = "<group>"; };
 		C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse@2x.png"; sourceTree = "<group>"; };
+		CA7614D8428E92A133B5EC81 /* SAQueryAdmission.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAQueryAdmission.swift; sourceTree = "<group>"; };
 		CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorTokensTests.swift; sourceTree = "<group>"; };
 		CB04CE94BAEDB4110C122697 /* SAQueryFavoriteSaveWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAQueryFavoriteSaveWindowController.swift; sourceTree = "<group>"; };
 		CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPMCPServer.swift; sourceTree = "<group>"; };
@@ -2022,6 +2025,7 @@
 				C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */,
 				CE098674353B0D5AC3C1A95C /* SAScriptStatementSplitter.swift */,
 				931A836AE7A6006CF827D972 /* SAScriptRunner+SPMySQL.swift */,
+				CA7614D8428E92A133B5EC81 /* SAQueryAdmission.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -3887,6 +3891,7 @@
 				FD1CB5B70C14049034B6B8A5 /* SAScriptConsoleAppearance.swift in Sources */,
 				E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */,
 				03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */,
+				AD162E31FB7300DB273BAFDD /* SAQueryAdmission.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4258,6 +4263,7 @@
 				ED9EAE14EC491D133641BF72 /* SAScriptConsoleAppearanceSection.swift in Sources */,
 				174C30F93D55F38CA6DC8A84 /* SAScriptStatementSplitter.swift in Sources */,
 				3C65C7519731B0BC8E835C73 /* SAScriptRunner+SPMySQL.swift in Sources */,
+				1320794935F5A2F109C879C4 /* SAQueryAdmission.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
