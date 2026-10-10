@@ -138,10 +138,10 @@
 	[info removeAllObjects];
 
 	if (![tableListInstance tableName]) {
-		[info addObject:NSLocalizedString(@"INFORMATION", @"header for blank info pane")];
+		[info addObject:NSLocalizedString(@"Information", @"header for blank info pane")];
 
 		if ([[tableListInstance selectedTableItems] count]) {
-			[info addObject:NSLocalizedString(@"multiple selection", @"multiple selection")];
+			[info addObject:NSLocalizedString(@"Multiple selection", @"info pane text shown when several tables are selected")];
 		}
 		
 		[infoTable reloadData];
@@ -250,9 +250,9 @@
 	else if ([tableListInstance tableType] == SPTableTypeProc || [tableListInstance tableType] == SPTableTypeFunc) {
 
 		if ([tableListInstance tableType] == SPTableTypeProc)
-			[info addObject:NSLocalizedString(@"PROCEDURE INFORMATION", @"header for procedure info pane")];
+			[info addObject:NSLocalizedString(@"Procedure information", @"header for procedure info pane")];
 		else
-			[info addObject:NSLocalizedString(@"FUNCTION INFORMATION", @"header for function info pane")];
+			[info addObject:NSLocalizedString(@"Function information", @"header for function info pane")];
 
 		if ([tableListInstance tableName]) {
 
@@ -298,7 +298,7 @@
 	// Get VIEW information
 	else if ([tableListInstance tableType] == SPTableTypeView) {
 
-		[info addObject:NSLocalizedString(@"VIEW INFORMATION", @"header for view info pane")];
+		[info addObject:NSLocalizedString(@"View information", @"header for view info pane")];
 
 		if ([tableListInstance tableName]) {
 

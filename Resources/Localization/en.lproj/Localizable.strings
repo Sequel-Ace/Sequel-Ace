@@ -4499,3 +4499,18 @@
 
 /* header for activities pane */
 "Activities" = "Activities";
+
+/* header for blank info pane */
+"Information" = "Information";
+
+/* info pane text shown when several tables are selected */
+"Multiple selection" = "Multiple selection";
+
+/* header for procedure info pane */
+"Procedure information" = "Procedure information";
+
+/* header for function info pane */
+"Function information" = "Function information";
+
+/* header for view info pane */
+"View information" = "View information";
