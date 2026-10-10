@@ -70,7 +70,37 @@ final class SAClaudeInfoRowTests: XCTestCase {
         XCTAssertEqual(row.attribute(.font, at: 0, effectiveRange: nil) as? NSFont, SAClaudeStyle.infoFont)
         let paragraph = row.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
         XCTAssertEqual(paragraph?.tabStops.first?.alignment, .right)
-        XCTAssertEqual(paragraph?.tabStops.first?.location, 230)
+        XCTAssertEqual(paragraph?.tabStops.first?.location, 222)
+    }
+
+    /// Verifies a split row's label and value both start at the info indent.
+    func testSplitRowIsIndented() {
+        let row = SAClaudeInfoRow.attributedRow(text: "engine: InnoDB", width: 240)
+        for index in [0, 7] {
+            let paragraph = row.attribute(.paragraphStyle, at: index, effectiveRange: nil) as? NSParagraphStyle
+            XCTAssertEqual(paragraph?.firstLineHeadIndent, 16, "at \(index)")
+            XCTAssertEqual(paragraph?.headIndent, 16, "at \(index)")
+        }
+    }
+
+    /// Verifies a row without ": " is indented the same way.
+    func testPlainRowIsIndented() {
+        let paragraph = SAClaudeInfoRow.attributedRow(text: "Multiple selection", width: 240)
+            .attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        XCTAssertEqual(paragraph?.firstLineHeadIndent, 16)
+        XCTAssertEqual(paragraph?.headIndent, 16)
+    }
+
+    /// Verifies a pane header is muted header text, indented like the rows, truncating at the tail.
+    func testHeaderStyling() {
+        let header = SAClaudeInfoRow.attributedHeader(text: "Table information")
+        XCTAssertEqual(header.string, "Table information")
+        XCTAssertEqual(header.attribute(.font, at: 0, effectiveRange: nil) as? NSFont, SAClaudeStyle.headerFont)
+        XCTAssertEqual(header.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textMuted)
+        let paragraph = header.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        XCTAssertEqual(paragraph?.firstLineHeadIndent, 16)
+        XCTAssertEqual(paragraph?.headIndent, 16)
+        XCTAssertEqual(paragraph?.lineBreakMode, .byTruncatingTail)
     }
 
     /// Verifies a column narrower than the padding gets a zero tab stop, not a negative one.

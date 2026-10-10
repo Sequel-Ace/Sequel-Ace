@@ -520,9 +520,8 @@
 	[textCell setDrawsBackground:NO];
 
 	if (rowIndex == 0) {
-		// Pane header: "Table information" / "Activities".
-		[textCell setFont:[SAClaudeStyle headerFont]];
-		[textCell setTextColor:[SAClaudeStyle textMuted]];
+		// Pane header: "Table information" / "Activities", indented like the rows.
+		[textCell setAttributedStringValue:[SAClaudeInfoRow attributedHeaderForText:[textCell stringValue] ?: @""]];
 		return;
 	}
 

@@ -44,12 +44,22 @@ import AppKit
         return (label.prefix(1).uppercased() + label.dropFirst(), value)
     }
 
-    /// The row as drawn: label muted on the left, value secondary on a right
-    /// tab stop `infoRowTrailingPadding` in from `width`; text without ": " plain.
-    @objc(attributedRowForText:width:)
-    static func attributedRow(text: String, width: CGFloat) -> NSAttributedString {
+    /// A truncating paragraph indented `infoRowLeadingIndent`, so info text
+    /// lines up with the names in the list above.
+    private static func indentedParagraph() -> NSMutableParagraphStyle {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
+        paragraph.firstLineHeadIndent = SAClaudeStyle.infoRowLeadingIndent
+        paragraph.headIndent = SAClaudeStyle.infoRowLeadingIndent
+        return paragraph
+    }
+
+    /// The row as drawn, indented like the names: label muted on the left,
+    /// value secondary on a right tab stop `infoRowTrailingPadding` in from
+    /// `width`; text without ": " plain.
+    @objc(attributedRowForText:width:)
+    static func attributedRow(text: String, width: CGFloat) -> NSAttributedString {
+        let paragraph = indentedParagraph()
         paragraph.tabStops = [NSTextTab(textAlignment: .right, location: max(0, width - SAClaudeStyle.infoRowTrailingPadding))]
         let font = SAClaudeStyle.infoFont
         guard let parts = split(text) else {
@@ -58,6 +68,17 @@ import AppKit
         let row = NSMutableAttributedString(string: parts.label, attributes: [.font: font, .foregroundColor: SAClaudeStyle.textMuted, .paragraphStyle: paragraph])
         row.append(NSAttributedString(string: "\t" + parts.value, attributes: [.font: font, .foregroundColor: SAClaudeStyle.textSecondary, .paragraphStyle: paragraph]))
         return row
+    }
+
+    /// A pane header ("Table information", "Activities"): muted header text,
+    /// indented like the rows.
+    @objc(attributedHeaderForText:)
+    static func attributedHeader(text: String) -> NSAttributedString {
+        NSAttributedString(string: text, attributes: [
+            .font: SAClaudeStyle.headerFont,
+            .foregroundColor: SAClaudeStyle.textMuted,
+            .paragraphStyle: indentedParagraph(),
+        ])
     }
 }
 

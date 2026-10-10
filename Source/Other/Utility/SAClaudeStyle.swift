@@ -67,7 +67,11 @@ import AppKit
     @objc static let cellImageInset: CGFloat = 3
     /// A borderless `NSTextFieldCell` draws its text this far in from its frame.
     @objc static let cellTextInset: CGFloat = 2
-    @objc static let infoRowTrailingPadding: CGFloat = 10
+    /// Space an info row's value keeps clear at the right, like the list's rows.
+    @objc static let infoRowTrailingPadding: CGFloat = sidebarTrailingPadding
+    /// Paragraph indent of an info row or pane header, so its text (after the
+    /// text cell's own inset) starts `pillInset + rowContentPadding` in, like the names.
+    @objc static var infoRowLeadingIndent: CGFloat { pillInset + rowContentPadding - cellTextInset }
 
     /// Where the 16pt glyph starts inside the padded sidebar icon canvas, so the
     /// icon lands `pillInset + rowContentPadding` from the list's left edge.

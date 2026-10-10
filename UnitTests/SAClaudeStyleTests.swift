@@ -60,6 +60,15 @@ final class SAClaudeStyleTests: XCTestCase {
         XCTAssertEqual(textX, 44)
     }
 
+    /// Verifies info rows start 18pt in like the names (16pt indent plus the
+    /// text cell's 2pt inset) and keep the list's 18pt clear on the right.
+    func testInfoRowMetrics() {
+        XCTAssertEqual(SAClaudeStyle.infoRowLeadingIndent + SAClaudeStyle.cellTextInset, SAClaudeStyle.pillInset + SAClaudeStyle.rowContentPadding)
+        XCTAssertEqual(SAClaudeStyle.infoRowLeadingIndent, 16)
+        XCTAssertEqual(SAClaudeStyle.infoRowTrailingPadding, SAClaudeStyle.sidebarTrailingPadding)
+        XCTAssertEqual(SAClaudeStyle.infoRowTrailingPadding, 18)
+    }
+
     /// Verifies the name cell is centred vertically and stops short of the pill's right padding.
     func testCellFrameIsCentredAndTrimmed() {
         let frame = SAClaudeSidebarGeometry.cellFrame(in: NSRect(x: 0, y: 64, width: 260, height: 32), textHeight: 18)
