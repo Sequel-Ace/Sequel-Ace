@@ -158,6 +158,22 @@ final class SATableListCellRendererTests: XCTestCase {
         XCTAssertNil(comment.drawnFrame)
     }
 
+    /// The info panel indents its header with a paragraph head indent, which
+    /// NSAttributedString.size() leaves out; the name frame must still fit the
+    /// whole text after the indent, or "Table information" truncates.
+    func testNameFrameIncludesTheParagraphIndent() {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.firstLineHeadIndent = 16
+        paragraph.headIndent = 16
+        let font = NSFont.systemFont(ofSize: 13)
+        let name = NSTextFieldCell(textCell: "")
+        name.attributedStringValue = NSAttributedString(string: "Table information", attributes: [.font: font, .paragraphStyle: paragraph])
+        let textWidth = NSAttributedString(string: "Table information", attributes: [.font: font]).size().width
+        var drawnFrame: NSRect?
+        render(name: name, comment: nil, width: 300) { drawnFrame = $0 }
+        XCTAssertGreaterThanOrEqual(drawnFrame?.width ?? 0, ceil(textWidth) + 16)
+    }
+
     private func makeName(_ text: String) -> NSTextFieldCell {
         let cell = NSTextFieldCell(textCell: text)
         cell.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)

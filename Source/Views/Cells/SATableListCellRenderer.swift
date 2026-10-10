@@ -52,7 +52,12 @@ import AppKit
             nameCell.attributedStringValue = originalValue
         }
 
-        let layout = layout(in: frame, nameWidth: originalValue.size().width)
+        // size() leaves out a paragraph head indent (the info panel indents its
+        // rows that way), so add it back or the indented text truncates.
+        let indent = originalValue.length > 0
+            ? (originalValue.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)?.firstLineHeadIndent ?? 0
+            : 0
+        let layout = layout(in: frame, nameWidth: originalValue.size().width + indent)
         nameCell.lineBreakMode = .byTruncatingTail
         if layout.nameFrame.width > 0 {
             drawName(layout.nameFrame)
