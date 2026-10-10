@@ -130,6 +130,10 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.toggleNavigator()
     }
 
+    @IBAction func toggleTableList(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.toggleTableList()
+    }
+
     // MARK: Database menu actions
 
     @IBAction func showGotoDatabase(_ sender: Any) {

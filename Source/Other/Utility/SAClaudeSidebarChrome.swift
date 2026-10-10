@@ -225,6 +225,41 @@ extension SAClaudeSidebarChrome {
     }
 }
 
+/// View > Hide / Show Table List (⌘0). Pure so it can be unit-tested; the
+/// document reads the split view and calls these.
+extension SAClaudeSidebarChrome {
+
+    /// The table list's width in DBView.xib, used when there is no width to go back to.
+    @objc static let tableListDefaultWidth: CGFloat = 214
+
+    /// Whether the table list is out of sight: collapsed by the split view
+    /// (`collapsedFlag`, set as soon as a collapse starts) or dragged shut to
+    /// under 1pt, which the split view does not record as a collapse.
+    ///
+    /// - Parameters:
+    ///   - collapsedFlag: The split view's own collapsed state.
+    ///   - sidebarWidth: The sidebar's width; pass 0 when its view is hidden.
+    @objc(tableListIsHiddenWithCollapsedFlag:sidebarWidth:)
+    static func tableListIsHidden(collapsedFlag: Bool, sidebarWidth: CGFloat) -> Bool {
+        collapsedFlag || sidebarWidth < 1
+    }
+
+    /// The View menu item's title: what choosing it would do.
+    @objc(tableListMenuTitleForHidden:)
+    static func tableListMenuTitle(hidden: Bool) -> String {
+        hidden
+            ? NSLocalizedString("Show Table List", comment: "View menu item that shows the table list sidebar")
+            : NSLocalizedString("Hide Table List", comment: "View menu item that hides the table list sidebar")
+    }
+
+    /// The width to reopen a dragged-shut table list at: the width it kept,
+    /// or `tableListDefaultWidth` when it has none.
+    @objc(tableListRestoreWidthForSavedWidth:)
+    static func tableListRestoreWidth(savedWidth: CGFloat) -> CGFloat {
+        savedWidth >= 1 ? savedWidth : tableListDefaultWidth
+    }
+}
+
 /// Fills its bounds with the Claude sidebar colour, redrawn for light/dark.
 /// Never takes clicks, so the views above it behave as before.
 @objc final class SAClaudeSidebarBackgroundView: NSView {

@@ -4514,3 +4514,9 @@
 
 /* header for view info pane */
 "View information" = "View information";
+
+/* View menu item that hides the table list sidebar */
+"Hide Table List" = "Hide Table List";
+
+/* View menu item that shows the table list sidebar */
+"Show Table List" = "Show Table List";

@@ -1107,6 +1107,39 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 #pragma mark -
+#pragma mark Table list methods
+
+/**
+ * Whether the table list sidebar is out of sight: collapsed by the split view,
+ * or dragged shut (a drag to zero width is not recorded as a collapse).
+ */
+- (BOOL)_tableListIsHidden {
+    NSView *sidebar = [[contentViewSplitter subviews] firstObject];
+    CGFloat width = (!sidebar || [sidebar isHidden]) ? 0 : NSWidth([sidebar frame]);
+    return [SAClaudeSidebarChrome tableListIsHiddenWithCollapsedFlag:[contentViewSplitter isCollapsibleSubviewCollapsed] sidebarWidth:width];
+}
+
+/**
+ * Hides or shows the table list sidebar (View > Hide / Show Table List).
+ */
+- (void)toggleTableList {
+    NSView *sidebar = [[contentViewSplitter subviews] firstObject];
+    if (!sidebar) return;
+
+    if (![self _tableListIsHidden]) {
+        [contentViewSplitter setCollapsibleSubviewCollapsed:YES animate:YES];
+    } else if ([contentViewSplitter isCollapsibleSubviewCollapsed]) {
+        // Collapsed by the split view, which reopens it at its pre-collapse width.
+        [contentViewSplitter setCollapsibleSubviewCollapsed:NO animate:YES];
+    } else {
+        // Dragged shut: the split view recorded no collapse, so set the width directly.
+        CGFloat savedWidth = [sidebar isHidden] ? NSWidth([sidebar frame]) : 0;
+        [sidebar setHidden:NO];
+        [contentViewSplitter setPosition:[SAClaudeSidebarChrome tableListRestoreWidthForSavedWidth:savedWidth] ofDividerAtIndex:0];
+    }
+}
+
+#pragma mark -
 #pragma mark Task progress and notification methods
 
 // The task *progress UI* (the borderless window, indicator, description /
@@ -3090,6 +3123,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Clear console
     if (action == @selector(clearConsole:)) {
         return ([[SPQueryController sharedQueryController] consoleMessageCount] > 0);
+    }
+
+    // Show/hide table list
+    if (action == @selector(toggleTableList:)) {
+        [menuItem setTitle:[SAClaudeSidebarChrome tableListMenuTitleForHidden:[self _tableListIsHidden]]];
+        return [[contentViewSplitter subviews] count] > 0;
     }
 
     // Show/hide console

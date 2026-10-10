@@ -567,6 +567,11 @@
                                     <action selector="toggleNavigator:" target="-1" id="1051"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Hide Table List" keyEquivalent="0" id="cLk-tl-tgl">
+                                <connections>
+                                    <action selector="toggleTableList:" target="-1" id="cLk-tl-act"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="1061"/>
                             <menuItem title="Display Binary Data as Hex" id="78w-kO-LU2">
                                 <modifierMask key="keyEquivalentModifierMask"/>

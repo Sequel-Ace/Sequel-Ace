@@ -441,6 +441,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)toggleConsole;
 - (void)showConsole;
 - (void)toggleNavigator;
+- (void)toggleTableList;
 
 #pragma mark Database menu
 

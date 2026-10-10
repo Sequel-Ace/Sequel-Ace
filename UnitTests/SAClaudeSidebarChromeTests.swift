@@ -364,3 +364,39 @@ final class SAClaudeSidebarPaneTests: XCTestCase {
         XCTAssertEqual(color.alphaComponent, 1, accuracy: 0.01)
     }
 }
+
+final class SAClaudeTableListToggleTests: XCTestCase {
+
+    /// Verifies a sidebar of normal width with no collapse recorded is shown.
+    func testVisibleSidebarIsNotHidden() {
+        XCTAssertFalse(SAClaudeSidebarChrome.tableListIsHidden(collapsedFlag: false, sidebarWidth: 214))
+        XCTAssertFalse(SAClaudeSidebarChrome.tableListIsHidden(collapsedFlag: false, sidebarWidth: 1))
+    }
+
+    /// Verifies a collapse recorded by the split view counts as hidden, whatever the width
+    /// (the flag is set as the collapse animation starts).
+    func testCollapsedFlagIsHidden() {
+        XCTAssertTrue(SAClaudeSidebarChrome.tableListIsHidden(collapsedFlag: true, sidebarWidth: 214))
+        XCTAssertTrue(SAClaudeSidebarChrome.tableListIsHidden(collapsedFlag: true, sidebarWidth: 0))
+    }
+
+    /// Verifies a sidebar dragged shut counts as hidden even though no collapse was recorded.
+    func testDraggedShutIsHidden() {
+        XCTAssertTrue(SAClaudeSidebarChrome.tableListIsHidden(collapsedFlag: false, sidebarWidth: 0))
+        XCTAssertTrue(SAClaudeSidebarChrome.tableListIsHidden(collapsedFlag: false, sidebarWidth: 0.5))
+    }
+
+    /// Verifies the menu item offers the opposite of the current state.
+    func testMenuTitle() {
+        XCTAssertEqual(SAClaudeSidebarChrome.tableListMenuTitle(hidden: true), "Show Table List")
+        XCTAssertEqual(SAClaudeSidebarChrome.tableListMenuTitle(hidden: false), "Hide Table List")
+    }
+
+    /// Verifies a kept width is restored and a zero one falls back to the 214pt default.
+    func testRestoreWidth() {
+        XCTAssertEqual(SAClaudeSidebarChrome.tableListDefaultWidth, 214)
+        XCTAssertEqual(SAClaudeSidebarChrome.tableListRestoreWidth(savedWidth: 260), 260)
+        XCTAssertEqual(SAClaudeSidebarChrome.tableListRestoreWidth(savedWidth: 0), 214)
+        XCTAssertEqual(SAClaudeSidebarChrome.tableListRestoreWidth(savedWidth: 0.5), 214)
+    }
+}
