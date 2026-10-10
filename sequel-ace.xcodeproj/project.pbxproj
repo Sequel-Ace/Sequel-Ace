@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
 		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
@@ -204,6 +205,7 @@
 		384582C70FB9603600DDACB6 /* proc-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C60FB9603600DDACB6 /* proc-small.png */; };
 		3876E15D1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 3876E15C1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.m */; };
 		387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */ = {isa = PBXBuildFile; fileRef = 387BBBA70FBCB6CB00B31746 /* SPTableRelations.m */; };
+		3C65C7519731B0BC8E835C73 /* SAScriptRunner+SPMySQL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A836AE7A6006CF827D972 /* SAScriptRunner+SPMySQL.swift */; };
 		3E242D4F20FEB44D0015470D /* button_bar_spacer_dark.png in Resources */ = {isa = PBXBuildFile; fileRef = 3E242D4B20FEB44D0015470D /* button_bar_spacer_dark.png */; };
 		3E242D5020FEB44D0015470D /* button_bar_spacer_dark@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3E242D4E20FEB44D0015470D /* button_bar_spacer_dark@2x.png */; };
 		410065F67228AD394D48A156 /* SADragPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */; };
@@ -723,6 +725,7 @@
 		DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000006 /* SPRuleFilterDropBox.swift */; };
 		DF41CA70087EC426ED97F397 /* SAScriptConsoleAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */; };
 		E51CC2AA59AF37FEF73B06A0 /* SADragPasteboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */; };
+		E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */; };
 		EB9FF92F188F0B4AA444A892 /* SAConnectionInfo+ConnectionString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */; };
 		ED3C9DE94BCF6D3F17DACBCA /* AWSLoginCredentialsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */; };
 		ED6B10573965334DAB40D0F7 /* SAScriptOutputFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153725AA3970D323ADB9C26B /* SAScriptOutputFormatter.swift */; };
@@ -1536,6 +1539,7 @@
 		8EA35EE6FE32D801FDF15E23 /* SAScriptConsoleAppearanceSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleAppearanceSection.swift; sourceTree = "<group>"; };
 		8F7D127BB5BCD94B0E794C5E /* SAHelpViewerWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAHelpViewerWindowController.swift; sourceTree = "<group>"; };
 		91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCache.swift; sourceTree = "<group>"; };
+		931A836AE7A6006CF827D972 /* SAScriptRunner+SPMySQL.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAScriptRunner+SPMySQL.swift"; sourceTree = "<group>"; };
 		93E86B9CAE3B927AC789893E /* SAFieldEditorCommitPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAFieldEditorCommitPolicyTests.swift; sourceTree = "<group>"; };
 		95AA6EC7ADA69D8FCD7F2CAF /* SATableListCellRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableListCellRenderer.swift; sourceTree = "<group>"; };
 		961210D1302E7233009A9A2A /* SAGitHubReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAGitHubReleaseTests.swift; sourceTree = "<group>"; };
@@ -1642,6 +1646,7 @@
 		BCE0025B11173D2A009DA533 /* SPFieldMapperController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFieldMapperController.h; sourceTree = "<group>"; };
 		BCE0025C11173D2A009DA533 /* SPFieldMapperController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFieldMapperController.m; sourceTree = "<group>"; };
 		BE09C59624F6AC834DAD7675 /* SAKeychain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychain.swift; sourceTree = "<group>"; };
+		C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptRunnerTests.swift; sourceTree = "<group>"; };
 		C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
 		C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleAppearance.swift; sourceTree = "<group>"; };
 		C57CA10F3F4B37E186CF7EF9 /* ConnectionStringParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectionStringParser.swift; sourceTree = "<group>"; };
@@ -2016,6 +2021,7 @@
 				84BCBDC308AB07FD3E701FE1 /* SPCustomQuery+Script.swift */,
 				C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */,
 				CE098674353B0D5AC3C1A95C /* SAScriptStatementSplitter.swift */,
+				931A836AE7A6006CF827D972 /* SAScriptRunner+SPMySQL.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -3012,6 +3018,7 @@
 				044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */,
 				B138F78DC06D7838CF975508 /* SAScriptConsoleModelTests.swift */,
 				21CD9E2C6AD84A05A062775B /* SAScriptConsoleAppearanceTests.swift */,
+				C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3878,6 +3885,8 @@
 				32328BA78FBF5757FA86C4C8 /* SAScriptConsoleModelTests.swift in Sources */,
 				10D9A7676BCA2DD36E1F5789 /* SAScriptConsoleAppearanceTests.swift in Sources */,
 				FD1CB5B70C14049034B6B8A5 /* SAScriptConsoleAppearance.swift in Sources */,
+				E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */,
+				03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4248,6 +4257,7 @@
 				DF41CA70087EC426ED97F397 /* SAScriptConsoleAppearance.swift in Sources */,
 				ED9EAE14EC491D133641BF72 /* SAScriptConsoleAppearanceSection.swift in Sources */,
 				174C30F93D55F38CA6DC8A84 /* SAScriptStatementSplitter.swift in Sources */,
+				3C65C7519731B0BC8E835C73 /* SAScriptRunner+SPMySQL.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

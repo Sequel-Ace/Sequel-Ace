@@ -8,6 +8,10 @@
 //  tracking, table-list reload detection, retry suppression) but keeps every
 //  result set instead of only the last one.
 //
+//  Talks to the connection through SAScriptQueryConnection so it is free of
+//  project ObjC types and also builds in the Unit Tests target; the
+//  SPMySQLConnection conformance lives in SAScriptRunner+SPMySQL.swift.
+//
 
 import Foundation
 
@@ -33,23 +37,32 @@ struct SAScriptRunSummary {
     var executedStatements: [String] = []
 }
 
-extension SAScriptCell {
-    init(mysqlValue value: Any) {
-        switch value {
-        case is NSNull:
-            self = .null
-        case let geometry as SPMySQLGeometryData:
-            self = .binary(geometry.data() ?? Data())
-        case let data as Data:
-            self = .binary(data)
-        case let string as String:
-            self = .text(string)
-        case let number as NSNumber:
-            self = .text(number.stringValue)
-        default:
-            self = .text(String(describing: value))
-        }
-    }
+/// A result returned by `SAScriptQueryConnection.runScriptStatement`.
+protocol SAScriptQueryResult: AnyObject {
+    var numberOfFields: Int { get }
+    var fieldNames: [String] { get }
+    var queryExecutionTime: Double { get }
+    /// The next row of a streamed result set, or nil once it is exhausted.
+    func nextRow() -> [SAScriptCell]?
+    /// Discard the rest of a streamed result set.
+    func cancelLoad()
+}
+
+/// The connection operations a script run needs.
+protocol SAScriptQueryConnection: AnyObject {
+    var retryQueriesOnConnectionFailure: Bool { get set }
+    /// major * 10000 + minor * 100 + release.
+    var scriptServerVersion: Int { get }
+    var scriptServerVersionString: String? { get }
+    /// Run one statement as a streamed result, asserting the database context.
+    func runScriptStatement(_ statement: String, assertingDatabaseContext database: String?) -> SAScriptQueryResult?
+    func scriptFirstField(fromQuery query: String, assertingDatabase database: String?) -> Any?
+    var scriptQueryErrored: Bool { get }
+    var scriptLastErrorID: Int { get }
+    var scriptLastSqlstate: String? { get }
+    var scriptLastErrorMessage: String? { get }
+    var scriptRowsAffectedByLastQuery: UInt64 { get }
+    var scriptLastQueryWasCancelled: Bool { get }
 }
 
 /// Passed as the task's cancellation callback object: SATaskController calls
@@ -79,12 +92,12 @@ final class SAScriptRunner {
     private static let tableListChangeRegex = try! NSRegularExpression(pattern: "^\\s*\\b(create|alter|drop|rename)\\b\\s+.", options: [.caseInsensitive])
     private static let databaseChangeRegex = try! NSRegularExpression(pattern: "^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+.", options: [.caseInsensitive])
 
-    private let connection: SPMySQLConnection
+    private let connection: SAScriptQueryConnection
     private let cancellation: SAScriptCancellationToken
     private let output: (String) -> Void
     private let progress: (_ index: Int, _ total: Int) -> Void
 
-    init(connection: SPMySQLConnection,
+    init(connection: SAScriptQueryConnection,
          cancellation: SAScriptCancellationToken,
          output: @escaping (String) -> Void,
          progress: @escaping (_ index: Int, _ total: Int) -> Void) {
@@ -98,10 +111,8 @@ final class SAScriptRunner {
     func run(statements: [SAScriptStatement], database: String?, continueOnError: Bool) -> SAScriptRunSummary {
         var summary = SAScriptRunSummary()
         var currentDatabase = database
-        let serverVersion = Int(connection.serverMajorVersion()) * 10000
-            + Int(connection.serverMinorVersion()) * 100
-            + Int(connection.serverReleaseVersion())
-        let serverIsMariaDB = (connection.serverVersionString() ?? "").range(of: "mariadb", options: .caseInsensitive) != nil
+        let serverVersion = connection.scriptServerVersion
+        let serverIsMariaDB = (connection.scriptServerVersionString ?? "").range(of: "mariadb", options: .caseInsensitive) != nil
         var databaseNamesAreCaseSensitive = false
         var caseSensitivityLoaded = false
 
@@ -124,49 +135,46 @@ final class SAScriptRunner {
                                                                                 currentDatabase: currentDatabase,
                                                                                 serverVersion: serverVersion,
                                                                                 serverIsMariaDB: serverIsMariaDB) {
-                let setting = connection.getFirstField(fromQuery: "SELECT @@lower_case_table_names", assertingDatabase: currentDatabase)
+                let setting = connection.scriptFirstField(fromQuery: "SELECT @@lower_case_table_names", assertingDatabase: currentDatabase)
                 // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
                 databaseNamesAreCaseSensitive = (setting as? NSString)?.integerValue == 0 || (setting as? NSNumber)?.intValue == 0
                 caseSensitivityLoaded = true
             }
 
-            let result = connection.queryString(statement.text,
-                                                usingEncoding: connection.stringEncoding(),
-                                                with: SPMySQLResultAsFastStreamingResult,
-                                                assertingDatabaseContext: currentDatabase) as? SPMySQLResult
+            let result = connection.runScriptStatement(statement.text, assertingDatabaseContext: currentDatabase)
             summary.queriesRun += 1
-            summary.executionTime += result?.queryExecutionTime() ?? 0
+            summary.executionTime += result?.queryExecutionTime ?? 0
 
             // queryString just reset lastQueryWasCancelled, so here it reflects
             // a Stop of this statement only.
-            if cancellation.isCancelled || connection.lastQueryWasCancelled {
+            if cancellation.isCancelled || connection.scriptLastQueryWasCancelled {
                 finishCancelled(&summary, result: result)
                 break
             }
 
             // A nil result means the query never ran (e.g. disconnected), even
             // when the connection recorded no error.
-            guard let result, !connection.queryErrored() else {
+            guard let result, !connection.scriptQueryErrored else {
                 reportError(for: statement, in: &summary)
                 if continueOnError { continue }
                 break
             }
 
-            if result.numberOfFields() > 0 {
-                let columns = (result.fieldNames() as? [String]) ?? []
+            if result.numberOfFields > 0 {
+                let columns = result.fieldNames
                 var rowCount: UInt64 = 0
-                while !cancellation.isCancelled, let row = result.getRowAsArray() {
+                while !cancellation.isCancelled, let row = result.nextRow() {
                     if rowCount == 0 {
                         output(SAScriptOutputFormatter.resultHeader(columns: columns))
                     }
-                    output(SAScriptOutputFormatter.row(row.map(SAScriptCell.init(mysqlValue:))))
+                    output(SAScriptOutputFormatter.row(row))
                     rowCount += 1
                 }
                 if cancellation.isCancelled {
                     finishCancelled(&summary, result: result)
                     break
                 }
-                if connection.queryErrored() {
+                if connection.scriptQueryErrored {
                     // An error while streaming rows (e.g. lost connection).
                     reportError(for: statement, in: &summary)
                     if continueOnError { continue }
@@ -175,7 +183,7 @@ final class SAScriptRunner {
                 output(SAScriptOutputFormatter.rowsInSetFooter(count: rowCount))
                 summary.totalAffectedRows += rowCount
             } else {
-                let affected = connection.rowsAffectedByLastQuery()
+                let affected = connection.scriptRowsAffectedByLastQuery
                 let count = affected == UInt64.max ? 0 : affected
                 output(SAScriptOutputFormatter.queryOK(affectedRows: count))
                 summary.totalAffectedRows += count
@@ -205,8 +213,8 @@ final class SAScriptRunner {
 
     /// Single exit path for every cancellation: drain/cancel any open
     /// streaming result so the connection is not left mid-result.
-    private func finishCancelled(_ summary: inout SAScriptRunSummary, result: SPMySQLResult?) {
-        (result as? SPMySQLStreamingResult)?.cancelLoad()
+    private func finishCancelled(_ summary: inout SAScriptRunSummary, result: SAScriptQueryResult?) {
+        result?.cancelLoad()
         output(SAScriptOutputFormatter.cancelled)
         summary.wasCancelled = true
     }
@@ -219,15 +227,15 @@ final class SAScriptRunner {
     }
 
     private func errorText(for statement: SAScriptStatement) -> String {
-        if connection.queryErrored() {
-            let sqlState = connection.lastSqlstate().flatMap { $0.isEmpty ? nil : $0 } ?? "HY000"
-            return SAScriptOutputFormatter.error(code: Int(connection.lastErrorID()),
+        if connection.scriptQueryErrored {
+            let sqlState = connection.scriptLastSqlstate.flatMap { $0.isEmpty ? nil : $0 } ?? "HY000"
+            return SAScriptOutputFormatter.error(code: connection.scriptLastErrorID,
                                                  sqlState: sqlState,
                                                  line: statement.line,
-                                                 message: connection.lastErrorMessage() ?? "")
+                                                 message: connection.scriptLastErrorMessage ?? "")
         }
         // No result and no recorded error: synthesise mysql's CR_SERVER_GONE_ERROR.
-        let message = connection.lastErrorMessage().flatMap { $0.isEmpty ? nil : $0 } ?? "MySQL server has gone away"
+        let message = connection.scriptLastErrorMessage.flatMap { $0.isEmpty ? nil : $0 } ?? "MySQL server has gone away"
         return SAScriptOutputFormatter.error(code: 2006, sqlState: "HY000", line: statement.line, message: message)
     }
 }
