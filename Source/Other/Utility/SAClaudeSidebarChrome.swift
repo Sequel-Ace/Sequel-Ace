@@ -112,8 +112,11 @@ extension SAClaudeSidebarChrome {
         objc_getAssociatedObject(view, &associationKey) as? SAClaudeHoverHighlighter
     }
 
-    @objc func mouseEntered(with event: NSEvent) { setHovered(true) }
-    @objc func mouseExited(with event: NSEvent) { setHovered(false) }
+    // The tracking area sends its owner `mouseEntered:` / `mouseExited:`. This
+    // is a plain NSObject, not an NSResponder override, so the selectors must be
+    // spelled out: `mouseEntered(with:)` alone exports as `mouseEnteredWith:`.
+    @objc(mouseEntered:) func mouseEntered(with event: NSEvent) { setHovered(true) }
+    @objc(mouseExited:) func mouseExited(with event: NSEvent) { setHovered(false) }
 
     /// Shows or clears the hover fill, resolved for the view's appearance.
     /// A disabled control gets no fill.

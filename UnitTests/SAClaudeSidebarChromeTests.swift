@@ -177,6 +177,28 @@ final class SAClaudeBarButtonTests: XCTestCase {
         XCTAssertFalse(area.options.contains(.activeInKeyWindow))
     }
 
+    /// A tracking area sends its owner `mouseEntered:` / `mouseExited:`. The
+    /// highlighter is a plain NSObject, so a Swift `mouseEntered(with:)` would
+    /// export as `mouseEnteredWith:` and the first hover crashed the app with an
+    /// unrecognized selector. Drives the hover through those exact selectors.
+    func testHighlighterAnswersTheTrackingAreaSelectors() throws {
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        button.appearance = NSAppearance(named: .darkAqua)
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .add)
+        let owner = try XCTUnwrap(button.trackingAreas.first { $0.owner is SAClaudeHoverHighlighter }?.owner as? NSObject)
+        let entered = NSSelectorFromString("mouseEntered:")
+        let exited = NSSelectorFromString("mouseExited:")
+        XCTAssertTrue(owner.responds(to: entered))
+        XCTAssertTrue(owner.responds(to: exited))
+
+        let event = try XCTUnwrap(NSEvent.enterExitEvent(with: .mouseEntered, location: .zero, modifierFlags: [], timestamp: 0,
+                                                         windowNumber: 0, context: nil, eventNumber: 0, trackingNumber: 0, userData: nil))
+        owner.perform(entered, with: event)
+        assertFill(of: button, is: 0x1E1E1D)
+        owner.perform(exited, with: event)
+        XCTAssertNil(button.layer?.backgroundColor)
+    }
+
     private func assertFill(of view: NSView, is hex: UInt32, file: StaticString = #filePath, line: UInt = #line) {
         guard let fill = view.layer?.backgroundColor.flatMap({ NSColor(cgColor: $0)?.usingColorSpace(.sRGB) }) else {
             return XCTFail("no hover fill", file: file, line: line)
