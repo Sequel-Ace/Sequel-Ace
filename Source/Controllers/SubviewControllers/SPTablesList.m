@@ -159,6 +159,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Claude-style sidebar: fixed 32pt rows in SF Pro, independent of the
 	// global table font (which still applies to the content and query grids).
 	[(SATablesListView *)tablesListView applyClaudeStyle];
+	[tableListSplitView setCustomDividerColor:[SAClaudeStyle divider]];
 
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
 		[[column dataCell] setFont:[SAClaudeStyle rowFont]];

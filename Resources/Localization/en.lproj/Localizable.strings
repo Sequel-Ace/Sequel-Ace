@@ -4493,3 +4493,9 @@
 
 /* header for pinned tables */
 "Pinned" = "Pinned";
+
+/* header for table info pane */
+"Table information" = "Table information";
+
+/* header for activities pane */
+"Activities" = "Activities";

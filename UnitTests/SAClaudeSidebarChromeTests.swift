@@ -33,3 +33,50 @@ final class SAClaudeSidebarChromeTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(inkColumns.min() ?? 0, 18)
     }
 }
+
+final class SAClaudeInfoRowTests: XCTestCase {
+
+    /// Verifies "rows: ~18,402" becomes a capitalised label and a value.
+    func testSplitsLabelAndValue() {
+        let parts = SAClaudeInfoRow.split("rows: ~18,402")
+        XCTAssertEqual(parts?.label, "Rows")
+        XCTAssertEqual(parts?.value, "~18,402")
+    }
+
+    /// Verifies only the first ": " splits, so times and later colons stay in the value.
+    func testSplitsOnlyAtFirstSeparator() {
+        let parts = SAClaudeInfoRow.split("updated: 2026-10-10 14:02:00")
+        XCTAssertEqual(parts?.label, "Updated")
+        XCTAssertEqual(parts?.value, "2026-10-10 14:02:00")
+        XCTAssertEqual(SAClaudeInfoRow.split("comment: a: b")?.value, "a: b")
+    }
+
+    /// Verifies a row with no ": " (another language, or a plain message) stays whole.
+    func testRowWithoutSeparatorStaysPlain() {
+        XCTAssertNil(SAClaudeInfoRow.split("no table selected"))
+        XCTAssertNil(SAClaudeInfoRow.split(": value"))
+        XCTAssertNil(SAClaudeInfoRow.split("label: "))
+        let row = SAClaudeInfoRow.attributedRow(text: "no table selected", width: 240)
+        XCTAssertEqual(row.string, "no table selected")
+        XCTAssertEqual(row.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textSecondary)
+    }
+
+    /// Verifies the label is muted, the value secondary and right-aligned on a tab stop.
+    func testAttributedRowStyling() {
+        let row = SAClaudeInfoRow.attributedRow(text: "engine: InnoDB", width: 240)
+        XCTAssertEqual(row.string, "Engine\tInnoDB")
+        XCTAssertEqual(row.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textMuted)
+        XCTAssertEqual(row.attribute(.foregroundColor, at: 7, effectiveRange: nil) as? NSColor, SAClaudeStyle.textSecondary)
+        XCTAssertEqual(row.attribute(.font, at: 0, effectiveRange: nil) as? NSFont, SAClaudeStyle.infoFont)
+        let paragraph = row.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        XCTAssertEqual(paragraph?.tabStops.first?.alignment, .right)
+        XCTAssertEqual(paragraph?.tabStops.first?.location, 230)
+    }
+
+    /// Verifies a column narrower than the padding gets a zero tab stop, not a negative one.
+    func testNarrowColumnTabStop() {
+        let paragraph = SAClaudeInfoRow.attributedRow(text: "engine: InnoDB", width: 4)
+            .attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        XCTAssertEqual(paragraph?.tabStops.first?.location, 0)
+    }
+}

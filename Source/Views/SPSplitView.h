@@ -54,6 +54,9 @@
 	NSMutableArray *viewMaximumSizes;
 }
 
+/// When set, the divider is drawn in this colour (the Claude-style sidebar's divider).
+@property (nonatomic, strong, nullable) NSColor *customDividerColor;
+
 // Collapsing/expanding
 - (void)setCollapsibleSubviewIndex:(NSUInteger)subviewIndex;
 - (void)setToggleCollapseButton:(NSButton *)aButton;

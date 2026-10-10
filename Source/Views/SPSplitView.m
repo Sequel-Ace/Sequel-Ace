@@ -69,6 +69,11 @@
 
 @implementation SPSplitView
 
+- (NSColor *)dividerColor
+{
+	return self.customDividerColor ?: [super dividerColor];
+}
+
 + (void)initialize {
 }
 
