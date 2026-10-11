@@ -4595,3 +4595,30 @@
 
 /* Preferences > Query Editor > Customise: rename, duplicate or remove theme files */
 "Edit theme list…" = "Edit theme list…";
+
+/* Run All console: a long statement is cut after 6 lines; this many lines are not shown */
+"… %ld more lines" = "… %ld more lines";
+
+/* Run All console: a statement failed and the script went on */
+"failed · continued" = "failed · continued";
+
+/* Run All console: a statement failed and the script stopped */
+"failed · stopped" = "failed · stopped";
+
+/* Run All console: the statement was stopped by the user */
+"cancelled" = "cancelled";
+
+/* Run All console: a query returned no rows */
+"Empty set" = "Empty set";
+
+/* Run All console: a query returned one row */
+"1 row" = "1 row";
+
+/* Run All console: a query returned this many rows */
+"%llu rows" = "%llu rows";
+
+/* Run All console: a statement changed one row */
+"1 row affected" = "1 row affected";
+
+/* Run All console: a statement changed this many rows */
+"%llu rows affected" = "%llu rows affected";
