@@ -92,4 +92,16 @@ final class SAEditorColourModeTests: XCTestCase {
         SAEditorColourMode.leaveCustomise(in: defaults)          // already following
         XCTAssertNil(defaults.object(forKey: SAEditorColourMode.customColoursKey))
     }
+
+    func testSnapshotWithoutALiveThemeNameRestoresAsUserDefined() {
+        defaults.set(false, forKey: SAEditorAppearanceThemeSwitcher.matchesAppearanceKey)
+        storeAll(0x2E3440, name: "")
+        defaults.removeObject(forKey: SAEditorThemeLoader.themeNameKey)
+        SAEditorColourMode.leaveCustomise(in: defaults)
+        XCTAssertEqual(defaults.string(forKey: SAEditorColourMode.customThemeNameKey), SAClaudeEditorDefaults.customSchemeName)
+        storeAll(0xFCFCFB, name: "Claude Light")          // what Follow macOS loads
+        SAEditorColourMode.enterCustomise(in: defaults)
+        XCTAssertEqual(liveRed(), 0x2E)
+        XCTAssertEqual(defaults.string(forKey: SAEditorThemeLoader.themeNameKey), "User-defined")
+    }
 }

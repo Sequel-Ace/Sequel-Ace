@@ -26,7 +26,10 @@ import AppKit
             if let data = defaults.data(forKey: key) { colours[key] = data }
         }
         defaults.set(colours, forKey: customColoursKey)
-        defaults.set(defaults.string(forKey: SAEditorThemeLoader.themeNameKey) ?? "", forKey: customThemeNameKey)
+        // Hand-edited colours from older versions may have no theme name; "User-defined" is
+        // what the switcher treats as custom, so restoring never leaves a Claude name on them.
+        let liveName = defaults.string(forKey: SAEditorThemeLoader.themeNameKey) ?? ""
+        defaults.set(liveName.isEmpty ? SAClaudeEditorDefaults.customSchemeName : liveName, forKey: customThemeNameKey)
     }
 
     /// Writes the snapshot back into the live keys when it holds all 11 colours.
