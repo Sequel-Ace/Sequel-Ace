@@ -4559,3 +4559,39 @@
 
 /* Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists */
 "%@ (missing)" = "%@ (missing)";
+
+/* Preferences > Query Editor: accessibility label of the Follow macOS / Customise choice */
+"Colours" = "Colours";
+
+/* Preferences > Query Editor: colours follow the macOS light/dark appearance with the Claude themes */
+"Follow macOS" = "Follow macOS";
+
+/* Preferences > Query Editor: the user's own editor colours */
+"Customise" = "Customise";
+
+/* Preferences > Query Editor: hint under Follow macOS */
+"Claude Light in light mode, Claude Dark in dark mode. Editor, results and console all follow." = "Claude Light in light mode, Claude Dark in dark mode. Editor, results and console all follow.";
+
+/* Preferences > Query Editor: caption of the light-mode theme preview */
+"Light" = "Light";
+
+/* Preferences > Query Editor: caption of the dark-mode theme preview */
+"Dark" = "Dark";
+
+/* Preferences > Query Editor: hint under Customise */
+"Your colours, the same in light and dark mode." = "Your colours, the same in light and dark mode.";
+
+/* Preferences > Query Editor > Customise: label of the theme to start from */
+"Start from:" = "Start from:";
+
+/* Preferences > Query Editor > Customise: save the current colours as a theme file */
+"Save as theme…" = "Save as theme…";
+
+/* Preferences > Query Editor > Customise: import a theme file */
+"Import theme…" = "Import theme…";
+
+/* Preferences > Query Editor > Customise: export the current colours as a theme file */
+"Export current theme…" = "Export current theme…";
+
+/* Preferences > Query Editor > Customise: rename, duplicate or remove theme files */
+"Edit theme list…" = "Edit theme list…";
