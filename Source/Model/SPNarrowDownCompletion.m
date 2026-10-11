@@ -288,7 +288,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 			[[theTableView tableColumnWithIdentifier:@"name"] setWidth:maxWindowWidth];
 		}
 		else {
-			NSScrollView *scrollView = (NSScrollView *)[self contentView];
+			NSScrollView *scrollView = [theTableView enclosingScrollView];
 			maxWindowWidth = [SACompletionWindowLayout windowSizeForTableContentSize:NSMakeSize(tableContentWidth, 0)
 			                                                           maximumWidth:CGFLOAT_MAX
 			                                                           scrollerStyle:[scrollView scrollerStyle]].width;
@@ -356,7 +356,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	[[scrollView verticalScroller] setControlSize:NSControlSizeSmall];
 	[[scrollView horizontalScroller] setControlSize:NSControlSizeSmall];
 
-	theTableView = [[NSTableView alloc] initWithFrame:NSZeroRect];
+	theTableView = [[SAClaudeCompletionTableView alloc] initWithFrame:NSZeroRect];
 	[theTableView setFocusRingType:NSFocusRingTypeNone];
 	[theTableView setAllowsEmptySelection:YES];
 	[theTableView setHeaderView:nil];
@@ -405,6 +405,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	[scrollView setDocumentView:theTableView];
 
 	[self setContentView:scrollView];
+	[SAClaudeCompletionStyler styleWindow:self tableView:theTableView];
 }
 
 // ========================
@@ -532,11 +533,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	}
 	else if([identifier isEqualToString:@"type"]) {
 		if(!(isQueryingDatabaseStructure && rowIndex == 0) && !dictMode) {
-			NSTokenFieldCell *b = [[NSTokenFieldCell alloc] init];
-			[b setEditable:NO];
-			[b setAlignment:NSTextAlignmentRight];
-			[b setFont:[NSFont systemFontOfSize:11]];
-			return b;
+			return [SAClaudeCompletionStyler typeCell];
 		}
 	}
 	else if ([identifier isEqualToString:@"path"]) {
@@ -586,7 +583,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 		else {
 			NSImage* image = nil;
 			NSString *imageName = [[filtered objectAtIndex:rowIndex] objectForKey:@"image"];
-			if(imageName) image = [NSImage imageNamed:imageName];
+			if(imageName) image = [SAClaudeCompletionStyler imageForName:imageName];
 			return image;
 		}
 	}
@@ -741,7 +738,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 	NSInteger displayedRows = [newFiltered count] < SPNarrowDownCompletionMaxRows ? [newFiltered count] : SPNarrowDownCompletionMaxRows;
 	CGFloat rowsHeight = ([theTableView rowHeight] + [theTableView intercellSpacing].height) * ((displayedRows) ? displayedRows : 1);
-	NSScrollView *scrollView = (NSScrollView *)[self contentView];
+	NSScrollView *scrollView = [theTableView enclosingScrollView];
 	NSSize newWindowSize = [SACompletionWindowLayout windowSizeForTableContentSize:NSMakeSize(tableContentWidth, rowsHeight)
 	                                                                  maximumWidth:maxWindowWidth
 	                                                                  scrollerStyle:[scrollView scrollerStyle]];

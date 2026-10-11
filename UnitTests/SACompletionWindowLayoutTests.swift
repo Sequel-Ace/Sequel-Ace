@@ -19,7 +19,7 @@ final class SACompletionWindowLayoutTests: XCTestCase {
             scrollerStyle: .legacy
         )
 
-        let visibleContentSize = contentSize(for: result, includesHorizontalScroller: false, style: .legacy)
+        let visibleContentSize = contentSize(for: scrollViewSize(result), includesHorizontalScroller: false, style: .legacy)
         XCTAssertEqual(visibleContentSize, tableContentSize)
     }
 
@@ -30,7 +30,7 @@ final class SACompletionWindowLayoutTests: XCTestCase {
             scrollerStyle: .overlay
         )
 
-        XCTAssertEqual(result, tableContentSize)
+        XCTAssertEqual(scrollViewSize(result), tableContentSize)
     }
 
     func testLegacyHorizontalScrollerIsPlacedBelowRowsWhenWidthIsCapped() {
@@ -40,8 +40,8 @@ final class SACompletionWindowLayoutTests: XCTestCase {
             scrollerStyle: .legacy
         )
 
-        let visibleContentSize = contentSize(for: result, includesHorizontalScroller: true, style: .legacy)
-        XCTAssertEqual(result.width, 450)
+        let visibleContentSize = contentSize(for: scrollViewSize(result), includesHorizontalScroller: true, style: .legacy)
+        XCTAssertEqual(scrollViewSize(result).width, 450)
         XCTAssertEqual(visibleContentSize.height, tableContentSize.height)
     }
 
@@ -52,7 +52,24 @@ final class SACompletionWindowLayoutTests: XCTestCase {
             scrollerStyle: .overlay
         )
 
-        XCTAssertEqual(result, NSSize(width: 450, height: tableContentSize.height))
+        XCTAssertEqual(scrollViewSize(result), NSSize(width: 450, height: tableContentSize.height))
+    }
+
+    func testWindowAddsTheCardPaddingOnEverySide() {
+        let result = SACompletionWindowLayout.windowSize(
+            for: tableContentSize,
+            maximumWidth: 1_000,
+            scrollerStyle: .overlay
+        )
+
+        XCTAssertEqual(SACompletionWindowLayout.cardPadding, 5)
+        XCTAssertEqual(result, NSSize(width: tableContentSize.width + 10, height: tableContentSize.height + 10))
+    }
+
+    /// The scroll view's frame inside the card padding.
+    private func scrollViewSize(_ windowSize: NSSize) -> NSSize {
+        let padding = SACompletionWindowLayout.cardPadding
+        return NSSize(width: windowSize.width - 2 * padding, height: windowSize.height - 2 * padding)
     }
 
     private func contentSize(
