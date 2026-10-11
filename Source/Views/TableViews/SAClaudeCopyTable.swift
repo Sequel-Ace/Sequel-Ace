@@ -176,10 +176,13 @@ import AppKit
             let r = rect(ofRow: row)
             NSRect(x: clipRect.minX, y: r.maxY - 1, width: clipRect.width, height: 1).intersection(clipRect).fill()
         }
+        // Column lines run from the top to the bottom of the last row, not down the empty area.
+        let lastRowMaxY = numberOfRows > 0 ? rect(ofRow: numberOfRows - 1).maxY : 0
+        guard let bottom = SAClaudeGridChrome.columnLineExtent(rowCount: numberOfRows, lastRowMaxY: lastRowMaxY) else { return }
         for column in 0..<numberOfColumns {
             let r = rect(ofColumn: column)
             guard SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: r.maxX, boundsMaxX: bounds.maxX) else { continue }
-            NSRect(x: r.maxX - 1, y: clipRect.minY, width: 1, height: clipRect.height).intersection(clipRect).fill()
+            NSRect(x: r.maxX - 1, y: bounds.minY, width: 1, height: bottom - bounds.minY).intersection(clipRect).fill()
         }
     }
 
@@ -272,7 +275,7 @@ import AppKit
             let rect = headerRect(ofColumn: column)
             guard rect.intersects(area) else { continue }
             drawColumn(table.tableColumns[column], in: rect, table: table)
-            if SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: rect.maxX, boundsMaxX: table.bounds.maxX) {
+            if table.numberOfRows > 0, SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: rect.maxX, boundsMaxX: table.bounds.maxX) {
                 palette.rowLine.setFill()
                 NSRect(x: rect.maxX - 1, y: rect.minY, width: 1, height: rect.height).intersection(area).fill()
             }

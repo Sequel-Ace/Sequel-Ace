@@ -44,6 +44,12 @@ final class SAClaudeGridChromeTests: XCTestCase {
         XCTAssertFalse(SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: 301, boundsMaxX: 300))
     }
 
+    func testColumnLinesEndAtTheLastRow() {
+        XCTAssertNil(SAClaudeGridChrome.columnLineExtent(rowCount: 0, lastRowMaxY: 0))
+        XCTAssertNil(SAClaudeGridChrome.columnLineExtent(rowCount: 0, lastRowMaxY: 120))
+        XCTAssertEqual(SAClaudeGridChrome.columnLineExtent(rowCount: 3, lastRowMaxY: 90), 90)
+    }
+
     func testScrollerAppearanceFollowsBackgroundLuminance() {
         XCTAssertTrue(SAClaudeGridChrome.isDark(srgb(0x151515)))
         XCTAssertTrue(SAClaudeGridChrome.isDark(srgb(0x2E3440)))

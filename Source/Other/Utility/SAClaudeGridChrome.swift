@@ -52,6 +52,11 @@ import AppKit
         columnMaxX < boundsMaxX - 1
     }
 
+    /// Where column lines end: the bottom of the last row, or nil (no lines) when there are no rows.
+    static func columnLineExtent(rowCount: Int, lastRowMaxY: CGFloat) -> CGFloat? {
+        rowCount > 0 ? lastRowMaxY : nil
+    }
+
     /// Relative luminance below 0.5 counts as a dark background.
     static func isDark(_ background: NSColor) -> Bool {
         guard let c = background.usingColorSpace(.sRGB) else { return false }
