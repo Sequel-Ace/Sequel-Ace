@@ -11,7 +11,7 @@ import AppKit
 
 /// The icons the left navigation draws.
 @objc enum SAClaudeGlyph: Int {
-    case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history, copy, save, clear
+    case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history, copy, save, clear, field, keyword
 }
 
 @objc final class SAClaudeGlyphs: NSObject {
@@ -24,7 +24,7 @@ import AppKit
         case .view: return SAClaudeStyle.tintView
         case .procedure: return SAClaudeStyle.tintProcedure
         case .function: return SAClaudeStyle.tintFunction
-        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear: return SAClaudeStyle.textMuted
+        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear, .field, .keyword: return SAClaudeStyle.textMuted
         }
     }
 
@@ -46,6 +46,8 @@ import AppKit
         case .copy: return NSLocalizedString("Copy all", comment: "accessibility name of the Run All console's Copy all button")
         case .save: return NSLocalizedString("Save output", comment: "accessibility name of the Run All console's Save button")
         case .clear: return NSLocalizedString("Clear output", comment: "accessibility name of the Run All console's Clear button")
+        case .field: return NSLocalizedString("Column", comment: "accessibility name of the column icon in the autocomplete list")
+        case .keyword: return NSLocalizedString("Keyword", comment: "accessibility name of the keyword icon in the autocomplete list")
         }
     }
 
@@ -212,6 +214,10 @@ import AppKit
         case .clear:
             return [line(p(3, 4.5), p(13, 4.5)), line(p(6.5, 4.5), p(6.5, 2.5)), line(p(6.5, 2.5), p(9.5, 2.5)), line(p(9.5, 2.5), p(9.5, 4.5)),
                     NSBezierPath(roundedRect: NSRect(x: 4.5, y: 4.5, width: 7, height: 9), xRadius: 1.5, yRadius: 1.5)]
+        case .field:
+            return [line(p(3, 4.5), p(13, 4.5)), line(p(3, 8), p(13, 8)), line(p(3, 11.5), p(9, 11.5))]
+        case .keyword:
+            return [line(p(4.5, 3.5), p(4.5, 12.5)), line(p(4.5, 8.5), p(10.5, 3.5)), line(p(6.5, 7), p(11, 12.5))]
         }
     }
 }

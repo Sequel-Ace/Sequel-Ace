@@ -9,7 +9,7 @@ import XCTest
 final class SAClaudeGlyphsTests: XCTestCase {
 
     private let allGlyphs: [SAClaudeGlyph] = [.database, .table, .view, .procedure, .function, .add, .actions, .refresh, .infoPanel,
-                                                .copy, .save, .clear]
+                                                .copy, .save, .clear, .field, .keyword]
 
     /// Draws an image at 2x into a bitmap under an appearance.
     private func render(_ image: NSImage, _ name: NSAppearance.Name) -> NSBitmapImageRep {
@@ -110,5 +110,8 @@ final class SAClaudeGlyphsTests: XCTestCase {
             XCTAssertFalse(image.accessibilityDescription?.isEmpty ?? true)
         }
         XCTAssertEqual(SAClaudeGlyph.infoPanel.rawValue, 8, "existing raw values unchanged")
+        XCTAssertEqual(SAClaudeGlyph.clear.rawValue, 14, "existing raw values unchanged")
+        XCTAssertEqual(SAClaudeGlyph.field.rawValue, 15)
+        XCTAssertEqual(SAClaudeGlyph.keyword.rawValue, 16)
     }
 }

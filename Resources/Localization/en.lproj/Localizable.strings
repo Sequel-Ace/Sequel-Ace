@@ -4638,5 +4638,8 @@
 /* accessibility name of the Run All console's Clear button */
 "Clear output" = "Clear output";
 
+/* accessibility name of the column icon in the autocomplete list */
+"Column" = "Column";
+
 /* Query Console: accessibility name of the options menu button in the toolbar */
 "Console options" = "Console options";
