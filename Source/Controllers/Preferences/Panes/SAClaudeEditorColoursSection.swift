@@ -205,6 +205,9 @@ struct SAClaudeEditorColoursSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Its own row, like "Start from:": beside the segmented control it would not fit the ~233pt column.
+            Text(NSLocalizedString("Colours:", comment: "Preferences > Query Editor: label before the Follow macOS / Customise choice"))
+                .accessibilityHidden(true)
             Picker(NSLocalizedString("Colours", comment: "Preferences > Query Editor: accessibility label of the Follow macOS / Customise choice"),
                    selection: $settings.modeSetting) {
                 Text(NSLocalizedString("Follow macOS", comment: "Preferences > Query Editor: colours follow the macOS light/dark appearance with the Claude themes")).tag(true)

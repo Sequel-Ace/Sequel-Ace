@@ -4563,6 +4563,9 @@
 /* Preferences > Query Editor: accessibility label of the Follow macOS / Customise choice */
 "Colours" = "Colours";
 
+/* Preferences > Query Editor: label before the Follow macOS / Customise choice */
+"Colours:" = "Colours:";
+
 /* Preferences > Query Editor: colours follow the macOS light/dark appearance with the Claude themes */
 "Follow macOS" = "Follow macOS";
 
