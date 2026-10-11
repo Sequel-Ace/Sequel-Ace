@@ -273,7 +273,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     // The editor theme follows the app's light/dark appearance when the user wants it to.
     NSString *themesDirectory = [[NSFileManager defaultManager] applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
-    if (themesDirectory) [[SAEditorAppearanceThemeSwitcher shared] startWithThemesDirectory:themesDirectory];
+    if (themesDirectory) {
+        // Installed copies of the bundled Claude themes are refreshed when the bundled ones change.
+        NSString *bundledThemesPath = [NSString stringWithFormat:@"%@/Default Themes", NSBundle.mainBundle.sharedSupportPath];
+        [SAClaudeThemeRefresher refreshInstalledThemesFromDirectory:bundledThemesPath toDirectory:themesDirectory defaults:[NSUserDefaults standardUserDefaults]];
+        [[SAEditorAppearanceThemeSwitcher shared] startWithThemesDirectory:themesDirectory];
+    }
 
     // Start the embedded MCP server if enabled in preferences.
     [self setupMCPServer];

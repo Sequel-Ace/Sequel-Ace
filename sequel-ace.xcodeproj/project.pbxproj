@@ -27,6 +27,7 @@
 		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		0BDF116B0C30BBE6B995BC8E /* SAEditorThemeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */; };
 		C21F0EB05F99F92919394303 /* SAClaudeEditorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */; };
+		6F51F1F0A937B4545B88899B /* SAClaudeThemeRefresher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */; };
 		94B370555E2958800EB6D4DD /* SAEditorAppearanceThemeSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */; };
 		3F3428286D5C41D1A476E954 /* SAEditorAppearanceThemeSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */; };
 		2BBA7C2C0453EDB033412104 /* SAEditorAppearanceThemeSwitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5CB8D201D85D9F4D023A969 /* SAEditorAppearanceThemeSwitcherTests.swift */; };
@@ -623,6 +624,7 @@
 		AEE918E2C7D542479969EFD1 /* SAAnalyticsConsentPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 702CD501171F1F6B4BDC3DDF /* SAAnalyticsConsentPolicyTests.swift */; };
 		AEECDC8D451950C7B7ADB1B1 /* SAEditorThemeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */; };
 		F967660D2D2DD58416CC7C45 /* SAClaudeEditorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */; };
+		B59E0D4F5B269DA4F8F33402 /* SAClaudeThemeRefresher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */; };
 		AEF6ABA38A7BC5E5C41F1907 /* SATypeAheadSelectionLoad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */; };
 		B01E10DB2BF1A67138C32D0C /* SAFavoriteDuplicateMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DD691F303C2F6B004792F0 /* SAFavoriteDuplicateMatcher.swift */; };
 		B04369CDAE73936C539212F7 /* SPMCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */; };
@@ -775,6 +777,7 @@
 		F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */; };
 		F44DD559DE48E5267C643D0D /* SAEditorThemeLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */; };
 		DDFA1491D09305AFD45E379E /* SAClaudeEditorDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAA2F2BC3B350B443632323 /* SAClaudeEditorDefaultsTests.swift */; };
+		4652DF7A79FDAA9F1D8CDCF9 /* SAClaudeThemeRefresherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E666CB5AC954ABFE2EA1364 /* SAClaudeThemeRefresherTests.swift */; };
 		14CC6C484E822E9D9B881AB0 /* SARegistrationDomainSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0079AC1FEC6C66DBA17BF /* SARegistrationDomainSnapshotTests.swift */; };
 		F4C0BDAE2E9F4D5E8A1B0101 /* AWSCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */; };
 		F4C0BDAE2E9F4D5E8A1B0102 /* RDSIAMAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B002 /* RDSIAMAuthentication.swift */; };
@@ -1545,6 +1548,7 @@
 		81815809CB9EBE53E9D2AA2A /* SADatabaseScopedValueCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCacheTests.swift; sourceTree = "<group>"; };
 		81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorThemeLoader.swift; sourceTree = "<group>"; };
 		74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorDefaults.swift; sourceTree = "<group>"; };
+		09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeThemeRefresher.swift; sourceTree = "<group>"; };
 		66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorAppearanceThemeSwitcher.swift; sourceTree = "<group>"; };
 		A19A2000000000000000E007 /* SQLiteManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SQLiteManagerTests.swift; sourceTree = "<group>"; };
 		8427339B03172104D2C98666 /* SAKeychainTestSupport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainTestSupport.swift; sourceTree = "<group>"; };
@@ -1618,6 +1622,7 @@
 		B138F78DC06D7838CF975508 /* SAScriptConsoleModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleModelTests.swift; sourceTree = "<group>"; };
 		B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorThemeLoaderTests.swift; sourceTree = "<group>"; };
 		6DAA2F2BC3B350B443632323 /* SAClaudeEditorDefaultsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorDefaultsTests.swift; sourceTree = "<group>"; };
+		3E666CB5AC954ABFE2EA1364 /* SAClaudeThemeRefresherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeThemeRefresherTests.swift; sourceTree = "<group>"; };
 		B6E0079AC1FEC6C66DBA17BF /* SARegistrationDomainSnapshotTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SARegistrationDomainSnapshotTests.swift; sourceTree = "<group>"; };
 		D5CB8D201D85D9F4D023A969 /* SAEditorAppearanceThemeSwitcherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorAppearanceThemeSwitcherTests.swift; sourceTree = "<group>"; };
 		B51D6B9D114C310C0074704E /* toolbar-switch-to-table-triggers.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-triggers.png"; sourceTree = "<group>"; };
@@ -2985,6 +2990,7 @@
 				A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */,
 				81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */,
 				74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */,
+				09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */,
 				66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */,
 			);
 			path = Utility;
@@ -3086,6 +3092,7 @@
 				B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */,
 				D5CB8D201D85D9F4D023A969 /* SAEditorAppearanceThemeSwitcherTests.swift */,
 				6DAA2F2BC3B350B443632323 /* SAClaudeEditorDefaultsTests.swift */,
+				3E666CB5AC954ABFE2EA1364 /* SAClaudeThemeRefresherTests.swift */,
 				B6E0079AC1FEC6C66DBA17BF /* SARegistrationDomainSnapshotTests.swift */,
 			);
 			name = Other;
@@ -3966,10 +3973,12 @@
 				718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */,
 				AEECDC8D451950C7B7ADB1B1 /* SAEditorThemeLoader.swift in Sources */,
 				F967660D2D2DD58416CC7C45 /* SAClaudeEditorDefaults.swift in Sources */,
+				B59E0D4F5B269DA4F8F33402 /* SAClaudeThemeRefresher.swift in Sources */,
 				3F3428286D5C41D1A476E954 /* SAEditorAppearanceThemeSwitcher.swift in Sources */,
 				F44DD559DE48E5267C643D0D /* SAEditorThemeLoaderTests.swift in Sources */,
 				2BBA7C2C0453EDB033412104 /* SAEditorAppearanceThemeSwitcherTests.swift in Sources */,
 				DDFA1491D09305AFD45E379E /* SAClaudeEditorDefaultsTests.swift in Sources */,
+				4652DF7A79FDAA9F1D8CDCF9 /* SAClaudeThemeRefresherTests.swift in Sources */,
 				14CC6C484E822E9D9B881AB0 /* SARegistrationDomainSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -4353,6 +4362,7 @@
 				A5C1E0D21A2B3C4D5E6F7083 /* SAClaudeEditorChrome.swift in Sources */,
 				0BDF116B0C30BBE6B995BC8E /* SAEditorThemeLoader.swift in Sources */,
 				C21F0EB05F99F92919394303 /* SAClaudeEditorDefaults.swift in Sources */,
+				6F51F1F0A937B4545B88899B /* SAClaudeThemeRefresher.swift in Sources */,
 				94B370555E2958800EB6D4DD /* SAEditorAppearanceThemeSwitcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
