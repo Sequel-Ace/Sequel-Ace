@@ -120,6 +120,27 @@ import AppKit
         set { super.rowHeight = max(newValue, SAClaudeGridChrome.minimumRowHeight) }
     }
 
+    private static var lineHeights: [String: CGFloat] = [:]
+
+    /// One line of the cell's text plus SPTextAndLinkCell's 2pt top offset (cached per font).
+    private static func lineHeight(for font: NSFont) -> CGFloat {
+        let key = "\(font.fontName)|\(font.pointSize)"
+        if let height = lineHeights[key] { return height }
+        let height = NSLayoutManager().defaultLineHeight(for: font) + 2
+        lineHeights[key] = height
+        return height
+    }
+
+    /// Cells lay their text out from the top; centre one line in the taller rows. This frame
+    /// feeds drawing, the field editor and link-arrow hit testing alike; selection and hover
+    /// use rect(ofRow:) and keep the full row.
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        let frame = super.frameOfCell(atColumn: column, row: row)
+        guard column >= 0, column < numberOfColumns, let cell = tableColumns[column].dataCell as? NSCell, let cellFont = cell.font else { return frame }
+        let inset = max(0, floor((frame.height - Self.lineHeight(for: cellFont)) / 2))
+        return frame.insetBy(dx: 0, dy: inset)
+    }
+
     override func drawBackground(inClipRect clipRect: NSRect) {
         palette.background.setFill()
         clipRect.intersection(bounds).fill()
@@ -228,7 +249,19 @@ import AppKit
         if let indicator = table.indicatorImage(in: column) {
             let size = indicator.size
             let indicatorRect = NSRect(x: rect.maxX - 8 - size.width, y: rect.midY - size.height / 2, width: size.width, height: size.height)
-            indicator.draw(in: indicatorRect)
+            if indicator.isTemplate {
+                // Template images draw black; tint them like the header label.
+                let palette = self.palette
+                let tinted = NSImage(size: size, flipped: false) { r in
+                    indicator.draw(in: r)
+                    palette.headerLabel.set()
+                    r.fill(using: .sourceAtop)
+                    return true
+                }
+                tinted.draw(in: indicatorRect)
+            } else {
+                indicator.draw(in: indicatorRect)
+            }
             textRect.size.width -= size.width + 4
         }
         let style = NSMutableParagraphStyle()
