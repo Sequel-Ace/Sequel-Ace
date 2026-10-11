@@ -147,9 +147,12 @@ import AppKit
     }
 
     override func highlightSelection(inClipRect clipRect: NSRect) {
-        palette.selection.setFill()
         let visible = rows(in: clipRect)
-        for row in selectedRowIndexes where row >= visible.location && row < NSMaxRange(visible) {
+        guard visible.length > 0 else { return }
+        palette.selection.setFill()
+        // Only the visible slice: after Select All on a huge result, walking every selected row janks.
+        let selected = selectedRowIndexes
+        for row in selected[selected.indexRange(in: visible.location..<NSMaxRange(visible))] {
             rect(ofRow: row).intersection(clipRect).fill()
         }
     }
@@ -197,6 +200,30 @@ import AppKit
         setHoveredRow(-1)
     }
 
+    /// Wheel and trackpad scrolling send no mouseMoved: re-read the row under the pointer.
+    override func scrollWheel(with event: NSEvent) {
+        super.scrollWheel(with: event)
+        updateHoveredRowFromPointer()
+    }
+
+    /// A re-run or reload leaves the old index meaningless.
+    override func reloadData() {
+        hoveredRow = -1
+        super.reloadData()
+    }
+
+    override func noteNumberOfRowsChanged() {
+        setHoveredRow(-1)
+        super.noteNumberOfRowsChanged()
+    }
+
+    private func updateHoveredRowFromPointer() {
+        // Like the tracking area (.activeInKeyWindow): no hover outside the key window.
+        guard let window, window.isKeyWindow else { setHoveredRow(-1); return }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        setHoveredRow(visibleRect.contains(point) ? row(at: point) : -1)
+    }
+
     private func setHoveredRow(_ row: Int) {
         guard row != hoveredRow else { return }
         if hoveredRow >= 0, hoveredRow < numberOfRows { setNeedsDisplay(rect(ofRow: hoveredRow)) }
@@ -213,6 +240,14 @@ import AppKit
         editor.backgroundColor = palette.background
         editor.textColor = palette.text
         editor.insertionPointColor = palette.caret
+    }
+
+    /// The field editor is the window's shared one: give its caret back before other fields use it.
+    /// (Cells set its text and background colours each time they start editing; not the caret.)
+    /// Reset before super, which may start editing the next cell (Tab/Return) and re-tint it.
+    override func textDidEndEditing(_ notification: Notification) {
+        (notification.object as? NSTextView)?.insertionPointColor = .textColor
+        super.textDidEndEditing(notification)
     }
 }
 
