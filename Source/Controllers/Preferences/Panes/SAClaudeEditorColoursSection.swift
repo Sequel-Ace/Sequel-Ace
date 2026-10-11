@@ -306,8 +306,18 @@ struct SAClaudeEditorColoursSection: View {
             $0.menu?.items.contains { $0.action == NSSelectorFromString("saveAsColorScheme:") } == true
         }
         let replaced = views + (gear.map { [$0] } ?? [])
+        // Resolve the pane's constraints first: the nib frames are not where the views end up.
+        paneView.layoutSubtreeIfNeeded()
         // In pane coordinates: the views may sit in nested containers.
-        let frame = replaced.map { paneView.convert($0.bounds, from: $0) }.reduce(NSRect.null) { $0.union($1) }
+        var frame = replaced.map { paneView.convert($0.bounds, from: $0) }.reduce(NSRect.null) { $0.union($1) }
+        // Grow to just before the nearest view on the right (the behaviour checkboxes), so the
+        // section and the checkboxes read as one panel; never shrink, keep the left edge and height.
+        let neighbours = paneView.subviews.filter { view in
+            !replaced.contains { $0 === view } && view.frame.minY < frame.maxY && view.frame.maxY > frame.minY && view.frame.minX >= frame.maxX - 1
+        }
+        if let nearest = neighbours.map({ $0.frame.minX }).min() {
+            frame.size.width = max(frame.width, nearest - 12 - frame.minX)
+        }
         // Detached, not hidden: the legacy pane code unhides its theme label on every pane show.
         // The pane's outlets keep messaging them harmlessly; the host also retains them so the
         // table keeps its enclosing scroll view (the ObjC caller looks it up on every show).
