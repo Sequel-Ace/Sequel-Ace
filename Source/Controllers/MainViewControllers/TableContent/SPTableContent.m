@@ -5111,7 +5111,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if ([tableView editedColumn] != -1
 			&& [tableView editedRow] == rowIndex
 			&& (NSUInteger)[[[[tableView tableColumns] safeObjectAtIndex:[tableView editedColumn]] identifier] integerValue] == columnIndex) {
-			[cell setTextColor:textForegroundColor];
+			[SAClaudeGridCellStyler styleCell:cell role:SAClaudeGridCellRoleText];
 			if (cellIsLinkCell) [cell setLinkActive:NO];
 			return;
 		}
@@ -5133,14 +5133,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		if (cellIsNullOrUnloaded) {
-			[cell setTextColor:(rowIndex == [tableContentView selectedRow] ? textForegroundColor : nullHighlightColor)];
+			[SAClaudeGridCellStyler styleCell:cell role:(rowIndex == [tableContentView selectedRow] ? SAClaudeGridCellRoleText : SAClaudeGridCellRoleNull)];
 		}
 		else {
-			[cell setTextColor:textForegroundColor];
+			[SAClaudeGridCellStyler styleCell:cell role:SAClaudeGridCellRoleText];
 			BOOL hasDisplayOverride = [self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]] ||
 				[[cell formatter] isKindOfClass:[SABaseFormatter class]];
 			if (hasDisplayOverride && rowIndex != [tableContentView selectedRow]) {
-				[cell setTextColor:displayOverrideHighlightColor];
+				[SAClaudeGridCellStyler styleCell:cell role:SAClaudeGridCellRoleDisplayOverride];
 			}
 		}
 

@@ -814,6 +814,7 @@
 		FA4FC2907FC19A9EA23B2465 /* SAKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE09C59624F6AC834DAD7675 /* SAKeychain.swift */; };
 		FA9D8FF0B7ABD591E1A9170E /* SADragPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */; };
 		FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */; };
+		A5C1E1A11A2B3C4D5E6F7102 /* SAClaudeCopyTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */; };
 		FD0E72EC2C391F44007EF348 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
 		A19A2000000000000000E009 /* SASQLiteSharedStoreLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A2000000000000000E008 /* SASQLiteSharedStoreLocation.swift */; };
 		A19A2000000000000000E004 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
@@ -1793,6 +1794,7 @@
 		FA1B2C3D4E5F6A7B8C9D0E0A /* SAVaultRoleFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultRoleFilterTests.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E0B /* SAVaultRoleListController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultRoleListController.swift; sourceTree = "<group>"; };
 		FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SATableHeaderView.swift; sourceTree = "<group>"; };
+		A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeCopyTable.swift; sourceTree = "<group>"; };
 		FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SQLiteDisplayFormatManager.swift; sourceTree = "<group>"; };
 		A19A2000000000000000E008 /* SASQLiteSharedStoreLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASQLiteSharedStoreLocation.swift; sourceTree = "<group>"; };
 		FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SAUuidFormatter.swift; sourceTree = "<group>"; };
@@ -2403,6 +2405,7 @@
 				BC398A2C121D526200BE3EF4 /* SPCopyTable.m */,
 				171C398D16BD634600209EC6 /* SPDatabaseContentViewDelegate.h */,
 				FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */,
+				A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */,
 				61984CED94C89FF3D0CEA884 /* SATablesListView.swift */,
 				9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */,
 			);
@@ -4093,6 +4096,7 @@
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
 				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,
 				FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */,
+				A5C1E1A11A2B3C4D5E6F7102 /* SAClaudeCopyTable.swift in Sources */,
 				DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */,
 				DD00DD00DD00DD00DD000003 /* SPFilterRuleEditor.swift in Sources */,
 				DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */,

@@ -19,6 +19,7 @@ import AppKit
     private weak var historyButton: NSPopUpButton?
     private weak var runButton: NSView?
     private weak var editorSplitView: SPSplitView?
+    private weak var editorScrollView: NSScrollView?
     private let background = SAClaudeEditorBarBackgroundView()
     private let bottomLine = SAClaudeDividerLine(frame: .zero)
     private var observer: NSObjectProtocol?
@@ -61,6 +62,7 @@ import AppKit
         if let editorPane = editorSplitView.subviews.first {
             for case let scrollView as NSScrollView in editorPane.subviews where scrollView.documentView is NSTextView {
                 scrollView.borderType = .noBorder
+                styler.editorScrollView = scrollView
             }
         }
         for button in [optionsButton, favoritesButton, historyButton] {
@@ -107,6 +109,8 @@ import AppKit
         appliedPalette = palette
         if background.fillColour != palette.background { background.fillColour = palette.background }
         bottomLine.colourOverride = palette.hairline
+        // Dark scrollers on a dark editor theme and light ones on a light theme.
+        editorScrollView?.appearance = SAClaudeGridChrome.scrollerAppearance(for: palette.background)
         if let split = editorSplitView {
             split.customDividerColor = palette.hairline
             // A plain needsDisplay didn't repaint the divider after a theme change; invalidate it explicitly.

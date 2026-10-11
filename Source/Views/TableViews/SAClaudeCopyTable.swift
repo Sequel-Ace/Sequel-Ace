@@ -1,0 +1,258 @@
+//
+//  SAClaudeCopyTable.swift
+//  Sequel Ace
+//
+//  The Query and Content tab grids as a quiet sheet: theme background, a faint
+//  line between rows, hover tint, the theme's selection colour, a 30pt header
+//  with the column type as a small tag. Only drawing changes; copying, editing,
+//  sorting and menus are SPCopyTable's. App target only.
+//
+
+import AppKit
+
+@objc enum SAClaudeGridCellRole: Int {
+    case text, null, displayOverride
+}
+
+/// Colours and fonts for grid cells, from the editor theme (cached; refreshed on settings changes).
+@objc(SAClaudeGridCellStyler) final class SAClaudeGridCellStyler: NSObject {
+
+    private static var cachedPalette: SAClaudeGridChrome.Palette?
+    private static var observer: NSObjectProtocol?
+    private static var fonts: [String: NSFont] = [:]
+
+    static var palette: SAClaudeGridChrome.Palette {
+        if observer == nil {
+            observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+                cachedPalette = nil
+            }
+        }
+        if let cachedPalette { return cachedPalette }
+        let palette = SAClaudeGridChrome.palette(from: .standard)
+        cachedPalette = palette
+        return palette
+    }
+
+    /// Drops the cached palette (e.g. when the effective appearance changes the fallback dynamic colours).
+    static func invalidatePalette() {
+        cachedPalette = nil
+    }
+
+    private static func font(_ base: NSFont, null: Bool) -> NSFont {
+        let key = "\(base.fontName)|\(base.pointSize)|\(null)"
+        if let font = fonts[key] { return font }
+        let font = null ? SAClaudeGridChrome.nullFont(base) : SAClaudeGridChrome.valueFont(base)
+        fonts[key] = font
+        return font
+    }
+
+    /// Sets the cell's text colour and font for its role; called from the grids' willDisplayCell.
+    @objc(styleCell:role:)
+    static func style(_ cell: Any, role: SAClaudeGridCellRole) {
+        guard let cell = cell as? NSTextFieldCell else { return }
+        switch role {
+        case .text: cell.textColor = Self.palette.text
+        case .null: cell.textColor = Self.palette.null
+        case .displayOverride: cell.textColor = Self.palette.displayOverride
+        }
+        if let base = cell.font { cell.font = font(base, null: role == .null) }
+        // Cell-based tables mark the selected row's cells highlighted, which draws a system
+        // selection box and white text; the table draws the theme selection itself.
+        cell.isHighlighted = false
+    }
+}
+
+@objc(SAClaudeCopyTable) final class SAClaudeCopyTable: SPCopyTable {
+
+    private var palette = SAClaudeGridChrome.palette(from: .standard)
+    private var observer: NSObjectProtocol?
+    private var hoveredRow = -1
+    private var hoverArea: NSTrackingArea?
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        usesAlternatingRowBackgroundColors = false
+        gridStyleMask.insert(.solidHorizontalGridLineMask)
+        if var frame = headerView?.frame { frame.size.height = SAClaudeGridChrome.headerHeight; headerView?.frame = frame }
+        cornerView = SAClaudeGridCornerView(frame: NSRect(x: 0, y: 0, width: 16, height: SAClaudeGridChrome.headerHeight))
+        applyPalette(force: true)
+        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.applyPalette(force: false)
+        }
+    }
+
+    deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        SAClaudeGridCellStyler.invalidatePalette()
+        applyPalette(force: true)
+    }
+
+    private func applyPalette(force: Bool) {
+        let newPalette = SAClaudeGridChrome.palette(from: .standard)
+        guard force || newPalette != palette else { return }
+        palette = newPalette
+        backgroundColor = palette.background
+        enclosingScrollView?.backgroundColor = palette.background
+        enclosingScrollView?.drawsBackground = true
+        // Only when it changes: a new appearance re-enters viewDidChangeEffectiveAppearance.
+        let scrollerAppearance = SAClaudeGridChrome.scrollerAppearance(for: palette.background)
+        if enclosingScrollView?.appearance?.name != scrollerAppearance?.name {
+            enclosingScrollView?.appearance = scrollerAppearance
+        }
+        (headerView as? SAClaudeTableHeaderView)?.palette = palette
+        (cornerView as? SAClaudeGridCornerView)?.palette = palette
+        needsDisplay = true
+        headerView?.needsDisplay = true
+    }
+
+    /// NSTableView only calls drawGrid(inClipRect:) when the mask is non-empty; the row lines
+    /// are always drawn, so the horizontal bit is always on. The vertical bit (the
+    /// "vertical gridlines" preference) passes through.
+    override var gridStyleMask: NSTableView.GridLineStyle {
+        get { super.gridStyleMask }
+        set { super.gridStyleMask = newValue.union(.solidHorizontalGridLineMask) }
+    }
+
+    override var rowHeight: CGFloat {
+        get { super.rowHeight }
+        set { super.rowHeight = max(newValue, SAClaudeGridChrome.minimumRowHeight) }
+    }
+
+    override func drawBackground(inClipRect clipRect: NSRect) {
+        palette.background.setFill()
+        clipRect.intersection(bounds).fill()
+    }
+
+    override func highlightSelection(inClipRect clipRect: NSRect) {
+        palette.selection.setFill()
+        let visible = rows(in: clipRect)
+        for row in selectedRowIndexes where row >= visible.location && row < NSMaxRange(visible) {
+            rect(ofRow: row).intersection(clipRect).fill()
+        }
+    }
+
+    override func drawGrid(inClipRect clipRect: NSRect) {
+        palette.rowLine.setFill()
+        let visible = rows(in: clipRect)
+        for row in visible.location..<NSMaxRange(visible) {
+            let r = rect(ofRow: row)
+            NSRect(x: clipRect.minX, y: r.maxY - 1, width: clipRect.width, height: 1).intersection(clipRect).fill()
+        }
+        if gridStyleMask.contains(.solidVerticalGridLineMask) {
+            for column in 0..<numberOfColumns {
+                let r = rect(ofColumn: column)
+                NSRect(x: r.maxX - 1, y: clipRect.minY, width: 1, height: clipRect.height).intersection(clipRect).fill()
+            }
+        }
+    }
+
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        if row == hoveredRow, !isRowSelected(row) {
+            palette.hover.setFill()
+            rect(ofRow: row).intersection(clipRect).fill()
+        }
+        super.drawRow(row, clipRect: clipRect)
+    }
+
+    // MARK: Hover
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        setHoveredRow(row(at: convert(event.locationInWindow, from: nil)))
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        setHoveredRow(-1)
+    }
+
+    private func setHoveredRow(_ row: Int) {
+        guard row != hoveredRow else { return }
+        if hoveredRow >= 0, hoveredRow < numberOfRows { setNeedsDisplay(rect(ofRow: hoveredRow)) }
+        hoveredRow = row
+        if row >= 0 { setNeedsDisplay(rect(ofRow: row)) }
+    }
+
+    // MARK: Inline editing (Content tab)
+
+    override func editColumn(_ column: Int, row: Int, with event: NSEvent?, select: Bool) {
+        super.editColumn(column, row: row, with: event, select: select)
+        guard let editor = currentEditor() as? NSTextView else { return }
+        editor.drawsBackground = true
+        editor.backgroundColor = palette.background
+        editor.textColor = palette.text
+        editor.insertionPointColor = palette.caret
+    }
+}
+
+/// The header: theme background, name in the muted label colour, the type as a small tag,
+/// the sort indicator, and a 1pt line underneath. Keeps SATableHeaderView's column menus.
+@objc(SAClaudeTableHeaderView) final class SAClaudeTableHeaderView: SATableHeaderView {
+
+    var palette = SAClaudeGridChrome.palette(from: .standard) { didSet { needsDisplay = true } }
+
+    private static let nameFont = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+    private static let tagFont = NSFont.systemFont(ofSize: 9.5, weight: .medium)
+
+    override func draw(_ dirtyRect: NSRect) {
+        let area = bounds.intersection(dirtyRect)
+        palette.background.setFill()
+        area.fill()
+        guard let table = tableView else { return }
+        for column in 0..<table.numberOfColumns {
+            let rect = headerRect(ofColumn: column)
+            guard rect.intersects(area) else { continue }
+            drawColumn(table.tableColumns[column], in: rect, table: table)
+            if table.gridStyleMask.contains(.solidVerticalGridLineMask) {
+                palette.rowLine.setFill()
+                NSRect(x: rect.maxX - 1, y: rect.minY, width: 1, height: rect.height).intersection(area).fill()
+            }
+        }
+        palette.headerLine.setFill()
+        NSRect(x: area.minX, y: bounds.maxY - 1, width: area.width, height: 1).intersection(area).fill()
+    }
+
+    private func drawColumn(_ column: NSTableColumn, in rect: NSRect, table: NSTableView) {
+        let parts = SAClaudeGridChrome.headerParts(column.headerCell.attributedStringValue)
+        var textRect = rect.insetBy(dx: 8, dy: 0)
+        if let indicator = table.indicatorImage(in: column) {
+            let size = indicator.size
+            let indicatorRect = NSRect(x: rect.maxX - 8 - size.width, y: rect.midY - size.height / 2, width: size.width, height: size.height)
+            indicator.draw(in: indicatorRect)
+            textRect.size.width -= size.width + 4
+        }
+        let style = NSMutableParagraphStyle()
+        style.lineBreakMode = .byTruncatingTail
+        let name = NSMutableAttributedString(string: parts.name, attributes: [.font: Self.nameFont, .foregroundColor: palette.headerLabel, .paragraphStyle: style])
+        if let type = parts.type {
+            name.append(NSAttributedString(string: "  ", attributes: [.font: Self.tagFont]))
+            name.append(NSAttributedString(string: type.uppercased(), attributes: [.font: Self.tagFont, .foregroundColor: palette.typeTag, .kern: 0.4, .paragraphStyle: style]))
+        }
+        let height = name.size().height
+        name.draw(with: NSRect(x: textRect.minX, y: rect.midY - height / 2, width: textRect.width, height: height),
+                  options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+    }
+}
+
+/// Fills the corner above the vertical scroller like the header.
+final class SAClaudeGridCornerView: NSView {
+    var palette = SAClaudeGridChrome.palette(from: .standard) { didSet { needsDisplay = true } }
+    override var isFlipped: Bool { true }
+    override func draw(_ dirtyRect: NSRect) {
+        let area = bounds.intersection(dirtyRect)
+        palette.background.setFill()
+        area.fill()
+        palette.headerLine.setFill()
+        NSRect(x: area.minX, y: bounds.maxY - 1, width: area.width, height: 1).intersection(area).fill()
+    }
+}

@@ -2440,7 +2440,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             showCellAsGray = [resultData cellIsNullOrUnloadedAtRow:rowIndex column:columnIndex];
         }
         
-        [cell setTextColor:showCellAsGray ? [NSColor lightGrayColor] : [NSColor controlTextColor]];
+        [SAClaudeGridCellStyler styleCell:cell role:showCellAsGray ? SAClaudeGridCellRoleNull : SAClaudeGridCellRoleText];
     }
 }
 
