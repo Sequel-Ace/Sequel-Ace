@@ -3170,6 +3170,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		if([[self delegate] isKindOfClass:[SPCustomQuery class]]) {
 
+			// Layout-manager rects are in text-container coordinates; shift them by the container inset.
+			[NSGraphicsContext saveGraphicsState];
+			NSAffineTransform *containerOffset = [NSAffineTransform transform];
+			[containerOffset translateXBy:[self textContainerOrigin].x yBy:[self textContainerOrigin].y];
+			[containerOffset concat];
+
 			// Highlights the current query if set in the Pref and no snippet session
 			// and if nothing is selected in the text view
 			if ([self shouldHiliteQuery] && snippetControlCounter<=-1 && ![self selectedRange].length && [[self string] length] < SP_MAX_TEXT_SIZE_FOR_SYNTAX_HIGHLIGHTING) {
@@ -3207,6 +3213,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 				}
 			}
 
+			[NSGraphicsContext restoreGraphicsState];
 		}
 	}
 }
@@ -3448,7 +3455,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 																 inTextContainer:[self textContainer]
 																	   rectCount:&rectCount];
 		for (i = 0; i < rectCount; i++) {
-			[self setNeedsDisplayInRect:rectsToUpdate[i]];
+			[self setNeedsDisplayInRect:NSOffsetRect(rectsToUpdate[i], [self textContainerOrigin].x, [self textContainerOrigin].y)];
 		}
 	}
 
@@ -3870,6 +3877,7 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse)
 
 	// Convert to a bounding rectangle in the window base coordinate system
 	NSRect boundingRect = [[self layoutManager] boundingRectForGlyphRange:glyphRange inTextContainer:[self textContainer]];
+	boundingRect = NSOffsetRect(boundingRect, [self textContainerOrigin].x, [self textContainerOrigin].y);
 	boundingRect = [self convertRect:boundingRect toView:nil];
 
 	// Convert the window position to a screen position
