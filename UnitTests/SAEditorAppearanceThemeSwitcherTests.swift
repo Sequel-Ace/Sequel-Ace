@@ -12,8 +12,10 @@ final class SAEditorAppearanceThemeSwitcherTests: XCTestCase {
     private var defaults: UserDefaults!
     private var dir: URL!
     private var switcher: SAEditorAppearanceThemeSwitcher!
+    private var registered: SARegistrationDomainSnapshot!
 
     override func setUpWithError() throws {
+        registered = SARegistrationDomainSnapshot()
         UserDefaults().removePersistentDomain(forName: suite)
         defaults = UserDefaults(suiteName: suite)
         SAEditorAppearanceThemeSwitcher.register(in: defaults)
@@ -28,6 +30,7 @@ final class SAEditorAppearanceThemeSwitcherTests: XCTestCase {
     override func tearDownWithError() throws {
         try? FileManager.default.removeItem(at: dir)
         UserDefaults().removePersistentDomain(forName: suite)
+        registered.restore()
     }
 
     private func writeTheme(_ name: String, background: String) throws {

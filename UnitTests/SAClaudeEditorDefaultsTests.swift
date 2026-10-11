@@ -10,13 +10,18 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
 
     private let suite = "SAClaudeEditorDefaultsTests"
     private var defaults: UserDefaults!
+    private var registered: SARegistrationDomainSnapshot!
 
     override func setUp() {
+        registered = SARegistrationDomainSnapshot()
         UserDefaults().removePersistentDomain(forName: suite)
         defaults = UserDefaults(suiteName: suite)
     }
 
-    override func tearDown() { UserDefaults().removePersistentDomain(forName: suite) }
+    override func tearDown() {
+        UserDefaults().removePersistentDomain(forName: suite)
+        registered.restore()
+    }
 
     /// Verifies Layer 2's defaults override Layer 1's neutral ones.
     func testClaudeDefaultsOverrideTheNeutralOnes() {

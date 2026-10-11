@@ -10,15 +10,18 @@ final class SAEditorThemeLoaderTests: XCTestCase {
 
     private var defaults: UserDefaults!
     private let suite = "SAEditorThemeLoaderTests"
+    private var registered: SARegistrationDomainSnapshot!
 
     override func setUp() {
         super.setUp()
+        registered = SARegistrationDomainSnapshot()
         UserDefaults().removePersistentDomain(forName: suite)
         defaults = UserDefaults(suiteName: suite)
     }
 
     override func tearDown() {
         UserDefaults().removePersistentDomain(forName: suite)
+        registered.restore()
         super.tearDown()
     }
 
