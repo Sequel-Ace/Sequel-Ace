@@ -27,6 +27,7 @@ import AppKit
         migrateFont(in: .standard, userFontData: userDomain?[fontKey] as? Data)
         upgradeThemeMatching(in: .standard, userDomain: userDomain)
         resetConsoleOverride(in: .standard)
+        resetFollowPair(in: .standard)
     }
 
     /// Keep in sync with SAScriptConsoleAppearance.useCustomKey. The Claude look has no
@@ -35,6 +36,13 @@ import AppKit
 
     static func resetConsoleOverride(in defaults: UserDefaults) {
         defaults.removeObject(forKey: consoleOverrideKey)
+    }
+
+    /// The Claude look has no light/dark theme pickers: Follow macOS always uses the
+    /// registered Claude Light / Claude Dark, so clear any stored (or renamed) pair.
+    static func resetFollowPair(in defaults: UserDefaults) {
+        defaults.removeObject(forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey)
+        defaults.removeObject(forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey)
     }
 
     static func register(in defaults: UserDefaults) {

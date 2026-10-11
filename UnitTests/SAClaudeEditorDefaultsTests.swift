@@ -145,4 +145,16 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
         XCTAssertNil(defaults.persistentDomain(forName: suite)?[SAClaudeEditorDefaults.consoleOverrideKey])
         XCTAssertFalse(defaults.bool(forKey: SAClaudeEditorDefaults.consoleOverrideKey))
     }
+
+    /// Verifies Follow macOS always reads the bundled pair: stored light/dark theme names are cleared.
+    func testFollowPairIsResetToTheClaudeThemes() {
+        SAClaudeEditorDefaults.register(in: defaults)
+        defaults.set("Nord", forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey)
+        defaults.set("Dracula", forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey)
+        SAClaudeEditorDefaults.resetFollowPair(in: defaults)
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?[SAEditorAppearanceThemeSwitcher.lightThemeKey])
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?[SAEditorAppearanceThemeSwitcher.darkThemeKey])
+        XCTAssertEqual(defaults.string(forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey), "Claude Light")
+        XCTAssertEqual(defaults.string(forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey), "Claude Dark")
+    }
 }
