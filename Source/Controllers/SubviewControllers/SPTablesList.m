@@ -378,6 +378,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (IBAction)addTable:(id)sender
 {
+	if (![mySQLConnection checkConnectionIfNecessary] || ![mySQLConnection checkConnection]) return;
 	if ((![tableSourceInstance saveRowOnDeselect]) || (![tableContentInstance saveRowOnDeselect]) || (![tableDocumentInstance database])) return;
 
 	[[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
