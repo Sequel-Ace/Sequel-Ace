@@ -92,7 +92,7 @@ final class SAEditorThemeAppearanceSettings: ObservableObject {
     func displayName(_ name: String) -> String {
         themeNames.contains(where: { $0.caseInsensitiveCompare(name) == .orderedSame })
             ? name
-            : String(format: NSLocalizedString("%@ (missing)", comment: "Preferences > Query Editor > Appearance: a chosen theme whose file no longer exists"), name)
+            : String(format: NSLocalizedString("%@ (missing)", comment: "Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists"), name)
     }
 }
 
