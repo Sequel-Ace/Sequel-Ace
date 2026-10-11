@@ -291,6 +291,7 @@ struct SAClaudeEditorColoursSection: View {
 
     private static var hostKey: UInt8 = 0
     private static var detachedKey: UInt8 = 0
+    private static var groupKey: UInt8 = 0
 
     @objc(installInPaneView:replacingViews:themesDirectory:confirmDiscardUnsaved:saveAs:importTheme:exportTheme:editThemeList:)
     static func install(in paneView: NSView, replacing views: [NSView], themesDirectory: String,
@@ -306,17 +307,13 @@ struct SAClaudeEditorColoursSection: View {
             $0.menu?.items.contains { $0.action == NSSelectorFromString("saveAsColorScheme:") } == true
         }
         let replaced = views + (gear.map { [$0] } ?? [])
-        // Resolve the pane's constraints first: the nib frames are not where the views end up.
-        paneView.layoutSubtreeIfNeeded()
         // In pane coordinates: the views may sit in nested containers.
-        var frame = replaced.map { paneView.convert($0.bounds, from: $0) }.reduce(NSRect.null) { $0.union($1) }
-        // Grow to just before the nearest view on the right (the behaviour checkboxes), so the
-        // section and the checkboxes read as one panel; never shrink, keep the left edge and height.
-        let neighbours = paneView.subviews.filter { view in
-            !replaced.contains { $0 === view } && view.frame.minY < frame.maxY && view.frame.maxY > frame.minY && view.frame.minX >= frame.maxX - 1
-        }
-        if let nearest = neighbours.map({ $0.frame.minX }).min() {
-            frame.size.width = max(frame.width, nearest - 12 - frame.minX)
+        let frame = replaced.map { paneView.convert($0.bounds, from: $0) }.reduce(NSRect.null) { $0.union($1) }
+        // The behaviour checkboxes: visible direct subviews to the right of the section and no
+        // higher than it (so not the Font row). They are laid out against the pane's trailing edge.
+        let rightColumn = paneView.subviews.filter { view in
+            !replaced.contains { $0 === view } && !view.isHidden
+                && view.frame.minX >= frame.maxX - 1 && view.frame.maxY <= frame.maxY + 1
         }
         // Detached, not hidden: the legacy pane code unhides its theme label on every pane show.
         // The pane's outlets keep messaging them harmlessly; the host also retains them so the
@@ -331,5 +328,85 @@ struct SAClaudeEditorColoursSection: View {
         host.autoresizingMask = [.maxXMargin, .minYMargin]
         paneView.addSubview(host)
         objc_setAssociatedObject(paneView, &hostKey, host, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+        let group = SAClaudeEditorColoursGroupLayout(paneView: paneView, host: host, rightColumn: rightColumn)
+        objc_setAssociatedObject(paneView, &groupKey, group, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        // The window may size the pane after preferencePaneView returns.
+        group.scheduleApply()
+    }
+}
+
+/// Lays the colours section and the behaviour checkboxes out as one block, centred in the pane:
+/// the section keeps its natural width, the checkbox column follows it at a fixed gap. The
+/// checkbox column is pinned to the pane's trailing edge by constraints, so it is moved by
+/// adjusting those constraints (setting frames would be undone by the next layout pass).
+private final class SAClaudeEditorColoursGroupLayout {
+    static let gap: CGFloat = 24
+
+    private weak var paneView: NSView?
+    private weak var host: NSView?
+    private let rightColumn: [NSView]
+    private let hostMinX: CGFloat
+    private var observer: NSObjectProtocol?
+    private var pending = false
+    private var applying = false
+
+    init(paneView: NSView, host: NSView, rightColumn: [NSView]) {
+        self.paneView = paneView
+        self.host = host
+        self.rightColumn = rightColumn
+        hostMinX = host.frame.minX
+        paneView.postsFrameChangedNotifications = true
+        observer = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: paneView, queue: .main) { [weak self] _ in
+            self?.scheduleApply()
+        }
+    }
+
+    deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+
+    /// Coalesced and deferred, so it never runs inside a layout pass.
+    func scheduleApply() {
+        guard !pending else { return }
+        pending = true
+        DispatchQueue.main.async { [weak self] in
+            self?.pending = false
+            self?.apply()
+        }
+    }
+
+    /// The constraints tying the checkbox column to the pane's trailing edge, with the sign of
+    /// their constant (pane.trailing - view.trailing when the pane is the first item).
+    private func trailingAnchors(in pane: NSView) -> [(constraint: NSLayoutConstraint, paneIsFirst: Bool)] {
+        pane.constraints.compactMap { constraint in
+            guard constraint.firstAttribute == .trailing, constraint.secondAttribute == .trailing else { return nil }
+            if constraint.firstItem === pane, let other = constraint.secondItem as? NSView, rightColumn.contains(where: { $0 === other }) {
+                return (constraint, true)
+            }
+            if constraint.secondItem === pane, let other = constraint.firstItem as? NSView, rightColumn.contains(where: { $0 === other }) {
+                return (constraint, false)
+            }
+            return nil
+        }
+    }
+
+    func apply() {
+        guard !applying, let pane = paneView, let host, !rightColumn.isEmpty, pane.bounds.width > 0 else { return }
+        applying = true
+        defer { applying = false }
+        pane.layoutSubtreeIfNeeded()
+        let column = rightColumn.map(\.frame).reduce(NSRect.null) { $0.union($1) }
+        guard !column.isNull else { return }
+
+        let groupWidth = host.frame.width + Self.gap + column.width
+        let groupX = max(hostMinX, ((pane.bounds.width - groupWidth) / 2).rounded())
+        if abs(host.frame.minX - groupX) > 0.5 {
+            host.frame.origin.x = groupX
+        }
+        let shift = groupX + host.frame.width + Self.gap - column.minX
+        guard abs(shift) > 0.5 else { return }
+        for anchor in trailingAnchors(in: pane) {
+            anchor.constraint.constant += anchor.paneIsFirst ? -shift : shift
+        }
+        pane.layoutSubtreeIfNeeded()
     }
 }
