@@ -97,7 +97,7 @@ private final class SAClaudeCompletionTextCell: NSTextFieldCell {
     override func drawingRect(forBounds rect: NSRect) -> NSRect {
         let drawing = super.drawingRect(forBounds: rect)
         guard let font else { return drawing }
-        let lineHeight = ceil(font.ascender - font.descender + font.leading)
+        let lineHeight = SAClaudeCompletionStyler.lineHeight(of: font)
         guard lineHeight < drawing.height else { return drawing }
         return NSRect(x: drawing.minX, y: drawing.minY + floor((drawing.height - lineHeight) / 2),
                       width: drawing.width, height: lineHeight)
@@ -180,6 +180,8 @@ private final class SAClaudeCompletionCardView: NSView {
         }
         if let tableView {
             tableView.backgroundColor = SAClaudeStatusChrome.popupSurface(theme: theme)
+            // Taller rows for a large editor font; the window takes the height on the next filter pass.
+            tableView.rowHeight = SACompletionWindowLayout.rowHeight(forFontLineHeight: SAClaudeCompletionStyler.lineHeight(of: font))
             if let column = tableView.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier("name")) {
                 let cell = (column.dataCell as? SAClaudeCompletionTextCell) ?? SAClaudeCompletionTextCell(textCell: "")
                 cell.isEditable = false
@@ -198,8 +200,28 @@ private final class SAClaudeCompletionCardView: NSView {
 @objc(SAClaudeCompletionStyler)
 final class SAClaudeCompletionStyler: NSObject {
 
-    static let rowHeight: CGFloat = 26
+    static let rowHeight = SACompletionWindowLayout.minimumRowHeight
     static let cornerRadius: CGFloat = 10
+
+    /// The height of one line of text in `font`, as the list's cells lay it out.
+    static func lineHeight(of font: NSFont) -> CGFloat {
+        ceil(font.ascender - font.descender + font.leading)
+    }
+
+    /// How far right of the popup window's left edge the name column's text starts, so the popup
+    /// can line that text up with the typed word (in multi-column and in one-column/dictionary lists).
+    @objc(nameTextOffsetForTableView:)
+    static func nameTextOffset(for tableView: NSTableView) -> CGFloat {
+        let index = tableView.column(withIdentifier: NSUserInterfaceItemIdentifier("name"))
+        guard index >= 0 else { return SACompletionWindowLayout.nameTextOffset(cellDrawingMinX: 0) }
+        // frameOfCell(atColumn:row:) is empty until the first filter pass loads rows, so inset the
+        // column's rect by half the intercell spacing, as the table does for its cells.
+        var cellFrame = tableView.rect(ofColumn: index).insetBy(dx: tableView.intercellSpacing.width / 2, dy: 0)
+        cellFrame.size.height = tableView.rowHeight
+        let cell = tableView.tableColumns[index].dataCell as? NSCell
+        let drawingMinX = cell?.drawingRect(forBounds: cellFrame).minX ?? cellFrame.minX
+        return SACompletionWindowLayout.nameTextOffset(cellDrawingMinX: drawingMinX)
+    }
 
     private static var theme: SAClaudeThemeColours?
     private static var images: [String: NSImage] = [:]

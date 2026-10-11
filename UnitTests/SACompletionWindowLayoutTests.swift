@@ -66,6 +66,25 @@ final class SACompletionWindowLayoutTests: XCTestCase {
         XCTAssertEqual(result, NSSize(width: tableContentSize.width + 10, height: tableContentSize.height + 10))
     }
 
+    func testRowsStay26ptForUsualEditorFonts() {
+        XCTAssertEqual(SACompletionWindowLayout.rowHeight(forFontLineHeight: 14), 26)
+        XCTAssertEqual(SACompletionWindowLayout.rowHeight(forFontLineHeight: 20), 26)
+    }
+
+    func testRowsGrowWithALargeEditorFont() {
+        XCTAssertEqual(SACompletionWindowLayout.rowHeight(forFontLineHeight: 21), 27)
+        XCTAssertEqual(SACompletionWindowLayout.rowHeight(forFontLineHeight: 28), 34)
+        // A fractional line height is rounded up before the 3pt above and below are added.
+        XCTAssertEqual(SACompletionWindowLayout.rowHeight(forFontLineHeight: 27.2), 34)
+    }
+
+    func testNameTextOffsetAddsTheCardPaddingAndTheCellsTextInset() {
+        // Multi-column list: the name cell starts at 20pt icon + 6pt spacing + half the name column's 6pt spacing.
+        XCTAssertEqual(SACompletionWindowLayout.nameTextOffset(cellDrawingMinX: 29), 36)
+        // One-column and dictionary lists: the icon column is 0pt wide.
+        XCTAssertEqual(SACompletionWindowLayout.nameTextOffset(cellDrawingMinX: 9), 16)
+    }
+
     /// The scroll view's frame inside the card padding.
     private func scrollViewSize(_ windowSize: NSSize) -> NSSize {
         let padding = SACompletionWindowLayout.cardPadding

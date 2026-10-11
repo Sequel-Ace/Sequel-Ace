@@ -296,7 +296,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 		// setCaretPos: runs before the first filter pass, so size the window now
 		// to keep the expanded popup inside the current screen.
-		[self setContentSize:NSMakeSize(maxWindowWidth, 0)];
+		[self setContentSize:NSMakeSize((dictMode || oneColumnMode) ? maxWindowWidth + 2 * SACompletionWindowLayout.cardPadding : maxWindowWidth, 0)];
 
 		currentDb = selectedDb;
 
@@ -317,6 +317,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 - (void)setCaretPos:(NSPoint)aPos
 {
+	aPos.x += 26 - [SAClaudeCompletionStyler nameTextOffsetForTableView:theTableView];
 	caretPos = aPos;
 
 	NSRect screen = [self rectOfMainScreen];
