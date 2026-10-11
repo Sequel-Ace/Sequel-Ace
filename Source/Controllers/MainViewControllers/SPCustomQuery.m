@@ -3834,7 +3834,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     }];
     
     // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
-    [textView setTextContainerInset:NSMakeSize(0.0f, 2.0f)];
+    [textView setTextContainerInset:NSMakeSize(0.0f, [SAClaudeEditorChrome editorTopInset])];
 
     // Set the structure and index view's vertical gridlines if required
     [customQueryView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];

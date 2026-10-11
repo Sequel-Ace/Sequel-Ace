@@ -156,7 +156,6 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	[scrollView setHasHorizontalRuler:NO];
 	[scrollView setHasVerticalRuler:YES];
 	[scrollView setRulersVisible:YES];
-	[self setTextContainerInset:NSMakeSize(0, [SAClaudeEditorChrome editorTopInset])];
 	[self setAllowsDocumentBackgroundColorChange:YES];
 	[self setContinuousSpellCheckingEnabled:NO];
 	[self setAutoindent:[prefs boolForKey:SPCustomQueryAutoIndent]];
