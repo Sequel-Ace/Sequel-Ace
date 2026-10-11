@@ -277,10 +277,11 @@ struct SAClaudeEditorColoursSection: View {
 }
 
 /// ObjC entry point: places the section where the pane's colour table, gear and
-/// theme label were, and hides those (built once per pane view).
+/// theme label were, and detaches those (built once per pane view).
 @objc(SAClaudeEditorColoursSectionHost) final class SAClaudeEditorColoursSectionHost: NSObject {
 
     private static var hostKey: UInt8 = 0
+    private static var detachedKey: UInt8 = 0
 
     @objc(installInPaneView:replacingViews:themesDirectory:confirmDiscardUnsaved:saveAs:importTheme:exportTheme:editThemeList:)
     static func install(in paneView: NSView, replacing views: [NSView], themesDirectory: String,
@@ -298,7 +299,11 @@ struct SAClaudeEditorColoursSection: View {
         let replaced = views + (gear.map { [$0] } ?? [])
         // In pane coordinates: the views may sit in nested containers.
         let frame = replaced.map { paneView.convert($0.bounds, from: $0) }.reduce(NSRect.null) { $0.union($1) }
-        replaced.forEach { $0.isHidden = true }
+        // Detached, not hidden: the legacy pane code unhides its theme label on every pane show.
+        // The pane's outlets keep messaging them harmlessly; the host also retains them so the
+        // table keeps its enclosing scroll view (the ObjC caller looks it up on every show).
+        replaced.forEach { $0.removeFromSuperview() }
+        objc_setAssociatedObject(paneView, &detachedKey, replaced, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
         let settings = SAClaudeEditorColoursSettings(themesDirectory: themesDirectory, confirmDiscardUnsaved: confirmDiscardUnsaved,
                                                      saveAs: saveAs, importTheme: importTheme, exportTheme: exportTheme, editThemeList: editThemeList)
