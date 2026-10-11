@@ -38,6 +38,14 @@ final class SAEditorThemeLoaderTests: XCTestCase {
         XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "#fe3")), [255, 238, 51, 255])
         XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "#ffee3380")), [255, 238, 51, 128])
         XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "#151515zz")), [21, 21, 21, 255], "scanning stops at the first non-hex character")
+        // The old NSScanner skipped leading whitespace/newlines, but only after the '#' check on the raw string.
+        XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: " 151515")), [21, 21, 21, 255])
+        XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "# 151515")), [21, 21, 21, 255])
+        XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "#\t151515")), [21, 21, 21, 255])
+        XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "#\n151515")), [21, 21, 21, 255])
+        XCTAssertEqual(components(SAEditorThemeLoader.colour(fromHex: "\n\t fe3")), [255, 238, 51, 255])
+        XCTAssertNil(SAEditorThemeLoader.colour(fromHex: " #151515"), "a space before the '#' was nil in the old parser")
+        XCTAssertNil(SAEditorThemeLoader.colour(fromHex: "##151515"))
         XCTAssertNil(SAEditorThemeLoader.colour(fromHex: ""))
         XCTAssertNil(SAEditorThemeLoader.colour(fromHex: "#1234"))
         XCTAssertNil(SAEditorThemeLoader.colour(fromHex: "zz"))
@@ -117,5 +125,47 @@ final class SAEditorThemeLoaderTests: XCTestCase {
         defaults.set(SAArchiving.archivedData(forColor: .red), forKey: "CustomQueryEditorTextColor")
         SAEditorThemeLoader.loadDefaultColours(into: defaults)
         XCTAssertEqual(stored("CustomQueryEditorTextColor"), [128, 64, 0, 255])
+    }
+
+    /// Verifies byte-for-byte colour precision: the old parser divided in 32-bit float.
+    func testComponentsUseFloatPrecisionLikeTheOldParser() {
+        let parsed = SAEditorThemeLoader.colour(fromHex: "#151515")!
+        let expected = CGFloat(Float(0x15) / 255)
+        XCTAssertEqual(parsed.redComponent, expected)
+        XCTAssertEqual(parsed.greenComponent, expected)
+        XCTAssertEqual(parsed.blueComponent, expected)
+        XCTAssertNotEqual(parsed.redComponent, CGFloat(0x15) / 255, "a Double division would differ")
+
+        // Archiving keeps ~11 significant digits, which still separates Float from Double division.
+        let archived = SAArchiving.color(from: SAArchiving.archivedData(forColor: parsed))!
+        let reference = SAArchiving.color(from: SAArchiving.archivedData(forColor: NSColor(calibratedRed: expected, green: expected, blue: expected, alpha: 1)))!
+        let doubleDivision = CGFloat(0x15) / 255
+        let doubleReference = SAArchiving.color(from: SAArchiving.archivedData(forColor: NSColor(calibratedRed: doubleDivision, green: doubleDivision, blue: doubleDivision, alpha: 1)))!
+        XCTAssertEqual(archived.redComponent, reference.redComponent)
+        XCTAssertEqual(archived.blueComponent, reference.blueComponent)
+        XCTAssertNotEqual(archived.redComponent, doubleReference.redComponent)
+
+        let short = SAEditorThemeLoader.colour(fromHex: "#fe3")!
+        XCTAssertEqual(short.greenComponent, CGFloat(Float(0xEE) / 255))
+        let withAlpha = SAEditorThemeLoader.colour(fromHex: "#ffee3380")!
+        XCTAssertEqual(withAlpha.alphaComponent, CGFloat(Float(0x80) / 255))
+        XCTAssertEqual(withAlpha.blueComponent, CGFloat(Float(0x33) / 255))
+    }
+
+    /// Verifies the bundled themes load completely with the exact values in their files.
+    func testBundledThemesLoadWithExactValues() throws {
+        let themes = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("SharedSupport/Default Themes")
+
+        XCTAssertEqual(SAEditorThemeLoader.loadTheme(atPath: themes.appendingPathComponent("Nord.spTheme").path, into: defaults), 11)
+        XCTAssertEqual(stored("CustomQueryEditorBackgroundColor"), [34, 38, 49, 255])   // #222631
+        XCTAssertEqual(stored("CustomQueryEditorTextColor"), [231, 234, 241, 255])      // #E7EAF1
+        XCTAssertEqual(stored("CustomQueryEditorCommentColor"), [59, 67, 87, 255])      // #3B4357
+
+        XCTAssertEqual(SAEditorThemeLoader.loadTheme(atPath: themes.appendingPathComponent("Monokai.spTheme").path, into: defaults), 11)
+        XCTAssertEqual(stored("CustomQueryEditorBackgroundColor"), [39, 40, 34, 255])   // #272822
+        XCTAssertEqual(stored("CustomQueryEditorSQLKeywordColor"), [249, 38, 114, 255]) // #F92672
+        XCTAssertEqual(stored("CustomQueryEditorVariableColor"), [79, 173, 236, 255])  // #4FADEC
     }
 }

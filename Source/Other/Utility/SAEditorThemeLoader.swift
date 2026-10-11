@@ -57,10 +57,13 @@ import AppKit
     static func colour(fromHex string: String) -> NSColor? {
         var body = Substring(string)
         if body.hasPrefix("#") { body = body.dropFirst() }
+        // The old NSScanner skipped leading whitespace/newlines, after the '#' check on the raw string.
+        body = body.drop(while: { $0.isWhitespace || $0.isNewline })
         let hexDigits = "0123456789abcdefABCDEF"
         let code = String(body.prefix { hexDigits.contains($0) })
         guard [3, 6, 8].contains(code.count), let value = UInt32(code, radix: 16) else { return nil }
-        func byte(_ v: UInt32) -> CGFloat { CGFloat(v & 0xFF) / 255 }
+        // The old parser divided in 32-bit float (`/ 255.f`) and widened; keep that so archived data is byte-identical.
+        func byte(_ v: UInt32) -> CGFloat { CGFloat(Float(v & 0xFF) / 255) }
         switch code.count {
         case 8:
             return NSColor(calibratedRed: byte(value >> 24), green: byte(value >> 16), blue: byte(value >> 8), alpha: byte(value))
@@ -68,8 +71,8 @@ import AppKit
             return NSColor(calibratedRed: byte(value >> 16), green: byte(value >> 8), blue: byte(value), alpha: 1)
         default:
             let r = (value >> 8) & 0xF, g = (value >> 4) & 0xF, b = value & 0xF
-            return NSColor(calibratedRed: CGFloat(r << 4 | r) / 255, green: CGFloat(g << 4 | g) / 255,
-                           blue: CGFloat(b << 4 | b) / 255, alpha: 1)
+            return NSColor(calibratedRed: CGFloat(Float(r << 4 | r) / 255), green: CGFloat(Float(g << 4 | g) / 255),
+                           blue: CGFloat(Float(b << 4 | b) / 255), alpha: 1)
         }
     }
 
