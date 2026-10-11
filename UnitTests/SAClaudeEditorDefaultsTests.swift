@@ -51,6 +51,65 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
         XCTAssertEqual(SAArchiving.font(from: defaults.data(forKey: SAClaudeEditorDefaults.fontKey))?.fontName, "Menlo-Regular", "a later deliberate Menlo 14 is kept")
     }
 
+    // MARK: - Theme-matching upgrade guard
+
+    private var matches: String { SAEditorAppearanceThemeSwitcher.matchesAppearanceKey }
+
+    /// Registers the Claude defaults, then runs the upgrade guard against the suite's own persistent domain.
+    private func runUpgrade() {
+        SAClaudeEditorDefaults.register(in: defaults)
+        SAClaudeEditorDefaults.upgradeThemeMatching(in: defaults, userDomain: defaults.persistentDomain(forName: suite))
+    }
+
+    /// Verifies an existing user on the pane's "User-defined" scheme keeps their hand-edited colours.
+    func testUpgradeTurnsMatchingOffForUserDefinedScheme() {
+        defaults.set("User-defined", forKey: SAEditorThemeLoader.themeNameKey)
+        runUpgrade()
+        XCTAssertFalse(defaults.bool(forKey: matches))
+        XCTAssertTrue(defaults.bool(forKey: SAClaudeEditorDefaults.themeUpgradeCheckedKey))
+    }
+
+    /// Verifies a user with no theme name but their own colour keys keeps them.
+    func testUpgradeTurnsMatchingOffForUnnamedCustomColours() {
+        defaults.set(SAArchiving.archivedData(forColor: .red), forKey: SAEditorThemeLoader.keywordColourKey)
+        runUpgrade()
+        XCTAssertFalse(defaults.bool(forKey: matches))
+    }
+
+    /// Verifies a user on a named theme is left to the registered default (matching on).
+    func testUpgradeLeavesNamedThemeAlone() {
+        defaults.set("Nord", forKey: SAEditorThemeLoader.themeNameKey)
+        defaults.set(SAArchiving.archivedData(forColor: .red), forKey: SAEditorThemeLoader.keywordColourKey)
+        runUpgrade()
+        XCTAssertTrue(defaults.bool(forKey: matches))
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?[matches])
+    }
+
+    /// Verifies a fresh user gets the registered default (matching on).
+    func testUpgradeLeavesFreshUserAlone() {
+        runUpgrade()
+        XCTAssertTrue(defaults.bool(forKey: matches))
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?[matches])
+        XCTAssertTrue(defaults.bool(forKey: SAClaudeEditorDefaults.themeUpgradeCheckedKey))
+    }
+
+    /// Verifies an explicit choice already in the user's domain is never overridden.
+    func testUpgradeLeavesExplicitChoiceAlone() {
+        defaults.set("User-defined", forKey: SAEditorThemeLoader.themeNameKey)
+        defaults.set(true, forKey: matches)
+        runUpgrade()
+        XCTAssertTrue(defaults.bool(forKey: matches))
+    }
+
+    /// Verifies the guard runs only once.
+    func testUpgradeRunsOnlyOnce() {
+        runUpgrade()
+        defaults.set("User-defined", forKey: SAEditorThemeLoader.themeNameKey)
+        runUpgrade()
+        XCTAssertTrue(defaults.bool(forKey: matches))
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?[matches])
+    }
+
     /// Verifies the bundled Claude themes parse to their backgrounds.
     func testBundledClaudeThemesParse() throws {
         let themes = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()

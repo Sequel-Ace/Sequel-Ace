@@ -14,16 +14,18 @@ import AppKit
     /// Keep in sync with SPCustomQueryEditorFont in SPConstants.m.
     static let fontKey = "CustomQueryEditorFont"
     static let fontMigratedKey = "SAClaudeEditorFontMigrated"
+    static let themeUpgradeCheckedKey = "SAClaudeEditorThemeUpgradeChecked"
 
     static var claudeFont: NSFont { .monospacedSystemFont(ofSize: 13, weight: .regular) }
 
     /// Registers the Claude defaults over Layer 1's neutral ones, then runs the
-    /// one-time font migration against the user's own (persistent) setting.
+    /// one-time font migration and theme-matching upgrade guard against the
+    /// user's own (persistent) settings.
     @objc static func registerAndMigrate() {
         register(in: .standard)
-        let userFont = Bundle.main.bundleIdentifier
-            .flatMap { UserDefaults.standard.persistentDomain(forName: $0)?[fontKey] as? Data }
-        migrateFont(in: .standard, userFontData: userFont)
+        let userDomain = Bundle.main.bundleIdentifier.flatMap { UserDefaults.standard.persistentDomain(forName: $0) }
+        migrateFont(in: .standard, userFontData: userDomain?[fontKey] as? Data)
+        upgradeThemeMatching(in: .standard, userDomain: userDomain)
     }
 
     static func register(in defaults: UserDefaults) {
@@ -48,5 +50,23 @@ import AppKit
             defaults.set(data, forKey: fontKey)
         }
         defaults.set(true, forKey: fontMigratedKey)
+    }
+
+    /// Theme name the Query Editor pane gives hand-edited colours.
+    /// Keep in sync with SPCustomColorSchemeName in SPEditorPreferencePane.m.
+    static let customSchemeName = "User-defined"
+
+    /// One-time guard for existing users: turning matching on by default would load
+    /// Claude Light/Dark over colours they edited by hand and never saved as a theme.
+    /// Reads the user's own (persistent) domain; always records that it ran.
+    static func upgradeThemeMatching(in defaults: UserDefaults, userDomain: [String: Any]?) {
+        guard !defaults.bool(forKey: themeUpgradeCheckedKey) else { return }
+        defaults.set(true, forKey: themeUpgradeCheckedKey)
+        let domain = userDomain ?? [:]
+        guard domain[SAEditorAppearanceThemeSwitcher.matchesAppearanceKey] == nil else { return }
+        let name = (domain[SAEditorThemeLoader.themeNameKey] as? String) ?? ""
+        let handEdited = name.caseInsensitiveCompare(customSchemeName) == .orderedSame
+            || (name.isEmpty && SAEditorThemeLoader.colourKeys.contains { domain[$0] != nil })
+        if handEdited { defaults.set(false, forKey: SAEditorAppearanceThemeSwitcher.matchesAppearanceKey) }
     }
 }
