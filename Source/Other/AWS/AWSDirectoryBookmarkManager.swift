@@ -38,10 +38,9 @@ import OSLog
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSDirectoryBookmark")
 
-    /// The bookmark creation options for security-scoped access
+    /// The bookmark creation options for security-scoped read-write access
     private let bookmarkCreationOptions: URL.BookmarkCreationOptions = [
-        .withSecurityScope,
-        .securityScopeAllowOnlyReadAccess
+        .withSecurityScope
     ]
     private let stateLock = NSLock()
 
@@ -261,6 +260,33 @@ import OSLog
         return false
     }
 
+    /// Replaces every AWS directory bookmark with a new read-write bookmark for `url`,
+    /// keeping the existing bookmarks when no bookmark can be created for `url`.
+    func replaceAWSDirectoryBookmark(with url: URL) -> Bool {
+        do {
+            _ = try url.bookmarkData(options: bookmarkCreationOptions, includingResourceValuesForKeys: nil, relativeTo: nil)
+        } catch {
+            os_log(.error, log: Self.log, "Cannot create a bookmark for the selected AWS directory: %{public}@", error.localizedDescription)
+            return false
+        }
+
+        stopAllAccessingAWSDirectory()
+        revokeAllAWSDirectoryBookmarks()
+        return addAWSDirectoryBookmark(from: url)
+    }
+
+    /// True when `url` names a folder this manager recognizes as the AWS directory.
+    func isAWSDirectoryURL(_ url: URL) -> Bool {
+        isAWSDirectoryBookmarkKey(url.absoluteString)
+    }
+
+    /// The location of the authorized AWS directory, or nil when no bookmark resolves.
+    var authorizedAWSDirectoryURL: URL? {
+        guard hasAWSDirectoryBookmark(), startAccessingAWSDirectory() else { return nil }
+        defer { stopAccessingAWSDirectory() }
+        return currentResolvedAWSDirectoryURL()
+    }
+
     private func isAWSDirectoryBookmarkKey(_ key: String) -> Bool {
         let decodedKey = key.removingPercentEncoding ?? key
         let path: String
@@ -309,6 +335,11 @@ import OSLog
         defer { stopAccessingAWSDirectory() }
 
         return FileManager.default.fileExists(atPath: resolvePathForCurrentAWSDirectory(path))
+    }
+
+    /// Translates a path under `~/.aws` into the authorized directory; call while access is held.
+    func resolvedAWSPath(for path: String) -> String {
+        resolvePathForCurrentAWSDirectory(path)
     }
 
     private func resolvePathForCurrentAWSDirectory(_ path: String) -> String {

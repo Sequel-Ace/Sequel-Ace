@@ -264,13 +264,50 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     return kcPassword;
 }
 
-- (NSString *)passwordForConnectionRequest
+- (NSString *)passwordForConnectionRequestForConnection:(SPMySQLConnection *)connection
 {
-    if ([self _isAWSIAMConnection]) {
-        return [self generateAWSIAMAuthToken];
+    if (![self _isAWSIAMConnection]) {
+        return [self keychainPassword];
     }
 
-    return [self keychainPassword];
+    NSError *awsError = nil;
+    NSString *token = [self generateAWSIAMAuthTokenWithError:&awsError];
+
+    [self _setLastAWSIAMTokenError:(token ? nil : awsError) forConnection:connection];
+
+    return token;
+}
+
+/**
+ * Records, or clears, the reason a connection could not be given an AWS IAM auth
+ * token. Each connection keeps its own reason: a document's own connection and the
+ * connection cloned for its database structure query ask for tokens independently
+ * and from different threads.
+ */
+- (void)_setLastAWSIAMTokenError:(NSError *)error forConnection:(SPMySQLConnection *)connection
+{
+    if (!connection) return;
+
+    [awsIAMTokenErrorLock lock];
+
+    if (error) {
+        [awsIAMTokenErrorsByConnection setObject:error forKey:connection];
+    } else {
+        [awsIAMTokenErrorsByConnection removeObjectForKey:connection];
+    }
+
+    [awsIAMTokenErrorLock unlock];
+}
+
+- (NSError *)lastAWSIAMTokenErrorForConnection:(SPMySQLConnection *)connection
+{
+    if (!connection) return nil;
+
+    [awsIAMTokenErrorLock lock];
+    NSError *error = [awsIAMTokenErrorsByConnection objectForKey:connection];
+    [awsIAMTokenErrorLock unlock];
+
+    return error;
 }
 
 /**
@@ -310,13 +347,16 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     }
 
     if (![token length]) {
+        NSError *emptyTokenError = [NSError errorWithDomain:@"AWSIAMAuthErrorDomain"
+                                                       code:-1
+                                                   userInfo:@{
+                                                       NSLocalizedDescriptionKey: NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
+                                                   }];
+
         if (errorPointer && !*errorPointer) {
-            *errorPointer = [NSError errorWithDomain:@"AWSIAMAuthErrorDomain"
-                                                code:-1
-                                            userInfo:@{
-                                                NSLocalizedDescriptionKey: NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
-                                            }];
+            *errorPointer = emptyTokenError;
         }
+
         NSLog(@"AWS IAM Authentication token generation failed: empty authentication token returned");
         return nil;
     }
@@ -440,6 +480,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         return;
     }
 
+    if ([self _isAWSIAMConnection]) {
+        [SAAWSDirectoryWriteAccessPrompt requestWriteAccessIfNeededForProfile:[self awsProfile]];
+    }
+
     if ([self _isVaultConnection] && ![[self vaultHost] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
                                      message:NSLocalizedString(@"A Vault host is required to connect.", @"vault host required connect message")
@@ -520,9 +564,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                                                    password:[self password] ?: @""
                                                                                          delegateAvailable:self.connectionService.mySQLDelegate != nil];
 
-    // Resolve explicit passwords and generated credentials before entering the service.
-    NSString *resolvedPassword = deferMySQLPasswordToDelegate ? nil : [self _resolvedMySQLPassword];
-    if (!resolvedPassword && !deferMySQLPasswordToDelegate) return; // AWS IAM error already shown
+    // Keep AWS token resolution in SAConnectionService so it can invalidate an
+    // earlier attempt before the credential phase and fence stale completions.
+    BOOL isAWSIAMConnection = [self _isAWSIAMConnection];
+    NSString *resolvedPassword = (deferMySQLPasswordToDelegate || isAWSIAMConnection) ? nil : [self _resolvedMySQLPassword];
+    if (!resolvedPassword && !deferMySQLPasswordToDelegate && !isAWSIAMConnection) return; // Password error already shown
 
     NSString *resolvedSSHPassword = [self _resolvedSSHPassword];
 
@@ -618,6 +664,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         strongSelf->mySQLConnection = result.connection;
         [strongSelf mySQLConnectionEstablished];
     };
+
+    if (isAWSIAMConnection) {
+        [self.connectionService connectAWSIAMWithController:self info:info preferences:preferences
+                                                     region:[self awsRegion] profile:[self awsProfile]
+                                                  attemptID:connectionAttemptID sshPassword:resolvedSSHPassword
+                                               parentWindow:[dbDocument parentWindowControllerWindow]
+                                                 completion:connectCompletion];
+        return;
+    }
 
     // Vault: fetch ephemeral credentials on a background thread so that a
     // browser-based OIDC flow (up to 120 s) does not block the main thread.
@@ -3737,6 +3792,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID
+{
+    return !cancellingConnection && connectionAttemptID == attemptID;
+}
+
 /**
  * Ends a connection attempt by stopping the connection animation and
  * displaying a specified error message.
@@ -4670,6 +4730,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Weak reference
         dbDocument = document;
+
+        awsIAMTokenErrorsByConnection = [NSMapTable weakToStrongObjectsMapTable];
+        awsIAMTokenErrorLock = [[NSLock alloc] init];
 
         databaseConnectionView = [dbDocument contentViewSplitter];
 

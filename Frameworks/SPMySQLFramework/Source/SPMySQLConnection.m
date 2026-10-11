@@ -109,6 +109,22 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 #pragma mark -
 #pragma mark Getters and Setters
 
+- (BOOL)lastQueryWasCancelled
+{
+	@synchronized (self) {
+		return lastQueryWasCancelled;
+	}
+}
+
+- (void)setLastQueryWasCancelled:(BOOL)cancelled
+{
+	// Some callers issue KILL through another connection and mark cancellation here.
+	@synchronized (self) {
+		if (cancelled) [self.sessionAccess recordQueryCancellation];
+		lastQueryWasCancelled = cancelled;
+	}
+}
+
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
@@ -346,6 +362,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		proxy = nil;
 		proxyStateChangeNotificationsIgnored = NO;
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
+		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -380,6 +397,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		reconnectionRetryAttempts = 0;
 		lastDelegateDecisionForLostConnection = SPMySQLConnectionLostDisconnect;
 		delegateDecisionLock = [[NSLock alloc] init];
+		valueEscaper = [[SAConnectionEscaper alloc] init];
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];
@@ -780,12 +798,33 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (userTriggeredDisconnect) {
 		mysql_close(mySQLConnection);
 		mySQLConnection = NULL;
+		[valueEscaper forgetSession];
+		[self _unlockConnection];
+		return NO;
+	}
+
+	// Reserve the cancellation handle while the native connection is locked.
+	NSError *socketError = nil;
+	if (![self.sessionAccess trackSocket:mySQLConnection->net.fd serverThreadID:mySQLConnection->thread_id error:&socketError]) {
+		[self _updateLastErrorMessage:socketError.localizedDescription];
+		mysql_close(mySQLConnection);
+		mySQLConnection = NULL;
+		state = SPMySQLDisconnected;
 		[self _unlockConnection];
 		return NO;
 	}
 
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
+	// What the new session reports is recorded for the escaper, which escapes from this rather
+	// than from the connection's own handle.
+	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
+	                     noBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0
+	                        openTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+	                            isHandshake:YES
+	                // A handshake carries no tracking item of its own; what the session reports
+	                // becomes known once its first statement has run.
+	                characterSetWasReported:NO];
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -828,6 +867,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// a query, ensure the connection is still up afterwards (!)
 	[self _updateConnectionVariables];
 	if (state != SPMySQLConnected) return NO;
+
+	// What a session starts with is only known once it has run a statement: a server's
+	// init_connect runs after the handshake has been answered, and can turn
+	// NO_BACKSLASH_ESCAPES on for every session without the global mode saying so. The escaping
+	// mode is taken from here, so that a session forgotten at teardown falls back to the mode the
+	// session after it will start under rather than to what the handshake alone showed.
+	[self _lockConnection];
+	if (mySQLConnection) {
+		[valueEscaper recordStartingModeWithNoBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0];
+	}
+	[self _unlockConnection];
 
 	// Now connection is established and verified, reset the counter
 	reconnectionRetryAttempts = 0;
@@ -926,7 +976,26 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (password) {
 		thePassword = [password cStringUsingEncoding:connectEncodingNS];
 	} else if ([delegate respondsToSelector:@selector(keychainPasswordForConnection:)]) {
-        thePassword = [[delegate keychainPasswordForConnection:self] cStringUsingEncoding:connectEncodingNS];
+		NSString *delegatePassword = [delegate keychainPasswordForConnection:self];
+
+		// A non-empty delegate message abandons the attempt without contacting the server.
+		if (!delegatePassword && [delegate respondsToSelector:@selector(credentialErrorMessageForConnection:)]) {
+			NSString *credentialError = [delegate credentialErrorMessageForConnection:self];
+
+			if ([credentialError length]) {
+				if (isMaster) {
+					[self _updateLastErrorMessage:credentialError];
+					[self _updateLastErrorID:CR_UNKNOWN_ERROR];
+					[self _updateLastSqlstate:@"HY000"];
+				}
+
+				mysql_close(theConnection);
+
+				return NULL;
+			}
+		}
+
+		thePassword = [delegatePassword cStringUsingEncoding:connectEncodingNS];
 	}
 
 	// If set to use a socket and a socket was supplied, use it; otherwise, search for a socket to use
@@ -978,25 +1047,30 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (mysql_options(theConnection, MYSQL_OPT_TLS_CIPHERSUITES, (const void *)theTLSCipherSuites)) {
 			SPLog(@"Failed to set default TLS 1.3 cipher suites; continuing with libmysqlclient defaults.");
 		}
-		enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_REQUIRED;
-		if(mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode)) {
-			if(isMaster) {
-				[self _updateLastErrorMessage:@"libmysqlclient is missing support for MYSQL_OPT_SSL_MODE"];
-				[self _updateLastSqlstate:@"HY000"];
-				[self _updateLastErrorID:2026];
-			}
-			return NULL;
-		}
-    } else {
-        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_PREFERRED;
-        mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
     }
+
+	// An attempt that requires TLS is abandoned when the mode cannot be applied, as
+	// libmysqlclient otherwise falls back to SSL_MODE_PREFERRED and its plaintext fallback.
+	BOOL requiresTLS = [SACleartextAuthPolicy requiresTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL];
+	enum mysql_ssl_mode opt_ssl_mode = requiresTLS ? SSL_MODE_REQUIRED : SSL_MODE_PREFERRED;
+
+	if (mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode) && requiresTLS) {
+		if (isMaster) {
+			[self _updateLastErrorMessage:@"libmysqlclient is missing support for MYSQL_OPT_SSL_MODE"];
+			[self _updateLastSqlstate:@"HY000"];
+			[self _updateLastErrorID:CR_SSL_CONNECTION_ERROR];
+		}
+
+		mysql_close(theConnection);
+
+		return NULL;
+	}
 
     MYSQL *connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
 
     //If we attempted SSL and failed, try one more time non-ssl if the user isn't requiring SSL
-    if(!useSSL && theConnection != connectionStatus) {
-        enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_DISABLED;
+    if([SACleartextAuthPolicy allowsRetryWithoutTLSWithCleartextPluginEnabled:enableClearTextPlugin sslRequested:useSSL] && theConnection != connectionStatus) {
+        opt_ssl_mode = SSL_MODE_DISABLED;
         mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode);
         connectionStatus = mysql_real_connect(theConnection, theHost, theUsername, thePassword, NULL, (unsigned int)port, theSocket, [self clientFlags]);
     }
@@ -1029,6 +1103,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 			[self _updateLastErrorID:mysql_errno(theConnection)];
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			[self _updateLastSqlstate:_stringForCStringWithEncoding(mysql_sqlstate(theConnection),NSISOLatin1StringEncoding)];
+
+			// Replaces the reported TLS failure with the reason the attempt required TLS.
+			if (enableClearTextPlugin && !useSSL && mysql_errno(theConnection) == CR_SSL_CONNECTION_ERROR) {
+				[self _updateLastErrorMessage:NSLocalizedString(@"This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.", @"cleartext authentication plugin requires TLS error")];
+			}
 		}
 
 		return NULL;
@@ -1078,6 +1157,15 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
+    BOOL restored = [self.sessionAccess reconnectAllowingRetries:canRetry operation:^BOOL {
+        return [self _performReconnectAllowingRetries:canRetry];
+    }];
+    // Explicit disconnect can retire a completed session while this caller waits.
+    return restored && state == SPMySQLConnected && !userTriggeredDisconnect;
+}
+
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry
+{
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
@@ -1085,30 +1173,6 @@ asm(".desc ___crashreporter_info__, 0x10");
     NSString *timeZoneIdentifierToRestore = nil;
 
 	@autoreleasepool {
-		// Check whether a reconnection attempt is already being made - if so, wait
-		// and return the status of that reconnection attempt.  This improves threaded
-		// use of the connection by preventing reconnect races.
-		if (reconnectingThread && !pthread_equal(reconnectingThread, pthread_self())) {
-
-			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
-			// takes less than the requested 0.1s, sleep instead.
-			while (reconnectingThread) {
-                SPLog(@"a reconnection attempt is already being made, waiting");
-
-				uint64_t loopIterationStart_t = _monotonicTime();
-
-				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.1) {
-					usleep(100000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
-				}
-			}
-
-			// Continue only if the reconnection being waited on was a background attempt
-			if (!(state == SPMySQLConnectionLostInBackground && canRetry)) {
-				return (state == SPMySQLConnected);
-			}
-		}
-
 		if ([[NSThread currentThread] isCancelled]) {
             SPLog(@"NSThread currentThread] isCancelled, returning");
 
@@ -1240,11 +1304,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-			reconnectSucceeded = YES;
-            [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+            reconnectSucceeded = [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
+            if (!reconnectSucceeded) {
+                // Never hand a session with the server's default time zone to a query.
+                // Preserve all saved state so the next use can retry restoration.
+                [self _disconnectPreservingProxyReconnect:YES];
+                state = SPMySQLConnectionLostInBackground;
+                reconnectingThread = NULL;
+                return NO;
+            }
             // When the connection is restored successfully, reset the relevant variables to prepare for the next time
             databaseToRestore = nil;
             encodingToRestore = nil;
@@ -1369,6 +1440,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
+		[self.sessionAccess clearSocket];
 		state = SPMySQLDisconnected;
 	}
 
@@ -1383,8 +1455,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return;
 	}
 
-	// If a query is active, cancel it
-	[self cancelCurrentQuery];
+    [self.sessionAccess cancelActiveQuery:^{ [self cancelCurrentQuery]; }];
 
 	state = SPMySQLDisconnecting;
 
@@ -1401,6 +1472,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _unlockConnection];
 	[self _cancelKeepAlives];
 	[self _lockConnection];
+	[self.sessionAccess clearSocket];
 	// Close the underlying MySQL connection if it still appears to be active, and not reading
 	// or writing.  While this may result in a leak of the MySQL object, it prevents crashes
 	// due to attempts to close a blocked/stuck connection.
@@ -1412,6 +1484,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 	mySQLConnection = NULL;
 	serverVersionNumber = 0;
 	state = SPMySQLDisconnected;
+	// The session is gone, so what it reported goes with it: until the next one shakes hands,
+	// values follow the character set on record, which that session will be set up with.
+	[valueEscaper forgetSession];
 	[self _unlockConnection];
 
 	// If using a connection proxy, disconnect that too
@@ -1469,10 +1544,62 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// should be encoded in utf8, too, the character got lost.
 	// This happened because the server did a roundtrip of utf8 -> latin1 -> utf8.
 
+	// What a session still needs once it has reported its variables - that the server will
+	// report later character set changes, and that the one it is in can be converted for - is
+	// worked out by SASessionStartupPlan. Only the statements it returns are run here.
+	SASessionStartupPlan *startupPlan = [SASessionStartupPlan
+		planForReportedCharacterSet:retrievedEncoding
+		               trackingList:[variables objectForKey:@"session_track_system_variables"]
+		                      quote:^NSString *(NSString *value) { return [value mySQLTickQuotedString]; }
+		           serverIsProxySQL:^BOOL{ return [self _serverIsProxySQL]; }];
+	// Asking the server to report later changes to the character set. Whether it took is not
+	// recorded anywhere: what the escaper needs is a change the server actually reported, which
+	// it is told about when one arrives, and this statement only decides whether any ever will.
+	if ([startupPlan trackingStatement]) {
+		[self queryString:[startupPlan trackingStatement]];
+		if ([self queryErrored]) {
+			SPLog(@"[_updateConnectionVariables]: could not turn on session state tracking: %@", [self lastErrorMessage]);
+		}
+	}
+	if ([startupPlan movesToAnotherCharacterSet]) {
+		SPLog(@"[_updateConnectionVariables]: no string encoding carries the session's character set '%@'; moving the session.",
+		      retrievedEncoding);
+		// More than one candidate, best first: a server too old for utf8mb4 is offered utf8
+		// rather than left in a character set nothing can convert for.
+		retrievedEncoding = [startupPlan characterSetWithoutStatements];
+		for (SASessionCharacterSetMove *move in [startupPlan characterSetMoves]) {
+			NSUInteger reportsBeforeTheMove = [valueEscaper reportsSoFar];
+			[self queryString:[move statement]];
+			if (![self queryErrored]) {
+				retrievedEncoding = [move characterSet];
+				// The move settles what the variable list only suggested: whether this session's
+				// changes are reported to the client at all. Judged by the report this statement
+				// brought back, not by whatever the escaper holds once it has let go.
+				[valueEscaper recordCharacterSetSetByConnection:retrievedEncoding reportsBefore:reportsBeforeTheMove];
+				break;
+			}
+			SPLog(@"[_updateConnectionVariables]: '%@' failed: %@", [move statement], [self lastErrorMessage]);
+		}
+	} else {
+		retrievedEncoding = [startupPlan characterSet];
+	}
+
 	// Update instance variables
 	encoding = [[NSString alloc] initWithString:retrievedEncoding];
 	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[encoding cStringUsingEncoding:stringEncoding]];
 	encodingUsesLatin1Transport = NO;
+
+	// What the server reads statements in, which the record above does not have to agree with: the
+	// record follows character_set_results, because results are decoded with it, and an
+	// init_connect can set the two differently. Escaping follows this one instead - a value
+	// escaped for the results character set and read in another one is how a quote escapes out of
+	// its literal.
+	BOOL aMoveTookEffect = [startupPlan movesToAnotherCharacterSet]
+		&& ![retrievedEncoding isEqualToString:[startupPlan characterSetWithoutStatements]];
+	// A move ran SET NAMES, which sets all of them alike, so there is nothing left to disagree.
+	sqlInputEncoding = aMoveTookEffect
+		? [[NSString alloc] initWithString:retrievedEncoding]
+		: [SAConnectionCharacterSets sqlInputCharacterSetFromVariables:variables];
 
 	// Check the interactive timeout - if it's below five minutes, increase it to ten
 	// to improve timeout/keepalive behaviour.  Note that wait_timeout also has be
@@ -1534,7 +1661,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self setEncodingUsesLatin1Transport:encodingUsesLatin1Transport];
 }
 
-- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+- (BOOL)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName
                       encodingUsesLatin1Transport:(BOOL)useLatin1Transport
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier
@@ -1548,12 +1675,7 @@ asm(".desc ___crashreporter_info__, 0x10");
         [self setEncodingUsesLatin1Transport:useLatin1Transport];
     }
 
-    if ([timeZoneIdentifier length]) {
-        // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
-        // bypasses its equality guard and re-runs SET time_zone after reconnect.
-        self.timeZoneIdentifier = nil;
-        [self updateTimeZoneIdentifier:timeZoneIdentifier];
-    }
+    return [SASessionTimeZoneRestorer restoreTimeZoneIdentifier:timeZoneIdentifier onConnection:self];
 }
 
 /**

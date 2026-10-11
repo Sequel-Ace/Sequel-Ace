@@ -105,22 +105,43 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	NSUInteger mallocSize = (cDataLength * 2) + 2;
 	char *escBuffer = (char *)malloc(mallocSize);
 
-	// Use mysql_real_escape_string to perform the escape, starting one character in
-	NSUInteger escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
-
-	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
-	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
-	if (escapedLength == (unsigned long)-1) {
-		NSUInteger theErrorID = mysql_errno(mySQLConnection);
-		if (theErrorID == CR_INSECURE_API_ERR) {
-			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
-		} else {
-			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
-			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
-			free(escBuffer);
-			return nil;
-		}
+	// Escape starting one character in. The session's own handle is not used: work nobody waits
+	// for any more can still be using it, or close it, while this runs. The escaper follows what
+	// the session last reported - its character set and its NO_BACKSLASH_ESCAPES mode.
+	// A session on its way out is being replaced: the next one is connected with the character
+	// set on record, so a value built now - which may well be sent on that next session - follows
+	// the record rather than what the old session last reported. Without this the safeguard had
+	// no caller that ever enabled it.
+	// Latin1 transport sets the session's client character set to latin1 while `encoding` keeps
+	// the name the connection was put on, so the transport character set is what the server
+	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
+	// as two latin1 ones, the second of which escapes the closing quote.
+	// What the server will read this statement in, not what it sends results in: an init_connect
+	// can leave character_set_client and character_set_results different, and escaping for the
+	// wrong one of them lets a trailing byte swallow the backslash and the quote end the literal.
+	NSString *transportCharacterSet = encodingUsesLatin1Transport
+		? @"latin1"
+		: (sqlInputEncoding ?: encoding);
+	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
+	                                             length:cDataLength
+	                                               into:escBuffer+1
+	                               characterSetOnRecord:transportCharacterSet
+	                             sessionIsBeingReplaced:NO];
+	// Not marked as being replaced. `SPMySQLDisconnecting` looks like the signal for it, but it
+	// does not say that the next statement runs on the replacement session:
+	// `_disconnectPreservingProxyReconnect:` releases the connection before closing the old
+	// handle, and `queryString:` still accepts a connection used a moment ago. A value escaped
+	// for the replacement and then run on the outgoing session is worse than the other way round,
+	// because the two escaping modes are not interchangeable: backslashes in a literal a
+	// `NO_BACKSLASH_ESCAPES` session reads leave the quote after one unescaped. Setting this needs
+	// the state that says the replacement is in hand, which #2676 introduces.
+	if (escapedLength < 0) {
+		// A value that cannot be escaped for this character set is not written. Before, an
+		// unexpected error raised an assertion, which ends the application in a debug build and
+		// is ignored in a release one - the latter then went on with an unescaped buffer.
+		SPLog(@"[escapeString:includingQuotes]: the value could not be escaped for character set %@", encoding);
+		free(escBuffer);
+		return nil;
 	}
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
@@ -324,6 +345,41 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
+    id theResult = [self.sessionAccess performQuery:^id {
+        return [self _queryString:theQueryString
+                   usingEncoding:theEncoding
+                  withResultType:theReturnType
+               assertingDatabase:databaseName
+       databaseContextIsRequired:databaseContextIsRequired];
+    } recover:^BOOL {
+        return [self _reconnectAllowingRetries:YES];
+    }];
+
+    // A statement that was refused the session never reached the server. Saying so is what
+    // keeps it apart from one that ran and changed nothing: callers read the row count and the
+    // error together, and both would still describe the statement before this one - which is
+    // how an edit that was never written comes to be treated as saved.
+    BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
+    if (!theResult && theSessionWasRefused) {
+        // The statement never reached `_queryString:`, which is where each query clears what the
+        // one before it left. A stop recorded against an earlier query would otherwise still
+        // stand here, and callers that read it alongside the error - the content view among
+        // them - take a cancelled query to be one the user already knows about and say nothing.
+        lastQueryWasCancelled = NO;
+        lastQueryAffectedRowCount = 0;
+        [self _updateLastErrorMessage:NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open")];
+        [self _updateLastErrorID:2013];
+        [self _updateLastSqlstate:@"HY000"];
+    }
+    return theResult;
+}
+
+- (id)_queryString:(NSString *)theQueryString
+     usingEncoding:(NSStringEncoding)theEncoding
+    withResultType:(SPMySQLResultType)theReturnType
+ assertingDatabase:(NSString *)databaseName
+databaseContextIsRequired:(BOOL)databaseContextIsRequired
+{
 	double queryExecutionTime;
 	NSString *theErrorMessage;
 	NSUInteger theErrorID;
@@ -393,14 +449,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	unsigned long long theAffectedRowCount = (unsigned long long)~0;
 	do {
 		BOOL databaseAssertionFailed = NO;
+		BOOL queryWasCancelled = ![self.sessionAccess beginNativeQuery];
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query. If the caller supplied an expected database, assert it
 		// under the same lock as the query so another thread cannot interleave a
 		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
-		queryStatus = 0;
-		SADatabaseAssertionError *databaseAssertionError = [databaseAssertionState
+		queryStatus = queryWasCancelled ? 1 : 0;
+		SADatabaseAssertionError *databaseAssertionError = queryWasCancelled ? nil : [databaseAssertionState
 			assertDatabase:databaseName
 			required:databaseContextIsRequired
 			onMySQLConnection:mySQLConnection
@@ -433,6 +490,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 		// If the query succeeded, no need to re-attempt.
 		if (!queryStatus) {
+			// What the session reports is recorded where the connection is released, once
+			// everything the statement produced has been read: a change the server reports
+			// arrives with the last of those packets, which at this point is still unread.
 			theErrorMessage = nil;
 			theErrorID = 0;
 			theSqlstate = nil;
@@ -451,7 +511,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			}
 
 			// Prevent retries if the query was cancelled or not a connection error
-			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+			if (self.sessionAccess.currentQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
 				break;
 			}
 		}
@@ -466,6 +526,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 		[self _lockConnection];
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
+		if (self.sessionAccess.currentQueryWasCancelled) {
+			queryStatus = 1;
+			break;
+		}
 
 	} while (--queryAttemptsAllowed > 0);
 
@@ -520,6 +584,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// If the query was cancelled, override the error state
+	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -678,73 +743,52 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
+    [self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
+        lastQueryWasCancelled = YES;
 
-	// Check whether a query is actually being performed - if not, return
-	if ([self _tryLockConnection]) {
-		[self _unlockConnection];
-		return;
-	}
+        // The query cancellation cannot occur on the connection actively running a query
+        // so set up a new connection to run the KILL command.
+        MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
 
-	// Mark that the last query was cancelled to prevent query retries from occurring
-	lastQueryWasCancelled = YES;
+        // If the new connection was successfully set up, use it to run a KILL command.
+        if (killerConnection) {
+            if (!self.sessionAccess.cancellationIsCurrent) {
+                mysql_close(killerConnection);
+                return YES;
+            }
+            NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
 
-	// The query cancellation cannot occur on the connection actively running a query
-	// so set up a new connection to run the KILL command.
-	MYSQL *killerConnection = [self _makeRawMySQLConnectionWithEncoding:@"utf8mb4" isMasterConnection:NO];
+            // Build the kill query
+            NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
+            if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
+                [killQuery appendString:@" TIDB"];
+                NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
+            }
+            [killQuery appendFormat:@" QUERY %lu", connectionThreadId];
 
-	// If the new connection was successfully set up, use it to run a KILL command.
-	if (killerConnection) {
-		NSStringEncoding aStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:mysql_character_set_name(killerConnection)];
+            // Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
+            // an explicit length, so no terminator is appended (see the main query path).
+            NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
 
-		// Build the kill query
-		NSMutableString *killQuery = [NSMutableString stringWithString:@"KILL"];
-		if ([[self serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-			[killQuery appendString:@" TIDB"];
-            NSLog(@"SPMySQL Framework: Killing Query in TIDB Mode");
-		}
-		[killQuery appendFormat:@" QUERY %lu", mySQLConnection->thread_id];
+            // Run the query
+            int killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
 
-		// Convert to a byte buffer in the killer connection's encoding.  mysql_real_query takes
-		// an explicit length, so no terminator is appended (see the main query path).
-		NSData *killQueryData = [killQuery dataUsingEncoding:aStringEncoding allowLossyConversion:YES];
+            // Close the temporary connection
+            mysql_close(killerConnection);
 
-		// Run the query
-		int killQueryStatus = mysql_real_query(killerConnection, [killQueryData bytes], [killQueryData length]);
-
-		// Close the temporary connection
-		mysql_close(killerConnection);
-
-		// If the kill query succeeded, the active query was cancelled.
-		if (killQueryStatus == 0) {
-			// Ensure the tracking bool is re-set to cover encompassed queries and return
-			lastQueryWasCancelled = YES;
-			return;
-		} else {
-            SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, mySQLConnection->thread_id);
-		}
-	} else if (!userTriggeredDisconnect) {
-        SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", mySQLConnection->thread_id);
-	}
-
-	// A full reconnect is required at this point to force a cancellation.  As the
-	// connection may have finished processing the query at this point (depending how
-	// long the connection attempt took), check whether we can skip the reconnect.
-	if ([self _tryLockConnection]) {
-		[self _unlockConnection];
-		return;
-	}
-
-	if (state == SPMySQLDisconnecting || state == SPMySQLDisconnected) return;
-
-	// Reset the connection with a reconnect.  Unlock the connection beforehand,
-	// to allow the reconnect, but lock it again afterwards to restore the expected
-	// state (query execution process should unlock as appropriate).
-	[self _unlockConnection];
-	[self _reconnectAllowingRetries:YES];
-	[self _lockConnection];
-
-	// Reset tracking bools to cover encompassed queries
-	lastQueryWasCancelled = YES;
+            // If the kill query succeeded, the active query was cancelled.
+            if (killQueryStatus == 0) {
+                // Ensure the tracking bool is re-set to cover encompassed queries and return
+                lastQueryWasCancelled = YES;
+                return YES;
+            } else {
+                SPLog(@"SPMySQL Framework: query cancellation failed due to cancellation query error (status %d) - %lu", killQueryStatus, connectionThreadId);
+            }
+        } else if (!userTriggeredDisconnect) {
+            SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", connectionThreadId);
+        }
+        return NO;
+    }];
 }
 
 @end
@@ -764,6 +808,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
 	// Repeat as long as there are results
 	while (!mysql_next_result(mySQLConnection)) {
+		// Each packet brings its own session-state items and replaces the one before, so a report
+		// is collected as it goes past rather than looked for once at the end.
+		characterSetReportedInAResultPacket = characterSetReportedInAResultPacket || [self _currentResultPacketReportsTheCharacterSet];
+
 		MYSQL_RES *eachResult = mysql_use_result(mySQLConnection);
 
 		// Ensure the result is really a result

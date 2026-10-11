@@ -29,26 +29,28 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseRename.h"
-#import "SPTableCopy.h"
-#import "SPViewCopy.h"
-#import "SPTablesList.h"
 #import "SPCreateDatabaseInfo.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseRename ()
 
-- (BOOL)_dropDatabase:(NSString *)database;
-
-- (BOOL)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
-- (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase;
+@property (nonatomic, copy, readwrite, nullable) NSString *failureDescription;
+@property (nonatomic, copy, readwrite, nullable) NSString *warningDescription;
+@property (nonatomic, readwrite) BOOL changedServer;
+@property (nonatomic, readwrite) BOOL connectionUsable;
 
 @end
 
 @implementation SPDatabaseRename
 
 /**
- * Note that this doesn't currently support moving any non-table objects (i.e. views, proc, functions, events, etc).
+ * Hands the rename to SADatabaseRenameConnectionSession, which switches the
+ * connection to UTF-8 where needed, lets SADatabaseRenameExecutor inspect the
+ * source, move the tables, recreate the views and drop the source only when
+ * everything moved, and restores and verifies the connection afterwards. This
+ * method only reaches the connection for it and reports the outcome.
  */
 - (BOOL)renameDatabaseFrom:(SPCreateDatabaseInfo *)sourceDatabase to:(NSString *)targetDatabase
 {
@@ -56,99 +58,72 @@
 
     SPLog(@"renameDatabaseFrom: %@, to: %@", sourceDatabaseName, targetDatabase);
 
+    self.failureDescription = nil;
+    self.warningDescription = nil;
+    self.changedServer = NO;
+    self.connectionUsable = YES;
+
 	// Check, whether the source database exists and the target database doesn't
 	BOOL sourceExists = [[connection databases] containsObject:sourceDatabaseName];
 	BOOL targetExists = [[connection databases] containsObject:targetDatabase];
-
-    BOOL success = NO;
-    BOOL success2 = NO;
-    BOOL success3 = NO;
 
     if (!sourceExists || targetExists){
         SPLog(@"!sourceExists || targetExists");
         return NO;
     }
 
-	NSArray *tables = [tablesList allTableNames];
+    SPMySQLConnection *renameConnection = connection;
 
-    success = [self createDatabase:targetDatabase
-                      withEncoding:[sourceDatabase defaultEncoding]
-                         collation:[sourceDatabase defaultCollation]];
-
-    if(success == YES){
-        SPLog(@"createDatabase SUCCESS, calling move tables");
-        success2 = [self _moveTables:tables fromDatabase:sourceDatabaseName toDatabase:targetDatabase];
-        if(success2 == NO){
-            SPLog(@"_moveTables FAILED: %@", [connection lastErrorMessage]);
-        }
-        else{
-            SPLog(@"_moveTables SUCCESS, calling _dropDatabase");
-            success3 = [self _dropDatabase:sourceDatabaseName];
-            if(success3 == NO){
-                SPLog(@"_dropDatabase FAILED: %@", [connection lastErrorMessage]);
-            }
-            else{
-                SPLog(@"_dropDatabase SUCCESS");
+    SADatabaseRenameConnectionSession *session = [[SADatabaseRenameConnectionSession alloc] initWithRun:^SADatabaseRenameStatementResult *(NSString *statement) {
+        // The result type decides what counts as success, including a
+        // missing result object that the connection did not flag as an error.
+        SPMySQLResult *result = [renameConnection queryString:statement];
+        BOOL errored = [renameConnection queryErrored];
+        NSMutableArray *rows = [NSMutableArray array];
+        if (result && !errored) {
+            [result setReturnDataAsStrings:YES];
+            NSArray *row;
+            while ((row = [result getRowAsArray]) != nil) {
+                [rows addObject:row];
             }
         }
+        return [[SADatabaseRenameStatementResult alloc] initWithRows:rows resultReturned:(result != nil) errored:errored errorMessage:[renameConnection lastErrorMessage]];
+    } quote:^NSString * _Nullable (NSString *value) {
+        // nil while the connection is closed or being re-established; the
+        // session and executor send no statement with it then
+        return [renameConnection escapeAndQuoteString:value];
+    } encoding:^NSString *{
+        return [renameConnection encoding];
+    } usesLatin1Transport:^BOOL{
+        return [renameConnection encodingUsesLatin1Transport];
+    } setEncoding:^BOOL(NSString *encoding) {
+        return [renameConnection setEncoding:encoding];
+    } setLatin1Transport:^BOOL(BOOL useLatin1Transport) {
+        return [renameConnection setEncodingUsesLatin1Transport:useLatin1Transport];
+    } storeEncodingForRestoration:^{
+        [renameConnection storeEncodingForRestoration];
+    } restoreStoredEncoding:^{
+        [renameConnection restoreStoredEncoding];
+    } reconnect:^BOOL{
+        return [renameConnection reconnect];
+    }];
+
+    self.failureDescription = [session renameDatabase:sourceDatabaseName
+                                                   to:targetDatabase
+                                             encoding:[sourceDatabase defaultEncoding]
+                                            collation:[sourceDatabase defaultCollation]];
+    self.changedServer = [session changedServer];
+    self.warningDescription = [session warningDescription];
+    self.connectionUsable = [session connectionUsable];
+    if (self.warningDescription) {
+        SPLog(@"rename warning: %@", self.warningDescription);
     }
-    else{
-        SPLog(@"createDatabase FAILED: %@", [connection lastErrorMessage]);
+    if (self.failureDescription) {
+        SPLog(@"rename failed: %@", self.failureDescription);
+        return NO;
     }
 
-    BOOL ret = success && success2 && success3;
-
-    SPLog(@"ret code: %hhd", ret);
-
-	return ret;
-}
-
-#pragma mark -
-#pragma mark Private API
-
-/**
- * This method drops a database.
- *
- * @param NSString databaseName name of the database to drop
- * @return BOOL YES on success, otherwise NO
- */
-- (BOOL)_dropDatabase:(NSString *)database 
-{
-    SPLog(@"_dropDatabase: %@", database);
-
-	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [database backtickQuotedString]]];	
-	
-	return ![connection queryErrored];
-}
-
-- (BOOL)_moveTables:(NSArray *)tables fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
-{
-    SPLog(@"_moveTables from : %@, to: %@", sourceDatabase, targetDatabase);
-
-    BOOL success = YES;
-
-	SPTableCopy *dbActionTableCopy = [[SPTableCopy alloc] init];
-	
-	[dbActionTableCopy setConnection:connection];
-	
-	for (NSString *table in tables) 
-	{
-        success = [dbActionTableCopy moveTable:table from:sourceDatabase to:targetDatabase];
-	}
-
-    return success;
-}
-
-- (void)_moveViews:(NSArray *)views fromDatabase:(NSString *)sourceDatabase toDatabase:(NSString *)targetDatabase
-{
-	SPViewCopy *dbActionViewCopy = [[SPViewCopy alloc] init];
-	
-	[dbActionViewCopy setConnection:connection];
-	
-	for (NSString *view in views) 
-	{
-		[dbActionViewCopy moveView:view from:sourceDatabase to:targetDatabase];
-	}
+    return YES;
 }
 
 @end

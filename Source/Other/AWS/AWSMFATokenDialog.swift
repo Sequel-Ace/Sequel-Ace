@@ -46,9 +46,21 @@ import OSLog
         mfaSerial: String?,
         parentWindow: NSWindow?
     ) -> String? {
+        promptForMFAToken(profile: profileName, mfaSerial: mfaSerial,
+                          parentWindow: parentWindow, shouldContinue: { true })
+    }
+
+    /// Check attempt liveness on main immediately before presenting any MFA UI.
+    @nonobjc static func promptForMFAToken(
+        profile profileName: String?,
+        mfaSerial: String?,
+        parentWindow: NSWindow?,
+        shouldContinue: @escaping () -> Bool
+    ) -> String? {
         var result: String?
 
         let showDialog = {
+            guard shouldContinue() else { return }
             result = self.showMFADialog(
                 profileName: profileName ?? "default",
                 mfaSerial: mfaSerial ?? "unknown"

@@ -73,6 +73,18 @@
 - (NSString *)keychainPasswordForConnection:(id)connection;
 
 /**
+ * Requests a message describing why no password could be supplied, asked only
+ * when keychainPasswordForConnection: returned no password.  Returning a
+ * non-empty string abandons the connection attempt without contacting the
+ * server.  It becomes the last error message of the connection's own attempt;
+ * a temporary attempt, such as the one made to cancel a query, leaves that
+ * state to the connection.
+ *
+ * @param connection The connection instance whose password could not be supplied
+ */
+- (NSString *)credentialErrorMessageForConnection:(id)connection;
+
+/**
  * Notifies the delegate that no underlying connection is available,
  * typically when the connection has been asked to perform a query
  * or some other action for which a connection must be present.
