@@ -125,4 +125,12 @@ final class SAEditorAppearanceThemeSwitcherTests: XCTestCase {
         XCTAssertTrue(SAEditorAppearanceThemeSwitcher.isDark(NSAppearance(named: .darkAqua)!))
         XCTAssertFalse(SAEditorAppearanceThemeSwitcher.isDark(NSAppearance(named: .aqua)!))
     }
+
+    /// Verifies a chosen theme that no longer exists stays selectable (shown as missing).
+    func testPickerNamesKeepAMissingChoice() {
+        let available = ["Default", "Dark One"]
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.pickerNames(available: available, selected: "Dark One"), available)
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.pickerNames(available: available, selected: "dark one"), available)
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.pickerNames(available: available, selected: "Gone"), available + ["Gone"])
+    }
 }

@@ -50,6 +50,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPEditorPreferencePane () <NSControlTextEditingDelegate, NSFontChanging>
 - (BOOL)_checkForUnsavedTheme;
+- (void)_refreshColourDisplay;
 - (NSArray *)_getAvailableThemes;
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
@@ -433,6 +434,16 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 }
 
 /**
+ * Re-reads the editor colours after the appearance switcher loaded a theme.
+ */
+- (void)_refreshColourDisplay
+{
+	[colorSettingTableView setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+	[colorSettingTableView reloadData];
+	[self updateDisplayColorThemeName];
+}
+
+/**
  * Updates the currently selected colour scheme theme name.
  */
 - (void)updateDisplayColorThemeName
@@ -717,9 +728,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 - (NSView *)preferencePaneView
 {
-	// The XIB view with the Swift "Script Output" section below it (built once, cached).
+	// The XIB view, then the Swift "Theme Appearance" section, then "Script Output" (each built once, cached).
 	__weak SPEditorPreferencePane *weakSelf = self;
-	return [SAScriptConsoleAppearanceSectionHost paneViewWrapping:[self view] onSelectFont:^{
+	NSView *withThemes = [SAEditorThemeAppearanceSectionHost paneViewWrapping:[self view]
+	                                                           themesDirectory:themePath ?: @""
+	                                                     confirmDiscardUnsaved:^BOOL{ return [weakSelf _checkForUnsavedTheme]; }
+	                                                            onThemeApplied:^{ [weakSelf _refreshColourDisplay]; }];
+	return [SAScriptConsoleAppearanceSectionHost paneViewWrapping:withThemes onSelectFont:^{
 		[weakSelf showScriptConsoleFontPanel];
 	}];
 }

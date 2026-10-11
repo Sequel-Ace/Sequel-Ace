@@ -121,4 +121,11 @@ import AppKit
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         return [SAEditorThemeLoader.defaultSchemeName] + themes
     }
+
+    /// The picker's entries: the available names, plus the selected name when it
+    /// no longer exists (the section shows it as missing).
+    static func pickerNames(available: [String], selected: String) -> [String] {
+        let present = available.contains { $0.caseInsensitiveCompare(selected) == .orderedSame }
+        return present || selected.isEmpty ? available : available + [selected]
+    }
 }

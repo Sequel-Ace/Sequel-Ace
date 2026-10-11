@@ -4520,3 +4520,18 @@
 
 /* View menu item that shows the table list sidebar */
 "Show Table List" = "Show Table List";
+
+/* Preferences > Query Editor: section title for choosing editor themes per light/dark appearance */
+"Theme Appearance" = "Theme Appearance";
+
+/* Preferences > Query Editor > Theme Appearance: checkbox making the editor theme follow light/dark mode */
+"Match system appearance" = "Match system appearance";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in light mode */
+"Light theme" = "Light theme";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in dark mode */
+"Dark theme" = "Dark theme";
+
+/* Preferences > Query Editor > Appearance: a chosen theme whose file no longer exists */
+"%@ (missing)" = "%@ (missing)";
