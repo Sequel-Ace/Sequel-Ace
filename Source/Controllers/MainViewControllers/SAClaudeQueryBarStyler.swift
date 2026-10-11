@@ -61,6 +61,7 @@ import AppKit
             button.isBordered = false
             (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
             button.font = .systemFont(ofSize: 13)
+            button.alignment = .left // the XIB centres titles, which pushes the label away from its icon
             SAClaudeHoverHighlighter.attach(to: button)
         }
         favoritesButton.item(at: 0)?.title = NSLocalizedString("Favorites", comment: "query editor bar: label of the query favorites menu button")
@@ -113,6 +114,14 @@ import AppKit
         layoutButtons(in: bar)
     }
 
+    /// Icon + label width. Not `sizeToFit`, which still reserves room for the hidden pull-down arrow;
+    /// the cell draws the icon at x 8 and the label from x 28 (left-aligned).
+    private func labelledWidth(of button: NSPopUpButton) -> CGFloat {
+        let title = (button.item(at: 0)?.title ?? "") as NSString
+        let titleWidth = ceil(title.size(withAttributes: [.font: button.font ?? .systemFont(ofSize: 13)]).width)
+        return 28 + titleWidth + 10
+    }
+
     fileprivate func layoutButtons(in bar: NSView) {
         guard !isLayingOut else { return }
         isLayingOut = true
@@ -130,8 +139,7 @@ import AppKit
         // Labels first; icon-only Favorites/History when the labels would run into Run.
         for labelled in [true, false] {
             for button in left where button !== optionsButton { button.imagePosition = labelled ? .imageLeading : .imageOnly }
-            for button in left { button.sizeToFit() }
-            let widths = left.map { $0 === optionsButton || !labelled ? height : max($0.frame.width + 12, height) }
+            let widths = left.map { $0 === optionsButton || !labelled ? height : max(labelledWidth(of: $0), height) }
             let xs = SAClaudeEditorChrome.leadingXs(widths: widths, start: SAClaudeEditorChrome.barSidePadding, gap: SAClaudeEditorChrome.buttonGap)
             let fits = (xs.last.map { $0 + widths[widths.count - 1] } ?? 0) <= runMinX - SAClaudeEditorChrome.buttonGap * 4
             if fits || !labelled {
