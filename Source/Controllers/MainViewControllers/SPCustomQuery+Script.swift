@@ -167,8 +167,8 @@ extension SPCustomQuery {
             ? String(format: NSLocalizedString("Running query %ld of %lu...", comment: "Running multiple queries string"), 1, statements.count)
             : NSLocalizedString("Running query...", comment: "Running single query string")
         document.startTask(withDescription: firstTask)
-        errorTextTitle?.stringValue = NSLocalizedString("Query Status", comment: "Query Status")
-        (errorText as? NSTextView)?.textColor = .controlTextColor
+        errorTextTitle?.stringValue = NSLocalizedString("Query status", comment: "Query tab status pane title when there is no error")
+        SAClaudeQueryInfoStyler.setErrorState(false, forTextView: errorText as? NSTextView)
         (errorText as? NSText)?.string = firstTask
         (affectedRowsText as? NSTextField)?.stringValue = ""
         // Stop records cancellation on the token first, so the runner admits no
@@ -223,9 +223,9 @@ extension SPCustomQuery {
 
         let hadErrors = summary.errorCount > 0
         errorTextTitle?.stringValue = hadErrors
-            ? NSLocalizedString("Last Error Message", comment: "Last Error Message")
-            : NSLocalizedString("Query Status", comment: "Query Status")
-        (errorText as? NSTextView)?.textColor = (hadErrors || summary.wasCancelled) ? .systemRed : .controlTextColor
+            ? NSLocalizedString("Last error", comment: "Query tab status pane title after an error")
+            : NSLocalizedString("Query status", comment: "Query tab status pane title when there is no error")
+        SAClaudeQueryInfoStyler.setErrorState(hadErrors || summary.wasCancelled, forTextView: errorText as? NSTextView)
         (errorText as? NSText)?.string = summary.wasCancelled
             ? NSLocalizedString("Query cancelled.", comment: "Query cancelled error")
             : (hadErrors ? summary.errorLines.joined(separator: "\n")

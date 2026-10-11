@@ -622,9 +622,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     }
     
     [tableDocumentInstance startTaskWithDescription:taskString];
-    [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
+    [errorTextTitle setStringValue:NSLocalizedString(@"Query status", @"Query tab status pane title when there is no error")];
     // reset colour
-    [errorText setTextColor:[NSColor controlTextColor]];
+    [SAClaudeQueryInfoStyler setErrorState:NO forTextView:errorText];
     [errorText setString:taskString];
     [affectedRowsText setStringValue:@""];
     
@@ -797,7 +797,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             NSString *taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %ld of %lu...", @"Running multiple queries string"), (long)(qp->query+1), (unsigned long)(qp->total)];
             [self->tableDocumentInstance setTaskDescription:taskString];
             // reset text colour
-            [self->errorText setTextColor:[NSColor controlTextColor]];
+            [SAClaudeQueryInfoStyler setErrorState:NO forTextView:self->errorText];
             [self->errorText setString:taskString];
         }];
         
@@ -908,13 +908,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                     if(!suppressErrorSheet) {
                         // Update error text for the user
                         [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(i+1), errorString];
-                        [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+                        [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
 
                         if(errors.length>0){
                             SPMainQSync(^{
                                 [self->errorText setString:errors];
                                 // set text colour to red
-                                [self->errorText setTextColor:[NSColor redColor]];
+                                [SAClaudeQueryInfoStyler setErrorState:YES forTextView:self->errorText];
                             });
                         }
                         SPMainQSync(^{
@@ -1561,8 +1561,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // If errors occur, display them
     if ( [mySQLConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
         // set the error text
-        [errorText setTextColor:[NSColor redColor]];
-        [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        [SAClaudeQueryInfoStyler setErrorState:YES forTextView:errorText];
+        [errorTextTitle setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
         [errorText setString:[errorsString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
         [[errorTextScrollView verticalScroller] setFloatValue:1.0f];
         
@@ -1623,14 +1623,14 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         }
         
     } else if ( [errorsString length] && queryIsTableSorter ) {
-        [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        [errorTextTitle setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
         // set text colour to red
-        [errorText setTextColor:[NSColor redColor]];
+        [SAClaudeQueryInfoStyler setErrorState:YES forTextView:errorText];
         [errorText setString:NSLocalizedString(@"Couldn't sort column.", @"text shown if an error occurred while sorting the result table")];
         NSBeep();
     } else {
         // reset text colour
-        [errorText setTextColor:[NSColor controlTextColor]];
+        [SAClaudeQueryInfoStyler setErrorState:NO forTextView:errorText];
         [errorText setString:NSLocalizedString(@"There were no errors.", @"text shown when query was successfull")];
     }
     
@@ -2232,9 +2232,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSString *tableForColumn = [columnDefinition objectForKey:@"org_table"];
     
     if(!tableForColumn || ![tableForColumn length]) {
-        [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        [errorTextTitle setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
         // set text colour to red
-        [errorText setTextColor:[NSColor redColor]];
+        [SAClaudeQueryInfoStyler setErrorState:YES forTextView:errorText];
         [errorText setString:[NSString stringWithFormat:NSLocalizedString(@"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.", @"Custom Query result editing error - could not identify a corresponding column"), [columnDefinition objectForKey:@"name"]]];
         NSBeep();
         return;
@@ -3879,6 +3879,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 	                                           runButton:runPrimaryActionButton
 	                                         resultsView:[customQueryView enclosingScrollView]
 	                                     editorSplitView:queryEditorSplitView];
+
+	// Claude look: status pane and bottom strip. The export pull-down has no outlet; the styler finds it.
+	[SAClaudeQueryInfoStyler attachToInfoSplitView:queryInfoPaneSplitView titleField:errorTextTitle messageTextView:errorText statusField:affectedRowsText infoButton:queryInfoButton exportButton:nil];
 }
 
 - (void)toggleRecordView

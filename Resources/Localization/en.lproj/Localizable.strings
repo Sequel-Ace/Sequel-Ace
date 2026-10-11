@@ -1580,6 +1580,9 @@
 /* export selected favorites menu item */
 "Export Selected..." = "Export Selected...";
 
+/* accessibility name of the ⋯ menu button in the Query tab's bottom strip, which holds Export Result */
+"Export result" = "Export result";
+
 /* text showing that the application is importing a supplied format */
 "Exporting %@" = "Exporting %@";
 
@@ -1937,6 +1940,9 @@
 
 /* Last Error Message */
 "Last Error Message" = "Last Error Message";
+
+/* Query tab status pane title after an error */
+"Last error" = "Last error";
 
 /* Last Used entry in favorites menu */
 "Last Used" = "Last Used";
@@ -2332,6 +2338,9 @@
 
 /* Query Status */
 "Query Status" = "Query Status";
+
+/* Query tab status pane title when there is no error */
+"Query status" = "Query status";
 
 /* table status : row count query failed : error title */
 "Querying row count failed" = "Querying row count failed";

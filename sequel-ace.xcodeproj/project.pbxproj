@@ -698,6 +698,7 @@
 		C2E7A3B62E5E1B3A00D22990 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */; };
 		A5C1E0D61A2B3C4D5E6F7087 /* SAClaudeQueryBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */; };
+		B7D2E1F11A2B3C4D5E6F7091 /* SAClaudeQueryInfoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D2E1F01A2B3C4D5E6F7090 /* SAClaudeQueryInfoStyler.swift */; };
 		A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */; };
 		A5C1E0DA1A2B3C4D5E6F708B /* SAClaudeLineNumberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */; };
 		C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */; };
@@ -1653,6 +1654,7 @@
 		ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AWSSSOClient.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPCustomQuery+Explain.swift"; sourceTree = "<group>"; };
 		A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryBarStyler.swift; sourceTree = "<group>"; };
+		B7D2E1F01A2B3C4D5E6F7090 /* SAClaudeQueryInfoStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryInfoStyler.swift; sourceTree = "<group>"; };
 		A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRunButton.swift; sourceTree = "<group>"; };
 		A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineNumberView.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifier.swift; sourceTree = "<group>"; };
@@ -2095,6 +2097,7 @@
 				17E641490EF01EF6001BC333 /* SPCustomQuery.m */,
 				AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */,
 				A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */,
+				B7D2E1F01A2B3C4D5E6F7090 /* SAClaudeQueryInfoStyler.swift */,
 				AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */,
 				17E641500EF01EF6001BC333 /* SPDatabaseDocument.h */,
 				17E641510EF01EF6001BC333 /* SPDatabaseDocument.m */,
@@ -4092,6 +4095,7 @@
 				17E641560EF01EF6001BC333 /* SPCustomQuery.m in Sources */,
 				C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */,
 				A5C1E0D61A2B3C4D5E6F7087 /* SAClaudeQueryBarStyler.swift in Sources */,
+				B7D2E1F11A2B3C4D5E6F7091 /* SAClaudeQueryInfoStyler.swift in Sources */,
 				A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */,
 				C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */,
 				CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
