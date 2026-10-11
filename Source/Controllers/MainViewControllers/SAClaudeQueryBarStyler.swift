@@ -57,6 +57,12 @@ import AppKit
         bar.addSubview(styler.bottomLine)
 
         SAClaudeSidebarChrome.styleSidebarSplitView(editorSplitView)
+        // The editor's scroll view has the XIB's default bezel; its bottom edge would double the hairline.
+        if let editorPane = editorSplitView.subviews.first {
+            for case let scrollView as NSScrollView in editorPane.subviews where scrollView.documentView is NSTextView {
+                scrollView.borderType = .noBorder
+            }
+        }
         for button in [optionsButton, favoritesButton, historyButton] {
             button.isBordered = false
             (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
