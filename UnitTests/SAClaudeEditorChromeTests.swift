@@ -1,0 +1,97 @@
+//
+//  SAClaudeEditorChromeTests.swift
+//  Unit Tests
+//
+
+import AppKit
+import XCTest
+
+final class SAClaudeEditorChromeTests: XCTestCase {
+
+    private func hex(_ c: NSColor) -> UInt32 {
+        let s = c.usingColorSpace(.sRGB)!
+        return UInt32((s.redComponent * 255).rounded()) << 16 | UInt32((s.greenComponent * 255).rounded()) << 8 | UInt32((s.blueComponent * 255).rounded())
+    }
+
+    private let claudeDark = (text: SAClaudeStyle.srgb(0xF0EFEC), background: SAClaudeStyle.srgb(0x151515))
+    private let claudeLight = (text: SAClaudeStyle.srgb(0x0B0B0B), background: SAClaudeStyle.srgb(0xFCFCFB))
+
+    private func assertNear(_ c: NSColor, _ expected: UInt32, file: StaticString = #filePath, line: UInt = #line) {
+        let got = hex(c)
+        for shift in [16, 8, 0] {
+            XCTAssertLessThanOrEqual(abs(Int((got >> UInt32(shift)) & 0xFF) - Int((expected >> UInt32(shift)) & 0xFF)), 1,
+                                     String(format: "got %06X expected %06X", got, expected), file: file, line: line)
+        }
+    }
+
+    /// Verifies the spec's palette values for the Claude themes (±1 per channel).
+    func testClaudePalettes() {
+        let dark = SAClaudeEditorChrome.palette(text: claudeDark.text, background: claudeDark.background)
+        assertNear(dark.background, 0x151515); assertNear(dark.hairline, 0x272626); assertNear(dark.hover, 0x272626)
+        assertNear(dark.buttonText, 0xC0BFBD); assertNear(dark.icon, 0x8D8D8B); assertNear(dark.gutterNumbers, 0x646362)
+        let light = SAClaudeEditorChrome.palette(text: claudeLight.text, background: claudeLight.background)
+        assertNear(light.background, 0xFCFCFB); assertNear(light.hairline, 0xE9E9E8); assertNear(light.hover, 0xE9E9E8)
+        assertNear(light.buttonText, 0x404040); assertNear(light.icon, 0x777777); assertNear(light.gutterNumbers, 0xA5A5A5)
+    }
+
+    private func luminance(_ c: NSColor) -> CGFloat {
+        let s = c.usingColorSpace(.sRGB)!
+        func lin(_ v: CGFloat) -> CGFloat { v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * lin(s.redComponent) + 0.7152 * lin(s.greenComponent) + 0.0722 * lin(s.blueComponent)
+    }
+
+    /// Verifies a non-Claude theme still gets readable button text (≥ 4.5:1).
+    func testNonClaudeThemeKeepsReadableButtonText() {
+        for (text, bg) in [(0xE7EAF1, 0x222631), (0x363C38, 0xECEFEB), (0xFFFFFF, 0x000000)] as [(UInt32, UInt32)] {
+            let p = SAClaudeEditorChrome.palette(text: SAClaudeStyle.srgb(text), background: SAClaudeStyle.srgb(bg))
+            let (a, b) = (luminance(p.buttonText), luminance(p.background))
+            XCTAssertGreaterThanOrEqual((max(a, b) + 0.05) / (min(a, b) + 0.05), 4.5, String(format: "%06X on %06X", text, bg))
+        }
+    }
+
+    /// Verifies the palette falls back when the colour settings are missing.
+    func testPaletteFromEmptyDefaultsFallsBack() {
+        let suite = "SAClaudeEditorChromeTests"
+        UserDefaults().removePersistentDomain(forName: suite)
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let p = SAClaudeEditorChrome.palette(from: UserDefaults(suiteName: suite)!)
+        XCTAssertNotNil(p.background.usingColorSpace(.sRGB))
+    }
+
+    /// Verifies the bar grows downward to 44pt keeping its top edge and the gap to the results.
+    func testBarFrames() {
+        let frames = SAClaudeEditorChrome.barFrames(bar: NSRect(x: 0, y: 213, width: 695, height: 25),
+                                                     results: NSRect(x: -1, y: -1, width: 697, height: 205),
+                                                     height: 44)
+        XCTAssertEqual(frames.bar, NSRect(x: 0, y: 194, width: 695, height: 44))
+        XCTAssertEqual(frames.results, NSRect(x: -1, y: -1, width: 697, height: 186))
+        let tiny = SAClaudeEditorChrome.barFrames(bar: NSRect(x: 0, y: 10, width: 100, height: 25),
+                                                   results: NSRect(x: 0, y: 0, width: 100, height: 5), height: 44)
+        XCTAssertEqual(tiny.results.height, 0)
+    }
+
+    /// Verifies vertical centring and left-to-right placement.
+    func testCentringAndPlacement() {
+        XCTAssertEqual(SAClaudeEditorChrome.centredY(height: 28, in: 44), 8)
+        XCTAssertEqual(SAClaudeEditorChrome.leadingXs(widths: [28, 90, 80], start: 10, gap: 2), [10, 40, 132])
+    }
+
+    /// Verifies shortcut hints like the menu shows them.
+    func testShortcutString() {
+        XCTAssertEqual(SAClaudeEditorChrome.shortcutString(keyEquivalent: "r", modifiers: .command), "⌘R")
+        XCTAssertEqual(SAClaudeEditorChrome.shortcutString(keyEquivalent: "r", modifiers: [.command, .option]), "⌥⌘R")
+        XCTAssertEqual(SAClaudeEditorChrome.shortcutString(keyEquivalent: "r", modifiers: [.command, .option, .shift, .control]), "⌃⌥⇧⌘R")
+        XCTAssertEqual(SAClaudeEditorChrome.shortcutString(keyEquivalent: "", modifiers: .command), "")
+    }
+
+    /// Verifies the drawn divider sits exactly at SPComboPopupButton's click split.
+    func testRunLayoutPutsTheDividerAtTheClickSplit() {
+        let bounds = NSRect(x: 0, y: 0, width: 150, height: 28)
+        let layout = SAClaudeEditorChrome.runLayout(bounds: bounds, lineOffset: 15, titleSize: NSSize(width: 70, height: 16), shortcutSize: NSSize(width: 20, height: 15))
+        XCTAssertEqual(layout.dividerX, 135)
+        XCTAssertEqual(layout.chevronRect.minX, 135)
+        XCTAssertEqual(layout.chevronRect.maxX, 150)
+        XCTAssertLessThanOrEqual(layout.shortcutOrigin.x + 20, layout.dividerX)
+        XCTAssertEqual(SAClaudeEditorChrome.runWidth(titleWidth: 70, shortcutWidth: 20, lineOffset: 15), 12 + 9 + 6 + 70 + 8 + 20 + 12 + 15)
+    }
+}

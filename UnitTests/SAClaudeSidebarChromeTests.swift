@@ -238,6 +238,24 @@ final class SAClaudeBarButtonTests: XCTestCase {
         XCTAssertEqual(fill.blueComponent, CGFloat(hex & 0xFF) / 255, accuracy: 0.01, file: file, line: line)
     }
 
+    /// Verifies a per-view hover colour replaces the Claude default.
+    func testHoverFillOverride() throws {
+        let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        button.appearance = NSAppearance(named: .darkAqua)
+        SAClaudeSidebarChrome.styleBarButton(button, glyph: .refresh)
+        SAClaudeHoverHighlighter.setFillColour(SAClaudeStyle.srgb(0x272626), for: button)
+        try XCTUnwrap(SAClaudeHoverHighlighter.highlighter(for: button)).setHovered(true)
+        assertFill(of: button, is: 0x272626)
+    }
+
+    /// Verifies a divider line can take a theme colour.
+    func testDividerColourOverride() {
+        let line = SAClaudeDividerLine(frame: NSRect(x: 0, y: 0, width: 10, height: 1))
+        XCTAssertNil(line.colourOverride)
+        line.colourOverride = .red
+        XCTAssertEqual(line.colourOverride, .red)
+    }
+
     /// Verifies a pull-down menu button shows the glyph through its first (title) item.
     func testPullDownShowsGlyphOnItsFirstItem() {
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 35, height: 28), pullsDown: true)

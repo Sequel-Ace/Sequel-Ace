@@ -1377,6 +1377,9 @@
 /* edit user-defined filter */
 "Edit user-defined Filters…" = "Edit user-defined Filters…";
 
+/* accessibility name of the editor options menu button under the query editor */
+"Editor options" = "Editor options";
+
 /* empty query message */
 "Empty query" = "Empty query";
 
@@ -2304,6 +2307,12 @@
 
 /* query editor preference pane tooltip */
 "Query Editor Preferences" = "Query Editor Preferences";
+
+/* accessibility name of the query favorites menu button under the query editor */
+"Query Favorites" = "Query Favorites";
+
+/* accessibility name of the query history menu button under the query editor */
+"Query History" = "Query History";
 
 /* query logging currently disabled label
  query logging disabled label */

@@ -100,4 +100,14 @@ final class SAClaudeGlyphsTests: XCTestCase {
             }
         }
     }
+
+    /// Verifies the editor bar's glyphs render and are named.
+    func testEditorBarGlyphs() {
+        for glyph in [SAClaudeGlyph.more, .favorite, .history] {
+            let image = SAClaudeGlyphs.image(glyph, tint: .gray)
+            XCTAssertNotNil(strokeColour(render(image, .darkAqua)), "glyph \(glyph.rawValue) draws nothing")
+            XCTAssertFalse(image.accessibilityDescription?.isEmpty ?? true)
+        }
+        XCTAssertEqual(SAClaudeGlyph.infoPanel.rawValue, 8, "existing raw values unchanged")
+    }
 }

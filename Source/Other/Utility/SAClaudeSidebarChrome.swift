@@ -106,6 +106,7 @@ extension SAClaudeSidebarChrome {
     private static var associationKey: UInt8 = 0
     private weak var view: NSView?
     private var isHovered = false
+    private var fillColour: NSColor?
     private var appearanceObservation: NSKeyValueObservation?
 
     /// Attaches a highlighter to `view` (once) and rounds its layer.
@@ -128,6 +129,13 @@ extension SAClaudeSidebarChrome {
         objc_setAssociatedObject(view, &associationKey, highlighter, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
+    /// Uses `colour` instead of the Claude sidebar hover fill for `view` (attach first).
+    @objc(setFillColour:forView:)
+    static func setFillColour(_ colour: NSColor?, for view: NSView) {
+        highlighter(for: view)?.fillColour = colour
+        if let highlighter = highlighter(for: view), highlighter.isHovered { highlighter.setHovered(true) }
+    }
+
     /// The highlighter attached to `view`, if any.
     static func highlighter(for view: NSView) -> SAClaudeHoverHighlighter? {
         objc_getAssociatedObject(view, &associationKey) as? SAClaudeHoverHighlighter
@@ -147,7 +155,7 @@ extension SAClaudeSidebarChrome {
         var fill: CGColor?
         if hovered, (view as? NSControl)?.isEnabled ?? true {
             view.effectiveAppearance.performAsCurrentDrawingAppearance {
-                fill = SAClaudeStyle.hoverFill.cgColor
+                fill = (self.fillColour ?? SAClaudeStyle.hoverFill).cgColor
             }
         }
         view.layer?.backgroundColor = fill
@@ -278,8 +286,11 @@ extension SAClaudeSidebarChrome {
 
 /// A 1pt line in the Claude divider colour, redrawn for light/dark.
 @objc final class SAClaudeDividerLine: NSView {
+    /// Replaces the Claude divider colour (e.g. with a theme-derived hairline).
+    @objc var colourOverride: NSColor? { didSet { needsDisplay = true } }
+
     override func draw(_ dirtyRect: NSRect) {
-        SAClaudeStyle.divider.setFill()
+        (colourOverride ?? SAClaudeStyle.divider).setFill()
         bounds.fill()
     }
 

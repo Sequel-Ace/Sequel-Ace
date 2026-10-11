@@ -11,7 +11,7 @@ import AppKit
 
 /// The icons the left navigation draws.
 @objc enum SAClaudeGlyph: Int {
-    case database, table, view, procedure, function, add, actions, refresh, infoPanel
+    case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history
 }
 
 @objc final class SAClaudeGlyphs: NSObject {
@@ -24,7 +24,7 @@ import AppKit
         case .view: return SAClaudeStyle.tintView
         case .procedure: return SAClaudeStyle.tintProcedure
         case .function: return SAClaudeStyle.tintFunction
-        case .add, .actions, .refresh, .infoPanel: return SAClaudeStyle.textMuted
+        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history: return SAClaudeStyle.textMuted
         }
     }
 
@@ -40,6 +40,9 @@ import AppKit
         case .actions: return NSLocalizedString("Table actions", comment: "accessibility name of the table actions menu button below the tables list")
         case .refresh: return NSLocalizedString("Refresh table list", comment: "accessibility name of the refresh button below the tables list")
         case .infoPanel: return NSLocalizedString("Toggle information panel", comment: "accessibility name of the button that shows or hides the table information panel")
+        case .more: return NSLocalizedString("Editor options", comment: "accessibility name of the editor options menu button under the query editor")
+        case .favorite: return NSLocalizedString("Query Favorites", comment: "accessibility name of the query favorites menu button under the query editor")
+        case .history: return NSLocalizedString("Query History", comment: "accessibility name of the query history menu button under the query editor")
         }
     }
 
@@ -180,6 +183,23 @@ import AppKit
         case .infoPanel:
             return [NSBezierPath(roundedRect: NSRect(x: 2, y: 2.5, width: 12, height: 11), xRadius: 2, yRadius: 2),
                     line(p(2, 10), p(14, 10))]
+        case .more:
+            return [NSBezierPath(ovalIn: NSRect(x: 2.75, y: 7.25, width: 1.5, height: 1.5)),
+                    NSBezierPath(ovalIn: NSRect(x: 7.25, y: 7.25, width: 1.5, height: 1.5)),
+                    NSBezierPath(ovalIn: NSRect(x: 11.75, y: 7.25, width: 1.5, height: 1.5))]
+        case .favorite:
+            let star = NSBezierPath()
+            let points: [(CGFloat, CGFloat)] = [(8, 2.2), (9.7, 5.8), (13.6, 6.3), (10.7, 9.0), (11.4, 12.9),
+                                                (8, 11), (4.6, 12.9), (5.3, 9.0), (2.4, 6.3), (6.3, 5.8)]
+            star.move(to: p(points[0].0, points[0].1))
+            for point in points.dropFirst() { star.line(to: p(point.0, point.1)) }
+            star.close()
+            return [star]
+        case .history:
+            let ring = NSBezierPath()
+            ring.appendArc(withCenter: p(8, 8), radius: 5.5, startAngle: 180, endAngle: 135, clockwise: false)
+            return [ring, line(p(2.5, 8), p(2.5, 5.3)), line(p(2.5, 8), p(5.1, 8)),
+                    line(p(8, 5), p(8, 8.2)), line(p(8, 8.2), p(10, 9.5))]
         }
     }
 }
