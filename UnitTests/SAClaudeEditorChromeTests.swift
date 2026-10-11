@@ -34,6 +34,45 @@ final class SAClaudeEditorChromeTests: XCTestCase {
         assertNear(light.buttonText, 0x404040); assertNear(light.icon, 0x777777); assertNear(light.gutterNumbers, 0xA5A5A5)
     }
 
+    /// Reads `c` back in generic RGB as a 24-bit hex value.
+    private func genericHex(_ c: NSColor) -> UInt32 {
+        let g = c.usingColorSpace(.genericRGB)!
+        return UInt32((g.redComponent * 255).rounded()) << 16 | UInt32((g.greenComponent * 255).rounded()) << 8 | UInt32((g.blueComponent * 255).rounded())
+    }
+
+    private func assertNearGeneric(_ c: NSColor, _ expected: UInt32, _ name: String, file: StaticString = #filePath, line: UInt = #line) {
+        let got = genericHex(c)
+        for shift in [16, 8, 0] {
+            XCTAssertLessThanOrEqual(abs(Int((got >> UInt32(shift)) & 0xFF) - Int((expected >> UInt32(shift)) & 0xFF)), 1,
+                                     String(format: "%@: got %06X expected %06X", name, got, expected), file: file, line: line)
+        }
+    }
+
+    /// The colours as the app stores and reloads them: calibrated (generic) RGB through SAArchiving.
+    private func storedTheme(text: String, background: String) throws -> (text: NSColor, background: NSColor) {
+        func roundTrip(_ hex: String) throws -> NSColor {
+            let colour = try XCTUnwrap(SAEditorThemeLoader.colour(fromHex: hex))
+            return try XCTUnwrap(SAArchiving.color(from: SAArchiving.archivedData(forColor: colour)))
+        }
+        return (try roundTrip(text), try roundTrip(background))
+    }
+
+    /// Verifies theme-loaded (generic RGB) Claude colours give the spec values, not an sRGB drift.
+    func testClaudePalettesFromStoredThemeColours() throws {
+        let dark = try storedTheme(text: "#F0EFEC", background: "#151515")
+        let d = SAClaudeEditorChrome.palette(text: dark.text, background: dark.background)
+        assertNearGeneric(d.background, 0x151515, "dark background")
+        assertNearGeneric(d.hairline, 0x272626, "dark hairline"); assertNearGeneric(d.hover, 0x272626, "dark hover")
+        assertNearGeneric(d.buttonText, 0xC0BFBD, "dark buttonText"); assertNearGeneric(d.icon, 0x8D8D8B, "dark icon")
+        assertNearGeneric(d.gutterNumbers, 0x646362, "dark gutter")
+        let light = try storedTheme(text: "#0B0B0B", background: "#FCFCFB")
+        let l = SAClaudeEditorChrome.palette(text: light.text, background: light.background)
+        assertNearGeneric(l.background, 0xFCFCFB, "light background")
+        assertNearGeneric(l.hairline, 0xE9E9E8, "light hairline"); assertNearGeneric(l.hover, 0xE9E9E8, "light hover")
+        assertNearGeneric(l.buttonText, 0x404040, "light buttonText"); assertNearGeneric(l.icon, 0x777777, "light icon")
+        assertNearGeneric(l.gutterNumbers, 0xA5A5A5, "light gutter")
+    }
+
     private func luminance(_ c: NSColor) -> CGFloat {
         let s = c.usingColorSpace(.sRGB)!
         func lin(_ v: CGFloat) -> CGFloat { v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
@@ -92,6 +131,7 @@ final class SAClaudeEditorChromeTests: XCTestCase {
         XCTAssertEqual(layout.chevronRect.minX, 135)
         XCTAssertEqual(layout.chevronRect.maxX, 150)
         XCTAssertLessThanOrEqual(layout.shortcutOrigin.x + 20, layout.dividerX)
+        XCTAssertEqual(layout.shortcutOrigin.x, 103)
         XCTAssertEqual(SAClaudeEditorChrome.runWidth(titleWidth: 70, shortcutWidth: 20, lineOffset: 15), 12 + 9 + 6 + 70 + 8 + 20 + 12 + 15)
     }
 }

@@ -28,17 +28,23 @@ import AppKit
         let gutterNumbers: NSColor
     }
 
-    /// `background + (text − background) × ratio`, per sRGB channel.
+    /// `background + (text − background) × ratio`, per channel, blended in the
+    /// background's own RGB colour space (the theme loader stores calibrated
+    /// RGB) and returned in it; sRGB when the background is not an RGB colour.
     static func derivedColour(text: NSColor, background: NSColor, ratio: CGFloat) -> NSColor {
-        let t = text.usingColorSpace(.sRGB) ?? .white
-        let b = background.usingColorSpace(.sRGB) ?? .black
+        // `colorSpace` is only valid for component-based colours (not catalog/dynamic ones).
+        let space: NSColorSpace = background.type == .componentBased && background.colorSpace.colorSpaceModel == .rgb
+            ? background.colorSpace : .sRGB
+        let t = text.usingColorSpace(space) ?? NSColor.white.usingColorSpace(space)!
+        let b = background.usingColorSpace(space) ?? NSColor.black.usingColorSpace(space)!
         func mix(_ tv: CGFloat, _ bv: CGFloat) -> CGFloat { bv + (tv - bv) * ratio }
-        return NSColor(srgbRed: mix(t.redComponent, b.redComponent), green: mix(t.greenComponent, b.greenComponent),
-                       blue: mix(t.blueComponent, b.blueComponent), alpha: 1)
+        var components: [CGFloat] = [mix(t.redComponent, b.redComponent), mix(t.greenComponent, b.greenComponent),
+                                     mix(t.blueComponent, b.blueComponent), 1]
+        return NSColor(colorSpace: space, components: &components, count: 4)
     }
 
     static func palette(text: NSColor, background: NSColor) -> Palette {
-        Palette(background: background.usingColorSpace(.sRGB) ?? background,
+        Palette(background: background,
                 hairline: derivedColour(text: text, background: background, ratio: hairlineRatio),
                 hover: derivedColour(text: text, background: background, ratio: hoverRatio),
                 buttonText: derivedColour(text: text, background: background, ratio: buttonTextRatio),
@@ -93,6 +99,7 @@ import AppKit
 
     // MARK: - Shortcut hint
 
+    /// For single printable key equivalents; special keys such as "\r" are not mapped to symbols.
     static func shortcutString(keyEquivalent: String, modifiers: NSEvent.ModifierFlags) -> String {
         guard !keyEquivalent.isEmpty else { return "" }
         var s = ""
