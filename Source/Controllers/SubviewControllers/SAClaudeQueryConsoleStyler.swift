@@ -277,6 +277,8 @@ import AppKit
         applyPalette(force: true)
         defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             self?.applyPalette(force: false)
+            // The controller sets the logging note's text from its own observer of the same write; lay out after it.
+            DispatchQueue.main.async { self?.layoutToolbar() }
         }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark; applyPalette(force:)
         // also drops the cached cell text style, which bakes them in.
@@ -378,7 +380,10 @@ import AppKit
             buttons.append(button)
             widths.append(max(labelledWidth(of: button), buttonHeight))
         }
-        let layout = SAClaudeConsoleToolbarLayout.layout(totalWidth: bounds.width, buttonWidths: widths)
+        // The logging note's fitted width; the search field yields room for it (0 when logging is on and it is empty).
+        let note = loggingLabel?.stringValue ?? ""
+        let noteWidth = note.isEmpty ? 0 : ceil(loggingLabel?.cell?.cellSize.width ?? 0)
+        let layout = SAClaudeConsoleToolbarLayout.layout(totalWidth: bounds.width, buttonWidths: widths, middleWidth: noteWidth)
         for (index, button) in buttons.enumerated() {
             let frame = NSRect(x: bounds.minX + layout.buttons[index].x, y: buttonY, width: layout.buttons[index].width, height: buttonHeight)
             if button.frame != frame { button.frame = frame }
@@ -396,11 +401,12 @@ import AppKit
         }
 
         if let loggingLabel {
-            let padding = SAClaudeConsoleToolbarLayout.sidePadding
-            let x = fieldFrame.maxX + padding
-            let right = (buttons.first.map { $0.frame.minX } ?? bounds.maxX) - padding
+            // Still truncates in a window narrower than the minimum; the tooltip keeps the full note.
+            let toolTip: String? = note.isEmpty ? nil : note
+            if loggingLabel.toolTip != toolTip { loggingLabel.toolTip = toolTip }
             let height = ceil(loggingLabel.cell?.cellSize.height ?? 14)
-            let frame = NSRect(x: x, y: SAClaudeEditorChrome.centredY(height: height, in: bounds.height), width: max(0, right - x), height: height)
+            let frame = NSRect(x: bounds.minX + layout.middle.x, y: SAClaudeEditorChrome.centredY(height: height, in: bounds.height),
+                               width: layout.middle.width, height: height)
             if loggingLabel.frame != frame { loggingLabel.frame = frame }
         }
     }
