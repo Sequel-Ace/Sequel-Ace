@@ -4,7 +4,7 @@
 //
 //  Draws the Run All console's block decorations behind the text: a faint line
 //  above each statement block, and for failed blocks a clay tint with a 2pt clay
-//  left edge. App target only.
+//  left edge, across the console's full width. App target only.
 //
 
 import AppKit
@@ -15,26 +15,37 @@ final class SAScriptConsoleLayoutManager: NSLayoutManager {
     var errorTint: NSColor = .clear
     var errorEdge = NSColor(srgbRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
 
-    override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
-        guard let storage = textStorage, let container = textContainers.first else { return }
+    /// Vertical padding of a block: the band reaches this far above and below its text,
+    /// and blocks after the first sit twice this far apart (see the console's paragraph spacing).
+    static let blockPadding: CGFloat = 10
 
-        // macOS 14+ views don't clip: fill only inside the text container, the
-        // text view's bounds and the area being redrawn.
-        var clip = NSRect(origin: origin, size: container.containerSize)
-        if let textView = container.textView { clip = clip.intersection(textView.bounds) }
+    /// Draws the block decorations for `dirtyRect` of `textView`. Called by
+    /// SAScriptConsoleBlockTextView before any text is drawn, so the selection
+    /// (drawn later by drawBackground(forGlyphRange:at:)) stays visible on top.
+    /// The text view, not drawBackground(forGlyphRange:at:), calls this because
+    /// NSTextView clips glyph drawing to the text container (inside the 14pt
+    /// inset), and blocks span the console's full width.
+    func drawBlockDecorations(in dirtyRect: NSRect, of textView: NSTextView) {
+        guard let storage = textStorage, storage.length > 0, let container = textView.textContainer else { return }
+
+        // macOS 14+ views don't clip: fill only inside the bounds and the area being redrawn.
+        var clip = textView.bounds.intersection(dirtyRect)
         if let context = NSGraphicsContext.current?.cgContext { clip = clip.intersection(context.boundingBoxOfClipPath) }
         guard !clip.isEmpty else { return }
         func fill(_ rect: NSRect) {
             let visible = rect.intersection(clip)
             if !visible.isEmpty { visible.fill() }
         }
+        let padding = Self.blockPadding
+        let origin = textView.textContainerOrigin
+        let full = textView.bounds
 
-        // Decorations reach ~5pt beyond their lines (into the gap between blocks),
-        // so look one gap further up and down than the glyphs being drawn.
-        let shown = boundingRect(forGlyphRange: glyphsToShow, in: container).insetBy(dx: 0, dy: -11)
-        let glyphs = glyphRange(forBoundingRectWithoutAdditionalLayout: shown, in: container)
-        let characters = characterRange(forGlyphRange: NSUnionRange(glyphs, glyphsToShow), actualGlyphRange: nil)
+        // Decorations reach one block padding beyond their lines (into the gap
+        // between blocks), so look a little further up and down than the dirty rect.
+        let shown = clip.offsetBy(dx: -origin.x, dy: -origin.y).insetBy(dx: 0, dy: -(2 * padding + 1))
+        let glyphs = glyphRange(forBoundingRectWithoutAdditionalLayout: NSRect(x: 0, y: shown.minY, width: container.containerSize.width, height: shown.height), in: container)
+        guard glyphs.length > 0 else { return }
+        let characters = characterRange(forGlyphRange: glyphs, actualGlyphRange: nil)
 
         storage.enumerateAttribute(.saConsoleBlockError, in: characters, options: []) { value, range, _ in
             guard (value as? Bool) == true else { return }
@@ -45,9 +56,7 @@ final class SAScriptConsoleLayoutManager: NSLayoutManager {
             if NSMaxRange(range) == storage.length, !extra.isEmpty, extra.minY < rect.maxY, extra.minY > rect.minY {
                 rect.size.height = extra.minY - rect.minY
             }
-            rect.origin.x = 0
-            rect.size.width = container.containerSize.width
-            rect = rect.offsetBy(dx: origin.x, dy: origin.y).insetBy(dx: 0, dy: -5)
+            rect = NSRect(x: full.minX, y: origin.y + rect.minY, width: full.width, height: rect.height).insetBy(dx: 0, dy: -padding)
             errorTint.setFill()
             fill(rect)
             errorEdge.setFill()
@@ -60,7 +69,16 @@ final class SAScriptConsoleLayoutManager: NSLayoutManager {
             // The used rect starts below the block's paragraph spacing (the gap between blocks).
             let line = lineFragmentUsedRect(forGlyphAt: glyph, effectiveRange: nil)
             separatorColour.setFill()
-            fill(NSRect(x: origin.x, y: origin.y + line.minY - 5.5, width: container.containerSize.width, height: 1))
+            fill(NSRect(x: full.minX, y: origin.y + line.minY - padding - 0.5, width: full.width, height: 1))
         }
+    }
+}
+
+/// The console's text view: draws the block decorations over its background,
+/// before the selection and the text.
+final class SAScriptConsoleBlockTextView: NSTextView {
+    override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
+        (layoutManager as? SAScriptConsoleLayoutManager)?.drawBlockDecorations(in: rect, of: self)
     }
 }

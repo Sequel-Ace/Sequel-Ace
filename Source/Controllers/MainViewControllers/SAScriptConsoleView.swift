@@ -138,9 +138,11 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
         // No wrapping: rows are tab-separated lines; scroll horizontally instead.
         let container = NSTextContainer(size: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
         container.widthTracksTextView = false
+        // Text starts at the 14pt inset, like the block padding.
+        container.lineFragmentPadding = 0
         layoutManager.addTextContainer(container)
 
-        let textView = NSTextView(frame: NSRect(origin: .zero, size: scrollView.contentSize), textContainer: container)
+        let textView = SAScriptConsoleBlockTextView(frame: NSRect(origin: .zero, size: scrollView.contentSize), textContainer: container)
         textView.isEditable = false
         textView.isSelectable = true
         textView.isRichText = false
@@ -172,10 +174,12 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
         /// The palette and style the console was last built with, to skip unchanged looks.
         private var look: [NSObject] = []
 
-        /// The gap between blocks (the layout manager draws the separator in it).
+        /// The gap between blocks: each block's bottom and top padding (the layout
+        /// manager draws the separator in its middle). The first block's top padding
+        /// is the text container inset.
         private static let blockGap: NSParagraphStyle = {
             let style = NSMutableParagraphStyle()
-            style.paragraphSpacingBefore = 10
+            style.paragraphSpacingBefore = 2 * SAScriptConsoleLayoutManager.blockPadding
             return style
         }()
 
