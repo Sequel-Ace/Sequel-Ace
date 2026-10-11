@@ -151,11 +151,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
     // keep track of tasks we start and stop, otherwise we get an assert error
     taskCount = 0;
 
-	lineNumberView = [[NoodleLineNumberView alloc] initWithScrollView:scrollView];
+	lineNumberView = [[SAClaudeLineNumberView alloc] initWithScrollView:scrollView];
 	[scrollView setVerticalRulerView:lineNumberView];
 	[scrollView setHasHorizontalRuler:NO];
 	[scrollView setHasVerticalRuler:YES];
 	[scrollView setRulersVisible:YES];
+	[self setTextContainerInset:NSMakeSize(0, [SAClaudeEditorChrome editorTopInset])];
 	[self setAllowsDocumentBackgroundColorChange:YES];
 	[self setContinuousSpellCheckingEnabled:NO];
 	[self setAutoindent:[prefs boolForKey:SPCustomQueryAutoIndent]];

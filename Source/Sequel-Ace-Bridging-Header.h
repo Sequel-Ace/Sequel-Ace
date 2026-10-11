@@ -57,6 +57,7 @@
 #import "SPCompatibility.h"
 #import "SPSplitView.h"
 #import "SPComboPopupButton.h"
+#import "NoodleLineNumberView.h"
 #import "SPTreeNode.h"
 #import "SPGroupNode.h"
 #import "SPFavoriteNode.h"
