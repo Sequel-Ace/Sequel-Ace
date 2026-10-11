@@ -109,6 +109,7 @@ extension SPCustomQuery {
     private func reportUnsupportedExplain() {
         NSSound.beep()
         errorTextTitle?.stringValue = NSLocalizedString("Query status", comment: "Query tab status pane title when there is no error")
+        SAClaudeQueryInfoStyler.setErrorState(false, forTextView: errorText as? NSTextView)
         let message = NSLocalizedString("EXPLAIN is only supported for a single SELECT or WITH statement.", comment: "EXPLAIN unsupported statement message")
         // errorText is wired in DBView.xib as an NSTextView (NSText subclass);
         // mirrors the [errorText setString:...] pattern used throughout SPCustomQuery.m.

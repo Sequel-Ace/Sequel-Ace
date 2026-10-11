@@ -24,7 +24,8 @@ import AppKit
     private static let dotGap: CGFloat = 6
     /// NSTextFieldCell draws its text 2pt in from the field's left edge.
     private static let titleTextInset: CGFloat = 2
-    private static let blockPadding = NSSize(width: 10, height: 8)
+    /// The error text's inset inside its block.
+    private static let errorTextInset = NSSize(width: 10, height: 8)
     private static let statusGap: CGFloat = 8
 
     private weak var split: SPSplitView?
@@ -37,7 +38,9 @@ import AppKit
     private weak var exportButton: NSPopUpButton?
 
     private let paneBackground = SAClaudeEditorBarBackgroundView()
-    private let dot = SAClaudeStatusDotView(frame: .zero)
+    private let dot = SAClaudeRoundedFillView(frame: .zero)
+    /// The eye toggle's resting fill while the pane is open (its image and alternate image are the same).
+    private let infoButtonStateFill = SAClaudeRoundedFillView(frame: .zero)
     private let errorBlock = SAClaudeErrorBlockView(frame: .zero)
     private let stripBackground = SAClaudeEditorBarBackgroundView()
     private let stripLine = SAClaudeDividerLine(frame: .zero)
@@ -48,11 +51,13 @@ import AppKit
     private var defaultsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
     private var appearanceObservation: NSKeyValueObservation?
+    private var infoButtonStateObservation: NSKeyValueObservation?
+    private var statusTextObservation: NSKeyValueObservation?
 
     /// The theme-derived colours, resolved for the split view's appearance.
     private struct Colours {
         let theme: SAClaudeThemeColours
-        let muted, hairline, errorText, errorFill, icon, hover, buttonText: NSColor
+        let muted, hairline, errorText, errorFill, icon, hover: NSColor
     }
 
     // MARK: - Attaching
@@ -140,8 +145,8 @@ import AppKit
             if titleField.superview === pane {
                 titleField.frame.origin.x += Self.titleShift
                 let textX = titleField.frame.minX + Self.titleTextInset
-                dot.frame = NSRect(x: textX - Self.dotGap - Self.dotSize,
-                                   y: titleField.frame.midY - Self.dotSize / 2,
+                dot.frame = NSRect(x: (textX - Self.dotGap - Self.dotSize).rounded(),
+                                   y: (titleField.frame.midY - Self.dotSize / 2).rounded(),
                                    width: Self.dotSize, height: Self.dotSize)
                 // Pinned like the title: to the pane's top-left.
                 dot.autoresizingMask = pane.isFlipped ? [.maxXMargin, .maxYMargin] : [.maxXMargin, .minYMargin]
@@ -169,10 +174,12 @@ import AppKit
         split.dividerStyle = .thin
     }
 
-    /// The block sits behind the message's scroll view, padded out 10/8pt and kept inside the pane.
+    /// The block covers the message's scroll view, its left edge on the text's line start (the dot's x);
+    /// the error text is inset inside it (see `applyState`).
     private func layoutErrorBlock() {
-        guard let pane, let scrollView = messageScrollView else { return }
-        let frame = scrollView.frame.insetBy(dx: -Self.blockPadding.width, dy: -Self.blockPadding.height).intersection(pane.bounds)
+        guard let scrollView = messageScrollView else { return }
+        let padding = messageTextView?.textContainer?.lineFragmentPadding ?? 5
+        let frame = scrollView.frame.insetBy(dx: padding, dy: 0)
         if errorBlock.frame != frame { errorBlock.frame = frame }
     }
 
@@ -182,7 +189,8 @@ import AppKit
         let height = container.isFlipped ? container.bounds.maxY - split.frame.maxY : split.frame.minY - container.bounds.minY
         guard height > 0 else { return }
         let stripY = container.isFlipped ? container.bounds.maxY - height : container.bounds.minY
-        stripBackground.frame = NSRect(x: container.bounds.minX, y: stripY, width: container.bounds.width, height: height)
+        // As wide as the split above it.
+        stripBackground.frame = NSRect(x: split.frame.minX, y: stripY, width: split.frame.width, height: height)
         stripBackground.autoresizingMask = container.isFlipped ? [.width, .minYMargin] : [.width, .maxYMargin]
         container.addSubview(stripBackground, positioned: .below, relativeTo: nil)
         // Hairline along the strip's top edge (non-flipped background view).
@@ -202,6 +210,17 @@ import AppKit
             infoButton.imagePosition = .imageOnly
             if infoButton.superview === container { infoButton.frame = ghostFrame(for: infoButton) }
             SAClaudeHoverHighlighter.attach(to: infoButton)
+            if let buttonSuperview = infoButton.superview {
+                infoButtonStateFill.cornerRadius = SAClaudeStyle.barButtonRadius
+                infoButtonStateFill.frame = infoButton.frame
+                infoButtonStateFill.autoresizingMask = infoButton.autoresizingMask
+                buttonSuperview.addSubview(infoButtonStateFill, positioned: .below, relativeTo: infoButton)
+                updateInfoButtonStateFill()
+                // SPSplitView sets the toggle's state whenever the pane collapses or expands.
+                infoButtonStateObservation = infoButton.observe(\.state, options: [.initial]) { [weak self] _, _ in
+                    DispatchQueue.main.async { self?.updateInfoButtonStateFill() }
+                }
+            }
         }
         if let exportButton {
             exportButton.isBordered = false
@@ -218,6 +237,11 @@ import AppKit
             statusField.font = font
             // One line tall now; a long status ends in an ellipsis instead of wrapping out of sight.
             statusField.lineBreakMode = .byTruncatingTail
+            // The full text, which the truncation may hide.
+            statusTextObservation = statusField.observe(\.stringValue, options: [.initial]) { field, _ in
+                let text = field.stringValue
+                field.toolTip = text.isEmpty ? nil : text
+            }
             guard statusField.superview === container else { return }
             var frame = statusField.frame
             let buttons = [infoButton as NSView?, exportButton].compactMap { $0 }.filter { $0.superview === container }
@@ -250,7 +274,7 @@ import AppKit
                                hairline: SAClaudeStatusChrome.hairline(theme: theme),
                                errorText: SAClaudeStatusChrome.errorText(theme: theme),
                                errorFill: SAClaudeStatusChrome.errorFill(theme: theme),
-                               icon: palette.icon, hover: palette.hover, buttonText: palette.buttonText)
+                               icon: palette.icon, hover: palette.hover)
         }
         guard let resolved else { return }
         colours = resolved
@@ -270,14 +294,12 @@ import AppKit
             let image = SAClaudeGlyphs.image(.infoPanel, tint: resolved.icon)
             infoButton.image = image
             infoButton.alternateImage = image
-            infoButton.contentTintColor = resolved.buttonText
             SAClaudeHoverHighlighter.setFillColour(resolved.hover, for: infoButton)
         }
         if let exportButton {
             let image = SAClaudeGlyphs.image(.more, tint: resolved.icon)
             image.accessibilityDescription = exportButton.accessibilityLabel()
             exportButton.item(at: 0)?.image = image
-            exportButton.contentTintColor = resolved.buttonText
             SAClaudeHoverHighlighter.setFillColour(resolved.hover, for: exportButton)
         }
         applyState()
@@ -289,16 +311,28 @@ import AppKit
         let theme = colours.theme
         let messageColour = isError ? colours.errorText : colours.muted
         if messageTextView?.textColor != messageColour { messageTextView?.textColor = messageColour }
+        let inset = isError ? Self.errorTextInset : .zero
+        if let messageTextView, messageTextView.textContainerInset != inset { messageTextView.textContainerInset = inset }
         dot.fillColour = SAClaudeStatusChrome.statusDot(isError: isError, theme: theme)
         errorBlock.fillColour = colours.errorFill
         errorBlock.isHidden = !isError
         statusField?.textColor = isError ? colours.errorText : colours.muted
+        infoButtonStateFill.fillColour = colours.hover
+    }
+
+    /// Shows the eye toggle's resting fill while the pane is expanded (or expanding).
+    private func updateInfoButtonStateFill() {
+        guard let split else { return }
+        infoButtonStateFill.isHidden = split.isCollapsibleSubviewCollapsed()
     }
 }
 
-/// The 7pt round status dot before the pane's title.
-final class SAClaudeStatusDotView: NSView {
+/// A rounded layer fill: the 7pt status dot before the pane's title (round by default) and the eye
+/// toggle's open-state fill.
+final class SAClaudeRoundedFillView: NSView {
     var fillColour: NSColor = .clear { didSet { needsDisplay = true } }
+    /// `nil` rounds the view fully (half its height).
+    var cornerRadius: CGFloat? { didSet { needsDisplay = true } }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -311,7 +345,7 @@ final class SAClaudeStatusDotView: NSView {
 
     /// Runs with the view's appearance current, so a dynamic colour resolves for light/dark.
     override func updateLayer() {
-        layer?.cornerRadius = bounds.height / 2
+        layer?.cornerRadius = cornerRadius ?? bounds.height / 2
         layer?.backgroundColor = fillColour.cgColor
     }
 
