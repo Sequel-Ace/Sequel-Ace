@@ -171,6 +171,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	{
 		if (returnCode == NSModalResponseOK) {
 			if ([self _loadColorSchemeFromFile:[[[panel URLs] objectAtIndex:0] path] ]) {
+				[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 				[self->prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 
 				[self updateDisplayColorThemeName];
@@ -184,6 +185,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![self _checkForUnsavedTheme]) return;
 	
 	if ([self _loadColorSchemeFromFile:[NSString stringWithFormat:@"%@/%@.%@", themePath, [sender title], SPColorThemeFileExtension]]) {
+		[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 		[prefs setObject:[sender title] forKey:SPCustomQueryEditorThemeName];
 		
 		[self updateDisplayColorThemeName];
@@ -318,6 +320,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![self _checkForUnsavedTheme]) return;
 	
 	[[NSColorPanel sharedColorPanel] close];
+	[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 	
 	[prefs setObject:SPDefaultColorSchemeName forKey:SPCustomQueryEditorThemeName];
 	
@@ -518,6 +521,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (colorData) {
 		[prefs setObject:colorData forKey:[editorColors objectAtIndex:colorRow]];
 	}
+	[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 
 	if ([[editorColors objectAtIndex:colorRow] isEqualTo:SPCustomQueryEditorBackgroundColor]) {
 		[colorSettingTableView setBackgroundColor:newColor];
@@ -596,6 +600,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			return;
 		}
 		
+		[[SAEditorAppearanceThemeSwitcher shared] themeRenamedFrom:[editThemeListItems objectAtIndex:rowIndex] to:newName];
+
 		// Refresh current color theme setting name
 		if ([[[prefs objectForKey:SPCustomQueryEditorThemeName] lowercaseString] isEqualToString:[[editThemeListItems objectAtIndex:rowIndex] lowercaseString]]) {
 			[prefs setObject:newName forKey:SPCustomQueryEditorThemeName];

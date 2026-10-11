@@ -128,6 +128,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
     // Register application defaults
     [prefs registerDefaults:preferenceDefaults];
+    [SAEditorAppearanceThemeSwitcher registerDefaults];
 
     // Upgrade prefs before any other parts of the app pick up on the values
     SPApplyRevisionChanges();
@@ -268,6 +269,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     [SPBundleManager.shared reloadBundles:self];
     [self _copyDefaultThemes];
+
+    // The editor theme follows the app's light/dark appearance when the user wants it to.
+    NSString *themesDirectory = [[NSFileManager defaultManager] applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
+    if (themesDirectory) [[SAEditorAppearanceThemeSwitcher shared] startWithThemesDirectory:themesDirectory];
 
     // Start the embedded MCP server if enabled in preferences.
     [self setupMCPServer];
