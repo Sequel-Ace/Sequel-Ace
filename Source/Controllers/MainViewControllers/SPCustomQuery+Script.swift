@@ -222,10 +222,12 @@ extension SPCustomQuery {
         }
 
         let hadErrors = summary.errorCount > 0
-        errorTextTitle?.stringValue = hadErrors
+        // A cancelled run shows its message as an error, so its title matches.
+        let showsError = hadErrors || summary.wasCancelled
+        errorTextTitle?.stringValue = showsError
             ? NSLocalizedString("Last error", comment: "Query tab status pane title after an error")
             : NSLocalizedString("Query status", comment: "Query tab status pane title when there is no error")
-        SAClaudeQueryInfoStyler.setErrorState(hadErrors || summary.wasCancelled, forTextView: errorText as? NSTextView)
+        SAClaudeQueryInfoStyler.setErrorState(showsError, forTextView: errorText as? NSTextView)
         (errorText as? NSText)?.string = summary.wasCancelled
             ? NSLocalizedString("Query cancelled.", comment: "Query cancelled error")
             : (hadErrors ? summary.errorLines.joined(separator: "\n")

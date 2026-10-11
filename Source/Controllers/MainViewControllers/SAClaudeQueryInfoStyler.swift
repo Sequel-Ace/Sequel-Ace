@@ -50,6 +50,7 @@ import AppKit
     private var colours: Colours?
     private var defaultsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
+    private var messageTextObserver: NSObjectProtocol?
     private var appearanceObservation: NSKeyValueObservation?
     private var infoButtonStateObservation: NSKeyValueObservation?
     private var statusTextObservation: NSKeyValueObservation?
@@ -99,6 +100,7 @@ import AppKit
     deinit {
         if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
         if let scrollFrameObserver { NotificationCenter.default.removeObserver(scrollFrameObserver) }
+        if let messageTextObserver { NotificationCenter.default.removeObserver(messageTextObserver) }
     }
 
     /// The pull-down beside the pane toggle whose menu (or a submenu) exports the query result.
@@ -165,6 +167,13 @@ import AppKit
                 scrollFrameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: scrollView, queue: .main) { [weak self] _ in
                     self?.layoutErrorBlock()
                 }
+                // The block hugs the message, so follow every change to its text (setString: too).
+                // Laid out on the next turn: the layout manager mustn't lay out while the storage edits.
+                if let textStorage = messageTextView?.textStorage {
+                    messageTextObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: textStorage, queue: nil) { [weak self] _ in
+                        DispatchQueue.main.async { self?.layoutErrorBlock() }
+                    }
+                }
             }
         }
         if let messageTextView {
@@ -174,13 +183,29 @@ import AppKit
         split.dividerStyle = .thin
     }
 
-    /// The block covers the message's scroll view, its left edge on the text's line start (the dot's x);
-    /// the error text is inset inside it (see `applyState`).
+    /// The block spans the message's scroll view, its left edge on the text's line start (the dot's x),
+    /// and hugs the error text inset inside it (see `applyState`): as tall as the text plus the insets,
+    /// top-aligned, never taller than the message area.
     private func layoutErrorBlock() {
         guard let scrollView = messageScrollView else { return }
         let padding = messageTextView?.textContainer?.lineFragmentPadding ?? 5
-        let frame = scrollView.frame.insetBy(dx: padding, dy: 0)
-        if errorBlock.frame != frame { errorBlock.frame = frame }
+        let area = scrollView.frame.insetBy(dx: padding, dy: 0)
+        var frame = area
+        if isError, let textHeight = errorTextHeight() {
+            frame.size.height = min(area.height, textHeight + 2 * Self.errorTextInset.height)
+            if !(scrollView.superview?.isFlipped ?? false) { frame.origin.y = area.maxY - frame.height }
+        }
+        guard errorBlock.frame != frame else { return }
+        errorBlock.frame = frame
+        errorBlock.needsDisplay = true
+    }
+
+    /// The height the message's text takes up in its text container.
+    private func errorTextHeight() -> CGFloat? {
+        guard let messageTextView, let layoutManager = messageTextView.layoutManager,
+              let textContainer = messageTextView.textContainer else { return nil }
+        layoutManager.ensureLayout(for: textContainer)
+        return ceil(layoutManager.usedRect(for: textContainer).height)
     }
 
     private func buildStrip() {
@@ -316,6 +341,7 @@ import AppKit
         dot.fillColour = SAClaudeStatusChrome.statusDot(isError: isError, theme: theme)
         errorBlock.fillColour = colours.errorFill
         errorBlock.isHidden = !isError
+        layoutErrorBlock()
         statusField?.textColor = isError ? colours.errorText : colours.muted
         infoButtonStateFill.fillColour = colours.hover
     }

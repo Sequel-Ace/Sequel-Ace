@@ -798,6 +798,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [self->tableDocumentInstance setTaskDescription:taskString];
             // reset text colour
             [SAClaudeQueryInfoStyler setErrorState:NO forTextView:self->errorText];
+            [self->errorTextTitle setStringValue:NSLocalizedString(@"Query status", @"Query tab status pane title when there is no error")];
             [self->errorText setString:taskString];
         }];
         
