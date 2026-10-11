@@ -115,14 +115,26 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
         XCTAssertNil(defaults.persistentDomain(forName: suite)?[matches])
     }
 
-    /// Verifies the bundled Claude themes parse to their backgrounds.
+    /// Verifies the bundled Claude themes parse and DISPLAY as Claude's sRGB colours: the files store
+    /// compensated hexes because the .spTheme parser creates calibrated (Generic RGB) colours.
     func testBundledClaudeThemesParse() throws {
         let themes = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("SharedSupport/Default Themes")
-        for (name, red) in [("Claude Dark", 0x15), ("Claude Light", 0xFC)] {
-            XCTAssertEqual(SAEditorThemeLoader.loadTheme(atPath: themes.appendingPathComponent(name + ".spTheme").path, into: defaults), 11, name)
-            let bg = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.backgroundColourKey))?.usingColorSpace(.genericRGB)
-            XCTAssertEqual(Int(((bg?.redComponent ?? -1) * 255).rounded()), red, name)
+        // Target sRGB background and SQL keyword colour per theme.
+        let expected: [(name: String, background: [Int], keyword: [Int])] = [
+            ("Claude Dark", [0x15, 0x15, 0x15], [0x6D, 0xA7, 0xEC]),
+            ("Claude Light", [0xFC, 0xFC, 0xFB], [0x18, 0x4F, 0x95]),
+        ]
+        func srgb(_ key: String) -> [Int]? {
+            guard let c = SAArchiving.color(from: defaults.data(forKey: key))?.usingColorSpace(.sRGB) else { return nil }
+            return [c.redComponent, c.greenComponent, c.blueComponent].map { Int(($0 * 255).rounded()) }
+        }
+        for item in expected {
+            XCTAssertEqual(SAEditorThemeLoader.loadTheme(atPath: themes.appendingPathComponent(item.name + ".spTheme").path, into: defaults), 11, item.name)
+            for (key, target) in [(SAEditorThemeLoader.backgroundColourKey, item.background), (SAEditorThemeLoader.keywordColourKey, item.keyword)] {
+                guard let shown = srgb(key) else { XCTFail("\(item.name) \(key) missing"); continue }
+                for (got, want) in zip(shown, target) { XCTAssertLessThanOrEqual(abs(got - want), 1, "\(item.name) \(key)") }
+            }
         }
     }
 }
