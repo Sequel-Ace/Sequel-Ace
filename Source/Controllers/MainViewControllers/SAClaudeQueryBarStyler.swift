@@ -107,8 +107,12 @@ import AppKit
         appliedPalette = palette
         if background.fillColour != palette.background { background.fillColour = palette.background }
         bottomLine.colourOverride = palette.hairline
-        editorSplitView?.customDividerColor = palette.hairline
-        editorSplitView?.needsDisplay = true
+        if let split = editorSplitView {
+            split.customDividerColor = palette.hairline
+            // A plain needsDisplay didn't repaint the divider after a theme change; invalidate it explicitly.
+            split.setNeedsDisplay(split.bounds)
+            split.layer?.setNeedsDisplay()
+        }
 
         let glyphs: [(NSPopUpButton?, SAClaudeGlyph)] = [(optionsButton, .more), (favoritesButton, .favorite), (historyButton, .history)]
         for (button, glyph) in glyphs {
