@@ -188,7 +188,8 @@ private struct SAClaudeThemeTile: View {
             .font(.system(size: 10, design: .monospaced))
             .foregroundColor(colour(SAEditorThemeLoader.textColourKey, .textColor))
             .padding(.horizontal, 8)
-            .frame(width: 104, height: 54, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 54)
             .background(RoundedRectangle(cornerRadius: 7).fill(colour(SAEditorThemeLoader.backgroundColourKey, .textBackgroundColor)))
             .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color(nsColor: .separatorColor)))
             Text(title).font(.system(size: 11)).foregroundColor(.secondary)
@@ -215,11 +216,13 @@ struct SAClaudeEditorColoursSection: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .frame(maxWidth: .infinity)
 
             if settings.followsMacOS {
                 Text(NSLocalizedString("Claude Light in light mode, Claude Dark in dark mode. Editor, results and console all follow.",
                                        comment: "Preferences > Query Editor: hint under Follow macOS"))
                     .font(.system(size: 11)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 10) {
                     SAClaudeThemeTile(title: NSLocalizedString("Light", comment: "Preferences > Query Editor: caption of the light-mode theme preview"), colours: light)
                     SAClaudeThemeTile(title: NSLocalizedString("Dark", comment: "Preferences > Query Editor: caption of the dark-mode theme preview"), colours: dark)
@@ -227,6 +230,7 @@ struct SAClaudeEditorColoursSection: View {
             } else {
                 Text(NSLocalizedString("Your colours, the same in light and dark mode.", comment: "Preferences > Query Editor: hint under Customise"))
                     .font(.system(size: 11)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Text(NSLocalizedString("Start from:", comment: "Preferences > Query Editor > Customise: label of the theme to start from"))
                 HStack(spacing: 6) {
                     Picker(NSLocalizedString("Start from:", comment: "Preferences > Query Editor > Customise: label of the theme to start from"),
@@ -234,6 +238,7 @@ struct SAClaudeEditorColoursSection: View {
                         ForEach(settings.startFromEntries(), id: \.self) { Text(settings.displayName($0)).tag($0) }
                     }
                     .labelsHidden()
+                    .frame(maxWidth: .infinity)
                     Menu {
                         Button(NSLocalizedString("Save as theme…", comment: "Preferences > Query Editor > Customise: save the current colours as a theme file"), action: settings.saveAs)
                         Button(NSLocalizedString("Import theme…", comment: "Preferences > Query Editor > Customise: import a theme file"), action: settings.importTheme)
@@ -269,6 +274,7 @@ struct SAClaudeEditorColoursSection: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .frame(maxWidth: .infinity)
                 .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: settings.colours[SAEditorThemeLoader.backgroundColourKey] ?? .textBackgroundColor)))
             }
             Spacer(minLength: 0)
