@@ -73,6 +73,14 @@ jobs:
             --manifest "${archive_directory}/manifest.json" \
             --notes "${archive_directory}/app-store-notes.txt" \
             --output "${RUNNER_TEMP}/release-status.json"
+          bundle exec ruby fastlane/bin/sa-release cloud-workflow-status \
+            --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}" --tag "${RELEASE_TAG}" \
+            --output "${RUNNER_TEMP}/cloud-workflow-status.json"
+          ruby -rjson -e '
+            report = JSON.parse(File.read(ARGV.fetch(0)))
+            report["cloud_workflow"] = JSON.parse(File.read(ARGV.fetch(1)))
+            File.write(ARGV.fetch(0), JSON.pretty_generate(report) + "\n")
+          ' "${RUNNER_TEMP}/release-status.json" "${RUNNER_TEMP}/cloud-workflow-status.json"
           {
             echo 'Read-only status; a successful inspection is not proof of release completion.'
             echo '```json'
