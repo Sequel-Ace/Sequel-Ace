@@ -173,13 +173,19 @@ import AppKit
         styler.saveButton = saveButton
         styler.loggingLabel = loggingLabel
         styler.gearButton = findPopUp(in: contentView, excluding: scrollView)
-        (tableView as? SAClaudeConsoleTableView)?.isErrorRow = isErrorRow
+        (tableView as? SAClaudeConsoleTableView)?.isErrorRow = isErrorRow.map(decoratedRows(errorRows:))
         styler.build()
     }
 
     deinit {
         if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
         if let clipFrameObserver { NotificationCenter.default.removeObserver(clipFrameObserver) }
+    }
+
+    /// A failed query and its error are logged as two rows (query, then error); both get the clay tint and edge
+    /// so they read as one unit. Rows past the end are not errors (the controller's lookup is range-safe).
+    static func decoratedRows(errorRows: @escaping (Int) -> Bool) -> (Int) -> Bool {
+        { row in errorRows(row) || errorRows(row + 1) }
     }
 
     /// The options (gear) pull-down: the XIB gives it no outlet.

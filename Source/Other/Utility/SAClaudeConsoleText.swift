@@ -47,11 +47,20 @@ struct SAClaudeConsoleTextStyle: Equatable {
 }
 
 enum SAClaudeConsoleText {
+    /// Marks an error message as the continuation of the failed query in the row above.
+    static let errorPrefix = "↳ "
+
+    /// An error row reads as part of the failed query above it: its Time, Connection and Database cells are
+    /// empty and its message is prefixed with "↳ ", all in soft clay. Display only; the logged text is unchanged.
     static func attributed(_ value: String, column: SAClaudeConsoleColumn, isError: Bool, style: SAClaudeConsoleTextStyle) -> NSAttributedString {
-        let base: NSColor = isError ? style.error : (column == .query ? style.text : style.muted)
+        if isError {
+            let text = column == .query ? errorPrefix + value : ""
+            return NSAttributedString(string: text, attributes: [.font: style.font, .foregroundColor: style.error])
+        }
+        let base: NSColor = column == .query ? style.text : style.muted
         // The style's font already has tabular digits (SAClaudeConsoleTextStyle.from applies valueFont).
         let result = NSMutableAttributedString(string: value, attributes: [.font: style.font, .foregroundColor: base])
-        guard column == .query, !isError else { return result }
+        guard column == .query else { return result }
         for token in SAClaudeSQLColouring.tokens(in: value) {
             let colour: NSColor
             switch token.kind {

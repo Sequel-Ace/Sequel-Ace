@@ -34,12 +34,27 @@ final class SAClaudeConsoleTextTests: XCTestCase {
         XCTAssertEqual(colour(meta, at: 0), .gray)
     }
 
-    func testErrorRowsAreErrorColouredInEveryColumn() {
-        for column in [SAClaudeConsoleColumn.time, .connection, .database, .query] {
-            let s = SAClaudeConsoleText.attributed("SELEC 2", column: column, isError: true, style: style)
-            XCTAssertEqual(colour(s, at: 0), .orange)
-            XCTAssertEqual(colour(s, at: 6), .orange)
+    func testErrorRowsLeaveTheMetaColumnsEmpty() {
+        for column in [SAClaudeConsoleColumn.time, .connection, .database] {
+            XCTAssertEqual(SAClaudeConsoleText.attributed("20:14:02", column: column, isError: true, style: style).string, "")
         }
+    }
+
+    func testErrorMessageIsMarkedAndErrorColoured() {
+        let s = SAClaudeConsoleText.attributed("You have an error in your SQL syntax", column: .query, isError: true, style: style)
+        XCTAssertEqual(s.string, "↳ You have an error in your SQL syntax")
+        XCTAssertEqual(colour(s, at: 0), .orange)
+        XCTAssertEqual(colour(s, at: 2), .orange)
+        XCTAssertEqual(colour(s, at: s.length - 1), .orange)
+        XCTAssertEqual(s.attribute(.font, at: 0, effectiveRange: nil) as? NSFont, style.font)
+    }
+
+    func testNonErrorRowsAreUnchanged() {
+        let q = SAClaudeConsoleText.attributed("SELEC 2", column: .query, isError: false, style: style)
+        XCTAssertEqual(q.string, "SELEC 2")
+        let meta = SAClaudeConsoleText.attributed("20:14:02", column: .time, isError: false, style: style)
+        XCTAssertEqual(meta.string, "20:14:02")
+        XCTAssertEqual(colour(meta, at: 0), .gray)
     }
 
     func testFontHasTabularDigits() {
