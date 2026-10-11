@@ -146,6 +146,8 @@ import AppKit
     private var appearanceObservation: NSKeyValueObservation?
     private var saveTitleObservation: NSKeyValueObservation?
     private var appliedPalettes: (grid: SAClaudeGridChrome.Palette, editor: SAClaudeEditorChrome.Palette)?
+    private var appliedTextStyle: SAClaudeConsoleTextStyle?
+    private var appliedFontKey: String?
 
     private static let buttonFont = NSFont.systemFont(ofSize: 13)
     private static let fieldFont = NSFont.systemFont(ofSize: 13)
@@ -276,16 +278,41 @@ import AppKit
         defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             self?.applyPalette(force: false)
         }
-        // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
+        // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark; applyPalette(force:)
+        // also drops the cached cell text style, which bakes them in.
         appearanceObservation = contentView.observe(\.effectiveAppearance) { [weak self] _, _ in
             DispatchQueue.main.async { self?.applyPalette(force: true) }
         }
+    }
+
+    /// The controller's font observer calls -[NSTableView setFont:], which leaves the cells' fonts alone; the
+    /// renderer centres text by the cell font, so the cells take the General font here (and the table redraws).
+    private func applyFont(_ font: NSFont) {
+        let key = "\(font.fontName)|\(font.pointSize)"
+        guard key != appliedFontKey else { return }
+        appliedFontKey = key
+        guard let tableView else { return }
+        for column in tableView.tableColumns { (column.dataCell as? NSCell)?.font = font }
+        tableView.needsDisplay = true
+    }
+
+    /// Drops the cached cell text style and redraws when it changed (a font or syntax-colour-only theme change
+    /// leaves the grid and editor palettes equal), or always with `force` (appearance changes).
+    private func applyTextStyle(font: NSFont, force: Bool) {
+        let style = SAClaudeConsoleTextStyle.from(defaults: .standard, font: font)
+        guard force || style != appliedTextStyle else { return }
+        appliedTextStyle = style
+        Self.cachedStyle = nil
+        tableView?.needsDisplay = true
     }
 
     /// Applies the colours derived from the editor theme; skips work when nothing changed.
     private func applyPalette(force: Bool) {
         let grid = SAClaudeGridChrome.palette(from: .standard)
         let editor = SAClaudeEditorChrome.palette(from: .standard)
+        let font = UserDefaults.getFont()
+        applyFont(font)
+        applyTextStyle(font: font, force: force)
         if !force, let appliedPalettes, appliedPalettes.grid == grid, appliedPalettes.editor == editor { return }
         appliedPalettes = (grid, editor)
 
@@ -298,6 +325,8 @@ import AppKit
 
         // Controls on the toolbar (field caret and cancel button, menus) follow the theme's brightness.
         let appearance = SAClaudeGridChrome.scrollerAppearance(for: background)
+        // The title under the transparent title bar too. Only on a change: it re-enters the appearance observation.
+        if let window, window.appearance?.name != appearance?.name { window.appearance = appearance }
         if toolbar.appearance?.name != appearance?.name { toolbar.appearance = appearance }
         if let scrollView {
             scrollView.drawsBackground = true

@@ -24,7 +24,8 @@ enum SAClaudeConsoleColumn: Equatable {
     }
 }
 
-struct SAClaudeConsoleTextStyle {
+/// Equatable so the console can tell a syntax-colour-only theme change (or a font change) apart from no change.
+struct SAClaudeConsoleTextStyle: Equatable {
     var font: NSFont
     var text, muted, error, keyword, string, backtick, number, comment: NSColor
 
