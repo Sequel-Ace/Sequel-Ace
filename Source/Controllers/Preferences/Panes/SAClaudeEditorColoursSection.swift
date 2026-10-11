@@ -121,19 +121,35 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
         set {
             guard newValue.caseInsensitiveCompare(themeName) != .orderedSame,
                   newValue != SAClaudeEditorDefaults.customSchemeName else { return }
-            guard confirmDiscardUnsaved() else {
-                DispatchQueue.main.async { [weak self] in self?.objectWillChange.send() }
-                return
-            }
+            guard confirmDiscardUnsaved() else { resync(); return }
             if newValue.caseInsensitiveCompare(SAEditorThemeLoader.defaultSchemeName) == .orderedSame {
                 SAEditorThemeLoader.loadDefaultColours(into: defaults)
             } else {
                 let path = (themesDirectory as NSString).appendingPathComponent(newValue + ".spTheme")
-                guard SAEditorThemeLoader.loadTheme(atPath: path, into: defaults) > 0 else { return }
+                guard SAEditorThemeLoader.loadTheme(atPath: path, into: defaults) > 0 else { resync(); return }
             }
             defaults.set(newValue, forKey: SAEditorThemeLoader.themeNameKey)
             refresh()
         }
+    }
+
+    /// Like the legacy colour table: the Background, Query Background and Selection rows draw their
+    /// label in the Text colour (their own colour is the fill), the others in their own colour.
+    func labelColour(for key: String) -> NSColor {
+        let usesText = key == SAEditorThemeLoader.backgroundColourKey
+            || key == SAEditorThemeLoader.highlightColourKey
+            || key == SAEditorThemeLoader.selectionColourKey
+        return colours[usesText ? SAEditorThemeLoader.textColourKey : key] ?? .textColor
+    }
+
+    /// Query Background and Selection rows are filled with their own colour.
+    func rowFill(for key: String) -> NSColor? {
+        key == SAEditorThemeLoader.highlightColourKey || key == SAEditorThemeLoader.selectionColourKey ? colours[key] : nil
+    }
+
+    /// Makes the picker re-read the stored theme after a change that was refused or failed.
+    private func resync() {
+        DispatchQueue.main.async { [weak self] in self?.objectWillChange.send() }
     }
 
     func startFromEntries() -> [String] {
@@ -234,7 +250,7 @@ struct SAClaudeEditorColoursSection: View {
                             HStack {
                                 Text(row.label)
                                     .font(.system(size: 12, design: .monospaced))
-                                    .foregroundColor(Color(nsColor: settings.colours[row.key] ?? .textColor))
+                                    .foregroundColor(Color(nsColor: settings.labelColour(for: row.key)))
                                 Spacer()
                                 RoundedRectangle(cornerRadius: 3)
                                     .fill(Color(nsColor: settings.colours[row.key] ?? .clear))
@@ -243,6 +259,7 @@ struct SAClaudeEditorColoursSection: View {
                             }
                             .padding(.horizontal, 8)
                             .frame(height: 22)
+                            .background(settings.rowFill(for: row.key).map { Color(nsColor: $0) } ?? Color.clear)
                             .contentShape(Rectangle())
                             .onTapGesture { settings.panelTarget.edit(row.key) }
                         }
