@@ -123,7 +123,8 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        // TextKit 1 with non-contiguous layout and our own layout manager (it
+        // TextKit 1 with non-contiguous layout and our own layout manager (its
+        // drawBlockDecorations, called from SAScriptConsoleBlockTextView.drawBackground(in:),
         // draws the block separators and error tint): TextKit 2 handles very
         // wide, non-wrapping documents and very long single lines poorly.
         let scrollView = NSScrollView()
