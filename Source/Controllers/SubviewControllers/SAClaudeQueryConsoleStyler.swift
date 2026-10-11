@@ -148,6 +148,8 @@ import AppKit
     private var appliedPalettes: (grid: SAClaudeGridChrome.Palette, editor: SAClaudeEditorChrome.Palette)?
     private var appliedTextStyle: SAClaudeConsoleTextStyle?
     private var appliedFontKey: String?
+    private var clipFrameObserver: NSObjectProtocol?
+    private var columnObservations: [NSKeyValueObservation] = []
 
     private static let buttonFont = NSFont.systemFont(ofSize: 13)
     private static let fieldFont = NSFont.systemFont(ofSize: 13)
@@ -177,6 +179,7 @@ import AppKit
 
     deinit {
         if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+        if let clipFrameObserver { NotificationCenter.default.removeObserver(clipFrameObserver) }
     }
 
     /// The options (gear) pull-down: the XIB gives it no outlet.
@@ -215,6 +218,7 @@ import AppKit
             toolbar.addSubview(fieldBackground)
             fieldBackground.addSubview(searchField)
             searchField.autoresizingMask = []
+            SAClaudeSearchFieldCell.install(on: searchField)
             searchField.isBezeled = false
             searchField.isBordered = false
             searchField.drawsBackground = false
@@ -275,6 +279,7 @@ import AppKit
 
         toolbar.onResize = { [weak self] in self?.layoutToolbar() }
         applyPalette(force: true)
+        observeColumnFit()
         defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             self?.applyPalette(force: false)
             // The controller sets the logging note's text from its own observer of the same write; lay out after it.
@@ -285,6 +290,30 @@ import AppKit
         appearanceObservation = contentView.observe(\.effectiveAppearance) { [weak self] _, _ in
             DispatchQueue.main.async { self?.applyPalette(force: true) }
         }
+    }
+
+    /// The Query column (last) fills the table's width: after the toolbar layout, whenever the visible width
+    /// changes (window resizes) and when the options menu shows or hides Time / Connection / Database.
+    /// Columns the user resizes keep their widths; the last column takes up the difference.
+    private func observeColumnFit() {
+        guard let tableView, let clipView = scrollView?.contentView else { return }
+        tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        clipView.postsFrameChangedNotifications = true
+        clipFrameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: clipView, queue: .main) { [weak self] _ in
+            self?.fitLastColumn()
+        }
+        columnObservations = tableView.tableColumns.map { column in
+            column.observe(\.isHidden) { [weak self] _, _ in
+                // After the controller's toggle has finished (it may reload or scroll next).
+                DispatchQueue.main.async { self?.fitLastColumn() }
+            }
+        }
+        fitLastColumn()
+    }
+
+    private func fitLastColumn() {
+        guard let tableView, tableView.numberOfColumns > 0 else { return }
+        tableView.sizeLastColumnToFit()
     }
 
     /// The controller's font observer calls -[NSTableView setFont:], which leaves the cells' fonts alone; the
@@ -425,6 +454,63 @@ final class SAClaudeConsoleToolbarView: NSView {
     override func setFrameSize(_ newSize: NSSize) {
         super.setFrameSize(newSize)
         onResize?()
+    }
+}
+
+/// The filter field's cell. Borderless, NSSearchFieldCell draws its text and places the field editor at the
+/// left edge, under the magnifier (it ignores its own searchTextRect); bezeled, it is drawn by a system view
+/// with its own fill. So the borderless cell lays itself out here: the magnifier and the cancel button where
+/// NSSearchFieldCell puts (and hit-tests) them, the text and the field editor between them.
+@objc(SAClaudeSearchFieldCell) final class SAClaudeSearchFieldCell: NSSearchFieldCell {
+
+    /// The field editor's line fragment padding: the cell's own text drawing matches it.
+    private static let textPadding: CGFloat = 2
+
+    /// Turns the field's existing cell into this class in place (no stored properties are added), so its
+    /// placeholder, target/action, recents and search options, and the field's delegate all stay as loaded.
+    static func install(on searchField: NSSearchField) {
+        guard let cell = searchField.cell, Swift.type(of: cell) == NSSearchFieldCell.self else { return }
+        object_setClass(cell, SAClaudeSearchFieldCell.self)
+        searchField.needsDisplay = true
+    }
+
+    /// Text starts 4pt inside the search button's frame: with the 2pt padding the first glyph sits about
+    /// 6pt after the magnifier; it ends 2pt before the cancel button.
+    override func searchTextRect(forBounds rect: NSRect) -> NSRect {
+        let minX = searchButtonRect(forBounds: rect).maxX - 4
+        let maxX = cancelButtonRect(forBounds: rect).minX - 2
+        return NSRect(x: minX, y: rect.minY, width: max(0, maxX - minX), height: rect.height)
+    }
+
+    override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        searchButtonCell?.draw(withFrame: searchButtonRect(forBounds: cellFrame), in: controlView)
+        if !stringValue.isEmpty {
+            cancelButtonCell?.draw(withFrame: cancelButtonRect(forBounds: cellFrame), in: controlView)
+        }
+        // While editing, the field editor draws the text (and the placeholder).
+        if (controlView as? NSControl)?.currentEditor() != nil { return }
+        let text = stringValue.isEmpty ? (placeholderAttributedString ?? NSAttributedString(string: placeholderString ?? "")) : attributedStringValue
+        let textRect = searchTextRect(forBounds: cellFrame)
+        guard textRect.width > 0 else { return }
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath.clip(textRect)
+        text.draw(with: textRect.insetBy(dx: Self.textPadding, dy: 0), options: [.usesLineFragmentOrigin])
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: searchTextRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
+    }
+
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: searchTextRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+    }
+
+    /// The caret in the field's (theme) text colour, so it shows on a dark or light theme field.
+    override func setUpFieldEditorAttributes(_ textObj: NSText) -> NSText {
+        let editor = super.setUpFieldEditorAttributes(textObj)
+        (editor as? NSTextView)?.insertionPointColor = textColor ?? .textColor
+        return editor
     }
 }
 
