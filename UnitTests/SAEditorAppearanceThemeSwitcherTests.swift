@@ -133,4 +133,13 @@ final class SAEditorAppearanceThemeSwitcherTests: XCTestCase {
         XCTAssertEqual(SAEditorAppearanceThemeSwitcher.pickerNames(available: available, selected: "dark one"), available)
         XCTAssertEqual(SAEditorAppearanceThemeSwitcher.pickerNames(available: available, selected: "Gone"), available + ["Gone"])
     }
+
+    /// Verifies a stored name in another case maps to the listed spelling; unknown names pass through.
+    func testCanonicalName() {
+        let available = ["Default", "Dark One"]
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.canonicalName("dark one", in: available), "Dark One")
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.canonicalName("Dark One", in: available), "Dark One")
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.canonicalName("Gone", in: available), "Gone")
+        XCTAssertEqual(SAEditorAppearanceThemeSwitcher.canonicalName("", in: available), "")
+    }
 }

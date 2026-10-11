@@ -56,7 +56,13 @@ final class SAEditorThemeAppearanceSettings: ObservableObject {
     var matchesSetting: Bool {
         get { matches }
         set {
-            if newValue, !confirmDiscardUnsaved() { refresh(); return }
+            if newValue, !confirmDiscardUnsaved() {
+                // Nothing in the model changed, so SwiftUI would not re-render and the
+                // checkbox would keep its flipped state. Republish after the toggle has
+                // finished writing so the body re-reads `matches` (false) and pushes it back.
+                DispatchQueue.main.async { [weak self] in self?.objectWillChange.send() }
+                return
+            }
             defaults.set(newValue, forKey: SAEditorAppearanceThemeSwitcher.matchesAppearanceKey)
             if newValue { SAEditorAppearanceThemeSwitcher.shared.applyForCurrentAppearance() }
             refresh()
@@ -64,12 +70,12 @@ final class SAEditorThemeAppearanceSettings: ObservableObject {
     }
 
     var lightSetting: String {
-        get { lightTheme }
+        get { SAEditorAppearanceThemeSwitcher.canonicalName(lightTheme, in: themeNames) }
         set { choose(newValue, forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey) }
     }
 
     var darkSetting: String {
-        get { darkTheme }
+        get { SAEditorAppearanceThemeSwitcher.canonicalName(darkTheme, in: themeNames) }
         set { choose(newValue, forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey) }
     }
 
@@ -107,7 +113,7 @@ struct SAEditorThemeAppearanceSection: View {
                         .gridColumnAlignment(.trailing)
                     Picker(NSLocalizedString("Light theme", comment: "Preferences > Query Editor > Theme Appearance: label for the theme used in light mode"),
                            selection: $settings.lightSetting) {
-                        ForEach(settings.entries(selected: settings.lightTheme), id: \.self) { Text(settings.displayName($0)).tag($0) }
+                        ForEach(settings.entries(selected: settings.lightSetting), id: \.self) { Text(settings.displayName($0)).tag($0) }
                     }
                     .labelsHidden()
                     .frame(maxWidth: 240, alignment: .leading)
@@ -116,7 +122,7 @@ struct SAEditorThemeAppearanceSection: View {
                     Text(NSLocalizedString("Dark theme", comment: "Preferences > Query Editor > Theme Appearance: label for the theme used in dark mode"))
                     Picker(NSLocalizedString("Dark theme", comment: "Preferences > Query Editor > Theme Appearance: label for the theme used in dark mode"),
                            selection: $settings.darkSetting) {
-                        ForEach(settings.entries(selected: settings.darkTheme), id: \.self) { Text(settings.displayName($0)).tag($0) }
+                        ForEach(settings.entries(selected: settings.darkSetting), id: \.self) { Text(settings.displayName($0)).tag($0) }
                     }
                     .labelsHidden()
                     .frame(maxWidth: 240, alignment: .leading)
@@ -128,6 +134,8 @@ struct SAEditorThemeAppearanceSection: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // The theme list can change (Edit Theme List) without any defaults write.
+        .onAppear { settings.refresh() }
     }
 }
 

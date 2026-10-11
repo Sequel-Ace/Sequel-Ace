@@ -128,4 +128,11 @@ import AppKit
         let present = available.contains { $0.caseInsensitiveCompare(selected) == .orderedSame }
         return present || selected.isEmpty ? available : available + [selected]
     }
+
+    /// The entry of `available` that matches `name` case-insensitively, or `name`
+    /// itself when none does. Picker tags are matched exactly, so a stored name in a
+    /// different case must be mapped to the listed spelling to show as selected.
+    static func canonicalName(_ name: String, in available: [String]) -> String {
+        available.first { $0.caseInsensitiveCompare(name) == .orderedSame } ?? name
+    }
 }
