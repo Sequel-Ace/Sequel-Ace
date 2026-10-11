@@ -359,6 +359,20 @@ final class SAScriptRunnerTests: XCTestCase {
         let lastStart = events.lastIndex { if case .statementStarted = $0 { return true }; return false }!
         XCTAssertEqual(Array(events[(lastStart + 1)...]), [.cancelled])
     }
+
+    func testStopRacingCompletionEmitsQueryOKThenCancelledThenFinished() {
+        // As testUseThatSucceedsUnderTheCancelMarkerStillTracksTheDatabase: the server commits while
+        // Stop lands, so the console must still learn the affected rows before "cancelled".
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        connection.outcomes["UPDATE t SET a = 1"] = .ok(affectedRows: 1)
+        connection.cancelMarked = ["UPDATE t SET a = 1"]
+        connection.whileExecuting = { sql in if sql == "UPDATE t SET a = 1" { token.cancel() } }
+        let (events, _) = runCollectingEvents(["UPDATE t SET a = 1", "DELETE FROM t"], on: connection, token: token)
+        XCTAssertEqual(connection.submitted, ["UPDATE t SET a = 1"])
+        XCTAssertEqual(events, [.statementStarted(sql: "UPDATE t SET a = 1"), .queryOK(affectedRows: 1), .cancelled,
+                                .statementFinished(time: 0.001, continuing: false)])
+    }
 }
 
 // MARK: - Fakes

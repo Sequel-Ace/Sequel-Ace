@@ -81,6 +81,12 @@ final class SAScriptConsoleBlockBuilderTests: XCTestCase {
     func testStopRacingCompletionWritesOneStatusLine() {
         let out = SAScriptConsoleBlockBuilder(style: style).append([.statementStarted(sql: "UPDATE t SET a = 1"), .queryOK(affectedRows: 1),
                                                                      .cancelled, .statementFinished(time: 0.001, continuing: false)])
-        XCTAssertEqual(out.text.string, "UPDATE t SET a = 1\ncancelled\n")
+        XCTAssertEqual(out.text.string, "UPDATE t SET a = 1\n1 row affected · cancelled\n")
+    }
+
+    func testCancelledStatusKeepsWhatAlreadyRan() {
+        XCTAssertEqual(SAScriptConsoleBlockBuilder.statusText(rows: nil, affected: nil, failed: false, cancelled: true, continuing: false, time: 0), "cancelled")
+        XCTAssertEqual(SAScriptConsoleBlockBuilder.statusText(rows: nil, affected: 3, failed: false, cancelled: true, continuing: false, time: 0), "3 rows affected · cancelled")
+        XCTAssertEqual(SAScriptConsoleBlockBuilder.statusText(rows: 0, affected: nil, failed: false, cancelled: true, continuing: false, time: 0), "Empty set · cancelled")
     }
 }

@@ -159,7 +159,8 @@ final class SAScriptConsoleBlockBuilder {
                 add(message + "\n", [.font: style.font, .foregroundColor: style.errorText])
             case .cancelled:
                 // Stop can arrive with no statementFinished (before the statement ran), so end the block now.
-                // A failed block keeps its "failed" status line, which statementFinished writes.
+                // A failed block keeps its "failed" status line, which statementFinished writes. A statement
+                // that completed as Stop raced it keeps its rows/affected count ("1 row affected · cancelled").
                 cancelled = true
                 if !failed && !statusWritten {
                     add(Self.statusText(rows: rows, affected: affected, failed: false, cancelled: true, continuing: false, time: 0) + "\n", status)
@@ -192,18 +193,24 @@ final class SAScriptConsoleBlockBuilder {
             return continuing ? NSLocalizedString("failed · continued", comment: "Run All console: a statement failed and the script went on")
                               : NSLocalizedString("failed · stopped", comment: "Run All console: a statement failed and the script stopped")
         }
-        if cancelled { return NSLocalizedString("cancelled", comment: "Run All console: the statement was stopped by the user") }
-        let what: String
+        if cancelled {
+            let word = NSLocalizedString("cancelled", comment: "Run All console: the statement was stopped by the user")
+            // Stop raced a statement that still completed (e.g. an UPDATE committed): keep what it did.
+            guard rows != nil || affected != nil else { return word }
+            return "\(whatText(rows: rows, affected: affected)) · \(word)"
+        }
+        return "\(whatText(rows: rows, affected: affected)) · \(timeText(time))"
+    }
+
+    private static func whatText(rows: UInt64?, affected: UInt64?) -> String {
         if let rows {
-            what = rows == 0 ? NSLocalizedString("Empty set", comment: "Run All console: a query returned no rows")
+            return rows == 0 ? NSLocalizedString("Empty set", comment: "Run All console: a query returned no rows")
                 : rows == 1 ? NSLocalizedString("1 row", comment: "Run All console: a query returned one row")
                 : String(format: NSLocalizedString("%llu rows", comment: "Run All console: a query returned this many rows"), rows)
-        } else {
-            let count = affected ?? 0
-            what = count == 1 ? NSLocalizedString("1 row affected", comment: "Run All console: a statement changed one row")
-                : String(format: NSLocalizedString("%llu rows affected", comment: "Run All console: a statement changed this many rows"), count)
         }
-        return "\(what) · \(timeText(time))"
+        let count = affected ?? 0
+        return count == 1 ? NSLocalizedString("1 row affected", comment: "Run All console: a statement changed one row")
+            : String(format: NSLocalizedString("%llu rows affected", comment: "Run All console: a statement changed this many rows"), count)
     }
 
     static func timeText(_ seconds: Double) -> String {
