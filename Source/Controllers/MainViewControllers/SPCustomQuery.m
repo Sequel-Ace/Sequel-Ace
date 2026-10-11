@@ -3785,7 +3785,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                         resizingView:customQueryScrollView
                                    shortcutTableView:customQueryView
                                         bottomInset:0
-                                           topInset:23
+                                           topInset:[SAClaudeEditorChrome barHeight]
                                        autosaveName:@"SARecordViewQueryWidth"];
 
     __weak __typeof__(self) weakSelf = self;
