@@ -43,7 +43,9 @@ final class SAClaudeConsoleTextTests: XCTestCase {
     }
 
     func testFontHasTabularDigits() {
-        let s = SAClaudeConsoleText.attributed("20:14:02", column: .time, isError: false, style: style)
+        var tabular = style
+        tabular.font = SAClaudeGridChrome.valueFont(.systemFont(ofSize: 13))
+        let s = SAClaudeConsoleText.attributed("20:14:02", column: .time, isError: false, style: tabular)
         let font = s.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
         let features = font?.fontDescriptor.object(forKey: .featureSettings) as? [[NSFontDescriptor.FeatureKey: Int]] ?? []
         XCTAssertTrue(features.contains { $0[.typeIdentifier] == kNumberSpacingType && $0[.selectorIdentifier] == kMonospacedNumbersSelector })

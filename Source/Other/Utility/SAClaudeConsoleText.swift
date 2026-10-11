@@ -48,9 +48,8 @@ struct SAClaudeConsoleTextStyle {
 enum SAClaudeConsoleText {
     static func attributed(_ value: String, column: SAClaudeConsoleColumn, isError: Bool, style: SAClaudeConsoleTextStyle) -> NSAttributedString {
         let base: NSColor = isError ? style.error : (column == .query ? style.text : style.muted)
-        // Tabular digits whatever font the style carries (valueFont is idempotent).
-        let font = SAClaudeGridChrome.valueFont(style.font)
-        let result = NSMutableAttributedString(string: value, attributes: [.font: font, .foregroundColor: base])
+        // The style's font already has tabular digits (SAClaudeConsoleTextStyle.from applies valueFont).
+        let result = NSMutableAttributedString(string: value, attributes: [.font: style.font, .foregroundColor: base])
         guard column == .query, !isError else { return result }
         for token in SAClaudeSQLColouring.tokens(in: value) {
             let colour: NSColor

@@ -16,12 +16,15 @@
 		A6D2F1E41B3C4D5E6F7081A3 /* SAClaudeGridChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D2F1E21B3C4D5E6F7081A1 /* SAClaudeGridChrome.swift */; };
 		C2A000032B3C4D5E6F708103 /* SAClaudeConsoleText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000042B3C4D5E6F708104 /* SAClaudeConsoleText.swift */; };
 		C2A000052B3C4D5E6F708105 /* SAClaudeConsoleText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000042B3C4D5E6F708104 /* SAClaudeConsoleText.swift */; };
+		C2A000092B3C4D5E6F708109 /* SAClaudeConsoleToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */; };
+		C2A0000A2B3C4D5E6F70810A /* SAClaudeConsoleToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */; };
 		BF671571BFEBD88F7DB7F406 /* SAClaudeSidebarChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */; };
 		A5C1E0D31A2B3C4D5E6F7084 /* SAClaudeEditorChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */; };
 		718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */; };
 		A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */; };
 		A6D2F1E11B3C4D5E6F708192 /* SAClaudeGridChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */; };
 		C2A000012B3C4D5E6F708101 /* SAClaudeConsoleTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */; };
+		C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */; };
 		CEC8F87DEDC9DC5F7BA60F91 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
 		4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */; };
 		9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */; };
@@ -666,6 +669,7 @@
 		BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC27779F11514B940034DF6A /* SPNavigatorController.m */; };
 		BC2898F3125F4488001B50E1 /* SPGeometryDataView.m in Sources */ = {isa = PBXBuildFile; fileRef = BC2898F2125F4488001B50E1 /* SPGeometryDataView.m */; };
 		BC29C37F10501EFD00DD6C6E /* SPQueryController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC29C37E10501EFD00DD6C6E /* SPQueryController.m */; };
+		C2A0000C2B3C4D5E6F70810C /* SAClaudeQueryConsoleStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A0000B2B3C4D5E6F70810B /* SAClaudeQueryConsoleStyler.swift */; };
 		BC2C16D40FEBEDF10003993B /* SPDataAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = BC2C16D30FEBEDF10003993B /* SPDataAdditions.m */; };
 		BC2C8E220FA8C2DB008468C7 /* SPMySQLHelpTemplate.html in Resources */ = {isa = PBXBuildFile; fileRef = BC2C8E210FA8C2DB008468C7 /* SPMySQLHelpTemplate.html */; };
 		BC32F242121D66260067305E /* SPFileManagerAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = BC32F241121D66260067305E /* SPFileManagerAdditions.m */; };
@@ -959,10 +963,12 @@
 		A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorChrome.swift; sourceTree = "<group>"; };
 		A6D2F1E21B3C4D5E6F7081A1 /* SAClaudeGridChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGridChrome.swift; sourceTree = "<group>"; };
 		C2A000042B3C4D5E6F708104 /* SAClaudeConsoleText.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleText.swift; sourceTree = "<group>"; };
+		C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleToolbarLayout.swift; sourceTree = "<group>"; };
 		38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSidebarChromeTests.swift; sourceTree = "<group>"; };
 		A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorChromeTests.swift; sourceTree = "<group>"; };
 		A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGridChromeTests.swift; sourceTree = "<group>"; };
 		C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleTextTests.swift; sourceTree = "<group>"; };
+		C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleToolbarLayoutTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -1696,6 +1702,7 @@
 		BC2898F2125F4488001B50E1 /* SPGeometryDataView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPGeometryDataView.m; sourceTree = "<group>"; };
 		BC29C37D10501EFD00DD6C6E /* SPQueryController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPQueryController.h; sourceTree = "<group>"; };
 		BC29C37E10501EFD00DD6C6E /* SPQueryController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPQueryController.m; sourceTree = "<group>"; };
+		C2A0000B2B3C4D5E6F70810B /* SAClaudeQueryConsoleStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryConsoleStyler.swift; sourceTree = "<group>"; };
 		BC2C16D20FEBEDF10003993B /* SPDataAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDataAdditions.h; sourceTree = "<group>"; };
 		BC2C16D30FEBEDF10003993B /* SPDataAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDataAdditions.m; sourceTree = "<group>"; };
 		BC2C8E210FA8C2DB008468C7 /* SPMySQLHelpTemplate.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = SPMySQLHelpTemplate.html; path = Templates/SPMySQLHelpTemplate.html; sourceTree = "<group>"; };
@@ -2151,6 +2158,7 @@
 				9BE76F9BF9BDA2921CDD05AF /* SPFilterTableController.h */,
 				BC29C37D10501EFD00DD6C6E /* SPQueryController.h */,
 				BC29C37E10501EFD00DD6C6E /* SPQueryController.m */,
+				C2A0000B2B3C4D5E6F70810B /* SAClaudeQueryConsoleStyler.swift */,
 				4D90B798101E0CDF00D116A1 /* SPUserManager.h */,
 				4D90B799101E0CDF00D116A1 /* SPUserManager.m */,
 				174CE14010AB9281008F892B /* SPProcessListController.h */,
@@ -3027,6 +3035,7 @@
 				A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */,
 				A6D2F1E21B3C4D5E6F7081A1 /* SAClaudeGridChrome.swift */,
 				C2A000042B3C4D5E6F708104 /* SAClaudeConsoleText.swift */,
+				C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */,
 				81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */,
 				C1A0B0030A1B2C3D4E5F6073 /* SAEditorColourMode.swift */,
 				74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */,
@@ -3132,6 +3141,7 @@
 				A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */,
 				A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */,
 				C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */,
+				C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */,
 				B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */,
 				C1A0B0010A1B2C3D4E5F6071 /* SAEditorColourModeTests.swift */,
 				D5CB8D201D85D9F4D023A969 /* SAEditorAppearanceThemeSwitcherTests.swift */,
@@ -4018,9 +4028,11 @@
 				A5C1E0D31A2B3C4D5E6F7084 /* SAClaudeEditorChrome.swift in Sources */,
 				A6D2F1E31B3C4D5E6F7081A2 /* SAClaudeGridChrome.swift in Sources */,
 				C2A000032B3C4D5E6F708103 /* SAClaudeConsoleText.swift in Sources */,
+				C2A000092B3C4D5E6F708109 /* SAClaudeConsoleToolbarLayout.swift in Sources */,
 				A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */,
 				A6D2F1E11B3C4D5E6F708192 /* SAClaudeGridChromeTests.swift in Sources */,
 				C2A000012B3C4D5E6F708101 /* SAClaudeConsoleTextTests.swift in Sources */,
+				C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */,
 				718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */,
 				AEECDC8D451950C7B7ADB1B1 /* SAEditorThemeLoader.swift in Sources */,
 				C1A0B0040A1B2C3D4E5F6074 /* SAEditorColourMode.swift in Sources */,
@@ -4226,6 +4238,7 @@
 				17F5B1541048C50D00FC794F /* SPExporter.m in Sources */,
 				17F5B39C1049B96A00FC794F /* SPSQLExporter.m in Sources */,
 				BC29C37F10501EFD00DD6C6E /* SPQueryController.m in Sources */,
+				C2A0000C2B3C4D5E6F70810C /* SAClaudeQueryConsoleStyler.swift in Sources */,
 				1ABC770125E3895300E8EE01 /* DispatchQueueExtension.swift in Sources */,
 				5822D3091061833C00CE2157 /* SPCSVParser.m in Sources */,
 				1AD785E725B749760007E153 /* OSLog.swift in Sources */,
@@ -4421,6 +4434,7 @@
 				A5C1E0D21A2B3C4D5E6F7083 /* SAClaudeEditorChrome.swift in Sources */,
 				A6D2F1E41B3C4D5E6F7081A3 /* SAClaudeGridChrome.swift in Sources */,
 				C2A000052B3C4D5E6F708105 /* SAClaudeConsoleText.swift in Sources */,
+				C2A0000A2B3C4D5E6F70810A /* SAClaudeConsoleToolbarLayout.swift in Sources */,
 				0BDF116B0C30BBE6B995BC8E /* SAEditorThemeLoader.swift in Sources */,
 				C1A0B0050A1B2C3D4E5F6075 /* SAEditorColourMode.swift in Sources */,
 				C21F0EB05F99F92919394303 /* SAClaudeEditorDefaults.swift in Sources */,

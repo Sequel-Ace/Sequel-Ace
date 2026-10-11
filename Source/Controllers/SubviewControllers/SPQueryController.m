@@ -669,6 +669,20 @@ static SPQueryController *sharedQueryController = nil;
 
 	//allow drag-out copying of selected rows
 	[consoleTableView setDraggingSourceOperationMask:NSDragOperationCopy forLocal:NO];
+
+	// Claude look: toolbar, grid and colours (built once per window).
+	__weak SPQueryController *weakSelf = self;
+	[SAClaudeQueryConsoleStyler attachToWindow:[self window]
+	                                 tableView:consoleTableView
+	                               searchField:consoleSearchField
+	                               clearButton:clearConsoleButton
+	                                saveButton:saveConsoleButton
+	                              loggingLabel:loggingDisabledTextField
+	                                isErrorRow:^BOOL(NSInteger row) {
+		SPQueryController *strongSelf = weakSelf;
+		if (!strongSelf) return NO;
+		return [(SPConsoleMessage *)[strongSelf->messagesVisibleSet safeObjectAtIndex:row] isError];
+	}];
 }
 
 /**
@@ -765,23 +779,9 @@ static SPQueryController *sharedQueryController = nil;
 
 	if (!returnValue) return returnValue;
 
-	NSMutableDictionary *stringAtributes = nil;
-
-	if (consoleFont) {
-		stringAtributes = [NSMutableDictionary dictionaryWithObject:consoleFont forKey:NSFontAttributeName];
-	}
-
-	// If this is an error message give it a red colour
-	if ([(SPConsoleMessage *)[messagesVisibleSet safeObjectAtIndex:row] isError]) {
-		if (stringAtributes) {
-			[stringAtributes setObject:[NSColor redColor] forKey:NSForegroundColorAttributeName];
-		}
-		else {
-			stringAtributes = [NSMutableDictionary dictionaryWithObject:[NSColor redColor] forKey:NSForegroundColorAttributeName];
-		}
-	}
-
-	return [[NSAttributedString alloc] initWithString:returnValue attributes:stringAtributes];
+	return [SAClaudeQueryConsoleStyler attributedValue:returnValue
+	                                  columnIdentifier:[tableColumn identifier]
+	                                           isError:[(SPConsoleMessage *)[messagesVisibleSet safeObjectAtIndex:row] isError]];
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard

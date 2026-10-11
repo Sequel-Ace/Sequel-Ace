@@ -4637,3 +4637,6 @@
 
 /* accessibility name of the Run All console's Clear button */
 "Clear output" = "Clear output";
+
+/* Query Console: accessibility name of the options menu button in the toolbar */
+"Console options" = "Console options";
