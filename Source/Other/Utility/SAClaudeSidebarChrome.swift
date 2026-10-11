@@ -273,7 +273,7 @@ extension SAClaudeSidebarChrome {
 @objc final class SAClaudeSidebarBackgroundView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         SAClaudeStyle.sidebarBackground.setFill()
-        dirtyRect.fill()
+        bounds.intersection(dirtyRect).fill()
     }
 
     override func viewDidChangeEffectiveAppearance() {

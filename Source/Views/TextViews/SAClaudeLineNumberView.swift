@@ -45,9 +45,12 @@ import AppKit
     /// Fills the gutter with the theme background and draws the numbers. Deliberately does not call
     /// `super.draw`, so the stock ruler background and separator line are not drawn. NoodleLineNumberView
     /// has no ruler markers (removed in the Sequel Ace version), so there is nothing else to draw.
+    /// Clipped to bounds: since macOS 14 views don't clip by default and `dirtyRect` can extend past
+    /// the ruler, so filling it unclipped would paint over the text view beside the gutter.
     override func draw(_ dirtyRect: NSRect) {
+        let rect = bounds.intersection(dirtyRect)
         gutterBackground.setFill()
-        dirtyRect.fill()
-        drawHashMarksAndLabels(in: dirtyRect)
+        rect.fill()
+        drawHashMarksAndLabels(in: rect)
     }
 }
