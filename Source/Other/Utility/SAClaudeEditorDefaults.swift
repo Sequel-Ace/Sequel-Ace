@@ -1,0 +1,52 @@
+//
+//  SAClaudeEditorDefaults.swift
+//  Sequel Ace
+//
+//  The Claude look's editor defaults: follow the system appearance with the
+//  bundled Claude Light / Claude Dark themes, and SF Mono 13 as the editor
+//  font. Shared with the Unit Tests target.
+//
+
+import AppKit
+
+@objc final class SAClaudeEditorDefaults: NSObject {
+
+    /// Keep in sync with SPCustomQueryEditorFont in SPConstants.m.
+    static let fontKey = "CustomQueryEditorFont"
+    static let fontMigratedKey = "SAClaudeEditorFontMigrated"
+
+    static var claudeFont: NSFont { .monospacedSystemFont(ofSize: 13, weight: .regular) }
+
+    /// Registers the Claude defaults over Layer 1's neutral ones, then runs the
+    /// one-time font migration against the user's own (persistent) setting.
+    @objc static func registerAndMigrate() {
+        register(in: .standard)
+        let userFont = Bundle.main.bundleIdentifier
+            .flatMap { UserDefaults.standard.persistentDomain(forName: $0)?[fontKey] as? Data }
+        migrateFont(in: .standard, userFontData: userFont)
+    }
+
+    static func register(in defaults: UserDefaults) {
+        defaults.register(defaults: [
+            SAEditorAppearanceThemeSwitcher.matchesAppearanceKey: true,
+            SAEditorAppearanceThemeSwitcher.lightThemeKey: "Claude Light",
+            SAEditorAppearanceThemeSwitcher.darkThemeKey: "Claude Dark",
+        ])
+    }
+
+    /// Migrate when not done before and the font is unset or the old default, Menlo 14.
+    static func shouldMigrateFont(alreadyMigrated: Bool, userFontData: Data?) -> Bool {
+        guard !alreadyMigrated else { return false }
+        guard let data = userFontData, let font = SAArchiving.font(from: data) else { return true }
+        return font.fontName == "Menlo-Regular" && font.pointSize == 14
+    }
+
+    /// Writes SF Mono 13 when `shouldMigrateFont` says so; always records that it ran.
+    static func migrateFont(in defaults: UserDefaults, userFontData: Data?) {
+        if shouldMigrateFont(alreadyMigrated: defaults.bool(forKey: fontMigratedKey), userFontData: userFontData),
+           let data = SAArchiving.archivedData(forFont: claudeFont) {
+            defaults.set(data, forKey: fontKey)
+        }
+        defaults.set(true, forKey: fontMigratedKey)
+    }
+}

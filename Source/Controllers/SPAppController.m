@@ -129,6 +129,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Register application defaults
     [prefs registerDefaults:preferenceDefaults];
     [SAEditorAppearanceThemeSwitcher registerDefaults];
+    [SAClaudeEditorDefaults registerAndMigrate];
 
     // Upgrade prefs before any other parts of the app pick up on the values
     SPApplyRevisionChanges();
