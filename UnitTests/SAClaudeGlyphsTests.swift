@@ -8,7 +8,8 @@ import XCTest
 
 final class SAClaudeGlyphsTests: XCTestCase {
 
-    private let allGlyphs: [SAClaudeGlyph] = [.database, .table, .view, .procedure, .function, .add, .actions, .refresh, .infoPanel]
+    private let allGlyphs: [SAClaudeGlyph] = [.database, .table, .view, .procedure, .function, .add, .actions, .refresh, .infoPanel,
+                                                .copy, .save, .clear]
 
     /// Draws an image at 2x into a bitmap under an appearance.
     private func render(_ image: NSImage, _ name: NSAppearance.Name) -> NSBitmapImageRep {

@@ -3,11 +3,11 @@
 //  Sequel Ace
 //
 //  The "Run All as Script" console that replaces the Query tab's result grid:
-//  a small toolbar over a read-only NSTextView. The text view is fed
-//  incrementally from SAScriptConsoleModel.appended so multi-megabyte output
-//  never goes through SwiftUI diffing. Its font and colours come from
-//  SAScriptConsoleAppearance (the Query Editor's by default) and follow
-//  preference changes live.
+//  a Claude-style toolbar over a read-only NSTextView showing one block per
+//  statement. The text view is fed incrementally from
+//  SAScriptConsoleModel.eventsAppended (through SAScriptConsoleBlockBuilder) so
+//  multi-megabyte output never goes through SwiftUI diffing. Its font and
+//  colours follow the Query Editor's and preference changes live.
 //
 
 import AppKit
@@ -21,28 +21,27 @@ struct SAScriptConsoleView: View {
     let defaultSaveFileName: String
 
     @AppStorage(SAScriptConsoleModel.continueOnErrorDefaultsKey) private var continueOnError = false
+    @StateObject private var chrome = SAConsoleChrome()
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
+            HStack(spacing: 2) {
                 Toggle(NSLocalizedString("Continue on error", comment: "Script console: checkbox to keep running a script after a statement fails"),
                        isOn: $continueOnError)
-                    .toggleStyle(.checkbox)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .tint(Color(nsColor: SAClaudeEditorChrome.runFill))
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(nsColor: chrome.palette.buttonText))
                 Spacer()
-                Button(NSLocalizedString("Copy All", comment: "Script console: button that copies all output to the clipboard")) {
-                    copyAll()
-                }
-                Button(NSLocalizedString("Save Output…", comment: "Script console: button that saves all output to a text file")) {
-                    save()
-                }
-                Button(NSLocalizedString("Clear", comment: "Clear button")) {
-                    model.clear()
-                }
+                SAConsoleGhostButton(glyph: .copy, title: NSLocalizedString("Copy all", comment: "Run All console: button that copies all output"), palette: chrome.palette, action: copyAll)
+                SAConsoleGhostButton(glyph: .save, title: NSLocalizedString("Save…", comment: "Run All console: button that saves all output to a text file"), palette: chrome.palette, action: save)
+                SAConsoleGhostButton(glyph: .clear, title: NSLocalizedString("Clear", comment: "Clear button"), palette: chrome.palette) { model.clear() }
             }
-            .controlSize(.small)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            Divider()
+            .padding(.horizontal, 10)
+            .frame(height: 36)
+            .background(Color(nsColor: chrome.palette.background))
+            Rectangle().fill(Color(nsColor: chrome.palette.hairline)).frame(height: 1)
             SAScriptConsoleTextView(model: model)
         }
     }
@@ -76,8 +75,45 @@ struct SAScriptConsoleView: View {
     }
 }
 
-/// Read-only, selectable, non-wrapping text view that appends output chunks
-/// as the model publishes them.
+/// The editor-theme palette for the console's toolbar, refreshed on settings changes.
+final class SAConsoleChrome: ObservableObject {
+    @Published private(set) var palette = SAClaudeEditorChrome.palette(from: .standard)
+    private var observer: NSObjectProtocol?
+    init() {
+        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            let palette = SAClaudeEditorChrome.palette(from: .standard)
+            if palette != self?.palette { self?.palette = palette }
+        }
+    }
+    deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+}
+
+/// A Claude ghost button: icon + label, 28pt tall, hover fill.
+struct SAConsoleGhostButton: View {
+    let glyph: SAClaudeGlyph
+    let title: String
+    let palette: SAClaudeEditorChrome.Palette
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(nsImage: SAClaudeGlyphs.image(glyph, tint: palette.icon))
+                Text(title).font(.system(size: 13)).foregroundColor(Color(nsColor: palette.buttonText))
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .background(RoundedRectangle(cornerRadius: 7).fill(hovering ? Color(nsColor: palette.hover) : .clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+    }
+}
+
+/// Read-only, selectable, non-wrapping text view that shows the run as
+/// statement blocks, appending them as the model publishes events.
 private struct SAScriptConsoleTextView: NSViewRepresentable {
 
     let model: SAScriptConsoleModel
@@ -87,37 +123,40 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        // TextKit 1 with non-contiguous layout: scrollableTextView() is TextKit 2
-        // on macOS 13+, which handles very wide, non-wrapping documents and very
-        // long single lines poorly.
+        // TextKit 1 with non-contiguous layout and our own layout manager (it
+        // draws the block separators and error tint): TextKit 2 handles very
+        // wide, non-wrapping documents and very long single lines poorly.
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
 
-        let textView = NSTextView(usingTextLayoutManager: false)
-        textView.layoutManager?.allowsNonContiguousLayout = true
+        let storage = NSTextStorage()
+        let layoutManager = SAScriptConsoleLayoutManager()
+        layoutManager.allowsNonContiguousLayout = true
+        storage.addLayoutManager(layoutManager)
+        // No wrapping: rows are tab-separated lines; scroll horizontally instead.
+        let container = NSTextContainer(size: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        container.widthTracksTextView = false
+        layoutManager.addTextContainer(container)
+
+        let textView = NSTextView(frame: NSRect(origin: .zero, size: scrollView.contentSize), textContainer: container)
         textView.isEditable = false
         textView.isSelectable = true
         textView.isRichText = false
         textView.allowsUndo = false
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true
-        textView.textContainerInset = NSSize(width: 4, height: 4)
+        textView.textContainerInset = NSSize(width: 14, height: 10)
 
-        // No wrapping: rows are tab-separated lines; scroll horizontally instead.
         textView.isHorizontallyResizable = true
         textView.isVerticallyResizable = true
         textView.autoresizingMask = [.width, .height]
         textView.minSize = scrollView.contentSize
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-        textView.textContainer?.widthTracksTextView = false
-        textView.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         scrollView.documentView = textView
 
-        textView.string = model.text
-        context.coordinator.apply(SAScriptConsoleAppearance.resolve(from: .standard), to: textView)
-        context.coordinator.bind(model: model, textView: textView)
+        context.coordinator.bind(model: model, storage: storage, layoutManager: layoutManager, textView: textView)
         return scrollView
     }
 
@@ -125,57 +164,105 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
 
     final class Coordinator {
         private var subscriptions = Set<AnyCancellable>()
-        private var appearance = SAScriptConsoleAppearance.fallback
-        private var hasAppliedAppearance = false
+        private var model: SAScriptConsoleModel?
+        /// The text view does not own a text system built by hand; keep it alive here.
+        private var storage: NSTextStorage?
+        private var builder: SAScriptConsoleBlockBuilder?
+        private var style: SAScriptConsoleStyle?
+        /// The palette and style the console was last built with, to skip unchanged looks.
+        private var look: [NSObject] = []
 
-        func bind(model: SAScriptConsoleModel, textView: NSTextView) {
+        /// The gap between blocks (the layout manager draws the separator in it).
+        private static let blockGap: NSParagraphStyle = {
+            let style = NSMutableParagraphStyle()
+            style.paragraphSpacingBefore = 10
+            return style
+        }()
+
+        func bind(model: SAScriptConsoleModel, storage: NSTextStorage, layoutManager: SAScriptConsoleLayoutManager, textView: NSTextView) {
             subscriptions.removeAll()
-            model.appended
-                .sink { [weak self, weak textView] chunk in
-                    guard let self, let textView, let storage = textView.textStorage else { return }
+            self.model = model
+            self.storage = storage
+            look = []
+            refresh(textView: textView, layoutManager: layoutManager)
+
+            model.eventsAppended
+                .sink { [weak self, weak textView] events in
+                    guard let self, let textView, let storage = self.storage else { return }
                     let wasAtBottom = Coordinator.isScrolledToBottom(textView)
-                    storage.append(NSAttributedString(string: chunk, attributes: self.textAttributes))
+                    storage.beginEditing()
+                    self.append(events, to: storage)
+                    storage.endEditing()
                     if wasAtBottom {
                         textView.scrollToEndOfDocument(nil)
                     }
                 }
                 .store(in: &subscriptions)
             model.cleared
-                .sink { [weak textView] in
-                    textView?.string = ""
+                .sink { [weak self] in
+                    guard let self, let storage = self.storage, let style = self.style else { return }
+                    // The builder's ranges are absolute, so start a fresh one with the empty text.
+                    self.builder = SAScriptConsoleBlockBuilder(style: style)
+                    storage.beginEditing()
+                    storage.deleteCharacters(in: NSRange(location: 0, length: storage.length))
+                    storage.endEditing()
                 }
                 .store(in: &subscriptions)
-            // Preferences → Query Editor (font, colours, Script Output override).
+            // Preferences → Query Editor (font, colours) and the theme switcher.
             // didChangeNotification fires for every default on any thread, so
-            // coalesce onto the main queue; apply(_:to:) skips unchanged looks.
+            // coalesce onto the main queue; refresh skips unchanged looks.
             NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
                 .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
-                .sink { [weak self, weak textView] _ in
-                    guard let self, let textView else { return }
-                    self.apply(SAScriptConsoleAppearance.resolve(from: .standard), to: textView)
+                .sink { [weak self, weak textView, weak layoutManager] _ in
+                    guard let self, let textView, let layoutManager else { return }
+                    self.refresh(textView: textView, layoutManager: layoutManager)
                 }
                 .store(in: &subscriptions)
         }
 
-        /// Applies the font and colours to the view and restyles the text already shown.
-        func apply(_ newAppearance: SAScriptConsoleAppearance, to textView: NSTextView) {
-            guard !hasAppliedAppearance || newAppearance != appearance else { return }
-            appearance = newAppearance
-            hasAppliedAppearance = true
-            textView.font = newAppearance.font
-            textView.textColor = newAppearance.textColor
-            textView.backgroundColor = newAppearance.backgroundColor
-            textView.enclosingScrollView?.backgroundColor = newAppearance.backgroundColor
-            textView.typingAttributes = textAttributes
-            if let storage = textView.textStorage, storage.length > 0 {
-                storage.beginEditing()
-                storage.addAttributes(textAttributes, range: NSRange(location: 0, length: storage.length))
-                storage.endEditing()
-            }
+        /// Applies the editor's font and colours and, when they changed, rebuilds every block from the event log.
+        func refresh(textView: NSTextView, layoutManager: SAScriptConsoleLayoutManager) {
+            let font = SAScriptConsoleAppearance.resolve(from: .standard).font
+            let newStyle = SAScriptConsoleStyle.from(defaults: .standard, font: font)
+            let palette = SAClaudeEditorChrome.palette(from: .standard)
+            let newLook: [NSObject] = [palette.background, newStyle.font, newStyle.text, newStyle.keyword, newStyle.string,
+                                       newStyle.backtick, newStyle.number, newStyle.comment]
+            guard newLook != look, let storage, let model else { return }
+            look = newLook
+            style = newStyle
+
+            let background = palette.background
+            textView.drawsBackground = true
+            textView.backgroundColor = background
+            textView.enclosingScrollView?.backgroundColor = background
+            textView.enclosingScrollView?.appearance = SAClaudeGridChrome.scrollerAppearance(for: background)
+            layoutManager.separatorColour = SAClaudeEditorChrome.derivedColour(text: newStyle.text, background: background, ratio: 0.04)
+            layoutManager.errorTint = SAClaudeEditorChrome.derivedColour(text: layoutManager.errorEdge, background: background, ratio: 0.06)
+
+            builder = SAScriptConsoleBlockBuilder(style: newStyle)
+            storage.beginEditing()
+            storage.deleteCharacters(in: NSRange(location: 0, length: storage.length))
+            append(model.eventLog, to: storage)
+            storage.endEditing()
+            textView.needsDisplay = true
         }
 
-        private var textAttributes: [NSAttributedString.Key: Any] {
-            [.font: appearance.font, .foregroundColor: appearance.textColor]
+        /// Appends the blocks for `events`; call between beginEditing() and endEditing().
+        private func append(_ events: [SAScriptConsoleEvent], to storage: NSTextStorage) {
+            guard let builder, !events.isEmpty else { return }
+            let base = storage.length
+            let built = builder.append(events)
+            storage.append(built.text)
+            // A failed block can start in an earlier chunk; the returned ranges are absolute.
+            for range in built.errorRanges {
+                let clamped = NSIntersectionRange(range, NSRange(location: 0, length: storage.length))
+                if clamped.length > 0 { storage.addAttribute(.saConsoleBlockError, value: true, range: clamped) }
+            }
+            built.text.enumerateAttribute(.saConsoleBlockStart, in: NSRange(location: 0, length: built.text.length), options: []) { value, range, _ in
+                guard (value as? Bool) == true, base + range.location > 0 else { return }
+                let paragraph = storage.mutableString.paragraphRange(for: NSRange(location: base + range.location, length: 0))
+                storage.addAttribute(.paragraphStyle, value: Coordinator.blockGap, range: paragraph)
+            }
         }
 
         private static func isScrolledToBottom(_ textView: NSTextView) -> Bool {

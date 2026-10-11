@@ -193,6 +193,7 @@ extension SPCustomQuery {
                 let text = String(format: NSLocalizedString("Running query %ld of %lu...", comment: "Running multiple queries string"), index + 1, total)
                 DispatchQueue.main.async { document?.setTaskDescription(text) }
             })
+        runner.events = { model.append(event: $0) }
 
         let thread = Thread { [weak self] in
             let summary = runner.run(statements: statements, database: database, continueOnError: continueOnError)

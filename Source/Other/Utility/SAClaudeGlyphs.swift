@@ -11,7 +11,7 @@ import AppKit
 
 /// The icons the left navigation draws.
 @objc enum SAClaudeGlyph: Int {
-    case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history
+    case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history, copy, save, clear
 }
 
 @objc final class SAClaudeGlyphs: NSObject {
@@ -24,7 +24,7 @@ import AppKit
         case .view: return SAClaudeStyle.tintView
         case .procedure: return SAClaudeStyle.tintProcedure
         case .function: return SAClaudeStyle.tintFunction
-        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history: return SAClaudeStyle.textMuted
+        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear: return SAClaudeStyle.textMuted
         }
     }
 
@@ -43,6 +43,9 @@ import AppKit
         case .more: return NSLocalizedString("Editor options", comment: "accessibility name of the editor options menu button under the query editor")
         case .favorite: return NSLocalizedString("Query Favorites", comment: "accessibility name of the query favorites menu button under the query editor")
         case .history: return NSLocalizedString("Query History", comment: "accessibility name of the query history menu button under the query editor")
+        case .copy: return NSLocalizedString("Copy all", comment: "accessibility name of the Run All console's Copy all button")
+        case .save: return NSLocalizedString("Save output", comment: "accessibility name of the Run All console's Save button")
+        case .clear: return NSLocalizedString("Clear output", comment: "accessibility name of the Run All console's Clear button")
         }
     }
 
@@ -200,6 +203,15 @@ import AppKit
             ring.appendArc(withCenter: p(8, 8), radius: 5.5, startAngle: 180, endAngle: 135, clockwise: false)
             return [ring, line(p(2.5, 8), p(2.5, 5.3)), line(p(2.5, 8), p(5.1, 8)),
                     line(p(8, 5), p(8, 8.2)), line(p(8, 8.2), p(10, 9.5))]
+        case .copy:
+            return [NSBezierPath(roundedRect: NSRect(x: 5.5, y: 5.5, width: 8, height: 8), xRadius: 1.5, yRadius: 1.5),
+                    line(p(2.5, 10.5), p(2.5, 3.5)), line(p(2.5, 3.5), p(3.5, 2.5)), line(p(3.5, 2.5), p(10.5, 2.5))]
+        case .save:
+            return [line(p(8, 2.5), p(8, 10)), line(p(8, 10), p(5, 7)), line(p(8, 10), p(11, 7)),
+                    line(p(3, 10.5), p(3, 13.5)), line(p(3, 13.5), p(13, 13.5)), line(p(13, 13.5), p(13, 10.5))]
+        case .clear:
+            return [line(p(3, 4.5), p(13, 4.5)), line(p(6.5, 4.5), p(6.5, 2.5)), line(p(6.5, 2.5), p(9.5, 2.5)), line(p(9.5, 2.5), p(9.5, 4.5)),
+                    NSBezierPath(roundedRect: NSRect(x: 4.5, y: 4.5, width: 7, height: 9), xRadius: 1.5, yRadius: 1.5)]
         }
     }
 }

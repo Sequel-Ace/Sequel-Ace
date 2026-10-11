@@ -4622,3 +4622,15 @@
 
 /* Run All console: a statement changed this many rows */
 "%llu rows affected" = "%llu rows affected";
+
+/* Run All console: button that copies all output; accessibility name of the Run All console's Copy all button */
+"Copy all" = "Copy all";
+
+/* Run All console: button that saves all output to a text file */
+"Save…" = "Save…";
+
+/* accessibility name of the Run All console's Save button */
+"Save output" = "Save output";
+
+/* accessibility name of the Run All console's Clear button */
+"Clear output" = "Clear output";
