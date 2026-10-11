@@ -43,6 +43,15 @@ import AppKit
                        caret: colour(SAEditorThemeLoader.caretColourKey, .textColor))
     }
 
+    /// Every other row is shaded: rows 1, 3, 5...
+    static func isZebra(row: Int) -> Bool { row % 2 == 1 }
+
+    /// Column separators sit at each column's right edge, except the last one at the edge of the
+    /// table (within 1pt, so float noise can't draw it).
+    static func drawsColumnSeparator(columnMaxX: CGFloat, boundsMaxX: CGFloat) -> Bool {
+        columnMaxX < boundsMaxX - 1
+    }
+
     /// Relative luminance below 0.5 counts as a dark background.
     static func isDark(_ background: NSColor) -> Bool {
         guard let c = background.usingColorSpace(.sRGB) else { return false }

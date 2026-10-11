@@ -30,6 +30,20 @@ final class SAClaudeGridChromeTests: XCTestCase {
         XCTAssertEqual(p.caret, caret)
     }
 
+    func testZebraShadesOddRows() {
+        XCTAssertFalse(SAClaudeGridChrome.isZebra(row: 0))
+        XCTAssertTrue(SAClaudeGridChrome.isZebra(row: 1))
+        XCTAssertFalse(SAClaudeGridChrome.isZebra(row: 2))
+        XCTAssertTrue(SAClaudeGridChrome.isZebra(row: 3))
+    }
+
+    func testColumnSeparatorSkipsTheLastColumnEdge() {
+        XCTAssertTrue(SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: 100, boundsMaxX: 300))
+        XCTAssertFalse(SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: 300, boundsMaxX: 300))
+        XCTAssertFalse(SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: 299.5, boundsMaxX: 300))
+        XCTAssertFalse(SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: 301, boundsMaxX: 300))
+    }
+
     func testScrollerAppearanceFollowsBackgroundLuminance() {
         XCTAssertTrue(SAClaudeGridChrome.isDark(srgb(0x151515)))
         XCTAssertTrue(SAClaudeGridChrome.isDark(srgb(0x2E3440)))

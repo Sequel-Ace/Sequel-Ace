@@ -148,7 +148,7 @@ import AppKit
         let visible = rows(in: area)
         guard visible.length > 0 else { return }
         palette.zebra.setFill()
-        for row in visible.location..<NSMaxRange(visible) where row % 2 == 1 {
+        for row in visible.location..<NSMaxRange(visible) where SAClaudeGridChrome.isZebra(row: row) {
             rect(ofRow: row).intersection(area).fill()
         }
     }
@@ -156,6 +156,11 @@ import AppKit
     override func highlightSelection(inClipRect clipRect: NSRect) {
         let visible = rows(in: clipRect)
         guard visible.length > 0 else { return }
+        // Hover is filled here, not in drawRow: this runs before drawGrid, so the row's lines stay on top.
+        if hoveredRow >= visible.location, hoveredRow < NSMaxRange(visible), !isRowSelected(hoveredRow) {
+            palette.hover.setFill()
+            rect(ofRow: hoveredRow).intersection(clipRect).fill()
+        }
         palette.selection.setFill()
         // Only the visible slice: after Select All on a huge result, walking every selected row janks.
         let selected = selectedRowIndexes
@@ -173,17 +178,9 @@ import AppKit
         }
         for column in 0..<numberOfColumns {
             let r = rect(ofColumn: column)
-            if r.maxX >= bounds.maxX { continue }
+            guard SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: r.maxX, boundsMaxX: bounds.maxX) else { continue }
             NSRect(x: r.maxX - 1, y: clipRect.minY, width: 1, height: clipRect.height).intersection(clipRect).fill()
         }
-    }
-
-    override func drawRow(_ row: Int, clipRect: NSRect) {
-        if row == hoveredRow, !isRowSelected(row) {
-            palette.hover.setFill()
-            rect(ofRow: row).intersection(clipRect).fill()
-        }
-        super.drawRow(row, clipRect: clipRect)
     }
 
     // MARK: Hover
@@ -275,7 +272,7 @@ import AppKit
             let rect = headerRect(ofColumn: column)
             guard rect.intersects(area) else { continue }
             drawColumn(table.tableColumns[column], in: rect, table: table)
-            if rect.maxX < table.bounds.maxX {
+            if SAClaudeGridChrome.drawsColumnSeparator(columnMaxX: rect.maxX, boundsMaxX: table.bounds.maxX) {
                 palette.rowLine.setFill()
                 NSRect(x: rect.maxX - 1, y: rect.minY, width: 1, height: rect.height).intersection(area).fill()
             }
