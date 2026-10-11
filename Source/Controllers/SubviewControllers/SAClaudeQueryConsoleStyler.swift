@@ -15,7 +15,12 @@ import AppKit
 @objc(SAClaudeConsoleTableView) final class SAClaudeConsoleTableView: NSTableView {
 
     /// The drawing, hover and palette live in the renderer; these overrides only forward to it.
-    private lazy var renderer = SAClaudeGridRenderer(table: self)
+    private lazy var renderer: SAClaudeGridRenderer = {
+        let renderer = SAClaudeGridRenderer(table: self)
+        // Plain NSTextFieldCells draw their text at the top of the frame (no SPTextAndLinkCell 2pt shift).
+        renderer.cellTextTopOffset = 0
+        return renderer
+    }()
 
     var isErrorRow: ((Int) -> Bool)? {
         get { renderer.isErrorRow }

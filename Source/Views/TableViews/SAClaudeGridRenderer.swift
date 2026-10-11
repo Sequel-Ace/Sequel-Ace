@@ -17,6 +17,9 @@ final class SAClaudeGridRenderer {
     private(set) var hoveredRow = -1
     /// Optional per-row error flag (console); error rows get a clay tint and a 2pt clay edge.
     var isErrorRow: ((Int) -> Bool)?
+    /// How far the data cell draws its text below the top of its frame: SPTextAndLinkCell shifts it 2pt;
+    /// a table of plain NSTextFieldCells (the console) sets 0.
+    var cellTextTopOffset: CGFloat = 2
 
     /// Clay `#D97757`, the error accent.
     private static let clay = NSColor(srgbRed: 0xD9 / 255, green: 0x77 / 255, blue: 0x57 / 255, alpha: 1)
@@ -40,6 +43,8 @@ final class SAClaudeGridRenderer {
 
     /// Call from awakeFromNib: alternating rows off, 30pt header, corner view, palette, observers.
     func install() {
+        // Idempotent: a second call would add a second defaults observer.
+        guard observer == nil else { return }
         table.usesAlternatingRowBackgroundColors = false
         table.gridStyleMask.formUnion([.solidHorizontalGridLineMask, .solidVerticalGridLineMask])
         if var frame = table.headerView?.frame { frame.size.height = SAClaudeGridChrome.headerHeight; table.headerView?.frame = frame }
@@ -84,11 +89,11 @@ final class SAClaudeGridRenderer {
         max(proposed, SAClaudeGridChrome.minimumRowHeight)
     }
 
-    /// One line of the cell's text plus SPTextAndLinkCell's 2pt top offset (cached per font).
+    /// One line of the cell's text (cached per font).
     private static func lineHeight(for font: NSFont) -> CGFloat {
         let key = "\(font.fontName)|\(font.pointSize)"
         if let height = lineHeights[key] { return height }
-        let height = NSLayoutManager().defaultLineHeight(for: font) + 2
+        let height = NSLayoutManager().defaultLineHeight(for: font)
         lineHeights[key] = height
         return height
     }
@@ -98,7 +103,7 @@ final class SAClaudeGridRenderer {
     /// use rect(ofRow:) and keep the full row.
     func frameOfCell(_ superFrame: NSRect, column: Int) -> NSRect {
         guard column >= 0, column < table.numberOfColumns, let cell = table.tableColumns[column].dataCell as? NSCell, let cellFont = cell.font else { return superFrame }
-        let inset = max(0, floor((superFrame.height - Self.lineHeight(for: cellFont)) / 2))
+        let inset = max(0, floor((superFrame.height - (Self.lineHeight(for: cellFont) + cellTextTopOffset)) / 2))
         return superFrame.insetBy(dx: 0, dy: inset)
     }
 
