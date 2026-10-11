@@ -26,6 +26,7 @@
 		090DF1933C6B8C6349D58020 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		0BDF116B0C30BBE6B995BC8E /* SAEditorThemeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */; };
+		C1A0B0050A1B2C3D4E5F6075 /* SAEditorColourMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0B0030A1B2C3D4E5F6073 /* SAEditorColourMode.swift */; };
 		C21F0EB05F99F92919394303 /* SAClaudeEditorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */; };
 		6F51F1F0A937B4545B88899B /* SAClaudeThemeRefresher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */; };
 		94B370555E2958800EB6D4DD /* SAEditorAppearanceThemeSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */; };
@@ -623,6 +624,7 @@
 		AED27D68E816948A2CE775B5 /* SAMarkedTextInputStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC23B8A2720007CC603932B3 /* SAMarkedTextInputStateTests.swift */; };
 		AEE918E2C7D542479969EFD1 /* SAAnalyticsConsentPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 702CD501171F1F6B4BDC3DDF /* SAAnalyticsConsentPolicyTests.swift */; };
 		AEECDC8D451950C7B7ADB1B1 /* SAEditorThemeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */; };
+		C1A0B0040A1B2C3D4E5F6074 /* SAEditorColourMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0B0030A1B2C3D4E5F6073 /* SAEditorColourMode.swift */; };
 		F967660D2D2DD58416CC7C45 /* SAClaudeEditorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */; };
 		B59E0D4F5B269DA4F8F33402 /* SAClaudeThemeRefresher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */; };
 		AEF6ABA38A7BC5E5C41F1907 /* SATypeAheadSelectionLoad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */; };
@@ -776,6 +778,7 @@
 		F3A4B8C191E14E7094C9B015 /* AWSIAMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */; };
 		F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */; };
 		F44DD559DE48E5267C643D0D /* SAEditorThemeLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */; };
+		C1A0B0020A1B2C3D4E5F6072 /* SAEditorColourModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0B0010A1B2C3D4E5F6071 /* SAEditorColourModeTests.swift */; };
 		DDFA1491D09305AFD45E379E /* SAClaudeEditorDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAA2F2BC3B350B443632323 /* SAClaudeEditorDefaultsTests.swift */; };
 		4652DF7A79FDAA9F1D8CDCF9 /* SAClaudeThemeRefresherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E666CB5AC954ABFE2EA1364 /* SAClaudeThemeRefresherTests.swift */; };
 		14CC6C484E822E9D9B881AB0 /* SARegistrationDomainSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0079AC1FEC6C66DBA17BF /* SARegistrationDomainSnapshotTests.swift */; };
@@ -1547,6 +1550,7 @@
 		812D779A61DFF497CD129924 /* SAQueryFavoriteStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAQueryFavoriteStoreTests.swift; sourceTree = "<group>"; };
 		81815809CB9EBE53E9D2AA2A /* SADatabaseScopedValueCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCacheTests.swift; sourceTree = "<group>"; };
 		81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorThemeLoader.swift; sourceTree = "<group>"; };
+		C1A0B0030A1B2C3D4E5F6073 /* SAEditorColourMode.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorColourMode.swift; sourceTree = "<group>"; };
 		74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorDefaults.swift; sourceTree = "<group>"; };
 		09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeThemeRefresher.swift; sourceTree = "<group>"; };
 		66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorAppearanceThemeSwitcher.swift; sourceTree = "<group>"; };
@@ -1621,6 +1625,7 @@
 		AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAAsyncResultBox.swift; sourceTree = "<group>"; };
 		B138F78DC06D7838CF975508 /* SAScriptConsoleModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleModelTests.swift; sourceTree = "<group>"; };
 		B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorThemeLoaderTests.swift; sourceTree = "<group>"; };
+		C1A0B0010A1B2C3D4E5F6071 /* SAEditorColourModeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorColourModeTests.swift; sourceTree = "<group>"; };
 		6DAA2F2BC3B350B443632323 /* SAClaudeEditorDefaultsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorDefaultsTests.swift; sourceTree = "<group>"; };
 		3E666CB5AC954ABFE2EA1364 /* SAClaudeThemeRefresherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeThemeRefresherTests.swift; sourceTree = "<group>"; };
 		B6E0079AC1FEC6C66DBA17BF /* SARegistrationDomainSnapshotTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SARegistrationDomainSnapshotTests.swift; sourceTree = "<group>"; };
@@ -2989,6 +2994,7 @@
 				E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */,
 				A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */,
 				81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */,
+				C1A0B0030A1B2C3D4E5F6073 /* SAEditorColourMode.swift */,
 				74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */,
 				09F8112FC38227F609BB23EB /* SAClaudeThemeRefresher.swift */,
 				66F6D7314740E30A79652710 /* SAEditorAppearanceThemeSwitcher.swift */,
@@ -3090,6 +3096,7 @@
 				38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */,
 				A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */,
 				B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */,
+				C1A0B0010A1B2C3D4E5F6071 /* SAEditorColourModeTests.swift */,
 				D5CB8D201D85D9F4D023A969 /* SAEditorAppearanceThemeSwitcherTests.swift */,
 				6DAA2F2BC3B350B443632323 /* SAClaudeEditorDefaultsTests.swift */,
 				3E666CB5AC954ABFE2EA1364 /* SAClaudeThemeRefresherTests.swift */,
@@ -3972,10 +3979,12 @@
 				A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */,
 				718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */,
 				AEECDC8D451950C7B7ADB1B1 /* SAEditorThemeLoader.swift in Sources */,
+				C1A0B0040A1B2C3D4E5F6074 /* SAEditorColourMode.swift in Sources */,
 				F967660D2D2DD58416CC7C45 /* SAClaudeEditorDefaults.swift in Sources */,
 				B59E0D4F5B269DA4F8F33402 /* SAClaudeThemeRefresher.swift in Sources */,
 				3F3428286D5C41D1A476E954 /* SAEditorAppearanceThemeSwitcher.swift in Sources */,
 				F44DD559DE48E5267C643D0D /* SAEditorThemeLoaderTests.swift in Sources */,
+				C1A0B0020A1B2C3D4E5F6072 /* SAEditorColourModeTests.swift in Sources */,
 				2BBA7C2C0453EDB033412104 /* SAEditorAppearanceThemeSwitcherTests.swift in Sources */,
 				DDFA1491D09305AFD45E379E /* SAClaudeEditorDefaultsTests.swift in Sources */,
 				4652DF7A79FDAA9F1D8CDCF9 /* SAClaudeThemeRefresherTests.swift in Sources */,
@@ -4361,6 +4370,7 @@
 				9126CC1CEF2EA1DFE938CDDD /* SAClaudeSidebarChrome.swift in Sources */,
 				A5C1E0D21A2B3C4D5E6F7083 /* SAClaudeEditorChrome.swift in Sources */,
 				0BDF116B0C30BBE6B995BC8E /* SAEditorThemeLoader.swift in Sources */,
+				C1A0B0050A1B2C3D4E5F6075 /* SAEditorColourMode.swift in Sources */,
 				C21F0EB05F99F92919394303 /* SAClaudeEditorDefaults.swift in Sources */,
 				6F51F1F0A937B4545B88899B /* SAClaudeThemeRefresher.swift in Sources */,
 				94B370555E2958800EB6D4DD /* SAEditorAppearanceThemeSwitcher.swift in Sources */,
