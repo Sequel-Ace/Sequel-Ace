@@ -78,14 +78,14 @@ import AppKit
 
     // MARK: - Bar geometry (non-flipped container)
 
-    /// Grows the bar to `height` keeping its top edge; the results area below
-    /// gives up the space and keeps its gap to the bar.
-    static func barFrames(bar: NSRect, results: NSRect, height: CGFloat) -> (bar: NSRect, results: NSRect) {
-        let gap = bar.minY - results.maxY
-        let newBar = NSRect(x: bar.minX, y: bar.maxY - height, width: bar.width, height: height)
+    /// Pins the bar, `height` tall and full width, to the top of its `container`
+    /// (so it neither overhangs the split divider above nor leaves a gap below);
+    /// the results area keeps its bottom, x and width and runs up to the bar.
+    static func barFrames(container: NSRect, results: NSRect, height: CGFloat) -> (bar: NSRect, results: NSRect) {
+        let bar = NSRect(x: container.minX, y: container.maxY - height, width: container.width, height: height)
         var newResults = results
-        newResults.size.height = max(0, newBar.minY - gap - results.minY)
-        return (newBar, newResults)
+        newResults.size.height = max(0, bar.minY - results.minY)
+        return (bar, newResults)
     }
 
     static func centredY(height: CGFloat, in barHeight: CGFloat) -> CGFloat {

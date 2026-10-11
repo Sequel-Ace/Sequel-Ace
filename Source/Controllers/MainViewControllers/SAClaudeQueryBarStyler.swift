@@ -31,7 +31,8 @@ import AppKit
     @objc(attachToBarWithOptionsButton:favoritesButton:historyButton:runButton:resultsView:editorSplitView:)
     static func attach(optionsButton: NSPopUpButton, favoritesButton: NSPopUpButton, historyButton: NSPopUpButton,
                        runButton: NSView, resultsView: NSView, editorSplitView: SPSplitView) {
-        guard let bar = favoritesButton.superview, objc_getAssociatedObject(bar, &associationKey) == nil else { return }
+        guard let bar = favoritesButton.superview, let container = bar.superview,
+              objc_getAssociatedObject(bar, &associationKey) == nil else { return }
         let styler = SAClaudeQueryBarStyler()
         styler.bar = bar
         styler.optionsButton = optionsButton
@@ -41,10 +42,12 @@ import AppKit
         styler.editorSplitView = editorSplitView
         objc_setAssociatedObject(bar, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
-        // Grow the bar to 44pt, taking the space from the top of the results area.
-        let frames = SAClaudeEditorChrome.barFrames(bar: bar.frame, results: resultsView.frame, height: SAClaudeEditorChrome.barHeight)
+        // Pin the 44pt bar to the top of its pane; the results area runs up to it.
+        let frames = SAClaudeEditorChrome.barFrames(container: container.bounds, results: resultsView.frame, height: SAClaudeEditorChrome.barHeight)
         bar.frame = frames.bar
+        bar.autoresizingMask = [.width, .minYMargin]
         resultsView.frame = frames.results
+        resultsView.autoresizingMask = [.width, .height]
 
         styler.background.frame = bar.bounds
         styler.background.autoresizingMask = [.width, .height]

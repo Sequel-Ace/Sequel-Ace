@@ -97,14 +97,17 @@ final class SAClaudeEditorChromeTests: XCTestCase {
         XCTAssertNotNil(p.background.usingColorSpace(.sRGB))
     }
 
-    /// Verifies the bar grows downward to 44pt keeping its top edge and the gap to the results.
+    /// Verifies the bar is pinned to the top of its pane at 44pt and full width, and the
+    /// results area below runs right up to it (no overhang above, no gap below).
     func testBarFrames() {
-        let frames = SAClaudeEditorChrome.barFrames(bar: NSRect(x: 0, y: 213, width: 695, height: 25),
+        // DBView.xib: pane 7211 is 695x235; the bar sits at y=213 h=25 (3pt above the pane), results top at 204.
+        let frames = SAClaudeEditorChrome.barFrames(container: NSRect(x: 0, y: 0, width: 695, height: 235),
                                                      results: NSRect(x: -1, y: -1, width: 697, height: 205),
                                                      height: 44)
-        XCTAssertEqual(frames.bar, NSRect(x: 0, y: 194, width: 695, height: 44))
-        XCTAssertEqual(frames.results, NSRect(x: -1, y: -1, width: 697, height: 186))
-        let tiny = SAClaudeEditorChrome.barFrames(bar: NSRect(x: 0, y: 10, width: 100, height: 25),
+        XCTAssertEqual(frames.bar, NSRect(x: 0, y: 191, width: 695, height: 44))
+        XCTAssertEqual(frames.results, NSRect(x: -1, y: -1, width: 697, height: 192))
+        XCTAssertEqual(frames.results.maxY, frames.bar.minY)
+        let tiny = SAClaudeEditorChrome.barFrames(container: NSRect(x: 0, y: 0, width: 100, height: 30),
                                                    results: NSRect(x: 0, y: 0, width: 100, height: 5), height: 44)
         XCTAssertEqual(tiny.results.height, 0)
     }
