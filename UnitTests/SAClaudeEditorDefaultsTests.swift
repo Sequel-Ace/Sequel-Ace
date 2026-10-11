@@ -137,4 +137,12 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
             }
         }
     }
+
+    /// Verifies the console-only appearance override is cleared so the console follows the editor.
+    func testConsoleOverrideIsResetSoTheConsoleMatchesTheEditor() {
+        defaults.set(true, forKey: SAClaudeEditorDefaults.consoleOverrideKey)
+        SAClaudeEditorDefaults.resetConsoleOverride(in: defaults)
+        XCTAssertNil(defaults.persistentDomain(forName: suite)?[SAClaudeEditorDefaults.consoleOverrideKey])
+        XCTAssertFalse(defaults.bool(forKey: SAClaudeEditorDefaults.consoleOverrideKey))
+    }
 }

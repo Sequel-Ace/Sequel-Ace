@@ -728,15 +728,17 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 - (NSView *)preferencePaneView
 {
-	// The XIB view, then the Swift "Theme Appearance" section, then "Script Output" (each built once, cached).
+	// Claude look: the Follow macOS / Customise colours section takes the colour table's place (built once).
 	__weak SPEditorPreferencePane *weakSelf = self;
-	NSView *withThemes = [SAEditorThemeAppearanceSectionHost paneViewWrapping:[self view]
-	                                                           themesDirectory:themePath ?: @""
-	                                                     confirmDiscardUnsaved:^BOOL{ return [weakSelf _checkForUnsavedTheme]; }
-	                                                            onThemeApplied:^{ [weakSelf _refreshColourDisplay]; }];
-	return [SAScriptConsoleAppearanceSectionHost paneViewWrapping:withThemes onSelectFont:^{
-		[weakSelf showScriptConsoleFontPanel];
-	}];
+	[SAClaudeEditorColoursSectionHost installInPaneView:[self view]
+	                                     replacingViews:@[[colorSettingTableView enclosingScrollView], colorThemeName, colorThemeNameLabel]
+	                                    themesDirectory:themePath ?: @""
+	                              confirmDiscardUnsaved:^BOOL{ return [weakSelf _checkForUnsavedTheme]; }
+	                                             saveAs:^{ [weakSelf saveAsColorScheme:nil]; }
+	                                        importTheme:^{ [weakSelf importColorScheme:nil]; }
+	                                        exportTheme:^{ [weakSelf exportColorScheme:nil]; }
+	                                      editThemeList:^{ [weakSelf editThemeList:nil]; }];
+	return [self view];
 }
 
 - (NSImage *)preferencePaneIcon

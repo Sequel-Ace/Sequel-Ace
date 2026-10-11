@@ -26,6 +26,15 @@ import AppKit
         let userDomain = Bundle.main.bundleIdentifier.flatMap { UserDefaults.standard.persistentDomain(forName: $0) }
         migrateFont(in: .standard, userFontData: userDomain?[fontKey] as? Data)
         upgradeThemeMatching(in: .standard, userDomain: userDomain)
+        resetConsoleOverride(in: .standard)
+    }
+
+    /// Keep in sync with SAScriptConsoleAppearance.useCustomKey. The Claude look has no
+    /// console-only colours: the console always uses the editor's.
+    static let consoleOverrideKey = "ScriptConsoleUseCustomAppearance"
+
+    static func resetConsoleOverride(in defaults: UserDefaults) {
+        defaults.removeObject(forKey: consoleOverrideKey)
     }
 
     static func register(in defaults: UserDefaults) {
