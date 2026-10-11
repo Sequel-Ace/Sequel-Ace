@@ -299,6 +299,66 @@ final class SAScriptRunnerTests: XCTestCase {
         let summary = runner.run(statements: statements, database: database, continueOnError: continueOnError)
         return (summary, output)
     }
+
+    // MARK: - Console events
+
+    private func runCollectingEvents(_ sql: [String], on connection: FakeScriptConnection, continueOnError: Bool = false,
+                                     token: SAScriptCancellationToken = SAScriptCancellationToken(),
+                                     onProgress: ((Int) -> Void)? = nil) -> (events: [SAScriptConsoleEvent], output: String) {
+        var output = ""
+        var events: [SAScriptConsoleEvent] = []
+        let runner = SAScriptRunner(connection: connection, cancellation: token,
+                                    output: { output += $0 }, progress: { index, _ in onProgress?(index) })
+        runner.events = { events.append($0) }
+        let statements = sql.enumerated().map { SAScriptStatement(text: $0.element, line: $0.offset + 1) }
+        _ = runner.run(statements: statements, database: "shop", continueOnError: continueOnError)
+        return (events, output)
+    }
+
+    private func startedCount(_ events: [SAScriptConsoleEvent]) -> Int {
+        events.filter { if case .statementStarted = $0 { return true }; return false }.count
+    }
+
+    func testSuccessfulSelectEmitsEventsInOrder() {
+        let connection = FakeScriptConnection()
+        connection.outcomes["SELECT 1"] = .rows(columns: ["a"], rows: [[.text("1")]])
+        let (events, _) = runCollectingEvents(["SELECT 1"], on: connection)
+        XCTAssertEqual(events, [.statementStarted(sql: "SELECT 1"), .resultHeader("a\n"), .row("1\n"),
+                                .rowsInSet(count: 1), .statementFinished(time: 0.001, continuing: true)])
+    }
+
+    func testOkStatementEmitsQueryOK() {
+        let connection = FakeScriptConnection()
+        connection.outcomes["UPDATE t SET a = 2"] = .ok(affectedRows: 3)
+        let (events, _) = runCollectingEvents(["UPDATE t SET a = 2"], on: connection)
+        XCTAssertEqual(events, [.statementStarted(sql: "UPDATE t SET a = 2"), .queryOK(affectedRows: 3),
+                                .statementFinished(time: 0.001, continuing: true)])
+    }
+
+    func testFailureMidRunEmitsEvents() {
+        for continueOnError in [true, false] {
+            let connection = FakeScriptConnection()
+            connection.outcomes["BAD"] = .error(code: 1064, sqlState: "42000", message: "syntax")
+            let (events, output) = runCollectingEvents(["SELECT 1", "BAD", "SELECT 3"], on: connection, continueOnError: continueOnError)
+            let failure = events.firstIndex(of: .failed(message: "ERROR 1064 (42000) at line 2: syntax"))
+            XCTAssertNotNil(failure)
+            if let failure { XCTAssertEqual(events[failure + 1], .statementFinished(time: 0, continuing: continueOnError)) }
+            XCTAssertEqual(startedCount(events), continueOnError ? 3 : 2)
+            XCTAssertTrue(output.contains("ERROR 1064 (42000) at line 2: syntax\n\n"))   // the text log is unchanged
+        }
+    }
+
+    func testCancelledRunEmitsCancelled() {
+        // As testStopFromProgressCallbackNeverSubmitsTheNextStatement: Stop lands after the
+        // second statement's header was printed, so it starts but never runs.
+        let connection = FakeScriptConnection()
+        let token = SAScriptCancellationToken()
+        let (events, _) = runCollectingEvents(["INSERT INTO t VALUES (1)", "DELETE FROM t"], on: connection, token: token,
+                                              onProgress: { index in if index == 1 { token.cancel() } })
+        XCTAssertEqual(startedCount(events), 2)
+        let lastStart = events.lastIndex { if case .statementStarted = $0 { return true }; return false }!
+        XCTAssertEqual(Array(events[(lastStart + 1)...]), [.cancelled])
+    }
 }
 
 // MARK: - Fakes

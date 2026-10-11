@@ -709,6 +709,7 @@
 		C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */; };
 		CACA94EDDD5F7ADE62E4CA71 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		CCF065F89382A9A33C1A2E3C /* SAScriptRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */; };
+		7A3C91E04B2D58F611A0C3D5 /* SAScriptConsoleEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3C91E04B2D58F611A0C3D7 /* SAScriptConsoleEvent.swift */; };
 		CD5AFDE14AA44B4AB444DD59 /* SAKeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4471240789125E4D4033602A /* SAKeychainAccess.swift */; };
 		CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */; };
 		CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000042F8C000600C4C14A /* SACellFilterOperator.swift */; };
@@ -757,6 +758,7 @@
 		DF41CA70087EC426ED97F397 /* SAScriptConsoleAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */; };
 		E51CC2AA59AF37FEF73B06A0 /* SADragPasteboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */; };
 		E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */; };
+		7A3C91E04B2D58F611A0C3D6 /* SAScriptConsoleEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3C91E04B2D58F611A0C3D7 /* SAScriptConsoleEvent.swift */; };
 		EB9FF92F188F0B4AA444A892 /* SAConnectionInfo+ConnectionString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */; };
 		ED3C9DE94BCF6D3F17DACBCA /* AWSLoginCredentialsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */; };
 		ED6B10573965334DAB40D0F7 /* SAScriptOutputFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153725AA3970D323ADB9C26B /* SAScriptOutputFormatter.swift */; };
@@ -1590,6 +1592,7 @@
 		8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelper.swift; sourceTree = "<group>"; };
 		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptRunner.swift; sourceTree = "<group>"; };
+		7A3C91E04B2D58F611A0C3D7 /* SAScriptConsoleEvent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleEvent.swift; sourceTree = "<group>"; };
 		8EA35EE6FE32D801FDF15E23 /* SAScriptConsoleAppearanceSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleAppearanceSection.swift; sourceTree = "<group>"; };
 		30EC973A18AF92665C943276 /* SAEditorThemeAppearanceSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorThemeAppearanceSection.swift; sourceTree = "<group>"; };
 		2B97BFD9F5085B81FB41D966 /* SAClaudeEditorColoursSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorColoursSection.swift; sourceTree = "<group>"; };
@@ -2085,6 +2088,7 @@
 				87376FCB9BB22836AD5235F8 /* SAScriptStatementLocator.swift */,
 				48C67458438228D42437126F /* SAScriptConsoleModel.swift */,
 				8D93D7D6B48E763F8FA71AF2 /* SAScriptRunner.swift */,
+				7A3C91E04B2D58F611A0C3D7 /* SAScriptConsoleEvent.swift */,
 				25F9E7E8514874239AE5FF59 /* SAScriptConsoleView.swift */,
 				84BCBDC308AB07FD3E701FE1 /* SPCustomQuery+Script.swift */,
 				C23A8C1FC41A45A658285063 /* SAScriptConsoleAppearance.swift */,
@@ -3981,6 +3985,7 @@
 				10D9A7676BCA2DD36E1F5789 /* SAScriptConsoleAppearanceTests.swift in Sources */,
 				FD1CB5B70C14049034B6B8A5 /* SAScriptConsoleAppearance.swift in Sources */,
 				E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */,
+				7A3C91E04B2D58F611A0C3D6 /* SAScriptConsoleEvent.swift in Sources */,
 				03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */,
 				AD162E31FB7300DB273BAFDD /* SAQueryAdmission.swift in Sources */,
 				B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */,
@@ -4373,6 +4378,7 @@
 				9C1001FC7D0AFB7305DC982D /* SAScriptStatementLocator.swift in Sources */,
 				9B56E248B4BB6212004570CA /* SAScriptConsoleModel.swift in Sources */,
 				CCF065F89382A9A33C1A2E3C /* SAScriptRunner.swift in Sources */,
+				7A3C91E04B2D58F611A0C3D5 /* SAScriptConsoleEvent.swift in Sources */,
 				ACDB8F22CA9B78276D639CD1 /* SAScriptConsoleView.swift in Sources */,
 				6DEA8EFBCCA6567E457B10E2 /* SPCustomQuery+Script.swift in Sources */,
 				DF41CA70087EC426ED97F397 /* SAScriptConsoleAppearance.swift in Sources */,

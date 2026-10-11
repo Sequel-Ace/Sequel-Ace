@@ -30,6 +30,12 @@ final class SAScriptConsoleModel {
     private var pending = ""
     private var flushScheduled = false
 
+    /// Structured output for the statement-block console (main thread).
+    private(set) var eventLog: [SAScriptConsoleEvent] = []
+    /// Batches of events in arrival order, published with the text flush.
+    let eventsAppended = PassthroughSubject<[SAScriptConsoleEvent], Never>()
+    private var pendingEvents: [SAScriptConsoleEvent] = []
+
     init(flushInterval: TimeInterval = 0.1) {
         self.flushInterval = flushInterval
     }
@@ -50,25 +56,46 @@ final class SAScriptConsoleModel {
         }
     }
 
+    /// Queue a structured event. Any thread.
+    func append(event: SAScriptConsoleEvent) {
+        lock.lock()
+        pendingEvents.append(event)
+        let needsSchedule = !flushScheduled
+        flushScheduled = true
+        lock.unlock()
+        if needsSchedule {
+            DispatchQueue.main.asyncAfter(deadline: .now() + flushInterval) { [weak self] in self?.flush() }
+        }
+    }
+
     /// Move pending output into `text` and publish it. Main thread only.
     func flush() {
         lock.lock()
         let chunk = pending
         pending = ""
+        let events = pendingEvents
+        pendingEvents = []
         flushScheduled = false
         lock.unlock()
 
-        guard !chunk.isEmpty else { return }
-        text += chunk
-        appended.send(chunk)
+        if !chunk.isEmpty {
+            text += chunk
+            appended.send(chunk)
+        }
+        if !events.isEmpty {
+            eventLog += events
+            eventsAppended.send(events)
+        }
     }
 
     /// Drop all output, including anything not yet flushed. Main thread only.
     func clear() {
         lock.lock()
         pending = ""
+        pendingEvents = []
         lock.unlock()
         text = ""
+        eventLog = []
         cleared.send()
     }
 }

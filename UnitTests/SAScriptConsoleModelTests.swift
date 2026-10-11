@@ -69,4 +69,39 @@ final class SAScriptConsoleModelTests: XCTestCase {
         XCTAssertEqual(model.text, "")
         XCTAssertEqual(clearCount, 1)
     }
+
+    func testEventsAreBufferedAndPublishedInOrder() {
+        let model = SAScriptConsoleModel(flushInterval: 60)
+        var batches: [[SAScriptConsoleEvent]] = []
+        model.eventsAppended.sink { batches.append($0) }.store(in: &cancellables)
+        let done = expectation(description: "appended off main")
+        DispatchQueue.global().async {
+            model.append(event: .statementStarted(sql: "SELECT 1"))
+            model.append(event: .rowsInSet(count: 0))
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 2)
+        XCTAssertTrue(model.eventLog.isEmpty)
+        model.flush()
+        XCTAssertEqual(model.eventLog, [.statementStarted(sql: "SELECT 1"), .rowsInSet(count: 0)])
+        XCTAssertEqual(batches, [[.statementStarted(sql: "SELECT 1"), .rowsInSet(count: 0)]])
+    }
+
+    func testEventsFlushEvenWithoutText() {
+        let model = SAScriptConsoleModel(flushInterval: 60)
+        model.append(event: .cancelled)
+        model.flush()
+        XCTAssertEqual(model.eventLog, [.cancelled])
+        XCTAssertEqual(model.text, "")
+    }
+
+    func testClearEmptiesTheEventLog() {
+        let model = SAScriptConsoleModel(flushInterval: 60)
+        model.append(event: .cancelled)
+        model.flush()
+        model.append(event: .rowsInSet(count: 1))
+        model.clear()
+        model.flush()
+        XCTAssertTrue(model.eventLog.isEmpty)
+    }
 }

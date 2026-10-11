@@ -104,6 +104,9 @@ final class SAScriptRunner {
     private let cancellation: SAScriptCancellationToken
     private let output: (String) -> Void
     private let progress: (_ index: Int, _ total: Int) -> Void
+    /// Structured console events, emitted next to the text `output`.
+    /// Called on the run's thread; nil by default.
+    var events: ((SAScriptConsoleEvent) -> Void)?
 
     init(connection: SAScriptQueryConnection,
          cancellation: SAScriptCancellationToken,
@@ -138,6 +141,7 @@ final class SAScriptRunner {
             }
             progress(index, statements.count)
             output(SAScriptOutputFormatter.statementHeader(SAScriptOutputFormatter.echoText(for: statement.text)))
+            events?(.statementStarted(sql: SAScriptOutputFormatter.echoText(for: statement.text)))
 
             if !caseSensitivityLoaded
                 && SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(for: statement.text,
@@ -184,6 +188,10 @@ final class SAScriptRunner {
                     finishCancelled(&summary)
                 }
             }
+            if case .cancelled = execution.outcome {} else {
+                let failed: Bool = { if case .failed = execution.outcome { return true }; return false }()
+                events?(.statementFinished(time: execution.time, continuing: !summary.wasCancelled && !(failed && !continueOnError)))
+            }
             if summary.wasCancelled { break }
             if case .failed = execution.outcome, !continueOnError { break }
         }
@@ -227,6 +235,7 @@ final class SAScriptRunner {
             let affected = connection.scriptRowsAffectedByLastQuery
             let count = affected == UInt64.max ? 0 : affected
             output(SAScriptOutputFormatter.queryOK(affectedRows: count))
+            events?(.queryOK(affectedRows: count))
             return (.completed(affectedRows: count, stopRequested: stopRequested), time)
         }
 
@@ -244,8 +253,11 @@ final class SAScriptRunner {
         while !cancellation.isCancelled, let row = result.nextRow() {
             if rowCount == 0 {
                 output(SAScriptOutputFormatter.resultHeader(columns: columns))
+                events?(.resultHeader(SAScriptOutputFormatter.resultHeader(columns: columns)))
             }
-            output(SAScriptOutputFormatter.row(row))
+            let line = SAScriptOutputFormatter.row(row)
+            output(line)
+            events?(.row(line))
             rowCount += 1
         }
         if cancellation.isCancelled {
@@ -257,6 +269,7 @@ final class SAScriptRunner {
             return (.failed, time)
         }
         output(SAScriptOutputFormatter.rowsInSetFooter(count: rowCount))
+        events?(.rowsInSet(count: rowCount))
         return (.completed(affectedRows: rowCount, stopRequested: false), time)
     }
 
@@ -287,12 +300,14 @@ final class SAScriptRunner {
     /// Single exit path for every cancellation.
     private func finishCancelled(_ summary: inout SAScriptRunSummary) {
         output(SAScriptOutputFormatter.cancelled)
+        events?(.cancelled)
         summary.wasCancelled = true
     }
 
     private func reportError(for statement: SAScriptStatement, in summary: inout SAScriptRunSummary) {
         let text = errorText(for: statement)
         output(text)
+        events?(.failed(message: text.trimmingCharacters(in: .newlines)))
         summary.errorCount += 1
         summary.errorLines.append(text.trimmingCharacters(in: .newlines))
     }
