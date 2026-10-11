@@ -50,15 +50,18 @@ final class SAScriptConsoleBlockBuilderTests: XCTestCase {
 
     func testFailedBlockIsFlaggedAndStatusSaysStopped() {
         let builder = SAScriptConsoleBlockBuilder(style: style)
-        _ = builder.append([.statementStarted(sql: "SELECT 1"), .rowsInSet(count: 0), .statementFinished(time: 0.001, continuing: true)])
+        let all = NSMutableAttributedString()
+        all.append(builder.append([.statementStarted(sql: "SELECT 1"), .rowsInSet(count: 0), .statementFinished(time: 0.001, continuing: true)]).text)
         let second = builder.append([.statementStarted(sql: "SELEC 2")])
+        all.append(second.text)
         let third = builder.append([.failed(message: "ERROR 1064 (42000) at line 2: syntax"), .statementFinished(time: 0, continuing: false)])
+        all.append(third.text)
         XCTAssertTrue(third.text.string.contains("ERROR 1064 (42000) at line 2: syntax\n"))
         XCTAssertTrue(third.text.string.hasSuffix("failed · stopped\n"))
         // The error range covers the whole second block: from its SQL to its status line.
-        let blockStart = (builder.allText as NSString).range(of: "SELEC 2").location
+        let blockStart = (all.string as NSString).range(of: "SELEC 2").location
         XCTAssertEqual(third.errorRanges.first?.location, blockStart)
-        XCTAssertEqual(NSMaxRange(third.errorRanges.first!), builder.allText.utf16.count)
+        XCTAssertEqual(NSMaxRange(third.errorRanges.first!), all.length)
         XCTAssertEqual(second.errorRanges, [])
     }
 

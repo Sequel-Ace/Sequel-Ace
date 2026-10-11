@@ -101,8 +101,8 @@ final class SAScriptConsoleBlockBuilder {
     static let maxSQLLines = 6
 
     private let style: SAScriptConsoleStyle
-    /// Everything built so far (to compute absolute ranges).
-    private(set) var allText = ""
+    /// Length (UTF-16 units) of everything built so far, to compute absolute ranges.
+    private(set) var length = 0
     private var blockStart = 0
     private var rows: UInt64?
     private var affected: UInt64?
@@ -116,7 +116,7 @@ final class SAScriptConsoleBlockBuilder {
     func append(_ events: [SAScriptConsoleEvent]) -> (text: NSAttributedString, errorRanges: [NSRange]) {
         let out = NSMutableAttributedString()
         var errorRanges: [NSRange] = []
-        let base = allText.utf16.count
+        let base = length
         func add(_ string: String, _ attributes: [NSAttributedString.Key: Any]) {
             out.append(NSAttributedString(string: string, attributes: attributes))
         }
@@ -176,7 +176,7 @@ final class SAScriptConsoleBlockBuilder {
                 }
             }
         }
-        allText += out.string
+        length += out.length
         if !errorRanges.isEmpty {
             // Ranges inside this chunk get the attribute here; earlier text is marked by the console.
             for range in errorRanges {
