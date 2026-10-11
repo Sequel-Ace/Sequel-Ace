@@ -729,8 +729,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (NSView *)preferencePaneView
 {
 	// Claude look: the Follow macOS / Customise colours section takes the colour table's place (built once).
+	NSView *paneView = [self view]; // loads the nib before the outlets below are read
 	__weak SPEditorPreferencePane *weakSelf = self;
-	[SAClaudeEditorColoursSectionHost installInPaneView:[self view]
+	[SAClaudeEditorColoursSectionHost installInPaneView:paneView
 	                                     replacingViews:@[[colorSettingTableView enclosingScrollView], colorThemeName, colorThemeNameLabel]
 	                                    themesDirectory:themePath ?: @""
 	                              confirmDiscardUnsaved:^BOOL{ return [weakSelf _checkForUnsavedTheme]; }
@@ -738,7 +739,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	                                        importTheme:^{ [weakSelf importColorScheme:nil]; }
 	                                        exportTheme:^{ [weakSelf exportColorScheme:nil]; }
 	                                      editThemeList:^{ [weakSelf editThemeList:nil]; }];
-	return [self view];
+	return paneView;
 }
 
 - (NSImage *)preferencePaneIcon
