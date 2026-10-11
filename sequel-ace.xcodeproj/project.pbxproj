@@ -681,6 +681,7 @@
 		C2E7A3B62E5E1B3A00D22990 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */; };
 		A5C1E0D61A2B3C4D5E6F7087 /* SAClaudeQueryBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */; };
+		A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */; };
 		C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */; };
 		C3A2875D9BB7411F87F05EA2 /* SPCustomQuerySQLClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */; };
 		C3A2875D9BB7411F87F05EA3 /* SPCustomQuerySQLClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */; };
@@ -1607,6 +1608,7 @@
 		ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AWSSSOClient.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPCustomQuery+Explain.swift"; sourceTree = "<group>"; };
 		A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryBarStyler.swift; sourceTree = "<group>"; };
+		A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRunButton.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifier.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifierTests.swift; sourceTree = "<group>"; };
 		AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAAsyncResultBox.swift; sourceTree = "<group>"; };
@@ -2807,6 +2809,7 @@
 				17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */,
 				58D2A6A516FBDEFF002EB401 /* SPComboPopupButton.h */,
 				58D2A6A616FBDEFF002EB401 /* SPComboPopupButton.m */,
+				A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */,
 				50805B0B1BF2A068005F7A99 /* SPPopUpButtonCell.h */,
 				50805B0C1BF2A068005F7A99 /* SPPopUpButtonCell.m */,
 				3876E15B1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.h */,
@@ -3999,6 +4002,7 @@
 				17E641560EF01EF6001BC333 /* SPCustomQuery.m in Sources */,
 				C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */,
 				A5C1E0D61A2B3C4D5E6F7087 /* SAClaudeQueryBarStyler.swift in Sources */,
+				A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */,
 				C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */,
 				CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
 				51BE68DC3017550E00AF389C /* SAImageRenderer.swift in Sources */,

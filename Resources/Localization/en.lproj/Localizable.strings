@@ -2538,6 +2538,18 @@
 /* Table Info Section : number of rows (estimated value) */
 "rows: ~%@" = "rows: ~%@";
 
+/* query editor run button title: run all queries */
+"Run all" = "Run all";
+
+/* query editor run button title: run previous query */
+"Run previous" = "Run previous";
+
+/* query editor run button title: run current query */
+"Run current" = "Run current";
+
+/* query editor run button title: run selection */
+"Run selection" = "Run selection";
+
 /* run all button */
 "Run All" = "Run All";
 

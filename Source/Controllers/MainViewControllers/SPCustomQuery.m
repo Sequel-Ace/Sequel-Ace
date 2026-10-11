@@ -1659,7 +1659,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // Update the links as appropriate
     if (primaryActionIsRunAll) {
         runPrimaryActionButtonAsSelection = nil;
-        [runPrimaryActionButton setTitle:NSLocalizedString(@"Run All", @"run all button")];
+        [runPrimaryActionButton setTitle:NSLocalizedString(@"Run all", @"query editor run button title: run all queries")];
         [runPrimaryActionMenuItem setTitle:NSLocalizedString(@"Run All Queries", @"Run All menu item title")];
     } else {
         runPrimaryActionButtonAsSelection = runPrimaryActionButton;
@@ -1689,16 +1689,16 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // whether the caret is inside a valid query.
     if (![textView selectedRange].length) {
         if (currentQueryBeforeCaret) {
-            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run Previous", @"Title of button to run query just before text caret in custom query view")];
+            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run previous", @"query editor run button title: run previous query")];
             [runSelectionMenuItem setTitle:NSLocalizedString(@"Run Previous Query", @"Title of action menu item to run query just before text caret in custom query view")];
         } else {
-            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run Current", @"Title of button to run current query in custom query view")];
+            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run current", @"query editor run button title: run current query")];
             [runSelectionMenuItem setTitle:NSLocalizedString(@"Run Current Query", @"Title of action menu item to run current query in custom query view")];
         }
         
         // Otherwise, reflect the active selection
     } else {
-        [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run Selection", @"Title of button to run selected text in custom query view")];
+        [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run selection", @"query editor run button title: run selection")];
         [runSelectionMenuItem setTitle:NSLocalizedString(@"Run Selected Text", @"Title of action menu item to run selected text in custom query view")];
     }
 }

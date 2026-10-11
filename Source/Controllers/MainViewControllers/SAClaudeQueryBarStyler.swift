@@ -23,6 +23,9 @@ import AppKit
     private let bottomLine = SAClaudeDividerLine(frame: .zero)
     private var observer: NSObjectProtocol?
     private var frameObserver: NSObjectProtocol?
+    private var runFrameObserver: NSObjectProtocol?
+    private var appliedPalette: SAClaudeEditorChrome.Palette?
+    private var isLayingOut = false
 
     /// Restyles the bar once per bar view and keeps it in step with the editor theme.
     @objc(attachToBarWithOptionsButton:favoritesButton:historyButton:runButton:resultsView:editorSplitView:)
@@ -72,17 +75,26 @@ import AppKit
         styler.frameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: bar, queue: .main) { [weak styler, weak bar] _ in
             if let styler, let bar { styler.layoutButtons(in: bar) }
         }
+        // The Run button resizes itself to its title (awakeFromNib, setTitle:), possibly after this ran.
+        runButton.postsFrameChangedNotifications = true
+        styler.runFrameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: runButton, queue: .main) { [weak styler, weak bar] _ in
+            if let styler, let bar { styler.layoutButtons(in: bar) }
+        }
     }
 
     deinit {
         if let observer { NotificationCenter.default.removeObserver(observer) }
         if let frameObserver { NotificationCenter.default.removeObserver(frameObserver) }
+        if let runFrameObserver { NotificationCenter.default.removeObserver(runFrameObserver) }
     }
 
     /// Applies the colours derived from the current editor theme and re-lays out the buttons.
     private func applyPalette() {
         guard let bar else { return }
         let palette = SAClaudeEditorChrome.palette(from: .standard)
+        // The defaults observer fires on every app-wide defaults write; only react when the palette changed.
+        guard palette != appliedPalette else { return }
+        appliedPalette = palette
         if background.fillColour != palette.background { background.fillColour = palette.background }
         bottomLine.colourOverride = palette.hairline
         editorSplitView?.customDividerColor = palette.hairline
@@ -99,12 +111,16 @@ import AppKit
     }
 
     fileprivate func layoutButtons(in bar: NSView) {
+        guard !isLayingOut else { return }
+        isLayingOut = true
+        defer { isLayingOut = false }
         let height = SAClaudeEditorChrome.buttonHeight
         let y = SAClaudeEditorChrome.centredY(height: height, in: bar.bounds.height)
         var runMinX = bar.bounds.maxX - SAClaudeEditorChrome.barSidePadding
         if let run = runButton {
             let width = run.frame.width
-            run.frame = NSRect(x: bar.bounds.maxX - SAClaudeEditorChrome.barSidePadding - width, y: y, width: width, height: height)
+            let runFrame = NSRect(x: bar.bounds.maxX - SAClaudeEditorChrome.barSidePadding - width, y: y, width: width, height: height)
+            if run.frame != runFrame { run.frame = runFrame }
             runMinX = run.frame.minX
         }
         let left = [optionsButton, favoritesButton, historyButton].compactMap { $0 }
