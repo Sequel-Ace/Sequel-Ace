@@ -2,8 +2,8 @@
 //  SAClaudeCopyTable.swift
 //  Sequel Ace
 //
-//  The Query and Content tab grids as a quiet sheet: theme background, a faint
-//  line between rows, hover tint, the theme's selection colour, a 30pt header
+//  The Query and Content tab grids as a quiet sheet: theme background, every
+//  other row shaded, lines between rows and columns, hover tint, the theme's selection colour, a 30pt header
 //  with the column type as a small tag. Only drawing changes; copying, editing,
 //  sorting and menus are SPCopyTable's. App target only.
 //
@@ -72,7 +72,7 @@ import AppKit
     override func awakeFromNib() {
         super.awakeFromNib()
         usesAlternatingRowBackgroundColors = false
-        gridStyleMask.insert(.solidHorizontalGridLineMask)
+        gridStyleMask.formUnion([.solidHorizontalGridLineMask, .solidVerticalGridLineMask])
         if var frame = headerView?.frame { frame.size.height = SAClaudeGridChrome.headerHeight; headerView?.frame = frame }
         cornerView = SAClaudeGridCornerView(frame: NSRect(x: 0, y: 0, width: 16, height: SAClaudeGridChrome.headerHeight))
         applyPalette(force: true)
@@ -107,12 +107,12 @@ import AppKit
         headerView?.needsDisplay = true
     }
 
-    /// NSTableView only calls drawGrid(inClipRect:) when the mask is non-empty; the row lines
-    /// are always drawn, so the horizontal bit is always on. The vertical bit (the
-    /// "vertical gridlines" preference) passes through.
+    /// NSTableView only calls drawGrid(inClipRect:) when the mask is non-empty; row and column
+    /// lines are always drawn (the "vertical gridlines" preference no longer applies), so both
+    /// bits are always on.
     override var gridStyleMask: NSTableView.GridLineStyle {
         get { super.gridStyleMask }
-        set { super.gridStyleMask = newValue.union(.solidHorizontalGridLineMask) }
+        set { super.gridStyleMask = newValue.union([.solidHorizontalGridLineMask, .solidVerticalGridLineMask]) }
     }
 
     override var rowHeight: CGFloat {
@@ -143,7 +143,14 @@ import AppKit
 
     override func drawBackground(inClipRect clipRect: NSRect) {
         palette.background.setFill()
-        clipRect.intersection(bounds).fill()
+        let area = clipRect.intersection(bounds)
+        area.fill()
+        let visible = rows(in: area)
+        guard visible.length > 0 else { return }
+        palette.zebra.setFill()
+        for row in visible.location..<NSMaxRange(visible) where row % 2 == 1 {
+            rect(ofRow: row).intersection(area).fill()
+        }
     }
 
     override func highlightSelection(inClipRect clipRect: NSRect) {
@@ -164,11 +171,10 @@ import AppKit
             let r = rect(ofRow: row)
             NSRect(x: clipRect.minX, y: r.maxY - 1, width: clipRect.width, height: 1).intersection(clipRect).fill()
         }
-        if gridStyleMask.contains(.solidVerticalGridLineMask) {
-            for column in 0..<numberOfColumns {
-                let r = rect(ofColumn: column)
-                NSRect(x: r.maxX - 1, y: clipRect.minY, width: 1, height: clipRect.height).intersection(clipRect).fill()
-            }
+        for column in 0..<numberOfColumns {
+            let r = rect(ofColumn: column)
+            if r.maxX >= bounds.maxX { continue }
+            NSRect(x: r.maxX - 1, y: clipRect.minY, width: 1, height: clipRect.height).intersection(clipRect).fill()
         }
     }
 
@@ -251,7 +257,7 @@ import AppKit
     }
 }
 
-/// The header: theme background, name in the muted label colour, the type as a small tag,
+/// The header: raised fill, column separators, name in the muted label colour, the type as a small tag,
 /// the sort indicator, and a 1pt line underneath. Keeps SATableHeaderView's column menus.
 @objc(SAClaudeTableHeaderView) final class SAClaudeTableHeaderView: SATableHeaderView {
 
@@ -262,14 +268,14 @@ import AppKit
 
     override func draw(_ dirtyRect: NSRect) {
         let area = bounds.intersection(dirtyRect)
-        palette.background.setFill()
+        palette.headerBackground.setFill()
         area.fill()
         guard let table = tableView else { return }
         for column in 0..<table.numberOfColumns {
             let rect = headerRect(ofColumn: column)
             guard rect.intersects(area) else { continue }
             drawColumn(table.tableColumns[column], in: rect, table: table)
-            if table.gridStyleMask.contains(.solidVerticalGridLineMask) {
+            if rect.maxX < table.bounds.maxX {
                 palette.rowLine.setFill()
                 NSRect(x: rect.maxX - 1, y: rect.minY, width: 1, height: rect.height).intersection(area).fill()
             }
@@ -318,7 +324,7 @@ final class SAClaudeGridCornerView: NSView {
     override var isFlipped: Bool { true }
     override func draw(_ dirtyRect: NSRect) {
         let area = bounds.intersection(dirtyRect)
-        palette.background.setFill()
+        palette.headerBackground.setFill()
         area.fill()
         palette.headerLine.setFill()
         NSRect(x: area.minX, y: bounds.maxY - 1, width: area.width, height: 1).intersection(area).fill()

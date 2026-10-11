@@ -11,8 +11,10 @@ import AppKit
 
 @objc final class SAClaudeGridChrome: NSObject {
 
-    static let rowLineRatio: CGFloat = 0.04
-    static let headerLineRatio: CGFloat = 0.08
+    static let rowLineRatio: CGFloat = 0.12
+    static let headerLineRatio: CGFloat = 0.12
+    static let zebraRatio: CGFloat = 0.035
+    static let headerFillRatio: CGFloat = 0.05
     static let headerLabelRatio: CGFloat = 0.55
     static let typeTagRatio: CGFloat = 0.36
     static let hoverRatio: CGFloat = 0.08
@@ -21,12 +23,13 @@ import AppKit
     @objc static let minimumRowHeight: CGFloat = 30
 
     struct Palette: Equatable {
-        let background, text, rowLine, headerLine, headerLabel, typeTag, hover, selection, null, displayOverride, caret: NSColor
+        let background, text, rowLine, headerLine, zebra, headerBackground, headerLabel, typeTag, hover, selection, null, displayOverride, caret: NSColor
     }
 
     static func palette(text: NSColor, background: NSColor, selection: NSColor, keyword: NSColor, caret: NSColor) -> Palette {
         func mix(_ ratio: CGFloat) -> NSColor { SAClaudeEditorChrome.derivedColour(text: text, background: background, ratio: ratio) }
         return Palette(background: background, text: text, rowLine: mix(rowLineRatio), headerLine: mix(headerLineRatio),
+                       zebra: mix(zebraRatio), headerBackground: mix(headerFillRatio),
                        headerLabel: mix(headerLabelRatio), typeTag: mix(typeTagRatio), hover: mix(hoverRatio),
                        selection: selection, null: mix(nullRatio), displayOverride: keyword, caret: caret)
     }
