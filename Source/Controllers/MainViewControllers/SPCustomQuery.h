@@ -88,6 +88,7 @@
 
 	// Hooks for layouts using the new single button with interchangeable actions
 	IBOutlet id runPrimaryActionButton;
+	IBOutlet NSPopUpButton *editorOptionsButton;
 	IBOutlet id runPrimaryActionButtonAsSelection;
 	IBOutlet NSMenuItem *runPrimaryActionMenuItem;
 	IBOutlet NSMenuItem *runSecondaryActionMenuItem;

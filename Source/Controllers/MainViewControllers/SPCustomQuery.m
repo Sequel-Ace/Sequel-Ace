@@ -3871,6 +3871,14 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
+
+	// Claude-style bar under the editor.
+	[SAClaudeQueryBarStyler attachToBarWithOptionsButton:editorOptionsButton
+	                                     favoritesButton:queryFavoritesButton
+	                                       historyButton:queryHistoryButton
+	                                           runButton:runPrimaryActionButton
+	                                         resultsView:[customQueryView enclosingScrollView]
+	                                     editorSplitView:queryEditorSplitView];
 }
 
 - (void)toggleRecordView

@@ -4313,6 +4313,7 @@ Gw
                 <outlet property="queryInfoButton" destination="7970" id="7974"/>
                 <outlet property="queryInfoPaneSplitView" destination="7206" id="7338"/>
                 <outlet property="runPrimaryActionButton" destination="8316" id="8322"/>
+                <outlet property="editorOptionsButton" destination="7221" id="cLk-eo-btn"/>
                 <outlet property="runPrimaryActionMenuItem" destination="8323" id="8332"/>
                 <outlet property="runSecondaryActionMenuItem" destination="8324" id="8331"/>
                 <outlet property="saveHistoryMenuItem" destination="7276" id="7373"/>

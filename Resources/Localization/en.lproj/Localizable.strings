@@ -1767,6 +1767,9 @@
 /* Hide Toolbar menu item */
 "Hide Toolbar" = "Hide Toolbar";
 
+/* query editor bar: label of the query history menu button */
+"History" = "History";
+
 /* export filename host token
  export header host label */
 "Host" = "Host";
