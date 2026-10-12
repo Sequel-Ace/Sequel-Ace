@@ -957,7 +957,7 @@ jobs:
       - name: Offer the verified ZIPs without private archive access
         if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
         id: public_handoff
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verified-release-zips-${{ needs.discover.outputs.build }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/public-release-handoff/
