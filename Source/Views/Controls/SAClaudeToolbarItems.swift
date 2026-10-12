@@ -91,7 +91,7 @@ import AppKit
     }
 }
 
-/// The 36×28 Claude toolbar button.
+/// The 40×32 Claude toolbar button (20pt glyph).
 final class SAClaudeToolbarButton: NSButton {
 
     weak var toolbarItem: NSToolbarItem?
@@ -103,7 +103,7 @@ final class SAClaudeToolbarButton: NSButton {
     init(glyph: SAClaudeGlyph, selectable: Bool) {
         self.glyph = glyph
         self.showsSelection = selectable
-        super.init(frame: NSRect(x: 0, y: 0, width: 36, height: 28))
+        super.init(frame: NSRect(x: 0, y: 0, width: 40, height: 32))
         title = ""
         isBordered = false
         setButtonType(.momentaryChange)
@@ -112,7 +112,7 @@ final class SAClaudeToolbarButton: NSButton {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
-    override var intrinsicContentSize: NSSize { NSSize(width: 36, height: 28) }
+    override var intrinsicContentSize: NSSize { NSSize(width: 40, height: 32) }
 
     private var isSelectedItem: Bool {
         guard showsSelection, let item = toolbarItem else { return false }
@@ -150,7 +150,7 @@ final class SAClaudeToolbarButton: NSButton {
         }
         let tint = selected ? SAClaudeStatusChrome.clay : SAClaudeStyle.textMuted
         let image = SAClaudeGlyphs.image(glyph, tint: tint)
-        let rect = NSRect(x: bounds.midX - 8, y: bounds.midY - 8, width: 16, height: 16)
+        let rect = NSRect(x: bounds.midX - 10, y: bounds.midY - 10, width: 20, height: 20)
         image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: isEnabled ? 1 : 0.35, respectFlipped: true, hints: nil)
     }
 }

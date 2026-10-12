@@ -89,6 +89,6 @@ enum SAClaudeToolbarLayout {
 
     /// The database pill: glyph, gaps, name and chevron, between 120 and 220pt.
     static func databasePillWidth(textWidth: CGFloat) -> CGFloat {
-        min(220, max(120, ceil(textWidth) + 54))
+        min(220, max(120, ceil(textWidth) + 56))
     }
 }

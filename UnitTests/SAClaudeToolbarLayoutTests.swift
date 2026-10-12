@@ -77,7 +77,7 @@ final class SAClaudeToolbarLayoutTests: XCTestCase {
 
     func testDatabasePillWidthClamps() {
         XCTAssertEqual(L.databasePillWidth(textWidth: 10), 120)
-        XCTAssertEqual(L.databasePillWidth(textWidth: 100.2), 155)
+        XCTAssertEqual(L.databasePillWidth(textWidth: 100.2), 157)
         XCTAssertEqual(L.databasePillWidth(textWidth: 400), 220)
     }
 }

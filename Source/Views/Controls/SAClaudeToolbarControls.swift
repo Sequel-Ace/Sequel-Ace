@@ -29,7 +29,7 @@ import AppKit
 
     override var intrinsicContentSize: NSSize {
         let width = (displayTitle as NSString).size(withAttributes: [.font: Self.titleFont]).width
-        return NSSize(width: SAClaudeToolbarLayout.databasePillWidth(textWidth: width), height: 28)
+        return NSSize(width: SAClaudeToolbarLayout.databasePillWidth(textWidth: width), height: 32)
     }
 
     // The document selects items as databases change; keep the pill fitted to the name.
@@ -53,12 +53,12 @@ import AppKit
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
         bounds.intersection(dirtyRect).clip()
-        let pill = NSRect(x: bounds.minX, y: bounds.midY - 14, width: bounds.width, height: 28)
+        let pill = NSRect(x: bounds.minX, y: bounds.midY - 16, width: bounds.width, height: 32)
         ((isHovered && isEnabled) ? SAClaudeStyle.selection : SAClaudeStyle.hoverFill).setFill()
         NSBezierPath(roundedRect: pill, xRadius: 8, yRadius: 8).fill()
 
         let alpha: CGFloat = isEnabled ? 1 : 0.35
-        let glyphRect = NSRect(x: pill.minX + 10, y: pill.midY - 8, width: 16, height: 16)
+        let glyphRect = NSRect(x: pill.minX + 10, y: pill.midY - 9, width: 18, height: 18)
         SAClaudeGlyphs.image(.database, tint: SAClaudeStyle.tintDatabase)
             .draw(in: glyphRect, from: .zero, operation: .sourceOver, fraction: alpha, respectFlipped: true, hints: nil)
 
@@ -87,7 +87,7 @@ import AppKit
 
 @objc(SAClaudeHistorySegmentedControl) final class SAClaudeHistorySegmentedControl: NSSegmentedControl {
 
-    private static let segmentWidth: CGFloat = 30
+    private static let segmentWidth: CGFloat = 34
     private var trackingArea: NSTrackingArea?
     private var hoveredSegment: Int? { didSet { if hoveredSegment != oldValue { needsDisplay = true } } }
 
@@ -101,7 +101,7 @@ import AppKit
         for segment in 0..<segmentCount { setWidth(Self.segmentWidth, forSegment: segment) }
     }
 
-    override var intrinsicContentSize: NSSize { NSSize(width: Self.segmentWidth * CGFloat(max(segmentCount, 1)), height: 28) }
+    override var intrinsicContentSize: NSSize { NSSize(width: Self.segmentWidth * CGFloat(max(segmentCount, 1)), height: 32) }
     override func sizeToFit() { setFrameSize(intrinsicContentSize) }
 
     override func updateTrackingAreas() {
@@ -125,7 +125,7 @@ import AppKit
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
         bounds.intersection(dirtyRect).clip()
-        let pill = NSRect(x: bounds.minX, y: bounds.midY - 14, width: bounds.width, height: 28)
+        let pill = NSRect(x: bounds.minX, y: bounds.midY - 16, width: bounds.width, height: 32)
         let shape = NSBezierPath(roundedRect: pill, xRadius: 8, yRadius: 8)
         SAClaudeStyle.hoverFill.setFill()
         shape.fill()
@@ -138,11 +138,11 @@ import AppKit
         }
         SAClaudeStyle.divider.setFill()
         for segment in 1..<max(segmentCount, 1) {
-            NSRect(x: pill.minX + CGFloat(segment) * Self.segmentWidth - 0.5, y: pill.minY + 7, width: 1, height: pill.height - 14).fill()
+            NSRect(x: pill.minX + CGFloat(segment) * Self.segmentWidth - 0.5, y: pill.minY + 8, width: 1, height: pill.height - 16).fill()
         }
         for segment in 0..<segmentCount {
             let glyph: SAClaudeGlyph = segment == 0 ? .chevronLeft : .chevronRight
-            let rect = NSRect(x: pill.minX + CGFloat(segment) * Self.segmentWidth + (Self.segmentWidth - 16) / 2, y: pill.midY - 8, width: 16, height: 16)
+            let rect = NSRect(x: pill.minX + CGFloat(segment) * Self.segmentWidth + (Self.segmentWidth - 18) / 2, y: pill.midY - 9, width: 18, height: 18)
             SAClaudeGlyphs.image(glyph, tint: SAClaudeStyle.textMuted)
                 .draw(in: rect, from: .zero, operation: .sourceOver, fraction: isEnabled(forSegment: segment) && isEnabled ? 1 : 0.35,
                       respectFlipped: true, hints: nil)
