@@ -113,10 +113,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 // A connection with no table selected opens on Query; the first table or view picked then
 // switches to this tab (the Default View preference, else the last-used tab). Cleared by any
-// manual tab switch. `applyingInitialViewMode` keeps the opening switch itself from clearing it.
+// manual tab switch. `applyingInitialViewMode` marks the app's own switches (the opening one and the
+// jump): they do not clear the pending state, and the tab-change delegate starts no load for the jump
+// because _loadTableTask loads the tab it ends up on. `hasScheduledInitialViewJump` is the decision
+// taken in loadTable:ofType: and carried out on the load thread.
 @property (assign) BOOL hasPendingInitialViewMode;
 @property (assign) SAViewMode pendingInitialViewMode;
 @property (assign) BOOL applyingInitialViewMode;
+@property (assign) BOOL hasScheduledInitialViewJump;
 
 - (void)_addDatabase;
 - (void)_alterDatabase;
@@ -567,26 +571,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             self.applyingInitialViewMode = NO;
             [prefs setInteger:lastViewPreference forKey:SPLastViewMode];
         }
-        else switch (preferredViewPreference) {
-            default:
-            case SPStructureViewMode:
-                [self viewStructure];
-                break;
-            case SPContentViewMode:
-                [self viewContent];
-                break;
-            case SPRelationsViewMode:
-                [self viewRelations];
-                break;
-            case SPTableInfoViewMode:
-                [self viewStatus];
-                break;
-            case SPQueryEditorViewMode:
-                [self viewQuery];
-                break;
-            case SPTriggersViewMode:
-                [self viewTriggers];
-                break;
+        else {
+            switch (preferredViewPreference) {
+                default:
+                case SPStructureViewMode:
+                    [self viewStructure];
+                    break;
+                case SPContentViewMode:
+                    [self viewContent];
+                    break;
+                case SPRelationsViewMode:
+                    [self viewRelations];
+                    break;
+                case SPTableInfoViewMode:
+                    [self viewStatus];
+                    break;
+                case SPQueryEditorViewMode:
+                    [self viewQuery];
+                    break;
+                case SPTriggersViewMode:
+                    [self viewTriggers];
+                    break;
+            }
         }
     }
 
@@ -5488,7 +5494,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self->spHistoryControllerInstance updateHistoryEntries];
         [self->prefs setInteger:[SAViewModeHelper preferencesValueFor:mode] forKey:SPLastViewMode];
         // Choosing a tab by hand settles where the user wants to be; the opening switch is not a choice.
-        if (!self.applyingInitialViewMode) self.hasPendingInitialViewMode = NO;
+        if (!self.applyingInitialViewMode) {
+            self.hasPendingInitialViewMode = NO;
+            self.hasScheduledInitialViewJump = NO;
+        }
         didSwitch = YES;
     });
     return didSwitch;
@@ -5617,6 +5626,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)tabView:(NSTabView *)aTabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem
 {
+    // The opening-tab jump runs inside _loadTableTask, which loads the tab it lands on itself.
+    if (self.applyingInitialViewMode) return;
+
     [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), [self table]]];
 
     // We can't pass aTabView or tabViewItem UI objects to a bg thread, but since the change should already
@@ -5693,20 +5705,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     selectedTableName = [[NSString alloc] initWithString:aTable];
     selectedTableType = aTableType;
 
-    // The first table or view picked after opening on Query moves to the user's usual tab.
+    // The first table or view picked after opening on Query moves to the user's usual tab. Decide here;
+    // _loadTableTask performs the switch so it does not race a second load started by the tab delegate.
     if ([SAInitialViewPolicy shouldJumpWithPending:self.hasPendingInitialViewMode
                                        selectedType:aTableType
                                      currentIsQuery:([self currentlySelectedView] == SPTableViewCustomQuery)]) {
-        SAViewMode jumpMode = self.pendingInitialViewMode;
         self.hasPendingInitialViewMode = NO;
-        switch (jumpMode) {
-            case SAViewModeStructure: [self viewStructure]; break;
-            case SAViewModeContent:   [self viewContent];   break;
-            case SAViewModeQuery:     [self viewQuery];     break;
-            case SAViewModeStatus:    [self viewStatus];    break;
-            case SAViewModeRelations: [self viewRelations]; break;
-            case SAViewModeTriggers:  [self viewTriggers];  break;
-        }
+        self.hasScheduledInitialViewJump = YES;
     }
 
     // Start a task
@@ -5846,6 +5851,23 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Restore view states as appropriate
         [spHistoryControllerInstance restoreViewStates];
+
+        // Carry out the opening-tab jump decided in loadTable:ofType: before the visible tab is loaded below
+        if (self.hasScheduledInitialViewJump) {
+            self.hasScheduledInitialViewJump = NO;
+            if (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) {
+                self.applyingInitialViewMode = YES;
+                switch (self.pendingInitialViewMode) {
+                    case SAViewModeStructure: [self viewStructure]; break;
+                    case SAViewModeContent:   [self viewContent];   break;
+                    case SAViewModeQuery:     [self viewQuery];     break;
+                    case SAViewModeStatus:    [self viewStatus];    break;
+                    case SAViewModeRelations: [self viewRelations]; break;
+                    case SAViewModeTriggers:  [self viewTriggers];  break;
+                }
+                self.applyingInitialViewMode = NO;
+            }
+        }
 
         // Load the currently selected view if looking at a table or view
         if (tableEncoding && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable))

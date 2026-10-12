@@ -11,7 +11,8 @@ import Foundation
 
 @objc final class SAInitialViewPolicy: NSObject {
 
-    // Keep in sync with SPTableType in SPConstants.h (this file has no ObjC dependency).
+    // Raw values of SPTableTypeTable and SPTableTypeView in SPConstants.h (this file has no ObjC dependency);
+    // keep in sync with SPTableType.
     private static let tableType = 0
     private static let viewType = 1
 
