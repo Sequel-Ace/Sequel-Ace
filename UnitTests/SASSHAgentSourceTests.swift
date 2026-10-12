@@ -51,34 +51,16 @@ final class SASSHAgentSourceTests: XCTestCase {
 
     // MARK: - Connection strings
 
-    private func exported(_ source: String) -> [String] {
-        SASSHAgentSource.connectionStringQueryItems(source: source).map { "\($0.name)=\($0.value ?? "")" }
-    }
-
-    /// A connection string is untrusted — it can be a link someone clicks.
-    /// Turning an agent on would offer the user's keys to the host it names,
-    /// so the only choice it may carry is "off".
-    func testAConnectionStringCanTurnTheAgentOffButNeverOn() {
-        XCTAssertTrue(SASSHAgentSource.isAcceptedFromConnectionString("off"))
-        for value in ["1password", "system", "automatic", "custom", "", "OFF", "yubikey"] {
-            XCTAssertFalse(SASSHAgentSource.isAcceptedFromConnectionString(value), value)
-        }
-    }
-
-    func testOnlyAnExplicitOffIsExported() {
-        XCTAssertEqual(exported("off"), ["ssh_agent=off"])
-        for kind in SASSHAgentSource.Kind.allCases where kind != .off {
-            XCTAssertEqual(exported(kind.rawValue), [], kind.rawValue)
-        }
-        XCTAssertEqual(exported(""), [])
-    }
-
-    /// Whatever the exporter writes, the importer accepts.
-    func testEverythingExportedIsAcceptedOnImport() {
-        for kind in SASSHAgentSource.Kind.allCases {
-            for item in SASSHAgentSource.connectionStringQueryItems(source: kind.rawValue) {
-                XCTAssertTrue(SASSHAgentSource.isAcceptedFromConnectionString(item.value ?? ""))
-            }
+    /// A `mysql://` link can connect without a confirmation, so it must not
+    /// use an agent at all — including the one the user set as their default.
+    func testAConnectionFromAConnectionStringUsesNoAgentWhateverTheDefault() throws {
+        for defaultSource in ["", "off", "1password", "system", "automatic", "custom"] {
+            let source = SASSHAgentSource.effective(connectionSource: SASSHAgentSource.sourceForConnectionString,
+                                                    connectionCustomPath: "",
+                                                    defaultSource: defaultSource, defaultCustomPath: "/tmp/a.sock")
+            XCTAssertEqual(source, .off, "default: \(defaultSource)")
+            XCTAssertNil(try source.targetPath(realHome: home, environment: ["SSH_AUTH_SOCK": "/tmp/sys.sock"],
+                                               automatic: neverAutomatic))
         }
     }
 

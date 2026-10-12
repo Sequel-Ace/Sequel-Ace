@@ -104,7 +104,7 @@ The helper only connects to sockets listed in `ssh-agent-relay.allow`, a text fi
 
 - A jump host (`ProxyJump`) uses the same agent as the destination. A jump host whose config entry names its own `IdentityAgent` is not redirected and cannot use an agent from within Sequel Ace.
 - `IdentityAgent` set to an environment variable (`$NAME`) is not supported by _Automatic_; choose the agent explicitly.
-- A `mysql://` connection string can turn the agent off for a connection (`ssh_agent=off`) but never on, and it cannot name an agent. Which agent to use is always set in Sequel Ace itself.
+- A connection opened from a `mysql://` connection string never uses an SSH agent, not even your default one, because such a link can connect without asking. After importing it, choose an agent in the connection's SSH settings.
 - `PKCS11Provider` and hardware-key setups that do not go through an agent socket are not covered by the helper. See the next section.
 
 #### SSH Agent and ProxyCommand Limitations on macOS

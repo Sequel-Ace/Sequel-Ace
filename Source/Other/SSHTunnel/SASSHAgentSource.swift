@@ -94,26 +94,13 @@ struct SASSHAgentSource: Equatable {
 
     // MARK: - Connection strings
 
-    /// The parameter a `mysql://` connection string carries the choice in.
-    enum ConnectionStringKey {
-        static let source = "ssh_agent"
-    }
-
-    /// Whether a connection string may carry this value. A connection string
-    /// is untrusted input — it can arrive as a clicked link — so it may turn
-    /// the agent off for a connection but never on: an agent offers the user's
-    /// keys to whatever SSH host the string names.
-    static func isAcceptedFromConnectionString(_ value: String) -> Bool {
-        value == Kind.off.rawValue
-    }
-
-    /// A connection's own agent choice as connection-string query items.
-    /// Only an explicit "off" travels: it is the one choice the recipient's
-    /// app will accept, and using an agent is each user's own decision.
-    static func connectionStringQueryItems(source: String) -> [URLQueryItem] {
-        guard isAcceptedFromConnectionString(source) else { return [] }
-        return [URLQueryItem(name: ConnectionStringKey.source, value: source)]
-    }
+    /// The agent choice given to every connection that comes from a `mysql://`
+    /// connection string. A connection string is untrusted input — it can
+    /// arrive as a clicked link and connect without a confirmation — and an
+    /// agent offers the user's keys to whatever SSH host the string names.
+    /// So such a connection never uses an agent, not even the user's default;
+    /// the user can choose one in the connection form afterwards.
+    static let sourceForConnectionString = Kind.off.rawValue
 
     // MARK: - Target socket
 

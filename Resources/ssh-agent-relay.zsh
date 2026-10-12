@@ -47,6 +47,7 @@ allowlist="$script_dir/ssh-agent-relay.allow"
 # Match where the path really leads, not how it is spelled. Some listed
 # locations sit in folders others can write to (/tmp); a link planted there
 # under a listed name must not become a way to reach an unlisted socket.
+given=$target
 target=${target:A}
 
 allowed=0
@@ -119,6 +120,9 @@ while true; do
 		# point ends both pumps and closes the connection to the agent. When
 		# either direction ends (CHLD), the other is ended too.
 		trap 'end_children; exit 0' TERM INT HUP CHLD
+		# This script runs for as long as the app does. Check again that the
+		# path still leads to the same socket of yours that was approved.
+		[[ ${given:A} == $target && -S $target && -O $target ]] || exit 1
 		zsocket -- $target 2>/dev/null || exit 1
 		agent_fd=$REPLY
 		/bin/cat <&$agent_fd >&$client_fd &

@@ -30,7 +30,6 @@ import Foundation
     @objc public static let validQueryParameters: [String] = [
         "type", "socket",
         "ssh_host", "ssh_port", "ssh_user", "ssh_password", "ssh_keyLocationEnabled", "ssh_keyLocation", "ssh_remote_socket_path",
-        "ssh_agent",
         "aws_region", "aws_profile",
         "autoConnect", "enable_cleartext_plugin", "get_server_public_key", "request_server_public_key"
     ]
@@ -133,17 +132,6 @@ import Foundation
                     details["ssh_remote_socket_path"] = value
                     details["sshRemoteSocketPath"] = value
 
-                case "ssh_agent":
-                    // A connection string can be a clicked link. It may turn
-                    // the SSH agent off for the connection but not on, and it
-                    // can never name an agent socket.
-                    guard SASSHAgentSource.isAcceptedFromConnectionString(value) else {
-                        invalidParameters.append(key)
-                        continue
-                    }
-                    details["ssh_agent"] = value
-                    details["sshAgentSource"] = value
-
                 case "aws_region":
                     details["aws_region"] = value
 
@@ -164,6 +152,11 @@ import Foundation
                 }
             }
         }
+
+        // A connection string can be a clicked link that connects without a
+        // confirmation. It never uses an SSH agent — not one it names (there is
+        // no parameter for that) and not the user's default either.
+        details["sshAgentSource"] = SASSHAgentSource.sourceForConnectionString
 
         // Set default connection type if not specified, based on query parameter hints
         if details["type"] == nil {

@@ -135,6 +135,9 @@ import Foundation
     }
 
     private let condition = NSCondition()
+    /// Held while a socket name is chosen and bound, so two launches cannot
+    /// settle on the same name.
+    private let bindLock = NSLock()
     private var entries: [String: Entry] = [:]
     private var nextToken = 0
 
@@ -273,9 +276,17 @@ import Foundation
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true,
                                                  attributes: [.posixPermissions: 0o700])
         Self.removeAbandonedSockets(inDirectory: directory)
-        let listenPath = try freeListenPath(forTarget: target)
-
-        let descriptor = try Self.makeListeningSocket(at: listenPath)
+        bindLock.lock()
+        let listenPath: String
+        let descriptor: Int32
+        do {
+            listenPath = try freeListenPath(forTarget: target)
+            descriptor = try Self.makeListeningSocket(at: listenPath)
+        } catch {
+            bindLock.unlock()
+            throw error
+        }
+        bindLock.unlock()
         var handedOver = false
         defer {
             // Once the helper is accepting, it holds the socket; this copy is
@@ -344,7 +355,8 @@ import Foundation
                 throw RelayError.listenPathTooLong(candidate)
             }
             if inUse.contains(candidate) { continue }
-            if Self.isSocket(candidate), Self.isListening(candidate) { continue }
+            // Only a socket that definitely has no listener may be replaced.
+            if Self.isSocket(candidate), !Self.isAbandoned(candidate) { continue }
             return candidate
         }
         throw RelayError.listenFailed("no free socket name")
@@ -385,12 +397,16 @@ import Foundation
         return lstat(path, &info) == 0 && (info.st_mode & S_IFMT) == S_IFSOCK
     }
 
-    /// Whether something still accepts connections on the socket at `path`.
-    private static func isListening(_ path: String) -> Bool {
+    /// Whether the socket at `path` certainly has no listener: the connection
+    /// is refused, or the file is gone. Any other outcome — it connects, or
+    /// the probe fails for a reason that says nothing about the listener,
+    /// such as a full backlog — counts as still in use.
+    private static func isAbandoned(_ path: String) -> Bool {
         let probe = socket(AF_UNIX, SOCK_STREAM, 0)
         guard probe >= 0 else { return false }
         defer { close(probe) }
-        return withSocketAddress(path, { Darwin.connect(probe, $0, $1) }) == 0
+        guard withSocketAddress(path, { Darwin.connect(probe, $0, $1) }) != 0 else { return false }
+        return errno == ECONNREFUSED || errno == ENOENT
     }
 
     /// Binds and listens at `path`, replacing a socket left by an earlier
@@ -425,11 +441,7 @@ import Foundation
         for name in names where name.range(of: "^a-[0-9a-f]{8}$", options: .regularExpression) != nil {
             let path = directory + "/" + name
             guard isSocket(path) else { continue }
-            let probe = socket(AF_UNIX, SOCK_STREAM, 0)
-            guard probe >= 0 else { continue }
-            let refused = withSocketAddress(path, { Darwin.connect(probe, $0, $1) }) != 0 && errno == ECONNREFUSED
-            close(probe)
-            if refused { unlink(path) }
+            if isAbandoned(path) { unlink(path) }
         }
     }
 
