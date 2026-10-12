@@ -17,6 +17,13 @@
 //  Where a row has no such painter (older macOS, or a future AppKit that
 //  draws rows differently) the row is left exactly as AppKit draws it.
 //
+//  Controls: the rule rows' pop-ups become ghost pills, their +/- buttons
+//  ghost glyph buttons, the enable checkbox a Claude checkbox and the value
+//  field a rounded field in the editor font; the AND/OR pop-up is a pill, the
+//  Apply button clay and Add Filter a ghost pill (cells in
+//  SAClaudeFilterCells.swift). Controls are only restyled in place: targets,
+//  actions, menus, bindings and the frames AppKit lays out are untouched.
+//
 
 import AppKit
 
@@ -117,7 +124,9 @@ import AppKit
     /// Makes every row AppKit paints through a row painter transparent, with a hairline on its top edge
     /// (none on the top row, so the lines fall between rows).
     private func restyleRows() {
-        guard let ruleEditor, let painterClass = Self.rowPainterClass else { return }
+        guard let ruleEditor else { return }
+        restyleRowControls(in: ruleEditor)
+        guard let painterClass = Self.rowPainterClass else { return }
         let hairline = (appliedPalette ?? Self.currentPalette).hairline
         for holder in ruleEditor.subviews {
             var rows: [NSView] = []
@@ -158,6 +167,125 @@ import AppKit
         return line
     }
 
+    // MARK: - Controls
+
+    private var palette: SAClaudeEditorChrome.Palette { appliedPalette ?? Self.currentPalette }
+
+    /// The editor font at the size the filter bar uses.
+    private static func fieldFont() -> NSFont {
+        SAClaudeCompletionStyler.editorFont().withSize(12)
+    }
+
+    /// Visits every control of the rule editor's rows. Idempotent: each control is brought to the styled state
+    /// whatever state it is in, and nothing AppKit lays out is moved.
+    private func restyleRowControls(in view: NSView) {
+        // The SwiftUI hosting views AppKit puts inside its own controls hold nothing of ours.
+        if String(describing: type(of: view)).contains("HostingView") { return }
+        if let popUp = view as? NSPopUpButton {
+            SAClaudeFilterCells.installPill(on: popUp)
+        } else if let field = view as? SPFilterRuleTextField {
+            styleValueField(field)
+        } else if let label = view as? NSTextField {
+            styleLabel(label)
+        } else if let button = view as? NSButton {
+            styleRowButton(button)
+        }
+        view.subviews.forEach(restyleRowControls)
+    }
+
+    /// The rule row's +/- buttons are told apart by their actions; AppKit's add/remove template images
+    /// (older macOS) are the fallback, as macOS 26 and later draw them through a hosting view with no image.
+    private static func glyph(forRowButton button: NSButton) -> SAClaudeGlyph? {
+        switch button.action.map(NSStringFromSelector) {
+        case "_addOption:": return .add
+        case "_deleteOption:": return .remove
+        default: break
+        }
+        switch button.image?.name() {
+        case NSImage.addTemplateName: return .add
+        case NSImage.removeTemplateName: return .remove
+        default: return nil
+        }
+    }
+
+    private func styleRowButton(_ button: NSButton) {
+        let palette = palette
+        if let glyph = Self.glyph(forRowButton: button) {
+            guard SAClaudeFilterCells.installCellDrawing(on: button) else { return }
+            button.isBordered = false
+            button.imagePosition = .imageOnly
+            let image = SAClaudeGlyphs.image(glyph, tint: palette.icon)
+            button.image = image
+            button.alternateImage = image
+            SAClaudeHoverHighlighter.attach(to: button)
+            SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
+        } else if let cell = button.cell as? NSButtonCell, cell.showsStateBy == .contentsCellMask, cell.highlightsBy == .contentsCellMask {
+            // A checkbox (NSButtonTypeSwitch): the rows' enable checkbox.
+            SAClaudeFilterCells.install(SAClaudeCheckboxCell.self, on: button)
+        }
+    }
+
+    /// The rule row's value field: a rounded fill and outline, the editor font, the theme's text colour. The fill is
+    /// the layer's, not the cell's, so it follows the rounded corners (and the field editor stays transparent).
+    private func styleValueField(_ field: SPFilterRuleTextField) {
+        let palette = palette
+        let themeText = Self.currentThemeText
+        field.isBezeled = false
+        field.isBordered = false
+        field.drawsBackground = false
+        field.wantsLayer = true
+        field.font = Self.fieldFont()
+        field.textColor = themeText
+        guard let layer = field.layer else { return }
+        layer.cornerRadius = 7
+        layer.borderWidth = 1
+        field.effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer.backgroundColor = SAClaudeFilterChrome.fieldFill(text: themeText, background: palette.background).cgColor
+            layer.borderColor = palette.hairline.cgColor
+        }
+    }
+
+    /// The rows' static text (for example "combines the conditions in this group"): SF Pro 12 in the muted tone.
+    /// Left at the size AppKit measured it for when 12pt would no longer fit its frame.
+    private func styleLabel(_ label: NSTextField) {
+        guard !label.isEditable else { return }
+        label.textColor = palette.icon
+        let font = NSFont.systemFont(ofSize: 12)
+        let width = ceil(NSAttributedString(string: label.stringValue, attributes: [.font: font]).size().width)
+        // A text field's cell keeps 2pt free on each side of its text.
+        guard width + 4 <= label.frame.width, label.font?.pointSize != 12 else { return }
+        label.font = font
+    }
+
+    /// Styles the AND/OR pop-up, the Apply button and the Add Filter button. Re-run on a palette change.
+    private func restyleBarControls() {
+        let palette = palette
+        if let popUp = rootConjunctionPopUp {
+            SAClaudeFilterCells.installPill(on: popUp)
+            popUp.needsDisplay = true
+        }
+        if let apply = applyButton, SAClaudeFilterCells.install(SAClaudeAccentButtonCell.self, on: apply) {
+            apply.isBordered = false
+            apply.needsDisplay = true
+        }
+        if let add = addFilterButton, SAClaudeFilterCells.installCellDrawing(on: add) {
+            add.isBordered = false
+            add.imagePosition = .imageLeading
+            let image = SAClaudeGlyphs.image(.add, tint: palette.icon)
+            add.image = image
+            add.alternateImage = image
+            let style = NSMutableParagraphStyle()
+            style.alignment = .center
+            add.attributedTitle = NSAttributedString(string: add.title, attributes: [
+                .font: NSFont.systemFont(ofSize: 12),
+                .foregroundColor: palette.buttonText,
+                .paragraphStyle: style,
+            ])
+            SAClaudeHoverHighlighter.attach(to: add)
+            SAClaudeHoverHighlighter.setFillColour(palette.hover, for: add)
+        }
+    }
+
     // MARK: - Colours
 
     /// Re-derives the colours when the editor theme changed (or always, when `force`).
@@ -182,6 +310,7 @@ import AppKit
             clipView.drawsBackground = true
         }
         restyleRows()
+        restyleBarControls()
         // Cells read the current colours at draw time.
         Self.markForDisplay(ruleEditor)
     }

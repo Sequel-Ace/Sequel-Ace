@@ -80,18 +80,69 @@ import Cocoa
 
 /// `NSTextField` subclass used for the argument input of a rule row.
 ///
-/// The subclass currently has no per-field behaviour – drag-and-drop is
-/// handled at the rule-editor level by `SPFilterRuleEditor` so dropping
+/// The subclass has no per-field drag-and-drop behaviour – drop handling
+/// is done at the rule-editor level by `SPFilterRuleEditor` so dropping
 /// a cell replaces the whole rule rather than just the argument value.
-/// The type is kept as a seam for future per-field customisation
-/// without having to re-plumb `SPRuleFilterController`'s text-field
-/// instantiation.
+///
+/// It does keep its height at `SAClaudeFilterChrome.controlHeight`: AppKit's
+/// rule editor remembers the size a row view had when the delegate returned it
+/// and restores that size on every layout (so a later resize cannot stick),
+/// and the Claude look needs these fields taller than a text field's own
+/// height. The row centres the field vertically itself.
 @objc public class SPFilterRuleTextField: NSTextField {
+    override public class var cellClass: AnyClass? {
+        get { SPFilterRuleTextFieldCell.self }
+        set { super.cellClass = newValue }
+    }
+
     override public init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
     }
 
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
+    }
+
+    override public var frame: NSRect {
+        get { super.frame }
+        set {
+            var frame = newValue
+            frame.size.height = SAClaudeFilterChrome.controlHeight
+            super.frame = frame
+        }
+    }
+
+    override public func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(NSSize(width: newSize.width, height: SAClaudeFilterChrome.controlHeight))
+    }
+}
+
+/// The cell of a rule row's argument field. While the field is drawn without a bezel (the Claude look
+/// draws its own rounded outline) its text sits inset from the edge and centred vertically; with a
+/// bezel it is AppKit's own placement.
+final class SPFilterRuleTextFieldCell: NSTextFieldCell {
+    /// Space between the field's edge and its text.
+    private static let textInset: CGFloat = 7
+
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        var drawingRect = super.drawingRect(forBounds: rect)
+        guard !isBezeled else { return drawingRect }
+        drawingRect = drawingRect.insetBy(dx: Self.textInset, dy: 0)
+        let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: NSFont.smallSystemFontSize)))
+        let spare = drawingRect.height - lineHeight
+        if spare > 0 {
+            drawingRect.origin.y += (spare / 2).rounded(.down)
+            drawingRect.size.height = lineHeight
+        }
+        return drawingRect
+    }
+
+    // AppKit places the field editor exactly where it is told to, not by -drawingRectForBounds:.
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+    }
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
     }
 }
