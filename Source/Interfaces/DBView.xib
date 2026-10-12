@@ -4107,7 +4107,7 @@ Gw
             <rect key="frame" x="0.0" y="0.0" width="269" height="32"/>
             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
             <subviews>
-                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6293">
+                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6293" customClass="SAClaudeHistorySegmentedControl">
                     <rect key="frame" x="201" y="3" width="61" height="24"/>
                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                     <segmentedCell key="cell" borderStyle="border" alignment="left" style="separated" trackingMode="momentary" id="6294">
@@ -4121,7 +4121,7 @@ Gw
                         <action selector="historyControlClicked:" target="6297" id="6300"/>
                     </connections>
                 </segmentedControl>
-                <popUpButton toolTip="Select a database to view (⇧⌘D)" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3995">
+                <popUpButton toolTip="Select a database to view (⇧⌘D)" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3995" customClass="SAClaudeDatabasePopUpButton">
                     <rect key="frame" x="0.0" y="3" width="200" height="25"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                     <popUpButtonCell key="cell" type="push" title="Choose Database..." bezelStyle="rounded" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" inset="2" selectedItem="3998" id="3996">
