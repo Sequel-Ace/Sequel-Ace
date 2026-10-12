@@ -373,9 +373,17 @@ happens before any caller-selected commit is checked out or executed. The
 scheduled and manually dispatched finalizer checks out the immutable trigger
 SHA rather than resolving the mutable `main` branch after authorization.
 
-All release workflows that use the private archive install ORAS 1.3.3 through
-`oras-project/setup-oras` v2.0.1 pinned to commit
-`1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d`. Linux-only orchestration jobs use
+All release workflows that use the private archive install ORAS through
+`oras-project/setup-oras`, pinned to a full immutable commit and maintained by
+Dependabot. The workflow files are the source of truth for the action revision,
+CLI download version, and archive checksums; see the
+[release orchestrator](../.github/workflows/release.yml) and
+[artifact publisher](../.github/workflows/release_publish.yml). Tests validate
+these pinning and consistency requirements without fixing a particular version.
+PR CI also runs `bundle exec ruby Scripts/verify-oras-checksums.rb` to compare
+configured checksums with the upstream release manifest for the workflow's CLI
+version. This network check is separate from the offline unit suite.
+Linux-only orchestration jobs use
 the checksum-pinned Linux amd64 archive; hosted-Mac feasibility and artifact
 verification jobs use the checksum-pinned Darwin archive for the runner's exact
 architecture. The GHCR adapter packages layers from a private temporary working
@@ -451,7 +459,12 @@ stays pending on Ubuntu with the exact wake tag armed. If Apple's run-progress
 field lags, the exact build plus that stapled artifact can still admit verification.
 The publisher then proves signing, stapling, notarization, and the artifact itself
 before any public attachment or App Store submission. Metadata readiness never
-replaces those byte-level checks.
+replaces those byte-level checks. Once handoff, archive digests, and public assets
+validate an `artifacts_verified` or `archived` continuation, Cloud checks use
+`cloud-status --artifacts-already-verified`: exact run, app/version/build identity
+and terminal failure checks still apply, but expired or unavailable Cloud download
+resources cannot block reuse of the verified ZIPs. Initial `cloud_running`
+collection and other Cloud callers retain the downloadable stapled-artifact gate.
 The publisher repeats the artifact-type selection at download with
 `--notarized-only`. If the stapled resource is no longer downloadable, it fails
 before verification and preserves the retryable handoff instead of stamping a
@@ -563,6 +576,33 @@ The API client follows Apple's documented
 [Xcode Cloud build-run endpoint](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-ciworkflows-_id_-buildruns)
 and binds a release run to its workflow, source tag, commit, and related App
 Store build rather than selecting the newest result.
+
+## Automatic Cloud trigger preflight
+
+The release engine reads the configured Production workflow before preparation
+and again immediately before creating the exact release tag. It requires an
+enabled workflow and an automatic tag condition that matches that tag, with no
+restrictive file filters. Manual-start conditions alone do not satisfy this
+check. Apple tag patterns are exact names or prefixes; a literal `production/*`
+with `isPrefix: false` is not a wildcard.
+
+The exact-tag recovery path (`resume_after_tag`) retains diagnostics but does
+not require a new automatic trigger: its existing tag and run are independently
+validated by reconciliation. Both sanitized snapshots are preserved in the
+initial private release archive.
+`release_status.yml` also reports the current automatic and manual conditions,
+workflow modification date, and whether the automatic condition matches the
+existing tag. It performs GET requests only, even if the trigger is missing.
+
+A matching configuration does not prove Apple received the Git event. If the
+exact run is absent, inspect these snapshots and the source-control integration.
+Do not automatically POST a replacement run: Apple exposes no idempotency key
+for that operation, and a delayed event or manual start can create a second
+build and consume another number. An authorized operator may start the exact
+existing tag after checking for a run; keep its publisher wake tag armed. Fix
+trigger settings through the normal Apple configuration interface, preserving
+all automatic and manual start-condition fields, then read them back through
+the status workflow. Never retag or create another RC merely to retry a trigger.
 
 ## Release component responsibilities
 

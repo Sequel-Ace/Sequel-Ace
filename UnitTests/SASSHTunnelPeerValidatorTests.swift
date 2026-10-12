@@ -133,8 +133,75 @@ final class SASSHTunnelPeerValidatorTests: XCTestCase {
         let ownTeam = SASSHTunnelPeerValidator.ownIdentity().teamIdentifier
         let reference = SASSHTunnelPeerValidator.policy(ownTeamIdentifier: ownTeam, expectedIdentifier: nil) { _ in }
         XCTAssertEqual(SASSHTunnelPeerValidator.appPeerPolicy()(pair[0]), reference(pair[0]))
-        let assistantReference = SASSHTunnelPeerValidator.policy(ownTeamIdentifier: ownTeam, expectedIdentifier: SASSHTunnelPeerValidator.assistantIdentifier) { _ in }
-        XCTAssertEqual(SASSHTunnelPeerValidator.assistantPeerPolicy()(pair[0]), assistantReference(pair[0]))
+        // No assistant path to read, so the identifier half is dropped and the
+        // policy is the team-only one — not a hardcoded-name policy.
+        let assistantReference = SASSHTunnelPeerValidator.policy(ownTeamIdentifier: ownTeam, expectedIdentifier: nil) { _ in }
+        XCTAssertEqual(SASSHTunnelPeerValidator.assistantPeerPolicy(assistantPath: nil) { _ in }(pair[0]),
+                       assistantReference(pair[0]))
+    }
+
+    // MARK: - The shipped assistant's identifier (issue #2689)
+
+    /// The bug that broke every tunnel in 6.0.0. `identifier` in a code
+    /// requirement is an exact match, and the distribution pipeline re-signs
+    /// the assistant — a bare Mach-O, so codesign derives the identifier from
+    /// the file name and appends a hash. Shipped 6.0.0 carried
+    /// `SequelAceTunnelAssistant-55554944e48d2df47eb331fcba5ba8a3b2434a63`
+    /// against a hardcoded `SequelAceTunnelAssistant`, so the app rejected its
+    /// own assistant on every connection. A development build is signed with
+    /// the bare name, which is why no amount of local testing could show it.
+    func testAShippedIdentifierIsNotTheProductNameSoItMustNotBeHardcoded() {
+        let shipped = SASSHTunnelPeerValidator.assistantIdentifier + "-55554944e48d2df47eb331fcba5ba8a3b2434a63"
+        XCTAssertNotEqual(shipped, SASSHTunnelPeerValidator.assistantIdentifier)
+
+        // Requirements built from each are different, and the shipped one is
+        // not satisfied by a requirement naming the bare product name.
+        let hardcoded = SASSHTunnelPeerValidator.requirement(identifier: SASSHTunnelPeerValidator.assistantIdentifier)
+        let actual = SASSHTunnelPeerValidator.requirement(identifier: shipped)
+        XCTAssertNotEqual(hardcoded, actual)
+        XCTAssertTrue(actual.contains(shipped))
+
+        // Both must still be well-formed requirement strings.
+        for text in [hardcoded, actual] {
+            var requirement: SecRequirement?
+            XCTAssertEqual(SecRequirementCreateWithString(text as CFString, [], &requirement), errSecSuccess, text)
+        }
+    }
+
+    /// The expectation is read from a *binary*, not assumed and not taken
+    /// from the running process — so whatever the pipeline chose for the
+    /// assistant is what gets required.
+    ///
+    /// This bundle makes the distinction visible: the code under test reads
+    /// the test bundle at `executablePath`, while `ownIdentity()` reads the
+    /// running process, which is Apple's `xctest` host. They differ, and that
+    /// is the whole point — the app must ask about the assistant's binary
+    /// rather than about itself.
+    func testTheIdentifierIsReadFromTheBinaryOnDiskNotTheRunningProcess() throws {
+        let bundlePath = try XCTUnwrap(Bundle(for: Self.self).executablePath)
+        guard let identifier = SASSHTunnelPeerValidator.signingIdentifier(ofBinaryAt: bundlePath) else {
+            throw XCTSkip("this build is unsigned, so there is no identifier to read")
+        }
+        XCTAssertFalse(identifier.isEmpty)
+        XCTAssertNotEqual(identifier, SASSHTunnelPeerValidator.ownIdentity().identifier,
+                          "the disk read must describe the named binary, not whoever is running")
+    }
+
+    func testAMissingBinaryYieldsNoIdentifierRatherThanACrash() {
+        XCTAssertNil(SASSHTunnelPeerValidator.signingIdentifier(ofBinaryAt: "/nonexistent/SequelAceTunnelAssistant"))
+    }
+
+    /// Without a readable identifier the policy must still admit our own
+    /// team's Apple-signed code — failing open here, never closed, is the
+    /// whole point: a locked-out assistant takes the tunnel with it.
+    func testAnUnreadableAssistantPathDegradesToTheTeamCheckAndSaysSo() {
+        var logged: [String] = []
+        let policy = SASSHTunnelPeerValidator.assistantPeerPolicy(assistantPath: "/nonexistent/x") { logged.append($0) }
+        let ownTeam = SASSHTunnelPeerValidator.ownIdentity().teamIdentifier
+        let reference = SASSHTunnelPeerValidator.policy(ownTeamIdentifier: ownTeam, expectedIdentifier: nil) { _ in }
+        XCTAssertEqual(policy(pair[0]), reference(pair[0]))
+        XCTAssertTrue(logged.contains { $0.contains("could not read the assistant's signing identifier") },
+                      "got \(logged)")
     }
 
     // MARK: - Through the transport

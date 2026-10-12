@@ -492,6 +492,11 @@
 	return [self.delegate keychainPasswordForConnection:connection];
 }
 
+- (NSString *)credentialErrorMessageForConnection:(id)connection
+{
+	return [self.delegate credentialErrorMessageForConnection:connection];
+}
+
 #pragma mark -
 
 - (void)dealloc

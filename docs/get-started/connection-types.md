@@ -231,9 +231,17 @@ mfa_serial = arn:aws:iam::123456789012:mfa/your-user
 region = us-east-1
 ```
 
+##### AWS Console Sign-In (`aws login`)
+
+Profiles created by `aws login` (AWS CLI 2.32 or later) hold a `login_session` entry. The temporary credentials `aws login` caches last 15 minutes; Sequel Ace renews them the same way the AWS CLI does, whenever a connection or reconnection needs them, and writes the renewed session back to `~/.aws/login/cache` so the AWS CLI keeps working too.
+
+Renewal works until your AWS sign-in session ends (at most 12 hours after `aws login`, or sooner if your account sets a shorter session). After that, run `aws login` again and reconnect.
+
 ##### Sandbox Access
 
-Sequel Ace is a sandboxed application and requires your permission to read the AWS credentials folder. When you first enable AWS IAM Authentication, click the **Authorize Access to ~/.aws...** button and select your `.aws` folder (usually located at `~/.aws` in your home directory). This permission is remembered for future sessions.
+Sequel Ace is a sandboxed application and requires your permission to access the AWS credentials folder. When you first enable AWS IAM Authentication, click the **Authorize Access to ~/.aws...** button and select your `.aws` folder (usually located at `~/.aws` in your home directory). This permission is remembered for future sessions.
+
+Renewing `aws login` credentials requires permission to update the `.aws` folder. If you authorized it with an earlier version of Sequel Ace, connecting with an `aws login` profile asks you once to select the folder again; click **Allow**. If you cancel, Sequel Ace keeps using the cached credentials until they expire and asks again the next time it starts.
 
 > **Note:** AWS IAM connections always use SSL/TLS and enable the cleartext plugin automatically.
 

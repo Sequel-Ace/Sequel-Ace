@@ -30,10 +30,39 @@
 
 #import "SPDatabaseAction.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * The SPDatabaseRename class povides functionality to rename a database.
  */
 @interface SPDatabaseRename : SPDatabaseAction
+
+/**
+ * Why the last rename stopped, for the user, or nil when it succeeded.
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *failureDescription;
+
+/**
+ * Set when the connection's character set, transport mode, collation or SQL
+ * mode could not be restored after the last rename, whether it succeeded or
+ * not; it says whether the connection was re-established or the user has to
+ * reconnect. nil otherwise.
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *warningDescription;
+
+/**
+ * Whether the connection may be queried after the last rename: NO only when
+ * its settings could not be restored and re-establishing it failed too, so
+ * nothing should be refreshed from it.
+ */
+@property (nonatomic, readonly) BOOL connectionUsable;
+
+/**
+ * Whether the last rename changed anything on the server before it stopped:
+ * the target database exists and objects may have moved into it, so the
+ * databases and tables shown need refreshing even though the rename failed.
+ */
+@property (nonatomic, readonly) BOOL changedServer;
 
 /**
  * This method renames an existing database.
@@ -46,3 +75,5 @@
 - (BOOL)renameDatabaseFrom:(SPCreateDatabaseInfo *)sourceDatabase to:(NSString *)targetDatabase;
 
 @end
+
+NS_ASSUME_NONNULL_END

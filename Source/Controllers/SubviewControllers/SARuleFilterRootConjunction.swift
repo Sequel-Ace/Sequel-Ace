@@ -228,9 +228,9 @@ import Foundation
     }
 
     /// Whether the whole tree is nothing but the untouched starter row the
-    /// rule editor seeds when it is first shown (one expression whose
-    /// arguments are all empty). Such a row would contribute `column = ''`
-    /// to the query, so callers that add a real rule or group replace it
+    /// rule editor seeds when it is first shown (an explicitly marked,
+    /// unchecked expression whose arguments are all empty). User predicates
+    /// comparing with '' are preserved; only the seeded row is replaced
     /// instead of appending beside it – the same rule the drag-and-drop
     /// append flow applies.
     ///

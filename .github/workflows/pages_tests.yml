@@ -1,0 +1,82 @@
+name: Pages Tests
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages_tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pages:
+    name: Build Pages with Pages API unavailable
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Ruby and locked Pages gems
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: docs
+      - name: Build with a failing Pages API and verify site URLs
+        working-directory: docs
+        env:
+          JEKYLL_ENV: production
+          PAGES_REPO_NWO: Sequel-Ace/Sequel-Ace
+        run: |
+          bundle exec ruby <<'RUBY'
+          require "jekyll"
+          Jekyll::PluginManager.require_from_bundler
+          require "octokit"
+          require "tmpdir"
+          require "fileutils"
+
+          # Reproduce the timeout from run 37156403781 immediately if URL
+          # generation ever falls back to the Pages API again.
+          class Octokit::Client
+            def pages(*)
+              raise Faraday::TimeoutError, "Pages API unavailable during site build"
+            end
+          end
+
+          # Prevent reintroducing CVE-2026-85396 through a transitive dependency.
+          zip = Bundler.locked_gems.specs.find { |spec| spec.name == "rubyzip" }
+          raise "Vulnerable rubyzip dependency" if zip && zip.version < Gem::Version.new("3.4.0")
+
+          Dir.mktmpdir("sequel-ace-pages-") do |destination|
+            Jekyll::Commands::Build.process("source" => Dir.pwd, "destination" => destination)
+            html = File.read(File.join(destination, "index.html"))
+            raise "Incorrect canonical URL" unless html.include?('href="https://sequel-ace.com/"')
+            raise "Incorrect stylesheet URL" unless html.include?('href="/assets/css/style.css?v=')
+            raise "Missing compiled CSS" unless File.size?(File.join(destination, "assets/css/style.css"))
+            raise "Missing getting started page" unless File.file?(File.join(destination, "get-started/index.html"))
+            raise "Bundler gems copied into site" if File.exist?(File.join(destination, "vendor"))
+          end
+
+          # Exercise dependency directories even when gems are cached outside docs.
+          Dir.mktmpdir("pages-vendor-source-") do |source|
+            FileUtils.cp("_config.yml", source)
+            File.write(File.join(source, "index.md"), "# Dependency exclusion fixture\n")
+            %w[node_modules vendor/bundle vendor/cache vendor/gems vendor/ruby].each do |root|
+              path = File.join(source, root, "dependency/lib/site_template/_posts")
+              FileUtils.mkdir_p(path)
+              File.write(File.join(path, "0000-00-00-welcome-to-jekyll.markdown.erb"), "---\ndate: <%= Time.now %>\n---\nDependency template\n")
+              File.write(File.join(source, root, "dependency.txt"), "Must not ship\n")
+            end
+            Dir.mktmpdir("pages-vendor-output-") do |destination|
+              Jekyll::Commands::Build.process("source" => source, "destination" => destination)
+              raise "Missing fixture page" unless File.file?(File.join(destination, "index.html"))
+              %w[node_modules vendor].each do |root|
+                raise "Published dependency files" if File.exist?(File.join(destination, root))
+              end
+            end
+          end
+          RUBY

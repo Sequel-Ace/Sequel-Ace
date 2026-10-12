@@ -58,7 +58,7 @@ enum SAMCPToolDefinitions {
                      description: "Execute an SQL statement and return the results as JSON. Use ? placeholders with `params` for values (safer than string-building). For read queries you can paginate with `limit`/`offset`. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
                      properties: [
                         "sql": ["type": "string", "description": "SQL statement; use ? for bound parameters"],
-                        "params": ["type": "array", "items": ["type": ["string", "number", "boolean", "null"]], "description": "Values bound to ? placeholders, in order"],
+                        "params": ["type": "array", "items": ["type": ["string", "number", "boolean", "null"]], "description": "Values bound to ? placeholders, in order. Without params (missing or empty) nothing is bound: a ? outside string literals and ordinary comments then reaches the server, which rejects it as a syntax error."],
                         "limit": ["type": "integer", "description": "Optional row limit for read queries (paginates by wrapping the query)"],
                         "offset": ["type": "integer", "description": "Optional row offset, used with limit"],
                         "connection": conn

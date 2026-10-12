@@ -69,6 +69,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	id<SAKeychainProviding> keychain;
 	NSSplitView *databaseConnectionView;
 
+	NSMapTable<SPMySQLConnection *, NSError *> *awsIAMTokenErrorsByConnection;
+	NSLock *awsIAMTokenErrorLock;
+
 	NSOpenPanel *keySelectionPanel;
 	NSUserDefaults *prefs;
 
@@ -326,7 +329,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
  * Returns the password to use for an actual MySQL connect/reconnect request.
  * For AWS IAM connections this generates a fresh token.
  */
-- (NSString *)passwordForConnectionRequest;
+- (NSString *)passwordForConnectionRequestForConnection:(SPMySQLConnection *)connection;
+- (nullable NSError *)lastAWSIAMTokenErrorForConnection:(SPMySQLConnection *)connection;
 
 // Connection processes
 - (IBAction)initiateConnection:(id)sender;
@@ -390,6 +394,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (void)mySQLConnectionEstablished;
 - (void)addConnectionToDocument;
+
+- (BOOL)isAWSConnectionAttemptCurrent:(NSUInteger)attemptID NS_SWIFT_NAME(isAWSConnectionAttemptCurrent(_:));
 
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail;
 
