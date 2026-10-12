@@ -3225,9 +3225,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                              database:[self database]
                                 table:[self table]
                          mySQLVersion:mySQLVersion
-             showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
+             showServerVersionInTitle:NO];
 
-    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
+    NSString *subtitle = [SAWindowTitleBuilder subtitleWithConnectionState:state mySQLVersion:mySQLVersion showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
+    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle subtitle:subtitle];
 
     // Always update, so that a window which is no longer connected drops the
     // favourite colour again. A nil colour clears both the tab line and the

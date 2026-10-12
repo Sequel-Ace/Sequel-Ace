@@ -252,4 +252,13 @@ final class SAWindowTitleBuilderTests: XCTestCase {
         )
         XCTAssertEqual(name, "")
     }
+
+    func testSubtitleCarriesTheServerVersionOnlyWhenConnectedAndEnabled() {
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "MySQL 9.6.0")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "9.6.0", showServerVersionInTitle: false), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: nil, showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "", showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .disconnected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connecting, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
+    }
 }

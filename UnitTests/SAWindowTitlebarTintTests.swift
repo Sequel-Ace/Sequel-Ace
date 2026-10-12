@@ -4,13 +4,13 @@
 //
 //  Pins the chrome decision behind the connection-colour title bar (#1856).
 //  The reset path is the load-bearing part: a tinted window has three
-//  properties changed, and clearing the colour has to restore all three -
-//  leaving `titlebarAppearsTransparent` on over `windowBackgroundColor`
-//  produces a flat, non-standard title bar instead of the stock one.
+//  properties changed, and clearing the colour has to restore all three to
+//  the Claude bar - a transparent title bar over
+//  `SAClaudeStyle.toolbarBackground` with a line separator (no longer the
+//  stock title bar).
 //
 //  The preference gate is pinned too: off is the default, and a window then
-//  has to look exactly as it did before the preference existed, whatever
-//  colour the connection carries.
+//  shows the Claude bar whatever colour the connection carries.
 //
 //  Whether the tint *looks* right, and whether it follows the selected tab,
 //  is not testable here (no window server in the test bundle) and stays a
@@ -58,44 +58,44 @@ final class SAWindowTitlebarTintTests: XCTestCase {
         XCTAssertIdentical(tint.backgroundColor, dynamic)
     }
 
-    // MARK: - No colour restores the stock title bar
+    // MARK: - No colour restores the Claude bar
 
-    func testNilColorRestoresAnOpaqueTitlebar() {
+    func testNilColorKeepsTheTitlebarTransparent() {
         let tint = SAWindowTitlebarTint(favoriteColor: nil, isEnabled: true)
 
-        XCTAssertFalse(tint.titlebarAppearsTransparent)
+        XCTAssertTrue(tint.titlebarAppearsTransparent)
     }
 
-    func testNilColorRestoresTheWindowBackgroundColor() {
+    func testNilColorUsesTheClaudeBarColour() {
         let tint = SAWindowTitlebarTint(favoriteColor: nil, isEnabled: true)
 
-        XCTAssertEqual(tint.backgroundColor, .windowBackgroundColor)
+        XCTAssertIdentical(tint.backgroundColor, SAClaudeStyle.toolbarBackground)
     }
 
-    func testNilColorRestoresTheAutomaticSeparator() {
+    func testNilColorDrawsALineSeparator() {
         let tint = SAWindowTitlebarTint(favoriteColor: nil, isEnabled: true)
 
-        XCTAssertEqual(tint.separatorStyle, .automatic)
+        XCTAssertEqual(tint.separatorStyle, .line)
     }
 
     // MARK: - The preference gates the whole thing
 
-    func testDisabledLeavesTheTitlebarOpaqueEvenWithAFavoriteColor() {
+    func testDisabledKeepsTheTitlebarTransparentEvenWithAFavoriteColor() {
         let tint = SAWindowTitlebarTint(favoriteColor: favoriteRed, isEnabled: false)
 
-        XCTAssertFalse(tint.titlebarAppearsTransparent)
+        XCTAssertTrue(tint.titlebarAppearsTransparent)
     }
 
-    func testDisabledKeepsTheWindowBackgroundColorEvenWithAFavoriteColor() {
+    func testDisabledUsesTheClaudeBarEvenWithAFavoriteColor() {
         let tint = SAWindowTitlebarTint(favoriteColor: favoriteRed, isEnabled: false)
 
-        XCTAssertEqual(tint.backgroundColor, .windowBackgroundColor)
+        XCTAssertIdentical(tint.backgroundColor, SAClaudeStyle.toolbarBackground)
     }
 
-    func testDisabledKeepsTheTitlebarSeparatorEvenWithAFavoriteColor() {
+    func testDisabledDrawsALineSeparatorEvenWithAFavoriteColor() {
         let tint = SAWindowTitlebarTint(favoriteColor: favoriteRed, isEnabled: false)
 
-        XCTAssertEqual(tint.separatorStyle, .automatic)
+        XCTAssertEqual(tint.separatorStyle, .line)
     }
 
     /// Off is the shipped default, so this is what an untouched install gets:

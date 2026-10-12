@@ -19,9 +19,10 @@ import AppKit
 /// drawing its own background, so the window background shows through the
 /// entire strip.
 ///
-/// The `nil` case is deliberately not "transparent over
-/// `windowBackgroundColor`" - that renders a flat, non-standard title bar
-/// rather than undoing the tint, so all three properties have to be restored.
+/// The `nil` case is the Claude bar: a transparent title bar over
+/// `SAClaudeStyle.toolbarBackground` with a hairline separator, no longer the
+/// stock title bar. All three properties are set explicitly so clearing a
+/// favourite colour restores them together.
 struct SAWindowTitlebarTint {
 
     /// Colour for `NSWindow.backgroundColor`. Kept as the caller's `NSColor`
@@ -34,7 +35,8 @@ struct SAWindowTitlebarTint {
     let titlebarAppearsTransparent: Bool
 
     /// Whether the hairline below the title bar is drawn. A separator reads as
-    /// a stray line across a coloured strip, so a tinted window drops it.
+    /// a stray line across a coloured strip, so a tinted window drops it; the
+    /// Claude bar keeps a hairline.
     let separatorStyle: NSTitlebarSeparatorStyle
 
     /// Derive the chrome for a connection's favourite colour.
@@ -43,18 +45,17 @@ struct SAWindowTitlebarTint {
     ///   - favoriteColor: the connection's favourite colour, or `nil` when it
     ///     has none or the document is not connected.
     ///   - isEnabled: the user's `DisplayConnectionColorInTitlebar` preference.
-    ///     Off is the default, and always yields the stock title bar - a window
-    ///     then looks exactly as it did before the preference existed, however
-    ///     the connection is coloured.
+    ///     Off is the default, and always yields the Claude bar, however the
+    ///     connection is coloured.
     init(favoriteColor: NSColor?, isEnabled: Bool) {
         if isEnabled, let favoriteColor = favoriteColor {
             backgroundColor = favoriteColor
             titlebarAppearsTransparent = true
             separatorStyle = .none
         } else {
-            backgroundColor = .windowBackgroundColor
-            titlebarAppearsTransparent = false
-            separatorStyle = .automatic
+            backgroundColor = SAClaudeStyle.toolbarBackground
+            titlebarAppearsTransparent = true
+            separatorStyle = .line
         }
     }
 }

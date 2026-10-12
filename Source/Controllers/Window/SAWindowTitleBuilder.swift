@@ -110,6 +110,12 @@ import Foundation
         return (filePath as NSString).lastPathComponent
     }
 
+    /// The window's subtitle: the server version, when the user shows it, now that the title itself no longer carries it.
+    @objc static func subtitle(connectionState: SAWindowConnectionState, mySQLVersion: String?, showServerVersionInTitle: Bool) -> String {
+        guard connectionState == .connected, showServerVersionInTitle, let version = mySQLVersion, !version.isEmpty else { return "" }
+        return "MySQL \(version)"
+    }
+
     /// `<fileName> — ` when there is a real file URL and the document has
     /// been given a name; empty string otherwise. The em dash and spaces
     /// match the format used by the original method so the assembled
