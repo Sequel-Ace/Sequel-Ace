@@ -60,6 +60,22 @@ import AppKit
         // selection box and white text; the table draws the theme selection itself.
         cell.isHighlighted = false
     }
+
+    /// The system colours a cell has when nobody chose one for it.
+    static func isDefaultTextColour(_ colour: NSColor?) -> Bool {
+        guard let colour else { return true }
+        return colour == .controlTextColor || colour == .labelColor || colour == .textColor || colour == .secondaryLabelColor
+    }
+
+    /// Themes a text cell whose colour is still the system default (grids whose delegates don't style
+    /// their cells); a colour a delegate set on purpose is kept.
+    static func styleDefaultText(_ cell: NSCell) {
+        guard let textCell = cell as? NSTextFieldCell, isDefaultTextColour(textCell.textColor) else {
+            (cell as? NSTextFieldCell)?.isHighlighted = false
+            return
+        }
+        style(textCell, role: .text)
+    }
 }
 
 extension Notification.Name {
@@ -101,6 +117,17 @@ extension Notification.Name {
     override func highlightSelection(inClipRect clipRect: NSRect) { renderer.highlightSelection(in: clipRect) }
 
     override func drawGrid(inClipRect clipRect: NSRect) { renderer.drawGrid(in: clipRect) }
+
+    /// Theme each prepared cell's default-coloured text (Relations, Triggers); Content and Query style their own.
+    @objc var stylesCells = false
+
+    // Cell-based tables only; overriding the deprecated hook is deliberate.
+    @available(macOS, deprecated: 10.10)
+    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
+        let cell = super.preparedCell(atColumn: column, row: row)
+        if stylesCells, let cell { SAClaudeGridCellStyler.styleDefaultText(cell) }
+        return cell
+    }
 
     // MARK: Hover
 

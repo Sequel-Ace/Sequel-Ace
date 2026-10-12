@@ -851,6 +851,7 @@
 		FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */; };
 		A5C1E1A11A2B3C4D5E6F7102 /* SAClaudeCopyTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */; };
 		A5C1E1A31A2B3C4D5E6F7104 /* SAClaudeGridRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A21A2B3C4D5E6F7103 /* SAClaudeGridRenderer.swift */; };
+		A5C1E1A51A2B3C4D5E6F7106 /* SAClaudeTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A41A2B3C4D5E6F7105 /* SAClaudeTableView.swift */; };
 		FD0E72EC2C391F44007EF348 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
 		A19A2000000000000000E009 /* SASQLiteSharedStoreLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A2000000000000000E008 /* SASQLiteSharedStoreLocation.swift */; };
 		A19A2000000000000000E004 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
@@ -1858,6 +1859,7 @@
 		FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SATableHeaderView.swift; sourceTree = "<group>"; };
 		A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeCopyTable.swift; sourceTree = "<group>"; };
 		A5C1E1A21A2B3C4D5E6F7103 /* SAClaudeGridRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGridRenderer.swift; sourceTree = "<group>"; };
+		A5C1E1A41A2B3C4D5E6F7105 /* SAClaudeTableView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableView.swift; sourceTree = "<group>"; };
 		FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SQLiteDisplayFormatManager.swift; sourceTree = "<group>"; };
 		A19A2000000000000000E008 /* SASQLiteSharedStoreLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASQLiteSharedStoreLocation.swift; sourceTree = "<group>"; };
 		FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SAUuidFormatter.swift; sourceTree = "<group>"; };
@@ -2477,6 +2479,7 @@
 				FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */,
 				A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */,
 				A5C1E1A21A2B3C4D5E6F7103 /* SAClaudeGridRenderer.swift */,
+				A5C1E1A41A2B3C4D5E6F7105 /* SAClaudeTableView.swift */,
 				61984CED94C89FF3D0CEA884 /* SATablesListView.swift */,
 				9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */,
 			);
@@ -4210,6 +4213,7 @@
 				FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */,
 				A5C1E1A11A2B3C4D5E6F7102 /* SAClaudeCopyTable.swift in Sources */,
 				A5C1E1A31A2B3C4D5E6F7104 /* SAClaudeGridRenderer.swift in Sources */,
+				A5C1E1A51A2B3C4D5E6F7106 /* SAClaudeTableView.swift in Sources */,
 				DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */,
 				DD00DD00DD00DD00DD000003 /* SPFilterRuleEditor.swift in Sources */,
 				DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */,
