@@ -83,7 +83,7 @@
 	[info addObject:NSLocalizedString(@"Table information", @"header for table info pane")];
 	[infoTable reloadData];
 
-	[SAClaudeSidebarChrome styleSidebarTable:infoTable];
+	[SAClaudeSidebarChrome styleInfoTable:infoTable];
 	[SAClaudeSidebarChrome styleSidebarTable:activitiesTable];
 }
 
@@ -418,7 +418,8 @@
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	return (row == 0 ? 25 : [tableView rowHeight]);
+	// The Table information header gets 6pt more than the 24pt rows; the activities pane keeps 25.
+	return (row == 0 ? (tableView == infoTable ? 31 : 25) : [tableView rowHeight]);
 }
 
 /**

@@ -20,8 +20,10 @@
 		C2A0000A2B3C4D5E6F70810A /* SAClaudeConsoleToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */; };
 		B07CCDCCD960D7977C32E316 /* SAClaudeToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCFA37404A7B7E6DAD73294 /* SAClaudeToolbarLayout.swift */; };
 		B00F744B7A33F01E098C816A /* SAClaudeTabBarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */; };
+		BF8000E2495A0EB517D41007 /* SAClaudeInfoRowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA6FC4AE5197D8C4FAE5487 /* SAClaudeInfoRowLayout.swift */; };
 		8D3F2FCC646EE51ACCF8995D /* SAClaudeToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCFA37404A7B7E6DAD73294 /* SAClaudeToolbarLayout.swift */; };
 		E663D6294651E0DAA7282EE4 /* SAClaudeTabBarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */; };
+		B0AC3D6EA566DB491A5D3EC4 /* SAClaudeInfoRowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA6FC4AE5197D8C4FAE5487 /* SAClaudeInfoRowLayout.swift */; };
 		BF671571BFEBD88F7DB7F406 /* SAClaudeSidebarChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */; };
 		A5C1E0D31A2B3C4D5E6F7084 /* SAClaudeEditorChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */; };
 		718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */; };
@@ -40,6 +42,7 @@
 		C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */; };
 		BC41F642164A11FA95682078 /* SAClaudeToolbarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D46F591FC6DF45F358FFE2 /* SAClaudeToolbarLayoutTests.swift */; };
 		38A55E30EB6F93CFF0947469 /* SAClaudeTabBarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A366D99C2FC7F1BA406F26BC /* SAClaudeTabBarLayoutTests.swift */; };
+		96136A40F13E111E2759562D /* SAClaudeInfoRowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09D7EEB6E31A39DF1C906CC /* SAClaudeInfoRowLayoutTests.swift */; };
 		CEC8F87DEDC9DC5F7BA60F91 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
 		4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */; };
 		9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */; };
@@ -853,6 +856,7 @@
 		A5C1E1A11A2B3C4D5E6F7102 /* SAClaudeCopyTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */; };
 		A5C1E1A31A2B3C4D5E6F7104 /* SAClaudeGridRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A21A2B3C4D5E6F7103 /* SAClaudeGridRenderer.swift */; };
 		A5C1E1A51A2B3C4D5E6F7106 /* SAClaudeTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E1A41A2B3C4D5E6F7105 /* SAClaudeTableView.swift */; };
+		B10FAD15E099BA9D0812C747 /* SAClaudeInfoRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D5771B4A71778612611C6E /* SAClaudeInfoRowCell.swift */; };
 		FD0E72EC2C391F44007EF348 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
 		A19A2000000000000000E009 /* SASQLiteSharedStoreLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A2000000000000000E008 /* SASQLiteSharedStoreLocation.swift */; };
 		A19A2000000000000000E004 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
@@ -990,6 +994,7 @@
 		C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleToolbarLayout.swift; sourceTree = "<group>"; };
 		BBCFA37404A7B7E6DAD73294 /* SAClaudeToolbarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeToolbarLayout.swift; sourceTree = "<group>"; };
 		135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTabBarLayout.swift; sourceTree = "<group>"; };
+		AEA6FC4AE5197D8C4FAE5487 /* SAClaudeInfoRowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeInfoRowLayout.swift; sourceTree = "<group>"; };
 		38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSidebarChromeTests.swift; sourceTree = "<group>"; };
 		A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorChromeTests.swift; sourceTree = "<group>"; };
 		B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStatusChrome.swift; sourceTree = "<group>"; };
@@ -1003,6 +1008,7 @@
 		C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleToolbarLayoutTests.swift; sourceTree = "<group>"; };
 		18D46F591FC6DF45F358FFE2 /* SAClaudeToolbarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeToolbarLayoutTests.swift; sourceTree = "<group>"; };
 		A366D99C2FC7F1BA406F26BC /* SAClaudeTabBarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTabBarLayoutTests.swift; sourceTree = "<group>"; };
+		D09D7EEB6E31A39DF1C906CC /* SAClaudeInfoRowLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeInfoRowLayoutTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -1862,6 +1868,7 @@
 		A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeCopyTable.swift; sourceTree = "<group>"; };
 		A5C1E1A21A2B3C4D5E6F7103 /* SAClaudeGridRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGridRenderer.swift; sourceTree = "<group>"; };
 		A5C1E1A41A2B3C4D5E6F7105 /* SAClaudeTableView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableView.swift; sourceTree = "<group>"; };
+		00D5771B4A71778612611C6E /* SAClaudeInfoRowCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeInfoRowCell.swift; sourceTree = "<group>"; };
 		FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SQLiteDisplayFormatManager.swift; sourceTree = "<group>"; };
 		A19A2000000000000000E008 /* SASQLiteSharedStoreLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASQLiteSharedStoreLocation.swift; sourceTree = "<group>"; };
 		FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SAUuidFormatter.swift; sourceTree = "<group>"; };
@@ -2482,6 +2489,7 @@
 				A5C1E1A01A2B3C4D5E6F7101 /* SAClaudeCopyTable.swift */,
 				A5C1E1A21A2B3C4D5E6F7103 /* SAClaudeGridRenderer.swift */,
 				A5C1E1A41A2B3C4D5E6F7105 /* SAClaudeTableView.swift */,
+				00D5771B4A71778612611C6E /* SAClaudeInfoRowCell.swift */,
 				61984CED94C89FF3D0CEA884 /* SATablesListView.swift */,
 				9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */,
 			);
@@ -3093,6 +3101,7 @@
 				C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */,
 				BBCFA37404A7B7E6DAD73294 /* SAClaudeToolbarLayout.swift */,
 				135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */,
+				AEA6FC4AE5197D8C4FAE5487 /* SAClaudeInfoRowLayout.swift */,
 				81D2D6EE30E7786A1B079D5D /* SAEditorThemeLoader.swift */,
 				C1A0B0030A1B2C3D4E5F6073 /* SAEditorColourMode.swift */,
 				74A5A66DB01D998457FA99AD /* SAClaudeEditorDefaults.swift */,
@@ -3204,6 +3213,7 @@
 				C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */,
 				18D46F591FC6DF45F358FFE2 /* SAClaudeToolbarLayoutTests.swift */,
 				A366D99C2FC7F1BA406F26BC /* SAClaudeTabBarLayoutTests.swift */,
+				D09D7EEB6E31A39DF1C906CC /* SAClaudeInfoRowLayoutTests.swift */,
 				B2EB9922C8845E4EE97F5639 /* SAEditorThemeLoaderTests.swift */,
 				C1A0B0010A1B2C3D4E5F6071 /* SAEditorColourModeTests.swift */,
 				D5CB8D201D85D9F4D023A969 /* SAEditorAppearanceThemeSwitcherTests.swift */,
@@ -4096,6 +4106,7 @@
 				C2A000092B3C4D5E6F708109 /* SAClaudeConsoleToolbarLayout.swift in Sources */,
 				8D3F2FCC646EE51ACCF8995D /* SAClaudeToolbarLayout.swift in Sources */,
 				E663D6294651E0DAA7282EE4 /* SAClaudeTabBarLayout.swift in Sources */,
+				B0AC3D6EA566DB491A5D3EC4 /* SAClaudeInfoRowLayout.swift in Sources */,
 				A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */,
 				B7C2D1E01C3D4E5F70819205 /* SAClaudeStatusChromeTests.swift in Sources */,
 				5EA285706FFE7F0CE3AA88D9 /* SAClaudeQueryCopyActionTests.swift in Sources */,
@@ -4105,6 +4116,7 @@
 				C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */,
 				BC41F642164A11FA95682078 /* SAClaudeToolbarLayoutTests.swift in Sources */,
 				38A55E30EB6F93CFF0947469 /* SAClaudeTabBarLayoutTests.swift in Sources */,
+				96136A40F13E111E2759562D /* SAClaudeInfoRowLayoutTests.swift in Sources */,
 				718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */,
 				AEECDC8D451950C7B7ADB1B1 /* SAEditorThemeLoader.swift in Sources */,
 				C1A0B0040A1B2C3D4E5F6074 /* SAEditorColourMode.swift in Sources */,
@@ -4218,6 +4230,7 @@
 				A5C1E1A11A2B3C4D5E6F7102 /* SAClaudeCopyTable.swift in Sources */,
 				A5C1E1A31A2B3C4D5E6F7104 /* SAClaudeGridRenderer.swift in Sources */,
 				A5C1E1A51A2B3C4D5E6F7106 /* SAClaudeTableView.swift in Sources */,
+				B10FAD15E099BA9D0812C747 /* SAClaudeInfoRowCell.swift in Sources */,
 				DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */,
 				DD00DD00DD00DD00DD000003 /* SPFilterRuleEditor.swift in Sources */,
 				DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */,
@@ -4521,6 +4534,7 @@
 				C2A0000A2B3C4D5E6F70810A /* SAClaudeConsoleToolbarLayout.swift in Sources */,
 				B07CCDCCD960D7977C32E316 /* SAClaudeToolbarLayout.swift in Sources */,
 				B00F744B7A33F01E098C816A /* SAClaudeTabBarLayout.swift in Sources */,
+				BF8000E2495A0EB517D41007 /* SAClaudeInfoRowLayout.swift in Sources */,
 				0BDF116B0C30BBE6B995BC8E /* SAEditorThemeLoader.swift in Sources */,
 				C1A0B0050A1B2C3D4E5F6075 /* SAEditorColourMode.swift in Sources */,
 				C21F0EB05F99F92919394303 /* SAClaudeEditorDefaults.swift in Sources */,
