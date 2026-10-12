@@ -244,18 +244,20 @@ struct SAClaudeEditorOptionsView: View {
             HStack(spacing: 6) {
                 tile(.shiftRight, symbol: "increase.indent", showsTitle: false)
                 tile(.shiftLeft, symbol: "decrease.indent", showsTitle: false)
-                if model.optionHeld {
-                    tile(.commentQuery, symbol: "text.bubble", showsTitle: false)
-                } else {
-                    tile(.commentLine, symbol: "text.bubble", showsTitle: false)
-                }
+                // SQL's line-comment marker, not a speech bubble.
+                tile(model.optionHeld ? .commentQuery : .commentLine, symbol: nil, glyphText: "--", showsTitle: false)
             }
         case .completionList?:
-            HStack(spacing: 6) {
-                tile(.completionList, symbol: "list.bullet", showsTitle: true)
-                tile(.completeDatabases, symbol: nil, showsTitle: true)
-                tile(.completeTables, symbol: nil, showsTitle: true)
-                tile(.completeFields, symbol: nil, showsTitle: true)
+            // Two by two, so every label fits.
+            VStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    tile(.completionList, symbol: "list.bullet", showsTitle: true)
+                    tile(.completeDatabases, symbol: "cylinder", showsTitle: true)
+                }
+                HStack(spacing: 6) {
+                    tile(.completeTables, symbol: "tablecells", showsTitle: true)
+                    tile(.completeFields, symbol: "list.dash", showsTitle: true)
+                }
             }
         default:
             ForEach(section.options.filter(\.isSwitch), id: \.self) { switchRow($0) }
@@ -267,10 +269,12 @@ struct SAClaudeEditorOptionsView: View {
         model.shortcut(for: option).map { "\(option.title)  \($0)" } ?? option.title
     }
 
-    private func tile(_ option: SAClaudeEditorOption, symbol: String?, showsTitle: Bool) -> some View {
+    /// - Parameter glyphText: Text drawn in place of an SF Symbol, e.g. SQL's "--".
+    private func tile(_ option: SAClaudeEditorOption, symbol: String?, glyphText: String? = nil, showsTitle: Bool) -> some View {
         Button { model.activate(option) } label: {
             HStack(spacing: 5) {
                 if let symbol { Image(systemName: symbol).font(.system(size: 12)) }
+                if let glyphText { Text(glyphText).font(.system(size: 13, weight: .semibold, design: .monospaced)) }
                 if showsTitle { Text(option.title).font(.system(size: 12)).lineLimit(1) }
             }
             .foregroundColor(model.colours.text)
