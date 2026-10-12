@@ -75,7 +75,11 @@ import AppKit
         let styler = SAClaudeQueryInfoStyler()
         objc_setAssociatedObject(split, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         styler.split = split
-        styler.pane = split.subviews[1]
+        // awakeFromNib collapses the pane first, which wraps it in an SPSplitViewHelperView. Style the
+        // pane itself: on expand the split sizes the pane from the wrapper's first subview, so nothing
+        // may be added to the wrapper.
+        let slot = split.subviews[1]
+        styler.pane = NSStringFromClass(type(of: slot)) == "SPSplitViewHelperView" ? slot.subviews.first : slot
         styler.titleField = titleField
         styler.messageTextView = messageTextView
         styler.messageScrollView = messageTextView?.enclosingScrollView
