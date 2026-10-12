@@ -4721,3 +4721,69 @@
 
 /* Accessibility help of the query bar Copy button: its chevron lists the copy actions */
 "ClaudeCopyOptions" = "Copy options";
+
+/* Editor options popover: button that inserts the previous query from history */
+"ClaudeEditorOptionsPrevious" = "Previous";
+
+/* Editor options popover: button that inserts the next query from history */
+"ClaudeEditorOptionsNext" = "Next";
+
+/* Editor options popover switch: choosing a history item replaces the editor text */
+"ClaudeEditorOptionsHistoryReplaces" = "History replaces editor content";
+
+/* Editor options popover switch: choosing a favorite replaces the editor text */
+"ClaudeEditorOptionsFavoriteReplaces" = "Favorite replaces editor content";
+
+/* Editor options popover: indent the selection */
+"ClaudeEditorOptionsShiftRight" = "Shift right";
+
+/* Editor options popover: un-indent the selection */
+"ClaudeEditorOptionsShiftLeft" = "Shift left";
+
+/* Editor options popover: comment out the line or selection */
+"ClaudeEditorOptionsCommentLine" = "Comment line";
+
+/* Editor options popover: comment out the current query (shown while Option is held) */
+"ClaudeEditorOptionsCommentQuery" = "Comment query";
+
+/* Editor options popover: open the completion list */
+"ClaudeEditorOptionsShowList" = "Show list";
+
+/* Editor options popover chip: complete from all database names */
+"ClaudeEditorOptionsDatabases" = "Databases";
+
+/* Editor options popover chip: complete from all table and view names */
+"ClaudeEditorOptionsTables" = "Tables";
+
+/* Editor options popover chip: complete from the current table's field names */
+"ClaudeEditorOptionsFields" = "Fields";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsIndent" = "Indent new lines";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsAutoPair" = "Auto-pair characters";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsUppercase" = "Auto-uppercase keywords";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsAutoComplete" = "Auto-completion";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsAutoHelp" = "Update help while typing";
+
+/* Editor options popover row that opens the font panel */
+"ClaudeEditorOptionsEditorFont" = "Editor font";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionHistory" = "History";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionEditing" = "Editing";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionCompletion" = "Completion";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionTyping" = "Typing";
