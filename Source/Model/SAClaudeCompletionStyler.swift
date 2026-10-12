@@ -223,6 +223,27 @@ final class SAClaudeCompletionStyler: NSObject {
         return SACompletionWindowLayout.nameTextOffset(cellDrawingMinX: drawingMinX)
     }
 
+    /// The gap between the caret's line and a popup that opens above it.
+    private static let aboveCaretGap: CGFloat = 3
+
+    /// For a popup that would run past the bottom of the editor's visible area (and has more room
+    /// above the caret's line), the caret position `-[SPNarrowDownCompletion filter]` places it
+    /// above the line from; `nil` keeps it below.
+    ///
+    /// - Parameters:
+    ///   - caret: The popup's caret position in screen coordinates: the bottom of the caret's line.
+    ///   - popupFontSize: The popup's font size; the popup puts its bottom 1.5 × this above the position.
+    @objc(abovePositionForCaret:popupHeight:popupFontSize:editor:)
+    static func abovePosition(caret: NSPoint, popupHeight: CGFloat, popupFontSize: CGFloat, editor: NSTextView?) -> NSValue? {
+        guard let editor, let window = editor.window,
+              let clipView = editor.enclosingScrollView?.contentView else { return nil }
+        let visible = window.convertToScreen(clipView.convert(clipView.bounds, to: nil))
+        let lineHeight = editor.layoutManager?.defaultLineHeight(for: editor.font ?? editorFont()) ?? popupFontSize * 1.2
+        guard SACompletionWindowLayout.opensAbove(popupHeight: popupHeight, lineBottom: caret.y, lineHeight: lineHeight,
+                                                  visibleMinY: visible.minY, visibleMaxY: visible.maxY) else { return nil }
+        return NSValue(point: NSPoint(x: caret.x, y: caret.y + lineHeight + aboveCaretGap - popupFontSize * 1.5))
+    }
+
     private static var theme: SAClaudeThemeColours?
     private static var images: [String: NSImage] = [:]
 

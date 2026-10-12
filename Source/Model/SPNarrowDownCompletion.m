@@ -745,6 +745,9 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	                                                                  scrollerStyle:[scrollView scrollerStyle]];
 	CGFloat newHeight = newWindowSize.height;
 
+	NSValue *abovePosition = isAbove ? nil : [SAClaudeCompletionStyler abovePositionForCaret:caretPos popupHeight:newHeight popupFontSize:[tableFont pointSize] editor:theView];
+	if(abovePosition) { caretPos = [abovePosition pointValue]; isAbove = YES; }
+
 	if(caretPos.y >= 0 && (isAbove || caretPos.y < newHeight)) {
 		isAbove = YES;
 		old.y = caretPos.y + newHeight + ([tableFont pointSize]*1.5f);

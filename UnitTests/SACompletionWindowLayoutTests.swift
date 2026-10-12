@@ -85,6 +85,23 @@ final class SACompletionWindowLayoutTests: XCTestCase {
         XCTAssertEqual(SACompletionWindowLayout.nameTextOffset(cellDrawingMinX: 9), 16)
     }
 
+    func testPopupOpensAboveTheCaretOnlyWhenItRunsPastTheEditorAndThereIsMoreRoomAbove() {
+        // Editor visible from y 100 to 600; caret lines are 16pt tall.
+        func opensAbove(_ popupHeight: CGFloat, lineBottom: CGFloat) -> Bool {
+            SACompletionWindowLayout.opensAbove(popupHeight: popupHeight, lineBottom: lineBottom, lineHeight: 16,
+                                                visibleMinY: 100, visibleMaxY: 600)
+        }
+        // Near the top: fits below.
+        XCTAssertFalse(opensAbove(280, lineBottom: 560))
+        // Last line of the editor: 20pt below, 464pt above.
+        XCTAssertTrue(opensAbove(280, lineBottom: 120))
+        // Exactly fits below.
+        XCTAssertFalse(opensAbove(280, lineBottom: 380))
+        // Fits neither way: the bigger side wins.
+        XCTAssertFalse(opensAbove(600, lineBottom: 400))
+        XCTAssertTrue(opensAbove(600, lineBottom: 250))
+    }
+
     /// The scroll view's frame inside the card padding.
     private func scrollViewSize(_ windowSize: NSSize) -> NSSize {
         let padding = SACompletionWindowLayout.cardPadding

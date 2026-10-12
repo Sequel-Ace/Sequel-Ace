@@ -30,6 +30,16 @@ import AppKit
         cardPadding + cellDrawingMinX + cellTextInset
     }
 
+    /// Whether the popup opens above the caret's line instead of below it: it doesn't fit between
+    /// the line and the bottom of the editor's visible area, and there is more room above the line.
+    /// Screen coordinates (y up); `lineBottom` is the bottom of the caret's line.
+    static func opensAbove(popupHeight: CGFloat, lineBottom: CGFloat, lineHeight: CGFloat,
+                           visibleMinY: CGFloat, visibleMaxY: CGFloat) -> Bool {
+        let roomBelow = lineBottom - visibleMinY
+        let roomAbove = visibleMaxY - (lineBottom + lineHeight)
+        return popupHeight > roomBelow && roomAbove > roomBelow
+    }
+
     /// Returns a window size whose scroll view (inside the card padding) fits
     /// the table content whenever the maximum width allows it. If horizontal
     /// scrolling is unavoidable, its non-overlay scroller is added below the
