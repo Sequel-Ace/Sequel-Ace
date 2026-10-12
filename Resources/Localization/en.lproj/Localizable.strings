@@ -4826,3 +4826,39 @@
 
 /* accessibility name of the history forward arrow */
 "ClaudeToolbarGlyphForward" = "Forward";
+
+/* View ▸ Toolbar submenu: show/hide the database picker */
+"ClaudeToolbarMenuDatabase" = "Database";
+
+/* View ▸ Toolbar submenu: show/hide the Structure view button */
+"ClaudeToolbarMenuStructure" = "Structure";
+
+/* View ▸ Toolbar submenu: show/hide the Content view button */
+"ClaudeToolbarMenuContent" = "Content";
+
+/* View ▸ Toolbar submenu: show/hide the Relations view button */
+"ClaudeToolbarMenuRelations" = "Relations";
+
+/* View ▸ Toolbar submenu: show/hide the Triggers view button */
+"ClaudeToolbarMenuTriggers" = "Triggers";
+
+/* View ▸ Toolbar submenu: show/hide the Table Info view button */
+"ClaudeToolbarMenuTableInfo" = "Table info";
+
+/* View ▸ Toolbar submenu: show/hide the Query view button */
+"ClaudeToolbarMenuQuery" = "Query";
+
+/* View ▸ Toolbar submenu: show/hide the back/forward history buttons */
+"ClaudeToolbarMenuHistory" = "History";
+
+/* View ▸ Toolbar submenu: show/hide the Record View button */
+"ClaudeToolbarMenuRecordView" = "Record view";
+
+/* View ▸ Toolbar submenu: show/hide the Users button */
+"ClaudeToolbarMenuUsers" = "Users";
+
+/* View ▸ Toolbar submenu: show/hide the Console button */
+"ClaudeToolbarMenuConsole" = "Console";
+
+/* View ▸ Toolbar submenu: show/hide the Clear Console button */
+"ClaudeToolbarMenuClearConsole" = "Clear console";
