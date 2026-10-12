@@ -201,7 +201,7 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(parser.mode, .normal)
 
         parser.setMode(.visual)
-        XCTAssertEqual(type("c"), .command(.operateSelection(.change)))
+        XCTAssertEqual(type("c"), .command(.operateSelection(.change, span: nil)))
         XCTAssertEqual(parser.mode, .visual)
     }
 
@@ -209,7 +209,7 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(type("v"), .command(.enterVisual(line: false)))
         XCTAssertEqual(parser.mode, .visual)
         XCTAssertEqual(type("j"), .command(.move(.lineDown, count: 1)))
-        XCTAssertEqual(type("d"), .command(.operateSelection(.delete)))
+        XCTAssertEqual(type("d"), .command(.operateSelection(.delete, span: nil)))
         // Leaving visual mode is part of the outcome the engine returns and the
         // text view installs; the parser does not pre-empt it.
         XCTAssertEqual(parser.mode, .visual)

@@ -481,14 +481,14 @@ final class SAVimTextEngineTests: XCTestCase {
     }
 
     func testOperatorInVisualModeUsesTheSelection() {
-        let outcome = run(.operateSelection(.delete), sql,
+        let outcome = run(.operateSelection(.delete, span: nil), sql,
                           caret: 0, mode: .visual, selection: NSRange(location: 0, length: 7))
         XCTAssertEqual(applied(outcome, to: sql), "id, name\nFROM users\nWHERE id = 3;")
         XCTAssertEqual(outcome.mode, .normal)
     }
 
     func testOperatorInVisualLineModeGrowsToWholeLines() {
-        let outcome = run(.operateSelection(.delete), sql,
+        let outcome = run(.operateSelection(.delete, span: nil), sql,
                           caret: 18, mode: .visualLine, selection: NSRange(location: 18, length: 3))
         XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name\nWHERE id = 3;")
         XCTAssertEqual(outcome.register?.isLinewise, true)
@@ -540,8 +540,49 @@ final class SAVimTextEngineTests: XCTestCase {
         let emoji = "😀x"
         XCTAssertEqual(run(.enterVisual(line: false), emoji, caret: 0).selection, NSRange(location: 0, length: 2))
         // And the selection the operator then sees covers the pair.
-        XCTAssertEqual(applied(run(.operateSelection(.delete), emoji, caret: 0,
+        XCTAssertEqual(applied(run(.operateSelection(.delete, span: nil), emoji, caret: 0,
                                    mode: .visual, selection: NSRange(location: 0, length: 2)), to: emoji), "x")
+    }
+
+    func testWordOperatorsKeepZWJEmojiSequencesWhole() {
+        // Woman + ZWJ + laptop is one composed character (5 UTF-16 units).
+        let zwj = "👩‍💻x"
+        XCTAssertEqual((zwj as NSString).length, 6)
+
+        XCTAssertEqual(applied(run(.operate(.delete, .motion(.wordForward(big: false)), count: 1), zwj, caret: 0), to: zwj), "x")
+        XCTAssertEqual(applied(run(.operate(.delete, .textObject(.word(big: false, around: false)), count: 1), zwj, caret: 0), to: zwj), "x")
+        XCTAssertEqual(applied(run(.operate(.change, .textObject(.word(big: false, around: false)), count: 1), zwj, caret: 0), to: zwj), "x")
+        XCTAssertEqual(run(.move(.wordForward(big: false), count: 1), zwj, caret: 0).caret, 5)
+    }
+
+    func testVisualSpanReplayDeletesTheRecordedExtentFromANewCaret() {
+        let sql = "alpha beta gamma"
+        // `viw` + `d` on "alpha" stamps a 5-character span; `.` at "beta" deletes it.
+        let first = run(.operateSelection(.delete, span: .characters(5)), sql,
+                        caret: 0, mode: .visual, selection: NSRange(location: 0, length: 5))
+        XCTAssertEqual(applied(first, to: sql), " beta gamma")
+
+        let afterFirst = " beta gamma"
+        let replay = run(.operateSelection(.delete, span: .characters(5)), afterFirst, caret: 1)
+        XCTAssertEqual(applied(replay, to: afterFirst), " gamma")
+    }
+
+    func testVisualLineSpanReplayDeletesTheRecordedLineCount() {
+        let lines = "one\ntwo\nthree\nfour"
+        let first = run(.operateSelection(.delete, span: .lines(1)), lines,
+                        caret: 0, mode: .visualLine, selection: NSRange(location: 0, length: 4))
+        XCTAssertEqual(applied(first, to: lines), "two\nthree\nfour")
+
+        let replay = run(.operateSelection(.delete, span: .lines(1)), "two\nthree\nfour", caret: 0)
+        XCTAssertEqual(applied(replay, to: "two\nthree\nfour"), "three\nfour")
+    }
+
+    func testVisualChangeSpanReplayOpensInsertOverTheRecordedExtent() {
+        let sql = "alpha beta"
+        let change = run(.operateSelection(.change, span: .characters(5)), sql, caret: 6)
+        XCTAssertEqual(applied(change, to: sql), "alpha ")
+        XCTAssertEqual(change.mode, .insert)
+        XCTAssertEqual(change.caret, 6)
     }
 
     func testVerticalMotionNeverLandsInsideACharacter() {

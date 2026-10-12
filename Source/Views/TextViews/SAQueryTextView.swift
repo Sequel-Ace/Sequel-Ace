@@ -191,6 +191,9 @@ import AppKit
             if case .exitToNormal = command {
                 leaveInsertMode(applyingRepeat: true)
             }
+            // Stamp the live visual extent before the edit clears it, so `.`
+            // can replay the same span from a later caret.
+            let recorded = commandWithRepeatableVisualSpan(command)
             let outcome = SAVimTextEngine.run(command, context: makeContext())
             apply(outcome)
 
@@ -199,8 +202,39 @@ import AppKit
                 lastSearch = (pattern: pattern, forward: forward)
             }
 
-            finishCommand(command, outcome: outcome)
+            finishCommand(recorded, outcome: outcome)
         }
+    }
+
+    /// Turns a live visual operator into one that carries its extent, so `.`
+    /// does not depend on the (now empty) selection.
+    private func commandWithRepeatableVisualSpan(_ command: SAVimCommand) -> SAVimCommand {
+        guard case .operateSelection(let op, let span) = command, span == nil, parser.mode.isVisual else {
+            return command
+        }
+        let text = string as NSString
+        if parser.mode == .visualLine {
+            let covered = SAVimTextEngine.lineSpan(covering: selectedRange(), in: text)
+            return .operateSelection(op, span: .lines(lineCount(covering: covered, in: text)))
+        }
+        let length = selectedRange().length
+        guard length > 0 else { return command }
+        return .operateSelection(op, span: .characters(length))
+    }
+
+    private func lineCount(covering range: NSRange, in text: NSString) -> Int {
+        guard range.length > 0, text.length > 0 else { return 0 }
+        var count = 0
+        var index = range.location
+        let end = NSMaxRange(range)
+        while index < end {
+            let line = SAVimTextEngine.lineRange(at: index, in: text)
+            count += 1
+            let next = NSMaxRange(line)
+            if next <= index { break }
+            index = next
+        }
+        return max(count, 1)
     }
 
     private func makeContext() -> SAVimContext {
@@ -623,7 +657,7 @@ private extension SAVimCommand {
             return true
         case .operate(let op, _, _):
             return op == .change
-        case .operateSelection(let op):
+        case .operateSelection(let op, _):
             return op == .change
         default:
             return false

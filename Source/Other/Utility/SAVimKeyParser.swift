@@ -77,14 +77,25 @@ enum SAVimTarget: Equatable {
     case wholeLines
 }
 
+/// A visual selection's extent, stored so `.` can replay a visual delete or
+/// change after the live selection has already been cleared.
+enum SAVimVisualSpan: Equatable {
+    /// Characterwise: this many UTF-16 units from the caret.
+    case characters(Int)
+    /// Linewise: this many lines starting at the caret's line.
+    case lines(Int)
+}
+
 /// A complete, ready-to-run vim command. Everything the parser can produce is
 /// a value — the view executes it, so replaying one (the `.` command) is just
 /// running the same value again.
 enum SAVimCommand: Equatable {
     case move(SAVimMotion, count: Int)
     case operate(SAVimOperator, SAVimTarget, count: Int)
-    /// An operator typed in visual mode: it applies to the live selection.
-    case operateSelection(SAVimOperator)
+    /// An operator typed in visual mode. `span` is nil while the selection is
+    /// live; after a successful edit the view stamps a span so `.` can replay
+    /// the same extent from a later caret.
+    case operateSelection(SAVimOperator, span: SAVimVisualSpan?)
     /// A text object typed in visual mode: it becomes the selection.
     case selectTextObject(SAVimTextObject)
     case enterInsert(SAVimInsertPlacement, count: Int)
@@ -701,7 +712,7 @@ final class SAVimKeyParser {
     /// here would strand `cfz` in insert mode when the line holds no `z`.
     private func visualOperator(_ op: SAVimOperator) -> SAVimParseResult {
         resetSequence()
-        return .command(.operateSelection(op))
+        return .command(.operateSelection(op, span: nil))
     }
 
     private func shorthand(_ op: SAVimOperator, _ target: SAVimTarget) -> SAVimParseResult {

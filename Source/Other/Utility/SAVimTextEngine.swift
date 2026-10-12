@@ -117,8 +117,8 @@ enum SAVimTextEngine {
         case .operate(let op, let target, let count):
             return runOperator(op, target: target, count: count, context: context)
 
-        case .operateSelection(let op):
-            return runSelectionOperator(op, context: context)
+        case .operateSelection(let op, let span):
+            return runSelectionOperator(op, span: span, context: context)
 
         case .selectTextObject(let object):
             guard let range = textObjectRange(object, context: context) else { return .failed }
@@ -347,11 +347,49 @@ enum SAVimTextEngine {
         return apply(op, to: range, linewise: linewise, context: context)
     }
 
-    private static func runSelectionOperator(_ op: SAVimOperator, context: SAVimContext) -> SAVimOutcome {
-        let linewise = context.mode == .visualLine
-        let range = linewise ? lineSpan(covering: context.selection, in: context.text) : context.selection
+    private static func runSelectionOperator(_ op: SAVimOperator, span: SAVimVisualSpan?, context: SAVimContext) -> SAVimOutcome {
+        let range: NSRange
+        let linewise: Bool
+        if let span {
+            guard let resolved = rangeForVisualSpan(span, from: context.caret, in: context.text) else {
+                return .failed
+            }
+            range = resolved.range
+            linewise = resolved.linewise
+        } else {
+            linewise = context.mode == .visualLine
+            range = linewise ? lineSpan(covering: context.selection, in: context.text) : context.selection
+        }
         guard range.length > 0 else { return .failed }
         return apply(op, to: range, linewise: linewise, context: context)
+    }
+
+    /// Rebuilds a recorded visual extent at a new caret for `.` replay.
+    private static func rangeForVisualSpan(_ span: SAVimVisualSpan, from caret: Int, in text: NSString) -> (range: NSRange, linewise: Bool)? {
+        let origin = min(max(caret, 0), text.length)
+        switch span {
+        case .characters(let length):
+            guard length > 0 else { return nil }
+            let end = min(origin + length, text.length)
+            // Grow to a composed-character boundary so a replay that lands
+            // mid-grapheme never splits a surrogate pair or ZWJ sequence.
+            let boundedEnd = end < text.length
+                ? NSMaxRange(text.rangeOfComposedCharacterSequence(at: max(origin, end - 1)))
+                : end
+            let range = NSRange(location: origin, length: max(0, min(boundedEnd, text.length) - origin))
+            guard range.length > 0 else { return nil }
+            return (range, false)
+
+        case .lines(let count):
+            guard count > 0, text.length > 0 else { return nil }
+            let start = lineStart(at: min(origin, max(text.length - 1, 0)), in: text)
+            var end = lineRange(at: start, in: text)
+            for _ in 1..<count {
+                guard NSMaxRange(end) < text.length else { break }
+                end = lineRange(at: NSMaxRange(end), in: text)
+            }
+            return (NSRange(location: start, length: NSMaxRange(end) - start), true)
+        }
     }
 
     /// The span an operator covers, and whether it is linewise.
@@ -874,18 +912,21 @@ extension SAVimTextEngine {
 
     static func characterClass(at index: Int, big: Bool, in text: NSString) -> CharacterClass {
         guard index >= 0, index < text.length else { return .whitespace }
-        let character = text.character(at: index)
+        // Classify the whole composed character so a ZWJ emoji is one unit,
+        // not a run of surrogates and joiners with mixed classes.
+        let range = text.rangeOfComposedCharacterSequence(at: index)
+        let character = text.character(at: range.location)
         if isBlank(character) || isNewline(character) {
             return .whitespace
         }
         if big {
             return .word
         }
-        guard let scalar = Unicode.Scalar(character) else { return .word }
-        if CharacterSet.alphanumerics.contains(scalar) || character == 0x5F {
-            return .word
+        let piece = text.substring(with: range)
+        let isWord = piece.unicodeScalars.allSatisfy { scalar in
+            CharacterSet.alphanumerics.contains(scalar) || scalar == "_"
         }
-        return .punctuation
+        return isWord ? .word : .punctuation
     }
 
     static func nextWordStart(from location: Int, big: Bool, in text: NSString) -> Int {
@@ -895,11 +936,11 @@ extension SAVimTextEngine {
         let startClass = characterClass(at: index, big: big, in: text)
         if startClass != .whitespace {
             while index < text.length, characterClass(at: index, big: big, in: text) == startClass {
-                index += 1
+                index = NSMaxRange(text.rangeOfComposedCharacterSequence(at: index))
             }
         }
         while index < text.length, characterClass(at: index, big: big, in: text) == .whitespace {
-            index += 1
+            index = NSMaxRange(text.rangeOfComposedCharacterSequence(at: index))
         }
         return index
     }
@@ -908,15 +949,17 @@ extension SAVimTextEngine {
         var index = min(location, text.length)
         guard index > 0 else { return 0 }
 
-        index -= 1
+        index = text.rangeOfComposedCharacterSequence(at: index - 1).location
         while index > 0, characterClass(at: index, big: big, in: text) == .whitespace {
-            index -= 1
+            index = text.rangeOfComposedCharacterSequence(at: index - 1).location
         }
         guard characterClass(at: index, big: big, in: text) != .whitespace else { return index }
 
         let runClass = characterClass(at: index, big: big, in: text)
-        while index > 0, characterClass(at: index - 1, big: big, in: text) == runClass {
-            index -= 1
+        while index > 0 {
+            let previous = text.rangeOfComposedCharacterSequence(at: index - 1).location
+            guard characterClass(at: previous, big: big, in: text) == runClass else { break }
+            index = previous
         }
         return index
     }
@@ -925,15 +968,19 @@ extension SAVimTextEngine {
         var index = min(location, text.length)
         guard index < text.length else { return text.length }
 
-        index += 1
+        index = NSMaxRange(text.rangeOfComposedCharacterSequence(at: index))
         while index < text.length, characterClass(at: index, big: big, in: text) == .whitespace {
-            index += 1
+            index = NSMaxRange(text.rangeOfComposedCharacterSequence(at: index))
         }
-        guard index < text.length else { return max(0, text.length - 1) }
+        guard index < text.length else {
+            return text.length > 0 ? characterStart(at: text.length - 1, in: text) : 0
+        }
 
         let runClass = characterClass(at: index, big: big, in: text)
-        while index + 1 < text.length, characterClass(at: index + 1, big: big, in: text) == runClass {
-            index += 1
+        while true {
+            let next = NSMaxRange(text.rangeOfComposedCharacterSequence(at: index))
+            guard next < text.length, characterClass(at: next, big: big, in: text) == runClass else { break }
+            index = next
         }
         return index
     }
@@ -1075,25 +1122,34 @@ extension SAVimTextEngine {
     }
 
     private static func wordObjectRange(at caret: Int, big: Bool, around: Bool, in text: NSString) -> NSRange? {
-        let runClass = characterClass(at: caret, big: big, in: text)
-        var start = caret
-        var end = caret
+        let origin = characterStart(at: min(caret, max(text.length - 1, 0)), in: text)
+        let runClass = characterClass(at: origin, big: big, in: text)
+        var start = origin
+        var end = origin
 
-        while start > 0, characterClass(at: start - 1, big: big, in: text) == runClass, !isNewline(text.character(at: start - 1)) {
-            start -= 1
+        while start > 0 {
+            let previous = text.rangeOfComposedCharacterSequence(at: start - 1).location
+            if isNewline(text.character(at: previous)) { break }
+            guard characterClass(at: previous, big: big, in: text) == runClass else { break }
+            start = previous
         }
-        while end + 1 < text.length, characterClass(at: end + 1, big: big, in: text) == runClass, !isNewline(text.character(at: end + 1)) {
-            end += 1
+        while true {
+            let next = NSMaxRange(text.rangeOfComposedCharacterSequence(at: end))
+            guard next < text.length, !isNewline(text.character(at: next)) else { break }
+            guard characterClass(at: next, big: big, in: text) == runClass else { break }
+            end = next
         }
-        var range = NSRange(location: start, length: end - start + 1)
+        var range = NSRange(location: start, length: NSMaxRange(text.rangeOfComposedCharacterSequence(at: end)) - start)
 
         guard around else { return range }
 
         // `aw` takes the trailing whitespace, or the leading whitespace when
         // the word is the last one on its line.
         var trailing = NSMaxRange(range)
-        while trailing < text.length, characterClass(at: trailing, big: big, in: text) == .whitespace, !isNewline(text.character(at: trailing)) {
-            trailing += 1
+        while trailing < text.length,
+              characterClass(at: trailing, big: big, in: text) == .whitespace,
+              !isNewline(text.character(at: trailing)) {
+            trailing = NSMaxRange(text.rangeOfComposedCharacterSequence(at: trailing))
         }
         if trailing > NSMaxRange(range) {
             range.length = trailing - range.location
@@ -1101,8 +1157,11 @@ extension SAVimTextEngine {
         }
 
         var leading = range.location
-        while leading > 0, characterClass(at: leading - 1, big: big, in: text) == .whitespace, !isNewline(text.character(at: leading - 1)) {
-            leading -= 1
+        while leading > 0 {
+            let previous = text.rangeOfComposedCharacterSequence(at: leading - 1).location
+            if isNewline(text.character(at: previous)) { break }
+            guard characterClass(at: previous, big: big, in: text) == .whitespace else { break }
+            leading = previous
         }
         range = NSRange(location: leading, length: NSMaxRange(range) - leading)
         return range
