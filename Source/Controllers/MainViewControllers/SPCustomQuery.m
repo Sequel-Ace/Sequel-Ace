@@ -3881,6 +3881,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 	                                         resultsView:[customQueryView enclosingScrollView]
 	                                     editorSplitView:queryEditorSplitView
 	                                        resultsTable:customQueryView];
+	[SAClaudeEditorOptionsButton attachToButton:editorOptionsButton textView:textView];
 
 	// Claude look: status pane and bottom strip. The export pull-down has no outlet; the styler finds it.
 	[SAClaudeQueryInfoStyler attachToInfoSplitView:queryInfoPaneSplitView titleField:errorTextTitle messageTextView:errorText statusField:affectedRowsText infoButton:queryInfoButton exportButton:nil];

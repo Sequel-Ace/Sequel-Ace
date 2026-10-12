@@ -705,6 +705,7 @@
 		C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */; };
 		A5C1E0D61A2B3C4D5E6F7087 /* SAClaudeQueryBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */; };
 		B7D2E1F11A2B3C4D5E6F7091 /* SAClaudeQueryInfoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D2E1F01A2B3C4D5E6F7090 /* SAClaudeQueryInfoStyler.swift */; };
+		D4A1C7E30B3F4A5C6D7E8F92 /* SAClaudeEditorOptionsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1C7E20B3F4A5C6D7E8F91 /* SAClaudeEditorOptionsPopover.swift */; };
 		A5C1E0F21A2B3C4D5E6F7091 /* SAClaudeCopyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0F11A2B3C4D5E6F7090 /* SAClaudeCopyButton.swift */; };
 		A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */; };
 		A5C1E0DA1A2B3C4D5E6F708B /* SAClaudeLineNumberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */; };
@@ -1668,6 +1669,7 @@
 		AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPCustomQuery+Explain.swift"; sourceTree = "<group>"; };
 		A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryBarStyler.swift; sourceTree = "<group>"; };
 		B7D2E1F01A2B3C4D5E6F7090 /* SAClaudeQueryInfoStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryInfoStyler.swift; sourceTree = "<group>"; };
+		D4A1C7E20B3F4A5C6D7E8F91 /* SAClaudeEditorOptionsPopover.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorOptionsPopover.swift; sourceTree = "<group>"; };
 		A5C1E0F11A2B3C4D5E6F7090 /* SAClaudeCopyButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeCopyButton.swift; sourceTree = "<group>"; };
 		A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRunButton.swift; sourceTree = "<group>"; };
 		A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineNumberView.swift; sourceTree = "<group>"; };
@@ -2112,6 +2114,7 @@
 				AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */,
 				A5C1E0D51A2B3C4D5E6F7086 /* SAClaudeQueryBarStyler.swift */,
 				B7D2E1F01A2B3C4D5E6F7090 /* SAClaudeQueryInfoStyler.swift */,
+				D4A1C7E20B3F4A5C6D7E8F91 /* SAClaudeEditorOptionsPopover.swift */,
 				AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */,
 				17E641500EF01EF6001BC333 /* SPDatabaseDocument.h */,
 				17E641510EF01EF6001BC333 /* SPDatabaseDocument.m */,
@@ -4120,6 +4123,7 @@
 				C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */,
 				A5C1E0D61A2B3C4D5E6F7087 /* SAClaudeQueryBarStyler.swift in Sources */,
 				B7D2E1F11A2B3C4D5E6F7091 /* SAClaudeQueryInfoStyler.swift in Sources */,
+				D4A1C7E30B3F4A5C6D7E8F92 /* SAClaudeEditorOptionsPopover.swift in Sources */,
 				A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */,
 				A5C1E0F21A2B3C4D5E6F7091 /* SAClaudeCopyButton.swift in Sources */,
 				C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */,

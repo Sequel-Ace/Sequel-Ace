@@ -4787,3 +4787,9 @@
 
 /* Editor options popover section header */
 "ClaudeEditorOptionsSectionTyping" = "Typing";
+
+/* Editor options popover: a switch's accessibility value when on */
+"ClaudeEditorOptionsOn" = "On";
+
+/* Editor options popover: a switch's accessibility value when off */
+"ClaudeEditorOptionsOff" = "Off";
