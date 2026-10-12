@@ -4851,6 +4851,9 @@
 /* accessibility name of the page options icon in a table tab's bottom bar */
 "ClaudeTabBarGlyphPageOptions" = "Page options";
 
+/* Structure tab: header above the indexes list */
+"ClaudeTabBarIndexesHeader" = "Indexes";
+
 /* View ▸ Toolbar submenu: show/hide the database picker */
 "ClaudeToolbarMenuDatabase" = "Database";
 

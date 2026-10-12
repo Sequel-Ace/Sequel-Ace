@@ -133,6 +133,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 											 selector:@selector(endDocumentTaskForTab:)
 												 name:SPDocumentTaskEndNotification
 											   object:tableDocumentInstance];
+
+	[SAClaudeTabBarStyler attachToContainer:[addTriggerButton superview] barTop:35 content:[triggersTableView enclosingScrollView] status:nil search:nil label:labelTextField];
 }
 
 /**

@@ -118,6 +118,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 											 selector:@selector(endDocumentTaskForTab:)
 												 name:SPDocumentTaskEndNotification
 											   object:tableDocumentInstance];
+
+	[SAClaudeTabBarStyler attachToContainer:[addRelationButton superview] barTop:35 content:[relationsTableView enclosingScrollView] status:nil search:nil label:labelTextField];
 }
 
 #pragma mark -

@@ -136,6 +136,8 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+
+	[SAClaudeTabBarStyler attachToContainer:[addIndexButton superview] barTop:25 content:[indexesTableView enclosingScrollView] status:nil search:nil label:nil];
 }
 
 #pragma mark -

@@ -250,7 +250,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [recordViewController installOverlayInView:tableContentContainer
                                          resizingView:[tableContentView enclosingScrollView]
                                     shortcutTableView:tableContentView
-                                         bottomInset:25
+                                         bottomInset:[SAClaudeTabBarStyler stripHeight]
                                             topInset:0
                                         autosaveName:@"SARecordViewContentWidth"];
 
@@ -358,6 +358,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
                                                  name:SPDocumentWillCloseNotification
                                                object:nil];
 
+    [SAClaudeTabBarStyler attachToContainer:tableContentContainer barTop:25 content:[tableContentView enclosingScrollView] status:countText search:columnFilterSearchField label:nil];
 }
 
 - (void)toggleRecordView

@@ -305,6 +305,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	for (NSTableColumn *col in [indexesTableView tableColumns]) {
 		[[col dataCell] setFont:tableFont];
 	}
+
+	[SAClaudeTabBarStyler attachToContainer:[addFieldButton superview] barTop:25 content:[tableSourceView enclosingScrollView] status:nil search:nil label:nil];
+	[SAClaudeTabBarStyler styleSectionHeaderWithGrabber:structureGrabber];
 }
 
 - (BOOL)_serverUsesMySQL84AutoIncrementRules
