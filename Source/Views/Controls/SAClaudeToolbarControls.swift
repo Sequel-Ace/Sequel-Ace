@@ -19,6 +19,8 @@ import AppKit
         super.awakeFromNib()
         isBordered = false
         (cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
+        // The XIB's fixed frame would otherwise win: the toolbar must size the pill from intrinsicContentSize.
+        translatesAutoresizingMaskIntoConstraints = false
     }
 
     private var displayTitle: String { titleOfSelectedItem ?? title }
@@ -89,6 +91,9 @@ import AppKit
 
     override func awakeFromNib() {
         super.awakeFromNib()
+        // Adjacent segments without gaps/insets so hit areas match the drawn 30pt halves.
+        segmentStyle = .smallSquare
+        translatesAutoresizingMaskIntoConstraints = false
         for segment in 0..<segmentCount { setWidth(Self.segmentWidth, forSegment: segment) }
     }
 
@@ -102,7 +107,8 @@ import AppKit
         addTrackingArea(area)
         trackingArea = area
     }
-    private func segment(at event: NSEvent) -> Int {
+    private func segment(at event: NSEvent) -> Int? {
+        guard segmentCount > 0 else { return nil }
         let x = convert(event.locationInWindow, from: nil).x
         return min(segmentCount - 1, max(0, Int(x / Self.segmentWidth)))
     }
@@ -119,7 +125,7 @@ import AppKit
         let shape = NSBezierPath(roundedRect: pill, xRadius: 8, yRadius: 8)
         SAClaudeStyle.hoverFill.setFill()
         shape.fill()
-        if let hoveredSegment, isEnabled(forSegment: hoveredSegment) {
+        if let hoveredSegment, isEnabled, isEnabled(forSegment: hoveredSegment) {
             NSGraphicsContext.saveGraphicsState()
             shape.addClip()
             SAClaudeStyle.selection.setFill()
