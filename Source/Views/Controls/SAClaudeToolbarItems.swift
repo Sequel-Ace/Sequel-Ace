@@ -10,10 +10,18 @@
 
 import AppKit
 
-/// The main window toolbar: redraws its Claude buttons when the selected view changes.
+/// The main window toolbar. It keeps the selected view itself rather than passing it to AppKit, which
+/// would draw its own selection bezel and accent-coloured label under the Claude pill; the document
+/// reads and writes the selection through this same property, so nothing else changes.
 @objc(SAClaudeToolbar) final class SAClaudeToolbar: NSToolbar {
+    private var claudeSelectedItemIdentifier: NSToolbarItem.Identifier?
+
     override var selectedItemIdentifier: NSToolbarItem.Identifier? {
-        didSet { items.forEach { $0.view?.needsDisplay = true } }
+        get { claudeSelectedItemIdentifier }
+        set {
+            claudeSelectedItemIdentifier = newValue
+            items.forEach { $0.view?.needsDisplay = true }
+        }
     }
 }
 
@@ -24,8 +32,16 @@ import AppKit
     /// A Claude-drawn copy of an image item with a Claude glyph; any other item is returned unchanged.
     @objc(styledItem:)
     static func styled(_ item: NSToolbarItem?) -> NSToolbarItem? {
-        guard let item, item.view == nil, let glyph = SAClaudeToolbarLayout.glyph(for: item.itemIdentifier.rawValue) else { return item }
+        guard let item else { return nil }
+        // No system bezel (the glass capsule on recent macOS): the Claude views draw their own pills.
+        item.isBordered = false
+        // A segmented control still gets the glass capsule; inside a plain container it's a custom view.
+        if let control = item.view as? NSSegmentedControl {
+            item.view = SAClaudeToolbarItemContainer(wrapping: control)
+        }
+        guard item.view == nil, let glyph = SAClaudeToolbarLayout.glyph(for: item.itemIdentifier.rawValue) else { return item }
         let styled = SAClaudeToolbarItem(itemIdentifier: item.itemIdentifier)
+        styled.isBordered = false
         styled.label = item.label
         styled.paletteLabel = item.paletteLabel
         styled.toolTip = item.toolTip
@@ -137,4 +153,24 @@ final class SAClaudeToolbarButton: NSButton {
         let rect = NSRect(x: bounds.midX - 8, y: bounds.midY - 8, width: 16, height: 16)
         image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: isEnabled ? 1 : 0.35, respectFlipped: true, hints: nil)
     }
+}
+
+/// A plain view hosting a toolbar control, so the toolbar treats the item as a custom view and draws no
+/// system bezel around it. The control stays the same object (its outlets and actions are unchanged).
+final class SAClaudeToolbarItemContainer: NSView {
+    init(wrapping control: NSView) {
+        super.init(frame: NSRect(origin: .zero, size: control.intrinsicContentSize))
+        translatesAutoresizingMaskIntoConstraints = false
+        control.removeFromSuperview()
+        control.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(control)
+        NSLayoutConstraint.activate([
+            control.leadingAnchor.constraint(equalTo: leadingAnchor),
+            control.trailingAnchor.constraint(equalTo: trailingAnchor),
+            control.topAnchor.constraint(equalTo: topAnchor),
+            control.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 }
