@@ -54,6 +54,7 @@ final class SAClaudeEditorOptionsPopover: NSObject, NSPopoverDelegate {
     func toggle() {
         guard let button else { return }
         if popover.isShown { popover.performClose(nil); return }
+        removeMonitors()
         model.load(menu: button.menu, textView: button.textView)
         popover.appearance = model.isDark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: button.isFlipped ? .maxY : .minY)
@@ -69,10 +70,16 @@ final class SAClaudeEditorOptionsPopover: NSObject, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
-        monitors.forEach(NSEvent.removeMonitor)
-        monitors.removeAll()
+        removeMonitors()
         model.optionHeld = false
     }
+
+    private func removeMonitors() {
+        monitors.forEach(NSEvent.removeMonitor)
+        monitors.removeAll()
+    }
+
+    deinit { removeMonitors() }
 }
 
 /// What the popover shows: the menu items behind each option, switch states, theme colours, the editor font.
@@ -165,7 +172,8 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
         // which reads the item's state — set it first, then fire the item as a menu click would.
         if let item = items[option], item.action != nil {
             item.state = newValue ? .on : .off
-            fire(item)
+            // Not performActionForItem: it also runs the item's value binding, which would write the old value back.
+            if let action = item.action { NSApp.sendAction(action, to: item.target, from: item) }
         }
         refresh()
     }
