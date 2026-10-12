@@ -271,6 +271,19 @@ enum SARuleFilterContextMenu {
     ) -> Bool {
         return (!visibilityWasApplied || !wasVisible || tableChanged) && willBeVisible && editorIsEmpty
     }
+
+    /// After the user removes rules with the − button, an editor left with no
+    /// rule at all falls back to a blank, unchecked starter row instead of the
+    /// empty Add Filter state. Rows emptied any other way (table switch,
+    /// restoring saved filters, hiding the bar) never re-seed.
+    @objc(shouldReseedStarterAfterUserDeletionWithEditorIsEmpty:barVisible:deletionWasUserDriven:)
+    public static func shouldReseedStarterAfterUserDeletion(
+        editorIsEmpty: Bool,
+        barVisible: Bool,
+        deletionWasUserDriven: Bool
+    ) -> Bool {
+        return editorIsEmpty && barVisible && deletionWasUserDriven
+    }
 }
 
 /// Presentation strings and checks for a group row's AND/OR choice, kept in

@@ -1248,12 +1248,26 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	// if the user removed the last row in the editor by pressing "-" (and only then) we immediately want to trigger a filter reset.
 	// There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
-	if(!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0) {
+	BOOL userRemovedLastRow = (!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0);
+	if(userRemovedLastRow) {
 		[self _invokeFilterTargetActionWithObject:nil];
 	}
 	previousRowCount = newRowCount;
 
 	[SAClaudeFilterBarStylerClass() restyleRowsOfRuleEditor:filterRuleEditor];
+
+	if(userRemovedLastRow) {
+		// fall back to the blank, unchecked starter row once the deletion has settled; the facts are read
+		// again then, as the bar may have been hidden or refilled meanwhile. The starter itself is added
+		// outside the rule editor's own change, so it cannot trigger this again.
+		SPMainLoopAsync(^{
+			if ([SARuleFilterVisibilityPolicy shouldReseedStarterAfterUserDeletionWithEditorIsEmpty:[self isEmpty]
+			                                                                             barVisible:self->enabled
+			                                                                  deletionWasUserDriven:YES]) {
+				[self addStarterFilterExpression];
+			}
+		});
+	}
 }
 
 - (void)_updateButtonStates
