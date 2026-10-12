@@ -111,6 +111,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
+// A connection with no table selected opens on Query; the first table or view picked then
+// switches to this tab (the Default View preference, else the last-used tab). Cleared by any
+// manual tab switch. `applyingInitialViewMode` keeps the opening switch itself from clearing it.
+@property (assign) BOOL hasPendingInitialViewMode;
+@property (assign) SAViewMode pendingInitialViewMode;
+@property (assign) BOOL applyingInitialViewMode;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -544,7 +551,23 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         else                         [self restoreSession];
     }
     else {
-        switch ([prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode]) {
+        NSInteger preferredViewPreference = [prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode];
+        SAViewMode preferredMode = [SAInitialViewPolicy preferredModeForPreferencesValue:preferredViewPreference];
+        SAViewMode initialMode = [SAInitialViewPolicy initialModeWithPreferred:preferredMode hasTable:([self table] != nil)];
+
+        if (initialMode != preferredMode) {
+            // Nothing is selected, so open on Query and remember where the first table or view should go.
+            // The opening switch overwrites SPLastViewMode; put it back so quitting before picking a
+            // table does not lose the user's usual tab.
+            NSInteger lastViewPreference = [prefs integerForKey:SPLastViewMode];
+            self.pendingInitialViewMode = preferredMode;
+            self.hasPendingInitialViewMode = YES;
+            self.applyingInitialViewMode = YES;
+            [self viewQuery];
+            self.applyingInitialViewMode = NO;
+            [prefs setInteger:lastViewPreference forKey:SPLastViewMode];
+        }
+        else switch (preferredViewPreference) {
             default:
             case SPStructureViewMode:
                 [self viewStructure];
@@ -5464,6 +5487,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self.mainToolbar setSelectedItemIdentifier:[SAViewModeHelper toolbarIdentifierFor:mode]];
         [self->spHistoryControllerInstance updateHistoryEntries];
         [self->prefs setInteger:[SAViewModeHelper preferencesValueFor:mode] forKey:SPLastViewMode];
+        // Choosing a tab by hand settles where the user wants to be; the opening switch is not a choice.
+        if (!self.applyingInitialViewMode) self.hasPendingInitialViewMode = NO;
         didSwitch = YES;
     });
     return didSwitch;
@@ -5667,6 +5692,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     selectedTableName = [[NSString alloc] initWithString:aTable];
     selectedTableType = aTableType;
+
+    // The first table or view picked after opening on Query moves to the user's usual tab.
+    if ([SAInitialViewPolicy shouldJumpWithPending:self.hasPendingInitialViewMode
+                                       selectedType:aTableType
+                                     currentIsQuery:([self currentlySelectedView] == SPTableViewCustomQuery)]) {
+        SAViewMode jumpMode = self.pendingInitialViewMode;
+        self.hasPendingInitialViewMode = NO;
+        switch (jumpMode) {
+            case SAViewModeStructure: [self viewStructure]; break;
+            case SAViewModeContent:   [self viewContent];   break;
+            case SAViewModeQuery:     [self viewQuery];     break;
+            case SAViewModeStatus:    [self viewStatus];    break;
+            case SAViewModeRelations: [self viewRelations]; break;
+            case SAViewModeTriggers:  [self viewTriggers];  break;
+        }
+    }
 
     // Start a task
     if (isReloading) {
