@@ -244,8 +244,8 @@ struct SAClaudeEditorOptionsView: View {
             HStack(spacing: 6) {
                 tile(.shiftRight, symbol: "increase.indent", showsTitle: false)
                 tile(.shiftLeft, symbol: "decrease.indent", showsTitle: false)
-                // SQL's line-comment marker, not a speech bubble.
-                tile(model.optionHeld ? .commentQuery : .commentLine, symbol: nil, glyphText: "--", showsTitle: false)
+                // SQL's line-comment marker plus the "/" of its ⌘/ shortcut.
+                tile(model.optionHeld ? .commentQuery : .commentLine, symbol: nil, glyphText: "--/", showsTitle: false)
             }
         case .completionList?:
             // Two by two, so every label fits.
