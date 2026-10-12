@@ -46,8 +46,9 @@ extension SAClaudeSidebarChrome {
         if let column = table.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier("info")) {
             let cell = SAClaudeInfoRowCell(textCell: "")
             cell.lineBreakMode = .byTruncatingTail
-            cell.isEditable = false
-            cell.isSelectable = false
+            // Editable/selectable like the XIB cell: SPTableInfo's shouldEditTableColumn: drives the header-click pane toggle (and always returns NO).
+            cell.isEditable = true
+            cell.isSelectable = true
             column.dataCell = cell
         }
     }
