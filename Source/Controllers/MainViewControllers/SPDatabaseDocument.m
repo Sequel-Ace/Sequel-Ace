@@ -3393,16 +3393,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSArray *)toolbarSelectableItemIdentifiers:(NSToolbar *)toolbar
 {
-    return @[
-        SPMainToolbarTableStructure,
-        SPMainToolbarTableContent,
-        SPMainToolbarCustomQuery,
-        SPMainToolbarTableInfo,
-        SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers,
-        [SARecordViewToolbarSupport itemIdentifier]
-    ];
-
+    // SAClaudeToolbar tracks the selected view and draws it itself; nothing is selectable for AppKit,
+    // so it draws no selection bezel or accent label of its own.
+    return @[];
 }
 
 /**
