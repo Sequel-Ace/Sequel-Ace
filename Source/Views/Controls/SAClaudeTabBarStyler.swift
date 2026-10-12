@@ -44,13 +44,11 @@ import AppKit
     private let stripLine = SAClaudeDividerLine(frame: .zero)
     private let searchFill = SAClaudeConsoleFieldView(frame: .zero)
     /// Edit mode's resting fill while it is switched on, by button.
-    private var stateFills: [(button: NSButton, fill: SAClaudeRoundedFillView)] = []
 
     private var appliedPalette: SAClaudeEditorChrome.Palette?
     private var defaultsObserver: NSObjectProtocol?
     private var appearanceObservation: NSKeyValueObservation?
     private var statusTextObservation: NSKeyValueObservation?
-    private var stateObservations: [NSKeyValueObservation] = []
 
     // MARK: - Attaching
 
@@ -149,32 +147,13 @@ import AppKit
 
         for item in buttons {
             let button = item.button
-            guard let glyph = item.glyph else { continue }
+            guard item.glyph != nil else { continue }
             button.isBordered = false
             button.imagePosition = .imageOnly
             if let tip = button.toolTip, !tip.isEmpty { button.setAccessibilityLabel(tip) }
             if let popUp = button as? NSPopUpButton { (popUp.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow }
             SAClaudeHoverHighlighter.attach(to: button)
-            if glyph == .editMode { addStateFill(behind: button) }
         }
-    }
-
-    /// Shows a rounded fill behind `button` while it is on. State changes come from the app (setState:)
-    /// and from clicks, which only reach the cell, so both are observed.
-    private func addStateFill(behind button: NSButton) {
-        guard let container else { return }
-        let fill = SAClaudeRoundedFillView(frame: button.frame)
-        fill.cornerRadius = SAClaudeStyle.barButtonRadius
-        fill.autoresizingMask = button.autoresizingMask
-        container.addSubview(fill, positioned: .below, relativeTo: button)
-        stateFills.append((button, fill))
-        let update: () -> Void = { [weak button, weak fill] in
-            guard let button, let fill else { return }
-            fill.isHidden = button.state != .on
-        }
-        update()
-        stateObservations.append(button.observe(\.state) { _, _ in update() })
-        if let cell = button.cell { stateObservations.append(cell.observe(\.state) { _, _ in update() }) }
     }
 
     /// Lays the buttons, the spinner and the status text out along the strip.
@@ -195,10 +174,6 @@ import AppKit
         for (item, x) in zip(right, rightXs) {
             item.button.frame = NSRect(x: x, y: buttonY, width: size, height: size)
             item.button.autoresizingMask = [.minXMargin, .maxYMargin]
-        }
-        for entry in stateFills {
-            entry.fill.frame = entry.button.frame
-            entry.fill.autoresizingMask = entry.button.autoresizingMask
         }
 
         var leftEdge = (leftXs.last.map { $0 + size } ?? 0)
@@ -312,15 +287,16 @@ import AppKit
                     popUp.item(at: 0)?.image = image
                 } else {
                     button.image = image
+                    // On (filter shown, edit mode on) the glyph turns clay; the buttons show alternateImage when on.
                     switch glyph {
-                    case .filter: button.alternateImage = SAClaudeGlyphs.image(.filterActive, tint: palette.icon)
+                    case .filter: button.alternateImage = SAClaudeGlyphs.image(.filterActive, tint: SAClaudeStatusChrome.clay)
+                    case .editMode: button.alternateImage = SAClaudeGlyphs.image(.editMode, tint: SAClaudeStatusChrome.clay)
                     default: button.alternateImage = image
                     }
                 }
             }
             SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
         }
-        for entry in stateFills { entry.fill.fillColour = palette.hover }
 
         if let search {
             searchFill.fillColour = palette.hover
