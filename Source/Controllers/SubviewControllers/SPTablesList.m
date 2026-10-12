@@ -173,6 +173,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if (sidebarPane) {
 		[SAClaudeSidebarChrome addSidebarBackground:sidebarPane];
 		[SAClaudeSidebarChrome addBarDivider:sidebarPane aboveView:toolbarAddButton];
+		[SAClaudeSidebarChrome setBarHeightInPane:sidebarPane belowView:tableListSplitView];
 	}
 
 	for (NSTableColumn *column in [tablesListView tableColumns]) {

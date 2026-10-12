@@ -181,6 +181,31 @@ extension SAClaudeSidebarChrome {
         SAClaudeHoverHighlighter.attach(to: button)
     }
 
+    /// The bottom bar's height: the same as the Query tab's strip beside it, so their top lines meet.
+    static let barHeight: CGFloat = 32
+
+    /// Makes the bottom bar `barHeight` tall: moves `split` (the view above the bar) up, centres the
+    /// bar's views in the bar, and puts the bar's divider on its top edge. Call after `addBarDivider`.
+    @objc(setBarHeightInPane:belowView:)
+    static func setBarHeight(in pane: NSView, below split: NSView) {
+        guard !pane.isFlipped, split.superview === pane else { return }
+        let oldBarTop = split.frame.minY
+        let barTop = pane.bounds.minY + barHeight
+        guard oldBarTop != barTop else { return }
+        let barViews = pane.subviews.filter { $0 !== split && !($0 is SAClaudeDividerLine) && $0.frame.maxY <= oldBarTop }
+
+        var splitFrame = split.frame
+        splitFrame.size.height -= barTop - splitFrame.minY
+        splitFrame.origin.y = barTop
+        guard splitFrame.height > 0 else { return }
+        split.frame = splitFrame
+
+        let centreY = pane.bounds.minY + barHeight / 2
+        for view in barViews { view.frame.origin.y = (centreY - view.frame.height / 2).rounded() }
+        // The Query tab's strip draws its line just inside its top edge; match it.
+        for line in pane.subviews.compactMap({ $0 as? SAClaudeDividerLine }) { line.frame.origin.y = barTop - 1 }
+    }
+
     /// Adds Claude's 1pt divider across `pane` just above the bottom bar
     /// (once), pinned to the bar so it stays put as the pane resizes.
     ///

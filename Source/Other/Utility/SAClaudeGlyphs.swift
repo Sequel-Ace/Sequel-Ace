@@ -176,11 +176,20 @@ import AppKit
         case .add:
             return [line(p(8, 3), p(8, 13)), line(p(3, 8), p(13, 8))]
         case .actions:
-            return [NSBezierPath(ovalIn: NSRect(x: 6, y: 6, width: 4, height: 4)),
-                    line(p(8, 1.8), p(8, 3.5)), line(p(8, 12.5), p(8, 14.2)),
-                    line(p(1.8, 8), p(3.5, 8)), line(p(12.5, 8), p(14.2, 8)),
-                    line(p(3.6, 3.6), p(4.8, 4.8)), line(p(11.2, 11.2), p(12.4, 12.4)),
-                    line(p(3.6, 12.4), p(4.8, 11.2)), line(p(11.2, 4.8), p(12.4, 3.6))]
+            // A cog: eight flat-topped teeth around a ring, and a hub.
+            func polar(_ radius: CGFloat, _ degrees: CGFloat) -> NSPoint {
+                let angle = degrees * .pi / 180
+                return p(8 + radius * cos(angle), 8 + radius * sin(angle))
+            }
+            let cog = NSBezierPath()
+            for tooth in 0..<8 {
+                let centre = CGFloat(tooth) * 45
+                let corners = [polar(4.6, centre - 15), polar(6.4, centre - 8), polar(6.4, centre + 8), polar(4.6, centre + 15)]
+                if tooth == 0 { cog.move(to: corners[0]) } else { cog.line(to: corners[0]) }
+                for corner in corners.dropFirst() { cog.line(to: corner) }
+            }
+            cog.close()
+            return [cog, NSBezierPath(ovalIn: NSRect(x: 6, y: 6, width: 4, height: 4))]
         case .refresh:
             let arc = NSBezierPath()
             arc.appendArc(withCenter: p(8, 8), radius: 5, startAngle: 30, endAngle: 330, clockwise: false)
