@@ -45,10 +45,18 @@ final class SAClaudeEditorOptionsPopover: NSObject, NSPopoverDelegate {
     }()
     private var monitors: [Any] = []
 
+    private static func appearance(isDark: Bool) -> NSAppearance? {
+        NSAppearance(named: isDark ? .darkAqua : .aqua)
+    }
+
     init(button: SAClaudeEditorOptionsButton) {
         self.button = button
         super.init()
         model.close = { [weak self] in self?.popover.performClose(nil) }
+        // The arrow and material follow a theme flip while the popover is open.
+        model.appearanceDidChange = { [weak self] isDark in
+            self?.popover.appearance = Self.appearance(isDark: isDark)
+        }
     }
 
     func toggle() {
@@ -56,17 +64,21 @@ final class SAClaudeEditorOptionsPopover: NSObject, NSPopoverDelegate {
         if popover.isShown { popover.performClose(nil); return }
         removeMonitors()
         model.load(menu: button.menu, textView: button.textView)
-        popover.appearance = model.isDark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
+        popover.appearance = Self.appearance(isDark: model.isDark)
+        model.optionHeld = NSEvent.modifierFlags.contains(.option)   // ⌥ may already be down
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: button.isFlipped ? .maxY : .minY)
         // ⌥ swaps Comment line for Comment query; a ⌘ shortcut (⌘R, ⌘]…) acts on the editor, so close first.
-        monitors.append(NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+        if let monitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged, handler: { [weak self] event in
             self?.model.optionHeld = event.modifierFlags.contains(.option)
             return event
-        } as Any)
-        monitors.append(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.modifierFlags.contains(.command) { self?.popover.performClose(nil) }
+        }) { monitors.append(monitor) }
+        if let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
+            guard let self, self.popover.isShown else { return event }
+            // Esc closes; swallow it, or the ⋯ menu's Completion List item (Esc) would also fire in the main window.
+            if event.keyCode == 53 { self.popover.performClose(nil); return nil }
+            if event.modifierFlags.contains(.command) { self.popover.performClose(nil) }
             return event
-        } as Any)
+        }) { monitors.append(monitor) }
     }
 
     func popoverDidClose(_ notification: Notification) {
@@ -97,6 +109,9 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
     @Published var optionHeld = false
     private(set) var isDark = true
     var close: () -> Void = {}
+    /// Called when the theme's light/dark nature flips, so the popover can follow while open.
+    var appearanceDidChange: ((Bool) -> Void)?
+    private var appliedTheme: SAClaudeThemeColours?
 
     private var items: [SAClaudeEditorOption: NSMenuItem] = [:]
     private var defaultsObserver: NSObjectProtocol?
@@ -138,8 +153,13 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
         let available = Set(items.filter { $0.value.isEnabled }.map(\.key))
         if available != enabled { enabled = available }
 
+        // This runs on every app-wide defaults write; only rebuild the colours when the theme changed.
         let theme = SAClaudeThemeColours.from(defaults: defaults)
-        isDark = SAClaudeGridChrome.isDark(theme.background)
+        guard theme != appliedTheme else { return }
+        appliedTheme = theme
+        let dark = SAClaudeGridChrome.isDark(theme.background)
+        let darkChanged = dark != isDark
+        isDark = dark
         let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
         colours = Colours(surface: Color(nsColor: surface),
                           text: Color(nsColor: theme.text),
@@ -148,6 +168,7 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
                           hover: Color(nsColor: SAClaudeEditorChrome.derivedColour(text: theme.text, background: surface, ratio: 0.08)),
                           tile: Color(nsColor: SAClaudeEditorChrome.derivedColour(text: theme.text, background: surface, ratio: 0.05)),
                           clay: Color(nsColor: SAClaudeStatusChrome.clay))
+        if darkChanged { appearanceDidChange?(dark) }
     }
 
     /// The menu item's shortcut, e.g. "⌘]", for tooltips.

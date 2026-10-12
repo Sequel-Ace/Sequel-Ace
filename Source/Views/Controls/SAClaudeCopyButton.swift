@@ -24,12 +24,16 @@ import AppKit
     private weak var table: SPCopyTable?
     var palette: SAClaudeEditorChrome.Palette? { didSet { needsDisplay = true } }
     var showsLabel = true { didSet { if showsLabel != oldValue { needsDisplay = true } } }
+    /// Called when the default action (and so the label slot, hence the preferred width) changed.
+    var preferredWidthDidChange: (() -> Void)?
 
     private var currentAction = SAClaudeQueryCopyAction.plain
     private var mainAvailable = false
     private var isShowingCopied = false
     private var copiedReset: DispatchWorkItem?
     private var hoveredPart: Part? { didSet { if hoveredPart != oldValue { needsDisplay = true } } }
+    private var isMenuOpen = false { didSet { if isMenuOpen != oldValue { needsDisplay = true } } }
+    private var ownTrackingArea: NSTrackingArea?
     private var footerItem = NSMenuItem()
     private var observers: [NSObjectProtocol] = []
 
@@ -63,10 +67,20 @@ import AppKit
 
         setAccessibilityHelp(NSLocalizedString("ClaudeCopyOptions", value: "Copy options", comment: "accessibility help of the query bar Copy button: its chevron lists the copy actions"))
 
-        target = self
-        action = #selector(copyDefault(_:))
+        // No target/action: SPComboPopupButton's setTarget: stores a strong reference, so `target = self`
+        // would retain the button forever. A main-part click (or Space) arrives in performClick(_:) instead.
 
         let centre = NotificationCenter.default
+        // NSMenu tracking swallows mouseExited, so follow the menu to draw the chevron's open state and re-read the hover.
+        // (menuWillOpen/menuDidClose are SPComboPopupButton's, as the menu delegate.)
+        observers.append(centre.addObserver(forName: NSMenu.didBeginTrackingNotification, object: menu, queue: .main) { [weak self] _ in
+            self?.isMenuOpen = true
+        })
+        observers.append(centre.addObserver(forName: NSMenu.didEndTrackingNotification, object: menu, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            self.isMenuOpen = false
+            self.hoveredPart = self.partUnderMouse()
+        })
         observers.append(centre.addObserver(forName: NSTableView.selectionDidChangeNotification, object: table, queue: .main) { [weak self] _ in self?.refreshState() })
         observers.append(centre.addObserver(forName: .SAClaudeCopyTableDidReload, object: table, queue: .main) { [weak self] _ in self?.refreshState() })
         observers.append(centre.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
@@ -80,6 +94,7 @@ import AppKit
 
     /// Re-reads the default, the row counts and the column definitions: enablement, ticks, footer, tooltip.
     private func refreshState() {
+        let previousAction = currentAction
         currentAction = SAClaudeQueryCopyAction.storedDefault(in: .standard)
         let total = table?.numberOfRows ?? 0
         let selected = table?.numberOfSelectedRows ?? 0
@@ -99,11 +114,21 @@ import AppKit
         }
         footerItem.title = SAClaudeQueryCopyAction.footer(selectedRows: selected, totalRows: total)
         needsDisplay = true
+        if currentAction != previousAction {
+            invalidateIntrinsicContentSize()
+            preferredWidthDidChange?()
+        }
     }
 
     // MARK: - Actions
 
-    @objc private func copyDefault(_ sender: Any?) {
+    /// A main-part click (SPComboPopupButtonCell calls this) or Space repeats the default action.
+    override func performClick(_ sender: Any?) {
+        guard isEnabled else { return }
+        copyDefault()
+    }
+
+    private func copyDefault() {
         guard mainAvailable else { NSSound.beep(); return }
         perform(currentAction)
     }
@@ -137,9 +162,9 @@ import AppKit
 
     // MARK: - Size
 
-    /// Wide enough for the widest label, so "Copied" and every action fit without moving the button.
+    /// Wide enough for the current action's label or "Copied", so the flash never moves the button.
     private var labelSlotWidth: CGFloat {
-        let labels = SAClaudeQueryCopyAction.allCases.map(\.shortLabel) + [SAClaudeQueryCopyAction.copiedLabel]
+        let labels = [currentAction.shortLabel, SAClaudeQueryCopyAction.copiedLabel]
         return labels.map { ceil(($0 as NSString).size(withAttributes: [.font: Self.labelFont]).width) }.max() ?? 0
     }
 
@@ -159,8 +184,10 @@ import AppKit
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
-        trackingAreas.filter { $0.owner === self }.forEach(removeTrackingArea)
-        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self))
+        if let ownTrackingArea { removeTrackingArea(ownTrackingArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self)
+        addTrackingArea(area)
+        ownTrackingArea = area
     }
 
     override func mouseMoved(with event: NSEvent) { hoveredPart = part(at: convert(event.locationInWindow, from: nil)) }
@@ -169,6 +196,13 @@ import AppKit
 
     private func part(at point: NSPoint) -> Part {
         point.x >= bounds.maxX - CGFloat(lineOffset) ? .chevron : .main
+    }
+
+    /// The part under the mouse right now, nil when it is outside the button.
+    private func partUnderMouse() -> Part? {
+        guard let window else { return nil }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        return bounds.contains(point) ? part(at: point) : nil
     }
 
     // MARK: - Drawing
@@ -185,11 +219,16 @@ import AppKit
         let shape = NSBezierPath(roundedRect: bounds, xRadius: SAClaudeStyle.barButtonRadius, yRadius: SAClaudeStyle.barButtonRadius)
         palette.hover.setFill()
         shape.fill()
-        if isEnabled, let hoveredPart {
+        if isEnabled {
+            // Hover or press fills the main part; hover or an open menu fills the chevron part.
+            let pressed = !isMenuOpen && (cell?.isHighlighted ?? false)
+            let fillMain = pressed || (!isMenuOpen && hoveredPart == .main)
+            let fillChevron = isMenuOpen || hoveredPart == .chevron
             NSGraphicsContext.saveGraphicsState()
             shape.addClip()
             SAClaudeEditorChrome.derivedColour(text: palette.buttonText, background: palette.hover, ratio: 0.08).setFill()
-            (hoveredPart == .main ? mainRect : chevronRect).fill()
+            if fillMain { mainRect.fill() }
+            if fillChevron { chevronRect.fill() }
             NSGraphicsContext.restoreGraphicsState()
         }
         palette.hairline.setFill()

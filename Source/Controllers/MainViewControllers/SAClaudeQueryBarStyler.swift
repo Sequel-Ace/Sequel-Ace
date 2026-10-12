@@ -82,6 +82,10 @@ import AppKit
             let copy = SAClaudeCopyButton.make(table: resultsTable)
             bar.addSubview(copy)
             styler.copyButton = copy
+            // A different default action changes the label slot, hence the width.
+            copy.preferredWidthDidChange = { [weak styler, weak bar] in
+                if let styler, let bar { styler.layoutButtons(in: bar) }
+            }
         }
 
         styler.applyPalette()
