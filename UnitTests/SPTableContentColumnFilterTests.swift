@@ -193,6 +193,24 @@ final class SARuleFilterDropBoxClickTests: XCTestCase {
         XCTAssertFalse(box.isShowingPreview)
         XCTAssertFalse(box.filterMenu()?.items.contains { $0.title == "Copy WHERE Clause" } ?? true)
     }
+
+    /// A defaults write on a background thread posts `UserDefaults.didChangeNotification` synchronously there. The
+    /// drop box observes it, and an observer that waits for the main queue blocked the writer while main waited
+    /// on that writer (a deadlock in the concurrent migration tests).
+    func testBackgroundDefaultsWriteDoesNotWaitForTheMainThread() {
+        let box = SPRuleFilterDropBox(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        let key = "SPRuleFilterDropBoxTests.backgroundWrite.\(UUID().uuidString)"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            UserDefaults.standard.set(true, forKey: key)
+            finished.signal()
+        }
+        // The main thread blocks here, as it does while waiting for concurrentPerform workers.
+        XCTAssertEqual(finished.wait(timeout: .now() + 2), .success)
+        withExtendedLifetime(box) {}
+    }
 }
 
 /// The row seeded when another table is selected starts unchecked: it is an empty
