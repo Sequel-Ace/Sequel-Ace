@@ -268,8 +268,15 @@ struct SAConnectionFormView: View {
                     title: Text("SSH Key", comment: "connection view : ssh key label"),
                     kind: .sshKey,
                     isEnabled: $model.sshKeyLocationEnabled,
-                    path: $model.info.sshKeyLocation
+                    path: $model.info.sshKeyLocation,
+                    // With an agent, a .pub file selects which agent key to offer.
+                    allowsPublicKey: SASSHAgentRelay.isAgentInEffect(connectionSource: model.info.sshAgentSource)
                 )
+                // Empty means "use the default from Preferences > Network".
+                SASSHAgentSourcePicker(source: $model.info.sshAgentSource, customPath: $model.info.sshAgentSocketPath,
+                                       includesUseDefault: true) {
+                    Text("SSH Agent", comment: "connection view : field label")
+                }
             }
 
             Section {
@@ -526,6 +533,7 @@ private struct SAOptionalFileRow: View {
     let kind: SAConnectionFileKind
     @Binding var isEnabled: Bool
     @Binding var path: String
+    var allowsPublicKey = false
 
     /// Same split as the form's validation alert: the Bool binds by key path.
     @State private var rejection: SAConnectionFileRejection?
@@ -590,7 +598,8 @@ private struct SAOptionalFileRow: View {
 
         // Reject a file of the wrong shape before storing it, so the failure
         // surfaces here rather than as an opaque connection error later.
-        if let rejection = SAConnectionFileValidator.rejection(forFileAt: url, kind: kind) {
+        if let rejection = SAConnectionFileValidator.rejection(forFileAt: url, kind: kind,
+                                                               allowingPublicKey: allowsPublicKey) {
             self.rejection = rejection
             isPresentingRejection = true
             return

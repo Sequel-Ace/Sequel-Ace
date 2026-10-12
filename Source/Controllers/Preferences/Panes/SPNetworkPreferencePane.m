@@ -132,6 +132,25 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
 
 
 #pragma mark -
+#pragma mark SSH agent
+
+- (void)awakeFromNib
+{
+	[super awakeFromNib];
+
+	// The pane's XIB has no SSH agent controls; the row and its sheet are Swift.
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		[SASSHAgentPreferences installRowInView:[self view] belowView:self.knownHostsChooser target:self action:@selector(showSSHAgentSettings:)];
+	});
+}
+
+- (IBAction)showSSHAgentSettings:(id)sender
+{
+	[SASSHAgentPreferences presentSettingsFromWindow:[[self view] window]];
+}
+
+#pragma mark -
 #pragma mark Custom SSH client methods
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context

@@ -3607,6 +3607,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
                 if ([connectionController sshRemoteSocketPath] && [[connectionController sshRemoteSocketPath] length]) [connection setObject:[connectionController sshRemoteSocketPath] forKey:@"sshRemoteSocketPath"];
+                if ([[connectionController sshAgentSource] length]) [connection setObject:[connectionController sshAgentSource] forKey:SPFavoriteSSHAgentSourceKey];
+                if ([[connectionController sshAgentSocketPath] length]) [connection setObject:[connectionController sshAgentSocketPath] forKey:SPFavoriteSSHAgentSocketPathKey];
                 break;
             case SPVaultConnection:
                 connectionType = @"SPVaultConnection";
@@ -3838,6 +3840,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
     if ([connection objectForKey:@"sshRemoteSocketPath"])    [connectionController setSshRemoteSocketPath:[connection objectForKey:@"sshRemoteSocketPath"]];
+    if ([connection objectForKey:SPFavoriteSSHAgentSourceKey])     [connectionController setSshAgentSource:[connection objectForKey:SPFavoriteSSHAgentSourceKey]];
+    if ([connection objectForKey:SPFavoriteSSHAgentSocketPathKey]) [connectionController setSshAgentSocketPath:[connection objectForKey:SPFavoriteSSHAgentSocketPathKey]];
 
     // Set Vault details if available
     if ([connection objectForKey:@"vault_host"])             [connectionController setVaultHost:[connection objectForKey:@"vault_host"]];

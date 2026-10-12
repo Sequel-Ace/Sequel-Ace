@@ -1,0 +1,24 @@
+# Sockets the Sequel Ace SSH agent helper may connect to.
+#
+# One path per line. "~" is your home folder. "*" matches any characters within
+# a single folder name. Lines starting with "#" are comments.
+#
+# Sequel Ace cannot change this file. To use an agent that is not listed, add
+# the path of its socket on a new line.
+
+# 1Password
+~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock
+~/.1password/agent.sock
+
+# macOS ssh-agent (SSH_AUTH_SOCK)
+/private/tmp/com.apple.launchd.*/Listeners
+/tmp/com.apple.launchd.*/Listeners
+/private/var/run/com.apple.launchd.*/Listeners
+/var/run/com.apple.launchd.*/Listeners
+
+# Secretive
+~/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+
+# Bitwarden
+~/.bitwarden-ssh-agent.sock
+~/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock

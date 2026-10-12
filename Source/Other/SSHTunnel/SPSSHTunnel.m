@@ -233,6 +233,16 @@ static unsigned short getRandomPort(void);
 }
 
 /**
+ * Sets the SSH agent this tunnel authenticates with (an SASSHAgentSource kind
+ * and, for a custom source, its socket). Leave unset for no agent.
+ */
+- (void)setAgentSource:(NSString *)theSource customSocketPath:(NSString *)thePath
+{
+	agentSource = [theSource copy];
+	agentCustomSocketPath = [thePath copy];
+}
+
+/**
  * Sets the path of an identity file, or public key file, to use when connecting.
  */
 - (BOOL)setKeyFilePath:(NSString *)thePath
@@ -482,6 +492,37 @@ static unsigned short getRandomPort(void);
             }
 		};
 
+		// The sandbox keeps ssh away from an SSH agent's socket, so an agent is
+		// reached through SASSHAgentRelay. Asked on every launch, so that a
+		// reconnect finds a relay as surely as a first connect does.
+		SASSHAgentLaunchPlan *agentPlan = nil;
+		if ([agentSource length]) {
+			NSError *agentError = nil;
+			agentPlan = [[SASSHAgentRelay shared] launchPlanForSource:agentSource
+			                                               customPath:agentCustomSocketPath ?: @""
+			                                                     host:sshHost
+			                                                     user:sshLogin ?: @""
+			                                                     port:sshPort
+			                                               hasKeyFile:(identityFilePath != nil)
+			                                                    error:&agentError];
+			if (!agentPlan) {
+				taskExitedUnexpectedly = YES;
+				[self setLastError:[agentError localizedDescription]];
+				[debugMessagesLock lock];
+				[debugMessages addObject:[NSString stringWithFormat:@"SSH agent: %@", [agentError localizedDescription]]];
+				[debugMessagesLock unlock];
+				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+				connectionState = SPMySQLProxyIdle;
+
+				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
+				// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
+				[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+
+				return;
+			}
+			if (![agentPlan isActive]) agentPlan = nil;
+		}
+
 		// Enable verbose mode for message parsing
 		[taskArguments addObject:@"-v"];
 
@@ -498,6 +539,9 @@ static unsigned short getRandomPort(void);
 			// existing masters without forwarding enabled and to isolate from interactive sessions.  Use a short
 			// hashed path to aid length limit issues.
 			NSString *pathString = [NSString stringWithFormat:@"%@@%@:%ld", sshLogin?sshLogin:@"", sshHost, (long)(sshPort?sshPort:0)];
+			// A master authenticated through one agent must not be shared with a
+			// connection that chose another agent, or none.
+			if (agentPlan) pathString = [pathString stringByAppendingFormat:@"|%@", [agentPlan targetPath]];
 			NSString *hashedString = [pathString.sha256Hash substringToIndex:8];
 			TA(@"-o",([NSString stringWithFormat:@"ControlPath=%@/SPSSH-%@", [NSFileManager temporaryDirectory], hashedString]));
 		}
@@ -602,6 +646,8 @@ static unsigned short getRandomPort(void);
 			TA(@"-o", @"ConnectTimeout=10");  // Add a shorter connect timeout
 		}
 
+		if (agentPlan) [taskArguments addObjectsFromArray:[agentPlan sshArguments]];
+
 		// Specify the port, host, and authentication details
 		if (sshPort) {
 			TA(@"-p", ([NSString stringWithFormat:@"%ld", (long)sshPort]));
@@ -631,6 +677,8 @@ static unsigned short getRandomPort(void);
 
 		// use default shell so ProxyJump commands run by ssh stay inside the sandbox
 		[taskEnvironment removeObjectForKey:@"SHELL"];
+		// A ProxyJump ssh does not see this ssh's -o options, only its environment
+		if (agentPlan) [taskEnvironment setObject:[agentPlan listenPath] forKey:@"SSH_AUTH_SOCK"];
 
 		[taskEnvironment safeSetObject:authenticationAppPath forKey:@"SSH_ASKPASS"];
 		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];

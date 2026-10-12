@@ -52,6 +52,8 @@
 	NSString *keychainAccount;
 	NSString *requestedPassphrase;
 	NSString *identityFilePath;
+	NSString *agentSource;
+	NSString *agentCustomSocketPath;
 	NSMutableArray *debugMessages;
 	NSLock *debugMessagesLock;
 	NSInteger sshPort;
@@ -100,6 +102,7 @@
 - (BOOL)setPassword:(NSString *)thePassword;
 - (BOOL)setKeyFilePath:(NSString *)thePath;
 - (void)setRemoteSocketPath:(NSString *)thePath;
+- (void)setAgentSource:(NSString *)theSource customSocketPath:(NSString *)thePath;
 - (SPMySQLConnectionProxyState)state;
 - (NSString *)lastError;
 - (NSString *)debugMessages;

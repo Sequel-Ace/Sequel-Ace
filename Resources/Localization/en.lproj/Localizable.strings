@@ -44,6 +44,15 @@
 /* text showing how many rows matched filter */
 "%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
 
+/* network preferences : ssh agent summary; %@ is the agent name */
+"%@ — helper not installed" = "%@ — helper not installed";
+
+/* network preferences : ssh agent summary; %@ is the agent name */
+"%@ — helper update required" = "%@ — helper update required";
+
+/* network preferences : ssh agent summary; %@ is the agent name */
+"%@ — relaunch to finish" = "%@ — relaunch to finish";
+
 /* text showing how many rows have been affected by a single query */
 "%@; %ld rows affected" = "%1$@; %2$ld rows affected";
 
@@ -125,20 +134,98 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* connection view : ssh : public key chosen but no ssh agent in use */
+"A public key can only be used together with an SSH agent. Choose the private key instead — the file without the .pub extension — or choose an SSH agent for this connection." = "A public key can only be used together with an SSH agent. Choose the private key instead — the file without the .pub extension — or choose an SSH agent for this connection.";
+
+/* ssh agent source : custom socket path field label */
+"Agent Socket" = "Agent Socket";
+
+/* ssh agent source : whatever ssh itself would use */
+"Automatic (from SSH config)" = "Automatic (from SSH config)";
+
+/* network preferences : ssh agent settings button */
+"Configure…" = "Configure…";
+
+/* SSH agent error; %@ is the reason */
+"Could not read the SSH config to find the SSH agent. %@" = "Could not read the SSH config to find the SSH agent. %@";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
+
+/* ssh agent source : user supplied socket path */
+"Custom Socket" = "Custom Socket";
+
+/* ssh agent settings : default source label */
+"Default agent:" = "Default agent:";
+
+/* ssh agent settings : close button */
+"Done" = "Done";
 
 /* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
 "Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%1$@', but dropping '%2$@' failed: %3$@";
 
+/* ssh agent settings : helper section title */
+"Helper" = "Helper";
+
+/* ssh agent helper install panel button */
+"Install" = "Install";
+
+/* SSH agent helper button */
+"Install Helper…" = "Install Helper…";
+
+/* SSH agent helper state */
+"Installed" = "Installed";
+
+/* SSH agent helper state */
+"Installed. Relaunch Sequel Ace to start using it." = "Installed. Relaunch Sequel Ace to start using it.";
+
+/* ssh agent settings : postpone relaunch button */
+"Later" = "Later";
+
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
 "Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
+
+/* SSH agent error */
+"No system SSH agent is available (SSH_AUTH_SOCK is not set)." = "No system SSH agent is available (SSH_AUTH_SOCK is not set).";
+
+/* SSH agent helper state */
+"Not installed" = "Not installed";
+
+/* ssh agent source : no agent */
+"Off" = "Off";
 
 /* rename database refused because GRANTs or partial revokes already exist for the target name (MySQL keeps grants for databases that do not exist); %1$@ target database, %2$@ lists them as `db`.* or `table` for 'user'@'host', or partial revoke on `db`.* for 'user'@'host' */
 "Privileges are already granted or partially revoked for the new name '%@' (%@); the moved tables and views would come under them. Nothing was changed." = "Privileges are already granted or partially revoked for the new name '%1$@' (%2$@); the moved tables and views would come under them. Nothing was changed.";
 
 /* rename database: querying information_schema failed; %1$@ source database, %2$@ server error */
 "Reading the objects of the database '%@' failed: %@ Nothing was changed." = "Reading the objects of the database '%1$@' failed: %2$@ Nothing was changed.";
+
+/* SSH agent error */
+"Reading the SSH config to find the SSH agent took too long." = "Reading the SSH config to find the SSH agent took too long.";
+
+/* ssh agent settings : relaunch button */
+"Relaunch" = "Relaunch";
+
+/* ssh agent settings : relaunch prompt title */
+"Relaunch Sequel Ace to finish installing the helper?" = "Relaunch Sequel Ace to finish installing the helper?";
+
+/* ssh agent settings : introduction */
+"Sequel Ace can authenticate SSH connections with keys held by an SSH agent such as 1Password, Secretive or the macOS agent. Each connection can override the default chosen here." = "Sequel Ace can authenticate SSH connections with keys held by an SSH agent such as 1Password, Secretive or the macOS agent. Each connection can override the default chosen here.";
+
+/* ssh agent settings : helper explanation */
+"Sequel Ace is sandboxed and cannot reach an SSH agent by itself. A small helper script, which you install once, passes connections on to the agents listed in its ssh-agent-relay.allow file. Your agent may show the request as coming from “com.apple.foundation.UserScriptService”, the macOS service that runs the helper." = "Sequel Ace is sandboxed and cannot reach an SSH agent by itself. A small helper script, which you install once, passes connections on to the agents listed in its ssh-agent-relay.allow file. Your agent may show the request as coming from “com.apple.foundation.UserScriptService”, the macOS service that runs the helper.";
+
+/* ssh agent settings : title */
+"SSH Agent" = "SSH Agent";
+
+/* ssh agent settings : install error title */
+"SSH Agent Helper" = "SSH Agent Helper";
+
+/* network preferences : ssh agent row label */
+"SSH Agent:" = "SSH Agent:";
+
+/* ssh agent source : macOS ssh-agent */
+"System Agent" = "System Agent";
 
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
@@ -161,8 +248,80 @@
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
 
+/* ssh agent helper install error */
+"The helper can only be installed in the folder the panel opens with. Try again without changing the folder." = "The helper can only be installed in the folder the panel opens with. Try again without changing the folder.";
+
+/* SSH agent relay error */
+"The SSH agent helper cannot run on this version of macOS." = "The SSH agent helper cannot run on this version of macOS.";
+
+/* ssh agent helper install error; %@ is the reason */
+"The SSH agent helper could not be installed. %@" = "The SSH agent helper could not be installed. %@";
+
+/* SSH agent relay error; %@ is a path */
+"The SSH agent helper could not be started because something else is in the way of its socket: %@" = "The SSH agent helper could not be started because something else is in the way of its socket: %@";
+
+/* SSH agent relay error */
+"The SSH agent helper could not be started because the path to its socket is too long." = "The SSH agent helper could not be started because the path to its socket is too long.";
+
+/* SSH agent relay error; %@ is the system's reason */
+"The SSH agent helper could not be started: %@" = "The SSH agent helper could not be started: %@";
+
+/* SSH agent relay error; %@ is the helper's own message */
+"The SSH agent helper could not start. %@" = "The SSH agent helper could not start. %@";
+
+/* SSH agent relay error */
+"The SSH agent helper did not start in time." = "The SSH agent helper did not start in time.";
+
+/* SSH agent relay error */
+"The SSH agent helper folder could not be found." = "The SSH agent helper folder could not be found.";
+
+/* ssh agent settings : relaunch prompt message */
+"The SSH agent helper is installed, but Sequel Ace will not use it until it has been relaunched. Open connections will be closed." = "The SSH agent helper is installed, but Sequel Ace will not use it until it has been relaunched. Open connections will be closed.";
+
+/* SSH agent relay error; %@ is a socket path */
+"The SSH agent helper is not allowed to connect to this socket. To allow it, add this line to ssh-agent-relay.allow:\n\n%@" = "The SSH agent helper is not allowed to connect to this socket. To allow it, add this line to ssh-agent-relay.allow:\n\n%@";
+
+/* SSH agent relay error */
+"The SSH agent helper needs to be updated. Update it in Preferences > Network." = "The SSH agent helper needs to be updated. Update it in Preferences > Network.";
+
+/* SSH agent relay error; %@ is the helper's own message */
+"The SSH agent helper stopped unexpectedly. %@" = "The SSH agent helper stopped unexpectedly. %@";
+
+/* SSH agent relay error */
+"The SSH agent helper was just installed. Relaunch Sequel Ace to start using it." = "The SSH agent helper was just installed. Relaunch Sequel Ace to start using it.";
+
+/* SSH agent relay error; %@ is the system's reason */
+"The SSH agent helper's socket could not be created: %@" = "The SSH agent helper's socket could not be created: %@";
+
+/* SSH agent error; %@ is a path */
+"The SSH agent socket path must be absolute: %@" = "The SSH agent socket path must be absolute: %@";
+
+/* SSH agent relay error; %@ is a socket path */
+"The SSH agent's socket was not found. Is the agent running?\n\n%@" = "The SSH agent's socket was not found. Is the agent running?\n\n%@";
+
+/* SSH agent error; %@ is a config value */
+"The SSH config sets IdentityAgent to %@, which Sequel Ace cannot resolve. Choose the agent explicitly instead of Automatic." = "The SSH config sets IdentityAgent to %@, which Sequel Ace cannot resolve. Choose the agent explicitly instead of Automatic.";
+
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
 "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
+
+/* SSH agent error */
+"This connection uses a custom SSH agent socket, but no socket path is set." = "This connection uses a custom SSH agent socket, but no socket path is set.";
+
+/* SSH agent relay error */
+"This connection uses an SSH agent, but the SSH agent helper is not installed. Install it in Preferences > Network." = "This connection uses an SSH agent, but the SSH agent helper is not installed. Install it in Preferences > Network.";
+
+/* ssh agent helper install panel message */
+"To install the SSH agent helper, Sequel Ace needs your permission to add it to this folder. Select the folder shown and click Install." = "To install the SSH agent helper, Sequel Ace needs your permission to add it to this folder. Select the folder shown and click Install.";
+
+/* SSH agent helper button */
+"Update Helper…" = "Update Helper…";
+
+/* SSH agent helper state */
+"Update required" = "Update required";
+
+/* ssh agent source : follow the default from preferences */
+"Use Default" = "Use Default";
 
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
 "Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
