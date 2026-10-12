@@ -4652,3 +4652,69 @@
 
 /* Query Console: accessibility name of the options menu button in the toolbar */
 "Console options" = "Console options";
+
+/* Query bar Copy button menu: copy the result rows as tab-separated text */
+"ClaudeCopyMenuPlain" = "Copy";
+
+/* Query bar Copy button menu: copy the result rows with a header row of column names */
+"ClaudeCopyMenuWithColumnNames" = "Copy with column names";
+
+/* Query bar Copy button menu: copy the result rows as SQL INSERT statements */
+"ClaudeCopyMenuSQLInsert" = "Copy as SQL INSERT";
+
+/* Query bar Copy button menu: copy the result rows as SQL INSERT statements without the auto-increment column */
+"ClaudeCopyMenuSQLInsertNoAutoInc" = "Copy as SQL INSERT (no auto_inc)";
+
+/* Query bar Copy button label: copies the result rows */
+"ClaudeCopyLabelPlain" = "Copy";
+
+/* Query bar Copy button label: copies the result rows with column names (keep short) */
+"ClaudeCopyLabelWithColumnNames" = "Copy with names";
+
+/* Query bar Copy button label: copies the result rows as SQL INSERT statements (keep short) */
+"ClaudeCopyLabelSQLInsert" = "Copy as INSERT";
+
+/* Query bar Copy button label: copies the result rows as SQL INSERT without the auto-increment column (keep short) */
+"ClaudeCopyLabelSQLInsertNoAutoInc" = "Copy INSERT (no auto_inc)";
+
+/* Query bar Copy button label shown briefly after copying */
+"ClaudeCopyLabelCopied" = "Copied";
+
+/* Query bar Copy button tooltip: one selected result row will be copied */
+"ClaudeCopyScopeOneSelected" = "Copy 1 selected row";
+
+/* Query bar Copy button tooltip: this many selected result rows will be copied */
+"ClaudeCopyScopeSelected" = "Copy %ld selected rows";
+
+/* Query bar Copy button tooltip: the result's only row will be copied */
+"ClaudeCopyScopeOneAll" = "Copy 1 row";
+
+/* Query bar Copy button tooltip: all of this many result rows will be copied */
+"ClaudeCopyScopeAll" = "Copy %ld rows";
+
+/* Query bar Copy button tooltip suffix (leading space): rows are copied with column names */
+"ClaudeCopyScopeSuffixColumnNames" = " with column names";
+
+/* Query bar Copy button tooltip suffix (leading space): rows are copied as SQL INSERT */
+"ClaudeCopyScopeSuffixSQLInsert" = " as SQL INSERT";
+
+/* Query bar Copy button tooltip suffix (leading space): rows are copied as SQL INSERT without the auto-increment column */
+"ClaudeCopyScopeSuffixSQLInsertNoAutoInc" = " as SQL INSERT (no auto_inc)";
+
+/* Query bar Copy button menu footer: one selected row will be copied */
+"ClaudeCopyFooterOneSelected" = "Copies 1 selected row";
+
+/* Query bar Copy button menu footer: this many selected rows will be copied */
+"ClaudeCopyFooterSelected" = "Copies %ld selected rows";
+
+/* Query bar Copy button menu footer: no selection, so the result's only row will be copied */
+"ClaudeCopyFooterOneAll" = "Copies 1 row · nothing selected";
+
+/* Query bar Copy button menu footer: no selection, so all of this many rows will be copied */
+"ClaudeCopyFooterAll" = "Copies %ld rows · nothing selected";
+
+/* Query bar Copy button tooltip when the result has no rows */
+"ClaudeCopyUnavailableNoRows" = "No rows to copy";
+
+/* Query bar Copy button tooltip when the result has no column definitions to build SQL INSERT statements from */
+"ClaudeCopyUnavailableNoColumns" = "SQL INSERT needs a result with column details";

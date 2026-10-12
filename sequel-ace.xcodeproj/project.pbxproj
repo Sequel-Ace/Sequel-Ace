@@ -23,8 +23,11 @@
 		718CDD5764F7B8A54517F261 /* SAClaudeSidebarChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */; };
 		A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */; };
 		B7C2D1E01C3D4E5F70819203 /* SAClaudeStatusChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */; };
+		D02C237055644956AA3EAE9E /* SAClaudeQueryCopyAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */; };
 		B7C2D1E01C3D4E5F70819204 /* SAClaudeStatusChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */; };
+		6F820F81C5F30F07306DCFB8 /* SAClaudeQueryCopyAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */; };
 		B7C2D1E01C3D4E5F70819205 /* SAClaudeStatusChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C2D1E01C3D4E5F70819202 /* SAClaudeStatusChromeTests.swift */; };
+		5EA285706FFE7F0CE3AA88D9 /* SAClaudeQueryCopyActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCE28E8C0432DCC01E291C9 /* SAClaudeQueryCopyActionTests.swift */; };
 		A6D2F1E11B3C4D5E6F708192 /* SAClaudeGridChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */; };
 		C2A000012B3C4D5E6F708101 /* SAClaudeConsoleTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */; };
 		C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */; };
@@ -972,7 +975,9 @@
 		38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSidebarChromeTests.swift; sourceTree = "<group>"; };
 		A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorChromeTests.swift; sourceTree = "<group>"; };
 		B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStatusChrome.swift; sourceTree = "<group>"; };
+		53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryCopyAction.swift; sourceTree = "<group>"; };
 		B7C2D1E01C3D4E5F70819202 /* SAClaudeStatusChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStatusChromeTests.swift; sourceTree = "<group>"; };
+		EDCE28E8C0432DCC01E291C9 /* SAClaudeQueryCopyActionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryCopyActionTests.swift; sourceTree = "<group>"; };
 		A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGridChromeTests.swift; sourceTree = "<group>"; };
 		C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleTextTests.swift; sourceTree = "<group>"; };
 		C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleToolbarLayoutTests.swift; sourceTree = "<group>"; };
@@ -3045,6 +3050,7 @@
 				E397B4F30CD81A95F8BD48C9 /* SAClaudeSidebarChrome.swift */,
 				A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */,
 				B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */,
+				53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */,
 				A6D2F1E21B3C4D5E6F7081A1 /* SAClaudeGridChrome.swift */,
 				C2A000042B3C4D5E6F708104 /* SAClaudeConsoleText.swift */,
 				C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */,
@@ -3152,6 +3158,7 @@
 				38E7CF2BC94D519B574D975D /* SAClaudeSidebarChromeTests.swift */,
 				A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */,
 				B7C2D1E01C3D4E5F70819202 /* SAClaudeStatusChromeTests.swift */,
+				EDCE28E8C0432DCC01E291C9 /* SAClaudeQueryCopyActionTests.swift */,
 				A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */,
 				C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */,
 				C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */,
@@ -4040,11 +4047,13 @@
 				BF671571BFEBD88F7DB7F406 /* SAClaudeSidebarChrome.swift in Sources */,
 				A5C1E0D31A2B3C4D5E6F7084 /* SAClaudeEditorChrome.swift in Sources */,
 				B7C2D1E01C3D4E5F70819204 /* SAClaudeStatusChrome.swift in Sources */,
+				6F820F81C5F30F07306DCFB8 /* SAClaudeQueryCopyAction.swift in Sources */,
 				A6D2F1E31B3C4D5E6F7081A2 /* SAClaudeGridChrome.swift in Sources */,
 				C2A000032B3C4D5E6F708103 /* SAClaudeConsoleText.swift in Sources */,
 				C2A000092B3C4D5E6F708109 /* SAClaudeConsoleToolbarLayout.swift in Sources */,
 				A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */,
 				B7C2D1E01C3D4E5F70819205 /* SAClaudeStatusChromeTests.swift in Sources */,
+				5EA285706FFE7F0CE3AA88D9 /* SAClaudeQueryCopyActionTests.swift in Sources */,
 				A6D2F1E11B3C4D5E6F708192 /* SAClaudeGridChromeTests.swift in Sources */,
 				C2A000012B3C4D5E6F708101 /* SAClaudeConsoleTextTests.swift in Sources */,
 				C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */,
@@ -4450,6 +4459,7 @@
 				9126CC1CEF2EA1DFE938CDDD /* SAClaudeSidebarChrome.swift in Sources */,
 				A5C1E0D21A2B3C4D5E6F7083 /* SAClaudeEditorChrome.swift in Sources */,
 				B7C2D1E01C3D4E5F70819203 /* SAClaudeStatusChrome.swift in Sources */,
+				D02C237055644956AA3EAE9E /* SAClaudeQueryCopyAction.swift in Sources */,
 				A6D2F1E41B3C4D5E6F7081A3 /* SAClaudeGridChrome.swift in Sources */,
 				C2A000052B3C4D5E6F708105 /* SAClaudeConsoleText.swift in Sources */,
 				C2A0000A2B3C4D5E6F70810A /* SAClaudeConsoleToolbarLayout.swift in Sources */,
