@@ -161,21 +161,33 @@ enum SARuleFilterDropBoxClickPolicy {
 
     /// The editor theme's palette, resolved under this view's appearance; the colours below follow it.
     private var palette = SAClaudeEditorChrome.palette(from: .standard)
+    /// The idle dashed outline, derived from the same theme text and background as `palette`.
+    private var dropStroke = SPRuleFilterDropBox.dropStroke(from: .standard)
     private var defaultsObserver: NSObjectProtocol?
 
     /// Re-derives the palette (the editor theme and the appearance can both change it) and recolours the
     /// label, the chevron and the outline.
     private func refreshPalette() {
         var resolved: SAClaudeEditorChrome.Palette?
+        var resolvedStroke: NSColor?
         effectiveAppearance.performAsCurrentDrawingAppearance {
             resolved = SAClaudeEditorChrome.palette(from: .standard)
+            resolvedStroke = Self.dropStroke(from: .standard)
         }
-        guard let resolved else { return }
+        guard let resolved, let resolvedStroke else { return }
         label.textColor = resolved.icon
         menuIndicator.contentTintColor = resolved.icon
-        guard resolved != palette else { return }
+        guard resolved != palette || resolvedStroke != dropStroke else { return }
         palette = resolved
+        dropStroke = resolvedStroke
         needsDisplay = true
+    }
+
+    /// The outline colour for the editor's current theme: text read the way `SAClaudeEditorChrome.palette(from:)` reads it.
+    private static func dropStroke(from defaults: UserDefaults) -> NSColor {
+        let text = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.textColourKey)) ?? .textColor
+        let background = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.backgroundColourKey)) ?? .textBackgroundColor
+        return SAClaudeFilterChrome.dropStroke(text: text, background: background)
     }
 
     override public func viewDidChangeEffectiveAppearance() {
@@ -302,9 +314,9 @@ enum SARuleFilterDropBoxClickPolicy {
             path.lineWidth = 1.5
             path.stroke()
         } else {
-            // Subtle dashed hairline - the standard empty-placeholder
-            // idiom for a drop zone.
-            palette.hairline.setStroke()
+            // Dashed outline - the standard empty-placeholder idiom for a
+            // drop zone - bright enough to see in dark mode.
+            dropStroke.setStroke()
             path.lineWidth = 1.0
             path.setLineDash([4.0, 3.0], count: 2, phase: 0)
             path.stroke()

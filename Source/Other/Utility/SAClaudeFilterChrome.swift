@@ -21,6 +21,14 @@ enum SAClaudeFilterChrome {
         SAClaudeEditorChrome.derivedColour(text: text, background: background, ratio: 0.035)
     }
 
+    /// How far the idle drop-zone outline sits from the background towards the text; brighter than the
+    /// palette hairline (0.08), which was invisible in dark mode.
+    static let dropStrokeRatio: CGFloat = 0.30
+
+    static func dropStroke(text: NSColor, background: NSColor) -> NSColor {
+        SAClaudeEditorChrome.derivedColour(text: text, background: background, ratio: dropStrokeRatio)
+    }
+
     static func dropHoverFill(background: NSColor) -> NSColor {
         SAClaudeEditorChrome.derivedColour(text: SAClaudeStatusChrome.clay, background: background, ratio: 0.12)
     }

@@ -217,7 +217,7 @@ import AppKit
             guard SAClaudeFilterCells.installCellDrawing(on: button) else { return }
             button.isBordered = false
             button.imagePosition = .imageOnly
-            let image = SAClaudeGlyphs.image(glyph, tint: palette.icon)
+            let image = SAClaudeGlyphs.image(glyph, tint: palette.buttonText)
             button.image = image
             button.alternateImage = image
             SAClaudeHoverHighlighter.attach(to: button)
@@ -274,7 +274,7 @@ import AppKit
         if let add = addFilterButton, SAClaudeFilterCells.installCellDrawing(on: add) {
             add.isBordered = false
             add.imagePosition = .imageLeading
-            let image = SAClaudeGlyphs.image(.add, tint: palette.icon)
+            let image = SAClaudeGlyphs.image(.add, tint: palette.buttonText)
             add.image = image
             add.alternateImage = image
             let style = NSMutableParagraphStyle()

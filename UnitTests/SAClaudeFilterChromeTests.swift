@@ -28,6 +28,15 @@ final class SAClaudeFilterChromeTests: XCTestCase {
         XCTAssertLessThan(r, 0.2)
     }
 
+    func testDropStrokeIsBrighterThanTheHairline() {
+        let white = NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)
+        let black = NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 1)
+        let stroke = C.dropStroke(text: white, background: black)
+        XCTAssertEqual(rgb(stroke).0, 0.30, accuracy: 0.01)
+        let hairline = SAClaudeEditorChrome.palette(text: white, background: black).hairline
+        XCTAssertGreaterThan(rgb(stroke).0, rgb(hairline).0)
+    }
+
     func testControlFrameIsCentred() {
         let frame = C.controlFrame(in: NSRect(x: 10, y: 0, width: 120, height: 32))
         XCTAssertEqual(frame, NSRect(x: 10, y: 4, width: 120, height: 24))
