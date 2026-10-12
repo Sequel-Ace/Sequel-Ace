@@ -419,7 +419,7 @@
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
 	// The Table information header gets 6pt more than the 24pt rows; the activities pane keeps 25.
-	return (row == 0 ? (tableView == infoTable ? 31 : 25) : [tableView rowHeight]);
+	return (row == 0 ? (tableView == infoTable ? 36 : 25) : [tableView rowHeight]);
 }
 
 /**

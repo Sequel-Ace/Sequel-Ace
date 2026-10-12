@@ -17,7 +17,14 @@ import AppKit
 
     override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
         guard let parts = SAClaudeInfoRowLayout.parts(of: stringValue) else {
-            super.drawInterior(withFrame: cellFrame, in: controlView)
+            // The header and single-line rows: centred vertically in their row (a cell draws at the top).
+            let textHeight = ceil(attributedStringValue.size().height)
+            var centred = cellFrame
+            if textHeight > 0, textHeight < cellFrame.height {
+                centred.origin.y = (cellFrame.midY - textHeight / 2).rounded()
+                centred.size.height = textHeight
+            }
+            super.drawInterior(withFrame: centred, in: controlView)
             return
         }
         let labelAttributes: [NSAttributedString.Key: Any] = [.font: Self.labelFont, .foregroundColor: SAClaudeStyle.textMuted]
