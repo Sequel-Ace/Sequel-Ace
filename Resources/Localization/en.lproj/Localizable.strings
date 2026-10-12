@@ -4827,6 +4827,30 @@
 /* accessibility name of the history forward arrow */
 "ClaudeToolbarGlyphForward" = "Forward";
 
+/* accessibility name of the remove icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphRemove" = "Remove";
+
+/* accessibility name of the duplicate icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphDuplicate" = "Duplicate";
+
+/* accessibility name of the edit mode icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphEditMode" = "Edit mode";
+
+/* accessibility name of the filter icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphFilter" = "Filter";
+
+/* accessibility name of the filter icon in a table tab's bottom bar when a filter is applied */
+"ClaudeTabBarGlyphFilterActive" = "Filter (active)";
+
+/* accessibility name of the columns icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphColumns" = "Columns";
+
+/* accessibility name of the indexes icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphIndexes" = "Indexes";
+
+/* accessibility name of the page options icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphPageOptions" = "Page options";
+
 /* View ▸ Toolbar submenu: show/hide the database picker */
 "ClaudeToolbarMenuDatabase" = "Database";
 

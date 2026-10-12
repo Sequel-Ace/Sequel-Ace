@@ -13,6 +13,7 @@ import AppKit
 @objc enum SAClaudeGlyph: Int {
     case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history, copy, save, clear, field, keyword
     case structure, relations, triggers, info, query, recordView, users, console, clearConsole, chevronLeft, chevronRight
+    case remove, duplicate, editMode, filter, filterActive, columns, indexes, pageOptions
 }
 
 @objc final class SAClaudeGlyphs: NSObject {
@@ -26,7 +27,8 @@ import AppKit
         case .procedure: return SAClaudeStyle.tintProcedure
         case .function: return SAClaudeStyle.tintFunction
         case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear, .field, .keyword,
-             .structure, .relations, .triggers, .info, .query, .recordView, .users, .console, .clearConsole, .chevronLeft, .chevronRight:
+             .structure, .relations, .triggers, .info, .query, .recordView, .users, .console, .clearConsole, .chevronLeft, .chevronRight,
+             .remove, .duplicate, .editMode, .filter, .filterActive, .columns, .indexes, .pageOptions:
             return SAClaudeStyle.textMuted
         }
     }
@@ -62,6 +64,14 @@ import AppKit
         case .clearConsole: return NSLocalizedString("ClaudeToolbarGlyphClearConsole", value: "Clear console", comment: "accessibility name of the clear console toolbar icon")
         case .chevronLeft: return NSLocalizedString("ClaudeToolbarGlyphBack", value: "Back", comment: "accessibility name of the history back arrow")
         case .chevronRight: return NSLocalizedString("ClaudeToolbarGlyphForward", value: "Forward", comment: "accessibility name of the history forward arrow")
+        case .remove: return NSLocalizedString("ClaudeTabBarGlyphRemove", value: "Remove", comment: "accessibility name of the remove icon in a table tab's bottom bar")
+        case .duplicate: return NSLocalizedString("ClaudeTabBarGlyphDuplicate", value: "Duplicate", comment: "accessibility name of the duplicate icon in a table tab's bottom bar")
+        case .editMode: return NSLocalizedString("ClaudeTabBarGlyphEditMode", value: "Edit mode", comment: "accessibility name of the edit mode icon in a table tab's bottom bar")
+        case .filter: return NSLocalizedString("ClaudeTabBarGlyphFilter", value: "Filter", comment: "accessibility name of the filter icon in a table tab's bottom bar")
+        case .filterActive: return NSLocalizedString("ClaudeTabBarGlyphFilterActive", value: "Filter (active)", comment: "accessibility name of the filter icon in a table tab's bottom bar when a filter is applied")
+        case .columns: return NSLocalizedString("ClaudeTabBarGlyphColumns", value: "Columns", comment: "accessibility name of the columns icon in a table tab's bottom bar")
+        case .indexes: return NSLocalizedString("ClaudeTabBarGlyphIndexes", value: "Indexes", comment: "accessibility name of the indexes icon in a table tab's bottom bar")
+        case .pageOptions: return NSLocalizedString("ClaudeTabBarGlyphPageOptions", value: "Page options", comment: "accessibility name of the page options icon in a table tab's bottom bar")
         }
     }
 
@@ -278,6 +288,31 @@ import AppKit
             return [line(p(9.5, 4), p(6, 8)), line(p(6, 8), p(9.5, 12))]
         case .chevronRight:
             return [line(p(6.5, 4), p(10, 8)), line(p(10, 8), p(6.5, 12))]
+        case .remove:
+            return [line(p(3.5, 8), p(12.5, 8))]
+        case .duplicate:
+            return [NSBezierPath(roundedRect: NSRect(x: 5.5, y: 5.5, width: 8, height: 8), xRadius: 1.5, yRadius: 1.5),
+                    line(p(2.5, 10.5), p(2.5, 3.5)), line(p(2.5, 3.5), p(3.5, 2.5)), line(p(3.5, 2.5), p(10.5, 2.5)),
+                    line(p(9.5, 7.5), p(9.5, 11.5)), line(p(7.5, 9.5), p(11.5, 9.5))]
+        case .editMode:
+            let pencil = NSBezierPath()
+            pencil.move(to: p(3, 13)); pencil.line(to: p(3.5, 10.5)); pencil.line(to: p(10.5, 3.5))
+            pencil.line(to: p(12.5, 5.5)); pencil.line(to: p(5.5, 12.5)); pencil.close()
+            return [pencil, line(p(9, 5), p(11, 7))]
+        case .filter, .filterActive:
+            let funnel = NSBezierPath()
+            funnel.move(to: p(2.5, 3.5)); funnel.line(to: p(13.5, 3.5)); funnel.line(to: p(9.2, 8.5))
+            funnel.line(to: p(9.2, 12.5)); funnel.line(to: p(6.8, 13.5)); funnel.line(to: p(6.8, 8.5)); funnel.close()
+            return glyph == .filterActive ? [funnel, NSBezierPath(ovalIn: NSRect(x: 11.5, y: 10, width: 3, height: 3))] : [funnel]
+        case .columns:
+            return [NSBezierPath(roundedRect: NSRect(x: 2.5, y: 3, width: 11, height: 10), xRadius: 1.5, yRadius: 1.5),
+                    line(p(6.2, 3), p(6.2, 13)), line(p(9.8, 3), p(9.8, 13))]
+        case .indexes:
+            return [line(p(3, 4.5), p(13, 4.5)), line(p(3, 8), p(10, 8)), line(p(3, 11.5), p(7, 11.5)),
+                    line(p(12, 8.5), p(12, 13)), line(p(10.5, 11.5), p(12, 13)), line(p(13.5, 11.5), p(12, 13))]
+        case .pageOptions:
+            return [NSBezierPath(roundedRect: NSRect(x: 3, y: 2.5, width: 10, height: 11), xRadius: 1.5, yRadius: 1.5),
+                    line(p(5.5, 6), p(10.5, 6)), line(p(5.5, 8.5), p(10.5, 8.5)), line(p(5.5, 11), p(8.5, 11))]
         }
     }
 }
