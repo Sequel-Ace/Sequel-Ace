@@ -71,6 +71,37 @@ import AppKit
     override func mouseMoved(with event: NSEvent) { super.mouseMoved(with: event); renderer.mouseMoved(event) }
     override func mouseExited(with event: NSEvent) { super.mouseExited(with: event); renderer.mouseExited() }
     override func scrollWheel(with event: NSEvent) { super.scrollWheel(with: event); renderer.scrolled() }
-    override func reloadData() { renderer.rowsReloaded(); super.reloadData() }
+    override func reloadData() {
+        renderer.rowsReloaded()
+        super.reloadData()
+        fitColumnsToContent()
+    }
+
+    // MARK: Column widths
+
+    /// Padding added to a column's widest content (cell insets and breathing room).
+    private static let columnPadding: CGFloat = 16
+    /// Wide values (comments, defaults) stop here; the rest truncate as before.
+    private static let maximumFittedWidth: CGFloat = 360
+    /// Rows measured per column; Structure and index lists are short, this only bounds the work.
+    private static let measuredRows = 500
+
+    /// Widens or narrows each visible column to its widest header or cell (the XIB widths were made
+    /// for 11pt text; the theme font is larger), so values and pop-up menus aren't cut off.
+    private func fitColumnsToContent() {
+        let rows = min(numberOfRows, Self.measuredRows)
+        for column in tableColumns where !column.isHidden {
+            var width = ceil(column.headerCell.cellSize.width)
+            for row in 0..<rows {
+                // A copy of the column's cell, filled the way the table fills it for drawing.
+                guard let cell = (column.dataCell(forRow: row) as? NSCell)?.copy() as? NSCell else { continue }
+                cell.objectValue = dataSource?.tableView?(self, objectValueFor: column, row: row)
+                delegate?.tableView?(self, willDisplayCell: cell, for: column, row: row)
+                width = max(width, ceil(cell.cellSize.width))
+            }
+            let fitted = min(max(width + Self.columnPadding, column.minWidth), min(column.maxWidth, Self.maximumFittedWidth))
+            if abs(column.width - fitted) > 0.5 { column.width = fitted }
+        }
+    }
     override func noteNumberOfRowsChanged() { renderer.rowsReloaded(); super.noteNumberOfRowsChanged() }
 }
