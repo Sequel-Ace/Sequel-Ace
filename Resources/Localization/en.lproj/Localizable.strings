@@ -4862,3 +4862,15 @@
 
 /* View ▸ Toolbar submenu: show/hide the Clear Console button */
 "ClaudeToolbarMenuClearConsole" = "Clear console";
+
+/* View menu: submenu for showing or hiding toolbar items */
+"ClaudeToolbarMenuTitle" = "Toolbar";
+
+/* View ▸ Toolbar: show toolbar items with icons and labels */
+"ClaudeToolbarMenuIconAndText" = "Icon and text";
+
+/* View ▸ Toolbar: show toolbar items as icons without labels */
+"ClaudeToolbarMenuIconOnly" = "Icon only";
+
+/* View ▸ Toolbar: restore the default toolbar items and order */
+"ClaudeToolbarMenuReset" = "Reset to default";

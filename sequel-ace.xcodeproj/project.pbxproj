@@ -338,6 +338,7 @@
 		5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */; };
 		5147B1022F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */; };
 		5147B1032F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */; };
+		5147B1072F8C000100C4C14A /* SAClaudeToolbarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1062F8C000100C4C14A /* SAClaudeToolbarMenu.swift */; };
 		5147B1052F8C000100C4C14A /* SAWindowTitlebarTintTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
@@ -1351,6 +1352,7 @@
 		5147B0152F8D000100C4C14A /* SPCSVParserTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPCSVParserTests.m; sourceTree = "<group>"; };
 		5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchTreeWalker.swift; sourceTree = "<group>"; };
 		5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitlebarTint.swift; sourceTree = "<group>"; };
+		5147B1062F8C000100C4C14A /* SAClaudeToolbarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAClaudeToolbarMenu.swift; sourceTree = "<group>"; };
 		5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitlebarTintTests.swift; sourceTree = "<group>"; };
 		514B40A12F683E7900369718 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		514B40A52F68412000369718 /* Credits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Credits.md; sourceTree = "<group>"; };
@@ -2329,6 +2331,7 @@
 				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
 				5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */,
 				5147B1012F8C000100C4C14A /* SAWindowTitlebarTint.swift */,
+				5147B1062F8C000100C4C14A /* SAClaudeToolbarMenu.swift */,
 				5132930A25F586A900D803AD /* TabManager.swift */,
 			);
 			path = Window;
@@ -4320,6 +4323,7 @@
 				5AF0C3000000000000000002 /* SATaskController.swift in Sources */,
 				5147B0022F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
 				5147B1022F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */,
+				5147B1072F8C000100C4C14A /* SAClaudeToolbarMenu.swift in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
 				51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */,
