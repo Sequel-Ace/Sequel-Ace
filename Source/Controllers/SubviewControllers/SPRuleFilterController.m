@@ -50,6 +50,18 @@ typedef NS_ENUM(NSInteger, RuleNodeType) {
 
 NSString * const SPRuleFilterHeightChangedNotification = @"SPRuleFilterHeightChanged";
 
+// SAClaudeFilterBarStyler is app-target Swift, but the Unit Tests target compiles this file too, so it is
+// looked up at runtime (Nil, and every call a no-op, in the tests).
+@protocol SAClaudeFilterBarStyling <NSObject>
++ (void)attachToRuleEditor:(NSRuleEditor *)ruleEditor rootConjunctionPopUp:(NSPopUpButton *)rootConjunctionPopUp applyButton:(NSButton *)applyButton addFilterButton:(NSButton *)addFilterButton;
++ (void)restyleRowsOfRuleEditor:(NSRuleEditor *)ruleEditor;
+@end
+
+static Class<SAClaudeFilterBarStyling> SAClaudeFilterBarStylerClass(void)
+{
+	return (Class<SAClaudeFilterBarStyling>)NSClassFromString(@"SAClaudeFilterBarStyler");
+}
+
 /**
  * The type of filter rule that the current item represents.
  */
@@ -383,6 +395,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (container && [dropBox superview] != container) {
 		[container addSubview:dropBox];
 	}
+
+	[SAClaudeFilterBarStylerClass() attachToRuleEditor:filterRuleEditor rootConjunctionPopUp:rootConjunctionPopUp applyButton:filterButton addFilterButton:addFilterButton];
 }
 
 - (SPRuleFilterDropBox *)dropBoxView
@@ -1238,6 +1252,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self _invokeFilterTargetActionWithObject:nil];
 	}
 	previousRowCount = newRowCount;
+
+	[SAClaudeFilterBarStylerClass() restyleRowsOfRuleEditor:filterRuleEditor];
 }
 
 - (void)_updateButtonStates
