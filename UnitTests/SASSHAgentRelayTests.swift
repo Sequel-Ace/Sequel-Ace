@@ -266,6 +266,56 @@ final class SASSHAgentRelayTests: XCTestCase {
         XCTAssertEqual(try SocketClient.exchange("fresh", at: listenPath), "pong:fresh")
     }
 
+    /// Socket names are short hashes. If the name for this target is already
+    /// taken by a socket something is listening on — another agent's relay,
+    /// or another copy of the app — taking it over would send that relay's
+    /// clients to the wrong agent.
+    func testNeverTakesOverASocketThatIsStillInUse() throws {
+        let name = SASSHAgentRelay.socketName(target: agent.path, processIdentifier: 4242)
+        let taken = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name)
+        let owner = try SASSHAgentRelay.makeListeningSocket(at: taken)
+        defer { close(owner) }
+
+        let relay = makeRelay()
+        let listenPath = try relay.listenPath(forTarget: agent.path)
+
+        XCTAssertNotEqual(listenPath, taken)
+        XCTAssertEqual(try SocketClient.exchange("mine", at: listenPath), "pong:mine")
+        // The original socket is untouched and still its owner's.
+        let probe = try SocketClient(path: taken)
+        probe.close()
+        var pending = pollfd(fd: owner, events: Int16(POLLIN), revents: 0)
+        XCTAssertEqual(poll(&pending, 1, 1000), 1, "the connection must have reached the original listener")
+    }
+
+    func testTwoAgentsWhoseNamesWouldCollideGetSeparateSockets() throws {
+        let other = try FakeAgent(path: root.appendingPathComponent("other.sock").path)
+        defer { other.close() }
+        try allow([agent.path, other.path])
+        // Every target hashes to the same first-choice name.
+        let relay = SASSHAgentRelay(installer: makeInstaller(), launcher: launches.launcher,
+                                    containerDataDirectory: containerData.path, processIdentifier: 4242,
+                                    socketNamer: { _, _, attempt in String(format: "0000000%x", attempt) })
+
+        let first = try relay.listenPath(forTarget: agent.path)
+        let second = try relay.listenPath(forTarget: other.path)
+
+        XCTAssertNotEqual(first, second)
+        XCTAssertEqual(launches.count, 2)
+        // Each socket leads to its own agent, not the other's.
+        let viaFirst = try SocketClient(path: first)
+        defer { viaFirst.close() }
+        try viaFirst.send("a")
+        XCTAssertEqual(try viaFirst.receive(), "pong:a")
+        XCTAssertEqual(agent.openConnections, 1)
+        XCTAssertEqual(other.openConnections, 0)
+        let viaSecond = try SocketClient(path: second)
+        defer { viaSecond.close() }
+        try viaSecond.send("b")
+        XCTAssertEqual(try viaSecond.receive(), "pong:b")
+        XCTAssertEqual(other.openConnections, 1)
+    }
+
     func testSweepsAbandonedSocketsOfOtherProcessesButNotLiveOnesOrOtherFiles() throws {
         let keys = containerData.path + "/.keys"
         let abandoned = keys + "/a-0000dead"
@@ -312,6 +362,59 @@ final class SASSHAgentRelayTests: XCTestCase {
             XCTAssertEqual(try SocketClient.exchange("hi", at: listenPath), "pong:hi", "line: \(line.debugDescription)")
             launches.stopAll()
         }
+    }
+
+    /// "#" starts a comment only at the start of a line or after whitespace.
+    /// Cutting at any "#" would turn a listed path that contains one into
+    /// permission for a different, shorter path.
+    func testAHashInsideAListedPathIsPartOfThePathNotAComment() throws {
+        let folder = root.appendingPathComponent("agents#1")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let hashed = try FakeAgent(path: folder.appendingPathComponent("a.sock").path)
+        // What the listed line would shrink to if it were cut at the "#".
+        let shortened = try FakeAgent(path: root.appendingPathComponent("agents").path)
+        defer { hashed.close(); shortened.close() }
+        try allow([hashed.path])
+
+        let listenPath = try makeRelay().listenPath(forTarget: hashed.path)
+        XCTAssertEqual(try SocketClient.exchange("hi", at: listenPath), "pong:hi")
+        launches.stopAll()
+        assertRefused("not-allowed") { _ = try makeRelay().listenPath(forTarget: shortened.path) }
+    }
+
+    /// A listed name can sit in a folder other people can write to (/tmp).
+    /// A link planted under such a name must not lead the helper to a socket
+    /// that is not listed.
+    func testALinkUnderAListedNameDoesNotReachAnUnlistedSocket() throws {
+        let unlisted = try FakeAgent(path: root.appendingPathComponent("docker.sock").path)
+        defer { unlisted.close() }
+        let folder = root.appendingPathComponent("com.apple.launchd.Evil")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let planted = folder.appendingPathComponent("Listeners")
+        try FileManager.default.createSymbolicLink(atPath: planted.path, withDestinationPath: unlisted.path)
+        try allow(["~/com.apple.launchd.*/Listeners"])
+
+        XCTAssertThrowsError(try makeRelay().listenPath(forTarget: planted.path)) { error in
+            // The refusal names where the link leads: that is what would have to be listed.
+            XCTAssertEqual(error as? SASSHAgentRelay.RelayError,
+                           .helperRefused(reason: "not-allowed", target: unlisted.path,
+                                          detail: (error as? SASSHAgentRelay.RelayError).flatMap {
+                                              if case .helperRefused(_, _, let detail) = $0 { return detail }
+                                              return nil
+                                          } ?? ""))
+        }
+        XCTAssertEqual(unlisted.openConnections, 0)
+    }
+
+    /// A listed path may itself be a link (~/.1password/agent.sock is one);
+    /// both it and its destination are then acceptable spellings.
+    func testAListedLinkAllowsTheSocketItPointsTo() throws {
+        let link = root.appendingPathComponent("agent-link.sock")
+        try FileManager.default.createSymbolicLink(atPath: link.path, withDestinationPath: agent.path)
+        try allow([link.path])
+
+        let listenPath = try makeRelay().listenPath(forTarget: link.path)
+        XCTAssertEqual(try SocketClient.exchange("hi", at: listenPath), "pong:hi")
     }
 
     func testWildcardDoesNotReachIntoDeeperFolders() throws {
@@ -426,6 +529,7 @@ final class SASSHAgentRelayTests: XCTestCase {
             .listenPathBlocked("/p"), .listenFailed("x"), .startTimedOut, .launchFailed("x"), .helperExited(detail: "x"),
             .helperRefused(reason: "not-allowed", target: "/t", detail: ""),
             .helperRefused(reason: "no-target", target: "/t", detail: ""),
+            .helperRefused(reason: "not-owned", target: "/t", detail: ""),
             .helperRefused(reason: "socket-module", target: "/t", detail: ""),
             .helperRefused(reason: "bind", target: "/t", detail: "could not listen"),
         ]

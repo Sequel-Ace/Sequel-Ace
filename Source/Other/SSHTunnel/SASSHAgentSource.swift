@@ -94,25 +94,25 @@ struct SASSHAgentSource: Equatable {
 
     // MARK: - Connection strings
 
-    /// The parameter names a `mysql://` connection string carries the choice in.
+    /// The parameter a `mysql://` connection string carries the choice in.
     enum ConnectionStringKey {
         static let source = "ssh_agent"
-        static let socketPath = "ssh_agent_socket"
     }
 
-    /// A connection's own agent choice as connection-string query items. The
-    /// kind of agent travels with the connection; a custom agent's socket path
-    /// is local to the machine, like a key file's, so a custom choice is only
-    /// exported together with its path and only when local paths were asked
-    /// for. No choice exports nothing, so the recipient's default applies.
-    static func connectionStringQueryItems(source: String, socketPath: String, includeLocalPaths: Bool) -> [URLQueryItem] {
-        guard let agent = stored(source, customPath: socketPath) else { return [] }
-        guard agent.kind == .custom else {
-            return [URLQueryItem(name: ConnectionStringKey.source, value: agent.storedValue)]
-        }
-        guard includeLocalPaths, !agent.customPath.isEmpty else { return [] }
-        return [URLQueryItem(name: ConnectionStringKey.source, value: agent.storedValue),
-                URLQueryItem(name: ConnectionStringKey.socketPath, value: agent.customPath)]
+    /// Whether a connection string may carry this value. A connection string
+    /// is untrusted input — it can arrive as a clicked link — so it may turn
+    /// the agent off for a connection but never on: an agent offers the user's
+    /// keys to whatever SSH host the string names.
+    static func isAcceptedFromConnectionString(_ value: String) -> Bool {
+        value == Kind.off.rawValue
+    }
+
+    /// A connection's own agent choice as connection-string query items.
+    /// Only an explicit "off" travels: it is the one choice the recipient's
+    /// app will accept, and using an agent is each user's own decision.
+    static func connectionStringQueryItems(source: String) -> [URLQueryItem] {
+        guard isAcceptedFromConnectionString(source) else { return [] }
+        return [URLQueryItem(name: ConnectionStringKey.source, value: source)]
     }
 
     // MARK: - Target socket

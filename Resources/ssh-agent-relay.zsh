@@ -15,6 +15,8 @@
 #     this script only accepts connections on it.
 #   - It connects only to sockets listed in ssh-agent-relay.allow, the text
 #     file next to this script. Sequel Ace cannot write that file; you can.
+#     Links are followed first: what must be listed is where the path really
+#     leads, and the socket there must belong to you.
 #   - It exits when Sequel Ace closes its standard input, i.e. when the app
 #     quits or crashes.
 #
@@ -40,18 +42,29 @@ home=${script_dir:h:h:h}
 # Only relay to sockets the user has listed.
 allowlist="$script_dir/ssh-agent-relay.allow"
 [[ -r $allowlist ]] || fail no-allowlist "$allowlist is missing" 69
-[[ $target == /* && $target != *//* && "$target/" != */../* && "$target/" != */./* ]] || fail not-allowed "the agent socket must be a plain absolute path" 67
+[[ $target == /* && $target != *//* && "$target/" != */../* && "$target/" != */./* && $target != *[[:cntrl:]]* ]] || fail not-allowed "the agent socket must be a plain absolute path" 67
+
+# Match where the path really leads, not how it is spelled. Some listed
+# locations sit in folders others can write to (/tmp); a link planted there
+# under a listed name must not become a way to reach an unlisted socket.
+target=${target:A}
 
 allowed=0
 target_parts=("${(@s:/:)target}")
 while IFS= read -r line || [[ -n $line ]]; do
-	line=${line%%\#*}
 	# Trim surrounding whitespace (and a CR from Windows line endings). Written
 	# without "#" repetition, which needs EXTENDED_GLOB and "zsh -f" has it off.
 	line=${line#"${line%%[![:space:]]*}"}
+	# "#" starts a comment at the start of a line or after whitespace only.
+	# A "#" inside a path is part of the path: cutting there would turn the
+	# line into permission for a different, shorter path.
+	[[ $line == \#* ]] && continue
+	line=${line%%[[:space:]]\#*}
 	line=${line%"${line##*[![:space:]]}"}
 	[[ -n $line ]] || continue
 	[[ $line == \~/* ]] && line="$home/${line#\~/}"
+	# Listed paths may be spelled through a link too (/tmp, /var, ~/.1password).
+	[[ $line != *\** ]] && line=${line:A}
 	pattern_parts=("${(@s:/:)line}")
 	(( ${#pattern_parts} == ${#target_parts} )) || continue
 	matched=1
@@ -62,8 +75,11 @@ while IFS= read -r line || [[ -n $line ]]; do
 	done
 	(( matched )) && { allowed=1; break }
 done < $allowlist
-(( allowed )) || fail not-allowed "$target is not listed in $allowlist" 67
+(( allowed )) || fail "not-allowed $target" "$target is not listed in $allowlist" 67
 [[ -S $target ]] || fail no-target "$target is not a socket (is the agent running?)" 68
+# An agent runs as you. A socket someone else created at a listed path — in a
+# shared folder such as /tmp, say — is not your agent.
+[[ -O $target ]] || fail not-owned "$target belongs to another user" 67
 
 # Standard output is the listening socket; standard input is the lifeline.
 exec {listen_fd}<&1 {control_fd}<&0

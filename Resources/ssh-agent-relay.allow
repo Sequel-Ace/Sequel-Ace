@@ -3,6 +3,10 @@
 # One path per line. "~" is your home folder. "*" matches any characters within
 # a single folder name. Lines starting with "#" are comments.
 #
+# Links are followed before a socket is checked against this list, so a line
+# with "*" must spell the real location (/private/tmp, not /tmp). The socket
+# must also belong to you.
+#
 # Sequel Ace cannot change this file. To use an agent that is not listed, add
 # the path of its socket on a new line.
 
@@ -12,9 +16,7 @@
 
 # macOS ssh-agent (SSH_AUTH_SOCK)
 /private/tmp/com.apple.launchd.*/Listeners
-/tmp/com.apple.launchd.*/Listeners
 /private/var/run/com.apple.launchd.*/Listeners
-/var/run/com.apple.launchd.*/Listeners
 
 # Secretive
 ~/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh

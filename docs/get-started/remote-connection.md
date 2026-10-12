@@ -98,12 +98,13 @@ Sequel Ace is sandboxed, and the sandbox does not let it (or the `ssh` it runs) 
 
 **Which sockets the helper may reach**
 
-The helper only connects to sockets listed in `ssh-agent-relay.allow`, a text file installed next to it (_Show in Finder_ in the SSH Agent settings reveals both). It comes with the usual 1Password, macOS agent, Secretive and Bitwarden locations. Sequel Ace cannot change this file; you can. If you use _Custom Socket_ or _Automatic_ with an agent that is not listed, the connection fails with a message that quotes the exact line to add.
+The helper only connects to sockets listed in `ssh-agent-relay.allow`, a text file installed next to it (_Show in Finder_ in the SSH Agent settings reveals both). It comes with the usual 1Password, macOS agent, Secretive and Bitwarden locations. Sequel Ace cannot change this file; you can. If you use _Custom Socket_ or _Automatic_ with an agent that is not listed, the connection fails with a message that quotes the exact line to add. Links are followed before a socket is checked against the list, so what must be listed is the socket's real location, and the socket must belong to your user account.
 
 **Limitations**
 
 - A jump host (`ProxyJump`) uses the same agent as the destination. A jump host whose config entry names its own `IdentityAgent` is not redirected and cannot use an agent from within Sequel Ace.
 - `IdentityAgent` set to an environment variable (`$NAME`) is not supported by _Automatic_; choose the agent explicitly.
+- A `mysql://` connection string can turn the agent off for a connection (`ssh_agent=off`) but never on, and it cannot name an agent. Which agent to use is always set in Sequel Ace itself.
 - `PKCS11Provider` and hardware-key setups that do not go through an agent socket are not covered by the helper. See the next section.
 
 #### SSH Agent and ProxyCommand Limitations on macOS

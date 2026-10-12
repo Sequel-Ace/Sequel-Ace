@@ -2381,7 +2381,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         id detailSSHRemoteSocketPath = [details objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: [details objectForKey:@"ssh_remote_socket_path"];
         if (detailSSHRemoteSocketPath) [favorite setObject:detailSSHRemoteSocketPath forKey:SPFavoriteSSHRemoteSocketPathKey];
         if ([details objectForKey:SPFavoriteSSHAgentSourceKey]) [favorite setObject:[details objectForKey:SPFavoriteSSHAgentSourceKey] forKey:SPFavoriteSSHAgentSourceKey];
-        if ([details objectForKey:SPFavoriteSSHAgentSocketPathKey]) [favorite setObject:[details objectForKey:SPFavoriteSSHAgentSocketPathKey] forKey:SPFavoriteSSHAgentSocketPathKey];
     }
     else if (typeTag == SPAWSIAMConnection) {
         if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];

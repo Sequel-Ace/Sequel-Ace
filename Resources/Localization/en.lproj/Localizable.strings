@@ -251,6 +251,9 @@
 /* ssh agent helper install error */
 "The helper can only be installed in the folder the panel opens with. Try again without changing the folder." = "The helper can only be installed in the folder the panel opens with. Try again without changing the folder.";
 
+/* SSH agent relay error; %@ is a socket path */
+"The socket at this path belongs to another user, so it cannot be your SSH agent.\n\n%@" = "The socket at this path belongs to another user, so it cannot be your SSH agent.\n\n%@";
+
 /* SSH agent relay error */
 "The SSH agent helper cannot run on this version of macOS." = "The SSH agent helper cannot run on this version of macOS.";
 

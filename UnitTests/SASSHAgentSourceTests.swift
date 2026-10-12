@@ -51,40 +51,34 @@ final class SASSHAgentSourceTests: XCTestCase {
 
     // MARK: - Connection strings
 
-    private func exported(_ source: String, socket: String = "", localPaths: Bool = false) -> [String] {
-        SASSHAgentSource.connectionStringQueryItems(source: source, socketPath: socket, includeLocalPaths: localPaths)
-            .map { "\($0.name)=\($0.value ?? "")" }
+    private func exported(_ source: String) -> [String] {
+        SASSHAgentSource.connectionStringQueryItems(source: source).map { "\($0.name)=\($0.value ?? "")" }
     }
 
-    func testAgentKindTravelsInAConnectionString() {
-        XCTAssertEqual(exported("1password"), ["ssh_agent=1password"])
-        XCTAssertEqual(exported("automatic"), ["ssh_agent=automatic"])
-        XCTAssertEqual(exported("system"), ["ssh_agent=system"])
+    /// A connection string is untrusted — it can be a link someone clicks.
+    /// Turning an agent on would offer the user's keys to the host it names,
+    /// so the only choice it may carry is "off".
+    func testAConnectionStringCanTurnTheAgentOffButNeverOn() {
+        XCTAssertTrue(SASSHAgentSource.isAcceptedFromConnectionString("off"))
+        for value in ["1password", "system", "automatic", "custom", "", "OFF", "yubikey"] {
+            XCTAssertFalse(SASSHAgentSource.isAcceptedFromConnectionString(value), value)
+        }
     }
 
-    /// Off is a choice too: it overrides the recipient's default.
-    func testExplicitOffTravelsButNoChoiceExportsNothing() {
+    func testOnlyAnExplicitOffIsExported() {
         XCTAssertEqual(exported("off"), ["ssh_agent=off"])
+        for kind in SASSHAgentSource.Kind.allCases where kind != .off {
+            XCTAssertEqual(exported(kind.rawValue), [], kind.rawValue)
+        }
         XCTAssertEqual(exported(""), [])
-        XCTAssertEqual(exported("unknown"), [])
     }
 
-    /// A custom agent's socket is a path on this machine, like a key file. A
-    /// custom choice without its path would import broken, so it is dropped.
-    func testCustomAgentTravelsOnlyWithItsPathAndOnlyWhenLocalPathsAreWanted() {
-        let socket = "~/Library/Containers/agent/Data/socket.ssh"
-        XCTAssertEqual(exported("custom", socket: socket), [])
-        XCTAssertEqual(exported("custom", socket: "", localPaths: true), [])
-        XCTAssertEqual(exported("custom", socket: socket, localPaths: true),
-                       ["ssh_agent=custom", "ssh_agent_socket=\(socket)"])
-    }
-
-    /// The importer accepts exactly the values the exporter writes.
-    func testEveryExportedKindIsOneTheParserAccepts() {
+    /// Whatever the exporter writes, the importer accepts.
+    func testEverythingExportedIsAcceptedOnImport() {
         for kind in SASSHAgentSource.Kind.allCases {
-            let value = SASSHAgentSource.connectionStringQueryItems(source: kind.rawValue, socketPath: "/s",
-                                                                    includeLocalPaths: true).first?.value
-            XCTAssertEqual(value.flatMap(SASSHAgentSource.Kind.init(rawValue:)), kind)
+            for item in SASSHAgentSource.connectionStringQueryItems(source: kind.rawValue) {
+                XCTAssertTrue(SASSHAgentSource.isAcceptedFromConnectionString(item.value ?? ""))
+            }
         }
     }
 

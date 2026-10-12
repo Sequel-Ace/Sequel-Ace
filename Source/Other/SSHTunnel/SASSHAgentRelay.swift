@@ -121,6 +121,11 @@ import Foundation
     private let containerDataDirectory: String
     private let processIdentifier: Int32
     private let startTimeout: TimeInterval
+    private let socketNamer: SocketNamer
+
+    /// Names the relay socket for a target; `attempt` counts up when a name
+    /// turns out to be taken.
+    typealias SocketNamer = (_ target: String, _ processIdentifier: Int32, _ attempt: Int) -> String
 
     private enum Entry {
         /// `exited` records a helper that quit before its launch finished —
@@ -137,12 +142,14 @@ import Foundation
          launcher: @escaping Launcher = SASSHAgentRelay.userScriptLauncher,
          containerDataDirectory: String = NSHomeDirectory(),
          processIdentifier: Int32 = ProcessInfo.processInfo.processIdentifier,
-         startTimeout: TimeInterval = SASSHAgentRelay.startTimeout) {
+         startTimeout: TimeInterval = SASSHAgentRelay.startTimeout,
+         socketNamer: @escaping SocketNamer = SASSHAgentRelay.socketName(target:processIdentifier:attempt:)) {
         self.installer = installer
         self.launcher = launcher
         self.containerDataDirectory = containerDataDirectory
         self.processIdentifier = processIdentifier
         self.startTimeout = startTimeout
+        self.socketNamer = socketNamer
     }
 
     @objc static let shared = SASSHAgentRelay(installer: SASSHAgentRelayInstaller.shared)
@@ -192,8 +199,13 @@ import Foundation
 
     /// The 8 hex digit name of the relay socket. Includes the process id so
     /// two running copies of the app never share a socket.
-    static func socketName(target: String, processIdentifier: Int32) -> String {
-        let digest = SHA256.hash(data: Data("\(target)\u{0}\(processIdentifier)".utf8))
+    ///
+    /// The name is a short hash because the whole path must fit in 103 bytes,
+    /// so two targets can share one. `attempt` gives the next candidate; the
+    /// relay never reuses a name that is still in use.
+    static func socketName(target: String, processIdentifier: Int32, attempt: Int = 0) -> String {
+        let suffix = attempt == 0 ? "" : "\u{0}\(attempt)"
+        let digest = SHA256.hash(data: Data("\(target)\u{0}\(processIdentifier)\(suffix)".utf8))
         return digest.prefix(4).map { String(format: "%02x", $0) }.joined()
     }
 
@@ -257,15 +269,11 @@ import Foundation
         case .installed: break
         }
 
-        let name = Self.socketName(target: target, processIdentifier: processIdentifier)
-        let listenPath = Self.listenPath(containerDataDirectory: containerDataDirectory, socketName: name)
-        guard listenPath.utf8.count <= Self.maximumSocketPathLength else {
-            throw RelayError.listenPathTooLong(listenPath)
-        }
-        let directory = (listenPath as NSString).deletingLastPathComponent
+        let directory = containerDataDirectory + "/.keys"
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true,
                                                  attributes: [.posixPermissions: 0o700])
         Self.removeAbandonedSockets(inDirectory: directory)
+        let listenPath = try freeListenPath(forTarget: target)
 
         let descriptor = try Self.makeListeningSocket(at: listenPath)
         var handedOver = false
@@ -307,9 +315,39 @@ import Foundation
         let detail = String(decoding: afterLine + helper.status.availableData, as: UTF8.self)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if let line, line.hasPrefix("error ") {
-            throw RelayError.helperRefused(reason: String(line.dropFirst("error ".count)), target: target, detail: detail)
+            // "error <reason>", or "error not-allowed <path>" naming where the
+            // target really leads once links are followed — the path the
+            // user would have to list.
+            let fields = line.dropFirst("error ".count).split(separator: " ", maxSplits: 1)
+            let reason = fields.first.map(String.init) ?? ""
+            let resolved = fields.count > 1 ? String(fields[1]) : target
+            throw RelayError.helperRefused(reason: reason, target: resolved, detail: detail)
         }
         throw RelayError.helperExited(detail: detail)
+    }
+
+    /// A socket path for `target` that nothing else is using. A name already
+    /// serving another agent, or another copy of the app, is never taken over:
+    /// that relay's clients would silently be talking to the wrong agent.
+    private func freeListenPath(forTarget target: String) throws -> String {
+        condition.lock()
+        let inUse = Set(entries.values.compactMap { entry -> String? in
+            if case .running(let listenPath, _, _) = entry { return listenPath }
+            return nil
+        })
+        condition.unlock()
+
+        for attempt in 0..<8 {
+            let name = socketNamer(target, processIdentifier, attempt)
+            let candidate = Self.listenPath(containerDataDirectory: containerDataDirectory, socketName: name)
+            guard candidate.utf8.count <= Self.maximumSocketPathLength else {
+                throw RelayError.listenPathTooLong(candidate)
+            }
+            if inUse.contains(candidate) { continue }
+            if Self.isSocket(candidate), Self.isListening(candidate) { continue }
+            return candidate
+        }
+        throw RelayError.listenFailed("no free socket name")
     }
 
     private func helperExited(target: String, token: Int, listenPath: String) {
@@ -345,6 +383,14 @@ import Foundation
     private static func isSocket(_ path: String) -> Bool {
         var info = stat()
         return lstat(path, &info) == 0 && (info.st_mode & S_IFMT) == S_IFSOCK
+    }
+
+    /// Whether something still accepts connections on the socket at `path`.
+    private static func isListening(_ path: String) -> Bool {
+        let probe = socket(AF_UNIX, SOCK_STREAM, 0)
+        guard probe >= 0 else { return false }
+        defer { close(probe) }
+        return withSocketAddress(path, { Darwin.connect(probe, $0, $1) }) == 0
     }
 
     /// Binds and listens at `path`, replacing a socket left by an earlier
@@ -455,6 +501,8 @@ extension SASSHAgentRelay.RelayError: LocalizedError {
             switch reason {
             case "not-allowed":
                 return String(format: NSLocalizedString("The SSH agent helper is not allowed to connect to this socket. To allow it, add this line to ssh-agent-relay.allow:\n\n%@", comment: "SSH agent relay error; %@ is a socket path"), Self.allowlistLine(for: target))
+            case "not-owned":
+                return String(format: NSLocalizedString("The socket at this path belongs to another user, so it cannot be your SSH agent.\n\n%@", comment: "SSH agent relay error; %@ is a socket path"), target)
             case "no-target":
                 return String(format: NSLocalizedString("The SSH agent's socket was not found. Is the agent running?\n\n%@", comment: "SSH agent relay error; %@ is a socket path"), target)
             case "socket-module":

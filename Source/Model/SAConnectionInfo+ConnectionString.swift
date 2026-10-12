@@ -74,8 +74,7 @@ extension SAConnectionInfo {
             if !sshRemoteSocketPath.isEmpty {
                 queryItems.append(URLQueryItem(name: "ssh_remote_socket_path", value: sshRemoteSocketPath))
             }
-            queryItems.append(contentsOf: SASSHAgentSource.connectionStringQueryItems(
-                source: sshAgentSource, socketPath: sshAgentSocketPath, includeLocalPaths: includeSSHKeyPath))
+            queryItems.append(contentsOf: SASSHAgentSource.connectionStringQueryItems(source: sshAgentSource))
 
         case .awsIAM:
             queryItems.append(URLQueryItem(name: "type", value: "aws_iam"))
@@ -223,9 +222,7 @@ extension SPFavoriteNode {
                 queryItems.append(URLQueryItem(name: "ssh_remote_socket_path", value: sshRemoteSocketPath))
             }
             queryItems.append(contentsOf: SASSHAgentSource.connectionStringQueryItems(
-                source: favoriteDict[SPFavoriteSSHAgentSourceKey] as? String ?? "",
-                socketPath: favoriteDict[SPFavoriteSSHAgentSocketPathKey] as? String ?? "",
-                includeLocalPaths: false))
+                source: favoriteDict[SPFavoriteSSHAgentSourceKey] as? String ?? ""))
         }
         else if typeValue == 3 { // SPAWSIAMConnection
             queryItems.append(URLQueryItem(name: "type", value: "aws_iam"))
