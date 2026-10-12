@@ -89,6 +89,13 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 */
 - (void)copy:(id)sender;
 
+/// Puts the rows on the general pasteboard as the copy action with this SPEditMenuCopy… tag does;
+/// every row when onlySelected is NO. Returns NO when there was nothing to copy.
+- (BOOL)copyRowsForTag:(NSInteger)tag onlySelectedRows:(BOOL)onlySelected;
+
+/// Whether the table has the column definitions SQL INSERT copies need.
+@property (readonly) BOOL hasColumnDefinitions;
+
 /*!
 	@method	 draggedRowsAsTabString:
 	@abstract   getter of the dragged rows of the table for drag

@@ -62,6 +62,11 @@ import AppKit
     }
 }
 
+extension Notification.Name {
+    /// Posted by `SAClaudeCopyTable` after it reloads its rows or changes their number.
+    static let SAClaudeCopyTableDidReload = Notification.Name("SAClaudeCopyTableDidReload")
+}
+
 @objc(SAClaudeCopyTable) final class SAClaudeCopyTable: SPCopyTable {
 
     /// The drawing, hover and palette live in the renderer; these overrides only forward to it.
@@ -122,11 +127,27 @@ import AppKit
     override func reloadData() {
         renderer.rowsReloaded()
         super.reloadData()
+        NotificationCenter.default.post(name: .SAClaudeCopyTableDidReload, object: self)
     }
 
     override func noteNumberOfRowsChanged() {
         renderer.rowsReloaded()
         super.noteNumberOfRowsChanged()
+        NotificationCenter.default.post(name: .SAClaudeCopyTableDidReload, object: self)
+    }
+
+    // MARK: Copy
+
+    /// The Query results grid; the Content tab's grid doesn't change the Copy button's default.
+    private static let queryResultsIdentifier = "CustomQueryResultsTableView"
+
+    /// Copying from the Query results (its menu or the Edit menu) makes that action the Copy button's default.
+    override func copy(_ sender: Any?) {
+        super.copy(sender)
+        guard identifier?.rawValue == Self.queryResultsIdentifier,
+              let tag = (sender as? NSMenuItem)?.tag ?? (sender as? NSControl)?.tag,
+              let action = SAClaudeQueryCopyAction(rawValue: tag) else { return }
+        SAClaudeQueryCopyAction.store(action, in: .standard)
     }
 
     // MARK: Inline editing (Content tab)
