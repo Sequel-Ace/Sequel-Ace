@@ -42,7 +42,7 @@ import AppKit
 
     private let stripBackground = SAClaudeEditorBarBackgroundView()
     private let stripLine = SAClaudeDividerLine(frame: .zero)
-    private let searchFill = SAClaudeRoundedFillView(frame: .zero)
+    private let searchFill = SAClaudeConsoleFieldView(frame: .zero)
     /// Edit mode's resting fill while it is switched on, by button.
     private var stateFills: [(button: NSButton, fill: SAClaudeRoundedFillView)] = []
 
@@ -208,6 +208,8 @@ import AppKit
             searchFill.frame = NSRect(x: leftEdge, y: SAClaudeTabBarLayout.centredY(height: height),
                                       width: SAClaudeTabBarLayout.searchFieldWidth, height: height)
             searchFill.autoresizingMask = [.maxXMargin, .maxYMargin]
+            // A click on the fill's padding focuses the field, as in the Query Console.
+            searchFill.onClick = { [weak search] in search?.window?.makeFirstResponder(search) }
             container.addSubview(searchFill, positioned: .below, relativeTo: search)
             leftEdge = searchFill.frame.maxX
             search.autoresizingMask = [.maxXMargin, .maxYMargin]

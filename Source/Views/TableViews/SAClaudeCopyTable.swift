@@ -59,18 +59,28 @@ import AppKit
     static func style(_ cell: Any, role: SAClaudeGridCellRole) {
         guard let cell = cell as? NSTextFieldCell else { return }
         switch role {
-        case .text:
-            let text = Self.palette.text
-            noteAppliedTextColour(text)
-            cell.textColor = text
+        case .text: applyText(Self.palette.text, to: cell)
         case .null: cell.textColor = Self.palette.null
         case .displayOverride: cell.textColor = Self.palette.displayOverride
         }
-        if let base = cell.font { cell.font = font(base, null: role == .null) }
+        finishStyling(cell, null: role == .null)
+    }
+
+    /// Sets a theme text colour and remembers it, so a cell still carrying it counts as "nobody chose it".
+    private static func applyText(_ colour: NSColor, to cell: NSTextFieldCell) {
+        noteAppliedTextColour(colour)
+        cell.textColor = colour
+    }
+
+    private static func finishStyling(_ cell: NSTextFieldCell, null: Bool) {
+        if let base = cell.font { cell.font = font(base, null: null) }
         // Cell-based tables mark the selected row's cells highlighted, which draws a system
         // selection box and white text; the table draws the theme selection itself.
         cell.isHighlighted = false
     }
+
+    /// How far a disabled (read-only) cell's text sits from the background towards the text colour.
+    private static let disabledTextRatio: CGFloat = 0.45
 
     /// The system colours a cell has when nobody chose one for it.
     static func isDefaultTextColour(_ colour: NSColor?) -> Bool {
@@ -86,7 +96,16 @@ import AppKit
             (cell as? NSTextFieldCell)?.isHighlighted = false
             return
         }
-        style(textCell, role: .text)
+        if textCell.isEnabled {
+            style(textCell, role: .text)
+        } else {
+            // AppKit only dims the stock control colour, so a themed colour would make a read-only cell
+            // (a view's structure, Length/Default of TEXT/BLOB/JSON columns) look editable.
+            let palette = Self.palette
+            applyText(SAClaudeEditorChrome.derivedColour(text: palette.text, background: palette.background,
+                                                          ratio: disabledTextRatio), to: textCell)
+            finishStyling(textCell, null: false)
+        }
     }
 }
 
