@@ -50,6 +50,12 @@ typedef NS_ENUM(NSInteger, RuleNodeType) {
 
 NSString * const SPRuleFilterHeightChangedNotification = @"SPRuleFilterHeightChanged";
 
+// What the filter target (SPTableContent) answers about the bar; see -_targetShowsFilterRuleEditor.
+@protocol SARuleFilterBarVisibility <NSObject>
+@optional
+- (BOOL)isFilterRuleEditorVisible;
+@end
+
 // SAClaudeFilterBarStyler is app-target Swift, but the Unit Tests target compiles this file too, so it is
 // looked up at runtime (Nil, and every call a no-op, in the tests).
 @protocol SAClaudeFilterBarStyling <NSObject>
@@ -1260,14 +1266,28 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		// fall back to the blank, unchecked starter row once the deletion has settled; the facts are read
 		// again then, as the bar may have been hidden or refilled meanwhile. The starter itself is added
 		// outside the rule editor's own change, so it cannot trigger this again.
+		BOOL deletionWasUserDriven = userRemovedLastRow;
 		SPMainLoopAsync(^{
+			// `enabled` is no help as the visibility fact: the filter task started above disables the
+			// controller until the query returns, and it stays YES for a hidden bar after a table load.
 			if ([SARuleFilterVisibilityPolicy shouldReseedStarterAfterUserDeletionWithEditorIsEmpty:[self isEmpty]
-			                                                                             barVisible:self->enabled
-			                                                                  deletionWasUserDriven:YES]) {
+			                                                                             barVisible:[self _targetShowsFilterRuleEditor]
+			                                                                  deletionWasUserDriven:deletionWasUserDriven]) {
 				[self addStarterFilterExpression];
 			}
 		});
 	}
+}
+
+/**
+ * Asks the filter target (SPTableContent, not imported here as the Unit Tests target compiles this file
+ * too) whether the filter bar is shown; NO when the target can't say.
+ */
+- (BOOL)_targetShowsFilterRuleEditor
+{
+	id<SARuleFilterBarVisibility> visibilitySource = (id<SARuleFilterBarVisibility>)target;
+	if (![visibilitySource respondsToSelector:@selector(isFilterRuleEditorVisible)]) return NO;
+	return [visibilitySource isFilterRuleEditorVisible];
 }
 
 - (void)_updateButtonStates

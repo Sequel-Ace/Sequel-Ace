@@ -1702,6 +1702,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 }
 
+/**
+ * Is the filter rule editor bar currently shown (as opposed to merely enabled for interaction)?
+ */
+- (BOOL)isFilterRuleEditorVisible
+{
+	return showFilterRuleEditor;
+}
+
 - (IBAction)toggleRuleEditorVisible:(id)sender
 {
 	BOOL shouldShow = !showFilterRuleEditor;
