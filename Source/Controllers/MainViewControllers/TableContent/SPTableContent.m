@@ -243,6 +243,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->paginationPopover setDelegate:(SPTableContent<NSPopoverDelegate> *)self];
     [self->paginationPopover setContentViewController:self->paginationViewController];
     [self->paginationPopover setBehavior:NSPopoverBehaviorTransient];
+    [SAClaudeFilterBarStyler stylePaginationPopover:self->paginationPopover];
 
     [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 

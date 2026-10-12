@@ -24,6 +24,9 @@
 //  SAClaudeFilterCells.swift). Controls are only restyled in place: targets,
 //  actions, menus, bindings and the frames AppKit lays out are untouched.
 //
+//  Pagination popover: `stylePaginationPopover(_:)` gives the Content tab's page / limit popover the
+//  editor theme's surface and the same controls (see the extension at the end of the file).
+//
 
 import AppKit
 
@@ -318,5 +321,194 @@ import AppKit
     private static func markForDisplay(_ view: NSView) {
         view.needsDisplay = true
         view.subviews.forEach(markForDisplay)
+    }
+}
+
+// MARK: - Pagination popover
+
+/// A plain text field of the pagination popover, drawn as a Claude field (the rounded fill and outline are
+/// its layer's). No stored properties: it is installed with `object_setClass`.
+private final class SAClaudePaginationField: NSTextField {
+    /// A disabled field (the "Limit result" checkbox off) is dimmed like the filter bar's cells.
+    override var isEnabled: Bool {
+        didSet { alphaValue = isEnabled ? 1 : SAClaudePaginationField.disabledAlpha }
+    }
+    static let disabledAlpha: CGFloat = 0.4
+}
+
+/// The cell of a pagination field: no bezel, so the text is inset from the rounded outline and centred vertically.
+private final class SAClaudePaginationFieldCell: NSTextFieldCell {
+    private static let textInset: CGFloat = 6
+
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        var drawingRect = super.drawingRect(forBounds: rect)
+        guard !isBezeled else { return drawingRect }
+        drawingRect = drawingRect.insetBy(dx: Self.textInset, dy: 0)
+        let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: 12)))
+        let spare = drawingRect.height - lineHeight
+        if spare > 0 {
+            drawingRect.origin.y += (spare / 2).rounded(.down)
+            drawingRect.size.height = lineHeight
+        }
+        return drawingRect
+    }
+
+    // AppKit places the field editor exactly where it is told to, not by -drawingRectForBounds:.
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+    }
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
+    }
+}
+
+/// Removes the will-show observer when the popover goes.
+private final class SAClaudePopoverObserver {
+    let token: NSObjectProtocol
+    init(_ token: NSObjectProtocol) { self.token = token }
+    deinit { NotificationCenter.default.removeObserver(token) }
+}
+
+extension SAClaudeFilterBarStyler {
+
+    private static var popoverObserverKey: UInt8 = 0
+    private static let popoverSurfaceIdentifier = NSUserInterfaceItemIdentifier("SAClaudePaginationSurface")
+    private static let popoverControlHeight = SAClaudeFilterChrome.controlHeight
+
+    /// Gives the Content pagination popover the editor theme's look: its appearance and surface, muted labels,
+    /// Claude number fields and checkboxes, a clay Go button and a hairline separator. Bindings, formatters,
+    /// targets and actions are untouched. Styles once now and again whenever the popover is about to show, so a
+    /// theme change applies.
+    @objc(stylePaginationPopover:)
+    static func stylePaginationPopover(_ popover: NSPopover?) {
+        guard let popover else { return }
+        applyPaginationStyle(to: popover)
+        guard objc_getAssociatedObject(popover, &popoverObserverKey) == nil else { return }
+        let token = NotificationCenter.default.addObserver(forName: NSPopover.willShowNotification, object: popover, queue: .main) { [weak popover] _ in
+            if let popover { applyPaginationStyle(to: popover) }
+        }
+        objc_setAssociatedObject(popover, &popoverObserverKey, SAClaudePopoverObserver(token), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    private static func applyPaginationStyle(to popover: NSPopover) {
+        guard let content = popover.contentViewController?.view else { return }
+        var themeColours: SAClaudeThemeColours?
+        var resolved: SAClaudeEditorChrome.Palette?
+        NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
+            themeColours = SAClaudeThemeColours.from(defaults: .standard)
+            resolved = SAClaudeEditorChrome.palette(from: .standard)
+        }
+        guard let theme = themeColours, let palette = resolved else { return }
+        currentPalette = palette
+        currentThemeText = theme.text
+
+        let dark = SAClaudeGridChrome.isDark(theme.background)
+        popover.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
+
+        let background: SAClaudeEditorBarBackgroundView
+        if let existing = content.subviews.first(where: { $0.identifier == popoverSurfaceIdentifier }) as? SAClaudeEditorBarBackgroundView {
+            background = existing
+        } else {
+            background = SAClaudeEditorBarBackgroundView(frame: content.bounds)
+            background.identifier = popoverSurfaceIdentifier
+            background.autoresizingMask = [.width, .height]
+            content.addSubview(background, positioned: .below, relativeTo: nil)
+        }
+        background.fillColour = surface
+
+        stylePaginationControls(in: content, theme: theme, palette: palette, surface: surface)
+        content.needsDisplay = true
+    }
+
+    private static func stylePaginationControls(in view: NSView, theme: SAClaudeThemeColours, palette: SAClaudeEditorChrome.Palette,
+                                                surface: NSColor) {
+        for subview in view.subviews where !(subview is SAClaudeEditorBarBackgroundView) {
+            if let field = subview as? NSTextField {
+                if field.isEditable {
+                    stylePaginationField(field, theme: theme, palette: palette, surface: surface)
+                } else {
+                    stylePaginationLabel(field, palette: palette)
+                }
+            } else if let button = subview as? NSButton {
+                stylePaginationButton(button)
+            } else if let box = subview as? NSBox {
+                stylePaginationSeparator(box, palette: palette)
+            }
+        }
+    }
+
+    /// Static text: SF Pro 12 in the muted tone, its frame grown (about its centre) to hold the taller font.
+    private static func stylePaginationLabel(_ label: NSTextField, palette: SAClaudeEditorChrome.Palette) {
+        label.textColor = palette.icon
+        let font = NSFont.systemFont(ofSize: 12)
+        guard label.font != font else { return }
+        label.font = font
+        let height = ceil(NSLayoutManager().defaultLineHeight(for: font)) + 1
+        if label.frame.height < height {
+            var frame = label.frame
+            frame.origin.y -= ((height - frame.height) / 2).rounded(.down)
+            frame.size.height = height
+            label.frame = frame
+        }
+    }
+
+    /// A number field: a rounded fill and outline on its layer, right-aligned monospaced digits in the theme's text colour.
+    private static func stylePaginationField(_ field: NSTextField, theme: SAClaudeThemeColours, palette: SAClaudeEditorChrome.Palette, surface: NSColor) {
+        if let cell = field.cell, type(of: cell) == NSTextFieldCell.self, type(of: field) == NSTextField.self {
+            object_setClass(cell, SAClaudePaginationFieldCell.self)
+            object_setClass(field, SAClaudePaginationField.self)
+            field.alphaValue = field.isEnabled ? 1 : SAClaudePaginationField.disabledAlpha
+        }
+        field.isBezeled = false
+        field.isBordered = false
+        field.drawsBackground = false
+        field.wantsLayer = true
+        field.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        field.textColor = theme.text
+        field.alignment = .right
+        guard let layer = field.layer else { return }
+        layer.cornerRadius = 7
+        layer.borderWidth = 1
+        field.effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer.backgroundColor = SAClaudeFilterChrome.fieldFill(text: theme.text, background: surface).cgColor
+            layer.borderColor = palette.hairline.cgColor
+        }
+        field.needsDisplay = true
+    }
+
+    /// The checkboxes become Claude checkboxes and the Go push button a clay one, `controlHeight` tall about its centre.
+    private static func stylePaginationButton(_ button: NSButton) {
+        guard let cell = button.cell as? NSButtonCell else { return }
+        if cell.showsStateBy == .contentsCellMask, cell.highlightsBy == .contentsCellMask {
+            if SAClaudeFilterCells.install(SAClaudeCheckboxCell.self, on: button) { button.needsDisplay = true }
+        } else if SAClaudeFilterCells.install(SAClaudeAccentButtonCell.self, on: button) {
+            button.isBordered = false
+            var frame = button.frame
+            if frame.height != popoverControlHeight {
+                frame.origin.y -= ((popoverControlHeight - frame.height) / 2).rounded(.down)
+                frame.size.height = popoverControlHeight
+                button.frame = frame
+            }
+            button.needsDisplay = true
+        }
+    }
+
+    /// The separator: a 1pt hairline in the palette colour.
+    private static func stylePaginationSeparator(_ box: NSBox, palette: SAClaudeEditorChrome.Palette) {
+        box.boxType = .custom
+        box.borderColor = palette.hairline
+        box.borderWidth = 1
+        box.cornerRadius = 0
+        box.fillColor = .clear
+        box.contentViewMargins = .zero
+        if box.frame.height != 1 {
+            var frame = box.frame
+            frame.origin.y += ((frame.height - 1) / 2).rounded(.down)
+            frame.size.height = 1
+            box.frame = frame
+        }
+        box.needsDisplay = true
     }
 }
