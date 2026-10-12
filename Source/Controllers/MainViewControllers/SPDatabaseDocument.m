@@ -329,7 +329,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (NSToolbar *)mainToolbar {
     if (!_mainToolbar) {
-        _mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
+        _mainToolbar = [[SAClaudeToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
         [_mainToolbar setAllowsUserCustomization:YES];
         [_mainToolbar setAutosavesConfiguration:YES];
         [_mainToolbar setDelegate:self];
@@ -3306,14 +3306,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setAction:@selector(clearConsole:)];
 
     } else if ([itemIdentifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
-        return [SARecordViewToolbarSupport makeToolbarItemWithTarget:self];
+        return [SAClaudeToolbarItems styledItem:[SARecordViewToolbarSupport makeToolbarItemWithTarget:self]];
 
     } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
         // Use data-driven SAViewMode for view-switching toolbar items
         for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
             NSToolbarItem *modeItem = [SAViewModeHelper makeToolbarItemFor:(SAViewMode)i target:self];
             if ([modeItem.itemIdentifier isEqualToString:itemIdentifier]) {
-                return modeItem;
+                return [SAClaudeToolbarItems styledItem:modeItem];
             }
         }
 
@@ -3336,7 +3336,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         toolbarItem = nil;
     }
 
-    return toolbarItem;
+    return [SAClaudeToolbarItems styledItem:toolbarItem];
 }
 
 - (void)toolbarWillAddItem:(NSNotification *)notification
@@ -3385,21 +3385,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar*)toolbar
 {
-    return @[
-        SPMainToolbarDatabaseSelection,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarTableStructure,
-        SPMainToolbarTableContent,
-        SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers,
-        SPMainToolbarTableInfo,
-        SPMainToolbarCustomQuery,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarHistoryNavigation,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarUserManager,
-        SPMainToolbarShowConsole
-    ];
+    return [SAClaudeToolbarItems defaultItemIdentifiers];
 }
 
 /**
