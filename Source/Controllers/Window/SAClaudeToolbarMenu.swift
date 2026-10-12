@@ -66,6 +66,20 @@ import AppKit
 
     private func identifiers(of toolbar: NSToolbar) -> [String] { toolbar.items.map(\.itemIdentifier.rawValue) }
 
+    /// Runs a toolbar edit, then re-asserts each document toolbar's selected view. AppKit propagates
+    /// edits to every toolbar sharing the identifier (all tabs) and may clear the selection, which
+    /// SPTableContent, SPCustomQuery, SPTableStructure etc. read to know their view is in front.
+    private func preservingSelection(_ edit: () -> Void) {
+        let saved: [(NSToolbar, NSToolbarItem.Identifier?)] = NSApp.windows.compactMap { window in
+            guard let toolbar = window.toolbar, toolbar.identifier == Self.toolbarIdentifier else { return nil }
+            return (toolbar, toolbar.selectedItemIdentifier)
+        }
+        edit()
+        for (toolbar, selected) in saved {
+            if let selected { toolbar.selectedItemIdentifier = selected }
+        }
+    }
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         guard let toolbar else { menuItem.state = .off; return false }
         switch menuItem.action {
@@ -85,11 +99,13 @@ import AppKit
     @objc private func toggleItem(_ sender: NSMenuItem) {
         guard let toolbar, let identifier = sender.representedObject as? String else { return }
         let current = identifiers(of: toolbar)
-        if let index = current.firstIndex(of: identifier) {
-            toolbar.removeItem(at: index)
-        } else {
-            toolbar.insertItem(withItemIdentifier: NSToolbarItem.Identifier(identifier),
-                               at: SAClaudeToolbarLayout.insertionIndex(of: identifier, into: current))
+        preservingSelection {
+            if let index = current.firstIndex(of: identifier) {
+                toolbar.removeItem(at: index)
+            } else {
+                toolbar.insertItem(withItemIdentifier: NSToolbarItem.Identifier(identifier),
+                                   at: SAClaudeToolbarLayout.insertionIndex(of: identifier, into: current))
+            }
         }
     }
 
@@ -98,10 +114,12 @@ import AppKit
 
     @objc private func resetToDefault(_ sender: Any?) {
         guard let toolbar else { return }
-        while !toolbar.items.isEmpty { toolbar.removeItem(at: toolbar.items.count - 1) }
-        for (index, identifier) in SAClaudeToolbarLayout.defaultItems.enumerated() {
-            toolbar.insertItem(withItemIdentifier: NSToolbarItem.Identifier(identifier), at: index)
+        preservingSelection {
+            while !toolbar.items.isEmpty { toolbar.removeItem(at: toolbar.items.count - 1) }
+            for (index, identifier) in SAClaudeToolbarLayout.defaultItems.enumerated() {
+                toolbar.insertItem(withItemIdentifier: NSToolbarItem.Identifier(identifier), at: index)
+            }
+            toolbar.displayMode = .iconAndLabel
         }
-        toolbar.displayMode = .iconAndLabel
     }
 }

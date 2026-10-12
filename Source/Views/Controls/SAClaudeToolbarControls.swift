@@ -21,6 +21,8 @@ import AppKit
         (cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
         // The XIB's fixed frame would otherwise win: the toolbar must size the pill from intrinsicContentSize.
         translatesAutoresizingMaskIntoConstraints = false
+        setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     }
 
     private var displayTitle: String { titleOfSelectedItem ?? title }
@@ -94,6 +96,8 @@ import AppKit
         // Adjacent segments without gaps/insets so hit areas match the drawn 30pt halves.
         segmentStyle = .smallSquare
         translatesAutoresizingMaskIntoConstraints = false
+        setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         for segment in 0..<segmentCount { setWidth(Self.segmentWidth, forSegment: segment) }
     }
 

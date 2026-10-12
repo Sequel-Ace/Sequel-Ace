@@ -50,6 +50,14 @@ import AppKit
 
 /// A view-based item that still asks its target to validate it, as image items do.
 @objc(SAClaudeToolbarItem) final class SAClaudeToolbarItem: NSToolbarItem {
+    // NSToolbarItem forwards setImage: to its view, and -[SPDatabaseDocument validateToolbarItem:] sets the
+    // Console item's image on every validation pass; store it without touching (and invalidating) the button.
+    private var storedImage: NSImage?
+    override var image: NSImage? {
+        get { storedImage }
+        set { storedImage = newValue }
+    }
+
     override func validate() {
         var enabled = true
         if let action, let target = target as? NSObject {
@@ -94,6 +102,8 @@ final class SAClaudeToolbarButton: NSButton {
         guard showsSelection, let item = toolbarItem else { return false }
         return item.toolbar?.selectedItemIdentifier == item.itemIdentifier
     }
+
+    override func isAccessibilitySelected() -> Bool { isSelectedItem }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
