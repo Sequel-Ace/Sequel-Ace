@@ -89,6 +89,25 @@ import Foundation
         "\(isMariaDB ? "DROP CONSTRAINT" : "DROP CHECK") \(quoted(name))"
     }
 
+    /// Names a new CHECK constraint must avoid, given the names already on the table.
+    ///
+    /// MySQL keeps foreign keys and checks in separate namespaces: one table can have a
+    /// foreign key and a check that are both called `ck`. Only another check conflicts, so
+    /// foreign key names must not block a check name. MariaDB 10.11 refuses a check named
+    /// like a foreign key (error 1826), so there both lists apply. (MariaDB 10.2.12 still
+    /// allowed it; the server stays the final judge either way.)
+    @objc(namesToAvoidForNewCheckWithForeignKeyNames:checkNames:mariaDB:)
+    static func namesToAvoidForNewCheck(foreignKeyNames: [String], checkNames: [String], isMariaDB: Bool) -> [String] {
+        isMariaDB ? foreignKeyNames + checkNames : checkNames
+    }
+
+    /// Names a new foreign key must avoid. The mirror image of `namesToAvoidForNewCheck`:
+    /// on MySQL a name used only by a check is free for a foreign key.
+    @objc(namesToAvoidForNewForeignKeyWithForeignKeyNames:checkNames:mariaDB:)
+    static func namesToAvoidForNewForeignKey(foreignKeyNames: [String], checkNames: [String], isMariaDB: Bool) -> [String] {
+        isMariaDB ? foreignKeyNames + checkNames : foreignKeyNames
+    }
+
     /// Whether a name (compared case-insensitively) is already used, so the
     /// add sheet can reject duplicates before the server does.
     @objc(isName:takenInNames:)

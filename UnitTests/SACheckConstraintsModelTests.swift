@@ -88,11 +88,46 @@ final class SACheckConstraintsModelTests: XCTestCase {
         XCTAssertFalse(model.canAdd(name: "ck_age", expression: "a > 0"))
     }
 
+    // MARK: - Shared names with a foreign key
+
+    func testOnMySQLACheckNameUsedByAForeignKeyIsFreeToAdd() {
+        let model = SACheckConstraintsModel()
+        model.update(checks: [], takenNames: namesToAvoid(foreignKeys: ["fk_parent"], checks: [], isMariaDB: false))
+
+        XCTAssertNil(model.nameProblem(for: "fk_parent"))
+        XCTAssertTrue(model.canAdd(name: "fk_parent", expression: "a > 0"))
+    }
+
+    func testOnMySQLDeletingACheckThatSharesANameWithAForeignKeyAllowsAddingItAgain() {
+        let model = SACheckConstraintsModel()
+
+        // Before: the check and the foreign key are both called ck, so the name is taken by the check
+        model.update(checks: [check("ck", "`a` > 0")], takenNames: namesToAvoid(foreignKeys: ["ck"], checks: ["ck"], isMariaDB: false))
+        XCTAssertNotNil(model.nameProblem(for: "ck"))
+
+        // After deleting the check, the foreign key remains but must not block the name
+        model.update(checks: [], takenNames: namesToAvoid(foreignKeys: ["ck"], checks: [], isMariaDB: false))
+        XCTAssertNil(model.nameProblem(for: "ck"))
+        XCTAssertTrue(model.canAdd(name: "ck", expression: "a > 0"))
+    }
+
+    func testOnMariaDBTheForeignKeyStillBlocksTheCheckName() {
+        let model = SACheckConstraintsModel()
+        model.update(checks: [], takenNames: namesToAvoid(foreignKeys: ["ck"], checks: [], isMariaDB: true))
+
+        XCTAssertNotNil(model.nameProblem(for: "ck"))
+        XCTAssertFalse(model.canAdd(name: "ck", expression: "a > 0"))
+    }
+
     func testNotEnforcedIsNotOfferedUntilTheServerSupportsIt() {
         XCTAssertFalse(SACheckConstraintsModel().supportsNotEnforced)
     }
 
     // MARK: - Helpers
+
+    private func namesToAvoid(foreignKeys: [String], checks: [String], isMariaDB: Bool) -> [String] {
+        SACheckConstraintSupport.namesToAvoidForNewCheck(foreignKeyNames: foreignKeys, checkNames: checks, isMariaDB: isMariaDB)
+    }
 
     private func check(_ name: String, _ expression: String, enforced: Bool = true) -> [String: Any] {
         [

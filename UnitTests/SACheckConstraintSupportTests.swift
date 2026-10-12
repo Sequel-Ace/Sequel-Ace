@@ -390,6 +390,42 @@ final class SACheckConstraintSupportTests: XCTestCase {
         )
     }
 
+    // MARK: - Which names a new constraint must avoid
+
+    func testOnMySQLAForeignKeyNameDoesNotBlockANewCheck() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.namesToAvoidForNewCheck(foreignKeyNames: ["ck", "fk_parent"], checkNames: ["chk_age"], isMariaDB: false),
+            ["chk_age"]
+        )
+    }
+
+    func testOnMySQLACheckNameDoesNotBlockANewForeignKey() {
+        XCTAssertEqual(
+            SACheckConstraintSupport.namesToAvoidForNewForeignKey(foreignKeyNames: ["fk_parent"], checkNames: ["ck", "chk_age"], isMariaDB: false),
+            ["fk_parent"]
+        )
+    }
+
+    func testOnMySQLEachKindStillBlocksItsOwnKind() {
+        XCTAssertTrue(SACheckConstraintSupport.namesToAvoidForNewCheck(foreignKeyNames: [], checkNames: ["ck"], isMariaDB: false).contains("ck"))
+        XCTAssertTrue(SACheckConstraintSupport.namesToAvoidForNewForeignKey(foreignKeyNames: ["fk"], checkNames: [], isMariaDB: false).contains("fk"))
+    }
+
+    func testOnMariaDBForeignKeysAndChecksShareOneNamespaceInBothDirections() {
+        let forCheck = SACheckConstraintSupport.namesToAvoidForNewCheck(foreignKeyNames: ["fk_parent"], checkNames: ["chk_age"], isMariaDB: true)
+        let forForeignKey = SACheckConstraintSupport.namesToAvoidForNewForeignKey(foreignKeyNames: ["fk_parent"], checkNames: ["chk_age"], isMariaDB: true)
+
+        XCTAssertEqual(Set(forCheck), ["fk_parent", "chk_age"])
+        XCTAssertEqual(Set(forForeignKey), ["fk_parent", "chk_age"])
+    }
+
+    func testNamesToAvoidAreEmptyWhenTheTableHasNoConstraints() {
+        for isMariaDB in [false, true] {
+            XCTAssertEqual(SACheckConstraintSupport.namesToAvoidForNewCheck(foreignKeyNames: [], checkNames: [], isMariaDB: isMariaDB), [])
+            XCTAssertEqual(SACheckConstraintSupport.namesToAvoidForNewForeignKey(foreignKeyNames: [], checkNames: [], isMariaDB: isMariaDB), [])
+        }
+    }
+
     func testNameCollisionIsCaseInsensitive() {
         XCTAssertTrue(SACheckConstraintSupport.isName("CK_Age", takenIn: ["fk_a", "ck_age"]))
         XCTAssertFalse(SACheckConstraintSupport.isName("ck_other", takenIn: ["fk_a", "ck_age"]))

@@ -647,6 +647,11 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	// information_schema) is generated live from db file scans, which cannot be cheaply done on servers with
 	// many databases.
 	[takenConstraintNames removeAllObjects];
+
+	// Foreign key and CHECK names are kept apart here and combined per server below: MySQL gives them
+	// separate namespaces, so a check may share a name with a foreign key; MariaDB treats them as one.
+	NSMutableArray<NSString *> *foreignKeyNames = [NSMutableArray array];
+	NSMutableArray<NSString *> *checkNames = [NSMutableArray array];
 	
 	if ([tablesListInstance tableType] == SPTableTypeTable) {
 		
@@ -666,7 +671,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 									 ([constraint objectForKey:@"delete"] ? [constraint objectForKey:@"delete"] : @""), SPRelationOnDeleteKey,
 									 nil]];
 			
-			[takenConstraintNames addObject:[[constraint objectForKey:SPRelationNameKey] lowercaseString]];			
+			[foreignKeyNames addObject:[[constraint objectForKey:SPRelationNameKey] lowercaseString]];			
 		}
 	}
 
@@ -677,8 +682,19 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	for (NSDictionary *check in checks)
 	{
 		NSString *checkName = [check objectForKey:SACheckConstraintSupport.nameKey];
-		if ([checkName length]) [takenConstraintNames addObject:[checkName lowercaseString]];
+		if ([checkName length]) [checkNames addObject:[checkName lowercaseString]];
 	}
+
+	// What each add sheet has to avoid: the legacy foreign key sheet reads takenConstraintNames, the Check
+	// Constraints section gets its own list
+	BOOL serverIsMariaDB = (isTable && [connection isConnected] && [connection isMariaDB]);
+
+	[takenConstraintNames addObjectsFromArray:[SACheckConstraintSupport namesToAvoidForNewForeignKeyWithForeignKeyNames:foreignKeyNames
+	                                                                                                         checkNames:checkNames
+	                                                                                                            mariaDB:serverIsMariaDB]];
+	NSArray<NSString *> *namesToAvoidForNewCheck = [SACheckConstraintSupport namesToAvoidForNewCheckWithForeignKeyNames:foreignKeyNames
+	                                                                                                         checkNames:checkNames
+	                                                                                                            mariaDB:serverIsMariaDB];
 
 	BOOL serverSupportsChecks = NO;
 	BOOL supportsNotEnforced = NO;
@@ -701,7 +717,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[checkConstraintsController updateWithChecks:checks
 	                        serverSupportsChecks:serverSupportsChecks
 	                         supportsNotEnforced:supportsNotEnforced
-	                                  takenNames:takenConstraintNames
+	                                  takenNames:namesToAvoidForNewCheck
 	                          interactionEnabled:![tableDocumentInstance isWorking]];
 
 	[relationsTableView reloadData];
