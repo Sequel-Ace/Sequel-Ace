@@ -12,6 +12,7 @@ import AppKit
 /// The icons the left navigation draws.
 @objc enum SAClaudeGlyph: Int {
     case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history, copy, save, clear, field, keyword
+    case structure, relations, triggers, info, query, recordView, users, console, clearConsole, chevronLeft, chevronRight
 }
 
 @objc final class SAClaudeGlyphs: NSObject {
@@ -24,7 +25,9 @@ import AppKit
         case .view: return SAClaudeStyle.tintView
         case .procedure: return SAClaudeStyle.tintProcedure
         case .function: return SAClaudeStyle.tintFunction
-        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear, .field, .keyword: return SAClaudeStyle.textMuted
+        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear, .field, .keyword,
+             .structure, .relations, .triggers, .info, .query, .recordView, .users, .console, .clearConsole, .chevronLeft, .chevronRight:
+            return SAClaudeStyle.textMuted
         }
     }
 
@@ -48,6 +51,17 @@ import AppKit
         case .clear: return NSLocalizedString("Clear output", comment: "accessibility name of the Run All console's Clear button")
         case .field: return NSLocalizedString("Column", comment: "accessibility name of the column icon in the autocomplete list")
         case .keyword: return NSLocalizedString("Keyword", comment: "accessibility name of the keyword icon in the autocomplete list")
+        case .structure: return NSLocalizedString("ClaudeToolbarGlyphStructure", value: "Structure", comment: "accessibility name of the table structure toolbar icon")
+        case .relations: return NSLocalizedString("ClaudeToolbarGlyphRelations", value: "Relations", comment: "accessibility name of the table relations toolbar icon")
+        case .triggers: return NSLocalizedString("ClaudeToolbarGlyphTriggers", value: "Triggers", comment: "accessibility name of the table triggers toolbar icon")
+        case .info: return NSLocalizedString("ClaudeToolbarGlyphInfo", value: "Table info", comment: "accessibility name of the table info toolbar icon")
+        case .query: return NSLocalizedString("ClaudeToolbarGlyphQuery", value: "Query", comment: "accessibility name of the query toolbar icon")
+        case .recordView: return NSLocalizedString("ClaudeToolbarGlyphRecordView", value: "Record view", comment: "accessibility name of the record view toolbar icon")
+        case .users: return NSLocalizedString("ClaudeToolbarGlyphUsers", value: "Users", comment: "accessibility name of the user accounts toolbar icon")
+        case .console: return NSLocalizedString("ClaudeToolbarGlyphConsole", value: "Console", comment: "accessibility name of the console toolbar icon")
+        case .clearConsole: return NSLocalizedString("ClaudeToolbarGlyphClearConsole", value: "Clear console", comment: "accessibility name of the clear console toolbar icon")
+        case .chevronLeft: return NSLocalizedString("ClaudeToolbarGlyphBack", value: "Back", comment: "accessibility name of the history back arrow")
+        case .chevronRight: return NSLocalizedString("ClaudeToolbarGlyphForward", value: "Forward", comment: "accessibility name of the history forward arrow")
         }
     }
 
@@ -227,6 +241,43 @@ import AppKit
             return [line(p(3, 4.5), p(13, 4.5)), line(p(3, 8), p(13, 8)), line(p(3, 11.5), p(9, 11.5))]
         case .keyword:
             return [line(p(4.5, 3.5), p(4.5, 12.5)), line(p(4.5, 8.5), p(10.5, 3.5)), line(p(6.5, 7), p(11, 12.5))]
+        case .structure:
+            return [NSBezierPath(roundedRect: NSRect(x: 2.5, y: 2.5, width: 11, height: 11), xRadius: 2, yRadius: 2),
+                    line(p(2.5, 6), p(13.5, 6)), line(p(6.2, 6), p(6.2, 13.5)), line(p(9.8, 6), p(9.8, 13.5))]
+        case .relations:
+            return [line(p(3, 5.5), p(13, 5.5)), line(p(10.5, 3), p(13, 5.5)), line(p(13, 5.5), p(10.5, 8)),
+                    line(p(13, 10.5), p(3, 10.5)), line(p(5.5, 8), p(3, 10.5)), line(p(3, 10.5), p(5.5, 13))]
+        case .triggers:
+            let bolt = NSBezierPath()
+            bolt.move(to: p(9, 1.8)); bolt.line(to: p(4, 9)); bolt.line(to: p(7.8, 9))
+            bolt.line(to: p(7, 14.2)); bolt.line(to: p(12, 7)); bolt.line(to: p(8.2, 7)); bolt.close()
+            return [bolt]
+        case .info:
+            return [NSBezierPath(ovalIn: NSRect(x: 2.2, y: 2.2, width: 11.6, height: 11.6)),
+                    line(p(8, 7.4), p(8, 11)), NSBezierPath(ovalIn: NSRect(x: 7.6, y: 4.6, width: 0.8, height: 0.8))]
+        case .query:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(5, 6.5), p(7, 8)), line(p(7, 8), p(5, 9.5)), line(p(8.5, 10), p(11, 10))]
+        case .recordView:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(9.5, 3), p(9.5, 13))]
+        case .users:
+            let body = NSBezierPath()
+            body.move(to: p(2.5, 13)); body.curve(to: p(9.5, 13), controlPoint1: p(2.5, 8.6), controlPoint2: p(9.5, 8.6))
+            let second = NSBezierPath()
+            second.move(to: p(10.6, 9.3)); second.curve(to: p(13.5, 12.6), controlPoint1: p(12.8, 9.3), controlPoint2: p(13.5, 10.6))
+            return [NSBezierPath(ovalIn: NSRect(x: 3.8, y: 3.2, width: 4.4, height: 4.4)), body,
+                    NSBezierPath(ovalIn: NSRect(x: 9.2, y: 4.2, width: 3.6, height: 3.6)), second]
+        case .console:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(2, 6), p(14, 6)), line(p(5, 8.2), p(6.6, 9.5)), line(p(6.6, 9.5), p(5, 10.8))]
+        case .clearConsole:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(2, 6), p(14, 6)), line(p(6.5, 8), p(9.5, 11)), line(p(9.5, 8), p(6.5, 11))]
+        case .chevronLeft:
+            return [line(p(9.5, 4), p(6, 8)), line(p(6, 8), p(9.5, 12))]
+        case .chevronRight:
+            return [line(p(6.5, 4), p(10, 8)), line(p(10, 8), p(6.5, 12))]
         }
     }
 }

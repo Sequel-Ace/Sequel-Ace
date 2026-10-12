@@ -9,7 +9,9 @@ import XCTest
 final class SAClaudeGlyphsTests: XCTestCase {
 
     private let allGlyphs: [SAClaudeGlyph] = [.database, .table, .view, .procedure, .function, .add, .actions, .refresh, .infoPanel,
-                                                .copy, .save, .clear, .field, .keyword]
+                                                .copy, .save, .clear, .field, .keyword,
+                                                .structure, .relations, .triggers, .info, .query, .recordView, .users, .console,
+                                                .clearConsole, .chevronLeft, .chevronRight]
 
     /// Draws an image at 2x into a bitmap under an appearance.
     private func render(_ image: NSImage, _ name: NSAppearance.Name) -> NSBitmapImageRep {
@@ -113,5 +115,14 @@ final class SAClaudeGlyphsTests: XCTestCase {
         XCTAssertEqual(SAClaudeGlyph.clear.rawValue, 14, "existing raw values unchanged")
         XCTAssertEqual(SAClaudeGlyph.field.rawValue, 15)
         XCTAssertEqual(SAClaudeGlyph.keyword.rawValue, 16)
+    }
+
+    /// Verifies the toolbar colour follows the appearance: 0x1A1A19 dark, 0xF4F3EF light.
+    func testToolbarBackgroundFollowsTheAppearance() {
+        var dark: NSColor?, light: NSColor?
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance { dark = SAClaudeStyle.toolbarBackground.usingColorSpace(.sRGB) }
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance { light = SAClaudeStyle.toolbarBackground.usingColorSpace(.sRGB) }
+        XCTAssertEqual(dark?.redComponent ?? 0, 0x1A / 255, accuracy: 0.01)
+        XCTAssertEqual(light?.redComponent ?? 0, 0xF4 / 255, accuracy: 0.01)
     }
 }

@@ -43,6 +43,8 @@ import AppKit
     @objc static let tintView = dynamic("tintView", dark: 0xA096EB, light: 0x7161E0)
     @objc static let tintProcedure = dynamic("tintProcedure", dark: 0xEC835A, light: 0xC25124)
     @objc static let tintFunction = dynamic("tintFunction", dark: 0x55BF50, light: 0x008300)
+    /// The main window's title bar and toolbar.
+    @objc static let toolbarBackground = dynamic("toolbarBackground", dark: 0x1A1A19, light: 0xF4F3EF)
 
     // MARK: - Fonts (SF Pro)
 

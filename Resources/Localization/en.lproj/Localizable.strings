@@ -4793,3 +4793,36 @@
 
 /* Editor options popover: a switch's accessibility value when off */
 "ClaudeEditorOptionsOff" = "Off";
+
+/* accessibility name of the table structure toolbar icon */
+"ClaudeToolbarGlyphStructure" = "Structure";
+
+/* accessibility name of the table relations toolbar icon */
+"ClaudeToolbarGlyphRelations" = "Relations";
+
+/* accessibility name of the table triggers toolbar icon */
+"ClaudeToolbarGlyphTriggers" = "Triggers";
+
+/* accessibility name of the table info toolbar icon */
+"ClaudeToolbarGlyphInfo" = "Table info";
+
+/* accessibility name of the query toolbar icon */
+"ClaudeToolbarGlyphQuery" = "Query";
+
+/* accessibility name of the record view toolbar icon */
+"ClaudeToolbarGlyphRecordView" = "Record view";
+
+/* accessibility name of the user accounts toolbar icon */
+"ClaudeToolbarGlyphUsers" = "Users";
+
+/* accessibility name of the console toolbar icon */
+"ClaudeToolbarGlyphConsole" = "Console";
+
+/* accessibility name of the clear console toolbar icon */
+"ClaudeToolbarGlyphClearConsole" = "Clear console";
+
+/* accessibility name of the history back arrow */
+"ClaudeToolbarGlyphBack" = "Back";
+
+/* accessibility name of the history forward arrow */
+"ClaudeToolbarGlyphForward" = "Forward";
