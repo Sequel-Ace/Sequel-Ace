@@ -18,6 +18,7 @@ import AppKit
     private weak var favoritesButton: NSPopUpButton?
     private weak var historyButton: NSPopUpButton?
     private weak var runButton: NSView?
+    private weak var copyButton: SAClaudeCopyButton?
     private weak var editorSplitView: SPSplitView?
     private weak var editorScrollView: NSScrollView?
     private let background = SAClaudeEditorBarBackgroundView()
@@ -29,9 +30,9 @@ import AppKit
     private var isLayingOut = false
 
     /// Restyles the bar once per bar view and keeps it in step with the editor theme.
-    @objc(attachToBarWithOptionsButton:favoritesButton:historyButton:runButton:resultsView:editorSplitView:)
+    @objc(attachToBarWithOptionsButton:favoritesButton:historyButton:runButton:resultsView:editorSplitView:resultsTable:)
     static func attach(optionsButton: NSPopUpButton, favoritesButton: NSPopUpButton, historyButton: NSPopUpButton,
-                       runButton: NSView, resultsView: NSView, editorSplitView: SPSplitView) {
+                       runButton: NSView, resultsView: NSView, editorSplitView: SPSplitView, resultsTable: SPCopyTable?) {
         guard let bar = favoritesButton.superview, let container = bar.superview,
               objc_getAssociatedObject(bar, &associationKey) == nil else { return }
         let styler = SAClaudeQueryBarStyler()
@@ -77,6 +78,11 @@ import AppKit
         favoritesButton.imagePosition = .imageLeading
         historyButton.imagePosition = .imageLeading
         optionsButton.imagePosition = .imageOnly
+        if let resultsTable {
+            let copy = SAClaudeCopyButton.make(table: resultsTable)
+            bar.addSubview(copy)
+            styler.copyButton = copy
+        }
 
         styler.applyPalette()
         styler.observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak styler] _ in
@@ -125,6 +131,7 @@ import AppKit
             button.contentTintColor = palette.buttonText
             SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
         }
+        copyButton?.palette = palette
         layoutButtons(in: bar)
     }
 
@@ -150,15 +157,26 @@ import AppKit
             runMinX = run.frame.minX
         }
         let left = [optionsButton, favoritesButton, historyButton].compactMap { $0 }
-        // Labels first; icon-only Favorites/History when the labels would run into Run.
-        for labelled in [true, false] {
-            for button in left where button !== optionsButton { button.imagePosition = labelled ? .imageLeading : .imageOnly }
-            let widths = left.map { $0 === optionsButton || !labelled ? height : max(labelledWidth(of: $0), height) }
+        let gapToRun = SAClaudeEditorChrome.buttonGap * 4
+        // Shrink in order: the Copy label first, then the Favorites/History labels.
+        let modes: [(copyLabelled: Bool, leftLabelled: Bool)] = [(true, true), (false, true), (false, false)]
+        for (index, mode) in modes.enumerated() {
+            var limit = runMinX
+            var copyFrame: NSRect?
+            if let copy = copyButton {
+                let width = copy.preferredWidth(labelled: mode.copyLabelled)
+                copyFrame = NSRect(x: runMinX - gapToRun - width, y: y, width: width, height: height)
+                limit = copyFrame!.minX
+            }
+            for button in left where button !== optionsButton { button.imagePosition = mode.leftLabelled ? .imageLeading : .imageOnly }
+            let widths = left.map { $0 === optionsButton || !mode.leftLabelled ? height : max(labelledWidth(of: $0), height) }
             let xs = SAClaudeEditorChrome.leadingXs(widths: widths, start: SAClaudeEditorChrome.barSidePadding, gap: SAClaudeEditorChrome.buttonGap)
-            let fits = (xs.last.map { $0 + widths[widths.count - 1] } ?? 0) <= runMinX - SAClaudeEditorChrome.buttonGap * 4
-            if fits || !labelled {
-                for (index, button) in left.enumerated() {
-                    button.frame = NSRect(x: xs[index], y: y, width: widths[index], height: height)
+            let fits = (xs.last.map { $0 + widths[widths.count - 1] } ?? 0) <= limit - gapToRun
+            if fits || index == modes.count - 1 {
+                for (i, button) in left.enumerated() { button.frame = NSRect(x: xs[i], y: y, width: widths[i], height: height) }
+                if let copy = copyButton, let copyFrame {
+                    copy.showsLabel = mode.copyLabelled
+                    if copy.frame != copyFrame { copy.frame = copyFrame }
                 }
                 return
             }

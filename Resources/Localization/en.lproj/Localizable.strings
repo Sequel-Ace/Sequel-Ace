@@ -4718,3 +4718,6 @@
 
 /* Query bar Copy button tooltip when the result has no column definitions to build SQL INSERT statements from */
 "ClaudeCopyUnavailableNoColumns" = "SQL INSERT needs a result with column details";
+
+/* Accessibility help of the query bar Copy button: its chevron lists the copy actions */
+"ClaudeCopyOptions" = "Copy options";
