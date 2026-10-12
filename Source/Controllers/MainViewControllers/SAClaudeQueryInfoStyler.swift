@@ -27,6 +27,8 @@ import AppKit
     /// The error text's inset inside its block.
     private static let errorTextInset = NSSize(width: 10, height: 8)
     private static let statusGap: CGFloat = 8
+    /// The bottom strip's visible height.
+    private static let stripHeight: CGFloat = 32
 
     private weak var split: SPSplitView?
     private weak var pane: NSView?
@@ -51,6 +53,8 @@ import AppKit
     private var defaultsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
     private var messageTextObserver: NSObjectProtocol?
+    private var containerFrameObserver: NSObjectProtocol?
+    private var windowObservation: NSKeyValueObservation?
     private var appearanceObservation: NSKeyValueObservation?
     private var infoButtonStateObservation: NSKeyValueObservation?
     private var statusTextObservation: NSKeyValueObservation?
@@ -105,6 +109,7 @@ import AppKit
         if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
         if let scrollFrameObserver { NotificationCenter.default.removeObserver(scrollFrameObserver) }
         if let messageTextObserver { NotificationCenter.default.removeObserver(messageTextObserver) }
+        if let containerFrameObserver { NotificationCenter.default.removeObserver(containerFrameObserver) }
     }
 
     /// The pull-down beside the pane toggle whose menu (or a submenu) exports the query result.
@@ -214,34 +219,17 @@ import AppKit
 
     private func buildStrip() {
         guard let split, let container = split.superview else { return }
-        // The strip is the container's area outside the split, on the side the buttons are on (below it).
-        let height = container.isFlipped ? container.bounds.maxY - split.frame.maxY : split.frame.minY - container.bounds.minY
-        guard height > 0 else { return }
-        let stripY = container.isFlipped ? container.bounds.maxY - height : container.bounds.minY
-        // As wide as the split above it.
-        stripBackground.frame = NSRect(x: split.frame.minX, y: stripY, width: split.frame.width, height: height)
-        stripBackground.autoresizingMask = container.isFlipped ? [.width, .minYMargin] : [.width, .maxYMargin]
         container.addSubview(stripBackground, positioned: .below, relativeTo: nil)
         // Hairline along the strip's top edge (non-flipped background view).
-        stripLine.frame = NSRect(x: 0, y: height - 1, width: stripBackground.bounds.width, height: 1)
         stripLine.autoresizingMask = [.width, .minYMargin]
         stripBackground.addSubview(stripLine)
 
-        // 28pt ghost buttons, kept on their centres horizontally and centred in the strip vertically
-        // (on their old centres they would run 4pt into the split above).
-        let centreY = stripY + height / 2
-        func ghostFrame(for view: NSView) -> NSRect {
-            NSRect(x: (view.frame.midX - Self.buttonSize / 2).rounded(), y: (centreY - Self.buttonSize / 2).rounded(),
-                   width: Self.buttonSize, height: Self.buttonSize)
-        }
         if let infoButton {
             infoButton.isBordered = false
             infoButton.imagePosition = .imageOnly
-            if infoButton.superview === container { infoButton.frame = ghostFrame(for: infoButton) }
             SAClaudeHoverHighlighter.attach(to: infoButton)
             if let buttonSuperview = infoButton.superview {
                 infoButtonStateFill.cornerRadius = SAClaudeStyle.barButtonRadius
-                infoButtonStateFill.frame = infoButton.frame
                 infoButtonStateFill.autoresizingMask = infoButton.autoresizingMask
                 buttonSuperview.addSubview(infoButtonStateFill, positioned: .below, relativeTo: infoButton)
                 updateInfoButtonStateFill()
@@ -255,15 +243,11 @@ import AppKit
             exportButton.isBordered = false
             (exportButton.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
             exportButton.imagePosition = .imageOnly
-            if exportButton.superview === container { exportButton.frame = ghostFrame(for: exportButton) }
             exportButton.setAccessibilityLabel(NSLocalizedString("Export result", comment: "accessibility name of the ⋯ menu button in the Query tab's bottom strip, which holds Export Result"))
             SAClaudeHoverHighlighter.attach(to: exportButton)
         }
-
-        // The status text follows the buttons and is centred in the strip like them.
         if let statusField {
-            let font = NSFont.systemFont(ofSize: 11)
-            statusField.font = font
+            statusField.font = .systemFont(ofSize: 11)
             // One line tall now; a long status ends in an ellipsis instead of wrapping out of sight.
             statusField.lineBreakMode = .byTruncatingTail
             // The full text, which the truncation may hide.
@@ -271,15 +255,64 @@ import AppKit
                 let text = field.stringValue
                 field.toolTip = text.isEmpty ? nil : text
             }
-            guard statusField.superview === container else { return }
+        }
+
+        layoutStrip()
+        // The window's edge hides the container's bottom, by an amount known only once it's in a
+        // window and laid out, so lay the strip out again as the container resizes.
+        container.postsFrameChangedNotifications = true
+        containerFrameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: container, queue: .main) { [weak self] _ in
+            self?.layoutStrip()
+        }
+        windowObservation = container.observe(\.window) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.layoutStrip() }
+        }
+    }
+
+    /// Sizes the strip to `stripHeight` above the container's visible bottom (the window's edge
+    /// covers the rest) by moving the split's bottom edge, and centres the buttons and status text in it.
+    private func layoutStrip() {
+        guard let split, let container = split.superview, !container.isFlipped else { return }
+        // Before the container is in a window, nothing is hidden yet.
+        let visible = container.window == nil ? container.bounds : container.visibleRect
+        guard visible.height > 0 else { return }
+        let stripBottom = max(container.bounds.minY, visible.minY)
+        let splitBottom = stripBottom + Self.stripHeight
+        if split.frame.minY != splitBottom {
+            var splitFrame = split.frame
+            splitFrame.size.height -= splitBottom - splitFrame.minY
+            splitFrame.origin.y = splitBottom
+            guard splitFrame.height > 0 else { return }
+            split.frame = splitFrame
+        }
+
+        // The background reaches down under the hidden part too; the hairline is on its top edge.
+        let background = NSRect(x: split.frame.minX, y: container.bounds.minY,
+                                width: split.frame.width, height: splitBottom - container.bounds.minY)
+        if stripBackground.frame != background {
+            stripBackground.frame = background
+            stripLine.frame = NSRect(x: 0, y: background.height - 1, width: background.width, height: 1)
+        }
+
+        // 28pt ghost buttons on their XIB centres horizontally, centred in the visible strip vertically.
+        let centreY = stripBottom + Self.stripHeight / 2
+        func ghostFrame(for view: NSView) -> NSRect {
+            NSRect(x: (view.frame.midX - Self.buttonSize / 2).rounded(), y: (centreY - Self.buttonSize / 2).rounded(),
+                   width: Self.buttonSize, height: Self.buttonSize)
+        }
+        let buttons = [infoButton as NSView?, exportButton].compactMap { $0 }.filter { $0.superview === container }
+        for button in buttons { button.frame = ghostFrame(for: button) }
+        if let infoButton, infoButtonStateFill.superview != nil { infoButtonStateFill.frame = infoButton.frame }
+
+        // The status text follows the buttons, one line tall and centred like them.
+        if let statusField, statusField.superview === container {
             var frame = statusField.frame
-            let buttons = [infoButton as NSView?, exportButton].compactMap { $0 }.filter { $0.superview === container }
             if let lastButtonMaxX = buttons.map(\.frame.maxX).max() {
                 let newX = lastButtonMaxX + Self.statusGap
                 frame.size.width += frame.minX - newX
                 frame.origin.x = newX
             }
-            let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: font))
+            let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: statusField.font ?? .systemFont(ofSize: 11)))
             frame.size.height = lineHeight
             frame.origin.y = (centreY - lineHeight / 2).rounded()
             statusField.frame = frame
