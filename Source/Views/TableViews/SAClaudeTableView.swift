@@ -49,6 +49,24 @@ import AppKit
         return cell
     }
 
+    // MARK: Inline editing
+
+    override func editColumn(_ column: Int, row: Int, with event: NSEvent?, select: Bool) {
+        super.editColumn(column, row: row, with: event, select: select)
+        guard let editor = currentEditor() as? NSTextView else { return }
+        editor.drawsBackground = true
+        editor.backgroundColor = renderer.palette.background
+        editor.textColor = renderer.palette.text
+        editor.insertionPointColor = renderer.palette.caret
+    }
+
+    /// The field editor is the window's shared one: give its caret back before other fields use it.
+    /// Reset before super, which may start editing the next cell (Tab/Return) and re-tint it.
+    override func textDidEndEditing(_ notification: Notification) {
+        (notification.object as? NSTextView)?.insertionPointColor = .textColor
+        super.textDidEndEditing(notification)
+    }
+
     override func updateTrackingAreas() { super.updateTrackingAreas(); renderer.updateTrackingArea() }
     override func mouseMoved(with event: NSEvent) { super.mouseMoved(with: event); renderer.mouseMoved(event) }
     override func mouseExited(with event: NSEvent) { super.mouseExited(with: event); renderer.mouseExited() }

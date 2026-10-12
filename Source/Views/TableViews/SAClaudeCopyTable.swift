@@ -46,12 +46,23 @@ import AppKit
         return font
     }
 
+    /// Every theme text colour `style(_:role: .text)` has applied. Grids reuse one data cell per column,
+    /// so a cell still carrying an earlier theme's colour must count as "nobody chose it" after a theme change.
+    private static var appliedTextColours: [NSColor] = []
+
+    private static func noteAppliedTextColour(_ colour: NSColor) {
+        if !appliedTextColours.contains(where: { $0 == colour }) { appliedTextColours.append(colour) }
+    }
+
     /// Sets the cell's text colour and font for its role; called from the grids' willDisplayCell.
     @objc(styleCell:role:)
     static func style(_ cell: Any, role: SAClaudeGridCellRole) {
         guard let cell = cell as? NSTextFieldCell else { return }
         switch role {
-        case .text: cell.textColor = Self.palette.text
+        case .text:
+            let text = Self.palette.text
+            noteAppliedTextColour(text)
+            cell.textColor = text
         case .null: cell.textColor = Self.palette.null
         case .displayOverride: cell.textColor = Self.palette.displayOverride
         }
@@ -65,6 +76,7 @@ import AppKit
     static func isDefaultTextColour(_ colour: NSColor?) -> Bool {
         guard let colour else { return true }
         return colour == .controlTextColor || colour == .labelColor || colour == .textColor || colour == .secondaryLabelColor
+            || appliedTextColours.contains(where: { $0 == colour })
     }
 
     /// Themes a text cell whose colour is still the system default (grids whose delegates don't style
