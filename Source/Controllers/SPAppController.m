@@ -1472,7 +1472,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
-    if ([sender keyWindow] != nil && [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationPromptOnQuit]) {
+    // Relaunching after an SSH agent helper install was asked for a moment ago; don't ask again.
+    if ([sender keyWindow] != nil && [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationPromptOnQuit] && ![SASSHAgentPreferences isRelaunching]) {
         BOOL answer = [self dialogOKCancelWithQuestion:NSLocalizedString(@"Close the app?", @"quitting app informal alert title") text:NSLocalizedString(@"Are you sure you want to quit the app?", @"quitting app informal alert body")];
         if (answer == NO) {
             return NSTerminateCancel;

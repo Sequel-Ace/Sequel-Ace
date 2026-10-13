@@ -40,6 +40,14 @@ import SwiftUI
 /// App target only.
 @objc final class SASSHAgentPreferences: NSObject {
 
+    /// True while the app is quitting because the user clicked Relaunch after
+    /// installing the helper. The app delegate skips its "close the app?"
+    /// confirmation then: the user has just asked for exactly this, and by
+    /// that point the new copy is already starting.
+    @objc static private(set) var isRelaunching = false
+
+    fileprivate static func beginRelaunch() { isRelaunching = true }
+
     /// Shows the default agent beside the Configure… button, so it can be seen
     /// without opening the sheet.
     private static weak var summaryLabel: NSTextField?
@@ -128,6 +136,7 @@ final class SASSHAgentSettingsWindowController: NSWindowController {
                               styleMask: [.titled], backing: .buffered, defer: true)
         self.init(window: window)
         let model = SASSHAgentSettingsModel()
+        model.dismiss = { [weak self] in self?.endSheet() }
         window.contentView = NSHostingView(rootView: SASSHAgentSettingsView(model: model) { [weak self] in
             self?.endSheet()
         })
@@ -168,6 +177,9 @@ final class SASSHAgentSettingsModel: ObservableObject {
     @Published var installError: String?
     @Published var isPresentingInstallError = false
     @Published var isPresentingRelaunchPrompt = false
+
+    /// Closes the settings sheet. Set by the window controller.
+    var dismiss: (() -> Void)?
 
     init() {
         let stored = UserDefaults.standard.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? ""
@@ -223,15 +235,53 @@ final class SASSHAgentSettingsModel: ObservableObject {
         }
     }
 
-    /// Ends the panel's write access to the helper's folder, which lasts for
-    /// the life of the process.
+    /// Relaunches the app, which ends the panel's write access to the helper's
+    /// folder (it lasts for the life of the process).
+    ///
+    /// The app will not quit while a sheet is up, and this is called from a
+    /// button on the settings sheet or on an alert over it. So the sheet is
+    /// closed first, and only then is the new copy started and this one quit.
     func relaunch() {
+        // Let the alert that carried the button finish closing.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+            guard let dismiss else { return Self.startNewInstanceAndQuit(onFailure: presentRelaunchError) }
+            dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                Self.startNewInstanceAndQuit(onFailure: Self.showRelaunchFailure)
+            }
+        }
+    }
+
+    private static func startNewInstanceAndQuit(onFailure: @escaping (String) -> Void) {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
-        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, error in
-            guard error == nil else { return }
-            DispatchQueue.main.async { NSApp.terminate(nil) }
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { application, error in
+            DispatchQueue.main.async {
+                if application != nil, error == nil {
+                    SASSHAgentPreferences.beginRelaunch()
+                    NSApp.terminate(nil)
+                } else {
+                    onFailure(error?.localizedDescription ?? "")
+                }
+            }
         }
+    }
+
+    private static let relaunchFailureMessage = NSLocalizedString("Sequel Ace could not relaunch itself. Quit Sequel Ace and open it again to finish installing the helper.", comment: "ssh agent settings : relaunch failed message")
+
+    /// Shares the sheet's one alert: two `.alert` modifiers on a view do not
+    /// both work.
+    private func presentRelaunchError(_ detail: String) {
+        presentInstallError([Self.relaunchFailureMessage, detail].filter { !$0.isEmpty }.joined(separator: "\n\n"))
+    }
+
+    /// The sheet has gone by the time this can fail, so the alert stands alone.
+    private static func showRelaunchFailure(_ detail: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = NSLocalizedString("SSH Agent Helper", comment: "ssh agent settings : install error title")
+        alert.informativeText = [relaunchFailureMessage, detail].filter { !$0.isEmpty }.joined(separator: "\n\n")
+        alert.runModal()
     }
 }
 
@@ -277,6 +327,7 @@ struct SASSHAgentSettingsView: View {
         } message: {
             Text(verbatim: model.installError ?? "")
         }
+
     }
 }
 

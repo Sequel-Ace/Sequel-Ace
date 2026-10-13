@@ -212,6 +212,9 @@
 /* ssh agent settings : introduction */
 "Sequel Ace can authenticate SSH connections with keys held by an SSH agent such as 1Password, Secretive or the macOS agent. Each connection can override the default chosen here." = "Sequel Ace can authenticate SSH connections with keys held by an SSH agent such as 1Password, Secretive or the macOS agent. Each connection can override the default chosen here.";
 
+/* ssh agent settings : relaunch failed message */
+"Sequel Ace could not relaunch itself. Quit Sequel Ace and open it again to finish installing the helper." = "Sequel Ace could not relaunch itself. Quit Sequel Ace and open it again to finish installing the helper.";
+
 /* ssh agent settings : helper explanation */
 "Sequel Ace is sandboxed and cannot reach an SSH agent by itself. A small helper script, which you install once, passes connections on to the agents listed in its ssh-agent-relay.allow file. Your agent may show the request as coming from “com.apple.foundation.UserScriptService”, the macOS service that runs the helper." = "Sequel Ace is sandboxed and cannot reach an SSH agent by itself. A small helper script, which you install once, passes connections on to the agents listed in its ssh-agent-relay.allow file. Your agent may show the request as coming from “com.apple.foundation.UserScriptService”, the macOS service that runs the helper.";
 
