@@ -1597,6 +1597,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Re-apply scroll layout after every details resize to avoid clipped top rows in small windows.
     [self scrollViewFrameChanged:nil];
+
+    // Claude look: the connection panel takes over the details frames (and re-centres them).
+    [SAClaudeConnectionPanelStyler panelDidResizeIn:connectionResizeContainer];
 }
 
 #pragma mark -
@@ -1850,6 +1853,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             }
             break;
     }
+
+    // Claude look: chain the panel's visible controls in visual order.
+    [SAClaudeConnectionPanelStyler keyViewsDidChangeIn:connectionResizeContainer];
 }
 
 /**
@@ -4874,6 +4880,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Force a resize after a tiny delay to ensure view is fully loaded
         [self performSelector:@selector(_forceInitialResize) withObject:nil afterDelay:0.0];
+
+        // Claude look: restyle the connection form as the Claude connection panel (it lays out on every resize above).
+        [SAClaudeConnectionPanelStyler attachToController:self
+                                                container:connectionResizeContainer
+                                               scrollView:connectionDetailsScrollView
+                                           formContainers:[NSArray arrayWithObjects:standardConnectionFormContainer, socketConnectionFormContainer,
+                                                           sshConnectionFormContainer, awsIAMConnectionFormContainer, vaultConnectionFormContainer, nil]
+                                            connectButton:connectButton
+                                               helpButton:helpButton
+                                        progressIndicator:progressIndicator
+                                             progressText:progressIndicatorText
+                                          editButtonsView:editButtonsView
+                                    awsAuthorizeInfoLabel:awsAuthorizeInfoLabel];
     }
 
     return self;

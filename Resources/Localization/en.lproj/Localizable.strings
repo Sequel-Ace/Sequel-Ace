@@ -4911,3 +4911,36 @@
 
 /* View ▸ Toolbar: restore the default toolbar items and order */
 "ClaudeToolbarMenuReset" = "Reset to default";
+
+/* accessibility name of the connection type tabs in the connection panel */
+"ClaudeConnectionTypeTabs" = "Connection type";
+
+/* connection panel : title of the fold holding the less used connection settings */
+"ClaudeConnectionAdvanced" = "Advanced";
+
+/* connection panel : label of the favourite colour row */
+"ClaudeConnectionColour" = "Colour";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionServer" = "Server";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionSignIn" = "Sign in";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionSSHTunnel" = "SSH tunnel";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionVault" = "Vault";
+
+/* connection panel : button saving the current details as a new favourite */
+"ClaudeConnectionAddToFavourites" = "Add to favourites";
+
+/* connection panel : button testing the connection details */
+"ClaudeConnectionTest" = "Test";
+
+/* connection panel : title when no favourite is selected */
+"ClaudeConnectionQuickConnect" = "Quick connect";
+
+/* connection panel : title of a favourite without a name */
+"ClaudeConnectionUntitled" = "Untitled";

@@ -160,17 +160,29 @@ private enum FilterCellDrawing {
 @objc(SAClaudeAccentButtonCell) final class SAClaudeAccentButtonCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-        let pill = SAClaudeFilterChrome.controlFrame(in: cellFrame)
+        Self.drawAccent(self, in: SAClaudeFilterChrome.controlFrame(in: cellFrame))
+    }
 
+    /// The clay pill and its white title, in `pill`.
+    static func drawAccent(_ cell: NSButtonCell, in pill: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
-        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
+        if !cell.isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
 
-        (isHighlighted ? SAClaudeEditorChrome.runFillPressed : SAClaudeEditorChrome.runFill).setFill()
+        (cell.isHighlighted ? SAClaudeEditorChrome.runFillPressed : SAClaudeEditorChrome.runFill).setFill()
         FilterCellDrawing.roundedPath(pill, radius: FilterCellDrawing.cornerRadius).fill()
 
         let font = NSFont.systemFont(ofSize: 12, weight: .medium)
-        FilterCellDrawing.drawTitle(title, in: pill.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: .white, font: font, alignment: .center)
+        FilterCellDrawing.drawTitle(cell.title, in: pill.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: .white, font: font, alignment: .center)
+    }
+}
+
+/// The connection panel's Connect button: the accent pill at the button's own height (28pt) rather than the
+/// filter bar's 24pt control height.
+@objc(SAClaudeFullHeightAccentButtonCell) final class SAClaudeFullHeightAccentButtonCell: NSButtonCell {
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        SAClaudeAccentButtonCell.drawAccent(self, in: cellFrame)
     }
 }
 
@@ -191,7 +203,7 @@ enum SAClaudeFilterCells {
     /// Whether `cls` is one of the classes this file installs.
     private static func isInstalled(_ cls: AnyClass) -> Bool {
         cls == SAClaudePillPopUpButtonCell.self || cls == SAClaudeCheckboxCell.self || cls == SAClaudeAccentButtonCell.self
-            || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
+            || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
             || NSStringFromClass(cls).hasPrefix(derivedPrefix)
     }
 
@@ -295,7 +307,7 @@ enum SAClaudeFilterCells {
         return true
     }
 
-    /// Draws `button` with `cellClass` (`SAClaudeCheckboxCell` or `SAClaudeAccentButtonCell`) in place of its
+    /// Draws `button` with `cellClass` (`SAClaudeCheckboxCell` or one of the accent cells) in place of its
     /// own cell. Only an exact NSButton with an exact NSButtonCell is swapped.
     @discardableResult
     static func install(_ cellClass: AnyClass, on button: NSButton) -> Bool {
