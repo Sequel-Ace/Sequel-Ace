@@ -252,6 +252,8 @@ import AppKit
             layer.backgroundColor = SAClaudeFilterChrome.fieldFill(text: themeText, background: palette.background).cgColor
         }
         field.setRestingBorderColour(palette.hairline, using: field.effectiveAppearance)
+        // The clay focus outline replaces AppKit's rectangular focus ring.
+        field.focusRingType = .none
     }
 
     /// The rows' static text (for example "combines the conditions in this group"): SF Pro 12 in the muted tone.
@@ -340,6 +342,27 @@ private final class SAClaudePaginationField: NSTextField {
         didSet { alphaValue = isEnabled ? 1 : SAClaudePaginationField.disabledAlpha }
     }
     static let disabledAlpha: CGFloat = 0.4
+
+    // Focus shows a clay 1pt outline in place of AppKit's focus ring, as the filter bar's value field does.
+    // (No stored properties: the class is swapped onto an existing field; the resting colour is the palette's.)
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { layer?.borderColor = SAClaudeStatusChrome.clay.cgColor }
+        return accepted
+    }
+
+    override func textDidBeginEditing(_ notification: Notification) {
+        super.textDidBeginEditing(notification)
+        layer?.borderColor = SAClaudeStatusChrome.clay.cgColor
+    }
+
+    override func textDidEndEditing(_ notification: Notification) {
+        super.textDidEndEditing(notification)
+        let palette = SAClaudeFilterBarStyler.currentPalette
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.borderColor = palette.hairline.cgColor
+        }
+    }
 }
 
 /// The cell of a pagination field: no bezel, so the text is inset from the rounded outline and centred vertically.
@@ -503,8 +526,10 @@ extension SAClaudeFilterBarStyler {
         layer.borderWidth = 1
         field.effectiveAppearance.performAsCurrentDrawingAppearance {
             layer.backgroundColor = SAClaudeFilterChrome.fieldFill(text: theme.text, background: surface).cgColor
-            layer.borderColor = palette.hairline.cgColor
+            // A re-style while the field is being edited keeps its clay focus outline.
+            layer.borderColor = (field.currentEditor() != nil ? SAClaudeStatusChrome.clay : palette.hairline).cgColor
         }
+        field.focusRingType = .none
         field.needsDisplay = true
     }
 
