@@ -1111,6 +1111,9 @@
 /* table info : section title */
 "Create syntax" = "Create syntax";
 
+/* table info : section title */
+"Comments" = "Comments";
+
 /* Create syntax label */
 "Create syntax for %@ '%@'" = "Create syntax for %1$@ '%2$@'";
 

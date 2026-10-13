@@ -731,6 +731,7 @@
 		7F3A9C41D2B84E60A15C8E02 /* SAClaudeTabBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3A9C41D2B84E60A15C8E03 /* SAClaudeTabBarStyler.swift */; };
 		900AB578E7E8F01807765D0F /* SAClaudeFilterBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F2FD803BC1212FFB686712 /* SAClaudeFilterBarStyler.swift */; };
 		A91E3C5B7D2F40C8B6E1D203 /* SAClaudeTableInfoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */; };
+		B7D24E9A1C5F4306A8E2F159 /* SAClaudeTableInfoCopyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3B91D05A7C4F28B4C0A7D3 /* SAClaudeTableInfoCopyButton.swift */; };
 		EFF2A4C8D7D22BD7F694D7B1 /* SAClaudeFilterCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ACBF542FEED47B84FCD687D /* SAClaudeFilterCells.swift */; };
 		A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */; };
 		A5C1E0DA1A2B3C4D5E6F708B /* SAClaudeLineNumberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */; };
@@ -1715,6 +1716,7 @@
 		C6E2F4B01B3D4E5F60718295 /* SAClaudeToolbarControls.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeToolbarControls.swift; sourceTree = "<group>"; };
 		7F3A9C41D2B84E60A15C8E03 /* SAClaudeTabBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTabBarStyler.swift; sourceTree = "<group>"; };
 		5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableInfoStyler.swift; sourceTree = "<group>"; };
+		6E3B91D05A7C4F28B4C0A7D3 /* SAClaudeTableInfoCopyButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableInfoCopyButton.swift; sourceTree = "<group>"; };
 		F7F2FD803BC1212FFB686712 /* SAClaudeFilterBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterBarStyler.swift; sourceTree = "<group>"; };
 		0ACBF542FEED47B84FCD687D /* SAClaudeFilterCells.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterCells.swift; sourceTree = "<group>"; };
 		A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRunButton.swift; sourceTree = "<group>"; };
@@ -2948,6 +2950,7 @@
 				7F3A9C41D2B84E60A15C8E03 /* SAClaudeTabBarStyler.swift */,
 				F7F2FD803BC1212FFB686712 /* SAClaudeFilterBarStyler.swift */,
 				5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */,
+				6E3B91D05A7C4F28B4C0A7D3 /* SAClaudeTableInfoCopyButton.swift */,
 				0ACBF542FEED47B84FCD687D /* SAClaudeFilterCells.swift */,
 				50805B0B1BF2A068005F7A99 /* SPPopUpButtonCell.h */,
 				50805B0C1BF2A068005F7A99 /* SPPopUpButtonCell.m */,
@@ -4212,6 +4215,7 @@
 				7F3A9C41D2B84E60A15C8E02 /* SAClaudeTabBarStyler.swift in Sources */,
 				900AB578E7E8F01807765D0F /* SAClaudeFilterBarStyler.swift in Sources */,
 				A91E3C5B7D2F40C8B6E1D203 /* SAClaudeTableInfoStyler.swift in Sources */,
+				B7D24E9A1C5F4306A8E2F159 /* SAClaudeTableInfoCopyButton.swift in Sources */,
 				EFF2A4C8D7D22BD7F694D7B1 /* SAClaudeFilterCells.swift in Sources */,
 				C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */,
 				CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
