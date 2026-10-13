@@ -1060,6 +1060,7 @@ private final class SAClaudePanelForm {
                 SAClaudeNamePlaceholderCell.placeholder = NSAttributedString(string: Self.namePlaceholder, attributes: [
                     .font: Self.nameFont, .foregroundColor: palette.icon,
                 ])
+                (nameField.cell as? SAClaudeNamePlaceholderCell)?.applyPlaceholder()
                 nameField.needsDisplay = true
                 nameField.lineBreakMode = .byTruncatingTail
             }
@@ -1721,6 +1722,7 @@ private final class SAClaudePanelForm {
 /// (the class is swapped onto the XIB's cell); the placeholder is shared, recoloured on each theme refresh.
 private final class SAClaudeNamePlaceholderCell: NSTextFieldCell {
     static var placeholder = NSAttributedString()
+    /// Outside callers (the binding) can't change the placeholder…
     override var placeholderString: String? {
         get { nil }
         set { }
@@ -1728,5 +1730,10 @@ private final class SAClaudeNamePlaceholderCell: NSTextFieldCell {
     override var placeholderAttributedString: NSAttributedString? {
         get { Self.placeholder }
         set { }
+    }
+    /// …but AppKit draws from the cell's stored placeholder (still the XIB's "optional"), so store ours there.
+    func applyPlaceholder() {
+        super.placeholderString = nil
+        super.placeholderAttributedString = Self.placeholder
     }
 }
