@@ -430,6 +430,7 @@ extension SAClaudeFilterBarStyler {
 
     private static func stylePaginationControls(in view: NSView, theme: SAClaudeThemeColours, palette: SAClaudeEditorChrome.Palette,
                                                 surface: NSColor) {
+        var separators: [NSBox] = []
         for subview in view.subviews where !(subview is SAClaudeEditorBarBackgroundView) {
             if let field = subview as? NSTextField {
                 if field.isEditable {
@@ -440,9 +441,25 @@ extension SAClaudeFilterBarStyler {
             } else if let button = subview as? NSButton {
                 stylePaginationButton(button)
             } else if let box = subview as? NSBox {
-                stylePaginationSeparator(box, palette: palette)
+                separators.append(box)
             }
         }
+        // Last, once the controls have grown to their Claude heights: each line sits midway in the gap
+        // between the rows above and below it, so a 24pt field never runs onto it.
+        for box in separators {
+            stylePaginationSeparator(box, palette: palette)
+            centreSeparator(box, in: view)
+        }
+    }
+
+    /// Moves a 1pt separator to the middle of the free space between the controls below and above it.
+    private static func centreSeparator(_ box: NSBox, in view: NSView) {
+        let others = view.subviews.filter { $0 !== box && !($0 is SAClaudeEditorBarBackgroundView) && !$0.isHidden }
+        let below = others.filter { $0.frame.midY < box.frame.midY }.map(\.frame.maxY).max()
+        let above = others.filter { $0.frame.midY > box.frame.midY }.map(\.frame.minY).min()
+        guard let below, let above, above > below else { return }
+        let y = ((below + above) / 2).rounded(.down)
+        if box.frame.minY != y { box.setFrameOrigin(NSPoint(x: box.frame.minX, y: y)) }
     }
 
     /// Static text: SF Pro 12 in the muted tone, its frame grown (about its centre) to hold the taller font.

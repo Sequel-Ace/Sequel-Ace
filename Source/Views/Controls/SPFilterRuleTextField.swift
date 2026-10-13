@@ -133,13 +133,22 @@ import Cocoa
 
     override public func becomeFirstResponder() -> Bool {
         let accepted = super.becomeFirstResponder()
-        // Only a field the Claude styling gave an outline (a layer border) shows the clay one.
-        if accepted, !showsFocusBorder, let layer, layer.borderWidth > 0 {
-            showsFocusBorder = true
-            if restingBorderColour == nil { restingBorderColour = layer.borderColor }
-            layer.borderColor = SAClaudeStatusChrome.clay.cgColor
-        }
+        if accepted { showFocusBorder() }
         return accepted
+    }
+
+    /// Typing again after Return (which ends editing but keeps the field focused) brings the clay border back.
+    override public func textDidBeginEditing(_ notification: Notification) {
+        super.textDidBeginEditing(notification)
+        showFocusBorder()
+    }
+
+    /// Only a field the Claude styling gave an outline (a layer border) shows the clay one.
+    private func showFocusBorder() {
+        guard !showsFocusBorder, let layer, layer.borderWidth > 0 else { return }
+        showsFocusBorder = true
+        if restingBorderColour == nil { restingBorderColour = layer.borderColor }
+        layer.borderColor = SAClaudeStatusChrome.clay.cgColor
     }
 
     override public func textDidEndEditing(_ notification: Notification) {
