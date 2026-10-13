@@ -5707,7 +5707,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // The first table or view picked after opening on Query moves to the user's usual tab. Decide here;
     // _loadTableTask performs the switch so it does not race a second load started by the tab delegate.
-    if ([SAInitialViewPolicy shouldJumpWithPending:self.hasPendingInitialViewMode
+    // Test the flag first: -currentlySelectedView can hop to the main thread, which a load with nothing pending skips.
+    if (self.hasPendingInitialViewMode &&
+        [SAInitialViewPolicy shouldJumpWithPending:self.hasPendingInitialViewMode
                                        selectedType:aTableType
                                      currentIsQuery:([self currentlySelectedView] == SPTableViewCustomQuery)]) {
         self.hasPendingInitialViewMode = NO;
