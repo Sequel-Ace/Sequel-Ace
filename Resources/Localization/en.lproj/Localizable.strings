@@ -4971,3 +4971,9 @@
 
 /* connection screen : top bar button adding a favourite */
 "ClaudeConnectionPageFavourite" = "Favourite";
+
+/* connection page : folder rename : cancel button */
+"ClaudeFolderRenameCancel" = "Cancel renaming";
+
+/* connection page : folder rename : save button */
+"ClaudeFolderRenameSave" = "Save folder name";

@@ -84,6 +84,9 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     /// The inline name field over a folder header, while renaming it.
     private var folderNameField: NSTextField?
     private var folderNameFieldID: String?
+    /// ✓ (save the name) and ✕ (cancel) after the folder name field, so committing is visible, not only Return.
+    private var folderNameButtons: [NSButton] = []
+    private static let folderButtonSize: CGFloat = 18
 
     private static let nameFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let summaryFont = NSFont.systemFont(ofSize: 11)
@@ -453,6 +456,17 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         folderNameField = field
         folderNameFieldID = id
         addSubview(field)
+        folderNameButtons = [
+            folderNameButton(symbol: "checkmark", tint: SAClaudeStatusChrome.clay,
+                             label: NSLocalizedString("ClaudeFolderRenameSave", value: "Save folder name",
+                                                      comment: "connection page : folder rename : save button"),
+                             action: #selector(saveFolderName(_:))),
+            folderNameButton(symbol: "xmark", tint: colours.muted,
+                             label: NSLocalizedString("ClaudeFolderRenameCancel", value: "Cancel renaming",
+                                                      comment: "connection page : folder rename : cancel button"),
+                             action: #selector(cancelFolderName(_:))),
+        ]
+        folderNameButtons.forEach { addSubview($0) }
         placeFolderNameField()
         needsDisplay = true
         if let frame = frame(of: id) { scrollToVisible(frame) }
@@ -469,8 +483,46 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
             return
         }
         let minX = header.minX + 22
-        let frame = NSRect(x: minX, y: header.midY - 9, width: max(40, min(280, header.maxX - minX - 4)), height: 18)
+        let buttonsWidth = CGFloat(folderNameButtons.count) * (Self.folderButtonSize + 4)
+        let frame = NSRect(x: minX, y: header.midY - 9,
+                           width: max(40, min(280, header.maxX - minX - 4 - buttonsWidth)), height: 18)
         if field.frame != frame { field.frame = frame }
+        var x = frame.maxX + 6
+        for button in folderNameButtons {
+            let buttonFrame = NSRect(x: x, y: header.midY - Self.folderButtonSize / 2,
+                                     width: Self.folderButtonSize, height: Self.folderButtonSize)
+            if button.frame != buttonFrame { button.frame = buttonFrame }
+            x += Self.folderButtonSize + 4
+        }
+    }
+
+    private func folderNameButton(symbol: String, tint: NSColor, label: String, action: Selector) -> NSButton {
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 11, weight: .semibold)) ?? NSImage()
+        let button = NSButton(image: image, target: self, action: action)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.contentTintColor = tint
+        button.toolTip = label
+        button.refusesFirstResponder = true
+        return button
+    }
+
+    /// Saves the name: ending the edit commits it (`controlTextDidEndEditing`).
+    @objc private func saveFolderName(_ sender: Any?) {
+        guard let field = folderNameField else { return }
+        if field.currentEditor() != nil {
+            window?.makeFirstResponder(self)
+        } else if let id = folderNameFieldID {
+            let name = field.stringValue
+            endRenamingFolder(cancel: false)
+            onRenameFolder?(id, name)
+        }
+    }
+
+    @objc private func cancelFolderName(_ sender: Any?) {
+        endRenamingFolder(cancel: true)
+        window?.makeFirstResponder(self)
     }
 
     private func endRenamingFolder(cancel: Bool) {
@@ -480,6 +532,8 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         field.delegate = nil
         if field.currentEditor() != nil { window?.makeFirstResponder(self) }
         field.removeFromSuperview()
+        folderNameButtons.forEach { $0.removeFromSuperview() }
+        folderNameButtons = []
         needsDisplay = true
     }
 
