@@ -91,7 +91,8 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     private static let nameFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let summaryFont = NSFont.systemFont(ofSize: 11)
     private static let badgeFont = NSFont.systemFont(ofSize: 10, weight: .medium)
-    private static let headerFont = NSFont.systemFont(ofSize: 11)
+    /// Folder names: the same size and weight as the card names (Quick connect).
+    private static let headerFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let messageFont = NSFont.systemFont(ofSize: 12)
     private static let padding: CGFloat = 12
     private static let dotSize: CGFloat = 6
@@ -253,11 +254,11 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         }
         let selected = folder.id == selectedID
         let colour = selected ? SAClaudeStatusChrome.clay : colours.muted
-        let glyph = NSRect(x: frame.minX + 4, y: frame.midY - 7, width: 14, height: 14)
-        drawSymbol("folder", pointSize: 11, colour: colour, in: glyph)
+        let glyph = NSRect(x: frame.minX + 4, y: frame.midY - 8, width: 16, height: 16)
+        drawSymbol("folder", pointSize: 13, colour: colour, in: glyph)
         guard folder.id != folderNameFieldID else { return }
         drawText(folder.title, font: Self.headerFont, colour: selected ? SAClaudeStatusChrome.clay : colours.muted,
-                 in: NSRect(x: glyph.maxX + 6, y: frame.midY - 7, width: max(0, frame.maxX - glyph.maxX - 10), height: 15))
+                 in: NSRect(x: glyph.maxX + 6, y: frame.midY - 9, width: max(0, frame.maxX - glyph.maxX - 10), height: 18))
     }
 
     private func drawNoMatches() {
@@ -482,10 +483,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
             endRenamingFolder(cancel: true)
             return
         }
-        let minX = header.minX + 22
+        let minX = header.minX + 24
         let buttonsWidth = CGFloat(folderNameButtons.count) * (Self.folderButtonSize + 4)
-        let frame = NSRect(x: minX, y: header.midY - 9,
-                           width: max(40, min(280, header.maxX - minX - 4 - buttonsWidth)), height: 18)
+        let frame = NSRect(x: minX, y: header.midY - 10,
+                           width: max(40, min(280, header.maxX - minX - 4 - buttonsWidth)), height: 20)
         if field.frame != frame { field.frame = frame }
         var x = frame.maxX + 6
         for button in folderNameButtons {
