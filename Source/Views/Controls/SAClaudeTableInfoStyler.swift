@@ -534,7 +534,8 @@ final class SAClaudeTableInfoCardView: NSView {
             self?.onMain { $0.updateCommentsBorder() }
         }
         commentsWindowObservation = commentsView.observe(\.window) { [weak self] _, _ in
-            self?.onMain { $0.observeFirstResponder() }
+            // Entering a window (the tab being shown) changes what the window's edge hides: lay out again.
+            self?.onMain { $0.observeFirstResponder(); $0.layOut() }
         }
         observeFirstResponder()
     }
@@ -582,7 +583,14 @@ final class SAClaudeTableInfoCardView: NSView {
 
     private func layOut() {
         guard canLayOut, let statusView, let splitView else { return }
-        let frames = Layout.frames(in: statusView.bounds, generalRows: Self.generalRowCount, storageRows: Self.storageRowCount,
+        // The window's edge hides the bottom of the tab view (it sits below the window's content area in DBView.xib),
+        // so lay out in the visible part, as the Query tab's strip does. Before it is in a window nothing is hidden yet.
+        var area = statusView.bounds
+        if statusView.window != nil {
+            let visible = statusView.visibleRect
+            if visible.height > 0 { area = NSRect(x: area.minX, y: visible.minY, width: area.width, height: visible.height) }
+        }
+        let frames = Layout.frames(in: area, generalRows: Self.generalRowCount, storageRows: Self.storageRowCount,
                                    copyButtonWidth: copyButton.preferredWidth)
         observeFirstResponder()
         place(generalTitle, frames.generalTitle)
