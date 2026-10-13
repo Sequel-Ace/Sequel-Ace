@@ -450,21 +450,22 @@
 }
 
 #pragma mark -
-#pragma mark Delegate method overrides
-
 /**
- * Handle requests to collapse a particular subview.  If a subview is collapsible,
- * by default this will return YES for that subview and NO for all others.
- * The delegate can override this if necessary.
+ * Handle requests to collapse a particular subview during divider dragging.
+ *
+ * In AppKit, returning YES here allows the user to drag the divider past its
+ * minimum constraint to collapse the subview to zero width (which then hides
+ * the divider via -shouldHideDividerAtIndex:). To avoid unintentionally
+ * collapsing subviews that have no collapse/uncollapse toggle controls (such
+ * as the database tables list, see #2675), dragging to collapse is disabled
+ * by default unless the delegate explicitly allows it.
+ * Programmatic collapsing is still supported via -setCollapsibleSubviewCollapsed:animate:
+ * and -toggleCollapse:.
  */
 - (BOOL)splitView:(NSSplitView *)splitView canCollapseSubview:(NSView *)subview
 {
 	if ([delegate respondsToSelector:@selector(splitView:canCollapseSubview:)]) {
 		return [delegate splitView:splitView canCollapseSubview:subview];
-	}
-
-	if (collapsibleSubviewIndex != NSNotFound && [[self subviews] objectAtIndex:collapsibleSubviewIndex] == subview) {
-		return YES;
 	}
 
 	return NO;
