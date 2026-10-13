@@ -186,6 +186,35 @@ private enum FilterCellDrawing {
     }
 }
 
+/// A bordered secondary button (the connection panel's "Connect without saving", "Save changes", …): a 7pt
+/// rounded outline in the brighter drop stroke (a hairline vanishes in dark themes) on a transparent fill, the
+/// title in the theme's text colour, SF Pro 12 medium. Hover is the hover highlighter's fill behind it; pressed
+/// fills it a little darker; disabled draws at 45%. Drawn at the button's own height.
+@objc(SAClaudeSecondaryButtonCell) final class SAClaudeSecondaryButtonCell: NSButtonCell {
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let palette = SAClaudeFilterBarStyler.currentPalette
+        let themeText = SAClaudeFilterBarStyler.currentThemeText
+
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
+
+        let path = FilterCellDrawing.roundedPath(cellFrame.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
+        if isHighlighted {
+            SAClaudeEditorChrome.derivedColour(text: themeText, background: palette.hover, ratio: 0.08).setFill()
+            path.fill()
+        }
+        path.lineWidth = 1
+        SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background).setStroke()
+        path.stroke()
+
+        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        FilterCellDrawing.drawTitle(title, in: cellFrame.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: themeText,
+                                    font: font, alignment: .center)
+    }
+}
+
 // MARK: - Installing
 
 /// Swaps the filter bar's controls over to the cells above. Every function leaves a control alone unless it is
@@ -203,7 +232,8 @@ enum SAClaudeFilterCells {
     /// Whether `cls` is one of the classes this file installs.
     private static func isInstalled(_ cls: AnyClass) -> Bool {
         cls == SAClaudePillPopUpButtonCell.self || cls == SAClaudeCheckboxCell.self || cls == SAClaudeAccentButtonCell.self
-            || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
+            || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeSecondaryButtonCell.self
+            || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
             || NSStringFromClass(cls).hasPrefix(derivedPrefix)
     }
 

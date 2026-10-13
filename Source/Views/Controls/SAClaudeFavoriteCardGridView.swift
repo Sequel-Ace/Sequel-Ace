@@ -84,7 +84,6 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     /// The inline name field over a folder header, while renaming it.
     private var folderNameField: NSTextField?
     private var folderNameFieldID: String?
-    private var folderNameFieldCancelled = false
 
     private static let nameFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let summaryFont = NSFont.systemFont(ofSize: 11)
@@ -453,7 +452,6 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         field.delegate = self
         folderNameField = field
         folderNameFieldID = id
-        folderNameFieldCancelled = false
         addSubview(field)
         placeFolderNameField()
         needsDisplay = true
@@ -475,7 +473,6 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
 
     private func endRenamingFolder(cancel: Bool) {
         guard let field = folderNameField else { return }
-        folderNameFieldCancelled = cancel
         folderNameField = nil
         folderNameFieldID = nil
         field.delegate = nil

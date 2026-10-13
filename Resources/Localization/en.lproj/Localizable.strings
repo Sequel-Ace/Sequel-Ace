@@ -4945,6 +4945,12 @@
 /* connection panel : pencil button that starts editing the connection name */
 "ClaudeConnectionEditName" = "Edit name";
 
+/* connection panel : primary button saving the favourite's edits, then connecting */
+"ClaudeConnectionSaveAndConnect" = "Save and connect";
+
+/* connection panel : button connecting with the edited details, leaving the favourite unsaved */
+"ClaudeConnectionConnectWithoutSaving" = "Connect without saving";
+
 /* connection screen : title of the Quick connect card */
 "ClaudeFavoriteCardsQuickConnect" = "Quick connect";
 

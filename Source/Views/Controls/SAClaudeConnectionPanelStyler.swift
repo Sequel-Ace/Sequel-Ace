@@ -239,6 +239,7 @@ private final class SAClaudePanelForm {
     private static let connectMinimumWidth: CGFloat = 96
     private static let ghostHeight: CGFloat = 28
     private static let ghostPadding: CGFloat = 10
+    private static let secondaryPadding: CGFloat = 12
     private static let actionGap: CGFloat = 8
     private static let dotSize: CGFloat = 10
     /// Share of the header the type tabs may take.
@@ -272,6 +273,14 @@ private final class SAClaudePanelForm {
     private let nameLabel = NSTextField(labelWithString: "")
     /// Starts editing the name.
     private let pencilButton = NSButton(frame: .zero)
+    /// The primary for a favourite with unsaved edits: saves, then connects only if the save went through.
+    private let saveAndConnectButton = NSButton(title: "", target: nil, action: nil)
+    /// Its secondary: the Connect button's own action, without saving.
+    private let connectWithoutSavingButton = NSButton(title: "", target: nil, action: nil)
+    /// The Connect button's XIB key equivalent (Return); it moves to whichever button is primary.
+    private var primaryKeyEquivalent = "\r"
+    private var layoutPending = false
+    private var actionUpdatePending = false
     private static let pencilSize: CGFloat = 16
     private static let namePlaceholder = NSLocalizedString("ClaudeConnectionNewFavourite", value: "New favourite",
                                                            comment: "connection panel : placeholder of the connection name in the header")
@@ -720,6 +729,21 @@ private final class SAClaudePanelForm {
                 test.title = NSLocalizedString("ClaudeConnectionTest", value: "Test",
                                                comment: "connection panel : button testing the connection details")
             }
+            // The action row's primary and secondary for a favourite with unsaved edits.
+            saveAndConnectButton.title = NSLocalizedString("ClaudeConnectionSaveAndConnect", value: "Save and connect",
+                                                           comment: "connection panel : primary button saving the favourite's edits, then connecting")
+            saveAndConnectButton.target = self
+            saveAndConnectButton.action = #selector(saveAndConnect(_:))
+            connectWithoutSavingButton.title = NSLocalizedString("ClaudeConnectionConnectWithoutSaving", value: "Connect without saving",
+                                                                 comment: "connection panel : button connecting with the edited details, leaving the favourite unsaved")
+            connectWithoutSavingButton.target = controller
+            connectWithoutSavingButton.action = #selector(SPConnectionController.initiateConnection(_:))
+            for button in [saveAndConnectButton, connectWithoutSavingButton] {
+                button.bezelStyle = .regularSquare
+                button.autoresizingMask = []
+                button.isHidden = true
+                container.addSubview(button)
+            }
             // The box slides and fades in when editing starts; with no size it can't cover the action row.
             editButtonsView.autoresizingMask = []
             editButtonsView.setFrameSize(.zero)
@@ -741,6 +765,16 @@ private final class SAClaudePanelForm {
         if let connectButton, SAClaudeFilterCells.install(SAClaudeFullHeightAccentButtonCell.self, on: connectButton) {
             connectButton.isBordered = false
         }
+        if let connectButton, !connectButton.keyEquivalent.isEmpty { primaryKeyEquivalent = connectButton.keyEquivalent }
+        if SAClaudeFilterCells.install(SAClaudeFullHeightAccentButtonCell.self, on: saveAndConnectButton) {
+            saveAndConnectButton.isBordered = false
+        }
+        // Real bordered secondary buttons (with the hover fill behind them).
+        for button in secondaryButtons {
+            SAClaudeFilterCells.install(SAClaudeSecondaryButtonCell.self, on: button)
+            button.isBordered = false
+            SAClaudeHoverHighlighter.attach(to: button)
+        }
         if let helpButton {
             helpButton.bezelStyle = .regularSquare
             helpButton.imagePosition = .noImage
@@ -758,9 +792,18 @@ private final class SAClaudePanelForm {
         }
     }
 
-    /// The ghost buttons: Add / Save / Test, help, AWS Authorize and Vault Refresh.
+    /// The ghost buttons: help, AWS Authorize and Vault Refresh.
     private var ghostButtons: [NSButton] {
-        editButtons + [helpButton].compactMap { $0 } + forms.flatMap(\.ghostButtons)
+        [helpButton].compactMap { $0 } + forms.flatMap(\.ghostButtons)
+    }
+
+    /// The action row's bordered secondaries: Add to favourites, Save changes, Test, Connect without saving.
+    private var secondaryButtons: [NSButton] {
+        editButtons + [connectWithoutSavingButton]
+    }
+
+    private func editButton(_ action: String) -> NSButton? {
+        editButtons.first { Self.action(of: $0) == action }
     }
 
     private var pickerButtons: [NSButton] {
@@ -837,8 +880,18 @@ private final class SAClaudePanelForm {
         // The SSH password and key share a row: the eye button and a revealed twin follow which one shows. Laid out
         // on the next turn, after the bindings have shown / hidden the two fields.
         observations.append(controller.observe(\.sshKeyLocationEnabled) { [weak self] _, _ in
-            DispatchQueue.main.async { self?.layOut() }
+            self?.onMain { $0.setNeedsLayoutSoon() }
         })
+        // AWS authorisation: the controller swaps Authorize + note for profile + region without resizing the form
+        // (`updateAWSAuthorizationUI` after the bookmark is added), so the panel follows the Authorize button.
+        for button in forms.flatMap(\.ghostButtons) where Self.action(of: button) == "authorizeAWSDirectory:" {
+            observations.append(button.observe(\.isHidden) { [weak self] _, _ in self?.onMain { $0.setNeedsLayoutSoon() } })
+        }
+        // Connecting: Connect turns into Cancel (and back); the primary follows on the next turn, once the
+        // controller's state has settled.
+        if let connectButton {
+            observations.append(connectButton.observe(\.title) { [weak self] _, _ in self?.onMain { $0.scheduleActionUpdate() } })
+        }
         // Advanced: the disclosure's lock and open state follow the values live (the time zone pop-up's action sets
         // `timeZoneMode`).
         let advanced: [NSKeyValueObservation] = [
@@ -853,7 +906,7 @@ private final class SAClaudePanelForm {
         ]
         observations += advanced
         if let editButtonsView {
-            observations.append(editButtonsView.observe(\.isHidden) { [weak self] _, _ in self?.onMain { $0.mirrorEditButtons() } })
+            observations.append(editButtonsView.observe(\.isHidden) { [weak self] _, _ in self?.onMain { $0.updateActionButtons() } })
         }
         windowObservation = container.observe(\.window) { [weak self] _, _ in
             self?.onMain { $0.observeFirstResponder() }
@@ -883,12 +936,67 @@ private final class SAClaudePanelForm {
         }
     }
 
-    private func mirrorEditButtons() {
-        guard let editButtonsView else { return }
-        for button in editButtons where button.isHidden != editButtonsView.isHidden {
-            button.isHidden = editButtonsView.isHidden
+    /// One layout on the next main-queue turn, however many changes ask for it before then.
+    private func setNeedsLayoutSoon() {
+        guard !layoutPending else { return }
+        layoutPending = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.layoutPending = false
+            self.layOut()
+        }
+    }
+
+    private func scheduleActionUpdate() {
+        guard !actionUpdatePending else { return }
+        actionUpdatePending = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.actionUpdatePending = false
+            self.updateActionButtons()
+        }
+    }
+
+    // MARK: - Action row
+
+    /// Which buttons the action row shows, and which is primary (clay, Return):
+    /// - a favourite with unsaved edits (the controller's edit-buttons box shown): Save and connect; secondaries
+    ///   Connect without saving, Save changes, Add to favourites, Test;
+    /// - a favourite without edits: Connect only;
+    /// - Quick connect: Connect; secondaries Add to favourites, Test;
+    /// - while connecting: Connect (now Cancel) is the primary; Save and connect / Connect without saving hide.
+    private func updateActionButtons() {
+        guard let controller, let connectButton else { return }
+        let connecting = controller.isConnecting || connectButton.action.map(NSStringFromSelector) == "cancelConnection:"
+        let favourite = controller.selectedFavorite() != nil
+        let editing = !(editButtonsView?.isHidden ?? true)
+        let saveFirst = favourite && editing && !connecting
+        func show(_ button: NSButton?, _ shown: Bool) {
+            if let button, button.isHidden == shown { button.isHidden = !shown }
+        }
+        show(connectButton, !saveFirst)
+        show(saveAndConnectButton, saveFirst)
+        show(connectWithoutSavingButton, saveFirst)
+        show(editButton("saveFavorite:"), favourite && editing)
+        show(editButton("addFavoriteUsingCurrentDetails:"), editing || !favourite)
+        show(editButton("initiateConnection:"), editing || !favourite)
+        if saveAndConnectButton.isEnabled == connecting { saveAndConnectButton.isEnabled = !connecting }
+
+        let primary: NSButton = saveFirst ? saveAndConnectButton : connectButton
+        for button in [connectButton, saveAndConnectButton] {
+            let key = button === primary ? primaryKeyEquivalent : ""
+            if button.keyEquivalent != key { button.keyEquivalent = key }
         }
         layOutActionRow()
+    }
+
+    /// Saves the favourite's edits, then connects — only when the save went through: a successful save ends the
+    /// controller's editing state; a failed one (an alert about missing details) returns with the edits still open.
+    @objc private func saveAndConnect(_ sender: Any?) {
+        guard let controller, !controller.isConnecting, controller.selectedFavorite() != nil else { return }
+        controller.saveFavorite(sender)
+        guard !controller.isEditingConnection else { return }
+        controller.initiateConnection(connectButton)
     }
 
     // MARK: - Colours
@@ -969,6 +1077,10 @@ private final class SAClaudePanelForm {
             guard let originals = pickerImages[ObjectIdentifier(button)] else { continue }
             button.image = originals.image.map { Self.tinted($0, palette.icon) }
             button.alternateImage = originals.alternate.map { Self.tinted($0, palette.buttonText) }
+        }
+        for button in secondaryButtons + [saveAndConnectButton] {
+            SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
+            button.needsDisplay = true
         }
         styleGhostTitles()
         if let progressText {
@@ -1085,13 +1197,19 @@ private final class SAClaudePanelForm {
 
     // MARK: - Advanced
 
+    /// Counts only what the selected type's Advanced section shows: the SSL files only while Require SSL is on, and
+    /// on AWS IAM (SSL forced, no plugin options) none of the SSL / plugin values — a saved value there could
+    /// otherwise lock the fold open with nothing to turn off.
     private var advancedHasNonDefault: Bool {
         guard let controller else { return false }
+        let aws = controller.type == SAClaudeConnectionType.awsIAM.rawValue
+        let ssl = !aws && controller.useSSL != 0
         let state = SAClaudeConnectionAdvancedState(
-            useSSL: controller.useSSL != 0, allowDataLocalInfile: controller.allowDataLocalInfile != 0,
-            enableClearTextPlugin: controller.enableClearTextPlugin != 0, requestServerPublicKey: controller.requestServerPublicKey != 0,
+            useSSL: ssl, allowDataLocalInfile: controller.allowDataLocalInfile != 0,
+            enableClearTextPlugin: !aws && controller.enableClearTextPlugin != 0,
+            requestServerPublicKey: !aws && controller.requestServerPublicKey != 0,
             timeZoneIsServerDefault: controller.timeZoneMode == .useServerTZ,
-            sslFiles: [controller.sslKeyFileLocation, controller.sslCertificateFileLocation, controller.sslCACertFileLocation])
+            sslFiles: ssl ? [controller.sslKeyFileLocation, controller.sslCertificateFileLocation, controller.sslCACertFileLocation] : [])
         return SAClaudeConnectionAdvanced.hasNonDefault(state)
     }
 
@@ -1175,6 +1293,12 @@ private final class SAClaudePanelForm {
         ceil(NSAttributedString(string: button.title, attributes: [.font: ghostFont]).size().width) + 2 * ghostPadding
     }
 
+    /// The card's size from the panel's last layout (the container's own frame can briefly be the controller's while
+    /// it resizes the form); `nil` before the first layout.
+    var laidOutSize: NSSize? {
+        lastFrames.map { NSSize(width: lastWidth, height: $0.height) }
+    }
+
     /// Lays the panel out for the selected type, then lets the page (or the controller) place it.
     func layOut() {
         guard let controller, let container, let tabView,
@@ -1242,7 +1366,7 @@ private final class SAClaudePanelForm {
         disclosure.isHidden = !form.canLayOut
         disclosure.isOpen = open
         disclosure.isLocked = advancedHasNonDefault
-        layOutActionRow()
+        updateActionButtons()
         updateFocus()
 
         if let onLayout {
@@ -1265,6 +1389,8 @@ private final class SAClaudePanelForm {
         // Name on top, the subtitle on the line below it: 19 + 15pt, so the pair reaches 2pt into the header gap
         // rather than overlapping.
         let nameY = header.maxY - nameHeight
+        /// The subtitle's top: under the name, or under the name's outline while it is edited (the header grows).
+        var subtitleTop = nameY
         let current = currentForm
         for form in forms {
             guard let nameField = form.nameField else { continue }
@@ -1283,8 +1409,10 @@ private final class SAClaudePanelForm {
             let fieldRect = NSRect(x: textX, y: header.maxY - fieldHeight, width: width, height: fieldHeight)
             Self.place(nameField, fieldRect)
             if let outline = fieldFrames[ObjectIdentifier(nameField)] {
-                Self.place(outline, NSRect(x: fieldRect.minX - Self.fieldInset, y: Self.centred(height: Self.fieldHeight, in: fieldRect),
-                                           width: fieldRect.width + 2 * Self.fieldInset, height: Self.fieldHeight))
+                let outlineRect = NSRect(x: fieldRect.minX - Self.fieldInset, y: Self.centred(height: Self.fieldHeight, in: fieldRect),
+                                         width: fieldRect.width + 2 * Self.fieldInset, height: Self.fieldHeight)
+                Self.place(outline, outlineRect)
+                if editing { subtitleTop = min(subtitleTop, outlineRect.minY - 2) }
             }
             Self.place(pencilButton, NSRect(x: fieldRect.maxX + 4, y: Self.centred(height: Self.pencilSize, in: fieldRect),
                                             width: Self.pencilSize, height: Self.pencilSize))
@@ -1294,7 +1422,7 @@ private final class SAClaudePanelForm {
             pencilButton.isHidden = true
             Self.place(nameLabel, NSRect(x: textX, y: nameY, width: textWidth, height: nameHeight))
         }
-        Self.place(subtitleLabel, NSRect(x: textX, y: nameY - subtitleHeight, width: textWidth, height: subtitleHeight))
+        Self.place(subtitleLabel, NSRect(x: textX, y: subtitleTop - subtitleHeight, width: textWidth, height: subtitleHeight))
         Self.place(dot, NSRect(x: header.minX, y: (nameY + nameHeight / 2 - Self.dotSize / 2).rounded(),
                                width: Self.dotSize, height: Self.dotSize))
         Self.place(typeTabs, frames.tabs)
@@ -1480,16 +1608,29 @@ private final class SAClaudePanelForm {
         guard let frames = lastFrames else { return }
         let row = frames.actionRow
         var right = row.maxX
-        if let connectButton {
-            let titles = [connectButton.title, NSLocalizedString("Cancel", comment: "cancel button")]
-            let fit = titles.map { ceil(NSAttributedString(string: $0, attributes: [.font: NSFont.systemFont(ofSize: 12, weight: .medium)]).size().width) }.max() ?? 0
-            let width = max(Self.connectMinimumWidth, fit + 2 * SAClaudeFilterChrome.pillPadding + 8)
-            Self.place(connectButton, NSRect(x: right - width, y: Self.centred(height: Self.connectHeight, in: row),
-                                             width: width, height: Self.connectHeight))
-            right -= width + Self.actionGap
+        // The primary on the right (Connect, or Save and connect for a favourite with edits; one is hidden).
+        let primaryFont = NSFont.systemFont(ofSize: 12, weight: .medium)
+        func titleWidth(_ title: String) -> CGFloat {
+            ceil(NSAttributedString(string: title, attributes: [.font: primaryFont]).size().width)
         }
-        for button in editButtons.reversed() {
-            let width = Self.ghostWidth(button)
+        var primaryWidth: CGFloat = 0
+        if let connectButton, !connectButton.isHidden {
+            let fit = [connectButton.title, NSLocalizedString("Cancel", comment: "cancel button")].map(titleWidth).max() ?? 0
+            primaryWidth = max(Self.connectMinimumWidth, fit + 2 * SAClaudeFilterChrome.pillPadding + 8)
+            Self.place(connectButton, NSRect(x: right - primaryWidth, y: Self.centred(height: Self.connectHeight, in: row),
+                                             width: primaryWidth, height: Self.connectHeight))
+        }
+        if !saveAndConnectButton.isHidden {
+            primaryWidth = max(Self.connectMinimumWidth, titleWidth(saveAndConnectButton.title) + 2 * SAClaudeFilterChrome.pillPadding + 8)
+            Self.place(saveAndConnectButton, NSRect(x: right - primaryWidth, y: Self.centred(height: Self.connectHeight, in: row),
+                                                    width: primaryWidth, height: Self.connectHeight))
+        }
+        if primaryWidth > 0 { right -= primaryWidth + Self.actionGap }
+        // Secondaries leftwards from the primary: Connect without saving, Save changes, Add to favourites, Test.
+        let secondaries = [connectWithoutSavingButton, editButton("saveFavorite:"), editButton("addFavoriteUsingCurrentDetails:"),
+                           editButton("initiateConnection:")].compactMap { $0 }
+        for button in secondaries {
+            let width = titleWidth(button.title) + 2 * Self.secondaryPadding
             Self.place(button, NSRect(x: right - width, y: Self.centred(height: Self.ghostHeight, in: row), width: width, height: Self.ghostHeight))
             if !button.isHidden { right -= width + Self.actionGap }
         }
@@ -1511,11 +1652,19 @@ private final class SAClaudePanelForm {
 
     // MARK: - Key view loop
 
-    /// (Page search → cards →) name → tabs → left column → right column → Advanced (when open) → Add / Save / Test /
-    /// Connect, for a laid-out type; Connect leads back to the first.
+    /// (Page search → cards →) name → tabs → left column → right column → Advanced (when open) → the action row
+    /// (Test, Add to favourites, Save changes, Connect without saving, then the primary), for a laid-out type; the
+    /// last leads back to the first. A type that keeps its XIB form only gets the page's controls linked to its
+    /// first control (its own XIB chain carries on from there).
     func chainKeyViews() {
         guard let controller, let container, let frames = lastFrames,
-              let form = forms.first(where: { $0.type.rawValue == controller.type }), form.canLayOut else { return }
+              let form = forms.first(where: { $0.type.rawValue == controller.type }) else { return }
+        guard form.canLayOut else {
+            let first = form.rows.first(where: { $0.section == .header })?.control
+                ?? form.formContainer.subviews.first { $0 is NSControl && $0.canBecomeKeyView }
+            Self.link(leadingKeyViews() + [first].compactMap { $0 }, closing: false)
+            return
+        }
         let rowFrames = Dictionary(frames.rows.map { ($0.id, $0.control) }, uniquingKeysWith: { first, _ in first })
         let middle = container.bounds.midX
         func controls(of row: SAClaudePanelRow) -> [NSView] {
@@ -1535,14 +1684,23 @@ private final class SAClaudePanelForm {
         chain += columns.flatMap(controls)
         chain.append(disclosure)
         chain += shown.filter { $0.section == .advanced }.flatMap(controls)
-        chain += editButtons
+        chain += [editButton("initiateConnection:"), editButton("addFavoriteUsingCurrentDetails:"), editButton("saveFavorite:")].compactMap { $0 }
+        chain += [connectWithoutSavingButton, saveAndConnectButton]
         if let connectButton { chain.append(connectButton) }
-        for (view, next) in zip(chain, chain.dropFirst()) where view.nextKeyView !== next {
-            view.nextKeyView = next
-        }
         // The loop closes on the first (the outline's own next key view stays the controller's).
-        if let first = chain.first, let last = chain.last, last !== first, last.nextKeyView !== first {
-            last.nextKeyView = first
+        Self.link(chain, closing: true)
+    }
+
+    /// Links each view to the next (and, when `closing`, the last to the first). A link is set again when the next
+    /// view's `previousKeyView` points elsewhere, as after the controller re-pointed a field's previous view at the
+    /// hidden outline (`updateFavoriteNextKeyView`), so Shift-Tab walks the same chain back.
+    private static func link(_ chain: [NSView], closing: Bool) {
+        var pairs = Array(zip(chain, chain.dropFirst()))
+        if closing, let first = chain.first, let last = chain.last, last !== first { pairs.append((last, first)) }
+        for (view, next) in pairs where view.nextKeyView !== next || next.previousKeyView !== view {
+            // Re-setting the same next view may not touch its previous view: clear first.
+            if view.nextKeyView === next { view.nextKeyView = nil }
+            view.nextKeyView = next
         }
     }
 }

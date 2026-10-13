@@ -23,10 +23,51 @@
 
 import AppKit
 
+/// The card grid's scroll view. It scrolls the cards while they overflow its three-row cap; a wheel or trackpad
+/// scroll it can't use (the cards fit, or they are already at the edge in the scroll's direction) goes to the page
+/// behind it instead of being swallowed. A trackpad gesture is decided when it begins (and when its momentum
+/// starts) and keeps going where it was sent for the rest of that phase.
+final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
+    private var forwardingGesture = false
+
+    override func scrollWheel(with event: NSEvent) {
+        let starts = event.phase == .began || event.phase == .mayBegin || event.momentumPhase == .began
+        let discrete = event.phase.isEmpty && event.momentumPhase.isEmpty
+        if starts || discrete { forwardingGesture = shouldForward(event) }
+        if forwardingGesture {
+            nextResponder?.scrollWheel(with: event)
+        } else {
+            super.scrollWheel(with: event)
+        }
+    }
+
+    /// Whether the page should take `event`: the cards fit, the scroll is mostly sideways, or the cards are already
+    /// at the top (scrolling up) / bottom (scrolling down).
+    private func shouldForward(_ event: NSEvent) -> Bool {
+        guard let document = documentView else { return true }
+        let visible = contentView.bounds
+        let contentHeight = document.frame.height
+        if contentHeight <= visible.height + 0.5 { return true }
+        let dy = event.scrollingDeltaY
+        if dy == 0 || abs(event.scrollingDeltaX) > abs(dy) { return true }
+        let atTop: Bool
+        let atBottom: Bool
+        if document.isFlipped {
+            atTop = visible.minY <= 0.5
+            atBottom = visible.maxY >= contentHeight - 0.5
+        } else {
+            atTop = visible.maxY >= contentHeight - 0.5
+            atBottom = visible.minY <= 0.5
+        }
+        // A positive delta scrolls towards the top of the content.
+        return dy > 0 ? atTop : atBottom
+    }
+}
+
 @objc final class SAClaudeFavoriteCardGridController: NSObject {
 
     /// The scroll view hosting the grid; the owner sets its frame (the grid follows its width).
-    @objc let view = NSScrollView()
+    @objc let view: NSScrollView = SAClaudeFavoriteCardGridScrollView()
     /// The cards themselves: the key-view loop's stop for the grid.
     var cardsView: NSView { gridView }
     /// Called after the cards change (reload, filter): their preferred height may have changed.

@@ -72,7 +72,8 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
             super.editColumn(column, row: row, with: event, select: select)
             return
         }
-        // A row that doesn't exist (a new folder hidden by the search) has nothing to edit.
+        // Always redirected while the page is shown, so the outline never opens its own (invisible) cell editor.
+        // No row (-1) or no tree node behind it: nothing to edit.
         guard row >= 0, let node = item(atRow: row) as? SPTreeNode else { return }
         page.redirectEdit(of: node)
     }
@@ -229,7 +230,9 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
     /// width saved for the classic sidebar is kept.
     private func collapseSidebar(_ sidebar: NSView, in splitView: SPSplitView) {
         splitView.autosaveName = nil
-        splitView.setAdditionalDragHandle(nil)
+        // `SPSplitView` raises when the handle's window differs from its own, and nil has no window: only clear it
+        // while the split view isn't in a window yet (the attach runs before it is).
+        if splitView.window == nil { splitView.setAdditionalDragHandle(nil) }
         splitView.setCollapsibleSubviewIndex(0)
         splitView.setCollapsibleSubviewCollapsed(true, animate: false)
         sidebar.isHidden = true
@@ -515,15 +518,19 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
 
         let gridHeight = grid.preferredHeight(forWidth: column)
         let panelShown = !container.isHidden
-        let panelSize = container.frame.size
-        let instructionHeight = ceil(instructionsField.cell?.cellSize.height ?? 16)
+        // The panel's own size: while the controller resizes the form it briefly sets the container to its XIB
+        // height, and a page laid out with that would clamp the scroll position for nothing.
+        let panelSize = panel?.laidOutSize ?? container.frame.size
+        // The instruction line only stands in for the panel (several favourites selected).
+        if instructionsField.isHidden != panelShown { instructionsField.isHidden = panelShown }
+        let instructionHeight = panelShown ? 0 : ceil(instructionsField.cell?.cellSize.height ?? 16)
 
         // Offsets from the page's top.
         let topBarTop = Self.topMargin
         let gridTop = topBarTop + Self.topBarHeight + Self.sectionGap
         let panelTop = gridTop + gridHeight + Self.sectionGap
-        let instructionTop = panelShown ? panelTop + panelSize.height + Self.instructionGap : panelTop
-        let total = instructionTop + instructionHeight + Self.bottomMargin
+        let total = panelShown ? panelTop + panelSize.height + Self.bottomMargin : panelTop + instructionHeight + Self.bottomMargin
+        let instructionTop = panelTop
         let height = max(total, clip.bounds.height).rounded(.up)
 
         let documentFrame = NSRect(x: 0, y: 0, width: paneWidth, height: height)
@@ -559,8 +566,10 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
             clip.scroll(to: origin)
             scrollView.reflectScrolledClipView(clip)
         }
-        // `topDistance` stays the user's: a pass that clamped it (an intermediate, shorter page while the
-        // controller and the panel take turns) doesn't lose where the user was.
+        // A clamped position becomes the user's: the page really is shorter (the panel uses its own size, so no
+        // intermediate pass is), and reopening Advanced mustn't jump back to the old, deeper position.
+        let distance = max(0, height - visibleHeight - clip.bounds.origin.y)
+        if distance < topDistance { topDistance = distance }
     }
 
     private func layOutTopBar(width: CGFloat) {
