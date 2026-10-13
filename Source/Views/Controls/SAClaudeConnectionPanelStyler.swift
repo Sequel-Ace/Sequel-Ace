@@ -891,6 +891,7 @@ private final class SAClaudePanelForm {
         // controller's state has settled.
         if let connectButton {
             observations.append(connectButton.observe(\.title) { [weak self] _, _ in self?.onMain { $0.scheduleActionUpdate() } })
+            observations.append(connectButton.observe(\.isEnabled) { [weak self] _, _ in self?.onMain { $0.scheduleActionUpdate() } })
         }
         // Advanced: the disclosure's lock and open state follow the values live (the time zone pop-up's action sets
         // `timeZoneMode`).
@@ -980,7 +981,10 @@ private final class SAClaudePanelForm {
         show(editButton("saveFavorite:"), favourite && editing)
         show(editButton("addFavoriteUsingCurrentDetails:"), editing || !favourite)
         show(editButton("initiateConnection:"), editing || !favourite)
-        if saveAndConnectButton.isEnabled == connecting { saveAndConnectButton.isEnabled = !connecting }
+        // The controller disables Connect while Vault roles refresh (and while connecting); the two new buttons follow.
+        let canConnect = connectButton.isEnabled && !connecting
+        if saveAndConnectButton.isEnabled != canConnect { saveAndConnectButton.isEnabled = canConnect }
+        if connectWithoutSavingButton.isEnabled != canConnect { connectWithoutSavingButton.isEnabled = canConnect }
 
         let primary: NSButton = saveFirst ? saveAndConnectButton : connectButton
         for button in [connectButton, saveAndConnectButton] {
@@ -1048,9 +1052,15 @@ private final class SAClaudePanelForm {
             if let nameField = form.nameField {
                 // The title: SF Pro 15 medium in the theme's text colour; "New favourite" while empty.
                 nameField.font = Self.nameFont
-                nameField.placeholderAttributedString = NSAttributedString(string: Self.namePlaceholder, attributes: [
+                // The XIB's `name` binding re-applies its null placeholder ("optional") on every update, so the cell
+                // ignores placeholders set on it and always shows this one.
+                if let cell = nameField.cell, type(of: cell) == NSTextFieldCell.self {
+                    object_setClass(cell, SAClaudeNamePlaceholderCell.self)
+                }
+                SAClaudeNamePlaceholderCell.placeholder = NSAttributedString(string: Self.namePlaceholder, attributes: [
                     .font: Self.nameFont, .foregroundColor: palette.icon,
                 ])
+                nameField.needsDisplay = true
                 nameField.lineBreakMode = .byTruncatingTail
             }
             for popUp in form.popUps {
@@ -1171,7 +1181,8 @@ private final class SAClaudePanelForm {
               let field = form.nameField ?? form.rows.first(where: { $0.section == .header })?.control as? NSTextField,
               !field.isHiddenOrHasHiddenAncestor, let window = field.window else { return }
         if window.makeFirstResponder(field) {
-            field.selectText(nil)
+            // Not `selectText(_:)`: on a field that is already editing it ends that edit first.
+            field.currentEditor()?.selectAll(nil)
             field.scrollToVisible(field.bounds)
         }
     }
@@ -1702,5 +1713,20 @@ private final class SAClaudePanelForm {
             if view.nextKeyView === next { view.nextKeyView = nil }
             view.nextKeyView = next
         }
+    }
+}
+
+/// The header name field's cell: always shows "New favourite" while the name is empty. The XIB's `name` binding sets
+/// its null placeholder ("optional") on every update; this cell ignores placeholders set on it. No stored properties
+/// (the class is swapped onto the XIB's cell); the placeholder is shared, recoloured on each theme refresh.
+private final class SAClaudeNamePlaceholderCell: NSTextFieldCell {
+    static var placeholder = NSAttributedString()
+    override var placeholderString: String? {
+        get { nil }
+        set { }
+    }
+    override var placeholderAttributedString: NSAttributedString? {
+        get { Self.placeholder }
+        set { }
     }
 }

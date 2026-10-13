@@ -456,7 +456,9 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         placeFolderNameField()
         needsDisplay = true
         if let frame = frame(of: id) { scrollToVisible(frame) }
-        if window.makeFirstResponder(field) { field.selectText(nil) }
+        // Select through the field editor: `selectText(_:)` on a field that is already editing ends that edit first,
+        // which `controlTextDidEndEditing` would take as the rename finishing (the field vanished at once).
+        if window.makeFirstResponder(field) { field.currentEditor()?.selectAll(nil) }
     }
 
     /// Keeps the name field on its folder's header after a relayout; ends it (cancelled) when the folder is gone.
