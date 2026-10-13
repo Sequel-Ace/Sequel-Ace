@@ -44,8 +44,12 @@ final class SAClaudeConnectionPanelLayoutTests: XCTestCase {
                 XCTAssertEqual(got?.section, want.0, "\(key) on \(type)")
                 XCTAssertEqual(got?.order, want.1, "\(key) on \(type)")
             }
+            // The name is the header's, on every type.
+            let name = SAClaudeConnectionClassifier.placement(keyPath: "name", type: type)
+            XCTAssertEqual(name?.section, .header, "name on \(type)")
+            XCTAssertEqual(name?.order, 0, "name on \(type)")
             // Advanced fields present on every type.
-            for (key, order) in [("name", 0), ("colour", 1), ("timeZone", 2), ("allowDataLocalInfile", 3)] {
+            for (key, order) in [("colour", 1), ("timeZone", 2), ("allowDataLocalInfile", 3)] {
                 let got = SAClaudeConnectionClassifier.placement(keyPath: key, type: type)
                 XCTAssertEqual(got?.section, .advanced, "\(key) on \(type)")
                 XCTAssertEqual(got?.order, order, "\(key) on \(type)")
@@ -92,8 +96,7 @@ final class SAClaudeConnectionPanelLayoutTests: XCTestCase {
     }
 
     private var advancedRows: [Spec] {
-        [field("name", .advanced),
-         Spec(id: "colour", label: "Colour", kind: .colour, section: .advanced),
+        [Spec(id: "colour", label: "Colour", kind: .colour, section: .advanced),
          Spec(id: "timeZone", label: "Time zone", kind: .field, section: .advanced),
          Spec(id: "allowDataLocalInfile", label: nil, kind: .checkbox, section: .advanced),
          Spec(id: "enableClearTextPlugin", label: nil, kind: .checkbox, section: .advanced),
@@ -149,21 +152,35 @@ final class SAClaudeConnectionPanelLayoutTests: XCTestCase {
     }
 
     func testAdvancedOpenAddsThreeRowsInTwoColumns() {
+        // Five advanced rows (colour, time zone, LOCAL_DATA_INFILE, cleartext, SSL pair) -> 3 lines of 32.
         let f = L.frames(type: .tcpip, rows: tcpipRows + advancedRows, width: 760, advancedOpen: true, tabsWidth: 200)
         XCTAssertEqual(f.height, 378)
         // Alternating left / right in order.
-        XCTAssertEqual(row(f, "name").label?.minX, 16)
-        XCTAssertEqual(row(f, "colour").label?.minX, 392)
-        XCTAssertEqual(row(f, "timeZone").label?.minX, 16)
-        XCTAssertEqual(top(row(f, "name").control, in: f), top(row(f, "colour").control, in: f))
-        XCTAssertEqual(top(row(f, "timeZone").control, in: f), top(row(f, "name").control, in: f) + 32)
+        XCTAssertEqual(row(f, "colour").label?.minX, 16)
+        XCTAssertEqual(row(f, "timeZone").label?.minX, 392)
+        XCTAssertEqual(top(row(f, "colour").control, in: f), top(row(f, "timeZone").control, in: f))
+        XCTAssertEqual(top(row(f, "allowDataLocalInfile").control, in: f), top(row(f, "colour").control, in: f) + 32)
+        XCTAssertEqual(top(row(f, "useSSL").control, in: f), top(row(f, "colour").control, in: f) + 64)
         // Advanced rows start sectionGap below the disclosure.
-        XCTAssertEqual(top(row(f, "name").control, in: f), top(f.disclosure, in: f) + 28 + 10)
+        XCTAssertEqual(top(row(f, "colour").control, in: f), top(f.disclosure, in: f) + 28 + 10)
         // Checkbox rows have no label rect; their control starts after the label column.
         XCTAssertNil(row(f, "allowDataLocalInfile").label)
         XCTAssertNil(row(f, "useSSL").label)
-        XCTAssertEqual(row(f, "allowDataLocalInfile").control.minX, 392 + 104 + 8)
-        XCTAssertEqual(row(f, "enableClearTextPlugin").control.minX, 16 + 104 + 8)
+        XCTAssertEqual(row(f, "allowDataLocalInfile").control.minX, 16 + 104 + 8)
+        XCTAssertEqual(row(f, "enableClearTextPlugin").control.minX, 392 + 104 + 8)
+        XCTAssertEqual(row(f, "useSSL").control.minX, 16 + 104 + 8)
+    }
+
+    func testHeaderRowsAreNeverLaidOut() {
+        let name = Spec(id: "name", label: "Name", kind: .field, section: .header)
+        for open in [false, true] {
+            let with = L.frames(type: .tcpip, rows: tcpipRows + [name] + advancedRows, width: 760, advancedOpen: open, tabsWidth: 200)
+            let without = L.frames(type: .tcpip, rows: tcpipRows + advancedRows, width: 760, advancedOpen: open, tabsWidth: 200)
+            XCTAssertEqual(with, without)
+            XCTAssertFalse(with.rows.contains { $0.id == "name" })
+        }
+        let narrow = L.frames(type: .tcpip, rows: tcpipRows + [name], width: 600, advancedOpen: false, tabsWidth: 200)
+        XCTAssertFalse(narrow.rows.contains { $0.id == "name" })
     }
 
     func testClosedAdvancedRowsAreNotLaidOut() {
@@ -175,10 +192,11 @@ final class SAClaudeConnectionPanelLayoutTests: XCTestCase {
     func testSSLOnAddsThreeFileRows() {
         let off = L.frames(type: .tcpip, rows: tcpipRows + advancedRows, width: 760, advancedOpen: true, tabsWidth: 200)
         let on = L.frames(type: .tcpip, rows: tcpipRows + advancedRows + sslFileRows, width: 760, advancedOpen: true, tabsWidth: 200)
-        XCTAssertEqual(on.height - off.height, 64)   // 6 rows -> 3 lines, 9 rows -> 5 lines
-        XCTAssertEqual(on.height, 378 + 64)
-        XCTAssertEqual(row(on, "sslKeyFileLocation").label?.minX, 16)   // advanced index 6 -> left
-        XCTAssertEqual(row(on, "sslCertificateFileLocation").label?.minX, 392)
+        XCTAssertEqual(on.height - off.height, 32)   // 5 rows -> 3 lines, 8 rows -> 4 lines
+        XCTAssertEqual(on.height, 410)
+        XCTAssertEqual(row(on, "sslKeyFileLocation").label?.minX, 392)   // advanced index 5 -> right
+        XCTAssertEqual(row(on, "sslCertificateFileLocation").label?.minX, 16)
+        XCTAssertEqual(row(on, "sslCACertFileLocation").label?.minX, 392)
     }
 
     func testSSHColumns() {
@@ -222,7 +240,7 @@ final class SAClaudeConnectionPanelLayoutTests: XCTestCase {
         // Server then signIn stacked; advanced rows each on their own line.
         let serverTop = top(f.sectionTitles[.server]!, in: f)
         XCTAssertEqual(top(f.sectionTitles[.signIn]!, in: f), serverTop + 18 + 3 * 32 + 10)
-        let stacked = 16 + 32 + 12 + (18 + 96) + 10 + (18 + 64) + 10 + 28 + 10 + 6 * 32 + 12 + 32 + 16
+        let stacked = 16 + 32 + 12 + (18 + 96) + 10 + (18 + 64) + 10 + 28 + 10 + 5 * 32 + 12 + 32 + 16   // 534
         XCTAssertEqual(f.height, CGFloat(stacked))
         XCTAssertEqual(f.tabs.maxX, 600 - 16)
         let boundary = L.frames(type: .tcpip, rows: tcpipRows, width: 620, advancedOpen: false, tabsWidth: 200)

@@ -201,6 +201,8 @@ private final class SAClaudePanelForm {
     var ghostButtons: [NSButton] = []
     var pickerButtons: [NSButton] = []
     var reveal: [ObjectIdentifier: SAClaudeRevealPair] = [:]
+    /// The type's own Name field, moved into the panel header (laid-out types only).
+    var nameField: NSTextField?
     let colourLabel = NSTextField(labelWithString: NSLocalizedString("ClaudeConnectionColour", value: "Colour",
                                                                      comment: "connection panel : label of the favourite colour row"))
 
@@ -266,7 +268,13 @@ private final class SAClaudePanelForm {
 
     private let card = SAClaudeTableInfoCardView()
     private let dot = SAClaudeColourDot()
+    /// The header title of a type that keeps its XIB form (laid-out types show their Name field there instead).
     private let nameLabel = NSTextField(labelWithString: "")
+    /// Starts editing the name.
+    private let pencilButton = NSButton(frame: .zero)
+    private static let pencilSize: CGFloat = 16
+    private static let namePlaceholder = NSLocalizedString("ClaudeConnectionNewFavourite", value: "New favourite",
+                                                           comment: "connection panel : placeholder of the connection name in the header")
     private let subtitleLabel = NSTextField(labelWithString: "")
     private let typeTabs = SAClaudeConnectionTypeTabs()
     private let disclosure = SAClaudeAdvancedDisclosure()
@@ -390,6 +398,7 @@ private final class SAClaudePanelForm {
 
     private static func sectionRank(_ section: SAClaudeConnectionSection) -> Int {
         switch section {
+        case .header: return -1
         case .server: return 0
         case .signIn: return 1
         case .sshTunnel: return 2
@@ -640,6 +649,30 @@ private final class SAClaudePanelForm {
         disclosure.onToggle = { [weak self] in self?.toggleAdvanced() }
         container.addSubview(disclosure)
 
+        // The name is the panel's title: each laid-out type's own Name field moves into the header (its XIB label
+        // hides); only the selected type's shows.
+        for form in forms where form.canLayOut {
+            guard let row = form.rows.first(where: { $0.section == .header }), let field = row.control as? NSTextField else { continue }
+            row.label?.isHidden = true
+            field.removeFromSuperview()
+            field.autoresizingMask = []
+            container.addSubview(field)
+            form.nameField = field
+        }
+        SAClaudeFilterCells.installCellDrawing(on: pencilButton)
+        pencilButton.isBordered = false
+        pencilButton.bezelStyle = .regularSquare
+        pencilButton.imagePosition = .imageOnly
+        pencilButton.title = ""
+        pencilButton.target = self
+        pencilButton.action = #selector(beginEditingName)
+        let editName = NSLocalizedString("ClaudeConnectionEditName", value: "Edit name",
+                                         comment: "connection panel : pencil button that starts editing the connection name")
+        pencilButton.toolTip = editName
+        pencilButton.setAccessibilityLabel(editName)
+        container.addSubview(pencilButton)
+        SAClaudeHoverHighlighter.attach(to: pencilButton)
+
         for form in forms {
             for label in form.labels {
                 label.stringValue = Self.sentenceCase(label.stringValue)
@@ -868,8 +901,9 @@ private final class SAClaudePanelForm {
 
         card.fill = cardFill
         card.stroke = palette.hairline
-        nameLabel.textColor = text
         subtitleLabel.textColor = palette.icon
+        pencilButton.image = SAClaudeGlyphs.image(.editMode, tint: palette.icon)
+        SAClaudeHoverHighlighter.setFillColour(palette.hover, for: pencilButton)
         dot.ringColour = SAClaudeFilterChrome.dropStroke(text: text, background: cardFill)
         for title in sectionTitles.values { title.textColor = palette.icon }
         disclosure.titleColour = palette.icon
@@ -892,6 +926,14 @@ private final class SAClaudePanelForm {
                 note.drawsBackground = false
             }
             for field in form.fields { styleField(field, text: text) }
+            if let nameField = form.nameField {
+                // The title: SF Pro 15 medium in the theme's text colour; "New favourite" while empty.
+                nameField.font = Self.nameFont
+                nameField.placeholderAttributedString = NSAttributedString(string: Self.namePlaceholder, attributes: [
+                    .font: Self.nameFont, .foregroundColor: palette.icon,
+                ])
+                nameField.lineBreakMode = .byTruncatingTail
+            }
             for popUp in form.popUps {
                 SAClaudeFilterCells.installPill(on: popUp)
                 popUp.needsDisplay = true
@@ -985,6 +1027,24 @@ private final class SAClaudePanelForm {
             let stroke = editing.contains(ObjectIdentifier(frameView)) ? SAClaudeStatusChrome.clay : theme.palette.hairline
             if frameView.stroke != stroke { frameView.stroke = stroke }
         }
+        // The header's name shows the field look only while it is edited (and widens to its cap meanwhile).
+        for form in forms {
+            guard let nameField = form.nameField, let outline = fieldFrames[ObjectIdentifier(nameField)] else { continue }
+            let hidden = nameField.isHidden || !editing.contains(ObjectIdentifier(outline))
+            if outline.isHidden != hidden { outline.isHidden = hidden }
+        }
+        if let frames = lastFrames { layOutHeader(frames) }
+    }
+
+    private var currentForm: SAClaudePanelForm? {
+        guard let controller else { return nil }
+        return forms.first { $0.type.rawValue == controller.type }
+    }
+
+    /// The pencil: edit the name, all of it selected.
+    @objc private func beginEditingName() {
+        guard let field = currentForm?.nameField, let window = field.window else { return }
+        if window.makeFirstResponder(field) { field.selectText(nil) }
     }
 
     // MARK: - Header
@@ -993,14 +1053,9 @@ private final class SAClaudePanelForm {
         guard let controller else { return }
         let type = SAClaudeConnectionType(rawValue: controller.type) ?? .tcpip
         let name = controller.name ?? ""
-        if !name.isEmpty {
-            nameLabel.stringValue = name
-        } else if controller.selectedFavorite() == nil {
-            nameLabel.stringValue = NSLocalizedString("ClaudeConnectionQuickConnect", value: "Quick connect",
-                                                      comment: "connection panel : title when no favourite is selected")
-        } else {
-            nameLabel.stringValue = NSLocalizedString("ClaudeConnectionUntitled", value: "Untitled",
-                                                      comment: "connection panel : title of a favourite without a name")
+        nameLabel.stringValue = name.isEmpty ? Self.namePlaceholder : name
+        if let theme {
+            nameLabel.textColor = name.isEmpty ? theme.palette.icon : theme.text
         }
         subtitleLabel.stringValue = SAClaudeConnectionSummary.subtitle(
             type: type, host: controller.host ?? "", port: controller.port ?? "", socket: controller.socket ?? "",
@@ -1008,6 +1063,7 @@ private final class SAClaudePanelForm {
         let colours = SPFavoriteColorSupport.sharedInstance().userColorList ?? []
         dot.colour = colours.indices.contains(controller.colorIndex) ? colours[controller.colorIndex] : nil
         if typeTabs.selectedIndex != type.rawValue { typeTabs.selectedIndex = type.rawValue }
+        if let frames = lastFrames { layOutHeader(frames) }
     }
 
     // MARK: - Advanced
@@ -1181,12 +1237,41 @@ private final class SAClaudePanelForm {
         let header = frames.header
         let nameHeight = Self.textHeight(nameLabel)
         let subtitleHeight = Self.textHeight(subtitleLabel)
-        let textX = header.minX + Self.dotSize + 8
+        // Room on the left for the editing outline (6pt outside the text) clear of the dot.
+        let textX = header.minX + Self.dotSize + 12
         let textWidth = max(0, header.maxX - 12 - textX)
         // Name on top, the subtitle on the line below it: 19 + 15pt, so the pair reaches 2pt into the header gap
         // rather than overlapping.
         let nameY = header.maxY - nameHeight
-        Self.place(nameLabel, NSRect(x: textX, y: nameY, width: textWidth, height: nameHeight))
+        let current = currentForm
+        for form in forms {
+            guard let nameField = form.nameField else { continue }
+            let hidden = form !== current
+            if nameField.isHidden != hidden { nameField.isHidden = hidden }
+        }
+        if let nameField = current?.nameField {
+            nameLabel.isHidden = true
+            // Sized to its text (or the placeholder), capped before the pencil and the tabs; the cap while editing.
+            let editing = nameField.currentEditor() != nil
+            let cap = max(0, textWidth - Self.pencilSize - 6)
+            let text = nameField.stringValue.isEmpty ? Self.namePlaceholder : nameField.stringValue
+            let natural = ceil(NSAttributedString(string: text, attributes: [.font: Self.nameFont]).size().width) + 6
+            let width = editing ? cap : min(natural, cap)
+            let fieldHeight = Self.textHeight(nameField)
+            let fieldRect = NSRect(x: textX, y: header.maxY - fieldHeight, width: width, height: fieldHeight)
+            Self.place(nameField, fieldRect)
+            if let outline = fieldFrames[ObjectIdentifier(nameField)] {
+                Self.place(outline, NSRect(x: fieldRect.minX - Self.fieldInset, y: Self.centred(height: Self.fieldHeight, in: fieldRect),
+                                           width: fieldRect.width + 2 * Self.fieldInset, height: Self.fieldHeight))
+            }
+            Self.place(pencilButton, NSRect(x: fieldRect.maxX + 4, y: Self.centred(height: Self.pencilSize, in: fieldRect),
+                                            width: Self.pencilSize, height: Self.pencilSize))
+            if pencilButton.isHidden != editing { pencilButton.isHidden = editing }
+        } else {
+            nameLabel.isHidden = false
+            pencilButton.isHidden = true
+            Self.place(nameLabel, NSRect(x: textX, y: nameY, width: textWidth, height: nameHeight))
+        }
         Self.place(subtitleLabel, NSRect(x: textX, y: nameY - subtitleHeight, width: textWidth, height: subtitleHeight))
         Self.place(dot, NSRect(x: header.minX, y: (nameY + nameHeight / 2 - Self.dotSize / 2).rounded(),
                                width: Self.dotSize, height: Self.dotSize))
@@ -1404,7 +1489,8 @@ private final class SAClaudePanelForm {
 
     // MARK: - Key view loop
 
-    /// Tabs → left column → right column → Advanced (when open) → Add / Save / Test / Connect, for a laid-out type.
+    /// Name → tabs → left column → right column → Advanced (when open) → Add / Save / Test / Connect, for a laid-out
+    /// type; Connect leads back to the name.
     private func chainKeyViews() {
         guard let controller, let container, let frames = lastFrames,
               let form = forms.first(where: { $0.type.rawValue == controller.type }), form.canLayOut else { return }
@@ -1423,7 +1509,7 @@ private final class SAClaudePanelForm {
             if leftA != leftB { return leftA }
             return ra.maxY > rb.maxY
         }
-        var chain: [NSView] = [typeTabs]
+        var chain: [NSView] = [form.nameField, typeTabs].compactMap { $0 }
         chain += columns.flatMap(controls)
         chain.append(disclosure)
         chain += shown.filter { $0.section == .advanced }.flatMap(controls)
@@ -1432,9 +1518,9 @@ private final class SAClaudePanelForm {
         for (view, next) in zip(chain, chain.dropFirst()) where view.nextKeyView !== next {
             view.nextKeyView = next
         }
-        // The loop closes on the tabs (the outline's own next key view stays the controller's).
-        if let last = chain.last, last !== typeTabs, last.nextKeyView !== typeTabs {
-            last.nextKeyView = typeTabs
+        // The loop closes on the name (the outline's own next key view stays the controller's).
+        if let first = chain.first, let last = chain.last, last !== first, last.nextKeyView !== first {
+            last.nextKeyView = first
         }
     }
 }

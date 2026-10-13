@@ -4939,8 +4939,8 @@
 /* connection panel : button testing the connection details */
 "ClaudeConnectionTest" = "Test";
 
-/* connection panel : title when no favourite is selected */
-"ClaudeConnectionQuickConnect" = "Quick connect";
+/* connection panel : placeholder of the connection name in the header */
+"ClaudeConnectionNewFavourite" = "New favourite";
 
-/* connection panel : title of a favourite without a name */
-"ClaudeConnectionUntitled" = "Untitled";
+/* connection panel : pencil button that starts editing the connection name */
+"ClaudeConnectionEditName" = "Edit name";

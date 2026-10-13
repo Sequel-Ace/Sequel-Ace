@@ -15,6 +15,8 @@ enum SAClaudeConnectionType: Int {
 }
 
 enum SAClaudeConnectionSection: Equatable, Hashable {
+    /// The panel header (the connection name); never laid out in a column.
+    case header
     case server, signIn, sshTunnel, vault, advanced
 }
 
@@ -35,9 +37,9 @@ enum SAClaudeConnectionClassifier {
     /// Section + order for a binding key path (or a synthetic id such as "colour") on a given type;
     /// nil = unknown, so the type keeps its XIB layout.
     static func placement(keyPath: String, type: SAClaudeConnectionType) -> (section: SAClaudeConnectionSection, order: Int)? {
-        // Fields present on every type.
+        // Fields present on every type. The name is the panel's title, edited in the header.
         switch keyPath {
-        case "name": return (.advanced, 0)
+        case "name": return (.header, 0)
         case "colour": return (.advanced, 1)
         case "timeZone": return (.advanced, 2)
         case "allowDataLocalInfile": return (.advanced, 3)
@@ -179,7 +181,7 @@ enum SAClaudeConnectionPanelLayout {
     }
 
     /// Lays out the rows for a type at `width` (the panel's full width). Rows within a section keep the given order.
-    /// Advanced rows are laid out only when `advancedOpen`. Unflipped coordinates (origin bottom-left); the layout is
+    /// Advanced rows are laid out only when `advancedOpen`; `.header` rows never are (the header rect holds them). Unflipped coordinates (origin bottom-left); the layout is
     /// computed from the panel top and mirrored at the end.
     static func frames(type: SAClaudeConnectionType, rows: [SAClaudeConnectionRowSpec], width: CGFloat,
                        advancedOpen: Bool, tabsWidth: CGFloat) -> Frames {
