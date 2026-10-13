@@ -1,0 +1,253 @@
+//
+//  SAClaudeFavoriteCardLayoutTests.swift
+//  Unit Tests
+//
+
+import AppKit
+import XCTest
+
+final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
+    private typealias L = SAClaudeFavoriteCardLayout
+    private typealias Card = SAClaudeFavoriteCard
+    private typealias Model = SAClaudeFavoriteGridModel
+
+    private func card(_ id: String, quick: Bool = false, folder: String? = nil) -> Card {
+        Card(id: id, isQuickConnect: quick, name: id, summary: "", badge: "", colorIndex: nil, folderID: folder)
+    }
+
+    /// Quick connect + 2 favourites at the top level, folder "Staging" with 3 cards.
+    private var sampleModel: Model {
+        Model(topLevel: [card("qc", quick: true), card("a"), card("b")],
+              folders: [SAClaudeFavoriteFolder(id: "f1", title: "Staging",
+                                               cards: [card("s1", folder: "f1"), card("s2", folder: "f1"), card("s3", folder: "f1")])])
+    }
+
+    private func frame(of id: String, in items: [L.Item]) -> NSRect? {
+        items.first { $0.kind == .card(id) }?.frame
+    }
+
+    // MARK: Columns and height
+
+    func testColumnsForWidth() {
+        XCTAssertEqual(L.columns(for: 445), 2)
+        XCTAssertEqual(L.columns(for: 700), 3)
+        XCTAssertEqual(L.columns(for: 960), 4)
+        XCTAssertEqual(L.columns(for: 150), 1)
+        XCTAssertEqual(L.columns(for: 0), 1)
+        XCTAssertEqual(L.columns(for: 5000), 4)
+    }
+
+    func testVisibleHeightCap() {
+        XCTAssertEqual(L.visibleHeight(contentHeight: 172), 172)
+        XCTAssertEqual(L.visibleHeight(contentHeight: 236), 236)
+        XCTAssertEqual(L.visibleHeight(contentHeight: 900), 3 * 64 + 2 * 10 + 24)
+        XCTAssertEqual(L.visibleHeight(contentHeight: 0), 0)
+    }
+
+    // MARK: Item frames
+
+    func testItemFramesAtWidth760() {
+        let (items, contentHeight) = L.items(for: sampleModel, width: 760)
+        XCTAssertEqual(items.count, 7)
+        XCTAssertEqual(frame(of: "qc", in: items), NSRect(x: 0, y: 0, width: 182.5, height: 64))
+        XCTAssertEqual(frame(of: "a", in: items), NSRect(x: 192.5, y: 0, width: 182.5, height: 64))
+        XCTAssertEqual(frame(of: "b", in: items), NSRect(x: 385, y: 0, width: 182.5, height: 64))
+        XCTAssertEqual(items.first { $0.kind == .folderHeader("f1") }?.frame, NSRect(x: 0, y: 74, width: 760, height: 24))
+        XCTAssertEqual(frame(of: "s1", in: items), NSRect(x: 0, y: 108, width: 182.5, height: 64))
+        XCTAssertEqual(frame(of: "s3", in: items), NSRect(x: 385, y: 108, width: 182.5, height: 64))
+        XCTAssertEqual(contentHeight, 172)
+    }
+
+    func testCardsWrapIntoRowsAtNarrowWidth() {
+        // 445 -> 2 columns, card width (445 - 10) / 2 = 217.5
+        let (items, contentHeight) = L.items(for: sampleModel, width: 445)
+        XCTAssertEqual(frame(of: "qc", in: items), NSRect(x: 0, y: 0, width: 217.5, height: 64))
+        XCTAssertEqual(frame(of: "a", in: items), NSRect(x: 227.5, y: 0, width: 217.5, height: 64))
+        XCTAssertEqual(frame(of: "b", in: items), NSRect(x: 0, y: 74, width: 217.5, height: 64))
+        // header: 74 + 64 + 10 = 148; cards at 148 + 24 + 10 = 182 and 256
+        XCTAssertEqual(items.first { $0.kind == .folderHeader("f1") }?.frame, NSRect(x: 0, y: 148, width: 445, height: 24))
+        XCTAssertEqual(frame(of: "s1", in: items)?.minY, 182)
+        XCTAssertEqual(frame(of: "s3", in: items), NSRect(x: 0, y: 256, width: 217.5, height: 64))
+        XCTAssertEqual(contentHeight, 320)
+    }
+
+    func testEmptyFolderIsJustAHeaderAndEmptyTopLevelStartsAtZero() {
+        let model = Model(topLevel: [], folders: [SAClaudeFavoriteFolder(id: "f", title: "A / B", cards: [])])
+        let (items, contentHeight) = L.items(for: model, width: 760)
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items[0].frame, NSRect(x: 0, y: 0, width: 760, height: 24))
+        XCTAssertEqual(contentHeight, 24)
+        XCTAssertEqual(L.items(for: Model(topLevel: [], folders: []), width: 760).contentHeight, 0)
+    }
+
+    func testSecondFolderStartsOnANewRowAfterGap() {
+        var model = sampleModel
+        model.folders.append(SAClaudeFavoriteFolder(id: "f2", title: "Prod", cards: [card("p1", folder: "f2")]))
+        let (items, contentHeight) = L.items(for: model, width: 760)
+        XCTAssertEqual(items.first { $0.kind == .folderHeader("f2") }?.frame, NSRect(x: 0, y: 182, width: 760, height: 24))
+        XCTAssertEqual(frame(of: "p1", in: items), NSRect(x: 0, y: 216, width: 182.5, height: 64))
+        XCTAssertEqual(contentHeight, 280)
+    }
+
+    // MARK: Drop targets
+
+    func testDropOverFolderHeaderIsInto() {
+        let model = sampleModel
+        let items = L.items(for: model, width: 760).items
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 300, y: 80), items: items, model: model), .into(folderID: "f1"))
+    }
+
+    func testDropOnLeftAndRightHalfOfACard() {
+        let model = sampleModel
+        let items = L.items(for: model, width: 760).items
+        // card "a" spans x 192.5...375; midpoint 283.75
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 200, y: 30), items: items, model: model), .before(cardID: "a", folderID: nil))
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 370, y: 30), items: items, model: model), .before(cardID: "b", folderID: nil))
+        // folder card "s2": right half -> before s3
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 360, y: 120), items: items, model: model), .before(cardID: "s3", folderID: "f1"))
+    }
+
+    func testDropOnRightHalfOfLastCardIsEndOfGroup() {
+        let model = sampleModel
+        let items = L.items(for: model, width: 760).items
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 560, y: 120), items: items, model: model), .endOf(folderID: "f1"))
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 560, y: 30), items: items, model: model), .endOf(folderID: nil))
+        // right of the last card in a partial row
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 700, y: 120), items: items, model: model), .endOf(folderID: "f1"))
+    }
+
+    func testDropBelowAGroupIsEndOfThatGroup() {
+        var model = sampleModel
+        model.folders.append(SAClaudeFavoriteFolder(id: "f2", title: "Prod", cards: [card("p1", folder: "f2")]))
+        let items = L.items(for: model, width: 760).items
+        // gap between the top-level row (ends 64) and the f1 header (74)
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 100, y: 69), items: items, model: model), .endOf(folderID: nil))
+        // gap between f1 cards (end 172) and the f2 header (182)
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 100, y: 177), items: items, model: model), .endOf(folderID: "f1"))
+        // below everything
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 100, y: 500), items: items, model: model), .endOf(folderID: "f2"))
+    }
+
+    func testDropBelowAnEmptyFolderHeaderIsEndOfThatFolder() {
+        let model = Model(topLevel: [card("qc", quick: true)], folders: [SAClaudeFavoriteFolder(id: "f", title: "Empty", cards: [])])
+        let items = L.items(for: model, width: 760).items
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 10, y: 400), items: items, model: model), .endOf(folderID: "f"))
+    }
+
+    func testQuickConnectIsNeverATarget() {
+        let model = sampleModel
+        let items = L.items(for: model, width: 760).items
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 10, y: 30), items: items, model: model), .before(cardID: "a", folderID: nil))
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 170, y: 30), items: items, model: model), .before(cardID: "a", folderID: nil))
+
+        let lonely = Model(topLevel: [card("qc", quick: true)], folders: [])
+        let lonelyItems = L.items(for: lonely, width: 760).items
+        XCTAssertEqual(L.dropTarget(at: NSPoint(x: 10, y: 30), items: lonelyItems, model: lonely), .endOf(folderID: nil))
+    }
+
+    func testDropOutsideTheGridIsNil() {
+        let model = sampleModel
+        let items = L.items(for: model, width: 760).items
+        XCTAssertNil(L.dropTarget(at: NSPoint(x: 100, y: -5), items: items, model: model))
+        XCTAssertNil(L.dropTarget(at: NSPoint(x: 100, y: 10), items: [], model: model))
+    }
+
+    // MARK: Reorder
+
+    private func reorder(_ moving: [String], _ arrays: [String: [String]], to destination: String, at index: Int) -> [String: [String]] {
+        var arrays = arrays
+        SAClaudeFavoriteReorder.apply(moving: moving, from: &arrays, to: destination, at: index)
+        return arrays
+    }
+
+    func testReorderWithinSameArrayForward() {
+        let result = reorder(["B"], ["root": ["A", "B", "C", "D"]], to: "root", at: 4)
+        XCTAssertEqual(result["root"], ["A", "C", "D", "B"])
+        XCTAssertEqual(reorder(["B"], ["root": ["A", "B", "C", "D"]], to: "root", at: 3)["root"], ["A", "C", "B", "D"])
+    }
+
+    func testReorderWithinSameArrayBackward() {
+        XCTAssertEqual(reorder(["D"], ["root": ["A", "B", "C", "D"]], to: "root", at: 0)["root"], ["D", "A", "B", "C"])
+    }
+
+    func testReorderToOwnPositionIsNoOp() {
+        XCTAssertEqual(reorder(["B"], ["root": ["A", "B", "C"]], to: "root", at: 1)["root"], ["A", "B", "C"])
+        XCTAssertEqual(reorder(["B"], ["root": ["A", "B", "C"]], to: "root", at: 2)["root"], ["A", "B", "C"])
+    }
+
+    func testReorderIntoAnotherFolder() {
+        let result = reorder(["B"], ["root": ["A", "B", "C"], "f1": ["X", "Y"]], to: "f1", at: 1)
+        XCTAssertEqual(result["root"], ["A", "C"])
+        XCTAssertEqual(result["f1"], ["X", "B", "Y"])
+    }
+
+    func testReorderOutToTopLevel() {
+        let result = reorder(["Y"], ["root": ["A", "B"], "f1": ["X", "Y"]], to: "root", at: 2)
+        XCTAssertEqual(result["root"], ["A", "B", "Y"])
+        XCTAssertEqual(result["f1"], ["X"])
+    }
+
+    func testReorderIntoEmptyOrMissingDestination() {
+        let result = reorder(["A"], ["root": ["A", "B"], "f1": []], to: "f1", at: 0)
+        XCTAssertEqual(result["f1"], ["A"])
+        XCTAssertEqual(result["root"], ["B"])
+        XCTAssertEqual(reorder(["A"], ["root": ["A", "B"]], to: "new", at: 0)["new"], ["A"])
+    }
+
+    func testReorderMultipleItemsKeepsTheirOrder() {
+        // forward within one array: A and B land before D
+        XCTAssertEqual(reorder(["A", "B"], ["root": ["A", "B", "C", "D"]], to: "root", at: 3)["root"], ["C", "A", "B", "D"])
+        // backward within one array
+        XCTAssertEqual(reorder(["C", "D"], ["root": ["A", "B", "C", "D"]], to: "root", at: 1)["root"], ["A", "C", "D", "B"])
+        // from two different arrays into a third
+        let result = reorder(["B", "X"], ["root": ["A", "B"], "f1": ["X", "Y"], "f2": ["P"]], to: "f2", at: 0)
+        XCTAssertEqual(result["f2"], ["B", "X", "P"])
+        XCTAssertEqual(result["root"], ["A"])
+        XCTAssertEqual(result["f1"], ["Y"])
+    }
+
+    func testReorderClampsOutOfRangeIndex() {
+        XCTAssertEqual(reorder(["A"], ["root": ["A", "B"], "f1": ["X"]], to: "f1", at: 9)["f1"], ["X", "A"])
+    }
+
+    // MARK: Model helpers
+
+    func testCardIndexMapsFavouriteIDsToFlatPositions() {
+        let model = sampleModel
+        XCTAssertEqual(model.allCards.map(\.id), ["qc", "a", "b", "s1", "s2", "s3"])
+        XCTAssertEqual(model.cardIndex(forFavoriteID: "qc"), 0)
+        XCTAssertEqual(model.cardIndex(forFavoriteID: "b"), 2)
+        XCTAssertEqual(model.cardIndex(forFavoriteID: "s2"), 4)
+        XCTAssertNil(model.cardIndex(forFavoriteID: "nope"))
+        XCTAssertEqual(model.cardID(at: 3), "s1")
+        XCTAssertNil(model.cardID(at: 6))
+        XCTAssertNil(model.cardID(at: -1))
+    }
+
+    // MARK: Summary and badge
+
+    func testSummaries() {
+        typealias S = SAClaudeFavoriteSummary
+        XCTAssertEqual(S.summary(type: 0, user: "root", host: "db.local", port: "3306", socket: "", sshHost: ""), "root@db.local:3306")
+        XCTAssertEqual(S.summary(type: 0, user: "", host: "db.local", port: "3306", socket: "", sshHost: ""), "db.local:3306")
+        XCTAssertEqual(S.summary(type: 0, user: "root", host: "db.local", port: "", socket: "", sshHost: ""), "root@db.local")
+        XCTAssertEqual(S.summary(type: 3, user: "iam", host: "x.rds.amazonaws.com", port: "3306", socket: "", sshHost: ""), "iam@x.rds.amazonaws.com:3306")
+        XCTAssertEqual(S.summary(type: 4, user: "v", host: "h", port: "", socket: "", sshHost: ""), "v@h")
+        XCTAssertEqual(S.summary(type: 1, user: "root", host: "", port: "", socket: "/tmp/mysql.sock", sshHost: ""), "root · /tmp/mysql.sock")
+        XCTAssertEqual(S.summary(type: 1, user: "root", host: "", port: "", socket: "", sshHost: ""), "root · default socket")
+        XCTAssertEqual(S.summary(type: 1, user: "", host: "", port: "", socket: "", sshHost: ""), "default socket")
+        XCTAssertEqual(S.summary(type: 2, user: "root", host: "127.0.0.1", port: "3306", socket: "", sshHost: "bastion.example.com"), "root@127.0.0.1:3306 via bastion.example.com")
+        XCTAssertEqual(S.summary(type: 2, user: "root", host: "127.0.0.1", port: "", socket: "", sshHost: ""), "root@127.0.0.1")
+        XCTAssertEqual(S.summary(type: 0, user: "  root ", host: " h ", port: " 1 ", socket: "", sshHost: ""), "root@h:1")
+    }
+
+    func testBadges() {
+        typealias S = SAClaudeFavoriteSummary
+        XCTAssertEqual(S.badge(type: 0), "TCP/IP")
+        XCTAssertEqual(S.badge(type: 1), "Socket")
+        XCTAssertEqual(S.badge(type: 2), "SSH")
+        XCTAssertEqual(S.badge(type: 3), "AWS IAM")
+        XCTAssertEqual(S.badge(type: 4), "Vault")
+        XCTAssertEqual(S.badge(type: 9), "")
+    }
+}
