@@ -4,7 +4,9 @@
 //
 //  Pure model and geometry for the connection screen's favourite cards: the card/folder/grid model, the
 //  column count and item frames at a given width, drop-target resolution, the reorder algorithm on ID
-//  arrays (mirrors the outline drop in SAFavoritesListDataSource) and the card summary/badge strings.
+//  arrays (mirrors the outline drop in SAFavoritesListDataSource) and the card summary/badge strings; the grid
+//  model built from a value copy of the favourites tree, drop targets translated to tree positions and arrow-key
+//  movement.
 //  Shared with Unit Tests; no app types.
 //
 
@@ -47,6 +49,78 @@ struct SAClaudeFavoriteGridModel: Equatable {
     func cardID(at index: Int) -> String? {
         let cards = allCards
         return cards.indices.contains(index) ? cards[index].id : nil
+    }
+}
+
+// MARK: - Model from the favourites tree
+
+/// A value copy of the favourites tree below the outline's section group, so the grid model and drop
+/// translation can be built and tested without `SPTreeNode`. The app builds it from the live tree (one
+/// entry per node, with the node's ID) and maps IDs back to nodes.
+struct SAClaudeFavoriteTreeEntry: Equatable {
+    var id: String
+    var name: String
+    var type = 0
+    var user = ""
+    var host = ""
+    var port = ""
+    var socket = ""
+    var sshHost = ""
+    var colorIndex: Int?
+    /// `nil` for a favourite; a folder's children (possibly empty) otherwise.
+    var children: [SAClaudeFavoriteTreeEntry]?
+
+    var isFolder: Bool { children != nil }
+
+    static func favorite(id: String, name: String, type: Int, user: String, host: String, port: String, socket: String,
+                         sshHost: String, colorIndex: Int?) -> SAClaudeFavoriteTreeEntry {
+        SAClaudeFavoriteTreeEntry(id: id, name: name, type: type, user: user, host: host, port: port, socket: socket,
+                                  sshHost: sshHost, colorIndex: colorIndex, children: nil)
+    }
+
+    static func folder(id: String, name: String, children: [SAClaudeFavoriteTreeEntry]) -> SAClaudeFavoriteTreeEntry {
+        SAClaudeFavoriteTreeEntry(id: id, name: name, children: children)
+    }
+}
+
+extension SAClaudeFavoriteGridModel {
+    /// The Quick connect card's ID (it has no node in the favourites tree).
+    static let quickConnectID = "quickConnect"
+
+    /// The grid for `entries` (the children of the favourites section group): Quick connect, then the
+    /// top-level favourites, then every folder depth-first ("Parent / Child") with its own favourites.
+    /// With an active `query` (`SAFavoriteSearchMatcher`: every token in the name or host), only matching
+    /// favourites show and folders without a matching favourite of their own hide; Quick connect stays.
+    static func make(from entries: [SAClaudeFavoriteTreeEntry], quickConnectName: String, quickConnectSummary: String,
+                     query: String) -> SAClaudeFavoriteGridModel {
+        let matcher = SAFavoriteSearchMatcher(query: query)
+
+        func cards(in children: [SAClaudeFavoriteTreeEntry], folderID: String?) -> [SAClaudeFavoriteCard] {
+            children.filter { !$0.isFolder && matcher.matches(name: $0.name, host: $0.host) }.map { entry in
+                SAClaudeFavoriteCard(id: entry.id, isQuickConnect: false, name: entry.name,
+                                     summary: SAClaudeFavoriteSummary.summary(type: entry.type, user: entry.user, host: entry.host,
+                                                                              port: entry.port, socket: entry.socket, sshHost: entry.sshHost),
+                                     badge: SAClaudeFavoriteSummary.badge(type: entry.type),
+                                     colorIndex: entry.colorIndex.flatMap { $0 >= 0 ? $0 : nil }, folderID: folderID)
+            }
+        }
+
+        var folders: [SAClaudeFavoriteFolder] = []
+        func addFolders(in children: [SAClaudeFavoriteTreeEntry], path: [String]) {
+            for folder in children where folder.isFolder {
+                let title = (path + [folder.name]).joined(separator: " / ")
+                let folderCards = cards(in: folder.children ?? [], folderID: folder.id)
+                if !matcher.isActive || !folderCards.isEmpty {
+                    folders.append(SAClaudeFavoriteFolder(id: folder.id, title: title, cards: folderCards))
+                }
+                addFolders(in: folder.children ?? [], path: path + [folder.name])
+            }
+        }
+        addFolders(in: entries, path: [])
+
+        let quickConnect = SAClaudeFavoriteCard(id: quickConnectID, isQuickConnect: true, name: quickConnectName,
+                                                summary: quickConnectSummary, badge: "", colorIndex: nil, folderID: nil)
+        return SAClaudeFavoriteGridModel(topLevel: [quickConnect] + cards(in: entries, folderID: nil), folders: folders)
     }
 }
 
@@ -190,6 +264,92 @@ enum SAClaudeFavoriteCardLayout {
         if card.isQuickConnect { return after() }
         if point.x < frame.midX { return .before(cardID: card.id, folderID: group.folderID) }
         return after()
+    }
+}
+
+// MARK: - Drop translation and keyboard movement
+
+extension SAClaudeFavoriteCardLayout {
+    /// A position in the real favourites tree: a folder (`nil` = the top level, i.e. the favourites section
+    /// group) and an index among ALL its children (folders and favourites interleaved) — what the shared move
+    /// helper takes.
+    struct TreeDestination: Equatable {
+        var folderID: String?
+        var index: Int
+    }
+
+    /// Translates a grid drop target into a tree position. Grid positions can't be used directly: the top-level
+    /// row starts with Quick connect, and a folder's cards leave out its subfolders. `.before(card)` is that
+    /// card's index in its parent's children, `.endOf(folder)` the parent's child count and `.into(folder)` its
+    /// start. `nil` when the target or the moving favourite isn't in `entries`, or when the move would leave the
+    /// favourite where it is (same parent, index unchanged after the helper's down-shift).
+    static func treeDestination(for target: DropTarget, moving id: String,
+                                in entries: [SAClaudeFavoriteTreeEntry]) -> TreeDestination? {
+        func children(of folderID: String?) -> [SAClaudeFavoriteTreeEntry]? {
+            guard let folderID else { return entries }
+            func find(_ list: [SAClaudeFavoriteTreeEntry]) -> [SAClaudeFavoriteTreeEntry]? {
+                for entry in list where entry.isFolder {
+                    if entry.id == folderID { return entry.children }
+                    if let found = find(entry.children ?? []) { return found }
+                }
+                return nil
+            }
+            return find(entries)
+        }
+        func location(of id: String, in list: [SAClaudeFavoriteTreeEntry], folderID: String?) -> (folderID: String?, index: Int)? {
+            for (index, entry) in list.enumerated() {
+                if entry.id == id { return entry.isFolder ? nil : (folderID, index) }
+                if entry.isFolder, let found = location(of: id, in: entry.children ?? [], folderID: entry.id) { return found }
+            }
+            return nil
+        }
+
+        guard let origin = location(of: id, in: entries, folderID: nil) else { return nil }
+        let destination: TreeDestination
+        switch target {
+        case .before(let cardID, let folderID):
+            guard let siblings = children(of: folderID), let index = siblings.firstIndex(where: { $0.id == cardID }) else { return nil }
+            destination = TreeDestination(folderID: folderID, index: index)
+        case .endOf(let folderID):
+            guard let siblings = children(of: folderID) else { return nil }
+            destination = TreeDestination(folderID: folderID, index: siblings.count)
+        case .into(let folderID):
+            guard children(of: folderID) != nil else { return nil }
+            destination = TreeDestination(folderID: folderID, index: 0)
+        }
+        if destination.folderID == origin.folderID, destination.index == origin.index || destination.index == origin.index + 1 {
+            return nil
+        }
+        return destination
+    }
+
+    enum MoveDirection {
+        case left, right, up, down
+    }
+
+    /// The card an arrow key moves to from `id`: left / right step through the display order; up / down go to the
+    /// nearest card (by centre x) in the closest row above / below, folder headers skipped. The first card when
+    /// `id` is `nil` or not shown; `nil` at an edge.
+    static func neighbour(of id: String?, _ direction: MoveDirection, items: [Item]) -> String? {
+        let cards: [(id: String, frame: NSRect)] = items.compactMap {
+            if case .card(let cardID) = $0.kind { return (cardID, $0.frame) }
+            return nil
+        }
+        guard let first = cards.first else { return nil }
+        guard let id, let position = cards.firstIndex(where: { $0.id == id }) else { return first.id }
+        let current = cards[position].frame
+
+        switch direction {
+        case .left:
+            return position > 0 ? cards[position - 1].id : nil
+        case .right:
+            return position + 1 < cards.count ? cards[position + 1].id : nil
+        case .up, .down:
+            let rows = cards.map(\.frame.minY).filter { direction == .up ? $0 < current.minY : $0 > current.minY }
+            guard let row = direction == .up ? rows.max() : rows.min() else { return nil }
+            return cards.filter { $0.frame.minY == row }
+                .min { abs($0.frame.midX - current.midX) < abs($1.frame.midX - current.midX) }?.id
+        }
     }
 }
 

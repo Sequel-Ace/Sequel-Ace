@@ -4944,3 +4944,15 @@
 
 /* connection panel : pencil button that starts editing the connection name */
 "ClaudeConnectionEditName" = "Edit name";
+
+/* connection screen : title of the Quick connect card */
+"ClaudeFavoriteCardsQuickConnect" = "Quick connect";
+
+/* connection screen : subtitle of the Quick connect card */
+"ClaudeFavoriteCardsQuickConnectSummary" = "Fill in the panel below";
+
+/* connection screen : shown in the favourite cards when the search matches nothing */
+"ClaudeFavoriteCardsNoMatches" = "No favourites match";
+
+/* connection screen : accessibility name of the favourite cards */
+"ClaudeFavoriteCardsAccessibility" = "Favourites";

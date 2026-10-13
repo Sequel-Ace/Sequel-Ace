@@ -250,4 +250,156 @@ final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
         XCTAssertEqual(S.badge(type: 4), "Vault")
         XCTAssertEqual(S.badge(type: 9), "")
     }
+
+    // MARK: Model from the favourites tree
+
+    private typealias Entry = SAClaudeFavoriteTreeEntry
+
+    private func fav(_ id: String, host: String = "", type: Int = 0, colour: Int? = nil) -> Entry {
+        Entry.favorite(id: id, name: id, type: type, user: "root", host: host, port: "3306", socket: "", sshHost: "", colorIndex: colour)
+    }
+
+    /// Top level: a, folder F (f1, nested folder G (g1), f2), b, empty folder E.
+    private var sampleTree: [Entry] {
+        [fav("a", host: "alpha.local", colour: 2),
+         Entry.folder(id: "F", name: "Staging", children: [fav("f1", host: "s1.local"),
+                                                            Entry.folder(id: "G", name: "EU", children: [fav("g1", host: "eu.local")]),
+                                                            fav("f2", host: "s2.local")]),
+         fav("b", host: "beta.local", type: 2, colour: -1),
+         Entry.folder(id: "E", name: "Empty", children: [])]
+    }
+
+    private func makeModel(_ query: String = "") -> Model {
+        Model.make(from: sampleTree, quickConnectName: "Quick connect", quickConnectSummary: "Fill in the panel below", query: query)
+    }
+
+    func testModelFromTreePutsQuickConnectAndTopLevelFirstThenFoldersDepthFirst() {
+        let model = makeModel()
+        XCTAssertEqual(model.topLevel.map(\.id), [Model.quickConnectID, "a", "b"])
+        XCTAssertEqual(model.topLevel[0].isQuickConnect, true)
+        XCTAssertEqual(model.topLevel[0].name, "Quick connect")
+        XCTAssertEqual(model.topLevel[0].summary, "Fill in the panel below")
+        XCTAssertEqual(model.folders.map(\.id), ["F", "G", "E"])
+        XCTAssertEqual(model.folders.map(\.title), ["Staging", "Staging / EU", "Empty"])
+        XCTAssertEqual(model.folders[0].cards.map(\.id), ["f1", "f2"])
+        XCTAssertEqual(model.folders[0].cards.map(\.folderID), ["F", "F"])
+        XCTAssertEqual(model.folders[1].cards.map(\.id), ["g1"])
+        XCTAssertEqual(model.folders[1].cards[0].folderID, "G")
+        XCTAssertEqual(model.folders[2].cards, [])
+    }
+
+    func testModelCardsCarrySummaryBadgeAndColour() {
+        let model = makeModel()
+        let a = model.topLevel[1]
+        XCTAssertEqual(a.summary, "root@alpha.local:3306")
+        XCTAssertEqual(a.badge, "TCP/IP")
+        XCTAssertEqual(a.colorIndex, 2)
+        XCTAssertNil(a.folderID)
+        XCTAssertFalse(a.isQuickConnect)
+        // A negative colour index means "no colour".
+        XCTAssertEqual(model.topLevel[2].badge, "SSH")
+        XCTAssertNil(model.topLevel[2].colorIndex)
+    }
+
+    func testModelFilterMatchesNameOrHostAndHidesFoldersWithoutMatches() {
+        // "eu" matches g1's host only; Quick connect always stays.
+        let model = makeModel("eu")
+        XCTAssertEqual(model.topLevel.map(\.id), [Model.quickConnectID])
+        XCTAssertEqual(model.folders.map(\.id), ["G"])
+        XCTAssertEqual(model.folders[0].title, "Staging / EU")
+
+        // Every token must match (name or host): "s2 local" → f2 only.
+        let narrowed = makeModel("s2 local")
+        XCTAssertEqual(narrowed.allCards.map(\.id), [Model.quickConnectID, "f2"])
+        XCTAssertEqual(narrowed.folders.map(\.id), ["F"])
+
+        // No match: only Quick connect, no folders.
+        let none = makeModel("zzz")
+        XCTAssertEqual(none.allCards.map(\.id), [Model.quickConnectID])
+        XCTAssertEqual(none.folders, [])
+
+        // Whitespace-only is no filter: empty folders stay.
+        XCTAssertEqual(makeModel("   ").folders.map(\.id), ["F", "G", "E"])
+    }
+
+    func testModelFromEmptyTreeIsQuickConnectOnly() {
+        let model = Model.make(from: [], quickConnectName: "Q", quickConnectSummary: "S", query: "")
+        XCTAssertEqual(model.allCards.map(\.id), [Model.quickConnectID])
+        XCTAssertEqual(model.folders, [])
+    }
+
+    // MARK: Drop target → tree position
+
+    private func destination(_ target: L.DropTarget, moving id: String) -> L.TreeDestination? {
+        L.treeDestination(for: target, moving: id, in: sampleTree)
+    }
+
+    func testBeforeACardIsThatCardsIndexAmongItsParentsRealChildren() {
+        // F's real children are [f1, G, f2]: f2 is at index 2 even though it's the second card.
+        XCTAssertEqual(destination(.before(cardID: "f2", folderID: "F"), moving: "a"), L.TreeDestination(folderID: "F", index: 2))
+        // Top level is [a, F, b, E]: b is at index 2.
+        XCTAssertEqual(destination(.before(cardID: "b", folderID: nil), moving: "g1"), L.TreeDestination(folderID: nil, index: 2))
+        XCTAssertEqual(destination(.before(cardID: "g1", folderID: "G"), moving: "a"), L.TreeDestination(folderID: "G", index: 0))
+    }
+
+    func testEndOfAGroupIsItsRealChildCount() {
+        XCTAssertEqual(destination(.endOf(folderID: nil), moving: "f1"), L.TreeDestination(folderID: nil, index: 4))
+        XCTAssertEqual(destination(.endOf(folderID: "F"), moving: "a"), L.TreeDestination(folderID: "F", index: 3))
+        XCTAssertEqual(destination(.endOf(folderID: "E"), moving: "a"), L.TreeDestination(folderID: "E", index: 0))
+    }
+
+    func testIntoAFolderIsItsStart() {
+        XCTAssertEqual(destination(.into(folderID: "G"), moving: "a"), L.TreeDestination(folderID: "G", index: 0))
+        XCTAssertEqual(destination(.into(folderID: "E"), moving: "f2"), L.TreeDestination(folderID: "E", index: 0))
+    }
+
+    func testDropsThatLeaveTheCardInPlaceAreNil() {
+        // Before itself, before its next sibling, at the end of its own group when it is last, at the start when first.
+        XCTAssertNil(destination(.before(cardID: "f2", folderID: "F"), moving: "f2"))
+        XCTAssertNil(L.treeDestination(for: .before(cardID: "y", folderID: nil), moving: "x", in: [fav("x"), fav("y")]))
+        XCTAssertNil(destination(.endOf(folderID: "G"), moving: "g1"))
+        XCTAssertNil(destination(.into(folderID: "F"), moving: "f1"))
+        // Moving down past a folder in the same parent is a real move.
+        XCTAssertEqual(destination(.before(cardID: "b", folderID: nil), moving: "a"), L.TreeDestination(folderID: nil, index: 2))
+    }
+
+    func testUnknownCardsFoldersAndQuickConnectAreNil() {
+        XCTAssertNil(destination(.before(cardID: "nope", folderID: nil), moving: "a"))
+        XCTAssertNil(destination(.endOf(folderID: "nope"), moving: "a"))
+        XCTAssertNil(destination(.into(folderID: "nope"), moving: "a"))
+        XCTAssertNil(destination(.endOf(folderID: nil), moving: "nope"))
+        XCTAssertNil(destination(.endOf(folderID: nil), moving: Model.quickConnectID))
+        // A folder is not a card.
+        XCTAssertNil(destination(.endOf(folderID: nil), moving: "F"))
+    }
+
+    // MARK: Keyboard neighbours
+
+    func testLeftAndRightFollowDisplayOrder() {
+        let (items, _) = L.items(for: sampleModel, width: 760) // 4 columns: qc a b / f1: s1 s2 s3
+        XCTAssertEqual(L.neighbour(of: "b", .right, items: items), "s1")
+        XCTAssertEqual(L.neighbour(of: "s1", .left, items: items), "b")
+        XCTAssertEqual(L.neighbour(of: "qc", .left, items: items), nil)
+        XCTAssertEqual(L.neighbour(of: "s3", .right, items: items), nil)
+    }
+
+    func testUpAndDownPickTheNearestCardInTheNextRow() {
+        let (items, _) = L.items(for: sampleModel, width: 445) // 2 columns: qc a / b ; s1 s2 / s3
+        XCTAssertEqual(L.neighbour(of: "qc", .down, items: items), "b")
+        XCTAssertEqual(L.neighbour(of: "a", .down, items: items), "b")
+        XCTAssertEqual(L.neighbour(of: "b", .down, items: items), "s1")
+        XCTAssertEqual(L.neighbour(of: "s2", .down, items: items), "s3")
+        XCTAssertEqual(L.neighbour(of: "s1", .up, items: items), "b")
+        XCTAssertEqual(L.neighbour(of: "b", .up, items: items), "qc")
+        XCTAssertEqual(L.neighbour(of: "s2", .up, items: items), "b")
+        XCTAssertNil(L.neighbour(of: "a", .up, items: items))
+        XCTAssertNil(L.neighbour(of: "s3", .down, items: items))
+    }
+
+    func testNoCurrentCardMovesToTheFirst() {
+        let (items, _) = L.items(for: sampleModel, width: 760)
+        XCTAssertEqual(L.neighbour(of: nil, .down, items: items), "qc")
+        XCTAssertEqual(L.neighbour(of: "gone", .right, items: items), "qc")
+        XCTAssertNil(L.neighbour(of: nil, .down, items: []))
+    }
 }
