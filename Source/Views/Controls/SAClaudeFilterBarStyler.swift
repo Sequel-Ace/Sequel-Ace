@@ -76,8 +76,14 @@ import AppKit
         ruleEditor.rowHeight = SAClaudeFilterChrome.rowHeight
 
         styler.applyColours(force: true)
-        styler.defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak styler] _ in
-            styler?.applyColours(force: false)
+        // No `queue: .main`: a defaults write on a background thread posts synchronously there, and an observer
+        // queue makes the writer wait for the main queue (a deadlock while main waits on that writer).
+        styler.defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak styler] _ in
+            if Thread.isMainThread {
+                styler?.applyColours(force: false)
+            } else {
+                DispatchQueue.main.async { styler?.applyColours(force: false) }
+            }
         }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
         styler.appearanceObservation = ruleEditor.observe(\.effectiveAppearance) { [weak styler] _, _ in
@@ -244,8 +250,8 @@ import AppKit
         layer.borderWidth = 1
         field.effectiveAppearance.performAsCurrentDrawingAppearance {
             layer.backgroundColor = SAClaudeFilterChrome.fieldFill(text: themeText, background: palette.background).cgColor
-            layer.borderColor = palette.hairline.cgColor
         }
+        field.setRestingBorderColour(palette.hairline, using: field.effectiveAppearance)
     }
 
     /// The rows' static text (for example "combines the conditions in this group"): SF Pro 12 in the muted tone.
@@ -468,6 +474,13 @@ extension SAClaudeFilterBarStyler {
         field.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
         field.textColor = theme.text
         field.alignment = .right
+        // Same height as the Go button and the filter bar's controls, grown about the field's centre.
+        if field.frame.height != popoverControlHeight {
+            var frame = field.frame
+            frame.origin.y -= ((popoverControlHeight - frame.height) / 2).rounded(.down)
+            frame.size.height = popoverControlHeight
+            field.frame = frame
+        }
         guard let layer = field.layer else { return }
         layer.cornerRadius = 7
         layer.borderWidth = 1

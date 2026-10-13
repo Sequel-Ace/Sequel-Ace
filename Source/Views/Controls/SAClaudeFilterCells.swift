@@ -106,7 +106,7 @@ private enum FilterCellDrawing {
     }
 }
 
-/// A checkbox drawn as a small rounded square: clay with a white check when on, a hairline outline when off.
+/// A checkbox drawn as a small rounded square: clay with a white check when on, an outline in a mid tone of the theme text when off (a hairline vanishes in dark mode).
 @objc(SAClaudeCheckboxCell) final class SAClaudeCheckboxCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
@@ -127,7 +127,7 @@ private enum FilterCellDrawing {
             }
             let outline = FilterCellDrawing.roundedPath(box.insetBy(dx: 0.5, dy: 0.5), radius: radius - 0.5)
             outline.lineWidth = 1
-            palette.hairline.setStroke()
+            SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background).setStroke()
             outline.stroke()
         } else {
             (isHighlighted ? SAClaudeEditorChrome.runFillPressed : SAClaudeEditorChrome.runFill).setFill()

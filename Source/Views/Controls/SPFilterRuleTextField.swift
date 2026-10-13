@@ -115,6 +115,39 @@ import Cocoa
     override public func setFrameSize(_ newSize: NSSize) {
         super.setFrameSize(NSSize(width: newSize.width, height: SAClaudeFilterChrome.controlHeight))
     }
+
+    // MARK: - Focus border
+
+    /// The outline colour the Claude styling gave the field, which a clay focus border replaces while editing.
+    private var restingBorderColour: CGColor?
+    private var showsFocusBorder = false
+
+    /// Sets the field's resting outline colour (the Claude styling's hairline). While the field has the clay
+    /// focus border it is remembered and restored when editing ends, not applied over the focus border.
+    func setRestingBorderColour(_ colour: NSColor, using appearance: NSAppearance) {
+        appearance.performAsCurrentDrawingAppearance {
+            restingBorderColour = colour.cgColor
+        }
+        if !showsFocusBorder { layer?.borderColor = restingBorderColour }
+    }
+
+    override public func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        // Only a field the Claude styling gave an outline (a layer border) shows the clay one.
+        if accepted, !showsFocusBorder, let layer, layer.borderWidth > 0 {
+            showsFocusBorder = true
+            if restingBorderColour == nil { restingBorderColour = layer.borderColor }
+            layer.borderColor = SAClaudeStatusChrome.clay.cgColor
+        }
+        return accepted
+    }
+
+    override public func textDidEndEditing(_ notification: Notification) {
+        super.textDidEndEditing(notification)
+        guard showsFocusBorder else { return }
+        showsFocusBorder = false
+        layer?.borderColor = restingBorderColour
+    }
 }
 
 /// The cell of a rule row's argument field. While the field is drawn without a bezel (the Claude look
