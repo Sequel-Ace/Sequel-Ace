@@ -298,6 +298,17 @@ private final class SAClaudePanelForm {
 
     private var defaultsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
+
+    // MARK: Page (set by `SAClaudeConnectionPageStyler` when the connection page owns the layout)
+
+    /// The page's column width; `nil` uses `min(scroll view width − 48, 960)`.
+    var columnWidth: CGFloat?
+    /// Called after each layout instead of the controller's `scrollViewFrameChanged:` centring: the page places
+    /// the card.
+    var onLayout: (() -> Void)?
+    /// The page's controls before the panel in the key-view loop (search, cards): the loop runs through them and
+    /// the panel, and closes on the first.
+    var leadingKeyViews: () -> [NSView] = { [] }
     private var observations: [NSKeyValueObservation] = []
     private var windowObservation: NSKeyValueObservation?
     private var firstResponderObservation: NSKeyValueObservation?
@@ -356,7 +367,7 @@ private final class SAClaudePanelForm {
         styler(for: container)?.chainKeyViews()
     }
 
-    private static func styler(for container: NSView) -> SAClaudeConnectionPanelStyler? {
+    static func styler(for container: NSView) -> SAClaudeConnectionPanelStyler? {
         objc_getAssociatedObject(container, &associationKey) as? SAClaudeConnectionPanelStyler
     }
 
@@ -1041,10 +1052,16 @@ private final class SAClaudePanelForm {
         return forms.first { $0.type.rawValue == controller.type }
     }
 
-    /// The pencil: edit the name, all of it selected.
-    @objc private func beginEditingName() {
-        guard let field = currentForm?.nameField, let window = field.window else { return }
-        if window.makeFirstResponder(field) { field.selectText(nil) }
+    /// The pencil (and Rename): edit the name, all of it selected. A type that keeps its XIB form edits its own
+    /// Name field there.
+    @objc func beginEditingName() {
+        guard let form = currentForm,
+              let field = form.nameField ?? form.rows.first(where: { $0.section == .header })?.control as? NSTextField,
+              !field.isHiddenOrHasHiddenAncestor, let window = field.window else { return }
+        if window.makeFirstResponder(field) {
+            field.selectText(nil)
+            field.scrollToVisible(field.bounds)
+        }
     }
 
     // MARK: - Header
@@ -1118,6 +1135,7 @@ private final class SAClaudePanelForm {
     // MARK: - Layout
 
     private func panelWidth() -> CGFloat {
+        if let columnWidth { return max(Self.minimumWidth, columnWidth.rounded(.down)) }
         let available = (scrollView?.frame.width ?? 0) - Self.sideMargin
         return max(Self.minimumWidth, min(available, Self.maximumWidth)).rounded(.down)
     }
@@ -1157,8 +1175,8 @@ private final class SAClaudePanelForm {
         ceil(NSAttributedString(string: button.title, attributes: [.font: ghostFont]).size().width) + 2 * ghostPadding
     }
 
-    /// Lays the panel out for the selected type, then lets the controller re-centre it in the scroll view.
-    private func layOut() {
+    /// Lays the panel out for the selected type, then lets the page (or the controller) place it.
+    func layOut() {
         guard let controller, let container, let tabView,
               let form = forms.first(where: { $0.type.rawValue == controller.type }) else { return }
         syncFavouriteSelection()
@@ -1227,9 +1245,13 @@ private final class SAClaudePanelForm {
         layOutActionRow()
         updateFocus()
 
-        // The controller centres the card in its scroll view (and sizes the document view).
-        let recentre = NSSelectorFromString("scrollViewFrameChanged:")
-        if controller.responds(to: recentre) { controller.perform(recentre, with: nil) }
+        if let onLayout {
+            onLayout()
+        } else {
+            // The controller centres the card in its scroll view (and sizes the document view).
+            let recentre = NSSelectorFromString("scrollViewFrameChanged:")
+            if controller.responds(to: recentre) { controller.perform(recentre, with: nil) }
+        }
         chainKeyViews()
     }
 
@@ -1489,9 +1511,9 @@ private final class SAClaudePanelForm {
 
     // MARK: - Key view loop
 
-    /// Name → tabs → left column → right column → Advanced (when open) → Add / Save / Test / Connect, for a laid-out
-    /// type; Connect leads back to the name.
-    private func chainKeyViews() {
+    /// (Page search → cards →) name → tabs → left column → right column → Advanced (when open) → Add / Save / Test /
+    /// Connect, for a laid-out type; Connect leads back to the first.
+    func chainKeyViews() {
         guard let controller, let container, let frames = lastFrames,
               let form = forms.first(where: { $0.type.rawValue == controller.type }), form.canLayOut else { return }
         let rowFrames = Dictionary(frames.rows.map { ($0.id, $0.control) }, uniquingKeysWith: { first, _ in first })
@@ -1509,7 +1531,7 @@ private final class SAClaudePanelForm {
             if leftA != leftB { return leftA }
             return ra.maxY > rb.maxY
         }
-        var chain: [NSView] = [form.nameField, typeTabs].compactMap { $0 }
+        var chain: [NSView] = leadingKeyViews() + [form.nameField, typeTabs].compactMap { $0 }
         chain += columns.flatMap(controls)
         chain.append(disclosure)
         chain += shown.filter { $0.section == .advanced }.flatMap(controls)
@@ -1518,7 +1540,7 @@ private final class SAClaudePanelForm {
         for (view, next) in zip(chain, chain.dropFirst()) where view.nextKeyView !== next {
             view.nextKeyView = next
         }
-        // The loop closes on the name (the outline's own next key view stays the controller's).
+        // The loop closes on the first (the outline's own next key view stays the controller's).
         if let first = chain.first, let last = chain.last, last !== first, last.nextKeyView !== first {
             last.nextKeyView = first
         }

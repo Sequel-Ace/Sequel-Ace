@@ -11,7 +11,7 @@
 
 import AppKit
 
-final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
+final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldDelegate {
 
     struct Colours {
         var text: NSColor = .labelColor
@@ -33,8 +33,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
 
     /// A card or folder header was clicked (or chosen with the arrow keys).
     var onSelect: ((String) -> Void)?
-    /// A favourite card was double-clicked, or Return / Enter was pressed with one selected.
+    /// A favourite card or folder header was double-clicked, or Return / Enter was pressed with a card selected.
     var onActivate: ((String) -> Void)?
+    /// A folder's inline name field committed a name (folder ID, the text as typed).
+    var onRenameFolder: ((String, String) -> Void)?
     /// The menu for a right-click on a card or folder header (`nil` ID: empty space).
     var menuProvider: ((String?) -> NSMenu?)?
     /// Whether this card may be dragged now.
@@ -79,6 +81,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
     private var draggedID: String?
     private var trackingArea: NSTrackingArea?
     private var accessibilityCards: [SAClaudeFavoriteCardAccessibilityElement] = []
+    /// The inline name field over a folder header, while renaming it.
+    private var folderNameField: NSTextField?
+    private var folderNameFieldID: String?
+    private var folderNameFieldCancelled = false
 
     private static let nameFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let summaryFont = NSFont.systemFont(ofSize: 11)
@@ -122,6 +128,7 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
         foldersByID = Dictionary(model.folders.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         if let hoverID, frame(of: hoverID) == nil { self.hoverID = nil }
         setFrameSize(NSSize(width: max(width, 1), height: max(contentHeight, minimumHeight)))
+        placeFolderNameField()
         rebuildAccessibilityElements()
         needsDisplay = true
         noteFocusRingMaskChanged()
@@ -246,6 +253,7 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
         let colour = selected ? SAClaudeStatusChrome.clay : colours.muted
         let glyph = NSRect(x: frame.minX + 4, y: frame.midY - 7, width: 14, height: 14)
         drawSymbol("folder", pointSize: 11, colour: colour, in: glyph)
+        guard folder.id != folderNameFieldID else { return }
         drawText(folder.title, font: Self.headerFont, colour: selected ? SAClaudeStatusChrome.clay : colours.muted,
                  in: NSRect(x: glyph.maxX + 6, y: frame.midY - 7, width: max(0, frame.maxX - glyph.maxX - 10), height: 15))
     }
@@ -343,13 +351,12 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
         guard let item = item(at: point) else { return }
         let id = id(of: item)
         onSelect?(id)
-        if case .card = item.kind {
-            if event.clickCount == 2 {
-                onActivate?(id)
-            } else {
-                mouseDownID = id
-                mouseDownPoint = point
-            }
+        if event.clickCount == 2 {
+            // Connects a favourite; renames a folder (as the outline's double-click did).
+            onActivate?(id)
+        } else if case .card = item.kind {
+            mouseDownID = id
+            mouseDownPoint = point
         }
     }
 
@@ -417,6 +424,85 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource {
             onSelect?(next)
         } else {
             NSSound.beep()
+        }
+    }
+
+    // MARK: - Renaming a folder
+
+    /// Shows an inline name field over the folder's header, `name` selected; Return or leaving the field commits
+    /// (`onRenameFolder`), Escape cancels.
+    func beginRenamingFolder(_ id: String, name: String) {
+        guard foldersByID[id] != nil, let window else { return }
+        endRenamingFolder(cancel: true)
+        let field = NSTextField(string: name)
+        field.font = Self.headerFont
+        field.textColor = colours.text
+        field.backgroundColor = colours.cardFill
+        field.drawsBackground = true
+        field.isBezeled = false
+        field.isBordered = false
+        field.focusRingType = .none
+        field.usesSingleLineMode = true
+        field.lineBreakMode = .byClipping
+        field.cell?.isScrollable = true
+        field.wantsLayer = true
+        field.layer?.cornerRadius = 4
+        field.layer?.borderWidth = 1
+        field.layer?.borderColor = SAClaudeStatusChrome.clay.cgColor
+        field.delegate = self
+        folderNameField = field
+        folderNameFieldID = id
+        folderNameFieldCancelled = false
+        addSubview(field)
+        placeFolderNameField()
+        needsDisplay = true
+        if let frame = frame(of: id) { scrollToVisible(frame) }
+        if window.makeFirstResponder(field) { field.selectText(nil) }
+    }
+
+    /// Keeps the name field on its folder's header after a relayout; ends it (cancelled) when the folder is gone.
+    private func placeFolderNameField() {
+        guard let field = folderNameField, let id = folderNameFieldID else { return }
+        guard let header = frame(of: id) else {
+            endRenamingFolder(cancel: true)
+            return
+        }
+        let minX = header.minX + 22
+        let frame = NSRect(x: minX, y: header.midY - 9, width: max(40, min(280, header.maxX - minX - 4)), height: 18)
+        if field.frame != frame { field.frame = frame }
+    }
+
+    private func endRenamingFolder(cancel: Bool) {
+        guard let field = folderNameField else { return }
+        folderNameFieldCancelled = cancel
+        folderNameField = nil
+        folderNameFieldID = nil
+        field.delegate = nil
+        if field.currentEditor() != nil { window?.makeFirstResponder(self) }
+        field.removeFromSuperview()
+        needsDisplay = true
+    }
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard control === folderNameField else { return false }
+        if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+            endRenamingFolder(cancel: true)
+            return true
+        }
+        return false
+    }
+
+    func controlTextDidEndEditing(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField, field === folderNameField, let id = folderNameFieldID else { return }
+        let name = field.stringValue
+        let movement = (notification.userInfo?["NSTextMovement"] as? Int).flatMap(NSTextMovement.init(rawValue:))
+        // Ends after this notification: the field editor is still being torn down.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.folderNameField === field else { return }
+            self.endRenamingFolder(cancel: false)
+            // Return / Tab hand the keyboard back to the cards; a click elsewhere already moved it.
+            if let movement, movement != .other { self.window?.makeFirstResponder(self) }
+            self.onRenameFolder?(id, name)
         }
     }
 

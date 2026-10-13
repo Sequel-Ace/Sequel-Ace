@@ -4956,3 +4956,12 @@
 
 /* connection screen : accessibility name of the favourite cards */
 "ClaudeFavoriteCardsAccessibility" = "Favourites";
+
+/* connection screen : top bar button adding a favourites folder */
+"ClaudeConnectionPageFolder" = "Folder";
+
+/* connection screen : tooltip of the top bar button adding a favourites folder */
+"ClaudeConnectionPageNewFolder" = "New folder";
+
+/* connection screen : top bar button adding a favourite */
+"ClaudeConnectionPageFavourite" = "Favourite";

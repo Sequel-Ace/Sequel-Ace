@@ -3244,6 +3244,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     [self.favoritesListDataSource reloadDataIn:favoritesOutlineView];
     [self _scrollToSelectedNode];
+
+    // Claude look: the favourite cards re-read the favourites tree.
+    [SAClaudeConnectionPageStyler favoritesDidReloadIn:connectionDetailsScrollView];
 }
 
 /**
@@ -4394,6 +4397,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         scrollDocumentFrame.size.height = scrollViewFrame.size.height;
         [[connectionDetailsScrollView documentView] setFrame:scrollDocumentFrame];
     }
+
+    // Claude look: the connection page lays itself out again (and keeps the user's scroll position).
+    [SAClaudeConnectionPageStyler pageNeedsLayoutIn:connectionDetailsScrollView];
 }
 
 #pragma mark -
@@ -4893,6 +4899,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                              progressText:progressIndicatorText
                                           editButtonsView:editButtonsView
                                     awsAuthorizeInfoLabel:awsAuthorizeInfoLabel];
+
+        // Claude look: the connection page (favourite cards above the panel; the sidebar collapses, its outline hidden).
+        [SAClaudeConnectionPageStyler attachToController:self splitView:connectionSplitView scrollView:connectionDetailsScrollView
+                                               container:connectionResizeContainer instructionsField:connectionInstructionsTextField
+                                             searchField:favoritesSearchField];
     }
 
     return self;

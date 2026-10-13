@@ -27,6 +27,10 @@ import AppKit
 
     /// The scroll view hosting the grid; the owner sets its frame (the grid follows its width).
     @objc let view = NSScrollView()
+    /// The cards themselves: the key-view loop's stop for the grid.
+    var cardsView: NSView { gridView }
+    /// Called after the cards change (reload, filter): their preferred height may have changed.
+    var onModelChange: (() -> Void)?
 
     private let gridView = SAClaudeFavoriteCardGridView()
     private weak var connectionController: SPConnectionController?
@@ -143,6 +147,7 @@ import AppKit
                                                quickConnectSummary: Self.quickConnectSummary, query: filter)
         gridView.isFiltering = SAFavoriteSearchMatcher(query: filter).isActive
         layOut(width: layoutWidth > 0 ? layoutWidth : view.contentSize.width)
+        onModelChange?()
     }
 
     private func id(forOutlineNode node: SPTreeNode) -> String? {
@@ -156,6 +161,7 @@ import AppKit
     private func connectHandlers() {
         gridView.onSelect = { [weak self] id in self?.select(id) }
         gridView.onActivate = { [weak self] id in self?.activate(id) }
+        gridView.onRenameFolder = { [weak self] id, name in self?.renameFolder(id, to: name) }
         gridView.menuProvider = { [weak self] id in self?.menu(selecting: id) }
         // As the outline: a drag may start unless the delegate says no (it saves an in-progress rename then).
         gridView.canDrag = { [weak self] _ in
@@ -187,15 +193,33 @@ import AppKit
         outline.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
     }
 
-    /// Connects to a favourite through the controller's double-action, with the node set as the outline's
-    /// double-action item (as the outline's own double-click and Return do). Quick connect and folders don't.
+    /// The controller's double-action, with the node set as the outline's double-action item (as the outline's own
+    /// double-click and Return do): a favourite connects, a folder starts its rename, Quick connect does nothing.
     private func activate(_ id: String) {
-        guard let outline, let connectionController, let node = nodesByID[id], !node.isGroup else { return }
+        guard let outline, let connectionController, let node = nodesByID[id] else { return }
         select(id)
         // `itemForDoubleAction` is publicly read-only; its private setter is reached through KVC.
         outline.setValue(node, forKey: "itemForDoubleAction")
         connectionController.nodeDoubleClicked(outline)
         outline.setValue(nil, forKey: "itemForDoubleAction")
+    }
+
+    /// Shows the inline name field on `node`'s folder header (the page calls this in place of the hidden outline's
+    /// cell editing). `false` when the folder has no header in the grid (e.g. hidden by the search).
+    @discardableResult
+    func beginRenaming(folder node: SPTreeNode) -> Bool {
+        guard node.isGroup, let id = id(forOutlineNode: node), id != SAClaudeFavoriteGridModel.quickConnectID,
+              gridView.frame(of: id) != nil else { return false }
+        gridView.beginRenamingFolder(id, name: (node.representedObject as? SPGroupNode)?.nodeName ?? "")
+        return true
+    }
+
+    /// Commits a folder name through the outline data source's cell-edit path (trimmed, ignored when empty; the
+    /// controller renames, saves and reloads), as the outline's own inline edit did.
+    private func renameFolder(_ id: String, to name: String) {
+        guard let outline, let dataSource, let node = nodesByID[id], node.isGroup,
+              name != (node.representedObject as? SPGroupNode)?.nodeName else { return }
+        dataSource.outlineView(outline, setObjectValue: name, for: outline.tableColumns.first, byItem: node)
     }
 
     /// Selects the right-clicked card or folder, then returns the favourites gear menu; on empty space the menu

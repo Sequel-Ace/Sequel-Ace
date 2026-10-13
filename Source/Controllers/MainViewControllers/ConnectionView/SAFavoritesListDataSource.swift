@@ -48,7 +48,8 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
 
     /// Active search query. Setting this rebuilds the visible-node set.
     /// Empty / whitespace-only query disables the filter (all nodes visible).
-    @objc var searchQuery: String = "" {
+    /// `dynamic` so the connection page's favourite cards can follow it with KVO.
+    @objc dynamic var searchQuery: String = "" {
         didSet { rebuildVisibleNodes() }
     }
 
