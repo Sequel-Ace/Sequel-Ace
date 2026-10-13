@@ -8,7 +8,7 @@
 //  refresh glyph that follows the end of the auto-increment value, the Create syntax card with its ghost
 //  Copy button, and the Comments title over a Claude field with a clay focus outline. The controls are the XIB's own objects:
 //  they are restyled and repositioned, never rebuilt (targets, actions, menus and bindings are untouched). The
-//  one structural change: the split view's two panes swap places so Create syntax is on top (see `putSyntaxPaneFirst`).
+//  one structural change: the split view's Comments pane gets a fixed height and Create syntax fills the rest (see `lockPanes`).
 //
 //  Layout is frame based (SAClaudeTableInfoLayout) and re-runs on the status view's frame changes, on
 //  changes of the auto-increment value and of the reset control's visibility, and on every refresh. Nothing
@@ -61,14 +61,9 @@ final class SAClaudeTableInfoCardView: NSView {
     private static let resetGap: CGFloat = 6
     private static let resetValueGap: CGFloat = 4
     private static let syntaxInset = NSSize(width: 6, height: 6)
-    /// The XIB autosaves this split view as "TableInfoSplitter", by subview index in the XIB's order (Comments first).
-    /// With Create syntax moved to index 0 the same key would mean the opposite panes, so the swapped layout saves
-    /// under its own key (the old one is left untouched; see `putSyntaxPaneFirst`).
-    private static let syntaxFirstAutosaveName = "TableInfoSplitterSyntaxFirst"
-    /// Title (16) + gap (6) + about four lines of comment field.
-    private static let minimumCommentsPaneHeight: CGFloat = 110
+    /// The Comments field's fixed height (about four lines); Create syntax takes the rest and scrolls.
+    private static let commentsPaneHeight: CGFloat = 84
     private static let minimumSyntaxPaneHeight: CGFloat = 80
-    private static let commentsTitleTopGap: CGFloat = 10
 
     private weak var statusView: NSView?
     private weak var splitView: NSSplitView?
@@ -213,7 +208,7 @@ final class SAClaudeTableInfoCardView: NSView {
             return (pane, scrollView)
         }
         guard let syntax = pane(of: createSyntaxView), let comments = pane(of: commentsView), syntax.pane !== comments.pane,
-              putSyntaxPaneFirst(syntax.pane, comments.pane) else { return }
+              lockPanes(syntax.pane, comments.pane) else { return }
         syntaxPane = syntax.pane
         syntaxScrollView = syntax.scrollView
         commentsPane = comments.pane
@@ -221,52 +216,30 @@ final class SAClaudeTableInfoCardView: NSView {
         panesReady = true
     }
 
-    /// The XIB lists the Comments pane first and `NSSplitView` is flipped, so Comments is on top. Puts the
-    /// Create syntax pane first (on top) instead, by containment rather than by index, keeping each pane's
-    /// height. False, with nothing changed, unless the split view stacks exactly these two panes.
-    ///
-    /// Everything index-based was checked: `SPSplitView` keeps its collapsible index unset here, the only min sizes
-    /// are 20 for both indexes (SPDatabaseDocument), the XIB gives it no delegate, and nothing else addresses its subviews.
-    /// The autosaved positions are by index, so the swapped layout autosaves under its own name: the XIB restores the
-    /// old key into the XIB-order panes (right by containment, whether or not the user ever dragged), the panes swap
-    /// keeping those heights, then the new key (if it has been saved before) restores the new order. Reusing the old
-    /// key would flip the panes' heights on every launch, or give a first launch the Comments pane's tall default.
-    /// Idempotent: with the syntax pane already first only the name and the divider style are (re)applied.
-    private func putSyntaxPaneFirst(_ syntax: NSView, _ comments: NSView) -> Bool {
+    /// The XIB lists the Comments pane first and `NSSplitView` is flipped, so Comments is on top and Create syntax
+    /// below — the order kept here. The Comments pane gets a fixed height (min = max, so the divider can't be dragged)
+    /// and Create syntax takes the rest, scrolling when the statement is long. Autosave is switched off so a saved
+    /// divider position can't fight the fixed layout. False, with nothing changed, unless the split view stacks exactly
+    /// these two panes with Comments first.
+    private func lockPanes(_ syntax: NSView, _ comments: NSView) -> Bool {
         guard let splitView, !splitView.isVertical, splitView.subviews.count == 2,
-              splitView.subviews.contains(where: { $0 === syntax }), splitView.subviews.contains(where: { $0 === comments }) else { return false }
-        let syntaxLength = syntax.frame.height
-        if splitView.subviews[0] !== syntax {
-            splitView.autosaveName = nil
-            splitView.sortSubviews({ left, right, context in
-                guard let context else { return .orderedSame }
-                let first = Unmanaged<NSView>.fromOpaque(context).takeUnretainedValue()
-                if left === first { return .orderedAscending }
-                return right === first ? .orderedDescending : .orderedSame
-            }, context: Unmanaged.passUnretained(syntax).toOpaque())
-        }
-        // The thick divider paints a grey gradient; the thin one takes the theme's hairline (as the Query tab's splits do).
+              splitView.subviews[0] === comments, splitView.subviews[1] === syntax else { return false }
+        splitView.autosaveName = nil
         splitView.dividerStyle = .thin
-        // The panes' minimums follow their new order: the Comments pane must hold its title and a few lines of field.
         if let split = splitView as? SPSplitView {
-            split.setMinSize(Self.minimumSyntaxPaneHeight, ofSubviewAt: 0)
-            split.setMinSize(Self.minimumCommentsPaneHeight, ofSubviewAt: 1)
+            split.setMinSize(Self.commentsPaneHeight, ofSubviewAt: 0)
+            split.setMaxSize(Self.commentsPaneHeight, ofSubviewAt: 0)
+            split.setMinSize(Self.minimumSyntaxPaneHeight, ofSubviewAt: 1)
         }
         splitView.adjustSubviews()
-        splitView.setPosition(syntaxLength, ofDividerAt: 0)
-        if splitView.autosaveName != Self.syntaxFirstAutosaveName { splitView.autosaveName = Self.syntaxFirstAutosaveName }
-        ensureCommentsMinimum()
+        fixCommentsHeight()
         return true
     }
 
-    /// A saved or carried-over divider can leave the Comments pane shorter than its minimum (a tall syntax pane from
-    /// the old order, or a size saved before the minimum existed): move the divider up until the Comments pane fits.
-    private func ensureCommentsMinimum() {
-        guard let splitView, splitView.subviews.count == 2, let commentsPane,
-              commentsPane.frame.height < Self.minimumCommentsPaneHeight else { return }
-        let position = splitView.bounds.height - splitView.dividerThickness - Self.minimumCommentsPaneHeight
-        guard position >= Self.minimumSyntaxPaneHeight else { return }
-        splitView.setPosition(position, ofDividerAt: 0)
+    /// Puts the divider back under the fixed-height Comments pane (a window resize may hand it extra height).
+    private func fixCommentsHeight() {
+        guard let splitView, let commentsPane, commentsPane.frame.height != Self.commentsPaneHeight else { return }
+        splitView.setPosition(Self.commentsPaneHeight, ofDividerAt: 0)
     }
 
     /// The tab's theme background always; the titles, cards and separator changes only when the form can be laid out.
@@ -277,11 +250,10 @@ final class SAClaudeTableInfoCardView: NSView {
             for card in [generalCard, storageCard] {
                 statusView.addSubview(card, positioned: .below, relativeTo: nil)
             }
-            for title in [generalTitle, storageTitle, syntaxTitle] {
+            for title in [generalTitle, storageTitle, commentsTitle] {
                 styleTitle(title)
                 statusView.addSubview(title)
             }
-            statusView.addSubview(copyButton)
             buildPanes()
         }
         // Round 1 left the tab views themselves unpainted (each paints its own content), and this tab has no
@@ -306,9 +278,12 @@ final class SAClaudeTableInfoCardView: NSView {
         }
         syntaxScrollView.autoresizingMask = [.width, .height]
         commentsScrollView.autoresizingMask = [.width, .height]
-        styleTitle(commentsTitle)
-        commentsTitle.autoresizingMask = [.width, .minYMargin]
-        commentsPane.addSubview(commentsTitle)
+        // The Create syntax title row (title + Copy) sits at the top of its own pane, above the statement card.
+        styleTitle(syntaxTitle)
+        syntaxTitle.autoresizingMask = [.width, .minYMargin]
+        syntaxPane.addSubview(syntaxTitle)
+        copyButton.autoresizingMask = [.minXMargin, .minYMargin]
+        syntaxPane.addSubview(copyButton)
         layOutPanes()
     }
 
@@ -439,7 +414,7 @@ final class SAClaudeTableInfoCardView: NSView {
     /// The split view's divider in the hairline colour (a plain `needsDisplay` doesn't repaint it after a theme change).
     private func styleDivider(palette: SAClaudeEditorChrome.Palette) {
         guard panesReady, let split = splitView as? SPSplitView else { return }
-        split.customDividerColor = palette.hairline
+        split.customDividerColor = palette.background
         split.setNeedsDisplay(split.bounds)
         split.layer?.setNeedsDisplay()
     }
@@ -591,18 +566,17 @@ final class SAClaudeTableInfoCardView: NSView {
             if visible.height > 0 { area = NSRect(x: area.minX, y: visible.minY, width: area.width, height: visible.height) }
         }
         let frames = Layout.frames(in: area, generalRows: Self.generalRowCount, storageRows: Self.storageRowCount,
-                                   copyButtonWidth: copyButton.preferredWidth)
+                                   copyButtonWidth: 0)
         observeFirstResponder()
         place(generalTitle, frames.generalTitle)
         place(storageTitle, frames.storageTitle)
-        // Centred in its row so the text lines up with the Copy button's.
-        place(syntaxTitle, NSRect(x: frames.syntaxTitle.minX, y: Layout.centred(height: Layout.titleHeight, in: frames.syntaxTitle),
-                                  width: frames.syntaxTitle.width, height: Layout.titleHeight))
-        place(copyButton, frames.copyButton)
+        // The title row above the split view now titles its first pane, Comments.
+        place(commentsTitle, NSRect(x: frames.syntaxTitle.minX, y: Layout.centred(height: Layout.titleHeight, in: frames.syntaxTitle),
+                                    width: frames.syntaxTitle.width, height: Layout.titleHeight))
         place(generalCard, frames.generalCard)
         place(storageCard, frames.storageCard)
         place(splitView, frames.splitView)
-        ensureCommentsMinimum()
+        fixCommentsHeight()
         layOutPanes()
         // The controller sometimes sets an empty syntax without `didChangeText`.
         updateCopyEnabled()
@@ -637,17 +611,21 @@ final class SAClaudeTableInfoCardView: NSView {
         }
     }
 
-    /// Fills the panes: the syntax card takes its whole pane; the comments pane has its title on top and the field below.
+    /// Fills the panes: the Comments field takes its whole pane; the Create syntax pane has a section gap, its title row
+    /// (title + Copy) and the statement card below.
     private func layOutPanes() {
         guard panesReady, let syntaxPane, let commentsPane, let syntaxScrollView, let commentsScrollView else { return }
         func set(_ view: NSView, _ frame: NSRect) { if view.frame != frame { view.frame = frame } }
-        set(syntaxScrollView, syntaxPane.bounds)
-        let bounds = commentsPane.bounds
-        // A gap under the thin divider, so the syntax card, the divider and the title don't touch.
-        let titleTop = bounds.maxY - Self.commentsTitleTopGap
-        set(commentsTitle, NSRect(x: bounds.minX, y: titleTop - Layout.titleHeight, width: bounds.width, height: Layout.titleHeight))
-        let fieldHeight = max(bounds.height - Self.commentsTitleTopGap - Layout.titleHeight - Layout.titleToCard, 0)
-        set(commentsScrollView, NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: fieldHeight))
+        set(commentsScrollView, commentsPane.bounds)
+        let bounds = syntaxPane.bounds
+        let rowY = bounds.maxY - Layout.sectionGap - Layout.copyRowHeight
+        let copyWidth = copyButton.preferredWidth
+        let row = NSRect(x: bounds.minX, y: rowY, width: bounds.width, height: Layout.copyRowHeight)
+        set(copyButton, NSRect(x: row.maxX - copyWidth, y: rowY, width: copyWidth, height: Layout.copyRowHeight))
+        set(syntaxTitle, NSRect(x: row.minX, y: Layout.centred(height: Layout.titleHeight, in: row),
+                                width: max(row.width - copyWidth - 8, 0), height: Layout.titleHeight))
+        let cardTop = rowY - Layout.titleToCard
+        set(syntaxScrollView, NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: max(cardTop - bounds.minY, 0)))
     }
 
     /// The auto-increment value, with the reset glyph just after its text while the glyph is shown.
