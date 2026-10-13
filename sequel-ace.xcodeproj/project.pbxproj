@@ -327,6 +327,7 @@
 		A19A2000000000000000E002 /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = A19A2000000000000000E001 /* FMDB */; };
 		5146ADF02F79B16900C4C14A /* SAFavoritesListDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */; };
 		5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */; };
+		F8B2C0DE0000000000000007 /* SAFavoritesMover.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2C0DE0000000000000006 /* SAFavoritesMover.swift */; };
 		5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */; };
 		7961924D74E50B267A44A0EA /* SAConnectionAttemptSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76586E98212DA3384D7FB71E /* SAConnectionAttemptSequence.swift */; };
 		95B520B702BC7C3F5B0194DE /* SAConnectionAttemptSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76586E98212DA3384D7FB71E /* SAConnectionAttemptSequence.swift */; };
@@ -1373,6 +1374,7 @@
 		51384AC12903461000FEC501 /* NSDictionaryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSDictionaryExtension.swift; sourceTree = "<group>"; };
 		5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDelegate.swift; sourceTree = "<group>"; };
 		5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDataSource.swift; sourceTree = "<group>"; };
+		F8B2C0DE0000000000000006 /* SAFavoritesMover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesMover.swift; sourceTree = "<group>"; };
 		5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionService.swift; sourceTree = "<group>"; };
 		76586E98212DA3384D7FB71E /* SAConnectionAttemptSequence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionAttemptSequence.swift; sourceTree = "<group>"; };
 		D10000232F8C000600C4C14A /* SAConnectionLostAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionLostAlert.swift; sourceTree = "<group>"; };
@@ -2425,6 +2427,7 @@
 				51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */,
 				5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */,
 				5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */,
+				F8B2C0DE0000000000000006 /* SAFavoritesMover.swift */,
 				5AF0C1000000000000000001 /* SAFavoritesListView.swift */,
 				5AF0C2000000000000000001 /* SAFavoriteItem.swift */,
 				5AF0C2000000000000000011 /* SAFavoriteItem+Tree.swift */,
@@ -4350,6 +4353,7 @@
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */,
 				5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */,
+				F8B2C0DE0000000000000007 /* SAFavoritesMover.swift in Sources */,
 				5AF0C1000000000000000002 /* SAFavoritesListView.swift in Sources */,
 				5AF0C2000000000000000002 /* SAFavoriteItem.swift in Sources */,
 				5AF0C2000000000000000012 /* SAFavoriteItem+Tree.swift in Sources */,
