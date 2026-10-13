@@ -117,8 +117,9 @@ import AppKit
 
     // MARK: - Tree ⇄ cards
 
+    /// The node's object address (not its hash, which is seeded and may collide); unique while the map retains it.
     private static func id(for node: SPTreeNode) -> String {
-        "node:" + String(UInt(bitPattern: ObjectIdentifier(node).hashValue), radix: 16)
+        "node:" + String(UInt(bitPattern: ObjectIdentifier(node)), radix: 16)
     }
 
     private static func entry(for node: SPTreeNode, into nodes: inout [String: SPTreeNode]) -> SAClaudeFavoriteTreeEntry {
@@ -198,6 +199,9 @@ import AppKit
     private func activate(_ id: String) {
         guard let outline, let connectionController, let node = nodesByID[id] else { return }
         select(id)
+        // Only act on the node the outline really has selected (selection fails when it has no row, e.g. hidden by
+        // the outline's search filter), as the controller acts on the selected row.
+        guard outline.selectedRow >= 0, outline.item(atRow: outline.selectedRow) as? SPTreeNode === node else { return }
         // `itemForDoubleAction` is publicly read-only; its private setter is reached through KVC.
         outline.setValue(node, forKey: "itemForDoubleAction")
         connectionController.nodeDoubleClicked(outline)

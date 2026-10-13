@@ -359,8 +359,23 @@ final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
         XCTAssertNil(L.treeDestination(for: .before(cardID: "y", folderID: nil), moving: "x", in: [fav("x"), fav("y")]))
         XCTAssertNil(destination(.endOf(folderID: "G"), moving: "g1"))
         XCTAssertNil(destination(.into(folderID: "F"), moving: "f1"))
-        // Moving down past a folder in the same parent is a real move.
-        XCTAssertEqual(destination(.before(cardID: "b", folderID: nil), moving: "a"), L.TreeDestination(folderID: nil, index: 2))
+        // Top level [a, F, b, E] shows "QC a b": a on its own right half (before b) or b on its own right half
+        // (end of the top level) only shifts them past folders, which the grid shows apart — no move.
+        XCTAssertNil(destination(.before(cardID: "b", folderID: nil), moving: "a"))
+        XCTAssertNil(destination(.endOf(folderID: nil), moving: "b"))
+        // F is [f1, G, f2]: f1 to the end only passes G.
+        XCTAssertNil(L.treeDestination(for: .before(cardID: "f2", folderID: "F"), moving: "f1", in: sampleTree))
+    }
+
+    func testDropsThatReorderFavouritesInTheSameParentMove() {
+        // Plain move down past the card's own index among contiguous favourites: before z is index 2.
+        XCTAssertEqual(L.treeDestination(for: .before(cardID: "z", folderID: nil), moving: "x", in: [fav("x"), fav("y"), fav("z")]),
+                       L.TreeDestination(folderID: nil, index: 2))
+        XCTAssertEqual(L.treeDestination(for: .before(cardID: "x", folderID: nil), moving: "z", in: [fav("x"), fav("y"), fav("z")]),
+                       L.TreeDestination(folderID: nil, index: 0))
+        // a past b (with folders between) changes the favourites' order.
+        XCTAssertEqual(destination(.endOf(folderID: nil), moving: "a"), L.TreeDestination(folderID: nil, index: 4))
+        XCTAssertEqual(destination(.into(folderID: "F"), moving: "f2"), L.TreeDestination(folderID: "F", index: 0))
     }
 
     func testUnknownCardsFoldersAndQuickConnectAreNil() {
@@ -394,6 +409,25 @@ final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
         XCTAssertEqual(L.neighbour(of: "s2", .up, items: items), "b")
         XCTAssertNil(L.neighbour(of: "a", .up, items: items))
         XCTAssertNil(L.neighbour(of: "s3", .down, items: items))
+    }
+
+    func testArrowsFromAFolderHeaderMoveRelativeToThatFolder() {
+        let (items, _) = L.items(for: sampleModel, width: 760) // qc a b / f1: s1 s2 s3
+        XCTAssertEqual(L.neighbour(of: "f1", .down, items: items), "s1")
+        XCTAssertEqual(L.neighbour(of: "f1", .right, items: items), "s1")
+        XCTAssertEqual(L.neighbour(of: "f1", .up, items: items), "b")
+        XCTAssertEqual(L.neighbour(of: "f1", .left, items: items), "b")
+
+        // An empty folder: down goes on to the next group's first card; a header at the very end has nothing below.
+        let model = Model(topLevel: [card("qc", quick: true)],
+                          folders: [SAClaudeFavoriteFolder(id: "e", title: "Empty", cards: []),
+                                    SAClaudeFavoriteFolder(id: "f", title: "F", cards: [card("f1", folder: "f")]),
+                                    SAClaudeFavoriteFolder(id: "z", title: "Z", cards: [])])
+        let (more, _) = L.items(for: model, width: 760)
+        XCTAssertEqual(L.neighbour(of: "e", .down, items: more), "f1")
+        XCTAssertEqual(L.neighbour(of: "e", .up, items: more), "qc")
+        XCTAssertNil(L.neighbour(of: "z", .down, items: more))
+        XCTAssertEqual(L.neighbour(of: "z", .up, items: more), "f1")
     }
 
     func testNoCurrentCardMovesToTheFirst() {

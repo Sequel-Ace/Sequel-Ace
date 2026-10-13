@@ -419,7 +419,8 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
             super.keyDown(with: event)
             return
         }
-        let current = selectedID.flatMap { cardsByID[$0] != nil ? $0 : nil }
+        // A selected folder header moves relative to its folder.
+        let current = selectedID.flatMap { cardsByID[$0] != nil || foldersByID[$0] != nil ? $0 : nil }
         if let next = Layout.neighbour(of: current, direction, items: items) {
             onSelect?(next)
         } else {

@@ -281,8 +281,9 @@ extension SAClaudeFavoriteCardLayout {
     /// Translates a grid drop target into a tree position. Grid positions can't be used directly: the top-level
     /// row starts with Quick connect, and a folder's cards leave out its subfolders. `.before(card)` is that
     /// card's index in its parent's children, `.endOf(folder)` the parent's child count and `.into(folder)` its
-    /// start. `nil` when the target or the moving favourite isn't in `entries`, or when the move would leave the
-    /// favourite where it is (same parent, index unchanged after the helper's down-shift).
+    /// start. `nil` when the target or the moving favourite isn't in `entries`, or when the move wouldn't change
+    /// what the grid shows: within the same parent, the order of its favourites (folders interleave with them in
+    /// the tree but are shown apart) stays the same — such a drop must not save or reset the sort.
     static func treeDestination(for target: DropTarget, moving id: String,
                                 in entries: [SAClaudeFavoriteTreeEntry]) -> TreeDestination? {
         func children(of folderID: String?) -> [SAClaudeFavoriteTreeEntry]? {
@@ -317,8 +318,13 @@ extension SAClaudeFavoriteCardLayout {
             guard children(of: folderID) != nil else { return nil }
             destination = TreeDestination(folderID: folderID, index: 0)
         }
-        if destination.folderID == origin.folderID, destination.index == origin.index || destination.index == origin.index + 1 {
-            return nil
+        if destination.folderID == origin.folderID, let siblings = children(of: origin.folderID) {
+            // The parent's children after the move, with the helper's down-shift when moving past the old index.
+            var moved = siblings
+            let entry = moved.remove(at: origin.index)
+            moved.insert(entry, at: min(destination.index > origin.index ? destination.index - 1 : destination.index, moved.count))
+            func favouriteOrder(_ list: [SAClaudeFavoriteTreeEntry]) -> [String] { list.filter { !$0.isFolder }.map(\.id) }
+            if favouriteOrder(moved) == favouriteOrder(siblings) { return nil }
         }
         return destination
     }
@@ -328,14 +334,25 @@ extension SAClaudeFavoriteCardLayout {
     }
 
     /// The card an arrow key moves to from `id`: left / right step through the display order; up / down go to the
-    /// nearest card (by centre x) in the closest row above / below, folder headers skipped. The first card when
-    /// `id` is `nil` or not shown; `nil` at an edge.
+    /// nearest card (by centre x) in the closest row above / below, folder headers skipped. From a folder header,
+    /// down / right go to the first card after it (its own first card) and up / left to the last card before it
+    /// (the previous group's last). The first card when `id` is `nil` or not shown; `nil` at an edge.
     static func neighbour(of id: String?, _ direction: MoveDirection, items: [Item]) -> String? {
         let cards: [(id: String, frame: NSRect)] = items.compactMap {
             if case .card(let cardID) = $0.kind { return (cardID, $0.frame) }
             return nil
         }
         guard let first = cards.first else { return nil }
+        if let id, let header = items.firstIndex(where: { $0.kind == .folderHeader(id) }) {
+            func cardID(_ item: Item) -> String? {
+                if case .card(let cardID) = item.kind { return cardID }
+                return nil
+            }
+            switch direction {
+            case .down, .right: return items[(header + 1)...].lazy.compactMap(cardID).first
+            case .up, .left: return items[..<header].reversed().lazy.compactMap(cardID).first
+            }
+        }
         guard let id, let position = cards.firstIndex(where: { $0.id == id }) else { return first.id }
         let current = cards[position].frame
 
