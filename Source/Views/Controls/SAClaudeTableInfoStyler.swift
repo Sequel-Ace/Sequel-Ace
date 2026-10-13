@@ -226,6 +226,9 @@ final class SAClaudeTableInfoCardView: NSView {
             resolvedText = SAClaudeThemeColours.from(defaults: .standard).text
         }
         guard let palette = resolvedPalette, let themeText = resolvedText else { return }
+        // The pills' cells read these at draw time; the Content filter bar may be detached or hop to main later.
+        SAClaudeFilterBarStyler.currentPalette = palette
+        SAClaudeFilterBarStyler.currentThemeText = themeText
         guard force || palette != appliedPalette || themeText != appliedThemeText else { return }
         appliedPalette = palette
         appliedThemeText = themeText

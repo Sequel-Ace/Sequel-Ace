@@ -39,9 +39,9 @@ import AppKit
 
     /// The editor theme's palette, as last derived by a styler. The filter bar's cells have no
     /// stored properties and read it at draw time.
-    private(set) static var currentPalette = SAClaudeEditorChrome.palette(from: .standard)
+    static var currentPalette = SAClaudeEditorChrome.palette(from: .standard)
     /// The editor theme's text colour, as last derived by a styler (read at draw time like `currentPalette`).
-    private(set) static var currentThemeText = SAClaudeThemeColours.from(defaults: .standard).text
+    static var currentThemeText = SAClaudeThemeColours.from(defaults: .standard).text
 
     private weak var ruleEditor: NSRuleEditor?
     private weak var container: NSView?
