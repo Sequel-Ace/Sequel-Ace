@@ -23,10 +23,11 @@ import AppKit
 final class SAClaudeTableInfoCardView: NSView {
     var fill: NSColor = .clear { didSet { needsDisplay = true } }
     var stroke: NSColor = .clear { didSet { needsDisplay = true } }
+    var radius: CGFloat = SAClaudeTableInfoLayout.cardRadius { didSet { needsDisplay = true } }
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
     override func draw(_ dirtyRect: NSRect) {
         let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
-                                xRadius: SAClaudeTableInfoLayout.cardRadius, yRadius: SAClaudeTableInfoLayout.cardRadius)
+                                xRadius: radius, yRadius: radius)
         fill.setFill()
         path.fill()
         stroke.setStroke()
@@ -93,6 +94,12 @@ final class SAClaudeTableInfoCardView: NSView {
     private let background = SAClaudeEditorBarBackgroundView()
     private let generalCard = SAClaudeTableInfoCardView()
     private let storageCard = SAClaudeTableInfoCardView()
+    /// The outlines of the syntax card and the comments field. An NSScrollView's own layer border doesn't draw,
+    /// so each scroll view sits just inside one of these.
+    private let syntaxFrame = SAClaudeTableInfoCardView()
+    private let commentsFrame = SAClaudeTableInfoCardView()
+    /// Keeps the comments field's square corners inside its frame's rounded outline.
+    private static let commentsFieldInset: CGFloat = 3
     private let generalTitle = NSTextField(labelWithString: NSLocalizedString("General", comment: "table info : section title"))
     private let storageTitle = NSTextField(labelWithString: NSLocalizedString("Storage", comment: "table info : section title"))
     private let syntaxTitle = NSTextField(labelWithString: NSLocalizedString("Create syntax", comment: "table info : section title"))
@@ -284,6 +291,9 @@ final class SAClaudeTableInfoCardView: NSView {
         syntaxPane.addSubview(syntaxTitle)
         copyButton.autoresizingMask = [.minXMargin, .minYMargin]
         syntaxPane.addSubview(copyButton)
+        syntaxPane.addSubview(syntaxFrame, positioned: .below, relativeTo: syntaxScrollView)
+        commentsFrame.radius = Self.commentsRadius
+        commentsPane.addSubview(commentsFrame, positioned: .below, relativeTo: commentsScrollView)
         layOutPanes()
     }
 
@@ -424,13 +434,10 @@ final class SAClaudeTableInfoCardView: NSView {
         guard let scrollView = syntaxScrollView ?? createSyntaxView?.enclosingScrollView else { return }
         scrollView.borderType = .noBorder
         scrollView.focusRingType = .none
-        scrollView.wantsLayer = true
-        scrollView.layer?.cornerRadius = Layout.cardRadius
-        scrollView.layer?.borderWidth = 1
-        scrollView.layer?.masksToBounds = true
         // The card has the page's own background, so its outline alone marks it: the brighter drop-zone stroke
-        // (0.30), as the 0.08 hairline vanishes in dark themes.
-        scrollView.layer?.borderColor = resolvedCGColor(SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background))
+        // (0.30), as the 0.08 hairline vanishes in dark themes. Drawn by the frame view behind the scroll view.
+        syntaxFrame.fill = .clear
+        syntaxFrame.stroke = SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background)
         // Keeps the text off the rounded corners.
         createSyntaxView?.textContainerInset = Self.syntaxInset
     }
@@ -449,10 +456,7 @@ final class SAClaudeTableInfoCardView: NSView {
         scrollView.backgroundColor = fieldFill
         scrollView.contentView.drawsBackground = true
         scrollView.contentView.backgroundColor = fieldFill
-        scrollView.wantsLayer = true
-        scrollView.layer?.cornerRadius = Self.commentsRadius
-        scrollView.layer?.borderWidth = 1
-        scrollView.layer?.masksToBounds = true
+        commentsFrame.fill = fieldFill
         commentsView.focusRingType = .none
         commentsView.drawsBackground = true
         commentsView.backgroundColor = fieldFill
@@ -463,19 +467,13 @@ final class SAClaudeTableInfoCardView: NSView {
         updateCommentsBorder()
     }
 
-    private func resolvedCGColor(_ colour: NSColor) -> CGColor {
-        var resolved = colour.cgColor
-        statusView?.effectiveAppearance.performAsCurrentDrawingAppearance { resolved = colour.cgColor }
-        return resolved
-    }
-
     /// Clay only while the comments field really is the window's first responder and editable (a view's or an absent
     /// table's comments are not), else the hairline. Begin-editing notifications alone don't count: the controller's
     /// programmatic text changes post them without any focus.
     private func updateCommentsBorder() {
-        guard let layer = commentsScrollView?.layer ?? commentsView?.enclosingScrollView?.layer, let palette = appliedPalette else { return }
+        guard let palette = appliedPalette else { return }
         let editing = commentsView.map { $0.isEditable && $0.window?.firstResponder === $0 } ?? false
-        layer.borderColor = resolvedCGColor(editing ? SAClaudeStatusChrome.clay : palette.hairline)
+        commentsFrame.stroke = editing ? SAClaudeStatusChrome.clay : palette.hairline
     }
 
     // MARK: - Copy button and comments focus
@@ -618,7 +616,8 @@ final class SAClaudeTableInfoCardView: NSView {
     private func layOutPanes() {
         guard panesReady, let syntaxPane, let commentsPane, let syntaxScrollView, let commentsScrollView else { return }
         func set(_ view: NSView, _ frame: NSRect) { if view.frame != frame { view.frame = frame } }
-        set(commentsScrollView, commentsPane.bounds)
+        set(commentsFrame, commentsPane.bounds)
+        set(commentsScrollView, commentsPane.bounds.insetBy(dx: Self.commentsFieldInset, dy: Self.commentsFieldInset))
         let bounds = syntaxPane.bounds
         let rowY = bounds.maxY - Layout.sectionGap - Layout.copyRowHeight
         let copyWidth = copyButton.preferredWidth
@@ -627,7 +626,9 @@ final class SAClaudeTableInfoCardView: NSView {
         set(syntaxTitle, NSRect(x: row.minX, y: Layout.centred(height: Layout.titleHeight, in: row),
                                 width: max(row.width - copyWidth - 8, 0), height: Layout.titleHeight))
         let cardTop = rowY - Layout.titleToCard
-        set(syntaxScrollView, NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: max(cardTop - bounds.minY, 0)))
+        let card = NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: max(cardTop - bounds.minY, 0))
+        set(syntaxFrame, card)
+        set(syntaxScrollView, card.insetBy(dx: 1, dy: 1))
     }
 
     /// The auto-increment value, with the reset glyph just after its text while the glyph is shown.
