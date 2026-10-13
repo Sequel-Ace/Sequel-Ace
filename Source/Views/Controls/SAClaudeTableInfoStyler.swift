@@ -370,7 +370,7 @@ final class SAClaudeTableInfoCardView: NSView {
         }
         styleResetButton(palette: palette)
         copyButton.refresh(palette: palette)
-        styleSyntaxCard(palette: palette)
+        styleSyntaxCard(palette: palette, themeText: themeText)
         styleCommentsField(palette: palette, themeText: themeText)
         styleDivider(palette: palette)
         statusView.needsDisplay = true
@@ -420,7 +420,7 @@ final class SAClaudeTableInfoCardView: NSView {
     }
 
     /// The Create syntax scroll view as a card: rounded, 1pt hairline. Its text view keeps the editor theme's colours and font.
-    private func styleSyntaxCard(palette: SAClaudeEditorChrome.Palette) {
+    private func styleSyntaxCard(palette: SAClaudeEditorChrome.Palette, themeText: NSColor) {
         guard let scrollView = syntaxScrollView ?? createSyntaxView?.enclosingScrollView else { return }
         scrollView.borderType = .noBorder
         scrollView.focusRingType = .none
@@ -428,7 +428,9 @@ final class SAClaudeTableInfoCardView: NSView {
         scrollView.layer?.cornerRadius = Layout.cardRadius
         scrollView.layer?.borderWidth = 1
         scrollView.layer?.masksToBounds = true
-        scrollView.layer?.borderColor = resolvedCGColor(palette.hairline)
+        // The card has the page's own background, so its outline alone marks it: the brighter drop-zone stroke
+        // (0.30), as the 0.08 hairline vanishes in dark themes.
+        scrollView.layer?.borderColor = resolvedCGColor(SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background))
         // Keeps the text off the rounded corners.
         createSyntaxView?.textContainerInset = Self.syntaxInset
     }
