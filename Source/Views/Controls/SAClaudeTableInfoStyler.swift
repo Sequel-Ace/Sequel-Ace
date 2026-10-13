@@ -65,6 +65,10 @@ final class SAClaudeTableInfoCardView: NSView {
     /// With Create syntax moved to index 0 the same key would mean the opposite panes, so the swapped layout saves
     /// under its own key (the old one is left untouched; see `putSyntaxPaneFirst`).
     private static let syntaxFirstAutosaveName = "TableInfoSplitterSyntaxFirst"
+    /// Title (16) + gap (6) + about four lines of comment field.
+    private static let minimumCommentsPaneHeight: CGFloat = 110
+    private static let minimumSyntaxPaneHeight: CGFloat = 80
+    private static let commentsTitleTopGap: CGFloat = 10
 
     private weak var statusView: NSView?
     private weak var splitView: NSSplitView?
@@ -243,10 +247,26 @@ final class SAClaudeTableInfoCardView: NSView {
         }
         // The thick divider paints a grey gradient; the thin one takes the theme's hairline (as the Query tab's splits do).
         splitView.dividerStyle = .thin
+        // The panes' minimums follow their new order: the Comments pane must hold its title and a few lines of field.
+        if let split = splitView as? SPSplitView {
+            split.setMinSize(Self.minimumSyntaxPaneHeight, ofSubviewAt: 0)
+            split.setMinSize(Self.minimumCommentsPaneHeight, ofSubviewAt: 1)
+        }
         splitView.adjustSubviews()
         splitView.setPosition(syntaxLength, ofDividerAt: 0)
         if splitView.autosaveName != Self.syntaxFirstAutosaveName { splitView.autosaveName = Self.syntaxFirstAutosaveName }
+        ensureCommentsMinimum()
         return true
+    }
+
+    /// A saved or carried-over divider can leave the Comments pane shorter than its minimum (a tall syntax pane from
+    /// the old order, or a size saved before the minimum existed): move the divider up until the Comments pane fits.
+    private func ensureCommentsMinimum() {
+        guard let splitView, splitView.subviews.count == 2, let commentsPane,
+              commentsPane.frame.height < Self.minimumCommentsPaneHeight else { return }
+        let position = splitView.bounds.height - splitView.dividerThickness - Self.minimumCommentsPaneHeight
+        guard position >= Self.minimumSyntaxPaneHeight else { return }
+        splitView.setPosition(position, ofDividerAt: 0)
     }
 
     /// The tab's theme background always; the titles, cards and separator changes only when the form can be laid out.
@@ -574,6 +594,7 @@ final class SAClaudeTableInfoCardView: NSView {
         place(generalCard, frames.generalCard)
         place(storageCard, frames.storageCard)
         place(splitView, frames.splitView)
+        ensureCommentsMinimum()
         layOutPanes()
         // The controller sometimes sets an empty syntax without `didChangeText`.
         updateCopyEnabled()
@@ -614,8 +635,10 @@ final class SAClaudeTableInfoCardView: NSView {
         func set(_ view: NSView, _ frame: NSRect) { if view.frame != frame { view.frame = frame } }
         set(syntaxScrollView, syntaxPane.bounds)
         let bounds = commentsPane.bounds
-        set(commentsTitle, NSRect(x: bounds.minX, y: bounds.maxY - Layout.titleHeight, width: bounds.width, height: Layout.titleHeight))
-        let fieldHeight = max(bounds.height - Layout.titleHeight - Layout.titleToCard, 0)
+        // A gap under the thin divider, so the syntax card, the divider and the title don't touch.
+        let titleTop = bounds.maxY - Self.commentsTitleTopGap
+        set(commentsTitle, NSRect(x: bounds.minX, y: titleTop - Layout.titleHeight, width: bounds.width, height: Layout.titleHeight))
+        let fieldHeight = max(bounds.height - Self.commentsTitleTopGap - Layout.titleHeight - Layout.titleToCard, 0)
         set(commentsScrollView, NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: fieldHeight))
     }
 
