@@ -109,6 +109,43 @@ private final class SAClaudeColourDot: NSView {
     }
 }
 
+/// A field's outline: the rounded field fill and a hairline (clay while the field is edited), behind the field.
+/// A click in its margin focuses the field it frames (whichever of a secure field and its plain twin is shown).
+private final class SAClaudeFieldOutline: NSView {
+    var fill: NSColor = .clear { didSet { needsDisplay = true } }
+    var stroke: NSColor = .clear { didSet { needsDisplay = true } }
+    var radius: CGFloat = 7 { didSet { needsDisplay = true } }
+    /// The field (and its plain twin) this outline frames; never retains anything that retains the outline.
+    var fields: [NSTextField] = []
+
+    private var target: NSTextField? {
+        fields.first { !$0.isHidden && $0.isEnabled && $0.isEditable }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard !isHidden, frame.contains(point), target != nil else { return nil }
+        return self
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let field = target, let window else { return }
+        if field.currentEditor() == nil { window.makeFirstResponder(field) }
+        // Caret at the end, as a click past the text would put it.
+        if let editor = field.currentEditor() {
+            editor.selectedRange = NSRange(location: (editor.string as NSString).length, length: 0)
+        }
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: radius, yRadius: radius)
+        fill.setFill()
+        path.fill()
+        stroke.setStroke()
+        path.lineWidth = 1
+        path.stroke()
+    }
+}
+
 /// One classified row of a type's form: its control and everything that moves with it.
 private final class SAClaudePanelRow {
     enum Condition { case always, ssl, awsAuthorised, awsUnauthorised, sshPassword, sshKey }
@@ -235,7 +272,17 @@ private final class SAClaudePanelForm {
     private let disclosure = SAClaudeAdvancedDisclosure()
     private var sectionTitles: [SAClaudeConnectionSection: NSTextField] = [:]
     /// The outline behind each text field and combo box (a field's plain twin shares its secure field's).
-    private var fieldFrames: [ObjectIdentifier: SAClaudeTableInfoCardView] = [:]
+    private var fieldFrames: [ObjectIdentifier: SAClaudeFieldOutline] = [:]
+    /// The key / file pickers' own images (normal, alternate), tinted from these on every theme change.
+    private var pickerImages: [ObjectIdentifier: (image: NSImage?, alternate: NSImage?)] = [:]
+
+    /// Advanced was opened for the selected favourite (or by a value turned on while editing); cleared only when
+    /// another favourite is selected, so turning a value off never folds the section away mid-edit.
+    private var advancedAutoOpened = false
+    private var lastFavourite: ObjectIdentifier?
+    private var favouriteSeen = false
+    private var laidOutAdvancedOpen: Bool?
+    private var advancedLayoutPending = false
 
     private var theme: (palette: SAClaudeEditorChrome.Palette, text: NSColor, fieldFill: NSColor, cardFill: NSColor)?
     private var lastFrames: Layout.Frames?
@@ -639,6 +686,9 @@ private final class SAClaudePanelForm {
             form.popUps.forEach { SAClaudeFilterCells.installPill(on: $0) }
             form.checkboxes.forEach { SAClaudeFilterCells.install(SAClaudeCheckboxCell.self, on: $0) }
         }
+        for button in pickerButtons {
+            pickerImages[ObjectIdentifier(button)] = (button.image, button.alternateImage)
+        }
         for button in ghostButtons + pickerButtons {
             SAClaudeFilterCells.installCellDrawing(on: button)
             button.isBordered = false
@@ -651,6 +701,12 @@ private final class SAClaudePanelForm {
             helpButton.bezelStyle = .regularSquare
             helpButton.imagePosition = .noImage
             helpButton.title = "?"
+        }
+        // Labels bound to an enabled state (AWS profile / region) keep their disabled dimming.
+        for label in forms.flatMap(\.labels) where Self.keyPath(of: label, .enabled) != nil {
+            observations.append(label.observe(\.isEnabled) { [weak self] label, _ in
+                self?.onMain { $0.styleLabelColour(label) }
+            })
         }
         // Their titles follow the enabled state (a borderless cell with a coloured title doesn't dim it).
         for button in ghostButtons {
@@ -668,22 +724,25 @@ private final class SAClaudePanelForm {
     }
 
     @discardableResult
-    private func frameView(for field: NSTextField, in form: SAClaudePanelForm) -> SAClaudeTableInfoCardView? {
+    private func frameView(for field: NSTextField, in form: SAClaudePanelForm) -> SAClaudeFieldOutline? {
         guard let superview = field.superview else { return nil }
         // A plain twin shares its secure field's outline.
         if let secure = form.reveal.first(where: { $0.value.twin === field })?.key, let shared = fieldFrames[secure] {
             fieldFrames[ObjectIdentifier(field)] = shared
+            if !shared.fields.contains(where: { $0 === field }) { shared.fields.append(field) }
             return shared
         }
         if let existing = fieldFrames[ObjectIdentifier(field)] { return existing }
-        let frameView = SAClaudeTableInfoCardView()
+        let frameView = SAClaudeFieldOutline()
         frameView.radius = Self.fieldRadius
+        frameView.fields = [field]
         frameView.frame = field.frame
         frameView.autoresizingMask = field.autoresizingMask
         superview.addSubview(frameView, positioned: .below, relativeTo: field)
         fieldFrames[ObjectIdentifier(field)] = frameView
         if let pair = form.reveal[ObjectIdentifier(field)] {
             fieldFrames[ObjectIdentifier(pair.twin)] = frameView
+            frameView.fields.append(pair.twin)
         }
         return frameView
     }
@@ -731,8 +790,24 @@ private final class SAClaudePanelForm {
             controller.observe(\.colorIndex) { [weak self] _, _ in self?.onMain { $0.updateHeader() } },
         ]
         observations += header
-        // The SSH password and key share a row: the eye button follows which one shows.
-        observations.append(controller.observe(\.sshKeyLocationEnabled) { [weak self] _, _ in self?.onMain { $0.layOut() } })
+        // The SSH password and key share a row: the eye button and a revealed twin follow which one shows. Laid out
+        // on the next turn, after the bindings have shown / hidden the two fields.
+        observations.append(controller.observe(\.sshKeyLocationEnabled) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.layOut() }
+        })
+        // Advanced: the disclosure's lock and open state follow the values live (the time zone pop-up's action sets
+        // `timeZoneMode`).
+        let advanced: [NSKeyValueObservation] = [
+            controller.observe(\.useSSL) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.allowDataLocalInfile) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.enableClearTextPlugin) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.requestServerPublicKey) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.timeZoneMode) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.sslKeyFileLocation) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.sslCertificateFileLocation) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+            controller.observe(\.sslCACertFileLocation) { [weak self] _, _ in self?.onMain { $0.advancedValuesChanged() } },
+        ]
+        observations += advanced
         if let editButtonsView {
             observations.append(editButtonsView.observe(\.isHidden) { [weak self] _, _ in self?.onMain { $0.mirrorEditButtons() } })
         }
@@ -805,7 +880,7 @@ private final class SAClaudePanelForm {
         for form in forms {
             for label in form.labels {
                 label.font = Self.labelFont
-                label.textColor = palette.icon
+                styleLabelColour(label)
                 label.alignment = .right
                 label.lineBreakMode = .byTruncatingTail
                 label.drawsBackground = false
@@ -836,6 +911,12 @@ private final class SAClaudePanelForm {
             SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
             button.needsDisplay = true
         }
+        // The key / file pickers' glyphs in the theme's colours: muted, and the text colour once a file is chosen.
+        for button in pickerButtons {
+            guard let originals = pickerImages[ObjectIdentifier(button)] else { continue }
+            button.image = originals.image.map { Self.tinted($0, palette.icon) }
+            button.alternateImage = originals.alternate.map { Self.tinted($0, palette.buttonText) }
+        }
         styleGhostTitles()
         if let progressText {
             progressText.font = Self.labelFont
@@ -845,6 +926,25 @@ private final class SAClaudePanelForm {
         updateHeader()
         updateFocus()
         container.needsDisplay = true
+    }
+
+    /// The muted label colour, dimmed further while the label is disabled (the AWS labels follow authorisation).
+    private func styleLabelColour(_ label: NSTextField) {
+        let palette = theme?.palette ?? SAClaudeFilterBarStyler.currentPalette
+        let colour = label.isEnabled ? palette.icon : palette.icon.withAlphaComponent(0.45)
+        if label.textColor != colour { label.textColor = colour }
+    }
+
+    /// `image` filled with `colour` wherever it is opaque.
+    private static func tinted(_ image: NSImage, _ colour: NSColor) -> NSImage {
+        let tinted = NSImage(size: image.size, flipped: false) { rect in
+            image.draw(in: rect)
+            colour.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+        tinted.accessibilityDescription = image.accessibilityDescription
+        return tinted
     }
 
     /// A text field or combo box without its bezel: the theme's text colour on the outline view behind it.
@@ -923,14 +1023,39 @@ private final class SAClaudePanelForm {
     }
 
     private var advancedOpen: Bool {
-        advancedHasNonDefault || UserDefaults.standard.bool(forKey: Self.advancedOpenKey)
+        advancedAutoOpened || UserDefaults.standard.bool(forKey: Self.advancedOpenKey)
     }
 
-    /// Only while no advanced value forces the fold open; the choice is remembered.
+    /// A newly selected favourite (or Quick connect) opens Advanced exactly when it has a non-default value.
+    private func syncFavouriteSelection() {
+        let identity = controller?.selectedFavoriteNode().map { ObjectIdentifier($0) }
+        guard !favouriteSeen || identity != lastFavourite else { return }
+        favouriteSeen = true
+        lastFavourite = identity
+        advancedAutoOpened = advancedHasNonDefault
+    }
+
+    /// An advanced value changed: turning one on opens the fold (it then stays open for this favourite); the
+    /// disclosure's lock follows at once, the layout on the next turn (a favourite load changes several values).
+    private func advancedValuesChanged() {
+        let nonDefault = advancedHasNonDefault
+        if nonDefault { advancedAutoOpened = true }
+        disclosure.isLocked = nonDefault
+        guard advancedOpen != laidOutAdvancedOpen, !advancedLayoutPending else { return }
+        advancedLayoutPending = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.advancedLayoutPending = false
+            if self.advancedOpen != self.laidOutAdvancedOpen { self.layOut() }
+        }
+    }
+
+    /// Only while no advanced value is on (the fold can't close over one); the choice is remembered.
     private func toggleAdvanced() {
         guard !advancedHasNonDefault else { return }
-        let defaults = UserDefaults.standard
-        defaults.set(!defaults.bool(forKey: Self.advancedOpenKey), forKey: Self.advancedOpenKey)
+        let open = !advancedOpen
+        UserDefaults.standard.set(open, forKey: Self.advancedOpenKey)
+        if !open { advancedAutoOpened = false }
         layOut()
     }
 
@@ -980,10 +1105,12 @@ private final class SAClaudePanelForm {
     private func layOut() {
         guard let controller, let container, let tabView,
               let form = forms.first(where: { $0.type.rawValue == controller.type }) else { return }
+        syncFavouriteSelection()
         let width = panelWidth()
         lastWidth = width
         let tabsWidth = min(typeTabs.preferredWidth, ((width - 2 * Layout.padding) * Self.tabsShare).rounded(.down))
         let open = advancedOpen
+        laidOutAdvancedOpen = open
 
         let frames: Layout.Frames
         if form.canLayOut {
@@ -1000,7 +1127,16 @@ private final class SAClaudePanelForm {
         if let documentWidth = container.superview?.bounds.width, documentWidth > 0 {
             containerFrame.origin.x = ((documentWidth - width) / 2).rounded(.down)
         }
-        if container.frame != containerFrame { container.frame = containerFrame }
+        if container.frame != containerFrame {
+            // The controller may have just started an animated resize of the container towards its XIB height; a
+            // zero-duration animation of the same property replaces it, so it ends at this frame.
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0
+                context.allowsImplicitAnimation = false
+                container.animator().frame = containerFrame
+            }
+            if container.frame != containerFrame { container.frame = containerFrame }
+        }
         Self.place(card, container.bounds)
         card.autoresizingMask = [.width, .height]
 
@@ -1038,6 +1174,7 @@ private final class SAClaudePanelForm {
         // The controller centres the card in its scroll view (and sizes the document view).
         let recentre = NSSelectorFromString("scrollViewFrameChanged:")
         if controller.responds(to: recentre) { controller.perform(recentre, with: nil) }
+        chainKeyViews()
     }
 
     private func layOutHeader(_ frames: Layout.Frames) {
@@ -1046,9 +1183,11 @@ private final class SAClaudePanelForm {
         let subtitleHeight = Self.textHeight(subtitleLabel)
         let textX = header.minX + Self.dotSize + 8
         let textWidth = max(0, header.maxX - 12 - textX)
+        // Name on top, the subtitle on the line below it: 19 + 15pt, so the pair reaches 2pt into the header gap
+        // rather than overlapping.
         let nameY = header.maxY - nameHeight
         Self.place(nameLabel, NSRect(x: textX, y: nameY, width: textWidth, height: nameHeight))
-        Self.place(subtitleLabel, NSRect(x: textX, y: header.minY, width: textWidth, height: subtitleHeight))
+        Self.place(subtitleLabel, NSRect(x: textX, y: nameY - subtitleHeight, width: textWidth, height: subtitleHeight))
         Self.place(dot, NSRect(x: header.minX, y: (nameY + nameHeight / 2 - Self.dotSize / 2).rounded(),
                                width: Self.dotSize, height: Self.dotSize))
         Self.place(typeTabs, frames.tabs)
@@ -1117,9 +1256,17 @@ private final class SAClaudePanelForm {
                     view.isHidden = !open
                 }
             }
-            if let pair = (row.control as? NSSecureTextField).flatMap({ form.reveal[ObjectIdentifier($0)] }) {
+            if let secure = row.control as? NSSecureTextField, let pair = form.reveal[ObjectIdentifier(secure)] {
                 let shown = rowFrames[row.id] != nil
                 if pair.eye.isHidden == shown { pair.eye.isHidden = !shown }
+                if row.condition == .sshPassword {
+                    // A revealed plain twin must not sit over the SSH key field; when the password returns, the
+                    // eye's state decides which of the two shows (the binding has just un-hidden the secure one).
+                    let revealed = pair.eye.state == .on
+                    let twinHidden = !(shown && revealed)
+                    if pair.twin.isHidden != twinHidden { pair.twin.isHidden = twinHidden }
+                    if shown, secure.isHidden != revealed { secure.isHidden = revealed }
+                }
             }
             guard let frame, let superview = row.control.superview else { continue }
             if let label = row.label {
@@ -1285,8 +1432,9 @@ private final class SAClaudePanelForm {
         for (view, next) in zip(chain, chain.dropFirst()) where view.nextKeyView !== next {
             view.nextKeyView = next
         }
-        if let last = chain.last, let outline = controller.favoritesOutlineView(), last.nextKeyView !== outline {
-            last.nextKeyView = outline
+        // The loop closes on the tabs (the outline's own next key view stays the controller's).
+        if let last = chain.last, last !== typeTabs, last.nextKeyView !== typeTabs {
+            last.nextKeyView = typeTabs
         }
     }
 }
