@@ -21,6 +21,12 @@ enum SAClaudeFilterChrome {
         SAClaudeEditorChrome.derivedColour(text: text, background: background, ratio: 0.035)
     }
 
+    /// The Table Info cards' fill: the theme background lifted a little towards the text, quieter than a field.
+    static let cardFillRatio: CGFloat = 0.025
+    static func cardFill(text: NSColor, background: NSColor) -> NSColor {
+        SAClaudeEditorChrome.derivedColour(text: text, background: background, ratio: cardFillRatio)
+    }
+
     /// How far the idle drop-zone outline sits from the background towards the text; brighter than the
     /// palette hairline (0.08), which was invisible in dark mode.
     static let dropStrokeRatio: CGFloat = 0.30
