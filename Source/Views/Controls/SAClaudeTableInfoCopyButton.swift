@@ -24,6 +24,15 @@ final class SAClaudeTableInfoCopyButton: NSButton {
     /// The text to copy, read at click time.
     var syntaxProvider: () -> String = { "" }
 
+    /// A disabled button shows no hover fill: one already showing when it is disabled is cleared (the highlighter
+    /// itself only declines to start one on a disabled control).
+    override var isEnabled: Bool {
+        didSet {
+            if !isEnabled { SAClaudeHoverHighlighter.highlighter(for: self)?.setHovered(false) }
+            needsDisplay = true
+        }
+    }
+
     private var palette: SAClaudeEditorChrome.Palette?
     private var isShowingCopied = false
     private var copiedReset: DispatchWorkItem?

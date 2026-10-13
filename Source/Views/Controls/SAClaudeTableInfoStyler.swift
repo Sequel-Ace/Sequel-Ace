@@ -7,7 +7,8 @@
 //  pills on the Type / Encoding / Collation pop-ups, and the auto-increment reset pop-up as a 20pt ghost
 //  refresh glyph that follows the end of the auto-increment value, the Create syntax card with its ghost
 //  Copy button, and the Comments title over a Claude field with a clay focus outline. The controls are the XIB's own objects:
-//  they are restyled and repositioned, never rebuilt (targets, actions, menus and bindings are untouched).
+//  they are restyled and repositioned, never rebuilt (targets, actions, menus and bindings are untouched). The
+//  one structural change: the split view's two panes swap places so Create syntax is on top (see `putSyntaxPaneFirst`).
 //
 //  Layout is frame based (SAClaudeTableInfoLayout) and re-runs on the status view's frame changes, on
 //  changes of the auto-increment value and of the reset control's visibility, and on every refresh. Nothing
@@ -59,15 +60,21 @@ final class SAClaudeTableInfoCardView: NSView {
     /// From the end of the auto-increment text to the reset glyph, and from the end of the shrunk value to it.
     private static let resetGap: CGFloat = 6
     private static let resetValueGap: CGFloat = 4
+    private static let syntaxInset = NSSize(width: 6, height: 6)
+    /// The XIB autosaves this split view as "TableInfoSplitter", by subview index in the XIB's order (Comments first).
+    /// With Create syntax moved to index 0 the same key would mean the opposite panes, so the swapped layout saves
+    /// under its own key (the old one is left untouched; see `putSyntaxPaneFirst`).
+    private static let syntaxFirstAutosaveName = "TableInfoSplitterSyntaxFirst"
 
     private weak var statusView: NSView?
     private weak var splitView: NSSplitView?
     private weak var createSyntaxView: NSTextView?
-    private weak var commentsView: NSTextView?
+    /// Strong: they are observed with KVO, so they must outlive the observation tokens (they never reference the styler).
+    private var commentsView: NSTextView?
     private var popUps: [NSPopUpButton] = []
     private var generalValues: [NSTextField] = []
     private var storageValues: [NSTextField] = []
-    private weak var resetButton: NSPopUpButton?
+    private var resetButton: NSPopUpButton?
 
     /// Every static label of the form (restyled even when nothing can be moved).
     private var labels: [NSTextField] = []
@@ -105,9 +112,8 @@ final class SAClaudeTableInfoCardView: NSView {
     private var commentsWindowObservation: NSKeyValueObservation?
     private var firstResponderObservation: NSKeyValueObservation?
     private var commentsEditableObservation: NSKeyValueObservation?
+    private var splitResizeObserver: NSObjectProtocol?
     private weak var observedWindow: NSWindow?
-    /// Whether the comments field has the keyboard focus (and shows the clay outline while it is editable).
-    private var commentsFocused = false
 
     // MARK: - Attaching
 
@@ -149,7 +155,14 @@ final class SAClaudeTableInfoCardView: NSView {
         if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
         if let frameObserver { NotificationCenter.default.removeObserver(frameObserver) }
         if let syntaxChangeObserver { NotificationCenter.default.removeObserver(syntaxChangeObserver) }
+        if let splitResizeObserver { NotificationCenter.default.removeObserver(splitResizeObserver) }
         for observer in commentsEditingObservers { NotificationCenter.default.removeObserver(observer) }
+        appearanceObservation?.invalidate()
+        autoIncrementObservation?.invalidate()
+        resetHiddenObservation?.invalidate()
+        commentsWindowObservation?.invalidate()
+        firstResponderObservation?.invalidate()
+        commentsEditableObservation?.invalidate()
     }
 
     // MARK: - Finding the form
@@ -195,12 +208,45 @@ final class SAClaudeTableInfoCardView: NSView {
             guard let pane = candidate, pane !== scrollView, scrollView.superview === pane, !pane.isFlipped else { return nil }
             return (pane, scrollView)
         }
-        guard let syntax = pane(of: createSyntaxView), let comments = pane(of: commentsView), syntax.pane !== comments.pane else { return }
+        guard let syntax = pane(of: createSyntaxView), let comments = pane(of: commentsView), syntax.pane !== comments.pane,
+              putSyntaxPaneFirst(syntax.pane, comments.pane) else { return }
         syntaxPane = syntax.pane
         syntaxScrollView = syntax.scrollView
         commentsPane = comments.pane
         commentsScrollView = comments.scrollView
         panesReady = true
+    }
+
+    /// The XIB lists the Comments pane first and `NSSplitView` is flipped, so Comments is on top. Puts the
+    /// Create syntax pane first (on top) instead, by containment rather than by index, keeping each pane's
+    /// height. False, with nothing changed, unless the split view stacks exactly these two panes.
+    ///
+    /// Everything index-based was checked: `SPSplitView` keeps its collapsible index unset here, the only min sizes
+    /// are 20 for both indexes (SPDatabaseDocument), the XIB gives it no delegate, and nothing else addresses its subviews.
+    /// The autosaved positions are by index, so the swapped layout autosaves under its own name: the XIB restores the
+    /// old key into the XIB-order panes (right by containment, whether or not the user ever dragged), the panes swap
+    /// keeping those heights, then the new key (if it has been saved before) restores the new order. Reusing the old
+    /// key would flip the panes' heights on every launch, or give a first launch the Comments pane's tall default.
+    /// Idempotent: with the syntax pane already first only the name and the divider style are (re)applied.
+    private func putSyntaxPaneFirst(_ syntax: NSView, _ comments: NSView) -> Bool {
+        guard let splitView, !splitView.isVertical, splitView.subviews.count == 2,
+              splitView.subviews.contains(where: { $0 === syntax }), splitView.subviews.contains(where: { $0 === comments }) else { return false }
+        let syntaxLength = syntax.frame.height
+        if splitView.subviews[0] !== syntax {
+            splitView.autosaveName = nil
+            splitView.sortSubviews({ left, right, context in
+                guard let context else { return .orderedSame }
+                let first = Unmanaged<NSView>.fromOpaque(context).takeUnretainedValue()
+                if left === first { return .orderedAscending }
+                return right === first ? .orderedDescending : .orderedSame
+            }, context: Unmanaged.passUnretained(syntax).toOpaque())
+        }
+        // The thick divider paints a grey gradient; the thin one takes the theme's hairline (as the Query tab's splits do).
+        splitView.dividerStyle = .thin
+        splitView.adjustSubviews()
+        splitView.setPosition(syntaxLength, ofDividerAt: 0)
+        if splitView.autosaveName != Self.syntaxFirstAutosaveName { splitView.autosaveName = Self.syntaxFirstAutosaveName }
+        return true
     }
 
     /// The tab's theme background always; the titles, cards and separator changes only when the form can be laid out.
@@ -260,6 +306,12 @@ final class SAClaudeTableInfoCardView: NSView {
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
         appearanceObservation = statusView.observe(\.effectiveAppearance) { [weak self] _, _ in
             self?.onMain { $0.refresh(force: true) }
+        }
+        // Dragging the divider resizes the panes: the Comments title and field follow exactly (only the panes' children move).
+        if let splitView, panesReady {
+            splitResizeObserver = NotificationCenter.default.addObserver(forName: NSSplitView.didResizeSubviewsNotification, object: splitView, queue: nil) { [weak self] _ in
+                self?.onMain { $0.layOutPanes() }
+            }
         }
         observeCopyEnabled()
         observeComments()
@@ -325,6 +377,7 @@ final class SAClaudeTableInfoCardView: NSView {
         copyButton.refresh(palette: palette)
         styleSyntaxCard(palette: palette)
         styleCommentsField(palette: palette, themeText: themeText)
+        styleDivider(palette: palette)
         statusView.needsDisplay = true
         layOut()
     }
@@ -363,6 +416,14 @@ final class SAClaudeTableInfoCardView: NSView {
         button.needsDisplay = true
     }
 
+    /// The split view's divider in the hairline colour (a plain `needsDisplay` doesn't repaint it after a theme change).
+    private func styleDivider(palette: SAClaudeEditorChrome.Palette) {
+        guard panesReady, let split = splitView as? SPSplitView else { return }
+        split.customDividerColor = palette.hairline
+        split.setNeedsDisplay(split.bounds)
+        split.layer?.setNeedsDisplay()
+    }
+
     /// The Create syntax scroll view as a card: rounded, 1pt hairline. Its text view keeps the editor theme's colours and font.
     private func styleSyntaxCard(palette: SAClaudeEditorChrome.Palette) {
         guard let scrollView = syntaxScrollView ?? createSyntaxView?.enclosingScrollView else { return }
@@ -373,6 +434,8 @@ final class SAClaudeTableInfoCardView: NSView {
         scrollView.layer?.borderWidth = 1
         scrollView.layer?.masksToBounds = true
         scrollView.layer?.borderColor = resolvedCGColor(palette.hairline)
+        // Keeps the text off the rounded corners.
+        createSyntaxView?.textContainerInset = Self.syntaxInset
     }
 
     /// The comments text view as a Claude field: the field fill, a hairline that turns clay while it is being edited.
@@ -409,10 +472,12 @@ final class SAClaudeTableInfoCardView: NSView {
         return resolved
     }
 
-    /// Clay while the comments field is focused and editable (a view's or an absent table's comments are not), else the hairline.
+    /// Clay only while the comments field really is the window's first responder and editable (a view's or an absent
+    /// table's comments are not), else the hairline. Begin-editing notifications alone don't count: the controller's
+    /// programmatic text changes post them without any focus.
     private func updateCommentsBorder() {
         guard let layer = commentsScrollView?.layer ?? commentsView?.enclosingScrollView?.layer, let palette = appliedPalette else { return }
-        let editing = commentsFocused && commentsView?.isEditable == true
+        let editing = commentsView.map { $0.isEditable && $0.window?.firstResponder === $0 } ?? false
         layer.borderColor = resolvedCGColor(editing ? SAClaudeStatusChrome.clay : palette.hairline)
     }
 
@@ -439,10 +504,10 @@ final class SAClaudeTableInfoCardView: NSView {
         let center = NotificationCenter.default
         commentsEditingObservers = [
             center.addObserver(forName: NSText.didBeginEditingNotification, object: commentsView, queue: nil) { [weak self] _ in
-                self?.onMain { $0.commentsFocused = true; $0.updateCommentsBorder() }
+                self?.onMain { $0.updateCommentsBorder() }
             },
             center.addObserver(forName: NSText.didEndEditingNotification, object: commentsView, queue: nil) { [weak self] _ in
-                self?.onMain { $0.commentsFocused = false; $0.updateCommentsBorder() }
+                self?.onMain { $0.updateCommentsBorder() }
             }
         ]
         commentsEditableObservation = commentsView.observe(\.isEditable) { [weak self] _, _ in
@@ -459,14 +524,10 @@ final class SAClaudeTableInfoCardView: NSView {
         guard let commentsView, commentsView.window !== observedWindow else { return }
         firstResponderObservation = nil
         observedWindow = commentsView.window
-        guard let window = commentsView.window else { return }
-        commentsFocused = window.firstResponder === commentsView
         updateCommentsBorder()
-        firstResponderObservation = window.observe(\.firstResponder) { [weak self] window, _ in
-            self?.onMain {
-                $0.commentsFocused = window.firstResponder === $0.commentsView
-                $0.updateCommentsBorder()
-            }
+        guard let window = commentsView.window else { return }
+        firstResponderObservation = window.observe(\.firstResponder) { [weak self] _, _ in
+            self?.onMain { $0.updateCommentsBorder() }
         }
     }
 
@@ -506,12 +567,16 @@ final class SAClaudeTableInfoCardView: NSView {
         observeFirstResponder()
         place(generalTitle, frames.generalTitle)
         place(storageTitle, frames.storageTitle)
-        place(syntaxTitle, frames.syntaxTitle)
+        // Centred in its row so the text lines up with the Copy button's.
+        place(syntaxTitle, NSRect(x: frames.syntaxTitle.minX, y: Layout.centred(height: Layout.titleHeight, in: frames.syntaxTitle),
+                                  width: frames.syntaxTitle.width, height: Layout.titleHeight))
         place(copyButton, frames.copyButton)
         place(generalCard, frames.generalCard)
         place(storageCard, frames.storageCard)
         place(splitView, frames.splitView)
         layOutPanes()
+        // The controller sometimes sets an empty syntax without `didChangeText`.
+        updateCopyEnabled()
 
         // General: pills on the left, Created / Updated on the right.
         let leftGeneral = Layout.rows(in: frames.generalCard, count: Self.generalRowCount, half: .left, labelWidth: labelWidth(popUpLabels))
