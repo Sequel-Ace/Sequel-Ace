@@ -261,8 +261,9 @@ final class SAClaudeWindowSkin: NSObject {
     /// Restyles everything when the theme changed (always, when `force`).
     func refresh(force: Bool) {
         guard let root else { return }
-        // An accessory sits in a system panel: its colours follow the panel's lightness.
-        let colours = SAClaudeSheetColours.current(matching: accessory != nil ? window?.effectiveAppearance : nil)
+        // An accessory keeps the theme's colours even in a system panel of the other lightness: the Claude cells
+        // read the colours below at draw time, app-wide, so one window can't have colours of its own.
+        let colours = SAClaudeSheetColours.current()
         // The Claude cells read these at draw time.
         SAClaudeFilterBarStyler.currentPalette = colours.palette
         SAClaudeFilterBarStyler.currentThemeText = colours.theme.text
@@ -494,10 +495,11 @@ final class SAClaudeWindowSkin: NSObject {
     private func styleLabel(_ label: NSTextField, muted: Bool, _ colours: SAClaudeSheetColours) {
         let marked = SAClaudeStyledMark.tone(of: label)
         guard marked != nil || !Self.hasLinks(label),
-              let tone = SAClaudeRecolouring.labelTone(marked: marked, current: label.textColor, isSmall: muted) else { return }
-        SAClaudeStyledMark.setTone(tone, on: label)
+              let tone = SAClaudeRecolouring.labelTone(marked: marked, applied: SAClaudeStyledMark.applied(of: label),
+                                                       current: label.textColor, isSmall: muted) else { return }
         let colour = tone == .muted ? colours.muted : colours.theme.text
         if label.textColor != colour { label.textColor = colour }
+        SAClaudeStyledMark.setTone(tone, applied: label.textColor ?? colour, on: label)
     }
 
     private static func hasLinks(_ label: NSTextField) -> Bool {
@@ -586,10 +588,9 @@ final class SAClaudeWindowSkin: NSObject {
         if textView.backgroundColor != background { textView.backgroundColor = background }
         if let scrollView = textView.enclosingScrollView { SAClaudeStyledMark.colourBackground(of: scrollView, background) }
         if Self.selfThemedTextViewClasses.contains(where: { textView.isKind(of: $0) }) { return }
-        let marked = SAClaudeStyledMark.tone(of: textView) != nil
-        if SAClaudeRecolouring.ownsText(marked: marked, current: textView.textColor) {
-            SAClaudeStyledMark.setTone(.text, on: textView)
+        if SAClaudeRecolouring.ownsText(applied: SAClaudeStyledMark.applied(of: textView), current: textView.textColor) {
             if textView.textColor != colours.theme.text { textView.textColor = colours.theme.text }
+            SAClaudeStyledMark.setTone(.text, applied: textView.textColor ?? colours.theme.text, on: textView)
         }
         if !textView.isRichText, type(of: textView) == NSTextView.self {
             let font = SAClaudeCompletionStyler.editorFont()
@@ -614,16 +615,11 @@ struct SAClaudeSheetColours {
     let muted: NSColor
     let isDark: Bool
 
-    /// The theme's colours; with `panelAppearance` (an accessory in a system panel), the system's colours of that
-    /// appearance instead whenever the theme's lightness differs from the panel's.
-    static func current(matching panelAppearance: NSAppearance? = nil) -> SAClaudeSheetColours {
+    /// The theme's colours, resolved for the app's appearance.
+    static func current() -> SAClaudeSheetColours {
         var result: SAClaudeSheetColours?
-        (panelAppearance ?? NSApp.effectiveAppearance).performAsCurrentDrawingAppearance {
-            var theme = SAClaudeThemeColours.from(defaults: .standard)
-            if let panelAppearance {
-                let panelIsDark = panelAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-                if SAClaudeGridChrome.isDark(theme.background) != panelIsDark { theme = systemTheme() }
-            }
+        NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
+            let theme = SAClaudeThemeColours.from(defaults: .standard)
             let palette = SAClaudeEditorChrome.palette(text: theme.text, background: theme.background)
             let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
             result = SAClaudeSheetColours(theme: theme, palette: palette, gridPalette: SAClaudeGridChrome.palette(from: .standard),
@@ -633,47 +629,46 @@ struct SAClaudeSheetColours {
         // performAsCurrentDrawingAppearance runs its block synchronously.
         return result!
     }
-
-    /// The system's colours, resolved for the current drawing appearance, in the shape of theme colours.
-    private static func systemTheme() -> SAClaudeThemeColours {
-        func resolved(_ colour: NSColor) -> NSColor { colour.usingColorSpace(.sRGB) ?? colour }
-        let text = resolved(.labelColor)
-        return SAClaudeThemeColours(background: resolved(.windowBackgroundColor), text: text, keyword: text, variable: text,
-                                    caret: text, quote: text, backtick: text, selection: resolved(.selectedTextBackgroundColor))
-    }
-
 }
 
 // MARK: - Styled marks
 
-/// Marks a view the styler coloured, with the tone it gave it, so a later restyle recolours it whatever colour it
-/// shows by then (a view off-screen during a theme change, such as another Preferences pane, keeps the old
-/// colour until it is styled again). The decisions are `SAClaudeRecolouring`'s.
+/// Marks a view the styler coloured, with the tone and the colour it gave it, so a later restyle recolours it while it
+/// still shows that colour (a view off-screen during a theme change, such as another Preferences pane, keeps the old
+/// colour until it is styled again) and leaves it once its code chose a colour. The decisions are
+/// `SAClaudeRecolouring`'s.
 enum SAClaudeStyledMark {
     private static var toneKey: UInt8 = 0
+    private static var appliedKey: UInt8 = 0
     private static var backgroundKey: UInt8 = 0
 
     static func tone(of view: NSView) -> SAClaudeRecolouring.Tone? {
         (objc_getAssociatedObject(view, &toneKey) as? String).flatMap(SAClaudeRecolouring.Tone.init(rawValue:))
     }
 
-    static func setTone(_ tone: SAClaudeRecolouring.Tone, on view: NSView) {
+    /// The text colour the styler last gave the view.
+    static func applied(of view: NSView) -> NSColor? { objc_getAssociatedObject(view, &appliedKey) as? NSColor }
+
+    static func setTone(_ tone: SAClaudeRecolouring.Tone, applied: NSColor, on view: NSView) {
         if self.tone(of: view) != tone { objc_setAssociatedObject(view, &toneKey, tone.rawValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+        objc_setAssociatedObject(view, &appliedKey, applied, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
-    /// Gives a table, scroll view's or similar view's background `colour` if it is the styler's to colour.
+    /// Gives a table's or scroll view's background `colour` if it is the styler's to colour.
     static func colourBackground(of view: NSView, _ colour: NSColor) {
-        let marked = objc_getAssociatedObject(view, &backgroundKey) != nil
+        let applied = objc_getAssociatedObject(view, &backgroundKey) as? NSColor
         let current: NSColor
         switch view {
         case let table as NSTableView: current = table.backgroundColor
         case let scrollView as NSScrollView: current = scrollView.backgroundColor
         default: return
         }
-        guard SAClaudeRecolouring.ownsBackground(marked: marked, current: current) else { return }
-        if !marked { objc_setAssociatedObject(view, &backgroundKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
-        guard current != colour else { return }
-        if let table = view as? NSTableView { table.backgroundColor = colour }
-        if let scrollView = view as? NSScrollView { scrollView.backgroundColor = colour }
+        guard SAClaudeRecolouring.ownsBackground(applied: applied, current: current) else { return }
+        if current != colour {
+            if let table = view as? NSTableView { table.backgroundColor = colour }
+            if let scrollView = view as? NSScrollView { scrollView.backgroundColor = colour }
+        }
+        let now = (view as? NSTableView)?.backgroundColor ?? (view as? NSScrollView)?.backgroundColor ?? colour
+        objc_setAssociatedObject(view, &backgroundKey, now, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 }

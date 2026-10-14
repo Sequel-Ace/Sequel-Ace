@@ -182,10 +182,11 @@ enum SAClaudeSheetTargeting {
     }
 }
 
-/// Which text and background colours the sheet styler sets. A view it has coloured once is marked (by the styler,
-/// on the view) with the tone it gave it and is recoloured on every restyle, whatever colour it shows meanwhile
-/// (a view off-screen during a theme change keeps the old theme's colour until then). An unmarked view is only
-/// coloured while it shows a system default colour; a colour its code chose is kept.
+/// Which text and background colours the sheet styler sets. A view it has coloured is marked (by the styler, on the
+/// view) with the tone and the colour it gave it. While the view still shows that colour it is the styler's and is
+/// recoloured on every restyle (a view off-screen during a theme change keeps the old theme's colour until then);
+/// once its code sets a colour of its own (a status label going green), the view is left alone. An unmarked view is
+/// only coloured while it shows a system default colour; a colour its code chose is kept.
 enum SAClaudeRecolouring {
 
     enum Tone: String, Equatable { case text, muted }
@@ -208,15 +209,25 @@ enum SAClaudeRecolouring {
             || colour == .underPageBackgroundColor
     }
 
-    /// The tone for a label: the one it was marked with; else, for a system colour, muted when it is small or
-    /// already secondary, text otherwise; nil (leave it) for a colour its code chose.
-    static func labelTone(marked: Tone?, current: NSColor?, isSmall: Bool) -> Tone? {
-        if let marked { return marked }
+    /// Whether `current` is still the colour the styler last gave the view.
+    static func stillApplied(_ applied: NSColor?, current: NSColor?) -> Bool {
+        guard let applied, let current else { return false }
+        return applied == current
+    }
+
+    /// The tone for a label: the one it was marked with while it still shows the styler's colour; else, for a system
+    /// colour, muted when it is small or already secondary, text otherwise; nil (leave it) for a colour its code chose.
+    static func labelTone(marked: Tone?, applied: NSColor?, current: NSColor?, isSmall: Bool) -> Tone? {
+        if let marked, stillApplied(applied, current: current) { return marked }
         guard isSystemText(current) else { return nil }
         return isSmall || isSystemSecondaryText(current) ? .muted : .text
     }
 
     /// Whether a text view's text (or a view's background) is the styler's to colour.
-    static func ownsText(marked: Bool, current: NSColor?) -> Bool { marked || isSystemText(current) }
-    static func ownsBackground(marked: Bool, current: NSColor) -> Bool { marked || isSystemBackground(current) }
+    static func ownsText(applied: NSColor?, current: NSColor?) -> Bool {
+        stillApplied(applied, current: current) || isSystemText(current)
+    }
+    static func ownsBackground(applied: NSColor?, current: NSColor) -> Bool {
+        stillApplied(applied, current: current) || isSystemBackground(current)
+    }
 }

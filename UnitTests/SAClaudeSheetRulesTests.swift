@@ -340,34 +340,44 @@ final class SAClaudeRecolouringTests: XCTestCase {
     private typealias R = SAClaudeRecolouring
 
     func testUnmarkedSystemLabelTakesTheTextTone() {
-        XCTAssertEqual(R.labelTone(marked: nil, current: .labelColor, isSmall: false), .text)
-        XCTAssertEqual(R.labelTone(marked: nil, current: nil, isSmall: false), .text)
+        XCTAssertEqual(R.labelTone(marked: nil, applied: nil, current: .labelColor, isSmall: false), .text)
+        XCTAssertEqual(R.labelTone(marked: nil, applied: nil, current: nil, isSmall: false), .text)
     }
 
     func testUnmarkedSmallOrSecondaryLabelIsMuted() {
-        XCTAssertEqual(R.labelTone(marked: nil, current: .controlTextColor, isSmall: true), .muted)
-        XCTAssertEqual(R.labelTone(marked: nil, current: .secondaryLabelColor, isSmall: false), .muted)
+        XCTAssertEqual(R.labelTone(marked: nil, applied: nil, current: .controlTextColor, isSmall: true), .muted)
+        XCTAssertEqual(R.labelTone(marked: nil, applied: nil, current: .secondaryLabelColor, isSmall: false), .muted)
     }
 
     func testUnmarkedLabelWithItsOwnColourIsLeftAlone() {
-        XCTAssertNil(R.labelTone(marked: nil, current: .systemRed, isSmall: false))
+        XCTAssertNil(R.labelTone(marked: nil, applied: nil, current: .systemRed, isSmall: false))
     }
 
-    /// A label styled under an earlier theme (marked) is recoloured whatever colour it shows now: it may have been
-    /// off-screen (Preferences' other panes) while the theme changed several times.
-    func testMarkedLabelKeepsItsToneWhateverColourItShows() {
+    /// A label styled under an earlier theme (marked) is recoloured while it still shows the colour it was given:
+    /// it may have been off-screen (Preferences' other panes) while the theme changed several times.
+    func testMarkedLabelKeepsItsToneWhileItShowsTheAppliedColour() {
         let oldTheme = NSColor(srgbRed: 0.1, green: 0.2, blue: 0.3, alpha: 1)
-        XCTAssertEqual(R.labelTone(marked: .text, current: oldTheme, isSmall: true), .text)
-        XCTAssertEqual(R.labelTone(marked: .muted, current: oldTheme, isSmall: false), .muted)
+        XCTAssertEqual(R.labelTone(marked: .text, applied: oldTheme, current: oldTheme, isSmall: true), .text)
+        XCTAssertEqual(R.labelTone(marked: .muted, applied: oldTheme, current: oldTheme, isSmall: false), .muted)
+    }
+
+    /// Once its code sets a colour of its own (the MCP status label going green), a marked label is left alone.
+    func testMarkedLabelWithACodeChosenColourIsLeftAlone() {
+        let oldTheme = NSColor(srgbRed: 0.1, green: 0.2, blue: 0.3, alpha: 1)
+        XCTAssertNil(R.labelTone(marked: .text, applied: oldTheme, current: .systemGreen, isSmall: false))
+        XCTAssertEqual(R.labelTone(marked: .muted, applied: oldTheme, current: .labelColor, isSmall: false), .text)
     }
 
     func testOwnershipOfTextAndBackgrounds() {
         let custom = NSColor(srgbRed: 0.5, green: 0.1, blue: 0.1, alpha: 1)
-        XCTAssertTrue(R.ownsText(marked: false, current: .textColor))
-        XCTAssertFalse(R.ownsText(marked: false, current: custom))
-        XCTAssertTrue(R.ownsText(marked: true, current: custom))
-        XCTAssertTrue(R.ownsBackground(marked: false, current: .textBackgroundColor))
-        XCTAssertFalse(R.ownsBackground(marked: false, current: custom))
-        XCTAssertTrue(R.ownsBackground(marked: true, current: custom))
+        let applied = NSColor(srgbRed: 0.2, green: 0.2, blue: 0.2, alpha: 1)
+        XCTAssertTrue(R.ownsText(applied: nil, current: .textColor))
+        XCTAssertFalse(R.ownsText(applied: nil, current: custom))
+        XCTAssertTrue(R.ownsText(applied: custom, current: custom))
+        XCTAssertFalse(R.ownsText(applied: applied, current: custom))
+        XCTAssertTrue(R.ownsBackground(applied: nil, current: .textBackgroundColor))
+        XCTAssertFalse(R.ownsBackground(applied: nil, current: custom))
+        XCTAssertTrue(R.ownsBackground(applied: custom, current: custom))
+        XCTAssertFalse(R.ownsBackground(applied: applied, current: custom))
     }
 }
