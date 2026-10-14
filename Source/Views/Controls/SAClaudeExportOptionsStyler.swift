@@ -121,7 +121,7 @@ final class SAClaudeExportOptionsStyler: NSObject {
             .checkbox(sqlUTF8BOM, indented: false),
             .title(title(NSLocalizedString("ClaudeExportOptInsert", value: "INSERT", comment: "export dialog options: SQL group title, how INSERT statements are split"))),
             .inputs(label: label(NSLocalizedString("ClaudeExportOptInsertEvery", value: "New statement every", comment: "export dialog options: SQL row label before the number and unit (KiB of data / rows) after which a new INSERT statement starts")),
-                    labelWidth: nil, [field(sqlInsertN, 60), pill(sqlInsertDivider, 110)]),
+                    labelWidth: nil, [field(sqlInsertN, 60), pill(sqlInsertDivider, 100)]),
         ])
         let csv = Page(view: csvView, rows: [
             .checkbox(csvFieldNames, indented: false),

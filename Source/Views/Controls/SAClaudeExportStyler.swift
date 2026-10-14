@@ -352,6 +352,8 @@ import AppKit
             button.alternateImage = nil
             button.imagePosition = .noImage
             button.isBordered = false
+            // The XIB's labelColor tint would override the muted attributed title once the button is borderless.
+            button.contentTintColor = nil
             SAClaudeHoverHighlighter.attach(to: button)
         }
 
@@ -362,6 +364,9 @@ import AppKit
             column.maxWidth = Layout.checkboxColumnWidth
             column.minWidth = Layout.checkboxColumnWidth
             column.width = Layout.checkboxColumnWidth
+            // Two XIB data cells carry IB's placeholder title "Check", clipped by the old 15pt columns; at 64pt it would
+            // show beside every box. Title-less, the Claude checkbox is centred in its column.
+            (column.dataCell as? NSButtonCell)?.title = ""
         }
     }
 
