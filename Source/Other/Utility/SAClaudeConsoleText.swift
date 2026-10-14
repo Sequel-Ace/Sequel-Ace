@@ -33,7 +33,7 @@ struct SAClaudeConsoleTextStyle: Equatable {
         func colour(_ key: String, _ fallback: NSColor) -> NSColor { SAArchiving.color(from: defaults.data(forKey: key)) ?? fallback }
         let text = colour(SAEditorThemeLoader.textColourKey, .textColor)
         let background = colour(SAEditorThemeLoader.backgroundColourKey, .textBackgroundColor)
-        let clay = NSColor(srgbRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
+        let clay = SAClaudeStatusChrome.errorClay
         return SAClaudeConsoleTextStyle(font: SAClaudeGridChrome.valueFont(font),
                                         text: text,
                                         muted: SAClaudeEditorChrome.derivedColour(text: text, background: background, ratio: 0.55),

@@ -349,7 +349,7 @@ import AppKit
         split.setNeedsDisplay(split.bounds)
         split.layer?.setNeedsDisplay()
         messageScrollView?.appearance = SAClaudeGridChrome.scrollerAppearance(for: theme.background)
-        errorBlock.edgeColour = SAClaudeStatusChrome.clay
+        errorBlock.edgeColour = SAClaudeStatusChrome.errorClay
         titleField?.textColor = resolved.muted
 
         if let infoButton {

@@ -13,7 +13,7 @@ final class SAScriptConsoleLayoutManager: NSLayoutManager {
 
     var separatorColour: NSColor = .separatorColor
     var errorTint: NSColor = .clear
-    var errorEdge = NSColor(srgbRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
+    var errorEdge = SAClaudeStatusChrome.errorClay
 
     /// Vertical padding of a block: the band reaches this far above and below its text,
     /// and blocks after the first sit twice this far apart (see the console's paragraph spacing).

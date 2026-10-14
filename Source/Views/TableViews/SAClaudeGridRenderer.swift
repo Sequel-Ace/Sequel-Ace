@@ -22,7 +22,7 @@ final class SAClaudeGridRenderer {
     var cellTextTopOffset: CGFloat = 2
 
     /// Clay `#D97757`, the error accent.
-    private static let clay = NSColor(srgbRed: 0xD9 / 255, green: 0x77 / 255, blue: 0x57 / 255, alpha: 1)
+    private static let clay = SAClaudeStatusChrome.errorClay
     private static let errorTintRatio: CGFloat = 0.06
     private static var lineHeights: [String: CGFloat] = [:]
 

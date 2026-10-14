@@ -61,8 +61,12 @@ import AppKit
 
     // MARK: - Run button
 
-    @objc static let runFill = SAClaudeStyle.srgb(0xC6613F)
-    @objc static let runFillPressed = SAClaudeStyle.srgb(0xD97757)
+    /// The accent fill (clay `#C6613F` unless the user chose an accent colour).
+    @objc static var runFill: NSColor { SAClaudeAccent.fill }
+    /// The pressed fill: the fill mixed towards white (dark appearance) or black (light), by the app's effective appearance.
+    @objc static var runFillPressed: NSColor {
+        SAClaudeAccent.fillPressed(darkTheme: NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
+    }
 
     // MARK: - Metrics
 

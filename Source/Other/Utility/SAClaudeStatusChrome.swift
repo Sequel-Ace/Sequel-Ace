@@ -56,7 +56,10 @@ struct SAClaudeThemeColours: Equatable {
 }
 
 enum SAClaudeStatusChrome {
-    static let clay = NSColor(srgbRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
+    /// The accent colour (the user's choice, clay by default) for decorative uses.
+    static var clay: NSColor { SAClaudeAccent.accent }
+    /// Clay `#D97757`, fixed: error accents do not follow the accent colour.
+    static let errorClay = NSColor(srgbRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
 
     private static func mix(_ theme: SAClaudeThemeColours, _ ratio: CGFloat) -> NSColor {
         SAClaudeEditorChrome.derivedColour(text: theme.text, background: theme.background, ratio: ratio)
@@ -66,12 +69,12 @@ enum SAClaudeStatusChrome {
     static func typeText(theme: SAClaudeThemeColours) -> NSColor { mix(theme, 0.36) }
     static func hairline(theme: SAClaudeThemeColours) -> NSColor { mix(theme, 0.12) }
     static func errorText(theme: SAClaudeThemeColours) -> NSColor {
-        SAClaudeEditorChrome.derivedColour(text: theme.text, background: clay, ratio: 0.35)
+        SAClaudeEditorChrome.derivedColour(text: theme.text, background: errorClay, ratio: 0.35)
     }
     static func errorFill(theme: SAClaudeThemeColours) -> NSColor {
-        SAClaudeEditorChrome.derivedColour(text: clay, background: theme.background, ratio: 0.06)
+        SAClaudeEditorChrome.derivedColour(text: errorClay, background: theme.background, ratio: 0.06)
     }
-    static func statusDot(isError: Bool, theme: SAClaudeThemeColours) -> NSColor { isError ? clay : theme.quote }
+    static func statusDot(isError: Bool, theme: SAClaudeThemeColours) -> NSColor { isError ? errorClay : theme.quote }
     static func messageText(isError: Bool, theme: SAClaudeThemeColours) -> NSColor { isError ? errorText(theme: theme) : muted(theme: theme) }
 
     static func popupSurface(theme: SAClaudeThemeColours) -> NSColor {

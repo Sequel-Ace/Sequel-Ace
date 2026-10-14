@@ -38,7 +38,12 @@ import AppKit
     @objc static let textPrimary = dynamic("textPrimary", dark: 0xF0EFEC, light: 0x0B0B0B)
     @objc static let textSecondary = dynamic("textSecondary", dark: 0xC3C2B7, light: 0x52514E)
     @objc static let textMuted = dynamic("textMuted", dark: 0x898781, light: 0x7B7974)
-    @objc static let tintDatabase = dynamic("tintDatabase", dark: 0xD97757, light: 0xC6613F)
+    /// The database glyph tint: the accent on a dark appearance, the accent's fill on a light one.
+    @objc static var tintDatabase: NSColor {
+        NSColor(name: NSColor.Name("SAClaude.tintDatabase")) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? SAClaudeAccent.accent : SAClaudeAccent.fill
+        }
+    }
     @objc static let tintTable = dynamic("tintTable", dark: 0x6DA7EC, light: 0x2A78D6)
     @objc static let tintView = dynamic("tintView", dark: 0xA096EB, light: 0x7161E0)
     @objc static let tintProcedure = dynamic("tintProcedure", dark: 0xEC835A, light: 0xC25124)
