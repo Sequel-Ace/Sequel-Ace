@@ -136,6 +136,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 - (void)_updateRecordView;
+/** Whether a row can be added right now: to a table, with its columns shown. */
+- (BOOL)_rowsCanBeAdded;
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (NSInteger)_recordViewSelectedRow;
 - (NSTableColumn *)_recordViewColumnForFieldID:(NSInteger)fieldID;
@@ -4248,6 +4250,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
+ * Whether a row can be added right now: to a table, with its columns shown. The column filter
+ * can hide every column while the table's own column list is unchanged, and a row added then
+ * would be edited by column number into columns that are not there. Every place that sets the
+ * Add button asks this, so the button says the same thing wherever it was last set.
+ */
+- (BOOL)_rowsCanBeAdded
+{
+	return [tablesListInstance tableType] == SPTableTypeTable && [dataColumns count] && [tableContentView numberOfColumns];
+}
+
+/**
  * Enable all content interactive elements after an ongoing task.
  * Rows can only be added while the table's columns are shown; a reload stays available either way.
  */
@@ -4261,7 +4274,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return;
 
 	if ( ![[tableDataInstance statusValueForKey:@"Rows"] isNSNull] && selectedTable && [selectedTable length] && [tableDataInstance tableEncoding]) {
-		[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable) && [dataColumns count] && [tableContentView numberOfColumns]];
+		[addButton setEnabled:[self _rowsCanBeAdded]];
 		[self updatePaginationState];
 		[reloadButton setEnabled:YES];
 	}
@@ -4753,7 +4766,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	isFirstChangeInView = YES;
 
-	[addButton setEnabled:([tablesListInstance tableType] == SPTableTypeTable)];
+	[addButton setEnabled:[self _rowsCanBeAdded]];
 
 	// If we are editing a row, attempt to save that row - if saving failed, reselect the edit row.
 	if (isEditingRow && [tableContentView selectedRow] != currentlyEditingRow && ![self saveRowOnDeselect]) return;
@@ -5635,6 +5648,14 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 
 	[tableContentView reloadData];
 	[self _updateRecordView];
+
+	// The Add button follows the columns on show. A load that ended with none - the filter matched
+	// nothing - left it disabled, and the end of the next load is the only other place that asks;
+	// on a table with no rows to click, that is the next reload. So it is asked here too, unless a
+	// load is running, which disabled every button until it ends.
+	if (!isWorking) {
+		[addButton setEnabled:[self _rowsCanBeAdded]];
+	}
 }
 
 #pragma mark -
