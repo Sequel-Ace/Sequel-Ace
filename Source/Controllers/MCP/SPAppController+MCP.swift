@@ -647,9 +647,15 @@ extension SPAppController: SPMCPDataSource {
     private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows, offset: Int = 0, streamResult: Bool = false) -> [String: Any] {
         // queryString buffers the entire native result. Unmodified queries must
         // use mysql_use_result instead so pagination bounds retained memory.
-        let result: SPMySQLResult? = streamResult
-            ? conn.streamingQueryString(sql, useLowMemoryBlockingStreaming: true) as? SPMySQLResult
-            : conn.queryString(sql)
+        // The statement is the client's, not the application's: a SELECT can call a function that
+        // writes, so after a lost connection it is sent again only when its outcome is known, and
+        // after uncommitted work was lost with a session it is refused like a write.
+        var result: SPMySQLResult?
+        conn.runStatements(fromOutsideApplication: {
+            result = streamResult
+                ? conn.streamingQueryString(sql, useLowMemoryBlockingStreaming: true) as? SPMySQLResult
+                : conn.queryString(sql)
+        })
         // A streaming result owns the native connection lock. Drain it before
         // returning on every path, without KILL/reconnect or closing its handle.
         // This bounds memory, not server execution time or network transfer.
