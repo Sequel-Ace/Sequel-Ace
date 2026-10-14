@@ -619,3 +619,27 @@ final class SAConnectionCancellationTests: XCTestCase {
         return connection
     }
 }
+
+/// The note on how the session that replaced a lost one commits, from what the server started it with.
+final class SALostWorkSessionNoteTests: XCTestCase {
+    private func note(autocommitAtConnect: Bool) -> String {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        connection.setValue(autocommitAtConnect, forKey: "sessionAutocommitAtConnect")
+        return (connection.perform(NSSelectorFromString("_noteOnHowTheNewSessionCommits"))?.takeUnretainedValue() as? String) ?? ""
+    }
+
+    /// A session started with autocommit on commits each statement on its own.
+    func testASessionStartedWithAutocommitOnCommitsEachStatement() {
+        XCTAssertEqual(note(autocommitAtConnect: true), "The new connection commits each statement on its own.")
+    }
+
+    /// One started with autocommit off - a server default, or an init_connect - commits nothing
+    /// until told to; the note says so rather than the opposite, which would have the user leave
+    /// out the COMMIT their work needs.
+    func testASessionStartedWithAutocommitOffSaysSo() {
+        let note = note(autocommitAtConnect: false)
+        XCTAssertTrue(note.contains("autocommit off"), note)
+        XCTAssertFalse(note.contains("on its own"), note)
+    }
+}

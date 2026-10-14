@@ -140,6 +140,8 @@
 - (void)_closeSessionOfAbandonedQuery;
 /** Notes whether the session about to be dropped takes uncommitted work with it; the connection must be held. */
 - (void)_noteUncommittedWorkLostWithSession;
+/** How the session that replaced a lost one commits, for the report of work lost with the old one. */
+- (NSString *)_noteOnHowTheNewSessionCommits;
 /** Whether a statement is refused because a session before it was dropped with uncommitted work, using up that report; the connection must be held. */
 - (BOOL)_refusesStatementForLostUncommittedWork:(NSString *)query;
 - (id)_queryString:(NSString *)theQueryString
