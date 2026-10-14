@@ -236,7 +236,7 @@ extension SPCustomQuery {
 
         document.setQueryMode(Int(SPQueryMode.interfaceQueryMode.rawValue))
         NotificationCenter.default.post(name: NSNotification.Name("SMySQLQueryHasBeenPerformed"), object: document)
-        SANotificationCenter.shared.postNotification(title: "Query Finished", body: (errorText as? NSText)?.string)
+        SANotificationCenter.shared.postNotification(title: NSLocalizedString("Query Finished", comment: "Title of the notification posted when a query or script run finishes"), body: (errorText as? NSText)?.string)
         document.endTask()
     }
 

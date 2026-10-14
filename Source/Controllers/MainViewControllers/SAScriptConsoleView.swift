@@ -54,13 +54,15 @@ struct SAScriptConsoleView: View {
     }
 
     private func save() {
-        model.flush()
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
         panel.nameFieldStringValue = defaultSaveFileName
-        let output = model.text
         let completion: (NSApplication.ModalResponse) -> Void = { response in
             guard response == .OK, let url = panel.url else { return }
+            // Read the console when the user confirms, so rows that streamed
+            // in while the save sheet was open are included.
+            model.flush()
+            let output = model.text
             do {
                 try output.write(to: url, atomically: true, encoding: .utf8)
             } catch {
