@@ -85,6 +85,8 @@ import AppKit
     private var optionsStyler: SAClaudeExportOptionsStyler?
     /// Task 4: the custom filename editor, in a popover under Customise.
     private let filenamePopover: SAClaudeExportFilenamePopover
+    /// Task 5: the progress and errors sheets; nil when their outlets are missing (those sheets keep the generic look).
+    private var progressStyler: SAClaudeExportProgressStyler?
 
     private var palette: SAClaudeEditorChrome.Palette?
     private var themeText: NSColor?
@@ -106,6 +108,7 @@ import AppKit
         let styler = SAClaudeExportStyler(outlets: outlets)
         objc_setAssociatedObject(controller, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         styler.optionsStyler = SAClaudeExportOptionsStyler(controller: controller, tabView: outlets.optionsTabView)   // Task 3
+        styler.progressStyler = SAClaudeExportProgressStyler(controller: controller)   // Task 5
         styler.build()
     }
 
@@ -143,7 +146,7 @@ import AppKit
     // MARK: - Finding the outlets
 
     /// The controller's outlet `key` (an ivar or a property), or nil when it has none or it is nil / of another type.
-    private static func outlet<T>(_ controller: NSObject, _ key: String) -> T? {
+    static func outlet<T>(_ controller: NSObject, _ key: String) -> T? {
         // `value(forKey:)` raises for an unknown key: look first.
         guard class_getInstanceVariable(type(of: controller), key) != nil || controller.responds(to: NSSelectorFromString(key)) else { return nil }
         return controller.value(forKey: key) as? T
@@ -468,6 +471,7 @@ import AppKit
         for glyph in [folderGlyph, fileGlyph] { glyph.contentTintColor = muted }
         optionsStyler?.recolour(muted: muted, text: text)   // Task 3
         filenamePopover.recolour(in: o.window.effectiveAppearance)   // Task 4
+        progressStyler?.recolour(palette: palette)   // Task 5
         let switcherColours = SAClaudeConnectionTypeTabs.Colours(selectedFill: fill, selectedStroke: palette.hairline, hoverFill: palette.hover,
                                                                  text: text, mutedText: muted)
         formatSwitcher.colours = switcherColours
