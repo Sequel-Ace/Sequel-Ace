@@ -266,11 +266,17 @@ final class SAScriptRunner {
                                    serverVersion: Int,
                                    serverIsMariaDB: Bool,
                                    in summary: inout SAScriptRunSummary) {
-        let fullRange = NSRange(location: 0, length: (statement as NSString).length)
-        if Self.tableListChangeRegex.firstMatch(in: statement, range: fullRange) != nil {
+        // The regexes are anchored at the start, so a leading `--`, `#` or
+        // block comment (common in dumps) must be stripped before matching.
+        let classified = SPCustomQuerySQLClassifier.stripSQLComments(statement,
+                                                                     serverVersion: serverVersion,
+                                                                     serverIsMariaDB: serverIsMariaDB)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let fullRange = NSRange(location: 0, length: (classified as NSString).length)
+        if Self.tableListChangeRegex.firstMatch(in: classified, range: fullRange) != nil {
             summary.tableListNeedsReload = true
         }
-        if Self.databaseChangeRegex.firstMatch(in: statement, range: fullRange) != nil {
+        if Self.databaseChangeRegex.firstMatch(in: classified, range: fullRange) != nil {
             summary.databaseChanged = true
         }
         let updatedDatabase = SASQLDatabaseContext.databaseName(afterSuccessfulQuery: statement,

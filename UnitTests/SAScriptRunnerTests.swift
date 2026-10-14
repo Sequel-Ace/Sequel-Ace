@@ -274,6 +274,41 @@ final class SAScriptRunnerTests: XCTestCase {
         wait(for: [attempted], timeout: 0.1)
     }
 
+    // MARK: - Leading comments do not hide a statement's side effects
+
+    func testLeadingCommentsDoNotHideTableListChanges() {
+        for sql in ["-- note\nCREATE TABLE t2 (id INT)",
+                    "# note\nALTER TABLE t ADD c INT",
+                    "/* note */ DROP TABLE t"] {
+            let connection = FakeScriptConnection()
+            connection.outcomes[sql] = .ok(affectedRows: 0)
+            let (summary, _) = run([sql], on: connection)
+
+            XCTAssertEqual(summary.errorCount, 0, sql)
+            XCTAssertTrue(summary.tableListNeedsReload, sql)
+        }
+    }
+
+    func testLeadingCommentDoesNotHideUse() {
+        let sql = "-- note\nUSE other_db"
+        let connection = FakeScriptConnection()
+        connection.outcomes[sql] = .ok(affectedRows: 0)
+        let (summary, _) = run([sql], on: connection)
+
+        XCTAssertTrue(summary.databaseChanged)
+        XCTAssertEqual(summary.finalDatabase, "other_db")
+    }
+
+    func testCommentedSelectDoesNotReloadTables() {
+        let sql = "-- note\nSELECT 1"
+        let connection = FakeScriptConnection()
+        connection.outcomes[sql] = .ok(affectedRows: 0)
+        let (summary, _) = run([sql], on: connection)
+
+        XCTAssertFalse(summary.tableListNeedsReload)
+        XCTAssertFalse(summary.databaseChanged)
+    }
+
     // MARK: - Helpers
 
     private func occurrences(of needle: String, in haystack: String) -> Int {
