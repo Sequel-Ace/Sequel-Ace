@@ -125,6 +125,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/*警告：没有条目被修改*/\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "选择私钥 — — 不带.pub扩展名的文件。";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "创建数据库'%1$@'失败: %2$@";
 
@@ -4424,3 +4427,12 @@
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "当您被问及如何处理时，连接无法使用。回答这个问题，然后再试一次。";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "“%@”是一个公钥。";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "“%@”不是一个有效的客户端证书文件。";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "“%@”不是一个有效的私钥文件。";
