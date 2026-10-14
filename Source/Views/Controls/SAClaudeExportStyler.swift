@@ -58,6 +58,8 @@ import AppKit
         let customFilenameButton: NSButton
         let customFilenameLabelButton: NSButton
         let customFilenameView: NSView
+        let customFilenameTokenField: NSTokenField
+        let customFilenameTokenPool: NSTokenField
     }
 
     private let outlets: Outlets
@@ -81,6 +83,8 @@ import AppKit
 
     /// Task 3: the options card's rows; nil when an options outlet is missing (that card keeps the XIB layout).
     private var optionsStyler: SAClaudeExportOptionsStyler?
+    /// Task 4: the custom filename editor, in a popover under Customise.
+    private let filenamePopover: SAClaudeExportFilenamePopover
 
     private var palette: SAClaudeEditorChrome.Palette?
     private var themeText: NSColor?
@@ -170,6 +174,8 @@ import AppKit
               let customFilenameButton: NSButton = outlet(c, "exportCustomFilenameViewButton"),
               let customFilenameLabelButton: NSButton = outlet(c, "exportCustomFilenameViewLabelButton"),
               let customFilenameView: NSView = outlet(c, "exportCustomFilenameView"),
+              let customFilenameTokenField: NSTokenField = outlet(c, "exportCustomFilenameTokenField"),
+              let customFilenameTokenPool: NSTokenField = outlet(c, "exportCustomFilenameTokenPool"),
               !contentView.isFlipped, !exporterView.isFlipped else { return nil }
 
         // The XIB views without outlets.
@@ -194,13 +200,16 @@ import AppKit
                        advancedOptionsView: advancedOptionsView, advancedOptionsLabelButton: advancedOptionsLabelButton,
                        lowMemoryButton: lowMemoryButton, compressionPopUp: compressionPopUp, tableListButtonBar: tableListButtonBar,
                        formatInfoText: formatInfoText, customFilenameButton: customFilenameButton,
-                       customFilenameLabelButton: customFilenameLabelButton, customFilenameView: customFilenameView)
+                       customFilenameLabelButton: customFilenameLabelButton, customFilenameView: customFilenameView,
+                       customFilenameTokenField: customFilenameTokenField, customFilenameTokenPool: customFilenameTokenPool)
     }
 
     // MARK: - Building
 
     private init(outlets: Outlets) {
         self.outlets = outlets
+        filenamePopover = SAClaudeExportFilenamePopover(customView: outlets.customFilenameView, tokenField: outlets.customFilenameTokenField,
+                                                        tokenPool: outlets.customFilenameTokenPool)
         super.init()
     }
 
@@ -419,10 +428,13 @@ import AppKit
     }
 
     /// Task 4: toggles the custom filename popover; true when handled.
-    private func toggleFilenameEditor() -> Bool { false }
+    private func toggleFilenameEditor() -> Bool {
+        filenamePopover.toggle(relativeTo: customiseButton)
+        return true
+    }
 
     /// Task 4: closes the custom filename popover (format or source changed).
-    private func closeFilenameEditor() {}
+    private func closeFilenameEditor() { filenamePopover.close() }
 
     @objc private func customise(_ sender: Any?) {
         _ = toggleFilenameEditor()
@@ -455,6 +467,7 @@ import AppKit
         for label in [leftTitle, optionsTitle, saveTitle, compressionLabel, o.formatInfoText] { label.textColor = muted }
         for glyph in [folderGlyph, fileGlyph] { glyph.contentTintColor = muted }
         optionsStyler?.recolour(muted: muted, text: text)   // Task 3
+        filenamePopover.recolour(in: o.window.effectiveAppearance)   // Task 4
         let switcherColours = SAClaudeConnectionTypeTabs.Colours(selectedFill: fill, selectedStroke: palette.hairline, hoverFill: palette.hover,
                                                                  text: text, mutedText: muted)
         formatSwitcher.colours = switcherColours
