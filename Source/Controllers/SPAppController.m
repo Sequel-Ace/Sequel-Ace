@@ -337,14 +337,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if ([MAMP_SPFVersion isEqualToString:@"1"]) {
         NSDictionary *spfStructure = [userInfo objectForKey:@"spfData"];
         if (spfStructure) {
-            // Another app may open a connection, but not connect it through an SSH agent by itself.
-            if (![SASSHAgentRelay mayAutoConnectWithConnectionDetails:[spfStructure objectForKey:@"connection"]]) {
-                NSMutableDictionary *withoutAutoConnect = [spfStructure mutableCopy];
-                [withoutAutoConnect removeObjectForKey:@"auto_connect"];
-                spfStructure = withoutAutoConnect;
-            }
+            // Another app may open a connection, but not connect it through an SSH agent
+            // by itself; that is decided on the connection as set up, not on what was sent.
+            BOOL wantsAutoConnect = [[spfStructure objectForKey:@"auto_connect"] respondsToSelector:@selector(boolValue)]
+                                 && [[spfStructure objectForKey:@"auto_connect"] boolValue];
+            NSMutableDictionary *withoutAutoConnect = [spfStructure mutableCopy];
+            [withoutAutoConnect removeObjectForKey:@"auto_connect"];
             SPWindowController *windowController = [self.tabManager newWindowForWindow];
-            [windowController.databaseDocument setState:spfStructure];
+            [windowController.databaseDocument setState:withoutAutoConnect];
+            if (wantsAutoConnect) [windowController.databaseDocument connectUnlessUsingSSHAgent];
         }
     }
 }

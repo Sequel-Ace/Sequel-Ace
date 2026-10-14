@@ -3887,6 +3887,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
+ * Connects, unless the connection now set up is an SSH tunnel that would use
+ * an SSH agent. For state from outside the app — session files, other apps —
+ * which can name any SSH host: that never connects through the user's agent
+ * without a click. Checked after the state is applied, so whatever the file
+ * left out (type, agent choice) is judged by what the form really holds.
+ */
+- (void)connectUnlessUsingSSHAgent
+{
+    if ([connectionController type] == SPSSHTunnelConnection
+        && [SASSHAgentRelay isAgentInEffectForConnectionSource:[connectionController sshAgentSource] ?: @""]) {
+        return;
+    }
+    [self connect];
+}
+
+/**
  * Initialise the document with the connection file at the supplied path.
  * Returns whether the document was initialised successfully.
  */
@@ -4061,15 +4077,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [spfDocData setObject:@NO forKey:@"auto_connect"];
 
-    // A session file can come from anywhere: it may not connect through an SSH agent by itself.
-    if([spf objectForKey:@"auto_connect"] && [[spf valueForKey:@"auto_connect"] boolValue]
-       && [SASSHAgentRelay mayAutoConnectWithConnectionDetails:[data objectForKey:@"connection"]]) {
-        [spfDocData setObject:@YES forKey:@"auto_connect"];
-        [data setObject:@YES forKey:@"auto_connect"];
-    }
+    BOOL fileWantsAutoConnect = ([spf objectForKey:@"auto_connect"] && [[spf valueForKey:@"auto_connect"] boolValue])
+                             || ([data objectForKey:@"auto_connect"] && [[data valueForKey:@"auto_connect"] boolValue]);
+    if (fileWantsAutoConnect) [spfDocData setObject:@YES forKey:@"auto_connect"];
 
-    // Set the state dictionary, triggering an autoconnect if appropriate
+    // A session file can come from anywhere, so it never triggers the connection itself:
+    // the decision is made below on the connection as actually set up.
+    [data removeObjectForKey:@"auto_connect"];
     [self setState:data];
+
+    if (fileWantsAutoConnect) [self connectUnlessUsingSSHAgent];
 
     return YES;
 }

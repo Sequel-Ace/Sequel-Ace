@@ -209,17 +209,6 @@ import Foundation
                                           defaultSource: defaultSource, defaultCustomPath: "").kind != .off
     }
 
-    /// Whether connection details that came from outside the app — a session
-    /// file, or another app — may connect by themselves. Not through an SSH
-    /// agent: like a connection string, such a file can name any SSH host,
-    /// and the agent would offer the user's keys to it. The connection still
-    /// opens; the user clicks Connect.
-    @objc(mayAutoConnectWithConnectionDetails:)
-    static func mayAutoConnect(connectionDetails: NSDictionary?) -> Bool {
-        guard (connectionDetails?["type"] as? String) == "SPSSHTunnelConnection" else { return true }
-        return !isAgentInEffect(connectionSource: connectionDetails?["sshAgentSource"] as? String ?? "")
-    }
-
     // MARK: - Relay lifecycle
 
     /// The 8 hex digit name of the relay socket. Includes the process id so
