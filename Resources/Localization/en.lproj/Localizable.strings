@@ -5148,3 +5148,15 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* import field mapping sheet: label before the import method switcher (INSERT · REPLACE · UPDATE) */
+"ClaudeImportMethod" = "Method";
+
+/* import field mapping sheet: label before the pop-up choosing how CSV fields are aligned to the table's columns */
+"ClaudeImportAlignBy" = "Align by";
+
+/* import field mapping sheet: accessibility name of the INSERT / REPLACE / UPDATE switcher */
+"ClaudeImportMethodSwitcher" = "Import method";
+
+/* import field mapping sheet: title of the group with the import method's options, e.g. "INSERT options" */
+"ClaudeImportMethodOptions" = "%@ options";

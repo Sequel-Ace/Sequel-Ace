@@ -4,8 +4,8 @@
 //
 //  The Claude CSV field mapping sheet: a header ("Import CSV", the source file in a pill frame, "Into" and the
 //  table-target pill with the "+ New table" ghost, or the new-table name row), a "Field mapping" card (the preview
-//  row navigator and the mapping table: pill-drawn source values, glyph operators, 24pt rows), an "Options" card and
-//  a footer (the "Go back" ghost, Cancel, Import). The XIB's own controls are restyled and placed from
+//  row navigator and the mapping table: pill-drawn source values, glyph operators, 24pt rows), an "Options" card (its
+//  rows are `SAClaudeImportOptionsStyler`'s) and a footer (the "Go back" ghost, Cancel, Import). The XIB's own controls are restyled and placed from
 //  `SAClaudeImportMapperLayout`; the controller keeps every action, shortcut, menu and the visibility of the
 //  new-table controls. The generic sheet skin keeps styling the controls; this styler owns the layout, the cards and
 //  the bespoke pieces. Attached once per `SPFieldMapperController` from its `awakeFromNib`, updated from its method,
@@ -55,11 +55,6 @@ import AppKit
         let previousRowButton: NSButton
         let nextRowButton: NSButton
         let recordCountLabel: NSTextField
-        let headerSwitch: NSButton
-        let methodLabel: NSTextField
-        let methodPopUp: NSPopUpButton
-        let alignLabel: NSTextField
-        let alignPopUp: NSPopUpButton
         let advancedButton: NSButton
         /// An NSButton in the XIB, typed NSTextField in the header.
         let advancedLabel: NSView
@@ -82,11 +77,6 @@ import AppKit
                   let previousRowButton: NSButton = outlet("rowDownButton"),
                   let nextRowButton: NSButton = outlet("rowUpButton"),
                   let recordCountLabel: NSTextField = outlet("recordCountLabel"),
-                  let headerSwitch: NSButton = outlet("importFieldNamesHeaderSwitch"),
-                  let methodLabel: NSTextField = outlet("importMethodLabel"),
-                  let methodPopUp: NSPopUpButton = outlet("importMethodPopup"),
-                  let alignLabel: NSTextField = outlet("alignByPopupLabel"),
-                  let alignPopUp: NSPopUpButton = outlet("alignByPopup"),
                   let advancedButton: NSButton = outlet("advancedButton"),
                   let advancedLabel: NSView = outlet("advancedLabel"),
                   let advancedBox: NSBox = outlet("advancedBox"),
@@ -96,8 +86,7 @@ import AppKit
 
             // The placed views are the content view's own (the layout's frames are in its coordinates).
             let placed: [NSView] = [pathControl, tableTargetPopUp, newTableNameLabel, newTableNameField, newTableInfoButton, newTableButton,
-                                    tableScrollView, previousRowButton, nextRowButton, recordCountLabel, headerSwitch, methodLabel,
-                                    methodPopUp, alignLabel, alignPopUp, goBackButton, importButton]
+                                    tableScrollView, previousRowButton, nextRowButton, recordCountLabel, goBackButton, importButton]
             guard placed.allSatisfy({ $0.superview === contentView }) else { return nil }
 
             // The XIB views without outlets: the header box (with its title) and Cancel.
@@ -125,11 +114,6 @@ import AppKit
             self.previousRowButton = previousRowButton
             self.nextRowButton = nextRowButton
             self.recordCountLabel = recordCountLabel
-            self.headerSwitch = headerSwitch
-            self.methodLabel = methodLabel
-            self.methodPopUp = methodPopUp
-            self.alignLabel = alignLabel
-            self.alignPopUp = alignPopUp
             self.advancedButton = advancedButton
             self.advancedLabel = advancedLabel
             self.advancedBox = advancedBox
@@ -140,6 +124,8 @@ import AppKit
     }
 
     private let outlets: Outlets
+    /// The Options card (and the Global values sheet's polish).
+    private let options: SAClaudeImportOptionsStyler
 
     // Added views.
     private let titleLabel = NSTextField(labelWithString: NSLocalizedString("ClaudeImportMapperTitle", value: "Import CSV", comment: "import field mapping sheet: title in the header"))
@@ -172,8 +158,10 @@ import AppKit
     /// Restyles and lays out the field mapping sheet of `controller` (an `SPFieldMapperController`), once. Does
     /// nothing when an expected outlet or XIB view is missing.
     @objc(attachToController:) static func attach(to controller: NSObject) {
-        guard styler(for: controller) == nil, let outlets = Outlets(controller) else { return }
-        let styler = SAClaudeImportMapperStyler(outlets: outlets)
+        guard styler(for: controller) == nil, let outlets = Outlets(controller),
+              let options = SAClaudeImportOptionsStyler(controller: controller, container: outlets.contentView,
+                                                        newTableNameField: outlets.newTableNameField) else { return }
+        let styler = SAClaudeImportMapperStyler(outlets: outlets, options: options)
         objc_setAssociatedObject(controller, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         styler.build()
     }
@@ -199,8 +187,9 @@ import AppKit
 
     // MARK: - Building
 
-    private init(outlets: Outlets) {
+    private init(outlets: Outlets, options: SAClaudeImportOptionsStyler) {
         self.outlets = outlets
+        self.options = options
         super.init()
     }
 
@@ -365,6 +354,7 @@ import AppKit
         // The controller never shows them again while attached (`openAdvancedSheet:` returns early); belt and braces.
         for view: NSView in [o.advancedButton, o.advancedLabel, o.advancedBox] where !view.isHidden { view.isHidden = true }
         styleGhostTitles()
+        options.update()
         layOut()
         chainKeyViews()
     }
@@ -374,13 +364,15 @@ import AppKit
     /// Re-derives the colours when the editor theme changed (always, when `force`) and recolours the added views.
     private func refresh(force: Bool) {
         let o = outlets
-        var resolved: (SAClaudeEditorChrome.Palette, NSColor, NSColor)?
+        var resolved: (SAClaudeEditorChrome.Palette, NSColor, NSColor, NSColor)?
         o.window.effectiveAppearance.performAsCurrentDrawingAppearance {
             let palette = SAClaudeEditorChrome.palette(from: .standard)
             let theme = SAClaudeThemeColours.from(defaults: .standard)
-            resolved = (palette, theme.text, SAClaudeFilterChrome.cardFill(text: theme.text, background: SAClaudeStatusChrome.popupSurface(theme: theme)))
+            let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
+            resolved = (palette, theme.text, SAClaudeFilterChrome.cardFill(text: theme.text, background: surface),
+                        SAClaudeFilterChrome.fieldFill(text: theme.text, background: surface))
         }
-        guard let (palette, text, fill) = resolved else { return }
+        guard let (palette, text, fill, fieldFill) = resolved else { return }
         guard force || palette != self.palette || text != themeText || fill != cardFill else { return }
         self.palette = palette
         themeText = text
@@ -403,6 +395,7 @@ import AppKit
             SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
         }
         (o.tableView.tableColumn(withIdentifier: Self.targetFieldColumn)?.dataCell as? NSTextFieldCell)?.textColor = text
+        options.recolour(palette: palette, text: text, cardFill: fill, fieldFill: fieldFill)
         // The pill and operator cells read the palette at draw time.
         o.tableView.needsDisplay = true
         styleGhostTitles()
@@ -458,7 +451,7 @@ import AppKit
         // Options card.
         Self.place(rightCard, f.rightCard)
         Self.placeLabel(rightTitle, f.rightTitle)
-        layOutOptions(in: f.options)
+        options.layOut(in: f.options)
 
         // Footer.
         Self.place(o.goBackButton, f.goBack)
@@ -472,28 +465,6 @@ import AppKit
         let intrinsic = control.intrinsicContentSize.width
         let width = intrinsic > 0 ? intrinsic : (control.cell?.cellSize.width ?? 0)
         return ceil(width) + 2 * Self.pathInset.width
-    }
-
-    /// Task 5 seam: lays out the Options card's content in `rect` (the card below its title). Until Task 5 replaces it,
-    /// the XIB's own option controls as plain rows: the header-row switch, then Method and Align by with their pop-ups.
-    private func layOutOptions(in rect: NSRect) {
-        let o = outlets
-        let rowHeight = Layout.rowHeight, gap: CGFloat = 8, labelWidth: CGFloat = 130, popUpWidth: CGFloat = 200
-        var top = rect.maxY
-        Self.place(o.headerSwitch, NSRect(x: rect.minX, y: top - 20, width: rect.width, height: 20))
-        top -= 20 + gap
-        for (label, popUp) in [(o.methodLabel, o.methodPopUp), (o.alignLabel, o.alignPopUp)] {
-            let y = top - rowHeight
-            Self.placeLabel(label, NSRect(x: rect.minX, y: y, width: labelWidth, height: rowHeight))
-            Self.place(popUp, NSRect(x: rect.minX + labelWidth + gap, y: y, width: max(0, min(popUpWidth, rect.width - labelWidth - gap)), height: rowHeight))
-            top = y - gap
-        }
-    }
-
-    /// Task 5 seam: the Options card's controls, top to bottom, for the key view loop.
-    private var optionsKeyViews: [NSView] {
-        let o = outlets
-        return [o.headerSwitch, o.methodPopUp, o.alignPopUp]
     }
 
     private static func ghostWidth(_ button: NSButton) -> CGFloat {
@@ -522,7 +493,7 @@ import AppKit
     private func chainKeyViews() {
         let o = outlets
         let first: NSView = o.tableTargetPopUp.isHidden ? o.newTableNameField : o.tableTargetPopUp
-        let chain: [NSView] = [first, o.tableView] + optionsKeyViews + [o.goBackButton, o.cancelButton, o.importButton]
+        let chain: [NSView] = [first, o.tableView] + options.keyViews + [o.goBackButton, o.cancelButton, o.importButton]
         var pairs = Array(zip(chain, chain.dropFirst()))
         if let head = chain.first, let last = chain.last { pairs.append((last, head)) }
         for (view, next) in pairs where view.nextKeyView !== next || next.previousKeyView !== view {

@@ -19,7 +19,7 @@ enum SAClaudeImportStyler {
     /// Claims `window` when it belongs to an importer: the importer's progress and errors sheets are styled (once).
     /// Called by `SAClaudeSheetStyler.consider` after the generic skin, each time a window is considered.
     static func claim(_ window: NSWindow) {
-        // Task 5: the field mapper's Global values sheet (its controls target the mapper, not the importer).
+        // The field mapper's Global values sheet is not an importer's: `SAClaudeImportOptionsStyler` polishes it at attach.
         guard let importer = importer(for: window) else { return }
         SAClaudeImportSheets.attach(to: importer)
         // The options strip: the open panel's accessory, or inside the Import from Clipboard sheet.
