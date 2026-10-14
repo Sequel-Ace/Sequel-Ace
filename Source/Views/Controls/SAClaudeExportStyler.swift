@@ -79,6 +79,9 @@ import AppKit
     private lazy var customiseButton = NSButton(title: NSLocalizedString("ClaudeExportCustomise", value: "Customise", comment: "export dialog: button that opens the custom filename editor"),
                                                 target: self, action: #selector(customise(_:)))
 
+    /// Task 3: the options card's rows; nil when an options outlet is missing (that card keeps the XIB layout).
+    private var optionsStyler: SAClaudeExportOptionsStyler?
+
     private var palette: SAClaudeEditorChrome.Palette?
     private var themeText: NSColor?
     private var cardFill: NSColor?
@@ -98,6 +101,7 @@ import AppKit
         guard styler(for: controller) == nil, let outlets = findOutlets(in: controller) else { return }
         let styler = SAClaudeExportStyler(outlets: outlets)
         objc_setAssociatedObject(controller, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        styler.optionsStyler = SAClaudeExportOptionsStyler(controller: controller, tabView: outlets.optionsTabView)   // Task 3
         styler.build()
     }
 
@@ -408,6 +412,7 @@ import AppKit
 
         closeFilenameEditor()
         styleGhostTitles()
+        optionsStyler?.updateLabelStates()   // Task 3
         layOut()
         o.tableList.sizeToFit()
         chainKeyViews()
@@ -449,6 +454,7 @@ import AppKit
         filenameLabel.textColor = text
         for label in [leftTitle, optionsTitle, saveTitle, compressionLabel, o.formatInfoText] { label.textColor = muted }
         for glyph in [folderGlyph, fileGlyph] { glyph.contentTintColor = muted }
+        optionsStyler?.recolour(muted: muted, text: text)   // Task 3
         let switcherColours = SAClaudeConnectionTypeTabs.Colours(selectedFill: fill, selectedStroke: palette.hairline, hoverFill: palette.hover,
                                                                  text: text, mutedText: muted)
         formatSwitcher.colours = switcherColours
@@ -532,10 +538,10 @@ import AppKit
     }
 
     /// Task 3: places the selected options item's controls in the options card.
-    private func layOutOptions() {}
+    private func layOutOptions() { optionsStyler?.layOut() }
 
     /// Task 3: the options card's controls, top to bottom, for the key view loop.
-    private var optionsKeyViews: [NSView] { [] }
+    private var optionsKeyViews: [NSView] { optionsStyler?.keyViews ?? [] }
 
     private static func ghostWidth(_ button: NSButton) -> CGFloat {
         ceil((button.cell?.cellSize.width ?? 0) + ghostButtonPadding)

@@ -5040,3 +5040,36 @@
 
 /* export dialog: button that unmarks every table in the list */
 "ClaudeExportMarkNone" = "None";
+
+/* export dialog options: group title, what the export includes (SQL, XML) */
+"ClaudeExportOptInclude" = "Include";
+
+/* export dialog options: SQL group title, how the output is written */
+"ClaudeExportOptOutput" = "Output";
+
+/* export dialog options: SQL group title, how INSERT statements are split */
+"ClaudeExportOptInsert" = "INSERT";
+
+/* export dialog options: SQL row label before the number and unit (KiB of data / rows) after which a new INSERT statement starts */
+"ClaudeExportOptInsertEvery" = "New statement every";
+
+/* export dialog options: CSV group title, the field separator, enclosing and escape characters */
+"ClaudeExportOptFields" = "Fields";
+
+/* export dialog options: CSV row label, the character that terminates fields or lines */
+"ClaudeExportOptTerminate" = "Terminate";
+
+/* export dialog options: CSV row label, the character that encloses fields */
+"ClaudeExportOptWrap" = "Wrap";
+
+/* export dialog options: CSV row label, the character that escapes special characters */
+"ClaudeExportOptEscape" = "Escape";
+
+/* export dialog options: CSV group title, the line terminator */
+"ClaudeExportOptLines" = "Lines";
+
+/* export dialog options: group title, the text written for NULL values (CSV, XML) */
+"ClaudeExportOptNullValues" = "NULL values";
+
+/* export dialog options: XML row label before the schema pop-up (MySQL / Plain schema) */
+"ClaudeExportOptFormat" = "Format";
