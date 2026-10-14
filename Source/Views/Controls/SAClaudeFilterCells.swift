@@ -205,7 +205,7 @@ private enum FilterCellDrawing {
     }
 
     /// The accent pill and its `onAccent` title, in `pill`.
-    static func drawAccent(_ cell: NSButtonCell, in pill: NSRect) {
+    static func drawAccent(_ cell: NSButtonCell, in pill: NSRect, font: NSFont = NSFont.systemFont(ofSize: 12, weight: .medium)) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
         if !cell.isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
@@ -213,7 +213,6 @@ private enum FilterCellDrawing {
         (cell.isHighlighted ? SAClaudeEditorChrome.runFillPressed : SAClaudeEditorChrome.runFill).setFill()
         FilterCellDrawing.roundedPath(pill, radius: FilterCellDrawing.cornerRadius).fill()
 
-        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
         FilterCellDrawing.drawTitle(cell.title, in: pill.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: SAClaudeAccent.onAccent, font: font, alignment: .center)
     }
 }
@@ -234,25 +233,73 @@ private enum FilterCellDrawing {
 @objc(SAClaudeSecondaryButtonCell) final class SAClaudeSecondaryButtonCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        Self.drawSecondary(self, in: cellFrame, font: NSFont.systemFont(ofSize: 12, weight: .medium), hovered: false)
+    }
+
+    /// The outline, the pressed (or `hovered`) fill and the theme-coloured title, in `rect`.
+    static func drawSecondary(_ cell: NSButtonCell, in rect: NSRect, font: NSFont, hovered: Bool) {
         let palette = SAClaudeFilterBarStyler.currentPalette
         let themeText = SAClaudeFilterBarStyler.currentThemeText
 
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
-        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
+        if !cell.isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
 
-        let path = FilterCellDrawing.roundedPath(cellFrame.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
-        if isHighlighted {
+        let path = FilterCellDrawing.roundedPath(rect.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
+        if cell.isHighlighted {
             SAClaudeEditorChrome.derivedColour(text: themeText, background: palette.hover, ratio: 0.08).setFill()
+            path.fill()
+        } else if hovered && cell.isEnabled {
+            palette.hover.setFill()
             path.fill()
         }
         path.lineWidth = 1
         SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background).setStroke()
         path.stroke()
 
-        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
-        FilterCellDrawing.drawTitle(title, in: cellFrame.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: themeText,
+        FilterCellDrawing.drawTitle(cell.title, in: rect.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: themeText,
                                     font: font, alignment: .center)
+    }
+}
+
+// MARK: - Sheet buttons
+
+/// Where a sheet button draws inside whatever frame the XIB gave it, and in which font.
+private enum SheetButtonDrawing {
+    static func rect(_ cell: NSButtonCell, in cellFrame: NSRect) -> NSRect {
+        SAClaudeSheetButtonGeometry.buttonRect(in: cellFrame, controlSize: cell.controlSize)
+    }
+
+    /// The cell's own point size (13 for regular buttons, 11 for small ones).
+    static func font(_ cell: NSButtonCell, weight: NSFont.Weight) -> NSFont {
+        NSFont.systemFont(ofSize: cell.font?.pointSize ?? NSFont.systemFontSize, weight: weight)
+    }
+
+    /// Whether the mouse is over `rect` of `controlView` (an `SAClaudeSheetHoverTracker` redraws the button on enter / exit).
+    static func isHovered(_ rect: NSRect, in controlView: NSView) -> Bool {
+        guard let window = controlView.window, window.isVisible else { return false }
+        return rect.contains(controlView.convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+}
+
+/// A sheet's or alert's primary button: the accent pill with an `onAccent` medium title in the button's own
+/// font size, drawn at a sensible height centred in the XIB frame (`SAClaudeSheetButtonGeometry`).
+@objc(SAClaudeSheetPrimaryButtonCell) final class SAClaudeSheetPrimaryButtonCell: NSButtonCell {
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        SAClaudeAccentButtonCell.drawAccent(self, in: SheetButtonDrawing.rect(self, in: cellFrame),
+                                            font: SheetButtonDrawing.font(self, weight: .medium))
+    }
+}
+
+/// A sheet's or alert's secondary button: the bordered secondary look, drawn like the primary one inside the
+/// XIB frame, with the hover fill inside its outline.
+@objc(SAClaudeSheetSecondaryButtonCell) final class SAClaudeSheetSecondaryButtonCell: NSButtonCell {
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let rect = SheetButtonDrawing.rect(self, in: cellFrame)
+        SAClaudeSecondaryButtonCell.drawSecondary(self, in: rect, font: SheetButtonDrawing.font(self, weight: .regular),
+                                                  hovered: SheetButtonDrawing.isHovered(rect, in: controlView))
     }
 }
 
@@ -275,6 +322,7 @@ enum SAClaudeFilterCells {
         cls == SAClaudePillPopUpButtonCell.self || cls == SAClaudeCheckboxCell.self || cls == SAClaudeRadioCell.self
             || cls == SAClaudeAccentButtonCell.self
             || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeSecondaryButtonCell.self
+            || cls == SAClaudeSheetPrimaryButtonCell.self || cls == SAClaudeSheetSecondaryButtonCell.self
             || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
             || NSStringFromClass(cls).hasPrefix(derivedPrefix)
     }
@@ -307,10 +355,21 @@ enum SAClaudeFilterCells {
     private static let drawSelector = #selector(NSCell.draw(withFrame:in:))
     private static let updateLayerSelector = #selector(getter: NSView.wantsUpdateLayer)
 
-    /// The control class to swap `button` (exactly an NSButton) to.
+    /// The prefix of the private classes NSAlert builds its buttons (and their cells) with.
+    private static let alertButtonClassPrefix = "_NSAlert"
+
+    /// Whether `cls` is one of NSAlert's private button or button-cell classes.
+    private static func isAlertButtonClass(_ cls: AnyClass) -> Bool {
+        NSStringFromClass(cls).hasPrefix(alertButtonClassPrefix)
+    }
+
+    /// The control class to swap `button` (exactly an NSButton, or one of NSAlert's private buttons) to.
     private static func hostClass(for button: NSButton) -> AnyClass? {
         let cls: AnyClass = type(of: button)
         if cls == NSButton.self { return SAClaudeFilterButton.self }
+        if isAlertButtonClass(cls) {
+            return derivedClass(of: cls, donor: SAClaudeFilterButton.self, selectors: [updateLayerSelector])
+        }
         return nil
     }
 
@@ -380,13 +439,49 @@ enum SAClaudeFilterCells {
     }
 
     /// Draws `button` with `cellClass` (`SAClaudeCheckboxCell`, `SAClaudeRadioCell` or one of the accent cells) in place of its
-    /// own cell. Only an exact NSButton with an exact NSButtonCell is swapped.
+    /// own cell. Only an exact NSButton with an exact NSButtonCell is swapped, or one of NSAlert's private
+    /// buttons, whose cell becomes a runtime subclass of its own class drawing like `cellClass`.
     @discardableResult
     static func install(_ cellClass: AnyClass, on button: NSButton) -> Bool {
         guard let cell = button.cell as? NSButtonCell else { return false }
         if hasInstalledClass(cell) { return installCellDrawing(on: button) }
-        guard type(of: cell) == NSButtonCell.self, installCellDrawing(on: button) else { return false }
-        object_setClass(cell, cellClass)
+        let currentCellClass: AnyClass = type(of: cell)
+        let newCellClass: AnyClass?
+        if currentCellClass == NSButtonCell.self {
+            newCellClass = cellClass
+        } else if isAlertButtonClass(currentCellClass) {
+            newCellClass = derivedClass(of: currentCellClass, donor: cellClass, selectors: [drawSelector])
+        } else {
+            newCellClass = nil
+        }
+        guard let newCellClass, installCellDrawing(on: button) else { return false }
+        object_setClass(cell, newCellClass)
+        button.needsDisplay = true
+        return true
+    }
+
+    /// Switches an installed sheet button between the primary and secondary looks (a button whose default-ness
+    /// changed). Returns false when the cell is not one of the sheet button cells or a subclass derived from them.
+    @discardableResult
+    static func switchSheetButton(_ button: NSButton, toPrimary primary: Bool) -> Bool {
+        guard let cell = button.cell as? NSButtonCell else { return false }
+        let wanted: AnyClass = primary ? SAClaudeSheetPrimaryButtonCell.self : SAClaudeSheetSecondaryButtonCell.self
+        let other: AnyClass = primary ? SAClaudeSheetSecondaryButtonCell.self : SAClaudeSheetPrimaryButtonCell.self
+        let current: AnyClass = type(of: cell)
+        if current == wanted { return true }
+        if current == other {
+            object_setClass(cell, wanted)
+            button.needsDisplay = true
+            return true
+        }
+        // A derived alert cell: re-derive from its AppKit base with the other donor.
+        let name = NSStringFromClass(current)
+        let otherMarker = derivedPrefix + NSStringFromClass(other) + "_"
+        let wantedMarker = derivedPrefix + NSStringFromClass(wanted) + "_"
+        if name.hasPrefix(wantedMarker) { return true }
+        guard name.hasPrefix(otherMarker), let base = class_getSuperclass(current),
+              let derived = derivedClass(of: base, donor: wanted, selectors: [drawSelector]) else { return false }
+        object_setClass(cell, derived)
         button.needsDisplay = true
         return true
     }

@@ -466,8 +466,9 @@ final class SAClaudeConsoleToolbarView: NSView {
 /// The filter field's cell. Borderless, NSSearchFieldCell draws its text and places the field editor at the
 /// left edge, under the magnifier (it ignores its own searchTextRect); bezeled, it is drawn by a system view
 /// with its own fill. So the borderless cell lays itself out here: the magnifier and the cancel button where
-/// NSSearchFieldCell puts (and hit-tests) them, the text and the field editor between them.
-@objc(SAClaudeSearchFieldCell) final class SAClaudeSearchFieldCell: NSSearchFieldCell {
+/// NSSearchFieldCell puts (and hit-tests) them, the text and the field editor between them. Not final: the sheet
+/// styler's `SAClaudeSheetSearchFieldCell` centres the text in a taller field.
+@objc(SAClaudeSearchFieldCell) class SAClaudeSearchFieldCell: NSSearchFieldCell {
 
     /// The field editor's line fragment padding: the cell's own text drawing matches it.
     private static let textPadding: CGFloat = 2

@@ -77,3 +77,90 @@ enum SAClaudeSheetRules {
         return bezel == .push || bezel == .flexiblePush
     }
 }
+
+/// Where a restyled push button draws inside the frame its XIB gave it. Classic XIB push buttons have frames
+/// taller than the bezel they draw (32pt regular, 28pt small), with the bezel's side margins inside the frame;
+/// code-built and newer ones are as tall as they draw. The Claude button is drawn at most `maximumHeight` tall,
+/// centred, and a classic frame keeps its side margins so neighbouring buttons don't touch.
+enum SAClaudeSheetButtonGeometry {
+
+    struct Metrics: Equatable {
+        /// The tallest the drawn button gets.
+        let maximumHeight: CGFloat
+        /// A frame at least this tall is a classic one, with `classicSideMargin` on each side.
+        let classicFrameHeight: CGFloat
+        let classicSideMargin: CGFloat
+    }
+
+    static func metrics(for controlSize: NSControl.ControlSize) -> Metrics {
+        switch controlSize {
+        case .small: return Metrics(maximumHeight: 22, classicFrameHeight: 26, classicSideMargin: 5)
+        case .mini: return Metrics(maximumHeight: 18, classicFrameHeight: 22, classicSideMargin: 1)
+        default: return Metrics(maximumHeight: 28, classicFrameHeight: 30, classicSideMargin: 6)
+        }
+    }
+
+    static func buttonRect(in frame: NSRect, controlSize: NSControl.ControlSize) -> NSRect {
+        let metrics = metrics(for: controlSize)
+        let height = min(frame.height, metrics.maximumHeight)
+        let side = frame.height >= metrics.classicFrameHeight ? metrics.classicSideMargin : 0
+        let width = max(0, frame.width - side * 2)
+        return NSRect(x: frame.minX + side, y: frame.minY + ((frame.height - height) / 2).rounded(.down), width: width, height: height)
+    }
+}
+
+/// Which windows the sheet styler restyles, decided from facts about the window (pure, so it is tested).
+enum SAClaudeSheetTargeting {
+
+    /// Owners (window controller or delegate) of the auxiliary windows that are restyled even when they are not sheets.
+    static let auxiliaryOwnerClasses: Set<String> = [
+        "SPPreferenceController",          // Preferences
+        "SPProcessListController",         // Process list
+        "SPServerVariablesController",     // Server variables
+        "SPQueryFavoriteManager",          // Query favourites manager
+        "SPContentFilterManager",          // Content filter manager
+        "SPNavigatorController",           // Navigator
+        "SPBundleEditorController",        // Bundle editor
+        "SPFieldEditorController",         // Field editor sheet
+        "SPExportController",              // Export
+        "SPDataImport",                    // Import (accessory and options)
+        "SPFieldMapperController",         // Data migration (import field mapping)
+        "SPUserManager",                   // User manager
+        "SPGotoDatabaseController",        // Go to database
+        "SPSSHTunnel",                     // SSH host question
+    ]
+
+    /// Owners whose windows are never restyled, sheet or not: the main document window, the Query Console and
+    /// the standalone connection window (already in the Claude look).
+    static let excludedOwnerClasses: Set<String> = ["SPWindowController", "SPQueryController", "SAConnectionWindowController"]
+
+    enum Decision: Equatable {
+        /// Restyle the whole window.
+        case window
+        /// Restyle it as an NSAlert's window (button roles from the alert).
+        case alert
+        /// An open / save panel: restyle only its accessory view.
+        case accessoryOnly
+        /// Leave it alone.
+        case skip
+    }
+
+    struct Facts: Equatable {
+        var isAlertWindow = false
+        var isSavePanel = false
+        /// NSWindow, NSPanel or a class of the app itself (not a system panel, popover or other AppKit-private window).
+        var isPlainOrAppWindowClass = true
+        var hasSheetParent = false
+        /// The class names of the window's controller and delegate.
+        var ownerClasses: [String] = []
+    }
+
+    static func decision(for facts: Facts) -> Decision {
+        if facts.isAlertWindow { return .alert }
+        if facts.isSavePanel { return .accessoryOnly }
+        guard facts.isPlainOrAppWindowClass else { return .skip }
+        if facts.ownerClasses.contains(where: excludedOwnerClasses.contains) { return .skip }
+        if facts.hasSheetParent { return .window }
+        return facts.ownerClasses.contains(where: auxiliaryOwnerClasses.contains) ? .window : .skip
+    }
+}

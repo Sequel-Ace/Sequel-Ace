@@ -72,6 +72,12 @@ enum SABookmarkPathNormalizer {
     }
 }
 
+/// Called by the alert helpers below right before an alert is shown. The app's Claude sheet styler sets it at
+/// launch (`SAClaudeSheetStyler.start()`); the Unit Tests target builds this file without the styler.
+enum SAAlertPresentation {
+    static var willPresent: ((NSAlert) -> Void)?
+}
+
 @objc extension NSAlert {
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message.
 	/// - Parameters:
@@ -94,6 +100,7 @@ enum SABookmarkPathNormalizer {
             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -129,6 +136,7 @@ enum SABookmarkPathNormalizer {
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
 
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -165,6 +173,7 @@ enum SABookmarkPathNormalizer {
             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: secondaryButtonTitle)
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -189,6 +198,7 @@ enum SABookmarkPathNormalizer {
             alert.messageText = title
             alert.informativeText = message
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            SAAlertPresentation.willPresent?(alert)
             alert.runModal()
             callback?()
         }
@@ -208,6 +218,7 @@ enum SABookmarkPathNormalizer {
             alert.messageText = title
             alert.informativeText = message
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            SAAlertPresentation.willPresent?(alert)
             alert.runModal()
             callback?()
         }
@@ -236,6 +247,7 @@ enum SABookmarkPathNormalizer {
             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -264,6 +276,7 @@ enum SABookmarkPathNormalizer {
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: secondaryButtonTitle)
 
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -290,6 +303,7 @@ enum SABookmarkPathNormalizer {
             alert.informativeText = message
             alert.accessoryView = accessoryView
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            SAAlertPresentation.willPresent?(alert)
             alert.runModal()
             callback?()
         }

@@ -170,3 +170,77 @@ final class SAClaudeSheetRulesTests: XCTestCase {
         XCTAssertEqual(style(SAClaudeControlDescriptor(kind: .other)), .unchanged)
     }
 }
+
+final class SAClaudeSheetButtonGeometryTests: XCTestCase {
+
+    private func rect(_ frame: NSRect, _ size: NSControl.ControlSize = .regular) -> NSRect {
+        SAClaudeSheetButtonGeometry.buttonRect(in: frame, controlSize: size)
+    }
+
+    func testClassicRegularFrameDraws28ptCentredInsideItsSideMargins() {
+        XCTAssertEqual(rect(NSRect(x: 14, y: 13, width: 82, height: 32)), NSRect(x: 20, y: 15, width: 70, height: 28))
+    }
+
+    func testAlertSized28ptFrameIsDrawnWhole() {
+        XCTAssertEqual(rect(NSRect(x: 0, y: 0, width: 110, height: 28)), NSRect(x: 0, y: 0, width: 110, height: 28))
+    }
+
+    func testShortModernFrameIsDrawnWhole() {
+        XCTAssertEqual(rect(NSRect(x: 5, y: 5, width: 80, height: 24)), NSRect(x: 5, y: 5, width: 80, height: 24))
+    }
+
+    func testTallFrameIsCappedAndCentred() {
+        XCTAssertEqual(rect(NSRect(x: 0, y: 0, width: 100, height: 37)), NSRect(x: 6, y: 4, width: 88, height: 28))
+    }
+
+    func testClassicSmallFrameDraws22ptInsideItsSideMargins() {
+        XCTAssertEqual(rect(NSRect(x: 0, y: 0, width: 80, height: 28), .small), NSRect(x: 5, y: 3, width: 70, height: 22))
+    }
+
+    func testNarrowFrameNeverGoesNegative() {
+        XCTAssertEqual(rect(NSRect(x: 0, y: 0, width: 8, height: 32)).width, 0)
+    }
+}
+
+final class SAClaudeSheetTargetingTests: XCTestCase {
+
+    private typealias Facts = SAClaudeSheetTargeting.Facts
+
+    private func decide(_ mutate: (inout Facts) -> Void) -> SAClaudeSheetTargeting.Decision {
+        var facts = Facts()
+        mutate(&facts)
+        return SAClaudeSheetTargeting.decision(for: facts)
+    }
+
+    func testAnySheetIsStyled() {
+        XCTAssertEqual(decide { $0.hasSheetParent = true; $0.ownerClasses = ["SPDatabaseDocument"] }, .window)
+    }
+
+    func testAlertWindowIsStyledAsAlert() {
+        XCTAssertEqual(decide { $0.isAlertWindow = true; $0.hasSheetParent = true }, .alert)
+    }
+
+    func testSavePanelOnlyGetsItsAccessoryStyled() {
+        XCTAssertEqual(decide { $0.isSavePanel = true; $0.hasSheetParent = true; $0.isPlainOrAppWindowClass = false }, .accessoryOnly)
+    }
+
+    func testListedAuxiliaryWindowIsStyled() {
+        XCTAssertEqual(decide { $0.ownerClasses = ["SPProcessListController"] }, .window)
+        XCTAssertEqual(decide { $0.ownerClasses = ["NSObject", "SPPreferenceController"] }, .window)
+    }
+
+    func testUnlistedWindowIsSkipped() {
+        XCTAssertEqual(decide { $0.ownerClasses = ["SAAboutWindowController"] }, .skip)
+        XCTAssertEqual(decide { _ in }, .skip)
+    }
+
+    func testMainDocumentWindowAndConsoleAreSkippedEvenAsSheets() {
+        XCTAssertEqual(decide { $0.ownerClasses = ["SPWindowController"] }, .skip)
+        XCTAssertEqual(decide { $0.ownerClasses = ["SPQueryController"]; $0.hasSheetParent = true }, .skip)
+    }
+
+    func testSystemPanelsAndPopoversAreSkipped() {
+        XCTAssertEqual(decide { $0.isPlainOrAppWindowClass = false; $0.hasSheetParent = true }, .skip)
+        XCTAssertEqual(decide { $0.isPlainOrAppWindowClass = false; $0.ownerClasses = ["SPPreferenceController"] }, .skip)
+    }
+}

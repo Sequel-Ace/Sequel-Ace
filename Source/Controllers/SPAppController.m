@@ -197,6 +197,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
     [SAClaudeToolbarMenu install];
+    [SAClaudeSheetStyler start];
 
     [SAAnalyticsConsentPolicy requestConsentIfNeeded];
     [SAAnalyticsConsentPolicy applyAnalyticsConsent];
