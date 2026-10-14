@@ -144,12 +144,6 @@ import AppKit
     private var cardFill: NSColor?
     private var isLayingOut = false
 
-    /// Every live styler (one per open mapping sheet), for the shared theme check.
-    private static let stylers = NSHashTable<SAClaudeImportMapperStyler>.weakObjects()
-    private static var defaultsObserver: NSObjectProtocol?
-    private static var themeCheckPending = false
-    private static var lastTheme: SAClaudeThemeColours?
-
     private var frameObservers: [NSObjectProtocol] = []
     private var appearanceObservation: NSKeyValueObservation?
 
@@ -217,7 +211,6 @@ import AppKit
         update()
         // The columns share the table's width from now on (the operator column keeps its fixed 28pt).
         o.tableView.sizeToFit()
-        SAClaudeWindowSkin.skin(for: o.window)?.refresh(force: true)
         observe()
     }
 
@@ -311,38 +304,11 @@ import AppKit
         frameObservers.append(NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: o.contentView, queue: nil) { [weak self] _ in
             Self.onMain { self?.layOut() }
         })
-        Self.stylers.add(self)
-        Self.observeDefaults()
+        SAClaudeThemeWatcher.observe(self) { $0.refresh(force: false) }
         appearanceObservation = o.window.observe(\.effectiveAppearance) { [weak self] _, _ in
             Self.onMain { self?.refresh(force: true) }
         }
         SAClaudeAccent.observe(self) { $0.refresh(force: true) }
-    }
-
-    /// One observer for every sheet's styler: any defaults write may be a theme change.
-    private static func observeDefaults() {
-        guard defaultsObserver == nil else { return }
-        // No `queue: .main`: a defaults write on a background thread must not wait for the main queue.
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.async { scheduleThemeCheck() }
-        }
-    }
-
-    /// One theme check per main-queue turn, however many defaults writes ask for it (window frames are saved
-    /// continuously), shared by all stylers: they refresh only when the theme changed (as `SAClaudeWindowSkin`'s).
-    private static func scheduleThemeCheck() {
-        guard !themeCheckPending else { return }
-        themeCheckPending = true
-        DispatchQueue.main.async {
-            themeCheckPending = false
-            var theme: SAClaudeThemeColours?
-            NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
-                theme = SAClaudeThemeColours.from(defaults: .standard)
-            }
-            guard theme != lastTheme else { return }
-            lastTheme = theme
-            stylers.allObjects.forEach { $0.refresh(force: false) }
-        }
     }
 
     // MARK: - Updating
@@ -514,7 +480,7 @@ import AppKit
     private static let inset: CGFloat = 2
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-        SAClaudePillPopUpButtonCell.drawPill(title: selectedItem?.title ?? title, in: cellFrame.insetBy(dx: Self.inset, dy: Self.inset),
+        SAClaudePillPopUpButtonCell.drawPill(title: SAClaudePillPopUpButtonCell.displayTitle(of: self), in: cellFrame.insetBy(dx: Self.inset, dy: Self.inset),
                                              flipped: controlView.isFlipped, font: font ?? FilterCellDrawing.font,
                                              enabled: isEnabled, highlighted: isHighlighted, outlined: true)
     }

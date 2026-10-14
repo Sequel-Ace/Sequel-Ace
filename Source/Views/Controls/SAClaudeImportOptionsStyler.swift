@@ -7,8 +7,8 @@
 //  group holding the current method's advanced options, always visible. The advanced views' checkboxes (and
 //  INSERT's ON DUPLICATE KEY UPDATE text view) are re-parented once into the sheet and the current method's shown;
 //  the advanced views stay hidden. The controller keeps resetting the options and their mutual exclusion. Also the
-//  Global values child sheet's light polish (glyph +/-, the Insert pill). Owned by `SAClaudeImportMapperStyler`,
-//  which calls it from its update, layout, refresh and key-view steps. App target only.
+//  Global values child sheet's light polish (glyph +/-, the Insert pill, the table's quiet grid look). Owned by
+//  `SAClaudeImportMapperStyler`, which calls it from its update, layout, refresh and key-view steps. App target only.
 //
 
 import AppKit
@@ -117,6 +117,8 @@ final class SAClaudeImportOptionsStyler {
         let addButton: NSButton
         let removeButton: NSButton
         let insertPullDown: NSPopUpButton
+        /// Optional: without it the table keeps the XIB's source-list look.
+        let table: NSTableView?
 
         init?(_ c: NSObject) {
             guard let addButton: NSButton = SAClaudeExportStyler.outlet(c, "addGlobalValueButton"),
@@ -125,6 +127,7 @@ final class SAClaudeImportOptionsStyler {
             self.addButton = addButton
             self.removeButton = removeButton
             self.insertPullDown = insertPullDown
+            table = SAClaudeExportStyler.outlet(c, "globalValuesTableView")
         }
     }
 
@@ -218,6 +221,15 @@ final class SAClaudeImportOptionsStyler {
                 SAClaudeHoverHighlighter.attach(to: button)
             }
             SAClaudeFilterCells.installPill(on: g.insertPullDown)
+            if let table = g.table {
+                // The generic skin leaves source lists (and their private background colour) alone. As a regular
+                // table on a system background it gives this one the quiet grid look when the sheet begins: the theme
+                // background (kept in step with the theme), no alternating rows, hairline grid colour, the Claude
+                // header; the selection is the regular highlight, its text inverting as AppKit's does.
+                table.selectionHighlightStyle = .regular
+                table.usesAlternatingRowBackgroundColors = false
+                table.backgroundColor = .controlBackgroundColor
+            }
         }
     }
 

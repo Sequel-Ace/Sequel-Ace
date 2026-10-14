@@ -93,12 +93,6 @@ import AppKit
     private var cardFill: NSColor?
     private var isLayingOut = false
 
-    /// Every live styler (one per open document), for the shared theme check.
-    private static let stylers = NSHashTable<SAClaudeExportStyler>.weakObjects()
-    private static var defaultsObserver: NSObjectProtocol?
-    private static var themeCheckPending = false
-    private static var lastTheme: SAClaudeThemeColours?
-
     private var frameObservers: [NSObjectProtocol] = []
     private var appearanceObservation: NSKeyValueObservation?
     private var columnObservations: [NSKeyValueObservation] = []
@@ -398,8 +392,7 @@ import AppKit
                 Self.onMain { self?.layOut() }
             })
         }
-        Self.stylers.add(self)
-        Self.observeDefaults()
+        SAClaudeThemeWatcher.observe(self) { $0.refresh(force: false) }
         appearanceObservation = o.window.observe(\.effectiveAppearance) { [weak self] _, _ in
             Self.onMain { self?.refresh(force: true) }
         }
@@ -410,32 +403,6 @@ import AppKit
             columnObservations.append(column.observe(\.isHidden) { [weak self] _, _ in
                 Self.onMain { self?.outlets.tableList.sizeToFit() }
             })
-        }
-    }
-
-    /// One observer for every document's styler: any defaults write may be a theme change.
-    private static func observeDefaults() {
-        guard defaultsObserver == nil else { return }
-        // No `queue: .main`: a defaults write on a background thread must not wait for the main queue.
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.async { scheduleThemeCheck() }
-        }
-    }
-
-    /// One theme check per main-queue turn, however many defaults writes ask for it (window frames are saved
-    /// continuously), shared by all stylers: they refresh only when the theme changed (as `SAClaudeWindowSkin`'s).
-    private static func scheduleThemeCheck() {
-        guard !themeCheckPending else { return }
-        themeCheckPending = true
-        DispatchQueue.main.async {
-            themeCheckPending = false
-            var theme: SAClaudeThemeColours?
-            NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
-                theme = SAClaudeThemeColours.from(defaults: .standard)
-            }
-            guard theme != lastTheme else { return }
-            lastTheme = theme
-            stylers.allObjects.forEach { $0.refresh(force: false) }
         }
     }
 

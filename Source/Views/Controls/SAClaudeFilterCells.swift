@@ -86,9 +86,14 @@ enum FilterCellDrawing {
 @objc(SAClaudePillPopUpButtonCell) final class SAClaudePillPopUpButtonCell: NSPopUpButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-        let title: String = selectedItem?.title ?? self.title ?? ""
-        Self.drawPill(title: title, in: SAClaudeFilterChrome.controlFrame(in: cellFrame), flipped: controlView.isFlipped,
+        Self.drawPill(title: Self.displayTitle(of: self), in: SAClaudeFilterChrome.controlFrame(in: cellFrame), flipped: controlView.isFlipped,
                       font: FilterCellDrawing.font, enabled: isEnabled, highlighted: isHighlighted, outlined: false)
+    }
+
+    /// What the pill shows: a pop-up's selected item; a pull-down's own title (its first item's), as AppKit shows
+    /// it — a pull-down's selected item is whichever entry was last chosen from it.
+    static func displayTitle(of cell: NSPopUpButtonCell) -> String {
+        (cell.pullsDown ? cell.title : cell.selectedItem?.title ?? cell.title) ?? ""
     }
 
     /// The pill in `pill`: the hover-coloured fill (or, when `outlined`, a 1pt outline in the brighter drop stroke
