@@ -170,6 +170,12 @@ final class SASSHAgentRelayInstallerTests: XCTestCase {
         }
     }
 
+    func testUseDefaultNamesTheCurrentDefault() {
+        XCTAssertEqual(SASSHAgentRelayInstaller.useDefaultTitle(defaultSource: "1password", defaultCustomPath: ""), "Use Default (1Password)")
+        XCTAssertEqual(SASSHAgentRelayInstaller.useDefaultTitle(defaultSource: "", defaultCustomPath: ""), "Use Default (Off)")
+        XCTAssertEqual(SASSHAgentRelayInstaller.useDefaultTitle(defaultSource: "custom", defaultCustomPath: "~/a.sock"), "Use Default (~/a.sock)")
+    }
+
     func testInstallFailsWithoutABundledHelper() {
         let installer = SASSHAgentRelayInstaller(scriptsDirectory: scripts, bundledScript: nil, bundledAllowlist: nil)
         XCTAssertThrowsError(try installer.install(into: scripts)) {

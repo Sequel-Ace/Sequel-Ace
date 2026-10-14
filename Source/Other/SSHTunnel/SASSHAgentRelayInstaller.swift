@@ -174,6 +174,14 @@ extension SASSHAgentRelayInstaller {
         }
     }
 
+    /// "Use Default (1Password)": the per-connection menu item that follows the
+    /// default, naming what that default currently is.
+    static func useDefaultTitle(defaultSource: String, defaultCustomPath: String) -> String {
+        let source = SASSHAgentSource.stored(defaultSource, customPath: defaultCustomPath) ?? .off
+        return String(format: NSLocalizedString("Use Default (%@)", comment: "ssh agent source : follow the default from preferences; %@ is the current default agent"),
+                      summary(defaultSource: source, status: .installed, installedThisSession: false))
+    }
+
     /// What a connection's SSH settings say about the agent it will use, so
     /// the outcome of "Use Default" and the helper's readiness are visible
     /// where the connection is edited. `needsAttention` is true when an agent

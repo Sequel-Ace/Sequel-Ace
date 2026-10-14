@@ -365,6 +365,9 @@
 /* ssh agent source : follow the default from preferences */
 "Use Default" = "Use Default";
 
+/* ssh agent source : follow the default from preferences; %@ is the current default agent */
+"Use Default (%@)" = "Use Default (%@)";
+
 /* rename database refused because views in other databases read from the source's tables or views, which the rename cannot repoint; %1$@ source database, %2$@ lists the views as `db`.`view` */
 "Views in other databases read from '%@' (%@) and would stop working once it is renamed. Nothing was changed." = "Views in other databases read from '%1$@' (%2$@) and would stop working once it is renamed. Nothing was changed.";
 

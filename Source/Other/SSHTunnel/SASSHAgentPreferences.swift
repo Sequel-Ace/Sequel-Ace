@@ -422,11 +422,14 @@ struct SASSHAgentSourcePicker<Label: View>: View {
     /// The per-connection picker starts on "Use Default" (an empty source).
     let includesUseDefault: Bool
     @ViewBuilder let label: () -> Label
+    @AppStorage(SASSHAgentSource.DefaultsKey.defaultSource) private var defaultSource = ""
+    @AppStorage(SASSHAgentSource.DefaultsKey.customSocketPath) private var defaultCustomPath = ""
 
     var body: some View {
         Picker(selection: $source, label: label()) {
             if includesUseDefault {
-                Text("Use Default", comment: "ssh agent source : follow the default from preferences").tag("")
+                Text(verbatim: SASSHAgentRelayInstaller.useDefaultTitle(defaultSource: defaultSource,
+                                                                        defaultCustomPath: defaultCustomPath)).tag("")
                 Divider()
             }
             Text("Off", comment: "ssh agent source : no agent").tag(SASSHAgentSource.Kind.off.rawValue)
@@ -534,7 +537,10 @@ struct SASSHAgentSourcePicker<Label: View>: View {
 
         status.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         status.maximumNumberOfLines = 3
-        status.lineBreakMode = .byTruncatingTail
+        // Wrap; only the last visible line may be cut short. (Truncating-tail
+        // on its own turns the label into a single truncated line.)
+        status.lineBreakMode = .byWordWrapping
+        status.cell?.truncatesLastVisibleLine = true
 
         // Selecting a favorite sets these on the controller; follow it.
         observations = [
@@ -562,11 +568,15 @@ struct SASSHAgentSourcePicker<Label: View>: View {
             popup.selectItem(at: index)
         }
         let defaults = UserDefaults.standard
+        let defaultSource = defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? ""
+        let defaultCustomPath = defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? ""
+        popup.item(at: 0)?.title = SASSHAgentRelayInstaller.useDefaultTitle(defaultSource: defaultSource,
+                                                                          defaultCustomPath: defaultCustomPath)
         let installer = SASSHAgentRelayInstaller.shared
         let state = SASSHAgentRelayInstaller.connectionStatus(
             connectionSource: source, connectionCustomPath: path,
-            defaultSource: defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? "",
-            defaultCustomPath: defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? "",
+            defaultSource: defaultSource,
+            defaultCustomPath: defaultCustomPath,
             status: installer?.status ?? .notInstalled,
             installedThisSession: installer?.installedThisSession ?? false)
         status.stringValue = state.text
