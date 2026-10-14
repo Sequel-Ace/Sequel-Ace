@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  The cells the Content filter bar draws its controls with: ghost pop-up
-//  pills, the enable checkbox and the clay Apply button. They are installed
+//  pills, the enable checkbox, the radio and the accent Apply button. They are installed
 //  onto the controls AppKit and the XIB already built with `object_setClass`,
 //  so every target, action, menu and binding stays as it was. The cells have
 //  no stored properties (an isa swap must keep the instance layout) and read
@@ -156,6 +156,47 @@ private enum FilterCellDrawing {
     }
 }
 
+/// A radio button drawn as a 14pt circle: a 1pt outline in the brighter drop stroke when off, the accent fill with
+/// a 6pt `onAccent` dot when on. Disabled draws at 40%; the title is drawn as the checkbox cell draws it.
+@objc(SAClaudeRadioCell) final class SAClaudeRadioCell: NSButtonCell {
+
+    private static let dotDiameter: CGFloat = 6
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let palette = SAClaudeFilterBarStyler.currentPalette
+        let themeText = SAClaudeFilterBarStyler.currentThemeText
+        let circle = SAClaudeFilterChrome.checkboxRect(in: cellFrame)
+
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(FilterCellDrawing.disabledAlpha) }
+
+        if state == .off {
+            if isHighlighted {
+                palette.hover.setFill()
+                NSBezierPath(ovalIn: circle).fill()
+            }
+            let outline = NSBezierPath(ovalIn: circle.insetBy(dx: 0.5, dy: 0.5))
+            outline.lineWidth = 1
+            SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background).setStroke()
+            outline.stroke()
+        } else {
+            (isHighlighted ? SAClaudeEditorChrome.runFillPressed : SAClaudeEditorChrome.runFill).setFill()
+            NSBezierPath(ovalIn: circle).fill()
+            let dot = NSRect(x: circle.midX - Self.dotDiameter / 2, y: circle.midY - Self.dotDiameter / 2,
+                             width: Self.dotDiameter, height: Self.dotDiameter)
+            SAClaudeAccent.onAccent.setFill()
+            NSBezierPath(ovalIn: dot).fill()
+        }
+
+        if imagePosition != .imageOnly, !title.isEmpty {
+            let minX = circle.maxX + 6
+            let titleRect = NSRect(x: minX, y: cellFrame.minY, width: max(0, cellFrame.maxX - minX), height: cellFrame.height)
+            FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
+        }
+    }
+}
+
 /// The filter bar's Apply button: a clay rounded fill with a white medium-weight title.
 @objc(SAClaudeAccentButtonCell) final class SAClaudeAccentButtonCell: NSButtonCell {
 
@@ -231,7 +272,8 @@ enum SAClaudeFilterCells {
 
     /// Whether `cls` is one of the classes this file installs.
     private static func isInstalled(_ cls: AnyClass) -> Bool {
-        cls == SAClaudePillPopUpButtonCell.self || cls == SAClaudeCheckboxCell.self || cls == SAClaudeAccentButtonCell.self
+        cls == SAClaudePillPopUpButtonCell.self || cls == SAClaudeCheckboxCell.self || cls == SAClaudeRadioCell.self
+            || cls == SAClaudeAccentButtonCell.self
             || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeSecondaryButtonCell.self
             || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
             || NSStringFromClass(cls).hasPrefix(derivedPrefix)
@@ -337,7 +379,7 @@ enum SAClaudeFilterCells {
         return true
     }
 
-    /// Draws `button` with `cellClass` (`SAClaudeCheckboxCell` or one of the accent cells) in place of its
+    /// Draws `button` with `cellClass` (`SAClaudeCheckboxCell`, `SAClaudeRadioCell` or one of the accent cells) in place of its
     /// own cell. Only an exact NSButton with an exact NSButtonCell is swapped.
     @discardableResult
     static func install(_ cellClass: AnyClass, on button: NSButton) -> Bool {
