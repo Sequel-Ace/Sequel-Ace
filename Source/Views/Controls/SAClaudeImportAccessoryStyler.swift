@@ -27,8 +27,6 @@ final class SAClaudeImportAccessoryStyler {
     /// The clipboard sheet's side margins (the preview card's; the strip brings its own).
     private static let sheetMargin: CGFloat = 16
     private static let previewTextInset = NSSize(width: 8, height: 8)
-    /// The format pop-up's item that selects the SQL options (titles are compared as literals by SPDataImport).
-    private static let sqlTitle = "SQL"
     /// The strip's minimum width: the CSV grid and the encoding row fit (and the clipboard sheet's 500pt minimum is
     /// wider).
     private static let minimumStripWidth: CGFloat = 460
@@ -192,8 +190,6 @@ final class SAClaudeImportAccessoryStyler {
             if let action = popUp.action { NSApp.sendAction(action, to: popUp.target, from: popUp) }
             self?.layOut()
         }
-        // The hidden pop-up drops out of the key view loop: the switcher leads into the XIB's chain.
-        switcher.nextKeyView = o.encodingPopUp
         o.importView.addSubview(switcher)
 
         for label in [encodingLabel, sqlLabel] + csvLabels {
@@ -409,9 +405,12 @@ final class SAClaudeImportAccessoryStyler {
         isLayingOut = true
         defer { isLayingOut = false }
 
-        let index = o.formatPopUp.indexOfSelectedItem
+        // What the tab view shows (index 0 CSV, 1 SQL), not the pop-up: SPDataImport can select "SQL" in the pop-up
+        // without `changeFormat:` (`startSQLImportProcessWithFile:`), and the strip must fit the item on screen.
+        let index = o.tabView.selectedTabViewItem.map { o.tabView.indexOfTabViewItem($0) } ?? 0
         if index >= 0, switcher.selectedIndex != index { switcher.selectedIndex = index }
-        let format: Layout.Format = o.formatPopUp.titleOfSelectedItem == Self.sqlTitle ? .sql : .csv
+        let format: Layout.Format = index == 1 ? .sql : .csv
+        chainKeyViews(format)
         let switcherWidth = ceil(switcher.preferredWidth)
         let labelWidth = ceil(encodingLabel.cell?.cellSize.width ?? 0)
         fitImportView(height: Layout.frames(width: o.importView.bounds.width, format: format, switcherWidth: switcherWidth,
@@ -442,6 +441,20 @@ final class SAClaudeImportAccessoryStyler {
         }
         Self.placeLabel(sqlLabel, inItem(sql.sqlLabel))
         Self.place(o.sqlErrorPopUp, inItem(sql.sqlPopUp))
+    }
+
+    /// Tab order in the strip's visual order: switcher → encoding → first line → fields terminated → fields enclosed →
+    /// lines terminated → fields escaped (CSV), or switcher → encoding → On SQL error (SQL). The last control leads
+    /// nowhere, as the XIB's last one did (the window goes on from there).
+    private func chainKeyViews(_ format: Layout.Format) {
+        let o = outlets
+        let chain: [NSView] = [switcher, o.encodingPopUp] + (format == .csv ? [o.firstLineSwitch] + o.csvFields : [o.sqlErrorPopUp])
+        for (view, next) in zip(chain, chain.dropFirst()) where view.nextKeyView !== next || next.previousKeyView !== view {
+            // Re-setting the same next view may not touch its previous view: clear first.
+            if view.nextKeyView === next { view.nextKeyView = nil }
+            view.nextKeyView = next
+        }
+        if let last = chain.last, last.nextKeyView != nil { last.nextKeyView = nil }
     }
 
     /// Gives the strip `height`: its frame and its height constraint. The open panel sizes an accessory that has
