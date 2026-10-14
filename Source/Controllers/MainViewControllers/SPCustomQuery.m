@@ -737,7 +737,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     @autoreleasepool {
         NSArray                     *queries        = [taskArguments objectForKey:@"queries"];
-        SPMySQLStreamingResultStore *resultStore    = nil;
+        __block SPMySQLStreamingResultStore *resultStore = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
         NSString                    *databaseName   = [taskArguments objectForKey:@"database"];
@@ -831,8 +831,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 databaseNameCaseSensitivityWasLoaded = YES;
             }
             
-            // Run the query, timing execution (note this also includes network and overhead)
-            resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabaseContext:databaseName];
+            // Run the query, timing execution (note this also includes network and overhead).
+            // The statement is the user's, not the application's: a SELECT can call a function that
+            // writes, so what became of it after a lost connection is not read off its first keyword
+            // - the editor sends nothing again, but a lost reply, or a result read cut off, has to
+            // say that the outcome is unknown rather than read like a plain failure.
+            [mySQLConnection runStatementsFromOutsideApplication:^{
+                resultStore = [self->mySQLConnection resultStoreFromQueryString:query assertingDatabaseContext:databaseName];
+            }];
             executionTime += [resultStore queryExecutionTime];
             totalQueriesRun++;
             
