@@ -441,6 +441,17 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.result as? Int, 42)
     }
 
+    /// Only the plain streaming result is read by the thread that asked for it. The fast one and
+    /// the result store download on a thread of their own, and a plain result keeps no connection.
+    func testOnlyThePlainStreamingResultIsReadByTheThreadThatAsked() {
+        XCTAssertTrue(SAConnectionWorkCoordinator.resultIsReadByTheThreadThatAsked(resultClass: SPMySQLStreamingResult.self))
+        XCTAssertFalse(SAConnectionWorkCoordinator.resultIsReadByTheThreadThatAsked(resultClass: SPMySQLFastStreamingResult.self),
+                       "the fast result's downloader thread holds the connection, not the caller")
+        XCTAssertFalse(SAConnectionWorkCoordinator.resultIsReadByTheThreadThatAsked(resultClass: SPMySQLStreamingResultStore.self))
+        XCTAssertFalse(SAConnectionWorkCoordinator.resultIsReadByTheThreadThatAsked(resultClass: SPMySQLResult.self))
+        XCTAssertFalse(SAConnectionWorkCoordinator.resultIsReadByTheThreadThatAsked(resultClass: nil))
+    }
+
     /// Work asked for away from the main thread runs where it was asked for.
     func testWorkAwayFromTheMainThreadIsNotHandedOver() {
         XCTAssertFalse(SAConnectionWorkCoordinator.workShouldRunOffMainThread(

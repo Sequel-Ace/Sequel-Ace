@@ -1812,11 +1812,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[self->connectionCancellation settleAbandonedWorkFromGeneration:abandonedAtGeneration];
 	}];
 
-	// A streaming result keeps the connection until it has been read, and it is read here, on the
-	// thread that asked for it - which therefore holds the connection now, not the worker. A result
-	// store downloads on a thread of its own and gives the connection back there.
-	if ([outcome finished] && [[outcome result] isKindOfClass:[SPMySQLStreamingResult class]]
-	    && ![[outcome result] isKindOfClass:[SPMySQLStreamingResultStore class]]) {
+	// A streaming result keeps the connection until it has been read. The plain one is read here, on
+	// the thread that asked for it - which therefore holds the connection now, not the worker. The
+	// fast one and the result store download on a thread of their own and give it back there, so
+	// the thread that asked never holds it; the coordinator tells the two apart.
+	if ([outcome finished] && [SAConnectionWorkCoordinator resultOfClassIsReadByTheThreadThatAsked:[[outcome result] class]]) {
 		[inFlightQuery noteConnectionHeldByCurrentThread:YES];
 	}
 

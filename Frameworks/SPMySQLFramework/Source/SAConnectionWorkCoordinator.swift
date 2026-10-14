@@ -279,6 +279,22 @@ public final class SAConnectionWorkCoordinator: NSObject {
         return isMainThread && delegateShowsTheWait
     }
 
+    /// Whether a result of this class is read by the thread that asked for it - which therefore
+    /// holds the connection once the work that produced the result is over.
+    ///
+    /// A streaming result keeps the connection until it has been read. The plain one is read by
+    /// whoever asked, row by row; the fast one and the result store download on a thread of their
+    /// own and give the connection back there, so the thread that asked never holds it. Told apart
+    /// by class, not by kind: a subclass that downloads elsewhere would otherwise count as read by
+    /// the caller, who would then be let past the session replacement as the thread holding the
+    /// connection - and escape a value for the old session while the download still runs on it.
+    /// - Parameter resultClass: The class of the result the work returned, or nil for none.
+    /// - Returns: Whether the thread that asked holds the connection to read the result.
+    @objc(resultOfClassIsReadByTheThreadThatAsked:)
+    public static func resultIsReadByTheThreadThatAsked(resultClass: AnyClass?) -> Bool {
+        return resultClass == SPMySQLStreamingResult.self
+    }
+
     /// Whether work the main thread would hand to the worker has to be refused instead.
     ///
     /// A question about the connection is answered on the main thread, and the thread that asked
