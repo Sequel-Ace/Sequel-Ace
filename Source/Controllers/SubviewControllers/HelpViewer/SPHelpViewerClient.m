@@ -296,6 +296,7 @@ NSString * const SPUserClosedHelpViewerNotification = @"SPUserClosedHelpViewer";
 	// local strong ref — the `controller` ivar would capture (unretained) self,
 	// already gone when the block runs, and wouldn't retain the controller.
 	SAHelpViewerWindowController *controllerToClose = controller;
+	controller = nil; // transfer sole ownership to the block
 	dispatch_async(dispatch_get_main_queue(), ^{
 		[controllerToClose setDataSource:nil]; // drop the weak data source before closing
 		[controllerToClose close]; // hide the window if still visible
