@@ -152,6 +152,9 @@
 /* ssh agent source : whatever ssh itself would use */
 "Automatic (from SSH config)" = "Automatic (from SSH config)";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "Choose the private key instead — the file without the .pub extension.";
+
 /* network preferences : ssh agent settings button */
 "Configure…" = "Configure…";
 
@@ -4625,3 +4628,12 @@
 
 /* SSH agent error; %@ is a file name */
 "“%@” is a public key, which only works together with an SSH agent, and the SSH config turns the agent off for this host (IdentityAgent none). Choose the private key, or choose an SSH agent for this connection." = "“%@” is a public key, which only works together with an SSH agent, and the SSH config turns the agent off for this host (IdentityAgent none). Choose the private key, or choose an SSH agent for this connection.";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "“%@” is a public key.";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "“%@” is not a valid client certificate file.";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
