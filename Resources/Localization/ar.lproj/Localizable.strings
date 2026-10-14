@@ -125,6 +125,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* تحذير: لم يتأثر أي صف */\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "اختر المفتاح الخاص بدلاً من ذلك — الملف بدون امتداد .pub .";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "فشل إنشاء قاعدة البيانات '%1$@': %2$@";
 
@@ -4426,3 +4429,12 @@
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "لا يمكن استخدام الاتصال بينما يتم سؤالك عما يجب فعله حيال ذلك. أجب على هذا السؤال، ثم حاول مرة أخرى.";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "\"%@\" هو مفتاح عمومي.";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "\"%@\" ليس ملف شهادة عميل صالح.";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "\"%@\" ليس ملف مفتاح خاص صالح.";
