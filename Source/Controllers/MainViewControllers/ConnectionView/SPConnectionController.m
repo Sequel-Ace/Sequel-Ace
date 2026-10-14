@@ -3498,6 +3498,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * If editing is not already active, mark editing as starting, triggering UI updates
  * to match.
  */
+/**
+ * Shows a line of text in the connection status area, where "Connecting…" appears.
+ * It is hidden again as soon as the user edits the connection.
+ */
+- (void)showStatusMessage:(NSString *)message
+{
+    [progressIndicatorText setStringValue:message ?: @""];
+    [progressIndicatorText setHidden:NO];
+}
+
 - (void)_startEditingConnection
 {
     // If not connecting, hide the connection status text to reflect changes

@@ -3897,6 +3897,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     if ([connectionController type] == SPSSHTunnelConnection
         && [SASSHAgentRelay isAgentInEffectForConnectionSource:[connectionController sshAgentSource] ?: @""]) {
+        // Say why nothing happened, so it doesn't look like a failed autoconnect.
+        [connectionController showStatusMessage:NSLocalizedString(@"This connection uses an SSH agent. Click Connect to connect.", @"connection view : status when a session file's autoconnect is skipped because the connection uses an SSH agent")];
         return;
     }
     [self connect];

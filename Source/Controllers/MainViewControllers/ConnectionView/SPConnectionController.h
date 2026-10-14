@@ -316,6 +316,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *sshRemoteSocketPath;
 @property (readwrite, copy) NSString *sshAgentSource;
 @property (readwrite, copy) NSString *sshAgentSocketPath;
+
+- (void)showStatusMessage:(NSString *)message;
 @property (readwrite, copy) NSString *socketHelpWindowUUID;
 @property (readwrite, copy) NSString *connectionKeychainID;
 @property (readwrite, copy) NSString *connectionKeychainItemName;

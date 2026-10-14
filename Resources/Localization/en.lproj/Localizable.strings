@@ -353,6 +353,9 @@
 /* SSH agent relay error */
 "This connection uses an SSH agent, but the SSH agent helper is not installed. Install it in Preferences > Network." = "This connection uses an SSH agent, but the SSH agent helper is not installed. Install it in Preferences > Network.";
 
+/* connection view : status when a session file's autoconnect is skipped because the connection uses an SSH agent */
+"This connection uses an SSH agent. Click Connect to connect." = "This connection uses an SSH agent. Click Connect to connect.";
+
 /* ssh agent helper install panel message */
 "To install the SSH agent helper, Sequel Ace needs your permission to add it to this folder. Select the folder shown and click Install." = "To install the SSH agent helper, Sequel Ace needs your permission to add it to this folder. Select the folder shown and click Install.";
 

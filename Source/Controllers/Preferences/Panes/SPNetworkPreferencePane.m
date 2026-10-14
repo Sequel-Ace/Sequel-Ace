@@ -44,7 +44,9 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
 + (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
 @end
 
-@interface SPNetworkPreferencePane ()
+@interface SPNetworkPreferencePane () {
+	BOOL sshAgentRowInstalled;
+}
 - (void)updateHiddenFiles;
 - (void)loadSSLCiphers;
 - (void)storeSSLCiphers;
@@ -139,10 +141,10 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
 	[super awakeFromNib];
 
 	// The pane's XIB has no SSH agent controls; the row and its sheet are Swift.
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		[SASSHAgentPreferences installRowInView:[self view] belowView:self.knownHostsChooser target:self action:@selector(showSSHAgentSettings:)];
-	});
+	// Once per pane: awakeFromNib can run again when nested nibs load.
+	if (sshAgentRowInstalled || !self.knownHostsChooser) return;
+	sshAgentRowInstalled = YES;
+	[SASSHAgentPreferences installRowInView:[self view] belowView:self.knownHostsChooser target:self action:@selector(showSSHAgentSettings:)];
 }
 
 - (IBAction)showSSHAgentSettings:(id)sender
