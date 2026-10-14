@@ -212,6 +212,8 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 // Data accessors
 - (NSArray *)currentResult;
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs hideBLOBs:(BOOL)hide;
+- (NSArray *)currentRawDataResult;
+- (NSArray *)exportDataColumnDefinitions;
 
 // Task interaction
 @property (readonly) BOOL isWorking;

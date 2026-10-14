@@ -67,6 +67,8 @@ static NSString * const SPTableViewDropColumnID      = @"drop";
 static const NSString *SPSQLExportStructureEnabled  = @"SQLExportStructureEnabled";
 static const NSString *SPSQLExportContentEnabled    = @"SQLExportContentEnabled";
 static const NSString *SPSQLExportDropEnabled       = @"SQLExportDropEnabled";
+static const NSString *SPFilteredResultRows         = @"FilteredResultRows";
+static const NSString *SPQueryResultRows            = @"QueryResultRows";
 
 typedef enum
 {
@@ -92,7 +94,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
-@interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol, NSMenuItemValidation, NSControlTextEditingDelegate>
+@interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol, SAJSONExporterDelegate, NSMenuItemValidation, NSControlTextEditingDelegate>
 @property (readwrite, copy) NSString *exportDatabaseName;
 
 - (void)_switchTab;
@@ -1030,8 +1032,9 @@ set_input:
 	//BOOL isHTML = (exportType == SPHTMLExport);
 	//BOOL isPDF  = (exportType == SPPDFExport);
 	BOOL isDot  = (exportType == SPDotExport);
+	BOOL isJSON = (exportType == SPJSONExport);
 	
-	BOOL enable = (isCSV || isXML /* || isHTML || isPDF  */ || isDot);
+	BOOL enable = (isCSV || isXML /* || isHTML || isPDF  */ || isDot || isJSON);
 	
 	[exportFilePerTableCheck setHidden:(isSQL || isDot)];		
 	[exportTableList setEnabled:(!isDot)];
@@ -1086,7 +1089,7 @@ set_input:
 		[exportDotForceLowerTableNamesCheck setState:(serverLowerCaseTableNameValue == 0)?NSControlStateValueOff:NSControlStateValueOn];
 	}
 	
-	[self _displayExportTypeOptions:(isSQL || isCSV || isXML || isDot)];
+	[self _displayExportTypeOptions:(isSQL || isCSV || isXML || isDot || isJSON)];
 	[self updateAvailableExportFilenameTokens];
 	
 	[self updateDisplayedExportFilename];
@@ -1172,6 +1175,7 @@ set_input:
 			if (numberOfTables <= 1) break;
 		case SPXMLExport:
 		case SPDotExport:
+		case SPJSONExport:
 			noteText = NSLocalizedString(@"Import of the selected data is currently not supported.", @"Export file format cannot be imported warning");
 			break;
 		default:
@@ -1228,12 +1232,20 @@ set_input:
 		BOOL isXML  = (exportType == SPXMLExport);
 		BOOL isHTML = (exportType == SPHTMLExport);
 		BOOL isPDF  = (exportType == SPPDFExport);
+		BOOL isJSON = (exportType == SPJSONExport);
 
 		BOOL structureEnabled = [[uiStateDict objectForKey:SPSQLExportStructureEnabled] boolValue];
 		BOOL contentEnabled   = [[uiStateDict objectForKey:SPSQLExportContentEnabled] boolValue];
 		BOOL dropEnabled      = [[uiStateDict objectForKey:SPSQLExportDropEnabled] boolValue];
 
-		if (isCSV || isXML || isHTML || isPDF || (isSQL && ((!structureEnabled) || (!dropEnabled)))) {
+		if (isJSON && ((exportSource == SPFilteredExport) || (exportSource == SPQueryExport))) {
+			// A query or filtered result exports whatever its result holds, so gate on
+			// availability — the headers row plus at least one data row, the same test that
+			// enables these sources in the Input popup — not on table selection: the table
+			// list is disabled for these sources and its checkboxes are not read.
+			enable = ([[uiStateDict objectForKey:(exportSource == SPFilteredExport) ? SPFilteredResultRows : SPQueryResultRows] integerValue] > 1);
+		}
+		else if (isCSV || isXML || isJSON || isHTML || isPDF || (isSQL && ((!structureEnabled) || (!dropEnabled)))) {
 			enable = NO;
 
 			// Only enable the button if at least one table is selected
@@ -1290,6 +1302,11 @@ set_input:
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeStructureCheck state]] forKey:SPSQLExportStructureEnabled];
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeContentCheck state]] forKey:SPSQLExportContentEnabled];
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeDropSyntaxCheck state]] forKey:SPSQLExportDropEnabled];
+
+	// Captured here on the main thread: _toggleExportButton: runs on a background thread and
+	// must not read the result arrays there.
+	[uiStateDict setObject:[NSNumber numberWithInteger:[[tableContentInstance currentResult] count]] forKey:SPFilteredResultRows];
+	[uiStateDict setObject:[NSNumber numberWithInteger:[[customQueryInstance currentResult] count]] forKey:SPQueryResultRows];
 
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController export button updater",tableDocumentInstance) target:self selector:@selector(_toggleExportButton:) object:uiStateDict];
 }
@@ -1387,11 +1404,18 @@ set_input:
 	// Get the data depending on the source
 	switch (exportSource)
 	{
+		// JSON carries NULL as null and bytes as base64, so it needs the cells as the store holds
+		// them; the display producers have already turned both into text. Every other format writes
+		// display text and keeps taking the display rows unchanged.
 		case SPFilteredExport:
-			dataArray = [tableContentInstance currentDataResultWithNULLs:YES hideBLOBs:NO];
+			dataArray = (exportType == SPJSONExport)
+				? [tableContentInstance currentRawDataResult]
+				: [tableContentInstance currentDataResultWithNULLs:YES hideBLOBs:NO];
 			break;
 		case SPQueryExport:
-			dataArray = [customQueryInstance currentDataResultWithNULLs:YES truncateDataFields:NO];
+			dataArray = (exportType == SPJSONExport)
+				? [customQueryInstance currentRawDataResult]
+				: [customQueryInstance currentDataResultWithNULLs:YES truncateDataFields:NO];
 			break;
 		case SPTableExport:
 			// Create an array of tables to export
@@ -1443,6 +1467,9 @@ set_input:
 			break;
 		case SPDotExport:
 			exportTypeLabel = @"Dot";
+			break;
+		case SPJSONExport:
+			exportTypeLabel = @"JSON";
 			break;
 		case SPPDFExport:
 		case SPHTMLExport:
@@ -1652,6 +1679,72 @@ set_input:
 			[xmlExporter setExportOutputFile:singleExportFile];
 
 			[exporters safeAddObject:xmlExporter];
+		}
+	}
+	// JSON export
+	else if (exportType == SPJSONExport) {
+
+		SAJSONExporter *jsonExporter = nil;
+
+		// If the user has selected to only export to a single file or this is a filtered or custom query
+		// export, create the single file now and assign it to all subsequently created exporters.
+		if ((![self exportToMultipleFiles]) || (exportSource == SPFilteredExport) || (exportSource == SPQueryExport)) {
+			NSString *selectedTableName = nil;
+			if (exportSource == SPTableExport && [exportTables count] == 1) selectedTableName = [exportTables firstObject];
+
+			[exportFilename setString:(createCustomFilename) ? [self expandCustomFilenameFormatUsingTableName:selectedTableName] : [self generateDefaultExportFilename]];
+
+			// Only append the extension if necessary
+			if (![[exportFilename pathExtension] length]) {
+				[exportFilename setString:[exportFilename stringByAppendingPathExtension:[self currentDefaultExportFileExtension]]];
+			}
+
+			singleExportFile = [SPExportFile exportFileAtPath:[[exportPathField stringValue] stringByAppendingPathComponent:exportFilename]];
+		}
+
+		// Start the export process depending on the data source
+		if (exportSource == SPTableExport) {
+
+			// Cache the number of tables being exported
+			exportTableCount = [exportTables count];
+
+			// Several tables sharing one file are written as one object keyed by table name,
+			// so that the file stays a single JSON document
+			BOOL keyByTableName = (![self exportToMultipleFiles]) && (exportTableCount > 1);
+			NSUInteger tableIndex = 0;
+
+			// Loop through the tables, creating an exporter for each
+			for (NSString *table in exportTables)
+			{
+				jsonExporter = [self initializeJSONExporterForTable:table orDataArray:nil];
+
+				// If required create a single file handle for all JSON exports
+				if (![self exportToMultipleFiles]) {
+					if (!singleFileHandleSet) {
+						[exportFiles safeAddObject:singleExportFile];
+
+						singleFileHandleSet = YES;
+					}
+
+					[jsonExporter setExportOutputFile:singleExportFile];
+					[jsonExporter setJsonKeyByTableName:keyByTableName];
+					[jsonExporter setJsonIsFirstTableInFile:(tableIndex == 0)];
+					[jsonExporter setJsonIsLastTableInFile:(tableIndex == exportTableCount - 1)];
+				}
+
+				[exporters addObject:jsonExporter];
+
+				tableIndex++;
+			}
+		}
+		else {
+			jsonExporter = [self initializeJSONExporterForTable:nil orDataArray:dataArray];
+
+			[exportFiles safeAddObject:singleExportFile];
+
+			[jsonExporter setExportOutputFile:singleExportFile];
+
+			[exporters safeAddObject:jsonExporter];
 		}
 	}
 	// Dot export
@@ -1873,6 +1966,76 @@ set_input:
 	return xmlExporter;
 }
 
+/**
+ * Initialises a JSON exporter for the supplied table name or data array.
+ *
+ * @param table     The table name for which the exporter should be created for (can be nil).
+ * @param dataArray The MySQL result data array for which the exporter should be created for (can be nil).
+ */
+- (SAJSONExporter *)initializeJSONExporterForTable:(NSString *)table orDataArray:(NSArray *)dataArray
+{
+	SAJSONExporter *jsonExporter = [[SAJSONExporter alloc] initWithDelegate:self];
+
+	// Depending on the export source, set the table name or data array
+	if (exportSource == SPTableExport) {
+		[jsonExporter setJsonTableName:table];
+	}
+	else {
+		[jsonExporter setJsonDataArray:dataArray];
+
+		// Pass the source's column definitions so the JSON exporter knows each column's type:
+		// number-shaped VARCHAR values (e.g. "1e3") must stay JSON strings. They come in export
+		// order — the same table-column order currentDataResultWithNULLs writes rows in — so a
+		// column dragged to a new position keeps its own type flag.
+		if (exportSource == SPFilteredExport) {
+			[jsonExporter setJsonColumnDefinitions:[tableContentInstance exportDataColumnDefinitions]];
+		}
+		else if (exportSource == SPQueryExport) {
+			[jsonExporter setJsonColumnDefinitions:[customQueryInstance exportDataColumnDefinitions]];
+		}
+	}
+
+	[jsonExporter setJsonPrettyPrint:([exportJSONPrettyPrintCheck state] == NSControlStateValueOn)];
+
+	// If required create separate files
+	if (exportSource == SPTableExport && [self exportToMultipleFiles]) {
+
+		if (createCustomFilename) {
+
+			// Create custom filename based on the selected format
+			[exportFilename setString:[self expandCustomFilenameFormatUsingTableName:table]];
+
+			// If the user chose to use a custom filename format and we exporting to multiple files, make
+			// sure the table name is included to ensure the output files are unique.
+			if (exportTableCount > 1) {
+				BOOL tableNameInTokens = NO;
+				NSArray *representedObjects = [exportCustomFilenameTokenField objectValue];
+				for (id representedObject in representedObjects) {
+					if ([representedObject isKindOfClass:[SPExportFileNameTokenObject class]] && [[representedObject tokenId] isEqualToString:SPFileNameTableTokenName]) tableNameInTokens = YES;
+				}
+				[exportFilename setString:(tableNameInTokens ? exportFilename : [exportFilename stringByAppendingFormat:@"_%@", table])];
+			}
+		}
+		else {
+			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? self.exportDatabaseName : table)];
+		}
+
+		// Only append the extension if necessary
+		if (![[exportFilename pathExtension] length]) {
+			[exportFilename setString:[exportFilename stringByAppendingPathExtension:[self currentDefaultExportFileExtension]]];
+		}
+
+		SPExportFile *file = [SPExportFile exportFileAtPath:[[exportPathField stringValue] stringByAppendingPathComponent:exportFilename]];
+
+		[exportFiles addObject:file];
+
+		[jsonExporter setExportOutputFile:file];
+	}
+
+	return jsonExporter;
+}
+
 #pragma mark - SPExportFileUtilitiesPrivateAPI
 
 /**
@@ -1889,6 +2052,7 @@ set_input:
 		case SPSQLExport: format = SAExportOutputFormatSql; break;
 		case SPXMLExport: format = SAExportOutputFormatXml; break;
 		case SPDotExport: format = SAExportOutputFormatDot; break;
+		case SPJSONExport: format = SAExportOutputFormatJson; break;
 		case SPCSVExport:
 		default:          format = SAExportOutputFormatCsv; break;
 	}
@@ -2276,12 +2440,13 @@ set_input:
 	BOOL isCSV = exportType == SPCSVExport;
 	BOOL isDot = exportType == SPDotExport;
 	BOOL isXML = exportType == SPXMLExport;
+	BOOL isJSON = exportType == SPJSONExport;
 
 	// Determine whether to remove the table from the tokens list
 	if (exportSource == SPQueryExport || isDot) {
 		removeTable = YES;
 	}
-	else if (isSQL || isCSV || isXML) {
+	else if (isSQL || isCSV || isXML || isJSON) {
 		for (NSArray *table in tables)
 		{
 			if ([[table safeObjectAtIndex:2] boolValue]) {
@@ -2407,6 +2572,9 @@ set_input:
 			break;
 		case SPDotExport:
 			extension = @"dot";
+			break;
+		case SPJSONExport:
+			extension = @"json";
 			break;
 		case SPPDFExport:
 		case SPHTMLExport:
@@ -2966,6 +3134,7 @@ set_input:
 			NAMEOF(SPCSVExport);
 			NAMEOF(SPXMLExport);
 			NAMEOF(SPDotExport);
+			NAMEOF(SPJSONExport);
 			NAMEOF(SPPDFExport);
 			NAMEOF(SPHTMLExport);
 			NAMEOF(SPExcelExport);
@@ -2980,6 +3149,7 @@ set_input:
 	VALUEOF(SPCSVExport, etd, dst);
 	VALUEOF(SPXMLExport, etd, dst);
 	VALUEOF(SPDotExport, etd, dst);
+	VALUEOF(SPJSONExport, etd, dst);
 	//VALUEOF(SPPDFExport, etd, dst);
 	//VALUEOF(SPHTMLExport, etd, dst);
 	//VALUEOF(SPExcelExport, etd, dst);
@@ -3330,6 +3500,8 @@ set_input:
 			return [self xmlSettings];
 		case SPDotExport:
 			return [self dotSettings];
+		case SPJSONExport:
+			return [self jsonSettings];
 		case SPExcelExport:
 		case SPHTMLExport:
 		case SPPDFExport:
@@ -3351,6 +3523,8 @@ set_input:
 			return [self applyXmlSettings:settings];
 		case SPDotExport:
 			return [self applyDotSettings:settings];
+		case SPJSONExport:
+			return [self applyJsonSettings:settings];
 		case SPExcelExport:
 		case SPHTMLExport:
 		case SPPDFExport:
@@ -3397,6 +3571,23 @@ set_input:
 {
 	id o;
 	if((o = [settings objectForKey:@"DotForceLowerTableNames"])) SetOnOff(o, exportDotForceLowerTableNamesCheck);
+}
+
+- (NSDictionary *)jsonSettings
+{
+	return @{
+			 @"exportToMultipleFiles": IsOn(exportFilePerTableCheck),
+			 @"JSONPrettyPrint":       IsOn(exportJSONPrettyPrintCheck)
+			 };
+}
+
+- (void)applyJsonSettings:(NSDictionary *)settings
+{
+	id o;
+	if((o = [settings safeObjectForKey:@"exportToMultipleFiles"])) SetOnOff(o, exportFilePerTableCheck);
+	[self toggleNewFilePerTable:nil];
+
+	if((o = [settings safeObjectForKey:@"JSONPrettyPrint"]))       SetOnOff(o, exportJSONPrettyPrintCheck);
 }
 
 - (NSDictionary *)xmlSettings
@@ -3489,6 +3680,9 @@ set_input:
 			return [self xmlSpecificSettingsForSchemaObject:name ofType:type];
 		case SPDotExport:
 			return [self dotSpecificSettingsForSchemaObject:name ofType:type];
+		case SPJSONExport:
+			// JSON per table setting is only yes/no, like CSV
+			return [self csvSpecificSettingsForSchemaObject:name ofType:type];
 		case SPExcelExport:
 		case SPHTMLExport:
 		case SPPDFExport:
@@ -3510,6 +3704,8 @@ set_input:
 			return [self applyXmlSpecificSettings:settings forSchemaObject:name ofType:type];
 		case SPDotExport:
 			return [self applyDotSpecificSettings:settings forSchemaObject:name ofType:type];
+		case SPJSONExport:
+			return [self applyCsvSpecificSettings:settings forSchemaObject:name ofType:type];
 		case SPExcelExport:
 		case SPHTMLExport:
 		case SPPDFExport:
@@ -3859,6 +4055,79 @@ set_input:
 	// Only update the progress text if this is a table export
 	if (exportSource == SPTableExport) {
 		[exportProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Table %lu of %lu (%@): Writing data...", @"export label showing app if writing data for a specific table"), currentTableExportIndex, exportTableCount, [exporter xmlTableName]]];
+	}
+	else {
+		[exportProgressText setStringValue:NSLocalizedString(@"Writing data...", @"export label showing app is writing data")];
+	}
+
+	[exportProgressText displayIfNeeded];
+
+	[exportProgressIndicator stopAnimation:self];
+	[exportProgressIndicator setUsesThreadedAnimation:NO];
+	[exportProgressIndicator setIndeterminate:NO];
+	[exportProgressIndicator setDoubleValue:0];
+}
+
+#pragma mark - SAJSONExporterDelegate
+
+- (void)jsonExportProcessWillBegin:(SAJSONExporter *)exporter
+{
+	[exportProgressText displayIfNeeded];
+
+	[exportProgressIndicator setIndeterminate:YES];
+	[exportProgressIndicator setUsesThreadedAnimation:YES];
+	[exportProgressIndicator startAnimation:self];
+
+	// Only update the progress text if this is a table export
+	if (exportSource == SPTableExport) {
+
+		// Update the current table export index
+		currentTableExportIndex = (exportTableCount - [exporters count]);
+
+		[exportProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Table %lu of %lu (%@): Fetching data...", @"export label showing that the app is fetching data for a specific table"), currentTableExportIndex, exportTableCount, [exporter jsonTableName]]];
+	}
+	else {
+		[exportProgressText setStringValue:NSLocalizedString(@"Fetching data...", @"export label showing that the app is fetching data")];
+	}
+
+	[exportProgressText displayIfNeeded];
+}
+
+- (void)jsonExportProcessComplete:(SAJSONExporter *)exporter
+{
+	// If required add the next exporter to the operation queue
+	if (([exporters count] > 0) && (exportSource == SPTableExport)) {
+
+		// If we're exporting to multiple files then close the file handle of the exporter
+		// that just finished, ensuring its data is written to disk.
+		if (exportToMultipleFiles) {
+			[[exporter exportOutputFile] close];
+		}
+
+		[operationQueue addOperation:[exporters firstObject]];
+
+		// Remove the exporter we just added to the operation queue from our list of exporters
+		// so we know it's already been done.
+		[exporters safeRemoveObjectAtIndex:0];
+	}
+	// Otherwise if the exporter list is empty, close the progress sheet
+	else {
+		[[exporter exportOutputFile] close];
+
+		[self exportEnded];
+	}
+}
+
+- (void)jsonExportProcessProgressUpdated:(SAJSONExporter *)exporter
+{
+	[exportProgressIndicator setDoubleValue:[exporter exportProgressValue]];
+}
+
+- (void)jsonExportProcessWillBeginWritingData:(SAJSONExporter *)exporter
+{
+	// Only update the progress text if this is a table export
+	if (exportSource == SPTableExport) {
+		[exportProgressText setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Table %lu of %lu (%@): Writing data...", @"export label showing app if writing data for a specific table"), currentTableExportIndex, exportTableCount, [exporter jsonTableName]]];
 	}
 	else {
 		[exportProgressText setStringValue:NSLocalizedString(@"Writing data...", @"export label showing app is writing data")];
