@@ -192,6 +192,9 @@
 		2A7D5700E8EA895137AA6F91 /* SPMCPHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B91D4A5EC24F24F7A7BCA7D /* SPMCPHTTP.swift */; };
 		2DEA028C8FA0650277377586 /* SATableReloadRetryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49A74A9F19E546A0AB95B7AA /* SATableReloadRetryPolicyTests.swift */; };
 		2E69A3914D17A0971CD68A09 /* SATypeAheadMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC963BC8D32F5BF63842F4AF /* SATypeAheadMatcher.swift */; };
+		B7C0A0000000000000000001 /* SAPinnedTableGroupPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C0A0000000000000000011 /* SAPinnedTableGroupPlanner.swift */; };
+		B7C0A0000000000000000002 /* SAPinnedTableGroupPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C0A0000000000000000011 /* SAPinnedTableGroupPlanner.swift */; };
+		B7C0A0000000000000000003 /* SAPinnedTableGroupsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C0A0000000000000000012 /* SAPinnedTableGroupsController.swift */; };
 		302DF8917DC7950ACEC08BEB /* SAQueryFavoriteStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812D779A61DFF497CD129924 /* SAQueryFavoriteStoreTests.swift */; };
 		32F9E22AF3964434B1429591 /* SATextViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB59B1CBC3F48418228E1EC /* SATextViewDelegate.swift */; };
 		33C3E41F77A1BEF1D611A511 /* SACodePointLengthAndMySQLDateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */; };
@@ -1662,6 +1665,8 @@
 		E19FEB555305B2E43ECCAA39 /* SPMCPServerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SPMCPServerTests.swift; sourceTree = "<group>"; };
 		EC23B8A2720007CC603932B3 /* SAMarkedTextInputStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAMarkedTextInputStateTests.swift; sourceTree = "<group>"; };
 		EC963BC8D32F5BF63842F4AF /* SATypeAheadMatcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadMatcher.swift; sourceTree = "<group>"; };
+		B7C0A0000000000000000011 /* SAPinnedTableGroupPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPinnedTableGroupPlanner.swift; sourceTree = "<group>"; };
+		B7C0A0000000000000000012 /* SAPinnedTableGroupsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPinnedTableGroupsController.swift; sourceTree = "<group>"; };
 		ED6AC28123000BCB7363F94A /* SAKeyboardShortcutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAKeyboardShortcutTests.swift; sourceTree = "<group>"; };
 		EF5C9FD78A565D5260B38E55 /* SAUserManagerPrivilegeNormalizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAUserManagerPrivilegeNormalizer.swift; sourceTree = "<group>"; };
 		F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAAnalyticsConsentPolicy+Firebase.swift"; sourceTree = "<group>"; };
@@ -2004,6 +2009,7 @@
 				17E6415F0EF01F15001BC333 /* SPTableInfo.m */,
 				17E641600EF01F15001BC333 /* SPTablesList.h */,
 				17E641610EF01F15001BC333 /* SPTablesList.m */,
+				B7C0A0000000000000000012 /* SAPinnedTableGroupsController.swift */,
 				BC27779E11514B940034DF6A /* SPNavigatorController.h */,
 				BC27779F11514B940034DF6A /* SPNavigatorController.m */,
 				17A7773211C52D8E001E27B4 /* SPIndexesController.h */,
@@ -2871,6 +2877,7 @@
 				51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */,
 				91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */,
 				EC963BC8D32F5BF63842F4AF /* SATypeAheadMatcher.swift */,
+				B7C0A0000000000000000011 /* SAPinnedTableGroupPlanner.swift */,
 				51BE43DC30174CC700AF389C /* SANotificationCenter.swift */,
 				51BE68DB3017550E00AF389C /* SAImageRenderer.swift */,
 				AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */,
@@ -3804,6 +3811,7 @@
 				FA9D8FF0B7ABD591E1A9170E /* SADragPasteboard.swift in Sources */,
 				E51CC2AA59AF37FEF73B06A0 /* SADragPasteboardTests.swift in Sources */,
 				C26711118FBC656C605CA64C /* SATypeAheadMatcher.swift in Sources */,
+				B7C0A0000000000000000002 /* SAPinnedTableGroupPlanner.swift in Sources */,
 				D877EB7F27977CC35E75E996 /* SATypeAheadMatcherTests.swift in Sources */,
 				C3D891759933FA88761B91F1 /* SAMarkedTextInputState.swift in Sources */,
 				AED27D68E816948A2CE775B5 /* SAMarkedTextInputStateTests.swift in Sources */,
@@ -3892,6 +3900,7 @@
 				AA000001000000000000001B /* SAAboutView.swift in Sources */,
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
+				B7C0A0000000000000000003 /* SAPinnedTableGroupsController.swift in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
 				51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
@@ -4175,6 +4184,7 @@
 				16C621C7049FAECBAC96972E /* SAKeyboardShortcut.swift in Sources */,
 				410065F67228AD394D48A156 /* SADragPasteboard.swift in Sources */,
 				2E69A3914D17A0971CD68A09 /* SATypeAheadMatcher.swift in Sources */,
+				B7C0A0000000000000000001 /* SAPinnedTableGroupPlanner.swift in Sources */,
 				99A89739992311A3A5EF3409 /* SATablesListView.swift in Sources */,
 				380D266BBBC36C450828626B /* SAMarkedTextInputState.swift in Sources */,
 				D5C55E280BE7908914727AB9 /* SAAnalyticsConsentPolicy.swift in Sources */,
