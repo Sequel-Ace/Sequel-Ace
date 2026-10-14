@@ -5079,3 +5079,24 @@
 
 /* export dialog options: XML row label before the schema pop-up (MySQL / Plain schema) */
 "ClaudeExportOptFormat" = "Format";
+
+/* import options: accessibility name of the CSV / SQL format switcher */
+"ClaudeImportFormatSwitcher" = "Import format";
+
+/* import options: label of the file encoding pop-up */
+"ClaudeImportEncoding" = "Encoding";
+
+/* import options: label of the CSV field separator field */
+"ClaudeImportFieldsTerminated" = "Fields terminated";
+
+/* import options: label of the CSV field enclosing character field */
+"ClaudeImportFieldsEnclosed" = "Fields enclosed";
+
+/* import options: label of the CSV line terminator field */
+"ClaudeImportLinesTerminated" = "Lines terminated";
+
+/* import options: label of the CSV escape character field */
+"ClaudeImportFieldsEscaped" = "Fields escaped";
+
+/* import options: label of the pop-up choosing what to do when a SQL statement fails */
+"ClaudeImportOnSQLError" = "On SQL error";

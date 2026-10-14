@@ -6,7 +6,8 @@
 //  styles (and every open panel whose accessory it styles); it claims those of an `SPDataImport`, found through the
 //  window's controls (their target) or the open panel's delegate, as SPDataImport.m carries no hook. Once per
 //  importer it styles the progress and errors sheets (`SAClaudeProgressSheetStyler`, kept in step with the editor
-//  theme, the accent and the appearance). App target only.
+//  theme, the accent and the appearance); the open panel's options strip and the Import from Clipboard sheet go to
+//  `SAClaudeImportAccessoryStyler`. App target only.
 //
 
 import AppKit
@@ -21,8 +22,10 @@ enum SAClaudeImportStyler {
         // Task 5: the field mapper's Global values sheet (its controls target the mapper, not the importer).
         guard let importer = importer(for: window) else { return }
         SAClaudeImportSheets.attach(to: importer)
-        // Task 3: the open panel's accessory (`window is NSSavePanel`) and the clipboard sheet
-        // (`importFromClipboardSheet`).
+        // The options strip: the open panel's accessory, or inside the Import from Clipboard sheet.
+        if window is NSSavePanel || window === SAClaudeExportStyler.outlet(importer, "importFromClipboardSheet") as NSWindow? {
+            SAClaudeImportAccessoryStyler.attach(importer: importer)?.claim(window)
+        }
     }
 
     /// The SPDataImport instance a window belongs to: a control in it whose target's class name is "SPDataImport",
