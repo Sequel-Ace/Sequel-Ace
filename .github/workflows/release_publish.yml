@@ -204,7 +204,7 @@ jobs:
 
       - name: Set up Ruby and locked gems
         if: steps.authorization.outputs.enabled == 'true'
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -451,7 +451,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -544,7 +544,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -647,7 +647,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -957,7 +957,7 @@ jobs:
       - name: Offer the verified ZIPs without private archive access
         if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
         id: public_handoff
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verified-release-zips-${{ needs.discover.outputs.build }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/public-release-handoff/
@@ -1152,7 +1152,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true

@@ -52,6 +52,7 @@ module SequelAceRelease
       when "validate-publish-handoff" then validate_publish_handoff(argv)
       when "validate-forward-recovery" then validate_forward_recovery(argv)
       when "cloud-status" then cloud_status(argv)
+      when "cloud-workflow-status" then cloud_workflow_status(argv)
       when "wait-cloud" then wait_cloud(argv)
       when "download-cloud-artifacts" then download_cloud_artifacts(argv)
       when "retry-alpha" then retry_alpha(argv)
@@ -841,6 +842,28 @@ module SequelAceRelease
       result = CloudRunStatus.new(client: app_store_client).readiness(**options.slice(
         :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit, :require_downloadable_artifact
       ))
+      emit(result, options[:output])
+    end
+
+    # Read-only preflight: never repair a missed tag event by creating a run.
+    def cloud_workflow_status(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release cloud-workflow-status --workflow-id ID --tag TAG [--require-automatic]"
+        value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--require-automatic") { options[:require_automatic] = true }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :workflow_id, :tag)
+      unless options[:tag].match?(/\A(?:production|beta)\/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*\z/)
+        raise ValidationError, "Cloud preflight requires a canonical release tag"
+      end
+      inspector = CloudWorkflowTrigger.new(client: app_store_client)
+      arguments = options.slice(:workflow_id, :tag)
+      result = options[:require_automatic] ? inspector.validate!(**arguments) : inspector.inspect(**arguments)
       emit(result, options[:output])
     end
 
@@ -1853,6 +1876,7 @@ module SequelAceRelease
           validate-publish-handoff   Validate an archived prerelease continuation
           validate-forward-recovery  Validate a preserved forward-only build mismatch
           cloud-status               Inspect an exact Xcode Cloud build without waiting
+          cloud-workflow-status      Inspect tag triggers; optionally require automatic start
           wait-cloud                 Wait for an exact Xcode Cloud build
           download-cloud-artifacts   Download every artifact for an exact Cloud build run
           retry-alpha                Reuse or start an Alpha-only retry for a failed beta run

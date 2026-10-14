@@ -48,6 +48,9 @@ static NSStringEncoding NSFromCFStringEncodingDOSJapanese;
 static NSStringEncoding NSFromCFStringEncodingEUC_KR;
 static NSStringEncoding NSFromCFStringEncodingGB_2312_80;
 static NSStringEncoding NSFromCFStringEncodingGBK_95;
+static NSStringEncoding NSFromCFStringEncodingDOSKorean;
+static NSStringEncoding NSFromCFStringEncodingEUC_CN;
+static NSStringEncoding NSFromCFStringEncodingGB_18030_2000;
 
 @implementation SPMySQLResult (Data_Conversion_Private_API)
 
@@ -97,6 +100,9 @@ static NSStringEncoding NSFromCFStringEncodingGBK_95;
 	NSFromCFStringEncodingEUC_KR = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_KR);
 	NSFromCFStringEncodingGB_2312_80 = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_2312_80);
 	NSFromCFStringEncodingGBK_95 = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGBK_95);
+	NSFromCFStringEncodingDOSKorean = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSKorean);
+	NSFromCFStringEncodingEUC_CN = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_CN);
+	NSFromCFStringEncodingGB_18030_2000 = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_18030_2000);
 }
 
 /**
@@ -352,7 +358,12 @@ PRIVATE NSString * _convertStringData(const void *dataBytes, NSUInteger dataLeng
 	// with CP949.
 	// Similarly, variable-length GBK, which can be one or two bytes; a character beginning
 	// with 0x81-0xFE is two bytes long, otherwise one byte.
-	else if (aStringEncoding == NSFromCFStringEncodingEUC_KR || aStringEncoding == NSFromCFStringEncodingGBK_95) {
+	// CP949 is the superset of EUC-KR this framework carries Korean sessions in, and EUC-CN the
+	// one it carries gb2312 sessions in; both are one or two bytes with a lead byte in the same
+	// range, EUC-CN using only 0xA1-0xFE of it. Without them here a Korean or gb2312 preview fell
+	// to the single-byte path below and was cut after half the characters asked for, mid-character.
+	else if (aStringEncoding == NSFromCFStringEncodingEUC_KR || aStringEncoding == NSFromCFStringEncodingGBK_95
+	         || aStringEncoding == NSFromCFStringEncodingDOSKorean || aStringEncoding == NSFromCFStringEncodingEUC_CN) {
 		while (i < dataLength && characterLength < previewLength) {
 			uint8_t charStart = ((uint8_t *)dataBytes)[i];
 			if (charStart >= 0x81 && charStart <= 0xFE) {
@@ -363,6 +374,23 @@ PRIVATE NSString * _convertStringData(const void *dataBytes, NSUInteger dataLeng
 			characterLength++;
 		}
 		byteLength = i;
+	}
+
+	// GB18030, which can be one, two or four bytes.  A character beginning with 0x81-0xFE is
+	// four bytes long when the byte after it is 0x30-0x39, and two bytes otherwise; anything
+	// else is one byte.
+	else if (aStringEncoding == NSFromCFStringEncodingGB_18030_2000) {
+		while (i < dataLength && characterLength < previewLength) {
+			uint8_t charStart = ((uint8_t *)dataBytes)[i];
+			if (charStart >= 0x81 && charStart <= 0xFE) {
+				uint8_t secondByte = (i + 1 < dataLength) ? ((uint8_t *)dataBytes)[i + 1] : 0;
+				i += (secondByte >= 0x30 && secondByte <= 0x39) ? 4 : 2;
+			} else {
+				i++;
+			}
+			characterLength++;
+		}
+		byteLength = MIN(i, dataLength);
 	}
 
 	// Shift JIS, which can be one or two bytes.  A character starting in the ranges
