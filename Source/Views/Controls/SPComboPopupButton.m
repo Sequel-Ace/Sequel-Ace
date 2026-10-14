@@ -30,9 +30,9 @@
 
 #import "SPComboPopupButton.h"
 
-#define kSPComboPopupButtonLineOffsetMini 13;
-#define kSPComboPopupButtonLineOffsetSmall 15;
-#define kSPComboPopupButtonLineOffsetRegular 17;
+#define kSPComboPopupButtonLineOffsetMini 16;
+#define kSPComboPopupButtonLineOffsetSmall 21;
+#define kSPComboPopupButtonLineOffsetRegular 23;
 
 @interface SPComboPopupButton ()
 
