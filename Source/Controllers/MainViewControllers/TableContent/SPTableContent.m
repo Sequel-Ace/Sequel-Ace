@@ -2923,6 +2923,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	NSUInteger i;
 	
+	// Said here, where the statement runs, and taken back right after it: every way of not getting
+	// here - a value that could not be prepared, a WHERE condition that could not be built, only
+	// generated columns changed, the user declining the confirmation - then leaves the document's
+	// processing state as it found it, instead of announcing a query that never comes.
+	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
+
 	// Run the query
 	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
@@ -3117,8 +3123,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
       [rowValuesToSave safeAddObject:fieldValue];
     }
 	}
-
-	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
 	NSMutableString *queryString;
 
