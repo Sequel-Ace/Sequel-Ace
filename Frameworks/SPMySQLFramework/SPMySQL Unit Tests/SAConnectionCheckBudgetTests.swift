@@ -10,6 +10,34 @@
 import XCTest
 @testable import SPMySQL
 
+/// Replaces only the transport, and records the limit every attempt was given. The check, the
+/// decision about the lost connection and the retry loop around them are the framework's own code.
+private final class SAFailedCheckRetryConnection: SPMySQLConnection {
+    /// The connect timeout each attempt ran on, in the order the attempts were made - the
+    /// attempt's own limit where its budget set one, the configured timeout otherwise, which is
+    /// how `_connect` reads them.
+    var connectTimeouts: [UInt] = []
+
+    @objc(_pingConnectionUsingLoopDelay:timeout:) func failingPing(_ loopDelay: UInt, timeout: UInt) -> Bool {
+        false
+    }
+
+    @objc(_connect) func recordAttempt() -> Bool {
+        let attemptLimit = (value(forKey: "connectTimeoutOverride") as? UInt) ?? 0
+        connectTimeouts.append(attemptLimit > 0 ? attemptLimit : timeout)
+        setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+        return false
+    }
+
+    @objc(_disconnectPreservingProxyReconnect:) func closeSession(_ preserveProxy: Bool) {
+        setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+    }
+
+    @objc(_waitForNetworkConnectionWithTimeout:) func waitForNetwork(_ timeout: Double) -> Bool {
+        true
+    }
+}
+
 final class SAConnectionCheckBudgetTests: XCTestCase {
     /// The default timeout is capped at the check limits.
     func testDefaultTimeoutIsCappedAtTheCheckLimits() {
@@ -137,6 +165,40 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         XCTAssertGreaterThan(SAConnectionCheckBudget.checkPingTimeout(forConfiguredTimeout: 1,
                                                                       sessionHasOpenTransaction: true),
                              SAConnectionCheckBudget.pingLimit, "a very short timeout does not shorten it further")
+    }
+
+    /// Only an answer from a delegate makes a retry the user's to wait for.
+    func testOnlyADelegatesAnswerMakesARetryTheUsersToWaitFor() {
+        XCTAssertTrue(SAConnectionCheckBudget.retryKeepsFailedCheckLimits(afterFailedCheck: true,
+                                                                           decisionCameFromDelegate: false))
+        XCTAssertFalse(SAConnectionCheckBudget.retryKeepsFailedCheckLimits(afterFailedCheck: true,
+                                                                            decisionCameFromDelegate: true))
+        XCTAssertFalse(SAConnectionCheckBudget.retryKeepsFailedCheckLimits(afterFailedCheck: false,
+                                                                            decisionCameFromDelegate: false))
+    }
+
+    /// Every attempt a failed check leads to keeps the check's limits, the ones the connection
+    /// decides on by itself included: with no delegate to ask it selects a reconnect five times
+    /// over, and on a connection with no timeout configured each of those would otherwise wait
+    /// with no limit at all - which is the wait the check exists to bound.
+    func testEveryRetryOfAFailedCheckKeepsItsLimits() {
+        let connection = SAFailedCheckRetryConnection()
+        connection.useKeepAlive = false
+        connection.timeout = 0
+        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+
+        XCTAssertFalse(connection.check())
+
+        // The check's own attempt, and the five the connection goes on to decide on.
+        XCTAssertEqual(connection.connectTimeouts.count, 6)
+        for granted in connection.connectTimeouts {
+            XCTAssertNotEqual(granted, 0, "an attempt of a failed check cannot run without a limit")
+            XCTAssertLessThanOrEqual(granted, SAConnectionCheckBudget.connectLimit)
+        }
     }
 
 }

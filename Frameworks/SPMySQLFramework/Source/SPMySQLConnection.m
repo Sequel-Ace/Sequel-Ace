@@ -1469,6 +1469,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 		                                                                                      afterFailedCheck:reconnectingAfterFailedCheck];
 		NSUInteger attemptConnectTimeout = [attemptBudget connectTimeout];
 
+		// Whether this attempt is a failed check's, kept past the connect: the flag goes with the
+		// attempt's other short limits once the connect is over, and the retry decided on below
+		// still has to know whose attempt it continues.
+		BOOL attemptFollowedFailedCheck = reconnectingAfterFailedCheck;
+
 		// If no network is present, wait for a short time for one to become available
 		[self _waitForNetworkConnectionWithTimeout:[attemptBudget networkWait]];
 
@@ -1674,6 +1679,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 				default:
 					reconnectingThread = NULL;
                     SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
+					// Where there was nobody to ask, the decision above was the connection's own, and
+					// the attempt is still the failed check's: it keeps the check's limits. A retry a
+					// delegate chose is the user's to wait for, and keeps the configured timeout.
+					reconnectingAfterFailedCheck = [SAConnectionCheckBudget retryKeepsFailedCheckLimitsAfterFailedCheck:attemptFollowedFailedCheck
+					                                                                          decisionCameFromDelegate:delegateSupportsConnectionLost];
 					reconnectSucceeded = [self _reconnectAllowingRetries:YES];
 			}
 		}
