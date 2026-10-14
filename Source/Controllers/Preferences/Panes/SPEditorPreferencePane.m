@@ -291,6 +291,19 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
 }
 
+/**
+ * Opens the font panel for the Script Output section's custom console font.
+ */
+- (void)showScriptConsoleFontPanel
+{
+	[[NSFontManager sharedFontManager] setAction:@selector(changeDefaultFont:)];
+
+	[(SPPreferenceController *)[[[self view] window] delegate] setFontChangeTarget:SPPrefFontChangeTargetScriptConsole];
+
+	[[NSFontPanel sharedFontPanel] setPanelFont:[SAScriptConsoleFontPanel currentFont] isMultiple:NO];
+	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
+}
+
 - (IBAction)resetSystemFont:(id)sender
 {
   [prefs setObject:[SAArchiving archivedDataForFont:[NSUserDefaults getSystemFont]] forKey:SPCustomQueryEditorFont];
@@ -698,7 +711,11 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 - (NSView *)preferencePaneView
 {
-	return [self view];
+	// The XIB view with the Swift "Script Output" section below it (built once, cached).
+	__weak SPEditorPreferencePane *weakSelf = self;
+	return [SAScriptConsoleAppearanceSectionHost paneViewWrapping:[self view] onSelectFont:^{
+		[weakSelf showScriptConsoleFontPanel];
+	}];
 }
 
 - (NSImage *)preferencePaneIcon

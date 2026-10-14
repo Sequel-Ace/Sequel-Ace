@@ -166,7 +166,7 @@
 @property BOOL textViewWasChanged;
 @property (strong) SPBracketHighlighter *bracketHighlighter;
 
-// Exposed for Swift extensions (see SPCustomQuery+Explain.swift)
+// Exposed for Swift extensions (see SPCustomQuery+Explain.swift, SPCustomQuery+Script.swift)
 @property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
 @property (readonly, strong) SPTablesList *tablesListInstance;
 @property (readonly, strong) SPTextView *textView;
@@ -178,6 +178,9 @@
 @property (readonly, strong) NSTextField *errorTextTitle;
 @property (readonly, strong) id errorText;
 @property (readonly, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
+@property (readonly, strong) SPMySQLConnection *mySQLConnection;
+@property (readonly, strong) NSScrollView *customQueryScrollView;
+@property (readonly, strong) id affectedRowsText;
 
 // IBAction methods
 - (IBAction)runPrimaryQueryAction:(id)sender;
