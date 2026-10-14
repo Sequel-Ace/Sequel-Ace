@@ -752,6 +752,10 @@
 		B7D24E9A1C5F4306A8E2F159 /* SAClaudeTableInfoCopyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3B91D05A7C4F28B4C0A7D3 /* SAClaudeTableInfoCopyButton.swift */; };
 		EFF2A4C8D7D22BD7F694D7B1 /* SAClaudeFilterCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ACBF542FEED47B84FCD687D /* SAClaudeFilterCells.swift */; };
 		5AC1A0DE5EE7000000000002 /* SAClaudeSheetStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC1A0DE5EE7000000000001 /* SAClaudeSheetStyler.swift */; };
+		5AC1A0DE5EE7000000000007 /* SAClaudeSheetCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC1A0DE5EE7000000000006 /* SAClaudeSheetCells.swift */; };
+		5AC1A0DE5EE7000000000009 /* SAClaudeAlertPresentationHook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC1A0DE5EE7000000000008 /* SAClaudeAlertPresentationHook.swift */; };
+		5AC1A0DE5EE7000000000004 /* SAClaudeClassSwap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC1A0DE5EE7000000000003 /* SAClaudeClassSwap.swift */; };
+		5AC1A0DE5EE7000000000005 /* SAClaudeClassSwap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC1A0DE5EE7000000000003 /* SAClaudeClassSwap.swift */; };
 		A5C1E0D81A2B3C4D5E6F7089 /* SAClaudeRunButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */; };
 		A5C1E0DA1A2B3C4D5E6F708B /* SAClaudeLineNumberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */; };
 		C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */; };
@@ -1754,6 +1758,9 @@
 		F7F2FD803BC1212FFB686712 /* SAClaudeFilterBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterBarStyler.swift; sourceTree = "<group>"; };
 		0ACBF542FEED47B84FCD687D /* SAClaudeFilterCells.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterCells.swift; sourceTree = "<group>"; };
 		5AC1A0DE5EE7000000000001 /* SAClaudeSheetStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSheetStyler.swift; sourceTree = "<group>"; };
+		5AC1A0DE5EE7000000000006 /* SAClaudeSheetCells.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSheetCells.swift; sourceTree = "<group>"; };
+		5AC1A0DE5EE7000000000008 /* SAClaudeAlertPresentationHook.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertPresentationHook.swift; sourceTree = "<group>"; };
+		5AC1A0DE5EE7000000000003 /* SAClaudeClassSwap.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeClassSwap.swift; sourceTree = "<group>"; };
 		A5C1E0D71A2B3C4D5E6F7088 /* SAClaudeRunButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRunButton.swift; sourceTree = "<group>"; };
 		A5C1E0D91A2B3C4D5E6F708A /* SAClaudeLineNumberView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineNumberView.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifier.swift; sourceTree = "<group>"; };
@@ -2994,6 +3001,8 @@
 				6E3B91D05A7C4F28B4C0A7D3 /* SAClaudeTableInfoCopyButton.swift */,
 				0ACBF542FEED47B84FCD687D /* SAClaudeFilterCells.swift */,
 				5AC1A0DE5EE7000000000001 /* SAClaudeSheetStyler.swift */,
+				5AC1A0DE5EE7000000000006 /* SAClaudeSheetCells.swift */,
+				5AC1A0DE5EE7000000000008 /* SAClaudeAlertPresentationHook.swift */,
 				50805B0B1BF2A068005F7A99 /* SPPopUpButtonCell.h */,
 				50805B0C1BF2A068005F7A99 /* SPPopUpButtonCell.m */,
 				3876E15B1CC0BA0300D85154 /* SPTableFooterPopUpButtonCell.h */,
@@ -3173,6 +3182,7 @@
 				87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */,
 				706B9F08AD7882845E635836 /* SAClaudeAccent.swift */,
 				A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */,
+				5AC1A0DE5EE7000000000003 /* SAClaudeClassSwap.swift */,
 				D3A1C0DE0000000000000001 /* SAClaudeTableInfoLayout.swift */,
 				E7A1C0DE0000000000000001 /* SAClaudeConnectionPanelLayout.swift */,
 				F8B2C0DE0000000000000001 /* SAClaudeFavoriteCardLayout.swift */,
@@ -4193,6 +4203,7 @@
 				C6EDCA2BD0D45CFFDA28EC4C /* SAClaudeAccent.swift in Sources */,
 				A7C21E5B9D3F4A60B18E2C47 /* SAClaudeEditorColoursSection.swift in Sources */,
 				C3D4E5F60718293A4B5C6D7E /* SAClaudeSheetRules.swift in Sources */,
+				5AC1A0DE5EE7000000000005 /* SAClaudeClassSwap.swift in Sources */,
 				D3A1C0DE0000000000000003 /* SAClaudeTableInfoLayout.swift in Sources */,
 				E7A1C0DE0000000000000003 /* SAClaudeConnectionPanelLayout.swift in Sources */,
 				F8B2C0DE0000000000000003 /* SAClaudeFavoriteCardLayout.swift in Sources */,
@@ -4282,6 +4293,9 @@
 				B7D24E9A1C5F4306A8E2F159 /* SAClaudeTableInfoCopyButton.swift in Sources */,
 				EFF2A4C8D7D22BD7F694D7B1 /* SAClaudeFilterCells.swift in Sources */,
 				5AC1A0DE5EE7000000000002 /* SAClaudeSheetStyler.swift in Sources */,
+				5AC1A0DE5EE7000000000007 /* SAClaudeSheetCells.swift in Sources */,
+				5AC1A0DE5EE7000000000009 /* SAClaudeAlertPresentationHook.swift in Sources */,
+				5AC1A0DE5EE7000000000004 /* SAClaudeClassSwap.swift in Sources */,
 				C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */,
 				CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
 				51BE68DC3017550E00AF389C /* SAImageRenderer.swift in Sources */,

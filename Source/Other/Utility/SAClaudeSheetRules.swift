@@ -151,7 +151,8 @@ enum SAClaudeSheetTargeting {
         /// NSWindow, NSPanel or a class of the app itself (not a system panel, popover or other AppKit-private window).
         var isPlainOrAppWindowClass = true
         var hasSheetParent = false
-        /// The class names of the window's controller and delegate.
+        /// The class names of the window's controller and delegate, as `NSStringFromClass` gives them (a Swift
+        /// class without an `@objc` name comes module-qualified, "Sequel_Ace.SPWindowController").
         var ownerClasses: [String] = []
     }
 
@@ -159,8 +160,14 @@ enum SAClaudeSheetTargeting {
         if facts.isAlertWindow { return .alert }
         if facts.isSavePanel { return .accessoryOnly }
         guard facts.isPlainOrAppWindowClass else { return .skip }
-        if facts.ownerClasses.contains(where: excludedOwnerClasses.contains) { return .skip }
+        let owners = facts.ownerClasses.map(unqualified)
+        if owners.contains(where: excludedOwnerClasses.contains) { return .skip }
         if facts.hasSheetParent { return .window }
-        return facts.ownerClasses.contains(where: auxiliaryOwnerClasses.contains) ? .window : .skip
+        return owners.contains(where: auxiliaryOwnerClasses.contains) ? .window : .skip
+    }
+
+    /// A class name without its module prefix: "Sequel_Ace.SPWindowController" → "SPWindowController".
+    static func unqualified(_ className: String) -> String {
+        className.split(separator: ".").last.map(String.init) ?? className
     }
 }

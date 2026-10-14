@@ -298,7 +298,7 @@ private enum SheetButtonDrawing {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
         let rect = SheetButtonDrawing.rect(self, in: cellFrame)
-        SAClaudeSecondaryButtonCell.drawSecondary(self, in: rect, font: SheetButtonDrawing.font(self, weight: .regular),
+        SAClaudeSecondaryButtonCell.drawSecondary(self, in: rect, font: SheetButtonDrawing.font(self, weight: .medium),
                                                   hovered: SheetButtonDrawing.isHovered(rect, in: controlView))
     }
 }
@@ -307,7 +307,8 @@ private enum SheetButtonDrawing {
 
 /// Swaps the filter bar's controls over to the cells above. Every function leaves a control alone unless it is
 /// one of the exact AppKit classes below (a control of any other class, such as one KVO has already
-/// isa-swizzled, is not ours to change), and never swaps twice.
+/// isa-swizzled, is not ours to change), never swaps twice, and never swaps an object something observes by
+/// KVO (`SAClaudeClassSwap`).
 enum SAClaudeFilterCells {
 
     /// The private classes AppKit's rule editor builds its pop-ups with.
@@ -409,7 +410,8 @@ enum SAClaudeFilterCells {
         } else {
             return false
         }
-        guard let newViewClass, let newCellClass else { return false }
+        guard let newViewClass, let newCellClass,
+              SAClaudeClassSwap.mayChangeClass(of: popUp), SAClaudeClassSwap.mayChangeClass(of: cell) else { return false }
 
         popUp.isBordered = false
         object_setClass(cell, newCellClass)
@@ -430,7 +432,7 @@ enum SAClaudeFilterCells {
             hideHostingViews(in: button)
             return true
         }
-        guard let newViewClass = hostClass(for: button) else { return false }
+        guard let newViewClass = hostClass(for: button), SAClaudeClassSwap.mayChangeClass(of: button) else { return false }
         object_setClass(button, newViewClass)
         if #available(macOS 14.0, *) { button.clipsToBounds = false }
         hideHostingViews(in: button)
@@ -454,7 +456,7 @@ enum SAClaudeFilterCells {
         } else {
             newCellClass = nil
         }
-        guard let newCellClass, installCellDrawing(on: button) else { return false }
+        guard let newCellClass, SAClaudeClassSwap.mayChangeClass(of: cell), installCellDrawing(on: button) else { return false }
         object_setClass(cell, newCellClass)
         button.needsDisplay = true
         return true
@@ -468,7 +470,8 @@ enum SAClaudeFilterCells {
         let wanted: AnyClass = primary ? SAClaudeSheetPrimaryButtonCell.self : SAClaudeSheetSecondaryButtonCell.self
         let other: AnyClass = primary ? SAClaudeSheetSecondaryButtonCell.self : SAClaudeSheetPrimaryButtonCell.self
         let current: AnyClass = type(of: cell)
-        if current == wanted { return true }
+        if current == wanted || NSStringFromClass(current).hasPrefix(derivedPrefix + NSStringFromClass(wanted) + "_") { return true }
+        guard SAClaudeClassSwap.mayChangeClass(of: cell), SAClaudeClassSwap.mayChangeClass(of: button) else { return false }
         if current == other {
             object_setClass(cell, wanted)
             button.needsDisplay = true
@@ -477,8 +480,6 @@ enum SAClaudeFilterCells {
         // A derived alert cell: re-derive from its AppKit base with the other donor.
         let name = NSStringFromClass(current)
         let otherMarker = derivedPrefix + NSStringFromClass(other) + "_"
-        let wantedMarker = derivedPrefix + NSStringFromClass(wanted) + "_"
-        if name.hasPrefix(wantedMarker) { return true }
         guard name.hasPrefix(otherMarker), let base = class_getSuperclass(current),
               let derived = derivedClass(of: base, donor: wanted, selectors: [drawSelector]) else { return false }
         object_setClass(cell, derived)

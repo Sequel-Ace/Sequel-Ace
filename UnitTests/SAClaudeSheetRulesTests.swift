@@ -235,12 +235,68 @@ final class SAClaudeSheetTargetingTests: XCTestCase {
     }
 
     func testMainDocumentWindowAndConsoleAreSkippedEvenAsSheets() {
-        XCTAssertEqual(decide { $0.ownerClasses = ["SPWindowController"] }, .skip)
+        XCTAssertEqual(decide { $0.ownerClasses = ["Sequel_Ace.SPWindowController"]; $0.hasSheetParent = true }, .skip)
         XCTAssertEqual(decide { $0.ownerClasses = ["SPQueryController"]; $0.hasSheetParent = true }, .skip)
+    }
+
+    func testModuleQualifiedSwiftOwnersAreMatchedUnqualified() {
+        XCTAssertEqual(decide { $0.ownerClasses = ["Sequel_Ace.SAConnectionWindowController"]; $0.hasSheetParent = true }, .skip)
+        XCTAssertEqual(decide { $0.ownerClasses = ["Sequel_Ace.SPWindowController"] }, .skip)
+        XCTAssertEqual(decide { $0.ownerClasses = ["Sequel_Ace.SPPreferenceController"] }, .window)
+        XCTAssertEqual(SAClaudeSheetTargeting.unqualified("Sequel_Ace.SPWindowController"), "SPWindowController")
+        XCTAssertEqual(SAClaudeSheetTargeting.unqualified("SPUserManager"), "SPUserManager")
     }
 
     func testSystemPanelsAndPopoversAreSkipped() {
         XCTAssertEqual(decide { $0.isPlainOrAppWindowClass = false; $0.hasSheetParent = true }, .skip)
         XCTAssertEqual(decide { $0.isPlainOrAppWindowClass = false; $0.ownerClasses = ["SPPreferenceController"] }, .skip)
+    }
+}
+
+final class SAClaudeClassSwapTests: XCTestCase {
+
+    private final class Observer: NSObject {
+        override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?,
+                                   context: UnsafeMutableRawPointer?) {}
+    }
+
+    /// Sends its change notifications by hand, so KVO doesn't need a runtime subclass to observe it.
+    private final class ManuallyNotified: NSObject {
+        override class func automaticallyNotifiesObservers(forKey key: String) -> Bool { false }
+        @objc var value = 0 {
+            willSet { willChangeValue(forKey: "value") }
+            didSet { didChangeValue(forKey: "value") }
+        }
+    }
+
+    func testUnobservedButtonMayChangeClass() {
+        XCTAssertTrue(SAClaudeClassSwap.mayChangeClass(of: NSButton(title: "OK", target: nil, action: nil)))
+    }
+
+    func testKVOObservedButtonMayNotChangeClassUntilTheObserverLeaves() {
+        let button = NSButton(title: "OK", target: nil, action: nil)
+        let observer = Observer()
+        button.addObserver(observer, forKeyPath: "hidden", options: [], context: nil)
+        XCTAssertFalse(SAClaudeClassSwap.mayChangeClass(of: button))
+        button.removeObserver(observer, forKeyPath: "hidden")
+        XCTAssertTrue(SAClaudeClassSwap.mayChangeClass(of: button))
+    }
+
+    func testManuallyNotifiedObservedObjectMayNotChangeClass() {
+        let object = ManuallyNotified()
+        let observer = Observer()
+        object.addObserver(observer, forKeyPath: "value", options: [], context: nil)
+        defer { object.removeObserver(observer, forKeyPath: "value") }
+        // No KVO runtime subclass: only the observation info shows the observer.
+        XCTAssertTrue(object_getClass(object) == ManuallyNotified.self)
+        XCTAssertFalse(SAClaudeClassSwap.mayChangeClass(of: object))
+    }
+
+    func testStackViewArrangedButtonIsObserved() {
+        let button = NSButton(title: "OK", target: nil, action: nil)
+        let stack = NSStackView(views: [button])
+        XCTAssertFalse(SAClaudeClassSwap.mayChangeClass(of: button))
+        stack.removeArrangedSubview(button)
+        button.removeFromSuperview()
     }
 }

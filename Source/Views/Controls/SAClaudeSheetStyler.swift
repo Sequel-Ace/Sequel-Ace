@@ -13,6 +13,8 @@
 //  them. Each restyled window keeps an `SAClaudeWindowSkin`, which recolours
 //  it when the editor theme, the accent or the appearance changes, and walks
 //  it again whenever it becomes key, so views added since are styled too.
+//  Alerts are styled as they are presented (SAClaudeAlertPresentationHook);
+//  the cells and boxes installed live in SAClaudeSheetCells.swift.
 //  App target only.
 //
 
@@ -21,12 +23,16 @@ import AppKit
 @objc(SAClaudeSheetStyler) final class SAClaudeSheetStyler: NSObject {
 
     private static var observers: [NSObjectProtocol] = []
+    private static var alertStyledKey: UInt8 = 0
 
-    /// Starts watching windows app-wide and styling the app's alert helpers' alerts (once; call at launch).
+    /// Starts watching windows app-wide and styling every alert before it is shown (once; call at launch).
     @objc static func start() {
         guard observers.isEmpty else { return }
-        // NSAlert's helper factories (NSAlertExtension.swift) style their alert before it shows, so it never flashes native.
-        SAAlertPresentation.willPresent = { styleAlert($0) }
+        // Every NSAlert is styled as it is presented (`runModal` / `beginSheetModal`); should that hook be
+        // unavailable, at least the helper factories in NSAlertExtension.swift style theirs.
+        if !SAClaudeAlertPresentationHook.install() {
+            SAAlertPresentation.willPresent = { styleAlert($0) }
+        }
         let centre = NotificationCenter.default
         // No observer queue: windows post these on main, and a queue would only add a hop.
         observers.append(centre.addObserver(forName: NSWindow.willBeginSheetNotification, object: nil, queue: nil) { note in
@@ -47,11 +53,15 @@ import AppKit
     }
 
     /// Styles `alert`'s window before it is shown: its first button primary (unless destructive), the others
-    /// secondary, its texts, suppression checkbox and accessory view. Lays the alert out. Call right before
-    /// `runModal()` / `beginSheetModal(for:)`.
+    /// secondary, its texts, suppression checkbox and accessory view. Lays the alert out. Called as the alert is
+    /// presented; once per alert (a second call, from a helper and the presentation hook both, does nothing; the
+    /// window's skin restyles it whenever it becomes key).
     @objc(styleAlert:) static func styleAlert(_ alert: NSAlert) {
+        guard objc_getAssociatedObject(alert, &alertStyledKey) == nil else { return }
+        objc_setAssociatedObject(alert, &alertStyledKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         // The buttons first: once the alert has laid itself out its stack view observes them, and the class of
-        // an observed object must not change (see `SAClaudeWindowSkin.mayChangeClass(of:)`).
+        // an observed object must not change (`SAClaudeClassSwap`). Buttons a caller's own `layout()` already
+        // put in the stack view stay native.
         for button in alert.buttons { SAClaudeWindowSkin.styleButton(button, alert: alert) }
         if alert.showsSuppressionButton, let suppression = alert.suppressionButton {
             SAClaudeWindowSkin.styleButton(suppression, alert: alert)
@@ -98,6 +108,8 @@ import AppKit
         case .accessoryOnly:
             guard let accessory = (window as? NSSavePanel)?.accessoryView else { return }
             if let skin = SAClaudeWindowSkin.skin(for: accessory) {
+                // An accessory view can be shown again in another panel: follow that panel's focus.
+                skin.observeFocus(in: window)
                 skin.refresh(force: true)
             } else {
                 SAClaudeWindowSkin.attach(toAccessory: accessory, in: window)
@@ -145,6 +157,8 @@ final class SAClaudeWindowSkin: NSObject {
     private let fields = NSHashTable<NSTextField>.weakObjects()
 
     private var observations: [NSKeyValueObservation] = []
+    private var focusObservation: NSKeyValueObservation?
+    private weak var focusWindow: NSWindow?
 
     /// Every live skin, for the shared theme check.
     private static let skins = NSHashTable<SAClaudeWindowSkin>.weakObjects()
@@ -194,10 +208,16 @@ final class SAClaudeWindowSkin: NSObject {
         observations.append(NSApp.observe(\.effectiveAppearance) { [weak self] _, _ in
             DispatchQueue.main.async { self?.refresh(force: true) }
         })
-        if let window {
-            observations.append(window.observe(\.firstResponder) { [weak self] _, _ in
-                DispatchQueue.main.async { self?.updateFocus() }
-            })
+        if let window { observeFocus(in: window) }
+    }
+
+    /// Follows `window`'s first responder for the fields' accent outline (once per window).
+    func observeFocus(in window: NSWindow) {
+        guard window !== focusWindow || focusObservation == nil else { return }
+        self.window = window
+        focusWindow = window
+        focusObservation = window.observe(\.firstResponder) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.updateFocus() }
         }
     }
 
@@ -236,6 +256,7 @@ final class SAClaudeWindowSkin: NSObject {
         // The Claude cells read these at draw time.
         SAClaudeFilterBarStyler.currentPalette = colours.palette
         SAClaudeFilterBarStyler.currentThemeText = colours.theme.text
+        SAClaudeSheetColours.currentSurface = colours.surface
         let accent = SAClaudeAccent.accent
         if !force, let applied, applied.theme == colours.theme, applied.accent == accent { return }
         applied = (colours.theme, accent)
@@ -324,26 +345,17 @@ final class SAClaudeWindowSkin: NSObject {
             // A borderless titled push button (a link-like text button) keeps its native look.
             guard button.isBordered || d.isAlertButton else { return }
             let primary = style == .primaryButton
-            // An observed button (an alert shown without the helpers: its stack view observes its buttons) stays native.
-            guard mayChangeClass(of: button), mayChangeClass(of: cell) else { return }
+            // `SAClaudeFilterCells` leaves an observed button native (`SAClaudeClassSwap`).
             if !SAClaudeFilterCells.switchSheetButton(button, toPrimary: primary) {
                 let cellClass: AnyClass = primary ? SAClaudeSheetPrimaryButtonCell.self : SAClaudeSheetSecondaryButtonCell.self
                 guard SAClaudeFilterCells.install(cellClass, on: button) else { return }
             }
             if !primary { SAClaudeSheetHoverTracker.attach(to: button) }
         case .checkbox, .radio:
-            guard mayChangeClass(of: button), mayChangeClass(of: cell) else { return }
             SAClaudeFilterCells.install(style == .checkbox ? SAClaudeCheckboxCell.self : SAClaudeRadioCell.self, on: button)
         default:
             break
         }
-    }
-
-    /// Whether the styler may swap `object`'s class: always for an object already in a Claude class (nothing is
-    /// swapped again), otherwise only while nothing observes it. KVO finds an observance by the observed object's
-    /// class, so after a swap the observer's removal (an NSStackView dropping its arranged buttons) throws.
-    static func mayChangeClass(of object: NSObject) -> Bool {
-        NSStringFromClass(type(of: object)).hasPrefix("SAClaude") || object.observationInfo == nil
     }
 
     /// `.switch` for a checkbox, `.radio` for a radio button (by the cell's accessibility role and its
@@ -362,8 +374,7 @@ final class SAClaudeWindowSkin: NSObject {
     /// A bordered pop-up showing a title becomes a pill; borderless and image-only ones (gear menus) stay native,
     /// as the pill cell draws titles, not images.
     private func stylePopUp(_ popUp: NSPopUpButton) {
-        guard SAClaudeSheetRules.style(for: SAClaudeControlDescriptor(kind: .popUp)) == .pill,
-              Self.mayChangeClass(of: popUp), let cell = popUp.cell, Self.mayChangeClass(of: cell) else { return }
+        guard SAClaudeSheetRules.style(for: SAClaudeControlDescriptor(kind: .popUp)) == .pill else { return }
         let installed = popUp.cell is SAClaudePillPopUpButtonCell
         let title = popUp.pullsDown ? (popUp.item(at: 0)?.title ?? "") : (popUp.titleOfSelectedItem ?? popUp.title)
         guard installed || (popUp.isBordered && !title.isEmpty) else { return }
@@ -386,17 +397,22 @@ final class SAClaudeWindowSkin: NSObject {
     }
 
     /// The Claude field: no bezel, a rounded field fill and hairline on its layer (the accent while edited), the
-    /// text centred in the XIB frame by a cell that knows it has no bezel. Combo and token fields stay native
-    /// (their button / tokens are drawn by AppKit's own views), as does any field whose cell is not a plain one.
+    /// text centred in the XIB frame by a cell that knows it has no bezel. A combo box gets the same look from its
+    /// layer and properties alone, as the connection panel's do (no cell or class swap; its arrow stays AppKit's).
+    /// Token fields stay native (their tokens are AppKit's own views), as does any field whose cell is not a plain one.
     private func styleField(_ field: NSTextField, _ colours: SAClaudeSheetColours) {
-        if field is NSComboBox || field is NSTokenField { return }
+        if field is NSTokenField { return }
         if !fields.contains(field) {
             // Auto layout sizes a bezel-less field to its text: only restyle one whose height is pinned.
             if !field.translatesAutoresizingMaskIntoConstraints,
                !field.constraints.contains(where: { $0.firstAttribute == .height && $0.secondItem == nil }) {
                 return
             }
-            guard Self.installFieldCell(on: field) else { return }
+            if let comboBox = field as? NSComboBox {
+                comboBox.isButtonBordered = false
+            } else if !Self.installFieldCell(on: field) {
+                return
+            }
             field.isBezeled = false
             field.isBordered = false
             field.drawsBackground = false
@@ -418,7 +434,7 @@ final class SAClaudeWindowSkin: NSObject {
     private static func installFieldCell(on field: NSTextField) -> Bool {
         guard let cell = field.cell else { return false }
         if cell is SAClaudeSheetFieldCell || cell is SAClaudeSheetSecureFieldCell || cell is SAClaudeSheetSearchFieldCell { return true }
-        guard mayChangeClass(of: cell) else { return false }
+        guard SAClaudeClassSwap.mayChangeClass(of: cell) else { return false }
         let cellClass: AnyClass = type(of: cell)
         if cellClass == NSTextFieldCell.self {
             object_setClass(cell, SAClaudeSheetFieldCell.self)
@@ -480,7 +496,7 @@ final class SAClaudeWindowSkin: NSObject {
             box.needsDisplay = true
             return
         }
-        guard current == NSBox.self, Self.mayChangeClass(of: box) else { return }
+        guard current == NSBox.self, SAClaudeClassSwap.mayChangeClass(of: box) else { return }
         switch style {
         case .separator: object_setClass(box, SAClaudeSheetSeparatorBox.self)
         case .titledBox: object_setClass(box, SAClaudeSheetTitledBox.self)
@@ -523,23 +539,23 @@ final class SAClaudeWindowSkin: NSObject {
     /// Text views that colour themselves from the editor settings.
     private static let selfThemedTextViewClasses: [AnyClass] = ["SPTextView", "SPBundleCommandTextView"].compactMap(NSClassFromString)
 
-    /// Plain-text views take the editor theme's colours (and font, when they are plain NSTextViews); rich text
-    /// and the app's own syntax-coloured editors are left alone.
+    /// Every text view gets the theme background and caret. The text colour (where nobody chose one) goes to plain or
+    /// editable text views; rich read-only text keeps its own colours. The app's syntax-coloured editors already
+    /// carry the theme's colours, so their text is left to them; the editor font only goes to plain NSTextViews.
     private func styleTextView(_ textView: NSTextView, _ colours: SAClaudeSheetColours) {
-        if Self.selfThemedTextViewClasses.contains(where: { textView.isKind(of: $0) }) || textView.isRichText { return }
-        if textView.drawsBackground, SAClaudeSheetColours.isDefaultBackground(textView.backgroundColor) {
-            SAClaudeSheetColours.noteAppliedBackground(colours.theme.background)
-            textView.backgroundColor = colours.theme.background
-            if let scrollView = textView.enclosingScrollView, SAClaudeSheetColours.isDefaultBackground(scrollView.backgroundColor) {
-                scrollView.backgroundColor = colours.theme.background
-            }
+        let background = colours.theme.background
+        SAClaudeSheetColours.noteAppliedBackground(background)
+        if textView.backgroundColor != background { textView.backgroundColor = background }
+        if let scrollView = textView.enclosingScrollView, SAClaudeSheetColours.isDefaultBackground(scrollView.backgroundColor) {
+            scrollView.backgroundColor = background
         }
-        if SAClaudeSheetColours.isDefaultText(textView.textColor) {
+        textView.insertionPointColor = colours.theme.caret
+        if Self.selfThemedTextViewClasses.contains(where: { textView.isKind(of: $0) }) { return }
+        if !textView.isRichText || textView.isEditable, SAClaudeSheetColours.isDefaultText(textView.textColor) {
             SAClaudeSheetColours.noteApplied(colours.theme.text, muted: false)
             textView.textColor = colours.theme.text
         }
-        textView.insertionPointColor = colours.theme.caret
-        if type(of: textView) == NSTextView.self {
+        if !textView.isRichText, type(of: textView) == NSTextView.self {
             let font = SAClaudeCompletionStyler.editorFont()
             if textView.font != font { textView.font = font }
         }
@@ -551,6 +567,8 @@ final class SAClaudeWindowSkin: NSObject {
 /// The colours one restyle uses, resolved for the app's appearance from the editor theme.
 struct SAClaudeSheetColours {
     static let fieldRadius: CGFloat = 7
+    /// The theme surface of the last restyle; the titled box reads it at draw time.
+    static var currentSurface: NSColor = .windowBackgroundColor
 
     let theme: SAClaudeThemeColours
     let palette: SAClaudeEditorChrome.Palette
@@ -574,21 +592,29 @@ struct SAClaudeSheetColours {
         return result!
     }
 
-    // Colours applied before count as "nobody chose one", so a theme change recolours them.
+    // Colours applied before count as "nobody chose one", so a theme change recolours them. Each list keeps the
+    // most recent few, without duplicates: every skin restyles on each theme change, so older colours are gone.
+    private static let appliedLimit = 8
     private static var appliedText: [NSColor] = []
     private static var appliedMuted: [NSColor] = []
     private static var appliedBackgrounds: [NSColor] = []
 
+    private static func remember(_ colour: NSColor, in list: inout [NSColor]) {
+        list.removeAll { $0 == colour }
+        list.append(colour)
+        if list.count > appliedLimit { list.removeFirst(list.count - appliedLimit) }
+    }
+
     static func noteApplied(_ colour: NSColor, muted: Bool) {
         if muted {
-            if !appliedMuted.contains(colour) { appliedMuted.append(colour) }
-        } else if !appliedText.contains(colour) {
-            appliedText.append(colour)
+            remember(colour, in: &appliedMuted)
+        } else {
+            remember(colour, in: &appliedText)
         }
     }
 
     static func noteAppliedBackground(_ colour: NSColor) {
-        if !appliedBackgrounds.contains(colour) { appliedBackgrounds.append(colour) }
+        remember(colour, in: &appliedBackgrounds)
     }
 
     /// The system text colours a control has when nobody chose one, or a colour this styler applied.
@@ -609,139 +635,4 @@ struct SAClaudeSheetColours {
         colour == .controlBackgroundColor || colour == .textBackgroundColor || colour == .windowBackgroundColor
             || colour == .underPageBackgroundColor || appliedBackgrounds.contains(colour)
     }
-}
-
-// MARK: - Cells and boxes
-
-/// Where a bezel-less sheet field puts its text: inset from the rounded outline and centred on one line (a field
-/// taller than two lines keeps its text at the top).
-private enum SheetFieldText {
-    static let horizontalInset: CGFloat = 6
-    static let multiLineTopInset: CGFloat = 3
-
-    static func rect(_ rect: NSRect, font: NSFont?) -> NSRect {
-        var text = rect.insetBy(dx: horizontalInset, dy: 0)
-        let line = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: NSFont.systemFontSize)))
-        let spare = text.height - line
-        if spare >= line {
-            text = text.insetBy(dx: 0, dy: multiLineTopInset)
-        } else if spare > 0 {
-            text.origin.y += (spare / 2).rounded(.down)
-            text.size.height = line
-        }
-        return text
-    }
-}
-
-/// A plain sheet field's cell once its bezel is off (installed with `object_setClass`, no stored properties).
-@objc(SAClaudeSheetFieldCell) final class SAClaudeSheetFieldCell: NSTextFieldCell {
-    override func drawingRect(forBounds rect: NSRect) -> NSRect {
-        let drawingRect = super.drawingRect(forBounds: rect)
-        return isBezeled || isBordered ? drawingRect : SheetFieldText.rect(drawingRect, font: font)
-    }
-
-    // AppKit places the field editor exactly where it is told to, not by -drawingRectForBounds:.
-    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
-        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
-    }
-
-    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
-        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
-    }
-}
-
-/// The secure twin of `SAClaudeSheetFieldCell`.
-@objc(SAClaudeSheetSecureFieldCell) final class SAClaudeSheetSecureFieldCell: NSSecureTextFieldCell {
-    override func drawingRect(forBounds rect: NSRect) -> NSRect {
-        let drawingRect = super.drawingRect(forBounds: rect)
-        return isBezeled || isBordered ? drawingRect : SheetFieldText.rect(drawingRect, font: font)
-    }
-
-    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
-        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
-    }
-
-    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
-        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
-    }
-}
-
-/// The Claude search field cell (magnifier, text, cancel button laid out by the cell) with its text centred on
-/// one line, as a sheet's search field keeps its XIB height.
-@objc(SAClaudeSheetSearchFieldCell) final class SAClaudeSheetSearchFieldCell: SAClaudeSearchFieldCell {
-    override func searchTextRect(forBounds rect: NSRect) -> NSRect {
-        var text = super.searchTextRect(forBounds: rect)
-        let line = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: NSFont.systemFontSize)))
-        let spare = text.height - line
-        if spare > 0 {
-            text.origin.y += (spare / 2).rounded(.down)
-            text.size.height = line
-        }
-        return text
-    }
-}
-
-/// A separator drawn as a 1pt hairline along its long axis (installed with `object_setClass`; on macOS 26 and
-/// later this also drops the private view NSBox draws its line with).
-@objc(SAClaudeSheetSeparatorBox) final class SAClaudeSheetSeparatorBox: NSBox {
-    override var wantsUpdateLayer: Bool { false }
-
-    override func draw(_ dirtyRect: NSRect) {
-        let line = bounds.width >= bounds.height
-            ? NSRect(x: bounds.minX, y: (bounds.midY - 0.5).rounded(.down), width: bounds.width, height: 1)
-            : NSRect(x: (bounds.midX - 0.5).rounded(.down), y: bounds.minY, width: 1, height: bounds.height)
-        SAClaudeFilterBarStyler.currentPalette.hairline.setFill()
-        line.intersection(dirtyRect).fill()
-    }
-}
-
-/// A titled box drawn as a hairline card (radius 9) under its title in SF Pro 11, muted. Installed with
-/// `object_setClass`; NSBox keeps its border, title and content rects, only the drawing is Claude's.
-@objc(SAClaudeSheetTitledBox) final class SAClaudeSheetTitledBox: NSBox {
-    private static let radius: CGFloat = 9
-
-    override var wantsUpdateLayer: Bool { false }
-
-    override func draw(_ dirtyRect: NSRect) {
-        let palette = SAClaudeFilterBarStyler.currentPalette
-        let card = NSBezierPath(roundedRect: borderRect.insetBy(dx: 0.5, dy: 0.5), xRadius: Self.radius - 0.5, yRadius: Self.radius - 0.5)
-        card.lineWidth = 1
-        palette.hairline.setStroke()
-        card.stroke()
-
-        guard titlePosition != .noTitle, !title.isEmpty else { return }
-        let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: palette.icon]
-        let string = NSAttributedString(string: title, attributes: attributes)
-        let size = string.size()
-        let titleArea = titleRect
-        let origin = NSPoint(x: titleArea.minX, y: (titleArea.midY - size.height / 2).rounded())
-        // The title sits on the card's top edge: clear the line behind it.
-        if titleArea.intersects(borderRect), let surface = window?.backgroundColor {
-            surface.setFill()
-            NSRect(x: origin.x - 3, y: titleArea.minY, width: size.width + 6, height: titleArea.height).fill()
-        }
-        string.draw(at: origin)
-    }
-}
-
-// MARK: - Hover
-
-/// Redraws a sheet's secondary button when the mouse enters or leaves it; the cell draws the hover fill itself
-/// (inside its outline, which is smaller than a classic XIB frame). Retained by the button.
-private final class SAClaudeSheetHoverTracker: NSObject {
-    private static var associationKey: UInt8 = 0
-    private weak var view: NSView?
-
-    static func attach(to view: NSView) {
-        guard objc_getAssociatedObject(view, &associationKey) == nil else { return }
-        let tracker = SAClaudeSheetHoverTracker()
-        tracker.view = view
-        view.addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect],
-                                            owner: tracker, userInfo: nil))
-        objc_setAssociatedObject(view, &associationKey, tracker, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-    }
-
-    // The tracking area sends its owner `mouseEntered:` / `mouseExited:`; spelled out for a plain NSObject.
-    @objc(mouseEntered:) func mouseEntered(with event: NSEvent) { view?.needsDisplay = true }
-    @objc(mouseExited:) func mouseExited(with event: NSEvent) { view?.needsDisplay = true }
 }
