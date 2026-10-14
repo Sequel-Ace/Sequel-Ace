@@ -40,6 +40,21 @@ private enum FilterCellDrawing {
     static let cornerRadius: CGFloat = 7
     static let disabledAlpha: CGFloat = 0.4
     static let font = NSFont.systemFont(ofSize: 12)
+    /// From the box (or circle) to the title.
+    static let titleGap: CGFloat = 6
+    /// Spare width so a measured title never truncates by a rounding hair.
+    static let titleSlack: CGFloat = 2
+
+    /// The size a Claude checkbox or radio cell draws: its 14pt mark, then the gap and the title at `font` (the
+    /// cell's own font and AppKit's native mark size would under-measure it). The height stays AppKit's, at least
+    /// the mark's, so rows keep their vertical layout.
+    static func toggleCellSize(title: String, drawsTitle: Bool, nativeHeight: CGFloat) -> NSSize {
+        var width = SAClaudeFilterChrome.checkboxSize
+        if drawsTitle, !title.isEmpty {
+            width += titleGap + ceil(NSAttributedString(string: title, attributes: [.font: font]).size().width) + titleSlack
+        }
+        return NSSize(width: width, height: max(nativeHeight, SAClaudeFilterChrome.checkboxSize))
+    }
 
     static func roundedPath(_ rect: NSRect, radius: CGFloat) -> NSBezierPath {
         NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
@@ -119,6 +134,11 @@ private enum FilterCellDrawing {
         return box
     }
 
+    /// `cellSize` measures through this too.
+    override func cellSize(forBounds rect: NSRect) -> NSSize {
+        FilterCellDrawing.toggleCellSize(title: title, drawsTitle: imagePosition != .imageOnly, nativeHeight: super.cellSize(forBounds: rect).height)
+    }
+
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
         let palette = SAClaudeFilterBarStyler.currentPalette
         let themeText = SAClaudeFilterBarStyler.currentThemeText
@@ -159,7 +179,7 @@ private enum FilterCellDrawing {
         }
 
         if imagePosition != .imageOnly, !title.isEmpty {
-            let minX = box.maxX + 6
+            let minX = box.maxX + FilterCellDrawing.titleGap
             let titleRect = NSRect(x: minX, y: cellFrame.minY, width: max(0, cellFrame.maxX - minX), height: cellFrame.height)
             FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
         }
@@ -171,6 +191,11 @@ private enum FilterCellDrawing {
 @objc(SAClaudeRadioCell) final class SAClaudeRadioCell: NSButtonCell {
 
     private static let dotDiameter: CGFloat = 6
+
+    /// `cellSize` measures through this too.
+    override func cellSize(forBounds rect: NSRect) -> NSSize {
+        FilterCellDrawing.toggleCellSize(title: title, drawsTitle: imagePosition != .imageOnly, nativeHeight: super.cellSize(forBounds: rect).height)
+    }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
         let palette = SAClaudeFilterBarStyler.currentPalette
@@ -200,7 +225,7 @@ private enum FilterCellDrawing {
         }
 
         if imagePosition != .imageOnly, !title.isEmpty {
-            let minX = circle.maxX + 6
+            let minX = circle.maxX + FilterCellDrawing.titleGap
             let titleRect = NSRect(x: minX, y: cellFrame.minY, width: max(0, cellFrame.maxX - minX), height: cellFrame.height)
             FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
         }

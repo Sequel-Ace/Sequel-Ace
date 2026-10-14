@@ -113,6 +113,13 @@ import AppKit
         objc_setAssociatedObject(controller, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         styler.optionsStyler = SAClaudeExportOptionsStyler(controller: controller, tabView: outlets.optionsTabView)   // Task 3
         styler.progressStyler = SAClaudeExportProgressStyler(controller: controller)   // Task 5
+        // A chip changes the filename field programmatically, which posts no text notification: the controller
+        // updates its preview as after its own programmatic changes.
+        styler.filenamePopover.onFieldChanged = { [weak controller] in
+            let selector = NSSelectorFromString("updateDisplayedExportFilename")
+            guard let controller, controller.responds(to: selector) else { return }
+            controller.perform(selector)
+        }
         styler.build()
     }
 
@@ -131,6 +138,8 @@ import AppKit
             guard let styler = styler(for: controller) else { return }
             styler.filenameLabel.stringValue = filename
             styler.filenameLabel.toolTip = filename
+            // The controller refreshes the available tokens just before (e.g. "Table" removed): the chips follow.
+            styler.filenamePopover.refreshTokens()
         }
     }
 
@@ -346,6 +355,9 @@ import AppKit
 
         if o.lowMemoryButton.toolTip == nil { o.lowMemoryButton.toolTip = o.lowMemoryButton.title }
         o.lowMemoryButton.title = NSLocalizedString("ClaudeExportLowMemory", value: "Low memory", comment: "export dialog: low memory export checkbox (the full explanation is its tooltip)")
+        // The Claude checkbox cell now, not at the sheet skin's first walk (after the first layout): the layout
+        // measures the cell that draws (its 14pt box and 12pt title), so the title never truncates.
+        for checkbox in [o.lowMemoryButton, o.filePerTableCheck] { SAClaudeFilterCells.install(SAClaudeCheckboxCell.self, on: checkbox) }
 
         o.refreshButton.isBordered = false
         o.refreshButton.imagePosition = .imageOnly

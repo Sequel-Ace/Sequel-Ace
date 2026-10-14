@@ -5,7 +5,9 @@
 //  The Export sheet's "Customise" popover: the controller's own custom filename view (hint, token field, token
 //  pool) re-parented into a transient popover under the Save to card's Customise button, in the Claude look. The
 //  controller keeps driving the token fields (delegate, drag and drop, the synthesised Return that tokenises typed
-//  `{tokens}`, which it posts to the field's own window). Owned by `SAClaudeExportStyler`. App target only.
+//  `{tokens}`, which it posts to the field's own window). The native token pool is hidden (kept: the controller's
+//  source of the available tokens) and shown as Claude outline chips that add a token on click or drag it into the
+//  field. Owned by `SAClaudeExportStyler`. App target only.
 //
 
 import AppKit
@@ -14,12 +16,11 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
 
     private static let width: CGFloat = 520
     private static let padding: CGFloat = 12
-    private static let poolHeight: CGFloat = 32
+    /// From the field to the chips.
+    private static let chipsGap: CGFloat = 12
     private static let fieldHeight: CGFloat = 22
     private static let hintHeight: CGFloat = 14
-    private static let poolGap: CGFloat = 10
     private static let hintGap: CGFloat = 6
-    private static let poolInset: CGFloat = 8
     private static let fieldRadius: CGFloat = 7
     private static let poolRadius: CGFloat = 9
     private static let hintFont = NSFont.systemFont(ofSize: 11)
@@ -30,6 +31,13 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         let fieldFill: NSColor
         let hairline: NSColor
         let muted: NSColor
+        let text: NSColor
+        /// A chip's outline under the pointer: a touch stronger than the hairline.
+        let hoverStroke: NSColor
+
+        var chip: SAClaudeExportTokenChip.Colours {
+            SAClaudeExportTokenChip.Colours(stroke: hairline, hoverStroke: hoverStroke, text: text, muted: muted)
+        }
     }
 
     private let customView: NSView
@@ -42,6 +50,12 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
     private let hintLabel: NSTextField?
 
     private var popover: NSPopover?
+    private let chipsView = SAClaudeExportTokenChipsView()
+    /// The token ids the chips show, in order (rebuilt only when the pool's tokens change).
+    private var chipTokenIds: [String] = []
+    /// After a chip changed the token field programmatically (no text notification): the controller updates its
+    /// filename preview, as it does after its own programmatic changes.
+    var onFieldChanged: (() -> Void)?
     private let surface = SAClaudeEditorBarBackgroundView()
     private var colours: Colours?
     private var sheetEndObserver: NSObjectProtocol?
@@ -83,6 +97,7 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         anchor = button
         let popover = self.popover ?? install()
         customView.isHidden = false
+        refreshTokens()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         if let window = tokenField.window {
             window.makeFirstResponder(tokenField)
@@ -135,6 +150,7 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         self.popover = popover
 
         restyle()
+        rebuildChips()
         layOut()
         applyColours()
         return popover
@@ -151,7 +167,13 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
             outerBox.isTransparent = true
             outerBox.contentViewMargins = .zero
         }
-        if let poolBox {
+        if usesChips, let poolBox, let outerContent = outerBox?.contentView {
+            // The pool stays alive and filled by the controller, out of sight; its tokens show as chips.
+            poolBox.isHidden = true
+            outerContent.addSubview(chipsView)
+            hintLabel?.stringValue = NSLocalizedString("ClaudeExportTokenHint", value: "Click a token to add it, or drag it into the field.",
+                                                       comment: "export dialog: hint above the custom filename field in the Customise popover")
+        } else if let poolBox {
             poolBox.boxType = .custom
             poolBox.borderWidth = 1
             poolBox.cornerRadius = Self.poolRadius
@@ -168,22 +190,94 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         tokenPool.drawsBackground = false
     }
 
-    /// Hint, field and pool top to bottom, 12pt in from the popover's edges.
+    /// Whether the pool is shown as chips (the XIB's boxes and hint were found; otherwise the view keeps its XIB layout).
+    private var usesChips: Bool {
+        outerBox?.contentView != nil && poolBox?.contentView != nil && hintLabel != nil
+    }
+
+    /// Hint, field and the chips top to bottom, 12pt in from the popover's edges; the popover is as tall as the
+    /// chips need (they wrap onto as many rows as the width takes).
     private func layOut() {
-        guard let outerBox, let poolBox, let hintLabel, let outerContent = outerBox.contentView,
-              let poolContent = poolBox.contentView else { return }
+        guard usesChips, let outerBox, let hintLabel, let outerContent = outerBox.contentView,
+              let content = popover?.contentViewController?.view else { return }
+        let innerWidth = Self.width - 2 * Self.padding
+        let chipsHeight = chipsView.height(forWidth: innerWidth)
+        let height = Self.padding + Self.hintHeight + Self.hintGap + Self.fieldHeight + (chipsHeight > 0 ? Self.chipsGap + chipsHeight : 0) + Self.padding
+        let size = NSSize(width: Self.width, height: height)
+        // The custom view and the surface follow the content view (width + height sizable).
+        if content.frame.size != size { content.setFrameSize(size) }
+        if let popover, popover.contentSize != size { popover.contentSize = size }
+
         Self.place(outerBox, customView.bounds)
         Self.place(outerContent, outerBox.bounds)
         let inner = outerContent.bounds.insetBy(dx: Self.padding, dy: Self.padding)
-        let pool = NSRect(x: inner.minX, y: inner.minY, width: inner.width, height: Self.poolHeight)
-        let field = NSRect(x: inner.minX, y: pool.maxY + Self.poolGap, width: inner.width, height: Self.fieldHeight)
-        Self.place(poolBox, pool)
+        let hint = NSRect(x: inner.minX, y: inner.maxY - Self.hintHeight, width: inner.width, height: Self.hintHeight)
+        let field = NSRect(x: inner.minX, y: hint.minY - Self.hintGap - Self.fieldHeight, width: inner.width, height: Self.fieldHeight)
+        Self.place(hintLabel, hint)
         Self.place(tokenField, field)
-        Self.place(hintLabel, NSRect(x: inner.minX, y: field.maxY + Self.hintGap, width: inner.width, height: Self.hintHeight))
-        Self.place(poolContent, poolBox.bounds.insetBy(dx: poolBox.borderWidth, dy: poolBox.borderWidth))
-        let poolBounds = poolContent.bounds
-        Self.place(tokenPool, NSRect(x: Self.poolInset, y: ((poolBounds.height - Self.fieldHeight) / 2).rounded(.down),
-                                     width: max(0, poolBounds.width - 2 * Self.poolInset), height: Self.fieldHeight))
+        Self.place(chipsView, NSRect(x: inner.minX, y: inner.minY, width: inner.width, height: chipsHeight))
+        chipsView.layOutChips()
+    }
+
+    // MARK: - Token chips
+
+    /// Rebuilds the chips when the controller changed the available tokens (e.g. "Table" removed) and re-fits the
+    /// popover. Cheap when nothing changed; called on show and whenever the controller updates the filename.
+    func refreshTokens() {
+        guard popover != nil, usesChips else { return }
+        if rebuildChips() { layOut() }
+    }
+
+    /// The pool's tokens (`SPExportFileNameTokenObject`s), as the controller last set them.
+    private var poolTokens: [(object: NSObject, id: String)] {
+        (tokenPool.objectValue as? [Any] ?? []).compactMap { item in
+            guard let object = item as? NSObject, object.responds(to: NSSelectorFromString("tokenId")),
+                  let id = object.value(forKey: "tokenId") as? String else { return nil }
+            return (object, id)
+        }
+    }
+
+    /// True when the chips changed.
+    @discardableResult
+    private func rebuildChips() -> Bool {
+        guard usesChips else { return false }
+        let tokens = poolTokens
+        guard tokens.map(\.id) != chipTokenIds else { return false }
+        chipTokenIds = tokens.map(\.id)
+        let delegate = tokenPool.delegate
+        let chipColours = colours?.chip ?? SAClaudeExportTokenChip.Colours(stroke: .separatorColor, hoverStroke: .tertiaryLabelColor,
+                                                                             text: .labelColor, muted: .secondaryLabelColor)
+        chipsView.setChips(tokens.map { token in
+            // The name the native pool showed (the controller's localized token name).
+            let title = delegate?.tokenField?(tokenPool, displayStringForRepresentedObject: token.object) ?? token.id
+            let chip = SAClaudeExportTokenChip(tokenId: token.id, title: title, colours: chipColours)
+            chip.onClick = { [weak self] in self?.add(token.object) }
+            return chip
+        })
+        return true
+    }
+
+    /// Appends `token` (the pool's token object; its id never changes) to the filename field, then puts the caret
+    /// after it and lets the controller update its preview.
+    private func add(_ token: NSObject) {
+        guard let window = tokenField.window else { return }
+        // Commit any text being typed first (the field tokenises it on ending editing).
+        if tokenField.currentEditor() != nil { window.makeFirstResponder(nil) }
+        var parts: [Any]
+        if let array = tokenField.objectValue as? [Any] {
+            parts = array
+        } else if let text = tokenField.objectValue as? String, !text.isEmpty {
+            parts = [text]
+        } else {
+            parts = []
+        }
+        parts.append(token)
+        tokenField.objectValue = parts
+        onFieldChanged?()
+        window.makeFirstResponder(tokenField)
+        if let editor = tokenField.currentEditor() {
+            editor.selectedRange = NSRange(location: (editor.string as NSString).length, length: 0)
+        }
     }
 
     private static func place(_ view: NSView, _ frame: NSRect) {
@@ -200,7 +294,8 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
             let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
             colours = Colours(isDark: SAClaudeGridChrome.isDark(theme.background), surface: surface,
                               fieldFill: SAClaudeFilterChrome.fieldFill(text: theme.text, background: surface),
-                              hairline: palette.hairline, muted: palette.icon)
+                              hairline: palette.hairline, muted: palette.icon, text: theme.text,
+                              hoverStroke: SAClaudeEditorChrome.derivedColour(text: theme.text, background: surface, ratio: 0.22))
         }
         applyColours()
     }
@@ -210,6 +305,7 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         let appearanceName: NSAppearance.Name = colours.isDark ? .darkAqua : .aqua
         if popover.appearance?.name != appearanceName { popover.appearance = NSAppearance(named: appearanceName) }
         surface.fillColour = colours.surface
+        for chip in chipsView.chips { chip.colours = colours.chip }
         if let poolBox {
             poolBox.borderColor = colours.hairline
             poolBox.fillColor = colours.fieldFill

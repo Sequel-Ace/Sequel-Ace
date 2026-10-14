@@ -175,6 +175,10 @@ final class SAClaudeExportOptionsStyler: NSObject {
             case .inputs(let label?, _, let inputs):
                 if let first = inputs.first { pairs.append((label, first.control)) }
                 page.view.addSubview(label)
+            case .checkbox(let button, _):
+                // The Claude checkbox cell before the first layout (the sheet skin's walk comes later): the row
+                // measures the cell that draws (its 14pt box and 12pt title), so the title never truncates.
+                SAClaudeFilterCells.install(SAClaudeCheckboxCell.self, on: button)
             default:
                 break
             }

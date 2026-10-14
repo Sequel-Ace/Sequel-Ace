@@ -5041,6 +5041,12 @@
 /* export dialog: button that unmarks every table in the list */
 "ClaudeExportMarkNone" = "None";
 
+/* export dialog: hint above the custom filename field in the Customise popover */
+"ClaudeExportTokenHint" = "Click a token to add it, or drag it into the field.";
+
+/* export dialog: accessibility name of a filename token chip, e.g. "Add Database token" */
+"ClaudeExportAddToken" = "Add %@ token";
+
 /* export dialog options: group title, what the export includes (SQL, XML) */
 "ClaudeExportOptInclude" = "Include";
 
