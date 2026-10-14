@@ -1149,6 +1149,15 @@ final class SAStatementMayCommitTests: XCTestCase {
         XCTAssertTrue(mayCommit("  XA  PREPARE 'x'"), "the keyword decides, as it does for RESET")
     }
 
+    /// MariaDB's `SET STATEMENT … FOR` runs the statement after `FOR`, which can be one the server
+    /// commits around; it is taken to commit as a whole, whatever follows, which costs at most a
+    /// warning too many.
+    func testSetStatementIsTakenToCommit() {
+        XCTAssertTrue(mayCommit("SET STATEMENT foreign_key_checks = 0 FOR TRUNCATE TABLE t"))
+        XCTAssertTrue(mayCommit("set statement max_statement_time = 1 for SELECT 1"))
+        XCTAssertTrue(mayCommit("/* fast */ SET STATEMENT sql_mode = 'ANSI' FOR DROP TABLE t"))
+    }
+
     /// Ordinary statements, and the one that changes nothing either way.
     func testStatementsThatCommitNothing() {
         for query in ["SELECT 1", "UPDATE t SET a = 1", "INSERT INTO t VALUES (1)",

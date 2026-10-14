@@ -483,8 +483,13 @@ final class SADatabaseAssertion: NSObject {
         // `SET PASSWORD` is account management, which the server commits around like the rest of
         // it. Unlike autocommit it is looked for where the statement puts the word rather than
         // anywhere in the text: a value that merely contains it is a different statement.
+        // MariaDB's `SET STATEMENT … FOR <statement>` runs whatever statement follows, which can
+        // be one the server commits around - `SET STATEMENT foreign_key_checks = 0 FOR TRUNCATE
+        // TABLE t`. It is taken to commit as a whole, like the other keywords that begin statements
+        // of which only some commit: the cost is one warning too many.
         let afterSet = statementCode.dropFirst(3).drop { $0.isWhitespace }
-        return afterSet.prefix { isIdentifierCharacter($0) }.uppercased() == "PASSWORD"
+        let wordAfterSet = afterSet.prefix { isIdentifierCharacter($0) }.uppercased()
+        return wordAfterSet == "PASSWORD" || wordAfterSet == "STATEMENT"
     }
 
     /// The words after `SET` that start a statement changing more than the session: a password, a
