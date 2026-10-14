@@ -672,26 +672,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			// transaction for it to be rolled back with. Sending it again would run it twice as
 			// readily as not at all, so it is not sent again, and the caller is told that what
 			// became of it is unknown rather than that it failed.
-			BOOL theStatementChangesData = [SAOutsideStatements areRunningOnCurrentThread]
-				|| !(mySQLConnection && [SADatabaseAssertionState statementLeavesDataAlone:theQueryString onMySQLConnection:mySQLConnection]);
-			// Only a session that is still there can be said to roll anything back. Without the
-			// handle there is no status to read, and reading one that is not there as "autocommit
-			// is off" would turn the case nothing is known about into the one case that needs no
-			// telling. What cannot be established does not count as established.
-			BOOL theSessionRollsItBack = NO;
-			if (mySQLConnection) {
-				unsigned int theServerStatus = mySQLConnection->server_status;
-				theSessionRollsItBack = [SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(theServerStatus & SERVER_STATUS_IN_TRANS) != 0
-				                                                                                             autocommit:(theServerStatus & SERVER_STATUS_AUTOCOMMIT) != 0
-				                                                                                    autocommitAtConnect:sessionAutocommitAtConnect];
-			}
-			BOOL theStatementMayCommit = mySQLConnection
-				&& [SADatabaseAssertionState statementMayCommit:theQueryString onMySQLConnection:mySQLConnection];
-			whatBecameOfTheStatementIsUnknown = [SAUncertainWrite outcomeIsUnknownForStatementThatReachedTheServer:theStatementReachedTheServer
-			                                                                                          changesData:theStatementChangesData
-			                                                                                errorIsConnectionLoss:[SPMySQLConnection isErrorIDConnectionError:theErrorID]
-			                                                                                   sessionRollsItBack:theSessionRollsItBack
-			                                                                                    statementMayCommit:theStatementMayCommit];
+			whatBecameOfTheStatementIsUnknown = [self _outcomeIsUnknownForStatement:theQueryString
+			                                                          reachedTheServer:theStatementReachedTheServer
+			                                                     errorIsConnectionLoss:[SPMySQLConnection isErrorIDConnectionError:theErrorID]];
 
 			// The statement is not sent again, so nothing else here establishes that the
 			// connection has gone. Left as it is, the handle keeps its freshly stamped
@@ -776,6 +759,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	} while (--queryAttemptsAllowed > 0);
 
 	SPMySQLResult *theResult = nil;
+	runningResultOutcomeIsUnknownIfCutOff = NO;
 
 	// On success, if there is a query result, retrieve the result data type
 	if (!queryStatus) {
@@ -815,6 +799,26 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			theErrorID = mysql_errno(mySQLConnection);
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+
+			// The server took the statement; what it produced is read now, or - for a streaming result -
+			// by whoever asked, later. A connection lost in the middle of that leaves a statement that
+			// changes data - a CALL that writes and returns rows - as unsettled as one whose own reply
+			// never came: the server may have carried it out and committed, or stopped partway, and
+			// nothing on this side can tell which. It is not sent again - nothing here does - and the
+			// error says so, so that nobody runs it a second time on the strength of a message that
+			// reads like a plain failure. Decided here, with the statement at hand, for a read cut off
+			// later as much as for one that failed just now.
+			runningResultOutcomeIsUnknownIfCutOff = [theResult isKindOfClass:[SPMySQLStreamingResult class]]
+				&& [self _outcomeIsUnknownForStatement:theQueryString reachedTheServer:YES errorIsConnectionLoss:YES];
+			if ([SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+				whatBecameOfTheStatementIsUnknown = [self _outcomeIsUnknownForStatement:theQueryString reachedTheServer:YES errorIsConnectionLoss:YES];
+				// The handle's transport is gone, and nothing here sends again to find that out: the
+				// session counts as lost, and the next use restores it, as for a reply that never came.
+				if (whatBecameOfTheStatementIsUnknown && state == SPMySQLConnected) {
+					state = SPMySQLConnectionLostInBackground;
+				}
+				runningResultOutcomeIsUnknownIfCutOff = NO;
+			}
 		} else {
 			theResult = [[SPMySQLEmptyResult alloc] init];
 		}
@@ -850,10 +854,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// the failure: a statement the user stopped as its connection went can still have been
 	// carried out, and "Query cancelled." on its own would read as though it had not been.
 	if (whatBecameOfTheStatementIsUnknown) {
-		NSString *theNote = NSLocalizedString(@"The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.", @"Note added to the error of a statement whose outcome could not be established");
-		theErrorMessage = [theErrorMessage length]
-			? [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage, theNote]
-			: theNote;
+		theErrorMessage = [self _messageNotingTheOutcomeIsUnknownAfter:theErrorMessage];
 	}
 
 	// A query nobody waited for finished anyway. Its caller was told it was cancelled, and what it
@@ -1395,13 +1396,76 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 }
 
 /**
- * Update lastErrorID, lastErrorMessage and lastSqlstate from connection
+ * Whether what became of a statement that failed with this error is unknown rather than known;
+ * SAUncertainWrite decides. What it needs is read from the session's last report, which lives in the
+ * handle: the connection must be held.
+ *
+ * @param theQueryString The statement.
+ * @param reachedTheServer Whether the statement was handed to the server at all.
+ * @param errorIsConnectionLoss Whether it failed because the connection went, rather than because the server refused it.
+ * @return Whether the outcome is unknown.
+ */
+- (BOOL)_outcomeIsUnknownForStatement:(NSString *)theQueryString reachedTheServer:(BOOL)reachedTheServer errorIsConnectionLoss:(BOOL)errorIsConnectionLoss
+{
+	BOOL theStatementChangesData = [SAOutsideStatements areRunningOnCurrentThread]
+		|| !(mySQLConnection && [SADatabaseAssertionState statementLeavesDataAlone:theQueryString onMySQLConnection:mySQLConnection]);
+	// Only a session that is still there can be said to roll anything back. Without the handle
+	// there is no status to read, and reading one that is not there as "autocommit is off" would
+	// turn the case nothing is known about into the one case that needs no telling. What cannot
+	// be established does not count as established.
+	BOOL theSessionRollsItBack = NO;
+	if (mySQLConnection) {
+		unsigned int theServerStatus = mySQLConnection->server_status;
+		theSessionRollsItBack = [SAConnectionCancellation droppingSessionLosesUncommittedWorkWithOpenTransaction:(theServerStatus & SERVER_STATUS_IN_TRANS) != 0
+		                                                                                             autocommit:(theServerStatus & SERVER_STATUS_AUTOCOMMIT) != 0
+		                                                                                    autocommitAtConnect:sessionAutocommitAtConnect];
+	}
+	BOOL theStatementMayCommit = mySQLConnection
+		&& [SADatabaseAssertionState statementMayCommit:theQueryString onMySQLConnection:mySQLConnection];
+	return [SAUncertainWrite outcomeIsUnknownForStatementThatReachedTheServer:reachedTheServer
+	                                                                 changesData:theStatementChangesData
+	                                                       errorIsConnectionLoss:errorIsConnectionLoss
+	                                                          sessionRollsItBack:theSessionRollsItBack
+	                                                           statementMayCommit:theStatementMayCommit];
+}
+
+/**
+ * The error message with the note that the statement may or may not have been carried out - said
+ * last, so that it survives whatever else described the failure: a statement the user stopped as its
+ * connection went can still have been carried out, and "Query cancelled." on its own would read as
+ * though it had not been.
+ *
+ * @param theErrorMessage The message so far, or nil.
+ * @return The message with the note.
+ */
+- (NSString *)_messageNotingTheOutcomeIsUnknownAfter:(NSString *)theErrorMessage
+{
+	NSString *theNote = NSLocalizedString(@"The connection was lost while this statement was running, so it may or may not have been carried out - the server was not able to say. Check before running it again.", @"Note added to the error of a statement whose outcome could not be established");
+	return [theErrorMessage length] ? [NSString stringWithFormat:@"%@\n\n%@", theErrorMessage, theNote] : theNote;
+}
+
+/**
+ * Update lastErrorID, lastErrorMessage and lastSqlstate from connection. This is also where a
+ * result read reports its end, cut off or not.
  */
 - (void)_updateLastErrorInfos
 {
 	[self _updateLastErrorID:NSNotFound];
 	[self _updateLastErrorMessage:nil];
 	[self _updateLastSqlstate:nil];
+
+	// A read the connection loss cut off leaves a statement that changes data unsettled, as decided
+	// when its result was handed out. The note goes on the error here, where the loss is first seen,
+	// and the session counts as lost, so that the next use restores it rather than probing a handle
+	// the client library has already closed. Used up either way: the read is over.
+	BOOL theReadWasCutOff = runningResultOutcomeIsUnknownIfCutOff && [SPMySQLConnection isErrorIDConnectionError:queryErrorID];
+	runningResultOutcomeIsUnknownIfCutOff = NO;
+	if (theReadWasCutOff) {
+		[self _updateLastErrorMessage:[self _messageNotingTheOutcomeIsUnknownAfter:queryErrorMessage]];
+		if (state == SPMySQLConnected) {
+			state = SPMySQLConnectionLostInBackground;
+		}
+	}
 }
 
 /**

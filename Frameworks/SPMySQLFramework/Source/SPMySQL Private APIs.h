@@ -149,6 +149,10 @@
 databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (void)_flushMultipleResultSets;
+/** Whether what became of a statement that failed with this error is unknown, from the session's last report; the connection must be held. */
+- (BOOL)_outcomeIsUnknownForStatement:(NSString *)theQueryString reachedTheServer:(BOOL)reachedTheServer errorIsConnectionLoss:(BOOL)errorIsConnectionLoss;
+/** The error message with the note that the statement may or may not have been carried out. */
+- (NSString *)_messageNotingTheOutcomeIsUnknownAfter:(NSString *)theErrorMessage;
 - (void)_updateLastErrorInfos;
 - (void)_updateLastErrorMessage:(NSString *)theErrorMessage;
 - (void)_updateLastErrorID:(NSUInteger)theErrorID;

@@ -145,6 +145,10 @@
 	BOOL lostWorkReportPendingForEditor;
 	BOOL lostWorkReportPendingForWrites;
 	BOOL sessionAutocommitAtConnect;
+	// Whether the statement whose result is still being read changes data, so that a read cut off by a
+	// connection loss leaves what became of it unknown. Set when the result is handed out, used up
+	// when the read ends.
+	BOOL runningResultOutcomeIsUnknownIfCutOff;
 
 	BOOL useKeepAlive;
 	SPMySQLKeepAliveTimer *keepAliveTimer;
