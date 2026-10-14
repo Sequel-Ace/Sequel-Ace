@@ -1099,25 +1099,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// follows would end that one's session and roll back a transaction nobody asked to stop.
 	if (![inFlightQuery generationIsWaiting:theQueryBeingStopped]) return;
 
-	// A full reconnect is required at this point to force a cancellation.  As the
-	// connection may have finished processing the query at this point (depending how
-	// long the connection attempt took), check whether we can skip the reconnect.
-	if ([self _tryLockConnection]) {
-		[self _unlockConnection];
-		return;
-	}
-
-	if (state == SPMySQLDisconnecting || state == SPMySQLDisconnected) return;
-
-	// Reset the connection with a reconnect.  Unlock the connection beforehand,
-	// to allow the reconnect, but lock it again afterwards to restore the expected
-	// state (query execution process should unlock as appropriate).
-	[self _unlockConnection];
-	[self _reconnectAllowingRetries:YES];
-	[self _lockConnection];
-
-	// Reset tracking bools to cover encompassed queries
-	lastQueryWasCancelled = YES;
+	// The socket could not be shut down: no descriptor to duplicate it onto, or one the system no
+	// longer counts as connected. The read then ends when the server or the transport ends it, and
+	// the request recorded above is found when it does. Nothing is forced from here: the query's
+	// thread holds the connection, and giving it up on its behalf - which used to follow, with a
+	// reconnect - published a connection in use as idle and closed the handle under the read.
+	SPLog(@"SPMySQL Framework: the socket of the query being stopped could not be shut down; its read ends with the transport");
 }
 
 /**

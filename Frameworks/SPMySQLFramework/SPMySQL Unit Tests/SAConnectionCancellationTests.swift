@@ -643,3 +643,47 @@ final class SALostWorkSessionNoteTests: XCTestCase {
         XCTAssertFalse(note.contains("on its own"), note)
     }
 }
+
+/// Replaces the two ways out to the network, and counts the one that must not be taken: a reconnect
+/// forced from the stopping thread while the query's thread holds the connection.
+private final class SAStopWithoutAShutdownConnection: SPMySQLConnection {
+    /// How often a reconnect was asked for.
+    var reconnectsAskedFor = 0
+
+    @objc(_killQueryOverSideConnectionForGeneration:serverThread:) func killNothing(_ generation: UInt, serverThread: UInt) -> Bool {
+        false
+    }
+
+    @objc(_reconnectAllowingRetries:) func countReconnect(_ canRetry: Bool) -> Bool {
+        reconnectsAskedFor += 1
+        return false
+    }
+}
+
+/// Stopping a query whose socket cannot be shut down - nothing to duplicate it onto - leaves the
+/// connection with the query's thread: the read ends with the transport, and the request is kept
+/// for when it does. Forcing the connection open from the stopping thread and reconnecting used to
+/// follow, which published a connection in use as idle and closed the handle under the read.
+final class SAStopWithoutAShutdownTests: XCTestCase {
+    func testAStopThatCannotShutTheSocketDownLeavesTheConnectionWithTheQuery() {
+        let connection = SAStopWithoutAShutdownConnection()
+        connection.useKeepAlive = false
+        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+        let inFlight = connection.value(forKey: "inFlightQuery") as! SAInFlightQuery
+        inFlight.noteLatestGeneration(5)
+        // Waiting on a socket nothing can be duplicated from.
+        inFlight.beginWaiting(forGeneration: 5, onSocket: -1, serverThread: 7)
+        // The query's thread holds the connection while it reads.
+        _ = connection.perform(NSSelectorFromString("_lockConnection"))
+        defer {
+            _ = connection.perform(NSSelectorFromString("_unlockConnection"))
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+        }
+
+        connection.cancelCurrentQuery()
+
+        XCTAssertEqual(connection.reconnectsAskedFor, 0, "no reconnect is forced under a read that still holds the connection")
+        XCTAssertTrue(inFlight.generationIsWaiting(5), "the read is still the query's to end")
+        XCTAssertTrue(inFlight.cancellationWasRequested(forGeneration: 5), "and the stop is kept for when it does")
+    }
+}
