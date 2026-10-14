@@ -42,6 +42,39 @@ final class SAClaudeSheetRulesTests: XCTestCase {
         XCTAssertEqual(style(button("Connect") { $0.keyEquivalent = "\r" }), .primaryButton)
     }
 
+    func testReturnWithNonPushBezelIsUnchanged() {
+        let bezels: [NSButton.BezelStyle] = [.helpButton, .recessed, .smallSquare, .texturedRounded, .inline, .circular]
+        for bezel in bezels {
+            XCTAssertEqual(style(button("Go", bezel: bezel) { $0.keyEquivalent = "\r" }), .unchanged, "bezel \(bezel.rawValue)")
+        }
+    }
+
+    func testReturnWithoutBezelIsUnchanged() {
+        var d = SAClaudeControlDescriptor(kind: .button)
+        d.title = "Go"
+        d.keyEquivalent = "\r"
+        XCTAssertEqual(style(d), .unchanged)
+    }
+
+    func testReturnWithFlexiblePushIsPrimary() {
+        XCTAssertEqual(style(button("Go", bezel: .flexiblePush) { $0.keyEquivalent = "\r" }), .primaryButton)
+        XCTAssertEqual(style(button("Go", bezel: .regularSquare) { $0.keyEquivalent = "\r" }), .primaryButton)
+    }
+
+    func testAlertFirstButtonIsPrimaryWithAnyBezel() {
+        XCTAssertEqual(style(button("OK", bezel: .smallSquare) { $0.isAlertButton = true; $0.alertButtonIndex = 0 }), .primaryButton)
+    }
+
+    func testAlertIndexZeroWithoutAlertFlagIsNotPrimary() {
+        XCTAssertEqual(style(button("OK") { $0.alertButtonIndex = 0 }), .secondaryButton)
+        XCTAssertEqual(style(button("OK", bezel: .smallSquare) { $0.alertButtonIndex = 0 }), .unchanged)
+    }
+
+    func testTitlelessCheckboxAndRadioKeepTheirStyle() {
+        XCTAssertEqual(style(button("", type: .switch, bezel: .regularSquare)), .checkbox)
+        XCTAssertEqual(style(button("", type: .radio, bezel: .regularSquare)), .radio)
+    }
+
     func testPlainPushButtonIsSecondary() {
         XCTAssertEqual(style(button("Browse…")), .secondaryButton)
     }

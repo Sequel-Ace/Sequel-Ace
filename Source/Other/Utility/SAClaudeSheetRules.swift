@@ -63,7 +63,9 @@ enum SAClaudeSheetRules {
         if d.buttonType == .switch { return .checkbox }
         if d.buttonType == .radio { return .radio }
         if d.title.isEmpty || d.isDestructive { return .unchanged }
-        if d.alertButtonIndex == 0 || d.keyEquivalent == "\r" { return .primaryButton }
+        // Primary: an alert's real first button, or a push-family button that answers Return.
+        if d.isAlertButton && d.alertButtonIndex == 0 { return .primaryButton }
+        if d.keyEquivalent == "\r" && isPushLike(d.bezelStyle) { return .primaryButton }
         return isPushLike(d.bezelStyle) ? .secondaryButton : .unchanged
     }
 
