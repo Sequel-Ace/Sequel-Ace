@@ -110,21 +110,13 @@ private enum FilterCellDrawing {
 /// A title-less one in a table column (a sheet table's checkbox data cell) is centred in its cell; elsewhere the box sits at the left.
 @objc(SAClaudeCheckboxCell) final class SAClaudeCheckboxCell: NSButtonCell {
 
-    /// Where the box is drawn (and clicked) in `cellFrame`.
+    /// Where the box is drawn in `cellFrame` (in a table the whole cell still toggles, as AppKit's own cell did).
     private func boxRect(in cellFrame: NSRect, of controlView: NSView) -> NSRect {
         var box = SAClaudeFilterChrome.checkboxRect(in: cellFrame)
         if title.isEmpty, controlView is NSTableView {
             box.origin.x = (cellFrame.midX - box.width / 2).rounded()
         }
         return box
-    }
-
-    /// In a table, the centred box is the trackable part (the rest of the cell only selects the row), so clicks follow the drawing.
-    override func hitTest(for event: NSEvent, in cellFrame: NSRect, of controlView: NSView) -> NSCell.HitResult {
-        guard title.isEmpty, controlView is NSTableView else { return super.hitTest(for: event, in: cellFrame, of: controlView) }
-        let point = controlView.convert(event.locationInWindow, from: nil)
-        let target = boxRect(in: cellFrame, of: controlView).insetBy(dx: -3, dy: -3)
-        return NSMouseInRect(point, target, controlView.isFlipped) ? [.contentArea, .trackableArea] : .contentArea
     }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {

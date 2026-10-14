@@ -28,7 +28,7 @@ enum SAClaudeExportLayout {
     static let saveCardHeight: CGFloat = 100
     static let optionsMinWidth: CGFloat = 280
     static let optionsShare: CGFloat = 0.45
-    static let checkboxColumnWidth: CGFloat = 64
+    static let checkboxColumnWidth: CGFloat = 72
     static let classicButtonWidth: CGFloat = 104
     static let classicButtonHeight: CGFloat = 32
     static let classicButtonInset: CGFloat = 6

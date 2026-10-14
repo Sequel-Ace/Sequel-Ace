@@ -16,6 +16,8 @@ final class SAClaudeExportProgressStyler {
 
     private static let titleFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let statusFont = NSFont.systemFont(ofSize: 11)
+    /// The errors label's height for the 13pt medium title (its XIB frame is 14pt and clips the descenders).
+    private static let errorsLabelHeight: CGFloat = 17
     private static let logFrameRadius: CGFloat = 7
     /// Keeps the log's square corners inside the frame's rounded outline.
     private static let logInset: CGFloat = 3
@@ -23,6 +25,7 @@ final class SAClaudeExportProgressStyler {
 
     private struct Progress {
         let indicator: NSProgressIndicator
+        let status: NSTextField
         let bar = SAClaudeProgressBar()
         var observations: [NSKeyValueObservation] = []
     }
@@ -45,7 +48,7 @@ final class SAClaudeExportProgressStyler {
             title.font = Self.titleFont
             status.font = Self.statusFont
             status.lineBreakMode = .byTruncatingMiddle
-            progress = Progress(indicator: indicator)
+            progress = Progress(indicator: indicator, status: status)
             installBar(over: indicator, in: parent)
         }
         if let window: NSWindow = SAClaudeExportStyler.outlet(controller, "errorsWindow"),
@@ -54,7 +57,14 @@ final class SAClaudeExportProgressStyler {
             // The label above the log has no outlet: the topmost static text of the sheet.
             let label = window.contentView?.subviews.compactMap { $0 as? NSTextField }
                 .filter { !$0.isEditable && !$0.isHidden }.max { $0.frame.maxY < $1.frame.maxY }
-            label?.font = Self.titleFont
+            if let label {
+                label.font = Self.titleFont
+                // Taller for the bigger font, keeping its top edge (the label is pinned to the top of the sheet).
+                if label.frame.height < Self.errorsLabelHeight {
+                    label.frame = NSRect(x: label.frame.minX, y: label.frame.maxY - Self.errorsLabelHeight,
+                                         width: label.frame.width, height: Self.errorsLabelHeight)
+                }
+            }
             textView.font = SAClaudeCompletionStyler.editorFont()
             textView.textContainerInset = Self.logTextInset
             installFrame(around: scrollView, in: parent, textView: textView)
@@ -66,9 +76,11 @@ final class SAClaudeExportProgressStyler {
         progress?.observations.forEach { $0.invalidate() }
     }
 
-    /// Recolours the bar's track and the log's frame, and redraws the bar (the accent may have changed).
+    /// Recolours the status line (muted), the bar's track and the log's frame, and redraws the bar (the accent may
+    /// have changed).
     func recolour(palette: SAClaudeEditorChrome.Palette) {
         if let progress {
+            if progress.status.textColor != palette.icon { progress.status.textColor = palette.icon }
             progress.bar.trackColour = palette.hairline
             progress.bar.needsDisplay = true
         }

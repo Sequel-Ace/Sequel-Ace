@@ -495,7 +495,8 @@ set_input:
 	
 	[exportInputPopUpButton selectItemAtIndex:exportSource];
 	
-	BOOL isSelectedTables = (exportSource == SPTableExport);
+	// Dot exports every table: like _switchTab, keep "New file per table" hidden and the table list disabled.
+	BOOL isSelectedTables = (exportSource == SPTableExport) && (exportType != SPDotExport);
 	
 	[exportFilePerTableCheck setHidden:(!isSelectedTables) || (exportType == SPSQLExport)];
 	[exportTableList setEnabled:isSelectedTables];

@@ -278,6 +278,8 @@ extension Notification.Name {
         }
         let style = NSMutableParagraphStyle()
         style.lineBreakMode = .byTruncatingTail
+        // A centred header cell (the Export sheet's checkbox columns) keeps its title centred; others stay leading.
+        if column.headerCell.alignment == .center { style.alignment = .center }
         let name = NSMutableAttributedString(string: parts.name, attributes: [.font: Self.nameFont, .foregroundColor: palette.headerLabel, .paragraphStyle: style])
         if let type = parts.type {
             name.append(NSAttributedString(string: "  ", attributes: [.font: Self.tagFont]))

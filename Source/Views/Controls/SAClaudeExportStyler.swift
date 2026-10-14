@@ -92,10 +92,14 @@ import AppKit
     private var themeText: NSColor?
     private var cardFill: NSColor?
     private var isLayingOut = false
-    private var themeCheckPending = false
+
+    /// Every live styler (one per open document), for the shared theme check.
+    private static let stylers = NSHashTable<SAClaudeExportStyler>.weakObjects()
+    private static var defaultsObserver: NSObjectProtocol?
+    private static var themeCheckPending = false
+    private static var lastTheme: SAClaudeThemeColours?
 
     private var frameObservers: [NSObjectProtocol] = []
-    private var defaultsObserver: NSObjectProtocol?
     private var appearanceObservation: NSKeyValueObservation?
     private var columnObservations: [NSKeyValueObservation] = []
 
@@ -218,7 +222,6 @@ import AppKit
 
     deinit {
         for observer in frameObservers { NotificationCenter.default.removeObserver(observer) }
-        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
         appearanceObservation?.invalidate()
         columnObservations.forEach { $0.invalidate() }
     }
@@ -364,7 +367,9 @@ import AppKit
             column.maxWidth = Layout.checkboxColumnWidth
             column.minWidth = Layout.checkboxColumnWidth
             column.width = Layout.checkboxColumnWidth
-            // Two XIB data cells carry IB's placeholder title "Check", clipped by the old 15pt columns; at 64pt it would
+            // The title above the centred box is centred too (`SAClaudeTableHeaderView` honours the header cell's alignment).
+            column.headerCell.alignment = .center
+            // Two XIB data cells carry IB's placeholder title "Check", clipped by the old 15pt columns; at 72pt it would
             // show beside every box. Title-less, the Claude checkbox is centred in its column.
             (column.dataCell as? NSButtonCell)?.title = ""
         }
@@ -378,10 +383,8 @@ import AppKit
                 Self.onMain { self?.layOut() }
             })
         }
-        // No `queue: .main`: a defaults write on a background thread must not wait for the main queue.
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
-            DispatchQueue.main.async { self?.scheduleThemeCheck() }
-        }
+        Self.stylers.add(self)
+        Self.observeDefaults()
         appearanceObservation = o.window.observe(\.effectiveAppearance) { [weak self] _, _ in
             Self.onMain { self?.refresh(force: true) }
         }
@@ -395,14 +398,29 @@ import AppKit
         }
     }
 
+    /// One observer for every document's styler: any defaults write may be a theme change.
+    private static func observeDefaults() {
+        guard defaultsObserver == nil else { return }
+        // No `queue: .main`: a defaults write on a background thread must not wait for the main queue.
+        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
+            DispatchQueue.main.async { scheduleThemeCheck() }
+        }
+    }
+
     /// One theme check per main-queue turn, however many defaults writes ask for it (window frames are saved
-    /// continuously); `refresh` restyles only when the theme changed.
-    private func scheduleThemeCheck() {
+    /// continuously), shared by all stylers: they refresh only when the theme changed (as `SAClaudeWindowSkin`'s).
+    private static func scheduleThemeCheck() {
         guard !themeCheckPending else { return }
         themeCheckPending = true
-        DispatchQueue.main.async { [weak self] in
-            self?.themeCheckPending = false
-            self?.refresh(force: false)
+        DispatchQueue.main.async {
+            themeCheckPending = false
+            var theme: SAClaudeThemeColours?
+            NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
+                theme = SAClaudeThemeColours.from(defaults: .standard)
+            }
+            guard theme != lastTheme else { return }
+            lastTheme = theme
+            stylers.allObjects.forEach { $0.refresh(force: false) }
         }
     }
 
