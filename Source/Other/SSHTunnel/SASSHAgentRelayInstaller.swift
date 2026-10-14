@@ -93,11 +93,14 @@ final class SASSHAgentRelayInstaller {
     /// Compares the installed script with the bundled one byte for byte. The
     /// script runs outside the sandbox, so anything but an exact match is
     /// treated as outdated and never run. The allowlist is the user's to edit
-    /// and is not compared.
+    /// and is not compared — but it has to be there: the helper refuses to
+    /// start without it, so a missing one also counts as outdated, which
+    /// brings back the button that reinstalls it.
     var status: Status {
         guard let installed = fileManager.contents(atPath: installedScript.path) else { return .notInstalled }
         guard let bundledScript, let bundled = fileManager.contents(atPath: bundledScript.path) else { return .outdated }
-        return installed == bundled ? .installed : .outdated
+        guard installed == bundled, fileManager.isReadableFile(atPath: installedAllowlist.path) else { return .outdated }
+        return .installed
     }
 
     /// True once this process has installed or updated the helper. The open
@@ -168,6 +171,38 @@ extension SASSHAgentRelayInstaller {
             return String(format: NSLocalizedString("%@ — helper not installed", comment: "network preferences : ssh agent summary; %@ is the agent name"), name)
         case .outdated:
             return String(format: NSLocalizedString("%@ — helper update required", comment: "network preferences : ssh agent summary; %@ is the agent name"), name)
+        }
+    }
+
+    /// What a connection's SSH settings say about the agent it will use, so
+    /// the outcome of "Use Default" and the helper's readiness are visible
+    /// where the connection is edited. `needsAttention` is true when an agent
+    /// is selected but the helper cannot run yet.
+    static func connectionStatus(connectionSource: String, connectionCustomPath: String,
+                                 defaultSource: String, defaultCustomPath: String,
+                                 status: Status, installedThisSession: Bool) -> (text: String, needsAttention: Bool) {
+        let effective = SASSHAgentSource.effective(connectionSource: connectionSource, connectionCustomPath: connectionCustomPath,
+                                                   defaultSource: defaultSource, defaultCustomPath: defaultCustomPath)
+        let followsDefault = SASSHAgentSource.stored(connectionSource, customPath: connectionCustomPath) == nil
+        guard effective.kind != .off else {
+            return (followsDefault
+                        ? NSLocalizedString("No SSH agent is used (the default is Off). Authentication uses the SSH password or key.", comment: "connection view : ssh agent status")
+                        : NSLocalizedString("No SSH agent is used. Authentication uses the SSH password or key.", comment: "connection view : ssh agent status"),
+                    false)
+        }
+        let name = summary(defaultSource: effective, status: .installed, installedThisSession: false)
+        if installedThisSession {
+            return (String(format: NSLocalizedString("%@ will be used after Sequel Ace is relaunched.", comment: "connection view : ssh agent status; %@ is the agent name"), name), true)
+        }
+        switch status {
+        case .notInstalled:
+            return (String(format: NSLocalizedString("%@ is selected, but the SSH agent helper is not installed.", comment: "connection view : ssh agent status; %@ is the agent name"), name), true)
+        case .outdated:
+            return (String(format: NSLocalizedString("%@ is selected, but the SSH agent helper needs to be updated.", comment: "connection view : ssh agent status; %@ is the agent name"), name), true)
+        case .installed:
+            return (String(format: followsDefault
+                               ? NSLocalizedString("Keys come from %@ (the default). Leave SSH Password empty unless the server also asks for one.", comment: "connection view : ssh agent status; %@ is the agent name")
+                               : NSLocalizedString("Keys come from %@. Leave SSH Password empty unless the server also asks for one.", comment: "connection view : ssh agent status; %@ is the agent name"), name), false)
         }
     }
 

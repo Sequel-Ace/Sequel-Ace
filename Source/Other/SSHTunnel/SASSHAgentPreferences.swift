@@ -378,6 +378,39 @@ private struct SASSHAgentHelperSection: View {
     }
 }
 
+/// Under a connection's SSH Agent picker: which agent that choice comes to,
+/// and whether the helper is ready for it — with a way into the settings when
+/// it is not. Without this, "Use Default" says nothing about what will happen.
+struct SASSHAgentConnectionStatus: View {
+
+    let source: String
+    let customPath: String
+
+    var body: some View {
+        let defaults = UserDefaults.standard
+        let installer = SASSHAgentRelayInstaller.shared
+        let status = SASSHAgentRelayInstaller.connectionStatus(
+            connectionSource: source, connectionCustomPath: customPath,
+            defaultSource: defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? "",
+            defaultCustomPath: defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? "",
+            status: installer?.status ?? .notInstalled,
+            installedThisSession: installer?.installedThisSession ?? false)
+        HStack(alignment: .firstTextBaseline) {
+            Text(verbatim: status.text)
+                .font(.callout)
+                .foregroundColor(status.needsAttention ? .orange : .secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button {
+                SASSHAgentPreferences.presentSettings(from: NSApp.keyWindow)
+            } label: {
+                Text("SSH Agent Settings…", comment: "connection view : open ssh agent settings button")
+            }
+            .controlSize(.small)
+        }
+    }
+}
+
 /// The agent choices, shared by the default in Preferences and the override
 /// on each connection.
 struct SASSHAgentSourcePicker<Label: View>: View {
@@ -406,5 +439,170 @@ struct SASSHAgentSourcePicker<Label: View>: View {
                 Text("Agent Socket", comment: "ssh agent source : custom socket path field label")
             }
         }
+    }
+}
+
+// MARK: - Legacy connection view
+
+/// The SSH agent row in the XIB-based connection view's SSH tab: a popup for
+/// the connection's own choice and, under it, what that choice comes to.
+///
+/// That tab is laid out with fixed frames in `ConnectionView.xib`. Rather than
+/// renumber every frame there, the row is inserted here: the container grows
+/// by the row's height, everything above the insertion point moves up with
+/// its top edge, and the controls below stay where they are.
+@objc final class SASSHAgentConnectionRow: NSObject {
+
+    private static let addedHeight: CGFloat = 60
+
+    private let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let status = NSTextField(wrappingLabelWithString: "")
+    private weak var controller: SPConnectionController?
+    private let onChange: () -> Void
+    private var observations: [NSKeyValueObservation] = []
+    private var defaultsObserver: NSObjectProtocol?
+
+    /// `anchor` is the control the row goes above (the SSH tab's time zone
+    /// popup); `siblingsBelow` are views that sit under `container` in its
+    /// superview and have to move down with its bottom edge.
+    @objc(installInContainer:aboveView:siblingsBelow:controller:onChange:)
+    static func install(in container: NSView, above anchor: NSView, siblingsBelow: [NSView],
+                        controller: SPConnectionController, onChange: @escaping () -> Void) -> SASSHAgentConnectionRow {
+        let row = SASSHAgentConnectionRow(controller: controller, onChange: onChange)
+        let height = addedHeight
+        let threshold = anchor.frame.maxY
+
+        let resizesSubviews = container.autoresizesSubviews
+        container.autoresizesSubviews = false
+        var frame = container.frame
+        frame.origin.y -= height
+        frame.size.height += height
+        container.frame = frame
+        for view in container.subviews where view.frame.minY >= threshold {
+            view.setFrameOrigin(NSPoint(x: view.frame.minX, y: view.frame.minY + height))
+        }
+        container.autoresizesSubviews = resizesSubviews
+        for sibling in siblingsBelow {
+            sibling.setFrameOrigin(NSPoint(x: sibling.frame.minX, y: sibling.frame.minY - height))
+        }
+
+        // Line the new label up with the label of the row below.
+        let anchorLabel = container.subviews.compactMap { $0 as? NSTextField }.first {
+            !$0.isEditable && $0.frame.maxX <= anchor.frame.minX + 4 && abs($0.frame.midY - anchor.frame.midY) < 8
+        }
+        let label = NSTextField(labelWithString: NSLocalizedString("SSH Agent:", comment: "network preferences : ssh agent row label"))
+        label.alignment = anchorLabel?.alignment ?? .right
+        label.font = anchorLabel?.font ?? .systemFont(ofSize: NSFont.systemFontSize)
+
+        let statusY = anchor.frame.minY + 33
+        let statusHeight: CGFloat = 28
+        let popupY = statusY + statusHeight + 2
+        row.popup.frame = NSRect(x: anchor.frame.minX, y: popupY, width: anchor.frame.width, height: anchor.frame.height)
+        row.status.frame = NSRect(x: anchor.frame.minX + 3, y: statusY, width: anchor.frame.width - 6, height: statusHeight)
+        label.frame = NSRect(x: anchorLabel?.frame.minX ?? 7, y: popupY + 5,
+                             width: anchorLabel?.frame.width ?? 98, height: anchorLabel?.frame.height ?? 17)
+        for view in [label, row.popup, row.status] as [NSView] {
+            view.autoresizingMask = [.maxXMargin, .minYMargin]
+            container.addSubview(view)
+        }
+        row.refresh()
+        return row
+    }
+
+    private init(controller: SPConnectionController, onChange: @escaping () -> Void) {
+        self.controller = controller
+        self.onChange = onChange
+        super.init()
+
+        let choices: [(String, String)] = [
+            (NSLocalizedString("Use Default", comment: "ssh agent source : follow the default from preferences"), ""),
+            (NSLocalizedString("Off", comment: "ssh agent source : no agent"), SASSHAgentSource.Kind.off.rawValue),
+            (NSLocalizedString("Automatic (from SSH config)", comment: "ssh agent source : whatever ssh itself would use"), SASSHAgentSource.Kind.automatic.rawValue),
+            (NSLocalizedString("System Agent", comment: "ssh agent source : macOS ssh-agent"), SASSHAgentSource.Kind.system.rawValue),
+            ("1Password", SASSHAgentSource.Kind.onePassword.rawValue),
+            (NSLocalizedString("Custom Socket…", comment: "ssh agent source : user supplied socket path, asks for the path"), SASSHAgentSource.Kind.custom.rawValue),
+        ]
+        for (index, choice) in choices.enumerated() {
+            popup.addItem(withTitle: choice.0)
+            popup.lastItem?.representedObject = choice.1
+            if index == 0 { popup.menu?.addItem(.separator()) }
+        }
+        popup.target = self
+        popup.action = #selector(choose(_:))
+
+        status.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        status.maximumNumberOfLines = 2
+        status.lineBreakMode = .byTruncatingTail
+
+        // Selecting a favorite sets these on the controller; follow it.
+        observations = [
+            controller.observe(\.sshAgentSource) { [weak self] _, _ in self?.refreshOnMain() },
+            controller.observe(\.sshAgentSocketPath) { [weak self] _, _ in self?.refreshOnMain() },
+        ]
+        // The default agent and the helper's state change what "Use Default" means.
+        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil,
+                                                                  queue: .main) { [weak self] _ in self?.refresh() }
+    }
+
+    deinit {
+        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+    }
+
+    private func refreshOnMain() {
+        if Thread.isMainThread { refresh() } else { DispatchQueue.main.async { [weak self] in self?.refresh() } }
+    }
+
+    private func refresh() {
+        let source = controller?.sshAgentSource ?? ""
+        let path = controller?.sshAgentSocketPath ?? ""
+        let known = SASSHAgentSource.Kind(rawValue: source) != nil ? source : ""
+        if let index = popup.itemArray.firstIndex(where: { ($0.representedObject as? String) == known }) {
+            popup.selectItem(at: index)
+        }
+        let defaults = UserDefaults.standard
+        let installer = SASSHAgentRelayInstaller.shared
+        let state = SASSHAgentRelayInstaller.connectionStatus(
+            connectionSource: source, connectionCustomPath: path,
+            defaultSource: defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? "",
+            defaultCustomPath: defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? "",
+            status: installer?.status ?? .notInstalled,
+            installedThisSession: installer?.installedThisSession ?? false)
+        status.stringValue = state.text
+        status.textColor = state.needsAttention ? .systemOrange : .secondaryLabelColor
+        status.toolTip = state.text
+    }
+
+    @objc private func choose(_ sender: NSPopUpButton) {
+        guard let controller, let source = sender.selectedItem?.representedObject as? String else { return }
+        var path = ""
+        if source == SASSHAgentSource.Kind.custom.rawValue {
+            guard let entered = Self.askForSocketPath(current: controller.sshAgentSocketPath ?? "") else {
+                refresh()   // cancelled: put the popup back
+                return
+            }
+            path = entered
+        }
+        controller.sshAgentSource = source
+        controller.sshAgentSocketPath = path
+        refresh()
+        onChange()
+    }
+
+    /// The legacy tab has no room for another field, so a custom agent's
+    /// socket path is asked for when "Custom Socket…" is chosen.
+    private static func askForSocketPath(current: String) -> String? {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("SSH Agent Socket", comment: "connection view : custom ssh agent socket prompt title")
+        alert.informativeText = NSLocalizedString("Enter the path of your SSH agent's socket.", comment: "connection view : custom ssh agent socket prompt message")
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+        let field = NSTextField(string: current)
+        field.placeholderString = "~/Library/…/agent.sock"
+        field.frame = NSRect(x: 0, y: 0, width: 320, height: 22)
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        let path = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.isEmpty ? nil : path
     }
 }

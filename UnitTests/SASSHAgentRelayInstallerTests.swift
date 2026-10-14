@@ -57,6 +57,22 @@ final class SASSHAgentRelayInstallerTests: XCTestCase {
         XCTAssertEqual(installer.status, .outdated)
     }
 
+    /// The helper will not start without its allowlist. A helper whose
+    /// allowlist has gone must not read as installed, or there would be no
+    /// button left to put it back.
+    func testAMissingAllowlistNeedsRepairAndReinstallingRestoresIt() throws {
+        let installer = makeInstaller()
+        try installer.install(into: scripts)
+        try FileManager.default.removeItem(at: installer.installedAllowlist)
+
+        XCTAssertEqual(installer.status, .outdated)
+        XCTAssertNotNil(SASSHAgentRelayInstaller.presentation(status: installer.status, installedThisSession: false).action)
+
+        try installer.install(into: scripts)
+        XCTAssertEqual(installer.status, .installed)
+        XCTAssertEqual(try String(contentsOf: installer.installedAllowlist, encoding: .utf8), "~/agent.sock\n")
+    }
+
     func testUpdatingReplacesTheScriptButKeepsTheUsersAllowlist() throws {
         let installer = makeInstaller()
         try installer.install(into: scripts)
@@ -117,6 +133,41 @@ final class SASSHAgentRelayInstallerTests: XCTestCase {
         XCTAssertEqual(summary(SASSHAgentSource(kind: .custom, customPath: "~/a/agent.sock"), .installed), "~/a/agent.sock")
         // With the agent off the helper's state is beside the point.
         XCTAssertEqual(summary(.off, .notInstalled), summary(.off, .installed))
+    }
+
+    private func connectionStatus(_ source: String, default defaultSource: String,
+                                  _ status: SASSHAgentRelayInstaller.Status = .installed,
+                                  relaunch: Bool = false) -> (text: String, needsAttention: Bool) {
+        SASSHAgentRelayInstaller.connectionStatus(connectionSource: source, connectionCustomPath: "",
+                                                  defaultSource: defaultSource, defaultCustomPath: "",
+                                                  status: status, installedThisSession: relaunch)
+    }
+
+    /// The connection form says which agent "Use Default" resolves to.
+    func testConnectionStatusNamesTheAgentThatWillBeUsed() {
+        XCTAssertTrue(connectionStatus("", default: "1password").text.contains("1Password"))
+        XCTAssertTrue(connectionStatus("system", default: "1password").text.contains(connectionStatus("system", default: "").text))
+        XCTAssertNotEqual(connectionStatus("", default: "1password").text, connectionStatus("1password", default: "").text,
+                          "following the default is said in so many words")
+        XCTAssertFalse(connectionStatus("", default: "1password").needsAttention)
+    }
+
+    func testConnectionStatusSaysWhenNoAgentIsUsed() {
+        XCTAssertFalse(connectionStatus("", default: "").needsAttention)
+        XCTAssertFalse(connectionStatus("off", default: "1password").needsAttention)
+        XCTAssertFalse(connectionStatus("off", default: "1password").text.contains("1Password"))
+        // With no agent in play the helper's state is beside the point.
+        XCTAssertEqual(connectionStatus("off", default: "", .notInstalled).text, connectionStatus("off", default: "", .installed).text)
+    }
+
+    func testConnectionStatusFlagsAnAgentThatCannotWorkYet() {
+        let ready = connectionStatus("1password", default: "")
+        for blocked in [connectionStatus("1password", default: "", .notInstalled),
+                        connectionStatus("1password", default: "", .outdated),
+                        connectionStatus("1password", default: "", .installed, relaunch: true)] {
+            XCTAssertTrue(blocked.needsAttention)
+            XCTAssertNotEqual(blocked.text, ready.text)
+        }
     }
 
     func testInstallFailsWithoutABundledHelper() {

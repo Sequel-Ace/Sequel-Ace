@@ -277,6 +277,7 @@ struct SAConnectionFormView: View {
                                        includesUseDefault: true) {
                     Text("SSH Agent", comment: "connection view : field label")
                 }
+                SASSHAgentConnectionStatus(source: model.info.sshAgentSource, customPath: model.info.sshAgentSocketPath)
             }
 
             Section {

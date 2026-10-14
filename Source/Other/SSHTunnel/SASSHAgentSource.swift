@@ -115,6 +115,9 @@ struct SASSHAgentSource: Equatable {
         case unsupportedIdentityAgent(String)
         case lookupFailed(String)
         case lookupTimedOut
+        /// The SSH key is a public key, but no agent is in effect for the host
+        /// after all, so nothing holds its private half.
+        case publicKeyWithoutAgent(String)
     }
 
     /// What `ssh -G` says about the agent for one host.
@@ -168,6 +171,12 @@ struct SASSHAgentSource: Equatable {
         }
         guard expanded.hasPrefix("/") else { throw ResolveError.relativePath(path) }
         return expanded
+    }
+
+    /// Whether `path` names a public key file, which ssh can only use as an
+    /// identity when an agent holds the matching private key.
+    static func isPublicKeyFile(_ path: String) -> Bool {
+        (path as NSString).pathExtension.lowercased() == "pub"
     }
 
     /// The user's home directory. `NSHomeDirectory()` is the container under

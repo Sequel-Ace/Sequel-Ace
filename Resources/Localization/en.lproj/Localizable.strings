@@ -26,6 +26,12 @@
  Initial favourite name after duplicating a previous favourite */
 "%@ Copy" = "%@ Copy";
 
+/* connection view : ssh agent status; %@ is the agent name */
+"%@ is selected, but the SSH agent helper is not installed." = "%@ is selected, but the SSH agent helper is not installed.";
+
+/* connection view : ssh agent status; %@ is the agent name */
+"%@ is selected, but the SSH agent helper needs to be updated." = "%@ is selected, but the SSH agent helper needs to be updated.";
+
 /* text showing a single row a partially loaded result */
 "%@ row in partial load" = "%@ row in partial load";
 
@@ -43,6 +49,9 @@
 
 /* text showing how many rows matched filter */
 "%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
+
+/* connection view : ssh agent status; %@ is the agent name */
+"%@ will be used after Sequel Ace is relaunched." = "%@ will be used after Sequel Ace is relaunched.";
 
 /* network preferences : ssh agent summary; %@ is the agent name */
 "%@ — helper not installed" = "%@ — helper not installed";
@@ -155,11 +164,17 @@
 /* ssh agent source : user supplied socket path */
 "Custom Socket" = "Custom Socket";
 
+/* ssh agent source : user supplied socket path, asks for the path */
+"Custom Socket…" = "Custom Socket…";
+
 /* ssh agent settings : default source label */
 "Default agent:" = "Default agent:";
 
 /* ssh agent settings : close button */
 "Done" = "Done";
+
+/* connection view : custom ssh agent socket prompt message */
+"Enter the path of your SSH agent's socket." = "Enter the path of your SSH agent's socket.";
 
 /* rename database: dropping the emptied source database failed; %1$@ target, %2$@ source, %3$@ server error */
 "Every object was moved to '%@', but dropping '%@' failed: %@" = "Every object was moved to '%1$@', but dropping '%2$@' failed: %3$@";
@@ -179,11 +194,23 @@
 /* SSH agent helper state */
 "Installed. Relaunch Sequel Ace to start using it." = "Installed. Relaunch Sequel Ace to start using it.";
 
+/* connection view : ssh agent status; %@ is the agent name */
+"Keys come from %@ (the default). Leave SSH Password empty unless the server also asks for one." = "Keys come from %@ (the default). Leave SSH Password empty unless the server also asks for one.";
+
+/* connection view : ssh agent status; %@ is the agent name */
+"Keys come from %@. Leave SSH Password empty unless the server also asks for one." = "Keys come from %@. Leave SSH Password empty unless the server also asks for one.";
+
 /* ssh agent settings : postpone relaunch button */
 "Later" = "Later";
 
 /* rename database: moving one object failed; %1$@ object, %2$@ server error, %3$@ target database, %4$@ source database */
 "Moving %@ failed: %@ The objects moved so far are in '%@'; '%@' was not dropped." = "Moving %1$@ failed: %2$@ The objects moved so far are in '%3$@'; '%4$@' was not dropped.";
+
+/* connection view : ssh agent status */
+"No SSH agent is used (the default is Off). Authentication uses the SSH password or key." = "No SSH agent is used (the default is Off). Authentication uses the SSH password or key.";
+
+/* connection view : ssh agent status */
+"No SSH agent is used. Authentication uses the SSH password or key." = "No SSH agent is used. Authentication uses the SSH password or key.";
 
 /* SSH agent error */
 "No system SSH agent is available (SSH_AUTH_SOCK is not set)." = "No system SSH agent is available (SSH_AUTH_SOCK is not set).";
@@ -223,6 +250,12 @@
 
 /* ssh agent settings : install error title */
 "SSH Agent Helper" = "SSH Agent Helper";
+
+/* connection view : open ssh agent settings button */
+"SSH Agent Settings…" = "SSH Agent Settings…";
+
+/* connection view : custom ssh agent socket prompt title */
+"SSH Agent Socket" = "SSH Agent Socket";
 
 /* network preferences : ssh agent row label */
 "SSH Agent:" = "SSH Agent:";
@@ -4589,3 +4622,6 @@
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.";
+
+/* SSH agent error; %@ is a file name */
+"“%@” is a public key, which only works together with an SSH agent, and the SSH config turns the agent off for this host (IdentityAgent none). Choose the private key, or choose an SSH agent for this connection." = "“%@” is a public key, which only works together with an SSH agent, and the SSH config turns the agent off for this host (IdentityAgent none). Choose the private key, or choose an SSH agent for this connection.";

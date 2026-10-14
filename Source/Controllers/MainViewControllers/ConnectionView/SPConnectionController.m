@@ -4778,6 +4778,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         [self loadNib];
 
+        // The SSH tab's XIB has no SSH agent controls; the row is added here (SASSHAgentConnectionRow).
+        if (sshConnectionFormContainer && sshTimeZoneField) {
+            __weak SPConnectionController *weakSelf = self;
+            sshAgentRow = [SASSHAgentConnectionRow installInContainer:sshConnectionFormContainer
+                                                            aboveView:sshTimeZoneField
+                                                        siblingsBelow:(sshConnectionSSLDetailsContainer ? @[sshConnectionSSLDetailsContainer] : @[])
+                                                           controller:self
+                                                             onChange:^{ [weakSelf _startEditingConnection]; }];
+        }
+
         NSArray *colorList = SPFavoriteColorSupport.sharedInstance.userColorList;
         [sshColorField setColorList:colorList];
         [sshColorField      bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];

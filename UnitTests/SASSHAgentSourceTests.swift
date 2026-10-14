@@ -91,7 +91,7 @@ final class SASSHAgentSourceTests: XCTestCase {
         })
         for source in ["", "off", "unknown"] {
             let plan = try relay.launchPlan(source: source, customPath: "", host: "db.example.com", user: "", port: 0,
-                                            hasKeyFile: false)
+                                            keyFilePath: "")
             XCTAssertFalse(plan.isActive)
             XCTAssertEqual(plan.sshArguments, [])
         }
@@ -135,6 +135,23 @@ final class SASSHAgentSourceTests: XCTestCase {
         XCTAssertEqual(try source.targetPath(realHome: home, environment: environment) { .environment },
                        "/var/run/x/Listeners")
         XCTAssertNil(try source.targetPath(realHome: home, environment: environment) { .disabled })
+    }
+
+    // MARK: - Public keys
+
+    func testRecognisesPublicKeyFilesByExtension() {
+        XCTAssertTrue(SASSHAgentSource.isPublicKeyFile("/Users/tester/.ssh/id_ed25519.pub"))
+        XCTAssertTrue(SASSHAgentSource.isPublicKeyFile("~/.ssh/ID_RSA.PUB"))
+        XCTAssertFalse(SASSHAgentSource.isPublicKeyFile("/Users/tester/.ssh/id_ed25519"))
+        XCTAssertFalse(SASSHAgentSource.isPublicKeyFile(""))
+    }
+
+    /// The message a user gets when Automatic finds the agent switched off for
+    /// the host but the connection's key is a public key.
+    func testPublicKeyWithoutAgentMessageNamesTheFileAndTheCause() {
+        let message = SASSHAgentSource.ResolveError.publicKeyWithoutAgent("id_ed25519.pub").errorDescription ?? ""
+        XCTAssertTrue(message.contains("id_ed25519.pub"))
+        XCTAssertTrue(message.contains("IdentityAgent none"))
     }
 
     // MARK: - ssh -G output

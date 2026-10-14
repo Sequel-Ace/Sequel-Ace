@@ -503,7 +503,7 @@ static unsigned short getRandomPort(void);
 			                                                     host:sshHost
 			                                                     user:sshLogin ?: @""
 			                                                     port:sshPort
-			                                               hasKeyFile:(identityFilePath != nil)
+			                                              keyFilePath:identityFilePath ?: @""
 			                                                    error:&agentError];
 			if (!agentPlan) {
 				taskExitedUnexpectedly = YES;

@@ -162,9 +162,14 @@ import Foundation
     /// Everything a tunnel needs for one ssh launch: resolves the agent socket
     /// for `source`, makes sure a helper is relaying it, and returns the ssh
     /// options. Called by `SPSSHTunnel` on its launch thread.
-    @objc(launchPlanForSource:customPath:host:user:port:hasKeyFile:error:)
+    ///
+    /// `keyFilePath` is the connection's SSH key, empty for none. A public key
+    /// is only an identity while an agent holds the private half, so if the
+    /// agent turns out to be disabled for this host the launch fails here with
+    /// a reason, not later as "Permission denied".
+    @objc(launchPlanForSource:customPath:host:user:port:keyFilePath:error:)
     func launchPlan(source: String, customPath: String, host: String, user: String, port: Int,
-                    hasKeyFile: Bool) throws -> SASSHAgentLaunchPlan {
+                    keyFilePath: String) throws -> SASSHAgentLaunchPlan {
         guard let agentSource = SASSHAgentSource.stored(source, customPath: customPath), agentSource.kind != .off else {
             return .inactive
         }
@@ -179,12 +184,18 @@ import Foundation
             try SASSHAgentSource.lookUpAutomaticAgent(sshPath: sshPath, configPath: configPath,
                                                       host: host, user: user, port: port)
         }
-        guard let target else { return .inactive }
+        guard let target else {
+            // Automatic resolved to "no agent" for this host (IdentityAgent none).
+            if SASSHAgentSource.isPublicKeyFile(keyFilePath) {
+                throw SASSHAgentSource.ResolveError.publicKeyWithoutAgent((keyFilePath as NSString).lastPathComponent)
+            }
+            return .inactive
+        }
 
         let listenPath = try self.listenPath(forTarget: target)
         let arguments = SASSHAgentSource.sshArguments(listenPath: listenPath,
                                                       usesBundledConfig: configPath == bundledConfig,
-                                                      hasKeyFile: hasKeyFile)
+                                                      hasKeyFile: !keyFilePath.isEmpty)
         return SASSHAgentLaunchPlan(sshArguments: arguments, listenPath: listenPath, targetPath: target)
     }
 
@@ -275,8 +286,11 @@ import Foundation
         let directory = containerDataDirectory + "/.keys"
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true,
                                                  attributes: [.posixPermissions: 0o700])
-        Self.removeAbandonedSockets(inDirectory: directory)
+        // The sweep is under the lock too: a socket another launch has bound
+        // but not yet started listening on refuses connections, and must not
+        // be mistaken for an abandoned one.
         bindLock.lock()
+        Self.removeAbandonedSockets(inDirectory: directory)
         let listenPath: String
         let descriptor: Int32
         do {
@@ -547,6 +561,8 @@ extension SASSHAgentSource.ResolveError: LocalizedError {
             return String(format: NSLocalizedString("Could not read the SSH config to find the SSH agent. %@", comment: "SSH agent error; %@ is the reason"), detail)
         case .lookupTimedOut:
             return NSLocalizedString("Reading the SSH config to find the SSH agent took too long.", comment: "SSH agent error")
+        case .publicKeyWithoutAgent(let name):
+            return String(format: NSLocalizedString("“%@” is a public key, which only works together with an SSH agent, and the SSH config turns the agent off for this host (IdentityAgent none). Choose the private key, or choose an SSH agent for this connection.", comment: "SSH agent error; %@ is a file name"), name)
         }
     }
 }
