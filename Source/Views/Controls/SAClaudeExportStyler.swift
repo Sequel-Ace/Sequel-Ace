@@ -83,8 +83,8 @@ import AppKit
 
     /// Task 3: the options card's rows; nil when an options outlet is missing (that card keeps the XIB layout).
     private var optionsStyler: SAClaudeExportOptionsStyler?
-    /// Task 4: the custom filename editor, in a popover under Customise.
-    private let filenamePopover: SAClaudeExportFilenamePopover
+    /// Task 4: the custom filename editor, in a child panel under Customise.
+    private let filenameEditor: SAClaudeExportFilenameEditor
     /// Task 5: the progress and errors sheets; nil when their outlets are missing (those sheets keep the generic look).
     private var progressStyler: SAClaudeExportProgressStyler?
 
@@ -115,7 +115,7 @@ import AppKit
         styler.progressStyler = SAClaudeExportProgressStyler(controller: controller)   // Task 5
         // A chip changes the filename field programmatically, which posts no text notification: the controller
         // updates its preview as after its own programmatic changes.
-        styler.filenamePopover.onFieldChanged = { [weak controller] in
+        styler.filenameEditor.onFieldChanged = { [weak controller] in
             let selector = NSSelectorFromString("updateDisplayedExportFilename")
             guard let controller, controller.responds(to: selector) else { return }
             controller.perform(selector)
@@ -139,11 +139,11 @@ import AppKit
             styler.filenameLabel.stringValue = filename
             styler.filenameLabel.toolTip = filename
             // The controller refreshes the available tokens just before (e.g. "Table" removed): the chips follow.
-            styler.filenamePopover.refreshTokens()
+            styler.filenameEditor.refreshTokens()
         }
     }
 
-    /// True when the styler handled the custom-filename toggle itself (the filename popover, Task 4).
+    /// True when the styler handled the custom-filename toggle itself (the filename editor panel, Task 4).
     @objc(handleCustomFilenameToggleForController:) static func handleCustomFilenameToggle(for controller: NSObject) -> Bool {
         styler(for: controller)?.toggleFilenameEditor() ?? false
     }
@@ -224,7 +224,7 @@ import AppKit
 
     private init(outlets: Outlets) {
         self.outlets = outlets
-        filenamePopover = SAClaudeExportFilenamePopover(customView: outlets.customFilenameView, tokenField: outlets.customFilenameTokenField,
+        filenameEditor = SAClaudeExportFilenameEditor(customView: outlets.customFilenameView, tokenField: outlets.customFilenameTokenField,
                                                         tokenPool: outlets.customFilenameTokenPool)
         super.init()
     }
@@ -465,14 +465,14 @@ import AppKit
         chainKeyViews()
     }
 
-    /// Task 4: toggles the custom filename popover; true when handled.
+    /// Task 4: toggles the custom filename editor panel; true when handled.
     private func toggleFilenameEditor() -> Bool {
-        filenamePopover.toggle(relativeTo: customiseButton)
+        filenameEditor.toggle(relativeTo: customiseButton)
         return true
     }
 
-    /// Task 4: closes the custom filename popover (format or source changed).
-    private func closeFilenameEditor() { filenamePopover.close() }
+    /// Task 4: closes the custom filename editor panel (format or source changed).
+    private func closeFilenameEditor() { filenameEditor.close() }
 
     @objc private func customise(_ sender: Any?) {
         _ = toggleFilenameEditor()
@@ -505,7 +505,7 @@ import AppKit
         for label in [leftTitle, optionsTitle, saveTitle, compressionLabel, o.formatInfoText] { label.textColor = muted }
         for glyph in [folderGlyph, fileGlyph] { glyph.contentTintColor = muted }
         optionsStyler?.recolour(muted: muted, text: text)   // Task 3
-        filenamePopover.recolour(in: o.window.effectiveAppearance)   // Task 4
+        filenameEditor.recolour(in: o.window.effectiveAppearance)   // Task 4
         progressStyler?.recolour(palette: palette)   // Task 5
         let switcherColours = SAClaudeConnectionTypeTabs.Colours(selectedFill: fill, selectedStroke: palette.hairline, hoverFill: palette.hover,
                                                                  text: text, mutedText: muted)

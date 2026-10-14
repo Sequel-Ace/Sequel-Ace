@@ -2,9 +2,9 @@
 //  SAClaudeExportTokenChips.swift
 //  Sequel Ace
 //
-//  The Customise popover's filename tokens as Claude outline chips, in place of the native token pool field: a
+//  The Customise editor's filename tokens as Claude outline chips, in place of the native token pool field: a
 //  wrapping row of chips, each a small hairline-outlined button with a muted "+" and the token's name. A click adds
-//  the token to the filename field (the popover does the adding); a drag carries the same pasteboard content the
+//  the token to the filename field (the editor does the adding); a drag carries the same pasteboard content the
 //  controller writes for its own token fields, so a drop goes through the controller's `readFromPasteboard`.
 //  App target only.
 //

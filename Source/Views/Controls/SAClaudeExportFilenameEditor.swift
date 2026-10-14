@@ -1,18 +1,33 @@
 //
-//  SAClaudeExportFilenamePopover.swift
+//  SAClaudeExportFilenameEditor.swift
 //  Sequel Ace
 //
-//  The Export sheet's "Customise" popover: the controller's own custom filename view (hint, token field, token
-//  pool) re-parented into a transient popover under the Save to card's Customise button, in the Claude look. The
-//  controller keeps driving the token fields (delegate, drag and drop, the synthesised Return that tokenises typed
-//  `{tokens}`, which it posts to the field's own window). The native token pool is hidden (kept: the controller's
-//  source of the available tokens) and shown as Claude outline chips that add a token on click or drag it into the
-//  field. Owned by `SAClaudeExportStyler`. App target only.
+//  The Export sheet's "Customise" filename editor: the controller's own custom filename view (hint, token field,
+//  token pool) re-parented into a small key-capable child panel of the export sheet, under the Save to card's
+//  Customise button, in the Claude look. The controller keeps driving the token fields (delegate, drag and drop, the
+//  synthesised Return that tokenises typed `{tokens}`, which it posts to the field's own window). The native token
+//  pool is hidden (kept: the controller's source of the available tokens) and shown as Claude outline chips that add
+//  a token on click or drag it into the field. Owned by `SAClaudeExportStyler`. App target only.
+//
+//  A panel, not an NSPopover: a popover over a sheet runs in AppKit's "deferred mode", where the popover's field
+//  editor is reported as first responder of both windows, and closing it made the sheet resign a field editor it
+//  does not own (NSInternalInconsistencyException). The panel is an ordinary key window: the sheet resigns key when
+//  the panel becomes key, and the field editor only ever belongs to the panel.
 //
 
 import AppKit
 
-final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
+/// The editor's window: borderless, key-capable (the token field edits in it), never main. Esc closes it.
+final class SAClaudeExportFilenamePanel: NSPanel {
+    /// Esc (when no field editor consumed it) — the editor closes.
+    var onCancel: (() -> Void)?
+
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+    override func cancelOperation(_ sender: Any?) { onCancel?() }
+}
+
+final class SAClaudeExportFilenameEditor: NSObject {
 
     private static let width: CGFloat = 520
     private static let padding: CGFloat = 12
@@ -23,7 +38,11 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
     private static let hintGap: CGFloat = 6
     private static let fieldRadius: CGFloat = 7
     private static let poolRadius: CGFloat = 9
+    private static let cardRadius: CGFloat = 12
+    /// From the Customise button to the panel's top (or bottom, when shown above it).
+    private static let anchorGap: CGFloat = 6
     private static let hintFont = NSFont.systemFont(ofSize: 11)
+    private static let escapeKeyCode: UInt16 = 53
 
     private struct Colours {
         let isDark: Bool
@@ -44,24 +63,27 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
     private let tokenField: NSTokenField
     private let tokenPool: NSTokenField
     /// The XIB's box around everything, the pool's box and the hint above the field; nil when not found (the view
-    /// then keeps its XIB layout inside the popover).
+    /// then keeps its XIB layout inside the panel).
     private let outerBox: NSBox?
     private let poolBox: NSBox?
     private let hintLabel: NSTextField?
 
-    private var popover: NSPopover?
+    private var panel: SAClaudeExportFilenamePanel?
+    /// The panel's rounded card: the surface fill and hairline behind the custom view (it takes no clicks).
+    private let card = SAClaudeTableInfoCardView()
     private let chipsView = SAClaudeExportTokenChipsView()
     /// The token ids the chips show, in order (rebuilt only when the pool's tokens change).
     private var chipTokenIds: [String] = []
     /// After a chip changed the token field programmatically (no text notification): the controller updates its
     /// filename preview, as it does after its own programmatic changes.
     var onFieldChanged: (() -> Void)?
-    private let surface = SAClaudeEditorBarBackgroundView()
     private var colours: Colours?
-    private var sheetEndObserver: NSObjectProtocol?
+
     private weak var anchor: NSButton?
-    /// The click on the Customise button that closed the (transient) popover: its button action must not reopen it.
-    private var closingClick: Int?
+    private weak var exportWindow: NSWindow?
+    private var eventMonitor: Any?
+    private var sheetEndObserver: NSObjectProtocol?
+    private var resignKeyObserver: NSObjectProtocol?
 
     init(customView: NSView, tokenField: NSTokenField, tokenPool: NSTokenField) {
         self.customView = customView
@@ -79,87 +101,140 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
     }
 
     deinit {
-        if let sheetEndObserver { NotificationCenter.default.removeObserver(sheetEndObserver) }
+        removeObservers()
     }
 
-    // MARK: - Showing
+    // MARK: - Showing and closing
 
-    /// Shows the popover under `button`, or closes it when shown.
+    var isShown: Bool { panel?.isVisible ?? false }
+
+    /// Shows the editor under `button`, or closes it when shown.
     func toggle(relativeTo button: NSButton) {
-        // A mouse-up shares its mouse-down's event number.
-        let closedByThisClick = closingClick != nil && NSApp.currentEvent?.type == .leftMouseUp && NSApp.currentEvent?.eventNumber == closingClick
-        closingClick = nil
-        if closedByThisClick { return }
-        if let popover, popover.isShown {
+        if isShown {
             close()
             return
         }
+        guard let window = button.window else { return }
         anchor = button
-        let popover = self.popover ?? install()
+        exportWindow = window
+        let panel = self.panel ?? install()
         customView.isHidden = false
         refreshTokens()
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        if let window = tokenField.window {
-            window.makeFirstResponder(tokenField)
-            if !window.isKeyWindow { window.makeKey() }
+        applyColours()
+        panel.level = window.level
+        position(panel)
+        window.addChildWindow(panel, ordered: .above)
+        panel.makeKeyAndOrderFront(nil)
+        panel.makeFirstResponder(tokenField)
+        observe(window)
+    }
+
+    /// The one way the editor closes: the field's typed text is kept, its editing ends inside the panel's own
+    /// window, and the export sheet takes key again (unless another window took it: `restoreKey` false).
+    func close(restoreKey: Bool = true) {
+        removeObservers()
+        guard let panel, panel.isVisible else { return }
+        tokenField.validateEditing()
+        panel.makeFirstResponder(nil)
+        exportWindow?.removeChildWindow(panel)
+        panel.orderOut(nil)
+        if restoreKey, let exportWindow, exportWindow.isVisible { exportWindow.makeKey() }
+    }
+
+    /// Its top 6pt under the Customise button, centred on it, inside the export sheet's frame horizontally; above
+    /// the button when there is no room below it in the sheet.
+    private func position(_ panel: NSPanel) {
+        guard let anchor, let window = exportWindow else { return }
+        let size = panel.frame.size
+        let button = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
+        let sheet = window.frame
+        let x = min(max(button.midX - size.width / 2, sheet.minX), max(sheet.minX, sheet.maxX - size.width))
+        var y = button.minY - Self.anchorGap - size.height
+        if y < sheet.minY { y = button.maxY + Self.anchorGap }
+        let origin = NSPoint(x: x.rounded(), y: y.rounded())
+        if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
+    }
+
+    private func observe(_ window: NSWindow) {
+        removeObservers()
+        // A click anywhere else in the app closes the editor; the click itself goes on as usual. A click on Customise
+        // is left to its own toggle (closing here would let the button reopen it).
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
+            guard let self, let panel = self.panel, panel.isVisible else { return event }
+            if event.type == .keyDown {
+                // Esc while the token field edits: its field editor would take it (`complete:`), so catch it here.
+                guard event.window === panel, event.keyCode == Self.escapeKeyCode,
+                      event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty else { return event }
+                self.close()
+                return nil
+            }
+            if event.window === panel { return event }
+            if let anchor = self.anchor, event.window === anchor.window,
+               anchor.bounds.contains(anchor.convert(event.locationInWindow, from: nil)) { return event }
+            self.close()
+            return event
         }
-        observeSheetEnd(of: button.window)
+        // `closeSheet:` hides the custom view and ends the sheet: the editor goes with it.
+        if let parent = window.sheetParent {
+            sheetEndObserver = NotificationCenter.default.addObserver(forName: NSWindow.didEndSheetNotification, object: parent, queue: nil) { [weak self] _ in
+                DispatchQueue.main.async { self?.close() }
+            }
+        }
+        // Key went to another window (not by a click in this app, which the monitor handles): close, leaving it there.
+        if let panel {
+            resignKeyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: nil) { [weak self] _ in
+                DispatchQueue.main.async {
+                    guard let self, let panel = self.panel, panel.isVisible, !panel.isKeyWindow else { return }
+                    self.close(restoreKey: false)
+                }
+            }
+        }
     }
 
-    func close() {
-        guard let popover, popover.isShown else { return }
-        popover.close()
-    }
-
-    func popoverWillClose(_ notification: Notification) {
-        closingClick = nil
-        guard let event = NSApp.currentEvent, event.type == .leftMouseDown, let anchor, event.window === anchor.window,
-              anchor.bounds.contains(anchor.convert(event.locationInWindow, from: nil)) else { return }
-        closingClick = event.eventNumber
-    }
-
-    /// `closeSheet:` hides the custom view and ends the sheet: the popover goes with it.
-    private func observeSheetEnd(of exportWindow: NSWindow?) {
+    private func removeObservers() {
+        if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }
+        eventMonitor = nil
         if let sheetEndObserver { NotificationCenter.default.removeObserver(sheetEndObserver) }
         sheetEndObserver = nil
-        guard let parent = exportWindow?.sheetParent else { return }
-        sheetEndObserver = NotificationCenter.default.addObserver(forName: NSWindow.didEndSheetNotification, object: parent, queue: nil) { [weak self] _ in
-            DispatchQueue.main.async { self?.close() }
-        }
+        if let resignKeyObserver { NotificationCenter.default.removeObserver(resignKeyObserver) }
+        resignKeyObserver = nil
     }
 
-    /// The popover and its view, once: the custom view moves into it for the life of the dialog.
-    private func install() -> NSPopover {
-        let content = NSView(frame: NSRect(x: 0, y: 0, width: Self.width, height: customView.frame.height))
-        surface.frame = content.bounds
-        surface.autoresizingMask = [.width, .height]
-        content.addSubview(surface)
+    /// The panel and its view, once: the custom view moves into it for the life of the dialog.
+    private func install() -> SAClaudeExportFilenamePanel {
+        let size = NSSize(width: Self.width, height: customView.frame.height)
+        let panel = SAClaudeExportFilenamePanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: true)
+        panel.isFloatingPanel = false
+        panel.hidesOnDeactivate = true
+        panel.hasShadow = true
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.isReleasedWhenClosed = false
+        panel.onCancel = { [weak self] in self?.close() }
+
+        let content = NSView(frame: NSRect(origin: .zero, size: size))
+        card.radius = Self.cardRadius
+        card.frame = content.bounds
+        card.autoresizingMask = [.width, .height]
+        content.addSubview(card)
         customView.removeFromSuperview()
         content.addSubview(customView)
         customView.frame = content.bounds
         customView.autoresizingMask = [.width, .height]
-
-        let controller = NSViewController()
-        controller.view = content
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.animates = true
-        popover.contentViewController = controller
-        popover.delegate = self
-        popover.contentSize = content.frame.size
-        self.popover = popover
+        panel.contentView = content
+        self.panel = panel
 
         restyle()
         rebuildChips()
         layOut()
         applyColours()
-        return popover
+        return panel
     }
 
     // MARK: - Look
 
-    /// The outer line box disappears (its content stays); the pool becomes a rounded hairline well; the editable
-    /// token field gets the Claude field look on its layer (the sheet skin does not walk the popover's window).
+    /// The outer line box disappears (its content stays); the pool becomes chips (or, without them, a rounded hairline
+    /// well); the editable token field gets the Claude field look on its layer (the sheet skin does not walk the panel).
     private func restyle() {
         if let outerBox {
             outerBox.boxType = .custom
@@ -195,18 +270,20 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         outerBox?.contentView != nil && poolBox?.contentView != nil && hintLabel != nil
     }
 
-    /// Hint, field and the chips top to bottom, 12pt in from the popover's edges; the popover is as tall as the
-    /// chips need (they wrap onto as many rows as the width takes).
+    /// Hint, field and the chips top to bottom, 12pt in from the panel's edges; the panel is as tall as the chips
+    /// need (they wrap onto as many rows as the width takes), its top edge kept while shown.
     private func layOut() {
-        guard usesChips, let outerBox, let hintLabel, let outerContent = outerBox.contentView,
-              let content = popover?.contentViewController?.view else { return }
+        guard usesChips, let outerBox, let hintLabel, let outerContent = outerBox.contentView, let panel else { return }
         let innerWidth = Self.width - 2 * Self.padding
         let chipsHeight = chipsView.height(forWidth: innerWidth)
         let height = Self.padding + Self.hintHeight + Self.hintGap + Self.fieldHeight + (chipsHeight > 0 ? Self.chipsGap + chipsHeight : 0) + Self.padding
         let size = NSSize(width: Self.width, height: height)
-        // The custom view and the surface follow the content view (width + height sizable).
-        if content.frame.size != size { content.setFrameSize(size) }
-        if let popover, popover.contentSize != size { popover.contentSize = size }
+        if panel.frame.size != size {
+            // The card and the custom view follow the content view (width + height sizable).
+            let top = panel.frame.maxY
+            panel.setContentSize(size)
+            if panel.isVisible { position(panel) } else { panel.setFrameOrigin(NSPoint(x: panel.frame.minX, y: top - size.height)) }
+        }
 
         Self.place(outerBox, customView.bounds)
         Self.place(outerContent, outerBox.bounds)
@@ -217,14 +294,15 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         Self.place(tokenField, field)
         Self.place(chipsView, NSRect(x: inner.minX, y: inner.minY, width: inner.width, height: chipsHeight))
         chipsView.layOutChips()
+        panel.invalidateShadow()
     }
 
     // MARK: - Token chips
 
     /// Rebuilds the chips when the controller changed the available tokens (e.g. "Table" removed) and re-fits the
-    /// popover. Cheap when nothing changed; called on show and whenever the controller updates the filename.
+    /// panel. Cheap when nothing changed; called on show and whenever the controller updates the filename.
     func refreshTokens() {
-        guard popover != nil, usesChips else { return }
+        guard panel != nil, usesChips else { return }
         if rebuildChips() { layOut() }
     }
 
@@ -261,7 +339,8 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
     /// after it and lets the controller update its preview.
     private func add(_ token: NSObject) {
         guard let window = tokenField.window else { return }
-        // Commit any text being typed first (the field tokenises it on ending editing).
+        // Commit any text being typed first (the field tokenises it on ending editing), inside the panel's own window.
+        tokenField.validateEditing()
         if tokenField.currentEditor() != nil { window.makeFirstResponder(nil) }
         var parts: [Any]
         if let array = tokenField.objectValue as? [Any] {
@@ -285,8 +364,10 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
         if !view.autoresizingMask.isEmpty { view.autoresizingMask = [] }
     }
 
+    // MARK: - Colours
+
     /// Re-derives the colours from the editor theme under `appearance` (the export window's) and recolours the
-    /// popover once it exists.
+    /// panel once it exists.
     func recolour(in appearance: NSAppearance) {
         appearance.performAsCurrentDrawingAppearance {
             let theme = SAClaudeThemeColours.from(defaults: .standard)
@@ -301,10 +382,11 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
     }
 
     private func applyColours() {
-        guard let popover, let colours else { return }
+        guard let panel, let colours else { return }
         let appearanceName: NSAppearance.Name = colours.isDark ? .darkAqua : .aqua
-        if popover.appearance?.name != appearanceName { popover.appearance = NSAppearance(named: appearanceName) }
-        surface.fillColour = colours.surface
+        if panel.appearance?.name != appearanceName { panel.appearance = NSAppearance(named: appearanceName) }
+        card.fill = colours.surface
+        card.stroke = colours.hairline
         for chip in chipsView.chips { chip.colours = colours.chip }
         if let poolBox {
             poolBox.borderColor = colours.hairline
@@ -316,5 +398,6 @@ final class SAClaudeExportFilenamePopover: NSObject, NSPopoverDelegate {
             tokenField.layer?.borderColor = colours.hairline.cgColor
         }
         tokenField.needsDisplay = true
+        panel.invalidateShadow()
     }
 }
