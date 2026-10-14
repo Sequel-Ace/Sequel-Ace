@@ -51,16 +51,24 @@ final class SAClaudeEditorColourPanelTarget: NSObject {
         defaults.set(SAClaudeEditorDefaults.customSchemeName, forKey: SAEditorThemeLoader.themeNameKey)
     }
 
-    /// Closes the panel if it is editing for us, so a stray click can't edit the other mode's set.
-    func close() {
-        let panel = NSColorPanel.shared
+    /// Lets go of the shared colour panel without closing it: if it was pointed at us, its target, action and our
+    /// key are cleared, so a drag in the panel can no longer write an editor colour. Called before another
+    /// client (the accent well) takes the panel over, and by `close()`.
+    func releasePanel() {
         if Self.owner === self {
             Self.owner = nil
+            let panel = NSColorPanel.shared
             panel.setTarget(nil)
             panel.setAction(nil)
-            panel.orderOut(nil)
         }
         key = nil
+    }
+
+    /// Closes the panel if it is editing for us, so a stray click can't edit the other mode's set.
+    func close() {
+        let ownsPanel = Self.owner === self
+        releasePanel()
+        if ownsPanel { NSColorPanel.shared.orderOut(nil) }
     }
 }
 
@@ -129,6 +137,12 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
         refresh()
     }
 
+    /// The accent well is about to take the shared colour panel: the editor colours' hand-off is dropped first
+    /// (called before the well sets itself as the panel's target, not after).
+    func accentWellWillActivate() {
+        panelTarget.releasePanel()
+    }
+
     /// Opens the colour panel for an editor colour; the accent well gives the panel up first.
     func editColour(_ key: String) {
         accentWell?.deactivate()
@@ -138,6 +152,7 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
     var modeSetting: Bool {
         get { followsMacOS }
         set {
+            accentWell?.deactivate()
             panelTarget.close()
             SAEditorColourMode.setFollowsMacOS(newValue)
             refresh()
@@ -200,11 +215,41 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
     }
 }
 
+/// The accent row's colour well. It tells its owner before it takes the shared colour panel over, and lets go
+/// of the panel when it leaves its window or the window closes (a later use of the panel must not move the accent).
+private final class SAClaudeAccentColorWell: NSColorWell {
+    var willActivate: (() -> Void)?
+    private var closeObserver: NSObjectProtocol?
+
+    override func activate(_ exclusive: Bool) {
+        willActivate?()
+        super.activate(exclusive)
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil, isActive { deactivate() }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
+        closeObserver = window.map { window in
+            NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+                if self?.isActive == true { self?.deactivate() }
+            }
+        }
+    }
+
+    deinit { if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) } }
+}
+
 /// A minimal-style colour well (the accent row's): every change, including a drag in the colour panel, is
 /// reported at once.
 private struct SAClaudeAccentWell: NSViewRepresentable {
     let colour: NSColor
     let onChange: (NSColor) -> Void
+    let willActivate: () -> Void
     let register: (NSColorWell) -> Void
 
     final class Coordinator: NSObject {
@@ -215,11 +260,12 @@ private struct SAClaudeAccentWell: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> NSColorWell {
-        let well = NSColorWell(style: .minimal)
+        let well = SAClaudeAccentColorWell(style: .minimal)
         well.color = colour
         well.isContinuous = true
         well.target = context.coordinator
         well.action = #selector(Coordinator.changed(_:))
+        well.willActivate = willActivate
         well.setAccessibilityLabel(NSLocalizedString("Accent colour", comment: "Preferences > Query Editor: label of the accent colour well"))
         register(well)
         return well
@@ -342,8 +388,10 @@ struct SAClaudeEditorColoursSection: View {
 
             // Below both modes: the accent drives every accent in the Claude look (buttons, outlines, dots, glyphs).
             Text(NSLocalizedString("Accent colour", comment: "Preferences > Query Editor: label of the accent colour well"))
+                .accessibilityHidden(true)
             HStack(spacing: 8) {
-                SAClaudeAccentWell(colour: settings.accent, onChange: settings.setAccent) { [weak settings] well in settings?.accentWell = well }
+                SAClaudeAccentWell(colour: settings.accent, onChange: settings.setAccent,
+                                   willActivate: settings.accentWellWillActivate) { [weak settings] well in settings?.accentWell = well }
                     .frame(width: 44, height: 24)
                 Button(NSLocalizedString("Reset to clay", comment: "Preferences > Query Editor: puts the accent colour back to the default clay"), action: settings.resetAccent)
                     .disabled(!settings.accentIsStored)
@@ -354,6 +402,8 @@ struct SAClaudeEditorColoursSection: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         // The theme list can change (Edit theme list, Import) without a defaults write.
         .onAppear { settings.refresh() }
+        // The pane going away ends the accent well's use of the shared colour panel.
+        .onDisappear { settings.accentWell?.deactivate() }
     }
 }
 

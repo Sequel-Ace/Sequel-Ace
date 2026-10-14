@@ -167,21 +167,76 @@ final class SAClaudeAccentTests: XCTestCase {
 
     func testObserveRunsTheHandlerOnMainWhileTheOwnerLives() {
         final class Owner {}
-        var owner: Owner? = Owner()
+        let owner = Owner()
         var calls = 0
         let called = expectation(description: "handler")
         called.assertForOverFulfill = false
-        SAClaudeAccent.observe(owner!) { _ in
+        SAClaudeAccent.observe(owner) { _ in
             XCTAssertTrue(Thread.isMainThread)
             calls += 1
             called.fulfill()
         }
         DispatchQueue.global().async { SAClaudeAccent.store(nil, in: self.defaults) }
         wait(for: [called], timeout: 2)
-        owner = nil
-        let before = calls
-        SAClaudeAccent.store(nil, in: defaults)
-        XCTAssertEqual(calls, before)
+        XCTAssertGreaterThan(calls, 0)
+        withExtendedLifetime(owner) {}
+    }
+
+    func testObserveRemovesItsObserverAsSoonAsTheOwnerDeallocates() {
+        final class Owner {}
+        final class Canary {}
+        weak var canary: Canary?
+        autoreleasepool {
+            let owner = Owner()
+            let strongCanary = Canary()
+            canary = strongCanary
+            // The observer block holds the handler, which holds the canary: it lives while the observer does.
+            SAClaudeAccent.observe(owner) { _ in _ = strongCanary }
+            XCTAssertNotNil(canary)
+        }
+        // No notification was posted since: only removing the observer can have released the handler.
+        XCTAssertNil(canary)
+    }
+
+    // MARK: - Settings row
+
+    private func makeSettings() -> SAClaudeEditorColoursSettings {
+        SAClaudeEditorColoursSettings(defaults: defaults, themesDirectory: NSTemporaryDirectory(), confirmDiscardUnsaved: { true },
+                                      saveAs: {}, importTheme: {}, exportTheme: {}, editThemeList: {})
+    }
+
+    func testSettingsStartAtClayWithResetDisabled() {
+        let settings = makeSettings()
+        assertSame(settings.accent, SAClaudeAccent.clayAccent)
+        XCTAssertFalse(settings.accentIsStored)
+    }
+
+    func testSetAccentStoresAnOpaqueSRGBColourInTheInjectedDefaults() {
+        let settings = makeSettings()
+        settings.setAccent(srgb(0x2A78D6).withAlphaComponent(0.4))
+        XCTAssertTrue(settings.accentIsStored)
+        assertSame(settings.accent, srgb(0x2A78D6))
+        let stored = SAClaudeAccent.stored(in: defaults)
+        XCTAssertEqual(stored?.alphaComponent ?? 0, 1, accuracy: 0.001)
+        assertSame(stored!, srgb(0x2A78D6))
+        XCTAssertNil(SAClaudeAccent.stored(in: .standard), "the injected defaults were used, not .standard")
+    }
+
+    func testResetAccentClearsTheStoredColour() {
+        let settings = makeSettings()
+        settings.setAccent(srgb(0x7161E0))
+        settings.resetAccent()
+        XCTAssertFalse(settings.accentIsStored)
+        assertSame(settings.accent, SAClaudeAccent.clayAccent)
+        XCTAssertNil(defaults.object(forKey: SAClaudeAccent.defaultsKey))
+    }
+
+    func testSettingsPickUpAnAccentStoredElsewhere() {
+        let settings = makeSettings()
+        SAClaudeAccent.store(srgb(0x008300), in: defaults)
+        settings.refresh()
+        XCTAssertTrue(settings.accentIsStored)
+        assertSame(settings.accent, srgb(0x008300))
     }
 
     func testErrorClayIsFixedWhateverTheAccent() {

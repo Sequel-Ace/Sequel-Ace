@@ -333,25 +333,7 @@ import AppKit
             popup.selectItem(at: 0)
         }
 
-        observeAccent(of: popup)
         return partition
-    }
-
-    private static var accentObserverKey: UInt8 = 0
-
-    /// Once per popup: re-renders the database icons in the new tint when the accent changes. The menu is
-    /// rebuilt by `configurePopup`, which keeps one observer for the popup's lifetime.
-    private static func observeAccent(of popup: NSPopUpButton) {
-        guard objc_getAssociatedObject(popup, &accentObserverKey) == nil else { return }
-        objc_setAssociatedObject(popup, &accentObserverKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        SAClaudeAccent.observe(popup) { popup in
-            let databaseName = SAClaudeGlyphs.accessibilityName(for: .database)
-            let icon = SAClaudeGlyphs.image(.database, tint: SAClaudeStyle.tintDatabase)
-            for item in popup.itemArray where item.image?.accessibilityDescription == databaseName {
-                item.image = icon
-            }
-            popup.needsDisplay = true
-        }
     }
 
     /// Background-thread orchestration for selecting a database (and

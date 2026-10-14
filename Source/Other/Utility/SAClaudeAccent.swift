@@ -38,24 +38,36 @@ import AppKit
     }
 
     /// The `.standard` stored colour, unarchived once and kept until `store` or a change of the key's data.
+    /// The read and the unarchiving happen outside the lock; a fill that raced an invalidation is dropped.
     static func stored() -> NSColor? {
         _ = defaultsObserver
         cacheLock.lock()
-        defer { cacheLock.unlock() }
-        if let cache { return cache.colour }
+        if let cache {
+            cacheLock.unlock()
+            return cache.colour
+        }
+        let generation = cacheGeneration
+        cacheLock.unlock()
+
         let data = UserDefaults.standard.data(forKey: defaultsKey)
         let colour = SAArchiving.color(from: data)?.usingColorSpace(.sRGB)
-        cache = (data, colour)
+
+        cacheLock.lock()
+        if cacheGeneration == generation { cache = (data, colour) }
+        cacheLock.unlock()
         return colour
     }
 
     private static let cacheLock = NSLock()
     private static var cache: (data: Data?, colour: NSColor?)?
+    /// Bumped by every invalidation, so a fill that started before one does not store stale data.
+    private static var cacheGeneration = 0
 
     /// Drops the cached colour; the next read unarchives again.
     static func invalidateCache() {
         cacheLock.lock()
         cache = nil
+        cacheGeneration += 1
         cacheLock.unlock()
     }
 
@@ -65,7 +77,10 @@ import AppKit
         forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
         let data = UserDefaults.standard.data(forKey: defaultsKey)
         cacheLock.lock()
-        if let cache, cache.data != data { SAClaudeAccent.cache = nil }
+        if let cache, cache.data != data {
+            SAClaudeAccent.cache = nil
+            cacheGeneration += 1
+        }
         cacheLock.unlock()
     }
 
@@ -94,19 +109,30 @@ import AppKit
 
     /// Calls `handler` with `owner` (on the main thread) whenever the accent changes, for as long as `owner`
     /// lives: stylers refresh whatever they cache from the accent. The observer has no queue (a writer on
-    /// another thread must not wait for main) and hops to main itself.
+    /// another thread must not wait for main) and hops to main itself; it is removed when `owner` deallocates.
     static func observe<Owner: AnyObject>(_ owner: Owner, _ handler: @escaping (Owner) -> Void) {
-        var token: NSObjectProtocol?
-        token = NotificationCenter.default.addObserver(forName: didChangeNotification, object: nil, queue: nil) { [weak owner] _ in
+        let token = NotificationCenter.default.addObserver(forName: didChangeNotification, object: nil, queue: nil) { [weak owner] _ in
             let run = {
-                guard let owner else {
-                    if let token { NotificationCenter.default.removeObserver(token) }
-                    return
-                }
-                handler(owner)
+                if let owner { handler(owner) }
             }
             if Thread.isMainThread { run() } else { DispatchQueue.main.async(execute: run) }
         }
+        let lifetime: ObserverLifetime
+        if let existing = objc_getAssociatedObject(owner, &lifetimeKey) as? ObserverLifetime {
+            lifetime = existing
+        } else {
+            lifetime = ObserverLifetime()
+            objc_setAssociatedObject(owner, &lifetimeKey, lifetime, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        lifetime.tokens.append(token)
+    }
+
+    private static var lifetimeKey: UInt8 = 0
+
+    /// Held by the observing owner; its deinit removes the owner's observers.
+    private final class ObserverLifetime {
+        var tokens: [NSObjectProtocol] = []
+        deinit { tokens.forEach(NotificationCenter.default.removeObserver) }
     }
 
     static func accent(in defaults: UserDefaults) -> NSColor { stored(in: defaults) ?? clayAccent }
