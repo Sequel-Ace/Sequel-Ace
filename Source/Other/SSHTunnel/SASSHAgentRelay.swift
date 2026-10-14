@@ -209,6 +209,17 @@ import Foundation
                                           defaultSource: defaultSource, defaultCustomPath: "").kind != .off
     }
 
+    /// Whether connection details that came from outside the app — a session
+    /// file, or another app — may connect by themselves. Not through an SSH
+    /// agent: like a connection string, such a file can name any SSH host,
+    /// and the agent would offer the user's keys to it. The connection still
+    /// opens; the user clicks Connect.
+    @objc(mayAutoConnectWithConnectionDetails:)
+    static func mayAutoConnect(connectionDetails: NSDictionary?) -> Bool {
+        guard (connectionDetails?["type"] as? String) == "SPSSHTunnelConnection" else { return true }
+        return !isAgentInEffect(connectionSource: connectionDetails?["sshAgentSource"] as? String ?? "")
+    }
+
     // MARK: - Relay lifecycle
 
     /// The 8 hex digit name of the relay socket. Includes the process id so
@@ -230,13 +241,22 @@ import Foundation
     /// The socket of a helper relaying `target`, starting one if none is
     /// running. Concurrent callers for one target share a single launch.
     func listenPath(forTarget target: String) throws -> String {
-        let deadline = Date().addingTimeInterval(startTimeout)
+        // Long enough for a launch already under way to finish or give up on
+        // its own: it allows startTimeout from the helper's start, after the
+        // sweep and file reads that come first.
+        let deadline = Date().addingTimeInterval(startTimeout * 2 + 1)
         condition.lock()
         waiting: while true {
             switch entries[target] {
-            case .running(let listenPath, _, _):
-                condition.unlock()
-                return listenPath
+            case .running(let listenPath, let helper, _):
+                if Self.isSocket(listenPath) {
+                    condition.unlock()
+                    return listenPath
+                }
+                // The socket has gone from under a running helper; start over.
+                entries[target] = nil
+                helper.closeInput()
+                continue waiting
             case .launching:
                 guard condition.wait(until: deadline) else {
                     condition.unlock()
@@ -256,9 +276,9 @@ import Foundation
             condition.lock()
             if case .launching(_, true) = entries[target] {
                 entries[target] = nil
+                unlink(listenPath)
                 condition.broadcast()
                 condition.unlock()
-                unlink(listenPath)
                 throw RelayError.helperExited(detail: "")
             }
             entries[target] = .running(listenPath: listenPath, helper: helper, token: token)
@@ -290,7 +310,7 @@ import Foundation
         // but not yet started listening on refuses connections, and must not
         // be mistaken for an abandoned one.
         bindLock.lock()
-        Self.removeAbandonedSockets(inDirectory: directory)
+        Self.removeAbandonedSockets(inDirectory: directory, sparing: runningListenPaths())
         let listenPath: String
         let descriptor: Int32
         do {
@@ -354,13 +374,17 @@ import Foundation
     /// A socket path for `target` that nothing else is using. A name already
     /// serving another agent, or another copy of the app, is never taken over:
     /// that relay's clients would silently be talking to the wrong agent.
-    private func freeListenPath(forTarget target: String) throws -> String {
+    private func runningListenPaths() -> Set<String> {
         condition.lock()
-        let inUse = Set(entries.values.compactMap { entry -> String? in
+        defer { condition.unlock() }
+        return Set(entries.values.compactMap { entry -> String? in
             if case .running(let listenPath, _, _) = entry { return listenPath }
             return nil
         })
-        condition.unlock()
+    }
+
+    private func freeListenPath(forTarget target: String) throws -> String {
+        let inUse = runningListenPaths()
 
         for attempt in 0..<8 {
             let name = socketNamer(target, processIdentifier, attempt)
@@ -411,10 +435,10 @@ import Foundation
         return lstat(path, &info) == 0 && (info.st_mode & S_IFMT) == S_IFSOCK
     }
 
-    /// Whether the socket at `path` certainly has no listener: the connection
-    /// is refused, or the file is gone. Any other outcome — it connects, or
-    /// the probe fails for a reason that says nothing about the listener,
-    /// such as a full backlog — counts as still in use.
+    /// Whether the socket at `path` looks abandoned: the connection is refused,
+    /// or the file is gone. Any other outcome counts as in use. A full backlog
+    /// is also refused on macOS, so callers spare their own live relays
+    /// (see `removeAbandonedSockets(inDirectory:sparing:)`).
     private static func isAbandoned(_ path: String) -> Bool {
         let probe = socket(AF_UNIX, SOCK_STREAM, 0)
         guard probe >= 0 else { return false }
@@ -449,12 +473,13 @@ import Foundation
     }
 
     /// Relay sockets are named per process, so a crash leaves one behind.
-    /// Removes those nothing is listening on any more.
-    static func removeAbandonedSockets(inDirectory directory: String) {
+    /// Removes those nothing is listening on any more. `sparing` are this
+    /// process's own live relays: a busy one can refuse a probe too.
+    static func removeAbandonedSockets(inDirectory directory: String, sparing: Set<String> = []) {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
         for name in names where name.range(of: "^a-[0-9a-f]{8}$", options: .regularExpression) != nil {
             let path = directory + "/" + name
-            guard isSocket(path) else { continue }
+            guard !sparing.contains(path), isSocket(path) else { continue }
             if isAbandoned(path) { unlink(path) }
         }
     }

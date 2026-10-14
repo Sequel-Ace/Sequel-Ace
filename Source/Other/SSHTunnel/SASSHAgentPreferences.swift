@@ -385,14 +385,16 @@ struct SASSHAgentConnectionStatus: View {
 
     let source: String
     let customPath: String
+    /// So the line follows changes made in the settings sheet it opens.
+    @AppStorage(SASSHAgentSource.DefaultsKey.defaultSource) private var defaultSource = ""
+    @AppStorage(SASSHAgentSource.DefaultsKey.customSocketPath) private var defaultCustomPath = ""
 
     var body: some View {
-        let defaults = UserDefaults.standard
         let installer = SASSHAgentRelayInstaller.shared
         let status = SASSHAgentRelayInstaller.connectionStatus(
             connectionSource: source, connectionCustomPath: customPath,
-            defaultSource: defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? "",
-            defaultCustomPath: defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? "",
+            defaultSource: defaultSource,
+            defaultCustomPath: defaultCustomPath,
             status: installer?.status ?? .notInstalled,
             installedThisSession: installer?.installedThisSession ?? false)
         HStack(alignment: .firstTextBaseline) {
@@ -453,7 +455,7 @@ struct SASSHAgentSourcePicker<Label: View>: View {
 /// its top edge, and the controls below stay where they are.
 @objc final class SASSHAgentConnectionRow: NSObject {
 
-    private static let addedHeight: CGFloat = 60
+    private static let addedHeight: CGFloat = 74
 
     private let popup = NSPopUpButton(frame: .zero, pullsDown: false)
     private let status = NSTextField(wrappingLabelWithString: "")
@@ -495,7 +497,7 @@ struct SASSHAgentSourcePicker<Label: View>: View {
         label.font = anchorLabel?.font ?? .systemFont(ofSize: NSFont.systemFontSize)
 
         let statusY = anchor.frame.minY + 33
-        let statusHeight: CGFloat = 28
+        let statusHeight: CGFloat = 42
         let popupY = statusY + statusHeight + 2
         row.popup.frame = NSRect(x: anchor.frame.minX, y: popupY, width: anchor.frame.width, height: anchor.frame.height)
         row.status.frame = NSRect(x: anchor.frame.minX + 3, y: statusY, width: anchor.frame.width - 6, height: statusHeight)
@@ -531,7 +533,7 @@ struct SASSHAgentSourcePicker<Label: View>: View {
         popup.action = #selector(choose(_:))
 
         status.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        status.maximumNumberOfLines = 2
+        status.maximumNumberOfLines = 3
         status.lineBreakMode = .byTruncatingTail
 
         // Selecting a favorite sets these on the controller; follow it.

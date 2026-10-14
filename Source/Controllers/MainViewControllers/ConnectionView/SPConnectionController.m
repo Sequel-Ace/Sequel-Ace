@@ -1130,8 +1130,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 // quick check to stop users selecting .pub files
 - (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url{
     if([url.pathExtension isEqualToString:@"pub"]){
-        // A public key is a valid identity only when an SSH agent holds the private half.
-        return [SASSHAgentRelay isAgentInEffectForConnectionSource:[self sshAgentSource] ?: @""];
+        // A public key is a valid identity only when an SSH agent holds the
+        // private half, and only for the SSH key: this panel also picks SSL files.
+        BOOL choosingSSHKey = [sender isKindOfClass:[NSSavePanel class]] && [(NSSavePanel *)sender accessoryView] == sshKeyLocationHelp;
+        return choosingSSHKey && [SASSHAgentRelay isAgentInEffectForConnectionSource:[self sshAgentSource] ?: @""];
     }
     return YES;
 }

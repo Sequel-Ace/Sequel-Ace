@@ -417,6 +417,25 @@ final class SASSHAgentRelayTests: XCTestCase {
         XCTAssertEqual(try SocketClient.exchange("hi", at: listenPath), "pong:hi")
     }
 
+    /// A line that is not an absolute path would otherwise be resolved
+    /// against wherever the helper happens to run.
+    func testRelativeAllowlistLinesAreIgnored() throws {
+        try allow(["agent.sock", "./agent.sock", (agent.path as NSString).lastPathComponent])
+        assertRefused("not-allowed") { _ = try makeRelay().listenPath(forTarget: agent.path) }
+    }
+
+    /// If the socket disappears from under a running helper, the next
+    /// request starts a fresh one instead of handing out the missing path.
+    func testARelayWhoseSocketWasRemovedIsReplaced() throws {
+        let relay = makeRelay()
+        let listenPath = try relay.listenPath(forTarget: agent.path)
+        unlink(listenPath)
+
+        XCTAssertEqual(try relay.listenPath(forTarget: agent.path), listenPath)
+        XCTAssertEqual(launches.count, 2)
+        XCTAssertEqual(try SocketClient.exchange("again", at: listenPath), "pong:again")
+    }
+
     func testWildcardDoesNotReachIntoDeeperFolders() throws {
         let folder = root.appendingPathComponent("a/b")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

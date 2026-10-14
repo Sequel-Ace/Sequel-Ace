@@ -4061,7 +4061,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [spfDocData setObject:@NO forKey:@"auto_connect"];
 
-    if([spf objectForKey:@"auto_connect"] && [[spf valueForKey:@"auto_connect"] boolValue]) {
+    // A session file can come from anywhere: it may not connect through an SSH agent by itself.
+    if([spf objectForKey:@"auto_connect"] && [[spf valueForKey:@"auto_connect"] boolValue]
+       && [SASSHAgentRelay mayAutoConnectWithConnectionDetails:[data objectForKey:@"connection"]]) {
         [spfDocData setObject:@YES forKey:@"auto_connect"];
         [data setObject:@YES forKey:@"auto_connect"];
     }

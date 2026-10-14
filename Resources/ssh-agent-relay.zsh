@@ -64,6 +64,9 @@ while IFS= read -r line || [[ -n $line ]]; do
 	line=${line%"${line##*[![:space:]]}"}
 	[[ -n $line ]] || continue
 	[[ $line == \~/* ]] && line="$home/${line#\~/}"
+	# Only absolute paths count; a relative line would mean "relative to
+	# wherever the helper happens to run".
+	[[ $line == /* ]] || continue
 	# Listed paths may be spelled through a link too (/tmp, /var, ~/.1password).
 	[[ $line != *\** ]] && line=${line:A}
 	pattern_parts=("${(@s:/:)line}")
@@ -105,6 +108,9 @@ trap shutdown TERM INT HUP
 # script was killed in the meantime the watcher has been re-parented, and the
 # process id it remembers may belong to something else by now.
 {
+	# Only the main loop accepts; a watcher outliving it must not keep the
+	# socket open and leave clients hanging.
+	exec {listen_fd}<&-
 	/bin/cat <&$control_fd >/dev/null
 	(( $sysparams[ppid] == main_pid )) && kill -TERM $main_pid 2>/dev/null
 } &

@@ -137,6 +137,27 @@ final class SASSHAgentSourceTests: XCTestCase {
         XCTAssertNil(try source.targetPath(realHome: home, environment: environment) { .disabled })
     }
 
+    // MARK: - Session files and other apps
+
+    /// A session file or another app may open an SSH connection that uses an
+    /// agent, but not connect it by itself: the user has to click Connect.
+    func testOutsideConnectionDetailsMayNotAutoConnectThroughAnAgent() {
+        let key = SASSHAgentSource.DefaultsKey.defaultSource
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+
+        UserDefaults.standard.set("", forKey: key)
+        XCTAssertTrue(SASSHAgentRelay.mayAutoConnect(connectionDetails: ["type": "SPSSHTunnelConnection"]))
+        XCTAssertFalse(SASSHAgentRelay.mayAutoConnect(connectionDetails: ["type": "SPSSHTunnelConnection", "sshAgentSource": "system"]))
+        XCTAssertTrue(SASSHAgentRelay.mayAutoConnect(connectionDetails: ["type": "SPSSHTunnelConnection", "sshAgentSource": "off"]))
+        XCTAssertTrue(SASSHAgentRelay.mayAutoConnect(connectionDetails: ["type": "SPTCPIPConnection", "sshAgentSource": "1password"]))
+
+        // A file that says nothing about the agent follows the user's default.
+        UserDefaults.standard.set("1password", forKey: key)
+        XCTAssertFalse(SASSHAgentRelay.mayAutoConnect(connectionDetails: ["type": "SPSSHTunnelConnection"]))
+        XCTAssertTrue(SASSHAgentRelay.mayAutoConnect(connectionDetails: ["type": "SPSSHTunnelConnection", "sshAgentSource": "off"]))
+    }
+
     // MARK: - Public keys
 
     func testRecognisesPublicKeyFilesByExtension() {
