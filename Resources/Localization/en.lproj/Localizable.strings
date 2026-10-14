@@ -2305,6 +2305,9 @@
 /* query editor preference pane tooltip */
 "Query Editor Preferences" = "Query Editor Preferences";
 
+/* Title of the notification posted when a query or script run finishes */
+"Query Finished" = "Query Finished";
+
 /* query logging currently disabled label
  query logging disabled label */
 "Query logging is currently disabled" = "Query logging is currently disabled";
