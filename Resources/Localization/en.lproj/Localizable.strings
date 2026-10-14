@@ -5100,3 +5100,33 @@
 
 /* import options: label of the pop-up choosing what to do when a SQL statement fails */
 "ClaudeImportOnSQLError" = "On SQL error";
+
+/* import field mapping sheet: title in the header */
+"ClaudeImportMapperTitle" = "Import CSV";
+
+/* import field mapping sheet: label before the target table pop-up */
+"ClaudeImportInto" = "Into";
+
+/* import field mapping sheet: button that imports into a new table */
+"ClaudeImportNewTable" = "+ New table";
+
+/* import field mapping sheet: label before the new table's name field */
+"ClaudeImportNewTableName" = "Name";
+
+/* import field mapping sheet: title of the card with the mapping table */
+"ClaudeImportFieldMapping" = "Field mapping";
+
+/* import field mapping sheet: title of the card with the import options */
+"ClaudeImportOptions" = "Options";
+
+/* import field mapping sheet: header of the column choosing the CSV value for each target column */
+"ClaudeImportColumnSource" = "CSV field";
+
+/* import field mapping sheet: header of the target table's column names */
+"ClaudeImportColumnTarget" = "Target column";
+
+/* import field mapping sheet: header of the target columns' types */
+"ClaudeImportColumnType" = "Type";
+
+/* import field mapping sheet: button that goes back to the file chooser */
+"ClaudeImportGoBack" = "‹ Go back";

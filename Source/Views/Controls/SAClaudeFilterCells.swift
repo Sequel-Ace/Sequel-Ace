@@ -36,7 +36,8 @@ import AppKit
 
 // MARK: - Drawing helpers
 
-private enum FilterCellDrawing {
+/// Shared with the other Claude cells (the Import mapping table's pill and operator cells).
+enum FilterCellDrawing {
     static let cornerRadius: CGFloat = 7
     static let disabledAlpha: CGFloat = 0.4
     static let font = NSFont.systemFont(ofSize: 12)
@@ -85,21 +86,37 @@ private enum FilterCellDrawing {
 @objc(SAClaudePillPopUpButtonCell) final class SAClaudePillPopUpButtonCell: NSPopUpButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let title: String = selectedItem?.title ?? self.title ?? ""
+        Self.drawPill(title: title, in: SAClaudeFilterChrome.controlFrame(in: cellFrame), flipped: controlView.isFlipped,
+                      font: FilterCellDrawing.font, enabled: isEnabled, highlighted: isHighlighted, outlined: false)
+    }
+
+    /// The pill in `pill`: the hover-coloured fill (or, when `outlined`, a 1pt outline in the brighter drop stroke
+    /// on a transparent fill), `title` in `font` and the up/down selector. Disabled draws at 40%.
+    static func drawPill(title: String, in pill: NSRect, flipped: Bool, font: NSFont, enabled: Bool, highlighted: Bool, outlined: Bool) {
         let palette = SAClaudeFilterBarStyler.currentPalette
         let themeText = SAClaudeFilterBarStyler.currentThemeText
-        let flipped = controlView.isFlipped
-        let pill = SAClaudeFilterChrome.controlFrame(in: cellFrame)
 
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
-        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(FilterCellDrawing.disabledAlpha) }
+        if !enabled { NSGraphicsContext.current?.cgContext.setAlpha(FilterCellDrawing.disabledAlpha) }
 
-        let fill = isHighlighted ? SAClaudeEditorChrome.derivedColour(text: themeText, background: palette.hover, ratio: 0.08) : palette.hover
-        fill.setFill()
-        FilterCellDrawing.roundedPath(pill, radius: FilterCellDrawing.cornerRadius).fill()
+        let pressed = SAClaudeEditorChrome.derivedColour(text: themeText, background: palette.hover, ratio: 0.08)
+        if outlined {
+            let outline = FilterCellDrawing.roundedPath(pill.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
+            if highlighted {
+                pressed.setFill()
+                outline.fill()
+            }
+            outline.lineWidth = 1
+            SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background).setStroke()
+            outline.stroke()
+        } else {
+            (highlighted ? pressed : palette.hover).setFill()
+            FilterCellDrawing.roundedPath(pill, radius: FilterCellDrawing.cornerRadius).fill()
+        }
 
-        let title: String = selectedItem?.title ?? self.title ?? ""
-        FilterCellDrawing.drawTitle(title, in: SAClaudeFilterChrome.pillTitleRect(in: pill), colour: themeText, font: FilterCellDrawing.font, alignment: .left)
+        FilterCellDrawing.drawTitle(title, in: SAClaudeFilterChrome.pillTitleRect(in: pill), colour: themeText, font: font, alignment: .left)
 
         // Two 3pt chevrons, one above the other, in the right-hand selector slot.
         let centreX = pill.maxX - 4 - SAClaudeFilterChrome.selectorWidth / 2

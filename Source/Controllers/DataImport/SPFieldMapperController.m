@@ -217,6 +217,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[self updateFieldNameAlignment];
 	
 	[self validateImportButton];
+	[SAClaudeImportMapperStyler attachToController:self];
 }
 
 #pragma mark -
@@ -611,6 +612,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	[self _setupFieldMappingPopUpMenus];
 	[fieldMapperTableView reloadData];
+	[SAClaudeImportMapperStyler controllerDidUpdate:self];
 
 }
 
@@ -676,6 +678,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	
 	[self _setupFieldMappingPopUpMenus];
 	[fieldMapperTableView reloadData];
+	[SAClaudeImportMapperStyler controllerDidUpdate:self];
 }
 
 - (IBAction)changeFieldAlignment:(id)sender
@@ -768,6 +771,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[self updateRowNavigation];
 	
 	[self validateImportButton];
+	[SAClaudeImportMapperStyler controllerDidUpdate:self];
 }
 
 - (IBAction)goBackToFileChooserFromPathControl:(id)sender
@@ -899,6 +903,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[self _setupFieldMappingPopUpMenus];
 	[fieldMapperTableView reloadData];
 	[self validateImportButton];
+	[SAClaudeImportMapperStyler controllerDidUpdate:self];
 }
 
 /*
@@ -1154,6 +1159,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (IBAction)openAdvancedSheet:(id)sender
 {
+	if ([SAClaudeImportMapperStyler isAttachedToController:self]) return;
 	showAdvancedView = !showAdvancedView;
 	if(showAdvancedView) {
 		[advancedButton setState:NSControlStateValueOn];
@@ -1265,6 +1271,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)resizeWindowByHeightDelta:(NSInteger)delta
 {
+	if ([SAClaudeImportMapperStyler isAttachedToController:self]) return;
 	NSAutoresizingMaskOptions tableMask = [fieldMapperTableScrollView autoresizingMask];
 	NSAutoresizingMaskOptions headerSwitchMask = [importFieldNamesHeaderSwitch autoresizingMask];
 	NSAutoresizingMaskOptions alignPopupMask = [alignByPopup autoresizingMask];
