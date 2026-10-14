@@ -583,8 +583,12 @@
                     databaseNameCaseSensitivityWasLoaded = YES;
                 }
 
-                // Run the query
-                [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
+                // Run the query. The statement is the file's, not the application's: a SELECT can call a function that
+                // writes, so after a lost connection it is sent again only when its outcome is known, and
+                // after uncommitted work was lost with a session it is refused like a write.
+                [mySQLConnection runStatementsFromOutsideApplication:^{
+                    [self->mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
+                }];
 
                 // in case the query was a "SET @@sql_mode = ...", the server_status may have changed
                 if([mySQLConnection updateServerStatusBits:&serverStatus]) [sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
@@ -694,8 +698,12 @@
 			databaseNameCaseSensitivityWasLoaded = YES;
 		}
 
-		// Run the query
-		[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
+		// Run the query. The statement is the file's, not the application's: a SELECT can call a function that
+		// writes, so after a lost connection it is sent again only when its outcome is known, and
+		// after uncommitted work was lost with a session it is refused like a write.
+		[mySQLConnection runStatementsFromOutsideApplication:^{
+			[self->mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
+		}];
 		// we don't care for the server_status that is set AFTER the last query has been executed
 
 		// Check for any errors

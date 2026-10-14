@@ -15,6 +15,30 @@ import WebKit
 // `SPPrintBackground` in SPConstants.m.
 let printBackgroundPreferenceKey = "PrintBackground"
 
+/// A table the print template shows, as the views hand it over: the first
+/// element holds the column names, the others the rows. A table without that
+/// first element could not be read - its query failed, or the wait for it was
+/// stopped - and is not printed.
+@objc final class SAPrintTable: NSObject {
+
+    /// The column names of a table.
+    /// - Parameter table: The table as a view hands it over.
+    /// - Returns: The first element, or nil when there is none or it is not a row.
+    @objc(headerOfTable:)
+    static func header(of table: [Any]?) -> [Any]? {
+        return table?.first as? [Any]
+    }
+
+    /// The rows below a table's column names.
+    /// - Parameter table: The table as a view hands it over.
+    /// - Returns: Every element after the first, or nil when the table has no column names.
+    @objc(rowsOfTable:)
+    static func rows(of table: [Any]?) -> [Any]? {
+        guard let table, header(of: table) != nil else { return nil }
+        return Array(table.dropFirst())
+    }
+}
+
 /// Builds `NSPrintOperation`s for `WKWebView`s with the app's shared page
 /// setup: symmetric margins derived from the printable page bounds, fit-width
 /// pagination, and the extended print-panel options.

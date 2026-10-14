@@ -31,6 +31,7 @@
 #import "Max Packet Size.h"
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLArrayAdditions.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 
 @implementation SPMySQLConnection (Max_Packet_Size)
 
@@ -74,8 +75,10 @@
 	if (newMaxSize < 1024) return NSNotFound;
 	if (newMaxSize > (1024 * 1024 * 1024)) newMaxSize = 1024 * 1024 * 1024;
 
-	// Perform a standard query to set the new size
-	[self queryString:[NSString stringWithFormat:@"SET GLOBAL max_allowed_packet = %lu", (unsigned long)newMaxSize]];
+	// Perform a standard query to set the new size; it is the connection's upkeep, not the user's work
+	[SAConnectionUpkeepStatements runOnCurrentThread:^{
+		[self queryString:[NSString stringWithFormat:@"SET GLOBAL max_allowed_packet = %lu", (unsigned long)newMaxSize]];
+	}];
 
 	// On failure, return NSNotFound - error state will have automatically been set
 	if ([self queryErrored]) return NSNotFound;
@@ -151,7 +154,9 @@
  */
 - (void)_updateMaxQuerySizeEditability
 {
-	[self queryString:@"SET GLOBAL max_allowed_packet = @@global.max_allowed_packet"];
+	[SAConnectionUpkeepStatements runOnCurrentThread:^{
+		[self queryString:@"SET GLOBAL max_allowed_packet = @@global.max_allowed_packet"];
+	}];
 	maxQuerySizeIsEditable = ![self queryErrored];
 	maxQuerySizeEditabilityChecked = YES;
 }

@@ -220,8 +220,61 @@
 		return;
 	}
 
-	[self setEncoding:previousEncoding];
-	[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
+	// A session on its way out is not told anything. Telling it means a statement, and a statement
+	// from the cleanup of stopped work goes to the worker and starts the very wait the user has
+	// just ended. The record goes back instead, which is what the session replacing this one
+	// connects with; this one keeps the character set it was put in, so the escaper is left
+	// describing it as it still is.
+	//
+	// Only the mark and the state are read, both plain values: the native handle belongs to
+	// whoever holds the connection, and the worker of abandoned work can be closing it.
+	if ([SAConnectionCancellation storedEncodingOnlyNeedsRecordingWhenSessionWillBeReplaced:sessionMustBeReplacedBeforeUse
+	                                                                     hasNoUsableSession:(state != SPMySQLConnected)]) {
+		[self _recordStoredEncodingWithoutTellingTheSession];
+	} else {
+		[self setEncoding:previousEncoding];
+		[self setEncodingUsesLatin1Transport:previousEncodingUsesLatin1Transport];
+	}
+
+	[self _putTheRestoredEncodingOnAnyPendingReconnect];
+}
+
+/**
+ * Keeps a reconnect's pending restoration in step with the encoding just put back.
+ *
+ * A reconnect takes its record of what to restore when it starts, so one that started while a
+ * temporary encoding was in force holds that temporary one - and a reconnect that was cancelled or
+ * failed keeps that record for its next attempt. Putting the stored encoding back without saying
+ * so here leaves that attempt restoring the temporary encoding instead of the user's: the
+ * connection says one character set and the session it comes back with is in another.
+ *
+ * Nothing is created: no record means no reconnect is waiting to use one. The resulting values are
+ * taken rather than the stored ones, since a character set that cannot be carried is replaced by
+ * one that can.
+ */
+- (void)_putTheRestoredEncodingOnAnyPendingReconnect
+{
+	if (!encodingToRestore) {
+		return;
+	}
+
+	encodingToRestore = [encoding copy];
+	encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
+}
+
+/**
+ * Puts the stored encoding back on record without sending anything.
+ *
+ * The four values `setEncoding:` keeps, set from the stored ones. What it does besides - the
+ * `SET NAMES`, and telling the escaper the session changed - is deliberately left out: this
+ * session has not changed, and will be replaced rather than told.
+ */
+- (void)_recordStoredEncodingWithoutTellingTheSession
+{
+	encoding = [[NSString alloc] initWithString:previousEncoding];
+	sqlInputEncoding = [[NSString alloc] initWithString:previousEncoding];
+	stringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[previousEncoding UTF8String]];
+	encodingUsesLatin1Transport = previousEncodingUsesLatin1Transport;
 }
 
 #pragma mark -
