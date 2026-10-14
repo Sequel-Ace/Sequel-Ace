@@ -86,7 +86,7 @@ import AppKit
     /// Task 4: the custom filename editor, in a child panel under Customise.
     private let filenameEditor: SAClaudeExportFilenameEditor
     /// Task 5: the progress and errors sheets; nil when their outlets are missing (those sheets keep the generic look).
-    private var progressStyler: SAClaudeExportProgressStyler?
+    private var progressStyler: SAClaudeProgressSheetStyler?
 
     private var palette: SAClaudeEditorChrome.Palette?
     private var themeText: NSColor?
@@ -112,7 +112,10 @@ import AppKit
         let styler = SAClaudeExportStyler(outlets: outlets)
         objc_setAssociatedObject(controller, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         styler.optionsStyler = SAClaudeExportOptionsStyler(controller: controller, tabView: outlets.optionsTabView)   // Task 3
-        styler.progressStyler = SAClaudeExportProgressStyler(controller: controller)   // Task 5
+        styler.progressStyler = SAClaudeProgressSheetStyler(   // Task 5
+            progress: SAClaudeProgressSheetStyler.Outlets(controller, title: "exportProgressTitle", status: "exportProgressText",
+                                                          indicator: "exportProgressIndicator"),
+            errors: SAClaudeProgressSheetStyler.ErrorOutlets(controller, window: "errorsWindow", textView: "errorsTextView"))
         // A chip changes the filename field programmatically, which posts no text notification: the controller
         // updates its preview as after its own programmatic changes.
         styler.filenameEditor.onFieldChanged = { [weak controller] in

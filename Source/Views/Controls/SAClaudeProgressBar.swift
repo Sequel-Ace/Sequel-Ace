@@ -6,7 +6,7 @@
 //  plain view laid over the sheet's NSProgressIndicator and reads that indicator's value, range and mode when it
 //  draws; the indicator itself is not touched (its frame, `maxValue` and animation are the export's progress scale
 //  and stay AppKit's), so this does not depend on how AppKit draws a determinate indicator on the running macOS.
-//  The indeterminate "Initializing..." state is left to the indicator, which `SAClaudeExportProgressStyler` shows
+//  The indeterminate "Initializing..." state is left to the indicator, which `SAClaudeProgressSheetStyler` shows
 //  then. App target only.
 //
 

@@ -756,7 +756,8 @@
 		EA0C0DE00000000000000009 /* SAClaudeExportOptionsStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000008 /* SAClaudeExportOptionsStyler.swift */; };
 		EA0C0DE0000000000000000B /* SAClaudeExportFilenameEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE0000000000000000A /* SAClaudeExportFilenameEditor.swift */; };
 		EA0C0DE00000000000000011 /* SAClaudeExportTokenChips.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000010 /* SAClaudeExportTokenChips.swift */; };
-		EA0C0DE0000000000000000D /* SAClaudeExportProgressStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE0000000000000000C /* SAClaudeExportProgressStyler.swift */; };
+		EA0C0DE0000000000000000D /* SAClaudeProgressSheetStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE0000000000000000C /* SAClaudeProgressSheetStyler.swift */; };
+		EA0C0DE00000000000000107 /* SAClaudeImportStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000106 /* SAClaudeImportStyler.swift */; };
 		EA0C0DE0000000000000000F /* SAClaudeProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE0000000000000000E /* SAClaudeProgressBar.swift */; };
 		C1A0DE500000000000000B02 /* SAClaudeFavoriteCardGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */; };
 		C1A0DE600000000000000C02 /* SAClaudeConnectionPageStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE600000000000000C01 /* SAClaudeConnectionPageStyler.swift */; };
@@ -1771,7 +1772,8 @@
 		EA0C0DE00000000000000008 /* SAClaudeExportOptionsStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportOptionsStyler.swift; sourceTree = "<group>"; };
 		EA0C0DE0000000000000000A /* SAClaudeExportFilenameEditor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportFilenameEditor.swift; sourceTree = "<group>"; };
 		EA0C0DE00000000000000010 /* SAClaudeExportTokenChips.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportTokenChips.swift; sourceTree = "<group>"; };
-		EA0C0DE0000000000000000C /* SAClaudeExportProgressStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportProgressStyler.swift; sourceTree = "<group>"; };
+		EA0C0DE0000000000000000C /* SAClaudeProgressSheetStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProgressSheetStyler.swift; sourceTree = "<group>"; };
+		EA0C0DE00000000000000106 /* SAClaudeImportStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeImportStyler.swift; sourceTree = "<group>"; };
 		EA0C0DE0000000000000000E /* SAClaudeProgressBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProgressBar.swift; sourceTree = "<group>"; };
 		C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFavoriteCardGridView.swift; sourceTree = "<group>"; };
 		C1A0DE600000000000000C01 /* SAClaudeConnectionPageStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionPageStyler.swift; sourceTree = "<group>"; };
@@ -3021,7 +3023,8 @@
 				EA0C0DE00000000000000008 /* SAClaudeExportOptionsStyler.swift */,
 				EA0C0DE0000000000000000A /* SAClaudeExportFilenameEditor.swift */,
 				EA0C0DE00000000000000010 /* SAClaudeExportTokenChips.swift */,
-				EA0C0DE0000000000000000C /* SAClaudeExportProgressStyler.swift */,
+				EA0C0DE0000000000000000C /* SAClaudeProgressSheetStyler.swift */,
+				EA0C0DE00000000000000106 /* SAClaudeImportStyler.swift */,
 				EA0C0DE0000000000000000E /* SAClaudeProgressBar.swift */,
 				C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */,
 				C1A0DE500000000000000B03 /* SAClaudeFavoriteCardGridController.swift */,
@@ -4327,7 +4330,8 @@
 				EA0C0DE00000000000000009 /* SAClaudeExportOptionsStyler.swift in Sources */,
 				EA0C0DE0000000000000000B /* SAClaudeExportFilenameEditor.swift in Sources */,
 				EA0C0DE00000000000000011 /* SAClaudeExportTokenChips.swift in Sources */,
-				EA0C0DE0000000000000000D /* SAClaudeExportProgressStyler.swift in Sources */,
+				EA0C0DE0000000000000000D /* SAClaudeProgressSheetStyler.swift in Sources */,
+				EA0C0DE00000000000000107 /* SAClaudeImportStyler.swift in Sources */,
 				EA0C0DE0000000000000000F /* SAClaudeProgressBar.swift in Sources */,
 				C1A0DE500000000000000B02 /* SAClaudeFavoriteCardGridView.swift in Sources */,
 				C1A0DE500000000000000B04 /* SAClaudeFavoriteCardGridController.swift in Sources */,

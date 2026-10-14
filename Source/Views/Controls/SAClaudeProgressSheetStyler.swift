@@ -1,18 +1,32 @@
 //
-//  SAClaudeExportProgressStyler.swift
+//  SAClaudeProgressSheetStyler.swift
 //  Sequel Ace
 //
-//  The Claude look of the export's two small sheets, which `SAClaudeExportStyler` creates once per
-//  `SPExportController`: the progress sheet (medium title, muted middle-truncated status line, the Claude progress
-//  bar over the XIB's indicator) and the errors sheet (medium label, the log in the editor font inside a hairline
-//  frame). The sheets' surface, buttons and text colours stay the generic sheet skin's. No card is added behind
-//  either sheet's content: on the skin's surface it would be a box inside a box. Each sheet is styled only when its
-//  outlets are all there. App target only.
+//  The Claude look of a progress sheet and an errors sheet, shared by Export (`SAClaudeExportStyler`, once per
+//  `SPExportController`) and Import (`SAClaudeImportStyler`, once per `SPDataImport`); each passes its own outlets.
+//  The progress sheet: medium title, muted middle-truncated status line, the Claude progress bar over the XIB's
+//  indicator. The errors sheet: medium label, the log in the editor font inside a hairline frame. The sheets'
+//  surface, buttons and text colours stay the generic sheet skin's. No card is added behind either sheet's content:
+//  on the skin's surface it would be a box inside a box. Each sheet is styled only when its outlets are all there.
+//  App target only.
 //
 
 import AppKit
 
-final class SAClaudeExportProgressStyler {
+final class SAClaudeProgressSheetStyler {
+
+    /// The progress sheet's title, status line and indicator.
+    struct Outlets {
+        var title: NSTextField
+        var status: NSTextField
+        var indicator: NSProgressIndicator
+    }
+
+    /// The errors sheet and its log.
+    struct ErrorOutlets {
+        var window: NSWindow
+        var textView: NSTextView
+    }
 
     private static let titleFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let statusFont = NSFont.systemFont(ofSize: 11)
@@ -38,24 +52,21 @@ final class SAClaudeExportProgressStyler {
     private var progress: Progress?
     private var log: Log?
 
-    /// Styles the progress and errors sheets of `controller` (an `SPExportController`); nil when neither sheet has
-    /// all its outlets.
-    init?(controller: NSObject) {
-        if let title: NSTextField = SAClaudeExportStyler.outlet(controller, "exportProgressTitle"),
-           let status: NSTextField = SAClaudeExportStyler.outlet(controller, "exportProgressText"),
-           let indicator: NSProgressIndicator = SAClaudeExportStyler.outlet(controller, "exportProgressIndicator"),
-           let parent = indicator.superview {
-            title.font = Self.titleFont
-            status.font = Self.statusFont
-            status.lineBreakMode = .byTruncatingMiddle
-            progress = Progress(indicator: indicator, status: status)
-            installBar(over: indicator, in: parent)
+    /// Styles the progress sheet of `progress` and the errors sheet of `errors`; nil when neither is given (or
+    /// neither has its views in place).
+    init?(progress outlets: Outlets?, errors errorOutlets: ErrorOutlets?) {
+        if let outlets, let parent = outlets.indicator.superview {
+            outlets.title.font = Self.titleFont
+            outlets.status.font = Self.statusFont
+            outlets.status.lineBreakMode = .byTruncatingMiddle
+            progress = Progress(indicator: outlets.indicator, status: outlets.status)
+            installBar(over: outlets.indicator, in: parent)
         }
-        if let window: NSWindow = SAClaudeExportStyler.outlet(controller, "errorsWindow"),
-           let textView: NSTextView = SAClaudeExportStyler.outlet(controller, "errorsTextView"),
-           let scrollView = textView.enclosingScrollView, let parent = scrollView.superview {
+        if let errorOutlets, let scrollView = errorOutlets.textView.enclosingScrollView,
+           let parent = scrollView.superview {
+            let textView = errorOutlets.textView
             // The label above the log has no outlet: the topmost static text of the sheet.
-            let label = window.contentView?.subviews.compactMap { $0 as? NSTextField }
+            let label = errorOutlets.window.contentView?.subviews.compactMap { $0 as? NSTextField }
                 .filter { !$0.isEditable && !$0.isHidden }.max { $0.frame.maxY < $1.frame.maxY }
             if let label {
                 label.font = Self.titleFont
@@ -95,8 +106,9 @@ final class SAClaudeExportProgressStyler {
     // MARK: - Progress
 
     /// The bar goes over the indicator, same frame and resizing. The indicator stays in the window with its frame and
-    /// `maxValue`, and keeps receiving the export's values: it is invisible while a value is shown (and the bar
-    /// draws it), and visible while indeterminate (and the bar is hidden). The bar follows the indicator by KVO.
+    /// `maxValue`, and keeps receiving the export's or import's values: it is invisible while a value is shown
+    /// (and the bar draws it), and visible while indeterminate (and the bar is hidden). The bar follows the indicator
+    /// by KVO.
     private func installBar(over indicator: NSProgressIndicator, in parent: NSView) {
         guard var progress else { return }
         let bar = progress.bar
@@ -112,7 +124,7 @@ final class SAClaudeExportProgressStyler {
             if indicator.alphaValue != alpha { indicator.alphaValue = alpha }
             bar.needsDisplay = true
         }
-        // The exporters may report progress from a background thread.
+        // The exporters and importers may report progress from a background thread.
         let onMain: () -> Void = { Thread.isMainThread ? sync() : DispatchQueue.main.async(execute: sync) }
         progress.observations = [
             indicator.observe(\.doubleValue) { _, _ in onMain() },
@@ -139,5 +151,26 @@ final class SAClaudeExportProgressStyler {
         let inner = scrollView.frame.insetBy(dx: Self.logInset, dy: Self.logInset)
         if scrollView.frame != inner { scrollView.frame = inner }
         self.log = log
+    }
+}
+
+extension SAClaudeProgressSheetStyler.Outlets {
+    /// `controller`'s outlets of these names (read by KVC); nil when one is missing.
+    init?(_ controller: NSObject, title: String, status: String, indicator: String) {
+        guard let title: NSTextField = SAClaudeExportStyler.outlet(controller, title),
+              let status: NSTextField = SAClaudeExportStyler.outlet(controller, status),
+              let indicator: NSProgressIndicator = SAClaudeExportStyler.outlet(controller, indicator) else {
+            return nil
+        }
+        self.init(title: title, status: status, indicator: indicator)
+    }
+}
+
+extension SAClaudeProgressSheetStyler.ErrorOutlets {
+    /// `controller`'s outlets of these names (read by KVC); nil when one is missing.
+    init?(_ controller: NSObject, window: String, textView: String) {
+        guard let window: NSWindow = SAClaudeExportStyler.outlet(controller, window),
+              let textView: NSTextView = SAClaudeExportStyler.outlet(controller, textView) else { return nil }
+        self.init(window: window, textView: textView)
     }
 }

@@ -86,10 +86,13 @@ import AppKit
 
     // MARK: - Targets
 
-    /// Restyles `window` if it is a target: already skinned windows are walked again with the current colours.
+    /// Restyles `window` if it is a target: already skinned windows are walked again with the current colours. Every
+    /// window styled (and every open panel whose accessory is) is then offered to the Import flow's styler, which
+    /// claims its own.
     static func consider(_ window: NSWindow) {
         if let skin = SAClaudeWindowSkin.skin(for: window) {
             skin.refresh(force: true)
+            SAClaudeImportStyler.claim(window)
             return
         }
         let alert = (window.delegate as? NSAlert).flatMap { $0.window === window ? $0 : nil }
@@ -114,8 +117,10 @@ import AppKit
             } else {
                 SAClaudeWindowSkin.attach(toAccessory: accessory, in: window)
             }
+            SAClaudeImportStyler.claim(window)
         case .window:
             SAClaudeWindowSkin.attach(to: window, alert: nil)
+            SAClaudeImportStyler.claim(window)
         case .skip:
             break
         }
