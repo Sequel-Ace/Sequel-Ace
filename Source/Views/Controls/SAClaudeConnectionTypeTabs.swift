@@ -5,7 +5,8 @@
 //  The connection panel's type tabs (TCP/IP, Socket, SSH, AWS IAM, Vault): ghost segments in one row, the
 //  selected one drawn on the card surface with a hairline. It replaces the tab view's own tab strip; selecting a
 //  segment only reports the index (the panel styler selects the tab view item, so the controller's tab delegate and
-//  `type` binding run as before). Arrow keys move the selection while it has focus. App target only.
+//  `type` binding run as before). Arrow keys move the selection while it has focus. Segments can be disabled
+//  (`enabledSegments`); the Export sheet's format and source switchers reuse the control. App target only.
 //
 
 import AppKit
@@ -41,6 +42,19 @@ final class SAClaudeConnectionTypeTabs: NSControl {
             NSAccessibility.post(element: self, notification: .valueChanged)
         }
     }
+
+    /// Which segments can be picked, by index (empty = all; a missing index is enabled). A disabled segment draws
+    /// its title muted at half strength, takes no clicks or hover, is skipped by the arrow keys and reads as dimmed.
+    var enabledSegments: [Bool] = [] {
+        didSet {
+            guard oldValue != enabledSegments else { return }
+            if let hoverIndex, !isSegmentEnabled(hoverIndex) { self.hoverIndex = nil }
+            needsDisplay = true
+        }
+    }
+
+    /// What VoiceOver calls the whole control (nil = "Connection type", the connection panel's).
+    var accessibilityGroupLabel: String?
 
     var colours = Colours(selectedFill: .controlBackgroundColor, selectedStroke: .separatorColor, hoverFill: .quaternaryLabelColor,
                           text: .labelColor, mutedText: .secondaryLabelColor) {
@@ -86,6 +100,15 @@ final class SAClaudeConnectionTypeTabs: NSControl {
         segmentRects().firstIndex { $0.contains(point) }
     }
 
+    /// The enabled segment under `point`, if any.
+    private func enabledIndex(at point: NSPoint) -> Int? {
+        index(at: point).flatMap { isSegmentEnabled($0) ? $0 : nil }
+    }
+
+    func isSegmentEnabled(_ index: Int) -> Bool {
+        enabledSegments.indices.contains(index) ? enabledSegments[index] : true
+    }
+
     // MARK: - Drawing
 
     override var isFlipped: Bool { false }
@@ -94,6 +117,7 @@ final class SAClaudeConnectionTypeTabs: NSControl {
         let rects = segmentRects()
         for (index, rect) in rects.enumerated() {
             let selected = index == selectedIndex
+            let enabled = isSegmentEnabled(index)
             let path = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: Self.radius, yRadius: Self.radius)
             if selected {
                 colours.selectedFill.setFill()
@@ -101,7 +125,7 @@ final class SAClaudeConnectionTypeTabs: NSControl {
                 colours.selectedStroke.setStroke()
                 path.lineWidth = 1
                 path.stroke()
-            } else if index == hoverIndex {
+            } else if index == hoverIndex, enabled {
                 colours.hoverFill.setFill()
                 path.fill()
             }
@@ -110,7 +134,8 @@ final class SAClaudeConnectionTypeTabs: NSControl {
             style.lineBreakMode = .byTruncatingTail
             let title = NSAttributedString(string: titles[index], attributes: [
                 .font: selected ? Self.selectedFont : Self.font,
-                .foregroundColor: selected ? colours.text : colours.mutedText,
+                .foregroundColor: !enabled ? colours.mutedText.withAlphaComponent(0.5)
+                    : selected ? colours.text : colours.mutedText,
                 .paragraphStyle: style,
             ])
             let textHeight = ceil(title.size().height)
@@ -131,7 +156,7 @@ final class SAClaudeConnectionTypeTabs: NSControl {
     // MARK: - Selecting
 
     private func select(_ index: Int) {
-        guard titles.indices.contains(index), isEnabled else { return }
+        guard titles.indices.contains(index), isEnabled, isSegmentEnabled(index) else { return }
         selectedIndex = index
         noteFocusRingMaskChanged()
         onSelect?(index)
@@ -141,14 +166,26 @@ final class SAClaudeConnectionTypeTabs: NSControl {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {
-        if let index = index(at: convert(event.locationInWindow, from: nil)) { select(index) }
+        if let index = enabledIndex(at: convert(event.locationInWindow, from: nil)) { select(index) }
     }
 
     override func keyDown(with event: NSEvent) {
         switch event.specialKey {
-        case .leftArrow?: select(selectedIndex - 1)
-        case .rightArrow?: select(selectedIndex + 1)
+        case .leftArrow?: selectEnabled(from: selectedIndex, step: -1)
+        case .rightArrow?: selectEnabled(from: selectedIndex, step: 1)
         default: super.keyDown(with: event)
+        }
+    }
+
+    /// Selects the nearest enabled segment from `index` in the direction of `step` (none: no change).
+    private func selectEnabled(from index: Int, step: Int) {
+        var candidate = index + step
+        while titles.indices.contains(candidate) {
+            if isSegmentEnabled(candidate) {
+                select(candidate)
+                return
+            }
+            candidate += step
         }
     }
 
@@ -161,8 +198,8 @@ final class SAClaudeConnectionTypeTabs: NSControl {
         hoverTrackingArea = area
     }
 
-    override func mouseEntered(with event: NSEvent) { hoverIndex = index(at: convert(event.locationInWindow, from: nil)) }
-    override func mouseMoved(with event: NSEvent) { hoverIndex = index(at: convert(event.locationInWindow, from: nil)) }
+    override func mouseEntered(with event: NSEvent) { hoverIndex = enabledIndex(at: convert(event.locationInWindow, from: nil)) }
+    override func mouseMoved(with event: NSEvent) { hoverIndex = enabledIndex(at: convert(event.locationInWindow, from: nil)) }
     override func mouseExited(with event: NSEvent) { hoverIndex = nil }
 
     // MARK: - Accessibility
@@ -181,7 +218,12 @@ final class SAClaudeConnectionTypeTabs: NSControl {
 
         override func accessibilityParent() -> Any? { tabs }
         override func accessibilityValue() -> Any? { NSNumber(value: tabs?.selectedIndex == index) }
+        override func isAccessibilityEnabled() -> Bool {
+            guard let tabs else { return false }
+            return tabs.isEnabled && tabs.isSegmentEnabled(index)
+        }
         override func accessibilityPerformPress() -> Bool {
+            guard isAccessibilityEnabled() else { return false }
             tabs?.select(index)
             return true
         }
@@ -201,7 +243,7 @@ final class SAClaudeConnectionTypeTabs: NSControl {
     override func isAccessibilityElement() -> Bool { true }
     override func accessibilityRole() -> NSAccessibility.Role? { .radioGroup }
     override func accessibilityLabel() -> String? {
-        NSLocalizedString("ClaudeConnectionTypeTabs", value: "Connection type", comment: "accessibility name of the connection type tabs in the connection panel")
+        accessibilityGroupLabel ?? NSLocalizedString("ClaudeConnectionTypeTabs", value: "Connection type", comment: "accessibility name of the connection type tabs in the connection panel")
     }
     override func accessibilityChildren() -> [Any]? { segmentElements }
     override func accessibilityValue() -> Any? { titles.indices.contains(selectedIndex) ? titles[selectedIndex] : nil }

@@ -273,6 +273,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	[exportOptionsTabBar wantsLayer];
 	[exportTablelistScrollView wantsLayer];
 	[exportTableListButtonBar wantsLayer];
+
+	[SAClaudeExportStyler attachToController:self];
 }
 
 #pragma mark -
@@ -503,6 +505,7 @@ set_input:
 	
 	[self updateAvailableExportFilenameTokens]; // will also update the filename itself
 	
+	[SAClaudeExportStyler controllerDidUpdate:self];
 	return (actualInput == input);
 }
 
@@ -833,6 +836,8 @@ set_input:
  */
 - (IBAction)toggleCustomFilenameFormatView:(id)sender
 {
+	if ([SAClaudeExportStyler handleCustomFilenameToggleForController:self]) return;
+
 	showCustomFilenameView = !showCustomFilenameView;
 
 	if (!showCustomFilenameView) {
@@ -872,6 +877,8 @@ set_input:
  */
 - (IBAction)toggleAdvancedExportOptionsView:(id)sender
 {
+	if ([SAClaudeExportStyler isAttachedToController:self]) return;
+
 	showAdvancedView = !showAdvancedView;
 
 	if (!showAdvancedView) {
@@ -1091,6 +1098,7 @@ set_input:
 	
 	[self updateDisplayedExportFilename];
 	[self _updateExportFormatInformation];
+	[SAClaudeExportStyler controllerDidUpdate:self];
 }
 
 /**
@@ -1132,6 +1140,8 @@ set_input:
  */
 - (void)_displayExportTypeOptions:(BOOL)display
 {
+	if ([SAClaudeExportStyler isAttachedToController:self]) { [exportOptionsTabBar setHidden:!display]; return; }
+
 	NSRect windowFrame = [[exportTablelistScrollView window] frame];
 	NSRect viewFrame   = [exportTablelistScrollView frame];
 	NSRect barFrame    = [exportTableListButtonBar frame];
@@ -2244,6 +2254,7 @@ set_input:
 	}
 
 	[exportCustomFilenameViewLabelButton setTitle:[NSString stringWithFormat:NSLocalizedString(@"Customize Filename (%@)", @"customize file name label"), filename]];
+	[SAClaudeExportStyler controller:self didUpdateFilename:filename];
 }
 
 - (NSString *)customFilenamePathExtension
@@ -2524,6 +2535,8 @@ set_input:
  */
 - (void)_resizeWindowForCustomFilenameViewByHeightDelta:(NSInteger)delta
 {
+	if ([SAClaudeExportStyler isAttachedToController:self]) return;
+
 	NSAutoresizingMaskOptions popUpMask              = [exportInputPopUpButton autoresizingMask];
 	NSAutoresizingMaskOptions fileCheckMask          = [exportFilePerTableCheck autoresizingMask];
 	NSAutoresizingMaskOptions scrollMask             = [exportTablelistScrollView autoresizingMask];
@@ -2583,6 +2596,8 @@ set_input:
  */
 - (void)_resizeWindowForAdvancedOptionsViewByHeightDelta:(NSInteger)delta
 {
+	if ([SAClaudeExportStyler isAttachedToController:self]) return;
+
 	NSAutoresizingMaskOptions scrollMask        = [exportTablelistScrollView autoresizingMask];
 	NSAutoresizingMaskOptions buttonBarMask     = [exportTableListButtonBar autoresizingMask];
 	NSAutoresizingMaskOptions tabBarMask        = [exportTypeTabBar autoresizingMask];

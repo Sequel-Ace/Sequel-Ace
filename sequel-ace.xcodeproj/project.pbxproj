@@ -749,6 +749,7 @@
 		A91E3C5B7D2F40C8B6E1D203 /* SAClaudeTableInfoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */; };
 		C1A0DE400000000000000A02 /* SAClaudeConnectionPanelStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE400000000000000A01 /* SAClaudeConnectionPanelStyler.swift */; };
 		C1A0DE400000000000000A04 /* SAClaudeConnectionTypeTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE400000000000000A03 /* SAClaudeConnectionTypeTabs.swift */; };
+		EA0C0DE00000000000000007 /* SAClaudeExportStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000006 /* SAClaudeExportStyler.swift */; };
 		C1A0DE500000000000000B02 /* SAClaudeFavoriteCardGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */; };
 		C1A0DE600000000000000C02 /* SAClaudeConnectionPageStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE600000000000000C01 /* SAClaudeConnectionPageStyler.swift */; };
 		C1A0DE500000000000000B04 /* SAClaudeFavoriteCardGridController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE500000000000000B03 /* SAClaudeFavoriteCardGridController.swift */; };
@@ -1756,6 +1757,7 @@
 		5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableInfoStyler.swift; sourceTree = "<group>"; };
 		C1A0DE400000000000000A01 /* SAClaudeConnectionPanelStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionPanelStyler.swift; sourceTree = "<group>"; };
 		C1A0DE400000000000000A03 /* SAClaudeConnectionTypeTabs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionTypeTabs.swift; sourceTree = "<group>"; };
+		EA0C0DE00000000000000006 /* SAClaudeExportStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportStyler.swift; sourceTree = "<group>"; };
 		C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFavoriteCardGridView.swift; sourceTree = "<group>"; };
 		C1A0DE600000000000000C01 /* SAClaudeConnectionPageStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionPageStyler.swift; sourceTree = "<group>"; };
 		C1A0DE500000000000000B03 /* SAClaudeFavoriteCardGridController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFavoriteCardGridController.swift; sourceTree = "<group>"; };
@@ -3000,6 +3002,7 @@
 				5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */,
 				C1A0DE400000000000000A01 /* SAClaudeConnectionPanelStyler.swift */,
 				C1A0DE400000000000000A03 /* SAClaudeConnectionTypeTabs.swift */,
+				EA0C0DE00000000000000006 /* SAClaudeExportStyler.swift */,
 				C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */,
 				C1A0DE500000000000000B03 /* SAClaudeFavoriteCardGridController.swift */,
 				C1A0DE600000000000000C01 /* SAClaudeConnectionPageStyler.swift */,
@@ -4296,6 +4299,7 @@
 				A91E3C5B7D2F40C8B6E1D203 /* SAClaudeTableInfoStyler.swift in Sources */,
 				C1A0DE400000000000000A02 /* SAClaudeConnectionPanelStyler.swift in Sources */,
 				C1A0DE400000000000000A04 /* SAClaudeConnectionTypeTabs.swift in Sources */,
+				EA0C0DE00000000000000007 /* SAClaudeExportStyler.swift in Sources */,
 				C1A0DE500000000000000B02 /* SAClaudeFavoriteCardGridView.swift in Sources */,
 				C1A0DE500000000000000B04 /* SAClaudeFavoriteCardGridController.swift in Sources */,
 				C1A0DE600000000000000C02 /* SAClaudeConnectionPageStyler.swift in Sources */,

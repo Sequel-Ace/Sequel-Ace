@@ -4995,3 +4995,48 @@
 
 /* export dialog: table list column header, include the table */
 "ClaudeExportColumnInclude" = "Include";
+
+/* export dialog: title in the header */
+"ClaudeExportTitle" = "Export";
+
+/* export dialog: title of the card with the source and the table list */
+"ClaudeExportWhatTitle" = "What to export";
+
+/* export dialog: title of the card with the destination folder and filename */
+"ClaudeExportSaveToTitle" = "Save to";
+
+/* export dialog: label of the output compression pop-up */
+"ClaudeExportCompression" = "Compression";
+
+/* export dialog: button that opens the custom filename editor */
+"ClaudeExportCustomise" = "Customise";
+
+/* export dialog: accessibility name of the format switcher */
+"ClaudeExportFormatSwitcher" = "Export format";
+
+/* export dialog: source switcher segment, export the marked tables */
+"ClaudeExportSourceTables" = "Tables";
+
+/* export dialog: source switcher segment, export the Content tab's filtered rows */
+"ClaudeExportSourceFiltered" = "Filtered results";
+
+/* export dialog: source switcher segment, export the Query tab's result */
+"ClaudeExportSourceQuery" = "Query results";
+
+/* export dialog: accessibility name of the source switcher */
+"ClaudeExportSourceSwitcher" = "Export source";
+
+/* export dialog: title of the saved settings pull-down */
+"ClaudeExportPresets" = "Presets";
+
+/* export dialog: low memory export checkbox (the full explanation is its tooltip) */
+"ClaudeExportLowMemory" = "Low memory";
+
+/* export dialog: title of the options card, e.g. "SQL options" */
+"ClaudeExportOptionsTitle" = "%@ options";
+
+/* export dialog: button that marks every table in the list */
+"ClaudeExportMarkAll" = "All";
+
+/* export dialog: button that unmarks every table in the list */
+"ClaudeExportMarkNone" = "None";
