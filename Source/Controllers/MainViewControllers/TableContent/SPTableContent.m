@@ -136,7 +136,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 - (void)_updateRecordView;
-/** Whether a row can be added right now: to a table, with its columns shown. */
+/** Whether a row can be added right now: no load running, to a table, with its columns shown. */
 - (BOOL)_rowsCanBeAdded;
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (NSInteger)_recordViewSelectedRow;
@@ -4250,14 +4250,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
- * Whether a row can be added right now: to a table, with its columns shown. The column filter
- * can hide every column while the table's own column list is unchanged, and a row added then
- * would be edited by column number into columns that are not there. Every place that sets the
- * Add button asks this, so the button says the same thing wherever it was last set.
+ * Whether a row can be added right now: no load running, to a table, with its columns shown. A
+ * load disables every button until it ends, and a selection change in the middle of one - the load
+ * restoring the selection - must not enable this one early. The column filter can hide every
+ * column while the table's own column list is unchanged, and a row added then would be edited by
+ * column number into columns that are not there. Every place that sets the Add button asks this,
+ * so the button says the same thing wherever it was last set.
  */
 - (BOOL)_rowsCanBeAdded
 {
-	return [tablesListInstance tableType] == SPTableTypeTable && [dataColumns count] && [tableContentView numberOfColumns];
+	return !isWorking && [tablesListInstance tableType] == SPTableTypeTable && [dataColumns count] && [tableContentView numberOfColumns];
 }
 
 /**
@@ -5651,11 +5653,9 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 
 	// The Add button follows the columns on show. A load that ended with none - the filter matched
 	// nothing - left it disabled, and the end of the next load is the only other place that asks;
-	// on a table with no rows to click, that is the next reload. So it is asked here too, unless a
-	// load is running, which disabled every button until it ends.
-	if (!isWorking) {
-		[addButton setEnabled:[self _rowsCanBeAdded]];
-	}
+	// on a table with no rows to click, that is the next reload. So it is asked here too; while a
+	// load runs the answer is no, as for every other button until the load ends.
+	[addButton setEnabled:[self _rowsCanBeAdded]];
 }
 
 #pragma mark -
