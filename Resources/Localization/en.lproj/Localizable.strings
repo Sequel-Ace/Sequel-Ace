@@ -4983,3 +4983,15 @@
 
 /* connection page : folder rename : save button */
 "ClaudeFolderRenameSave" = "Save folder name";
+
+/* export dialog: table list column header, include structure */
+"ClaudeExportColumnStructure" = "Structure";
+
+/* export dialog: table list column header, include DROP TABLE */
+"ClaudeExportColumnDrop" = "Drop";
+
+/* export dialog: table list column header, include content */
+"ClaudeExportColumnContent" = "Content";
+
+/* export dialog: table list column header, include the table */
+"ClaudeExportColumnInclude" = "Include";
