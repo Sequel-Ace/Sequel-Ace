@@ -3003,7 +3003,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         action == @selector(copyDatabase:)         ||
         action == @selector(renameDatabase:)       ||
         action == @selector(openDatabaseInNewTab:) ||
-        action == @selector(refreshTables:))
+        action == @selector(refreshTables:)        ||
+        action == @selector(showSearchAllTables:))
     {
         return [self database] != nil;
     }
