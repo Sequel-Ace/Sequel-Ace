@@ -323,7 +323,7 @@
                                                                 </connections>
                                                             </button>
                                                             <textField hidden="YES" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5423">
-                                                                <rect key="frame" x="29" y="43" width="264" height="17"/>
+                                                                <rect key="frame" x="40" y="41" width="257" height="17"/>
                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Connecting..." id="5424">
                                                                     <font key="font" metaFont="system"/>
