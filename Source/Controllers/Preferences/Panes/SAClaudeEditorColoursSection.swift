@@ -76,6 +76,11 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
     @Published private(set) var themeNames: [String] = []
     @Published private(set) var themeName = ""
     @Published private(set) var colours: [String: NSColor] = [:]
+    /// The accent colour in effect, and whether the user has chosen one (else it is clay and Reset is disabled).
+    @Published private(set) var accent: NSColor = SAClaudeAccent.clayAccent
+    @Published private(set) var accentIsStored = false
+    /// The accent row's colour well, so it can stop editing when another colour is picked or the accent reset.
+    weak var accentWell: NSColorWell?
 
     init(defaults: UserDefaults = .standard, themesDirectory: String, confirmDiscardUnsaved: @escaping () -> Bool,
          saveAs: @escaping () -> Void, importTheme: @escaping () -> Void, exportTheme: @escaping () -> Void, editThemeList: @escaping () -> Void) {
@@ -105,6 +110,29 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
         var newColours: [String: NSColor] = [:]
         for row in colourRows { newColours[row.key] = SAArchiving.color(from: defaults.data(forKey: row.key)) ?? .textColor }
         if newColours != colours { colours = newColours }
+        let storedAccent = SAClaudeAccent.stored(in: defaults)
+        let resolvedAccent = storedAccent ?? SAClaudeAccent.clayAccent
+        if resolvedAccent != accent { accent = resolvedAccent }
+        if (storedAccent != nil) != accentIsStored { accentIsStored = storedAccent != nil }
+    }
+
+    /// Stores the accent the well picked (opaque); every Claude view recolours live.
+    func setAccent(_ colour: NSColor) {
+        SAClaudeAccent.store(colour.withAlphaComponent(1), in: defaults)
+        refresh()
+    }
+
+    /// Back to clay.
+    func resetAccent() {
+        accentWell?.deactivate()
+        SAClaudeAccent.store(nil, in: defaults)
+        refresh()
+    }
+
+    /// Opens the colour panel for an editor colour; the accent well gives the panel up first.
+    func editColour(_ key: String) {
+        accentWell?.deactivate()
+        panelTarget.edit(key)
     }
 
     var modeSetting: Bool {
@@ -169,6 +197,40 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
               let data = FileManager.default.contents(atPath: "\(support)/Default Themes/\(name).spTheme"),
               let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) else { return [:] }
         return SAEditorThemeLoader.colours(fromThemePlist: plist)
+    }
+}
+
+/// A minimal-style colour well (the accent row's): every change, including a drag in the colour panel, is
+/// reported at once.
+private struct SAClaudeAccentWell: NSViewRepresentable {
+    let colour: NSColor
+    let onChange: (NSColor) -> Void
+    let register: (NSColorWell) -> Void
+
+    final class Coordinator: NSObject {
+        var onChange: (NSColor) -> Void = { _ in }
+        @objc func changed(_ sender: NSColorWell) { onChange(sender.color) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSColorWell {
+        let well = NSColorWell(style: .minimal)
+        well.color = colour
+        well.isContinuous = true
+        well.target = context.coordinator
+        well.action = #selector(Coordinator.changed(_:))
+        well.setAccessibilityLabel(NSLocalizedString("Accent colour", comment: "Preferences > Query Editor: label of the accent colour well"))
+        register(well)
+        return well
+    }
+
+    func updateNSView(_ well: NSColorWell, context: Context) {
+        context.coordinator.onChange = onChange
+        register(well)
+        // While the well is being edited it already shows what the panel holds.
+        guard !well.isActive, well.color.usingColorSpace(.sRGB) != colour.usingColorSpace(.sRGB) else { return }
+        well.color = colour
     }
 }
 
@@ -269,13 +331,23 @@ struct SAClaudeEditorColoursSection: View {
                             .frame(height: 22)
                             .background(settings.rowFill(for: row.key).map { Color(nsColor: $0) } ?? Color.clear)
                             .contentShape(Rectangle())
-                            .onTapGesture { settings.panelTarget.edit(row.key) }
+                            .onTapGesture { settings.editColour(row.key) }
                         }
                     }
                     .padding(.vertical, 4)
                 }
                 .frame(maxWidth: .infinity)
                 .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: settings.colours[SAEditorThemeLoader.backgroundColourKey] ?? .textBackgroundColor)))
+            }
+
+            // Below both modes: the accent drives every accent in the Claude look (buttons, outlines, dots, glyphs).
+            Text(NSLocalizedString("Accent colour", comment: "Preferences > Query Editor: label of the accent colour well"))
+            HStack(spacing: 8) {
+                SAClaudeAccentWell(colour: settings.accent, onChange: settings.setAccent) { [weak settings] well in settings?.accentWell = well }
+                    .frame(width: 44, height: 24)
+                Button(NSLocalizedString("Reset to clay", comment: "Preferences > Query Editor: puts the accent colour back to the default clay"), action: settings.resetAccent)
+                    .disabled(!settings.accentIsStored)
+                Spacer(minLength: 0)
             }
             Spacer(minLength: 0)
         }

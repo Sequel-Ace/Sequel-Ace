@@ -231,6 +231,8 @@ enum SARuleFilterDropBoxClickPolicy {
                 DispatchQueue.main.async { [weak self] in self?.refreshPalette() }
             }
         }
+        // The drag-over fill and stroke are the accent; they are drawn, so a redraw picks the new one up.
+        SAClaudeAccent.observe(self) { $0.needsDisplay = true }
     }
 
     /// Right-click offers the same "Add Filter" / "Add AND/OR Group" actions

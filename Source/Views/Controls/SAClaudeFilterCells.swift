@@ -106,7 +106,7 @@ private enum FilterCellDrawing {
     }
 }
 
-/// A checkbox drawn as a small rounded square: clay with a white check when on, an outline in a mid tone of the theme text when off (a hairline vanishes in dark mode).
+/// A checkbox drawn as a small rounded square: the accent with an `onAccent` check when on, an outline in a mid tone of the theme text when off (a hairline vanishes in dark mode).
 @objc(SAClaudeCheckboxCell) final class SAClaudeCheckboxCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
@@ -144,7 +144,7 @@ private enum FilterCellDrawing {
             mark.lineWidth = 1.6
             mark.lineCapStyle = .round
             mark.lineJoinStyle = .round
-            NSColor.white.setStroke()
+            SAClaudeAccent.onAccent.setStroke()
             mark.stroke()
         }
 
@@ -197,14 +197,14 @@ private enum FilterCellDrawing {
     }
 }
 
-/// The filter bar's Apply button: a clay rounded fill with a white medium-weight title.
+/// The filter bar's Apply button: an accent rounded fill with an `onAccent` medium-weight title.
 @objc(SAClaudeAccentButtonCell) final class SAClaudeAccentButtonCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
         Self.drawAccent(self, in: SAClaudeFilterChrome.controlFrame(in: cellFrame))
     }
 
-    /// The clay pill and its white title, in `pill`.
+    /// The accent pill and its `onAccent` title, in `pill`.
     static func drawAccent(_ cell: NSButtonCell, in pill: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
@@ -214,7 +214,7 @@ private enum FilterCellDrawing {
         FilterCellDrawing.roundedPath(pill, radius: FilterCellDrawing.cornerRadius).fill()
 
         let font = NSFont.systemFont(ofSize: 12, weight: .medium)
-        FilterCellDrawing.drawTitle(cell.title, in: pill.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: .white, font: font, alignment: .center)
+        FilterCellDrawing.drawTitle(cell.title, in: pill.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: SAClaudeAccent.onAccent, font: font, alignment: .center)
     }
 }
 

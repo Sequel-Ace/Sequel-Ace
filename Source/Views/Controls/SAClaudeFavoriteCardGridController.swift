@@ -340,6 +340,11 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
         notificationObservers.append(NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
             self?.onMain { $0.refreshColours(force: false) }
         })
+        // The drop fill is derived from the accent and the cards draw it: re-derive and redraw.
+        SAClaudeAccent.observe(self) { controller in
+            controller.refreshColours(force: true)
+            controller.gridView.accentDidChange()
+        }
         notificationObservers.append(NotificationCenter.default.addObserver(forName: NSOutlineView.selectionDidChangeNotification, object: outline, queue: nil) { [weak self] _ in
             self?.onMain { $0.syncSelection() }
         })

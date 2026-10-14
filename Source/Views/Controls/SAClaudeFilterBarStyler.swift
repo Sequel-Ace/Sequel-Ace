@@ -85,6 +85,8 @@ import AppKit
                 DispatchQueue.main.async { styler?.applyColours(force: false) }
             }
         }
+        // The checkbox, Apply button and focus outlines draw in the accent: restyle and redraw them.
+        SAClaudeAccent.observe(styler) { $0.applyColours(force: true) }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
         styler.appearanceObservation = ruleEditor.observe(\.effectiveAppearance) { [weak styler] _, _ in
             DispatchQueue.main.async { styler?.applyColours(force: true) }

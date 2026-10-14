@@ -2,7 +2,7 @@
 //  SAClaudeRunButton.swift
 //  Sequel Ace
 //
-//  The query editor's Run button drawn as Claude's clay split button.
+//  The query editor's Run button drawn as Claude's accent split button.
 //  SPComboPopupButton already splits clicks (left of its divider runs, right
 //  of it opens the run menu); this subclass only changes the drawing and
 //  sizes itself to its title. App target only.
@@ -13,11 +13,11 @@ import AppKit
 @objc(SAClaudeRunButton) final class SAClaudeRunButton: SPComboPopupButton {
 
     private var titleAttributes: [NSAttributedString.Key: Any] {
-        [.font: NSFont.systemFont(ofSize: 13, weight: .medium), .foregroundColor: NSColor.white]
+        [.font: NSFont.systemFont(ofSize: 13, weight: .medium), .foregroundColor: SAClaudeAccent.onAccent]
     }
 
     private var shortcutAttributes: [NSAttributedString.Key: Any] {
-        [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.white.withAlphaComponent(0.75)]
+        [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: SAClaudeAccent.onAccent.withAlphaComponent(0.75)]
     }
 
     /// The shortcut of the run-menu item whose action is this button's action.
@@ -46,6 +46,8 @@ import AppKit
         super.awakeFromNib()
         isBordered = false
         fitKeepingRightEdge()
+        // The fill, glyphs and title are the accent and its contrasting colour, drawn: redraw on a change.
+        SAClaudeAccent.observe(self) { $0.needsDisplay = true }
     }
 
     private func fitKeepingRightEdge() {
@@ -67,7 +69,7 @@ import AppKit
         let layout = SAClaudeEditorChrome.runLayout(bounds: bounds, lineOffset: CGFloat(lineOffset),
                                                     titleSize: title.size(withAttributes: titleAttributes),
                                                     shortcutSize: shortcutText.size(withAttributes: shortcutAttributes))
-        NSColor.white.withAlphaComponent(0.28).setFill()
+        SAClaudeAccent.onAccent.withAlphaComponent(0.28).setFill()
         NSRect(x: layout.dividerX - 0.5, y: bounds.minY + 6, width: 1, height: bounds.height - 12).fill()
 
         let play = NSBezierPath()
@@ -75,7 +77,7 @@ import AppKit
         play.line(to: NSPoint(x: layout.playRect.minX, y: layout.playRect.maxY))
         play.line(to: NSPoint(x: layout.playRect.maxX, y: layout.playRect.midY))
         play.close()
-        NSColor.white.setFill()
+        SAClaudeAccent.onAccent.setFill()
         play.fill()
 
         title.draw(at: layout.titleOrigin, withAttributes: titleAttributes)
@@ -89,7 +91,7 @@ import AppKit
         chevron.lineWidth = 1.5
         chevron.lineCapStyle = .round
         chevron.lineJoinStyle = .round
-        NSColor.white.setStroke()
+        SAClaudeAccent.onAccent.setStroke()
         chevron.stroke()
     }
 }

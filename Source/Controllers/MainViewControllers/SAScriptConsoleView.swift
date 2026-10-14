@@ -30,7 +30,7 @@ struct SAScriptConsoleView: View {
                        isOn: $continueOnError)
                     .toggleStyle(.switch)
                     .controlSize(.mini)
-                    .tint(Color(nsColor: SAClaudeEditorChrome.runFill))
+                    .tint(Color(nsColor: chrome.accentFill))
                     .font(.system(size: 13))
                     .foregroundColor(Color(nsColor: chrome.palette.buttonText))
                 Spacer()
@@ -78,8 +78,11 @@ struct SAScriptConsoleView: View {
 /// The editor-theme palette for the console's toolbar, refreshed on settings changes.
 final class SAConsoleChrome: ObservableObject {
     @Published private(set) var palette = SAClaudeEditorChrome.palette(from: .standard)
+    /// The accent fill, for the "Continue on error" switch; follows an accent change while the console is open.
+    @Published private(set) var accentFill = SAClaudeEditorChrome.runFill
     private var observer: NSObjectProtocol?
     init() {
+        SAClaudeAccent.observe(self) { $0.accentFill = SAClaudeEditorChrome.runFill }
         observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             let palette = SAClaudeEditorChrome.palette(from: .standard)
             if palette != self?.palette { self?.palette = palette }

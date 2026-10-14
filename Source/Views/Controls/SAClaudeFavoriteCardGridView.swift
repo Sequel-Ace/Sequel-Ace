@@ -476,6 +476,14 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         if window.makeFirstResponder(field) { field.currentEditor()?.selectAll(nil) }
     }
 
+    /// The accent changed: the cards, folder headers, reorder bar and unsaved dot are drawn in it (a redraw picks it
+    /// up); an open rename field's outline and Save glyph hold it, so those are set again.
+    func accentDidChange() {
+        folderNameField?.layer?.borderColor = SAClaudeStatusChrome.clay.cgColor
+        folderNameButtons.first?.contentTintColor = SAClaudeStatusChrome.clay
+        needsDisplay = true
+    }
+
     /// Keeps the name field on its folder's header after a relayout; ends it (cancelled) when the folder is gone.
     private func placeFolderNameField() {
         guard let field = folderNameField, let id = folderNameFieldID else { return }

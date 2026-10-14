@@ -859,6 +859,11 @@ private final class SAClaudePanelForm {
         observations.append(container.observe(\.effectiveAppearance) { [weak self] _, _ in
             self?.onMain { $0.refresh(force: true) }
         })
+        // The Connect button, checkboxes and the focused field's outline are drawn in the accent.
+        SAClaudeAccent.observe(self) { styler in
+            styler.updateFocus()
+            if let container = styler.container { SAClaudeAccent.redisplay(container) }
+        }
         if let scrollView {
             scrollView.postsFrameChangedNotifications = true
             scrollFrameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: scrollView, queue: nil) { [weak self] _ in

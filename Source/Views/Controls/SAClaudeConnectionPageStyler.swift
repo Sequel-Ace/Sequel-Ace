@@ -341,6 +341,8 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
         observations.append(rightPane.observe(\.effectiveAppearance) { [weak self] _, _ in
             self?.onMain { $0.refresh(force: true) }
         })
+        // The search field's focus outline is the accent.
+        SAClaudeAccent.observe(self) { $0.updateFocus() }
         // The user's scrolling (the page restores it after relayouts).
         scrollView.contentView.postsBoundsChangedNotifications = true
         notificationObservers.append(NotificationCenter.default.addObserver(forName: NSView.boundsDidChangeNotification, object: scrollView.contentView, queue: nil) { [weak self] _ in

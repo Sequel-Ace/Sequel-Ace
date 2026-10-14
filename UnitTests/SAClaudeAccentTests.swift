@@ -15,12 +15,20 @@ final class SAClaudeAccentTests: XCTestCase {
         super.setUp()
         suiteName = "SAClaudeAccentTests." + UUID().uuidString
         defaults = UserDefaults(suiteName: suiteName)
+        clearStandardAccent()
     }
 
     override func tearDown() {
         defaults.removePersistentDomain(forName: suiteName)
         defaults = nil
+        clearStandardAccent()
         super.tearDown()
+    }
+
+    /// The accessors that draw read `.standard`; no test may leave an accent there.
+    private func clearStandardAccent() {
+        UserDefaults.standard.removeObject(forKey: SAClaudeAccent.defaultsKey)
+        SAClaudeAccent.invalidateCache()
     }
 
     private func srgb(_ hex: UInt32) -> NSColor { SAClaudeStyle.srgb(hex) }
@@ -90,10 +98,90 @@ final class SAClaudeAccentTests: XCTestCase {
         XCTAssertEqual(SAClaudeAccent.relativeLuminance(srgb(0xC6613F)), 0.209, accuracy: 0.005)
     }
 
-    func testOnAccentIsWhiteForClayAndNearBlackForALightAccent() {
+    func testOnAccentIsWhiteForClayAndNearBlackForLightAndMidAccents() {
         assertSame(SAClaudeAccent.onAccent(in: defaults), srgb(0xFFFFFF))
-        SAClaudeAccent.store(srgb(0xFFE066), in: defaults)
-        assertSame(SAClaudeAccent.onAccent(in: defaults), srgb(0x1A1A1A))
+        let expectations: [(UInt32, UInt32)] = [(0xFFE066, 0x1A1A1A), (0xF5A623, 0x1A1A1A), (0x1F4E9C, 0xFFFFFF), (0xD97757, 0x1A1A1A)]
+        for (fill, title) in expectations {
+            SAClaudeAccent.store(srgb(fill), in: defaults)
+            assertSame(SAClaudeAccent.onAccent(in: defaults), srgb(title))
+        }
+    }
+
+    func testOnAccentHasTheBetterContrastExceptWhiteKeepsClay() {
+        func contrast(_ a: NSColor, _ b: NSColor) -> CGFloat {
+            let (x, y) = (SAClaudeAccent.relativeLuminance(a), SAClaudeAccent.relativeLuminance(b))
+            return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+        }
+        // Whatever the fill, the chosen title is within the preference margin of the better one.
+        for hex: UInt32 in [0x000000, 0x1F4E9C, 0x2A78D6, 0x7161E0, 0x008300, 0xC6613F, 0xD97757, 0xF5A623, 0xFFE066, 0xFFFFFF] {
+            let fill = srgb(hex)
+            let chosen = SAClaudeAccent.onAccent(fill: fill)
+            let best = max(contrast(fill, srgb(0xFFFFFF)), contrast(fill, SAClaudeAccent.nearBlack))
+            XCTAssertGreaterThanOrEqual(contrast(fill, chosen) * 1.25, best, String(format: "#%06X", hex))
+        }
+    }
+
+    func testStandardAccessorsReadStoredColourThroughTheCache() {
+        assertSame(SAClaudeAccent.accent, SAClaudeAccent.clayAccent)
+        SAClaudeAccent.store(srgb(0x2A78D6), in: .standard)
+        assertSame(SAClaudeAccent.accent, srgb(0x2A78D6))
+        assertSame(SAClaudeAccent.fill, srgb(0x2A78D6))
+        SAClaudeAccent.store(nil, in: .standard)
+        assertSame(SAClaudeAccent.accent, SAClaudeAccent.clayAccent)
+        assertSame(SAClaudeAccent.fill, SAClaudeAccent.clayFill)
+    }
+
+    func testCacheFollowsAnOutsideWriteOfTheKey() {
+        assertSame(SAClaudeAccent.accent, SAClaudeAccent.clayAccent)   // fills the cache with "absent"
+        let data = SAArchiving.archivedData(forColor: srgb(0x7161E0))
+        UserDefaults.standard.set(data, forKey: SAClaudeAccent.defaultsKey)   // not through `store`
+        assertSame(SAClaudeAccent.accent, srgb(0x7161E0))
+        UserDefaults.standard.removeObject(forKey: SAClaudeAccent.defaultsKey)
+        assertSame(SAClaudeAccent.accent, SAClaudeAccent.clayAccent)
+    }
+
+    func testFillPressedOnDefaultClayFill() {
+        let clay = SAClaudeAccent.clayFill
+        let dark = SAClaudeAccent.fillPressed(darkTheme: true)
+        let light = SAClaudeAccent.fillPressed(darkTheme: false)
+        let c = components(clay)
+        for (index, value) in components(dark).enumerated() { XCTAssertEqual(value, c[index] + (1 - c[index]) * 0.12, accuracy: 0.005) }
+        for (index, value) in components(light).enumerated() { XCTAssertEqual(value, c[index] * 0.88, accuracy: 0.005) }
+        assertSame(SAClaudeAccent.fillPressed(darkTheme: true, in: defaults), dark)
+    }
+
+    private func resolved(_ colour: NSColor, _ appearance: NSAppearance.Name) -> NSColor {
+        var result = colour
+        NSAppearance(named: appearance)!.performAsCurrentDrawingAppearance { result = colour.usingColorSpace(.sRGB)! }
+        return result
+    }
+
+    func testTintDatabaseIsTheAccentInDarkAndTheFillInLight() {
+        assertSame(resolved(SAClaudeStyle.tintDatabase, .darkAqua), SAClaudeAccent.clayAccent)
+        assertSame(resolved(SAClaudeStyle.tintDatabase, .aqua), SAClaudeAccent.clayFill)
+        // A stored accent is both the accent and the fill: the same colour in either appearance.
+        SAClaudeAccent.store(srgb(0x2A78D6), in: .standard)
+        assertSame(resolved(SAClaudeStyle.tintDatabase, .darkAqua), srgb(0x2A78D6))
+        assertSame(resolved(SAClaudeStyle.tintDatabase, .aqua), srgb(0x2A78D6))
+    }
+
+    func testObserveRunsTheHandlerOnMainWhileTheOwnerLives() {
+        final class Owner {}
+        var owner: Owner? = Owner()
+        var calls = 0
+        let called = expectation(description: "handler")
+        called.assertForOverFulfill = false
+        SAClaudeAccent.observe(owner!) { _ in
+            XCTAssertTrue(Thread.isMainThread)
+            calls += 1
+            called.fulfill()
+        }
+        DispatchQueue.global().async { SAClaudeAccent.store(nil, in: self.defaults) }
+        wait(for: [called], timeout: 2)
+        owner = nil
+        let before = calls
+        SAClaudeAccent.store(nil, in: defaults)
+        XCTAssertEqual(calls, before)
     }
 
     func testErrorClayIsFixedWhateverTheAccent() {

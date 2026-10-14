@@ -4618,6 +4618,12 @@
 /* Preferences > Query Editor > Customise: rename, duplicate or remove theme files */
 "Edit theme list…" = "Edit theme list…";
 
+/* Preferences > Query Editor: label of the accent colour well */
+"Accent colour" = "Accent colour";
+
+/* Preferences > Query Editor: puts the accent colour back to the default clay */
+"Reset to clay" = "Reset to clay";
+
 /* Run All console: a long statement is cut after 6 lines; this many lines are not shown */
 "… %ld more lines" = "… %ld more lines";
 

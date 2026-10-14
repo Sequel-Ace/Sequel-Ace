@@ -23,6 +23,8 @@ import AppKit
         translatesAutoresizingMaskIntoConstraints = false
         setContentHuggingPriority(.defaultHigh, for: .horizontal)
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        // The pill's database glyph is drawn in the accent: redraw (re-rendering the tinted image) when it changes.
+        SAClaudeAccent.observe(self) { $0.needsDisplay = true }
     }
 
     private var displayTitle: String { titleOfSelectedItem ?? title }

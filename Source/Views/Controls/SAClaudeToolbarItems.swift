@@ -108,6 +108,8 @@ final class SAClaudeToolbarButton: NSButton {
         isBordered = false
         setButtonType(.momentaryChange)
         imagePosition = .noImage
+        // The selected glyph is drawn in the accent: redraw (it re-renders the tinted image) when it changes.
+        SAClaudeAccent.observe(self) { $0.needsDisplay = true }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }

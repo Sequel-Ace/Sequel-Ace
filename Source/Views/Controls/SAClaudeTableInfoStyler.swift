@@ -308,6 +308,11 @@ final class SAClaudeTableInfoCardView: NSView {
         defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
             self?.onMain { $0.refresh(force: false) }
         }
+        // The Comments field's focus outline is the accent.
+        SAClaudeAccent.observe(self) { styler in
+            styler.updateCommentsBorder()
+            if let statusView = styler.statusView { SAClaudeAccent.redisplay(statusView) }
+        }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
         appearanceObservation = statusView.observe(\.effectiveAppearance) { [weak self] _, _ in
             self?.onMain { $0.refresh(force: true) }

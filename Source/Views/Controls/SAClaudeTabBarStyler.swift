@@ -89,6 +89,8 @@ import AppKit
         styler.defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak styler] _ in
             styler?.applyColours(force: false)
         }
+        // The on-state filter / edit glyphs are tinted images: re-render them with the new accent.
+        SAClaudeAccent.observe(styler) { $0.applyColours(force: true) }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
         styler.appearanceObservation = container.observe(\.effectiveAppearance) { [weak styler] _, _ in
             DispatchQueue.main.async { styler?.applyColours(force: true) }

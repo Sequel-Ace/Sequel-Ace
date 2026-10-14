@@ -121,6 +121,7 @@ import Cocoa
     /// The outline colour the Claude styling gave the field, which a clay focus border replaces while editing.
     private var restingBorderColour: CGColor?
     private var showsFocusBorder = false
+    private var observesAccent = false
 
     /// Sets the field's resting outline colour (the Claude styling's hairline). While the field has the clay
     /// focus border it is remembered and restored when editing ends, not applied over the focus border.
@@ -149,6 +150,13 @@ import Cocoa
         showsFocusBorder = true
         if restingBorderColour == nil { restingBorderColour = layer.borderColor }
         layer.borderColor = SAClaudeStatusChrome.clay.cgColor
+        if !observesAccent {
+            observesAccent = true
+            // An accent change while the field is being edited recolours its focus border.
+            SAClaudeAccent.observe(self) { field in
+                if field.showsFocusBorder { field.layer?.borderColor = SAClaudeStatusChrome.clay.cgColor }
+            }
+        }
     }
 
     override public func textDidEndEditing(_ notification: Notification) {

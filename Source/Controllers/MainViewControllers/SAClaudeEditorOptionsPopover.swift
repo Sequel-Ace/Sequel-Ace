@@ -100,6 +100,8 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
     struct Colours {
         var surface = Color.clear, text = Color.primary, muted = Color.secondary
         var hairline = Color.gray, hover = Color.gray, tile = Color.gray, clay = Color.orange
+        /// The switch knob on the accent track.
+        var onClay = Color.white
     }
 
     @Published var switches: [SAClaudeEditorOption: Bool] = [:]
@@ -119,6 +121,11 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
     init() {
         defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             self?.refresh()
+        }
+        // The switches are accent-coloured: rebuild the colours although the theme is unchanged.
+        SAClaudeAccent.observe(self) { model in
+            model.appliedTheme = nil
+            model.refresh()
         }
     }
 
@@ -167,7 +174,8 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
                           hairline: Color(nsColor: SAClaudeStatusChrome.hairline(theme: theme)),
                           hover: Color(nsColor: SAClaudeEditorChrome.derivedColour(text: theme.text, background: surface, ratio: 0.08)),
                           tile: Color(nsColor: SAClaudeEditorChrome.derivedColour(text: theme.text, background: surface, ratio: 0.05)),
-                          clay: Color(nsColor: SAClaudeStatusChrome.clay))
+                          clay: Color(nsColor: SAClaudeStatusChrome.clay),
+                          onClay: Color(nsColor: SAClaudeAccent.onAccent))
         if darkChanged { appearanceDidChange?(dark) }
     }
 
@@ -293,7 +301,7 @@ struct SAClaudeEditorOptionsView: View {
             HStack {
                 Text(option.title).font(.system(size: 12.5)).foregroundColor(model.colours.text)
                 Spacer(minLength: 8)
-                SAClaudeSwitch(isOn: isOn, on: model.colours.clay, off: model.colours.hairline)
+                SAClaudeSwitch(isOn: isOn, on: model.colours.clay, off: model.colours.hairline, knobOn: model.colours.onClay)
             }
             .frame(height: 26)
             .contentShape(Rectangle())
@@ -350,10 +358,12 @@ private struct SAClaudeSwitch: View {
     let isOn: Bool
     let on: Color
     let off: Color
+    /// The knob on the accent track (a light accent needs a dark knob); the knob on the off track is white.
+    let knobOn: Color
     var body: some View {
         ZStack(alignment: isOn ? .trailing : .leading) {
             Capsule().fill(isOn ? on : off).frame(width: 26, height: 15)
-            Circle().fill(Color.white).frame(width: 11, height: 11).padding(2)
+            Circle().fill(isOn ? knobOn : Color.white).frame(width: 11, height: 11).padding(2)
         }
         .animation(.easeOut(duration: 0.12), value: isOn)
         .accessibilityHidden(true)
