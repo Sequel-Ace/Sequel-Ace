@@ -54,6 +54,46 @@ enum SARuleFilterDropBoxClickPolicy {
     }
 }
 
+/// Where the drop zone puts its label and chevron. Pure so it can be
+/// unit-tested.
+enum SARuleFilterDropBoxLayout {
+    /// The subview frames for one size of the zone.
+    struct Frames: Equatable {
+        /// The prompt or preview label.
+        let label: NSRect
+        /// The chevron, or `nil` while the prompt shows and it is hidden.
+        let indicator: NSRect?
+    }
+
+    /// - Parameters:
+    ///   - bounds: The zone's bounds size.
+    ///   - labelSize: The label's intrinsic content size.
+    ///   - indicatorSize: The chevron's intrinsic content size.
+    ///   - showingPreview: Whether the label shows the WHERE preview.
+    /// - Returns: The label and chevron frames.
+    static func frames(bounds: NSSize, labelSize: NSSize, indicatorSize: NSSize, showingPreview: Bool) -> Frames {
+        let y = (bounds.height - labelSize.height) / 2.0
+        if showingPreview {
+            // The preview uses the full width with a small inset, minus the
+            // chevron at the right end; the label itself tail-truncates when
+            // the clause is longer than the bar.
+            let inset: CGFloat = 10
+            let indicatorX = max(bounds.width - inset - indicatorSize.width, 0)
+            let indicator = NSRect(x: indicatorX, y: (bounds.height - indicatorSize.height) / 2.0,
+                                   width: indicatorSize.width, height: indicatorSize.height)
+            let label = NSRect(x: inset, y: y, width: max(indicatorX - 4 - inset, 0), height: labelSize.height)
+            return Frames(label: label, indicator: indicator)
+        }
+        // Center the prompt at its natural width, but clamp to the drop
+        // box's own bounds so a narrow container clips the text inside
+        // the dashed border instead of letting it spill outside.
+        // `byClipping` on the label prevents a mid-word ellipsis.
+        let labelWidth = min(labelSize.width, bounds.width)
+        let x = max((bounds.width - labelWidth) / 2.0, 0)
+        return Frames(label: NSRect(x: x, y: y, width: labelWidth, height: labelSize.height), indicator: nil)
+    }
+}
+
 /// A permanently-visible drop zone rendered next to the rule editor in
 /// the Content tab. The view does two jobs:
 ///
@@ -89,12 +129,10 @@ enum SARuleFilterDropBoxClickPolicy {
         // box bounds already clip the label visually, and a clipped
         // edge reads better than "add fil…".
         l.lineBreakMode = .byClipping
-        // Plain autoresize so we never mix Auto-Layout into the filter
-        // container's frame-based layout – the mix was triggering an
-        // infinite constraint-update cycle when the container briefly
-        // passed through a zero-sized state during Content-tab load.
+        // Frame-based, like the filter container: no constraints of our own,
+        // and the frame is set from `resizeSubviews(withOldSize:)` - see
+        // there for why never from `layout()`.
         l.translatesAutoresizingMaskIntoConstraints = true
-        l.autoresizingMask = [.width, .minYMargin, .maxYMargin]
         return l
     }()
 
@@ -125,7 +163,7 @@ enum SARuleFilterDropBoxClickPolicy {
             toolTip = SPRuleFilterDropBox.promptTooltip
             menuIndicator.isHidden = true
         }
-        needsLayout = true
+        placeSubviews()
     }
 
     /// Whether the label currently shows the WHERE preview (left-aligned,
@@ -181,6 +219,7 @@ enum SARuleFilterDropBoxClickPolicy {
         addSubview(menuIndicator)
         registerForDraggedTypes([Self.rowDropType])
         toolTip = SPRuleFilterDropBox.promptTooltip
+        placeSubviews()
     }
 
     /// Right-click offers the same "Add Filter" / "Add AND/OR Group" actions
@@ -211,29 +250,34 @@ enum SARuleFilterDropBoxClickPolicy {
         return menu
     }
 
-    override public func layout() {
-        super.layout()
-        let labelSize = label.intrinsicContentSize
-        let y = (bounds.height - labelSize.height) / 2.0
-        if isShowingPreview {
-            // The preview uses the full width with a small inset, minus the
-            // chevron at the right end; the label itself tail-truncates when
-            // the clause is longer than the bar.
-            let inset: CGFloat = 10
-            let indicatorSize = menuIndicator.intrinsicContentSize
-            let indicatorX = max(bounds.width - inset - indicatorSize.width, 0)
-            menuIndicator.frame = NSRect(x: indicatorX, y: (bounds.height - indicatorSize.height) / 2.0,
-                                         width: indicatorSize.width, height: indicatorSize.height)
-            label.frame = NSRect(x: inset, y: y, width: max(indicatorX - 4 - inset, 0), height: labelSize.height)
-            return
+    /// Places the subviews whenever the zone changes size.
+    ///
+    /// Not in `layout()`: the window runs under Auto Layout, which turns each
+    /// frame set here into constraints and applies its own solution of them in
+    /// every layout pass. With the label's old flexible autoresizing mask that
+    /// solution differed from the frame we set - snapped to the pixel grid, or
+    /// widened to 4 pt in a zero-sized zone - and putting our frame back from
+    /// `layout()` dirtied the constraints for another pass, without end, until
+    /// AppKit raised for a window needing more Update Constraints passes than
+    /// it has views (seen while tables loaded). Placing the subviews only when
+    /// the size or the text changes keeps any such disagreement from feeding
+    /// back into the layout pass.
+    ///
+    /// - Parameter oldSize: The zone's previous size; unused.
+    override public func resizeSubviews(withOldSize oldSize: NSSize) {
+        placeSubviews()
+    }
+
+    /// Sets the label and chevron frames for the current size and text.
+    private func placeSubviews() {
+        let frames = SARuleFilterDropBoxLayout.frames(bounds: bounds.size,
+                                                      labelSize: label.intrinsicContentSize,
+                                                      indicatorSize: menuIndicator.intrinsicContentSize,
+                                                      showingPreview: isShowingPreview)
+        if let indicatorFrame = frames.indicator {
+            menuIndicator.frame = indicatorFrame
         }
-        // Center the prompt at its natural width, but clamp to the drop
-        // box's own bounds so a narrow container clips the text inside
-        // the dashed border instead of letting it spill outside.
-        // `byClipping` on the label prevents a mid-word ellipsis.
-        let labelWidth = min(labelSize.width, bounds.width)
-        let x = max((bounds.width - labelWidth) / 2.0, 0)
-        label.frame = NSRect(x: x, y: y, width: labelWidth, height: labelSize.height)
+        label.frame = frames.label
     }
 
     override public var acceptsFirstResponder: Bool { false }
