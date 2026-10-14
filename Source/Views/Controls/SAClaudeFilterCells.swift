@@ -266,8 +266,10 @@ private enum FilterCellDrawing {
 
 /// Where a sheet button draws inside whatever frame the XIB gave it, and in which font.
 private enum SheetButtonDrawing {
-    static func rect(_ cell: NSButtonCell, in cellFrame: NSRect) -> NSRect {
-        SAClaudeSheetButtonGeometry.buttonRect(in: cellFrame, controlSize: cell.controlSize)
+    /// Inside the classic bezel's side margins, except on NSAlert's own buttons (laid out without them).
+    static func rect(_ cell: NSButtonCell, in cellFrame: NSRect, of controlView: NSView) -> NSRect {
+        let isAlertButton = NSStringFromClass(type(of: controlView)).contains("_NSAlert")
+        return SAClaudeSheetButtonGeometry.buttonRect(in: cellFrame, controlSize: cell.controlSize, classicMargins: !isAlertButton)
     }
 
     /// The cell's own point size (13 for regular buttons, 11 for small ones).
@@ -287,7 +289,7 @@ private enum SheetButtonDrawing {
 @objc(SAClaudeSheetPrimaryButtonCell) final class SAClaudeSheetPrimaryButtonCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-        SAClaudeAccentButtonCell.drawAccent(self, in: SheetButtonDrawing.rect(self, in: cellFrame),
+        SAClaudeAccentButtonCell.drawAccent(self, in: SheetButtonDrawing.rect(self, in: cellFrame, of: controlView),
                                             font: SheetButtonDrawing.font(self, weight: .medium))
     }
 }
@@ -297,7 +299,7 @@ private enum SheetButtonDrawing {
 @objc(SAClaudeSheetSecondaryButtonCell) final class SAClaudeSheetSecondaryButtonCell: NSButtonCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-        let rect = SheetButtonDrawing.rect(self, in: cellFrame)
+        let rect = SheetButtonDrawing.rect(self, in: cellFrame, of: controlView)
         SAClaudeSecondaryButtonCell.drawSecondary(self, in: rect, font: SheetButtonDrawing.font(self, weight: .medium),
                                                   hovered: SheetButtonDrawing.isHovered(rect, in: controlView))
     }

@@ -77,10 +77,9 @@ import AppKit
         forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
         let data = UserDefaults.standard.data(forKey: defaultsKey)
         cacheLock.lock()
-        if let cache, cache.data != data {
-            SAClaudeAccent.cache = nil
-            cacheGeneration += 1
-        }
+        if let cache, cache.data != data { SAClaudeAccent.cache = nil }
+        // Always: a fill already reading the old data must not store it after this write.
+        cacheGeneration += 1
         cacheLock.unlock()
     }
 

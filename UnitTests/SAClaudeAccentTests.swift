@@ -190,9 +190,11 @@ final class SAClaudeAccentTests: XCTestCase {
             let owner = Owner()
             let strongCanary = Canary()
             canary = strongCanary
-            // The observer block holds the handler, which holds the canary: it lives while the observer does.
-            SAClaudeAccent.observe(owner) { _ in _ = strongCanary }
-            XCTAssertNotNil(canary)
+            withExtendedLifetime(owner) {
+                // The observer block holds the handler, which holds the canary: it lives while the observer does.
+                SAClaudeAccent.observe(owner) { _ in _ = strongCanary }
+                XCTAssertNotNil(canary)
+            }
         }
         // No notification was posted since: only removing the observer can have released the handler.
         XCTAssertNil(canary)

@@ -22,14 +22,18 @@ struct SAClaudeControlDescriptor: Equatable {
     var title: String = ""
     var keyEquivalent: String = ""
     var isAlertButton = false
-    /// 0 = the alert's first (default) button.
+    /// 0 = the alert's first button.
     var alertButtonIndex: Int? = nil
+    /// Whether any of the alert's buttons answers Return: then that one is the primary, not necessarily the first.
+    var alertHasReturnButton = false
     var isDestructive = false
     var isEditable = false
     var isBezeledOrBordered = false
     var fontSize: CGFloat = 13
     var isSeparatorBox = false
     var boxTitle: String = ""
+    /// A pop-up or pull-down that shows an image and no title (a gear menu): the pill draws titles, not images.
+    var isImageOnly = false
 }
 
 /// The Claude look a control is given.
@@ -49,7 +53,7 @@ enum SAClaudeSheetRules {
         case .textField:
             if d.isEditable { return d.isBezeledOrBordered ? .field : .unchanged }
             return d.fontSize <= mutedLabelMaxFontSize ? .mutedLabel : .label
-        case .popUp: return .pill
+        case .popUp: return d.isImageOnly ? .unchanged : .pill
         case .box:
             if d.isSeparatorBox { return .separator }
             return d.boxTitle.isEmpty ? .unchanged : .titledBox
@@ -63,8 +67,13 @@ enum SAClaudeSheetRules {
         if d.buttonType == .switch { return .checkbox }
         if d.buttonType == .radio { return .radio }
         if d.title.isEmpty || d.isDestructive { return .unchanged }
-        // Primary: an alert's real first button, or a push-family button that answers Return.
-        if d.isAlertButton && d.alertButtonIndex == 0 { return .primaryButton }
+        if d.isAlertButton {
+            // Primary: the alert button that answers Return, or its first button when none does.
+            let isPrimary = d.alertHasReturnButton ? d.keyEquivalent == "\r" : d.alertButtonIndex == 0
+            if isPrimary { return .primaryButton }
+            return isPushLike(d.bezelStyle) ? .secondaryButton : .unchanged
+        }
+        // Primary: a push-family button that answers Return.
         if d.keyEquivalent == "\r" && isPushLike(d.bezelStyle) { return .primaryButton }
         return isPushLike(d.bezelStyle) ? .secondaryButton : .unchanged
     }
@@ -78,32 +87,33 @@ enum SAClaudeSheetRules {
     }
 }
 
-/// Where a restyled push button draws inside the frame its XIB gave it. Classic XIB push buttons have frames
-/// taller than the bezel they draw (32pt regular, 28pt small), with the bezel's side margins inside the frame;
-/// code-built and newer ones are as tall as they draw. The Claude button is drawn at most `maximumHeight` tall,
-/// centred, and a classic frame keeps its side margins so neighbouring buttons don't touch.
+/// Where a restyled push button draws inside the frame it was given. XIB push buttons were laid out with the
+/// classic bezel's transparent side margins inside their frames (6pt regular, 5pt small, 1pt mini), whatever
+/// height the frame has, so neighbouring buttons and fields keep a visual gap; NSAlert lays its buttons out
+/// edge to edge with its own spacing, so they have none. The Claude button is drawn at most `maximumHeight`
+/// tall, centred vertically.
 enum SAClaudeSheetButtonGeometry {
 
     struct Metrics: Equatable {
         /// The tallest the drawn button gets.
         let maximumHeight: CGFloat
-        /// A frame at least this tall is a classic one, with `classicSideMargin` on each side.
-        let classicFrameHeight: CGFloat
+        /// The classic bezel's side margin inside a XIB frame.
         let classicSideMargin: CGFloat
     }
 
     static func metrics(for controlSize: NSControl.ControlSize) -> Metrics {
         switch controlSize {
-        case .small: return Metrics(maximumHeight: 22, classicFrameHeight: 26, classicSideMargin: 5)
-        case .mini: return Metrics(maximumHeight: 18, classicFrameHeight: 22, classicSideMargin: 1)
-        default: return Metrics(maximumHeight: 28, classicFrameHeight: 30, classicSideMargin: 6)
+        case .small: return Metrics(maximumHeight: 22, classicSideMargin: 5)
+        case .mini: return Metrics(maximumHeight: 18, classicSideMargin: 1)
+        default: return Metrics(maximumHeight: 28, classicSideMargin: 6)
         }
     }
 
-    static func buttonRect(in frame: NSRect, controlSize: NSControl.ControlSize) -> NSRect {
+    /// `classicMargins`: the frame carries the classic side margins (every XIB push button; not NSAlert's).
+    static func buttonRect(in frame: NSRect, controlSize: NSControl.ControlSize, classicMargins: Bool) -> NSRect {
         let metrics = metrics(for: controlSize)
         let height = min(frame.height, metrics.maximumHeight)
-        let side = frame.height >= metrics.classicFrameHeight ? metrics.classicSideMargin : 0
+        let side = classicMargins ? metrics.classicSideMargin : 0
         let width = max(0, frame.width - side * 2)
         return NSRect(x: frame.minX + side, y: frame.minY + ((frame.height - height) / 2).rounded(.down), width: width, height: height)
     }
@@ -170,4 +180,43 @@ enum SAClaudeSheetTargeting {
     static func unqualified(_ className: String) -> String {
         className.split(separator: ".").last.map(String.init) ?? className
     }
+}
+
+/// Which text and background colours the sheet styler sets. A view it has coloured once is marked (by the styler,
+/// on the view) with the tone it gave it and is recoloured on every restyle, whatever colour it shows meanwhile
+/// (a view off-screen during a theme change keeps the old theme's colour until then). An unmarked view is only
+/// coloured while it shows a system default colour; a colour its code chose is kept.
+enum SAClaudeRecolouring {
+
+    enum Tone: String, Equatable { case text, muted }
+
+    /// The system text colours a control has when nobody chose one.
+    static func isSystemText(_ colour: NSColor?) -> Bool {
+        guard let colour else { return true }
+        return colour == .controlTextColor || colour == .labelColor || colour == .textColor || isSystemSecondaryText(colour)
+    }
+
+    /// The system's secondary text colours: a label in one stays muted.
+    static func isSystemSecondaryText(_ colour: NSColor?) -> Bool {
+        guard let colour else { return false }
+        return colour == .secondaryLabelColor || colour == .tertiaryLabelColor || colour == .disabledControlTextColor
+    }
+
+    /// The system backgrounds a table, text view or scroll view has when nobody chose one.
+    static func isSystemBackground(_ colour: NSColor) -> Bool {
+        colour == .controlBackgroundColor || colour == .textBackgroundColor || colour == .windowBackgroundColor
+            || colour == .underPageBackgroundColor
+    }
+
+    /// The tone for a label: the one it was marked with; else, for a system colour, muted when it is small or
+    /// already secondary, text otherwise; nil (leave it) for a colour its code chose.
+    static func labelTone(marked: Tone?, current: NSColor?, isSmall: Bool) -> Tone? {
+        if let marked { return marked }
+        guard isSystemText(current) else { return nil }
+        return isSmall || isSystemSecondaryText(current) ? .muted : .text
+    }
+
+    /// Whether a text view's text (or a view's background) is the styler's to colour.
+    static func ownsText(marked: Bool, current: NSColor?) -> Bool { marked || isSystemText(current) }
+    static func ownsBackground(marked: Bool, current: NSColor) -> Bool { marked || isSystemBackground(current) }
 }

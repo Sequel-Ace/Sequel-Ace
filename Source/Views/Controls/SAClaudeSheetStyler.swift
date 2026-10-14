@@ -152,7 +152,7 @@ final class SAClaudeWindowSkin: NSObject {
     /// The alert whose window this is; its buttons get the alert roles.
     weak var alert: NSAlert?
 
-    private var applied: (theme: SAClaudeThemeColours, accent: NSColor)?
+    private var applied: SAClaudeThemeColours?
     private var colours: SAClaudeSheetColours?
     private let fields = NSHashTable<NSTextField>.weakObjects()
 
@@ -203,7 +203,8 @@ final class SAClaudeWindowSkin: NSObject {
     private func observe() {
         Self.skins.add(self)
         Self.observeDefaults()
-        SAClaudeAccent.observe(self) { $0.refresh(force: true) }
+        // The accent is read at draw time by the cells; only the fields' outlines hold it.
+        SAClaudeAccent.observe(self) { $0.accentChanged() }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
         observations.append(NSApp.observe(\.effectiveAppearance) { [weak self] _, _ in
             DispatchQueue.main.async { self?.refresh(force: true) }
@@ -249,17 +250,25 @@ final class SAClaudeWindowSkin: NSObject {
 
     // MARK: Refreshing
 
-    /// Restyles everything when the theme or the accent changed (always, when `force`).
+    private var root: NSView? { accessory ?? window?.contentView }
+
+    /// The accent changed: the accent outline of the field being edited, and a redraw of everything else.
+    private func accentChanged() {
+        updateFocus()
+        if let root { SAClaudeAccent.redisplay(root) }
+    }
+
+    /// Restyles everything when the theme changed (always, when `force`).
     func refresh(force: Bool) {
-        guard let root = accessory ?? window?.contentView else { return }
-        let colours = SAClaudeSheetColours.current()
+        guard let root else { return }
+        // An accessory sits in a system panel: its colours follow the panel's lightness.
+        let colours = SAClaudeSheetColours.current(matching: accessory != nil ? window?.effectiveAppearance : nil)
         // The Claude cells read these at draw time.
         SAClaudeFilterBarStyler.currentPalette = colours.palette
         SAClaudeFilterBarStyler.currentThemeText = colours.theme.text
         SAClaudeSheetColours.currentSurface = colours.surface
-        let accent = SAClaudeAccent.accent
-        if !force, let applied, applied.theme == colours.theme, applied.accent == accent { return }
-        applied = (colours.theme, accent)
+        if !force, let applied, applied == colours.theme { return }
+        applied = colours.theme
         self.colours = colours
 
         applyChrome(colours, root: root)
@@ -268,7 +277,8 @@ final class SAClaudeWindowSkin: NSObject {
         SAClaudeAccent.redisplay(root)
     }
 
-    /// The appearance from the theme's lightness and the theme surface behind everything.
+    /// The appearance from the colours' lightness (the theme's; a save panel's own for its accessory) and the
+    /// surface behind everything.
     private func applyChrome(_ colours: SAClaudeSheetColours, root: NSView) {
         let appearanceName: NSAppearance.Name = colours.isDark ? .darkAqua : .aqua
         if accessory != nil {
@@ -335,9 +345,10 @@ final class SAClaudeWindowSkin: NSObject {
         d.title = button.title
         d.keyEquivalent = button.keyEquivalent
         d.isDestructive = button.hasDestructiveAction
-        if let index = alert?.buttons.firstIndex(where: { $0 === button }) {
+        if let alert, let index = alert.buttons.firstIndex(where: { $0 === button }) {
             d.isAlertButton = true
             d.alertButtonIndex = index
+            d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
         }
         let style = SAClaudeSheetRules.style(for: d)
         switch style {
@@ -371,22 +382,39 @@ final class SAClaudeWindowSkin: NSObject {
         }
     }
 
-    /// A bordered pop-up showing a title becomes a pill; borderless and image-only ones (gear menus) stay native,
-    /// as the pill cell draws titles, not images.
+    /// A pop-up showing a title becomes a pill; image-only and icon-sized ones (gear and action menus) and ones
+    /// with nothing to show stay native, as the pill cell draws titles, not images.
     private func stylePopUp(_ popUp: NSPopUpButton) {
-        guard SAClaudeSheetRules.style(for: SAClaudeControlDescriptor(kind: .popUp)) == .pill else { return }
+        let item = popUp.pullsDown ? popUp.item(at: 0) : popUp.selectedItem
+        let title = item?.title ?? popUp.title
+        let image = item?.image ?? popUp.image
+        var d = SAClaudeControlDescriptor(kind: .popUp)
+        d.title = title
+        d.isImageOnly = popUp.imagePosition == .imageOnly || (image != nil && title.isEmpty) || (!popUp.isBordered && image != nil)
+            || (!(popUp.cell is SAClaudePillPopUpButtonCell) && Self.isIconSized(popUp, title: title))
+        guard SAClaudeSheetRules.style(for: d) == .pill else { return }
         let installed = popUp.cell is SAClaudePillPopUpButtonCell
-        let title = popUp.pullsDown ? (popUp.item(at: 0)?.title ?? "") : (popUp.titleOfSelectedItem ?? popUp.title)
         guard installed || (popUp.isBordered && !title.isEmpty) else { return }
         SAClaudeFilterCells.installPill(on: popUp)
+    }
+
+    /// A pull-down too narrow for its title in the pill (the Export sheet's 41pt settings menu, titled "S"): AppKit
+    /// shows it as an icon-like button, which the pill would turn into a truncated title.
+    private static func isIconSized(_ popUp: NSPopUpButton, title: String) -> Bool {
+        guard popUp.pullsDown else { return false }
+        let titleArea = SAClaudeFilterChrome.pillTitleRect(in: SAClaudeFilterChrome.controlFrame(in: popUp.bounds)).width
+        let titleWidth = ceil(NSAttributedString(string: title, attributes: [.font: NSFont.systemFont(ofSize: 12)]).size().width)
+        return titleArea < titleWidth + SAClaudeFilterChrome.pillPadding
     }
 
     // MARK: Text fields
 
     private func styleTextField(_ field: NSTextField, _ colours: SAClaudeSheetColours) {
         var d = SAClaudeControlDescriptor(kind: .textField)
-        d.isEditable = field.isEditable
-        d.isBezeledOrBordered = field.isBezeled || field.isBordered || fields.contains(field)
+        let styledAsField = fields.contains(field)
+        // A bezeled read-only box (the Export sheet's path) shows a value like a field and gets the field look.
+        d.isEditable = field.isEditable || field.isBezeled || styledAsField
+        d.isBezeledOrBordered = field.isBezeled || field.isBordered || styledAsField
         d.fontSize = field.font?.pointSize ?? NSFont.systemFontSize
         switch SAClaudeSheetRules.style(for: d) {
         case .field: styleField(field, colours)
@@ -399,9 +427,8 @@ final class SAClaudeWindowSkin: NSObject {
     /// The Claude field: no bezel, a rounded field fill and hairline on its layer (the accent while edited), the
     /// text centred in the XIB frame by a cell that knows it has no bezel. A combo box gets the same look from its
     /// layer and properties alone, as the connection panel's do (no cell or class swap; its arrow stays AppKit's).
-    /// Token fields stay native (their tokens are AppKit's own views), as does any field whose cell is not a plain one.
+    /// A token field likewise, its tokens staying AppKit's. Any other field whose cell is not a plain one stays native.
     private func styleField(_ field: NSTextField, _ colours: SAClaudeSheetColours) {
-        if field is NSTokenField { return }
         if !fields.contains(field) {
             // Auto layout sizes a bezel-less field to its text: only restyle one whose height is pinned.
             if !field.translatesAutoresizingMaskIntoConstraints,
@@ -410,6 +437,8 @@ final class SAClaudeWindowSkin: NSObject {
             }
             if let comboBox = field as? NSComboBox {
                 comboBox.isButtonBordered = false
+            } else if field is NSTokenField {
+                // No cell swap: the token cell lays its tokens out itself.
             } else if !Self.installFieldCell(on: field) {
                 return
             }
@@ -463,11 +492,11 @@ final class SAClaudeWindowSkin: NSObject {
 
     /// Static text in the theme's text colour (muted when small). Colours the code chose (warnings, links) are kept.
     private func styleLabel(_ label: NSTextField, muted: Bool, _ colours: SAClaudeSheetColours) {
-        let current = label.textColor
-        guard SAClaudeSheetColours.isDefaultText(current), !Self.hasLinks(label) else { return }
-        let wantsMuted = muted || SAClaudeSheetColours.isMutedDefault(current)
-        let colour = wantsMuted ? colours.muted : colours.theme.text
-        SAClaudeSheetColours.noteApplied(colour, muted: wantsMuted)
+        let marked = SAClaudeStyledMark.tone(of: label)
+        guard marked != nil || !Self.hasLinks(label),
+              let tone = SAClaudeRecolouring.labelTone(marked: marked, current: label.textColor, isSmall: muted) else { return }
+        SAClaudeStyledMark.setTone(tone, on: label)
+        let colour = tone == .muted ? colours.muted : colours.theme.text
         if label.textColor != colour { label.textColor = colour }
     }
 
@@ -514,15 +543,11 @@ final class SAClaudeWindowSkin: NSObject {
         // The XIBs' older tables are source lists by their (deprecated) highlight style, raw value 1.
         let isSourceList = table.style == .sourceList || table.selectionHighlightStyle.rawValue == 1
         if !isSourceList {
-            if SAClaudeSheetColours.isDefaultBackground(table.backgroundColor) {
-                SAClaudeSheetColours.noteAppliedBackground(colours.theme.background)
-                table.backgroundColor = colours.theme.background
-            }
-            if let scrollView = table.enclosingScrollView, SAClaudeSheetColours.isDefaultBackground(scrollView.backgroundColor) {
-                scrollView.backgroundColor = colours.theme.background
-            }
+            SAClaudeStyledMark.colourBackground(of: table, colours.theme.background)
+            if let scrollView = table.enclosingScrollView { SAClaudeStyledMark.colourBackground(of: scrollView, colours.theme.background) }
             if table.usesAlternatingRowBackgroundColors { table.usesAlternatingRowBackgroundColors = false }
         }
+        Self.installCheckboxCells(in: table)
         table.gridColor = colours.palette.hairline
         if let header = table.headerView, type(of: header) == NSTableHeaderView.self {
             let claudeHeader = SAClaudeTableHeaderView(frame: header.frame)
@@ -534,26 +559,37 @@ final class SAClaudeWindowSkin: NSObject {
         table.headerView?.needsDisplay = true
     }
 
+    /// A cell-based column of checkboxes (the Export sheet's table list) draws Claude checkboxes: its data cell, an
+    /// exact NSButtonCell of the switch type, becomes an `SAClaudeCheckboxCell` in place, so its state, target,
+    /// action and the table's own `objectValue` / click handling stay AppKit's.
+    private static func installCheckboxCells(in table: NSTableView) {
+        for column in table.tableColumns {
+            guard let cell = column.dataCell as? NSButtonCell, type(of: cell) == NSButtonCell.self,
+                  buttonType(of: cell) == .switch, SAClaudeClassSwap.mayChangeClass(of: cell) else { continue }
+            object_setClass(cell, SAClaudeCheckboxCell.self)
+        }
+    }
+
     // MARK: Text views
 
     /// Text views that colour themselves from the editor settings.
     private static let selfThemedTextViewClasses: [AnyClass] = ["SPTextView", "SPBundleCommandTextView"].compactMap(NSClassFromString)
 
-    /// Every text view gets the theme background and caret. The text colour (where nobody chose one) goes to plain or
-    /// editable text views; rich read-only text keeps its own colours. The app's syntax-coloured editors already
-    /// carry the theme's colours, so their text is left to them; the editor font only goes to plain NSTextViews.
+    /// Every text view gets the theme caret. Plain or editable ones also take the theme background and (where
+    /// nobody chose one) text colour; rich read-only text keeps its own colours on its own background. The app's
+    /// syntax-coloured editors already carry the theme's colours, so their text is left to them; the editor font
+    /// only goes to plain NSTextViews.
     private func styleTextView(_ textView: NSTextView, _ colours: SAClaudeSheetColours) {
-        let background = colours.theme.background
-        SAClaudeSheetColours.noteAppliedBackground(background)
-        if textView.backgroundColor != background { textView.backgroundColor = background }
-        if let scrollView = textView.enclosingScrollView, SAClaudeSheetColours.isDefaultBackground(scrollView.backgroundColor) {
-            scrollView.backgroundColor = background
-        }
         textView.insertionPointColor = colours.theme.caret
+        guard !textView.isRichText || textView.isEditable else { return }
+        let background = colours.theme.background
+        if textView.backgroundColor != background { textView.backgroundColor = background }
+        if let scrollView = textView.enclosingScrollView { SAClaudeStyledMark.colourBackground(of: scrollView, background) }
         if Self.selfThemedTextViewClasses.contains(where: { textView.isKind(of: $0) }) { return }
-        if !textView.isRichText || textView.isEditable, SAClaudeSheetColours.isDefaultText(textView.textColor) {
-            SAClaudeSheetColours.noteApplied(colours.theme.text, muted: false)
-            textView.textColor = colours.theme.text
+        let marked = SAClaudeStyledMark.tone(of: textView) != nil
+        if SAClaudeRecolouring.ownsText(marked: marked, current: textView.textColor) {
+            SAClaudeStyledMark.setTone(.text, on: textView)
+            if textView.textColor != colours.theme.text { textView.textColor = colours.theme.text }
         }
         if !textView.isRichText, type(of: textView) == NSTextView.self {
             let font = SAClaudeCompletionStyler.editorFont()
@@ -578,10 +614,16 @@ struct SAClaudeSheetColours {
     let muted: NSColor
     let isDark: Bool
 
-    static func current() -> SAClaudeSheetColours {
+    /// The theme's colours; with `panelAppearance` (an accessory in a system panel), the system's colours of that
+    /// appearance instead whenever the theme's lightness differs from the panel's.
+    static func current(matching panelAppearance: NSAppearance? = nil) -> SAClaudeSheetColours {
         var result: SAClaudeSheetColours?
-        NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
-            let theme = SAClaudeThemeColours.from(defaults: .standard)
+        (panelAppearance ?? NSApp.effectiveAppearance).performAsCurrentDrawingAppearance {
+            var theme = SAClaudeThemeColours.from(defaults: .standard)
+            if let panelAppearance {
+                let panelIsDark = panelAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+                if SAClaudeGridChrome.isDark(theme.background) != panelIsDark { theme = systemTheme() }
+            }
             let palette = SAClaudeEditorChrome.palette(text: theme.text, background: theme.background)
             let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
             result = SAClaudeSheetColours(theme: theme, palette: palette, gridPalette: SAClaudeGridChrome.palette(from: .standard),
@@ -592,47 +634,46 @@ struct SAClaudeSheetColours {
         return result!
     }
 
-    // Colours applied before count as "nobody chose one", so a theme change recolours them. Each list keeps the
-    // most recent few, without duplicates: every skin restyles on each theme change, so older colours are gone.
-    private static let appliedLimit = 8
-    private static var appliedText: [NSColor] = []
-    private static var appliedMuted: [NSColor] = []
-    private static var appliedBackgrounds: [NSColor] = []
-
-    private static func remember(_ colour: NSColor, in list: inout [NSColor]) {
-        list.removeAll { $0 == colour }
-        list.append(colour)
-        if list.count > appliedLimit { list.removeFirst(list.count - appliedLimit) }
+    /// The system's colours, resolved for the current drawing appearance, in the shape of theme colours.
+    private static func systemTheme() -> SAClaudeThemeColours {
+        func resolved(_ colour: NSColor) -> NSColor { colour.usingColorSpace(.sRGB) ?? colour }
+        let text = resolved(.labelColor)
+        return SAClaudeThemeColours(background: resolved(.windowBackgroundColor), text: text, keyword: text, variable: text,
+                                    caret: text, quote: text, backtick: text, selection: resolved(.selectedTextBackgroundColor))
     }
 
-    static func noteApplied(_ colour: NSColor, muted: Bool) {
-        if muted {
-            remember(colour, in: &appliedMuted)
-        } else {
-            remember(colour, in: &appliedText)
+}
+
+// MARK: - Styled marks
+
+/// Marks a view the styler coloured, with the tone it gave it, so a later restyle recolours it whatever colour it
+/// shows by then (a view off-screen during a theme change, such as another Preferences pane, keeps the old
+/// colour until it is styled again). The decisions are `SAClaudeRecolouring`'s.
+enum SAClaudeStyledMark {
+    private static var toneKey: UInt8 = 0
+    private static var backgroundKey: UInt8 = 0
+
+    static func tone(of view: NSView) -> SAClaudeRecolouring.Tone? {
+        (objc_getAssociatedObject(view, &toneKey) as? String).flatMap(SAClaudeRecolouring.Tone.init(rawValue:))
+    }
+
+    static func setTone(_ tone: SAClaudeRecolouring.Tone, on view: NSView) {
+        if self.tone(of: view) != tone { objc_setAssociatedObject(view, &toneKey, tone.rawValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
+    /// Gives a table, scroll view's or similar view's background `colour` if it is the styler's to colour.
+    static func colourBackground(of view: NSView, _ colour: NSColor) {
+        let marked = objc_getAssociatedObject(view, &backgroundKey) != nil
+        let current: NSColor
+        switch view {
+        case let table as NSTableView: current = table.backgroundColor
+        case let scrollView as NSScrollView: current = scrollView.backgroundColor
+        default: return
         }
-    }
-
-    static func noteAppliedBackground(_ colour: NSColor) {
-        remember(colour, in: &appliedBackgrounds)
-    }
-
-    /// The system text colours a control has when nobody chose one, or a colour this styler applied.
-    static func isDefaultText(_ colour: NSColor?) -> Bool {
-        guard let colour else { return true }
-        return colour == .controlTextColor || colour == .labelColor || colour == .textColor
-            || isMutedDefault(colour) || appliedText.contains(colour)
-    }
-
-    /// The system's secondary text colours, or a muted colour this styler applied: kept muted.
-    static func isMutedDefault(_ colour: NSColor?) -> Bool {
-        guard let colour else { return false }
-        return colour == .secondaryLabelColor || colour == .tertiaryLabelColor || colour == .disabledControlTextColor
-            || appliedMuted.contains(colour)
-    }
-
-    static func isDefaultBackground(_ colour: NSColor) -> Bool {
-        colour == .controlBackgroundColor || colour == .textBackgroundColor || colour == .windowBackgroundColor
-            || colour == .underPageBackgroundColor || appliedBackgrounds.contains(colour)
+        guard SAClaudeRecolouring.ownsBackground(marked: marked, current: current) else { return }
+        if !marked { objc_setAssociatedObject(view, &backgroundKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+        guard current != colour else { return }
+        if let table = view as? NSTableView { table.backgroundColor = colour }
+        if let scrollView = view as? NSScrollView { scrollView.backgroundColor = colour }
     }
 }

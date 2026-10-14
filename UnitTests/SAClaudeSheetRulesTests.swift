@@ -34,6 +34,35 @@ final class SAClaudeSheetRulesTests: XCTestCase {
         XCTAssertEqual(style(button("OK") { $0.isAlertButton = true; $0.alertButtonIndex = 0 }), .primaryButton)
     }
 
+    func testAlertFirstButtonWithReturnIsPrimary() {
+        XCTAssertEqual(style(button("OK") { $0.isAlertButton = true; $0.alertButtonIndex = 0; $0.keyEquivalent = "\r"; $0.alertHasReturnButton = true }),
+                       .primaryButton)
+    }
+
+    func testAlertReturnButtonIsPrimaryWhenItIsNotTheFirst() {
+        let replace = button("Replace") { $0.isAlertButton = true; $0.alertButtonIndex = 0; $0.keyEquivalent = "r"; $0.alertHasReturnButton = true }
+        let cancel = button("Cancel") { $0.isAlertButton = true; $0.alertButtonIndex = 1; $0.keyEquivalent = "\r"; $0.alertHasReturnButton = true }
+        XCTAssertEqual(style(replace), .secondaryButton)
+        XCTAssertEqual(style(cancel), .primaryButton)
+    }
+
+    func testAlertWithoutReturnButtonMakesItsFirstButtonPrimary() {
+        XCTAssertEqual(style(button("Delete") { $0.isAlertButton = true; $0.alertButtonIndex = 0; $0.keyEquivalent = "" }), .primaryButton)
+        XCTAssertEqual(style(button("Keep") { $0.isAlertButton = true; $0.alertButtonIndex = 1; $0.keyEquivalent = "\u{1b}" }), .secondaryButton)
+    }
+
+    func testImageOnlyPopUpIsUnchanged() {
+        var d = SAClaudeControlDescriptor(kind: .popUp)
+        d.isImageOnly = true
+        XCTAssertEqual(style(d), .unchanged)
+    }
+
+    func testTitledPopUpIsPill() {
+        var d = SAClaudeControlDescriptor(kind: .popUp)
+        d.title = "SQL"
+        XCTAssertEqual(style(d), .pill)
+    }
+
     func testAlertSecondButtonIsSecondary() {
         XCTAssertEqual(style(button("Cancel") { $0.isAlertButton = true; $0.alertButtonIndex = 1 }), .secondaryButton)
     }
@@ -173,20 +202,25 @@ final class SAClaudeSheetRulesTests: XCTestCase {
 
 final class SAClaudeSheetButtonGeometryTests: XCTestCase {
 
-    private func rect(_ frame: NSRect, _ size: NSControl.ControlSize = .regular) -> NSRect {
-        SAClaudeSheetButtonGeometry.buttonRect(in: frame, controlSize: size)
+    private func rect(_ frame: NSRect, _ size: NSControl.ControlSize = .regular, classic: Bool = true) -> NSRect {
+        SAClaudeSheetButtonGeometry.buttonRect(in: frame, controlSize: size, classicMargins: classic)
     }
 
     func testClassicRegularFrameDraws28ptCentredInsideItsSideMargins() {
         XCTAssertEqual(rect(NSRect(x: 14, y: 13, width: 82, height: 32)), NSRect(x: 20, y: 15, width: 70, height: 28))
     }
 
-    func testAlertSized28ptFrameIsDrawnWhole() {
-        XCTAssertEqual(rect(NSRect(x: 0, y: 0, width: 110, height: 28)), NSRect(x: 0, y: 0, width: 110, height: 28))
+    /// The Export sheet's "Change…" (a 29pt regular frame two points right of the path field) keeps its margins.
+    func testShorterXIBFrameStillKeepsItsSideMargins() {
+        XCTAssertEqual(rect(NSRect(x: 579, y: 364, width: 96, height: 29)), NSRect(x: 585, y: 364, width: 84, height: 28))
     }
 
-    func testShortModernFrameIsDrawnWhole() {
-        XCTAssertEqual(rect(NSRect(x: 5, y: 5, width: 80, height: 24)), NSRect(x: 5, y: 5, width: 80, height: 24))
+    func testAlertButtonIsDrawnWhole() {
+        XCTAssertEqual(rect(NSRect(x: 0, y: 0, width: 110, height: 28), classic: false), NSRect(x: 0, y: 0, width: 110, height: 28))
+    }
+
+    func testShortFrameIsDrawnAtItsOwnHeight() {
+        XCTAssertEqual(rect(NSRect(x: 5, y: 5, width: 80, height: 24)), NSRect(x: 11, y: 5, width: 68, height: 24))
     }
 
     func testTallFrameIsCappedAndCentred() {
@@ -298,5 +332,42 @@ final class SAClaudeClassSwapTests: XCTestCase {
         XCTAssertFalse(SAClaudeClassSwap.mayChangeClass(of: button))
         stack.removeArrangedSubview(button)
         button.removeFromSuperview()
+    }
+}
+
+final class SAClaudeRecolouringTests: XCTestCase {
+
+    private typealias R = SAClaudeRecolouring
+
+    func testUnmarkedSystemLabelTakesTheTextTone() {
+        XCTAssertEqual(R.labelTone(marked: nil, current: .labelColor, isSmall: false), .text)
+        XCTAssertEqual(R.labelTone(marked: nil, current: nil, isSmall: false), .text)
+    }
+
+    func testUnmarkedSmallOrSecondaryLabelIsMuted() {
+        XCTAssertEqual(R.labelTone(marked: nil, current: .controlTextColor, isSmall: true), .muted)
+        XCTAssertEqual(R.labelTone(marked: nil, current: .secondaryLabelColor, isSmall: false), .muted)
+    }
+
+    func testUnmarkedLabelWithItsOwnColourIsLeftAlone() {
+        XCTAssertNil(R.labelTone(marked: nil, current: .systemRed, isSmall: false))
+    }
+
+    /// A label styled under an earlier theme (marked) is recoloured whatever colour it shows now: it may have been
+    /// off-screen (Preferences' other panes) while the theme changed several times.
+    func testMarkedLabelKeepsItsToneWhateverColourItShows() {
+        let oldTheme = NSColor(srgbRed: 0.1, green: 0.2, blue: 0.3, alpha: 1)
+        XCTAssertEqual(R.labelTone(marked: .text, current: oldTheme, isSmall: true), .text)
+        XCTAssertEqual(R.labelTone(marked: .muted, current: oldTheme, isSmall: false), .muted)
+    }
+
+    func testOwnershipOfTextAndBackgrounds() {
+        let custom = NSColor(srgbRed: 0.5, green: 0.1, blue: 0.1, alpha: 1)
+        XCTAssertTrue(R.ownsText(marked: false, current: .textColor))
+        XCTAssertFalse(R.ownsText(marked: false, current: custom))
+        XCTAssertTrue(R.ownsText(marked: true, current: custom))
+        XCTAssertTrue(R.ownsBackground(marked: false, current: .textBackgroundColor))
+        XCTAssertFalse(R.ownsBackground(marked: false, current: custom))
+        XCTAssertTrue(R.ownsBackground(marked: true, current: custom))
     }
 }

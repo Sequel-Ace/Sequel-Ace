@@ -5,7 +5,7 @@
 //  Settings → Query Editor's colour choice in the Claude look: Follow macOS
 //  (Claude Light/Dark) or Customise (a theme to start from, a ⋯ menu with the
 //  pane's theme actions, and all 11 colours). It takes the place of the XIB
-//  colour table, gear and theme label. App target only.
+//  colour table, gear and theme label. Shared with the Unit Tests target.
 //
 
 import AppKit
@@ -90,6 +90,11 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
     /// The accent row's colour well, so it can stop editing when another colour is picked or the accent reset.
     weak var accentWell: NSColorWell?
 
+    /// Stops the accent well editing, only if it is (deactivating an inactive well still talks to the colour panel).
+    func deactivateAccentWell() {
+        if let accentWell, accentWell.isActive { accentWell.deactivate() }
+    }
+
     init(defaults: UserDefaults = .standard, themesDirectory: String, confirmDiscardUnsaved: @escaping () -> Bool,
          saveAs: @escaping () -> Void, importTheme: @escaping () -> Void, exportTheme: @escaping () -> Void, editThemeList: @escaping () -> Void) {
         self.defaults = defaults
@@ -132,7 +137,7 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
 
     /// Back to clay.
     func resetAccent() {
-        accentWell?.deactivate()
+        deactivateAccentWell()
         SAClaudeAccent.store(nil, in: defaults)
         refresh()
     }
@@ -145,14 +150,14 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
 
     /// Opens the colour panel for an editor colour; the accent well gives the panel up first.
     func editColour(_ key: String) {
-        accentWell?.deactivate()
+        deactivateAccentWell()
         panelTarget.edit(key)
     }
 
     var modeSetting: Bool {
         get { followsMacOS }
         set {
-            accentWell?.deactivate()
+            deactivateAccentWell()
             panelTarget.close()
             SAEditorColourMode.setFollowsMacOS(newValue)
             refresh()
@@ -403,7 +408,7 @@ struct SAClaudeEditorColoursSection: View {
         // The theme list can change (Edit theme list, Import) without a defaults write.
         .onAppear { settings.refresh() }
         // The pane going away ends the accent well's use of the shared colour panel.
-        .onDisappear { settings.accentWell?.deactivate() }
+        .onDisappear { settings.deactivateAccentWell() }
     }
 }
 
