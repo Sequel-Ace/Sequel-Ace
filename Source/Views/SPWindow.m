@@ -179,7 +179,17 @@
 	[super toggleFullScreen:sender];
 }
 
+- (IBAction)toggleTabBar:(id)sender {
+	/* The Claude tab bar replaces the native strip. */
+}
+
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+	// The Claude tab bar replaces macOS's tab strip and its overview: AppKit adds these to the View menu itself.
+	if ([menuItem action] == @selector(toggleTabBar:) || [menuItem action] == @selector(toggleTabOverview:)) {
+		[menuItem setHidden:YES];
+		return NO;
+	}
+
 	// If the item is the Show/Hide Toolbar menu item, override the text to allow correct translation
 	if ([menuItem action] == @selector(toggleToolbarShown:)) {
 		BOOL theResponse = [super validateMenuItem:menuItem];

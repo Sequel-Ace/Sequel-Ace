@@ -5163,3 +5163,9 @@
 
 /* sidebar: placeholder of the field that filters the tables list */
 "ClaudeSidebarFilterPlaceholder" = "Filter tables";
+
+/* window tab bar: accessibility name of a tab's close button, and the context menu item that closes the tab */
+"ClaudeTabBarCloseTab" = "Close tab";
+
+/* window tab bar: tooltip and accessibility name of the button that opens a new tab */
+"ClaudeTabBarNewTab" = "New tab";

@@ -50,9 +50,22 @@ import SnapKit
         setupFramePersistence()
         setupAppearance()
         observeTitlebarTintPreference()
-        observeTabSelection()
         window?.toolbarStyle = .unified
     }
+
+    override func windowDidLoad() {
+        super.windowDidLoad()
+        if let window = window {
+            tabBar = SAClaudeWindowTabBarController(window: window)
+        }
+    }
+
+    /// The Claude tab bar under the toolbar (in place of macOS's tab strip).
+    private(set) var tabBar: SAClaudeWindowTabBarController?
+
+    /// What this tab's chip shows: the tab title and whether the connection uses SSL.
+    private(set) var tabBarTitle = ""
+    private(set) var tabBarIsSSL = false
 
     /// The favourite colour of the connection in this tab, or `nil` when it has
     /// none or the tab is not connected. Kept so the title bar can be repainted
@@ -62,15 +75,6 @@ import SnapKit
     /// Holds the preference observer for the window's lifetime; the token
     /// unregisters it on deinit.
     private var titlebarTintSubscription: NotificationToken?
-
-    /// Key-window observers that keep the tab accessory's selected style current;
-    /// the tokens unregister them on deinit.
-    private var tabSelectionSubscriptions: [NotificationToken] = []
-
-    /// Observes `selectedWindow` of the tab group this window is in. The group
-    /// object changes when tabs are merged or moved out, so it is re-made then.
-    private var tabGroupObservation: NSKeyValueObservation?
-    private weak var observedTabGroup: NSWindowTabGroup?
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
@@ -135,12 +139,6 @@ private extension SPWindowController {
         if #available(macOS 10.13, *) {
             window?.tab.accessoryView = tabAccessoryView
         }
-        // AppKit re-hosts every tab's accessory in the selected window's tab bar
-        // whenever the group's selection or membership changes (merge, move a tab
-        // out, drag between windows). Deferred so the group's state has settled.
-        tabAccessoryView.onMoveToWindow = { [weak self] in
-            DispatchQueue.main.async { self?.updateTabSelection() }
-        }
     }
 
     /// Paint the whole window top - title bar, unified toolbar and the native
@@ -188,55 +186,6 @@ private extension SPWindowController {
             self.applyTitlebarTint(self.favoriteColor)
         }
     }
-
-    /// Restyle the tab content when this window gains or loses key status, when its
-    /// accessory is re-hosted (see `setupAppearance`) and when its tab group's
-    /// `selectedWindow` changes. Each refresh covers the whole group, because a
-    /// merge or a tab moving out changes the selection of tabs that never become
-    /// or resign key themselves.
-    func observeTabSelection() {
-        guard let window = window else {
-            return
-        }
-        tabSelectionSubscriptions = [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification].map { name in
-            NotificationCenter.default.observe(name: name, object: window, queue: .main) { [weak self] _ in
-                self?.updateTabSelection()
-            }
-        }
-        updateTabSelection()
-    }
-
-    /// Restyle every tab in this window's tab group.
-    func updateTabSelection() {
-        guard let window = window else {
-            return
-        }
-        for tab in window.tabGroup?.windows ?? [window] {
-            (tab.windowController as? SPWindowController)?.applyTabSelection()
-        }
-    }
-
-    /// The group's selected tab stays selected while another app or window is key.
-    func applyTabSelection() {
-        guard let window = window else {
-            return
-        }
-        observeTabGroup(window.tabGroup)
-        let selected = window.tabGroup.map { $0.selectedWindow === window } ?? window.isKeyWindow
-        tabAccessoryView.setSelected(selected)
-    }
-
-    /// Follows `group`'s selection (KVO compliant per NSWindowTabGroup.h); a no-op
-    /// while it is already the observed group.
-    func observeTabGroup(_ group: NSWindowTabGroup?) {
-        guard group !== observedTabGroup || (group != nil && tabGroupObservation == nil) else {
-            return
-        }
-        observedTabGroup = group
-        tabGroupObservation = group?.observe(\.selectedWindow) { [weak self] _, _ in
-            DispatchQueue.main.async { self?.updateTabSelection() }
-        }
-    }
 }
 
 // MARK: - Public API
@@ -252,6 +201,8 @@ private extension SPWindowController {
 
         tabAccessoryView.setTitle(title: tabTitle)
         tabAccessoryView.setToolTipPath(title)
+        tabBarTitle = tabTitle
+        tabBarItemDidChange()
     }
 
     func updateWindow(title: String, tabTitle: String, subtitle: String) {
@@ -267,8 +218,27 @@ private extension SPWindowController {
     /// favourite colour, or not connected" and clears the dot and the tint.
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
         favoriteColor = color
+        tabBarIsSSL = isSSL
         tabAccessoryView.update(color: color, isSSL: isSSL)
         applyTitlebarTint(color)
+        tabBarItemDidChange()
+    }
+
+    /// The favourite colour of this tab's chip: the favourite's `-tab` colour, `nil` when there is none.
+    var tabBarColour: NSColor? {
+        SPWindowTabAccessory.tabColour(for: favoriteColor)
+    }
+
+    /// Called by the tab bar for every window of the group it rebuilds. The native tab content keeps its
+    /// selected style, though macOS's strip is hidden; it shows again only if a future macOS stops hosting the strip
+    /// the way the bar hides it.
+    func tabBarSelectionDidChange(isSelected: Bool) {
+        tabAccessoryView.setSelected(isSelected)
+    }
+
+    /// The title, colour or SSL state of this tab changed: rebuild the chips of its group.
+    private func tabBarItemDidChange() {
+        tabBar?.refresh()
     }
 }
 
