@@ -296,22 +296,28 @@ enum FilterCellDrawing {
     /// The outline, the pressed (or `hovered`) fill and the theme-coloured title, in `rect`.
     static func drawSecondary(_ cell: NSButtonCell, in rect: NSRect, font: NSFont, hovered: Bool) {
         let palette = SAClaudeFilterBarStyler.currentPalette
-        let themeText = SAClaudeFilterBarStyler.currentThemeText
+        drawSecondary(cell, in: rect, font: font, hovered: hovered, text: SAClaudeFilterBarStyler.currentThemeText,
+                      background: palette.background, hover: palette.hover)
+    }
 
+    /// The same look in explicit colours: the title in `text`, the outline and pressed fill derived from `text`
+    /// over `background`, the hover fill `hover` (for chrome that follows the app's tokens, not the editor theme).
+    static func drawSecondary(_ cell: NSButtonCell, in rect: NSRect, font: NSFont, hovered: Bool,
+                              text themeText: NSColor, background: NSColor, hover: NSColor) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
         if !cell.isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
 
         let path = FilterCellDrawing.roundedPath(rect.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
         if cell.isHighlighted {
-            SAClaudeEditorChrome.derivedColour(text: themeText, background: palette.hover, ratio: 0.08).setFill()
+            SAClaudeEditorChrome.derivedColour(text: themeText, background: hover, ratio: 0.08).setFill()
             path.fill()
         } else if hovered && cell.isEnabled {
-            palette.hover.setFill()
+            hover.setFill()
             path.fill()
         }
         path.lineWidth = 1
-        SAClaudeFilterChrome.dropStroke(text: themeText, background: palette.background).setStroke()
+        SAClaudeFilterChrome.dropStroke(text: themeText, background: background).setStroke()
         path.stroke()
 
         FilterCellDrawing.drawTitle(cell.title, in: rect.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: themeText,
