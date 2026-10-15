@@ -5188,6 +5188,18 @@
 /* Claude sheet title: the Rename Database sheet */
 "ClaudeFormRenameDatabase" = "Rename database";
 
+/* Claude sheet title: the New Database sheet */
+"ClaudeFormNewDatabase" = "New database";
+
+/* Claude sheet title: the Alter Database sheet (encoding and collation) */
+"ClaudeFormAlterDatabase" = "Alter database";
+
+/* Claude sheet title: the Duplicate Database sheet */
+"ClaudeFormDuplicateDatabase" = "Duplicate database";
+
+/* Claude sheet row label: the password field of the encrypted connection file sheet */
+"ClaudeFormLabelPassword" = "Password";
+
 /* Claude sheet row label: the field with the new name of a database or table being renamed or duplicated */
 "ClaudeFormLabelNewName" = "New name";
 
