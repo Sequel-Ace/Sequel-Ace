@@ -176,6 +176,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[SAClaudeSidebarChrome setBarHeightInPane:sidebarPane belowView:tableListSplitView];
 	}
 
+	// Claude-style filter field: a 40pt band above the list with a rounded fill behind the field.
+	[SAClaudeSidebarFilterStyler attachToField:listFilterField listScrollView:[tablesListView enclosingScrollView]];
+
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
 		[[column dataCell] setFont:[SAClaudeStyle rowFont]];
 	}

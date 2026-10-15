@@ -524,14 +524,29 @@ final class SAClaudeConsoleToolbarView: NSView {
 /// The rounded field behind the borderless search field; a click on its padding focuses the field.
 final class SAClaudeConsoleFieldView: NSView {
     var fillColour: NSColor = .clear { didSet { needsDisplay = true } }
+    /// A 1pt outline inside the edge (the focus outline), or none.
+    var borderColour: NSColor? { didSet { needsDisplay = true } }
+    var cornerRadius: CGFloat = SAClaudeStyle.barButtonRadius { didSet { needsDisplay = true } }
     var onClick: (() -> Void)?
 
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         NSBezierPath.clip(bounds.intersection(dirtyRect))
         fillColour.setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: SAClaudeStyle.barButtonRadius, yRadius: SAClaudeStyle.barButtonRadius).fill()
+        NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius).fill()
+        if let borderColour {
+            borderColour.setStroke()
+            let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: cornerRadius - 0.5, yRadius: cornerRadius - 0.5)
+            outline.lineWidth = 1
+            outline.stroke()
+        }
         NSGraphicsContext.restoreGraphicsState()
+    }
+
+    /// A dynamic fill colour resolves again under the new appearance.
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
     }
 
     override func mouseDown(with event: NSEvent) {

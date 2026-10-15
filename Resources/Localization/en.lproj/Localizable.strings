@@ -5160,3 +5160,6 @@
 
 /* import field mapping sheet: title of the group with the import method's options, e.g. "INSERT options" */
 "ClaudeImportMethodOptions" = "%@ options";
+
+/* sidebar: placeholder of the field that filters the tables list */
+"ClaudeSidebarFilterPlaceholder" = "Filter tables";
