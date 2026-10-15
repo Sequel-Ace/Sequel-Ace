@@ -33,6 +33,11 @@ struct SAClaudeWindowTabItem {
     private let barView: SAClaudeWindowTabBarView
     private var model: SAClaudeWindowTabBarModel?
     private var windowObservers: [NSObjectProtocol] = []
+    /// Whether the bar shows an older state of the group. Only the shown (selected) tab's bar is kept current;
+    /// the others are brought up to date when their tab is selected, before it is displayed.
+    private var isStale = true
+    /// The strip offset the shown bar last scrolled to, for when this bar is next shown.
+    private var sharedScrollOffset: CGFloat?
 
     /// AppKit also shows its strip on a lone window, with no group change, when "Show Tab Bar" was once chosen
     /// for this kind of window (it keeps that choice in the app's defaults); these hide it there too.
@@ -55,8 +60,9 @@ struct SAClaudeWindowTabItem {
         window.addTitlebarAccessoryViewController(accessory)
         Self.hideNativeTabBar(in: window)
         windowObservers = Self.hidingNotifications.map { name in
-            NotificationCenter.default.addObserver(forName: name, object: window, queue: nil) { [weak window] _ in
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: nil) { [weak self, weak window] _ in
                 if let window { Self.hideNativeTabBar(in: window) }
+                self?.updateIfStale()
             }
         }
         barView.onScroll = { [weak self] offset in self?.shareScrollOffset(offset) }
@@ -144,13 +150,25 @@ struct SAClaudeWindowTabItem {
 
     private var isVisible: Bool { !accessory.isHidden }
 
-    /// Every tab has a bar of its own, but the group shows one strip: the shown bar's scroll offset goes to the
-    /// others, so switching tabs doesn't move the chips under the pointer.
+    /// Every tab has a bar of its own, but the group shows one strip: the shown bar's scroll offset is kept for
+    /// the others, which take it when they are next shown, so switching tabs doesn't move the chips under the
+    /// pointer.
     private func shareScrollOffset(_ offset: CGFloat) {
         guard let window, window.tabGroup?.selectedWindow === window else { return }
         for other in groupWindows where other !== window {
-            Self.controller(for: other)?.barView.adoptScrollOffset(offset)
+            Self.controller(for: other)?.sharedScrollOffset = offset
         }
+    }
+
+    /// The window shown for this window's group: its selected tab, or the window itself when it has no group.
+    private var shownWindow: NSWindow? {
+        window?.tabGroup?.selectedWindow ?? window
+    }
+
+    /// Brings the bar up to date synchronously if its tab is now the shown one and it missed group changes.
+    private func updateIfStale() {
+        guard isStale, let window, shownWindow === window else { return }
+        rebuild()
     }
 
     private func setVisible(_ visible: Bool) {
@@ -165,6 +183,8 @@ struct SAClaudeWindowTabItem {
     private func groupDidChange() {
         let windows = groupWindows
         windows.forEach(Self.hideNativeTabBar(in:))
+        // A newly selected tab is displayed at the end of this turn: its bar must be current by then.
+        if !Self.isReordering, let shown = shownWindow { Self.controller(for: shown)?.updateIfStale() }
         let shouldShow = windows.count > 1
         if !Self.isReordering, windows.contains(where: { Self.controller(for: $0).map { $0.isVisible != shouldShow } ?? false }) {
             rebuild()
@@ -173,12 +193,13 @@ struct SAClaudeWindowTabItem {
         }
     }
 
-    /// Builds the items for the group and shows them in every group window's bar. Returns the windows covered.
+    /// Builds the items for the group and shows them in the shown tab's bar; the other bars only follow whether
+    /// the bar shows at all, and are marked stale. Returns the windows covered.
     @discardableResult
     private func rebuild() -> [NSWindow] {
         guard let window else { return [] }
         let windows = groupWindows
-        let selected = window.tabGroup?.selectedWindow ?? window
+        let selected = shownWindow ?? window
         let items = windows.map { tab -> SAClaudeWindowTabItem in
             let controller = tab.windowController as? SPWindowController
             return SAClaudeWindowTabItem(window: tab,
@@ -190,14 +211,25 @@ struct SAClaudeWindowTabItem {
         }
         for (tab, item) in zip(windows, items) {
             let controller = tab.windowController as? SPWindowController
-            controller?.tabBar?.show(items)
+            controller?.tabBar?.show(items, isShown: tab === selected)
             controller?.tabBarSelectionDidChange(isSelected: item.isSelected)
         }
         return windows
     }
 
-    private func show(_ items: [SAClaudeWindowTabItem]) {
+    /// Hidden tabs' bars still show or hide with the group (so the title bar has the right height when the tab
+    /// is selected) but skip the chips.
+    private func show(_ items: [SAClaudeWindowTabItem], isShown: Bool) {
         setVisible(items.count > 1)
+        guard isShown else {
+            isStale = true
+            return
+        }
+        isStale = false
+        if let offset = sharedScrollOffset {
+            sharedScrollOffset = nil
+            barView.adoptScrollOffset(offset)
+        }
         barView.items = items
     }
 
