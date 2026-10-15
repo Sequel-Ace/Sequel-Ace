@@ -2,8 +2,8 @@
 //  SAClaudeWindowTabBarViews.swift
 //  Sequel Ace
 //
-//  The views of the Claude window tab bar: the bar itself (a scrolling strip of chips and "+") and the chips.
-//  The controller and model that feed them are in SAClaudeWindowTabBar.swift.
+//  The views of the Claude window tab bar: the bar itself (a scrolling strip of chips and "+"); the chips are in
+//  SAClaudeWindowTabChipView.swift. The controller and model that feed them are in SAClaudeWindowTabBar.swift.
 //
 
 import AppKit
@@ -121,7 +121,8 @@ final class SAClaudeWindowTabBarView: NSView {
 
     override func layout() {
         super.layout()
-        let frames = SAClaudeWindowTabBarLayout.frames(count: chips.count, barWidth: bounds.width)
+        let frames = SAClaudeWindowTabBarLayout.frames(preferredWidths: chips.map { SAClaudeWindowTabChipView.preferredWidth(for: $0.item) },
+                                                       barWidth: bounds.width)
         scrollView.frame = frames.scrollArea
         scrollView.tile()
         stripView.frame = NSRect(x: 0, y: 0, width: frames.contentWidth, height: frames.scrollArea.height)
@@ -397,269 +398,11 @@ private final class SAClaudeWindowTabInsertionMarker: NSView {
     }
 }
 
-/// A borderless glyph button for the bar.
-private final class SAClaudeWindowTabBarButton: NSButton {
+/// A borderless glyph button for the bar ("+") and its chips (close).
+final class SAClaudeWindowTabBarButton: NSButton {
     /// Whether the click that brings an inactive window forward also presses the button.
     var answersFirstClick = true
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { answersFirstClick }
     override var mouseDownCanMoveWindow: Bool { false }
-}
-
-// MARK: - Chip
-
-/// One tab: favourite dot, title and SSL padlock centred as a group (`SAClaudeTabContentLayout`, as the native
-/// tab content did) in the space left of the close button, which shows at the right while hovered or selected. Selected: card fill with a
-/// hairline, medium primary title. Others: no fill (hover fill under the pointer), regular secondary title.
-/// A press is tracked by the bar (click to select, drag to reorder); right-click shows the tab's menu.
-final class SAClaudeWindowTabChipView: NSView {
-    static let cornerRadius: CGFloat = 8
-    static let closeSize: CGFloat = 16
-    static let closeInset: CGFloat = 6
-    /// Kept clear at the right of the content whether or not the close button shows, so the title never moves.
-    static let closeReserve: CGFloat = closeInset + closeSize + 2
-    /// The content's padding at the left.
-    static let contentInset: CGFloat = 10
-
-    var item: SAClaudeWindowTabItem {
-        didSet { applyItem() }
-    }
-
-    /// The bar showing this chip, which tracks presses on it and is its accessibility parent.
-    weak var bar: SAClaudeWindowTabBarView?
-
-    var isHovered = false {
-        didSet {
-            guard isHovered != oldValue else { return }
-            updateCloseButton()
-            needsDisplay = true
-        }
-    }
-
-    private let titleField: NSTextField = {
-        let field = NSTextField(labelWithString: "")
-        field.lineBreakMode = .byTruncatingTail
-        field.maximumNumberOfLines = 1
-        field.cell?.truncatesLastVisibleLine = true
-        return field
-    }()
-
-    private let lockView: NSImageView = {
-        let image = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: SAClaudeTabContentLayout.lockSize, weight: .regular))
-            ?? NSImage(named: "fallback_lock.fill")
-        image?.isTemplate = true
-        let view = NSImageView()
-        view.image = image
-        view.imageScaling = .scaleProportionallyDown
-        view.contentTintColor = SAClaudeStyle.textMuted
-        view.toolTip = NSLocalizedString("Connection Secured via SSL", comment: "Connection Secured via SSL information text")
-        return view
-    }()
-
-    private let closeButton: SAClaudeWindowTabBarButton = {
-        let button = SAClaudeWindowTabBarButton()
-        button.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: nil)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 9, weight: .semibold))
-        button.imagePosition = .imageOnly
-        button.isBordered = false
-        button.contentTintColor = SAClaudeStyle.textSecondary
-        button.setAccessibilityLabel(NSLocalizedString("ClaudeTabBarCloseTab", comment: "window tab bar: accessibility name of a tab's close button, and the context menu item that closes the tab"))
-        SAClaudeHoverHighlighter.attach(to: button)
-        button.layer?.cornerRadius = 4
-        return button
-    }()
-
-    /// Where the favourite dot is drawn, `nil` when there is none.
-    private var dotFrame: NSRect?
-
-    init(item: SAClaudeWindowTabItem) {
-        self.item = item
-        super.init(frame: .zero)
-        // The chip itself is the accessibility element and carries the title.
-        titleField.setAccessibilityElement(false)
-        lockView.setAccessibilityElement(false)
-        addSubview(titleField)
-        addSubview(lockView)
-        addSubview(closeButton)
-        closeButton.target = self
-        closeButton.action = #selector(closeTab(_:))
-        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self, userInfo: nil))
-        applyItem()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func applyItem() {
-        titleField.stringValue = item.title
-        titleField.font = .systemFont(ofSize: 12, weight: item.isSelected ? .medium : .regular)
-        titleField.textColor = item.isSelected ? SAClaudeStyle.textPrimary : SAClaudeStyle.textSecondary
-        if toolTip != item.tooltip { toolTip = item.tooltip }
-        updateCloseButton()
-        needsLayout = true
-        needsDisplay = true
-    }
-
-    private func updateCloseButton() {
-        closeButton.isHidden = !(isHovered || item.isSelected)
-    }
-
-    override func layout() {
-        super.layout()
-        let inset = Self.contentInset
-        let content = NSSize(width: max(0, bounds.width - inset - Self.closeReserve), height: bounds.height)
-        let frames = SAClaudeTabContentLayout.frames(size: content,
-                                                     titleWidth: titleField.cell?.cellSize.width ?? 0,
-                                                     hasColour: item.colour != nil,
-                                                     isSSL: item.isSSL)
-        dotFrame = frames.dot?.offsetBy(dx: inset, dy: 0)
-        titleField.frame = frames.title.offsetBy(dx: inset, dy: 0)
-        lockView.isHidden = frames.lock == nil
-        if let lock = frames.lock { lockView.frame = lock.offsetBy(dx: inset, dy: 0) }
-        closeButton.frame = NSRect(x: bounds.width - Self.closeInset - Self.closeSize,
-                                   y: ((bounds.height - Self.closeSize) / 2).rounded(.down),
-                                   width: Self.closeSize, height: Self.closeSize)
-        needsDisplay = true
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        if item.isSelected {
-            let card = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: Self.cornerRadius - 0.5, yRadius: Self.cornerRadius - 0.5)
-            SAClaudeStyle.hoverFill.setFill()
-            card.fill()
-            SAClaudeStyle.divider.setStroke()
-            card.lineWidth = 1
-            card.stroke()
-        } else if isHovered {
-            SAClaudeStyle.hoverFill.setFill()
-            NSBezierPath(roundedRect: bounds, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius).fill()
-        }
-        if let colour = item.colour, let dotFrame {
-            colour.setFill()
-            NSBezierPath(ovalIn: dotFrame).fill()
-        }
-    }
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
-    }
-
-    // MARK: Mouse
-
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    override var mouseDownCanMoveWindow: Bool { false }
-
-    override func mouseEntered(with event: NSEvent) { isHovered = true }
-    override func mouseExited(with event: NSEvent) { isHovered = false }
-
-    override func mouseDown(with event: NSEvent) {
-        if let bar {
-            bar.trackPress(on: self, with: event)
-        } else {
-            select()
-        }
-    }
-
-    /// Makes this chip's tab the group's selected one.
-    func select() {
-        guard !item.isSelected, let window = item.window, let group = window.tabGroup else { return }
-        group.selectedWindow = window
-    }
-
-    /// Middle-click closes the tab, as in browsers.
-    override func otherMouseUp(with event: NSEvent) {
-        guard event.buttonNumber == 2 else {
-            super.otherMouseUp(with: event)
-            return
-        }
-        item.window?.performClose(nil)
-    }
-
-    override func otherMouseDown(with event: NSEvent) {
-        guard event.buttonNumber == 2 else {
-            super.otherMouseDown(with: event)
-            return
-        }
-    }
-
-    @objc private func closeTab(_ sender: Any?) {
-        item.window?.performClose(nil)
-    }
-
-    // MARK: Menu
-
-    override func menu(for event: NSEvent) -> NSMenu? { tabMenu() }
-
-    /// Close tab, Close other tabs, Move tab to new window, Merge all windows.
-    private func tabMenu() -> NSMenu? {
-        guard let window = item.window else { return nil }
-        let group = window.tabGroup?.windows ?? [window]
-        let hasOtherTabs = group.contains { $0 !== window }
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        func add(_ title: String, _ action: Selector, enabled: Bool = true) {
-            let menuItem = menu.addItem(withTitle: title, action: action, keyEquivalent: "")
-            menuItem.target = self
-            menuItem.isEnabled = enabled
-        }
-        add(NSLocalizedString("ClaudeTabBarCloseTab", comment: "window tab bar: accessibility name of a tab's close button, and the context menu item that closes the tab"),
-            #selector(closeTab(_:)))
-        add(NSLocalizedString("ClaudeTabBarCloseOthers", comment: "window tab bar: context menu item that closes every tab of the window except the clicked one"),
-            #selector(closeOtherTabs(_:)), enabled: hasOtherTabs)
-        menu.addItem(.separator())
-        add(NSLocalizedString("ClaudeTabBarMoveToNewWindow", comment: "window tab bar: context menu item that moves the clicked tab out into a window of its own"),
-            #selector(moveTabToNewWindow(_:)), enabled: hasOtherTabs)
-        add(NSLocalizedString("ClaudeTabBarMergeAll", comment: "window tab bar: context menu item that merges every window of the app into tabs of this window"),
-            #selector(mergeAllWindows(_:)), enabled: Self.hasOtherWindows(than: window, group: group))
-        return menu
-    }
-
-    /// Whether the app shows a window, outside `group`, that `window` could merge with.
-    private static func hasOtherWindows(than window: NSWindow, group: [NSWindow]) -> Bool {
-        NSApp.windows.contains { other in
-            other.tabbingIdentifier == window.tabbingIdentifier
-                && !group.contains { $0 === other }
-                && (other.isVisible || other.isMiniaturized)
-        }
-    }
-
-    /// Asks every other tab of the group to close, each the way ⌘W would.
-    @objc private func closeOtherTabs(_ sender: Any?) {
-        guard let window = item.window else { return }
-        for other in window.tabGroup?.windows ?? [] where other !== window {
-            other.performClose(nil)
-        }
-    }
-
-    @objc private func moveTabToNewWindow(_ sender: Any?) {
-        item.window?.moveTabToNewWindow(nil)
-    }
-
-    @objc private func mergeAllWindows(_ sender: Any?) {
-        item.window?.mergeAllWindows(nil)
-    }
-
-    // MARK: Accessibility
-
-    override func isAccessibilityElement() -> Bool { true }
-    override func accessibilityRole() -> NSAccessibility.Role? { .radioButton }
-    override func accessibilityLabel() -> String? { item.title }
-    override func accessibilityHelp() -> String? { item.tooltip }
-    override func accessibilityValue() -> Any? { NSNumber(value: item.isSelected) }
-    override func isAccessibilitySelected() -> Bool { item.isSelected }
-    override func accessibilityParent() -> Any? { bar ?? super.accessibilityParent() }
-
-    override func accessibilityPerformPress() -> Bool {
-        select()
-        return true
-    }
-
-    override func accessibilityPerformShowMenu() -> Bool {
-        guard let menu = tabMenu() else { return false }
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.minY), in: self)
-        return true
-    }
 }

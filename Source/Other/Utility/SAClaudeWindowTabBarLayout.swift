@@ -11,9 +11,9 @@ import AppKit
 enum SAClaudeWindowTabBarLayout {
     static let height: CGFloat = 36
     static let chipHeight: CGFloat = 28
-    static let maxChipWidth: CGFloat = 210
-    static let minChipWidth: CGFloat = 110
-    static let gap: CGFloat = 4
+    static let maxChipWidth: CGFloat = 220
+    static let minChipWidth: CGFloat = 100
+    static let gap: CGFloat = 6
     static let sideInset: CGFloat = 8
     static let plusSize: CGFloat = 24
     static let plusGap: CGFloat = 8
@@ -30,17 +30,30 @@ enum SAClaudeWindowTabBarLayout {
     struct Step: Equatable { var id: Int; var index: Int }
 
 
-    static func frames(count: Int, barWidth: CGFloat) -> Frames {
+    /// Chips sized to their content: each preferred width clamped to [min, max], packed from the left of the
+    /// scrolling area. When they don't fit, every chip shrinks by the same ratio, though not below the minimum;
+    /// if they still don't fit at that size the strip scrolls.
+    static func frames(preferredWidths: [CGFloat], barWidth: CGFloat) -> Frames {
         let plus = NSRect(x: barWidth - sideInset - plusSize, y: ((height - plusSize) / 2).rounded(.down), width: plusSize, height: plusSize)
         let scrollArea = NSRect(x: sideInset, y: 0, width: max(0, barWidth - 2 * sideInset - plusSize - plusGap), height: height)
-        guard count > 0 else { return Frames(scrollArea: scrollArea, chips: [], contentWidth: 0, scrolls: false, plus: plus) }
-        let n = CGFloat(count)
-        var width = min(maxChipWidth, ((scrollArea.width - gap * (n - 1)) / n).rounded(.down))
+        guard !preferredWidths.isEmpty else { return Frames(scrollArea: scrollArea, chips: [], contentWidth: 0, scrolls: false, plus: plus) }
+        let gaps = gap * CGFloat(preferredWidths.count - 1)
+        let available = scrollArea.width
+        var widths = preferredWidths.map { min(maxChipWidth, max(minChipWidth, $0)) }
+        let total = widths.reduce(0, +)
         var scrolls = false
-        if width < minChipWidth { width = minChipWidth; scrolls = true }
+        if total + gaps > available {
+            let ratio = max(0, available - gaps) / total
+            widths = widths.map { max(minChipWidth, ($0 * ratio).rounded(.down)) }
+            scrolls = widths.reduce(0, +) + gaps > available
+        }
         let y = ((height - chipHeight) / 2).rounded(.down)
-        let chips = (0..<count).map { NSRect(x: CGFloat($0) * (width + gap), y: y, width: width, height: chipHeight) }
-        return Frames(scrollArea: scrollArea, chips: chips, contentWidth: n * width + (n - 1) * gap, scrolls: scrolls, plus: plus)
+        var x: CGFloat = 0
+        let chips = widths.map { width -> NSRect in
+            defer { x += width + gap }
+            return NSRect(x: x, y: y, width: width, height: chipHeight)
+        }
+        return Frames(scrollArea: scrollArea, chips: chips, contentWidth: widths.reduce(0, +) + gaps, scrolls: scrolls, plus: plus)
     }
 
     /// The insertion index (0...chips.count) for a drag at content x: the number of chips whose midX is left of x.

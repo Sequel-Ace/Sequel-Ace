@@ -175,11 +175,17 @@ struct SAClaudeWindowTabItem {
 
     #if DEBUG
     /// The safety net for the hiding above: a debug log when a macOS tab strip is still visible in the window's
-    /// frame view. Logged rather than asserted - a future macOS that hosts the strip differently only shows its
-    /// strip above ours, which must not take a debug build down.
+    /// title bar. Logged rather than asserted - a future macOS that hosts the strip differently only shows its
+    /// strip above ours, which must not take a debug build down. Only the frame view's title bar side is walked,
+    /// not the content view's (much larger) subtree, as this runs on every group change.
     private static func reportVisibleNativeStrip(in window: NSWindow) {
-        guard let frameView = window.contentView?.superview, let strip = visibleNativeStrip(in: frameView) else { return }
-        NSLog("SAClaudeWindowTabBar: macOS's tab strip is still visible in '%@' (%@)", window.title, NSStringFromClass(type(of: strip)))
+        guard let contentView = window.contentView, let frameView = contentView.superview else { return }
+        for subview in frameView.subviews where subview !== contentView {
+            if let strip = visibleNativeStrip(in: subview) {
+                NSLog("SAClaudeWindowTabBar: macOS's tab strip is still visible in '%@' (%@)", window.title, NSStringFromClass(type(of: strip)))
+                return
+            }
+        }
     }
 
     /// A hidden accessory controller collapses its view rather than hiding it, so a strip counts as visible only

@@ -20,43 +20,53 @@ final class SAClaudeWindowTabBarLayoutTests: XCTestCase {
         return working
     }
 
-    func testThreeTabsUseTheMaximumWidth() {
-        let f = L.frames(count: 3, barWidth: 800)
+    func testChipsFitTheirContentPackedFromTheLeft() {
+        let f = L.frames(preferredWidths: [150, 180, 120], barWidth: 800)
         XCTAssertEqual(f.scrollArea, NSRect(x: 8, y: 0, width: 752, height: 36))
-        XCTAssertEqual(f.chips.map(\.minX), [0, 214, 428])
-        XCTAssertEqual(f.chips[0], NSRect(x: 0, y: 4, width: 210, height: 28))
-        XCTAssertEqual(f.contentWidth, 638)
+        XCTAssertEqual(f.chips.map(\.width), [150, 180, 120])
+        XCTAssertEqual(f.chips.map(\.minX), [0, 156, 342])
+        XCTAssertEqual(f.chips[0], NSRect(x: 0, y: 4, width: 150, height: 28))
+        XCTAssertEqual(f.contentWidth, 462)
         XCTAssertFalse(f.scrolls)
         XCTAssertEqual(f.plus, NSRect(x: 768, y: 6, width: 24, height: 24))
     }
 
-    func testChipsShareTheBarBeforeScrolling() {
-        let f = L.frames(count: 5, barWidth: 800)
-        XCTAssertEqual(f.chips[0].width, 147)
-        XCTAssertEqual(f.chips[4].maxX, 751)
+    func testPreferredWidthsAreClamped() {
+        let f = L.frames(preferredWidths: [300, 90], barWidth: 800)
+        XCTAssertEqual(f.chips.map(\.width), [220, 100])
+        XCTAssertEqual(f.chips.map(\.minX), [0, 226])
+        XCTAssertFalse(f.scrolls)
+    }
+
+    func testChipsShrinkProportionallyBeforeScrolling() {
+        // Available 752, gaps 24, sum 1000: each 200 * 0.728 = 145.6, floored.
+        let f = L.frames(preferredWidths: Array(repeating: 200, count: 5), barWidth: 800)
+        XCTAssertEqual(f.chips.map(\.width), Array(repeating: 145, count: 5))
+        XCTAssertEqual(f.contentWidth, 749)
+        XCTAssertEqual(f.chips[4].maxX, 749)
         XCTAssertFalse(f.scrolls)
     }
 
     func testManyTabsScrollAtTheMinimumWidth() {
-        let f = L.frames(count: 10, barWidth: 800)
-        XCTAssertEqual(f.chips[0].width, 110)
-        XCTAssertEqual(f.contentWidth, 1136)
+        let f = L.frames(preferredWidths: Array(repeating: 200, count: 12), barWidth: 800)
+        XCTAssertEqual(f.chips.map(\.width), Array(repeating: 100, count: 12))
+        XCTAssertEqual(f.contentWidth, 1266)
         XCTAssertTrue(f.scrolls)
     }
 
     func testNoTabs() {
-        let f = L.frames(count: 0, barWidth: 800)
+        let f = L.frames(preferredWidths: [], barWidth: 800)
         XCTAssertTrue(f.chips.isEmpty)
         XCTAssertEqual(f.contentWidth, 0)
         XCTAssertFalse(f.scrolls)
     }
 
     func testInsertionIndex() {
-        let chips = L.frames(count: 3, barWidth: 800).chips
+        let chips = L.frames(preferredWidths: [150, 180, 120], barWidth: 800).chips   // midX 75, 246, 402
         XCTAssertEqual(L.insertionIndex(x: -20, chips: chips), 0)
-        XCTAssertEqual(L.insertionIndex(x: 100, chips: chips), 0)
-        XCTAssertEqual(L.insertionIndex(x: 300, chips: chips), 1)
-        XCTAssertEqual(L.insertionIndex(x: 700, chips: chips), 3)
+        XCTAssertEqual(L.insertionIndex(x: 100, chips: chips), 1)
+        XCTAssertEqual(L.insertionIndex(x: 300, chips: chips), 2)
+        XCTAssertEqual(L.insertionIndex(x: 500, chips: chips), 3)
     }
 
     func testTargetOrder() {

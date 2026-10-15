@@ -50,6 +50,11 @@ import AppKit
     @objc static let tintFunction = dynamic("tintFunction", dark: 0x55BF50, light: 0x008300)
     /// The main window's title bar and toolbar.
     @objc static let toolbarBackground = dynamic("toolbarBackground", dark: 0x1A1A19, light: 0xF4F3EF)
+    /// The window tab bar's chips: every tab, and the selected (raised) one.
+    @objc static let tabFill = dynamic("tabFill", dark: 0x222221, light: 0xEBEAE5)
+    @objc static let tabBorder = dynamic("tabBorder", dark: 0x34332F, light: 0xD9D8D2)
+    @objc static let tabSelectedFill = dynamic("tabSelectedFill", dark: 0x2F2E2B, light: 0xFFFFFF)
+    @objc static let tabSelectedBorder = dynamic("tabSelectedBorder", dark: 0x4A4944, light: 0xCFCEC8)
 
     // MARK: - Fonts (SF Pro)
 

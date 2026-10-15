@@ -756,6 +756,7 @@
 		7F3A9C41D2B84E60A15C8E02 /* SAClaudeTabBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3A9C41D2B84E60A15C8E03 /* SAClaudeTabBarStyler.swift */; };
 		7AB0C0DE0000000000000007 /* SAClaudeWindowTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB0C0DE0000000000000006 /* SAClaudeWindowTabBar.swift */; };
 		7AB0C0DE0000000000000009 /* SAClaudeWindowTabBarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB0C0DE0000000000000008 /* SAClaudeWindowTabBarViews.swift */; };
+		7AB0C0DE000000000000000B /* SAClaudeWindowTabChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB0C0DE000000000000000A /* SAClaudeWindowTabChipView.swift */; };
 		900AB578E7E8F01807765D0F /* SAClaudeFilterBarStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F2FD803BC1212FFB686712 /* SAClaudeFilterBarStyler.swift */; };
 		A91E3C5B7D2F40C8B6E1D203 /* SAClaudeTableInfoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */; };
 		C1A0DE400000000000000A02 /* SAClaudeConnectionPanelStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0DE400000000000000A01 /* SAClaudeConnectionPanelStyler.swift */; };
@@ -1785,6 +1786,7 @@
 		7F3A9C41D2B84E60A15C8E03 /* SAClaudeTabBarStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTabBarStyler.swift; sourceTree = "<group>"; };
 		7AB0C0DE0000000000000006 /* SAClaudeWindowTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeWindowTabBar.swift; sourceTree = "<group>"; };
 		7AB0C0DE0000000000000008 /* SAClaudeWindowTabBarViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeWindowTabBarViews.swift; sourceTree = "<group>"; };
+		7AB0C0DE000000000000000A /* SAClaudeWindowTabChipView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeWindowTabChipView.swift; sourceTree = "<group>"; };
 		5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableInfoStyler.swift; sourceTree = "<group>"; };
 		C1A0DE400000000000000A01 /* SAClaudeConnectionPanelStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionPanelStyler.swift; sourceTree = "<group>"; };
 		C1A0DE400000000000000A03 /* SAClaudeConnectionTypeTabs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionTypeTabs.swift; sourceTree = "<group>"; };
@@ -3043,6 +3045,7 @@
 				7F3A9C41D2B84E60A15C8E03 /* SAClaudeTabBarStyler.swift */,
 				7AB0C0DE0000000000000006 /* SAClaudeWindowTabBar.swift */,
 				7AB0C0DE0000000000000008 /* SAClaudeWindowTabBarViews.swift */,
+				7AB0C0DE000000000000000A /* SAClaudeWindowTabChipView.swift */,
 				F7F2FD803BC1212FFB686712 /* SAClaudeFilterBarStyler.swift */,
 				5C1A0E7D3B9F4A2186D07E41 /* SAClaudeTableInfoStyler.swift */,
 				C1A0DE400000000000000A01 /* SAClaudeConnectionPanelStyler.swift */,
@@ -4366,6 +4369,7 @@
 				7F3A9C41D2B84E60A15C8E02 /* SAClaudeTabBarStyler.swift in Sources */,
 				7AB0C0DE0000000000000007 /* SAClaudeWindowTabBar.swift in Sources */,
 				7AB0C0DE0000000000000009 /* SAClaudeWindowTabBarViews.swift in Sources */,
+				7AB0C0DE000000000000000B /* SAClaudeWindowTabChipView.swift in Sources */,
 				900AB578E7E8F01807765D0F /* SAClaudeFilterBarStyler.swift in Sources */,
 				A91E3C5B7D2F40C8B6E1D203 /* SAClaudeTableInfoStyler.swift in Sources */,
 				C1A0DE400000000000000A02 /* SAClaudeConnectionPanelStyler.swift in Sources */,
