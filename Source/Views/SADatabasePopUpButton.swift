@@ -13,9 +13,10 @@
 import AppKit
 import SwiftUI
 
-/// Instantiated from DBView.xib by its module-qualified name, so no
-/// explicit `@objc(...)` runtime name — that would stop the nib finding it.
-final class SADatabasePopUpButton: NSPopUpButton, NSPopoverDelegate {
+/// Instantiated from DBView.xib by its module-qualified name: plain `@objc`
+/// keeps that runtime name, a custom `@objc(...)` name would stop the nib
+/// finding it.
+@objc final class SADatabasePopUpButton: NSPopUpButton, NSPopoverDelegate {
 
     private var pickerPopover: NSPopover?
     /// Timestamp of the click that dismissed the transient popover. That
