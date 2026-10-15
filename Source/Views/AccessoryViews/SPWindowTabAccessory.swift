@@ -63,6 +63,10 @@ final class SPWindowTabAccessory: NSView {
     private var isSSL = false
     private var isSelected = false
 
+    /// Called when the accessory lands in a window: AppKit re-hosts it whenever its tab group's selection or
+    /// membership changes, so the owner can refresh the selected style.
+    var onMoveToWindow: (() -> Void)?
+
     // MARK: Subviews
 
     private let colourDot = TabColourDot()
@@ -154,6 +158,11 @@ final class SPWindowTabAccessory: NSView {
         colourDot.needsDisplay = true
         tabText.needsDisplay = true
         lockImageView.needsDisplay = true
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil { onMoveToWindow?() }
     }
 
     override func viewDidMoveToSuperview() {

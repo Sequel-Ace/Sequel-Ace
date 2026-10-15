@@ -67,6 +67,11 @@ import SnapKit
     /// the tokens unregister them on deinit.
     private var tabSelectionSubscriptions: [NotificationToken] = []
 
+    /// Observes `selectedWindow` of the tab group this window is in. The group
+    /// object changes when tabs are merged or moved out, so it is re-made then.
+    private var tabGroupObservation: NSKeyValueObservation?
+    private weak var observedTabGroup: NSWindowTabGroup?
+
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
 
@@ -130,6 +135,12 @@ private extension SPWindowController {
         if #available(macOS 10.13, *) {
             window?.tab.accessoryView = tabAccessoryView
         }
+        // AppKit re-hosts every tab's accessory in the selected window's tab bar
+        // whenever the group's selection or membership changes (merge, move a tab
+        // out, drag between windows). Deferred so the group's state has settled.
+        tabAccessoryView.onMoveToWindow = { [weak self] in
+            DispatchQueue.main.async { self?.updateTabSelection() }
+        }
     }
 
     /// Paint the whole window top - title bar, unified toolbar and the native
@@ -178,10 +189,11 @@ private extension SPWindowController {
         }
     }
 
-    /// Restyle the tab content when this window gains or loses key status. Switching
-    /// tabs in a group moves key status between the windows, and the group's
-    /// `selectedWindow` is already updated when the old tab resigns key, so these two
-    /// notifications also cover selection changes within the group.
+    /// Restyle the tab content when this window gains or loses key status, when its
+    /// accessory is re-hosted (see `setupAppearance`) and when its tab group's
+    /// `selectedWindow` changes. Each refresh covers the whole group, because a
+    /// merge or a tab moving out changes the selection of tabs that never become
+    /// or resign key themselves.
     func observeTabSelection() {
         guard let window = window else {
             return
@@ -194,12 +206,36 @@ private extension SPWindowController {
         updateTabSelection()
     }
 
-    /// The selected tab of a group stays selected while another app or window is key.
+    /// Restyle every tab in this window's tab group.
     func updateTabSelection() {
         guard let window = window else {
             return
         }
-        tabAccessoryView.setSelected(window.isKeyWindow || window.tabGroup?.selectedWindow === window)
+        for tab in window.tabGroup?.windows ?? [window] {
+            (tab.windowController as? SPWindowController)?.applyTabSelection()
+        }
+    }
+
+    /// The group's selected tab stays selected while another app or window is key.
+    func applyTabSelection() {
+        guard let window = window else {
+            return
+        }
+        observeTabGroup(window.tabGroup)
+        let selected = window.tabGroup.map { $0.selectedWindow === window } ?? window.isKeyWindow
+        tabAccessoryView.setSelected(selected)
+    }
+
+    /// Follows `group`'s selection (KVO compliant per NSWindowTabGroup.h); a no-op
+    /// while it is already the observed group.
+    func observeTabGroup(_ group: NSWindowTabGroup?) {
+        guard group !== observedTabGroup || (group != nil && tabGroupObservation == nil) else {
+            return
+        }
+        observedTabGroup = group
+        tabGroupObservation = group?.observe(\.selectedWindow) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.updateTabSelection() }
+        }
     }
 }
 

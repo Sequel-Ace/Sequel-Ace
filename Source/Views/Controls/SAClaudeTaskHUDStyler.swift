@@ -80,6 +80,11 @@ final class SAClaudeTaskHUDStyler {
         }
         cancelButton.font = Self.buttonFont
 
+        // Replace the XIB's placeholder text with the zero time SATaskController writes when a task ends, so the
+        // first task does not show the placeholder until the first one-second tick.
+        duration.attributedStringValue = NSAttributedString(
+            string: DateComponentsFormatter.hourMinSecFormatter.string(from: 0) ?? "", attributes: durationAttributes())
+
         layOut()
         SAClaudeAccent.observe(self) { $0.spinner.refreshColours() }
     }
@@ -166,8 +171,10 @@ final class SAClaudeTaskHUDStyler {
     private static func styleCard(_ box: NSBox, in bounds: NSRect) {
         box.boxType = .custom
         // The XIB's box has no border type, which hides a custom box's border; `borderType` itself is deprecated
-        // API, so it is set through KVC.
-        box.setValue(NSBorderType.lineBorder.rawValue, forKey: "borderType")
+        // API, so it is set through KVC, and only while AppKit still has it (KVC on a missing key raises).
+        if box.responds(to: NSSelectorFromString("setBorderType:")) {
+            box.setValue(NSBorderType.lineBorder.rawValue, forKey: "borderType")
+        }
         box.isTransparent = false
         box.titlePosition = .noTitle
         box.cornerRadius = SAClaudeTaskHUDLayout.cornerRadius
