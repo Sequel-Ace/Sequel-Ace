@@ -17,6 +17,11 @@ enum SAClaudeFormStrings {
     static var newDatabase: String { NSLocalizedString("ClaudeFormNewDatabase", value: "New database", comment: "Claude sheet title: the New Database sheet") }
     static var alterDatabase: String { NSLocalizedString("ClaudeFormAlterDatabase", value: "Alter database", comment: "Claude sheet title: the Alter Database sheet (encoding and collation)") }
     static var duplicateDatabase: String { NSLocalizedString("ClaudeFormDuplicateDatabase", value: "Duplicate database", comment: "Claude sheet title: the Duplicate Database sheet") }
+    static var newTable: String { NSLocalizedString("ClaudeFormNewTable", value: "New table", comment: "Claude sheet title: the New Table sheet") }
+    static var duplicateTable: String { NSLocalizedString("ClaudeFormDuplicateTable", value: "Duplicate table", comment: "Claude sheet title: the Duplicate Table sheet (also used for views, procedures and functions)") }
+    static var addKey: String { NSLocalizedString("ClaudeFormAddKey", value: "Add a key?", comment: "Claude sheet title: asks which index to add so a column can be AUTO_INCREMENT") }
+    static var keyType: String { NSLocalizedString("ClaudeFormLabelKeyType", value: "Key type", comment: "Claude sheet row label: the pop-up choosing PRIMARY KEY, INDEX or UNIQUE") }
+    static var resetAutoIncrement: String { NSLocalizedString("ClaudeFormResetAutoIncrement", value: "Reset auto increment", comment: "Claude sheet title: the Reset AUTO_INCREMENT sheet") }
     static var password: String { NSLocalizedString("ClaudeFormLabelPassword", value: "Password", comment: "Claude sheet row label: the password field of the encrypted connection file sheet") }
     static var newName: String { NSLocalizedString("ClaudeFormLabelNewName", value: "New name", comment: "Claude sheet row label: the field with the new name of a database or table being renamed or duplicated") }
     static var contextCurrently: String { NSLocalizedString("ClaudeFormContextCurrently", value: "Currently %@", comment: "Claude sheet context line under the Rename Database title: the database's current name") }
@@ -66,6 +71,10 @@ enum SAClaudeFormRecipes {
         case .duplicateDatabase: return duplicateDatabase(m)
         case .renameDatabase: return renameDatabase(m)
         case .password: return password(m)
+        case .newTable: return newTable(m)
+        case .duplicateTable: return duplicateTable(m)
+        case .addKey: return addKey(m)
+        case .resetAutoIncrement: return resetAutoIncrement(m)
         default: return nil
         }
     }
@@ -149,6 +158,89 @@ enum SAClaudeFormRecipes {
         return SAClaudeSimpleFormRecipe {
             SAClaudeFormContent(title: header.stringValue, context: message.stringValue, items: items, footerTrailing: footer,
                                 hidden: [header, message])
+        }
+    }
+
+    /// New table (SPTablesList · tableSheet): Name / Encoding / Collation / Type; context "In <db>".
+    private static func newTable(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        guard let name = row(outlet(m.owner, "tableNameField") as NSTextField?, .field),
+              let encoding = row(outlet(m.owner, "tableEncodingButton") as NSPopUpButton?, .popUp),
+              let collation = row(outlet(m.owner, "tableCollationButton") as NSPopUpButton?, .popUp),
+              let type = row(outlet(m.owner, "tableTypeButton") as NSPopUpButton?, .popUp),
+              let footer = footer(m.window, primary: outlet(m.owner, "addTableButton")) else { return nil }
+        let items = [name, encoding, collation, type]
+        return SAClaudeSimpleFormRecipe { [weak doc = m.document] in
+            SAClaudeFormContent(title: SAClaudeFormStrings.newTable, context: SAClaudeFormContext.inside(doc?.database()),
+                                items: items, footerTrailing: footer)
+        }
+    }
+
+    /// Duplicate table (SPTablesList · copyTableSheet): New name / Database; "Duplicate table content"; context
+    /// "From <table>". The XIB's centred title and its "Duplicate table 'x' to:" prompt (rewritten by the controller
+    /// at every open) are unused statics, hidden at every apply.
+    private static func duplicateTable(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        guard let name: NSTextField = outlet(m.owner, "copyTableNameField"),
+              let databaseLabel: NSTextField = outlet(m.owner, "copyTableToNewDatabaseMessageField"),
+              let database: NSPopUpButton = outlet(m.owner, "chooseDatabaseButton"),
+              let copyContent: NSButton = outlet(m.owner, "copyTableContentSwitch"),
+              let footer = footer(m.window, primary: outlet(m.owner, "copyTableButton")) else { return nil }
+        let items: [SAClaudeFormItem] = [.row(.text(SAClaudeFormStrings.newName), name, .field),
+                                         .row(.existing(databaseLabel), database, .popUp),
+                                         .control(copyContent, .checkbox)]
+        return SAClaudeSimpleFormRecipe { [weak doc = m.document] in
+            SAClaudeFormContent(title: SAClaudeFormStrings.duplicateTable, context: SAClaudeFormContext.from(doc?.table()),
+                                items: items, footerTrailing: footer)
+        }
+    }
+
+    /// Add a key? (SPTableStructure · keySheet): Key type. Context: the edited column's name, the explanation then
+    /// staying as a wrapped note above the row; without a column name the explanation is the context line.
+    private static func addKey(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        guard let contentView = m.window.contentView,
+              let keyType: NSPopUpButton = outlet(m.owner, "chooseKeyButton"),
+              let explanation = contentView.subviews.compactMap({ $0 as? NSTextField }).first(where: { !$0.isEditable && !$0.stringValue.isEmpty }),
+              let footer = footer(m.window) else { return nil }
+        return SAClaudeSimpleFormRecipe(didAttach: { _ in
+            explanation.font = SAClaudeFormSheet.labelFont
+            explanation.lineBreakMode = .byWordWrapping
+            explanation.maximumNumberOfLines = 0
+            return nil
+        }, content: { [weak structure = m.owner, weak doc = m.document, weak window = m.window] in
+            let column = structure.flatMap { SAClaudeFormRecipes.editedColumnName($0) }
+            var items: [SAClaudeFormItem] = []
+            if column != nil {
+                if explanation.isHidden { explanation.isHidden = false }
+                let width = max(SAClaudeFormLayout.minimumWidth, window?.contentView?.bounds.width ?? 0) - 2 * SAClaudeFormLayout.sideMargin
+                let height = ceil(explanation.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)).height ?? 30)
+                items.append(.wide(explanation, .custom(height: height)))
+            }
+            items.append(.row(.text(SAClaudeFormStrings.keyType), keyType, .popUp))
+            let note = explanation.stringValue.replacingOccurrences(of: "\n", with: " ")
+            return SAClaudeFormContent(title: SAClaudeFormStrings.addKey, context: column ?? SAClaudeFormText.joined([note]) ?? doc?.table(),
+                                       items: items, footerTrailing: footer, hidden: column == nil ? [explanation] : [])
+        })
+    }
+
+    /// The name of the column being edited in the structure view (the row whose Extra became auto_increment).
+    static func editedColumnName(_ structure: NSObject) -> String? {
+        guard let table: NSTableView = outlet(structure, "tableSourceView"),
+              let column = table.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier("name")) else { return nil }
+        let row = table.editedRow >= 0 ? table.editedRow : table.selectedRow
+        guard row >= 0, row < table.numberOfRows,
+              let name = table.dataSource?.tableView?(table, objectValueFor: column, row: row) as? String,
+              !name.isEmpty, name != "..." else { return nil }
+        return name
+    }
+
+    /// Reset auto increment (SPTableStructure · resetAutoIncrementSheet): the value row; context: the table. The
+    /// separator line, which the controller un-hides in the Structure view, is hidden at every apply.
+    private static func resetAutoIncrement(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        guard let value = row(outlet(m.owner, "resetAutoIncrementValue") as NSTextField?, .field),
+              let footer = footer(m.window) else { return nil }
+        let line: NSView? = outlet(m.owner, "resetAutoIncrementLine")
+        return SAClaudeSimpleFormRecipe { [weak doc = m.document] in
+            SAClaudeFormContent(title: SAClaudeFormStrings.resetAutoIncrement, context: doc?.table(), items: [value],
+                                footerTrailing: footer, hidden: line.map { [$0] } ?? [])
         }
     }
 }

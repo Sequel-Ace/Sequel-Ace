@@ -5211,3 +5211,18 @@
 
 /* Claude sheet context line under the New Table title: the database the table is created in */
 "ClaudeFormContextIn" = "In %@";
+
+/* Claude sheet title: the New Table sheet */
+"ClaudeFormNewTable" = "New table";
+
+/* Claude sheet title: the Duplicate Table sheet (also used for views, procedures and functions) */
+"ClaudeFormDuplicateTable" = "Duplicate table";
+
+/* Claude sheet title: asks which index to add so a column can be AUTO_INCREMENT */
+"ClaudeFormAddKey" = "Add a key?";
+
+/* Claude sheet row label: the pop-up choosing PRIMARY KEY, INDEX or UNIQUE */
+"ClaudeFormLabelKeyType" = "Key type";
+
+/* Claude sheet title: the Reset AUTO_INCREMENT sheet */
+"ClaudeFormResetAutoIncrement" = "Reset auto increment";
