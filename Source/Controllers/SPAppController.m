@@ -198,7 +198,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     [SAClaudeToolbarMenu install];
     [SAClaudeSheetStyler start];
-    [SAClaudeWindowTabBarController keepWindowMenuTabItems];
+    [SAClaudeWindowTabBarController installWindowMenuMergeItem];
 
     [SAAnalyticsConsentPolicy requestConsentIfNeeded];
     [SAAnalyticsConsentPolicy applyAnalyticsConsent];

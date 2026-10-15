@@ -198,7 +198,7 @@
 	}
 
 	if ([menuItem action] == @selector(mergeAllWindows:)) {
-		return [SAClaudeWindowTabBarController canMergeAllWindowsInto:self];
+		return [SAClaudeWindowTabBarController validateMergeItem:menuItem for:self];
 	}
 
 	// If the item is the Show/Hide Toolbar menu item, override the text to allow correct translation

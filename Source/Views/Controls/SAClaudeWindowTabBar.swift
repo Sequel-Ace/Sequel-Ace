@@ -114,16 +114,29 @@ struct SAClaudeWindowTabItem {
         controller(for: selected)?.refresh()
     }
 
-    /// AppKit leaves the tab items (Show Next Tab … Merge All Windows) out of the Window menu while the key window
-    /// can't tab, which is every lone window here (transparent title bar), so Merge All Windows vanished exactly
-    /// when it was needed. A private NSMenu switch keeps them installed; validation stays SPWindow's. A no-op if a
-    /// future macOS drops the switch.
-    @objc static func keepWindowMenuTabItems() {
-        let selector = NSSelectorFromString("_setAlwaysInstallWindowTabItems:")
-        guard NSMenu.responds(to: selector) else { return }
-        typealias Setter = @convention(c) (AnyClass, Selector, Bool) -> Void
-        unsafeBitCast(NSMenu.method(for: selector), to: Setter.self)(NSMenu.self, selector, true)
+    /// AppKit adds its tab items (Show Next Tab … Merge All Windows) to the Window menu only once a key window has
+    /// had a tab group, which a lone window here never gets (transparent title bar), so Merge All Windows was
+    /// missing exactly when only separate windows were open. Ours sits above Bring All to Front and hides itself
+    /// whenever AppKit's own is in the menu (see `validateMergeItem`).
+    @objc static func installWindowMenuMergeItem() {
+        guard let menu = NSApp.windowsMenu, !menu.items.contains(where: { $0.identifier == mergeItemIdentifier }) else { return }
+        let item = NSMenuItem(title: NSLocalizedString("ClaudeWindowMenuMergeAll", value: "Merge All Windows",
+                                                       comment: "Window menu: merges every window of the app into tabs of the front window"),
+                              action: #selector(NSWindow.mergeAllWindows(_:)), keyEquivalent: "")
+        item.identifier = mergeItemIdentifier
+        let index = menu.items.firstIndex { $0.action == #selector(NSApplication.arrangeInFront(_:)) } ?? menu.items.count
+        menu.insertItem(item, at: index)
     }
+
+    /// Validates a Merge All Windows item for `window`: ours is hidden while AppKit's own is in the same menu.
+    @objc static func validateMergeItem(_ item: NSMenuItem, for window: NSWindow) -> Bool {
+        if item.identifier == mergeItemIdentifier {
+            item.isHidden = item.menu?.items.contains { $0 !== item && $0.action == #selector(NSWindow.mergeAllWindows(_:)) && !$0.isHidden } ?? false
+        }
+        return canMergeAllWindows(into: window)
+    }
+
+    private static let mergeItemIdentifier = NSUserInterfaceItemIdentifier("SAClaudeMergeAllWindows")
 
     /// Whether Merge All Windows has a window to bring into `window`'s group.
     @objc static func canMergeAllWindows(into window: NSWindow) -> Bool {

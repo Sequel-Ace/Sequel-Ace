@@ -5181,3 +5181,6 @@
 
 /* window tab bar: context menu item that merges every window of the app into tabs of this window */
 "ClaudeTabBarMergeAll" = "Merge all windows";
+
+/* Window menu: merges every window of the app into tabs of the front window */
+"ClaudeWindowMenuMergeAll" = "Merge All Windows";
