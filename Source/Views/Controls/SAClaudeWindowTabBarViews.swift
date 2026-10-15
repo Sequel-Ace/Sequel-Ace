@@ -18,17 +18,30 @@ final class SAClaudeWindowTabBarView: NSView {
     /// so `window` is not it then.
     weak var hostWindow: NSWindow?
 
+    /// Called with the strip's new horizontal offset whenever it scrolls (but not when it adopts one).
+    var onScroll: ((CGFloat) -> Void)?
+
     var items: [SAClaudeWindowTabItem] = [] {
         didSet {
             // The chips are about to show other items: a drag in progress would move the wrong one.
             endDrag()
             let selected = items.first(where: \.isSelected)?.window
-            if selected !== shownSelection {
+            let selectionChanged = selected !== shownSelection
+            if selectionChanged {
                 shownSelection = selected
                 needsScrollToSelection = true
             }
             updateChips()
+            if selectionChanged, window != nil {
+                NSAccessibility.post(element: self, notification: .valueChanged)
+            }
         }
+    }
+
+    /// Scrolls the strip to `offset` at the next layout - the offset another bar of the group is showing.
+    func adoptScrollOffset(_ offset: CGFloat) {
+        adoptedScrollOffset = offset
+        needsLayout = true
     }
 
     /// How far the pointer moves before a press on a chip becomes a drag.
@@ -67,6 +80,8 @@ final class SAClaudeWindowTabBarView: NSView {
     /// The selected tab the strip last scrolled for.
     private weak var shownSelection: NSWindow?
     private var needsScrollToSelection = false
+    private var adoptedScrollOffset: CGFloat?
+    private var isAdoptingScrollOffset = false
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -77,6 +92,8 @@ final class SAClaudeWindowTabBarView: NSView {
         scrollView.verticalScrollElasticity = .none
         scrollView.contentView.drawsBackground = false
         scrollView.documentView = stripView
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        NotificationCenter.default.addObserver(self, selector: #selector(stripDidScroll(_:)), name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
         addSubview(scrollView)
         insertionMarker.isHidden = true
         stripView.addSubview(insertionMarker)
@@ -132,6 +149,12 @@ final class SAClaudeWindowTabBarView: NSView {
         chipSlots = frames.chips
         scrolls = frames.scrolls
         plusButton.frame = frames.plus
+        if let offset = adoptedScrollOffset {
+            adoptedScrollOffset = nil
+            isAdoptingScrollOffset = true
+            scrollView.scrollHorizontally(to: offset)
+            isAdoptingScrollOffset = false
+        }
         if !scrolls {
             scrollView.scrollHorizontally(to: 0)
         } else if needsScrollToSelection, let index = items.firstIndex(where: \.isSelected), index < chipSlots.count {
@@ -182,6 +205,11 @@ final class SAClaudeWindowTabBarView: NSView {
         }
     }
 
+    @objc private func stripDidScroll(_ notification: Notification) {
+        guard !isAdoptingScrollOffset else { return }
+        onScroll?(scrollView.contentView.bounds.minX)
+    }
+
     /// "+": a new tab in this bar's window, the way the native strip's "+" and ⌘T make one.
     @objc private func newTab(_ sender: Any?) {
         guard let hostWindow else { return }
@@ -197,6 +225,8 @@ final class SAClaudeWindowTabBarView: NSView {
     func trackPress(on chip: SAClaudeWindowTabChipView, with mouseDown: NSEvent) {
         guard let window else { return }
         let start = mouseDown.locationInWindow
+        // The tab pressed, kept in case the chips are rebuilt for other tabs before the button comes up.
+        let pressedTab = chip.item.window
         var began = false
         var autoscroll: Timer?
         defer {
@@ -220,7 +250,7 @@ final class SAClaudeWindowTabBarView: NSView {
                 if began {
                     drop()
                 } else {
-                    chip.select()
+                    SAClaudeWindowTabChipView.select(pressedTab)
                 }
                 return
             case .keyDown where event.keyCode == Self.escapeKeyCode:
@@ -343,15 +373,17 @@ final class SAClaudeWindowTabBarView: NSView {
     override func accessibilityValue() -> Any? { chips.first { $0.item.isSelected } }
 }
 
-/// The scrolling area of the strip: scrolls only horizontally, a mouse wheel's vertical turns included.
+/// The scrolling area of the strip: scrolls only horizontally, vertical wheel turns and trackpad swipes included.
 private final class SAClaudeWindowTabScrollView: NSScrollView {
     override func scrollWheel(with event: NSEvent) {
-        guard !event.hasPreciseScrollingDeltas, event.scrollingDeltaX == 0, event.scrollingDeltaY != 0 else {
+        let scrolls = (documentView?.frame.width ?? 0) > contentView.bounds.width
+        guard scrolls, abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX) else {
             super.scrollWheel(with: event)
             return
         }
-        // Wheel down scrolls towards the end, as shift-wheel does.
-        scrollHorizontally(by: -event.scrollingDeltaY * horizontalLineScroll)
+        // Down (or a swipe up) scrolls towards the end, as shift-wheel does; a wheel's deltas are in lines.
+        let delta = event.hasPreciseScrollingDeltas ? event.scrollingDeltaY : event.scrollingDeltaY * horizontalLineScroll
+        scrollHorizontally(by: -delta)
     }
 
     /// Scrolls by `delta` points, kept within the strip; whether it moved.

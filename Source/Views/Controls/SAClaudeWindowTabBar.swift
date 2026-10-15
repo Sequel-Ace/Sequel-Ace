@@ -32,6 +32,15 @@ struct SAClaudeWindowTabItem {
     private let accessory = SAClaudeWindowTabBarAccessory()
     private let barView: SAClaudeWindowTabBarView
     private var model: SAClaudeWindowTabBarModel?
+    private var windowObservers: [NSObjectProtocol] = []
+
+    /// AppKit also shows its strip on a lone window, with no group change, when "Show Tab Bar" was once chosen
+    /// for this kind of window (it keeps that choice in the app's defaults); these hide it there too.
+    private static let hidingNotifications: [Notification.Name] = [
+        NSWindow.didBecomeKeyNotification,
+        NSWindow.didBecomeMainNotification,
+        NSWindow.didChangeOcclusionStateNotification,   // ordered on screen
+    ]
 
     init(window: NSWindow) {
         self.window = window
@@ -45,7 +54,17 @@ struct SAClaudeWindowTabItem {
         setVisible(false)
         window.addTitlebarAccessoryViewController(accessory)
         Self.hideNativeTabBar(in: window)
+        windowObservers = Self.hidingNotifications.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: nil) { [weak window] _ in
+                if let window { Self.hideNativeTabBar(in: window) }
+            }
+        }
+        barView.onScroll = { [weak self] offset in self?.shareScrollOffset(offset) }
         model = SAClaudeWindowTabBarModel(window: window) { [weak self] in self?.groupDidChange() }
+    }
+
+    deinit {
+        windowObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
     /// Rebuilds the chips of every bar in this window's group, at most once per main-queue turn.
@@ -60,14 +79,14 @@ struct SAClaudeWindowTabItem {
 
     /// Hides macOS's tab strip in `window`: AppKit hosts it in a bottom title bar accessory controller of its own,
     /// and makes a fresh, visible one whenever the window joins a group, so this runs on every group change. Safe
-    /// to repeat. Only the controller is hidden - hiding the strip view alone would leave an empty band.
+    /// to repeat, and cheap. Only the controller is hidden - hiding the strip view alone would leave an empty band.
     static func hideNativeTabBar(in window: NSWindow) {
         for controller in window.titlebarAccessoryViewControllers
         where !(controller is SAClaudeWindowTabBarAccessory) && controller.layoutAttribute == .bottom && !controller.isHidden {
             controller.isHidden = true
         }
         #if DEBUG
-        reportVisibleNativeStrip(in: window)
+        scheduleNativeStripReport(for: window)
         #endif
     }
 
@@ -125,6 +144,15 @@ struct SAClaudeWindowTabItem {
 
     private var isVisible: Bool { !accessory.isHidden }
 
+    /// Every tab has a bar of its own, but the group shows one strip: the shown bar's scroll offset goes to the
+    /// others, so switching tabs doesn't move the chips under the pointer.
+    private func shareScrollOffset(_ offset: CGFloat) {
+        guard let window, window.tabGroup?.selectedWindow === window else { return }
+        for other in groupWindows where other !== window {
+            Self.controller(for: other)?.barView.adoptScrollOffset(offset)
+        }
+    }
+
     private func setVisible(_ visible: Bool) {
         guard accessory.isHidden == visible || barView.isHidden == visible else { return }
         accessory.isHidden = !visible
@@ -174,6 +202,24 @@ struct SAClaudeWindowTabItem {
     }
 
     #if DEBUG
+    /// Windows whose title bar the safety net below checks at the end of this main-queue turn.
+    private static var windowsToReport: [NSWindow] = []
+
+    /// Checks `window` once this turn, however often its strip was hidden (several KVO callbacks for each window
+    /// of the group per change).
+    private static func scheduleNativeStripReport(for window: NSWindow) {
+        if windowsToReport.isEmpty {
+            DispatchQueue.main.async {
+                let windows = windowsToReport
+                windowsToReport = []
+                windows.forEach(reportVisibleNativeStrip(in:))
+            }
+        }
+        if !windowsToReport.contains(where: { $0 === window }) {
+            windowsToReport.append(window)
+        }
+    }
+
     /// The safety net for the hiding above: a debug log when a macOS tab strip is still visible in the window's
     /// title bar. Logged rather than asserted - a future macOS that hosts the strip differently only shows its
     /// strip above ours, which must not take a debug build down. Only the frame view's title bar side is walked,
@@ -191,6 +237,8 @@ struct SAClaudeWindowTabItem {
     /// A hidden accessory controller collapses its view rather than hiding it, so a strip counts as visible only
     /// when some of it is on screen.
     private static func visibleNativeStrip(in view: NSView) -> NSView? {
+        // The strip is never inside our own bar.
+        if view is SAClaudeWindowTabBarView { return nil }
         if NSStringFromClass(type(of: view)) == "NSTabBar" {
             return view.isHiddenOrHasHiddenAncestor || view.visibleRect.height <= 1 ? nil : view
         }

@@ -90,7 +90,6 @@ final class SAClaudeWindowTabChipView: NSView {
         button.imagePosition = .imageOnly
         button.isBordered = false
         button.contentTintColor = SAClaudeStyle.textSecondary
-        button.setAccessibilityLabel(NSLocalizedString("ClaudeTabBarCloseTab", comment: "window tab bar: accessibility name of a tab's close button, and the context menu item that closes the tab"))
         SAClaudeHoverHighlighter.attach(to: button)
         button.layer?.cornerRadius = 4
         return button
@@ -123,6 +122,7 @@ final class SAClaudeWindowTabChipView: NSView {
         titleField.font = .systemFont(ofSize: Self.titleFontSize, weight: item.isSelected ? .medium : .regular)
         titleField.textColor = item.isSelected ? SAClaudeStyle.textPrimary : SAClaudeStyle.textSecondary
         if toolTip != item.tooltip { toolTip = item.tooltip }
+        closeButton.setAccessibilityLabel(String(format: NSLocalizedString("ClaudeTabBarCloseTabNamed", comment: "window tab bar: accessibility name of a tab's close button, with the tab's title"), item.title))
         updateCloseButton()
         updateShadow()
         needsLayout = true
@@ -214,6 +214,13 @@ final class SAClaudeWindowTabChipView: NSView {
     override func mouseEntered(with event: NSEvent) { isHovered = true }
     override func mouseExited(with event: NSEvent) { isHovered = false }
 
+    /// The whole chip but its close button takes the mouse, so a ctrl-click on the title opens the tab's menu
+    /// (AppKit asks the view under the pointer) and a press there is tracked like one on the padding.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hit = super.hitTest(point) else { return nil }
+        return hit.isDescendant(of: closeButton) ? hit : self
+    }
+
     override func mouseDown(with event: NSEvent) {
         if let bar {
             bar.trackPress(on: self, with: event)
@@ -224,7 +231,12 @@ final class SAClaudeWindowTabChipView: NSView {
 
     /// Makes this chip's tab the group's selected one.
     func select() {
-        guard !item.isSelected, let window = item.window, let group = window.tabGroup else { return }
+        Self.select(item.window)
+    }
+
+    /// Makes `window` its group's selected tab.
+    static func select(_ window: NSWindow?) {
+        guard let window, let group = window.tabGroup, group.selectedWindow !== window else { return }
         group.selectedWindow = window
     }
 
@@ -242,17 +254,19 @@ final class SAClaudeWindowTabChipView: NSView {
             super.otherMouseDown(with: event)
             return
         }
+        // Swallowed: the middle button closes the tab on its way up.
     }
 
     @objc private func closeTab(_ sender: Any?) {
-        item.window?.performClose(nil)
+        tab(for: sender)?.performClose(nil)
     }
 
     // MARK: Menu
 
     override func menu(for event: NSEvent) -> NSMenu? { tabMenu() }
 
-    /// Close tab, Close other tabs, Move tab to new window, Merge all windows.
+    /// Close tab, Close other tabs, Move tab to new window, Merge all windows. Each item carries the tab's window,
+    /// so it acts on that tab even if the chips are rebuilt while the menu is open.
     private func tabMenu() -> NSMenu? {
         guard let window = item.window else { return nil }
         let group = window.tabGroup?.windows ?? [window]
@@ -262,9 +276,10 @@ final class SAClaudeWindowTabChipView: NSView {
         func add(_ title: String, _ action: Selector, enabled: Bool = true) {
             let menuItem = menu.addItem(withTitle: title, action: action, keyEquivalent: "")
             menuItem.target = self
+            menuItem.representedObject = window
             menuItem.isEnabled = enabled
         }
-        add(NSLocalizedString("ClaudeTabBarCloseTab", comment: "window tab bar: accessibility name of a tab's close button, and the context menu item that closes the tab"),
+        add(NSLocalizedString("ClaudeTabBarCloseTab", comment: "window tab bar: context menu item that closes the tab"),
             #selector(closeTab(_:)))
         add(NSLocalizedString("ClaudeTabBarCloseOthers", comment: "window tab bar: context menu item that closes every tab of the window except the clicked one"),
             #selector(closeOtherTabs(_:)), enabled: hasOtherTabs)
@@ -285,20 +300,30 @@ final class SAClaudeWindowTabChipView: NSView {
         }
     }
 
+    /// The tab an action is for: the one its menu item was built for, else this chip's.
+    private func tab(for sender: Any?) -> NSWindow? {
+        (sender as? NSMenuItem)?.representedObject as? NSWindow ?? item.window
+    }
+
     /// Asks every other tab of the group to close, each the way ⌘W would.
     @objc private func closeOtherTabs(_ sender: Any?) {
-        guard let window = item.window else { return }
+        guard let window = tab(for: sender) else { return }
         for other in window.tabGroup?.windows ?? [] where other !== window {
             other.performClose(nil)
         }
     }
 
     @objc private func moveTabToNewWindow(_ sender: Any?) {
-        item.window?.moveTabToNewWindow(nil)
+        tab(for: sender)?.moveTabToNewWindow(nil)
     }
 
+    /// Merges into the clicked tab's window, made the key window first, as the Window menu's item merges into
+    /// the key window.
     @objc private func mergeAllWindows(_ sender: Any?) {
-        item.window?.mergeAllWindows(nil)
+        guard let window = tab(for: sender) else { return }
+        let shown = window.tabGroup?.selectedWindow ?? window
+        shown.makeKeyAndOrderFront(nil)
+        shown.mergeAllWindows(nil)
     }
 
     // MARK: Accessibility

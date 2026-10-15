@@ -29,12 +29,12 @@ enum SAClaudeWindowTabBarLayout {
     /// Remove `id`, then insert it at `index`.
     struct Step: Equatable { var id: Int; var index: Int }
 
-
     /// Chips sized to their content: each preferred width clamped to [min, max], packed from the left of the
     /// scrolling area. When they don't fit, every chip shrinks by the same ratio, though not below the minimum;
-    /// if they still don't fit at that size the strip scrolls.
+    /// if they still don't fit at that size the strip scrolls. "+" follows the last chip, or stays at the right
+    /// edge (where the scrolling area always leaves room for it) while the strip scrolls.
     static func frames(preferredWidths: [CGFloat], barWidth: CGFloat) -> Frames {
-        let plus = NSRect(x: barWidth - sideInset - plusSize, y: ((height - plusSize) / 2).rounded(.down), width: plusSize, height: plusSize)
+        var plus = NSRect(x: barWidth - sideInset - plusSize, y: ((height - plusSize) / 2).rounded(.down), width: plusSize, height: plusSize)
         let scrollArea = NSRect(x: sideInset, y: 0, width: max(0, barWidth - 2 * sideInset - plusSize - plusGap), height: height)
         guard !preferredWidths.isEmpty else { return Frames(scrollArea: scrollArea, chips: [], contentWidth: 0, scrolls: false, plus: plus) }
         let gaps = gap * CGFloat(preferredWidths.count - 1)
@@ -47,13 +47,15 @@ enum SAClaudeWindowTabBarLayout {
             widths = widths.map { max(minChipWidth, ($0 * ratio).rounded(.down)) }
             scrolls = widths.reduce(0, +) + gaps > available
         }
+        let contentWidth = widths.reduce(0, +) + gaps
+        if !scrolls { plus.origin.x = scrollArea.minX + contentWidth + gap }
         let y = ((height - chipHeight) / 2).rounded(.down)
         var x: CGFloat = 0
         let chips = widths.map { width -> NSRect in
             defer { x += width + gap }
             return NSRect(x: x, y: y, width: width, height: chipHeight)
         }
-        return Frames(scrollArea: scrollArea, chips: chips, contentWidth: widths.reduce(0, +) + gaps, scrolls: scrolls, plus: plus)
+        return Frames(scrollArea: scrollArea, chips: chips, contentWidth: contentWidth, scrolls: scrolls, plus: plus)
     }
 
     /// The insertion index (0...chips.count) for a drag at content x: the number of chips whose midX is left of x.
@@ -61,8 +63,10 @@ enum SAClaudeWindowTabBarLayout {
         chips.filter { $0.midX < x }.count
     }
 
-    /// The order after moving `id` to the gap before index `insertion` (an index in the current order); unchanged when the move is a no-op.
+    /// The order after moving `id` to the gap before index `insertion` (an index in the current order, clamped to
+    /// 0...order.count); unchanged when the move is a no-op.
     static func target(order: [Int], moving id: Int, toInsertion insertion: Int) -> [Int] {
+        let insertion = min(max(0, insertion), order.count)
         guard let from = order.firstIndex(of: id), insertion != from, insertion != from + 1 else { return order }
         var result = order
         result.remove(at: from)

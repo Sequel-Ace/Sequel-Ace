@@ -28,7 +28,7 @@ final class SAClaudeWindowTabBarLayoutTests: XCTestCase {
         XCTAssertEqual(f.chips[0], NSRect(x: 0, y: 4, width: 150, height: 28))
         XCTAssertEqual(f.contentWidth, 462)
         XCTAssertFalse(f.scrolls)
-        XCTAssertEqual(f.plus, NSRect(x: 768, y: 6, width: 24, height: 24))
+        XCTAssertEqual(f.plus, NSRect(x: 476, y: 6, width: 24, height: 24))   // right after the last chip
     }
 
     func testPreferredWidthsAreClamped() {
@@ -52,6 +52,7 @@ final class SAClaudeWindowTabBarLayoutTests: XCTestCase {
         XCTAssertEqual(f.chips.map(\.width), Array(repeating: 100, count: 12))
         XCTAssertEqual(f.contentWidth, 1266)
         XCTAssertTrue(f.scrolls)
+        XCTAssertEqual(f.plus, NSRect(x: 768, y: 6, width: 24, height: 24))   // pinned at the right edge
     }
 
     func testNoTabs() {
@@ -74,6 +75,8 @@ final class SAClaudeWindowTabBarLayoutTests: XCTestCase {
         XCTAssertEqual(L.target(order: [1, 2, 3], moving: 1, toInsertion: 3), [2, 3, 1])
         XCTAssertEqual(L.target(order: [1, 2, 3], moving: 2, toInsertion: 1), [1, 2, 3])   // onto itself
         XCTAssertEqual(L.target(order: [1, 2, 3], moving: 2, toInsertion: 2), [1, 2, 3])   // just after itself
+        XCTAssertEqual(L.target(order: [1, 2, 3], moving: 1, toInsertion: 9), [2, 3, 1])   // clamped to the end
+        XCTAssertEqual(L.target(order: [1, 2, 3], moving: 3, toInsertion: -4), [3, 1, 2])  // clamped to the front
     }
 
     func testMovingANonSelectedTabIsOneStep() {
