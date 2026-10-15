@@ -5169,3 +5169,12 @@
 
 /* window tab bar: tooltip and accessibility name of the button that opens a new tab */
 "ClaudeTabBarNewTab" = "New tab";
+
+/* window tab bar: context menu item that closes every tab of the window except the clicked one */
+"ClaudeTabBarCloseOthers" = "Close other tabs";
+
+/* window tab bar: context menu item that moves the clicked tab out into a window of its own */
+"ClaudeTabBarMoveToNewWindow" = "Move tab to new window";
+
+/* window tab bar: context menu item that merges every window of the app into tabs of this window */
+"ClaudeTabBarMergeAll" = "Merge all windows";

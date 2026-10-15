@@ -71,7 +71,29 @@ struct SAClaudeWindowTabItem {
         #endif
     }
 
+    /// Reorders the tabs of `selected`'s group by `steps` (ids index into `windows`, the group's order the steps
+    /// were planned on) through the group's own remove and insert, never moving `selected`, so the selection stays.
+    /// Every remove and insert has AppKit add a fresh tab strip, which the group's KVO hides at once; the bars are
+    /// rebuilt once at the end rather than for each intermediate order.
+    static func reorder(_ windows: [NSWindow], steps: [SAClaudeWindowTabBarLayout.Step], keeping selected: NSWindow) {
+        isReordering = true
+        defer { isReordering = false }
+        for step in steps where windows.indices.contains(step.id) {
+            let moving = windows[step.id]
+            // A tab closed since the drag started is not put back.
+            guard moving !== selected, let group = selected.tabGroup, group.windows.contains(where: { $0 === moving }) else { continue }
+            group.removeWindow(moving)
+            group.insertWindow(moving, at: min(max(0, step.index), group.windows.count))
+        }
+        (selected.tabGroup?.windows ?? [selected]).forEach(hideNativeTabBar(in:))
+        controller(for: selected)?.refresh()
+    }
+
     // MARK: Private
+
+    /// While `reorder` runs, the group passes through orders (and, with two tabs, a single tab) that are not
+    /// shown: bars are not shown, hidden or rebuilt for them.
+    private static var isReordering = false
 
     /// Controllers whose group asked for a rebuild this main-queue turn.
     private static var pendingRefreshes: [SAClaudeWindowTabBarController] = []
@@ -111,12 +133,12 @@ struct SAClaudeWindowTabItem {
 
     /// The model's callback, synchronous from KVO: hide macOS's strip in every window of the group right away (it
     /// must never reach the screen), then rebuild - at once when a bar has to appear or disappear, so a new tab
-    /// never shows a frame without its bar, otherwise coalesced.
+    /// never shows a frame without its bar, otherwise (and during a reorder) coalesced.
     private func groupDidChange() {
         let windows = groupWindows
         windows.forEach(Self.hideNativeTabBar(in:))
         let shouldShow = windows.count > 1
-        if windows.contains(where: { Self.controller(for: $0).map { $0.isVisible != shouldShow } ?? false }) {
+        if !Self.isReordering, windows.contains(where: { Self.controller(for: $0).map { $0.isVisible != shouldShow } ?? false }) {
             rebuild()
         } else {
             refresh()
