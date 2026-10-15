@@ -2,7 +2,7 @@
 //  SAClaudeWindowTabBarLayoutTests.swift
 //  Unit Tests
 //
-//  Geometry and reorder maths for the Claude window tab bar.
+//  Geometry, reorder and merge maths for the Claude window tab bar.
 //
 
 import XCTest
@@ -98,5 +98,55 @@ final class SAClaudeWindowTabBarLayoutTests: XCTestCase {
 
     func testNoStepsWhenUnchanged() {
         XCTAssertEqual(L.reorderSteps(order: [1, 2, 3], target: [1, 2, 3], selected: 2), [])
+    }
+
+    // MARK: Merge plan
+
+    /// A stand-in window: identity only.
+    private final class W: CustomStringConvertible {
+        let name: String
+        init(_ name: String) { self.name = name }
+        var description: String { name }
+    }
+
+    /// `groups` lists each tab group's windows in tab order; a window in none of them has no group.
+    private func plan(target: W, windows: [W], groups: [[W]] = []) -> [String] {
+        L.mergePlan(target: target, windows: windows) { w in groups.first { $0.contains { $0 === w } } }.map(\.name)
+    }
+
+    func testMergePlanLoneTargetAndTwoLoneWindows() {
+        let a = W("a"), b = W("b"), c = W("c")
+        XCTAssertEqual(plan(target: a, windows: [a, b, c]), ["b", "c"])
+        XCTAssertEqual(plan(target: b, windows: [a, b, c]), ["a", "c"])
+    }
+
+    func testMergePlanGroupsInFirstSeenOrderThenLoneWindows() {
+        let t1 = W("t1"), t2 = W("t2"), t3 = W("t3"), g1 = W("g1"), g2 = W("g2"), lone = W("lone")
+        let groups = [[t1, t2, t3], [g1, g2]]
+        XCTAssertEqual(plan(target: t2, windows: [t1, t2, t3, g1, g2, lone], groups: groups), ["g1", "g2", "lone"])
+        XCTAssertEqual(plan(target: t1, windows: [lone, g2, t3, g1, t1, t2], groups: groups), ["lone", "g1", "g2"])
+    }
+
+    func testMergePlanLeavesOutTheTargetsGroup() {
+        let t1 = W("t1"), t2 = W("t2"), other = W("other")
+        let result = plan(target: t1, windows: [t2, other, t1], groups: [[t1, t2]])
+        XCTAssertEqual(result, ["other"])
+    }
+
+    func testMergePlanKeepsTabOrderOfAGroupSeenThroughALaterTab() {
+        let t = W("t"), g1 = W("g1"), g2 = W("g2"), g3 = W("g3")
+        XCTAssertEqual(plan(target: t, windows: [t, g3, g1, g2], groups: [[g1, g2, g3]]), ["g1", "g2", "g3"])
+    }
+
+    func testMergePlanIsEmptyWhenEverythingIsInTheTargetsGroup() {
+        let t1 = W("t1"), t2 = W("t2")
+        XCTAssertEqual(plan(target: t1, windows: [t1, t2], groups: [[t1, t2]]), [])
+        XCTAssertEqual(plan(target: t1, windows: [t1]), [])
+        XCTAssertEqual(plan(target: t1, windows: []), [])
+    }
+
+    func testMergePlanListsEachWindowOnce() {
+        let t = W("t"), a = W("a"), g1 = W("g1"), g2 = W("g2")
+        XCTAssertEqual(plan(target: t, windows: [a, g2, a, t, g1, g2, a], groups: [[g1, g2]]), ["a", "g1", "g2"])
     }
 }

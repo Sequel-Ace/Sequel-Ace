@@ -2,8 +2,8 @@
 //  SAClaudeWindowTabBarLayout.swift
 //  Sequel Ace
 //
-//  Frames and reorder steps for the Claude window tab bar (chips, scroll area, "+" button).
-//  Pure geometry and reorder maths. Shared with the Unit Tests target.
+//  Frames, reorder steps and the merge plan for the Claude window tab bar (chips, scroll area, "+" button).
+//  Pure geometry, reorder and merge maths. Shared with the Unit Tests target.
 //
 
 import AppKit
@@ -105,5 +105,21 @@ enum SAClaudeWindowTabBarLayout {
             steps.append(step)
         }
         return steps
+    }
+
+    /// The windows Merge All Windows appends to `target`'s group, in order: every other group, in the order its
+    /// first-seen window comes in `windows`, each with its windows in tab order. `group(w)` is `w`'s group in tab
+    /// order, or nil when it has none (a lone window is a group of one). Each window once, none of `target`'s group.
+    static func mergePlan<W: AnyObject>(target: W, windows: [W], group: (W) -> [W]?) -> [W] {
+        var planned = (group(target) ?? []) + [target]
+        func isPlanned(_ w: W) -> Bool { planned.contains { $0 === w } }
+        var result: [W] = []
+        for window in windows where !isPlanned(window) {
+            for member in group(window) ?? [window] where !isPlanned(member) {
+                planned.append(member)
+                result.append(member)
+            }
+        }
+        return result
     }
 }
