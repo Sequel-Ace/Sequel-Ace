@@ -162,6 +162,11 @@ private extension TabManager {
         let current = managedWindows.first { $0.window.isMainWindow }?.window ?? managedWindows.first { $0.window.isVisible }?.window
         if let current, !current.styleMask.contains(.fullScreen) {
             newWindow.setFrameTopLeftPoint(newWindow.cascadeTopLeft(from: NSPoint(x: current.frame.minX, y: current.frame.maxY)))
+            // A screen-filling window leaves no room to cascade: open the new one exactly over it instead of half
+            // off the screen.
+            if let visible = (current.screen ?? NSScreen.main)?.visibleFrame, !visible.contains(newWindow.frame) {
+                newWindow.setFrame(current.frame, display: false)
+            }
         }
         // A window of its own is the first tab of its own group.
         managedWindows.insert(newManagement, at: 0)
