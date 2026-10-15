@@ -169,4 +169,124 @@ final class SAClaudeFormLayoutTests: XCTestCase {
         XCTAssertEqual(SAClaudeFormText.joined(["users", nil, " ", "INT(11)"]), "users · INT(11)")
         XCTAssertNil(SAClaudeFormText.joined([nil, ""]))
     }
+
+    // MARK: - Field editor and BIT editor
+
+    private var regularCancel: L.FooterItem { L.FooterItem(width: 99, height: 32, inset: 6) }
+    private var regularOK: L.FooterItem { L.FooterItem(width: 99, height: 32, inset: 6) }
+
+    func testEditorStripSwitcherIconsSurfaceAndFooterFrames() {
+        let f = L.editorFrames(L.EditorSpec(size: NSSize(width: 735, height: 428), hasContext: true, switcherWidth: 200, iconCount: 3,
+                                            footerLeading: [L.FooterItem(width: 220, height: 18)], footerTrailing: [regularCancel, regularOK]))
+        XCTAssertEqual(f.title, NSRect(x: 20, y: 392, width: 695, height: 18))
+        XCTAssertEqual(f.context, NSRect(x: 20, y: 375, width: 695, height: 15))
+        XCTAssertEqual(f.surface, NSRect(x: 20, y: 64, width: 695, height: 295))
+        XCTAssertEqual(f.strip, NSRect(x: 20, y: 319, width: 695, height: 40))
+        XCTAssertEqual(f.switcher, NSRect(x: 28, y: 326, width: 200, height: 26))
+        XCTAssertEqual(f.icons, [NSRect(x: 615, y: 325, width: 28, height: 28), NSRect(x: 647, y: 325, width: 28, height: 28),
+                                 NSRect(x: 679, y: 325, width: 28, height: 28)])
+        XCTAssertEqual(f.content, NSRect(x: 24, y: 68, width: 687, height: 250))
+        XCTAssertEqual(f.footerLeading, [NSRect(x: 20, y: 21, width: 220, height: 18)])
+        XCTAssertEqual(f.footerTrailing, [NSRect(x: 527, y: 14, width: 99, height: 32), NSRect(x: 622, y: 14, width: 99, height: 32)])
+    }
+
+    func testEditorStripCollapsesWithoutSwitcherAndIcons() {
+        let f = L.editorFrames(L.EditorSpec(size: NSSize(width: 735, height: 428), hasContext: true, switcherWidth: 0, iconCount: 0))
+        XCTAssertNil(f.strip)
+        XCTAssertNil(f.switcher)
+        XCTAssertTrue(f.icons.isEmpty)
+        // No strip: the content starts 4pt under the surface's top edge (359 - 4 = 355) and fills the whole surface.
+        XCTAssertEqual(f.surface, NSRect(x: 20, y: 64, width: 695, height: 295))
+        XCTAssertEqual(f.content, NSRect(x: 24, y: 68, width: 687, height: 287))
+        // Icons only: the strip stays and the icons are right-aligned, no switcher.
+        let iconsOnly = L.editorFrames(L.EditorSpec(size: NSSize(width: 735, height: 428), hasContext: false, switcherWidth: 0, iconCount: 2))
+        XCTAssertEqual(iconsOnly.strip, NSRect(x: 20, y: 336, width: 695, height: 40))
+        XCTAssertNil(iconsOnly.switcher)
+        XCTAssertEqual(iconsOnly.icons, [NSRect(x: 647, y: 342, width: 28, height: 28), NSRect(x: 679, y: 342, width: 28, height: 28)])
+        XCTAssertEqual(iconsOnly.icons.last?.maxX, 707)
+        // Switcher only: no icons, the switcher at the strip's left.
+        let switcherOnly = L.editorFrames(L.EditorSpec(size: NSSize(width: 735, height: 428), hasContext: false, switcherWidth: 160, iconCount: 0))
+        XCTAssertEqual(switcherOnly.switcher, NSRect(x: 28, y: 343, width: 160, height: 26))
+        XCTAssertTrue(switcherOnly.icons.isEmpty)
+    }
+
+    func testEditorTinySizesStayNonNegative() {
+        for size in [NSSize(width: 390, height: 150), NSSize(width: 390, height: 100), NSSize(width: 650, height: 200)] {
+            let f = L.editorFrames(L.EditorSpec(size: size, hasContext: true, switcherWidth: 200, iconCount: 3, footerTrailing: [regularCancel, regularOK]))
+            for r in [f.surface, f.content] + [f.strip, f.switcher].compactMap({ $0 }) + f.icons { assertNonNegative(r) }
+            XCTAssertGreaterThanOrEqual(f.surface.minY, 64)
+        }
+    }
+
+    func testReadOnlyFooterHasSinglePrimaryAtTheRightMargin() {
+        let f = L.editorFrames(L.EditorSpec(size: NSSize(width: 735, height: 428), hasContext: false, switcherWidth: 200, iconCount: 3,
+                                            footerTrailing: [regularOK]))
+        XCTAssertEqual(f.footerTrailing, [NSRect(x: 622, y: 14, width: 99, height: 32)])
+        XCTAssertEqual(f.footerTrailing.first?.maxX, 735 - L.sideMargin + 6)
+        XCTAssertTrue(f.footerLeading.isEmpty)
+    }
+
+    func testBitGridOrder() {
+        let g = L.bitGrid(chipsLeft: 100, top: 300)
+        XCTAssertEqual(g.chips.count, 64)
+        XCTAssertEqual(g.rowLabels.count, 8)
+        XCTAssertEqual(L.bitGridHeight, 188)
+        XCTAssertEqual(L.bitChipsWidth, 236)
+        XCTAssertEqual(g.chips[63], NSRect(x: 100, y: 280, width: 26, height: 20))
+        XCTAssertEqual(g.chips[56], NSRect(x: 310, y: 280, width: 26, height: 20))
+        XCTAssertEqual(g.chips[55], NSRect(x: 100, y: 256, width: 26, height: 20))
+        XCTAssertEqual(g.chips[7], NSRect(x: 100, y: 112, width: 26, height: 20))
+        XCTAssertEqual(g.chips[0], NSRect(x: 310, y: 112, width: 26, height: 20))
+        XCTAssertEqual(g.rowLabels[0], NSRect(x: 68, y: 284, width: 24, height: 12))
+        XCTAssertEqual(g.rowLabels[7], NSRect(x: 68, y: 116, width: 24, height: 12))
+        for row in 0..<8 {
+            for column in 1..<8 {
+                let bit = 63 - (8 * row + column)
+                XCTAssertEqual(g.chips[bit].minY, g.chips[bit + 1].minY)
+                XCTAssertEqual(g.chips[bit].minX - g.chips[bit + 1].maxX, 4)
+            }
+        }
+        XCTAssertEqual(g.chips.map(\.minY).min(), 300 - L.bitGridHeight)
+    }
+
+    func testOperatorFrames() {
+        let frames = L.operatorFrames(count: 7, in: NSRect(x: 100, y: 50, width: 276, height: 22))
+        XCTAssertEqual(frames.count, 7)
+        XCTAssertEqual(frames.first, NSRect(x: 100, y: 50, width: 36, height: 22))
+        XCTAssertEqual(frames.last, NSRect(x: 340, y: 50, width: 36, height: 22))
+        XCTAssertTrue(L.operatorFrames(count: 0, in: .zero).isEmpty)
+    }
+
+    func testBitControlColumnFitsTheSevenOperators() {
+        XCTAssertEqual(L.operatorRowWidth(count: 7), 276)
+        XCTAssertEqual(L.operatorRowWidth(count: 0), 0)
+        XCTAssertEqual(L.bitControlColumnWidth, 276)
+        // A BIT sheet: the 188pt grid across the form, the operator row in the control column.
+        let items: [L.Item] = [.wide(.custom(height: L.bitGridHeight)), .control(.custom(height: L.operatorButtonSize.height))]
+        let f = L.frames(L.Spec(items: items, hasContext: true, footerLeading: [L.FooterItem(width: 60, height: 28)],
+                                footerTrailing: [small, smallPrimary], currentSize: NSSize(width: 360, height: 300),
+                                minimumControlWidth: L.bitControlColumnWidth))
+        let operators = f.items[1].control
+        XCTAssertGreaterThanOrEqual(operators.width, 276)
+        XCTAssertEqual(L.operatorFrames(count: 7, in: operators).last?.maxX ?? .infinity, operators.minX + 276)
+        XCTAssertLessThanOrEqual(operators.minX + 276, f.size.width - L.sideMargin)
+        // Without the guarantee the default 200pt column would clip the row.
+        let narrow = L.frames(L.Spec(items: items, hasContext: true, currentSize: NSSize(width: 360, height: 300)))
+        XCTAssertLessThan(narrow.items[1].control.width, 276)
+    }
+
+    func testFieldTitleParsing() {
+        var t = SAClaudeFormText.fieldTitle("Field: “id” – INT(11) NOT NULL ")
+        XCTAssertEqual(t.column, "id"); XCTAssertEqual(t.details, "INT(11) NOT NULL")
+        t = SAClaudeFormText.fieldTitle("“flags” – BIT(8) ")
+        XCTAssertEqual(t.column, "flags"); XCTAssertEqual(t.details, "BIT(8)")
+        t = SAClaudeFormText.fieldTitle("Field: “a – b” – TEXT")
+        XCTAssertEqual(t.column, "a – b"); XCTAssertEqual(t.details, "TEXT")
+        t = SAClaudeFormText.fieldTitle("“doc” – ")
+        XCTAssertEqual(t.column, "doc"); XCTAssertNil(t.details)
+        t = SAClaudeFormText.fieldTitle("“note”")
+        XCTAssertEqual(t.column, "note"); XCTAssertNil(t.details)
+        t = SAClaudeFormText.fieldTitle("plain")
+        XCTAssertEqual(t.column, "plain"); XCTAssertNil(t.details)
+    }
 }

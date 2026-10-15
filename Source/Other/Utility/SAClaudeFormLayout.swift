@@ -93,6 +93,8 @@ enum SAClaudeFormLayout {
         /// The recipe's width, when it gives one.
         var fixedWidth: CGFloat? = nil
         var resizable = false
+        /// The narrowest control column the sheet must give (the BIT sheet's operator row needs 276pt).
+        var minimumControlWidth: CGFloat = SAClaudeFormLayout.minimumControlWidth
     }
 
     struct ItemFrame: Equatable {
@@ -177,14 +179,21 @@ enum SAClaudeFormLayout {
             if case .row(let width, _) = item { return width } else { return nil }
         }
         var labelColumn = labelColumnWidth(labelWidths)
-        let formNeed = labelWidths.isEmpty
-            ? 2 * sideMargin + minimumControlWidth
-            : 2 * sideMargin + labelColumn + labelGap + minimumControlWidth
+        // Controls without a row label still sit right of the (minimum) label column, so they need it too.
+        let hasControlColumn = s.items.contains { item in
+            switch item {
+            case .row, .control: return true
+            default: return false
+            }
+        }
+        let formNeed = labelWidths.isEmpty && !hasControlColumn
+            ? 2 * sideMargin + s.minimumControlWidth
+            : 2 * sideMargin + labelColumn + labelGap + s.minimumControlWidth
         let footerNeed = footerWidth(leading: s.footerLeading, trailing: s.footerTrailing)
         let minWidth = min(max(minimumWidth, formNeed, footerNeed), maximumWidth)
         let width = max(minWidth, s.fixedWidth ?? s.currentSize.width)
         // Labels truncate only when the sheet cannot widen further (it is at 560pt or more) and they still don't fit.
-        let availableLabelColumn = max(minimumLabelColumn, width - 2 * sideMargin - labelGap - minimumControlWidth)
+        let availableLabelColumn = max(minimumLabelColumn, width - 2 * sideMargin - labelGap - s.minimumControlWidth)
         let truncates = width >= maximumWidth && labelColumn > availableLabelColumn
         if truncates { labelColumn = availableLabelColumn }
 
@@ -279,5 +288,162 @@ enum SAClaudeFormText {
     static func joined(_ parts: [String?]) -> String? {
         let kept = parts.compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         return kept.isEmpty ? nil : kept.joined(separator: " · ")
+    }
+}
+
+// MARK: - Field editor
+
+extension SAClaudeFormLayout {
+    static let stripHeight: CGFloat = 40
+    static let stripPadding: CGFloat = 8
+    static let switcherHeight: CGFloat = 26
+    static let iconButtonSize: CGFloat = 28
+    static let iconButtonGap: CGFloat = 4
+
+    struct EditorSpec: Equatable {
+        /// The sheet's content size (kept: the field editor is resizable, its minimum is the controller's).
+        var size: NSSize
+        var hasContext: Bool
+        /// 0: no mode switcher.
+        var switcherWidth: CGFloat
+        /// Visible strip icons, laid out right-aligned.
+        var iconCount: Int
+        var footerLeading: [FooterItem] = []
+        var footerTrailing: [FooterItem] = []
+    }
+
+    struct EditorFrames: Equatable {
+        var title: NSRect
+        var context: NSRect?
+        /// The rounded editor surface (strip included).
+        var surface: NSRect
+        /// The toolbar strip at the surface's top; nil when it has nothing to show.
+        var strip: NSRect?
+        var switcher: NSRect?
+        var icons: [NSRect]
+        /// Where the visible content view (text, hex, JSON or image) goes.
+        var content: NSRect
+        var footerLeading: [NSRect]
+        var footerTrailing: [NSRect]
+    }
+
+    static func editorFrames(_ s: EditorSpec) -> EditorFrames {
+        let width = s.size.width
+        let contentWidth = max(0, width - 2 * sideMargin)
+        var cursor = s.size.height - topMargin
+        let title = NSRect(x: sideMargin, y: cursor - titleHeight, width: contentWidth, height: titleHeight)
+        cursor = title.minY
+        var context: NSRect?
+        if s.hasContext {
+            cursor -= contextGap
+            context = NSRect(x: sideMargin, y: cursor - contextHeight, width: contentWidth, height: contextHeight)
+            cursor -= contextHeight
+        }
+        cursor -= headerGap
+        let bottom = bottomMargin + footerHeight + footerGap
+        let surface = NSRect(x: sideMargin, y: bottom, width: contentWidth, height: max(0, cursor - bottom))
+
+        var strip: NSRect?
+        var switcher: NSRect?
+        var icons: [NSRect] = []
+        if s.switcherWidth > 0 || s.iconCount > 0 {
+            let height = min(stripHeight, surface.height)
+            let stripRect = NSRect(x: surface.minX, y: surface.maxY - height, width: surface.width, height: height)
+            strip = stripRect
+            if s.switcherWidth > 0 {
+                switcher = NSRect(x: stripRect.minX + stripPadding, y: stripRect.minY + ((stripRect.height - switcherHeight) / 2).rounded(.down),
+                                  width: s.switcherWidth, height: switcherHeight)
+            }
+            var x = stripRect.maxX - stripPadding
+            for _ in 0..<max(0, s.iconCount) {
+                let icon = NSRect(x: x - iconButtonSize, y: stripRect.minY + ((stripRect.height - iconButtonSize) / 2).rounded(.down),
+                                  width: iconButtonSize, height: iconButtonSize)
+                icons.insert(icon, at: 0)
+                x = icon.minX - iconButtonGap
+            }
+        }
+        // Under the strip's 1pt hairline, or inset from the surface's own edge.
+        let top = strip.map { $0.minY - 1 } ?? surface.maxY - blockInset
+        let contentBottom = surface.minY + blockInset
+        let content = NSRect(x: surface.minX + blockInset, y: contentBottom, width: max(0, surface.width - 2 * blockInset),
+                             height: max(0, top - contentBottom))
+        let footer = footerFrames(width: width, leading: s.footerLeading, trailing: s.footerTrailing)
+        return EditorFrames(title: title, context: context, surface: surface, strip: strip, switcher: switcher, icons: icons,
+                            content: content, footerLeading: footer.leading, footerTrailing: footer.trailing)
+    }
+}
+
+// MARK: - BIT editor
+
+extension SAClaudeFormLayout {
+    static let bitChipSize = NSSize(width: 26, height: 20)
+    static let bitChipGap: CGFloat = 4
+    static let bitRowGap: CGFloat = 4
+    static let bitLabelWidth: CGFloat = 24
+    static let bitLabelHeight: CGFloat = 12
+    static let bitLabelGap: CGFloat = 8
+    static let operatorButtonSize = NSSize(width: 36, height: 22)
+    static let operatorButtonGap: CGFloat = 4
+
+    static var bitGridHeight: CGFloat { 8 * bitChipSize.height + 7 * bitRowGap }
+    static var bitChipsWidth: CGFloat { 8 * bitChipSize.width + 7 * bitChipGap }
+
+    /// The width of `count` operator buttons side by side (7 → 276pt).
+    static func operatorRowWidth(count: Int) -> CGFloat {
+        count <= 0 ? 0 : CGFloat(count) * operatorButtonSize.width + CGFloat(count - 1) * operatorButtonGap
+    }
+    /// The control column the BIT sheet must keep: its 7 operator buttons in one row; the
+    /// chip grid (236pt) fits inside it. Pass as `Spec.minimumControlWidth`.
+    static var bitControlColumnWidth: CGFloat { max(operatorRowWidth(count: 7), bitChipsWidth) }
+
+    struct BitGrid: Equatable {
+        /// Index = bit number (0 = least significant).
+        var chips: [NSRect]
+        /// Index = row from the top: row r holds bits 63 − 8r … 56 − 8r and is labelled with bit 56 − 8r.
+        var rowLabels: [NSRect]
+    }
+
+    /// 8 rows × 8 chips, bit 63 top-left → bit 0 bottom-right; each row led by its bit-position label.
+    static func bitGrid(chipsLeft: CGFloat, top: CGFloat) -> BitGrid {
+        var chips = [NSRect](repeating: .zero, count: 64)
+        var labels: [NSRect] = []
+        for row in 0..<8 {
+            let y = top - CGFloat(row + 1) * bitChipSize.height - CGFloat(row) * bitRowGap
+            labels.append(NSRect(x: chipsLeft - bitLabelGap - bitLabelWidth, y: y + ((bitChipSize.height - bitLabelHeight) / 2).rounded(.down),
+                                 width: bitLabelWidth, height: bitLabelHeight))
+            for column in 0..<8 {
+                chips[63 - (8 * row + column)] = NSRect(x: chipsLeft + CGFloat(column) * (bitChipSize.width + bitChipGap), y: y,
+                                                        width: bitChipSize.width, height: bitChipSize.height)
+            }
+        }
+        return BitGrid(chips: chips, rowLabels: labels)
+    }
+
+    /// The BIT operator buttons left to right from `rect`'s left edge, centred on it.
+    static func operatorFrames(count: Int, in rect: NSRect) -> [NSRect] {
+        (0..<max(0, count)).map { index in
+            NSRect(x: rect.minX + CGFloat(index) * (operatorButtonSize.width + operatorButtonGap),
+                   y: rect.minY + ((rect.height - operatorButtonSize.height) / 2).rounded(.down),
+                   width: operatorButtonSize.width, height: operatorButtonSize.height)
+        }
+    }
+}
+
+extension SAClaudeFormText {
+
+    /// The column name and the type details from the field editors' label (`“name” – TYPE(len) NOT NULL encoding`,
+    /// optionally prefixed "Field: "). Text without the curly quotes is the column name as is.
+    static func fieldTitle(_ label: String) -> (column: String, details: String?) {
+        let text = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let open = text.firstIndex(of: "“") else { return (text, nil) }
+        let start = text.index(after: open)
+        if let separator = text.range(of: "” –", range: start..<text.endIndex) {
+            let details = text[separator.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+            return (String(text[start..<separator.lowerBound]), details.isEmpty ? nil : details)
+        }
+        if text.hasSuffix("”"), let close = text.lastIndex(of: "”"), close >= start {
+            return (String(text[start..<close]), nil)
+        }
+        return (text, nil)
     }
 }
