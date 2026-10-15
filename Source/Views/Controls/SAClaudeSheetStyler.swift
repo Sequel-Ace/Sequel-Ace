@@ -88,11 +88,12 @@ import AppKit
 
     /// Restyles `window` if it is a target: already skinned windows are walked again with the current colours. Every
     /// window styled (and every open panel whose accessory is) is then offered to the Import flow's styler, which
-    /// claims its own.
+    /// claims its own; windows are also offered to the table/database sheets' form (`SAClaudeFormSheetStyler`).
     static func consider(_ window: NSWindow) {
         if let skin = SAClaudeWindowSkin.skin(for: window) {
             skin.refresh(force: true)
             SAClaudeImportStyler.claim(window)
+            SAClaudeFormSheetStyler.claim(window)
             return
         }
         let alert = (window.delegate as? NSAlert).flatMap { $0.window === window ? $0 : nil }
@@ -121,6 +122,7 @@ import AppKit
         case .window:
             SAClaudeWindowSkin.attach(to: window, alert: nil)
             SAClaudeImportStyler.claim(window)
+            SAClaudeFormSheetStyler.claim(window)
         case .skip:
             break
         }
@@ -356,7 +358,9 @@ final class SAClaudeWindowSkin: NSObject {
             d.alertButtonIndex = index
             d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
         }
-        let style = SAClaudeSheetRules.style(for: d)
+        var style = SAClaudeSheetRules.style(for: d)
+        // A bespoke styler may give a push button a role the rules don't (`SAClaudeSheetButtonRole`).
+        if let forcedPrimary = SAClaudeSheetButtonRole.forced(button) { style = forcedPrimary ? .primaryButton : .secondaryButton }
         switch style {
         case .primaryButton, .secondaryButton:
             // A borderless titled push button (a link-like text button) keeps its native look.
@@ -675,5 +679,22 @@ enum SAClaudeStyledMark {
         }
         let now = (view as? NSTableView)?.backgroundColor ?? (view as? NSScrollView)?.backgroundColor ?? colour
         objc_setAssociatedObject(view, &backgroundKey, now, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+}
+
+// MARK: - Forced button roles
+
+/// A push button whose sheet role a bespoke styler chose: the field editor's read-only Close is the primary though it
+/// answers Escape, and the BIT editor's textured buttons get roles at all. Read by `SAClaudeWindowSkin.styleButton`,
+/// so the role survives every later walk of the window.
+enum SAClaudeSheetButtonRole {
+    private static var key: UInt8 = 0
+
+    static func force(_ button: NSButton, primary: Bool) {
+        objc_setAssociatedObject(button, &key, primary, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    static func forced(_ button: NSButton) -> Bool? {
+        objc_getAssociatedObject(button, &key) as? Bool
     }
 }

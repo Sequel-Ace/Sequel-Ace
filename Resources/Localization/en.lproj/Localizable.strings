@@ -5184,3 +5184,18 @@
 
 /* Window menu: merges every window of the app into tabs of the front window */
 "ClaudeWindowMenuMergeAll" = "Merge All Windows";
+
+/* Claude sheet title: the Rename Database sheet */
+"ClaudeFormRenameDatabase" = "Rename database";
+
+/* Claude sheet row label: the field with the new name of a database or table being renamed or duplicated */
+"ClaudeFormLabelNewName" = "New name";
+
+/* Claude sheet context line under the Rename Database title: the database's current name */
+"ClaudeFormContextCurrently" = "Currently %@";
+
+/* Claude sheet context line under a Duplicate title: the database or table being duplicated */
+"ClaudeFormContextFrom" = "From %@";
+
+/* Claude sheet context line under the New Table title: the database the table is created in */
+"ClaudeFormContextIn" = "In %@";

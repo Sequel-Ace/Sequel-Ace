@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */; };
+		F0A0C0DE0000000000000007 /* SAClaudeFormSheetStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000006 /* SAClaudeFormSheetStyler.swift */; };
 		F0A0C0DE0000000000000005 /* SAClaudeFormLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */; };
 		F0A0C0DE0000000000000003 /* SAClaudeFormLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */; };
 		F0A0C0DE0000000000000002 /* SAClaudeFormLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */; };
@@ -1051,6 +1053,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormRecipes.swift; sourceTree = "<group>"; };
+		F0A0C0DE0000000000000006 /* SAClaudeFormSheetStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormSheetStyler.swift; sourceTree = "<group>"; };
 		F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormLayoutTests.swift; sourceTree = "<group>"; };
 		F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormLayout.swift; sourceTree = "<group>"; };
 		D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyle.swift; sourceTree = "<group>"; };
@@ -3034,6 +3038,8 @@
 		17FDB0AC1280938000DBBBC2 /* Controls */ = {
 			isa = PBXGroup;
 			children = (
+				F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */,
+				F0A0C0DE0000000000000006 /* SAClaudeFormSheetStyler.swift */,
 				50E217B118174246009D3580 /* SPColorSelectorView.h */,
 				50E217B218174246009D3580 /* SPColorSelectorView.m */,
 				DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */,
@@ -4363,6 +4369,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */,
+				F0A0C0DE0000000000000007 /* SAClaudeFormSheetStyler.swift in Sources */,
 				F0A0C0DE0000000000000002 /* SAClaudeFormLayout.swift in Sources */,
 				11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */,
 				17E641460EF01EB5001BC333 /* main.m in Sources */,
