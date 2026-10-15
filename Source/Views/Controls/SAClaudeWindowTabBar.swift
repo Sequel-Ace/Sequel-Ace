@@ -114,6 +114,17 @@ struct SAClaudeWindowTabItem {
         controller(for: selected)?.refresh()
     }
 
+    /// AppKit leaves the tab items (Show Next Tab … Merge All Windows) out of the Window menu while the key window
+    /// can't tab, which is every lone window here (transparent title bar), so Merge All Windows vanished exactly
+    /// when it was needed. A private NSMenu switch keeps them installed; validation stays SPWindow's. A no-op if a
+    /// future macOS drops the switch.
+    @objc static func keepWindowMenuTabItems() {
+        let selector = NSSelectorFromString("_setAlwaysInstallWindowTabItems:")
+        guard NSMenu.responds(to: selector) else { return }
+        typealias Setter = @convention(c) (AnyClass, Selector, Bool) -> Void
+        unsafeBitCast(NSMenu.method(for: selector), to: Setter.self)(NSMenu.self, selector, true)
+    }
+
     /// Whether Merge All Windows has a window to bring into `window`'s group.
     @objc static func canMergeAllWindows(into window: NSWindow) -> Bool {
         !mergePlan(into: window).isEmpty
@@ -124,7 +135,7 @@ struct SAClaudeWindowTabItem {
     /// document window joins `window`'s group after its last tab, group by group in tab order; `window` stays
     /// selected. The bars follow from the group's KVO.
     @objc static func mergeAllWindows(into window: NSWindow) {
-        for other in mergePlan(into: window) {
+        for other in mergePlan(into: window) where !(window.tabGroup?.windows.contains { $0 === other } ?? false) {
             (window.tabGroup?.windows.last ?? window).addTabbedWindow(other, ordered: .above)
         }
         window.tabGroup?.selectedWindow = window
@@ -135,8 +146,10 @@ struct SAClaudeWindowTabItem {
     // MARK: Private
 
     /// The document windows to merge into `window`, in the order to append them. A tab that isn't selected is
-    /// not visible, so a window counts as shown when it or its group's selected tab is.
+    /// not visible, so a window counts as shown when it or its group's selected tab is. Only a document window
+    /// merges: the Bundle Editor and the field editor sheet are SPWindows too.
     private static func mergePlan(into window: NSWindow) -> [NSWindow] {
+        guard window.windowController is SPWindowController, !window.isSheet else { return [] }
         func isShown(_ w: NSWindow?) -> Bool { w.map { $0.isVisible || $0.isMiniaturized } ?? false }
         let documents = NSApp.windows.filter { w in
             w.windowController is SPWindowController && !w.isSheet && (isShown(w) || isShown(w.tabGroup?.selectedWindow))
