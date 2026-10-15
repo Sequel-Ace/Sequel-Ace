@@ -59,9 +59,10 @@ private final class SAClaudeSidebarFilterCell: SAClaudeSearchFieldCell {
         let styler = SAClaudeSidebarFilterStyler(field: field, fill: fill)
         objc_setAssociatedObject(field, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
+        // Styled first: the field's height comes from its borderless 12pt cell, not the XIB's bezeled one.
+        styler.styleField()
         place(field: field, fill: fill, listScrollView: listScrollView, in: container)
         container.addSubview(fill, positioned: .below, relativeTo: field)
-        styler.styleField()
         styler.observe()
     }
 
