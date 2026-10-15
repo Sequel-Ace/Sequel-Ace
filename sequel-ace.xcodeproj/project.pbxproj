@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F0A0C0DE0000000000000005 /* SAClaudeFormLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */; };
+		F0A0C0DE0000000000000003 /* SAClaudeFormLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */; };
+		F0A0C0DE0000000000000002 /* SAClaudeFormLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */; };
 		B58100BAE9FAD13A49B2040F /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
 		B05B233FB5B0FF706A6C1F74 /* SAClaudeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */; };
 		1116723AD7F48B7A730F8592 /* SAClaudeGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D42719F17E83D365061AD03 /* SAClaudeGlyphs.swift */; };
@@ -1048,6 +1051,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormLayoutTests.swift; sourceTree = "<group>"; };
+		F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormLayout.swift; sourceTree = "<group>"; };
 		D2C61E747E908724CE997AC6 /* SAClaudeStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyle.swift; sourceTree = "<group>"; };
 		2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStyleTests.swift; sourceTree = "<group>"; };
 		05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGlyphsTests.swift; sourceTree = "<group>"; };
@@ -3208,6 +3213,7 @@
 		507FF10E1BBCC4A900104523 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */,
 				1AD785E325B749760007E153 /* OSLog.swift */,
 				507FF1101BBCC4C400104523 /* SPFunctions.h */,
 				507FF1111BBCC57600104523 /* SPFunctions.m */,
@@ -3272,6 +3278,7 @@
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */,
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
 				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
@@ -4004,6 +4011,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A0C0DE0000000000000005 /* SAClaudeFormLayoutTests.swift in Sources */,
+				F0A0C0DE0000000000000003 /* SAClaudeFormLayout.swift in Sources */,
 				51AC3B7430475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift in Sources */,
 				1196D9FED5B52DE6CD6B0C76 /* SASSHTunnelAuthSource.swift in Sources */,
 				EDDD0AB23E0A1F4A5AE67091 /* SASSHTunnelAuthService.swift in Sources */,
@@ -4354,6 +4363,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A0C0DE0000000000000002 /* SAClaudeFormLayout.swift in Sources */,
 				11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */,
 				17E641460EF01EB5001BC333 /* main.m in Sources */,
 				1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */,
