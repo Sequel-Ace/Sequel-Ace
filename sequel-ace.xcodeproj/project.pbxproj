@@ -29,6 +29,7 @@
 		EA0C0DE00000000000000002 /* SAClaudeExportLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000001 /* SAClaudeExportLayout.swift */; };
 		EA0C0DE00000000000000102 /* SAClaudeImportLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000101 /* SAClaudeImportLayout.swift */; };
 		C1A0C0DE0000000000000002 /* SAClaudeChromeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0C0DE0000000000000001 /* SAClaudeChromeLayout.swift */; };
+		7AB0C0DE0000000000000002 /* SAClaudeWindowTabBarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB0C0DE0000000000000001 /* SAClaudeWindowTabBarLayout.swift */; };
 		E7A1C0DE0000000000000002 /* SAClaudeConnectionPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE0000000000000001 /* SAClaudeConnectionPanelLayout.swift */; };
 		4F7E5129B8997F6E6DAB2CA9 /* SAInitialViewPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35C6BDFBC4E82B92BBE3698A /* SAInitialViewPolicy.swift */; };
 		BF8000E2495A0EB517D41007 /* SAClaudeInfoRowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA6FC4AE5197D8C4FAE5487 /* SAClaudeInfoRowLayout.swift */; };
@@ -40,6 +41,7 @@
 		EA0C0DE00000000000000003 /* SAClaudeExportLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000001 /* SAClaudeExportLayout.swift */; };
 		EA0C0DE00000000000000103 /* SAClaudeImportLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000101 /* SAClaudeImportLayout.swift */; };
 		C1A0C0DE0000000000000003 /* SAClaudeChromeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0C0DE0000000000000001 /* SAClaudeChromeLayout.swift */; };
+		7AB0C0DE0000000000000003 /* SAClaudeWindowTabBarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB0C0DE0000000000000001 /* SAClaudeWindowTabBarLayout.swift */; };
 		E7A1C0DE0000000000000003 /* SAClaudeConnectionPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE0000000000000001 /* SAClaudeConnectionPanelLayout.swift */; };
 		F8B2C0DE0000000000000002 /* SAClaudeFavoriteCardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2C0DE0000000000000001 /* SAClaudeFavoriteCardLayout.swift */; };
 		F8B2C0DE0000000000000003 /* SAClaudeFavoriteCardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2C0DE0000000000000001 /* SAClaudeFavoriteCardLayout.swift */; };
@@ -69,6 +71,7 @@
 		EA0C0DE00000000000000005 /* SAClaudeExportLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000004 /* SAClaudeExportLayoutTests.swift */; };
 		EA0C0DE00000000000000105 /* SAClaudeImportLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0C0DE00000000000000104 /* SAClaudeImportLayoutTests.swift */; };
 		C1A0C0DE0000000000000005 /* SAClaudeChromeLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0C0DE0000000000000004 /* SAClaudeChromeLayoutTests.swift */; };
+		7AB0C0DE0000000000000005 /* SAClaudeWindowTabBarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB0C0DE0000000000000004 /* SAClaudeWindowTabBarLayoutTests.swift */; };
 		E7A1C0DE0000000000000005 /* SAClaudeConnectionPanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A1C0DE0000000000000004 /* SAClaudeConnectionPanelLayoutTests.swift */; };
 		F8B2C0DE0000000000000005 /* SAClaudeFavoriteCardLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2C0DE0000000000000004 /* SAClaudeFavoriteCardLayoutTests.swift */; };
 		2BAC517D4AE974DECB8C223A /* SAInitialViewPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3EC439C38911AE036FD33A /* SAInitialViewPolicyTests.swift */; };
@@ -1060,6 +1063,7 @@
 		EA0C0DE00000000000000001 /* SAClaudeExportLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportLayout.swift; sourceTree = "<group>"; };
 		EA0C0DE00000000000000101 /* SAClaudeImportLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeImportLayout.swift; sourceTree = "<group>"; };
 		C1A0C0DE0000000000000001 /* SAClaudeChromeLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeChromeLayout.swift; sourceTree = "<group>"; };
+		7AB0C0DE0000000000000001 /* SAClaudeWindowTabBarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeWindowTabBarLayout.swift; sourceTree = "<group>"; };
 		E7A1C0DE0000000000000001 /* SAClaudeConnectionPanelLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionPanelLayout.swift; sourceTree = "<group>"; };
 		F8B2C0DE0000000000000001 /* SAClaudeFavoriteCardLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFavoriteCardLayout.swift; sourceTree = "<group>"; };
 		35C6BDFBC4E82B92BBE3698A /* SAInitialViewPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAInitialViewPolicy.swift; sourceTree = "<group>"; };
@@ -1084,6 +1088,7 @@
 		EA0C0DE00000000000000004 /* SAClaudeExportLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeExportLayoutTests.swift; sourceTree = "<group>"; };
 		EA0C0DE00000000000000104 /* SAClaudeImportLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeImportLayoutTests.swift; sourceTree = "<group>"; };
 		C1A0C0DE0000000000000004 /* SAClaudeChromeLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeChromeLayoutTests.swift; sourceTree = "<group>"; };
+		7AB0C0DE0000000000000004 /* SAClaudeWindowTabBarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeWindowTabBarLayoutTests.swift; sourceTree = "<group>"; };
 		E7A1C0DE0000000000000004 /* SAClaudeConnectionPanelLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConnectionPanelLayoutTests.swift; sourceTree = "<group>"; };
 		F8B2C0DE0000000000000004 /* SAClaudeFavoriteCardLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFavoriteCardLayoutTests.swift; sourceTree = "<group>"; };
 		2A3EC439C38911AE036FD33A /* SAInitialViewPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAInitialViewPolicyTests.swift; sourceTree = "<group>"; };
@@ -3241,6 +3246,7 @@
 				EA0C0DE00000000000000001 /* SAClaudeExportLayout.swift */,
 				EA0C0DE00000000000000101 /* SAClaudeImportLayout.swift */,
 				C1A0C0DE0000000000000001 /* SAClaudeChromeLayout.swift */,
+				7AB0C0DE0000000000000001 /* SAClaudeWindowTabBarLayout.swift */,
 				E7A1C0DE0000000000000001 /* SAClaudeConnectionPanelLayout.swift */,
 				F8B2C0DE0000000000000001 /* SAClaudeFavoriteCardLayout.swift */,
 				35C6BDFBC4E82B92BBE3698A /* SAInitialViewPolicy.swift */,
@@ -3363,6 +3369,7 @@
 				EA0C0DE00000000000000004 /* SAClaudeExportLayoutTests.swift */,
 				EA0C0DE00000000000000104 /* SAClaudeImportLayoutTests.swift */,
 				C1A0C0DE0000000000000004 /* SAClaudeChromeLayoutTests.swift */,
+				7AB0C0DE0000000000000004 /* SAClaudeWindowTabBarLayoutTests.swift */,
 				E7A1C0DE0000000000000004 /* SAClaudeConnectionPanelLayoutTests.swift */,
 				F8B2C0DE0000000000000004 /* SAClaudeFavoriteCardLayoutTests.swift */,
 				2A3EC439C38911AE036FD33A /* SAInitialViewPolicyTests.swift */,
@@ -4268,6 +4275,7 @@
 				EA0C0DE00000000000000003 /* SAClaudeExportLayout.swift in Sources */,
 				EA0C0DE00000000000000103 /* SAClaudeImportLayout.swift in Sources */,
 				C1A0C0DE0000000000000003 /* SAClaudeChromeLayout.swift in Sources */,
+				7AB0C0DE0000000000000003 /* SAClaudeWindowTabBarLayout.swift in Sources */,
 				E7A1C0DE0000000000000003 /* SAClaudeConnectionPanelLayout.swift in Sources */,
 				F8B2C0DE0000000000000003 /* SAClaudeFavoriteCardLayout.swift in Sources */,
 				D282BE001749EAB06C742E37 /* SAInitialViewPolicy.swift in Sources */,
@@ -4288,6 +4296,7 @@
 				EA0C0DE00000000000000005 /* SAClaudeExportLayoutTests.swift in Sources */,
 				EA0C0DE00000000000000105 /* SAClaudeImportLayoutTests.swift in Sources */,
 				C1A0C0DE0000000000000005 /* SAClaudeChromeLayoutTests.swift in Sources */,
+				7AB0C0DE0000000000000005 /* SAClaudeWindowTabBarLayoutTests.swift in Sources */,
 				E7A1C0DE0000000000000005 /* SAClaudeConnectionPanelLayoutTests.swift in Sources */,
 				F8B2C0DE0000000000000005 /* SAClaudeFavoriteCardLayoutTests.swift in Sources */,
 				2BAC517D4AE974DECB8C223A /* SAInitialViewPolicyTests.swift in Sources */,
@@ -4743,6 +4752,7 @@
 				EA0C0DE00000000000000002 /* SAClaudeExportLayout.swift in Sources */,
 				EA0C0DE00000000000000102 /* SAClaudeImportLayout.swift in Sources */,
 				C1A0C0DE0000000000000002 /* SAClaudeChromeLayout.swift in Sources */,
+				7AB0C0DE0000000000000002 /* SAClaudeWindowTabBarLayout.swift in Sources */,
 				E7A1C0DE0000000000000002 /* SAClaudeConnectionPanelLayout.swift in Sources */,
 				F8B2C0DE0000000000000002 /* SAClaudeFavoriteCardLayout.swift in Sources */,
 				4F7E5129B8997F6E6DAB2CA9 /* SAInitialViewPolicy.swift in Sources */,
