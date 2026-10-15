@@ -50,6 +50,7 @@ import SnapKit
         setupFramePersistence()
         setupAppearance()
         observeTitlebarTintPreference()
+        observeTabSelection()
         window?.toolbarStyle = .unified
     }
 
@@ -61,6 +62,10 @@ import SnapKit
     /// Holds the preference observer for the window's lifetime; the token
     /// unregisters it on deinit.
     private var titlebarTintSubscription: NotificationToken?
+
+    /// Key-window observers that keep the tab accessory's selected style current;
+    /// the tokens unregister them on deinit.
+    private var tabSelectionSubscriptions: [NotificationToken] = []
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
@@ -172,6 +177,30 @@ private extension SPWindowController {
             self.applyTitlebarTint(self.favoriteColor)
         }
     }
+
+    /// Restyle the tab content when this window gains or loses key status. Switching
+    /// tabs in a group moves key status between the windows, and the group's
+    /// `selectedWindow` is already updated when the old tab resigns key, so these two
+    /// notifications also cover selection changes within the group.
+    func observeTabSelection() {
+        guard let window = window else {
+            return
+        }
+        tabSelectionSubscriptions = [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification].map { name in
+            NotificationCenter.default.observe(name: name, object: window, queue: .main) { [weak self] _ in
+                self?.updateTabSelection()
+            }
+        }
+        updateTabSelection()
+    }
+
+    /// The selected tab of a group stays selected while another app or window is key.
+    func updateTabSelection() {
+        guard let window = window else {
+            return
+        }
+        tabAccessoryView.setSelected(window.isKeyWindow || window.tabGroup?.selectedWindow === window)
+    }
 }
 
 // MARK: - Public API
@@ -181,9 +210,12 @@ private extension SPWindowController {
         window?.title = title
         if #available(macOS 10.13, *) {
             window?.tab.title = tabTitle
+            // The window title is the full path; the tab shows only its tail.
+            window?.tab.toolTip = title
         }
-        
+
         tabAccessoryView.setTitle(title: tabTitle)
+        tabAccessoryView.setToolTipPath(title)
     }
 
     func updateWindow(title: String, tabTitle: String, subtitle: String) {
@@ -192,11 +224,11 @@ private extension SPWindowController {
     }
 
     /// Reflect the connection this tab holds in the window chrome: the colour
-    /// line on the tab accessory, the SSL padlock, and the title bar tint.
+    /// dot on the tab accessory, the SSL padlock, and the title bar tint.
     ///
     /// The single funnel for all three, called from
     /// `-[SPDatabaseDocument updateWindowTitle:]`. A `nil` colour means "no
-    /// favourite colour, or not connected" and clears the line and the tint.
+    /// favourite colour, or not connected" and clears the dot and the tint.
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
         favoriteColor = color
         tabAccessoryView.update(color: color, isSSL: isSSL)
