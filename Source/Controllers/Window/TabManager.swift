@@ -163,8 +163,8 @@ private extension TabManager {
         if let current, !current.styleMask.contains(.fullScreen) {
             newWindow.setFrameTopLeftPoint(newWindow.cascadeTopLeft(from: NSPoint(x: current.frame.minX, y: current.frame.maxY)))
             // A screen-filling window leaves no room to cascade: open the new one exactly over it instead of half
-            // off the screen.
-            if let visible = (current.screen ?? NSScreen.main)?.visibleFrame, !visible.contains(newWindow.frame) {
+            // off the screen. Only when that window is itself on the screen; otherwise the cascade is kept.
+            if let visible = (current.screen ?? NSScreen.main)?.visibleFrame, !visible.contains(newWindow.frame), visible.contains(current.frame) {
                 newWindow.setFrame(current.frame, display: false)
             }
         }

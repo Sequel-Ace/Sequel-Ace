@@ -287,18 +287,12 @@ final class SAClaudeWindowTabChipView: NSView {
         add(NSLocalizedString("ClaudeTabBarMoveToNewWindow", comment: "window tab bar: context menu item that moves the clicked tab out into a window of its own"),
             #selector(moveTabToNewWindow(_:)), enabled: hasOtherTabs)
         add(NSLocalizedString("ClaudeTabBarMergeAll", comment: "window tab bar: context menu item that merges every window of the app into tabs of this window"),
-            #selector(mergeAllWindows(_:)), enabled: Self.hasOtherWindows(than: window, group: group))
+            #selector(mergeAllWindows(_:)), enabled: SAClaudeWindowTabBarController.canMergeAllWindows(into: hostWindow ?? window))
         return menu
     }
 
-    /// Whether the app shows a window, outside `group`, that `window` could merge with.
-    private static func hasOtherWindows(than window: NSWindow, group: [NSWindow]) -> Bool {
-        NSApp.windows.contains { other in
-            other.tabbingIdentifier == window.tabbingIdentifier
-                && !group.contains { $0 === other }
-                && (other.isVisible || other.isMiniaturized)
-        }
-    }
+    /// The window this chip's bar is in: the shown tab of the group.
+    private var hostWindow: NSWindow? { bar?.hostWindow ?? self.window }
 
     /// The tab an action is for: the one its menu item was built for, else this chip's.
     private func tab(for sender: Any?) -> NSWindow? {
@@ -317,13 +311,10 @@ final class SAClaudeWindowTabChipView: NSView {
         tab(for: sender)?.moveTabToNewWindow(nil)
     }
 
-    /// Merges into the clicked tab's window, made the key window first, as the Window menu's item merges into
-    /// the key window.
+    /// Merges every other window into this bar's window, which stays selected (and becomes key).
     @objc private func mergeAllWindows(_ sender: Any?) {
-        guard let window = tab(for: sender) else { return }
-        let shown = window.tabGroup?.selectedWindow ?? window
-        shown.makeKeyAndOrderFront(nil)
-        shown.mergeAllWindows(nil)
+        guard let window = hostWindow ?? tab(for: sender) else { return }
+        SAClaudeWindowTabBarController.mergeAllWindows(into: window)
     }
 
     // MARK: Accessibility

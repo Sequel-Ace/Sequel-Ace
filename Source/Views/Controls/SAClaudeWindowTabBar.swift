@@ -114,7 +114,37 @@ struct SAClaudeWindowTabItem {
         controller(for: selected)?.refresh()
     }
 
+    /// Whether Merge All Windows has a window to bring into `window`'s group.
+    @objc static func canMergeAllWindows(into window: NSWindow) -> Bool {
+        !mergePlan(into: window).isEmpty
+    }
+
+    /// Merge All Windows, ours: AppKit refuses tabbing for windows with a transparent title bar (its merge is
+    /// disabled, and a lone window gets no tab group), but still adds tabs when asked explicitly. Every other
+    /// document window joins `window`'s group after its last tab, group by group in tab order; `window` stays
+    /// selected. The bars follow from the group's KVO.
+    @objc static func mergeAllWindows(into window: NSWindow) {
+        for other in mergePlan(into: window) {
+            (window.tabGroup?.windows.last ?? window).addTabbedWindow(other, ordered: .above)
+        }
+        window.tabGroup?.selectedWindow = window
+        window.makeKeyAndOrderFront(nil)
+        (window.tabGroup?.windows ?? [window]).forEach(hideNativeTabBar(in:))
+    }
+
     // MARK: Private
+
+    /// The document windows to merge into `window`, in the order to append them. A tab that isn't selected is
+    /// not visible, so a window counts as shown when it or its group's selected tab is.
+    private static func mergePlan(into window: NSWindow) -> [NSWindow] {
+        func isShown(_ w: NSWindow?) -> Bool { w.map { $0.isVisible || $0.isMiniaturized } ?? false }
+        let documents = NSApp.windows.filter { w in
+            w.windowController is SPWindowController && !w.isSheet && (isShown(w) || isShown(w.tabGroup?.selectedWindow))
+        }
+        return SAClaudeWindowTabBarLayout.mergePlan(target: window, windows: documents) { w in
+            w.tabGroup.flatMap { $0.windows.isEmpty ? nil : $0.windows }
+        }
+    }
 
     /// While `reorder` runs, the group passes through orders (and, with two tabs, a single tab) that are not
     /// shown: bars are not shown, hidden or rebuilt for them.

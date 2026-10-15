@@ -183,11 +183,22 @@
 	/* The Claude tab bar replaces the native strip. */
 }
 
+/**
+ * AppKit refuses to merge windows with a transparent title bar (the Claude bar): the Claude tab bar merges them.
+ */
+- (IBAction)mergeAllWindows:(id)sender {
+	[SAClaudeWindowTabBarController mergeAllWindowsInto:self];
+}
+
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
 	// The Claude tab bar replaces macOS's tab strip and its overview: AppKit adds these to the View menu itself.
 	if ([menuItem action] == @selector(toggleTabBar:) || [menuItem action] == @selector(toggleTabOverview:)) {
 		[menuItem setHidden:YES];
 		return NO;
+	}
+
+	if ([menuItem action] == @selector(mergeAllWindows:)) {
+		return [SAClaudeWindowTabBarController canMergeAllWindowsInto:self];
 	}
 
 	// If the item is the Show/Hide Toolbar menu item, override the text to allow correct translation
