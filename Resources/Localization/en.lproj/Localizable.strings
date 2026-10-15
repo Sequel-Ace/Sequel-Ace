@@ -2105,6 +2105,9 @@
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
 
+/* database picker : shown when the search matches no database */
+"No Matching Databases" = "No Matching Databases";
+
 /* header for no matches in filtered list */
 "NO MATCHES" = "NO MATCHES";
 
@@ -2582,6 +2585,9 @@
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
+
+/* database picker : search field placeholder */
+"Search Databases" = "Search Databases";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
