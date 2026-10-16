@@ -415,13 +415,14 @@ final class SADatabaseAssertion: NSObject {
         let lookup = querySessionValue("SELECT CAST(DATABASE() AS BINARY)", false)
         guard let error = lookup.error,
               error.errorID == 1064,
-              error.message?.hasPrefix("sphinxql: syntax error,") == true else {
+              error.sqlState == "42000",
+              error.message == "sphinxql: syntax error, unexpected AS, expecting ')' or ',' near 'AS BINARY)'" else {
             return lookup
         }
 
         // Sphinx 3.7.1 rejects CAST(... AS BINARY), returns a dummy "main"
         // from DATABASE(), and has no selectable database namespaces. Verify
-        // its empty SHOW DATABASES result instead. Match its parser diagnostic,
+        // its empty SHOW DATABASES result instead. Match this probe's exact diagnostic,
         // not its configurable MySQL version string; other servers retain the
         // original probe and all errors. A nonempty list still rejects nil.
         return querySessionValue("SHOW DATABASES", true)
