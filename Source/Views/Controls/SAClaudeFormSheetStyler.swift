@@ -204,6 +204,8 @@ struct SAClaudeFormContent {
     var collapsed: [NSView] = []
     /// Off-screen key-equivalent buttons: kept beyond the sheet's right edge.
     var offscreen: [NSView] = []
+    /// The narrowest control column the form needs (the BIT sheet's operator row: 276pt).
+    var minimumControlWidth: CGFloat = SAClaudeFormLayout.minimumControlWidth
 
     /// Every XIB view the form places (labels it adopts included).
     var allViews: [NSView] {
@@ -558,7 +560,8 @@ final class SAClaudeFormSheet: NSObject {
                                footerLeading: content.footerLeading.map(Self.footerItem),
                                footerTrailing: content.footerTrailing.map(Self.footerItem),
                                currentSize: contentView.bounds.size,
-                               resizable: window.styleMask.contains(.resizable))
+                               resizable: window.styleMask.contains(.resizable),
+                               minimumControlWidth: content.minimumControlWidth)
         var f = Layout.frames(spec)
         if ownsHeight { f = ownedHeightFrames(spec, f) }
         resizeWindow(to: f)

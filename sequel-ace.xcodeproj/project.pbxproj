@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */; };
 		F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */; };
 		F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */; };
 		F0A0C0DE0000000000000007 /* SAClaudeFormSheetStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000006 /* SAClaudeFormSheetStyler.swift */; };
@@ -1054,6 +1055,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBitEditorForm.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFieldEditorStyler.swift; sourceTree = "<group>"; };
 		F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormRecipes.swift; sourceTree = "<group>"; };
 		F0A0C0DE0000000000000006 /* SAClaudeFormSheetStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormSheetStyler.swift; sourceTree = "<group>"; };
@@ -3040,6 +3042,7 @@
 		17FDB0AC1280938000DBBBC2 /* Controls */ = {
 			isa = PBXGroup;
 			children = (
+				F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */,
 				F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */,
 				F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */,
 				F0A0C0DE0000000000000006 /* SAClaudeFormSheetStyler.swift */,
@@ -4372,6 +4375,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */,
 				F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */,
 				F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */,
 				F0A0C0DE0000000000000007 /* SAClaudeFormSheetStyler.swift in Sources */,

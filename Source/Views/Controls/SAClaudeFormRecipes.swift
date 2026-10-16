@@ -101,6 +101,7 @@ enum SAClaudeFormRecipes {
         case .trigger: return trigger(m)
         case .createSyntax: return createSyntax(m)
         case .goToDatabase: return goToDatabase(m)
+        case .bitEditor: return bitEditor(m)
         default: return nil
         }
     }
