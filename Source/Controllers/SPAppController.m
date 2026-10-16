@@ -278,7 +278,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         SPWindowController *newWindowController = [self.tabManager replaceTabServiceWithInitialWindow];
 
         if (spfDict) {
-            [newWindowController.databaseDocument setState:spfDict];
+            // Launch arguments come from whoever started the app: like a session file, they may
+            // not connect through an SSH agent by themselves. Decided on the connection as set up.
+            BOOL wantsAutoConnect = [[spfDict objectForKey:@"auto_connect"] respondsToSelector:@selector(boolValue)]
+                                 && [[spfDict objectForKey:@"auto_connect"] boolValue];
+            NSMutableDictionary *withoutAutoConnect = [spfDict mutableCopy];
+            [withoutAutoConnect removeObjectForKey:@"auto_connect"];
+            [newWindowController.databaseDocument setState:withoutAutoConnect];
+            if (wantsAutoConnect) [newWindowController.databaseDocument connectUnlessUsingSSHAgent];
         }
 
         // Set autoconnection if appropriate
