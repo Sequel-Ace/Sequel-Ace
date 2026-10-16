@@ -320,6 +320,9 @@
 /* ssh agent settings : relaunch prompt message */
 "The SSH agent helper is installed, but Sequel Ace will not use it until it has been relaunched. Open connections will be closed." = "The SSH agent helper is installed, but Sequel Ace will not use it until it has been relaunched. Open connections will be closed.";
 
+/* ssh agent helper install error */
+"The SSH agent helper is missing from this copy of Sequel Ace." = "The SSH agent helper is missing from this copy of Sequel Ace.";
+
 /* SSH agent relay error; %@ is a socket path */
 "The SSH agent helper is not allowed to connect to this socket. To allow it, add this line to ssh-agent-relay.allow:\n\n%@" = "The SSH agent helper is not allowed to connect to this socket. To allow it, add this line to ssh-agent-relay.allow:\n\n%@";
 

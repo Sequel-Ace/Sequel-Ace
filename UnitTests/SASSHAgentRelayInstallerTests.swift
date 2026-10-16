@@ -73,6 +73,41 @@ final class SASSHAgentRelayInstallerTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: installer.installedAllowlist, encoding: .utf8), "~/agent.sock\n")
     }
 
+    /// NSUserUnixTask cannot run a script without its execute bit, so such a
+    /// copy must not read as installed; reinstalling restores the bit.
+    func testAScriptThatLostItsExecuteBitNeedsRepair() throws {
+        let installer = makeInstaller()
+        try installer.install(into: scripts)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: installer.installedScript.path)
+        XCTAssertEqual(installer.status, .outdated)
+
+        try installer.install(into: scripts)
+        XCTAssertEqual(installer.status, .installed)
+    }
+
+    /// An allowlist that exists but cannot be read is made readable again on
+    /// update, keeping the user's entries.
+    func testUpdatingMakesAnUnreadableAllowlistReadableAndKeepsItsContents() throws {
+        let installer = makeInstaller()
+        try installer.install(into: scripts)
+        try "~/agent.sock\n/my/own/agent.sock\n".write(to: installer.installedAllowlist, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: installer.installedAllowlist.path)
+        XCTAssertEqual(installer.status, .outdated)
+
+        try installer.install(into: scripts)
+
+        XCTAssertEqual(installer.status, .installed)
+        XCTAssertEqual(try String(contentsOf: installer.installedAllowlist, encoding: .utf8), "~/agent.sock\n/my/own/agent.sock\n")
+    }
+
+    /// The settings sheet shows the error's text, so a failed copy must carry
+    /// the system's reason, not a generic one.
+    func testInstallErrorsCarryAReadableReason() {
+        XCTAssertEqual(SASSHAgentRelayInstaller.InstallError.copyFailed("Permission denied").localizedDescription, "Permission denied")
+        XCTAssertFalse(SASSHAgentRelayInstaller.InstallError.wrongFolder.localizedDescription.contains("SASSHAgentRelayInstaller"))
+        XCTAssertFalse(SASSHAgentRelayInstaller.InstallError.missingBundledHelper.localizedDescription.contains("SASSHAgentRelayInstaller"))
+    }
+
     func testUpdatingReplacesTheScriptButKeepsTheUsersAllowlist() throws {
         let installer = makeInstaller()
         try installer.install(into: scripts)

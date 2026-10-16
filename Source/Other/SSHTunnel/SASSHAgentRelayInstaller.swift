@@ -99,7 +99,11 @@ final class SASSHAgentRelayInstaller {
     var status: Status {
         guard let installed = fileManager.contents(atPath: installedScript.path) else { return .notInstalled }
         guard let bundledScript, let bundled = fileManager.contents(atPath: bundledScript.path) else { return .outdated }
-        guard installed == bundled, fileManager.isReadableFile(atPath: installedAllowlist.path) else { return .outdated }
+        // It also has to be runnable, and its allowlist readable: otherwise every
+        // agent connection fails, and only "outdated" brings back the repair button.
+        guard installed == bundled,
+              fileManager.isExecutableFile(atPath: installedScript.path),
+              fileManager.isReadableFile(atPath: installedAllowlist.path) else { return .outdated }
         return .installed
     }
 
@@ -132,6 +136,9 @@ final class SASSHAgentRelayInstaller {
             try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: scriptDestination.path)
             if !fileManager.fileExists(atPath: allowlistDestination.path) {
                 try allowlist.write(to: allowlistDestination, options: .atomic)
+                try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: allowlistDestination.path)
+            } else if !fileManager.isReadableFile(atPath: allowlistDestination.path) {
+                // Keep the user's list, but make it readable again.
                 try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: allowlistDestination.path)
             }
         } catch {
@@ -229,6 +236,20 @@ extension SASSHAgentRelayInstaller {
                     NSLocalizedString("Update Helper…", comment: "SSH agent helper button"))
         case .installed:
             return (NSLocalizedString("Installed", comment: "SSH agent helper state"), nil)
+        }
+    }
+}
+
+extension SASSHAgentRelayInstaller.InstallError: LocalizedError {
+
+    var errorDescription: String? {
+        switch self {
+        case .wrongFolder:
+            return NSLocalizedString("The helper can only be installed in the folder the panel opens with. Try again without changing the folder.", comment: "ssh agent helper install error")
+        case .missingBundledHelper:
+            return NSLocalizedString("The SSH agent helper is missing from this copy of Sequel Ace.", comment: "ssh agent helper install error")
+        case .copyFailed(let detail):
+            return detail
         }
     }
 }

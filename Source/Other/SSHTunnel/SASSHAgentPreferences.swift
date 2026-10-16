@@ -213,7 +213,7 @@ final class SASSHAgentSettingsModel: ObservableObject {
             // instead of leaving it to be discovered at the next connection.
             isPresentingRelaunchPrompt = true
         } catch SASSHAgentRelayInstaller.InstallError.wrongFolder {
-            presentInstallError(NSLocalizedString("The helper can only be installed in the folder the panel opens with. Try again without changing the folder.", comment: "ssh agent helper install error"))
+            presentInstallError(SASSHAgentRelayInstaller.InstallError.wrongFolder.localizedDescription)
         } catch {
             presentInstallError(String(format: NSLocalizedString("The SSH agent helper could not be installed. %@", comment: "ssh agent helper install error; %@ is the reason"), error.localizedDescription))
         }

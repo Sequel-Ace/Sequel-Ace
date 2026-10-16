@@ -316,10 +316,30 @@ final class SASSHAgentRelayTests: XCTestCase {
         XCTAssertEqual(other.openConnections, 1)
     }
 
+    private func backdate(_ path: String, by seconds: TimeInterval) throws {
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(-seconds)], ofItemAtPath: path)
+    }
+
+    /// Another copy of the app may have just bound a socket and not yet be
+    /// listening, which looks the same as abandoned. Fresh sockets are left.
+    func testSweepLeavesAFreshSocketThatMayStillBeStarting() throws {
+        let keys = containerData.path + "/.keys"
+        let starting = keys + "/a-0000f00d"
+        close(try SASSHAgentRelay.makeListeningSocket(at: starting))
+
+        SASSHAgentRelay.removeAbandonedSockets(inDirectory: keys)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: starting))
+
+        try backdate(starting, by: SASSHAgentRelay.abandonedSocketMinimumAge + 5)
+        SASSHAgentRelay.removeAbandonedSockets(inDirectory: keys)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: starting))
+    }
+
     func testSweepsAbandonedSocketsOfOtherProcessesButNotLiveOnesOrOtherFiles() throws {
         let keys = containerData.path + "/.keys"
         let abandoned = keys + "/a-0000dead"
         close(try SASSHAgentRelay.makeListeningSocket(at: abandoned))
+        try backdate(abandoned, by: SASSHAgentRelay.abandonedSocketMinimumAge + 5)
         let live = keys + "/a-0000beef"
         let liveDescriptor = try SASSHAgentRelay.makeListeningSocket(at: live)
         defer { close(liveDescriptor) }

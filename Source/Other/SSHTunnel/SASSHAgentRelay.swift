@@ -461,14 +461,24 @@ import Foundation
         return descriptor
     }
 
+    /// How old a socket must be before the sweep may treat it as abandoned.
+    /// Another copy of the app — a relaunch overlaps with the old one — may
+    /// have just bound a socket and not yet be listening on it; it refuses
+    /// connections for that moment just as an abandoned one does.
+    static let abandonedSocketMinimumAge: TimeInterval = 30
+
     /// Relay sockets are named per process, so a crash leaves one behind.
     /// Removes those nothing is listening on any more. `sparing` are this
     /// process's own live relays: a busy one can refuse a probe too.
-    static func removeAbandonedSockets(inDirectory directory: String, sparing: Set<String> = []) {
+    static func removeAbandonedSockets(inDirectory directory: String, sparing: Set<String> = [],
+                                       minimumAge: TimeInterval = abandonedSocketMinimumAge) {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
+        let cutoff = Date().addingTimeInterval(-minimumAge)
         for name in names where name.range(of: "^a-[0-9a-f]{8}$", options: .regularExpression) != nil {
             let path = directory + "/" + name
             guard !sparing.contains(path), isSocket(path) else { continue }
+            guard let modified = (try? FileManager.default.attributesOfItem(atPath: path))?[.modificationDate] as? Date,
+                  modified < cutoff else { continue }
             if isAbandoned(path) { unlink(path) }
         }
     }
