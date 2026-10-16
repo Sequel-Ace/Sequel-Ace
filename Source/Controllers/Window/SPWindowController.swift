@@ -58,7 +58,14 @@ import SnapKit
         if let window = window {
             tabBar = SAClaudeWindowTabBarController(window: window)
         }
+        databaseListSubscription = NotificationCenter.default.observe(name: .SPDatabaseCreatedRemovedRenamed, object: nil) { [weak self] _ in
+            guard let self, let document = self.databaseDocument as? SADatabaseSelectionDelegate else { return }
+            SADatabaseListManager.clearSelectionIfDropped(delegate: document, isWorking: self.databaseDocument.isWorking())
+        }
     }
+
+    /// Clears the selection of a dropped database (see `SADatabaseListManager.clearSelectionIfDropped`).
+    private var databaseListSubscription: NotificationToken?
 
     /// The Claude tab bar under the toolbar (in place of macOS's tab strip).
     private(set) var tabBar: SAClaudeWindowTabBarController?

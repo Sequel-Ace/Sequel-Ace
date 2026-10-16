@@ -301,6 +301,27 @@ final class SADatabaseListManagerTests: XCTestCase {
 
     /// Verifies every database item in the toolbar pop-up shows the clay database icon,
     /// and the command items do not.
+    // MARK: - Dropped database
+
+    func testSelectionOfADroppedDatabaseIsCleared() {
+        XCTAssertTrue(SADatabaseListManager.isDroppedSelection("test_again", popupTitles: ["Choose Database...", "beato"], isWorking: false))
+    }
+
+    func testSelectionStillListedIsKept() {
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("beato", popupTitles: ["Choose Database...", "beato"], isWorking: false))
+    }
+
+    func testNoSelectionIsKept() {
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection(nil, popupTitles: ["Choose Database..."], isWorking: false))
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("", popupTitles: ["Choose Database..."], isWorking: false))
+    }
+
+    /// A rename rebuilds the popup with the new name, then selects it in a task: the old name is missing
+    /// meanwhile, but it is not a drop.
+    func testSelectionIsKeptWhileTheDocumentIsWorking() {
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("old_name", popupTitles: ["Choose Database...", "new_name"], isWorking: true))
+    }
+
     func testDatabaseItemsShowTheDatabaseIcon() {
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
         _ = SADatabaseListManager.configurePopup(popup,
