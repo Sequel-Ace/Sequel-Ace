@@ -184,3 +184,31 @@ private enum SAClaudeAlertClassifier {
         return SAClaudeAlertClassification(kind: .warning)
     }
 }
+
+/// Which alerts get the Claude card. A SwiftUI `.alert` is an ordinary `NSAlert` presented on a window that hosts a
+/// SwiftUI view, so it keeps today's skin; so does an alert that is not exactly an `NSAlert` or whose buttons
+/// target something other than the alert.
+enum SAClaudeAlertEligibility {
+
+    struct Facts: Equatable {
+        /// `NSStringFromClass` of the visible class (KVO subclasses skipped).
+        var alertClassName: String
+        /// One entry per button; nil = no target.
+        var buttonTargetClassNames: [String?]
+        /// `String(describing:)` of the class of the first SwiftUI hosting view in the presenting window's view tree,
+        /// else of its content view; nil when the alert is not presented on a window.
+        var presentingContentClassName: String?
+    }
+
+    static func isEligible(_ facts: Facts) -> Bool {
+        guard facts.alertClassName == "NSAlert" else { return false }
+        guard facts.buttonTargetClassNames.allSatisfy({ $0 == "NSAlert" }) else { return false }
+        if let presenter = facts.presentingContentClassName, isHostingViewClassName(presenter) { return false }
+        return true
+    }
+
+    /// `String(describing: type(of: view))` of a SwiftUI hosting view (`NSHostingView<Root>`, `_NSHostingView<Root>`).
+    static func isHostingViewClassName(_ name: String) -> Bool {
+        name.hasPrefix("NSHostingView") || name.hasPrefix("_NSHostingView")
+    }
+}

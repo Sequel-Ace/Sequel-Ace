@@ -35,12 +35,25 @@ enum SAClaudeAlertPresentationHook {
         for (original, replacement) in methods {
             method_exchangeImplementations(original, replacement)
         }
+        // Alerts built from an NSError (`+alertWithError:`, which `NSAlert(error:)` and `presentError:` use) are marked,
+        // so they classify as Errors. Optional: a missing class method leaves the instance exchanges in place.
+        if let original = class_getClassMethod(NSAlert.self, NSSelectorFromString("alertWithError:")),
+           let replacement = class_getClassMethod(NSAlert.self, NSSelectorFromString("saClaude_alertWithError:")) {
+            method_exchangeImplementations(original, replacement)
+        }
         installed = true
         return true
     }
 }
 
 extension NSAlert {
+
+    /// After the exchange this runs as `+alertWithError:`; the inner call reaches the original.
+    @objc(saClaude_alertWithError:) dynamic class func saClaude_alertWithError(_ error: NSError) -> NSAlert {
+        let alert = saClaude_alertWithError(error)
+        SAClaudeAlertOrigin.markFromError(alert)
+        return alert
+    }
 
     /// After the exchange this runs as `runModal`; the inner call reaches the original.
     @objc(saClaude_runModal) dynamic func saClaude_runModal() -> NSApplication.ModalResponse {

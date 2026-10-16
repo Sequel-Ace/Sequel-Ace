@@ -332,9 +332,11 @@ final class SAClaudeAlertCard: NSObject {
             Self.place(serverBlock, NSRect(x: rect.minX, y: rect.minY, width: textWidth, height: rect.height))
             serverBlock.layoutContent()
         }
-        if let accessory, let rect = frames.accessory { Self.place(accessory, rect) }
-        if let suppression, let rect = frames.suppression { Self.place(suppression, rect) }
-        for (button, rect) in zip(buttons, frames.buttons) { Self.place(button, rect) }
+        // Only controls this card's root still owns: the CHECK TABLE results accessory is one XIB view reused by six
+        // alerts, and a stale card must not move it once another alert holds it.
+        if let accessory, let rect = frames.accessory, accessory.superview === root { Self.place(accessory, rect) }
+        if let suppression, let rect = frames.suppression, suppression.superview === root { Self.place(suppression, rect) }
+        for (button, rect) in zip(buttons, frames.buttons) where button.superview === root { Self.place(button, rect) }
 
         window.recalculateKeyViewLoop()
 

@@ -224,4 +224,37 @@ final class SAClaudeAlertKindTests: XCTestCase {
         XCTAssertEqual(split("MySQL Error", ""), parts("", nil))
         XCTAssertEqual(split("x", "MySQL a dit : y"), parts("MySQL a dit : y", nil))
     }
+    // MARK: - Eligibility (SwiftUI and other alerts keep today's skin)
+
+    private func facts(alertClass: String = "NSAlert", targets: [String?] = ["NSAlert", "NSAlert"], presenter: String? = nil) -> SAClaudeAlertEligibility.Facts {
+        .init(alertClassName: alertClass, buttonTargetClassNames: targets, presentingContentClassName: presenter)
+    }
+
+    func testPlainAlertIsEligible() {
+        XCTAssertTrue(SAClaudeAlertEligibility.isEligible(facts()))
+        XCTAssertTrue(SAClaudeAlertEligibility.isEligible(facts(presenter: "NSView")))
+        XCTAssertTrue(SAClaudeAlertEligibility.isEligible(facts(targets: [])))
+    }
+
+    func testSubclassIsNotEligible() {
+        XCTAssertFalse(SAClaudeAlertEligibility.isEligible(facts(alertClass: "SwiftUI.PlatformAlert")))
+        XCTAssertFalse(SAClaudeAlertEligibility.isEligible(facts(alertClass: "Sequel_Ace.SomeAlert")))
+    }
+
+    func testForeignButtonTargetIsNotEligible() {
+        XCTAssertFalse(SAClaudeAlertEligibility.isEligible(facts(targets: ["NSAlert", "SwiftUI.AlertActionTarget"])))
+        XCTAssertFalse(SAClaudeAlertEligibility.isEligible(facts(targets: [nil])))
+    }
+
+    func testHostingViewPresenterIsNotEligible() {
+        XCTAssertFalse(SAClaudeAlertEligibility.isEligible(facts(presenter: "NSHostingView<SAConnectionFormView>")))
+        XCTAssertFalse(SAClaudeAlertEligibility.isEligible(facts(presenter: "_NSHostingView<Foo>")))
+    }
+
+    func testHostingViewDetectionByTypeName() {
+        XCTAssertTrue(SAClaudeAlertEligibility.isHostingViewClassName("NSHostingView<ProbeSwiftUIView>"))
+        XCTAssertTrue(SAClaudeAlertEligibility.isHostingViewClassName("_NSHostingView<X>"))
+        XCTAssertFalse(SAClaudeAlertEligibility.isHostingViewClassName("NSView"))
+        XCTAssertFalse(SAClaudeAlertEligibility.isHostingViewClassName("NSKVONotifying_NSView"))
+    }
 }

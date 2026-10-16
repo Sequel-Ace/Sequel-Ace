@@ -41,13 +41,63 @@ enum SAClaudeAlertCardStyler {
         init(_ value: SAClaudeAlertClassification) { self.value = value }
     }
 
-    /// Before the buttons are styled. False = no card for this alert (ineligible, see Task 7).
+    /// Before the buttons are styled. False = no card for this alert (not eligible: a SwiftUI `.alert`, a subclass, a
+    /// foreign button target); it keeps today's skin. `parent` is the window a sheet is presented on; `runModal` passes
+    /// nil (SwiftUI alerts are sheets, so nothing is lost).
     static func prepare(_ alert: NSAlert, presentedOn parent: NSWindow?) -> Bool {
+        let eligibility = SAClaudeAlertEligibility.Facts(
+            alertClassName: visibleClassName(of: alert),
+            buttonTargetClassNames: alert.buttons.map { button in (button.target as AnyObject?).map(visibleClassName(of:)) },
+            presentingContentClassName: presentingContentClassName(of: parent))
+        guard SAClaudeAlertEligibility.isEligible(eligibility) else {
+            #if DEBUG
+            NSLog("SAClaudeAlertCard: alert not eligible, keeping today's skin: \(eligibility)")
+            #endif
+            return false
+        }
         let facts = SAClaudeAlertFacts(title: alert.messageText, message: alert.informativeText,
                                        buttonTitles: alert.buttons.map(\.title), isFromError: SAClaudeAlertOrigin.isFromError(alert))
         let classification = SAClaudeAlertKind.classify(facts)
         objc_setAssociatedObject(alert, &classificationKey, StoredClassification(classification), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         return true
+    }
+
+    // MARK: - Eligibility facts
+
+    /// `NSStringFromClass` of the object's class with KVO subclasses (`NSKVONotifying_…`) skipped.
+    static func visibleClassName(of object: AnyObject) -> String {
+        var cls: AnyClass? = object_getClass(object)
+        while let current = cls, NSStringFromClass(current).hasPrefix("NSKVONotifying_"), let parent = class_getSuperclass(current) {
+            cls = parent
+        }
+        return cls.map { NSStringFromClass($0) } ?? ""
+    }
+
+    /// The class name (`String(describing:)`, so KVO and mangling do not matter) of the first SwiftUI hosting view in
+    /// the presenting window's view tree that is visible and fills the window's content; else of the content view.
+    /// A hosting view that only fills part of the window (the record view overlay, the script console in a database
+    /// window) does not make the window a SwiftUI one.
+    static func presentingContentClassName(of window: NSWindow?) -> String? {
+        guard let content = window?.contentView else { return nil }
+        if let hosting = fullSizeHostingView(in: content, content: content) { return String(describing: type(of: hosting)) }
+        return String(describing: type(of: content))
+    }
+
+    private static func fullSizeHostingView(in view: NSView, content: NSView) -> NSView? {
+        if SAClaudeAlertEligibility.isHostingViewClassName(String(describing: type(of: view))),
+           !view.isHiddenOrHasHiddenAncestor, coversMostOf(content, view) {
+            return view
+        }
+        for subview in view.subviews {
+            if let found = fullSizeHostingView(in: subview, content: content) { return found }
+        }
+        return nil
+    }
+
+    private static func coversMostOf(_ content: NSView, _ view: NSView) -> Bool {
+        let frame = content.convert(view.bounds, from: view).intersection(content.bounds)
+        guard content.bounds.width > 0, content.bounds.height > 0 else { return false }
+        return frame.width >= content.bounds.width * 0.9 && frame.height >= content.bounds.height * 0.9
     }
 
     /// After `layout()` and the generic skin.
