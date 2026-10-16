@@ -44,14 +44,17 @@ extension NSAlert {
 
     /// After the exchange this runs as `runModal`; the inner call reaches the original.
     @objc(saClaude_runModal) dynamic func saClaude_runModal() -> NSApplication.ModalResponse {
-        SAClaudeSheetStyler.styleAlert(self)
+        SAClaudeSheetStyler.styleAlert(self, presentedOn: nil)
         return saClaude_runModal()
     }
 
     /// After the exchange this runs as `beginSheetModal(for:completionHandler:)`; the inner call reaches the original.
     @objc(saClaude_beginSheetModalForWindow:completionHandler:)
     dynamic func saClaude_beginSheetModal(for window: NSWindow, completionHandler handler: ((NSApplication.ModalResponse) -> Void)?) {
-        SAClaudeSheetStyler.styleAlert(self)
+        SAClaudeSheetStyler.styleAlert(self, presentedOn: window)
         saClaude_beginSheetModal(for: window, completionHandler: handler)
+        // The original re-runs `-[NSAlert layout]`, which takes the alert's controls back out of the card: put it back
+        // before the sheet becomes key.
+        SAClaudeAlertCard.card(for: self)?.verify()
     }
 }

@@ -21,7 +21,13 @@ enum SAClaudeAlertChrome {
     /// A true red `#C03A2E`, distinct from the clay accent (`#C6613F`) and from the error clay (`#D97757`), so a red
     /// "Delete" never reads as an ordinary OK. Used for the Error / Destructive tile and the destructive button.
     static let red = NSColor(srgbRed: 0xC0 / 255.0, green: 0x3A / 255.0, blue: 0x2E / 255.0, alpha: 1)
-    static let amber = NSColor(srgbRed: 0xD4 / 255.0, green: 0xA1 / 255.0, blue: 0x3A / 255.0, alpha: 1)
+    /// The Warning tone follows the appearance it is drawn in: `#D4A13A` on a dark card, the deeper `#B7801A` on a
+    /// light one (the lighter amber is too faint on a light surface).
+    static let amberDark = NSColor(srgbRed: 0xD4 / 255.0, green: 0xA1 / 255.0, blue: 0x3A / 255.0, alpha: 1)
+    static let amberLight = NSColor(srgbRed: 0xB7 / 255.0, green: 0x80 / 255.0, blue: 0x1A / 255.0, alpha: 1)
+    static let amber = NSColor(name: "SAClaudeAlertAmber") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? amberDark : amberLight
+    }
     static let green = NSColor(srgbRed: 0x4F / 255.0, green: 0xA0 / 255.0, blue: 0x5A / 255.0, alpha: 1)
 
     /// The tile is the surface mixed this far towards the tone.

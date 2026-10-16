@@ -5262,3 +5262,6 @@
 
 /* field editor: accessibility name of the Text / Image / Hex / JSON switcher */
 "ClaudeFieldEditorDisplayMode" = "Display mode";
+
+/* Claude alert card: label above the MySQL server's error text */
+"ClaudeAlertMySQLSaid" = "MySQL said";

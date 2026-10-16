@@ -47,7 +47,14 @@ final class SAClaudeAlertChromeTests: XCTestCase {
     }
 
     func testAmberAndGreen() {
-        assertColour(C.amber, [0xD4 / 255.0, 0xA1 / 255.0, 0x3A / 255.0, 1])
+        assertColour(C.amberDark, [0xD4 / 255.0, 0xA1 / 255.0, 0x3A / 255.0, 1])
+        assertColour(C.amberLight, [0xB7 / 255.0, 0x80 / 255.0, 0x1A / 255.0, 1])
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance {
+            assertColour(C.amber, [0xD4 / 255.0, 0xA1 / 255.0, 0x3A / 255.0, 1])
+        }
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
+            assertColour(C.amber, [0xB7 / 255.0, 0x80 / 255.0, 0x1A / 255.0, 1])
+        }
         assertColour(C.green, [0x4F / 255.0, 0xA0 / 255.0, 0x5A / 255.0, 1])
     }
 

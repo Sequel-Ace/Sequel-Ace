@@ -52,13 +52,21 @@ import AppKit
         })
     }
 
-    /// Styles `alert`'s window before it is shown: its first button primary (unless destructive), the others
-    /// secondary, its texts, suppression checkbox and accessory view. Lays the alert out. Called as the alert is
-    /// presented; once per alert (a second call, from a helper and the presentation hook both, does nothing; the
-    /// window's skin restyles it whenever it becomes key).
+    /// `styleAlert(_:presentedOn:)` for an alert with no known parent window (`runModal`, the helper factories).
     @objc(styleAlert:) static func styleAlert(_ alert: NSAlert) {
+        styleAlert(alert, presentedOn: nil)
+    }
+
+    /// Styles `alert`'s window before it is shown: its first button primary, the others secondary, its texts,
+    /// suppression checkbox and accessory view. Lays the alert out, then lays the Claude alert card out in its window
+    /// (`SAClaudeAlertCardStyler`; the destructive button turns red once the card is in). `parent` is the window a
+    /// sheet is presented on. Called as the alert is presented; once per alert (a second call, from a helper and the
+    /// presentation hook both, does nothing; the window's skin restyles it and the card is put back whenever it
+    /// becomes key).
+    @objc(styleAlert:presentedOnWindow:) static func styleAlert(_ alert: NSAlert, presentedOn parent: NSWindow?) {
         guard objc_getAssociatedObject(alert, &alertStyledKey) == nil else { return }
         objc_setAssociatedObject(alert, &alertStyledKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        let card = SAClaudeAlertCardStyler.prepare(alert, presentedOn: parent)
         // The buttons first: once the alert has laid itself out its stack view observes them, and the class of
         // an observed object must not change (`SAClaudeClassSwap`). Buttons a caller's own `layout()` already
         // put in the stack view stay native.
@@ -68,6 +76,7 @@ import AppKit
         }
         alert.layout()
         skinAlert(alert)
+        if card { SAClaudeAlertCardStyler.attach(alert) }
     }
 
     private static func onMain(_ work: @escaping () -> Void) {
@@ -92,6 +101,7 @@ import AppKit
     static func consider(_ window: NSWindow) {
         if let skin = SAClaudeWindowSkin.skin(for: window) {
             skin.refresh(force: true)
+            SAClaudeAlertCardStyler.claim(window)
             SAClaudeImportStyler.claim(window)
             SAClaudeFormSheetStyler.claim(window)
             return
@@ -109,6 +119,7 @@ import AppKit
         switch SAClaudeSheetTargeting.decision(for: facts) {
         case .alert:
             if let alert { skinAlert(alert) }
+            SAClaudeAlertCardStyler.claim(window)
         case .accessoryOnly:
             guard let accessory = (window as? NSSavePanel)?.accessoryView else { return }
             if let skin = SAClaudeWindowSkin.skin(for: accessory) {
@@ -358,8 +369,9 @@ final class SAClaudeWindowSkin: NSObject {
             d.alertButtonIndex = index
             d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
         }
-        // A forced-destructive button (the alert card's red one) keeps the red look at every walk, whatever the rules say.
-        if SAClaudeSheetButtonRole.isDestructive(button) {
+        // A forced-destructive push button (the alert card's red one) keeps the red look at every walk, whatever the
+        // rules say. Only a push button: a checkbox or radio flagged by mistake keeps its own look.
+        if SAClaudeSheetButtonRole.isDestructive(button), d.buttonType == .momentaryPushIn {
             guard button.isBordered || d.isAlertButton else { return }
             if !SAClaudeFilterCells.switchSheetButton(button, to: .destructive) {
                 guard SAClaudeFilterCells.install(SAClaudeSheetDestructiveButtonCell.self, on: button) else { return }

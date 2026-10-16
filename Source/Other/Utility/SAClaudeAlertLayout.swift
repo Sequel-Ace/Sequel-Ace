@@ -142,7 +142,8 @@ enum SAClaudeAlertLayout {
         var buttonsY = y
         if let s = spec.suppressionSize {
             if suppressionOnOwnRow {
-                suppressionFrame = NSRect(x: margin, y: y, width: s.width, height: s.height)
+                // Never past the right margin: a wider checkbox truncates its title.
+                suppressionFrame = NSRect(x: margin, y: y, width: min(s.width, cardWidth - 2 * margin), height: s.height)
                 buttonsY = y + s.height + footerRowGap
             } else {
                 suppressionFrame = NSRect(x: margin, y: y + (footerHeight - s.height) / 2, width: s.width, height: s.height)

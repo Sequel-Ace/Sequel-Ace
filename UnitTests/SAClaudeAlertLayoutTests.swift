@@ -84,6 +84,14 @@ final class SAClaudeAlertLayoutTests: XCTestCase {
                                    NSRect(x: 20, y: 130, width: 72, height: 28)])
     }
 
+    /// A suppression checkbox wider than the card on its own row is cut to the margins (its title truncates).
+    func testOwnRowSuppressionStaysWithinTheMargins() {
+        let f = L.frames(spec([150, 190, 72], suppression: NSSize(width: 500, height: 16)), text: L.TextHeights(title: 17, message: 30))
+        XCTAssertEqual(f.size.width, 468)
+        XCTAssertEqual(f.suppression, NSRect(x: 20, y: 94, width: 428, height: 16))
+        XCTAssertEqual(f.buttons.first, NSRect(x: 298, y: 118, width: 150, height: 28))
+    }
+
     /// AWS MFA: a fixed-size accessory in the text column.
     func testFixedAccessoryInTextColumn() {
         let text = L.TextHeights(title: 17, message: 60)
