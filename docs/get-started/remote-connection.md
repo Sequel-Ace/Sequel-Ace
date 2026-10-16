@@ -66,6 +66,47 @@ $ ssh -L 1234:mysqlhost:3306 sshuser@sshhost
 
 Here `mysqlhost` is what you have to enter in Sequel Ace as the MySQL host, `sshuser` corresponds to the SSH user, and `sshhost` corresponds to the SSH host field, obviously. The first number, `1234`, is the local port of the SSH tunnel. Sequel Ace chooses this port automatically. The second number in the command, `3306`, is the port used by the MySQL server.
 
+#### Using an SSH Agent (1Password, Secretive, the macOS agent, …)
+
+Sequel Ace can authenticate an SSH connection with keys held by an SSH agent, so the private key never has to be exported to a file.
+
+Sequel Ace is sandboxed, and the sandbox does not let it (or the `ssh` it runs) open an agent's socket. To bridge that gap Sequel Ace uses a small helper script that you install once. The helper runs outside the sandbox and passes connections from Sequel Ace on to your agent. It does nothing else, and you can read it: it is a short `zsh` script.
+
+**Set it up**
+
+1. Open _Preferences_ > _Network_ and click _Configure…_ next to _SSH Agent_.
+2. Click _Install Helper…_. A file panel opens on Sequel Ace's _Application Scripts_ folder; leave the folder as it is and click _Install_. Sequel Ace needs this one-time permission because it cannot write to that folder by itself.
+3. Click _Relaunch_. Sequel Ace will not use the helper until it has been relaunched, because the permission from step 2 lasts until the app quits.
+4. Choose a _Default agent_, or leave the default _Off_ and choose an agent per connection with the _SSH Agent_ option in the connection's SSH settings.
+
+**Agent choices**
+
+| Choice | What it uses |
+| --- | --- |
+| Off | No agent. Sequel Ace behaves as it always has. |
+| Automatic (from SSH config) | Whatever `ssh` would use for that host: `IdentityAgent` from your SSH config file, otherwise the macOS agent. |
+| System Agent | The macOS `ssh-agent` (`SSH_AUTH_SOCK`). |
+| 1Password | 1Password's SSH agent. |
+| Custom Socket | An agent socket path you enter, for example Secretive's or Bitwarden's. |
+
+**What to expect**
+
+- Your agent decides whether to allow each use of a key. With 1Password the approval prompt names the requester as `com.apple.foundation.UserScriptService`, not Sequel Ace. That is the macOS service that runs the helper; it is the name every app's user scripts appear under.
+- After a Sequel Ace update that changes the helper, _Preferences_ > _Network_ > _SSH Agent_ shows _Update required_ and agent connections fail with a message saying so until you click _Update Helper…_ and relaunch.
+- To offer one specific key from an agent that holds many, turn on _SSH Key_ for the connection and choose that key's public key (`.pub`) file. Servers limit how many keys a client may try.
+- With your own SSH config file, your config's `IdentitiesOnly` and `AddKeysToAgent` settings apply as written. With Sequel Ace's built-in config, key files are never added to your agent.
+
+**Which sockets the helper may reach**
+
+The helper only connects to sockets listed in `ssh-agent-relay.allow`, a text file installed next to it (_Show in Finder_ in the SSH Agent settings reveals both). It comes with the usual 1Password, macOS agent, Secretive and Bitwarden locations. Sequel Ace cannot change this file; you can. If you use _Custom Socket_ or _Automatic_ with an agent that is not listed, the connection fails with a message that quotes the exact line to add. Links are followed before a socket is checked against the list, so what must be listed is the socket's real location, and the socket must belong to your user account.
+
+**Limitations**
+
+- A jump host (`ProxyJump`) uses the same agent as the destination. A jump host whose config entry names its own `IdentityAgent` is not redirected and cannot use an agent from within Sequel Ace.
+- `IdentityAgent` set to an environment variable (`$NAME`) is not supported by _Automatic_; choose the agent explicitly.
+- A connection opened from a `mysql://` connection string never uses an SSH agent, not even your default one, because such a link can connect without asking. After importing it, choose an agent in the connection's SSH settings.
+- `PKCS11Provider` and hardware-key setups that do not go through an agent socket are not covered by the helper. See the next section.
+
 #### SSH Agent and ProxyCommand Limitations on macOS
 
 Sequel Ace is sandboxed on macOS and uses the system SSH client. Some advanced SSH setups that work in Terminal may fail in Sequel Ace if they require direct access to sockets, helper binaries, or files outside what Sequel Ace can access.
@@ -83,7 +124,8 @@ Recommended troubleshooting steps:
 1. In Sequel Ace, go to _Preferences_ > _Network_ and select your custom SSH config file.
 2. In _Preferences_ > _Files_, grant access to all SSH support paths your config uses (for example `~/.ssh`, key files, `known_hosts`, include files, helper scripts, certificate files).
 3. In your SSH config, prefer built-in macOS tools when possible (for example `/usr/bin/ssh`, `/usr/bin/nc`, `/bin/zsh`) instead of symlinked/non-system paths.
-4. If agent-based auth still fails, create the SSH tunnel outside Sequel Ace and connect with a **Standard** connection to `127.0.0.1`.
+4. For agent-based auth, set up the SSH agent helper described above.
+5. If that is not an option, create the SSH tunnel outside Sequel Ace and connect with a **Standard** connection to `127.0.0.1`.
 
 Example external tunnel:
 
@@ -97,7 +139,7 @@ Then connect in Sequel Ace with:
 - Port: `3307`
 - Username/password/database: your normal MySQL credentials
 
-Advanced option: If your SSH agent supports a custom socket location, point `IdentityAgent` to a socket path inside `~/Library/Containers/com.sequel-ace.sequel-ace/Data/` and configure the agent itself to create that socket there.
+Alternative without the helper: if your SSH agent supports a custom socket location, point `IdentityAgent` to a socket path inside `~/Library/Containers/com.sequel-ace.sequel-ace/Data/` and configure the agent itself to create that socket there.
 
 
 #### Notes

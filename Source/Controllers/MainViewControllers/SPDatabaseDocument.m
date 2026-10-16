@@ -3607,6 +3607,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
                 if ([connectionController sshRemoteSocketPath] && [[connectionController sshRemoteSocketPath] length]) [connection setObject:[connectionController sshRemoteSocketPath] forKey:@"sshRemoteSocketPath"];
+                if ([[connectionController sshAgentSource] length]) [connection setObject:[connectionController sshAgentSource] forKey:SPFavoriteSSHAgentSourceKey];
+                if ([[connectionController sshAgentSocketPath] length]) [connection setObject:[connectionController sshAgentSocketPath] forKey:SPFavoriteSSHAgentSocketPathKey];
                 break;
             case SPVaultConnection:
                 connectionType = @"SPVaultConnection";
@@ -3838,6 +3840,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
     if ([connection objectForKey:@"sshRemoteSocketPath"])    [connectionController setSshRemoteSocketPath:[connection objectForKey:@"sshRemoteSocketPath"]];
+    if ([connection objectForKey:SPFavoriteSSHAgentSourceKey])     [connectionController setSshAgentSource:[connection objectForKey:SPFavoriteSSHAgentSourceKey]];
+    if ([connection objectForKey:SPFavoriteSSHAgentSocketPathKey]) [connectionController setSshAgentSocketPath:[connection objectForKey:SPFavoriteSSHAgentSocketPathKey]];
 
     // Set Vault details if available
     if ([connection objectForKey:@"vault_host"])             [connectionController setVaultHost:[connection objectForKey:@"vault_host"]];
@@ -3880,6 +3884,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     return YES;
+}
+
+/**
+ * Connects, unless the connection now set up is an SSH tunnel that would use
+ * an SSH agent. For state from outside the app — session files, other apps —
+ * which can name any SSH host: that never connects through the user's agent
+ * without a click. Checked after the state is applied, so whatever the file
+ * left out (type, agent choice) is judged by what the form really holds.
+ */
+- (void)connectUnlessUsingSSHAgent
+{
+    if ([connectionController type] == SPSSHTunnelConnection
+        && [SASSHAgentRelay isAgentInEffectForConnectionSource:[connectionController sshAgentSource] ?: @""]) {
+        // Say why nothing happened, so it doesn't look like a failed autoconnect.
+        [connectionController showStatusMessage:NSLocalizedString(@"This connection uses an SSH agent. Click Connect to connect.", @"connection view : status when a session file's autoconnect is skipped because the connection uses an SSH agent")];
+        return;
+    }
+    [self connect];
 }
 
 /**
@@ -4057,13 +4079,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [spfDocData setObject:@NO forKey:@"auto_connect"];
 
-    if([spf objectForKey:@"auto_connect"] && [[spf valueForKey:@"auto_connect"] boolValue]) {
-        [spfDocData setObject:@YES forKey:@"auto_connect"];
-        [data setObject:@YES forKey:@"auto_connect"];
-    }
+    BOOL fileWantsAutoConnect = ([spf objectForKey:@"auto_connect"] && [[spf valueForKey:@"auto_connect"] boolValue])
+                             || ([data objectForKey:@"auto_connect"] && [[data valueForKey:@"auto_connect"] boolValue]);
+    if (fileWantsAutoConnect) [spfDocData setObject:@YES forKey:@"auto_connect"];
 
-    // Set the state dictionary, triggering an autoconnect if appropriate
+    // A session file can come from anywhere, so it never triggers the connection itself:
+    // the decision is made below on the connection as actually set up.
+    [data removeObjectForKey:@"auto_connect"];
     [self setState:data];
+
+    if (fileWantsAutoConnect) [self connectUnlessUsingSSHAgent];
 
     return YES;
 }

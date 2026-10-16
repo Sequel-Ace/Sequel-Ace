@@ -476,7 +476,7 @@ final class SAConnectionFormModel: ObservableObject {
             return vaultFailure
         }
 
-        return SAConnectionDetailsValidator.validate(
+        if let failure = SAConnectionDetailsValidator.validate(
             type: info.type,
             host: info.host,
             sshHost: info.sshHost,
@@ -490,7 +490,15 @@ final class SAConnectionFormModel: ObservableObject {
             sslCertificateFileLocation: info.sslCertificateFileLocation,
             sslCACertFileLocationEnabled: info.sslCACertFileLocationEnabled != 0,
             sslCACertFileLocation: info.sslCACertFileLocation
-        )
+        ) {
+            return failure
+        }
+
+        return SAConnectionDetailsValidator.publicKeyFailure(
+            type: info.type,
+            sshKeyLocationEnabled: info.sshKeyLocationEnabled != 0,
+            sshKeyLocation: info.sshKeyLocation,
+            agentInEffect: SASSHAgentRelay.isAgentInEffect(connectionSource: info.sshAgentSource))
     }
 
     /// The three Vault preconditions `-initiateConnection:` enforces before it

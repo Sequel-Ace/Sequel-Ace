@@ -23,6 +23,9 @@ import Foundation
     case hostMissing
     case sshHostMissing
     case sshKeyFileMissing
+    /// The SSH key is a public key but no SSH agent is in effect to hold the
+    /// private half — e.g. the agent was turned off after the key was chosen.
+    case sshKeyIsPublicKey
     case sslKeyFileMissing
     case sslCertificateFileMissing
     case sslCACertFileMissing
@@ -50,6 +53,29 @@ import Foundation
 }
 
 @objc final class SAConnectionDetailsValidator: NSObject {
+
+    /// A public key is a usable SSH identity only while an SSH agent holds
+    /// the private half, and the chooser only accepts one then. This re-checks
+    /// at connect time, because the agent can be switched off afterwards and
+    /// ssh would otherwise fail with a bare "Permission denied".
+    ///
+    /// Separate from `validate` so that keeps its signature and its
+    /// first-error ordering; callers run this after it passes.
+    @objc(publicKeyFailureWithType:sshKeyLocationEnabled:sshKeyLocation:agentInEffect:)
+    static func publicKeyFailure(type: SAConnectionType, sshKeyLocationEnabled: Bool, sshKeyLocation: String?,
+                                 agentInEffect: Bool) -> SAConnectionValidationFailure? {
+        guard type == .sshTunnel, sshKeyLocationEnabled, !agentInEffect, let path = sshKeyLocation,
+              SAConnectionFileKind.sshKey.rejectedExtensions.contains((path as NSString).pathExtension.lowercased()) else {
+            return nil
+        }
+        return SAConnectionValidationFailure(
+            kind: .sshKeyIsPublicKey,
+            alertTitle: String(format: NSLocalizedString("“%@” is a public key.",
+                                                         comment: "connection view : ssh : key file picker : public key error title"),
+                               (path as NSString).lastPathComponent),
+            alertMessage: NSLocalizedString("A public key can only be used together with an SSH agent. Choose the private key instead — the file without the .pub extension — or choose an SSH agent for this connection.",
+                                            comment: "connection view : ssh : public key chosen but no ssh agent in use"))
+    }
 
     /// Run the pre-connection checks in the same order as the original
     /// inline code. Returns `nil` if the form is valid, otherwise the
@@ -291,8 +317,14 @@ struct SAConnectionFileRejection {
     /// Reads `url` and returns its rejection, or nil when it is acceptable.
     /// An unreadable file is reported with the underlying read error, matching
     /// the original, which surfaced the NSData error before its own check.
-    static func rejection(forFileAt url: URL, kind: SAConnectionFileKind) -> SAConnectionFileRejection? {
-        if kind.rejectedExtensions.contains(url.pathExtension.lowercased()) {
+    ///
+    /// `allowingPublicKey` lifts the `.pub` refusal for the SSH-key row when
+    /// the connection authenticates through an SSH agent: there a public key
+    /// is a valid identity file — it tells ssh which of the agent's keys to
+    /// offer — and is the only way to pin one key of an agent that holds many.
+    static func rejection(forFileAt url: URL, kind: SAConnectionFileKind,
+                          allowingPublicKey: Bool = false) -> SAConnectionFileRejection? {
+        if !allowingPublicKey, kind.rejectedExtensions.contains(url.pathExtension.lowercased()) {
             return SAConnectionFileRejection(
                 alertTitle: String(format: NSLocalizedString("“%@” is a public key.",
                                                              comment: "connection view : ssh : key file picker : public key error title"),
