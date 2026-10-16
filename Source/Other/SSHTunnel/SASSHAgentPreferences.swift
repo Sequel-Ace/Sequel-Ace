@@ -425,8 +425,12 @@ struct SASSHAgentConnectionStatus: View {
     /// So the line follows changes made in the settings sheet it opens.
     @AppStorage(SASSHAgentSource.DefaultsKey.defaultSource) private var defaultSource = ""
     @AppStorage(SASSHAgentSource.DefaultsKey.customSocketPath) private var defaultCustomPath = ""
+    /// Installing the helper changes none of the inputs above; bumped when
+    /// the sheet closes so the helper's state is read again.
+    @State private var settingsRevision = 0
 
     var body: some View {
+        let _ = settingsRevision
         let installer = SASSHAgentRelayInstaller.shared
         let status = SASSHAgentRelayInstaller.connectionStatus(
             connectionSource: source, connectionCustomPath: customPath,
@@ -446,6 +450,9 @@ struct SASSHAgentConnectionStatus: View {
                 Text("SSH Agent Settings…", comment: "connection view : open ssh agent settings button")
             }
             .controlSize(.small)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: SASSHAgentPreferences.settingsDidCloseNotification)) { _ in
+            settingsRevision += 1
         }
     }
 }
