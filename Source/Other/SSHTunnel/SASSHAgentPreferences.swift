@@ -46,6 +46,10 @@ import SwiftUI
     /// that point the new copy is already starting.
     @objc static private(set) var isRelaunching = false
 
+    /// Posted when an SSH agent settings sheet closes: the default agent or the
+    /// helper may have changed.
+    static let settingsDidCloseNotification = Notification.Name("SASSHAgentSettingsDidClose")
+
     fileprivate static func beginRelaunch() { isRelaunching = true }
 
     /// Shows the default agent beside the Configure… button, so it can be seen
@@ -128,8 +132,9 @@ import SwiftUI
 
 final class SASSHAgentSettingsWindowController: NSWindowController {
 
-    /// A sheet is not retained by its parent while it is up.
-    private static var presented: SASSHAgentSettingsWindowController?
+    /// A sheet is not retained by its parent while it is up, and more than one
+    /// can be up at once (Preferences and a connection window each open one).
+    private static var presented: [SASSHAgentSettingsWindowController] = []
 
     convenience init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 400),
@@ -145,10 +150,11 @@ final class SASSHAgentSettingsWindowController: NSWindowController {
     func beginSheet(on parent: NSWindow) {
         guard let window else { return }
         window.setContentSize(window.contentView?.fittingSize ?? window.frame.size)
-        Self.presented = self
-        parent.beginSheet(window) { _ in
-            Self.presented = nil
+        Self.presented.append(self)
+        parent.beginSheet(window) { [self] _ in
+            Self.presented.removeAll { $0 === self }
             SASSHAgentPreferences.refreshSummary()
+            NotificationCenter.default.post(name: SASSHAgentPreferences.settingsDidCloseNotification, object: nil)
         }
     }
 
@@ -465,7 +471,9 @@ struct SASSHAgentSourcePicker<Label: View>: View {
     private weak var controller: SPConnectionController?
     private let onChange: () -> Void
     private var observations: [NSKeyValueObservation] = []
-    private var defaultsObserver: NSObjectProtocol?
+    private var notificationObservers: [NSObjectProtocol] = []
+    /// The default agent as last shown, to ignore unrelated preference writes.
+    private var shownDefault: [String] = []
 
     /// `anchor` is the control the row goes above (the SSH tab's time zone
     /// popup); `siblingsBelow` are views that sit under `container` in its
@@ -548,12 +556,28 @@ struct SASSHAgentSourcePicker<Label: View>: View {
             controller.observe(\.sshAgentSocketPath) { [weak self] _, _ in self?.refreshOnMain() },
         ]
         // The default agent and the helper's state change what "Use Default" means.
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil,
-                                                                  queue: .main) { [weak self] _ in self?.refresh() }
+        // Any preference write in the app posts didChange, so only a change to the
+        // agent keys refreshes; the helper can only change in the settings sheet.
+        let center = NotificationCenter.default
+        notificationObservers = [
+            center.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+                guard let self, self.currentDefault() != self.shownDefault else { return }
+                self.refresh()
+            },
+            center.addObserver(forName: SASSHAgentPreferences.settingsDidCloseNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.refresh()
+            },
+        ]
     }
 
     deinit {
-        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+        notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+
+    private func currentDefault() -> [String] {
+        let defaults = UserDefaults.standard
+        return [defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? "",
+                defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? ""]
     }
 
     private func refreshOnMain() {
@@ -567,9 +591,9 @@ struct SASSHAgentSourcePicker<Label: View>: View {
         if let index = popup.itemArray.firstIndex(where: { ($0.representedObject as? String) == known }) {
             popup.selectItem(at: index)
         }
-        let defaults = UserDefaults.standard
-        let defaultSource = defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? ""
-        let defaultCustomPath = defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? ""
+        shownDefault = currentDefault()
+        let defaultSource = shownDefault[0]
+        let defaultCustomPath = shownDefault[1]
         popup.item(at: 0)?.title = SASSHAgentRelayInstaller.useDefaultTitle(defaultSource: defaultSource,
                                                                           defaultCustomPath: defaultCustomPath)
         let installer = SASSHAgentRelayInstaller.shared
