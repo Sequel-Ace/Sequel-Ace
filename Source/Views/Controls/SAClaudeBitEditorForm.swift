@@ -60,6 +60,9 @@ extension SAClaudeFormRecipes {
             for chip in bits + [null] { SAClaudeBitChipCell.install(on: chip) }
             null.isBordered = false
             null.setFrameSize(NSSize(width: ceil(null.cell?.cellSize.width ?? 48), height: SAClaudeFormLayout.bitChipSize.height))
+            // The XIB's textured bezel draws an outline layer of its own behind the Claude cell (a second ring
+            // around Cancel): the footer buttons are push buttons like every other sheet's.
+            for button in [ok, cancel] { button.bezelStyle = .push }
             SAClaudeFormChrome.force(ok, primary: true)
             SAClaudeFormChrome.force(cancel, primary: false)
             for button in operators { SAClaudeFormChrome.force(button, primary: false) }

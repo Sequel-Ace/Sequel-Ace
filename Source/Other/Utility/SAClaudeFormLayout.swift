@@ -382,7 +382,7 @@ extension SAClaudeFormLayout {
     static let bitLabelWidth: CGFloat = 24
     static let bitLabelHeight: CGFloat = 12
     static let bitLabelGap: CGFloat = 8
-    static let operatorButtonSize = NSSize(width: 36, height: 22)
+    static let operatorButtonSize = NSSize(width: 44, height: 22)  // fits the rotate titles "+<<" and ">>+"
     static let operatorButtonGap: CGFloat = 4
 
     static var bitGridHeight: CGFloat { 8 * bitChipSize.height + 7 * bitRowGap }

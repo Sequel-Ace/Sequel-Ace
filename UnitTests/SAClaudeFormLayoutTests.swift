@@ -250,26 +250,26 @@ final class SAClaudeFormLayoutTests: XCTestCase {
     }
 
     func testOperatorFrames() {
-        let frames = L.operatorFrames(count: 7, in: NSRect(x: 100, y: 50, width: 276, height: 22))
+        let frames = L.operatorFrames(count: 7, in: NSRect(x: 100, y: 50, width: 332, height: 22))
         XCTAssertEqual(frames.count, 7)
-        XCTAssertEqual(frames.first, NSRect(x: 100, y: 50, width: 36, height: 22))
-        XCTAssertEqual(frames.last, NSRect(x: 340, y: 50, width: 36, height: 22))
+        XCTAssertEqual(frames.first, NSRect(x: 100, y: 50, width: 44, height: 22))
+        XCTAssertEqual(frames.last, NSRect(x: 388, y: 50, width: 44, height: 22))
         XCTAssertTrue(L.operatorFrames(count: 0, in: .zero).isEmpty)
     }
 
     func testBitControlColumnFitsTheSevenOperators() {
-        XCTAssertEqual(L.operatorRowWidth(count: 7), 276)
+        XCTAssertEqual(L.operatorRowWidth(count: 7), 332)
         XCTAssertEqual(L.operatorRowWidth(count: 0), 0)
-        XCTAssertEqual(L.bitControlColumnWidth, 276)
+        XCTAssertEqual(L.bitControlColumnWidth, 332)
         // A BIT sheet: the 188pt grid across the form, the operator row in the control column.
         let items: [L.Item] = [.wide(.custom(height: L.bitGridHeight)), .control(.custom(height: L.operatorButtonSize.height))]
         let f = L.frames(L.Spec(items: items, hasContext: true, footerLeading: [L.FooterItem(width: 60, height: 28)],
                                 footerTrailing: [small, smallPrimary], currentSize: NSSize(width: 360, height: 300),
                                 minimumControlWidth: L.bitControlColumnWidth))
         let operators = f.items[1].control
-        XCTAssertGreaterThanOrEqual(operators.width, 276)
-        XCTAssertEqual(L.operatorFrames(count: 7, in: operators).last?.maxX ?? .infinity, operators.minX + 276)
-        XCTAssertLessThanOrEqual(operators.minX + 276, f.size.width - L.sideMargin)
+        XCTAssertGreaterThanOrEqual(operators.width, 332)
+        XCTAssertEqual(L.operatorFrames(count: 7, in: operators).last?.maxX ?? .infinity, operators.minX + 332)
+        XCTAssertLessThanOrEqual(operators.minX + 332, f.size.width - L.sideMargin)
         // Without the guarantee the default 200pt column would clip the row.
         let narrow = L.frames(L.Spec(items: items, hasContext: true, currentSize: NSSize(width: 360, height: 300)))
         XCTAssertLessThan(narrow.items[1].control.width, 276)
