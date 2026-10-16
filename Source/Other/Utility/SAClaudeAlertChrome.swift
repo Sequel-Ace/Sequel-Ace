@@ -35,6 +35,12 @@ enum SAClaudeAlertChrome {
     static let redGlyph = NSColor(name: "SAClaudeAlertRedGlyph") { appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? redGlyphDark : red
     }
+    /// A secondary destructive button (every destructive button but the default one): a 1pt dashed outline and the
+    /// title in this red, `red` on a light card and `redGlyphDark` on a dark one; pressed, filled with it at 10%.
+    static var destructiveOutline: NSColor { redGlyph }
+    static let destructiveOutlineDash: [CGFloat] = [4, 3]
+    static let destructiveOutlineWidth: CGFloat = 1
+    static let destructiveOutlinePressedAlpha: CGFloat = 0.10
     /// The Info glyph tone: `#4FA05A` on a dark card, the deeper `#3E8A4A` on a light one (the lighter green is 2.5-2.7:1
     /// on a light tile).
     static let greenDark = NSColor(srgbRed: 0x4F / 255.0, green: 0xA0 / 255.0, blue: 0x5A / 255.0, alpha: 1)

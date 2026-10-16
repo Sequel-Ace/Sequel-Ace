@@ -53,4 +53,44 @@ final class SAClaudeFilterChromeTests: XCTestCase {
     func testCheckboxRect() {
         XCTAssertEqual(C.checkboxRect(in: NSRect(x: 2, y: 0, width: 20, height: 32)), NSRect(x: 2, y: 9, width: 14, height: 14))
     }
+
+    // MARK: - Checkbox / radio titles
+
+    private typealias T = SAClaudeToggleTitleMetrics
+
+    private func lineWidth(_ line: String) -> CGFloat {
+        ceil(NSAttributedString(string: line, attributes: T.attributes).size().width)
+    }
+
+    /// Walkthrough 2: "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" was measured as one string
+    /// at the caller's 11pt font and drawn at 12pt, truncated. A title with a newline is measured line by line in the
+    /// attributes it is drawn with, and the cell is tall enough for every line.
+    func testMultiLineTitleIsMeasuredLineByLineWithTheDrawingAttributes() {
+        let title = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?"
+        XCTAssertEqual(T.font, NSFont.systemFont(ofSize: 12))
+        let widest = max(lineWidth("Reset AUTO_INCREMENT after deletion"), lineWidth("(only for Delete ALL ROWS IN TABLE)?"))
+        let size = T.cellSize(title: title, drawsTitle: true, nativeHeight: 28)
+        XCTAssertGreaterThanOrEqual(size.width, C.checkboxSize + T.gap + widest + T.slack)
+        // At that width every line fits on one line: two lines' height, and the cell holds them.
+        let wrapped = T.wrappedTitleHeight(title, cellWidth: size.width)
+        XCTAssertEqual(wrapped, T.wrappedTitleHeight("Ag\nAg", cellWidth: 10_000))
+        XCTAssertGreaterThanOrEqual(size.height, wrapped)
+        XCTAssertGreaterThan(wrapped, T.lineHeight * 1.5)
+        // The caller's own (smaller) font does not change the measurement.
+        XCTAssertGreaterThan(size.width, C.checkboxSize + T.gap
+            + ceil(NSAttributedString(string: "(only for Delete ALL ROWS IN TABLE)?", attributes: [.font: NSFont.systemFont(ofSize: 11)]).size().width) + T.slack)
+        // Other line breaks count too.
+        XCTAssertEqual(T.cellSize(title: "Reset AUTO_INCREMENT after deletion\r\n(only for Delete ALL ROWS IN TABLE)?", drawsTitle: true, nativeHeight: 28).width, size.width)
+    }
+
+    /// An ordinary one-line title measures exactly as before: box, gap, the title's width, slack; AppKit's height.
+    func testOneLineTitleMeasuresAsBefore() {
+        let title = "Show this again"
+        let size = T.cellSize(title: title, drawsTitle: true, nativeHeight: 18)
+        XCTAssertEqual(size.width, C.checkboxSize + T.gap + ceil(NSAttributedString(string: title, attributes: [.font: NSFont.systemFont(ofSize: 12)]).size().width) + T.slack)
+        XCTAssertEqual(size.height, 18)
+        XCTAssertEqual(T.cellSize(title: title, drawsTitle: true, nativeHeight: 10).height, C.checkboxSize)
+        XCTAssertEqual(T.cellSize(title: title, drawsTitle: false, nativeHeight: 18), NSSize(width: C.checkboxSize, height: 18))
+        XCTAssertEqual(T.cellSize(title: "", drawsTitle: true, nativeHeight: 18), NSSize(width: C.checkboxSize, height: 18))
+    }
 }

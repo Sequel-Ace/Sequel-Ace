@@ -42,35 +42,35 @@ enum FilterCellDrawing {
     static let disabledAlpha: CGFloat = 0.4
     static let font = NSFont.systemFont(ofSize: 12)
     /// From the box (or circle) to the title.
-    static let titleGap: CGFloat = 6
+    static let titleGap: CGFloat = SAClaudeToggleTitleMetrics.gap
     /// Spare width so a measured title never truncates by a rounding hair.
-    static let titleSlack: CGFloat = 2
+    static let titleSlack: CGFloat = SAClaudeToggleTitleMetrics.slack
 
-    /// The size a Claude checkbox or radio cell draws: its 14pt mark, then the gap and the title at `font` (the
-    /// cell's own font and AppKit's native mark size would under-measure it). The height stays AppKit's, at least
-    /// the mark's, so rows keep their vertical layout.
+    /// The size a Claude checkbox or radio cell draws (`SAClaudeToggleTitleMetrics.cellSize`): a title with line breaks
+    /// is measured line by line, in the font it is drawn in.
     static func toggleCellSize(title: String, drawsTitle: Bool, nativeHeight: CGFloat) -> NSSize {
-        var width = SAClaudeFilterChrome.checkboxSize
-        if drawsTitle, !title.isEmpty {
-            width += titleGap + ceil(NSAttributedString(string: title, attributes: [.font: font]).size().width) + titleSlack
-        }
-        return NSSize(width: width, height: max(nativeHeight, SAClaudeFilterChrome.checkboxSize))
+        SAClaudeToggleTitleMetrics.cellSize(title: title, drawsTitle: drawsTitle, nativeHeight: nativeHeight)
+    }
+
+    /// AppKit's own size for a checkbox / radio cell (only its height is used), through NSButtonCell's implementation
+    /// rather than `super`: a cell derived from one of NSAlert's private cells carries the toggle cells'
+    /// `cellSize(forBounds:)` (`SAClaudeFilterCells`), and `super` from that donated method calls it again, forever.
+    static func nativeToggleCellSize(_ cell: NSButtonCell, forBounds rect: NSRect) -> NSSize {
+        typealias CellSize = @convention(c) (AnyObject, Selector, NSRect) -> NSSize
+        let selector = #selector(NSCell.cellSize(forBounds:))
+        guard let implementation = class_getMethodImplementation(NSButtonCell.self, selector) else { return .zero }
+        return unsafeBitCast(implementation, to: CellSize.self)(cell, selector, rect)
     }
 
     /// The height of a checkbox / radio title wrapped on word boundaries to fit a cell `cellWidth` wide (beside its 14pt
     /// mark and the gap). One line's height when the title fits on one line. The alert card sizes a long suppression
     /// checkbox with this, and the cells draw the same wrapped text, so no title is truncated.
     static func wrappedToggleTitleHeight(_ title: String, cellWidth: CGFloat) -> CGFloat {
-        let width = max(1, cellWidth - SAClaudeFilterChrome.checkboxSize - titleGap - titleSlack)
-        let style = NSMutableParagraphStyle()
-        style.lineBreakMode = .byWordWrapping
-        let bounds = NSAttributedString(string: title, attributes: [.font: font, .paragraphStyle: style])
-            .boundingRect(with: NSSize(width: width, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin])
-        return ceil(bounds.height)
+        SAClaudeToggleTitleMetrics.wrappedTitleHeight(title, cellWidth: cellWidth)
     }
 
     /// One line of a checkbox / radio title.
-    static var toggleTitleLineHeight: CGFloat { wrappedToggleTitleHeight("Ag", cellWidth: 10_000) }
+    static var toggleTitleLineHeight: CGFloat { SAClaudeToggleTitleMetrics.lineHeight }
 
     /// Draws a title that needs several lines (see `wrappedToggleTitleHeight`) from the top of `rect`.
     static func drawWrappedTitle(_ text: String, in rect: NSRect, colour: NSColor, font: NSFont) {
@@ -197,7 +197,8 @@ enum FilterCellDrawing {
 
     /// `cellSize` measures through this too.
     override func cellSize(forBounds rect: NSRect) -> NSSize {
-        FilterCellDrawing.toggleCellSize(title: title, drawsTitle: imagePosition != .imageOnly, nativeHeight: super.cellSize(forBounds: rect).height)
+        FilterCellDrawing.toggleCellSize(title: title, drawsTitle: imagePosition != .imageOnly,
+                                         nativeHeight: FilterCellDrawing.nativeToggleCellSize(self, forBounds: rect).height)
     }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
@@ -243,9 +244,9 @@ enum FilterCellDrawing {
             let minX = box.maxX + FilterCellDrawing.titleGap
             let titleRect = NSRect(x: minX, y: cellFrame.minY, width: max(0, cellFrame.maxX - minX), height: cellFrame.height)
             if wrapsTitle(in: cellFrame) {
-                FilterCellDrawing.drawWrappedTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font)
+                FilterCellDrawing.drawWrappedTitle(title, in: titleRect, colour: themeText, font: SAClaudeToggleTitleMetrics.font)
             } else {
-                FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
+                FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: SAClaudeToggleTitleMetrics.font, alignment: .left)
             }
         }
     }
@@ -259,7 +260,8 @@ enum FilterCellDrawing {
 
     /// `cellSize` measures through this too.
     override func cellSize(forBounds rect: NSRect) -> NSSize {
-        FilterCellDrawing.toggleCellSize(title: title, drawsTitle: imagePosition != .imageOnly, nativeHeight: super.cellSize(forBounds: rect).height)
+        FilterCellDrawing.toggleCellSize(title: title, drawsTitle: imagePosition != .imageOnly,
+                                         nativeHeight: FilterCellDrawing.nativeToggleCellSize(self, forBounds: rect).height)
     }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
@@ -292,7 +294,7 @@ enum FilterCellDrawing {
         if imagePosition != .imageOnly, !title.isEmpty {
             let minX = circle.maxX + FilterCellDrawing.titleGap
             let titleRect = NSRect(x: minX, y: cellFrame.minY, width: max(0, cellFrame.maxX - minX), height: cellFrame.height)
-            FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
+            FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: SAClaudeToggleTitleMetrics.font, alignment: .left)
         }
     }
 }
@@ -422,6 +424,39 @@ private enum SheetButtonDrawing {
     }
 }
 
+/// A secondary destructive alert button (every destructive button but the default one, e.g. "Delete ALL ROWS IN
+/// TABLE" beside the default "Delete Selected Row"): the secondary button's geometry and font, a 1pt red dashed
+/// outline and a red title (`SAClaudeAlertChrome.destructiveOutline`: `red` light, `redGlyphDark` dark); pressed, a
+/// faint (10%) red fill; 45% when disabled.
+@objc(SAClaudeSheetDestructiveSecondaryButtonCell) final class SAClaudeSheetDestructiveSecondaryButtonCell: NSButtonCell {
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let rect = SheetButtonDrawing.rect(self, in: cellFrame, of: controlView)
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
+
+        // Resolved in the button's own appearance (the dynamic red is the glyph's).
+        var red = SAClaudeAlertChrome.red
+        controlView.effectiveAppearance.performAsCurrentDrawingAppearance {
+            red = SAClaudeAlertChrome.destructiveOutline.usingColorSpace(.sRGB) ?? SAClaudeAlertChrome.red
+        }
+        let path = FilterCellDrawing.roundedPath(rect.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
+        if isHighlighted {
+            red.withAlphaComponent(SAClaudeAlertChrome.destructiveOutlinePressedAlpha).setFill()
+            path.fill()
+        }
+        path.lineWidth = SAClaudeAlertChrome.destructiveOutlineWidth
+        let dash = SAClaudeAlertChrome.destructiveOutlineDash
+        path.setLineDash(dash, count: dash.count, phase: 0)
+        red.setStroke()
+        path.stroke()
+
+        FilterCellDrawing.drawTitle(title, in: rect.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: red,
+                                    font: SheetButtonDrawing.font(self, weight: .medium), alignment: .center)
+    }
+}
+
 /// A sheet's or alert's secondary button: the bordered secondary look, drawn like the primary one inside the
 /// XIB frame, with the hover fill inside its outline.
 @objc(SAClaudeSheetSecondaryButtonCell) final class SAClaudeSheetSecondaryButtonCell: NSButtonCell {
@@ -433,8 +468,9 @@ private enum SheetButtonDrawing {
     }
 }
 
-/// The three looks of a sheet or alert push button.
-enum SAClaudeSheetButtonLook: CaseIterable { case primary, secondary, destructive }
+/// The looks of a sheet or alert push button: `destructive` is the filled red default, `destructiveSecondary` the
+/// red dashed outline of every other destructive alert button.
+enum SAClaudeSheetButtonLook: CaseIterable { case primary, secondary, destructive, destructiveSecondary }
 
 // MARK: - Installing
 
@@ -457,7 +493,7 @@ enum SAClaudeFilterCells {
             || cls == SAClaudeAccentButtonCell.self
             || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeSecondaryButtonCell.self
             || cls == SAClaudeSheetPrimaryButtonCell.self || cls == SAClaudeSheetSecondaryButtonCell.self
-            || cls == SAClaudeSheetDestructiveButtonCell.self
+            || cls == SAClaudeSheetDestructiveButtonCell.self || cls == SAClaudeSheetDestructiveSecondaryButtonCell.self
             || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
             || NSStringFromClass(cls).hasPrefix(derivedPrefix)
     }
@@ -488,6 +524,14 @@ enum SAClaudeFilterCells {
     }
 
     private static let drawSelector = #selector(NSCell.draw(withFrame:in:))
+    private static let cellSizeSelector = #selector(NSCell.cellSize(forBounds:))
+
+    /// What a cell derived from one of NSAlert's private cells takes from `donor`: its drawing, and for a checkbox or
+    /// radio its measurement too, so NSAlert's suppression checkbox is sized as it is drawn (in the toggle title font,
+    /// line by line), not by AppKit at the caller's own font.
+    private static func donatedSelectors(for donor: AnyClass) -> [Selector] {
+        donor == SAClaudeCheckboxCell.self || donor == SAClaudeRadioCell.self ? [drawSelector, cellSizeSelector] : [drawSelector]
+    }
     private static let updateLayerSelector = #selector(getter: NSView.wantsUpdateLayer)
 
     /// The prefix of the private classes NSAlert builds its buttons (and their cells) with.
@@ -586,7 +630,7 @@ enum SAClaudeFilterCells {
         if currentCellClass == NSButtonCell.self {
             newCellClass = cellClass
         } else if isAlertButtonClass(currentCellClass) {
-            newCellClass = derivedClass(of: currentCellClass, donor: cellClass, selectors: [drawSelector])
+            newCellClass = derivedClass(of: currentCellClass, donor: cellClass, selectors: donatedSelectors(for: cellClass))
         } else {
             newCellClass = nil
         }
@@ -602,10 +646,11 @@ enum SAClaudeFilterCells {
         case .primary: return SAClaudeSheetPrimaryButtonCell.self
         case .secondary: return SAClaudeSheetSecondaryButtonCell.self
         case .destructive: return SAClaudeSheetDestructiveButtonCell.self
+        case .destructiveSecondary: return SAClaudeSheetDestructiveSecondaryButtonCell.self
         }
     }
 
-    /// Switches an installed sheet button between the primary, secondary and destructive looks (a button whose
+    /// Switches an installed sheet button between the primary, secondary and (filled or outlined) destructive looks (a button whose
     /// default-ness or role changed). Returns false when the cell is not one of the sheet button cells or a subclass
     /// derived from them.
     @discardableResult

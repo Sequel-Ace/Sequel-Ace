@@ -105,6 +105,35 @@ final class SAClaudeAlertKindTests: XCTestCase {
         XCTAssertEqual(classify("Delete rows?", "", ["Delete", "Skip", "Cancel"]), c(.destructive, reds: [0]))
     }
 
+    /// Walkthrough 2 (Kunal): of the destructive buttons, the default one (Return, else the first: the one drawn primary)
+    /// stays filled red; every other one is a red dashed outline.
+    func testOnlyTheDefaultDestructiveButtonIsFilled() {
+        let deleteRow = classify("Delete selected row?", "Are you sure you want to delete the selected row from this table? This action cannot be undone.",
+                                 ["Delete Selected Row", "Delete ALL ROWS IN TABLE", "Cancel"])
+        // NSAlert gives its first button Return and a "Cancel" button Escape.
+        XCTAssertEqual(deleteRow.destructiveLooks(keyEquivalents: ["\r", "", "\u{1b}"]), [0: .filled, 1: .outlined])
+        // One destructive button that is the default: filled, as before.
+        XCTAssertEqual(c(.destructive, red: 0).destructiveLooks(keyEquivalents: ["\r", "\u{1b}"]), [0: .filled])
+        // No Return button: the first button is the default.
+        XCTAssertEqual(c(.destructive, reds: [0, 1]).destructiveLooks(keyEquivalents: ["", "", ""]), [0: .filled, 1: .outlined])
+        // Return on another button: every destructive button is an outline.
+        XCTAssertEqual(c(.destructive, reds: [1, 2]).destructiveLooks(keyEquivalents: ["\r", "", ""]), [1: .outlined, 2: .outlined])
+        XCTAssertEqual(c(.destructive, reds: [0]).destructiveLooks(keyEquivalents: ["r", "\r"]), [0: .outlined])
+        // "Don't Save" beside the default "Save".
+        XCTAssertEqual(c(.destructive, red: 1).destructiveLooks(keyEquivalents: ["\r", "d", "\u{1b}"]), [1: .outlined])
+        // Nothing red: nothing to draw.
+        XCTAssertEqual(c(.question).destructiveLooks(keyEquivalents: ["\r", "\u{1b}"]), [:])
+        // An index past the buttons is ignored.
+        XCTAssertEqual(c(.destructive, reds: [0, 5]).destructiveLooks(keyEquivalents: ["\r"]), [0: .filled])
+    }
+
+    func testDefaultButtonIndex() {
+        XCTAssertEqual(SAClaudeAlertClassification.defaultButtonIndex(keyEquivalents: ["\r", "", "\u{1b}"]), 0)
+        XCTAssertEqual(SAClaudeAlertClassification.defaultButtonIndex(keyEquivalents: ["r", "\r"]), 1)
+        XCTAssertEqual(SAClaudeAlertClassification.defaultButtonIndex(keyEquivalents: ["", ""]), 0)
+        XCTAssertNil(SAClaudeAlertClassification.defaultButtonIndex(keyEquivalents: []))
+    }
+
     func testDestructiveButtonNeedsWordBoundary() {
         XCTAssertEqual(classify("Proceed?", "", ["Clearance", "Cancel"]), c(.question))
     }

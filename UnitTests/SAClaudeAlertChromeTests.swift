@@ -46,6 +46,20 @@ final class SAClaudeAlertChromeTests: XCTestCase {
         XCTAssertNotEqual(C.red, SAClaudeStatusChrome.errorClay)
     }
 
+    /// A secondary destructive button: a 1pt red dashed outline ([4, 3]) and red title, `red` in light and the glyph's
+    /// `redGlyphDark` in dark; pressed, a faint (10%) red fill.
+    func testDestructiveOutline() {
+        XCTAssertEqual(C.destructiveOutlineDash, [4, 3])
+        XCTAssertEqual(C.destructiveOutlineWidth, 1)
+        XCTAssertEqual(C.destructiveOutlinePressedAlpha, 0.10, accuracy: 0.0001)
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
+            assertColour(C.destructiveOutline, [0xC0 / 255.0, 0x3A / 255.0, 0x2E / 255.0, 1])
+        }
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance {
+            assertColour(C.destructiveOutline, [0xE0 / 255.0, 0x57 / 255.0, 0x4A / 255.0, 1])
+        }
+    }
+
     func testAmberAndGreen() {
         assertColour(C.amberDark, [0xD4 / 255.0, 0xA1 / 255.0, 0x3A / 255.0, 1])
         assertColour(C.amberLight, [0xB7 / 255.0, 0x80 / 255.0, 0x1A / 255.0, 1])

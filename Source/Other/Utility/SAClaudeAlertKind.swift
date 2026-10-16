@@ -26,6 +26,32 @@ struct SAClaudeAlertClassification: Equatable {
     var destructiveButtonIndices: [Int] = []
 }
 
+/// How a destructive alert button is drawn: the default one (Return, else the first: the button drawn primary) is
+/// filled red; every other destructive button is a secondary button with a red dashed outline and a red title.
+enum SAClaudeAlertDestructiveLook: Equatable {
+    case filled, outlined
+}
+
+extension SAClaudeAlertClassification {
+    /// The alert's default button, the one drawn primary: the one answering Return, else the first
+    /// (`SAClaudeSheetRules`). nil = no buttons. `keyEquivalents` in `alert.buttons` order.
+    static func defaultButtonIndex(keyEquivalents: [String]) -> Int? {
+        if let index = keyEquivalents.firstIndex(of: "\r") { return index }
+        return keyEquivalents.isEmpty ? nil : 0
+    }
+
+    /// The look of each of `destructiveButtonIndices` (those within the buttons): `.filled` for the default button,
+    /// `.outlined` for every other one. Return codes, key equivalents and Escape are not touched by either look.
+    func destructiveLooks(keyEquivalents: [String]) -> [Int: SAClaudeAlertDestructiveLook] {
+        let defaultIndex = Self.defaultButtonIndex(keyEquivalents: keyEquivalents)
+        var looks: [Int: SAClaudeAlertDestructiveLook] = [:]
+        for index in destructiveButtonIndices where keyEquivalents.indices.contains(index) {
+            looks[index] = index == defaultIndex ? .filled : .outlined
+        }
+        return looks
+    }
+}
+
 struct SAClaudeAlertMessageParts: Equatable {
     var explanation: String
     /// The server's text for the "MySQL said" block; nil = no block.

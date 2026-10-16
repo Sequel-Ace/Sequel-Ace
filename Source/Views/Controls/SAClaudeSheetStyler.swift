@@ -369,12 +369,13 @@ final class SAClaudeWindowSkin: NSObject {
             d.alertButtonIndex = index
             d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
         }
-        // A forced-destructive push button (the alert card's red one) keeps the red look at every walk, whatever the
-        // rules say. Only a push button: a checkbox or radio flagged by mistake keeps its own look.
-        if SAClaudeSheetButtonRole.isDestructive(button), d.buttonType == .momentaryPushIn {
+        // A forced-destructive push button (the alert card's red ones: the default filled, the others a red dashed
+        // outline) keeps its red look at every walk, whatever the rules say. Only a push button: a checkbox or radio
+        // flagged by mistake keeps its own look.
+        if let look = SAClaudeSheetButtonRole.destructiveLook(button), d.buttonType == .momentaryPushIn {
             guard button.isBordered || d.isAlertButton else { return }
-            if !SAClaudeFilterCells.switchSheetButton(button, to: .destructive) {
-                guard SAClaudeFilterCells.install(SAClaudeSheetDestructiveButtonCell.self, on: button) else { return }
+            if !SAClaudeFilterCells.switchSheetButton(button, to: look) {
+                guard SAClaudeFilterCells.install(SAClaudeFilterCells.sheetCellClass(for: look), on: button) else { return }
             }
             return
         }
@@ -720,13 +721,16 @@ enum SAClaudeSheetButtonRole {
 
     private static var destructiveKey: UInt8 = 0
 
-    /// Gives `button` the red destructive look at every later walk of the window (the alert card's destructive
-    /// button). Call `SAClaudeWindowSkin.styleButton` afterwards to apply it now.
-    static func forceDestructive(_ button: NSButton) {
-        objc_setAssociatedObject(button, &destructiveKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    /// Gives `button` a red destructive look at every later walk of the window (the alert card's destructive buttons):
+    /// filled red (`secondary` false, the default button) or the red dashed outline (`secondary` true, every other one).
+    /// Call `SAClaudeWindowSkin.styleButton` afterwards to apply it now.
+    static func forceDestructive(_ button: NSButton, secondary: Bool = false) {
+        objc_setAssociatedObject(button, &destructiveKey, secondary, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
-    static func isDestructive(_ button: NSButton) -> Bool {
-        (objc_getAssociatedObject(button, &destructiveKey) as? Bool) == true
+    /// `.destructive` or `.destructiveSecondary` for a button given a destructive look, else nil.
+    static func destructiveLook(_ button: NSButton) -> SAClaudeSheetButtonLook? {
+        guard let secondary = objc_getAssociatedObject(button, &destructiveKey) as? Bool else { return nil }
+        return secondary ? .destructiveSecondary : .destructive
     }
 }
