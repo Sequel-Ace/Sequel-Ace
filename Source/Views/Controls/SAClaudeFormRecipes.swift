@@ -36,6 +36,9 @@ enum SAClaudeFormStrings {
     static var references: String { NSLocalizedString("ClaudeFormSectionReferences", value: "References", comment: "Claude sheet section title in New Relation: the referenced database, table and column") }
     static var goToDatabase: String { NSLocalizedString("ClaudeFormGoToDatabase", value: "Go to database", comment: "Claude window title: the Go to Database dialog") }
     static var fields: String { NSLocalizedString("ClaudeFormSectionFields", value: "Fields", comment: "Claude sheet section title: the columns an index is built on") }
+    static var openFile: String { NSLocalizedString("ClaudeFieldEditorOpenFile", value: "Open file…", comment: "field editor: tooltip of the toolbar icon that loads the field's value from a file") }
+    static var saveFile: String { NSLocalizedString("ClaudeFieldEditorSaveFile", value: "Save to file…", comment: "field editor: tooltip of the toolbar icon that saves the field's value to a file") }
+    static var displayMode: String { NSLocalizedString("ClaudeFieldEditorDisplayMode", value: "Display mode", comment: "field editor: accessibility name of the Text / Image / Hex / JSON switcher") }
 }
 
 // MARK: - Context lines
@@ -59,6 +62,15 @@ enum SAClaudeFormContext {
         guard let caller: NSObject = SAClaudeFormRecipes.outlet(editor, "callerInstance"),
               SAClaudeFormOwners.className(of: caller) == "SPTableContent" else { return nil }
         return doc?.table()
+    }
+
+    /// The header of the field editor's sheets (the edit sheet and the BIT sheet): the column parsed from the
+    /// controller's label as the title; the table (when opened from table content) and the type details the label
+    /// showed ("users · INT(11) NOT NULL") as the context. Derived at every apply: the label is set before each begin.
+    static func fieldEditorHeader(label: String, editor: NSObject?, document: SPDatabaseDocument?) -> (title: String, context: String?) {
+        let parsed = SAClaudeFormText.fieldTitle(label)
+        let table = editor.flatMap { fieldEditorTable($0, document) }
+        return (parsed.column, SAClaudeFormText.joined([table, parsed.details]))
     }
 
     private static func format(_ format: String, _ name: String?) -> String? {

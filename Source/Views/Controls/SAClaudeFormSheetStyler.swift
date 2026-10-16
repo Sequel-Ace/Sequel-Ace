@@ -26,6 +26,10 @@ enum SAClaudeFormSheetStyler {
 
     /// Called by `SAClaudeSheetStyler.consider` after the generic skin, each time a window is considered.
     static func claim(_ window: NSWindow) {
+        if let editor = SAClaudeFieldEditorStyler.styler(for: window) {
+            editor.apply()
+            return
+        }
         if let sheet = SAClaudeFormSheet.sheet(for: window) {
             sheet.apply()
             return
@@ -50,6 +54,7 @@ enum SAClaudeFormSheetStyler {
 
     /// Attaches the form for `match`; false when its recipe is missing or incomplete (nothing was changed then).
     private static func attach(_ match: SAClaudeFormMatch) -> Bool {
+        if match.kind == .fieldEditor { return SAClaudeFieldEditorStyler.attach(match) != nil }
         guard let recipe = SAClaudeFormRecipes.recipe(for: match),
               let sheet = SAClaudeFormSheet.attach(window: match.window, recipe: recipe) else { return false }
         sheet.apply()

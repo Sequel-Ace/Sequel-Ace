@@ -5253,3 +5253,12 @@
 
 /* Claude window title: the Go to Database dialog */
 "ClaudeFormGoToDatabase" = "Go to database";
+
+/* field editor: tooltip of the toolbar icon that loads the field's value from a file */
+"ClaudeFieldEditorOpenFile" = "Open file…";
+
+/* field editor: tooltip of the toolbar icon that saves the field's value to a file */
+"ClaudeFieldEditorSaveFile" = "Save to file…";
+
+/* field editor: accessibility name of the Text / Image / Hex / JSON switcher */
+"ClaudeFieldEditorDisplayMode" = "Display mode";
