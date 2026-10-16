@@ -15,6 +15,83 @@ import XCTest
 final class SADatabaseAssertionTests: XCTestCase {
     private let latin1CharacterSet = Data("latin1".utf8)
 
+    func testActiveDatabaseProbePreservesMySQLAndMariaDBResults() {
+        for data in [nil, Data(), Data("main".utf8), Data("資料庫".utf8)] as [Data?] {
+            let expected = SADatabaseSessionValueLookup(data: data, error: nil)
+            var queries: [String] = []
+            let lookup = SADatabaseAssertion.queryActiveDatabaseData { query, returnRowPresence in
+                queries.append(query)
+                XCTAssertFalse(returnRowPresence)
+                return expected
+            }
+            XCTAssertTrue(lookup === expected)
+            XCTAssertEqual(queries, ["SELECT CAST(DATABASE() AS BINARY)"])
+        }
+    }
+
+    func testActiveDatabaseProbeDoesNotHideOtherErrors() {
+        let errors = [
+            SADatabaseAssertionError(errorID: 1064, message: "You have an error in your SQL syntax", sqlState: "42000"),
+            SADatabaseAssertionError(errorID: 1064, message: nil, sqlState: "42000"),
+            SADatabaseAssertionError(errorID: 1142, message: "SELECT command denied", sqlState: "42000"),
+            SADatabaseAssertionError(errorID: 2013, message: "Lost connection", sqlState: "HY000"),
+            SADatabaseAssertionError(errorID: 2013, message: "sphinxql: syntax error, interrupted", sqlState: "HY000"),
+            SADatabaseAssertionError(errorID: 1064, message: "sphinxql: other error", sqlState: "42000")
+        ]
+        for error in errors {
+            var queryCount = 0
+            let lookup = SADatabaseAssertion.queryActiveDatabaseData { _, _ in
+                queryCount += 1
+                return .init(data: nil, error: error)
+            }
+            XCTAssertTrue(lookup.error === error)
+            XCTAssertEqual(queryCount, 1)
+        }
+    }
+
+    func testSphinxFallbackRequiresAnEmptyDatabaseList() {
+        for databasePresence in [nil, Data([1])] as [Data?] {
+            var queries: [String] = []
+            var rowPresenceChecks: [Bool] = []
+            let error = assertDatabase(
+                nil,
+                selectedDatabaseName: nil,
+                databaseStateKnown: false,
+                databaseIsSelected: false,
+                queryActiveDatabaseData: {
+                    SADatabaseAssertion.queryActiveDatabaseData { query, returnRowPresence in
+                        queries.append(query)
+                        rowPresenceChecks.append(returnRowPresence)
+                        if queries.count == 1 {
+                            return .init(data: nil, error: SADatabaseAssertionError(
+                                errorID: 1064,
+                                message: "sphinxql: syntax error, unexpected AS, expecting ')' or ',' near 'AS BINARY)'",
+                                sqlState: "42000"
+                            ))
+                        }
+                        return .init(data: databasePresence, error: nil)
+                    }
+                }
+            )
+            XCTAssertEqual(queries, ["SELECT CAST(DATABASE() AS BINARY)", "SHOW DATABASES"])
+            XCTAssertEqual(rowPresenceChecks, [false, true])
+            XCTAssertEqual(error?.errorID, databasePresence == nil ? nil : 1046)
+        }
+    }
+
+    func testSphinxFallbackPreservesDatabaseListFailure() {
+        let expectedError = SADatabaseAssertionError(errorID: 2013, message: "Lost connection", sqlState: "HY000")
+        let lookup = SADatabaseAssertion.queryActiveDatabaseData { query, _ in
+            if query == "SHOW DATABASES" {
+                return .init(data: nil, error: expectedError)
+            }
+            return .init(data: nil, error: SADatabaseAssertionError(
+                errorID: 1064, message: "sphinxql: syntax error, unexpected AS", sqlState: "42000"
+            ))
+        }
+        XCTAssertTrue(lookup.error === expectedError)
+    }
+
     func testDisabledAssertionDoesNotConsultOrMutateSession() {
         let error = assertDatabase(
             "target",
@@ -558,6 +635,30 @@ private final class SADatabaseAssertionMismatchRecorder {
 
 final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingResultStoreDelegate {
     private var resultStoreDownloadExpectation: XCTestExpectation?
+
+    func testSphinxQueryCanAssertEmptyDatabaseContext() throws {
+        guard let port = ProcessInfo.processInfo.environment["SPMYSQL_TEST_SPHINX_PORT"].flatMap(UInt.init) else {
+            throw XCTSkip("Set SPMYSQL_TEST_SPHINX_PORT to a local Sphinx 3.7.1 mysql41 listener to run this regression.")
+        }
+        let connection = SPMySQLConnection()
+        connection.host = "127.0.0.1"
+        connection.port = port
+        connection.username = "root"
+        connection.useSocket = false
+        connection.useKeepAlive = false
+        XCTAssertTrue(connection.connect())
+        defer { connection.disconnect() }
+
+        // The unasserted query already works; the empty-context probe must not
+        // reject it before the user statement reaches Sphinx (issue #2765).
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 42") as? String, "42")
+        assertQuerySucceeded(connection)
+        for _ in 0..<2 {
+            let result = connection.queryString("SELECT 42", assertingDatabaseContext: nil)
+            assertQuerySucceeded(connection)
+            XCTAssertEqual(try row(from: result).first as? String, "42")
+        }
+    }
 
     func resultStoreDidFinishLoadingData(_ resultStore: SPMySQLStreamingResultStore!) {
         resultStoreDownloadExpectation?.fulfill()
