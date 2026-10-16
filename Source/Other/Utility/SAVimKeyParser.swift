@@ -131,6 +131,10 @@ enum SAVimParseResult: Equatable {
 /// One key press, reduced to what the parser needs.
 struct SAVimKeyStroke: Equatable {
     let character: Character?
+    /// What the active keyboard layout produced, including non-ASCII text.
+    /// Used for search patterns and `f`/`r` arguments; normal commands still
+    /// use `character`, which falls back to the US key position when needed.
+    let layoutCharacter: Character?
     let keyCode: UInt16
     let control: Bool
     let option: Bool
@@ -152,12 +156,14 @@ struct SAVimKeyStroke: Equatable {
     ]
 
     init(character: Character?,
+         layoutCharacter: Character? = nil,
          keyCode: UInt16,
          control: Bool = false,
          option: Bool = false,
          command: Bool = false,
          shift: Bool = false) {
         self.character = character
+        self.layoutCharacter = layoutCharacter ?? character
         self.keyCode = keyCode
         self.control = control
         self.option = option
@@ -174,13 +180,17 @@ struct SAVimKeyStroke: Equatable {
     /// US position of the key stand in, so normal mode keeps working without
     /// switching input sources.
     init(characters: String?, keyCode: UInt16, control: Bool = false, option: Bool = false, command: Bool = false, shift: Bool = false) {
+        var layout: Character?
+        if let first = characters?.first, !first.isControlCharacter {
+            layout = first
+        }
         var resolved: Character?
         if let first = characters?.first, first.isASCII, !first.isControlCharacter {
             resolved = first
         } else if let fallback = SAVimKeyStroke.usLayoutCharacter(keyCode: keyCode, shift: shift) {
             resolved = fallback
         }
-        self.init(character: resolved, keyCode: keyCode, control: control, option: option, command: command, shift: shift)
+        self.init(character: resolved, layoutCharacter: layout, keyCode: keyCode, control: control, option: option, command: command, shift: shift)
     }
 
     var isEscape: Bool {
@@ -328,7 +338,7 @@ final class SAVimKeyParser {
             case "r":
                 return complete(.redo(count: takeCount()))
             default:
-                return .passthrough
+                return reject()
             }
         }
 
@@ -509,7 +519,7 @@ final class SAVimKeyParser {
     // MARK: - Awaited second keys
 
     private func handleAwaited(_ awaiting: Awaiting, _ stroke: SAVimKeyStroke) -> SAVimParseResult {
-        guard let character = stroke.character, !stroke.control else {
+        guard let character = stroke.layoutCharacter ?? stroke.character, !stroke.control else {
             return reject()
         }
 
@@ -581,7 +591,7 @@ final class SAVimKeyParser {
             return .pending(display: pendingDisplay)
         }
 
-        guard let character = stroke.character, !stroke.control else {
+        guard let character = stroke.layoutCharacter ?? stroke.character, !stroke.control else {
             return .pending(display: pendingDisplay)
         }
 

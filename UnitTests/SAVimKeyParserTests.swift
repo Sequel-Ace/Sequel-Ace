@@ -244,9 +244,9 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(type("z"), .command(.replaceChar("z", count: 2)))
     }
 
-    func testControlRIsRedoAndOtherControlKeysPassThrough() {
+    func testControlRIsRedoAndOtherControlKeysAreConsumed() {
         XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "r", keyCode: 15, control: true)), .command(.redo(count: 1)))
-        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "a", keyCode: 0, control: true)), .passthrough)
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "a", keyCode: 0, control: true)), .rejected)
     }
 
     func testCommandKeyEventsAlwaysPassThrough() {
@@ -293,6 +293,24 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(parser.handle(SAVimKeyStroke(character: nil,
                                                     keyCode: SAVimKeyStroke.returnKeyCode,
                                                     control: true)), .passthrough)
+    }
+
+    func testUnsupportedControlKeysAreConsumedInNormalMode() {
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "d", keyCode: 2, control: true)), .rejected)
+    }
+
+    func testSearchKeepsNonLatinLayoutCharacters() {
+        XCTAssertEqual(type("/"), .pending(display: "/"))
+        let result = parser.handle(SAVimKeyStroke(characters: "и", keyCode: 34))
+        XCTAssertEqual(result, .pending(display: "/и"))
+        XCTAssertEqual(press(keyCode: SAVimKeyStroke.returnKeyCode),
+                       .command(.search(pattern: "и", forward: true)))
+    }
+
+    func testFindCharKeepsNonLatinLayoutCharacters() {
+        XCTAssertEqual(type("f"), .pending(display: "f"))
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(characters: "и", keyCode: 34)),
+                       .command(.move(.findChar("и", forward: true, till: false), count: 1)))
     }
 
     func testReturnAfterAnOperatorIsALinewiseTarget() {

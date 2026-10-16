@@ -199,7 +199,9 @@ enum SAVimTextEngine {
 
         if context.mode.isVisual {
             let anchor = context.visualAnchor
-            let head = resolved.location
+            let head = context.mode == .visualLine
+                ? resolved.location
+                : clampToNormal(resolved.location, in: context.text)
             let range = visualRange(anchor: anchor, head: head, linewise: context.mode == .visualLine, in: context.text)
             // `caret` is the moving end of the selection, which is where the
             // next motion starts from — without it `vww` would keep
@@ -341,7 +343,7 @@ enum SAVimTextEngine {
     // MARK: - Operators
 
     private static func runOperator(_ op: SAVimOperator, target: SAVimTarget, count: Int, context: SAVimContext) -> SAVimOutcome {
-        guard let (range, linewise) = operatorRange(target, count: count, context: context) else {
+        guard let (range, linewise) = operatorRange(target, count: count, operator: op, context: context) else {
             return .failed
         }
         return apply(op, to: range, linewise: linewise, context: context)
@@ -393,7 +395,10 @@ enum SAVimTextEngine {
     }
 
     /// The span an operator covers, and whether it is linewise.
-    static func operatorRange(_ target: SAVimTarget, count: Int, context: SAVimContext) -> (NSRange, Bool)? {
+    static func operatorRange(_ target: SAVimTarget,
+                              count: Int,
+                              operator op: SAVimOperator? = nil,
+                              context: SAVimContext) -> (NSRange, Bool)? {
         let text = context.text
         let caret = min(context.caret, text.length)
 
@@ -408,10 +413,44 @@ enum SAVimTextEngine {
             return (NSRange(location: start, length: NSMaxRange(end) - start), true)
 
         case .textObject(let object):
-            guard let range = textObjectRange(object, context: context) else { return nil }
+            guard var range = textObjectRange(object, context: context) else { return nil }
+            let repeats = max(count, 1)
+            if repeats > 1 {
+                for _ in 1..<repeats {
+                    var probe = NSMaxRange(range)
+                    while probe < text.length,
+                          characterClass(at: probe, big: false, in: text) == .whitespace {
+                        probe = NSMaxRange(text.rangeOfComposedCharacterSequence(at: probe))
+                    }
+                    guard probe < text.length else { break }
+                    var probeContext = context
+                    probeContext.caret = probe
+                    guard let next = textObjectRange(object, context: probeContext) else { break }
+                    let unitedEnd = max(NSMaxRange(range), NSMaxRange(next))
+                    range = NSRange(location: min(range.location, next.location),
+                                    length: unitedEnd - min(range.location, next.location))
+                }
+            }
             return (range, false)
 
         case .motion(let motion):
+            if op == .change, case .wordForward(let big) = motion {
+                guard let resolved = destination(for: .wordEnd(big: big), count: count, context: context) else {
+                    return nil
+                }
+                var start = caret
+                var end = max(caret, resolved.location)
+                if resolved.kind == .inclusive, end < text.length {
+                    let contentEnd = lineContentEnd(at: end, in: text)
+                    if contentEnd > lineStart(at: end, in: text) {
+                        end = NSMaxRange(text.rangeOfComposedCharacterSequence(at: end))
+                    }
+                }
+                start = max(0, min(start, text.length))
+                end = max(start, min(end, text.length))
+                return (NSRange(location: start, length: end - start), false)
+            }
+
             guard let resolved = destination(for: motion, count: count, context: context) else { return nil }
 
             if resolved.kind == .linewise {
@@ -428,15 +467,23 @@ enum SAVimTextEngine {
 
             // vim's "one past the end of the line" rule: `dw` on the last word
             // of a line stops at the line break instead of swallowing it.
+            // Counted motions that cross onto the next line keep their full span.
             if case .wordForward = motion {
                 let contentEnd = lineContentEnd(at: caret, in: text)
-                if end > contentEnd, caret < contentEnd {
+                let caretLine = lineStart(at: caret, in: text)
+                let destLine = lineStart(at: resolved.location, in: text)
+                let crossesLine = destLine != caretLine
+                let allowCrossing = crossesLine && max(count, 1) > 1
+                if end > contentEnd, caret < contentEnd, !allowCrossing {
                     end = contentEnd
                 }
             }
 
             if resolved.kind == .inclusive, end < text.length {
-                end = NSMaxRange(text.rangeOfComposedCharacterSequence(at: end))
+                let contentEnd = lineContentEnd(at: end, in: text)
+                if contentEnd > lineStart(at: end, in: text) {
+                    end = NSMaxRange(text.rangeOfComposedCharacterSequence(at: end))
+                }
             }
 
             start = max(0, min(start, text.length))

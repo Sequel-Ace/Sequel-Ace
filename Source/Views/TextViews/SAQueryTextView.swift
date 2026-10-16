@@ -387,7 +387,9 @@ import AppKit
         let inserted = (typed > 0 && typed == grew)
             ? text.substring(with: NSRange(location: start, length: typed))
             : ""
-        lastChange = (command: command, insertedText: inserted)
+        if !command.needsInsertPayloadForRepeat || !inserted.isEmpty {
+            lastChange = (command: command, insertedText: inserted)
+        }
 
         // The extra copies a count asks for go in here, while the caret is
         // still the insert caret — normal mode pulls it back onto the last
@@ -467,8 +469,11 @@ import AppKit
         switch command {
         case .enterInsert(.openBelow, _), .enterInsert(.openAbove, _):
             let indent = SAVimTextEngine.indentString(ofLineAt: selectedRange().location, in: string as NSString)
-            return String(repeating: "\n" + indent + text, count: copies)
+            let unit = "\n" + indent + text
+            guard (unit as NSString).length * copies <= SAVimTextEngine.maximumGeneratedLength else { return "" }
+            return String(repeating: unit, count: copies)
         default:
+            guard (text as NSString).length * copies <= SAVimTextEngine.maximumGeneratedLength else { return "" }
             return String(repeating: text, count: copies)
         }
     }
@@ -505,6 +510,9 @@ import AppKit
 
     override func resignFirstResponder() -> Bool {
         leaveInsertMode()
+        if isVimActive, parser.mode == .insert {
+            parser.setMode(.normal)
+        }
         modeBadge.hide()
         return super.resignFirstResponder()
     }
@@ -677,8 +685,24 @@ private extension SAVimCommand {
     /// Changes `.` can replay on their own.
     var isRepeatable: Bool {
         switch self {
-        case .operate, .operateSelection, .deleteChar, .replaceChar, .paste, .joinLines, .toggleCase:
+        case .operate(let op, _, _):
+            return op != .yank
+        case .operateSelection(let op, _):
+            return op != .yank
+        case .deleteChar, .replaceChar, .paste, .joinLines, .toggleCase:
             return true
+        default:
+            return false
+        }
+    }
+
+    /// Insert-mode commands that must capture typed text before `.` can replay them.
+    var needsInsertPayloadForRepeat: Bool {
+        switch self {
+        case .enterInsert, .substituteChar:
+            return true
+        case .operate(let op, _, _), .operateSelection(let op, _):
+            return op == .change
         default:
             return false
         }

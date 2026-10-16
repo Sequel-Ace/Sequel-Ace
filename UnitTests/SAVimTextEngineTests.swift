@@ -69,6 +69,36 @@ final class SAVimTextEngineTests: XCTestCase {
         XCTAssertEqual(applied(outcome, to: sql), "SELECT id, \nFROM users\nWHERE id = 3;")
     }
 
+    func testDeleteTwoWordsCanCrossALineBreak() {
+        let words = "foo\nbar baz"
+        let outcome = run(.operate(.delete, .motion(.wordForward(big: false)), count: 2), words, caret: 0)
+        XCTAssertEqual(applied(outcome, to: words), "baz")
+    }
+
+    func testChangeWordKeepsTheSeparatorAfterTheWord() {
+        let outcome = run(.operate(.change, .motion(.wordForward(big: false)), count: 1), "foo bar", caret: 0)
+        XCTAssertEqual(applied(outcome, to: "foo bar"), " bar")
+    }
+
+    func testDeleteToEndOfLineOnAnEmptyLineDoesNotRemoveTheNewline() {
+        let blank = "a\n\nb"
+        let outcome = run(.operate(.delete, .motion(.lineEnd), count: 1), blank, caret: 2)
+        XCTAssertEqual(applied(outcome, to: blank), "a\n\nb")
+    }
+
+    func testDeleteTwoInnerWords() {
+        let words = "alpha beta gamma"
+        let outcome = run(.operate(.delete, .textObject(.word(big: false, around: false)), count: 2), words, caret: 0)
+        XCTAssertEqual(applied(outcome, to: words), " gamma")
+    }
+
+    func testVisualCharRightAtLineEndDoesNotSelectTheNewline() {
+        let line = "a\nb"
+        let outcome = run(.move(.charRight, count: 1), line,
+                          caret: 0, mode: .visual, selection: NSRange(location: 0, length: 1))
+        XCTAssertEqual(outcome.selection, NSRange(location: 0, length: 1))
+    }
+
     func testDeleteWordEndIsInclusive() {
         let outcome = run(.operate(.delete, .motion(.wordEnd(big: false)), count: 1), sql, caret: 7)
         XCTAssertEqual(applied(outcome, to: sql), "SELECT , name\nFROM users\nWHERE id = 3;")

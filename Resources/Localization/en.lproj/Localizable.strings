@@ -2302,6 +2302,12 @@
 /* query editor preference pane tooltip */
 "Query Editor Preferences" = "Query Editor Preferences";
 
+/* query editor preference : enable vim keybindings in the SQL editor */
+"Vim mode" = "Vim mode";
+
+/* query editor gear menu : toggle vim keybindings */
+"Vim Mode" = "Vim Mode";
+
 /* query logging currently disabled label
  query logging disabled label */
 "Query logging is currently disabled" = "Query logging is currently disabled";
