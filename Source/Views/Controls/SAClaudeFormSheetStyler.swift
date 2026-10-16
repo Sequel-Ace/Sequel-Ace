@@ -124,9 +124,20 @@ enum SAClaudeFormOwners {
         return nil
     }
 
-    /// The open document whose Go to Database controller this is.
-    private static func document(owningGoTo controller: NSObject) -> SPDatabaseDocument? {
-        for window in NSApp.windows {
+    /// The open document whose Go to Database controller this is. The dialog is app-modal and has no parent window,
+    /// but the document that opened it stays the main window: only the main window's (else the frontmost connection
+    /// window's) controller is asked — it shows a connection, so its document exists — never every window
+    /// controller's lazily created `databaseDocument`.
+    /// The controller is verified by identity; nil when none matches.
+    static func document(owningGoTo controller: NSObject) -> SPDatabaseDocument? {
+        var candidates: [NSWindow] = []
+        if let main = NSApp.mainWindow { candidates.append(main) }
+        candidates += NSApp.windows.filter { $0.isMainWindow && !candidates.contains($0) }
+        // Should the dialog itself be the main window: the frontmost connection window.
+        if let front = NSApp.orderedWindows.first(where: { $0.isVisible && $0.windowController is SPWindowController }), !candidates.contains(front) {
+            candidates.append(front)
+        }
+        for window in candidates {
             guard let doc = document(of: window) else { continue }
             if (SAClaudeFormRecipes.outlet(doc, "gotoDatabaseController") as NSObject?) === controller { return doc }
         }

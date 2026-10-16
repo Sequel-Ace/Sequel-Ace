@@ -34,6 +34,7 @@ enum SAClaudeFormStrings {
     static var columnSection: String { NSLocalizedString("ClaudeFormSectionColumn", value: "Column", comment: "Claude sheet section title in New Relation: the column of this table the foreign key is on") }
     static var nameAndActions: String { NSLocalizedString("ClaudeFormSectionNameAndActions", value: "Name and actions", comment: "Claude sheet section title in New Relation: the constraint name and its ON UPDATE / ON DELETE actions") }
     static var references: String { NSLocalizedString("ClaudeFormSectionReferences", value: "References", comment: "Claude sheet section title in New Relation: the referenced database, table and column") }
+    static var goToDatabase: String { NSLocalizedString("ClaudeFormGoToDatabase", value: "Go to database", comment: "Claude window title: the Go to Database dialog") }
     static var fields: String { NSLocalizedString("ClaudeFormSectionFields", value: "Fields", comment: "Claude sheet section title: the columns an index is built on") }
 }
 
@@ -86,6 +87,8 @@ enum SAClaudeFormRecipes {
         case .newIndex: return newIndex(m)
         case .newRelation: return newRelation(m)
         case .trigger: return trigger(m)
+        case .createSyntax: return createSyntax(m)
+        case .goToDatabase: return goToDatabase(m)
         default: return nil
         }
     }
@@ -386,5 +389,44 @@ enum SAClaudeFormRecipes {
             return SAClaudeFormContent(title: isEdit ? SAClaudeFormStrings.editTrigger : SAClaudeFormStrings.newTrigger,
                                        context: doc?.table(), items: items, footerTrailing: [cancel, primary], hidden: [box])
         })
+    }
+
+    /// Create syntax (SPDatabaseDocument · createTableSyntaxWindow): the controller's label as the title, the table
+    /// as context (none for several items); the syntax as a growing block; Copy and Save As… left, Close right. The
+    /// window stays resizable with its own frame autosave.
+    private static func createSyntax(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        guard let contentView = m.window.contentView,
+              let label: NSTextField = outlet(m.owner, "createTableSyntaxTextField"),
+              let textView: NSTextView = outlet(m.owner, "createTableSyntaxTextView"),
+              let scrollView = textView.enclosingScrollView, scrollView.superview === contentView,
+              let copy = SAClaudeFormFind.button(in: contentView, action: "copyCreateTableSyntaxFromSheet:"),
+              let save = SAClaudeFormFind.button(in: contentView, action: "saveCreateSyntax:"),
+              let close = SAClaudeFormFind.button(in: contentView, keyEquivalent: "\r") else { return nil }
+        let several = NSLocalizedString("Create syntaxes for selected items", comment: "Create syntaxes for selected items label")
+        let items: [SAClaudeFormItem] = [.block(scrollView, minHeight: 120, grows: true, strip: [])]
+        return SAClaudeSimpleFormRecipe { [weak doc = m.document] in
+            SAClaudeFormContent(title: label.stringValue, context: label.stringValue == several ? nil : doc?.table(), items: items,
+                                footerLeading: [copy, save], footerTrailing: [close], hidden: [label])
+        }
+    }
+
+    /// Go to database (SPGotoDatabaseController window): the search field across the form, the database list as a
+    /// block; context: the server. The window is app-modal and has no parent, so its document is looked up (cheaply)
+    /// at each apply until found.
+    private static func goToDatabase(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        guard let contentView = m.window.contentView,
+              let search: NSSearchField = outlet(m.owner, "searchField"),
+              let list: NSTableView = outlet(m.owner, "databaseListView"),
+              let scrollView = list.enclosingScrollView, scrollView.superview === contentView,
+              search.superview === contentView,
+              let ok: NSButton = outlet(m.owner, "okButton"),
+              let cancel: NSButton = outlet(m.owner, "cancelButton") else { return nil }
+        let items: [SAClaudeFormItem] = [.wide(search, .field), .block(scrollView, minHeight: 180, grows: true, strip: [])]
+        weak var document = m.document
+        return SAClaudeSimpleFormRecipe { [weak controller = m.owner] in
+            if document == nil, let controller { document = SAClaudeFormOwners.document(owningGoTo: controller) }
+            return SAClaudeFormContent(title: SAClaudeFormStrings.goToDatabase, context: SAClaudeFormContext.server(document), items: items,
+                                       footerTrailing: [cancel, ok])
+        }
     }
 }

@@ -5250,3 +5250,6 @@
 
 /* Claude sheet section title in New Relation: the referenced database, table and column */
 "ClaudeFormSectionReferences" = "References";
+
+/* Claude window title: the Go to Database dialog */
+"ClaudeFormGoToDatabase" = "Go to database";
