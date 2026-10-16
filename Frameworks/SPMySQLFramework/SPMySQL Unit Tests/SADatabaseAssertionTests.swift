@@ -653,6 +653,26 @@ final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingRes
         // reject it before the user statement reaches Sphinx (issue #2765).
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 42") as? String, "42")
         assertQuerySucceeded(connection)
+
+        // Exercise the first empty-context assertion through the query editor's
+        // streaming API, before the successful fallback has been cached.
+        let store = try XCTUnwrap(connection.resultStore(fromQueryString: "SELECT 42", assertingDatabaseContext: nil))
+        assertQuerySucceeded(connection)
+        let downloaded = expectation(description: "Sphinx result store download completes")
+        resultStoreDownloadExpectation = downloaded
+        store.delegate = self
+        defer {
+            store.cancelLoad()
+            store.delegate = nil
+            resultStoreDownloadExpectation = nil
+        }
+        store.startDownload()
+        let completed = XCTWaiter.wait(for: [downloaded], timeout: 5)
+        XCTAssertEqual(completed, .completed)
+        guard completed == .completed else { return }
+        XCTAssertEqual(store.numberOfRows(), 1)
+        XCTAssertEqual((store.rowContents(at: 0) as? [Any])?.first as? String, "42")
+
         for _ in 0..<2 {
             let result = connection.queryString("SELECT 42", assertingDatabaseContext: nil)
             assertQuerySucceeded(connection)
