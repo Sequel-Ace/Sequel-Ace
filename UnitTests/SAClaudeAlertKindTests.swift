@@ -1,0 +1,196 @@
+import XCTest
+
+final class SAClaudeAlertKindTests: XCTestCase {
+    private func classify(_ title: String, _ message: String = "", _ buttons: [String], fromError: Bool = false) -> SAClaudeAlertClassification {
+        SAClaudeAlertKind.classify(SAClaudeAlertFacts(title: title, message: message, buttonTitles: buttons, isFromError: fromError))
+    }
+    private func c(_ kind: SAClaudeAlertKind, red: Int? = nil) -> SAClaudeAlertClassification { .init(kind: kind, destructiveButtonIndex: red) }
+    private func split(_ title: String, _ message: String) -> SAClaudeAlertMessageParts {
+        SAClaudeAlertMessageSplit.split(title: title, message: message)
+    }
+    private func parts(_ explanation: String, _ server: String?) -> SAClaudeAlertMessageParts {
+        .init(explanation: explanation, serverText: server)
+    }
+
+    /// Every row of the spec's table (messages from the real call sites).
+    func testSpecTable() {
+        XCTAssertEqual(classify("Delete database 'x'?", "Are you sure you want to delete the database 'x'? This operation cannot be undone.", ["Delete", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Delete selected row?", "Are you sure you want to delete the selected row from this table? This action cannot be undone.", ["Delete", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Truncate table 'x'", "Are you sure you want to delete ALL records in the table 'x'? This operation cannot be undone.", ["Truncate", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Kill query?", "Are you sure you want to kill the current query executing on connection ID 42?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.", ["Kill query", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Error adding new table", "An error occurred while trying to add the new table 'x'.\n\nMySQL said: Unknown database 'y'", ["OK"]), c(.error))
+        XCTAssertEqual(classify("Insufficient connection details", "Insufficient details provided to establish a connection. Please provide at least a host.", ["OK"]), c(.error))
+        XCTAssertEqual(classify("Empty query", "Cannot save an empty query.", ["OK"]), c(.error))
+        XCTAssertEqual(classify("Execute SQL?", "Do you really want to proceed with this query?\n\n DROP TABLE `x`\n", ["Proceed", "Cancel"]), c(.question))
+        XCTAssertEqual(classify("MySQL Error", "You have an error in your SQL syntax; check the manual", ["Run All", "Continue", "Stop"]), c(.error))
+        XCTAssertEqual(classify("An error occurred while importing SQL", "[ERROR in query 3] Table 'x' already exists\n", ["Continue", "Ignore All Errors", "Stop"]), c(.error))
+        XCTAssertEqual(classify("Change table type", "Are you sure you want to change this table's type to MyISAM?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.", ["Change", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Delete index 'x'?", "Are you sure you want to delete the index 'x'? This action cannot be undone.", ["Delete", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Flushed Privileges", "Successfully flushed privileges.", ["OK"]), c(.info))
+        XCTAssertEqual(classify("Default Bundles Update", "The following default Bundles were updated:\nx\nYour modifications were stored as “(user)”.", ["OK"]), c(.info))
+        XCTAssertEqual(classify("Only Partially Supported", "Duplicating the database 'x' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("A new version is available", "Version 5.1.0 is available. You are currently running 5.0.9", ["View", "Download", "Cancel"]), c(.question))
+    }
+
+    func testRealCallSiteVariants() {
+        XCTAssertEqual(classify("Kill query?", "Are you sure you want to kill the current query executing on connection ID 42?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.", ["Kill", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Delete rows?", "Are you sure you want to delete the selected rows? This action cannot be undone.", ["Delete Selected Rows", "Delete ALL ROWS IN TABLE", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Only Partially Supported", "Duplicating the database 'x' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", ["Continue", "Cancel"]), c(.question))
+        XCTAssertEqual(classify("Error", "Couldn't delete 'x'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: Cannot delete or update a parent row", ["Continue", "Stop"]), c(.error))
+        XCTAssertEqual(classify("Connection lost", "The connection to the server was lost.", ["Reconnect", "Close"]), c(.question))
+    }
+
+    func testCheckTableSuccessIsInfoFailureIsError() {
+        XCTAssertEqual(classify("Check table 'x'", "Check table successfully passed.\n\nMySQL said: OK", ["OK"]), c(.info))
+        XCTAssertEqual(classify("Check table 'x'", "Check table failed.\n\nMySQL said: Table is marked as crashed", ["OK"]), c(.error))
+        XCTAssertEqual(classify("Error while checking selected items", "MySQL said:", ["OK"]), c(.error))
+    }
+
+    func testDestructiveButtonWords() {
+        let words = ["Delete", "Remove", "Drop", "Truncate", "Kill", "Clear", "Empty", "Shutdown", "Shut Down", "Discard", "Force Delete", "Reset", "Overwrite", "delete", "DELETE"]
+        for word in words {
+            XCTAssertEqual(classify("Sure?", "", [word + " it", "Cancel"]), c(.destructive, red: 0), word)
+        }
+    }
+
+    func testDestructiveButtonNeedsWordBoundary() {
+        XCTAssertEqual(classify("Proceed?", "", ["Clearance", "Cancel"]), c(.question))
+    }
+
+    func testCancelIsNeverDestructive() {
+        XCTAssertEqual(classify("Delete it?", "", ["Cancel", "Delete"]), c(.destructive, red: 1))
+        XCTAssertEqual(classify("Change table type", "This action cannot be undone.", ["Cancel", "Change"]), c(.destructive, red: 1))
+        XCTAssertEqual(classify("x", "", ["Cancel…", "Delete"]), c(.destructive, red: 1))
+        XCTAssertEqual(classify("Delete x?", "", ["Cancel"]), c(.warning))
+    }
+
+    func testTitleQuestionVerbs() {
+        for title in ["Drop table x?", "Remove favorite?", "Truncate tables?", "Kill connection?", "Delete rows?"] {
+            XCTAssertEqual(classify(title, "", ["Yes", "No"]), c(.destructive, red: 0), title)
+        }
+        XCTAssertEqual(classify("Delete rows", "", ["Yes", "No"]), c(.question))
+    }
+
+    func testDataLossText() {
+        for message in ["This can’t be undone.", "Rows are removed permanently.", "You will lose all unsaved data in this tab.", "The loss of some data is possible."] {
+            XCTAssertEqual(classify("Sure?", message, ["Go", "Cancel"]), c(.destructive, red: 0), message)
+        }
+    }
+
+    func testDestructiveTextNeedsAChoice() {
+        XCTAssertEqual(classify("Notice", "This cannot be undone.", ["OK"]), c(.warning))
+    }
+
+    func testCannotBeUndoneIsNotAFailure() {
+        XCTAssertEqual(classify("Notice", "This can't be undone.", ["Close"]), c(.warning))
+        XCTAssertEqual(classify("x", "You cannot do that.", ["OK"]), c(.error))
+    }
+
+    func testStrongFailureAnyButtons() {
+        for message in ["MySQL said: x", "An error occurred", "Errors were found", "The export failed", "Couldn't open the file", "Couldn’t open", "Could not connect", "Unable to read"] {
+            XCTAssertEqual(classify("x", message, ["Retry", "Skip", "Stop"]), c(.error), message)
+        }
+        XCTAssertEqual(classify("x", "", ["A", "B"], fromError: true), c(.error))
+    }
+
+    /// Preflight ruling (F15): a strong failure beats a destructive-sounding button title.
+    func testStrongFailureBeatsDestructiveButton() {
+        XCTAssertEqual(classify("Unable to write row", "The row could not be saved.\n\nMySQL said: Duplicate entry '1' for key 'PRIMARY'", ["Edit row", "Discard changes"]), c(.error))
+        // ... but a destructive question or data-loss wording still wins.
+        XCTAssertEqual(classify("Delete rows?", "An error may follow. This cannot be undone.", ["Delete", "Cancel"]), c(.destructive, red: 0))
+    }
+
+    func testFailureWordsNeedWordBoundaries() {
+        XCTAssertEqual(classify("Mirror settings", "Terror-free.", ["OK"]), c(.warning))
+    }
+
+    func testWeakFailureOnlyWithSingleAcknowledgeButton() {
+        for button in ["OK", "Close", "Done", "Dismiss"] {
+            for message in ["Invalid filter", "Table not found", "Access denied", "A name must be given", "The field is empty", "Cannot connect", "Insufficient privileges"] {
+                XCTAssertEqual(classify("x", message, [button]).kind, .error, "\(button): \(message)")
+            }
+        }
+        XCTAssertEqual(classify("Invalid filter", "", ["Retry", "Cancel"]), c(.question))
+        XCTAssertEqual(classify("Invalid filter", "", ["Edit"]), c(.warning))
+    }
+
+    func testInfoWords() {
+        let sentences = [
+            "The operation was a success.", "The operation was Successful.", "The export finished.", "The import completed.",
+            "All done.", "The privileges were flushed.", "The query was saved.", "The rows were exported.", "The rows were imported.",
+            "The bundles were updated.", "The server is up to date.", "The text was copied.", "The checksum is 42.",
+            "Results of the check", "Result of the check", "Some information for you."
+        ]
+        for sentence in sentences {
+            XCTAssertEqual(classify("Notice", sentence, ["OK"]), c(.info), sentence)
+        }
+    }
+
+    func testInfoNeedsSingleAcknowledgeButton() {
+        XCTAssertEqual(classify("Export finished", "", ["Show", "OK"]), c(.question))
+    }
+
+    func testWarningWordsVetoInfo() {
+        for title in ["Export finished with a warning", "Saved, but some rows may be missing", "Updated; might need a restart", "Import completed partially", "Copied (deprecated format)", "Saved with limited precision", "Exported; not supported by 5.5"] {
+            XCTAssertEqual(classify(title, "", ["OK"]), c(.warning), title)
+        }
+    }
+
+    func testFallbackIsWarning() {
+        XCTAssertEqual(classify("Hello", "Something happened.", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("", "", ["OK"]), c(.warning))
+    }
+
+    func testNoButtonsMeansImplicitOK() {
+        XCTAssertEqual(classify("Flushed Privileges", "Successfully flushed privileges.", []), c(.info))
+        XCTAssertEqual(classify("Empty query", "Cannot save an empty query.", []), c(.error))
+    }
+
+    func testQuotedNamesDoNotDecideTheKind() {
+        XCTAssertEqual(classify("Table 'saved queries' has no primary key", "", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("x", "The table “exported rows” has no key.", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("x", "Column `error` was renamed.", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("Couldn't delete 'x'.", "", ["OK"]), c(.error))
+        // Preflight ruling (F6): curly single quotes are detected before they are normalised.
+        XCTAssertEqual(classify("x", "The table ‘saved queries’ has no key.", ["OK"]), c(.warning))
+    }
+
+    func testOtherLanguagesFallBackSafely() {
+        XCTAssertEqual(classify("Base de données supprimée", "Opération réussie.", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("Supprimer la base ?", "", ["Supprimer", "Annuler"]), c(.question))
+    }
+
+    // MARK: Split
+
+    func testSplitAtMarker() {
+        XCTAssertEqual(split("Error adding new table", "An error occurred while trying to add the new table 'x'.\n\nMySQL said: Unknown database 'y'"),
+                       parts("An error occurred while trying to add the new table 'x'.", "Unknown database 'y'"))
+    }
+
+    func testSplitMarkerOnItsOwnLineOrUnspaced() {
+        XCTAssertEqual(split("x", "Couldn't rename 'a'.\n\nMySQL said:\nTable 'b' already exists\n"), parts("Couldn't rename 'a'.", "Table 'b' already exists"))
+        XCTAssertEqual(split("x", "An error occurred while trying to check the table.\n\nMySQL said:Lost connection"),
+                       parts("An error occurred while trying to check the table.", "Lost connection"))
+    }
+
+    func testSplitKeepsEverythingAfterTheMarker() {
+        XCTAssertEqual(split("x", "x.\n\nMySQL said: a\n\nMySQL said: b"), parts("x.", "a\n\nMySQL said: b"))
+    }
+
+    func testWholeMessageForMySQLErrorTitle() {
+        XCTAssertEqual(split("MySQL Error", "You have an error in your SQL syntax\n"), parts("", "You have an error in your SQL syntax"))
+        XCTAssertEqual(split("mysql error", "You have an error in your SQL syntax\n"), parts("", "You have an error in your SQL syntax"))
+    }
+
+    func testWholeMessageForErrorInQuery() {
+        XCTAssertEqual(split("An error occurred while importing SQL", "[ERROR in query 3] Table 'x' already exists\n"),
+                       parts("", "[ERROR in query 3] Table 'x' already exists"))
+    }
+
+    func testNoBlockWithoutServerText() {
+        XCTAssertEqual(split("Flushed Privileges", "Successfully flushed privileges."), parts("Successfully flushed privileges.", nil))
+        XCTAssertEqual(split("Error while checking selected items", "MySQL said:"), parts("MySQL said:", nil))
+        XCTAssertEqual(split("MySQL Error", ""), parts("", nil))
+        XCTAssertEqual(split("x", "MySQL a dit : y"), parts("MySQL a dit : y", nil))
+    }
+}

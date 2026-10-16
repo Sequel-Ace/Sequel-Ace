@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1E7CA2D0000000000000005 /* SAClaudeAlertKindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */; };
+		A1E7CA2D0000000000000003 /* SAClaudeAlertKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */; };
+		A1E7CA2D0000000000000002 /* SAClaudeAlertKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */; };
 		F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */; };
 		F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */; };
 		F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */; };
@@ -1055,6 +1058,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKindTests.swift; sourceTree = "<group>"; };
+		A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKind.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBitEditorForm.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFieldEditorStyler.swift; sourceTree = "<group>"; };
 		F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormRecipes.swift; sourceTree = "<group>"; };
@@ -3225,6 +3230,7 @@
 		507FF10E1BBCC4A900104523 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */,
 				F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */,
 				1AD785E325B749760007E153 /* OSLog.swift */,
 				507FF1101BBCC4C400104523 /* SPFunctions.h */,
@@ -3290,6 +3296,7 @@
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */,
 				F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */,
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
 				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
@@ -4023,6 +4030,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1E7CA2D0000000000000005 /* SAClaudeAlertKindTests.swift in Sources */,
+				A1E7CA2D0000000000000003 /* SAClaudeAlertKind.swift in Sources */,
 				F0A0C0DE0000000000000005 /* SAClaudeFormLayoutTests.swift in Sources */,
 				F0A0C0DE0000000000000003 /* SAClaudeFormLayout.swift in Sources */,
 				51AC3B7430475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift in Sources */,
@@ -4375,6 +4384,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1E7CA2D0000000000000002 /* SAClaudeAlertKind.swift in Sources */,
 				F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */,
 				F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */,
 				F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */,
