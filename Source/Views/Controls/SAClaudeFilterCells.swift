@@ -357,6 +357,28 @@ private enum SheetButtonDrawing {
     }
 }
 
+/// A destructive alert button (Delete, Remove, Kill…): the primary button's geometry and font in a true red
+/// (`SAClaudeAlertChrome.red`, never the clay accent), pressed 12% towards black, an `onAccent` medium title,
+/// 45% when disabled.
+@objc(SAClaudeSheetDestructiveButtonCell) final class SAClaudeSheetDestructiveButtonCell: NSButtonCell {
+    private static let pressedRatio: CGFloat = 0.12
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let pill = SheetButtonDrawing.rect(self, in: cellFrame, of: controlView)
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        if !isEnabled { NSGraphicsContext.current?.cgContext.setAlpha(0.45) }
+
+        let red = SAClaudeAlertChrome.red
+        let black = NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 1)
+        (isHighlighted ? SAClaudeEditorChrome.derivedColour(text: black, background: red, ratio: Self.pressedRatio) : red).setFill()
+        FilterCellDrawing.roundedPath(pill, radius: FilterCellDrawing.cornerRadius).fill()
+
+        FilterCellDrawing.drawTitle(title, in: pill.insetBy(dx: SAClaudeFilterChrome.pillPadding, dy: 0), colour: SAClaudeAccent.onAccent(fill: red),
+                                    font: SheetButtonDrawing.font(self, weight: .medium), alignment: .center)
+    }
+}
+
 /// A sheet's or alert's secondary button: the bordered secondary look, drawn like the primary one inside the
 /// XIB frame, with the hover fill inside its outline.
 @objc(SAClaudeSheetSecondaryButtonCell) final class SAClaudeSheetSecondaryButtonCell: NSButtonCell {
@@ -367,6 +389,9 @@ private enum SheetButtonDrawing {
                                                   hovered: SheetButtonDrawing.isHovered(rect, in: controlView))
     }
 }
+
+/// The three looks of a sheet or alert push button.
+enum SAClaudeSheetButtonLook: CaseIterable { case primary, secondary, destructive }
 
 // MARK: - Installing
 
@@ -389,6 +414,7 @@ enum SAClaudeFilterCells {
             || cls == SAClaudeAccentButtonCell.self
             || cls == SAClaudeFullHeightAccentButtonCell.self || cls == SAClaudeSecondaryButtonCell.self
             || cls == SAClaudeSheetPrimaryButtonCell.self || cls == SAClaudeSheetSecondaryButtonCell.self
+            || cls == SAClaudeSheetDestructiveButtonCell.self
             || cls == SAClaudeFilterPopUpButton.self || cls == SAClaudeFilterButton.self
             || NSStringFromClass(cls).hasPrefix(derivedPrefix)
     }
@@ -527,28 +553,45 @@ enum SAClaudeFilterCells {
         return true
     }
 
-    /// Switches an installed sheet button between the primary and secondary looks (a button whose default-ness
-    /// changed). Returns false when the cell is not one of the sheet button cells or a subclass derived from them.
+    /// The cell class that draws `look`.
+    static func sheetCellClass(for look: SAClaudeSheetButtonLook) -> AnyClass {
+        switch look {
+        case .primary: return SAClaudeSheetPrimaryButtonCell.self
+        case .secondary: return SAClaudeSheetSecondaryButtonCell.self
+        case .destructive: return SAClaudeSheetDestructiveButtonCell.self
+        }
+    }
+
+    /// Switches an installed sheet button between the primary, secondary and destructive looks (a button whose
+    /// default-ness or role changed). Returns false when the cell is not one of the sheet button cells or a subclass
+    /// derived from them.
     @discardableResult
-    static func switchSheetButton(_ button: NSButton, toPrimary primary: Bool) -> Bool {
+    static func switchSheetButton(_ button: NSButton, to look: SAClaudeSheetButtonLook) -> Bool {
         guard let cell = button.cell as? NSButtonCell else { return false }
-        let wanted: AnyClass = primary ? SAClaudeSheetPrimaryButtonCell.self : SAClaudeSheetSecondaryButtonCell.self
-        let other: AnyClass = primary ? SAClaudeSheetSecondaryButtonCell.self : SAClaudeSheetPrimaryButtonCell.self
+        let wanted: AnyClass = sheetCellClass(for: look)
+        let wantedName = NSStringFromClass(wanted)
         let current: AnyClass = type(of: cell)
-        if current == wanted || NSStringFromClass(current).hasPrefix(derivedPrefix + NSStringFromClass(wanted) + "_") { return true }
+        if current == wanted || NSStringFromClass(current).hasPrefix(derivedPrefix + wantedName + "_") { return true }
         guard SAClaudeClassSwap.mayChangeClass(of: cell), SAClaudeClassSwap.mayChangeClass(of: button) else { return false }
-        if current == other {
+        let others = SAClaudeSheetButtonLook.allCases.filter { $0 != look }.map(sheetCellClass(for:))
+        if others.contains(where: { $0 == current }) {
             object_setClass(cell, wanted)
             button.needsDisplay = true
             return true
         }
-        // A derived alert cell: re-derive from its AppKit base with the other donor.
+        // A derived alert cell: re-derive from its AppKit base with the wanted donor.
         let name = NSStringFromClass(current)
-        let otherMarker = derivedPrefix + NSStringFromClass(other) + "_"
-        guard name.hasPrefix(otherMarker), let base = class_getSuperclass(current),
+        guard others.contains(where: { name.hasPrefix(derivedPrefix + NSStringFromClass($0) + "_") }),
+              let base = class_getSuperclass(current),
               let derived = derivedClass(of: base, donor: wanted, selectors: [drawSelector]) else { return false }
         object_setClass(cell, derived)
         button.needsDisplay = true
         return true
+    }
+
+    /// `switchSheetButton(_:to:)` between the primary and secondary looks.
+    @discardableResult
+    static func switchSheetButton(_ button: NSButton, toPrimary primary: Bool) -> Bool {
+        switchSheetButton(button, to: primary ? .primary : .secondary)
     }
 }

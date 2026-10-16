@@ -358,6 +358,14 @@ final class SAClaudeWindowSkin: NSObject {
             d.alertButtonIndex = index
             d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
         }
+        // A forced-destructive button (the alert card's red one) keeps the red look at every walk, whatever the rules say.
+        if SAClaudeSheetButtonRole.isDestructive(button) {
+            guard button.isBordered || d.isAlertButton else { return }
+            if !SAClaudeFilterCells.switchSheetButton(button, to: .destructive) {
+                guard SAClaudeFilterCells.install(SAClaudeSheetDestructiveButtonCell.self, on: button) else { return }
+            }
+            return
+        }
         var style = SAClaudeSheetRules.style(for: d)
         // A bespoke styler may give a push button a role the rules don't (`SAClaudeSheetButtonRole`).
         if let forcedPrimary = SAClaudeSheetButtonRole.forced(button) { style = forcedPrimary ? .primaryButton : .secondaryButton }
@@ -696,5 +704,17 @@ enum SAClaudeSheetButtonRole {
 
     static func forced(_ button: NSButton) -> Bool? {
         objc_getAssociatedObject(button, &key) as? Bool
+    }
+
+    private static var destructiveKey: UInt8 = 0
+
+    /// Gives `button` the red destructive look at every later walk of the window (the alert card's destructive
+    /// button). Call `SAClaudeWindowSkin.styleButton` afterwards to apply it now.
+    static func forceDestructive(_ button: NSButton) {
+        objc_setAssociatedObject(button, &destructiveKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    static func isDestructive(_ button: NSButton) -> Bool {
+        (objc_getAssociatedObject(button, &destructiveKey) as? Bool) == true
     }
 }

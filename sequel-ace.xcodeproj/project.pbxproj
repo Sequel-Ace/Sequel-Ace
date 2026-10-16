@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1E7CA2D0000000000000011 /* SAClaudeAlertCardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000010 /* SAClaudeAlertCardViews.swift */; };
+		A1E7CA2D000000000000000F /* SAClaudeAlertChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */; };
+		A1E7CA2D000000000000000D /* SAClaudeAlertChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */; };
+		A1E7CA2D000000000000000C /* SAClaudeAlertChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */; };
 		A1E7CA2D000000000000000A /* SAClaudeAlertLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */; };
 		A1E7CA2D0000000000000008 /* SAClaudeAlertLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */; };
 		A1E7CA2D0000000000000007 /* SAClaudeAlertLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */; };
@@ -1061,6 +1065,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1E7CA2D0000000000000010 /* SAClaudeAlertCardViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertCardViews.swift; sourceTree = "<group>"; };
+		A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertChromeTests.swift; sourceTree = "<group>"; };
+		A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertChrome.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertLayoutTests.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertLayout.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKindTests.swift; sourceTree = "<group>"; };
@@ -3052,6 +3059,7 @@
 		17FDB0AC1280938000DBBBC2 /* Controls */ = {
 			isa = PBXGroup;
 			children = (
+				A1E7CA2D0000000000000010 /* SAClaudeAlertCardViews.swift */,
 				F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */,
 				F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */,
 				F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */,
@@ -3235,6 +3243,7 @@
 		507FF10E1BBCC4A900104523 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */,
 				A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */,
 				A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */,
 				F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */,
@@ -3302,6 +3311,7 @@
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */,
 				A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */,
 				A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */,
 				F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */,
@@ -4037,6 +4047,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1E7CA2D000000000000000F /* SAClaudeAlertChromeTests.swift in Sources */,
+				A1E7CA2D000000000000000D /* SAClaudeAlertChrome.swift in Sources */,
 				A1E7CA2D000000000000000A /* SAClaudeAlertLayoutTests.swift in Sources */,
 				A1E7CA2D0000000000000008 /* SAClaudeAlertLayout.swift in Sources */,
 				A1E7CA2D0000000000000005 /* SAClaudeAlertKindTests.swift in Sources */,
@@ -4393,6 +4405,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1E7CA2D0000000000000011 /* SAClaudeAlertCardViews.swift in Sources */,
+				A1E7CA2D000000000000000C /* SAClaudeAlertChrome.swift in Sources */,
 				A1E7CA2D0000000000000007 /* SAClaudeAlertLayout.swift in Sources */,
 				A1E7CA2D0000000000000002 /* SAClaudeAlertKind.swift in Sources */,
 				F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */,
