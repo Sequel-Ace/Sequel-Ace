@@ -287,9 +287,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [newWindowController.databaseDocument setState:withoutAutoConnect];
             if (wantsAutoConnect) [newWindowController.databaseDocument connectUnlessUsingSSHAgent];
         }
-
-        // Set autoconnection if appropriate
-        if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
+        // Set autoconnection if appropriate. Not when launch arguments supplied the connection:
+        // the window then holds theirs, not the default favorite, and that was decided above.
+        else if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
             [newWindowController.databaseDocument connect];
         }
     }
