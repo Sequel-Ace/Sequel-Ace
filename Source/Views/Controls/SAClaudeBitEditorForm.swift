@@ -73,7 +73,7 @@ extension SAClaudeFormRecipes {
     }
 }
 
-/// A BIT editor chip: a rounded rectangle, the accent fill when on, a hairline outline when off, its title (NULL)
+/// A BIT editor chip: a rounded rectangle, the accent fill when on, a drop-stroke outline (visible in dark mode) when off, its title (NULL)
 /// centred. Installed in place of the bit checkboxes' and the NULL toggle's cells (`object_setClass`, no stored
 /// properties), so their state, target, action and tags stay the controller's; draws its colours at draw time.
 @objc(SAClaudeBitChipCell) final class SAClaudeBitChipCell: NSButtonCell {
@@ -118,7 +118,7 @@ extension SAClaudeFormRecipes {
                 path.fill()
             }
             path.lineWidth = 1
-            palette.hairline.setStroke()
+            SAClaudeFilterChrome.dropStroke(text: SAClaudeFilterBarStyler.currentThemeText, background: palette.background).setStroke()
             path.stroke()
         }
         if !title.isEmpty {
