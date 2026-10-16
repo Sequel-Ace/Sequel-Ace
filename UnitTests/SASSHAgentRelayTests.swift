@@ -229,6 +229,34 @@ final class SASSHAgentRelayTests: XCTestCase {
         }
     }
 
+    /// A startup that fails while other connections are waiting must be
+    /// cleaned up exactly once: a second cleanup could erase the replacement
+    /// launch a waiter has already started, causing yet another launch.
+    func testAFailedStartupWithWaitersLeadsToExactlyOneReplacementLaunch() throws {
+        for iteration in 0..<25 {
+            let launchCount = Locked<Int>(0)
+            let real = launches.launcher
+            let relay = SASSHAgentRelay(installer: makeInstaller(), launcher: { script, arguments, socket, onExit in
+                let number = launchCount.value + 1
+                launchCount.mutate { $0 += 1 }
+                guard number == 1 else { return try real(script, arguments, socket, onExit) }
+                // The first helper says "ready" and dies before its launch is recorded.
+                Thread.sleep(forTimeInterval: 0.05)   // let the other callers start waiting
+                let status = Pipe()
+                status.fileHandleForWriting.write(Data("ready\n".utf8))
+                try? status.fileHandleForWriting.close()
+                onExit()
+                return SASSHAgentRelay.Helper(status: status.fileHandleForReading, closeInput: {})
+            }, containerDataDirectory: containerData.path, processIdentifier: 4242)
+
+            let target = agent.path
+            DispatchQueue.concurrentPerform(iterations: 6) { _ in _ = try? relay.listenPath(forTarget: target) }
+
+            XCTAssertEqual(launchCount.value, 2, "iteration \(iteration): one failed launch, one replacement")
+            launches.stopAll()
+        }
+    }
+
     func testAHelperThatNeverAnswersTimesOutAndIsToldToQuit() throws {
         let toldToQuit = Locked<Bool>(false)
         let relay = SASSHAgentRelay(installer: makeInstaller(), launcher: { _, _, _, _ in

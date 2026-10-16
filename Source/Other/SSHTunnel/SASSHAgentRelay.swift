@@ -266,10 +266,11 @@ import Foundation
             let (listenPath, helper) = try start(target: target, token: token)
             condition.lock()
             if case .launching(_, true) = entries[target] {
-                entries[target] = nil
-                unlink(listenPath)
-                condition.broadcast()
+                // Leave the entry to the catch below: cleaning up here too
+                // would wake a waiter, and a second cleanup could then erase
+                // the replacement launch it had started.
                 condition.unlock()
+                unlink(listenPath)
                 throw RelayError.helperExited(detail: "")
             }
             entries[target] = .running(listenPath: listenPath, helper: helper, token: token)
@@ -278,7 +279,9 @@ import Foundation
             return listenPath
         } catch {
             condition.lock()
-            entries[target] = nil
+            if case .launching(let launching, _) = entries[target], launching == token {
+                entries[target] = nil
+            }
             condition.broadcast()
             condition.unlock()
             throw error
