@@ -290,19 +290,17 @@ final class SAClaudeFormLayoutTests: XCTestCase {
         XCTAssertEqual(t.column, "plain"); XCTAssertNil(t.details)
     }
 
-    /// The content grid's header shows the type after the name, and the controller's label carries that header
-    /// text: the title is the name alone.
-    func testFieldTitleDropsTheHeadersTypeSuffix() {
-        var t = SAClaudeFormText.fieldTitle("Field: “payload JSON” – JSON")
+    /// The content grid's header joins the name and the type with U+2004, and the controller's label carries
+    /// that header text: the title is the name alone.
+    func testFieldTitleDropsTheHeadersType() {
+        var t = SAClaudeFormText.fieldTitle("Field: “payload\u{2004}JSON” – JSON")
         XCTAssertEqual(t.column, "payload"); XCTAssertEqual(t.details, "JSON")
-        t = SAClaudeFormText.fieldTitle("Field: “data BLOB” – BLOB(65535)")
+        t = SAClaudeFormText.fieldTitle("Field: “data\u{2004}BLOB” – BLOB(65535)")
         XCTAssertEqual(t.column, "data"); XCTAssertEqual(t.details, "BLOB(65535)")
-        t = SAClaudeFormText.fieldTitle("Field: “flags bit” – BIT(8)")
+        t = SAClaudeFormText.fieldTitle("“flags\u{2004}BIT”")
         XCTAssertEqual(t.column, "flags")
-        // A name that only is the type word, or merely ends in other text, is kept.
-        t = SAClaudeFormText.fieldTitle("Field: “json” – JSON")
-        XCTAssertEqual(t.column, "json")
-        t = SAClaudeFormText.fieldTitle("Field: “my blobby” – BLOB")
-        XCTAssertEqual(t.column, "my blobby")
+        // Ordinary spaces are part of the name.
+        t = SAClaudeFormText.fieldTitle("Field: “my json” – JSON")
+        XCTAssertEqual(t.column, "my json")
     }
 }
