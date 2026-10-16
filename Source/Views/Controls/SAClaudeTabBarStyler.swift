@@ -35,6 +35,9 @@ import AppKit
     private weak var status: NSTextField?
     private weak var search: NSSearchField?
     private weak var label: NSTextField?
+    private weak var content: NSView?
+    private var fittedToVisibleArea = false
+    private var windowObservation: NSKeyValueObservation?
     private var buttons: [BarButton] = []
     /// How many of `buttons` are in the left group.
     private var leftCount = 0
@@ -65,9 +68,7 @@ import AppKit
     @objc(attachToContainer:barTop:content:status:search:label:)
     static func attach(container: NSView?, barTop: CGFloat, content: NSView?, status: NSTextField?,
                        search: NSSearchField?, label: NSTextField?) {
-        // A strip is never a window's whole content: SPIndexesController runs -awakeFromNib again when it
-        // loads its New index sheet, and its outlet then names the sheet's Add button.
-        guard let container, !container.isFlipped, container !== container.window?.contentView,
+        guard let container, !container.isFlipped,
               objc_getAssociatedObject(container, &associationKey) == nil else { return }
         let styler = SAClaudeTabBarStyler()
         objc_setAssociatedObject(container, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
@@ -83,6 +84,7 @@ import AppKit
         styler.buildStrip()
         styler.layoutControls(spinner: spinner)
         styler.moveContent(content)
+        styler.content = content
         styler.styleSearchField()
         styler.styleStatus()
         if let table = (content as? NSScrollView)?.documentView as? SAClaudeCopyTable { table.stylesCells = true }
@@ -94,6 +96,10 @@ import AppKit
         // The on-state filter / edit glyphs are tinted images: re-render them with the new accent.
         SAClaudeAccent.observe(styler) { $0.applyColours(force: true) }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.
+        // The overhang is only measurable on screen (the tab views are moved into the window later).
+        styler.windowObservation = container.observe(\.window, options: [.initial]) { [weak styler] _, _ in
+            DispatchQueue.main.async { styler?.fitToVisibleArea() }
+        }
         styler.appearanceObservation = container.observe(\.effectiveAppearance) { [weak styler] _, _ in
             DispatchQueue.main.async { styler?.applyColours(force: true) }
         }
@@ -213,6 +219,45 @@ import AppKit
             status.autoresizingMask = [.width, .maxYMargin]
         }
         layoutSearchField()
+    }
+
+    /// Some tab views in DBView.xib hang past their pane (Relations and Triggers: 7pt left, 10pt below,
+    /// 6pt right), so a strip laid out from the container's corner sat partly below the window. Once the
+    /// container is on screen, the strip band and the content's bottom edge move in by that overhang. Once:
+    /// the overhang is the XIB's, and autoresizing keeps everything pinned after that.
+    private func fitToVisibleArea() {
+        guard let container, !fittedToVisibleArea, let windowContent = container.window?.contentView else { return }
+        // The window's content area in the container's coordinates: unlike visibleRect, also right while the
+        // window or its tab is not on screen.
+        let visible = container.convert(windowContent.bounds, from: windowContent).intersection(container.bounds)
+        guard !visible.isEmpty else { return }
+        fittedToVisibleArea = true
+        // Only a small overhang is the XIB's; anything larger is a scrolled or collapsed container.
+        func overhang(_ value: CGFloat) -> CGFloat { (0...20).contains(value) ? value : 0 }
+        let left = overhang(visible.minX - container.bounds.minX)
+        let right = overhang(container.bounds.maxX - visible.maxX)
+        let bottom = overhang(visible.minY - container.bounds.minY)
+        guard left > 0 || right > 0 || bottom > 0 else { return }
+
+        for view in container.subviews where view.frame.minY < Self.stripHeight && view !== content {
+            var frame = view.frame
+            frame.origin.y += bottom
+            if view.autoresizingMask.contains(.width) {
+                frame.origin.x += left
+                frame.size.width = max(0, frame.width - left - right)
+            } else if view.autoresizingMask.contains(.minXMargin) {
+                frame.origin.x -= right
+            } else {
+                frame.origin.x += left
+            }
+            view.frame = frame
+        }
+        if let content, content.superview === container, bottom > 0 {
+            var frame = content.frame
+            frame.origin.y += bottom
+            frame.size.height = max(0, frame.height - bottom)
+            content.frame = frame
+        }
     }
 
     /// Moves the content's bottom edge to the strip's top, keeping its top where it is.
