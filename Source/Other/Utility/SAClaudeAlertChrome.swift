@@ -19,7 +19,8 @@ struct SAClaudeAlertCardColours: Equatable {
 
 enum SAClaudeAlertChrome {
     /// A true red `#C03A2E`, distinct from the clay accent (`#C6613F`) and from the error clay (`#D97757`), so a red
-    /// "Delete" never reads as an ordinary OK. Used for the Error / Destructive tile and the destructive button.
+    /// "Delete" never reads as an ordinary OK. Used for the destructive button's fill (white text on it is 5.4:1) and the
+    /// Error / Destructive glyph on a light card; a dark card draws the glyph in the lighter `redGlyphDark`.
     static let red = NSColor(srgbRed: 0xC0 / 255.0, green: 0x3A / 255.0, blue: 0x2E / 255.0, alpha: 1)
     /// The Warning tone follows the appearance it is drawn in: `#D4A13A` on a dark card, the deeper `#B7801A` on a
     /// light one (the lighter amber is too faint on a light surface).
@@ -28,7 +29,19 @@ enum SAClaudeAlertChrome {
     static let amber = NSColor(name: "SAClaudeAlertAmber") { appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? amberDark : amberLight
     }
-    static let green = NSColor(srgbRed: 0x4F / 255.0, green: 0xA0 / 255.0, blue: 0x5A / 255.0, alpha: 1)
+    /// The Error / Destructive glyph tone: `red` on a light card, a lighter `#E0574A` on a dark one (`red` is only
+    /// 2.3-2.6:1 on a dark card's tile; this is 3.1:1 or more).
+    static let redGlyphDark = NSColor(srgbRed: 0xE0 / 255.0, green: 0x57 / 255.0, blue: 0x4A / 255.0, alpha: 1)
+    static let redGlyph = NSColor(name: "SAClaudeAlertRedGlyph") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? redGlyphDark : red
+    }
+    /// The Info glyph tone: `#4FA05A` on a dark card, the deeper `#3E8A4A` on a light one (the lighter green is 2.5-2.7:1
+    /// on a light tile).
+    static let greenDark = NSColor(srgbRed: 0x4F / 255.0, green: 0xA0 / 255.0, blue: 0x5A / 255.0, alpha: 1)
+    static let greenLight = NSColor(srgbRed: 0x3E / 255.0, green: 0x8A / 255.0, blue: 0x4A / 255.0, alpha: 1)
+    static let green = NSColor(name: "SAClaudeAlertGreen") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? greenDark : greenLight
+    }
 
     /// The tile is the surface mixed this far towards the tone.
     static let tileFillRatio: CGFloat = 0.13
@@ -53,7 +66,7 @@ enum SAClaudeAlertChrome {
     /// Question is neutral: the card's secondary text colour.
     static func tone(for kind: SAClaudeAlertKind, secondaryText: NSColor) -> NSColor {
         switch kind {
-        case .error, .destructive: return red
+        case .error, .destructive: return redGlyph
         case .warning: return amber
         case .question: return secondaryText
         case .info: return green

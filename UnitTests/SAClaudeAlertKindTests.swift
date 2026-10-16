@@ -64,6 +64,17 @@ final class SAClaudeAlertKindTests: XCTestCase {
         XCTAssertEqual(classify("JavaScript Exception", "Exception:\nline = 3\nmessage = x\nsource = y", ["OK"]), c(.error))
     }
 
+    /// The data-loss fallback reddens the button that gives the changes up, never the "Save" that keeps them.
+    func testDataLossRedIsDontSaveNeverSave() {
+        let lost = "Changes have been made, which will be lost if this window is closed."
+        XCTAssertEqual(classify("Unsaved changes", lost, ["Save", "Don't Save", "Cancel"]), c(.destructive, red: 1))
+        XCTAssertEqual(classify("Unsaved changes", lost, ["Save", "Don\u{2019}t Save", "Cancel"]), c(.destructive, red: 1))
+        XCTAssertEqual(classify("Unsaved changes", lost, ["Save", "Discard", "Cancel"]), c(.destructive, red: 1))
+        XCTAssertEqual(classify("Unsaved changes", lost, ["Don't Save", "Save", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Unsaved changes", lost, ["Save", "Cancel"]), c(.destructive, red: nil), "no button but Save: nothing turns red")
+        XCTAssertEqual(classify("Unsaved changes", lost, ["Continue", "Cancel"]), c(.destructive, red: 0))
+    }
+
     func testNegatedCompletionIsNotInfo() {
         for message in ["The export was not saved.", "The rows weren't imported.", "The file isn't updated.", "Never copied.", "Results of the check are unavailable.", "Results of the check are missing."] {
             XCTAssertEqual(classify("Notice", message, ["OK"]), c(.warning), message)

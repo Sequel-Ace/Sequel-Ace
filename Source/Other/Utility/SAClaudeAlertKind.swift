@@ -79,6 +79,10 @@ private enum SAClaudeAlertClassifier {
     ]
 
     private static let destructiveButton = regex("^(delete|remove|drop|truncate|kill|clear|empty|shutdown|shut down|discard|force delete|reset|overwrite)(?![\\p{L}])")
+    /// "Don't Save", "Do Not Save", "Don't …": the button that gives the changes up, which is the red one of a data-loss
+    /// prompt (its "Save" sibling is the safe choice).
+    private static let declineButton = regex("^(don'?t|do not)(?![\\p{L}])")
+    private static let saveButton = regex("^(save|keep)(?![\\p{L}])")
     private static let destructiveTitle = regex("^(delete|drop|truncate|remove|kill)\\b")
     // Tuned against the call sites: overwrite (SPDataImport.m:318, SPExportController.m:2044), "will be lost"
     // (SPUserManager.m:983, SPDataImport.m:603), "without saving" (SPEditorPreferencePane.m:786). "was lost" is not data loss.
@@ -149,8 +153,16 @@ private enum SAClaudeAlertClassifier {
             let title = matchingText(facts.title).trimmingCharacters(in: .whitespacesAndNewlines)
             let questionTitle = matches(destructiveTitle, title) && title.contains("?")
             if questionTitle || matches(dataLoss, text) {
-                let red = buttons.indices.first { !isCancel(buttons[$0]) && matches(destructiveButton, buttons[$0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) }
-                return SAClaudeAlertClassification(kind: .destructive, destructiveButtonIndex: red ?? firstNonCancel)
+                func normalised(_ index: Int) -> String {
+                    buttons[index].trimmingCharacters(in: .whitespacesAndNewlines).lowercased().replacingOccurrences(of: "’", with: "'")
+                }
+                let candidates = buttons.indices.filter { !isCancel(buttons[$0]) }
+                // The delete-type button; else a "Don't Save" / "Discard"-style one; else the first button that is not
+                // Cancel, but never a "Save" / "Keep" (the safe choice): then no button turns red.
+                let red = candidates.first { matches(destructiveButton, normalised($0)) }
+                    ?? candidates.first { matches(declineButton, normalised($0)) }
+                    ?? candidates.first { !matches(saveButton, normalised($0)) }
+                return SAClaudeAlertClassification(kind: .destructive, destructiveButtonIndex: red)
             }
         }
 

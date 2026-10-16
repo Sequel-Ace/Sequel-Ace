@@ -209,6 +209,8 @@ final class SAClaudeAlertCard: NSObject {
     /// internal constraints; its own frame is the card's.
     private func reparentControls() {
         for view in controls where view.superview !== root {
+            // The CHECK TABLE accessory, once another alert's card holds it, is not taken back by this (stale) card.
+            if view === accessory, view.superview is SAClaudeAlertCardView { continue }
             if let stack = view.superview as? NSStackView { stack.removeArrangedSubview(view) }
             view.removeFromSuperview()
             view.translatesAutoresizingMaskIntoConstraints = true
@@ -357,7 +359,8 @@ final class SAClaudeAlertCard: NSObject {
         return !content.subviews.contains { isHiddenByCard($0) && !$0.isHidden }
     }
 
-    /// Puts the card back if AppKit replaced the content or moved the alert's controls; false = gave up (today's skin).
+    /// Puts the card back if AppKit replaced the content or moved the alert's controls. False = gave up: the window is
+    /// left as it is (the card as installed, not today's skin), and the card does not try again.
     @discardableResult
     func verify() -> Bool {
         guard !gaveUp, let alert else { return false }

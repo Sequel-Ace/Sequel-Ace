@@ -29,8 +29,8 @@ final class SAClaudeAlertChromeTests: XCTestCase {
 
     func testTones() {
         let secondary = NSColor.systemPink
-        XCTAssertEqual(C.tone(for: .error, secondaryText: secondary), C.red)
-        XCTAssertEqual(C.tone(for: .destructive, secondaryText: secondary), C.red)
+        XCTAssertEqual(C.tone(for: .error, secondaryText: secondary), C.redGlyph)
+        XCTAssertEqual(C.tone(for: .destructive, secondaryText: secondary), C.redGlyph)
         XCTAssertEqual(C.tone(for: .warning, secondaryText: secondary), C.amber)
         XCTAssertEqual(C.tone(for: .info, secondaryText: secondary), C.green)
         XCTAssertEqual(C.tone(for: .question, secondaryText: secondary), secondary)
@@ -55,7 +55,55 @@ final class SAClaudeAlertChromeTests: XCTestCase {
         NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
             assertColour(C.amber, [0xB7 / 255.0, 0x80 / 255.0, 0x1A / 255.0, 1])
         }
-        assertColour(C.green, [0x4F / 255.0, 0xA0 / 255.0, 0x5A / 255.0, 1])
+        assertColour(C.greenDark, [0x4F / 255.0, 0xA0 / 255.0, 0x5A / 255.0, 1])
+        assertColour(C.greenLight, [0x3E / 255.0, 0x8A / 255.0, 0x4A / 255.0, 1])
+        assertColour(C.redGlyphDark, [0xE0 / 255.0, 0x57 / 255.0, 0x4A / 255.0, 1])
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance {
+            assertColour(C.green, [0x4F / 255.0, 0xA0 / 255.0, 0x5A / 255.0, 1])
+            assertColour(C.redGlyph, [0xE0 / 255.0, 0x57 / 255.0, 0x4A / 255.0, 1])
+        }
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
+            assertColour(C.green, [0x3E / 255.0, 0x8A / 255.0, 0x4A / 255.0, 1])
+            assertColour(C.redGlyph, [0xC0 / 255.0, 0x3A / 255.0, 0x2E / 255.0, 1])
+        }
+    }
+
+    /// Each kind's glyph reads against its own tile on the card surface (WCAG 3:1 for a graphic). The destructive
+    /// button's fill stays `red` in both appearances. Surfaces: white (the light card), and the dark cards' range.
+    /// The Warning glyph in light is the amber the round kept (`#B7801A`: 2.98:1 on white), so its floor is 2.9.
+    func testGlyphContrastOnItsTile() {
+        func contrast(_ a: NSColor, _ b: NSColor) -> CGFloat {
+            let (x, y) = (SAClaudeAccent.relativeLuminance(a), SAClaudeAccent.relativeLuminance(b))
+            return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+        }
+        func surface(_ hex: Int) -> NSColor {
+            NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        }
+        let cases: [(name: String, appearance: NSAppearance.Name, surfaces: [Int])] = [
+            ("light", .aqua, [0xFFFFFF]),
+            ("dark", .darkAqua, [0x1A1A18, 0x262624, 0x30302E])
+        ]
+        // Question is the card's secondary text colour (not fixed here), so only the fixed tones are measured.
+        for kind in SAClaudeAlertKind.allCases where kind != .question {
+            for c in cases {
+                for hex in c.surfaces {
+                    NSAppearance(named: c.appearance)!.performAsCurrentDrawingAppearance {
+                        let card = surface(hex)
+                        let tone = C.tone(for: kind, secondaryText: .gray)
+                        let tile = C.tileFill(tone: tone, surface: card)
+                        let floor: CGFloat = (kind == .warning && c.name == "light") ? 2.9 : 3.0
+                        let ratio = contrast(tone, tile)
+                        XCTAssertGreaterThanOrEqual(ratio, floor, "\(kind) \(c.name) on #\(String(hex, radix: 16)): \(ratio)")
+                    }
+                }
+            }
+        }
+        // Dark cards: the old red glyph (the button fill) would fail the bar, which is why the glyph has its own tone.
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance {
+            let card = surface(0x30302E)
+            XCTAssertLessThan(contrast(C.red, C.tileFill(tone: C.red, surface: card)), 3.0)
+        }
+        assertColour(C.red, [0xC0 / 255.0, 0x3A / 255.0, 0x2E / 255.0, 1])
     }
 
     func testTileFill() {

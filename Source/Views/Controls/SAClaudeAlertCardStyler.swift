@@ -41,10 +41,11 @@ enum SAClaudeAlertCardStyler {
         init(_ value: SAClaudeAlertClassification) { self.value = value }
     }
 
-    /// Before the buttons are styled. False = no card for this alert (not eligible: a SwiftUI `.alert`, a subclass, a
+    /// Before the buttons are styled and the alert lays itself out. False = no card for this alert (not eligible: a SwiftUI `.alert`, a subclass, a
     /// foreign button target); it keeps today's skin. `parent` is the window a sheet is presented on; `runModal` passes
     /// nil (SwiftUI alerts are sheets, so nothing is lost).
     static func prepare(_ alert: NSAlert, presentedOn parent: NSWindow?) -> Bool {
+        releaseAccessoryFromOtherCard(of: alert)
         let eligibility = SAClaudeAlertEligibility.Facts(
             alertClassName: visibleClassName(of: alert),
             buttonTargetClassNames: alert.buttons.map { button in (button.target as AnyObject?).map(visibleClassName(of:)) },
@@ -60,6 +61,15 @@ enum SAClaudeAlertCardStyler {
         let classification = SAClaudeAlertKind.classify(facts)
         objc_setAssociatedObject(alert, &classificationKey, StoredClassification(classification), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         return true
+    }
+
+    /// The CHECK TABLE results accessory is one XIB view reused by six alerts. If an earlier alert's card still holds
+    /// it, NSAlert's `layout()` would pull that whole card root into this alert; so it is let go first, before the
+    /// layout, and this alert's card can claim it.
+    static func releaseAccessoryFromOtherCard(of alert: NSAlert) {
+        if let accessory = alert.accessoryView, accessory.superview is SAClaudeAlertCardView {
+            accessory.removeFromSuperview()
+        }
     }
 
     // MARK: - Eligibility facts
