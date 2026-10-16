@@ -11,7 +11,7 @@
 
 import AppKit
 
-final class SAClaudeConnectionTypeTabs: NSControl {
+final class SAClaudeConnectionTypeTabs: NSControl, NSViewToolTipOwner {
 
     struct Colours {
         var selectedFill: NSColor
@@ -30,7 +30,16 @@ final class SAClaudeConnectionTypeTabs: NSControl {
     var titles: [String] = [] {
         didSet {
             rebuildAccessibilityChildren()
+            updateToolTips()
             needsDisplay = true
+        }
+    }
+
+    /// A tooltip per segment, by index (empty or nil = none). The field editor passes its segmented control's.
+    var toolTips: [String?] = [] {
+        didSet {
+            guard oldValue != toolTips else { return }
+            updateToolTips()
         }
     }
 
@@ -151,6 +160,34 @@ final class SAClaudeConnectionTypeTabs: NSControl {
 
     override func drawFocusRingMask() {
         NSBezierPath(roundedRect: focusRingMaskBounds, xRadius: Self.radius, yRadius: Self.radius).fill()
+    }
+
+    // MARK: - Tooltips
+
+    private var hasToolTipRects = false
+
+    /// One tooltip rect per segment (the view's own tooltip machinery asks `view(_:stringForToolTip:…)`).
+    private func updateToolTips() {
+        if hasToolTipRects {
+            removeAllToolTips()
+            hasToolTipRects = false
+        }
+        guard toolTips.contains(where: { $0?.isEmpty == false }) else { return }
+        for rect in segmentRects() {
+            addToolTip(rect, owner: self, userData: nil)
+            hasToolTipRects = true
+        }
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        let changed = newSize != frame.size
+        super.setFrameSize(newSize)
+        if changed, hasToolTipRects { updateToolTips() }
+    }
+
+    func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint, userData data: UnsafeMutableRawPointer?) -> String {
+        guard let index = index(at: point), toolTips.indices.contains(index) else { return "" }
+        return toolTips[index] ?? ""
     }
 
     // MARK: - Selecting

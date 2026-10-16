@@ -29,8 +29,9 @@ final class SAClaudeFieldEditorStyler: NSObject {
     private static let minimumEditorHeight: CGFloat = 40
 
     private struct Outlets {
-        /// The window retains the styler (associated), so it outlives it.
-        unowned let window: NSWindow
+        /// The window retains the styler (associated). Weak, not unowned: the frame observer can fire while the window
+        /// is being torn down, and that must be a no-op, not a trap.
+        weak var window: NSWindow?
         let contentView: NSView
         let fieldName: NSTextField
         let segments: NSSegmentedControl
@@ -139,7 +140,8 @@ final class SAClaudeFieldEditorStyler: NSObject {
 
     private func build() {
         let o = outlets
-        controllerMinimum = o.window.contentRect(forFrameRect: NSRect(origin: .zero, size: o.window.minSize)).size
+        guard let window = o.window else { return }
+        controllerMinimum = window.contentRect(forFrameRect: NSRect(origin: .zero, size: window.minSize)).size
 
         // Frames from now on. The XIB's layout is resolved once (every view gets its laid-out size), then its
         // constraints are switched off: those between the sheet's own views and the content view, and each of those
@@ -176,12 +178,29 @@ final class SAClaudeFieldEditorStyler: NSObject {
         o.progress.controlSize = .small
         o.progress.setFrameSize(NSSize(width: Self.spinnerSize, height: Self.spinnerSize))
         SAClaudeFormChrome.force(o.close, primary: true)
+        chainKeyViews()
         observe()
+    }
+
+    /// The switcher joins the key loop, in visual order and closed: switcher, the content views (only the visible one
+    /// can take focus; hidden ones are skipped), the strip's icons, the footer. Set once: the views are the sheet's own.
+    private func chainKeyViews() {
+        let o = outlets
+        let content: [NSView] = o.contentViews.map { ($0 as? NSScrollView)?.documentView ?? $0 }
+        let chain: [NSView] = [switcher] + content + [o.open, o.save, o.quickLook, o.editInSheet, o.cancel, o.ok, o.close]
+        var pairs = Array(zip(chain, chain.dropFirst()))
+        pairs.append((chain[chain.count - 1], chain[0]))
+        for (view, next) in pairs where view.nextKeyView !== next || next.previousKeyView !== view {
+            // Re-setting the same next view may not touch its previous view: clear first.
+            if view.nextKeyView === next { view.nextKeyView = nil }
+            view.nextKeyView = next
+        }
     }
 
     private func observe() {
         let o = outlets
-        observers = SAClaudeFormObservers(window: o.window, contentView: o.contentView,
+        guard let window = o.window else { return }
+        observers = SAClaudeFormObservers(window: window, contentView: o.contentView,
                                           onFrameChange: { [weak self] in self?.apply() },
                                           onThemeChange: { [weak self] in self?.setNeedsApply() })
         // What the controller shows or selects after the sheet began (the JSON segment, an image, read-only Close).
@@ -201,12 +220,13 @@ final class SAClaudeFieldEditorStyler: NSObject {
     /// controller's mode and visibility changes and on theme changes. Idempotent.
     func apply() {
         let o = outlets
-        guard o.contentView.bounds.width > 0, o.contentView.bounds.height > 0 else { return }
+        guard o.window != nil, o.contentView.bounds.width > 0, o.contentView.bounds.height > 0 else { return }
         coalescer.perform { applyNow() }
     }
 
     private func applyNow() {
         let o = outlets
+        guard o.window != nil else { return }
         let colours = SAClaudeSheetColours.current()
 
         // Header.
@@ -217,6 +237,8 @@ final class SAClaudeFieldEditorStyler: NSObject {
         // The switcher follows the segmented control.
         let count = o.segments.segmentCount
         let titles = (0..<count).map { o.segments.label(forSegment: $0) ?? "" }
+        let toolTips = (0..<count).map { o.segments.toolTip(forSegment: $0) }
+        if switcher.toolTips != toolTips { switcher.toolTips = toolTips }
         if switcher.titles != titles { switcher.titles = titles }
         let enabled = (0..<count).map { o.segments.isEnabled(forSegment: $0) }
         if switcher.enabledSegments != enabled { switcher.enabledSegments = enabled }
@@ -273,15 +295,16 @@ final class SAClaudeFieldEditorStyler: NSObject {
     /// sheet be smaller (a frame saved before), grows it to that once, its top edge kept.
     private func keepMinimum(_ needed: NSSize) {
         let o = outlets
+        guard let window = o.window else { return }
         let minimum = NSSize(width: max(controllerMinimum.width, needed.width), height: max(controllerMinimum.height, needed.height))
-        if o.window.contentMinSize != minimum { o.window.contentMinSize = minimum }
+        if window.contentMinSize != minimum { window.contentMinSize = minimum }
         let current = o.contentView.bounds.size
         guard current.width < minimum.width || current.height < minimum.height else { return }
         let size = NSSize(width: max(current.width, minimum.width), height: max(current.height, minimum.height))
-        let old = o.window.frame
-        var frame = o.window.frameRect(forContentRect: NSRect(origin: .zero, size: size))
+        let old = window.frame
+        var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: size))
         frame.origin = NSPoint(x: (old.midX - frame.width / 2).rounded(), y: old.maxY - frame.height)
-        o.window.setFrame(frame, display: o.window.isVisible)
+        window.setFrame(frame, display: window.isVisible)
     }
 
     private func recolour(_ colours: SAClaudeSheetColours) {

@@ -32,6 +32,8 @@ enum SAClaudeThemeWatcher {
     /// Calls `handler` with `owner` on the main thread whenever the editor theme's colours change, for as long as
     /// `owner` lives (it is held weakly; nothing to remove). Call on the main thread.
     static func observe<Owner: AnyObject>(_ owner: Owner, _ handler: @escaping (Owner) -> Void) {
+        // A short-lived owner (a field editor per edit) would otherwise stay registered until the next theme change.
+        entries.removeAll { $0.owner == nil }
         entries.append(Entry(owner: owner) { [weak owner] in
             if let owner { handler(owner) }
         })

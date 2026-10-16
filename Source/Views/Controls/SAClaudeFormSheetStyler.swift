@@ -377,8 +377,9 @@ final class SAClaudeFormSheet: NSObject {
         case block(NSScrollView, SAClaudeFormSurfaceView, [NSButton])
     }
 
-    /// The window retains this object (associated), so it outlives it.
-    unowned let window: NSWindow
+    /// The window retains this object (associated). Weak, not unowned: the frame observer can fire while the window is
+    /// being torn down (this object is released after `-[NSWindow dealloc]`), and that must be a no-op, not a trap.
+    private(set) weak var window: NSWindow?
     let contentView: NSView
     private let recipe: SAClaudeFormRecipe
 
@@ -475,17 +476,19 @@ final class SAClaudeFormSheet: NSObject {
     /// The content view's frame changed: applied now (a live resize stays smooth) unless the form owns the height
     /// and the user isn't resizing — then once on the next turn, after whatever resized the sheet has finished.
     private func frameDidChange() {
+        guard let window else { return }
         if ownsHeight && !window.inLiveResize { setNeedsApply() } else { apply() }
     }
 
     // MARK: Applying
 
     func apply() {
-        guard contentView.bounds.width > 0, contentView.bounds.height > 0 else { return }
+        guard window != nil, contentView.bounds.width > 0, contentView.bounds.height > 0 else { return }
         coalescer.perform { applyNow() }
     }
 
     private func applyNow() {
+        guard let window else { return }
         let content = recipe.content()
         let colours = SAClaudeSheetColours.current()
         var used = Set(content.namedViews.map { ObjectIdentifier($0) })
@@ -563,8 +566,8 @@ final class SAClaudeFormSheet: NSObject {
                                resizable: window.styleMask.contains(.resizable),
                                minimumControlWidth: content.minimumControlWidth)
         var f = Layout.frames(spec)
-        if ownsHeight { f = ownedHeightFrames(spec, f) }
-        resizeWindow(to: f)
+        if ownsHeight { f = ownedHeightFrames(spec, f, window: window) }
+        resizeWindow(to: f, window: window)
 
         header.place(title: f.title, context: f.context)
         for (entry, frame) in zip(placed, f.items) { place(entry, frame, f) }
@@ -635,7 +638,7 @@ final class SAClaudeFormSheet: NSObject {
 
     /// With `ownsHeight`: a live resize sets the dragged-in height; any other height (a controller's resize) gives
     /// way to the natural height plus the dragged-in one — so a fold changes the height by exactly its rows.
-    private func ownedHeightFrames(_ spec: Layout.Spec, _ f: Layout.Frames) -> Layout.Frames {
+    private func ownedHeightFrames(_ spec: Layout.Spec, _ f: Layout.Frames, window: NSWindow) -> Layout.Frames {
         guard f.heightIsFlexible else { return f }
         let natural = f.minimumSize.height
         if window.inLiveResize {
@@ -649,7 +652,7 @@ final class SAClaudeFormSheet: NSObject {
         return Layout.frames(held)
     }
 
-    private func resizeWindow(to f: Layout.Frames) {
+    private func resizeWindow(to f: Layout.Frames, window: NSWindow) {
         if window.styleMask.contains(.resizable) {
             if window.contentMinSize != f.minimumSize { window.contentMinSize = f.minimumSize }
             let maxHeight = f.heightIsFlexible ? CGFloat.greatestFiniteMagnitude : f.minimumSize.height
@@ -806,8 +809,9 @@ final class SAClaudeFormSheet: NSObject {
 
 // MARK: - Block surface
 
-/// A full-width block's rounded surface (the editor theme's background, a hairline), optionally with a strip at its
-/// bottom (the index sheet's +/−) or top (the field editor's toolbar) in the card fill under a hairline divider.
+/// A full-width block's rounded surface (the editor theme's background, the drop stroke as outline), optionally with
+/// a strip at its bottom (the index sheet's +/−) or top (the field editor's toolbar) in the card fill under a divider
+/// in the same stroke.
 /// Reads its colours at draw time; the generic skin redisplays the window on theme and accent changes.
 final class SAClaudeFormSurfaceView: NSView {
     var stripHeight: CGFloat = 0 { didSet { if stripHeight != oldValue { needsDisplay = true } } }
@@ -818,6 +822,8 @@ final class SAClaudeFormSurfaceView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         let palette = SAClaudeFilterBarStyler.currentPalette
+        // The drop stroke, like the chips and checkboxes: the 8% hairline vanishes in dark mode.
+        let edge = SAClaudeFilterChrome.dropStroke(text: SAClaudeFilterBarStyler.currentThemeText, background: palette.background)
         let radius = SAClaudeFormLayout.blockRadius
         let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: radius - 0.5, yRadius: radius - 0.5)
         palette.background.setFill()
@@ -830,12 +836,12 @@ final class SAClaudeFormSurfaceView: NSView {
             outline.addClip()
             SAClaudeFilterChrome.cardFill(text: SAClaudeFilterBarStyler.currentThemeText, background: palette.background).setFill()
             strip.fill()
-            palette.hairline.setFill()
+            edge.setFill()
             NSRect(x: 0, y: stripAtTop ? strip.minY - 1 : strip.maxY, width: bounds.width, height: 1).fill()
             NSGraphicsContext.restoreGraphicsState()
         }
         outline.lineWidth = 1
-        palette.hairline.setStroke()
+        edge.setStroke()
         outline.stroke()
     }
 }
