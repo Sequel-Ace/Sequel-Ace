@@ -5236,6 +5236,12 @@
 /* Claude sheet title: the New Relation (foreign key) sheet */
 "ClaudeFormNewRelation" = "New relation";
 
+/* Claude sheet title: the trigger sheet when adding a trigger */
+"ClaudeFormNewTrigger" = "New trigger";
+
+/* Claude sheet title: the trigger sheet when editing an existing trigger */
+"ClaudeFormEditTrigger" = "Edit trigger";
+
 /* Claude sheet section title in New Relation: the column of this table the foreign key is on */
 "ClaudeFormSectionColumn" = "Column";
 

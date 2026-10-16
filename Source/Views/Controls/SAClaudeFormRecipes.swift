@@ -29,6 +29,8 @@ enum SAClaudeFormStrings {
     static var contextIn: String { NSLocalizedString("ClaudeFormContextIn", value: "In %@", comment: "Claude sheet context line under the New Table title: the database the table is created in") }
     static var newIndex: String { NSLocalizedString("ClaudeFormNewIndex", value: "New index", comment: "Claude sheet title: the New Index sheet") }
     static var newRelation: String { NSLocalizedString("ClaudeFormNewRelation", value: "New relation", comment: "Claude sheet title: the New Relation (foreign key) sheet") }
+    static var newTrigger: String { NSLocalizedString("ClaudeFormNewTrigger", value: "New trigger", comment: "Claude sheet title: the trigger sheet when adding a trigger") }
+    static var editTrigger: String { NSLocalizedString("ClaudeFormEditTrigger", value: "Edit trigger", comment: "Claude sheet title: the trigger sheet when editing an existing trigger") }
     static var columnSection: String { NSLocalizedString("ClaudeFormSectionColumn", value: "Column", comment: "Claude sheet section title in New Relation: the column of this table the foreign key is on") }
     static var nameAndActions: String { NSLocalizedString("ClaudeFormSectionNameAndActions", value: "Name and actions", comment: "Claude sheet section title in New Relation: the constraint name and its ON UPDATE / ON DELETE actions") }
     static var references: String { NSLocalizedString("ClaudeFormSectionReferences", value: "References", comment: "Claude sheet section title in New Relation: the referenced database, table and column") }
@@ -83,6 +85,7 @@ enum SAClaudeFormRecipes {
         case .resetAutoIncrement: return resetAutoIncrement(m)
         case .newIndex: return newIndex(m)
         case .newRelation: return newRelation(m)
+        case .trigger: return trigger(m)
         default: return nil
         }
     }
@@ -350,6 +353,38 @@ enum SAClaudeFormRecipes {
         }, content: { [weak doc = m.document] in
             SAClaudeFormContent(title: SAClaudeFormStrings.newRelation, context: doc?.table(), items: items,
                                 footerLeading: [spinner, status], footerTrailing: [cancel, primary], hidden: boxes)
+        })
+    }
+
+    /// New / Edit trigger (SPTableTriggers · addTriggerPanel): Name / Action Time / Event and the SQL editor as a
+    /// growing block; the title follows the controller's mode, read at every apply (the panel is reused). The
+    /// "Trigger:" box is hidden, its rows lifted into the sheet by the engine; the editor keeps its text view, so its
+    /// delegate and syntax behaviour are untouched.
+    private static func trigger(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        let o = m.owner
+        guard let contentView = m.window.contentView,
+              let name: NSTextField = outlet(o, "triggerNameTextField"),
+              let time: NSPopUpButton = outlet(o, "triggerActionTimePopUpButton"),
+              let event: NSPopUpButton = outlet(o, "triggerEventPopUpButton"),
+              let textView: NSTextView = outlet(o, "triggerStatementTextView"),
+              let scrollView = textView.enclosingScrollView, scrollView.superview === contentView,
+              let primary: NSButton = outlet(o, "confirmAddTriggerButton"),
+              let cancel = SAClaudeFormFind.button(in: contentView, action: "closeTriggerSheet:"),
+              let box = SAClaudeFormFind.box(around: name)
+        else { return nil }
+        let controls: [NSView] = [name, time, event]
+        let labels = controls.compactMap(SAClaudeFormFind.label(beside:))
+        guard labels.count == controls.count else { return nil }
+        let items: [SAClaudeFormItem] = [
+            .row(.existing(labels[0]), name, .field),
+            .row(.existing(labels[1]), time, .popUp),
+            .row(.existing(labels[2]), event, .popUp),
+            .block(scrollView, minHeight: 120, grows: true, strip: []),
+        ]
+        return SAClaudeSimpleFormRecipe(content: { [weak triggers = o, weak doc = m.document] in
+            let isEdit = (outlet(triggers, "isEdit") as NSNumber?)?.boolValue ?? false
+            return SAClaudeFormContent(title: isEdit ? SAClaudeFormStrings.editTrigger : SAClaudeFormStrings.newTrigger,
+                                       context: doc?.table(), items: items, footerTrailing: [cancel, primary], hidden: [box])
         })
     }
 }
