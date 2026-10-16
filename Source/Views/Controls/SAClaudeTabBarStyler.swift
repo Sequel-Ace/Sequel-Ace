@@ -226,10 +226,15 @@ import AppKit
     /// container is on screen, the strip band and the content's bottom edge move in by that overhang. Once:
     /// the overhang is the XIB's, and autoresizing keeps everything pinned after that.
     private func fitToVisibleArea() {
-        guard let container, !fittedToVisibleArea, let windowContent = container.window?.contentView else { return }
-        // The window's content area in the container's coordinates: unlike visibleRect, also right while the
-        // window or its tab is not on screen.
-        let visible = container.convert(windowContent.bounds, from: windowContent).intersection(container.bounds)
+        guard let container, !fittedToVisibleArea, container.window != nil else { return }
+        // What the ancestors leave visible (the split view's pane clips the left overhang, the window the
+        // bottom): unlike visibleRect, also right while the window or its tab is not on screen.
+        var visible = container.bounds
+        var ancestor = container.superview
+        while let view = ancestor {
+            visible = visible.intersection(container.convert(view.bounds, from: view))
+            ancestor = view.superview
+        }
         guard !visible.isEmpty else { return }
         fittedToVisibleArea = true
         // Only a small overhang is the XIB's; anything larger is a scrolled or collapsed container.
