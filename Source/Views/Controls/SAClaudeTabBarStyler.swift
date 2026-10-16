@@ -65,7 +65,9 @@ import AppKit
     @objc(attachToContainer:barTop:content:status:search:label:)
     static func attach(container: NSView?, barTop: CGFloat, content: NSView?, status: NSTextField?,
                        search: NSSearchField?, label: NSTextField?) {
-        guard let container, !container.isFlipped,
+        // A strip is never a window's whole content: SPIndexesController runs -awakeFromNib again when it
+        // loads its New index sheet, and its outlet then names the sheet's Add button.
+        guard let container, !container.isFlipped, container !== container.window?.contentView,
               objc_getAssociatedObject(container, &associationKey) == nil else { return }
         let styler = SAClaudeTabBarStyler()
         objc_setAssociatedObject(container, &associationKey, styler, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)

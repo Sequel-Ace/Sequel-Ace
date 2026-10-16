@@ -302,6 +302,9 @@ enum SAClaudeFormRecipes {
             SAClaudeFormFind.reparent(advanced + [addButton, removeButton], into: contentView)
         }, didAttach: { sheet in
             sheet.ownHeight()
+            // The fields table paints white below its rows (the XIB colour): let the block's surface show instead.
+            (scrollView.documentView as? NSTableView)?.backgroundColor = .clear
+            scrollView.drawsBackground = false
             // The controller's own (animated) resize runs first; re-fit on the next turn.
             return advancedView.observe(\.isHidden) { [weak sheet] _, _ in
                 SAClaudeFormSheet.onMain { sheet?.setNeedsApply() }
