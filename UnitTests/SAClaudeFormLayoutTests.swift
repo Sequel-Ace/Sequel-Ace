@@ -289,4 +289,20 @@ final class SAClaudeFormLayoutTests: XCTestCase {
         t = SAClaudeFormText.fieldTitle("plain")
         XCTAssertEqual(t.column, "plain"); XCTAssertNil(t.details)
     }
+
+    /// The content grid's header shows the type after the name, and the controller's label carries that header
+    /// text: the title is the name alone.
+    func testFieldTitleDropsTheHeadersTypeSuffix() {
+        var t = SAClaudeFormText.fieldTitle("Field: “payload JSON” – JSON")
+        XCTAssertEqual(t.column, "payload"); XCTAssertEqual(t.details, "JSON")
+        t = SAClaudeFormText.fieldTitle("Field: “data BLOB” – BLOB(65535)")
+        XCTAssertEqual(t.column, "data"); XCTAssertEqual(t.details, "BLOB(65535)")
+        t = SAClaudeFormText.fieldTitle("Field: “flags bit” – BIT(8)")
+        XCTAssertEqual(t.column, "flags")
+        // A name that only is the type word, or merely ends in other text, is kept.
+        t = SAClaudeFormText.fieldTitle("Field: “json” – JSON")
+        XCTAssertEqual(t.column, "json")
+        t = SAClaudeFormText.fieldTitle("Field: “my blobby” – BLOB")
+        XCTAssertEqual(t.column, "my blobby")
+    }
 }

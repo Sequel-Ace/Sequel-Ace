@@ -433,13 +433,25 @@ extension SAClaudeFormText {
 
     /// The column name and the type details from the field editors' label (`“name” – TYPE(len) NOT NULL encoding`,
     /// optionally prefixed "Field: "). Text without the curly quotes is the column name as is.
+    /// The content grid's header shows the type after the column name ("payload JSON"), and the field editor's
+    /// label carries that header text: drops a last word that is the type's first word ("BLOB" of "BLOB(65535)").
+    private static func withoutTypeSuffix(_ column: String, details: String) -> String {
+        guard let type = details.split(whereSeparator: { $0 == " " || $0 == "(" }).first, !type.isEmpty,
+              let space = column.lastIndex(of: " ") else { return column }
+        let last = column[column.index(after: space)...]
+        guard last.caseInsensitiveCompare(type) == .orderedSame else { return column }
+        let name = column[..<space].trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? column : name
+    }
+
     static func fieldTitle(_ label: String) -> (column: String, details: String?) {
         let text = label.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let open = text.firstIndex(of: "“") else { return (text, nil) }
         let start = text.index(after: open)
         if let separator = text.range(of: "” –", range: start..<text.endIndex) {
             let details = text[separator.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-            return (String(text[start..<separator.lowerBound]), details.isEmpty ? nil : details)
+            let column = String(text[start..<separator.lowerBound])
+            return (withoutTypeSuffix(column, details: details), details.isEmpty ? nil : details)
         }
         if text.hasSuffix("”"), let close = text.lastIndex(of: "”"), close >= start {
             return (String(text[start..<close]), nil)
