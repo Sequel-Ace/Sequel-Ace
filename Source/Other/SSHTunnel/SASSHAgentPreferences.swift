@@ -187,11 +187,42 @@ final class SASSHAgentSettingsModel: ObservableObject {
     /// Closes the settings sheet. Set by the window controller.
     var dismiss: (() -> Void)?
 
+    private var observers: [NSObjectProtocol] = []
+
     init() {
-        let stored = UserDefaults.standard.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? ""
-        defaultSource = SASSHAgentSource.Kind(rawValue: stored)?.rawValue ?? SASSHAgentSource.Kind.off.rawValue
+        defaultSource = Self.storedDefaultSource()
         customSocketPath = UserDefaults.standard.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? ""
         refresh()
+        // Another settings sheet can be open at the same time (Preferences and a
+        // connection window); follow what it changes.
+        let center = NotificationCenter.default
+        observers = [
+            center.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.followStoredDefaults()
+            },
+            center.addObserver(forName: SASSHAgentPreferences.settingsDidCloseNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.followStoredDefaults()
+                self?.refresh()
+            },
+        ]
+    }
+
+    deinit {
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+
+    private static func storedDefaultSource() -> String {
+        let stored = UserDefaults.standard.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? ""
+        return SASSHAgentSource.Kind(rawValue: stored)?.rawValue ?? SASSHAgentSource.Kind.off.rawValue
+    }
+
+    /// Only assigns on a real change: these properties write back to the
+    /// defaults, which would otherwise post another change notification.
+    private func followStoredDefaults() {
+        let source = Self.storedDefaultSource()
+        let path = UserDefaults.standard.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? ""
+        if source != defaultSource { defaultSource = source }
+        if path != customSocketPath { customSocketPath = path }
     }
 
     func refresh() {

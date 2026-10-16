@@ -223,8 +223,10 @@ import Foundation
         return digest.prefix(4).map { String(format: "%02x", $0) }.joined()
     }
 
-    static func listenPath(containerDataDirectory: String, socketName: String) -> String {
-        containerDataDirectory + "/.keys/a-" + socketName
+    /// The socket's name also carries the owning process id, so the sweep can
+    /// tell a dead copy's leftover from another live copy's socket.
+    static func listenPath(containerDataDirectory: String, socketName: String, processIdentifier: Int32) -> String {
+        containerDataDirectory + "/.keys/a-" + socketName + "-" + String(processIdentifier)
     }
 
     /// The socket of a helper relaying `target`, starting one if none is
@@ -285,12 +287,8 @@ import Foundation
 
     private func start(target: String, token: Int) throws -> (String, Helper) {
         guard let installer else { throw RelayError.helperUnavailable }
-        guard !installer.installedThisSession else { throw RelayError.relaunchRequired }
-        switch installer.status {
-        case .notInstalled: throw RelayError.helperNotInstalled
-        case .outdated: throw RelayError.helperOutdated
-        case .installed: break
-        }
+        // Early, cheap refusal; the launch itself re-checks under the installer's lock.
+        try Self.mapLaunchRefusal { try installer.whileLaunchable { _ in } }
 
         let directory = containerDataDirectory + "/.keys"
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true,
@@ -320,10 +318,16 @@ import Foundation
 
         let helper: Helper
         do {
-            helper = try launcher(installer.installedScript, [target],
-                                  FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)) { [weak self] in
-                self?.helperExited(target: target, token: token, listenPath: listenPath)
+            helper = try Self.mapLaunchRefusal {
+                try installer.whileLaunchable { script in
+                    try launcher(script, [target],
+                                 FileHandle(fileDescriptor: descriptor, closeOnDealloc: false)) { [weak self] in
+                        self?.helperExited(target: target, token: token, listenPath: listenPath)
+                    }
+                }
             }
+        } catch let error as RelayError {
+            throw error
         } catch {
             throw RelayError.launchFailed(error.localizedDescription)
         }
@@ -377,7 +381,8 @@ import Foundation
 
         for attempt in 0..<8 {
             let name = socketNamer(target, processIdentifier, attempt)
-            let candidate = Self.listenPath(containerDataDirectory: containerDataDirectory, socketName: name)
+            let candidate = Self.listenPath(containerDataDirectory: containerDataDirectory, socketName: name,
+                                            processIdentifier: processIdentifier)
             guard candidate.utf8.count <= Self.maximumSocketPathLength else {
                 throw RelayError.listenPathTooLong(candidate)
             }
@@ -387,6 +392,18 @@ import Foundation
             return candidate
         }
         throw RelayError.listenFailed("no free socket name")
+    }
+
+    private static func mapLaunchRefusal<T>(_ body: () throws -> T) throws -> T {
+        do {
+            return try body()
+        } catch let refusal as SASSHAgentRelayInstaller.LaunchRefusal {
+            switch refusal {
+            case .notInstalled: throw RelayError.helperNotInstalled
+            case .outdated: throw RelayError.helperOutdated
+            case .relaunchRequired: throw RelayError.relaunchRequired
+            }
+        }
     }
 
     private func helperExited(target: String, token: Int, listenPath: String) {
@@ -461,26 +478,26 @@ import Foundation
         return descriptor
     }
 
-    /// How old a socket must be before the sweep may treat it as abandoned.
-    /// Another copy of the app — a relaunch overlaps with the old one — may
-    /// have just bound a socket and not yet be listening on it; it refuses
-    /// connections for that moment just as an abandoned one does.
-    static let abandonedSocketMinimumAge: TimeInterval = 30
-
     /// Relay sockets are named per process, so a crash leaves one behind.
-    /// Removes those nothing is listening on any more. `sparing` are this
-    /// process's own live relays: a busy one can refuse a probe too.
-    static func removeAbandonedSockets(inDirectory directory: String, sparing: Set<String> = [],
-                                       minimumAge: TimeInterval = abandonedSocketMinimumAge) {
+    /// Removes those whose owning process has gone. Another live copy's socket
+    /// is never touched: a full backlog or a socket not yet listening refuses
+    /// a probe just as an abandoned one does, so the process id decides.
+    /// `sparing` are this process's own live relays.
+    static func removeAbandonedSockets(inDirectory directory: String, sparing: Set<String> = []) {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory) else { return }
-        let cutoff = Date().addingTimeInterval(-minimumAge)
-        for name in names where name.range(of: "^a-[0-9a-f]{8}$", options: .regularExpression) != nil {
+        for name in names {
+            guard let match = name.range(of: "^a-[0-9a-f]{8}-[0-9]+$", options: .regularExpression),
+                  !match.isEmpty, let pid = Int32(name.split(separator: "-").last ?? "") else { continue }
             let path = directory + "/" + name
-            guard !sparing.contains(path), isSocket(path) else { continue }
-            guard let modified = (try? FileManager.default.attributesOfItem(atPath: path))?[.modificationDate] as? Date,
-                  modified < cutoff else { continue }
-            if isAbandoned(path) { unlink(path) }
+            guard !sparing.contains(path), isSocket(path), !isProcessAlive(pid) else { continue }
+            unlink(path)
         }
+    }
+
+    /// Signal 0 checks for a process without affecting it. A process we may not
+    /// signal (EPERM) is alive; only ESRCH means it has gone.
+    private static func isProcessAlive(_ pid: Int32) -> Bool {
+        pid > 0 && (kill(pid, 0) == 0 || errno == EPERM)
     }
 
     /// Reads up to the first newline (`nil` at EOF with nothing read), and

@@ -397,6 +397,28 @@ static unsigned short getRandomPort(void);
 }
 
 /*
+ * Ends a launch that cannot go ahead before ssh is started: records the error,
+ * returns to idle and tells the delegate. Shared by the known-hosts and SSH
+ * agent checks in -launchTask:.
+ */
+- (void)_abortLaunchWithError:(NSString *)message debugMessage:(NSString *)debugMessage
+{
+	taskExitedUnexpectedly = YES;
+	[self setLastError:message];
+	if (debugMessage) {
+		[debugMessagesLock lock];
+		[debugMessages addObject:debugMessage];
+		[debugMessagesLock unlock];
+	}
+	[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
+	connectionState = SPMySQLProxyIdle;
+
+	if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
+	// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
+	[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+}
+
+/*
  * Launch the NSTask which wraps the SSH process, and use it to initiate the
  * tunnel to the remote server.
  * Sets up and tears down as appropriate for usage in a background thread.
@@ -506,18 +528,8 @@ static unsigned short getRandomPort(void);
 			                                              keyFilePath:identityFilePath ?: @""
 			                                                    error:&agentError];
 			if (!agentPlan) {
-				taskExitedUnexpectedly = YES;
-				[self setLastError:[agentError localizedDescription]];
-				[debugMessagesLock lock];
-				[debugMessages addObject:[NSString stringWithFormat:@"SSH agent: %@", [agentError localizedDescription]]];
-				[debugMessagesLock unlock];
-				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
-				connectionState = SPMySQLProxyIdle;
-
-				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
-				// Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
-				[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
-
+				[self _abortLaunchWithError:[agentError localizedDescription]
+				               debugMessage:[NSString stringWithFormat:@"SSH agent: %@", [agentError localizedDescription]]];
 				return;
 			}
 			if (![agentPlan isActive]) agentPlan = nil;
@@ -599,15 +611,7 @@ static unsigned short getRandomPort(void);
             }
 
             if(alertMessage != nil) {
-                taskExitedUnexpectedly = YES;
-                [self setLastError:alertMessage];
-				[standardErrorDrainCoordinator finishWithoutStandardErrorPipe];
-				connectionState = SPMySQLProxyIdle;
-
-                if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
-                // Run the run loop for a short time to ensure all task/pipe callbacks are dealt with
-                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
-
+                [self _abortLaunchWithError:alertMessage debugMessage:nil];
                 return;
             }
 

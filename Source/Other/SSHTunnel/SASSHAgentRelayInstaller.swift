@@ -67,7 +67,29 @@ final class SASSHAgentRelayInstaller {
     private let fileManager: FileManager
 
     private let stateLock = NSLock()
+    private let launchLock = NSLock()
     private var installedThisSessionFlag = false
+
+    enum LaunchRefusal: Error, Equatable {
+        case notInstalled
+        case outdated
+        /// Installed or updated by this process, which still holds the panel's
+        /// write access to the folder.
+        case relaunchRequired
+    }
+
+    /// Runs `body` with the installed script if it may be launched now, with
+    /// installation blocked until `body` returns.
+    func whileLaunchable<T>(_ body: (URL) throws -> T) throws -> T {
+        launchLock.lock()
+        defer { launchLock.unlock() }
+        guard !installedThisSession else { throw LaunchRefusal.relaunchRequired }
+        switch status {
+        case .notInstalled: throw LaunchRefusal.notInstalled
+        case .outdated: throw LaunchRefusal.outdated
+        case .installed: return try body(installedScript)
+        }
+    }
 
     init(scriptsDirectory: URL, bundledScript: URL?, bundledAllowlist: URL?, fileManager: FileManager = .default) {
         self.scriptsDirectory = scriptsDirectory
@@ -103,8 +125,19 @@ final class SASSHAgentRelayInstaller {
         // agent connection fails, and only "outdated" brings back the repair button.
         guard installed == bundled,
               fileManager.isExecutableFile(atPath: installedScript.path),
-              fileManager.isReadableFile(atPath: installedAllowlist.path) else { return .outdated }
+              isReadableRegularFile(installedAllowlist.path) else { return .outdated }
         return .installed
+    }
+
+    private func isReadableRegularFile(_ path: String) -> Bool {
+        (try? fileManager.attributesOfItem(atPath: path))?[.type] as? FileAttributeType == .typeRegular
+            && fileManager.isReadableFile(atPath: path)
+    }
+
+    private func isRegularFileOrLinkToOne(_ path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        return fileManager.fileExists(atPath: path, isDirectory: &isDirectory) && !isDirectory.boolValue
+            && (try? fileManager.attributesOfItem(atPath: path))?[.type] as? FileAttributeType == .typeRegular
     }
 
     /// True once this process has installed or updated the helper. The open
@@ -120,6 +153,11 @@ final class SASSHAgentRelayInstaller {
     /// Scripts folder — the panel lets the user navigate anywhere. An existing
     /// allowlist is left alone so the user's edits survive updates.
     func install(into folder: URL) throws {
+        // Held for the whole install, and by `whileLaunchable` around a helper
+        // launch: a launch can never slip in between the new helper landing and
+        // the "installed this session" flag being set.
+        launchLock.lock()
+        defer { launchLock.unlock() }
         guard folder.standardizedFileURL.resolvingSymlinksInPath().path
                 == scriptsDirectory.standardizedFileURL.resolvingSymlinksInPath().path else {
             throw InstallError.wrongFolder
@@ -134,6 +172,12 @@ final class SASSHAgentRelayInstaller {
         do {
             try script.write(to: scriptDestination, options: .atomic)
             try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: scriptDestination.path)
+            // Something other than a plain file at the allowlist's name (a folder,
+            // a link to elsewhere) cannot be the allowlist; replace it.
+            let existsAtAllowlist = (try? fileManager.attributesOfItem(atPath: allowlistDestination.path)) != nil
+            if existsAtAllowlist, !isRegularFileOrLinkToOne(allowlistDestination.path) {
+                try fileManager.removeItem(at: allowlistDestination)
+            }
             if !fileManager.fileExists(atPath: allowlistDestination.path) {
                 try allowlist.write(to: allowlistDestination, options: .atomic)
                 try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: allowlistDestination.path)

@@ -108,6 +108,35 @@ final class SASSHAgentRelayInstallerTests: XCTestCase {
         XCTAssertFalse(SASSHAgentRelayInstaller.InstallError.missingBundledHelper.localizedDescription.contains("SASSHAgentRelayInstaller"))
     }
 
+    /// A folder (or anything but a plain file) at the allowlist's name cannot
+    /// be read as one; it must count as needing repair, and repair replaces it.
+    func testANonFileAllowlistNeedsRepairAndIsReplaced() throws {
+        let installer = makeInstaller()
+        try installer.install(into: scripts)
+        try FileManager.default.removeItem(at: installer.installedAllowlist)
+        try FileManager.default.createDirectory(at: installer.installedAllowlist, withIntermediateDirectories: false)
+        XCTAssertEqual(installer.status, .outdated)
+
+        try installer.install(into: scripts)
+        XCTAssertEqual(installer.status, .installed)
+        XCTAssertEqual(try String(contentsOf: installer.installedAllowlist, encoding: .utf8), "~/agent.sock\n")
+    }
+
+    /// No helper launch can start in the session that installed it, however
+    /// the two interleave: the check and the install share one lock.
+    func testLaunchIsRefusedOnceInstalledThisSession() throws {
+        let installer = makeInstaller()
+        XCTAssertThrowsError(try installer.whileLaunchable { _ in }) {
+            XCTAssertEqual($0 as? SASSHAgentRelayInstaller.LaunchRefusal, .notInstalled)
+        }
+        try installer.install(into: scripts)
+        var launched = false
+        XCTAssertThrowsError(try installer.whileLaunchable { _ in launched = true }) {
+            XCTAssertEqual($0 as? SASSHAgentRelayInstaller.LaunchRefusal, .relaunchRequired)
+        }
+        XCTAssertFalse(launched)
+    }
+
     func testUpdatingReplacesTheScriptButKeepsTheUsersAllowlist() throws {
         let installer = makeInstaller()
         try installer.install(into: scripts)

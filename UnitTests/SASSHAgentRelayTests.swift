@@ -70,9 +70,9 @@ final class SASSHAgentRelayTests: XCTestCase {
     }
 
     private func makeRelay(installer: SASSHAgentRelayInstaller? = nil, containerData override: String? = nil,
-                           startTimeout: TimeInterval = 5) -> SASSHAgentRelay {
+                           startTimeout: TimeInterval = 5, processIdentifier: Int32 = 4242) -> SASSHAgentRelay {
         SASSHAgentRelay(installer: installer ?? makeInstaller(), launcher: launches.launcher,
-                        containerDataDirectory: override ?? containerData.path, processIdentifier: 4242,
+                        containerDataDirectory: override ?? containerData.path, processIdentifier: processIdentifier,
                         startTimeout: startTimeout)
     }
 
@@ -258,7 +258,7 @@ final class SASSHAgentRelayTests: XCTestCase {
 
     func testReplacesASocketLeftBehindByAnEarlierRun() throws {
         let name = SASSHAgentRelay.socketName(target: agent.path, processIdentifier: 4242)
-        let stale = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name)
+        let stale = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name, processIdentifier: 4242)
         close(try SASSHAgentRelay.makeListeningSocket(at: stale))
 
         let listenPath = try makeRelay().listenPath(forTarget: agent.path)
@@ -271,12 +271,14 @@ final class SASSHAgentRelayTests: XCTestCase {
     /// or another copy of the app — taking it over would send that relay's
     /// clients to the wrong agent.
     func testNeverTakesOverASocketThatIsStillInUse() throws {
-        let name = SASSHAgentRelay.socketName(target: agent.path, processIdentifier: 4242)
-        let taken = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name)
+        // A live process id, as the running app's own would be.
+        let pid = getpid()
+        let name = SASSHAgentRelay.socketName(target: agent.path, processIdentifier: pid)
+        let taken = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name, processIdentifier: pid)
         let owner = try SASSHAgentRelay.makeListeningSocket(at: taken)
         defer { close(owner) }
 
-        let relay = makeRelay()
+        let relay = makeRelay(processIdentifier: pid)
         let listenPath = try relay.listenPath(forTarget: agent.path)
 
         XCTAssertNotEqual(listenPath, taken)
@@ -316,31 +318,33 @@ final class SASSHAgentRelayTests: XCTestCase {
         XCTAssertEqual(other.openConnections, 1)
     }
 
-    private func backdate(_ path: String, by seconds: TimeInterval) throws {
-        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(-seconds)], ofItemAtPath: path)
+    /// A process id that certainly belongs to no running process: a child that
+    /// has run and been reaped.
+    private func deadProcessIdentifier() throws -> Int32 {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+        try process.run()
+        process.waitUntilExit()
+        return process.processIdentifier
     }
 
-    /// Another copy of the app may have just bound a socket and not yet be
-    /// listening, which looks the same as abandoned. Fresh sockets are left.
-    func testSweepLeavesAFreshSocketThatMayStillBeStarting() throws {
+    /// Another live copy of the app may have a socket that refuses a probe —
+    /// not listening yet, or a full backlog. Its process id says it is alive,
+    /// so the sweep leaves it.
+    func testSweepLeavesSocketsOfLiveProcessesEvenWhenTheyRefuseConnections() throws {
         let keys = containerData.path + "/.keys"
-        let starting = keys + "/a-0000f00d"
-        close(try SASSHAgentRelay.makeListeningSocket(at: starting))
+        let otherLiveCopy = keys + "/a-0000f00d-\(getpid())"
+        close(try SASSHAgentRelay.makeListeningSocket(at: otherLiveCopy))   // refuses connections now
 
         SASSHAgentRelay.removeAbandonedSockets(inDirectory: keys)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: starting))
-
-        try backdate(starting, by: SASSHAgentRelay.abandonedSocketMinimumAge + 5)
-        SASSHAgentRelay.removeAbandonedSockets(inDirectory: keys)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: starting))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: otherLiveCopy))
     }
 
     func testSweepsAbandonedSocketsOfOtherProcessesButNotLiveOnesOrOtherFiles() throws {
         let keys = containerData.path + "/.keys"
-        let abandoned = keys + "/a-0000dead"
+        let abandoned = keys + "/a-0000dead-\(try deadProcessIdentifier())"
         close(try SASSHAgentRelay.makeListeningSocket(at: abandoned))
-        try backdate(abandoned, by: SASSHAgentRelay.abandonedSocketMinimumAge + 5)
-        let live = keys + "/a-0000beef"
+        let live = keys + "/a-0000beef-\(getpid())"
         let liveDescriptor = try SASSHAgentRelay.makeListeningSocket(at: live)
         defer { close(liveDescriptor) }
         try "keep".write(toFile: keys + "/ssh_known_hosts_strict", atomically: true, encoding: .utf8)
@@ -523,7 +527,7 @@ final class SASSHAgentRelayTests: XCTestCase {
 
     func testNeverRemovesARegularFileSittingAtItsSocketPath() throws {
         let name = SASSHAgentRelay.socketName(target: agent.path, processIdentifier: 4242)
-        let squatter = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name)
+        let squatter = SASSHAgentRelay.listenPath(containerDataDirectory: containerData.path, socketName: name, processIdentifier: 4242)
         try "precious".write(toFile: squatter, atomically: true, encoding: .utf8)
 
         XCTAssertThrowsError(try makeRelay().listenPath(forTarget: agent.path)) {
