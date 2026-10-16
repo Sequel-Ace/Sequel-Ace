@@ -62,7 +62,7 @@ enum SAClaudeAlertMessageSplit {
 ///    delete-type button (unless a strong failure signal says the alert reports an error).
 /// 2. Error — strong failure signals; weak ones only with a single OK/Close-type button.
 /// 3. Question — two or more buttons.
-/// 4. Info — a single OK/Close-type button, an info word, no warning word.
+/// 4. Info — a single OK/Close-type button, an info word, no warning word, nothing negated or missing.
 /// 5. Warning — everything else (never Info by default).
 private enum SAClaudeAlertClassifier {
     private static func regex(_ pattern: String) -> NSRegularExpression {
@@ -80,12 +80,18 @@ private enum SAClaudeAlertClassifier {
 
     private static let destructiveButton = regex("^(delete|remove|drop|truncate|kill|clear|empty|shutdown|shut down|discard|force delete|reset|overwrite)(?![\\p{L}])")
     private static let destructiveTitle = regex("^(delete|drop|truncate|remove|kill)\\b")
-    private static let dataLoss = regex("(cannot be undone|can't be undone|\\bpermanently\\b|\\b(lose|loss of)\\b[^.!?]*\\bdata\\b)")
+    // Tuned against the call sites: overwrite (SPDataImport.m:318, SPExportController.m:2044), "will be lost"
+    // (SPUserManager.m:983, SPDataImport.m:603), "without saving" (SPEditorPreferencePane.m:786). "was lost" is not data loss.
+    private static let dataLoss = regex("(cannot be undone|can't be undone|\\bpermanently\\b|\\b(lose|loss of)\\b[^.!?]*\\bdata\\b|\\boverwrit(e|es|ing|ten)\\b|\\bbe (?:[a-z]+ )?lost\\b|\\bwithout saving\\b)")
     private static let mysqlSaid = regex("\\bmysql said\\b")
-    private static let strongFailure = regex("\\b(mysql said|errors?|failed|failure|couldn't|could not|unable to)\\b")
-    private static let strongFailureWithoutServer = regex("\\b(errors?|failed|failure|couldn't|could not|unable to)\\b")
+    // "exception": SABundleHTMLOutputWindowController.swift:195 (JavaScript Exception).
+    private static let strongFailure = regex("\\b(mysql said|errors?|exceptions?|failed|failure|couldn't|could not|unable to)\\b")
+    private static let strongFailureWithoutServer = regex("\\b(errors?|exceptions?|failed|failure|couldn't|could not|unable to)\\b")
     private static let weakFailure = regex("(\\b(cannot|can't)\\b(?! be undone)|\\b(invalid|not found|denied|must|empty|insufficient)\\b)")
-    private static let infoWord = regex("\\b(success|successful|successfully|finished|completed|done|flushed|saved|exported|imported|updated|is up to date|copied|checksum|result of|results of|information)\\b")
+    // "checksums": SPDatabaseDocument.m:1990 ("Checksums of selected items" with the results table).
+    private static let infoWord = regex("\\b(success|successful|successfully|finished|completed|done|flushed|saved|exported|imported|updated|is up to date|running the latest|copied|checksums?|result of|results of|information)\\b")
+    // A negated or missing outcome is never good news (SPTableContent.m:1522: "did not match ... information was read").
+    private static let negation = regex("(\\b(not|never|no longer|unavailable|missing)\\b|n't\\b)")
     private static let warningWord = regex("\\b(warning|partial|partially|may|might|deprecated|limited|not supported)\\b")
 
     private static func matches(_ expression: NSRegularExpression, _ text: String) -> Bool {
@@ -171,7 +177,7 @@ private enum SAClaudeAlertClassifier {
             return SAClaudeAlertClassification(kind: .question)
         }
         // 4.
-        if singleAcknowledge && matches(infoWord, text) && !matches(warningWord, text) {
+        if singleAcknowledge && matches(infoWord, text) && !matches(warningWord, text) && !matches(negation, text) {
             return SAClaudeAlertClassification(kind: .info)
         }
         // 5.

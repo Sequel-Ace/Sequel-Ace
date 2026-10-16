@@ -40,6 +40,37 @@ final class SAClaudeAlertKindTests: XCTestCase {
         XCTAssertEqual(classify("Connection lost", "The connection to the server was lost.", ["Reconnect", "Close"]), c(.question))
     }
 
+    /// Tuning against the real call sites (Task 3 classification report): each case cites the site that motivated it.
+    func testCallSiteTuning() {
+        // SPDataImport.m:318 — importing may overwrite data: a destructive choice, the confirming button turns red.
+        XCTAssertEqual(classify("The current database already has existing tables, importing may overwrite data. Are you sure you want to continue?", "The chosen import file can potentially overwrite existing data. You should use caution when proceeding with the import.", ["Yes, continue anyway", "Cancel"]), c(.destructive, red: 0))
+        // SPExportController.m:2044 — replacing a file overwrites its contents.
+        XCTAssertEqual(classify("“x” already exists. Do you want to replace it?", "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents.", ["Replace", "Cancel", "Skip existing"]), c(.destructive, red: 0))
+        // SPUserManager.m:983 — changes that will be lost.
+        XCTAssertEqual(classify("Unsaved changes", "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue?", ["Continue", "Cancel"]), c(.destructive, red: 0))
+        // SPDataImport.m:603 — characters "will be unrecoverably lost!".
+        XCTAssertEqual(classify("Incompatible encoding in SQL file", "You can continue the import, but any non-BMP characters in the SQL file will be unrecoverably lost!", ["Import Anyway", "Cancel"]), c(.destructive, red: 0))
+        // SPEditorPreferencePane.m:786 — proceeding without saving discards the theme.
+        XCTAssertEqual(classify("Unsaved Theme", "The current color theme is unsaved. Do you want to proceed without saving it?", ["Proceed", "Cancel"]), c(.destructive, red: 0))
+        // ... but a lost connection is not data loss (spec table: Reconnect / Close stays a Question).
+        XCTAssertEqual(classify("Connection lost", "The connection to the server was lost.", ["Reconnect", "Close"]), c(.question))
+        // SPTableContent.m:1522 — "information" must not make a failure read as Info.
+        XCTAssertEqual(classify("Table contents not loaded", "The column list for 'x' did not match the data the server returned, and reloading the table did not settle it. This usually means the connection dropped while the table information was read.\n\nCheck the connection, then reload the table.", ["OK"]), c(.warning))
+        // GitHubReleaseManager.swift:299 — "up to date" in other words is Info.
+        XCTAssertEqual(classify("No Newer Release Available", "You are currently running the latest release.", ["OK"]), c(.info))
+        // SPDatabaseDocument.m:1990 — the plural of the spec's "checksum" (results table accessory, no message).
+        XCTAssertEqual(classify("Checksums of selected items", "", ["OK"]), c(.info))
+        // SABundleHTMLOutputWindowController.swift:195 — a JavaScript exception is a failure.
+        XCTAssertEqual(classify("JavaScript Exception", "Exception:\nline = 3\nmessage = x\nsource = y", ["OK"]), c(.error))
+    }
+
+    func testNegatedCompletionIsNotInfo() {
+        for message in ["The export was not saved.", "The rows weren't imported.", "The file isn't updated.", "Never copied.", "Results of the check are unavailable.", "Results of the check are missing."] {
+            XCTAssertEqual(classify("Notice", message, ["OK"]), c(.warning), message)
+        }
+        XCTAssertEqual(classify("Notice", "The export was saved.", ["OK"]), c(.info))
+    }
+
     func testCheckTableSuccessIsInfoFailureIsError() {
         XCTAssertEqual(classify("Check table 'x'", "Check table successfully passed.\n\nMySQL said: OK", ["OK"]), c(.info))
         XCTAssertEqual(classify("Check table 'x'", "Check table failed.\n\nMySQL said: Table is marked as crashed", ["OK"]), c(.error))
