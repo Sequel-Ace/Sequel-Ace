@@ -375,6 +375,12 @@ final class SAClaudeFormSheet: NSObject {
     private lazy var coalescer = SAClaudeFormApplyCoalescer { [weak self] in self?.apply() }
     private var observers: SAClaudeFormObservers?
 
+    /// Set by `ownHeight()`: the form keeps the sheet's height itself.
+    private var ownsHeight = false
+    /// With `ownsHeight`: the height the user dragged in above the natural one; dropped at every begin.
+    private var extraHeight: CGFloat = 0
+    private var beginObserver: NSObjectProtocol?
+
     static func sheet(for window: NSWindow) -> SAClaudeFormSheet? {
         objc_getAssociatedObject(window, &associationKey) as? SAClaudeFormSheet
     }
@@ -395,7 +401,7 @@ final class SAClaudeFormSheet: NSObject {
         let sheet = SAClaudeFormSheet(window: window, contentView: contentView, recipe: recipe)
         objc_setAssociatedObject(window, &associationKey, sheet, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         sheet.observers = SAClaudeFormObservers(window: window, contentView: contentView,
-                                                onFrameChange: { [weak sheet] in sheet?.apply() },
+                                                onFrameChange: { [weak sheet] in sheet?.frameDidChange() },
                                                 onThemeChange: { [weak sheet] in sheet?.setNeedsApply() })
         recipe.didAttach(sheet)
         return sheet
@@ -409,6 +415,10 @@ final class SAClaudeFormSheet: NSObject {
         super.init()
     }
 
+    deinit {
+        if let beginObserver { NotificationCenter.default.removeObserver(beginObserver) }
+    }
+
     static func onMain(_ work: @escaping () -> Void) {
         if Thread.isMainThread { work() } else { DispatchQueue.main.async(execute: work) }
     }
@@ -416,6 +426,38 @@ final class SAClaudeFormSheet: NSObject {
     /// One `apply` on the next main-queue turn, however many ask for it.
     func setNeedsApply() {
         coalescer.setNeedsApply()
+    }
+
+    /// For a sheet whose controller animates its own height (the index sheet's Advanced fold, and again at close):
+    /// the form owns the height from now on — the natural height for the current content plus whatever the user
+    /// drags in (live resize only) — and frame changes outside a live resize are applied once on the next turn, so
+    /// the controller's animation runs to its end and the form re-fits after it instead of fighting each frame. The
+    /// dragged-in height is dropped each time the sheet begins. Other sheets keep applying at every frame change.
+    func ownHeight() {
+        guard !ownsHeight else { return }
+        ownsHeight = true
+        beginObserver = NotificationCenter.default.addObserver(forName: NSWindow.willBeginSheetNotification, object: nil, queue: nil) { [weak self] note in
+            guard let parent = note.object as? NSWindow else { return }
+            SAClaudeFormSheet.onMain { self?.sheetMayBegin(on: parent) }
+        }
+    }
+
+    /// A sheet begins on `parent`: if it is this one, back to its natural height. AppKit may attach the sheet only
+    /// after posting (as `SAClaudeSheetStyler` notes), so this checks now and on the next turn.
+    private func sheetMayBegin(on parent: NSWindow) {
+        let check = { [weak self, weak parent] in
+            guard let self, let parent, parent.attachedSheet === self.window else { return }
+            self.extraHeight = 0
+            self.apply()
+        }
+        check()
+        DispatchQueue.main.async(execute: check)
+    }
+
+    /// The content view's frame changed: applied now (a live resize stays smooth) unless the form owns the height
+    /// and the user isn't resizing — then once on the next turn, after whatever resized the sheet has finished.
+    private func frameDidChange() {
+        if ownsHeight && !window.inLiveResize { setNeedsApply() } else { apply() }
     }
 
     // MARK: Applying
@@ -501,7 +543,8 @@ final class SAClaudeFormSheet: NSObject {
                                footerTrailing: content.footerTrailing.map(Self.footerItem),
                                currentSize: contentView.bounds.size,
                                resizable: window.styleMask.contains(.resizable))
-        let f = Layout.frames(spec)
+        var f = Layout.frames(spec)
+        if ownsHeight { f = ownedHeightFrames(spec, f) }
         resizeWindow(to: f)
 
         header.place(title: f.title, context: f.context)
@@ -569,6 +612,22 @@ final class SAClaudeFormSheet: NSObject {
             let isSeparator = (view as? NSBox)?.boxType == .separator
             if isStaticText || isSeparator, !view.isHidden { view.isHidden = true }
         }
+    }
+
+    /// With `ownsHeight`: a live resize sets the dragged-in height; any other height (a controller's resize) gives
+    /// way to the natural height plus the dragged-in one — so a fold changes the height by exactly its rows.
+    private func ownedHeightFrames(_ spec: Layout.Spec, _ f: Layout.Frames) -> Layout.Frames {
+        guard f.heightIsFlexible else { return f }
+        let natural = f.minimumSize.height
+        if window.inLiveResize {
+            extraHeight = max(0, f.size.height - natural)
+            return f
+        }
+        let height = natural + extraHeight
+        guard f.size.height != height else { return f }
+        var held = spec
+        held.currentSize.height = height
+        return Layout.frames(held)
     }
 
     private func resizeWindow(to f: Layout.Frames) {

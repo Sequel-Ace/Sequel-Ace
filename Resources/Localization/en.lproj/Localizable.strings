@@ -5226,3 +5226,9 @@
 
 /* Claude sheet title: the Reset AUTO_INCREMENT sheet */
 "ClaudeFormResetAutoIncrement" = "Reset auto increment";
+
+/* Claude sheet title: the New Index sheet */
+"ClaudeFormNewIndex" = "New index";
+
+/* Claude sheet section title: the columns an index is built on */
+"ClaudeFormSectionFields" = "Fields";

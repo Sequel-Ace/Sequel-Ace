@@ -27,6 +27,8 @@ enum SAClaudeFormStrings {
     static var contextCurrently: String { NSLocalizedString("ClaudeFormContextCurrently", value: "Currently %@", comment: "Claude sheet context line under the Rename Database title: the database's current name") }
     static var contextFrom: String { NSLocalizedString("ClaudeFormContextFrom", value: "From %@", comment: "Claude sheet context line under a Duplicate title: the database or table being duplicated") }
     static var contextIn: String { NSLocalizedString("ClaudeFormContextIn", value: "In %@", comment: "Claude sheet context line under the New Table title: the database the table is created in") }
+    static var newIndex: String { NSLocalizedString("ClaudeFormNewIndex", value: "New index", comment: "Claude sheet title: the New Index sheet") }
+    static var fields: String { NSLocalizedString("ClaudeFormSectionFields", value: "Fields", comment: "Claude sheet section title: the columns an index is built on") }
 }
 
 // MARK: - Context lines
@@ -75,6 +77,7 @@ enum SAClaudeFormRecipes {
         case .duplicateTable: return duplicateTable(m)
         case .addKey: return addKey(m)
         case .resetAutoIncrement: return resetAutoIncrement(m)
+        case .newIndex: return newIndex(m)
         default: return nil
         }
     }
@@ -242,5 +245,63 @@ enum SAClaudeFormRecipes {
             SAClaudeFormContent(title: SAClaudeFormStrings.resetAutoIncrement, context: doc?.table(), items: [value],
                                 footerTrailing: footer, hidden: line.map { [$0] } ?? [])
         }
+    }
+
+    /// New index (SPIndexesController window): Name / Type; section "Fields" with the indexed-fields table as a
+    /// growing block and its +/− in the strip under it; the Advanced disclosure folding Storage / Block size. The
+    /// advanced rows and the +/− move out of their boxes into the sheet once; the emptied Advanced view stays in the
+    /// hierarchy (the controller toggles it) at a zero frame, and its toggling re-lays the form out. The controller
+    /// animates its own resize at each toggle and at close: the form owns the height (`ownHeight`), re-fitting once
+    /// that animation is over and dropping any dragged-in height at every begin.
+    private static func newIndex(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        let o = m.owner
+        guard let contentView = m.window.contentView,
+              let nameField: NSTextField = outlet(o, "indexNameTextField"), let nameLabel: NSTextField = outlet(o, "indexNameLabel"),
+              let typePopUp: NSPopUpButton = outlet(o, "indexTypePopUpButton"), let typeLabel: NSTextField = outlet(o, "indexTypeLabel"),
+              let scrollView: NSScrollView = outlet(o, "indexedColumnsScrollView"),
+              let addButton: NSButton = outlet(o, "addIndexedColumnButton"), let removeButton: NSButton = outlet(o, "removeIndexedColumnButton"),
+              let buttonBar: NSBox = outlet(o, "anchoredButtonBar"),
+              let triangle: NSButton = outlet(o, "indexAdvancedOptionsViewButton"),
+              let disclosureLabel: NSButton = outlet(o, "indexAdvancedOptionsViewLabelButton"),
+              let advancedView: NSView = outlet(o, "indexAdvancedOptionsView"),
+              let storage: NSPopUpButton = outlet(o, "indexStorageTypePopUpButton"),
+              let blockSize: NSTextField = outlet(o, "indexKeyBlockSizeTextField"),
+              let storageLabel = SAClaudeFormFind.label(beside: storage),
+              let blockSizeLabel = SAClaudeFormFind.label(beside: blockSize),
+              let advancedBox = SAClaudeFormFind.box(around: storage),
+              let footer = footer(m.window, primary: outlet(o, "confirmAddIndexButton")),
+              ([nameField, nameLabel, typePopUp, typeLabel, scrollView, buttonBar, triangle, disclosureLabel, advancedView] as [NSView])
+                .allSatisfy({ $0.superview === contentView })
+        else { return nil }
+        let advanced: [NSView] = [storageLabel, storage, blockSizeLabel, blockSize]
+        return SAClaudeSimpleFormRecipe(install: { contentView in
+            SAClaudeFormFind.reparent(advanced + [addButton, removeButton], into: contentView)
+        }, didAttach: { sheet in
+            sheet.ownHeight()
+            // The controller's own (animated) resize runs first; re-fit on the next turn.
+            return advancedView.observe(\.isHidden) { [weak sheet] _, _ in
+                SAClaudeFormSheet.onMain { sheet?.setNeedsApply() }
+            }
+        }, content: { [weak indexes = o] in
+            let open = !advancedView.isHidden
+            // Moved out of the Advanced box, the advanced rows show while the fold is open. Not before: attach reads
+            // the content to check the sheet before anything is changed.
+            if storage.superview === contentView {
+                for view in advanced where view.isHidden == open { view.isHidden = !open }
+            }
+            var items: [SAClaudeFormItem] = [
+                .row(.existing(nameLabel), nameField, .field),
+                .row(.existing(typeLabel), typePopUp, .popUp),
+                .section(SAClaudeFormStrings.fields),
+                .block(scrollView, minHeight: 104, grows: true, strip: [(addButton, .add), (removeButton, .remove)]),
+                .disclosure(triangle: triangle, label: disclosureLabel),
+            ]
+            if open {
+                items += [.row(.existing(storageLabel), storage, .popUp), .row(.existing(blockSizeLabel), blockSize, .field)]
+            }
+            return SAClaudeFormContent(title: SAClaudeFormStrings.newIndex,
+                                       context: indexes.flatMap { SAClaudeFormRecipes.outlet($0, "table") as String? },
+                                       items: items, footerTrailing: footer, hidden: [buttonBar, advancedBox], collapsed: [advancedView])
+        })
     }
 }
