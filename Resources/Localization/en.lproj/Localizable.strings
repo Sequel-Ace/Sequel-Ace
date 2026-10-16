@@ -5232,3 +5232,15 @@
 
 /* Claude sheet section title: the columns an index is built on */
 "ClaudeFormSectionFields" = "Fields";
+
+/* Claude sheet title: the New Relation (foreign key) sheet */
+"ClaudeFormNewRelation" = "New relation";
+
+/* Claude sheet section title in New Relation: the column of this table the foreign key is on */
+"ClaudeFormSectionColumn" = "Column";
+
+/* Claude sheet section title in New Relation: the constraint name and its ON UPDATE / ON DELETE actions */
+"ClaudeFormSectionNameAndActions" = "Name and actions";
+
+/* Claude sheet section title in New Relation: the referenced database, table and column */
+"ClaudeFormSectionReferences" = "References";

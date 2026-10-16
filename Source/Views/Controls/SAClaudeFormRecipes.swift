@@ -28,6 +28,10 @@ enum SAClaudeFormStrings {
     static var contextFrom: String { NSLocalizedString("ClaudeFormContextFrom", value: "From %@", comment: "Claude sheet context line under a Duplicate title: the database or table being duplicated") }
     static var contextIn: String { NSLocalizedString("ClaudeFormContextIn", value: "In %@", comment: "Claude sheet context line under the New Table title: the database the table is created in") }
     static var newIndex: String { NSLocalizedString("ClaudeFormNewIndex", value: "New index", comment: "Claude sheet title: the New Index sheet") }
+    static var newRelation: String { NSLocalizedString("ClaudeFormNewRelation", value: "New relation", comment: "Claude sheet title: the New Relation (foreign key) sheet") }
+    static var columnSection: String { NSLocalizedString("ClaudeFormSectionColumn", value: "Column", comment: "Claude sheet section title in New Relation: the column of this table the foreign key is on") }
+    static var nameAndActions: String { NSLocalizedString("ClaudeFormSectionNameAndActions", value: "Name and actions", comment: "Claude sheet section title in New Relation: the constraint name and its ON UPDATE / ON DELETE actions") }
+    static var references: String { NSLocalizedString("ClaudeFormSectionReferences", value: "References", comment: "Claude sheet section title in New Relation: the referenced database, table and column") }
     static var fields: String { NSLocalizedString("ClaudeFormSectionFields", value: "Fields", comment: "Claude sheet section title: the columns an index is built on") }
 }
 
@@ -78,6 +82,7 @@ enum SAClaudeFormRecipes {
         case .addKey: return addKey(m)
         case .resetAutoIncrement: return resetAutoIncrement(m)
         case .newIndex: return newIndex(m)
+        case .newRelation: return newRelation(m)
         default: return nil
         }
     }
@@ -302,6 +307,49 @@ enum SAClaudeFormRecipes {
             return SAClaudeFormContent(title: SAClaudeFormStrings.newIndex,
                                        context: indexes.flatMap { SAClaudeFormRecipes.outlet($0, "table") as String? },
                                        items: items, footerTrailing: footer, hidden: [buttonBar, advancedBox], collapsed: [advancedView])
+        })
+    }
+
+    /// New relation (SPTableRelations · addRelationPanel): sections Column / Name and actions / References; the
+    /// spinner and its status at the footer's left. The XIB's four boxes (Name, Table:, References, Action) are
+    /// hidden and their labels and controls lifted into the sheet by the engine. The reference pop-ups are refilled
+    /// by the controller as the user picks; they fill their frames, so that never moves the layout. All views are
+    /// found, and checked to be in the sheet, before anything is moved.
+    private static func newRelation(_ m: SAClaudeFormMatch) -> SAClaudeFormRecipe? {
+        let o = m.owner
+        guard let contentView = m.window.contentView,
+              let column: NSPopUpButton = outlet(o, "columnPopUpButton"),
+              let name: NSTextField = outlet(o, "constraintName"),
+              let onUpdate: NSPopUpButton = outlet(o, "onUpdatePopUpButton"),
+              let onDelete: NSPopUpButton = outlet(o, "onDeletePopUpButton"),
+              let refDatabase: NSPopUpButton = outlet(o, "refDatabasePopUpButton"),
+              let refTable: NSPopUpButton = outlet(o, "refTablePopUpButton"),
+              let refColumn: NSPopUpButton = outlet(o, "refColumnPopUpButton"),
+              let spinner: NSProgressIndicator = outlet(o, "dataProgressIndicator"),
+              let status: NSTextField = outlet(o, "progressStatusTextField"),
+              let primary: NSButton = outlet(o, "confirmAddRelationButton"),
+              let cancel = SAClaudeFormFind.button(in: contentView, action: "closeRelationSheet:"),
+              spinner.superview === contentView, status.superview === contentView
+        else { return nil }
+        let controls: [NSView] = [column, name, onUpdate, onDelete, refDatabase, refTable, refColumn]
+        let labels = controls.compactMap(SAClaudeFormFind.label(beside:))
+        let enclosing = controls.compactMap(SAClaudeFormFind.box(around:))
+        guard labels.count == controls.count, enclosing.count == controls.count else { return nil }
+        var boxes: [NSBox] = []
+        for box in enclosing where !boxes.contains(where: { $0 === box }) { boxes.append(box) }
+        func item(_ index: Int, _ kind: Kind) -> SAClaudeFormItem { .row(.existing(labels[index]), controls[index], kind) }
+        let items: [SAClaudeFormItem] = [
+            .section(SAClaudeFormStrings.columnSection), item(0, .popUp),
+            .section(SAClaudeFormStrings.nameAndActions), item(1, .field), item(2, .popUp), item(3, .popUp),
+            .section(SAClaudeFormStrings.references), item(4, .popUp), item(5, .popUp), item(6, .popUp),
+        ]
+        return SAClaudeSimpleFormRecipe(didAttach: { _ in
+            spinner.controlSize = .small
+            spinner.setFrameSize(NSSize(width: 16, height: 16))
+            return nil
+        }, content: { [weak doc = m.document] in
+            SAClaudeFormContent(title: SAClaudeFormStrings.newRelation, context: doc?.table(), items: items,
+                                footerLeading: [spinner, status], footerTrailing: [cancel, primary], hidden: boxes)
         })
     }
 }
