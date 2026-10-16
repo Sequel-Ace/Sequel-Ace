@@ -57,6 +57,31 @@ enum FilterCellDrawing {
         return NSSize(width: width, height: max(nativeHeight, SAClaudeFilterChrome.checkboxSize))
     }
 
+    /// The height of a checkbox / radio title wrapped on word boundaries to fit a cell `cellWidth` wide (beside its 14pt
+    /// mark and the gap). One line's height when the title fits on one line. The alert card sizes a long suppression
+    /// checkbox with this, and the cells draw the same wrapped text, so no title is truncated.
+    static func wrappedToggleTitleHeight(_ title: String, cellWidth: CGFloat) -> CGFloat {
+        let width = max(1, cellWidth - SAClaudeFilterChrome.checkboxSize - titleGap - titleSlack)
+        let style = NSMutableParagraphStyle()
+        style.lineBreakMode = .byWordWrapping
+        let bounds = NSAttributedString(string: title, attributes: [.font: font, .paragraphStyle: style])
+            .boundingRect(with: NSSize(width: width, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin])
+        return ceil(bounds.height)
+    }
+
+    /// One line of a checkbox / radio title.
+    static var toggleTitleLineHeight: CGFloat { wrappedToggleTitleHeight("Ag", cellWidth: 10_000) }
+
+    /// Draws a title that needs several lines (see `wrappedToggleTitleHeight`) from the top of `rect`.
+    static func drawWrappedTitle(_ text: String, in rect: NSRect, colour: NSColor, font: NSFont) {
+        guard rect.width > 0 else { return }
+        let style = NSMutableParagraphStyle()
+        style.lineBreakMode = .byWordWrapping
+        style.alignment = .left
+        NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: colour, .paragraphStyle: style])
+            .draw(with: rect, options: [.usesLineFragmentOrigin])
+    }
+
     static func roundedPath(_ rect: NSRect, radius: CGFloat) -> NSBezierPath {
         NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
     }
@@ -152,8 +177,22 @@ enum FilterCellDrawing {
         var box = SAClaudeFilterChrome.checkboxRect(in: cellFrame)
         if title.isEmpty, controlView is NSTableView {
             box.origin.x = (cellFrame.midX - box.width / 2).rounded()
+        } else if wrapsTitle(in: cellFrame) {
+            // Several title lines: the box sits level with the first one.
+            let line = FilterCellDrawing.toggleTitleLineHeight
+            box.origin.y = FilterCellDrawing.y(((line - box.height) / 2).rounded(), in: cellFrame, flipped: controlView.isFlipped)
+                - (controlView.isFlipped ? 0 : box.height)
         }
         return box
+    }
+
+    /// Whether the title takes several lines here: it does not fit on one and the frame is tall enough for the wrapped
+    /// text (every ordinary one-line checkbox keeps its single truncating line).
+    private func wrapsTitle(in cellFrame: NSRect) -> Bool {
+        guard imagePosition != .imageOnly, !title.isEmpty else { return false }
+        let lineHeight = FilterCellDrawing.toggleTitleLineHeight
+        let wrapped = FilterCellDrawing.wrappedToggleTitleHeight(title, cellWidth: cellFrame.width)
+        return wrapped > lineHeight * 1.5 && cellFrame.height >= wrapped
     }
 
     /// `cellSize` measures through this too.
@@ -203,7 +242,11 @@ enum FilterCellDrawing {
         if imagePosition != .imageOnly, !title.isEmpty {
             let minX = box.maxX + FilterCellDrawing.titleGap
             let titleRect = NSRect(x: minX, y: cellFrame.minY, width: max(0, cellFrame.maxX - minX), height: cellFrame.height)
-            FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
+            if wrapsTitle(in: cellFrame) {
+                FilterCellDrawing.drawWrappedTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font)
+            } else {
+                FilterCellDrawing.drawTitle(title, in: titleRect, colour: themeText, font: FilterCellDrawing.font, alignment: .left)
+            }
         }
     }
 }

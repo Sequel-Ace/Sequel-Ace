@@ -92,6 +92,27 @@ final class SAClaudeAlertLayoutTests: XCTestCase {
         XCTAssertEqual(f.buttons.first, NSRect(x: 298, y: 118, width: 150, height: 28))
     }
 
+    /// Walkthrough: "Reset AUTO_INCREMENT after delete (only for Delete ALL ROWS IN TABLE)" beside three long buttons. The
+    /// checkbox takes its own row spanning the content width and is as tall as its wrapped title: nothing truncates.
+    func testLongSuppressionTitleWrapsOnItsOwnRowAtTheContentWidth() throws {
+        let s = spec([150, 190, 72], suppression: NSSize(width: 520, height: 16))
+        let content = L.width(s) - 2 * L.margin
+        // The card measured the title wrapped at `content`: three lines of 16.
+        let f = L.frames(s, text: L.TextHeights(title: 17, message: 30, suppression: 48))
+        let box = try XCTUnwrap(f.suppression)
+        XCTAssertEqual(box.height, 48)
+        XCTAssertLessThanOrEqual(box.width, content)
+        XCTAssertEqual(box.minX, L.margin)
+        XCTAssertLessThanOrEqual(box.maxX, f.size.width - L.margin)
+        // The buttons sit below it, the card is tall enough for both rows.
+        XCTAssertEqual(f.buttons.first?.minY, box.maxY + L.footerRowGap)
+        XCTAssertEqual(f.size.height, box.minY + 48 + L.footerRowGap + L.buttonHeight + L.margin)
+        // A checkbox that fits beside the buttons is untouched by its measured height.
+        let beside = L.frames(spec([72, 72], suppression: NSSize(width: 260, height: 18)), text: L.TextHeights(title: 17, message: 30, suppression: 54))
+        XCTAssertEqual(beside.suppression?.height, 18)
+        XCTAssertEqual(beside.size.height, 142)
+    }
+
     /// AWS MFA: a fixed-size accessory in the text column.
     func testFixedAccessoryInTextColumn() {
         let text = L.TextHeights(title: 17, message: 60)

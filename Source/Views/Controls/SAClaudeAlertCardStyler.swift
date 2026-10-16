@@ -117,13 +117,15 @@ enum SAClaudeAlertCardStyler {
         guard let card = SAClaudeAlertCard.install(on: alert, classification: classification, parts: parts, colours: currentColours()) else { return }
         markLabels(of: card)
 
-        // Only once the card is in (a refused card leaves the alert exactly as today): the destructive button turns red.
-        // Its cell is swapped in place; the card has taken the button out of NSAlert's stack view, which no longer
-        // observes it (`SAClaudeClassSwap`).
-        if classification.kind == .destructive, let index = classification.destructiveButtonIndex, alert.buttons.indices.contains(index) {
-            let button = alert.buttons[index]
-            SAClaudeSheetButtonRole.forceDestructive(button)
-            SAClaudeWindowSkin.styleButton(button, alert: alert)
+        // Only once the card is in (a refused card leaves the alert exactly as today): every destructive button turns red.
+        // Each cell is swapped in place; the card has taken the buttons out of NSAlert's stack view, which no longer
+        // observes them (`SAClaudeClassSwap`).
+        if classification.kind == .destructive {
+            for index in classification.destructiveButtonIndices where alert.buttons.indices.contains(index) {
+                let button = alert.buttons[index]
+                SAClaudeSheetButtonRole.forceDestructive(button)
+                SAClaudeWindowSkin.styleButton(button, alert: alert)
+            }
         }
 
         SAClaudeThemeWatcher.observe(card) { refresh($0) }

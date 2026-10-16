@@ -4,7 +4,8 @@ final class SAClaudeAlertKindTests: XCTestCase {
     private func classify(_ title: String, _ message: String = "", _ buttons: [String], fromError: Bool = false) -> SAClaudeAlertClassification {
         SAClaudeAlertKind.classify(SAClaudeAlertFacts(title: title, message: message, buttonTitles: buttons, isFromError: fromError))
     }
-    private func c(_ kind: SAClaudeAlertKind, red: Int? = nil) -> SAClaudeAlertClassification { .init(kind: kind, destructiveButtonIndex: red) }
+    private func c(_ kind: SAClaudeAlertKind, red: Int? = nil) -> SAClaudeAlertClassification { .init(kind: kind, destructiveButtonIndices: red.map { [$0] } ?? []) }
+    private func c(_ kind: SAClaudeAlertKind, reds: [Int]) -> SAClaudeAlertClassification { .init(kind: kind, destructiveButtonIndices: reds) }
     private func split(_ title: String, _ message: String) -> SAClaudeAlertMessageParts {
         SAClaudeAlertMessageSplit.split(title: title, message: message)
     }
@@ -34,7 +35,7 @@ final class SAClaudeAlertKindTests: XCTestCase {
 
     func testRealCallSiteVariants() {
         XCTAssertEqual(classify("Kill query?", "Are you sure you want to kill the current query executing on connection ID 42?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.", ["Kill", "Cancel"]), c(.destructive, red: 0))
-        XCTAssertEqual(classify("Delete rows?", "Are you sure you want to delete the selected rows? This action cannot be undone.", ["Delete Selected Rows", "Delete ALL ROWS IN TABLE", "Cancel"]), c(.destructive, red: 0))
+        XCTAssertEqual(classify("Delete rows?", "Are you sure you want to delete the selected rows? This action cannot be undone.", ["Delete Selected Rows", "Delete ALL ROWS IN TABLE", "Cancel"]), c(.destructive, reds: [0, 1]))
         XCTAssertEqual(classify("Only Partially Supported", "Duplicating the database 'x' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", ["Continue", "Cancel"]), c(.question))
         XCTAssertEqual(classify("Error", "Couldn't delete 'x'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: Cannot delete or update a parent row", ["Continue", "Stop"]), c(.error))
         XCTAssertEqual(classify("Connection lost", "The connection to the server was lost.", ["Reconnect", "Close"]), c(.question))
@@ -95,6 +96,15 @@ final class SAClaudeAlertKindTests: XCTestCase {
         }
     }
 
+    /// Walkthrough (Kunal): every delete-type button is red, never Cancel.
+    func testEveryDeleteTypeButtonIsRed() {
+        XCTAssertEqual(classify("Delete selected row?", "Are you sure you want to delete the selected row from this table? This action cannot be undone.", ["Delete Selected Row", "Delete ALL ROWS IN TABLE", "Cancel"]), c(.destructive, reds: [0, 1]))
+        XCTAssertEqual(classify("Delete it?", "", ["Cancel", "Delete", "Remove all"]), c(.destructive, reds: [1, 2]))
+        XCTAssertEqual(classify("Sure?", "", ["Keep", "Discard", "Reset", "Cancel"]), c(.destructive, reds: [1, 2]))
+        // Only the delete-type ones: a neutral sibling stays as it is.
+        XCTAssertEqual(classify("Delete rows?", "", ["Delete", "Skip", "Cancel"]), c(.destructive, reds: [0]))
+    }
+
     func testDestructiveButtonNeedsWordBoundary() {
         XCTAssertEqual(classify("Proceed?", "", ["Clearance", "Cancel"]), c(.question))
     }
@@ -133,6 +143,21 @@ final class SAClaudeAlertKindTests: XCTestCase {
             XCTAssertEqual(classify("x", message, ["Retry", "Skip", "Stop"]), c(.error), message)
         }
         XCTAssertEqual(classify("x", "", ["A", "B"], fromError: true), c(.error))
+    }
+
+    /// Walkthrough (Kunal): a title that states a failure is a strong failure signal, even over a "Reset…" button.
+    func testFailureTitleIsAStrongFailure() {
+        // SPConnectionController.m:_validateSSHConfigFile — the real buttons.
+        XCTAssertEqual(classify("Cannot Access SSH Config File", "Sequel Ace does not have permission to read the configured SSH config file at '/x'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.",
+                           ["Go to Network Settings", "Reset to Default & Continue", "Cancel"]), c(.error))
+        for title in ["Cannot open file", "can't open file", "Can\u{2019}t open file", "Can not open file", "Unable to open file", "Couldn't open file", "Couldn\u{2019}t open file", "Could not open file", "Failed to open file", "FAILED to open"] {
+            XCTAssertEqual(classify(title, "", ["Reset", "Cancel"]), c(.error), title)
+        }
+        // "cannot be undone" is data-loss wording, not failure.
+        XCTAssertEqual(classify("Cannot be undone", "", ["OK"]), c(.warning))
+        XCTAssertEqual(classify("Delete it?", "Cannot be undone.", ["Delete", "Cancel"]), c(.destructive, red: 0))
+        // A title that merely contains the word later on is not a failure statement.
+        XCTAssertEqual(classify("Reset: cannot go back?", "", ["Reset", "Cancel"]), c(.destructive, red: 0))
     }
 
     /// Preflight ruling (F15): a strong failure beats a destructive-sounding button title.

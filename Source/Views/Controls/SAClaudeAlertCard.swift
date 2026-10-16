@@ -284,10 +284,15 @@ final class SAClaudeAlertCard: NSObject {
         return ceil(cell.cellSize(forBounds: NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)).height)
     }
 
-    private func textHeights(width: CGFloat) -> SAClaudeAlertLayout.TextHeights {
-        SAClaudeAlertLayout.TextHeights(title: Self.height(of: titleLabel, width: width),
-                                        message: messageLabel.map { Self.height(of: $0, width: width) } ?? 0,
-                                        block: serverBlock?.height(blockWidth: width) ?? 0)
+    private func textHeights(width: CGFloat, spec: SAClaudeAlertLayout.Spec) -> SAClaudeAlertLayout.TextHeights {
+        // The suppression checkbox on its own row is as wide as the card's content: its title wraps there.
+        let suppressionHeight = suppression.map {
+            FilterCellDrawing.wrappedToggleTitleHeight($0.title, cellWidth: SAClaudeAlertLayout.width(spec) - 2 * SAClaudeAlertLayout.margin)
+        } ?? 0
+        return SAClaudeAlertLayout.TextHeights(title: Self.height(of: titleLabel, width: width),
+                                               message: messageLabel.map { Self.height(of: $0, width: width) } ?? 0,
+                                               block: serverBlock?.height(blockWidth: width) ?? 0,
+                                               suppression: suppressionHeight)
     }
 
     private static func place(_ view: NSView, _ frame: NSRect) {
@@ -304,7 +309,7 @@ final class SAClaudeAlertCard: NSObject {
         let spec = spec(for: window)
         let column = SAClaudeAlertLayout.textColumnWidth(cardWidth: SAClaudeAlertLayout.width(spec))
         var textWidth = column
-        var frames = SAClaudeAlertLayout.frames(spec, text: textHeights(width: column))
+        var frames = SAClaudeAlertLayout.frames(spec, text: textHeights(width: column, spec: spec))
         if textScrollView.hasVerticalScroller != frames.scrolls { textScrollView.hasVerticalScroller = frames.scrolls }
         // A scroll view not yet shown can still carry the default style; the shown one takes the system's.
         if textScrollView.scrollerStyle != NSScroller.preferredScrollerStyle { textScrollView.scrollerStyle = NSScroller.preferredScrollerStyle }
@@ -315,7 +320,7 @@ final class SAClaudeAlertCard: NSObject {
                                                      controlSize: .regular, scrollerStyle: textScrollView.scrollerStyle).width
             if clipWidth > 0, clipWidth < column {
                 textWidth = clipWidth
-                frames = SAClaudeAlertLayout.frames(spec, text: textHeights(width: textWidth))
+                frames = SAClaudeAlertLayout.frames(spec, text: textHeights(width: textWidth, spec: spec))
             }
         }
         self.frames = frames

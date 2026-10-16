@@ -22,7 +22,9 @@ enum SAClaudeAlertLayout {
     }
 
     /// Measured at `textColumnWidth(cardWidth:)`. 0 = absent (message: no explanation line; block: no MySQL block).
-    struct TextHeights: Equatable { var title: CGFloat; var message: CGFloat = 0; var block: CGFloat = 0 }
+    /// `suppression` is the checkbox's height with its title wrapped to the card's content width (`width(spec) - 2 * margin`);
+    /// it counts only when the checkbox takes its own row (0 = its natural height).
+    struct TextHeights: Equatable { var title: CGFloat; var message: CGFloat = 0; var block: CGFloat = 0; var suppression: CGFloat = 0 }
 
     struct Frames: Equatable {
         var size: NSSize
@@ -105,12 +107,15 @@ enum SAClaudeAlertLayout {
         let buttons = buttonsRowWidth(spec.buttonWidths)
         var suppressionOnOwnRow = false
         var footerHeight = buttonHeight
+        var suppressionHeight = spec.suppressionSize?.height ?? 0
         if let s = spec.suppressionSize {
             if s.width + suppressionGap + buttons <= cardWidth - 2 * margin {
                 footerHeight = max(buttonHeight, s.height)
             } else {
+                // Its own row, as wide as the content: the title wraps onto as many lines as it needs.
                 suppressionOnOwnRow = true
-                footerHeight = s.height + footerRowGap + buttonHeight
+                suppressionHeight = max(s.height, text.suppression)
+                footerHeight = suppressionHeight + footerRowGap + buttonHeight
             }
         }
         let accessoryBlock = spec.accessory.map { accessoryGap + $0.size.height } ?? 0
@@ -142,9 +147,9 @@ enum SAClaudeAlertLayout {
         var buttonsY = y
         if let s = spec.suppressionSize {
             if suppressionOnOwnRow {
-                // Never past the right margin: a wider checkbox truncates its title.
-                suppressionFrame = NSRect(x: margin, y: y, width: min(s.width, cardWidth - 2 * margin), height: s.height)
-                buttonsY = y + s.height + footerRowGap
+                // Never past the right margin; a wider title wraps (the card measured `text.suppression` at this width).
+                suppressionFrame = NSRect(x: margin, y: y, width: min(s.width, cardWidth - 2 * margin), height: suppressionHeight)
+                buttonsY = y + suppressionHeight + footerRowGap
             } else {
                 suppressionFrame = NSRect(x: margin, y: y + (footerHeight - s.height) / 2, width: s.width, height: s.height)
             }

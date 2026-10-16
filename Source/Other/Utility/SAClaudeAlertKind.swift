@@ -21,8 +21,9 @@ struct SAClaudeAlertFacts: Equatable {
 
 struct SAClaudeAlertClassification: Equatable {
     var kind: SAClaudeAlertKind
-    /// Destructive only: the button that turns red (never a Cancel-type one).
-    var destructiveButtonIndex: Int? = nil
+    /// Destructive only: the buttons that turn red, ascending (every delete-type button, never a Cancel-type one; with
+    /// no delete-type button, at most one fallback). Empty = nothing turns red.
+    var destructiveButtonIndices: [Int] = []
 }
 
 struct SAClaudeAlertMessageParts: Equatable {
@@ -59,7 +60,8 @@ enum SAClaudeAlertMessageSplit {
 
 /// The rules behind `SAClaudeAlertKind.classify`, in order, first match wins:
 /// 1. Destructive — a destructive-sounding question or data-loss wording (two or more buttons), or a non-Cancel
-///    delete-type button (unless a strong failure signal says the alert reports an error).
+///    delete-type button (unless a strong failure signal says the alert reports an error). Every delete-type button
+///    turns red.
 /// 2. Error — strong failure signals; weak ones only with a single OK/Close-type button.
 /// 3. Question — two or more buttons.
 /// 4. Info — a single OK/Close-type button, an info word, no warning word, nothing negated or missing.
@@ -87,6 +89,9 @@ private enum SAClaudeAlertClassifier {
     // Tuned against the call sites: overwrite (SPDataImport.m:318, SPExportController.m:2044), "will be lost"
     // (SPUserManager.m:983, SPDataImport.m:603), "without saving" (SPEditorPreferencePane.m:786). "was lost" is not data loss.
     private static let dataLoss = regex("(cannot be undone|can't be undone|\\bpermanently\\b|\\b(lose|loss of)\\b[^.!?]*\\bdata\\b|\\boverwrit(e|es|ing|ten)\\b|\\bbe (?:[a-z]+ )?lost\\b|\\bwithout saving\\b)")
+    /// A title that states a failure ("Cannot Access SSH Config File", "Unable to …", "Failed to …"): a strong failure signal.
+    private static let failureTitle = regex("^(cannot|can't|can not|unable|couldn't|could not|failed)(?![\\p{L}])")
+    private static let cannotBeUndone = regex("\\b(cannot|can't) be undone\\b")
     private static let mysqlSaid = regex("\\bmysql said\\b")
     // "exception": SABundleHTMLOutputWindowController.swift:195 (JavaScript Exception).
     private static let strongFailure = regex("\\b(mysql said|errors?|exceptions?|failed|failure|couldn't|could not|unable to)\\b")
@@ -157,25 +162,31 @@ private enum SAClaudeAlertClassifier {
                     buttons[index].trimmingCharacters(in: .whitespacesAndNewlines).lowercased().replacingOccurrences(of: "’", with: "'")
                 }
                 let candidates = buttons.indices.filter { !isCancel(buttons[$0]) }
-                // The delete-type button; else a "Don't Save" / "Discard"-style one; else the first button that is not
-                // Cancel, but never a "Save" / "Keep" (the safe choice): then no button turns red.
-                let red = candidates.first { matches(destructiveButton, normalised($0)) }
-                    ?? candidates.first { matches(declineButton, normalised($0)) }
-                    ?? candidates.first { !matches(saveButton, normalised($0)) }
-                return SAClaudeAlertClassification(kind: .destructive, destructiveButtonIndex: red)
+                // Every delete-type button; else one "Don't Save" / "Discard"-style button; else the first button that is
+                // not Cancel, but never a "Save" / "Keep" (the safe choice): then no button turns red.
+                var red = candidates.filter { matches(destructiveButton, normalised($0)) }
+                if red.isEmpty {
+                    red = (candidates.first { matches(declineButton, normalised($0)) }
+                        ?? candidates.first { !matches(saveButton, normalised($0)) }).map { [$0] } ?? []
+                }
+                return SAClaudeAlertClassification(kind: .destructive, destructiveButtonIndices: red)
             }
         }
 
         // 2a. A strong failure signal beats a destructive-sounding button title.
-        let isStrongFailure = facts.isFromError || matches(strongFailure, text)
+        let titleText = matchingText(facts.title).trimmingCharacters(in: .whitespacesAndNewlines)
+        let titleStatesFailure = matches(failureTitle, titleText) && !matches(cannotBeUndone, text)
+        let isStrongFailure = facts.isFromError || titleStatesFailure || matches(strongFailure, text)
         if isStrongFailure {
             return SAClaudeAlertClassification(kind: .error)
         }
 
-        // 1b. A non-Cancel delete-type button.
-        if buttons.count >= 2,
-           let red = buttons.indices.first(where: { !isCancel(buttons[$0]) && matches(destructiveButton, buttons[$0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) }) {
-            return SAClaudeAlertClassification(kind: .destructive, destructiveButtonIndex: red)
+        // 1b. Non-Cancel delete-type buttons.
+        if buttons.count >= 2 {
+            let red = buttons.indices.filter { !isCancel(buttons[$0]) && matches(destructiveButton, buttons[$0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) }
+            if !red.isEmpty {
+                return SAClaudeAlertClassification(kind: .destructive, destructiveButtonIndices: red)
+            }
         }
 
         let singleAcknowledge = buttons.count == 1 && isAcknowledge(buttons[0])
