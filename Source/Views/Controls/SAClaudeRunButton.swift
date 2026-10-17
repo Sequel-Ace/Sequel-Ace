@@ -67,9 +67,11 @@ import AppKit
         showSplitCard(adapter: SAClaudeRunMenuAdapter.shared) { [weak self] in self?.isCardOpen = $0 }
     }
 
-    /// The chevron part opens the run card; the main part runs (SPComboPopupButtonCell's tracking, unchanged).
+    /// The chevron part opens (or closes) the run card; the main part runs (SPComboPopupButtonCell's tracking,
+    /// unchanged), except the click that closes the open card, which only closes it.
     override func mouseDown(with event: NSEvent) {
         if isOnChevron(event), showCard() { return }
+        if SAClaudeMenuCardPresenter.shared.consumesClick(on: self) { return }
         super.mouseDown(with: event)
     }
 

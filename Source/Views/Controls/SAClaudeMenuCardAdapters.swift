@@ -56,9 +56,17 @@ final class SAClaudeHistoryEntriesMenuAdapter: SAClaudeMenuCardAdapter {
 
 /// The Query History pull-down: search, one row per query (the query in mono, up to two lines), Save History…
 /// (⌥: Copy History, as the native menu) and Clear History as the footer. The native search field item is not
-/// shown: it is cleared, with the items its filter hid, so the card lists every query.
+/// shown: it is cleared, with the items its filter hid, so the card lists every query. Search covers the full stored
+/// queries when `fullQueries` supplies them (the rows show the tooltip, as the native menu).
 final class SAClaudeQueryHistoryMenuAdapter: SAClaudeMenuCardAdapter {
     static let shared = SAClaudeQueryHistoryMenuAdapter()
+
+    /// The document's stored history, in menu order (nil: search the tooltips).
+    private let fullQueries: () -> [String]?
+
+    init(fullQueries: @escaping () -> [String]? = { nil }) {
+        self.fullQueries = fullQueries
+    }
 
     var hasSearch: Bool { true }
 
@@ -68,7 +76,7 @@ final class SAClaudeQueryHistoryMenuAdapter: SAClaudeMenuCardAdapter {
 
     func entries(for menu: NSMenu) -> [SAClaudeMenuEntry]? {
         SAClaudeMenuCardModel.resetNativeSearch(in: menu)
-        return SAClaudeMenuCardModel.queryHistoryEntries(from: menu)
+        return SAClaudeMenuCardModel.queryHistoryEntries(from: menu, fullQueries: fullQueries())
     }
 
     func palette(for control: NSView) -> SAClaudeMenuCardPalette { .editor() }

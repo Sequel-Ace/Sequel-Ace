@@ -77,6 +77,10 @@ import AppKit
         showCard() || super.accessibilityPerformPress()
     }
 
+    override func accessibilityPerformShowMenu() -> Bool {
+        showCard() || super.accessibilityPerformShowMenu()
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
@@ -183,7 +187,9 @@ import AppKit
     }
 
     /// A click navigates once; a press held for `holdDelay` (or dragged) opens the segment's history card instead.
+    /// While a card is open for this control, a click on either segment only closes it (no navigation).
     override func mouseDown(with event: NSEvent) {
+        if SAClaudeMenuCardPresenter.shared.consumesClick(on: self) { return }
         guard let segment = segment(at: event), historyMenu(forSegment: segment) != nil, let window else {
             super.mouseDown(with: event)
             return

@@ -215,6 +215,48 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         XCTAssertNil(SAClaudeMenuCardModel.move(highlight: nil, in: [], by: 1))
     }
 
+    // MARK: - Firing a snapshot item
+
+    private final class Validating: NSObject, NSMenuItemValidation {
+        var allow = true
+        @objc func act(_ sender: Any?) {}
+        func validateMenuItem(_ menuItem: NSMenuItem) -> Bool { allow }
+    }
+
+    func testStillFireableOnlyWhileInAMenuAndEnabled() {
+        let target = Validating()
+        let menu = NSMenu()
+        let item = menu.addItem(withTitle: "Pick", action: #selector(Validating.act(_:)), keyEquivalent: "")
+        item.target = target
+        XCTAssertTrue(SAClaudeMenuCardModel.isStillFireable(item))
+
+        // Disabled since the card opened: validation runs again, the item is refused.
+        target.allow = false
+        XCTAssertFalse(SAClaudeMenuCardModel.isStillFireable(item))
+        target.allow = true
+
+        // Moved to another menu (back/forward's cached items): still fireable, at its new index.
+        let other = NSMenu()
+        other.addItem(withTitle: "Before", action: nil, keyEquivalent: "")
+        menu.removeItem(item)
+        other.addItem(item)
+        XCTAssertTrue(SAClaudeMenuCardModel.isStillFireable(item))
+        XCTAssertEqual(other.index(of: item), 1)
+
+        // Removed (History and the database list are rebuilt with new items): never fired.
+        other.removeItem(item)
+        XCTAssertNil(item.menu)
+        XCTAssertFalse(SAClaudeMenuCardModel.isStillFireable(item))
+
+        // removeAllItems (SADatabaseListManager.configurePopup) detaches every item too.
+        let rebuilt = NSMenu()
+        let old = rebuilt.addItem(withTitle: "shop", action: #selector(Validating.act(_:)), keyEquivalent: "")
+        old.target = target
+        rebuilt.removeAllItems()
+        rebuilt.addItem(withTitle: "shop", action: #selector(Validating.act(_:)), keyEquivalent: "").target = target
+        XCTAssertFalse(SAClaudeMenuCardModel.isStillFireable(old))
+    }
+
     func testCardSize() {
         XCTAssertEqual(SAClaudeMenuCardModel.cardSize(contentWidth: 100, contentHeight: 300, screenVisibleHeight: 1000), NSSize(width: 240, height: 300))
         XCTAssertEqual(SAClaudeMenuCardModel.cardSize(contentWidth: 600, contentHeight: 900, screenVisibleHeight: 1000), NSSize(width: 420, height: 600))
@@ -284,6 +326,20 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         popup.selectItem(withTitle: "late")
         XCTAssertEqual(shape(rows(databaseEntries(popup)).list), ["header Your databases", "item shop", "item late"])
         XCTAssertEqual(databaseEntries(popup).filter(\.isTicked).map(\.title), ["late"])
+    }
+
+    func testDatabaseFooterIsNeverTicked() {
+        // The pop-up can have a footer item selected (e.g. right after Add Database… was picked natively).
+        let popup = databasePopUp(["shop", "mysql"], current: "shop")
+        for title in ["Add Database...", "Refresh Databases"] {
+            popup.selectItem(withTitle: title)
+            XCTAssertEqual(popup.titleOfSelectedItem, title)
+            let entries = databaseEntries(popup)
+            XCTAssertFalse(entries.contains { $0.isFooter && $0.isTicked }, title)
+            XCTAssertFalse(entries.contains { $0.isTicked }, title)
+        }
+        popup.selectItem(withTitle: "mysql")
+        XCTAssertEqual(databaseEntries(popup).filter(\.isTicked).map(\.title), ["mysql"])
     }
 
     func testDatabaseEntriesFilterKeepsFooter() {
@@ -409,6 +465,34 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "b from")), ["item \(long)"])
     }
 
+    func testQueryHistorySearchCoversTheFullStoredQuery() {
+        let tail = "needle_column"
+        let long = "SELECT " + String(repeating: "a, ", count: 100) + "\(tail) FROM t"   // > 256: the tooltip is cut
+        XCTAssertGreaterThan(long.count, 300)
+        let target = QueryActions()
+        let (button, _) = historyPullDown(["SELECT 1", long], target: target)
+        let tooltip = button.menu!.items[8].toolTip!
+        XCTAssertFalse(tooltip.contains(tail))
+
+        // Tooltips only: the term past character 255 matches nothing.
+        let shortOnly = rows(SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!)).list
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(shortOnly, query: tail)), ["noMatches"])
+
+        // With the stored history: found, and the row still shows the tooltip.
+        let entries = SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!, fullQueries: ["SELECT 1", long])
+        let list = rows(entries).list
+        let found = SAClaudeMenuCardModel.filter(list, query: tail)
+        XCTAssertEqual(found.map { $0.entry?.index }, [8])
+        XCTAssertEqual(found.first?.entry?.detail, tooltip)
+        XCTAssertEqual(found.first?.entry?.title, tooltip)
+        XCTAssertEqual(found.first?.entry?.searchText, long)
+        XCTAssertEqual(list.first?.entry?.searchText, "SELECT 1")
+
+        // A history out of step with the menu (another count) is not used: tooltips again.
+        let stale = SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!, fullQueries: [long])
+        XCTAssertEqual(rows(stale).list.map { $0.entry?.searchText }, ["SELECT 1", tooltip])
+    }
+
     func testQueryHistoryEntriesEmptyHistoryIsFooterOnly() {
         let (button, _) = historyPullDown([], target: QueryActions())
         let resolved = rows(SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!))
@@ -433,9 +517,20 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         let parts = SAClaudeMenuCardModel.favoriteTitleParts("Orders by day\tord⇥")
         XCTAssertEqual(parts.name, "Orders by day")
         XCTAssertEqual(parts.trigger, "ord⇥")
+        // A name containing a tab: split at the last tab only.
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("a\tb\tc⇥").name, "a\tb")
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("a\tb\tc⇥").trigger, "c⇥")
+        // No trailing ⇥: no trigger, the whole title (tabs included) is the name.
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("Name\t ").name, "Name\t ")
         XCTAssertNil(SAClaudeMenuCardModel.favoriteTitleParts("Name\t ").trigger)
-        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("a\tb\tc⇥").name, "a")
-        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("a\tb\tc⇥").trigger, "b\tc⇥")
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("Tab\tseparated name").name, "Tab\tseparated name")
+        XCTAssertNil(SAClaudeMenuCardModel.favoriteTitleParts("Tab\tseparated name").trigger)
+        // A trailing ⇥ without a tab is part of the name.
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("Arrow⇥").name, "Arrow⇥")
+        XCTAssertNil(SAClaudeMenuCardModel.favoriteTitleParts("Arrow⇥").trigger)
+        // Nothing but ⇥ after the tab: the name, no chip.
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("Name\t⇥").name, "Name")
+        XCTAssertNil(SAClaudeMenuCardModel.favoriteTitleParts("Name\t⇥").trigger)
     }
 
     func testQueryFavoritesEntriesSectionsRowsAndFooter() {

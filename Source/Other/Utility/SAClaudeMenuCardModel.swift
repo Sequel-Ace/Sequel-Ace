@@ -189,6 +189,16 @@ enum SAClaudeMenuCardModel {
         return highlight
     }
 
+    // MARK: - Firing
+
+    /// Whether a card row's item (taken from the snapshot made when the card opened) may still fire: still in a menu
+    /// (an item its owner removed or replaced has none) and enabled after that menu's validation (`update()`). An item
+    /// moved to another menu (back/forward's cached items) may: the presenter fires it at its index there.
+    static func isStillFireable(_ item: NSMenuItem) -> Bool {
+        item.menu?.update()
+        return item.menu != nil && item.isEnabled
+    }
+
     // MARK: - Size
 
     static func cardSize(contentWidth: CGFloat, contentHeight: CGFloat, screenVisibleHeight: CGFloat) -> NSSize {
@@ -215,12 +225,14 @@ extension SAClaudeMenuCardModel {
         var footer: [SAClaudeMenuEntry] = []
         for var entry in entries(from: menu, skipping: [0]) where entry.kind == .item {
             let item = menu.items[entry.index]
-            entry.isTicked = entry.index == selectedIndex
             if hasOwnAction(item) {
+                // An action, never the current database: no tick, whatever the pop-up has selected.
+                entry.isTicked = false
                 entry.isFooter = true
                 entry.symbol = databaseFooterSymbol(item.action)
                 footer.append(entry)
             } else {
+                entry.isTicked = entry.index == selectedIndex
                 entry.symbol = "cylinder"
                 databases.append(entry)
             }
@@ -263,10 +275,17 @@ extension SAClaudeMenuCardModel {
     static let queryMenuFirstListIndex = 7
 
     /// The Query History pull-down: one detail-only row per query (`detail` = the tooltip, the query up to 256
-    /// characters, else the title), searched on it; the head actions as the footer: Save History… (Copy History while
-    /// ⌥ is held, as the native menu shows the pair) and Clear History. Item 0 (the title), the head separators and
-    /// the search-field view item are dropped.
-    static func queryHistoryEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
+    /// characters, else the title), searched on the full query; the head actions as the footer: Save History… (Copy
+    /// History while ⌥ is held, as the native menu shows the pair) and Clear History. Item 0 (the title), the head
+    /// separators and the search-field view item are dropped.
+    ///
+    /// `fullQueries` is the document's stored history (`SPQueryController -historyForFileURL:`), which the menu lists
+    /// in order from item 7 (SPCustomQuery -chooseQueryHistory: reads `history[index - 7]`). Used for search only when
+    /// it has exactly one query per listed item; otherwise (nil, or a menu out of step with it) the search falls back
+    /// to the tooltip.
+    static func queryHistoryEntries(from menu: NSMenu, fullQueries: [String]? = nil) -> [SAClaudeMenuEntry] {
+        let listed = max(menu.numberOfItems - queryMenuFirstListIndex, 0)
+        let full = fullQueries.flatMap { $0.count == listed ? $0 : nil }
         var result: [SAClaudeMenuEntry] = []
         for var entry in entries(from: menu, skipping: [0]) {
             let item = menu.items[entry.index]
@@ -278,7 +297,7 @@ extension SAClaudeMenuCardModel {
                 let query = item.toolTip ?? item.title
                 entry.title = query
                 entry.detail = query
-                entry.searchText = query
+                entry.searchText = full?[entry.index - queryMenuFirstListIndex] ?? query
             }
             result.append(entry)
         }
@@ -322,12 +341,13 @@ extension SAClaudeMenuCardModel {
         return result
     }
 
-    /// A favourite's menu title is "name" or "name\ttrigger⇥" (SPCustomQuery -queryFavoritesHaveBeenUpdated:):
-    /// the name before the first tab, the trimmed text after it as the trigger (nil when there is none).
+    /// A favourite's menu title is "name" or "name\ttrigger⇥" (SPCustomQuery -queryFavoritesHaveBeenUpdated:). Only a
+    /// title ending in "⇥" has a trigger: split at its last tab, the name before it and the trimmed text after it as the
+    /// trigger ("⇥" kept; nil when nothing else is left). Any other title is the whole name, tabs included, with no chip.
     static func favoriteTitleParts(_ title: String) -> (name: String, trigger: String?) {
-        guard let tab = title.firstIndex(of: "\t") else { return (title, nil) }
+        guard title.hasSuffix("⇥"), let tab = title.lastIndex(of: "\t") else { return (title, nil) }
         let trigger = title[title.index(after: tab)...].trimmingCharacters(in: .whitespacesAndNewlines)
-        return (String(title[..<tab]), trigger.isEmpty ? nil : trigger)
+        return (String(title[..<tab]), trigger.isEmpty || trigger == "⇥" ? nil : trigger)
     }
 
     /// The History/Favorites search field the card replaces: cleared, and the items its filter hid shown again

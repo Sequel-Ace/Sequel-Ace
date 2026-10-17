@@ -86,15 +86,19 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
         let model: SAClaudeMenuCardViewModel
         let adapter: SAClaudeMenuCardAdapter
         let menu: NSMenu
+        /// The menu's items when the card opened, by index: a row fires the item it was built from, even when the menu
+        /// was rebuilt or reordered under the open card (entry indices point into this, not into the live menu).
+        let items: [NSMenuItem]
         weak var control: NSView?
         let onClose: (() -> Void)?
 
         init(popover: NSPopover, model: SAClaudeMenuCardViewModel, adapter: SAClaudeMenuCardAdapter, menu: NSMenu,
-             control: NSView, onClose: (() -> Void)?) {
+             items: [NSMenuItem], control: NSView, onClose: (() -> Void)?) {
             self.popover = popover
             self.model = model
             self.adapter = adapter
             self.menu = menu
+            self.items = items
             self.control = control
             self.onClose = onClose
         }
@@ -133,6 +137,7 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
 
         menu.update()
         guard let entries = adapter.entries(for: menu) else { return fallback("adapter refused the menu") }
+        let items = menu.items
         if let reason = Self.unsupportedItem(in: menu, entries: entries) { return fallback(reason) }
 
         let palette = adapter.palette(for: control)
@@ -151,7 +156,7 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
         popover.contentViewController = host
         popover.appearance = Self.appearance(isDark: palette.isDark)
 
-        let session = Session(popover: popover, model: model, adapter: adapter, menu: menu, control: control, onClose: onClose)
+        let session = Session(popover: popover, model: model, adapter: adapter, menu: menu, items: items, control: control, onClose: onClose)
         model.choose = { [weak self, weak session] position in
             guard let self, let session, self.session === session else { return }
             self.choose(position)
@@ -162,7 +167,7 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
         let anchor = anchorRect ?? control.bounds
         popover.show(relativeTo: anchor, of: control, preferredEdge: preferredEdge ?? Self.edge(for: control, anchor: anchor))
         installMonitors()
-        observe(control: control, popover: popover)
+        observe(control: control, popover: popover, menu: menu)
         watchStyleChanges()
         focusSearchField()
         return true
@@ -213,15 +218,18 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
     }
 
     /// Closes first, then fires after this event, so a sheet or alert the action opens doesn't attach to a closing
-    /// popover. Only a choosable row fires.
+    /// popover. Only a choosable row fires, and only the item that row was built from (`Session.items`), while it is
+    /// still in a menu and enabled: a menu rebuilt under the open card (History after a query, the database list,
+    /// back/forward after a navigation) fires nothing rather than whichever item now has the row's old index.
     private func choose(_ position: Int) {
         guard let session, let row = session.model.row(at: position), row.isChoosable, let entry = row.entry,
-              entry.index >= 0, entry.index < session.menu.numberOfItems else { return }
-        let item = session.menu.items[entry.index]
+              entry.index >= 0, entry.index < session.items.count else { return }
+        let item = session.items[entry.index]
         // The modifiers held when choosing (Return's keyDown, or the click's mouse-up): actions such as
         // chooseQueryHistory: read `[NSApp currentEvent] modifierFlags` to flip replace/insert.
         let flags = (NSApp.currentEvent?.modifierFlags ?? NSEvent.modifierFlags).intersection(.deviceIndependentFlagsMask)
         close()
+        guard SAClaudeMenuCardModel.isStillFireable(item) else { return }
         scheduleFire(item, modifierFlags: flags)
     }
 
@@ -253,6 +261,20 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
         }
         pendingFires[token] = item
         NSApp.postEvent(event, atStart: true)
+    }
+
+    // MARK: Clicks on the card's own control
+
+    /// Call at the top of a control's mouseDown, before its main action (Run's run, Copy's copy, a back/forward
+    /// segment's navigation). True when this click belongs to the card: the card is open for `control` (it is closed
+    /// now), or this mouse-down is the one that just closed it as a transient popover. The control then returns without
+    /// acting, as a native menu swallows the click that dismisses it.
+    func consumesClick(on control: NSView) -> Bool {
+        if let session, session.control === control {
+            close()
+            return true
+        }
+        return isClosingClick(on: control)
     }
 
     // MARK: Closing
@@ -419,9 +441,17 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
 
     // MARK: Window and style observation
 
-    private func observe(control: NSView, popover: NSPopover) {
+    private func observe(control: NSView, popover: NSPopover, menu: NSMenu) {
         let centre = NotificationCenter.default
         let controlWindow = control.window
+        // The menu gained or lost items under the card (rebuilt by its owner): the rows are stale, close. Synchronous
+        // (no queue), so a pick can't land between the rebuild and the close.
+        for name in [NSMenu.didAddItemNotification, NSMenu.didRemoveItemNotification] {
+            observers.append(centre.addObserver(forName: name, object: menu, queue: nil) { [weak self, weak popover] _ in
+                guard let self, let popover, self.session?.popover === popover else { return }
+                self.close()
+            })
+        }
         observers.append(centre.addObserver(forName: NSWindow.willCloseNotification, object: controlWindow, queue: .main) { [weak self] _ in
             self?.close()
         })

@@ -68,7 +68,13 @@ import AppKit
         }
         // History and Favorites open Claude cards. Swapped before the hover highlighter's KVO below: a class swap
         // is refused for an observed object (SAClaudeClassSwap), and then the native menus stay.
-        SAClaudeMenuCardPopUpButton.install(on: historyButton, adapter: SAClaudeQueryHistoryMenuAdapter.shared)
+        // History search covers the full stored queries, read as SPCustomQuery -chooseQueryHistory: reads them (the
+        // button's target is the SPCustomQuery, DBView.xib).
+        let historyAdapter = SAClaudeQueryHistoryMenuAdapter { [weak historyButton] in
+            guard let query = historyButton?.target as? SPCustomQuery, let fileURL = query.tableDocumentInstance?.fileURL() else { return nil }
+            return SPQueryController.shared().history(forFileURL: fileURL) as? [String]
+        }
+        SAClaudeMenuCardPopUpButton.install(on: historyButton, adapter: historyAdapter)
         SAClaudeMenuCardPopUpButton.install(on: favoritesButton, adapter: SAClaudeQueryFavoritesMenuAdapter.shared)
         for button in [optionsButton, favoritesButton, historyButton] {
             button.isBordered = false

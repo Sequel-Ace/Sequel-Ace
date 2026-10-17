@@ -171,9 +171,11 @@ import AppKit
         }
     }
 
-    /// The chevron part opens the copy card; the main part copies (SPComboPopupButtonCell's tracking, unchanged).
+    /// The chevron part opens (or closes) the copy card; the main part copies (SPComboPopupButtonCell's tracking,
+    /// unchanged), except the click that closes the open card, which only closes it.
     override func mouseDown(with event: NSEvent) {
         if isOnChevron(event), showCard() { return }
+        if SAClaudeMenuCardPresenter.shared.consumesClick(on: self) { return }
         super.mouseDown(with: event)
     }
 
