@@ -364,13 +364,69 @@ extension SAClaudeMenuCardModel {
         for item in menu.items.dropFirst(queryMenuFirstListIndex) where item.isHidden { item.isHidden = false }
     }
 
-    /// The Run split button's menu: every item in order (item 0, the pull-down's title, dropped), with a glyph by
-    /// action and the item's shortcut.
+    /// The Run split button's menu, regrouped for the card (the NSMenu keeps its order for shortcuts): the run actions
+    /// (run current, run all, run all as script), a separator, then Switch Default and Explain. Items are placed by
+    /// action, not title (the run-current title follows the context). An item no rule knows follows after another
+    /// separator, in native order. Each entry keeps its native `index`; an alternate stays directly after its primary;
+    /// hidden items stay hidden. Item 0 (the pull-down's title) dropped; a glyph by action, and the item's shortcut.
     static func runEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
-        entries(from: menu, skipping: [0]).map { entry in
+        let native = entries(from: menu, skipping: [0]).map { entry -> SAClaudeMenuEntry in
             var entry = entry
             if entry.kind == .item { entry.symbol = runSymbol(menu.items[entry.index].action) }
             return entry
+        }
+
+        // A unit is a primary entry with the alternates directly after it, or a separator.
+        var units: [[SAClaudeMenuEntry]] = []
+        for entry in native {
+            if entry.isAlternate, entry.kind == .item, let last = units.last, last[0].kind == .item {
+                units[units.count - 1].append(entry)
+            } else {
+                units.append([entry])
+            }
+        }
+
+        var grouped: [[(rank: Int, unit: [SAClaudeMenuEntry])]] = [[], []]
+        var rest: [SAClaudeMenuEntry] = []
+        for unit in units {
+            if unit[0].kind == .item, let place = runPlacement(menu.items[unit[0].index].action) {
+                grouped[place.section].append((place.rank, unit))
+            } else {
+                rest.append(contentsOf: unit)
+            }
+        }
+
+        var syntheticSeparators = 0
+        func separator() -> SAClaudeMenuEntry {
+            syntheticSeparators += 1
+            return SAClaudeMenuEntry(index: -1 - syntheticSeparators, kind: .separator, title: "")
+        }
+        // Native separators only between two entries (none leading, trailing or doubled).
+        var tail: [SAClaudeMenuEntry] = []
+        for entry in rest where !(entry.kind == .separator && (tail.last?.kind ?? .separator) == .separator) {
+            tail.append(entry)
+        }
+        while tail.last?.kind == .separator { tail.removeLast() }
+
+        var sections = grouped.map { $0.sorted { $0.rank < $1.rank }.flatMap(\.unit) } + [tail]
+        sections.removeAll { $0.isEmpty }
+        var result: [SAClaudeMenuEntry] = []
+        for section in sections {
+            if !result.isEmpty { result.append(separator()) }
+            result.append(contentsOf: section)
+        }
+        return result
+    }
+
+    /// Where the card puts a run-menu item: section 0 the run actions, section 1 Switch Default and Explain.
+    private static func runPlacement(_ action: Selector?) -> (section: Int, rank: Int)? {
+        switch action.map(NSStringFromSelector) {
+        case "runPrimaryQueryAction:": return (0, 0)
+        case "runSecondaryQueryAction:": return (0, 1)
+        case "runAllAsScriptAction:": return (0, 2)
+        case "switchDefaultQueryAction:": return (1, 0)
+        case "runExplainQueryAction:": return (1, 1)
+        default: return nil
         }
     }
 

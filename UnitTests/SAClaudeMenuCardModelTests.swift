@@ -587,30 +587,139 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         @objc func runAllAsScriptAction(_ sender: Any?) {}
     }
 
-    func testRunEntriesKeepOrderWithGlyphsAndShortcuts() {
-        let target = RunActions()
+    /// The run menu as DBView.xib builds it (item 0 is the pull-down's hidden title). `currentTitle` is the run-current
+    /// item's title, which SPCustomQuery changes with the context.
+    private func runMenu(currentTitle: String = "Run Current Query", target: RunActions, extra: [(String, Selector?, Bool)] = []) -> NSMenu {
         let menu = NSMenu()
         menu.addItem(withTitle: "Run Current", action: nil, keyEquivalent: "").isHidden = true
-        func add(_ title: String, _ action: Selector, _ key: String, _ mask: NSEvent.ModifierFlags) {
+        func add(_ title: String, _ action: Selector?, _ key: String, _ mask: NSEvent.ModifierFlags) {
             let item = menu.addItem(withTitle: title, action: action, keyEquivalent: key)
             item.keyEquivalentModifierMask = mask
             item.target = target
         }
-        add("Run Current Query", #selector(RunActions.runPrimaryQueryAction(_:)), "r", .command)
+        add(currentTitle, #selector(RunActions.runPrimaryQueryAction(_:)), "r", .command)
         menu.addItem(.separator())
         add("Run All Queries", #selector(RunActions.runSecondaryQueryAction(_:)), "r", [.option, .command])
         add("Switch Default", #selector(RunActions.switchDefaultQueryAction(_:)), "", [])
         menu.addItem(.separator())
         add("Explain Current Query", #selector(RunActions.runExplainQueryAction(_:)), "e", [.option, .command])
         add("Run All as Script", #selector(RunActions.runAllAsScriptAction(_:)), "r", [.shift, .option, .command])
+        for (title, action, hidden) in extra {
+            add(title, action, "", [])
+            menu.items.last!.isHidden = hidden
+        }
+        return menu
+    }
+
+    func testRunEntriesGroupRunActionsThenSwitchDefaultAndExplain() {
+        let menu = runMenu(target: RunActions())
         assertSymbolsExist(SAClaudeMenuCardModel.runEntries(from: menu))
         let resolved = rows(SAClaudeMenuCardModel.runEntries(from: menu))
-        XCTAssertEqual(shape(resolved.list), ["item Run Current Query", "separator", "item Run All Queries", "item Switch Default",
-                                              "separator", "item Explain Current Query", "item Run All as Script"])
+        XCTAssertEqual(shape(resolved.list), ["item Run Current Query", "item Run All Queries", "item Run All as Script", "separator",
+                                              "item Switch Default", "item Explain Current Query"])
         let items = resolved.list.compactMap { $0.kind == .item ? $0.entry : nil }
-        XCTAssertEqual(items.map(\.symbol), ["play", "forward.end", "arrow.left.arrow.right", "text.magnifyingglass", "scroll"])
-        XCTAssertEqual(items.map(\.shortcut), ["⌘R", "⌥⌘R", "", "⌥⌘E", "⌥⇧⌘R"])
+        XCTAssertEqual(items.map(\.symbol), ["play", "forward.end", "scroll", "arrow.left.arrow.right", "text.magnifyingglass"])
+        XCTAssertEqual(items.map(\.shortcut), ["⌘R", "⌥⌘R", "⌥⇧⌘R", "", "⌥⌘E"])
         XCTAssertTrue(resolved.footer.isEmpty)
+    }
+
+    func testRunEntriesGroupByActionWhateverTheRunCurrentTitle() {
+        for title in ["Run Selected Text", "Run Current Query", "Run Previous Query", "Run Something New"] {
+            let resolved = rows(SAClaudeMenuCardModel.runEntries(from: runMenu(currentTitle: title, target: RunActions())))
+            XCTAssertEqual(shape(resolved.list), ["item \(title)", "item Run All Queries", "item Run All as Script", "separator",
+                                                  "item Switch Default", "item Explain Current Query"], title)
+        }
+    }
+
+    func testRunEntriesKeepTheNativeIndexOfEveryItem() {
+        // Choosing fires menu.items[entry.index] (the snapshotted item): reordering the card must not move that.
+        let menu = runMenu(target: RunActions())
+        let entries = SAClaudeMenuCardModel.runEntries(from: menu)
+        for entry in entries where entry.kind == .item {
+            XCTAssertEqual(menu.items[entry.index].title, entry.title)
+        }
+        let byAction = Dictionary(uniqueKeysWithValues: entries.filter { $0.kind == .item }
+            .map { (NSStringFromSelector(menu.items[$0.index].action!), $0.index) })
+        XCTAssertEqual(byAction["runPrimaryQueryAction:"], 1)
+        XCTAssertEqual(byAction["runSecondaryQueryAction:"], 3)
+        XCTAssertEqual(byAction["switchDefaultQueryAction:"], 4)
+        XCTAssertEqual(byAction["runExplainQueryAction:"], 6)
+        XCTAssertEqual(byAction["runAllAsScriptAction:"], 7)
+    }
+
+    func testRunEntriesPutUnknownItemsLastInNativeOrderAfterAnotherSeparator() {
+        let menu = runMenu(target: RunActions(), extra: [("Bundle One", nil, false), ("Bundle Two", nil, false)])
+        let resolved = rows(SAClaudeMenuCardModel.runEntries(from: menu))
+        XCTAssertEqual(shape(resolved.list), ["item Run Current Query", "item Run All Queries", "item Run All as Script", "separator",
+                                              "item Switch Default", "item Explain Current Query", "separator",
+                                              "item Bundle One", "item Bundle Two"])
+        // The native separator between two unknown items survives; none doubles, leads or trails.
+        let menu2 = runMenu(target: RunActions(), extra: [("Bundle One", nil, false)])
+        menu2.addItem(.separator())
+        menu2.addItem(withTitle: "Bundle Two", action: nil, keyEquivalent: "")
+        menu2.addItem(.separator())
+        let list2 = rows(SAClaudeMenuCardModel.runEntries(from: menu2)).list
+        XCTAssertEqual(Array(shape(list2).suffix(4)), ["separator", "item Bundle One", "separator", "item Bundle Two"])
+        XCTAssertNotEqual(SAClaudeMenuCardModel.runEntries(from: menu2).last?.kind, .separator)
+    }
+
+    func testRunEntriesNeverLeadDoubleOrTrailSeparators() {
+        func check(_ menu: NSMenu, _ message: String) {
+            let entries = SAClaudeMenuCardModel.runEntries(from: menu)
+            let kinds = entries.map(\.kind)
+            XCTAssertNotEqual(kinds.first, .separator, message)
+            XCTAssertNotEqual(kinds.last, .separator, message)
+            XCTAssertFalse(zip(kinds, kinds.dropFirst()).contains { $0 == .separator && $1 == .separator }, message)
+            let list = rows(entries).list
+            XCTAssertNotEqual(list.first?.kind, .separator, message)
+            XCTAssertNotEqual(list.last?.kind, .separator, message)
+        }
+        let target = RunActions()
+        check(runMenu(target: target), "full menu")
+        // Only unknown items.
+        let unknownOnly = NSMenu()
+        unknownOnly.addItem(withTitle: "Run Current", action: nil, keyEquivalent: "").isHidden = true
+        unknownOnly.addItem(withTitle: "Bundle", action: nil, keyEquivalent: "")
+        unknownOnly.addItem(.separator())
+        check(unknownOnly, "unknown only")
+        XCTAssertEqual(shape(rows(SAClaudeMenuCardModel.runEntries(from: unknownOnly)).list), ["item Bundle"])
+        // One section missing.
+        let noSecondSection = NSMenu()
+        noSecondSection.addItem(withTitle: "Run Current", action: nil, keyEquivalent: "").isHidden = true
+        let all = noSecondSection.addItem(withTitle: "Run All as Script", action: #selector(RunActions.runAllAsScriptAction(_:)), keyEquivalent: "")
+        all.target = target
+        noSecondSection.addItem(.separator())
+        check(noSecondSection, "section 2 missing")
+        XCTAssertEqual(shape(rows(SAClaudeMenuCardModel.runEntries(from: noSecondSection)).list), ["item Run All as Script"])
+        // Section 1 entirely hidden: the card starts at section 2 without a leading separator.
+        let hiddenRun = runMenu(target: target)
+        for item in hiddenRun.items where [#selector(RunActions.runPrimaryQueryAction(_:)), #selector(RunActions.runSecondaryQueryAction(_:)),
+                                          #selector(RunActions.runAllAsScriptAction(_:))].contains(where: { $0 == item.action }) {
+            item.isHidden = true
+        }
+        check(hiddenRun, "section 1 hidden")
+        XCTAssertEqual(shape(rows(SAClaudeMenuCardModel.runEntries(from: hiddenRun)).list), ["item Switch Default", "item Explain Current Query"])
+    }
+
+    func testRunEntriesKeepHiddenHiddenAndAlternatesBehindTheirPrimary() {
+        let target = RunActions()
+        let menu = runMenu(target: target, extra: [("Hidden Bundle", nil, true)])
+        // An alternate of Run All Queries, directly after it in the menu.
+        let alt = NSMenuItem(title: "Run All Queries (alt)", action: #selector(RunActions.runAllAsScriptAction(_:)), keyEquivalent: "r")
+        alt.keyEquivalentModifierMask = [.option, .command, .control]
+        alt.target = target
+        alt.isAlternate = true
+        menu.insertItem(alt, at: 4)
+        let entries = SAClaudeMenuCardModel.runEntries(from: menu)
+        let titles = entries.filter { $0.kind == .item }.map(\.title)
+        XCTAssertEqual(titles, ["Run Current Query", "Run All Queries", "Run All Queries (alt)", "Run All as Script",
+                                "Switch Default", "Explain Current Query", "Hidden Bundle"])
+        XCTAssertTrue(entries.first { $0.title == "Hidden Bundle" }!.isHidden)
+        XCTAssertTrue(entries.first { $0.title == "Run All Queries (alt)" }!.isAlternate)
+        XCTAssertEqual(shape(rows(entries).list), ["item Run Current Query", "item Run All Queries", "item Run All as Script", "separator",
+                                                   "item Switch Default", "item Explain Current Query"])
+        XCTAssertEqual(shape(rows(entries, option: true).list), ["item Run Current Query", "item Run All Queries (alt)", "item Run All as Script", "separator",
+                                                                 "item Switch Default", "item Explain Current Query"])
     }
 
     func testCopyEntriesGlyphsTickAndFooterNote() {
