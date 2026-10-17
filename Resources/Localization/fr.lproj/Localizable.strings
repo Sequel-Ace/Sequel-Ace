@@ -1580,6 +1580,9 @@
 /* export filename favorite name token */
 "Favorite" = "Favoris";
 
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "Favori modifié";
+
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "Favori à remplacer";
 

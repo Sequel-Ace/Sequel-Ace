@@ -1580,6 +1580,9 @@
 /* export filename favorite name token */
 "Favorite" = "个人收藏";
 
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "喜欢的更改";
+
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "最喜欢的替换";
 

@@ -1581,6 +1581,9 @@ selezionare il certificato e riprovare.";
 /* export filename favorite name token */
 "Favorite" = "Preferito";
 
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "Preferito Modificato";
+
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "Preferito da sostituire";
 

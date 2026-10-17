@@ -1580,6 +1580,9 @@
 /* export filename favorite name token */
 "Favorite" = "お気に入り";
 
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "お気に入りの変更";
+
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "置き換えるお気に入り";
 

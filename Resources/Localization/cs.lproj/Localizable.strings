@@ -1581,6 +1581,9 @@
 /* export filename favorite name token */
 "Favorite" = "Oblíbené";
 
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "Oblíbená změna";
+
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "Oblíbená k nahrazení";
 
