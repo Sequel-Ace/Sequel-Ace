@@ -5286,3 +5286,6 @@
 
 /* Record View: count shown in the search field; %d is the number of matching fields */
 "ClaudeRecordMatchMany" = "%d matches";
+
+/* Record View: title shown above the fields of a custom query result row */
+"ClaudeRecordQueryResult" = "Query result";

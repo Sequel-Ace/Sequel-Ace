@@ -89,6 +89,12 @@ enum SARecordViewFocusAction: Equatable {
 final class SARecordViewModel: ObservableObject {
     @Published private(set) var selectedRowCount = 0
     @Published private(set) var fields: [SARecordField] = []
+    /// 0-based position of the shown row in its grid; -1 when unknown.
+    @Published private(set) var rowIndex = -1
+    /// Rows currently in the grid; 0 when unknown.
+    @Published private(set) var rowCount = 0
+    /// The table name (Content) or "Query result" (Query).
+    @Published private(set) var title = ""
     @Published var searchText = ""
     @Published var selectedFieldID: SARecordField.ID?
     @Published var editingFieldID: SARecordField.ID?
@@ -100,6 +106,8 @@ final class SARecordViewModel: ObservableObject {
     var beginEditing: ((Int) -> Bool)?
     var validateEditing: ((Int, String) -> String?)?
     var commitEditing: ((Int, String) -> Bool)?
+    /// Asks the host to select the previous (-1) or next (+1) row.
+    var rowStepHandler: ((Int) -> Void)?
 
     var visibleFields: [SARecordField] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -113,9 +121,16 @@ final class SARecordViewModel: ObservableObject {
         selectedRowCount == 1 && !visibleFields.isEmpty
     }
 
-    func update(fields: [SARecordField], selectedRowCount: Int) {
+    func update(fields: [SARecordField],
+                selectedRowCount: Int,
+                rowIndex: Int = -1,
+                rowCount: Int = 0,
+                title: String = "") {
         cancelEdit()
         self.selectedRowCount = selectedRowCount
+        self.rowIndex = rowIndex
+        self.rowCount = rowCount
+        self.title = title
         self.fields = selectedRowCount == 1 ? fields : []
         selectedFieldID = nil
     }
@@ -123,6 +138,23 @@ final class SARecordViewModel: ObservableObject {
     func clear() {
         searchText = ""
         update(fields: [], selectedRowCount: 0)
+    }
+
+    /// Moves to the previous (-1) or next (+1) row through the host. Does
+    /// nothing at the ends or without rows; an edit in progress is committed
+    /// first and, if that fails, the panel stays on the row.
+    func stepRow(_ delta: Int) {
+        let step = SAClaudeRecordFields.rowStep(index: rowIndex, count: rowCount)
+        guard (delta < 0 && step.previous) || (delta > 0 && step.next) else {
+            return
+        }
+        if editingFieldID != nil {
+            commitEdit()
+            guard editingFieldID == nil else {
+                return
+            }
+        }
+        rowStepHandler?(delta < 0 ? -1 : 1)
     }
 
     func requestEdit(_ field: SARecordField) {
@@ -579,8 +611,29 @@ private final class SARecordViewOverlayView: NSView {
 
     @objc(updateWithFields:selectedRowCount:)
     func update(with dictionaries: [NSDictionary], selectedRowCount: Int) {
+        update(with: dictionaries, selectedRowCount: selectedRowCount, rowIndex: -1, rowCount: 0, title: "")
+    }
+
+    @objc(updateWithFields:selectedRowCount:rowIndex:rowCount:title:)
+    func update(with dictionaries: [NSDictionary],
+                selectedRowCount: Int,
+                rowIndex: Int,
+                rowCount: Int,
+                title: String) {
         assert(Thread.isMainThread)
-        model.update(fields: Self.fields(from: dictionaries), selectedRowCount: selectedRowCount)
+        model.update(
+            fields: Self.fields(from: dictionaries),
+            selectedRowCount: selectedRowCount,
+            rowIndex: rowIndex,
+            rowCount: rowCount,
+            title: title
+        )
+    }
+
+    /// Registers the host callback that selects the previous (-1) or next (+1) row.
+    @objc(setRowStepHandler:)
+    func setRowStepHandler(_ handler: @escaping (Int) -> Void) {
+        model.rowStepHandler = handler
     }
 
     static func fields(from dictionaries: [NSDictionary]) -> [SARecordField] {

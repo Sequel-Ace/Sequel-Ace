@@ -225,6 +225,86 @@ final class SARecordViewTests: XCTestCase {
         )
     }
 
+    func testUpdateStoresRowFacts() {
+        let model = SARecordViewModel()
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 3, rowCount: 10, title: "users")
+
+        XCTAssertEqual(model.rowIndex, 3)
+        XCTAssertEqual(model.rowCount, 10)
+        XCTAssertEqual(model.title, "users")
+
+        model.update(fields: fields, selectedRowCount: 1)
+        XCTAssertEqual(model.rowIndex, -1)
+        XCTAssertEqual(model.rowCount, 0)
+        XCTAssertEqual(model.title, "")
+    }
+
+    func testStepRowCallsHandlerOnlyWhenAllowed() {
+        let model = SARecordViewModel()
+        var steps: [Int] = []
+        model.rowStepHandler = { steps.append($0) }
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        model.stepRow(-1)
+        XCTAssertEqual(steps, [])
+        model.stepRow(1)
+        XCTAssertEqual(steps, [1])
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 2, rowCount: 3, title: "t")
+        model.stepRow(1)
+        XCTAssertEqual(steps, [1])
+        model.stepRow(-1)
+        XCTAssertEqual(steps, [1, -1])
+
+        model.update(fields: [], selectedRowCount: 0, rowIndex: -1, rowCount: 0, title: "t")
+        model.stepRow(1)
+        model.stepRow(-1)
+        XCTAssertEqual(steps, [1, -1])
+    }
+
+    func testStepRowCommitsEditFirst() {
+        let model = SARecordViewModel()
+        var events: [String] = []
+        model.beginEditing = { _ in true }
+        model.commitEditing = { id, value in
+            events.append("commit \(id) \(value)")
+            return true
+        }
+        model.rowStepHandler = { events.append("step \($0)") }
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        model.requestEdit(fields[1])
+        model.editDraft = "Grace"
+
+        model.stepRow(1)
+
+        XCTAssertEqual(events, ["commit 1 Grace", "step 1"])
+        XCTAssertNil(model.editingFieldID)
+    }
+
+    func testStepRowStaysPutWhenCommitFails() {
+        let model = SARecordViewModel()
+        var steps: [Int] = []
+        model.beginEditing = { _ in true }
+        model.commitEditing = { _, _ in false }
+        model.rowStepHandler = { steps.append($0) }
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        model.requestEdit(fields[1])
+
+        model.stepRow(1)
+
+        XCTAssertEqual(steps, [])
+        XCTAssertEqual(model.editingFieldID, 1)
+    }
+
+    func testControllerExposesObjectiveCRowFactSelectors() {
+        let controller = SARecordViewController()
+
+        XCTAssertTrue(controller.responds(to: NSSelectorFromString("updateWithFields:selectedRowCount:rowIndex:rowCount:title:")))
+        XCTAssertTrue(controller.responds(to: NSSelectorFromString("updateWithFields:selectedRowCount:")))
+        XCTAssertTrue(controller.responds(to: NSSelectorFromString("setRowStepHandler:")))
+    }
+
     func testControllerExposesObjectiveCShowHandlerSelector() {
         let controller = SARecordViewController()
 

@@ -259,6 +259,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [recordViewController setShowHandler:^{
         [weakSelf _updateRecordView];
     }];
+    [recordViewController setRowStepHandler:^(NSInteger delta) {
+        [weakSelf _recordViewStepRowBy:delta];
+    }];
     [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
         SPTableContent *strongSelf = weakSelf;
         if (!strongSelf) return NO;
@@ -4585,6 +4588,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:tableContentView];
 }
 
+/**
+ * Selects the previous (-1) or next (+1) row for the record view. Programmatic selection skips the
+ * delegate's shouldSelectRow:, so ask it first; the selection-change notification refreshes the panel.
+ */
+- (void)_recordViewStepRowBy:(NSInteger)delta
+{
+	NSInteger selectedRow = [self _recordViewSelectedRow];
+	if (selectedRow < 0) return;
+
+	NSInteger targetRow = selectedRow + delta;
+	if (targetRow < 0 || (NSUInteger)targetRow >= tableRowsCount) return;
+	if (![self tableView:tableContentView shouldSelectRow:targetRow]) return;
+
+	[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)targetRow] byExtendingSelection:NO];
+	[tableContentView scrollRowToVisible:targetRow];
+}
+
 - (void)_updateRecordView
 {
 	if (!recordViewController.isVisible) return;
@@ -4622,11 +4642,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[fields addObject:@{
 			@"id": @(storageIndex),
 			@"name": columnDefinition[@"name"] ?: [[tableColumn headerCell] stringValue] ?: @"",
-			@"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+			@"value": [self _recordViewStringForValue:value tableColumn:tableColumn],
+			@"type": columnDefinition[@"type"] ?: @"",
+			@"isNull": @([value isNSNull]),
+			@"notLoaded": @([value isSPNotLoaded])
 		}];
 	}
 
-	[recordViewController updateWithFields:fields selectedRowCount:1];
+	[recordViewController updateWithFields:fields
+	                      selectedRowCount:1
+	                              rowIndex:selectedRow
+	                              rowCount:(NSInteger)tableRowsCount
+	                                 title:selectedTable ?: @""];
 }
 
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn

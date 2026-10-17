@@ -3792,6 +3792,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [recordViewController setShowHandler:^{
         [weakSelf _updateRecordView];
     }];
+    [recordViewController setRowStepHandler:^(NSInteger delta) {
+        [weakSelf _recordViewStepRowBy:delta];
+    }];
     [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
         SPCustomQuery *strongSelf = weakSelf;
         if (!strongSelf) return NO;
@@ -3964,6 +3967,23 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:customQueryView];
 }
 
+/**
+ * Selects the previous (-1) or next (+1) row for the record view. Programmatic selection skips the
+ * delegate's shouldSelectRow:, so ask it first; the selection-change notification refreshes the panel.
+ */
+- (void)_recordViewStepRowBy:(NSInteger)delta
+{
+    NSInteger selectedRow = [self _recordViewSelectedRow];
+    if (selectedRow < 0) return;
+
+    NSInteger targetRow = selectedRow + delta;
+    if (targetRow < 0 || (NSUInteger)targetRow >= [resultData count]) return;
+    if (![self tableView:customQueryView shouldSelectRow:targetRow]) return;
+
+    [customQueryView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)targetRow] byExtendingSelection:NO];
+    [customQueryView scrollRowToVisible:targetRow];
+}
+
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
 {
     if ([value isKindOfClass:[SPMySQLGeometryData class]]) return [value wktString];
@@ -4015,11 +4035,18 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         [fields addObject:@{
             @"id": @(columnIndex),
             @"name": columnDefinition[@"name"] ?: @"",
-            @"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+            @"value": [self _recordViewStringForValue:value tableColumn:tableColumn],
+            @"type": columnDefinition[@"type"] ?: @"",
+            @"isNull": @([value isNSNull]),
+            @"notLoaded": @([value isSPNotLoaded])
         }];
     }
 
-    [recordViewController updateWithFields:fields selectedRowCount:1];
+    [recordViewController updateWithFields:fields
+                          selectedRowCount:1
+                                  rowIndex:selectedRow
+                                  rowCount:(NSInteger)[resultData count]
+                                     title:NSLocalizedString(@"ClaudeRecordQueryResult", @"record view title for a custom query result")];
 }
 
 //this method is called right before the UI objects are deallocated
