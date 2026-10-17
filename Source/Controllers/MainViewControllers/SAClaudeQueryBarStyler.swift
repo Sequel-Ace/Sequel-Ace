@@ -66,6 +66,10 @@ import AppKit
                 styler.editorScrollView = scrollView
             }
         }
+        // History and Favorites open Claude cards. Swapped before the hover highlighter's KVO below: a class swap
+        // is refused for an observed object (SAClaudeClassSwap), and then the native menus stay.
+        SAClaudeMenuCardPopUpButton.install(on: historyButton, adapter: SAClaudeQueryHistoryMenuAdapter.shared)
+        SAClaudeMenuCardPopUpButton.install(on: favoritesButton, adapter: SAClaudeQueryFavoritesMenuAdapter.shared)
         for button in [optionsButton, favoritesButton, historyButton] {
             button.isBordered = false
             (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow

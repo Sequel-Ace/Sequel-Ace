@@ -4,8 +4,8 @@
 //
 //  The query editor's Run button drawn as Claude's accent split button.
 //  SPComboPopupButton already splits clicks (left of its divider runs, right
-//  of it opens the run menu); this subclass only changes the drawing and
-//  sizes itself to its title. App target only.
+//  of it opens the run menu); this subclass changes the drawing, sizes itself
+//  to its title, and opens the run menu as a Claude card. App target only.
 //
 
 import AppKit
@@ -25,6 +25,9 @@ import AppKit
         guard let action, let item = menu?.items.first(where: { $0.action == action && !$0.keyEquivalent.isEmpty }) else { return "" }
         return SAClaudeEditorChrome.shortcutString(keyEquivalent: item.keyEquivalent, modifiers: item.keyEquivalentModifierMask)
     }
+
+    /// The run card is shown: the chevron part draws pressed.
+    private var isCardOpen = false { didSet { if isCardOpen != oldValue { needsDisplay = true } } }
 
     /// SPCustomQuery sets the label with setTitle:, which for a pull-down retitles item 0.
     private var displayTitle: String { title }
@@ -58,17 +61,54 @@ import AppKit
         needsDisplay = true
     }
 
+    // MARK: Claude card
+
+    private func showCard() -> Bool {
+        showSplitCard(adapter: SAClaudeRunMenuAdapter.shared) { [weak self] in self?.isCardOpen = $0 }
+    }
+
+    /// The chevron part opens the run card; the main part runs (SPComboPopupButtonCell's tracking, unchanged).
+    override func mouseDown(with event: NSEvent) {
+        if isOnChevron(event), showCard() { return }
+        super.mouseDown(with: event)
+    }
+
+    /// ↓ opens the run card; Space/Return keep running.
+    override func keyDown(with event: NSEvent) {
+        if Self.opensCard(event), showCard() { return }
+        super.keyDown(with: event)
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        showCard() || super.accessibilityPerformShowMenu()
+    }
+
+    /// VoiceOver's press runs, as Space does (NSPopUpButton's own press would open the native menu).
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled else { return false }
+        performClick(nil)
+        return true
+    }
+
     override func draw(_ dirtyRect: NSRect) {
-        let pressed = cell?.isHighlighted ?? false
+        let pressed = !isCardOpen && (cell?.isHighlighted ?? false)
         let fill = pressed ? SAClaudeEditorChrome.runFillPressed : SAClaudeEditorChrome.runFill
         (isEnabled ? fill : fill.withAlphaComponent(0.45)).setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: 7, yRadius: 7).fill()
+        let shape = NSBezierPath(roundedRect: bounds, xRadius: 7, yRadius: 7)
+        shape.fill()
 
         let title = displayTitle as NSString
         let shortcutText = shortcut as NSString
         let layout = SAClaudeEditorChrome.runLayout(bounds: bounds, lineOffset: CGFloat(lineOffset),
                                                     titleSize: title.size(withAttributes: titleAttributes),
                                                     shortcutSize: shortcutText.size(withAttributes: shortcutAttributes))
+        if isCardOpen {
+            NSGraphicsContext.saveGraphicsState()
+            shape.addClip()
+            SAClaudeEditorChrome.runFillPressed.setFill()
+            layout.chevronRect.fill()
+            NSGraphicsContext.restoreGraphicsState()
+        }
         SAClaudeAccent.onAccent.withAlphaComponent(0.28).setFill()
         NSRect(x: layout.dividerX - 0.5, y: bounds.minY + 6, width: 1, height: bounds.height - 12).fill()
 

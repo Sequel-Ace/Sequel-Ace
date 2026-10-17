@@ -26,6 +26,26 @@ import SwiftUI
         guard isEnabled, menu != nil else { return }
         popover.toggle()
     }
+
+    /// Space, Return and ↓ (and VoiceOver's press and show menu) open the card too, not the native menu.
+    override func keyDown(with event: NSEvent) {
+        let opensCard = event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+            && [49, 36, 76, 125].contains(event.keyCode)  // Space, Return, keypad Enter, ↓
+        guard opensCard, isEnabled, menu != nil else { super.keyDown(with: event); return }
+        popover.toggle()
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled, menu != nil else { return super.accessibilityPerformPress() }
+        popover.toggle()
+        return true
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        guard isEnabled, menu != nil else { return super.accessibilityPerformShowMenu() }
+        popover.toggle()
+        return true
+    }
 }
 
 /// Owns the NSPopover, its key/modifier monitors and the view model.

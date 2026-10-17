@@ -719,9 +719,10 @@ struct SAClaudeMenuCardMetrics {
         return CGFloat(longest) * monoAdvance
     }
 
-    /// Everything beside the title: glyph, chip, shortcut, tick and the paddings.
+    /// Everything beside the title: glyph, chip, shortcut, tick, the paddings, and the row HStack's spacing before
+    /// its Spacer (SwiftUI spaces a Spacer like any other child).
     private static func chrome(of entry: SAClaudeMenuEntry) -> CGFloat {
-        var width = (cardPadding + rowPadding) * 2
+        var width = (cardPadding + rowPadding) * 2 + gap
         if entry.symbol != nil { width += symbolWidth + gap }
         if let chip = entry.trailingChip, !chip.isEmpty { width += gap + textWidth(chip, smallFont) + 12 }
         if !entry.shortcut.isEmpty { width += gap + textWidth(entry.shortcut, smallFont) }
@@ -744,7 +745,7 @@ struct SAClaudeMenuCardMetrics {
     /// 28pt; detail-only rows 28 / 44 for one / two mono lines; two-line rows 46 / 60.
     private static func itemHeight(_ entry: SAClaudeMenuEntry, cardWidth: CGFloat) -> CGFloat {
         guard let detail = entry.detail else { return rowHeight }
-        var available = cardWidth - (cardPadding + rowPadding) * 2
+        var available = cardWidth - (cardPadding + rowPadding) * 2 - gap
         if entry.symbol != nil { available -= symbolWidth + gap }
         if !entry.shortcut.isEmpty { available -= gap + textWidth(entry.shortcut, smallFont) }
         if entry.isTicked { available -= gap + 12 }

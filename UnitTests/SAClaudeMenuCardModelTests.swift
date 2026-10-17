@@ -253,4 +253,258 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "SH")), ["header Your databases", "item shop", "item shipping"])
         XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "my")), ["header System", "item mysql"])
     }
+
+    // MARK: - Query editor bar menus
+
+    /// Every glyph an adapter names must be a real SF Symbol (the card draws nothing for an unknown name).
+    private func assertSymbolsExist(_ entries: [SAClaudeMenuEntry], file: StaticString = #filePath, line: UInt = #line) {
+        for symbol in entries.compactMap(\.symbol) {
+            XCTAssertNotNil(NSImage(systemSymbolName: symbol, accessibilityDescription: nil), "\(symbol) is not an SF Symbol", file: file, line: line)
+        }
+    }
+
+    /// Records the pull-down's action and validates like SPCustomQuery: favourites headers disabled.
+    private final class QueryActions: NSObject, NSMenuItemValidation {
+        var picks: [Int] = []
+        @objc func choose(_ sender: NSPopUpButton) { picks.append(sender.indexOfSelectedItem) }
+        @objc func copyQueryHistory(_ sender: Any?) {}
+        @objc func saveQueryHistory(_ sender: Any?) {}
+        @objc func clearQueryHistory(_ sender: Any?) {}
+        func validateMenuItem(_ menuItem: NSMenuItem) -> Bool { menuItem.tag != SAClaudeMenuCardModel.favoriteHeaderTag }
+    }
+
+    private func searchItem() -> (NSMenuItem, NSSearchField) {
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let field = NSSearchField(frame: container.bounds)
+        container.addSubview(field)
+        let item = NSMenuItem(title: "..placeholder for seachfield..", action: nil, keyEquivalent: "")
+        item.view = container
+        return (item, field)
+    }
+
+    /// The History pull-down as DBView.xib and SPCustomQuery -historyItemsHaveBeenUpdated: build it.
+    private func historyPullDown(_ queries: [String], target: QueryActions) -> (NSPopUpButton, NSSearchField) {
+        let button = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 140, height: 25), pullsDown: true)
+        button.target = target
+        button.action = #selector(QueryActions.choose(_:))
+        let menu = button.menu!
+        let title = NSMenuItem(title: "History", action: nil, keyEquivalent: ""); title.isHidden = true; menu.addItem(title)
+        for (name, tag, selector, alternate) in [("Copy History", SAClaudeMenuCardModel.historyCopyTag, #selector(QueryActions.copyQueryHistory(_:)), false),
+                                                 ("Save History…", SAClaudeMenuCardModel.historySaveTag, #selector(QueryActions.saveQueryHistory(_:)), true),
+                                                 ("Clear History", SAClaudeMenuCardModel.historyClearTag, #selector(QueryActions.clearQueryHistory(_:)), false)] {
+            let item = NSMenuItem(title: name, action: selector, keyEquivalent: "")
+            item.tag = tag
+            item.target = target
+            item.isAlternate = alternate
+            item.keyEquivalentModifierMask = alternate ? [] : .option
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let (search, field) = searchItem()
+        menu.addItem(search)
+        menu.addItem(.separator())
+        for query in queries {
+            let item = NSMenuItem(title: query.count > 64 ? String(query.prefix(63)) + "…" : query, action: nil, keyEquivalent: "")
+            item.toolTip = query.count > 256 ? String(query.prefix(255)) + "…" : query
+            menu.addItem(item)
+        }
+        return (button, field)
+    }
+
+    /// The Favorites pull-down as DBView.xib and SPCustomQuery -queryFavoritesHaveBeenUpdated: build it.
+    private func favoritesPullDown(file: [(String, String?, String)], global: [(String, String?, String)], target: QueryActions) -> (NSPopUpButton, NSSearchField) {
+        let button = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 140, height: 25), pullsDown: true)
+        button.target = target
+        button.action = #selector(QueryActions.choose(_:))
+        let menu = button.menu!
+        let title = NSMenuItem(title: "Favorites", action: nil, keyEquivalent: ""); title.isHidden = true; menu.addItem(title)
+        menu.addItem(withTitle: "Save Query to Favorites", action: nil, keyEquivalent: "").tag = 100000
+        menu.addItem(withTitle: "Save All to Favorites", action: nil, keyEquivalent: "").tag = 100001
+        menu.addItem(withTitle: "Edit Favorites...", action: nil, keyEquivalent: "")
+        menu.addItem(.separator())
+        let (search, field) = searchItem()
+        menu.addItem(search)
+        menu.addItem(.separator())
+        for (header, favourites) in [("shop.spf", file), ("Global", global)] {
+            let item = NSMenuItem(title: header, action: nil, keyEquivalent: "")
+            item.tag = SAClaudeMenuCardModel.favoriteHeaderTag
+            menu.addItem(item)
+            for (name, trigger, query) in favourites {
+                let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+                item.toolTip = query
+                item.attributedTitle = NSAttributedString(string: trigger.map { "\(name)\t\($0)⇥" } ?? name,
+                                                          attributes: [.font: NSFont.systemFont(ofSize: 11)])
+                item.indentationLevel = 1
+                menu.addItem(item)
+            }
+        }
+        return (button, field)
+    }
+
+    func testQueryHistoryEntriesRowsAndFooter() {
+        let target = QueryActions()
+        let long = "SELECT " + String(repeating: "a, ", count: 40) + "b FROM t"
+        let (button, _) = historyPullDown(["SELECT 1", long], target: target)
+        button.menu!.update()
+        let entries = SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!)
+        assertSymbolsExist(entries)
+        // Item 0, the head separators and the search-field view item are not entries.
+        XCTAssertFalse(entries.contains { $0.index == 0 || $0.index == 5 || $0.kind == .separator && $0.index < 7 })
+        let resolved = rows(entries)
+        XCTAssertEqual(shape(resolved.list), ["item SELECT 1", "item \(long)"])
+        let second = resolved.list[1].entry!
+        XCTAssertEqual(second.index, 8)
+        XCTAssertEqual(second.detail, long)          // the tooltip (the query), not the 64-character title
+        XCTAssertEqual(second.searchText, long)
+        XCTAssertEqual(second.toolTip, long)
+        XCTAssertNil(second.symbol)
+        XCTAssertEqual(second.title, long)            // detail-only row: title equal to the detail
+        XCTAssertEqual(shape(resolved.footer), ["item Copy History", "item Clear History"])
+        XCTAssertEqual(resolved.footer.map { $0.entry?.symbol }, ["doc.on.doc", "trash"])
+        // ⌥ swaps Copy History for Save History… inside the footer.
+        let option = rows(entries, option: true)
+        XCTAssertEqual(shape(option.footer), ["item Save History…", "item Clear History"])
+        XCTAssertEqual(option.footer.first?.entry?.symbol, "square.and.arrow.down")
+        XCTAssertTrue(option.list.count == 2)
+        // Footer actions are never filtered.
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "b from")), ["item \(long)"])
+    }
+
+    func testQueryHistoryEntriesEmptyHistoryIsFooterOnly() {
+        let (button, _) = historyPullDown([], target: QueryActions())
+        let resolved = rows(SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!))
+        XCTAssertTrue(resolved.list.isEmpty)
+        XCTAssertEqual(shape(resolved.footer), ["item Copy History", "item Clear History"])
+    }
+
+    func testResetNativeSearchClearsFieldAndShowsFilteredItems() {
+        let (button, field) = historyPullDown(["SELECT 1", "SELECT 2"], target: QueryActions())
+        field.stringValue = "2"
+        button.menu!.items[7].isHidden = true   // what SPCustomQuery's filter did for "2"
+        SAClaudeMenuCardModel.resetNativeSearch(in: button.menu!)
+        XCTAssertEqual(field.stringValue, "")
+        XCTAssertFalse(button.menu!.items[7].isHidden)
+        XCTAssertTrue(button.menu!.items[0].isHidden)   // the pull-down title stays hidden
+        XCTAssertEqual(shape(rows(SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!)).list), ["item SELECT 1", "item SELECT 2"])
+    }
+
+    func testFavoriteTitleParts() {
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("Orders").name, "Orders")
+        XCTAssertNil(SAClaudeMenuCardModel.favoriteTitleParts("Orders").trigger)
+        let parts = SAClaudeMenuCardModel.favoriteTitleParts("Orders by day\tord⇥")
+        XCTAssertEqual(parts.name, "Orders by day")
+        XCTAssertEqual(parts.trigger, "ord⇥")
+        XCTAssertNil(SAClaudeMenuCardModel.favoriteTitleParts("Name\t ").trigger)
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("a\tb\tc⇥").name, "a")
+        XCTAssertEqual(SAClaudeMenuCardModel.favoriteTitleParts("a\tb\tc⇥").trigger, "b\tc⇥")
+    }
+
+    func testQueryFavoritesEntriesSectionsRowsAndFooter() {
+        let target = QueryActions()
+        let (button, _) = favoritesPullDown(file: [("Orders", "ord", "SELECT * FROM orders")],
+                                            global: [("Users", nil, "SELECT * FROM users"), ("Count", "cnt", "SELECT COUNT(*) FROM t")],
+                                            target: target)
+        button.menu!.update()
+        let entries = SAClaudeMenuCardModel.queryFavoritesEntries(from: button.menu!)
+        assertSymbolsExist(entries)
+        let resolved = rows(entries)
+        XCTAssertEqual(shape(resolved.list), ["header shop.spf", "item Orders", "header Global", "item Users", "item Count"])
+        let orders = resolved.list[1].entry!
+        XCTAssertEqual(orders.index, 8)
+        XCTAssertEqual(orders.trailingChip, "ord⇥")
+        XCTAssertEqual(orders.detail, "SELECT * FROM orders")
+        XCTAssertNil(resolved.list[3].entry!.trailingChip)
+        XCTAssertEqual(shape(resolved.footer), ["item Save Query to Favorites", "item Save All to Favorites", "item Edit Favorites..."])
+        XCTAssertEqual(resolved.footer.map { $0.entry!.index }, [1, 2, 3])
+        XCTAssertEqual(resolved.footer.map { $0.entry?.symbol }, ["star", "star.square.on.square", "pencil"])
+        XCTAssertFalse(entries.contains { $0.index == 5 })   // the search-field view item
+        // Headers aren't choosable, favourites are.
+        XCTAssertFalse(resolved.list[0].isChoosable)
+        XCTAssertTrue(resolved.list[1].isChoosable)
+        // Search covers name, trigger and query; the empty section's header goes.
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "cnt")), ["header Global", "item Count"])
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "from users")), ["header Global", "item Users"])
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "orders")), ["header shop.spf", "item Orders"])
+    }
+
+    func testQueryFavoritesEntriesEmptyIsFooterOnly() {
+        let (button, _) = favoritesPullDown(file: [], global: [], target: QueryActions())
+        let resolved = rows(SAClaudeMenuCardModel.queryFavoritesEntries(from: button.menu!))
+        XCTAssertTrue(resolved.list.isEmpty)
+        XCTAssertEqual(resolved.footer.count, 3)
+    }
+
+    func testFavouritePickSelectsTheSameIndexAsTheNativeMenu() {
+        let target = QueryActions()
+        let (button, _) = favoritesPullDown(file: [("Orders", "ord", "SELECT 1")], global: [("Users", nil, "SELECT 2")], target: target)
+        let users = rows(SAClaudeMenuCardModel.queryFavoritesEntries(from: button.menu!)).list.first { $0.entry?.title == "Users" }!.entry!
+        // The card fires a pull-down item with performActionForItem(at:) (SAClaudeMenuCardPresenter.fire).
+        button.menu!.performActionForItem(at: users.index)
+        XCTAssertEqual(target.picks, [users.index])
+        XCTAssertEqual(button.indexOfSelectedItem, users.index)
+        XCTAssertEqual(button.selectedItem?.toolTip, "SELECT 2")
+    }
+
+    private final class RunActions: NSObject {
+        @objc func runPrimaryQueryAction(_ sender: Any?) {}
+        @objc func runSecondaryQueryAction(_ sender: Any?) {}
+        @objc func switchDefaultQueryAction(_ sender: Any?) {}
+        @objc func runExplainQueryAction(_ sender: Any?) {}
+        @objc func runAllAsScriptAction(_ sender: Any?) {}
+    }
+
+    func testRunEntriesKeepOrderWithGlyphsAndShortcuts() {
+        let target = RunActions()
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Run Current", action: nil, keyEquivalent: "").isHidden = true
+        func add(_ title: String, _ action: Selector, _ key: String, _ mask: NSEvent.ModifierFlags) {
+            let item = menu.addItem(withTitle: title, action: action, keyEquivalent: key)
+            item.keyEquivalentModifierMask = mask
+            item.target = target
+        }
+        add("Run Current Query", #selector(RunActions.runPrimaryQueryAction(_:)), "r", .command)
+        menu.addItem(.separator())
+        add("Run All Queries", #selector(RunActions.runSecondaryQueryAction(_:)), "r", [.option, .command])
+        add("Switch Default", #selector(RunActions.switchDefaultQueryAction(_:)), "", [])
+        menu.addItem(.separator())
+        add("Explain Current Query", #selector(RunActions.runExplainQueryAction(_:)), "e", [.option, .command])
+        add("Run All as Script", #selector(RunActions.runAllAsScriptAction(_:)), "r", [.shift, .option, .command])
+        assertSymbolsExist(SAClaudeMenuCardModel.runEntries(from: menu))
+        let resolved = rows(SAClaudeMenuCardModel.runEntries(from: menu))
+        XCTAssertEqual(shape(resolved.list), ["item Run Current Query", "separator", "item Run All Queries", "item Switch Default",
+                                              "separator", "item Explain Current Query", "item Run All as Script"])
+        let items = resolved.list.compactMap { $0.kind == .item ? $0.entry : nil }
+        XCTAssertEqual(items.map(\.symbol), ["play", "forward.end", "arrow.left.arrow.right", "text.magnifyingglass", "scroll"])
+        XCTAssertEqual(items.map(\.shortcut), ["⌘R", "⌥⌘R", "", "⌥⌘E", "⌥⇧⌘R"])
+        XCTAssertTrue(resolved.footer.isEmpty)
+    }
+
+    func testCopyEntriesGlyphsTickAndFooterNote() {
+        // Built as SAClaudeCopyButton builds it: a menu set on a pull-down (whose action-less items get the cell's action).
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.addItem(NSMenuItem(title: "", action: nil, keyEquivalent: ""))
+        for action in SAClaudeQueryCopyAction.allCases {
+            let item = menu.addItem(withTitle: action.menuTitle, action: #selector(NSText.copy(_:)), keyEquivalent: "")
+            item.tag = action.tag
+            item.state = action == .sqlInsert ? .on : .off
+            item.isEnabled = action != .sqlInsertNoAutoIncrement
+        }
+        menu.addItem(.separator())
+        let note = NSMenuItem()
+        note.isEnabled = false
+        menu.addItem(note)
+        note.title = "Copies 3 rows · nothing selected"
+        let button = NSPopUpButton(frame: .zero, pullsDown: true)
+        button.menu = menu
+        XCTAssertNotNil(note.action)   // the pop-up cell's item action: why the note is found by tag
+        assertSymbolsExist(SAClaudeMenuCardModel.copyEntries(from: menu))
+        let resolved = rows(SAClaudeMenuCardModel.copyEntries(from: menu))
+        XCTAssertEqual(resolved.list.map { $0.entry?.title }, SAClaudeQueryCopyAction.allCases.map { Optional($0.menuTitle) })
+        XCTAssertEqual(resolved.list.map { $0.entry?.symbol }, ["doc.on.doc", "tablecells", "chevron.left.forwardslash.chevron.right", "number.square"])
+        XCTAssertEqual(resolved.list.filter { $0.entry?.isTicked == true }.map { menu.items[$0.entry!.index].tag }, [SAClaudeQueryCopyAction.sqlInsert.tag])
+        XCTAssertFalse(resolved.list[3].isChoosable)
+        XCTAssertEqual(shape(resolved.footer), ["item Copies 3 rows · nothing selected"])
+        XCTAssertFalse(resolved.footer[0].isChoosable)
+    }
 }

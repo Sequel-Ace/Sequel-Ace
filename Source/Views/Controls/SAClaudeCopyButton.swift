@@ -160,6 +160,40 @@ import AppKit
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.copiedDuration, execute: reset)
     }
 
+    // MARK: - Claude card
+
+    /// The chevron's card; while it is shown the chevron draws open, as for the native menu.
+    private func showCard() -> Bool {
+        showSplitCard(adapter: SAClaudeCopyMenuAdapter.shared) { [weak self] open in
+            guard let self else { return }
+            self.isMenuOpen = open
+            if !open { self.hoveredPart = self.partUnderMouse() }
+        }
+    }
+
+    /// The chevron part opens the copy card; the main part copies (SPComboPopupButtonCell's tracking, unchanged).
+    override func mouseDown(with event: NSEvent) {
+        if isOnChevron(event), showCard() { return }
+        super.mouseDown(with: event)
+    }
+
+    /// ↓ opens the copy card; Space/Return keep copying.
+    override func keyDown(with event: NSEvent) {
+        if Self.opensCard(event), showCard() { return }
+        super.keyDown(with: event)
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        showCard() || super.accessibilityPerformShowMenu()
+    }
+
+    /// VoiceOver's press copies, as Space does (NSPopUpButton's own press would open the native menu).
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled else { return false }
+        performClick(nil)
+        return true
+    }
+
     // MARK: - Size
 
     /// Wide enough for the current action's label or "Copied", so the flash never moves the button.

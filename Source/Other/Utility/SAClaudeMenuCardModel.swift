@@ -238,3 +238,152 @@ extension SAClaudeMenuCardModel {
         }
     }
 }
+
+// MARK: - Query editor bar menus (History, Favorites, Run, Copy)
+
+extension SAClaudeMenuCardModel {
+    /// `SP_FAVORITE_HEADER_MENUITEM_TAG` in SPCustomQuery.h: the tag of the favourites menu's section headers.
+    static let favoriteHeaderTag = 200000
+    /// `SP_HISTORY_COPY_MENUITEM_TAG` … `SP_HISTORY_CLEAR_MENUITEM_TAG` in SPCustomQuery.h.
+    static let historyCopyTag = 300000
+    static let historySaveTag = 300001
+    static let historyClearTag = 300002
+    /// The History and Favorites pull-downs (DBView.xib) have seven fixed head items (title, actions, separators,
+    /// the search-field view item); the queries / favourites start here (SPCustomQuery -historyItemsHaveBeenUpdated:,
+    /// -queryFavoritesHaveBeenUpdated:, which keep the first 7).
+    static let queryMenuFirstListIndex = 7
+
+    /// The Query History pull-down: one detail-only row per query (`detail` = the tooltip, the query up to 256
+    /// characters, else the title), searched on it; the head actions (Copy History with its ⌥ alternate Save History…,
+    /// Clear History) as the footer. Item 0 (the title), the head separators and the search-field view item are dropped.
+    static func queryHistoryEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
+        var result: [SAClaudeMenuEntry] = []
+        for var entry in entries(from: menu, skipping: [0]) {
+            let item = menu.items[entry.index]
+            if entry.index < queryMenuFirstListIndex {
+                guard entry.kind == .item, item.view == nil else { continue }
+                entry.isFooter = true   // both halves of the Copy / Save pair: the model routes the footer per entry
+                entry.symbol = historyFooterSymbol(tag: item.tag)
+            } else if entry.kind == .item {
+                let query = item.toolTip ?? item.title
+                entry.title = query
+                entry.detail = query
+                entry.searchText = query
+            }
+            result.append(entry)
+        }
+        return result
+    }
+
+    private static func historyFooterSymbol(tag: Int) -> String? {
+        switch tag {
+        case historyCopyTag: return "doc.on.doc"
+        case historySaveTag: return "square.and.arrow.down"
+        case historyClearTag: return "trash"
+        default: return nil
+        }
+    }
+
+    /// The Query Favorites pull-down: head actions 1…3 (Save Query to Favorites…, Save All…, Edit Favorites…) as the
+    /// footer; items tagged `favoriteHeaderTag` as section headers; each favourite as a two-line row: its name, the
+    /// tab trigger as the trailing chip, the query (tooltip) as the detail, searched on all three.
+    static func queryFavoritesEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
+        let footerSymbols = [1: "star", 2: "star.square.on.square", 3: "pencil"]
+        var result: [SAClaudeMenuEntry] = []
+        for var entry in entries(from: menu, skipping: [0]) {
+            let item = menu.items[entry.index]
+            if entry.index < queryMenuFirstListIndex {
+                guard entry.kind == .item, item.view == nil else { continue }
+                entry.isFooter = true
+                entry.symbol = footerSymbols[entry.index]
+            } else if entry.kind == .item {
+                if item.tag == favoriteHeaderTag {
+                    entry.kind = .header
+                } else {
+                    let parts = favoriteTitleParts(item.title)
+                    entry.title = parts.name
+                    entry.trailingChip = parts.trigger
+                    entry.detail = item.toolTip
+                    entry.searchText = [parts.name, parts.trigger, item.toolTip].compactMap { $0 }.joined(separator: " ")
+                }
+            }
+            result.append(entry)
+        }
+        return result
+    }
+
+    /// A favourite's menu title is "name" or "name\ttrigger⇥" (SPCustomQuery -queryFavoritesHaveBeenUpdated:):
+    /// the name before the first tab, the trimmed text after it as the trigger (nil when there is none).
+    static func favoriteTitleParts(_ title: String) -> (name: String, trigger: String?) {
+        guard let tab = title.firstIndex(of: "\t") else { return (title, nil) }
+        let trigger = title[title.index(after: tab)...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return (String(title[..<tab]), trigger.isEmpty ? nil : trigger)
+    }
+
+    /// The History/Favorites search field the card replaces: cleared, and the items its filter hid shown again
+    /// (what SPCustomQuery's filter does for an empty string), so the card and a later native menu list them all.
+    static func resetNativeSearch(in menu: NSMenu) {
+        for item in menu.items {
+            guard let view = item.view else { continue }
+            var stack = [view]
+            while let next = stack.popLast() {
+                if let field = next as? NSSearchField { field.stringValue = "" }
+                stack.append(contentsOf: next.subviews)
+            }
+        }
+        for item in menu.items.dropFirst(queryMenuFirstListIndex) where item.isHidden { item.isHidden = false }
+    }
+
+    /// The Run split button's menu: every item in order (item 0, the pull-down's title, dropped), with a glyph by
+    /// action and the item's shortcut.
+    static func runEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
+        entries(from: menu, skipping: [0]).map { entry in
+            var entry = entry
+            if entry.kind == .item { entry.symbol = runSymbol(menu.items[entry.index].action) }
+            return entry
+        }
+    }
+
+    private static func runSymbol(_ action: Selector?) -> String? {
+        switch action.map(NSStringFromSelector) {
+        case "runPrimaryQueryAction:": return "play"
+        case "runSecondaryQueryAction:": return "forward.end"
+        case "runAllAsScriptAction:": return "scroll"
+        case "runExplainQueryAction:": return "text.magnifyingglass"   // "questionmark.magnifyingglass" is not an SF Symbol
+        case "switchDefaultQueryAction:": return "arrow.left.arrow.right"
+        default: return nil
+        }
+    }
+
+    /// The Copy split button's menu: the four copy actions (glyph by tag, ticked as the menu marks them), and the
+    /// trailing note item (the row count; not a copy action) as a disabled footer row. Item 0 (the title) dropped.
+    /// The note is found by its tag, not by "no action": a pop-up gives its action-less items the cell's item action.
+    static func copyEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
+        let last = menu.items.indices.last
+        let noteIndex = last.flatMap { index -> Int? in
+            let item = menu.items[index]
+            return index > 0 && !item.isSeparatorItem && SAClaudeQueryCopyAction(rawValue: item.tag) == nil ? index : nil
+        }
+        return entries(from: menu, skipping: [0]).map { entry in
+            var entry = entry
+            guard entry.kind == .item else { return entry }
+            if entry.index == noteIndex {
+                entry.isFooter = true
+                entry.isEnabled = false
+            } else {
+                entry.symbol = copySymbol(tag: menu.items[entry.index].tag)
+            }
+            return entry
+        }
+    }
+
+    private static func copySymbol(tag: Int) -> String? {
+        switch SAClaudeQueryCopyAction(rawValue: tag) {
+        case .plain: return "doc.on.doc"
+        case .withColumnNames: return "tablecells"
+        case .sqlInsert: return "chevron.left.forwardslash.chevron.right"
+        case .sqlInsertNoAutoIncrement: return "number.square"
+        case nil: return nil
+        }
+    }
+}
