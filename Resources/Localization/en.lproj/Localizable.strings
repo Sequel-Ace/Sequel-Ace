@@ -1613,9 +1613,6 @@
 /* export filename favorite name token */
 "Favorite" = "Favorite";
 
-/* Stale query favorite replacement alert title */
-"Favorite Changed" = "Favorite Changed";
-
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "Favorite to replace";
 

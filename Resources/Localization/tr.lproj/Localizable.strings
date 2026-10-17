@@ -1587,9 +1587,6 @@ Bu sorguyu sonlandırmaya devam etmenin veri bozulmasına yol açabileceğini l�
 /* export filename favorite name token */
 "Favorite" = "Favori";
 
-/* Stale query favorite replacement alert title */
-"Favorite Changed" = "Favorite Changed";
-
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "Favorite to replace";
 

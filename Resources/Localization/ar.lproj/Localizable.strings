@@ -1582,9 +1582,6 @@
 /* export filename favorite name token */
 "Favorite" = "المفضلة";
 
-/* Stale query favorite replacement alert title */
-"Favorite Changed" = "تم تغيير المفضلة";
-
 /* Query favorite replacement picker accessibility label */
 "Favorite to replace" = "المفضلة للاستبدال";
 
