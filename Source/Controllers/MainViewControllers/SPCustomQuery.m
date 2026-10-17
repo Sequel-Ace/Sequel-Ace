@@ -351,17 +351,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            if ([[textView.textStorage string] length] > 0) {
-                [selectedFaveQueryStr insertString:@"\n" atIndex:0];
-            }
-          
-            NSRange selectedRange = [textView selectedRange];
-            // If no selected range, then make a new range then use it for appending query
-            if (!selectedRange.length) {
-              selectedRange = NSMakeRange(textView.textStorage.length, 0);
-            }
-          
-            [textView insertAsSnippet:selectedFaveQueryStr atRange:selectedRange];
+            [self insertPickedQuery:selectedFaveQueryStr];
         }
     }
 }
@@ -390,19 +380,28 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            if ([[textView.textStorage string] length] > 0) {
-                [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
-            }
-          
-            NSRange selectedRange = [textView selectedRange];
-            // If no selected range, then make a new range then use it for appending query
-            if (!selectedRange.length) {
-              selectedRange = NSMakeRange(textView.textStorage.length, 0);
-            }
-          
-            [textView insertAsSnippet:selectedHistoryQueryStr atRange:selectedRange];
+            [self insertPickedQuery:selectedHistoryQueryStr];
         }
 
+    }
+}
+
+/**
+ * Inserts a query picked from the History or Favorites menu (insert mode) on its own line: in place of the
+ * selection, or at the end of the text when nothing is selected, with a newline before it unless it starts a line,
+ * and one after it when text follows on the same line. The caret ends after the query, before that newline
+ * (unless a snippet placeholder is selected).
+ */
+- (void)insertPickedQuery:(NSString *)query
+{
+    SAClaudeQueryInsertion *insertion = [SAClaudeQueryInsertion insertionOfQuery:query intoText:[textView string] selectedRange:[textView selectedRange]];
+    [textView insertAsSnippet:insertion.text atRange:insertion.range];
+
+    if (insertion.trailingNewlineLength && ![textView isSnippetMode]) {
+        NSRange caret = [textView selectedRange];
+        if (!caret.length && caret.location >= (NSUInteger)insertion.trailingNewlineLength) {
+            [textView setSelectedRange:NSMakeRange(caret.location - insertion.trailingNewlineLength, 0)];
+        }
     }
 }
 
