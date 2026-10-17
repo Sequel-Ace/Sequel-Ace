@@ -26,6 +26,7 @@
 		5EC0DEC400000000000000C4 /* SAClaudeRecordFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */; };
 		5EC0DEC400000000000000C5 /* SAClaudeRecordFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */; };
 		5EC0DEC400000000000000A7 /* SAClaudeMenuCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */; };
+		5EC0DEC400000000000000D2 /* SAClaudeSwiftUIStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000D1 /* SAClaudeSwiftUIStyle.swift */; };
 		5EC0DEC400000000000000A9 /* SAClaudeMenuCardAdapters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A8 /* SAClaudeMenuCardAdapters.swift */; };
 		5EC0DEC400000000000000AB /* SAClaudeMenuCardPopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000AA /* SAClaudeMenuCardPopUpButton.swift */; };
 		5EC0DEC400000000000000B3 /* SAClaudeMenuGlyphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000B1 /* SAClaudeMenuGlyphs.swift */; };
@@ -1097,6 +1098,7 @@
 		5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRecordFields.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRecordFieldsTests.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCard.swift; sourceTree = "<group>"; };
+		5EC0DEC400000000000000D1 /* SAClaudeSwiftUIStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSwiftUIStyle.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A8 /* SAClaudeMenuCardAdapters.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardAdapters.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000AA /* SAClaudeMenuCardPopUpButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardPopUpButton.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000B1 /* SAClaudeMenuGlyphs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuGlyphs.swift; sourceTree = "<group>"; };
@@ -3133,6 +3135,7 @@
 				EA0C0DE0000000000000010E /* SAClaudeThemeWatcher.swift */,
 				5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */,
 				5EC0DEC400000000000000A8 /* SAClaudeMenuCardAdapters.swift */,
+				5EC0DEC400000000000000D1 /* SAClaudeSwiftUIStyle.swift */,
 				5EC0DEC400000000000000AA /* SAClaudeMenuCardPopUpButton.swift */,
 				5EC0DEC400000000000000B6 /* SAClaudeMenuGlyphPass.swift */,
 				EA0C0DE0000000000000000E /* SAClaudeProgressBar.swift */,
@@ -4507,6 +4510,7 @@
 				EA0C0DE0000000000000010F /* SAClaudeThemeWatcher.swift in Sources */,
 				5EC0DEC400000000000000A7 /* SAClaudeMenuCard.swift in Sources */,
 				5EC0DEC400000000000000A9 /* SAClaudeMenuCardAdapters.swift in Sources */,
+				5EC0DEC400000000000000D2 /* SAClaudeSwiftUIStyle.swift in Sources */,
 				5EC0DEC400000000000000AB /* SAClaudeMenuCardPopUpButton.swift in Sources */,
 				5EC0DEC400000000000000B7 /* SAClaudeMenuGlyphPass.swift in Sources */,
 				EA0C0DE0000000000000000F /* SAClaudeProgressBar.swift in Sources */,

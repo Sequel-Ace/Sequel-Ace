@@ -306,6 +306,9 @@ final class SAClaudeWindowSkin: NSObject {
             if window.appearance?.name != appearanceName { window.appearance = NSAppearance(named: appearanceName) }
             if window.backgroundColor != colours.surface { window.backgroundColor = colours.surface }
         }
+        // A SwiftUI root (the Save Query Favorite sheet) draws its own surface; a view added inside a hosting view
+        // once its content is up lands above that content and would blank the sheet.
+        if Self.isHostingView(root) { return }
         let surface: SAClaudeEditorBarBackgroundView
         if let existing = root.subviews.first(where: { $0.identifier == Self.surfaceIdentifier }) as? SAClaudeEditorBarBackgroundView {
             surface = existing
@@ -319,13 +322,18 @@ final class SAClaudeWindowSkin: NSObject {
         surface.fillColour = colours.surface
     }
 
+    /// A SwiftUI hosting view (NSHostingView or AppKit's own), which styles itself.
+    private static func isHostingView(_ view: NSView) -> Bool {
+        String(describing: type(of: view)).contains("HostingView")
+    }
+
     // MARK: Walking
 
     /// Styles `view` and, unless it is a control (whose subviews are AppKit's own), everything inside it.
     private func style(_ view: NSView, _ colours: SAClaudeSheetColours) {
         if view.identifier == Self.surfaceIdentifier { return }
         // SwiftUI content (Settings' Claude colours section, AppKit's own hosting views) styles itself.
-        if String(describing: type(of: view)).contains("HostingView") { return }
+        if Self.isHostingView(view) { return }
         switch view {
         case let popUp as NSPopUpButton:
             stylePopUp(popUp)
