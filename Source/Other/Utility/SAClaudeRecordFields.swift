@@ -6,11 +6,13 @@
 //
 //  Pure logic behind the Claude-look Record View panel: how a field is
 //  displayed (NULL chip, not-loaded, pretty JSON, display cap), search
-//  matching and highlight ranges, the long-value collapse decision, row
-//  stepping and per-row panel state. No AppKit/SwiftUI, no project ObjC
-//  types, so it compiles into the Unit Tests target.
+//  matching and highlight ranges, where a value wraps and the long-value
+//  collapse decision, row stepping and per-row panel state. No AppKit/SwiftUI
+//  (Core Text only, for line breaking), no project ObjC types, so it compiles
+//  into the Unit Tests target.
 //
 
+import CoreText
 import Foundation
 
 /// What the panel shows for a field's value.
@@ -28,6 +30,38 @@ enum SAClaudeRecordDisplayValue: Equatable {
 struct SAClaudeRecordMatch: Equatable {
     var nameRanges: [NSRange]
     var valueRanges: [NSRange]
+}
+
+/// The fields a search shows, with where each matching field matched.
+struct SAClaudeRecordSearchResult: Equatable {
+    var fields: [SARecordField]
+    /// Matches by field ID; empty when there is no query.
+    var matches: [Int: SAClaudeRecordMatch]
+    /// Matching fields (the field being edited is shown even when it doesn't match, but not counted).
+    var matchCount: Int
+}
+
+/// Where a value wraps in the panel, measured with Core Text's own line breaking (`CTTypesetterSuggestLineBreak`) -
+/// what SwiftUI `Text` draws with - in the value font at the value's width. Lines are wrapped lines, not
+/// "\n"-separated ones: the collapse, the "Show all N lines" count and "a match below the 6th line" all use them.
+struct SAClaudeRecordLineLayout: Equatable {
+    /// Wrapped lines the value takes (a trailing line break doesn't add an empty one).
+    var lineCount: Int
+    /// UTF-16 offset where the first line past the collapsed limit starts (the text's length when it fits).
+    var collapsedEnd: Int
+}
+
+/// The link under a long value.
+enum SAClaudeRecordFoldLink: Equatable {
+    case none
+    case showAll(Int)
+    case showLess
+}
+
+/// How a long value is drawn: cut to its first lines or in full, and the link under it.
+struct SAClaudeRecordFold: Equatable {
+    var collapsed: Bool
+    var link: SAClaudeRecordFoldLink
 }
 
 /// Per-row view state that survives a refresh of the same row (edit commit,
@@ -294,16 +328,28 @@ enum SAClaudeRecordFields {
         return found
     }
 
-    /// The fields to show for a search: those that match, plus the field being
-    /// edited wherever it sits, in original order.
-    static func visibleFields(_ fields: [SARecordField], query: String, editingFieldID: Int?) -> [SARecordField] {
+    /// The search: the fields that match (names and displayed values), plus the field being edited wherever it
+    /// sits, in original order, with each match and the count of matching fields. `display` supplies each field's
+    /// displayed value (the panel passes its per-row cache; `displayValue` by default).
+    static func search(_ fields: [SARecordField],
+                       query: String,
+                       editingFieldID: Int?,
+                       display: (SARecordField) -> SAClaudeRecordDisplayValue = displayValue) -> SAClaudeRecordSearchResult {
+        var result = SAClaudeRecordSearchResult(fields: [], matches: [:], matchCount: 0)
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return fields
+            result.fields = fields
+            return result
         }
-        return fields.filter { field in
-            field.id == editingFieldID
-                || match(field, display: displayValue(field), query: query) != nil
+        for field in fields {
+            if let match = match(field, display: display(field), query: query) {
+                result.fields.append(field)
+                result.matches[field.id] = match
+                result.matchCount += 1
+            } else if field.id == editingFieldID {
+                result.fields.append(field)
+            }
         }
+        return result
     }
 
     static func matchCountText(_ count: Int) -> String {
@@ -316,20 +362,62 @@ enum SAClaudeRecordFields {
 
     // MARK: - Collapse
 
-    /// 0-based index of the line containing UTF-16 offset `location` (the
-    /// number of newlines before it). Out-of-range offsets are clamped.
-    static func lineIndex(of location: Int, in text: String) -> Int {
-        let utf16 = text.utf16
-        let end = utf16.index(utf16.startIndex, offsetBy: max(0, min(location, utf16.count)))
-        var lines = 0
-        for unit in utf16[utf16.startIndex..<end] where unit == 0x0A {
-            lines += 1
+    /// Where `text` wraps at `width` in `font`. A typesetter over a whole long paragraph makes each suggested break
+    /// cost the rest of the paragraph (quadratic: ~0.8s for one 100,000-character line), so each line is broken
+    /// within a window from its start - the same breaks while the window is far longer than a line can hold (even
+    /// 1pt-wide characters): linear.
+    static func lineLayout(_ text: String, width: CGFloat, font: CTFont, limit: Int = collapsedLineLimit) -> SAClaudeRecordLineLayout {
+        let string = text as NSString
+        let length = string.length
+        guard length > 0, width > 1 else {
+            return SAClaudeRecordLineLayout(lineCount: 1, collapsedEnd: length)
         }
-        return lines
+        let window = lineBreakWindow(width: width)
+        let attributes = [NSAttributedString.Key(kCTFontAttributeName as String): font]
+        var start = 0
+        var lineCount = 0
+        var collapsedEnd = length
+        while start < length {
+            var end = min(length, start + window)
+            if end < length {
+                end = NSMaxRange(string.rangeOfComposedCharacterSequence(at: end - 1))
+            }
+            let chunk = NSAttributedString(string: string.substring(with: NSRange(location: start, length: end - start)), attributes: attributes)
+            let typesetter = CTTypesetterCreateWithAttributedString(chunk)
+            start += max(CTTypesetterSuggestLineBreak(typesetter, 0, Double(width)), 1)
+            lineCount += 1
+            if lineCount == limit {
+                collapsedEnd = start
+            }
+        }
+        return SAClaudeRecordLineLayout(lineCount: lineCount, collapsedEnd: min(collapsedEnd, length))
+    }
+
+    /// Characters a line is broken within (see `lineLayout`).
+    static func lineBreakWindow(width: CGFloat) -> Int {
+        max(1_024, Int(width.rounded(.up)) * 2)
+    }
+
+    /// Whether a search hit starts past the collapsed cut (and so must be shown: the value is forced open).
+    static func matchStartsBelow(_ ranges: [NSRange], collapsedEnd: Int) -> Bool {
+        ranges.contains { $0.location >= collapsedEnd }
     }
 
     static func isCollapsed(lineCount: Int, expanded: Bool, matchStartsBelowLimit: Bool) -> Bool {
         lineCount > collapsedLineLimit && !expanded && !matchStartsBelowLimit
+    }
+
+    /// How a value with this layout is drawn: collapsed with "Show all N lines" past the limit; expanded by the
+    /// user with "Show less"; held open by a search hit below the cut with no link (it can't fold while it matches).
+    static func fold(_ layout: SAClaudeRecordLineLayout, expanded: Bool, valueRanges: [NSRange]) -> SAClaudeRecordFold {
+        guard layout.lineCount > collapsedLineLimit else {
+            return SAClaudeRecordFold(collapsed: false, link: .none)
+        }
+        let below = matchStartsBelow(valueRanges, collapsedEnd: layout.collapsedEnd)
+        if isCollapsed(lineCount: layout.lineCount, expanded: expanded, matchStartsBelowLimit: below) {
+            return SAClaudeRecordFold(collapsed: true, link: .showAll(layout.lineCount))
+        }
+        return SAClaudeRecordFold(collapsed: false, link: below ? .none : .showLess)
     }
 
     // MARK: - Row stepping and state

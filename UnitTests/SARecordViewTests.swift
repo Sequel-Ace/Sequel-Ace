@@ -433,6 +433,79 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertNil(action(down, responder: outside))
     }
 
+    func testBlockKeysStandDownWhileEditing() {
+        let recordView = NSView()
+        func action(_ event: NSEvent) -> SARecordViewPanelKey? {
+            SARecordViewToolbarSupport.panelKeyAction(event, firstResponder: recordView, recordView: recordView,
+                                                      isRecordViewVisible: true, isEditing: true, hasSelection: true)
+        }
+        XCTAssertNil(action(keyEvent(keyCode: 36, characters: "\r")))
+        XCTAssertNil(action(keyEvent(keyCode: 0, characters: "a")))
+        XCTAssertNil(action(keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function])))
+        XCTAssertNil(action(keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function, .option])))
+    }
+
+    func testOpenEditKeepsItsDraftAgainstBlockActions() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+        model.beginEditing = { _ in true }
+        model.commitEditing = { _, _ in false }
+        model.selectedFieldID = 1
+        model.editSelectedField()
+        model.editDraft = "unsaved"
+
+        model.editSelectedField()
+        XCTAssertEqual(model.editingFieldID, 1)
+        XCTAssertEqual(model.editDraft, "unsaved", "Return on the block doesn't restart the edit")
+
+        model.typeIntoSearch("x")
+        XCTAssertEqual(model.searchText, "", "typing doesn't start a search while editing")
+
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 1)
+
+        model.requestEdit(fields[1])
+        XCTAssertEqual(model.editDraft, "unsaved", "editing the same field again keeps the draft")
+
+        model.requestEdit(fields[2])
+        XCTAssertEqual(model.editingFieldID, 1, "another field waits while the open edit's commit is refused")
+        XCTAssertEqual(model.editDraft, "unsaved")
+    }
+
+    func testEditingAnotherFieldCommitsTheOpenEditFirst() {
+        let model = SARecordViewModel()
+        var committed: [(Int, String)] = []
+        model.update(fields: fields, selectedRowCount: 1)
+        model.beginEditing = { _ in true }
+        model.commitEditing = { id, value in
+            committed.append((id, value))
+            return true
+        }
+        model.requestEdit(fields[1])
+        model.editDraft = "Grace"
+
+        model.requestEdit(fields[2])
+
+        XCTAssertEqual(committed.map(\.0), [1])
+        XCTAssertEqual(committed.map(\.1), ["Grace"])
+        XCTAssertEqual(model.editingFieldID, 2)
+        XCTAssertEqual(model.editDraft, "Lovelace")
+    }
+
+    func testFocusFromGridSelectsKeptFieldOrFirstVisible() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        model.selectedFieldID = 2
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+
+        model.requestFocus(.table)
+        XCTAssertEqual(model.selectedFieldID, 2, "the field kept across the row change")
+
+        model.update(fields: Array(fields.prefix(2)), selectedRowCount: 1, rowIndex: 2, rowCount: 3, title: "t")
+        model.requestFocus(.table)
+        XCTAssertEqual(model.selectedFieldID, 0, "none kept: the first visible field")
+    }
+
     func testPanelKeysInTheSearchFieldAndEditor() {
         let recordView = NSView()
         let field = NSTextView()

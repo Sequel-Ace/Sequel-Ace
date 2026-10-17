@@ -66,56 +66,13 @@ private struct SARecordPanelRoot: View {
 
 // MARK: - Measured lines
 
-/// Where a value wraps in the panel. The panel draws values with SwiftUI `Text` (Core Text); this measures with Core
-/// Text's own line breaking (`CTTypesetterSuggestLineBreak`) in the same font and width, so the count and the 6-line
-/// cut match what is drawn. Lines here are wrapped lines, not "\n"-separated ones: the collapse, the "Show all N
-/// lines" count and "a match below the 6th line" all use them.
-struct SAClaudeRecordLineLayout: Equatable {
-    /// Wrapped lines the whole value takes.
-    var lineCount: Int
-    /// UTF-16 offset where the first line past the collapsed limit starts (the text's length when it fits).
-    var collapsedEnd: Int
-
+/// Measured lines (`SAClaudeRecordFields.lineLayout`) per field and width for the shown snapshot
+/// (`SARecordViewModel.generation`): a value is measured once per width, not on every body pass; a new snapshot (row
+/// change, refresh) starts over.
+final class SAClaudeRecordLineCache {
+    /// The value font as Core Text sees it: what `.system(size: 12, design: .monospaced)` draws with.
     static let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
 
-    static func measure(_ text: String, width: CGFloat, limit: Int = SAClaudeRecordFields.collapsedLineLimit) -> SAClaudeRecordLineLayout {
-        let string = text as NSString
-        let length = string.length
-        guard length > 0, width > 1 else {
-            return SAClaudeRecordLineLayout(lineCount: 1, collapsedEnd: length)
-        }
-        // A typesetter over a whole long paragraph makes each suggested break cost the rest of the paragraph
-        // (quadratic: ~0.8s for one 100,000-character line). Breaking within a window from the line's start gives the
-        // same breaks while the window is far longer than a line can hold (even 1pt-wide characters): linear.
-        let window = max(1_024, Int(width.rounded(.up)) * 2)
-        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        var start = 0
-        var lineCount = 0
-        var collapsedEnd = length
-        while start < length {
-            var end = min(length, start + window)
-            if end < length {
-                end = NSMaxRange(string.rangeOfComposedCharacterSequence(at: end - 1))
-            }
-            let chunk = NSAttributedString(string: string.substring(with: NSRange(location: start, length: end - start)), attributes: attributes)
-            let typesetter = CTTypesetterCreateWithAttributedString(chunk)
-            start += max(CTTypesetterSuggestLineBreak(typesetter, 0, Double(width)), 1)
-            lineCount += 1
-            if lineCount == limit {
-                collapsedEnd = start
-            }
-        }
-        // A trailing line break draws one more (empty) line.
-        if string.character(at: length - 1) == 0x0A {
-            lineCount += 1
-        }
-        return SAClaudeRecordLineLayout(lineCount: lineCount, collapsedEnd: min(collapsedEnd, length))
-    }
-}
-
-/// Measured lines per field and width for the shown snapshot (`SARecordViewModel.generation`): a value is measured
-/// once per width, not on every body pass; a new snapshot (row change, refresh) starts over.
-final class SAClaudeRecordLineCache {
     private struct Key: Hashable {
         var fieldID: Int
         var width: CGFloat
@@ -133,7 +90,7 @@ final class SAClaudeRecordLineCache {
         if let layout = layouts[key] {
             return layout
         }
-        let layout = SAClaudeRecordLineLayout.measure(text, width: width)
+        let layout = SAClaudeRecordFields.lineLayout(text, width: width, font: Self.font)
         layouts[key] = layout
         return layout
     }
@@ -175,6 +132,7 @@ private struct SAClaudeRecordPanelView: View {
     @FocusState private var editorFocus: SARecordField.ID?
     /// How much narrower the laid-out list is than the panel (the scroll view keeps a scroller's width clear), as
     /// last measured; values wrap in the list's width, so measuring them needs it before the list is laid out.
+    /// (Not private, as `isHovered`.)
     @State var listInset = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
 
     var body: some View {
@@ -221,6 +179,9 @@ private struct SAClaudeRecordPanelView: View {
 
     // MARK: Header
 
+    private static let previousRowLabel = NSLocalizedString("ClaudeRecordPreviousRow", value: "Previous row (⌥↑)", comment: "Record View: tooltip of the header button that shows the previous row")
+    private static let nextRowLabel = NSLocalizedString("ClaudeRecordNextRow", value: "Next row (⌥↓)", comment: "Record View: tooltip of the header button that shows the next row")
+
     private var header: some View {
         let step = SAClaudeRecordFields.rowStep(index: model.rowIndex, count: model.rowCount)
         return HStack(spacing: 2) {
@@ -234,15 +195,15 @@ private struct SAClaudeRecordPanelView: View {
             }
             .buttonStyle(SAClaudeGhostIconButtonStyle())
             .disabled(!step.previous)
-            .help(NSLocalizedString("ClaudeRecordPreviousRow", value: "Previous row (⌥↑)", comment: "Record View: tooltip of the header button that shows the previous row"))
-            .accessibilityLabel(Text(NSLocalizedString("ClaudeRecordPreviousRow", value: "Previous row (⌥↑)", comment: "Record View: tooltip of the header button that shows the previous row")))
+            .help(Self.previousRowLabel)
+            .accessibilityLabel(Text(Self.previousRowLabel))
             Button { model.stepRow(1) } label: {
                 Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold))
             }
             .buttonStyle(SAClaudeGhostIconButtonStyle())
             .disabled(!step.next)
-            .help(NSLocalizedString("ClaudeRecordNextRow", value: "Next row (⌥↓)", comment: "Record View: tooltip of the header button that shows the next row"))
-            .accessibilityLabel(Text(NSLocalizedString("ClaudeRecordNextRow", value: "Next row (⌥↓)", comment: "Record View: tooltip of the header button that shows the next row")))
+            .help(Self.nextRowLabel)
+            .accessibilityLabel(Text(Self.nextRowLabel))
         }
         .padding(.leading, SARecordPanelMetrics.horizontalPadding)
         .padding(.trailing, SARecordPanelMetrics.horizontalPadding - 4)
@@ -272,7 +233,7 @@ private struct SAClaudeRecordPanelView: View {
 
     // MARK: Search
 
-    private func searchField(_ result: SARecordViewSearchResult) -> some View {
+    private func searchField(_ result: SAClaudeRecordSearchResult) -> some View {
         let hasQuery = !model.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         return SAClaudeFieldChrome(isFocused: searchFocused, size: .panel) {
             HStack(spacing: 6) {
@@ -300,7 +261,7 @@ private struct SAClaudeRecordPanelView: View {
 
     // MARK: Fields
 
-    private func fieldList(_ result: SARecordViewSearchResult, textWidth: CGFloat) -> some View {
+    private func fieldList(_ result: SAClaudeRecordSearchResult, textWidth: CGFloat) -> some View {
         let firstID = result.fields.first?.id
         return ScrollViewReader { proxy in
             ScrollView(.vertical) {
@@ -400,6 +361,7 @@ private struct SAClaudeRecordBlock: View {
     let lines: SAClaudeRecordLineCache
     let generation: Int
     var editorFocus: FocusState<SARecordField.ID?>.Binding
+    // Not private: a private wrapped property with a default makes the memberwise init private to the type.
     @State var isHovered = false
 
     var body: some View {
@@ -500,27 +462,32 @@ private struct SAClaudeRecordBlock: View {
     private func textValue(_ text: String) -> some View {
         let layout = lines.layout(fieldID: field.id, generation: generation, text: text, width: textWidth)
         let ranges = match?.valueRanges ?? []
-        let matchBelow = ranges.contains { $0.location >= layout.collapsedEnd }
-        let collapsed = SAClaudeRecordFields.isCollapsed(lineCount: layout.lineCount, expanded: isExpanded, matchStartsBelowLimit: matchBelow)
+        let fold = SAClaudeRecordFields.fold(layout, expanded: isExpanded, valueRanges: ranges)
         // Collapsed, only the first 6 lines' text is laid out at all (a 5 MB value draws as fast as a short one).
-        let shown = collapsed ? Self.collapsedText(text, end: layout.collapsedEnd) : text
+        let shown = fold.collapsed ? Self.collapsedText(text, end: layout.collapsedEnd) : text
         Text(SAClaudeRecordHighlight.attributed(shown.isEmpty ? " " : shown, ranges: ranges, highlight: palette.highlight))
             .font(SARecordPanelMetrics.valueFont)
             .foregroundColor(palette.text)
-            .lineLimit(collapsed ? SAClaudeRecordFields.collapsedLineLimit : nil)
+            .lineLimit(fold.collapsed ? SAClaudeRecordFields.collapsedLineLimit : nil)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-        // A value a search hit forced open has nothing to fold back while it matches.
-        if layout.lineCount > SAClaudeRecordFields.collapsedLineLimit && (collapsed || isExpanded) {
-            Button {
-                model.toggleExpanded(field.id)
-            } label: {
-                Text(verbatim: collapsed
-                     ? String(format: NSLocalizedString("ClaudeRecordShowAllLines", value: "Show all %d lines", comment: "Record View: link under a collapsed long value; %d is the number of lines the value takes"), layout.lineCount)
-                     : NSLocalizedString("ClaudeRecordShowLess", value: "Show less", comment: "Record View: link under an expanded long value that collapses it again"))
-            }
-            .buttonStyle(SAClaudeLinkButtonStyle())
+        switch fold.link {
+        case .none:
+            EmptyView()
+        case .showAll(let lineCount):
+            foldLink(String(format: NSLocalizedString("ClaudeRecordShowAllLines", value: "Show all %d lines", comment: "Record View: link under a collapsed long value; %d is the number of lines the value takes"), lineCount))
+        case .showLess:
+            foldLink(NSLocalizedString("ClaudeRecordShowLess", value: "Show less", comment: "Record View: link under an expanded long value that collapses it again"))
         }
+    }
+
+    private func foldLink(_ title: String) -> some View {
+        Button {
+            model.toggleExpanded(field.id)
+        } label: {
+            Text(verbatim: title)
+        }
+        .buttonStyle(SAClaudeLinkButtonStyle())
     }
 
     private static func collapsedText(_ text: String, end: Int) -> String {
@@ -568,9 +535,7 @@ private struct SAClaudeRecordEditor: View {
             .focused(editorFocus, equals: fieldID)
             .onSubmit {
                 model.commitEdit()
-                if model.editingFieldID == nil {
-                    returnToBlocks()
-                }
+                returnToBlocks()
             }
             .onExitCommand {
                 model.cancelEdit()
@@ -583,10 +548,14 @@ private struct SAClaudeRecordEditor: View {
             }
     }
 
-    /// After SwiftUI has taken the editor down (it hands the first responder to the window as it goes).
+    /// Once the edit has ended - the hosts end it by refreshing the panel, not by accepting the commit - and SwiftUI
+    /// has taken the editor down (it hands the first responder to the window as it goes). A refused commit keeps the
+    /// editor and its keyboard.
     private func returnToBlocks() {
         DispatchQueue.main.async { [model] in
-            model.requestFocus(.table)
+            if model.editingFieldID == nil {
+                model.requestFocus(.table)
+            }
         }
     }
 }

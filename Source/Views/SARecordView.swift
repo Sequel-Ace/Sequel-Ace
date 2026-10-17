@@ -102,15 +102,6 @@ enum SARecordViewPanelKey: Equatable {
     }
 }
 
-/// The fields a search shows, with where each matching field matched.
-struct SARecordViewSearchResult {
-    var fields: [SARecordField]
-    /// Matches by field ID; empty when there is no query.
-    var matches: [Int: SAClaudeRecordMatch]
-    /// Matching fields (the field being edited is shown even when it doesn't match, but not counted).
-    var matchCount: Int
-}
-
 final class SARecordViewModel: ObservableObject {
     @Published private(set) var selectedRowCount = 0
     @Published private(set) var fields: [SARecordField] = []
@@ -148,7 +139,7 @@ final class SARecordViewModel: ObservableObject {
     /// `displayValue` per field ID for the current snapshot: JSON is parsed and long values capped once per row,
     /// not on every search keystroke or body pass.
     private var displayCache: [Int: SAClaudeRecordDisplayValue] = [:]
-    private var searchCache: (query: String, editingFieldID: Int?, generation: Int, result: SARecordViewSearchResult)?
+    private var searchCache: (query: String, editingFieldID: Int?, generation: Int, result: SAClaudeRecordSearchResult)?
 
     func display(for field: SARecordField) -> SAClaudeRecordDisplayValue {
         if let cached = displayCache[field.id] {
@@ -159,27 +150,13 @@ final class SARecordViewModel: ObservableObject {
         return display
     }
 
-    /// The search over names and displayed values (`SAClaudeRecordFields.match`), memoised per query, edited
-    /// field and snapshot.
-    var searchResult: SARecordViewSearchResult {
+    /// `SAClaudeRecordFields.search` over the cached display values, memoised per query, edited field and snapshot.
+    var searchResult: SAClaudeRecordSearchResult {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if let cache = searchCache, cache.query == query, cache.editingFieldID == editingFieldID, cache.generation == generation {
             return cache.result
         }
-        var result = SARecordViewSearchResult(fields: [], matches: [:], matchCount: 0)
-        if query.isEmpty {
-            result.fields = fields
-        } else {
-            for field in fields {
-                if let match = SAClaudeRecordFields.match(field, display: display(for: field), query: query) {
-                    result.fields.append(field)
-                    result.matches[field.id] = match
-                    result.matchCount += 1
-                } else if field.id == editingFieldID {
-                    result.fields.append(field)
-                }
-            }
-        }
+        let result = SAClaudeRecordFields.search(fields, query: query, editingFieldID: editingFieldID) { display(for: $0) }
         searchCache = (query, editingFieldID, generation, result)
         return result
     }
@@ -252,6 +229,9 @@ final class SARecordViewModel: ObservableObject {
     }
 
     // MARK: - Keyboard on the field blocks
+    //
+    // While a value is being edited these stand down: the keys belong to the inline editor, and nothing here may
+    // restart the edit (dropping its draft) or move the panel under it.
 
     /// A click on a block: selects it and gives the panel the keyboard.
     func selectField(_ fieldID: SARecordField.ID) {
@@ -261,6 +241,9 @@ final class SARecordViewModel: ObservableObject {
 
     /// ↑ / ↓ over the visible fields; never wraps. Without a visible selection, selects the first visible field.
     func moveSelection(by delta: Int) {
+        guard editingFieldID == nil else {
+            return
+        }
         let visible = visibleFields
         guard !visible.isEmpty else {
             return
@@ -274,7 +257,7 @@ final class SARecordViewModel: ObservableObject {
 
     /// Return on a selected block.
     func editSelectedField() {
-        guard let field = visibleFields.first(where: { $0.id == selectedFieldID }) else {
+        guard editingFieldID == nil, let field = visibleFields.first(where: { $0.id == selectedFieldID }) else {
             return
         }
         requestEdit(field)
@@ -282,7 +265,7 @@ final class SARecordViewModel: ObservableObject {
 
     /// A printable character typed while a block is selected starts (or continues) the search with it.
     func typeIntoSearch(_ characters: String) {
-        guard selectedFieldID != nil, !characters.isEmpty else {
+        guard editingFieldID == nil, selectedFieldID != nil, !characters.isEmpty else {
             return
         }
         searchText += characters
@@ -298,7 +281,18 @@ final class SARecordViewModel: ObservableObject {
         }
     }
 
+    /// Starts editing `field`. Another field's open edit is committed first; while that commit is refused, its
+    /// draft stays open and this does nothing.
     func requestEdit(_ field: SARecordField) {
+        if let editing = editingFieldID {
+            guard editing != field.id else {
+                return
+            }
+            commitEdit()
+            guard editingFieldID == nil else {
+                return
+            }
+        }
         guard beginEditing?(field.id) == true else {
             return
         }
@@ -512,7 +506,8 @@ private final class SARecordViewOverlayView: NSView {
 
     /// The panel's own keys. On the field blocks (the panel focused, not a text field): ↑/↓ move the selection,
     /// Return edits it, ⌥↑/⌥↓ step rows, a printable character (no ⌘/⌃) with a block selected starts a search.
-    /// In the search field: Escape, ↓ to the blocks, ⌥↑/⌥↓. The inline value editor keeps all its keys.
+    /// In the search field: Escape, ↓ to the blocks, ⌥↑/⌥↓. While a value is being edited, none: the inline editor
+    /// keeps all its keys.
     static func panelKeyAction(_ event: NSEvent,
                                firstResponder: NSResponder?,
                                recordView: NSView,
@@ -544,6 +539,10 @@ private final class SARecordViewOverlayView: NSView {
             return nil
         }
 
+        // An open inline edit (its editor not focused yet, or a refused commit) owns the keys.
+        guard !isEditing else {
+            return nil
+        }
         if let vertical {
             if modifiers == .option {
                 return .stepRow(vertical)

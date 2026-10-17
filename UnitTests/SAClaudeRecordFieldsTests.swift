@@ -5,6 +5,7 @@
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
 //
 
+import AppKit
 import XCTest
 
 final class SAClaudeRecordFieldsTests: XCTestCase {
@@ -154,38 +155,140 @@ final class SAClaudeRecordFieldsTests: XCTestCase {
 
     func testSearchKeepsEditingFieldVisible() {
         let fields = [field(0, "id", "1"), field(1, "name", "Ada"), field(2, "bio", "mathematician"), field(3, "note", "Ada again")]
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "ada", editingFieldID: nil).map(\.id), [1, 3])
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "ada", editingFieldID: 0).map(\.id), [0, 1, 3])
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "ada", editingFieldID: 3).map(\.id), [1, 3])
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "", editingFieldID: 2).map(\.id), [0, 1, 2, 3])
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "zzz", editingFieldID: 2).map(\.id), [2])
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "zzz", editingFieldID: nil), [])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "ada", editingFieldID: nil).fields.map(\.id), [1, 3])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "ada", editingFieldID: 0).fields.map(\.id), [0, 1, 3])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "ada", editingFieldID: 3).fields.map(\.id), [1, 3])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "", editingFieldID: 2).fields.map(\.id), [0, 1, 2, 3])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "zzz", editingFieldID: 2).fields.map(\.id), [2])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "zzz", editingFieldID: nil).fields, [])
     }
 
     func testVisibleFieldsMatchNamesAndNullChip() {
         let fields = [field(0, "deleted_at", "", isNull: true), field(1, "title", "hello")]
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "null", editingFieldID: nil).map(\.id), [0])
-        XCTAssertEqual(SAClaudeRecordFields.visibleFields(fields, query: "TITLE", editingFieldID: nil).map(\.id), [1])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "null", editingFieldID: nil).fields.map(\.id), [0])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "TITLE", editingFieldID: nil).fields.map(\.id), [1])
     }
 
     // MARK: - Collapse
 
-    func testMatchBelowCollapsedLinesForcesExpansion() {
-        let lines = (1...10).map { "line \($0)" }
-        let text = lines.joined(separator: "\n")
-        let f = field(1, "body", text)
-        let query = "line 8"
-        let match = SAClaudeRecordFields.match(f, display: display(f), query: query)!
-        let start = match.valueRanges[0].location
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: start, in: text), 7)
-        let below = SAClaudeRecordFields.lineIndex(of: start, in: text) >= SAClaudeRecordFields.collapsedLineLimit
-        XCTAssertTrue(below)
-        XCTAssertFalse(SAClaudeRecordFields.isCollapsed(lineCount: 10, expanded: false, matchStartsBelowLimit: below))
+    func testSearchCountsMatchesAndUsesSuppliedDisplay() {
+        let fields = [field(0, "id", "1"), field(1, "name", "Ada"), field(2, "note", "Ada again")]
+        let result = SAClaudeRecordFields.search(fields, query: "ada", editingFieldID: 0)
+        XCTAssertEqual(result.fields.map(\.id), [0, 1, 2])
+        XCTAssertEqual(result.matchCount, 2)
+        XCTAssertEqual(Set(result.matches.keys), [1, 2])
+        XCTAssertEqual(SAClaudeRecordFields.search(fields, query: "  ", editingFieldID: nil),
+                       SAClaudeRecordSearchResult(fields: fields, matches: [:], matchCount: 0))
 
-        let early = SAClaudeRecordFields.match(f, display: display(f), query: "line 2")!
-        let earlyBelow = SAClaudeRecordFields.lineIndex(of: early.valueRanges[0].location, in: text) >= SAClaudeRecordFields.collapsedLineLimit
-        XCTAssertFalse(earlyBelow)
-        XCTAssertTrue(SAClaudeRecordFields.isCollapsed(lineCount: 10, expanded: false, matchStartsBelowLimit: earlyBelow))
+        let cached = SAClaudeRecordFields.search(fields, query: "cached", editingFieldID: nil) { _ in .text("cached value") }
+        XCTAssertEqual(cached.fields.map(\.id), [0, 1, 2])
+    }
+
+    // MARK: - Wrapped lines and collapse
+
+    private let valueFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+
+    /// A width that holds exactly `columns` characters of the mono value font.
+    private func width(columns: Int) -> CGFloat {
+        var glyph = CGGlyph()
+        var character = UniChar(UInt8(ascii: "x"))
+        CTFontGetGlyphsForCharacters(valueFont, &character, &glyph, 1)
+        var advance = CGSize.zero
+        CTFontGetAdvancesForGlyphs(valueFont, .horizontal, &glyph, &advance, 1)
+        return advance.width * CGFloat(columns) + advance.width / 2
+    }
+
+    /// One unbroken paragraph of 200 characters, 20 to a wrapped line, with `word` placed at `offset`.
+    private func paragraph(with word: String, at offset: Int) -> String {
+        var characters = Array(repeating: Character("x"), count: 200)
+        for (index, character) in word.enumerated() {
+            characters[offset + index] = character
+        }
+        return String(characters)
+    }
+
+    func testMatchOnWrappedLineEightOfOneParagraphForcesExpansion() {
+        let text = paragraph(with: "needle", at: 7 * 20 + 5)
+        let layout = SAClaudeRecordFields.lineLayout(text, width: width(columns: 20), font: valueFont)
+        XCTAssertEqual(layout, SAClaudeRecordLineLayout(lineCount: 10, collapsedEnd: 120))
+
+        let f = field(1, "body", text)
+        let match = SAClaudeRecordFields.match(f, display: display(f), query: "needle")!
+        XCTAssertTrue(SAClaudeRecordFields.matchStartsBelow(match.valueRanges, collapsedEnd: layout.collapsedEnd))
+        XCTAssertEqual(SAClaudeRecordFields.fold(layout, expanded: false, valueRanges: match.valueRanges),
+                       SAClaudeRecordFold(collapsed: false, link: .none))
+    }
+
+    func testMatchOnWrappedLineThreeStaysCollapsedWithShowAllCount() {
+        let text = paragraph(with: "needle", at: 2 * 20 + 5)
+        let layout = SAClaudeRecordFields.lineLayout(text, width: width(columns: 20), font: valueFont)
+        let f = field(1, "body", text)
+        let match = SAClaudeRecordFields.match(f, display: display(f), query: "needle")!
+
+        XCTAssertFalse(SAClaudeRecordFields.matchStartsBelow(match.valueRanges, collapsedEnd: layout.collapsedEnd))
+        XCTAssertEqual(SAClaudeRecordFields.fold(layout, expanded: false, valueRanges: match.valueRanges),
+                       SAClaudeRecordFold(collapsed: true, link: .showAll(10)))
+    }
+
+    func testMatchBelowCollapsedLinesForcesExpansion() {
+        let text = (1...40).map { $0 == 30 ? "line 30 needle" : "line \($0)" }.joined(separator: "\n")
+        let layout = SAClaudeRecordFields.lineLayout(text, width: 600, font: valueFont)
+        XCTAssertEqual(layout.lineCount, 40)
+        XCTAssertEqual(layout.collapsedEnd, (text as NSString).range(of: "line 7").location)
+
+        let f = field(1, "body", text)
+        let below = SAClaudeRecordFields.match(f, display: display(f), query: "needle")!
+        XCTAssertEqual(SAClaudeRecordFields.fold(layout, expanded: false, valueRanges: below.valueRanges),
+                       SAClaudeRecordFold(collapsed: false, link: .none))
+
+        let onSixthLine = SAClaudeRecordFields.match(f, display: display(f), query: "line 6")!
+        XCTAssertEqual(SAClaudeRecordFields.fold(layout, expanded: false, valueRanges: onSixthLine.valueRanges),
+                       SAClaudeRecordFold(collapsed: true, link: .showAll(40)))
+    }
+
+    func testFoldLinks() {
+        let long = SAClaudeRecordLineLayout(lineCount: 9, collapsedEnd: 50)
+        XCTAssertEqual(SAClaudeRecordFields.fold(long, expanded: false, valueRanges: []), SAClaudeRecordFold(collapsed: true, link: .showAll(9)))
+        XCTAssertEqual(SAClaudeRecordFields.fold(long, expanded: true, valueRanges: []), SAClaudeRecordFold(collapsed: false, link: .showLess))
+        let hitBelow = [NSRange(location: 60, length: 3)]
+        XCTAssertEqual(SAClaudeRecordFields.fold(long, expanded: true, valueRanges: hitBelow), SAClaudeRecordFold(collapsed: false, link: .none),
+                       "Show less can't fold a value a search hit holds open")
+        let short = SAClaudeRecordLineLayout(lineCount: 6, collapsedEnd: 30)
+        XCTAssertEqual(SAClaudeRecordFields.fold(short, expanded: false, valueRanges: []), SAClaudeRecordFold(collapsed: false, link: .none))
+    }
+
+    func testTrailingLineBreakAddsNoLine() {
+        let six = (1...6).map { "line \($0)" }.joined(separator: "\n")
+        XCTAssertEqual(SAClaudeRecordFields.lineLayout(six + "\n", width: 600, font: valueFont).lineCount, 6)
+        XCTAssertEqual(SAClaudeRecordFields.fold(SAClaudeRecordFields.lineLayout(six + "\n", width: 600, font: valueFont), expanded: false, valueRanges: []),
+                       SAClaudeRecordFold(collapsed: false, link: .none))
+        XCTAssertEqual(SAClaudeRecordFields.lineLayout(six + "\nline 7", width: 600, font: valueFont).lineCount, 7)
+        XCTAssertEqual(SAClaudeRecordFields.lineLayout("", width: 600, font: valueFont), SAClaudeRecordLineLayout(lineCount: 1, collapsedEnd: 0))
+        XCTAssertEqual(SAClaudeRecordFields.lineLayout("one", width: 600, font: valueFont), SAClaudeRecordLineLayout(lineCount: 1, collapsedEnd: 3))
+    }
+
+    /// The windowed breaker gives the whole-paragraph typesetter's breaks, past the window boundary too.
+    func testWindowedBreaksMatchWholeParagraph() {
+        let words = ["select", "a", "lorem", "ipsum", "path/to/file.txt", "naïve", "averyveryverylongtokenwithoutspaces", "a-b-c", "中文字符", "🙂"]
+        var text = ""
+        var index = 0
+        while text.utf16.count < 3 * SAClaudeRecordFields.lineBreakWindow(width: 300) {
+            text += words[(index * 7) % words.count] + (index % 23 == 0 ? "\n" : " ")
+            index += 1
+        }
+        let typesetter = CTTypesetterCreateWithAttributedString(NSAttributedString(string: text, attributes: [.font: valueFont]))
+        let length = (text as NSString).length
+        var breaks: [Int] = []
+        var start = 0
+        while start < length {
+            start += max(CTTypesetterSuggestLineBreak(typesetter, start, 300), 1)
+            breaks.append(start)
+        }
+        XCTAssertGreaterThan(breaks.count, 60)
+        XCTAssertEqual(SAClaudeRecordFields.lineLayout(text, width: 300, font: valueFont).lineCount, breaks.count)
+        for line in [6, 30, breaks.count / 2, breaks.count - 2] {
+            XCTAssertEqual(SAClaudeRecordFields.lineLayout(text, width: 300, font: valueFont, limit: line).collapsedEnd, breaks[line - 1], "line \(line)")
+        }
     }
 
     func testIsCollapsedRules() {
@@ -193,15 +296,6 @@ final class SAClaudeRecordFieldsTests: XCTestCase {
         XCTAssertFalse(SAClaudeRecordFields.isCollapsed(lineCount: 6, expanded: false, matchStartsBelowLimit: false))
         XCTAssertTrue(SAClaudeRecordFields.isCollapsed(lineCount: 7, expanded: false, matchStartsBelowLimit: false))
         XCTAssertFalse(SAClaudeRecordFields.isCollapsed(lineCount: 7, expanded: true, matchStartsBelowLimit: false))
-    }
-
-    func testLineIndex() {
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: 0, in: "a\nb\nc"), 0)
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: 2, in: "a\nb\nc"), 1)
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: 4, in: "a\nb\nc"), 2)
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: 99, in: "a\nb\nc"), 2)
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: -3, in: "a\nb"), 0)
-        XCTAssertEqual(SAClaudeRecordFields.lineIndex(of: 5, in: "😀\nb"), 1)
     }
 
     // MARK: - Count, stepping, state
