@@ -22,6 +22,9 @@
 		5EC0DEC400000000000000A3 /* SAClaudeMenuCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */; };
 		5EC0DEC400000000000000A4 /* SAClaudeMenuCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */; };
 		5EC0DEC400000000000000A5 /* SAClaudeMenuCardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A2 /* SAClaudeMenuCardModelTests.swift */; };
+		5EC0DEC400000000000000C3 /* SAClaudeRecordFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */; };
+		5EC0DEC400000000000000C4 /* SAClaudeRecordFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */; };
+		5EC0DEC400000000000000C5 /* SAClaudeRecordFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */; };
 		5EC0DEC400000000000000A7 /* SAClaudeMenuCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */; };
 		5EC0DEC400000000000000A9 /* SAClaudeMenuCardAdapters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A8 /* SAClaudeMenuCardAdapters.swift */; };
 		5EC0DEC400000000000000AB /* SAClaudeMenuCardPopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000AA /* SAClaudeMenuCardPopUpButton.swift */; };
@@ -1091,6 +1094,8 @@
 		A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKind.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardModel.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A2 /* SAClaudeMenuCardModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardModelTests.swift; sourceTree = "<group>"; };
+		5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRecordFields.swift; sourceTree = "<group>"; };
+		5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeRecordFieldsTests.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCard.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A8 /* SAClaudeMenuCardAdapters.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardAdapters.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000AA /* SAClaudeMenuCardPopUpButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardPopUpButton.swift; sourceTree = "<group>"; };
@@ -3280,6 +3285,7 @@
 				A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */,
 				A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */,
 				5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */,
+				5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */,
 				5EC0DEC400000000000000B1 /* SAClaudeMenuGlyphs.swift */,
 				F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */,
 				1AD785E325B749760007E153 /* OSLog.swift */,
@@ -3351,6 +3357,7 @@
 				A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */,
 				A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */,
 				5EC0DEC400000000000000A2 /* SAClaudeMenuCardModelTests.swift */,
+				5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */,
 				5EC0DEC400000000000000B2 /* SAClaudeMenuGlyphsTests.swift */,
 				F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */,
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
@@ -4094,6 +4101,8 @@
 				A1E7CA2D0000000000000003 /* SAClaudeAlertKind.swift in Sources */,
 				5EC0DEC400000000000000A3 /* SAClaudeMenuCardModel.swift in Sources */,
 				5EC0DEC400000000000000A5 /* SAClaudeMenuCardModelTests.swift in Sources */,
+				5EC0DEC400000000000000C3 /* SAClaudeRecordFields.swift in Sources */,
+				5EC0DEC400000000000000C5 /* SAClaudeRecordFieldsTests.swift in Sources */,
 				5EC0DEC400000000000000B3 /* SAClaudeMenuGlyphs.swift in Sources */,
 				5EC0DEC400000000000000B5 /* SAClaudeMenuGlyphsTests.swift in Sources */,
 				F0A0C0DE0000000000000005 /* SAClaudeFormLayoutTests.swift in Sources */,
@@ -4457,6 +4466,7 @@
 				A1E7CA2D0000000000000007 /* SAClaudeAlertLayout.swift in Sources */,
 				A1E7CA2D0000000000000002 /* SAClaudeAlertKind.swift in Sources */,
 				5EC0DEC400000000000000A4 /* SAClaudeMenuCardModel.swift in Sources */,
+				5EC0DEC400000000000000C4 /* SAClaudeRecordFields.swift in Sources */,
 				5EC0DEC400000000000000B4 /* SAClaudeMenuGlyphs.swift in Sources */,
 				F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */,
 				F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */,

@@ -59,18 +59,22 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertNil(model.selectedFieldID)
     }
 
-    func testPreviewFlattensWhitespaceWithoutChangingValue() {
+    func testDisplayValueKeepsLineBreaksAndFullValue() {
         let field = SARecordField(id: 0, name: "content", value: "first\nsecond\tthird")
 
-        XCTAssertEqual(field.previewValue, "first second third")
+        XCTAssertEqual(SAClaudeRecordFields.displayValue(field), .text("first\nsecond\tthird"))
         XCTAssertEqual(field.value, "first\nsecond\tthird")
     }
 
-    func testPreviewLimitsLongValues() {
-        let field = SARecordField(id: 0, name: "content", value: String(repeating: "x", count: 5_000))
+    func testDisplayValueLimitsLongValuesButNotTheStoredValue() {
+        let field = SARecordField(id: 0, name: "content", value: String(repeating: "x", count: 150_000))
 
-        XCTAssertEqual(field.previewValue.count, 4_097)
-        XCTAssertTrue(field.previewValue.hasSuffix("…"))
+        guard case .text(let shown) = SAClaudeRecordFields.displayValue(field) else {
+            return XCTFail("expected text")
+        }
+        XCTAssertEqual(shown.count, 100_001)
+        XCTAssertTrue(shown.hasSuffix("…"))
+        XCTAssertEqual(field.value.count, 150_000)
     }
 
     func testBeginsAndCommitsInlineEdit() {

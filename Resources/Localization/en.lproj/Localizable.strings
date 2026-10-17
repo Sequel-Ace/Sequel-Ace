@@ -5283,3 +5283,9 @@
 
 /* Claude menu card: placeholder of the Query Favorites card's search field */
 "ClaudeMenuSearchFavorites" = "Search favorites";
+
+/* Record View: count shown in the search field when exactly one field matches */
+"ClaudeRecordMatchOne" = "1 match";
+
+/* Record View: count shown in the search field; %d is the number of matching fields */
+"ClaudeRecordMatchMany" = "%d matches";

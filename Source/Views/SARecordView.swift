@@ -8,19 +8,15 @@
 import SwiftUI
 
 struct SARecordField: Identifiable, Equatable {
-    let id: Int
-    let name: String
-    let value: String
-
-    var previewValue: String {
-        let prefix = value.prefix(4_097)
-        let isTruncated = prefix.count > 4_096
-        let flattened = String(prefix.prefix(4_096))
-            .components(separatedBy: .newlines)
-            .joined(separator: " ")
-            .replacingOccurrences(of: "\t", with: " ")
-        return isTruncated ? flattened + "…" : flattened
-    }
+    var id: Int
+    var name: String
+    var value: String
+    /// The column definition's type (`VARCHAR`, `JSON`, ...); empty when unknown.
+    var type: String = ""
+    /// SQL NULL, as opposed to an empty string or the text "NULL".
+    var isNull = false
+    /// A BLOB/TEXT value that has not been loaded yet.
+    var notLoaded = false
 }
 
 enum SARecordViewFocusTarget: Equatable {
@@ -254,13 +250,23 @@ private struct SARecordView: View {
                             }
                         }
                 } else {
-                    Text(field.previewValue)
+                    Text(Self.singleLinePreview(field.value))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
             }
         }
         .focused($panelFocus, equals: .table)
+    }
+
+    /// Interim single-line cell text until the Claude body (wrapped values) lands.
+    private static func singleLinePreview(_ value: String) -> String {
+        let prefix = value.prefix(4_097)
+        let flattened = String(prefix.prefix(4_096))
+            .components(separatedBy: .newlines)
+            .joined(separator: " ")
+            .replacingOccurrences(of: "\t", with: " ")
+        return prefix.count > 4_096 ? flattened + "…" : flattened
     }
 
     @ViewBuilder
@@ -582,7 +588,10 @@ private final class SARecordViewOverlayView: NSView {
             SARecordField(
                 id: (dictionary["id"] as? NSNumber)?.intValue ?? index,
                 name: dictionary["name"] as? String ?? "",
-                value: dictionary["value"] as? String ?? ""
+                value: dictionary["value"] as? String ?? "",
+                type: dictionary["type"] as? String ?? "",
+                isNull: (dictionary["isNull"] as? NSNumber)?.boolValue ?? false,
+                notLoaded: (dictionary["notLoaded"] as? NSNumber)?.boolValue ?? false
             )
         }
     }
