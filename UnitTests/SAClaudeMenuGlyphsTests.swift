@@ -57,10 +57,6 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         "addEmptyFilterRow": "plus",
         "addEmptyFilterGroup": "plus.rectangle.on.rectangle",
         "copyPreviewClause:": "doc.on.doc",
-        // Refresh / reload.
-        "refresh:": "arrow.clockwise",
-        "refreshTables:": "arrow.clockwise",
-        "reloadTable:": "arrow.clockwise",
     ]
 
     private func symbol(_ selector: String, _ title: String = "Item") -> String? {
@@ -119,7 +115,10 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         // Dynamic items (Bundles, cell filter operators, display formats, sort choices, column toggles) and unknowns.
         for selector in ["executeBundleItemForDataTable:", "executeBundleItemForInputField:", "apply:", "sortFavorites:",
                          "reverseSortFavorites:", "toggleColumnView:", "toggleDisplayOverrideFormatter:", "submenuAction:",
-                         "_popUpItemAction:", "somethingNew:", ""] {
+                         "_popUpItemAction:", "somethingNew:", "",
+                         // No in-scope menu sends these: buttons (reloadTable:), the main menu (refreshTables:) and
+                         // the User Manager sheet's gear (refresh:).
+                         "refresh:", "refreshTables:", "reloadTable:"] {
             XCTAssertNil(symbol(selector), selector)
         }
     }
@@ -157,7 +156,11 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         let database = item("mysql", nil)
         let databaseImage = NSImage(size: NSSize(width: 12, height: 12))
         database.image = databaseImage
-        [gearTitle, codeSet, database].forEach(menu.addItem)
+        // A code image on an action AppKit has its own image for (copy:): still the code's.
+        let codeCopy = item("Copy", "copy:")
+        let codeCopyImage = NSImage(size: NSSize(width: 16, height: 16))
+        codeCopy.image = codeCopyImage
+        [gearTitle, codeSet, database, codeCopy].forEach(menu.addItem)
 
         SAClaudeMenuGlyphs.apply(to: menu, imageFor: image, mainMenu: nil)
         SAClaudeMenuGlyphs.apply(to: menu, imageFor: image, mainMenu: nil)
@@ -165,10 +168,12 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         XCTAssertTrue(codeSet.image === codeImage)
         XCTAssertTrue(gearTitle.image === gearImage)
         XCTAssertTrue(database.image === databaseImage)
+        XCTAssertTrue(codeCopy.image === codeCopyImage)
         // Their visibility is the code's business too.
         XCTAssertTrue(isAutomatic(codeSet))
         XCTAssertTrue(isAutomatic(gearTitle))
         XCTAssertTrue(isAutomatic(database))
+        XCTAssertTrue(isAutomatic(codeCopy))
     }
 
     /// AppKit gives some standard actions an image of its own (Copy, Cut, Paste…), hidden by default on macOS 27:
@@ -268,6 +273,40 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         context.addItem(contextRename)
         SAClaudeMenuGlyphs.apply(to: context, imageFor: image, mainMenu: mainMenu)
         XCTAssertEqual(nameOf(contextRename.image), "pencil")
+    }
+
+    // MARK: Which menus
+
+    /// Only a main document window with no sheet attached, never the main menu: sheets (Query Favorites, User
+    /// Manager), panels, Settings and utility windows keep their menus native.
+    func testAppliesOnlyInMainDocumentWindowWithoutSheet() {
+        XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: true, hasAttachedSheet: false))
+        for isMainMenu in [false, true] {
+            for isMainDocumentWindow in [false, true] {
+                for hasAttachedSheet in [false, true] where isMainMenu || !isMainDocumentWindow || hasAttachedSheet {
+                    XCTAssertFalse(SAClaudeMenuGlyphs.shouldApply(isMainMenu: isMainMenu, isMainDocumentWindow: isMainDocumentWindow,
+                                                                  hasAttachedSheet: hasAttachedSheet),
+                                   "mainMenu=\(isMainMenu) document=\(isMainDocumentWindow) sheet=\(hasAttachedSheet)")
+                }
+            }
+        }
+    }
+
+    func testIsInMainMenu() {
+        let mainMenu = NSMenu(title: "Main")
+        let fileItem = item("File", nil)
+        let file = NSMenu(title: "File")
+        let recentItem = item("Open Recent", nil)
+        let recent = NSMenu(title: "Open Recent")
+        mainMenu.addItem(fileItem)
+        mainMenu.setSubmenu(file, for: fileItem)
+        file.addItem(recentItem)
+        file.setSubmenu(recent, for: recentItem)
+        XCTAssertTrue(SAClaudeMenuGlyphs.isInMainMenu(mainMenu, mainMenu: mainMenu))
+        XCTAssertTrue(SAClaudeMenuGlyphs.isInMainMenu(file, mainMenu: mainMenu))
+        XCTAssertTrue(SAClaudeMenuGlyphs.isInMainMenu(recent, mainMenu: mainMenu))
+        XCTAssertFalse(SAClaudeMenuGlyphs.isInMainMenu(NSMenu(), mainMenu: mainMenu))
+        XCTAssertFalse(SAClaudeMenuGlyphs.isInMainMenu(file, mainMenu: nil))
     }
 
     func testMissingImageLeavesItemAlone() {

@@ -10,7 +10,8 @@
 //  entries, anything new) get none. Titles, order, shortcuts and validation
 //  are untouched. Pure (AppKit types only, no app state): built into the app
 //  and the Unit Tests targets. The pass that runs it before each menu opens
-//  is SAClaudeMenuGlyphPass.
+//  is SAClaudeMenuGlyphPass; which menus it runs on (the main document
+//  windows' only) is `shouldApply`.
 //
 
 import AppKit
@@ -56,7 +57,7 @@ enum SAClaudeMenuGlyphs {
         // Export / import
         "exportSelectedTablesAs:": "square.and.arrow.up",
         "exportCustomQueryResultAsFormat:": "square.and.arrow.up",
-        "exportFavorites:": "square.and.arrow.up",
+        "exportFavorites:": "square.and.arrow.up",      // connection gear (Query Favorites' is in a sheet: skipped)
         "importFavorites:": "square.and.arrow.down",
         // Windows and tabs
         "openTableInNewTab:": "macwindow.badge.plus",
@@ -73,10 +74,6 @@ enum SAClaudeMenuGlyphs {
         "showMySQLHelpForCurrentWord:": "questionmark.circle",
         "selectCurrentQuery:": "selection.pin.in.out",
         "makeSelectedFavoriteDefault:": "star",
-        // Refresh / reload
-        "refresh:": "arrow.clockwise",
-        "refreshTables:": "arrow.clockwise",
-        "reloadTable:": "arrow.clockwise",
     ]
 
     /// Submenus whose rows are choices rather than commands (column toggles, sort keys, filter operators): the rows
@@ -97,13 +94,27 @@ enum SAClaudeMenuGlyphs {
         byAction[selector]
     }
 
+    /// Whether the pass glyphs a menu that is opening: only in a main document window (the database window, whose
+    /// connection screen is the same window) with no sheet attached, and never the main menu bar's menus. Menus
+    /// opened in sheets, panels, Settings and utility windows (Query Favorites, User Manager, Bundle Editor,
+    /// Console…) stay as they are, as the spec's non-goals ask.
+    static func shouldApply(isMainMenu: Bool, isMainDocumentWindow: Bool, hasAttachedSheet: Bool) -> Bool {
+        !isMainMenu && isMainDocumentWindow && !hasAttachedSheet
+    }
+
+    /// Whether `menu` is the main menu bar's or one of its submenus (its top supermenu is `mainMenu`).
+    static func isInMainMenu(_ menu: NSMenu, mainMenu: NSMenu?) -> Bool {
+        guard let mainMenu else { return false }
+        return topMenu(of: menu) === mainMenu
+    }
+
     /// Gives each item of `menu` and its submenus whose image is empty and whose action maps the glyph `imageFor`
     /// returns for it (shown, on macOS 27, whatever the system's menu-icon setting: `preferredImageVisibility`);
     /// a submenu's parent row takes the glyph all its rows share. Never replaces an image: an item that already has
     /// one keeps it, except that AppKit's own image for a mapped standard action (Copy, Cut, Paste) is shown too.
     /// Does nothing to the main menu bar's menus (any menu whose top supermenu is `mainMenu`).
     static func apply(to menu: NSMenu, imageFor: (String) -> NSImage?, mainMenu: NSMenu? = NSApp?.mainMenu) {
-        if let mainMenu, topMenu(of: menu) === mainMenu { return }
+        if isInMainMenu(menu, mainMenu: mainMenu) { return }
         fill(menu, imageFor: imageFor)
     }
 
@@ -128,12 +139,12 @@ enum SAClaudeMenuGlyphs {
 
     /// The one glyph every command row of `submenu` maps to (directly or as a parent-only group), else nil.
     private static func sharedSymbol(of submenu: NSMenu) -> String? {
-        let rows = submenu.items.filter { !$0.isSeparatorItem && $0.submenu == nil && $0.action != nil }
+        let rows = submenu.items.filter { !$0.isSeparatorItem && $0.submenu == nil }
+            .compactMap { row in row.action.map { (NSStringFromSelector($0), row.title) } }
         guard !rows.isEmpty else { return nil }
         var shared: String?
-        for row in rows {
-            let selector = NSStringFromSelector(row.action!)
-            guard let name = symbol(forAction: selector, title: row.title) ?? parentOnly[selector],
+        for (selector, title) in rows {
+            guard let name = symbol(forAction: selector, title: title) ?? parentOnly[selector],
                   shared == nil || shared == name else { return nil }
             shared = name
         }
