@@ -212,14 +212,47 @@ final class SAClaudeMenuCardPresenter: NSObject, NSPopoverDelegate {
         object.setValue(value, forKeyPath: keyPath)
     }
 
-    /// Closes first, then fires on the next runloop turn, so a sheet or alert the action opens doesn't attach to a
-    /// closing popover. Only a choosable row fires.
+    /// Closes first, then fires after this event, so a sheet or alert the action opens doesn't attach to a closing
+    /// popover. Only a choosable row fires.
     private func choose(_ position: Int) {
         guard let session, let row = session.model.row(at: position), row.isChoosable, let entry = row.entry,
               entry.index >= 0, entry.index < session.menu.numberOfItems else { return }
         let item = session.menu.items[entry.index]
+        // The modifiers held when choosing (Return's keyDown, or the click's mouse-up): actions such as
+        // chooseQueryHistory: read `[NSApp currentEvent] modifierFlags` to flip replace/insert.
+        let flags = (NSApp.currentEvent?.modifierFlags ?? NSEvent.modifierFlags).intersection(.deviceIndependentFlagsMask)
         close()
-        DispatchQueue.main.async { Self.fire(item) }
+        scheduleFire(item, modifierFlags: flags)
+    }
+
+    /// Items waiting for their application-defined event, keyed by the event's `data1`.
+    private var pendingFires: [Int: NSMenuItem] = [:]
+    private var nextFireToken = 0
+    private var fireMonitor: Any?
+    private static let fireEventSubtype: Int16 = 0x5AC3
+
+    /// Fires `item` from an application-defined event that carries `modifierFlags`, posted at the front of the queue:
+    /// while the action runs, `NSApp.currentEvent` is that event (a plain main-queue hop would leave it nil).
+    private func scheduleFire(_ item: NSMenuItem, modifierFlags: NSEvent.ModifierFlags) {
+        if fireMonitor == nil {
+            fireMonitor = NSEvent.addLocalMonitorForEvents(matching: .applicationDefined) { [weak self] event in
+                guard event.subtype.rawValue == Self.fireEventSubtype, let self,
+                      let item = self.pendingFires.removeValue(forKey: event.data1) else { return event }
+                Self.fire(item)
+                return nil
+            }
+        }
+        nextFireToken += 1
+        let token = nextFireToken
+        guard fireMonitor != nil,
+              let event = NSEvent.otherEvent(with: .applicationDefined, location: .zero, modifierFlags: modifierFlags,
+                                             timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: 0, context: nil,
+                                             subtype: Self.fireEventSubtype, data1: token, data2: 0) else {
+            DispatchQueue.main.async { Self.fire(item) }
+            return
+        }
+        pendingFires[token] = item
+        NSApp.postEvent(event, atStart: true)
     }
 
     // MARK: Closing
