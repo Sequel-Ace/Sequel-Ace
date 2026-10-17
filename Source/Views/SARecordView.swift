@@ -44,6 +44,10 @@ enum SARecordViewPanelKey: Equatable {
     case escapeSearch
     /// ↓ in the search field moves to the field blocks.
     case focusFields
+    /// Escape on the field blocks while an edit is open: cancel it.
+    case cancelEdit
+    /// Return on the field blocks while an edit is open: back into its editor.
+    case focusEditor
 }
 
 @objc final class SARecordViewEditSupport: NSObject {
@@ -117,6 +121,10 @@ final class SARecordViewModel: ObservableObject {
     @Published var focusedFieldID: SARecordField.ID?
     @Published var editDraft = ""
     @Published private(set) var focusRequestID = 0
+    /// Bumped to put the keyboard back in the open inline editor (`focusedFieldID` may not have changed).
+    @Published private(set) var editorFocusRequestID = 0
+    /// The value the open edit started from: committing it unchanged has nothing to write.
+    private var editStartValue: String?
     /// Which long values are expanded; belongs to the shown row (`SAClaudeRecordFields.carry`).
     @Published private(set) var panelState = SAClaudeRecordPanelState(rowKey: "", expandedFieldIDs: [])
     private(set) var focusTarget: SARecordViewFocusTarget?
@@ -293,13 +301,37 @@ final class SARecordViewModel: ObservableObject {
                 return
             }
         }
-        guard beginEditing?(field.id) == true else {
+        // Never a field this snapshot no longer has (a menu or click left over from before a reload).
+        guard fields.contains(where: { $0.id == field.id }), beginEditing?(field.id) == true else {
             return
         }
-        let field = fields.first { $0.id == field.id } ?? field
+        // The begin handler may have refreshed the snapshot (a not-loaded value loads): edit what it shows now.
+        guard let field = fields.first(where: { $0.id == field.id }) else {
+            return
+        }
         editingFieldID = field.id
         focusedFieldID = field.id
         editDraft = field.value
+        editStartValue = field.value
+    }
+
+    /// Escape on the field blocks while an edit is open (its editor lost the keyboard, e.g. after a refused
+    /// commit): drops the edit and its draft, and the blocks keep the keyboard.
+    func cancelOpenEdit() {
+        guard editingFieldID != nil else {
+            return
+        }
+        cancelEdit()
+        requestFocus(.table)
+    }
+
+    /// Return on the field blocks while an edit is open: back into its editor.
+    func focusEditor() {
+        guard let fieldID = editingFieldID else {
+            return
+        }
+        focusedFieldID = fieldID
+        editorFocusRequestID += 1
     }
 
     func requestFocus(_ target: SARecordViewFocusTarget) {
@@ -313,9 +345,18 @@ final class SARecordViewModel: ObservableObject {
         }
     }
 
+    /// Commits the open edit through the host (Return, focus loss, starting another edit, a row step). An unchanged
+    /// draft just closes the edit: there is nothing to write, and a host would otherwise write the same value (the
+    /// Query tab's UPDATE then affects 0 rows, warns and refuses, leaving the editor open without the keyboard).
     func commitEdit() {
-        guard let fieldID = editingFieldID,
-              commitEditing?(fieldID, editDraft) == true else {
+        guard let fieldID = editingFieldID else {
+            return
+        }
+        if editDraft == editStartValue {
+            cancelEdit()
+            return
+        }
+        guard commitEditing?(fieldID, editDraft) == true else {
             return
         }
         cancelEdit()
@@ -354,6 +395,7 @@ final class SARecordViewModel: ObservableObject {
         editingFieldID = nil
         focusedFieldID = nil
         editDraft = ""
+        editStartValue = nil
     }
 }
 
@@ -506,8 +548,8 @@ private final class SARecordViewOverlayView: NSView {
 
     /// The panel's own keys. On the field blocks (the panel focused, not a text field): ↑/↓ move the selection,
     /// Return edits it, ⌥↑/⌥↓ step rows, a printable character (no ⌘/⌃) with a block selected starts a search.
-    /// In the search field: Escape, ↓ to the blocks, ⌥↑/⌥↓. While a value is being edited, none: the inline editor
-    /// keeps all its keys.
+    /// In the search field: Escape, ↓ to the blocks, ⌥↑/⌥↓. While a value is being edited the inline editor keeps
+    /// all its keys; on the blocks only Escape (cancel the edit) and Return (back into the editor) act.
     static func panelKeyAction(_ event: NSEvent,
                                firstResponder: NSResponder?,
                                recordView: NSView,
@@ -539,9 +581,17 @@ private final class SARecordViewOverlayView: NSView {
             return nil
         }
 
-        // An open inline edit (its editor not focused yet, or a refused commit) owns the keys.
-        guard !isEditing else {
-            return nil
+        // An open inline edit (its editor not focused yet, or a refused commit) owns the keys: only Escape (cancel it)
+        // and Return (back into its editor) act, so the panel is never left without a way out.
+        if isEditing {
+            guard modifiers.isEmpty else {
+                return nil
+            }
+            switch event.keyCode {
+            case 53: return .cancelEdit
+            case 36, 76: return .focusEditor
+            default: return nil
+            }
         }
         if let vertical {
             if modifiers == .option {
@@ -720,6 +770,10 @@ private final class SARecordViewOverlayView: NSView {
             model.escapeInSearch()
         case .focusFields:
             model.requestFocus(.table)
+        case .cancelEdit:
+            model.cancelOpenEdit()
+        case .focusEditor:
+            model.focusEditor()
         }
     }
 

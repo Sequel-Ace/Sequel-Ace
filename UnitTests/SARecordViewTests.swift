@@ -87,6 +87,7 @@ final class SARecordViewTests: XCTestCase {
             return true
         }
 
+        model.update(fields: [field], selectedRowCount: 1)
         model.requestEdit(field)
         XCTAssertEqual(model.editingFieldID, 2)
         XCTAssertEqual(model.focusedFieldID, 2)
@@ -109,6 +110,7 @@ final class SARecordViewTests: XCTestCase {
             committed = (id, value)
             return true
         }
+        model.update(fields: [field], selectedRowCount: 1)
         model.requestEdit(field)
         model.editDraft = "Grace"
 
@@ -121,6 +123,7 @@ final class SARecordViewTests: XCTestCase {
 
     func testRejectedEditNeverCreatesDraft() {
         let model = SARecordViewModel()
+        model.update(fields: [SARecordField(id: 0, name: "generated", value: "42")], selectedRowCount: 1)
         model.beginEditing = { _ in false }
 
         model.requestEdit(SARecordField(id: 0, name: "generated", value: "42"))
@@ -148,6 +151,7 @@ final class SARecordViewTests: XCTestCase {
         let model = SARecordViewModel()
         let field = SARecordField(id: 0, name: "name", value: "Ada")
         model.beginEditing = { _ in true }
+        model.update(fields: [field], selectedRowCount: 1)
         model.requestEdit(field)
         model.editDraft = "unsaved"
 
@@ -163,6 +167,7 @@ final class SARecordViewTests: XCTestCase {
         let field = SARecordField(id: 0, name: "name", value: "Ada")
         model.beginEditing = { _ in true }
         model.commitEditing = { _, _ in false }
+        model.update(fields: [field], selectedRowCount: 1)
         model.requestEdit(field)
         model.editDraft = "invalid"
 
@@ -179,6 +184,7 @@ final class SARecordViewTests: XCTestCase {
         model.validateEditing = { _, value in
             value == "invalid" ? nil : String(value.prefix(3))
         }
+        model.update(fields: [field], selectedRowCount: 1)
         model.requestEdit(field)
 
         model.updateEditDraft("Grace")
@@ -439,7 +445,10 @@ final class SARecordViewTests: XCTestCase {
             SARecordViewToolbarSupport.panelKeyAction(event, firstResponder: recordView, recordView: recordView,
                                                       isRecordViewVisible: true, isEditing: true, hasSelection: true)
         }
-        XCTAssertNil(action(keyEvent(keyCode: 36, characters: "\r")))
+        XCTAssertEqual(action(keyEvent(keyCode: 36, characters: "\r")), .focusEditor)
+        XCTAssertEqual(action(keyEvent(keyCode: 76, characters: "\u{3}")), .focusEditor)
+        XCTAssertEqual(action(keyEvent(keyCode: 53, characters: "\u{1b}")), .cancelEdit)
+        XCTAssertNil(action(keyEvent(keyCode: 53, characters: "\u{1b}", modifiers: .shift)))
         XCTAssertNil(action(keyEvent(keyCode: 0, characters: "a")))
         XCTAssertNil(action(keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function])))
         XCTAssertNil(action(keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function, .option])))
@@ -470,6 +479,101 @@ final class SARecordViewTests: XCTestCase {
         model.requestEdit(fields[2])
         XCTAssertEqual(model.editingFieldID, 1, "another field waits while the open edit's commit is refused")
         XCTAssertEqual(model.editDraft, "unsaved")
+    }
+
+    func testUnchangedDraftClosesWithoutCommitting() {
+        let model = SARecordViewModel()
+        var commits = 0
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        model.beginEditing = { _ in true }
+        model.commitEditing = { _, _ in
+            commits += 1
+            return false
+        }
+        var steps: [Int] = []
+        model.rowStepHandler = { steps.append($0) }
+
+        model.requestEdit(fields[1])
+        model.commitEdit()
+        XCTAssertNil(model.editingFieldID, "Return with nothing changed")
+
+        model.requestEdit(fields[1])
+        model.editorFocusChanged(nil)
+        XCTAssertNil(model.editingFieldID, "focus loss with nothing changed")
+
+        model.requestEdit(fields[1])
+        model.requestEdit(fields[2])
+        XCTAssertEqual(model.editingFieldID, 2, "starting another edit")
+
+        model.stepRow(1)
+        XCTAssertNil(model.editingFieldID)
+        XCTAssertEqual(steps, [1], "a row step")
+
+        model.requestEdit(fields[0])
+        model.editDraft = "43"
+        model.editDraft = "42"
+        model.commitEdit()
+        XCTAssertNil(model.editingFieldID, "changed back to the start value")
+        XCTAssertEqual(commits, 0)
+    }
+
+    func testEscapeOnBlocksCancelsARefusedEdit() {
+        let model = SARecordViewModel()
+        var panelFocus = 0
+        model.focusPanelHandler = { panelFocus += 1 }
+        model.update(fields: fields, selectedRowCount: 1)
+        model.beginEditing = { _ in true }
+        model.commitEditing = { _, _ in false }
+        model.selectedFieldID = 1
+        model.editSelectedField()
+        model.editDraft = "refused"
+        model.editorFocusChanged(nil)
+        XCTAssertEqual(model.editingFieldID, 1, "the refused commit leaves the edit open")
+
+        model.cancelOpenEdit()
+
+        XCTAssertNil(model.editingFieldID)
+        XCTAssertEqual(model.editDraft, "")
+        XCTAssertEqual(panelFocus, 1)
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 2, "the block keys work again")
+        model.editSelectedField()
+        XCTAssertEqual(model.editingFieldID, 2)
+    }
+
+    func testReturnOnBlocksRefocusesARefusedEdit() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+        model.beginEditing = { _ in true }
+        model.commitEditing = { _, _ in false }
+        model.requestEdit(fields[1])
+        model.editDraft = "refused"
+        model.editorFocusChanged(nil)
+        let requests = model.editorFocusRequestID
+
+        model.focusEditor()
+
+        XCTAssertEqual(model.editorFocusRequestID, requests + 1)
+        XCTAssertEqual(model.focusedFieldID, 1)
+        XCTAssertEqual(model.editingFieldID, 1)
+        XCTAssertEqual(model.editDraft, "refused")
+
+        model.cancelEdit()
+        model.focusEditor()
+        XCTAssertEqual(model.editorFocusRequestID, requests + 1, "nothing to focus without an open edit")
+    }
+
+    func testNeverEditsAFieldTheSnapshotNoLongerHas() {
+        let model = SARecordViewModel()
+        var begun: [Int] = []
+        model.beginEditing = { begun.append($0); return true }
+        model.update(fields: fields, selectedRowCount: 1)
+        model.update(fields: [SARecordField(id: 0, name: "other", value: "1")], selectedRowCount: 1)
+
+        model.requestEdit(fields[2])
+
+        XCTAssertEqual(begun, [])
+        XCTAssertNil(model.editingFieldID)
     }
 
     func testEditingAnotherFieldCommitsTheOpenEditFirst() {
@@ -613,6 +717,7 @@ final class SARecordViewTests: XCTestCase {
         model.rowStepHandler = { steps.append($0) }
         model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
         model.requestEdit(fields[1])
+        model.editDraft = "Grace"
 
         model.stepRow(1)
 

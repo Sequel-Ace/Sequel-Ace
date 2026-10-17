@@ -164,6 +164,7 @@ private struct SAClaudeRecordPanelView: View {
         .frame(minWidth: 240, idealWidth: 320)
         .background(palette.surface)
         .onChange(of: model.focusedFieldID) { editorFocus = $0 }
+        .onChange(of: model.editorFocusRequestID) { _ in editorFocus = model.focusedFieldID }
         .onChange(of: editorFocus) { model.editorFocusChanged($0) }
         .onChange(of: model.focusRequestID) { _ in
             if model.focusTarget == .filter {
