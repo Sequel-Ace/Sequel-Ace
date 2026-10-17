@@ -141,7 +141,9 @@ enum SAClaudeSheetTargeting {
     ]
 
     /// Owners whose windows are never restyled, sheet or not: the main document window, the Query Console and
-    /// the standalone connection window (already in the Claude look).
+    /// the experimental standalone connection window. That window is no longer opened from the menu (⇧⌘N now
+    /// opens the main window's connection screen); it stays excluded so the sheet styler never walks its
+    /// SwiftUI content.
     static let excludedOwnerClasses: Set<String> = ["SPWindowController", "SPQueryController", "SAConnectionWindowController"]
 
     enum Decision: Equatable {

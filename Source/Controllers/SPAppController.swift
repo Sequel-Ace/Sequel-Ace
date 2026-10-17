@@ -34,6 +34,9 @@ extension SPAppController {
     /// Tracks open standalone connection windows so they don't get deallocated.
     private static var standaloneConnectionWindows: [StandaloneConnectionWindow] = []
 
+    /// Retired from the File menu (⇧⌘N now sends `newWindow:` and opens the main window's connection
+    /// screen); kept in place, unused, for upstream merges.
+    ///
     /// Opens a standalone connection window (decoupled from document lifecycle).
     /// This is the modernized connection flow — the connection screen exists
     /// independently, and only creates a document tab on successful connect.
@@ -253,15 +256,20 @@ extension SPAppController {
 
 extension SPAppController {
 
-    /// Adds a "New Connection Window" menu item to the File menu.
+    /// Adds a "New Connection Window" (⇧⌘N) item to the File menu. It sends `newWindow:` down the responder
+    /// chain — the same action as ⌘N's item in MainMenu.xib — so both open a new window on the main window's
+    /// connection screen. (The experimental standalone connection window is no longer reachable from the menu.)
     /// Called from applicationDidFinishLaunching via ObjC.
     @objc func installStandaloneConnectionMenuItem() {
         guard let fileMenu = NSApp.mainMenu?.item(withTitle: "File")?.submenu else {
             return
         }
 
-        // Idempotent: don't add if already present
-        if fileMenu.items.contains(where: { $0.action == #selector(openStandaloneConnectionWindow(_:)) }) {
+        // Idempotent: don't add if already present. ⌘N's own item shares the action and title, so tell ours
+        // apart by its Shift modifier.
+        if fileMenu.items.contains(where: {
+            $0.action == #selector(newWindow(_:)) && $0.keyEquivalentModifierMask.contains(.shift)
+        }) {
             return
         }
 
@@ -270,7 +278,7 @@ extension SPAppController {
 
         let menuItem = NSMenuItem(
             title: NSLocalizedString("New Connection Window", comment: "Menu item for standalone connection window"),
-            action: #selector(openStandaloneConnectionWindow(_:)),
+            action: #selector(newWindow(_:)),
             keyEquivalent: "N"  // Cmd+Shift+N
         )
         menuItem.keyEquivalentModifierMask = [.command, .shift]
