@@ -22,6 +22,7 @@
 		5EC0DEC400000000000000A3 /* SAClaudeMenuCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */; };
 		5EC0DEC400000000000000A4 /* SAClaudeMenuCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */; };
 		5EC0DEC400000000000000A5 /* SAClaudeMenuCardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A2 /* SAClaudeMenuCardModelTests.swift */; };
+		5EC0DEC400000000000000A7 /* SAClaudeMenuCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */; };
 		F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */; };
 		F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */; };
 		F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */; };
@@ -1081,6 +1082,7 @@
 		A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKind.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardModel.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A2 /* SAClaudeMenuCardModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardModelTests.swift; sourceTree = "<group>"; };
+		5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCard.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBitEditorForm.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFieldEditorStyler.swift; sourceTree = "<group>"; };
 		F0A0C0DE0000000000000008 /* SAClaudeFormRecipes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFormRecipes.swift; sourceTree = "<group>"; };
@@ -3108,6 +3110,7 @@
 				EA0C0DE0000000000000010A /* SAClaudeImportMapperStyler.swift */,
 				EA0C0DE0000000000000010C /* SAClaudeImportOptionsStyler.swift */,
 				EA0C0DE0000000000000010E /* SAClaudeThemeWatcher.swift */,
+				5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */,
 				EA0C0DE0000000000000000E /* SAClaudeProgressBar.swift */,
 				C1A0DE500000000000000B01 /* SAClaudeFavoriteCardGridView.swift */,
 				C1A0DE500000000000000B03 /* SAClaudeFavoriteCardGridController.swift */,
@@ -4464,6 +4467,7 @@
 				EA0C0DE0000000000000010B /* SAClaudeImportMapperStyler.swift in Sources */,
 				EA0C0DE0000000000000010D /* SAClaudeImportOptionsStyler.swift in Sources */,
 				EA0C0DE0000000000000010F /* SAClaudeThemeWatcher.swift in Sources */,
+				5EC0DEC400000000000000A7 /* SAClaudeMenuCard.swift in Sources */,
 				EA0C0DE0000000000000000F /* SAClaudeProgressBar.swift in Sources */,
 				C1A0DE500000000000000B02 /* SAClaudeFavoriteCardGridView.swift in Sources */,
 				C1A0DE500000000000000B04 /* SAClaudeFavoriteCardGridController.swift in Sources */,

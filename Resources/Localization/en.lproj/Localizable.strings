@@ -5265,3 +5265,6 @@
 
 /* Claude alert card: label above the MySQL server's error text */
 "ClaudeAlertMySQLSaid" = "MySQL said";
+
+/* Claude menu card: the one line shown when the search matches no row */
+"ClaudeMenuNoMatches" = "No matches";
