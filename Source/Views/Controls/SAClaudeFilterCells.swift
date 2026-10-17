@@ -424,7 +424,7 @@ private enum SheetButtonDrawing {
     }
 }
 
-/// A secondary destructive alert button (every destructive button but the default one, e.g. "Delete ALL ROWS IN
+/// A secondary destructive alert button (a delete-type destructive button other than the default one, e.g. "Delete ALL ROWS IN
 /// TABLE" beside the default "Delete Selected Row"): the secondary button's geometry and font, a 1pt red dashed
 /// outline and a red title (`SAClaudeAlertChrome.destructiveOutline`: `red` light, `redGlyphDark` dark); pressed, a
 /// faint (10%) red fill; 45% when disabled.
@@ -441,7 +441,8 @@ private enum SheetButtonDrawing {
         controlView.effectiveAppearance.performAsCurrentDrawingAppearance {
             red = SAClaudeAlertChrome.destructiveOutline.usingColorSpace(.sRGB) ?? SAClaudeAlertChrome.red
         }
-        let path = FilterCellDrawing.roundedPath(rect.insetBy(dx: 0.5, dy: 0.5), radius: FilterCellDrawing.cornerRadius - 0.5)
+        let inset = SAClaudeAlertChrome.destructiveOutlineInset
+        let path = FilterCellDrawing.roundedPath(rect.insetBy(dx: inset, dy: inset), radius: FilterCellDrawing.cornerRadius - inset)
         if isHighlighted {
             red.withAlphaComponent(SAClaudeAlertChrome.destructiveOutlinePressedAlpha).setFill()
             path.fill()
@@ -469,7 +470,7 @@ private enum SheetButtonDrawing {
 }
 
 /// The looks of a sheet or alert push button: `destructive` is the filled red default, `destructiveSecondary` the
-/// red dashed outline of every other destructive alert button.
+/// red dashed outline of a non-default delete-type destructive alert button.
 enum SAClaudeSheetButtonLook: CaseIterable { case primary, secondary, destructive, destructiveSecondary }
 
 // MARK: - Installing

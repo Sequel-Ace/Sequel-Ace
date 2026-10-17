@@ -117,12 +117,13 @@ enum SAClaudeAlertCardStyler {
         guard let card = SAClaudeAlertCard.install(on: alert, classification: classification, parts: parts, colours: currentColours()) else { return }
         markLabels(of: card)
 
-        // Only once the card is in (a refused card leaves the alert exactly as today): every destructive button turns
-        // red, the default one filled, every other one a red dashed outline. Only the look changes (return codes, key
-        // equivalents, Escape stay). Each cell is swapped in place; the card has taken the buttons out of NSAlert's stack
-        // view, which no longer observes them (`SAClaudeClassSwap`).
+        // Only once the card is in (a refused card leaves the alert exactly as today): the default destructive button
+        // turns filled red, every other delete-type one a red dashed outline; any other ("Don't Save") stays a plain
+        // secondary button. Only the look changes (return codes, key equivalents, Escape stay). Each cell is swapped in
+        // place; the card has taken the buttons out of NSAlert's stack view, which no longer observes them
+        // (`SAClaudeClassSwap`).
         if classification.kind == .destructive {
-            let looks = classification.destructiveLooks(keyEquivalents: alert.buttons.map(\.keyEquivalent))
+            let looks = classification.destructiveLooks(titles: alert.buttons.map(\.title), keyEquivalents: alert.buttons.map(\.keyEquivalent))
             for index in looks.keys.sorted() {
                 let button = alert.buttons[index]
                 SAClaudeSheetButtonRole.forceDestructive(button, secondary: looks[index] == .outlined)

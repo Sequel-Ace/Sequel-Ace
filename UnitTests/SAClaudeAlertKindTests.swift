@@ -105,26 +105,45 @@ final class SAClaudeAlertKindTests: XCTestCase {
         XCTAssertEqual(classify("Delete rows?", "", ["Delete", "Skip", "Cancel"]), c(.destructive, reds: [0]))
     }
 
-    /// Walkthrough 2 (Kunal): of the destructive buttons, the default one (Return, else the first: the one drawn primary)
-    /// stays filled red; every other one is a red dashed outline.
-    func testOnlyTheDefaultDestructiveButtonIsFilled() {
-        let deleteRow = classify("Delete selected row?", "Are you sure you want to delete the selected row from this table? This action cannot be undone.",
-                                 ["Delete Selected Row", "Delete ALL ROWS IN TABLE", "Cancel"])
+    /// Walkthrough 2-3 (Kunal): the default destructive button (Return, else the first: the one drawn primary) stays
+    /// filled red, whatever its title. Another destructive button is a red dashed outline only when its title is a
+    /// delete-type one (the classifier's word list); any other ("Don't Save", the fallback) stays a plain secondary button.
+    func testOnlyTheDefaultAndDeleteTypeButtonsGetARedLook() {
+        let rows = "Are you sure you want to delete the selected row from this table? This action cannot be undone."
+        let deleteRow = classify("Delete selected row?", rows, ["Delete Selected Row", "Delete ALL ROWS IN TABLE", "Cancel"])
         // NSAlert gives its first button Return and a "Cancel" button Escape.
-        XCTAssertEqual(deleteRow.destructiveLooks(keyEquivalents: ["\r", "", "\u{1b}"]), [0: .filled, 1: .outlined])
-        // One destructive button that is the default: filled, as before.
-        XCTAssertEqual(c(.destructive, red: 0).destructiveLooks(keyEquivalents: ["\r", "\u{1b}"]), [0: .filled])
+        XCTAssertEqual(deleteRow.destructiveLooks(titles: ["Delete Selected Row", "Delete ALL ROWS IN TABLE", "Cancel"], keyEquivalents: ["\r", "", "\u{1b}"]),
+                       [0: .filled, 1: .outlined])
+        // "Don't Save" beside the default "Save" (the real "will be lost" alert): no red look at all.
+        let lost = "Changes have been made, which will be lost if this window is closed."
+        let dontSave = classify("Unsaved changes", lost, ["Save", "Don't Save", "Cancel"])
+        XCTAssertEqual(dontSave.destructiveButtonIndices, [1])
+        XCTAssertEqual(dontSave.destructiveLooks(titles: ["Save", "Don't Save", "Cancel"], keyEquivalents: ["\r", "", "\u{1b}"]), [:])
+        let curly = classify("Unsaved changes", lost, ["Save", "Don\u{2019}t Save", "Cancel"])
+        XCTAssertEqual(curly.destructiveLooks(titles: ["Save", "Don\u{2019}t Save", "Cancel"], keyEquivalents: ["\r", "", "\u{1b}"]), [:])
+        XCTAssertEqual(c(.destructive, red: 1).destructiveLooks(titles: ["Save", "Do Not Save", "Cancel"], keyEquivalents: ["\r", "", "\u{1b}"]), [:])
+        // Several delete-type buttons beside a plain default: each is an outline.
+        XCTAssertEqual(c(.destructive, reds: [1, 2]).destructiveLooks(titles: ["OK", "Delete", "Remove", "Cancel"], keyEquivalents: ["\r", "", "", "\u{1b}"]),
+                       [1: .outlined, 2: .outlined])
+        // "Discard" is in the delete-type list.
+        XCTAssertEqual(c(.destructive, red: 1).destructiveLooks(titles: ["Save", "Discard", "Cancel"], keyEquivalents: ["\r", "", "\u{1b}"]), [1: .outlined])
+        // Case and surrounding space do not matter.
+        XCTAssertEqual(c(.destructive, red: 1).destructiveLooks(titles: ["Keep", "  DELETE all "], keyEquivalents: ["\r", ""]), [1: .outlined])
+        // A fallback (non-delete) red button that is not the default: no look.
+        XCTAssertEqual(c(.destructive, red: 1).destructiveLooks(titles: ["Keep", "Change", "Cancel"], keyEquivalents: ["\r", "", "\u{1b}"]), [:])
+        // A fallback red button that is the default stays filled, whatever its title.
+        XCTAssertEqual(c(.destructive, red: 0).destructiveLooks(titles: ["Change", "Cancel"], keyEquivalents: ["\r", "\u{1b}"]), [0: .filled])
+        XCTAssertEqual(c(.destructive, red: 0).destructiveLooks(titles: ["Don't Save", "Cancel"], keyEquivalents: ["\r", "\u{1b}"]), [0: .filled])
         // No Return button: the first button is the default.
-        XCTAssertEqual(c(.destructive, reds: [0, 1]).destructiveLooks(keyEquivalents: ["", "", ""]), [0: .filled, 1: .outlined])
-        // Return on another button: every destructive button is an outline.
-        XCTAssertEqual(c(.destructive, reds: [1, 2]).destructiveLooks(keyEquivalents: ["\r", "", ""]), [1: .outlined, 2: .outlined])
-        XCTAssertEqual(c(.destructive, reds: [0]).destructiveLooks(keyEquivalents: ["r", "\r"]), [0: .outlined])
-        // "Don't Save" beside the default "Save".
-        XCTAssertEqual(c(.destructive, red: 1).destructiveLooks(keyEquivalents: ["\r", "d", "\u{1b}"]), [1: .outlined])
+        XCTAssertEqual(c(.destructive, reds: [0, 1]).destructiveLooks(titles: ["Delete", "Remove", "Cancel"], keyEquivalents: ["", "", ""]), [0: .filled, 1: .outlined])
+        // Return on another button: a delete-type button before it is an outline.
+        XCTAssertEqual(c(.destructive, reds: [0]).destructiveLooks(titles: ["Delete", "Keep"], keyEquivalents: ["r", "\r"]), [0: .outlined])
         // Nothing red: nothing to draw.
-        XCTAssertEqual(c(.question).destructiveLooks(keyEquivalents: ["\r", "\u{1b}"]), [:])
-        // An index past the buttons is ignored.
-        XCTAssertEqual(c(.destructive, reds: [0, 5]).destructiveLooks(keyEquivalents: ["\r"]), [0: .filled])
+        XCTAssertEqual(c(.question).destructiveLooks(titles: ["OK", "Cancel"], keyEquivalents: ["\r", "\u{1b}"]), [:])
+        // An index past the buttons (either array) is ignored.
+        XCTAssertEqual(c(.destructive, reds: [0, 5]).destructiveLooks(titles: ["Delete"], keyEquivalents: ["\r"]), [0: .filled])
+        XCTAssertEqual(c(.destructive, reds: [0, 1]).destructiveLooks(titles: ["Delete"], keyEquivalents: ["\r", ""]), [0: .filled])
+        XCTAssertEqual(c(.destructive, reds: [0, 1]).destructiveLooks(titles: ["Delete", "Remove"], keyEquivalents: ["\r"]), [0: .filled])
     }
 
     func testDefaultButtonIndex() {

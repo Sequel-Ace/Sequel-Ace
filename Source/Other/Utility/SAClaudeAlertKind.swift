@@ -27,7 +27,8 @@ struct SAClaudeAlertClassification: Equatable {
 }
 
 /// How a destructive alert button is drawn: the default one (Return, else the first: the button drawn primary) is
-/// filled red; every other destructive button is a secondary button with a red dashed outline and a red title.
+/// filled red; another destructive button with a delete-type title is a secondary button with a red dashed outline and
+/// a red title. Any other destructive button ("Don't Save", the fallback) has no look: a plain secondary button.
 enum SAClaudeAlertDestructiveLook: Equatable {
     case filled, outlined
 }
@@ -40,13 +41,20 @@ extension SAClaudeAlertClassification {
         return keyEquivalents.isEmpty ? nil : 0
     }
 
-    /// The look of each of `destructiveButtonIndices` (those within the buttons): `.filled` for the default button,
-    /// `.outlined` for every other one. Return codes, key equivalents and Escape are not touched by either look.
-    func destructiveLooks(keyEquivalents: [String]) -> [Int: SAClaudeAlertDestructiveLook] {
+    /// The look of each of `destructiveButtonIndices` (those within the buttons) that gets one: `.filled` for the
+    /// default button, whatever its title; `.outlined` for another one only when its title is a delete-type button
+    /// (the classifier's word list); no entry for any other ("Don't Save", the first-non-Cancel fallback), which is
+    /// drawn as a plain secondary button like Cancel. `titles` and `keyEquivalents` in `alert.buttons` order. Return
+    /// codes, key equivalents and Escape are not touched by either look.
+    func destructiveLooks(titles: [String], keyEquivalents: [String]) -> [Int: SAClaudeAlertDestructiveLook] {
         let defaultIndex = Self.defaultButtonIndex(keyEquivalents: keyEquivalents)
         var looks: [Int: SAClaudeAlertDestructiveLook] = [:]
-        for index in destructiveButtonIndices where keyEquivalents.indices.contains(index) {
-            looks[index] = index == defaultIndex ? .filled : .outlined
+        for index in destructiveButtonIndices where keyEquivalents.indices.contains(index) && titles.indices.contains(index) {
+            if index == defaultIndex {
+                looks[index] = .filled
+            } else if SAClaudeAlertClassifier.isDeleteTypeButton(titles[index]) {
+                looks[index] = .outlined
+            }
         }
         return looks
     }
@@ -147,6 +155,12 @@ private enum SAClaudeAlertClassifier {
         result = result.replacingOccurrences(of: "’", with: "'").replacingOccurrences(of: "“", with: "\"").replacingOccurrences(of: "”", with: "\"")
         result = removing(straightQuoted, from: result)
         return result.lowercased()
+    }
+
+    /// A delete-type button title (the classifier's red word list), matched as the classifier matches it: trimmed,
+    /// lower-cased, curly apostrophe straightened.
+    static func isDeleteTypeButton(_ title: String) -> Bool {
+        matches(destructiveButton, title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().replacingOccurrences(of: "’", with: "'"))
     }
 
     private static func isCancel(_ title: String) -> Bool {

@@ -369,8 +369,8 @@ final class SAClaudeWindowSkin: NSObject {
             d.alertButtonIndex = index
             d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
         }
-        // A forced-destructive push button (the alert card's red ones: the default filled, the others a red dashed
-        // outline) keeps its red look at every walk, whatever the rules say. Only a push button: a checkbox or radio
+        // A forced-destructive push button (the alert card's red ones: the default filled, other delete-type ones a red
+        // dashed outline) keeps its red look at every walk, whatever the rules say. Only a push button: a checkbox or radio
         // flagged by mistake keeps its own look.
         if let look = SAClaudeSheetButtonRole.destructiveLook(button), d.buttonType == .momentaryPushIn {
             guard button.isBordered || d.isAlertButton else { return }
@@ -722,7 +722,7 @@ enum SAClaudeSheetButtonRole {
     private static var destructiveKey: UInt8 = 0
 
     /// Gives `button` a red destructive look at every later walk of the window (the alert card's destructive buttons):
-    /// filled red (`secondary` false, the default button) or the red dashed outline (`secondary` true, every other one).
+    /// filled red (`secondary` false, the default button) or the red dashed outline (`secondary` true, another delete-type one).
     /// Call `SAClaudeWindowSkin.styleButton` afterwards to apply it now.
     static func forceDestructive(_ button: NSButton, secondary: Bool = false) {
         objc_setAssociatedObject(button, &destructiveKey, secondary, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
