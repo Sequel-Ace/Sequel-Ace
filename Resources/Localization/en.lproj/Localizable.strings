@@ -5289,3 +5289,27 @@
 
 /* Record View: title shown above the fields of a custom query result row */
 "ClaudeRecordQueryResult" = "Query result";
+
+/* Record View: placeholder of the search field above the fields */
+"ClaudeRecordSearchPlaceholder" = "Search fields and values";
+
+/* Record View footer: how to edit a value */
+"ClaudeRecordEditHint" = "Double-click a value to edit";
+
+/* Record View footer: the keys that show the previous / next row */
+"ClaudeRecordRowsHint" = "⌥↑↓ rows";
+
+/* Record View: link under a collapsed long value; %d is the number of lines the value takes */
+"ClaudeRecordShowAllLines" = "Show all %d lines";
+
+/* Record View: link under an expanded long value that collapses it again */
+"ClaudeRecordShowLess" = "Show less";
+
+/* Record View header: the shown row's position in the grid; %1$ld is the row number, %2$ld the number of rows */
+"ClaudeRecordRowPosition" = "Row %1$ld of %2$ld";
+
+/* Record View: tooltip of the header button that shows the previous row */
+"ClaudeRecordPreviousRow" = "Previous row (⌥↑)";
+
+/* Record View: tooltip of the header button that shows the next row */
+"ClaudeRecordNextRow" = "Next row (⌥↓)";

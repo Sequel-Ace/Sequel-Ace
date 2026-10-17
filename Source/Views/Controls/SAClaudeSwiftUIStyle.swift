@@ -275,7 +275,9 @@ struct SAClaudeFieldStyle: TextFieldStyle {
     }
 }
 
-private struct SAClaudeFieldChrome<Content: View>: View {
+/// The field's chrome around any content — for a field that holds more than its text (the Record View's search field:
+/// magnifier, text, match count).
+struct SAClaudeFieldChrome<Content: View>: View {
     @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     @Environment(\.isEnabled) var isEnabled
     let isFocused: Bool

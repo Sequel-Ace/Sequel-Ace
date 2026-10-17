@@ -30,6 +30,22 @@ enum SARecordViewFocusAction: Equatable {
     case filter
 }
 
+/// A key the panel handles itself (the AppKit key monitor routes it; SwiftUI's key handling needs macOS 14).
+enum SARecordViewPanelKey: Equatable {
+    /// ↑ (-1) / ↓ (+1) on the field blocks.
+    case moveSelection(Int)
+    /// Return on a selected block.
+    case editSelection
+    /// ⌥↑ (-1) / ⌥↓ (+1): the previous / next row.
+    case stepRow(Int)
+    /// A printable character on a selected block starts a search with it.
+    case search(String)
+    /// Escape in the search field.
+    case escapeSearch
+    /// ↓ in the search field moves to the field blocks.
+    case focusFields
+}
+
 @objc final class SARecordViewEditSupport: NSObject {
     @objc(validateValue:withFormatter:)
     static func validate(_ value: String, with formatter: Formatter?) -> String? {
@@ -86,6 +102,15 @@ enum SARecordViewFocusAction: Equatable {
     }
 }
 
+/// The fields a search shows, with where each matching field matched.
+struct SARecordViewSearchResult {
+    var fields: [SARecordField]
+    /// Matches by field ID; empty when there is no query.
+    var matches: [Int: SAClaudeRecordMatch]
+    /// Matching fields (the field being edited is shown even when it doesn't match, but not counted).
+    var matchCount: Int
+}
+
 final class SARecordViewModel: ObservableObject {
     @Published private(set) var selectedRowCount = 0
     @Published private(set) var fields: [SARecordField] = []
@@ -101,20 +126,66 @@ final class SARecordViewModel: ObservableObject {
     @Published var focusedFieldID: SARecordField.ID?
     @Published var editDraft = ""
     @Published private(set) var focusRequestID = 0
+    /// Which long values are expanded; belongs to the shown row (`SAClaudeRecordFields.carry`).
+    @Published private(set) var panelState = SAClaudeRecordPanelState(rowKey: "", expandedFieldIDs: [])
     private(set) var focusTarget: SARecordViewFocusTarget?
+    /// Bumped by every `update`: caches keyed by it (display values, measured lines) drop the previous snapshot's.
+    private(set) var generation = 0
+    /// Names the field list a row shows: the row (`panelState.rowKey`) and its columns. A refresh of the same row
+    /// keeps it; another row, or the same row position in a different result (a re-run query), changes it.
+    private(set) var listKey = ""
 
     var beginEditing: ((Int) -> Bool)?
     var validateEditing: ((Int, String) -> String?)?
     var commitEditing: ((Int, String) -> Bool)?
     /// Asks the host to select the previous (-1) or next (+1) row.
     var rowStepHandler: ((Int) -> Void)?
+    /// Makes the field blocks (the panel itself) the first responder.
+    var focusPanelHandler: (() -> Void)?
+    /// Gives the keyboard back to the grid.
+    var focusGridHandler: (() -> Void)?
+
+    /// `displayValue` per field ID for the current snapshot: JSON is parsed and long values capped once per row,
+    /// not on every search keystroke or body pass.
+    private var displayCache: [Int: SAClaudeRecordDisplayValue] = [:]
+    private var searchCache: (query: String, editingFieldID: Int?, generation: Int, result: SARecordViewSearchResult)?
+
+    func display(for field: SARecordField) -> SAClaudeRecordDisplayValue {
+        if let cached = displayCache[field.id] {
+            return cached
+        }
+        let display = SAClaudeRecordFields.displayValue(field)
+        displayCache[field.id] = display
+        return display
+    }
+
+    /// The search over names and displayed values (`SAClaudeRecordFields.match`), memoised per query, edited
+    /// field and snapshot.
+    var searchResult: SARecordViewSearchResult {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let cache = searchCache, cache.query == query, cache.editingFieldID == editingFieldID, cache.generation == generation {
+            return cache.result
+        }
+        var result = SARecordViewSearchResult(fields: [], matches: [:], matchCount: 0)
+        if query.isEmpty {
+            result.fields = fields
+        } else {
+            for field in fields {
+                if let match = SAClaudeRecordFields.match(field, display: display(for: field), query: query) {
+                    result.fields.append(field)
+                    result.matches[field.id] = match
+                    result.matchCount += 1
+                } else if field.id == editingFieldID {
+                    result.fields.append(field)
+                }
+            }
+        }
+        searchCache = (query, editingFieldID, generation, result)
+        return result
+    }
 
     var visibleFields: [SARecordField] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else {
-            return fields
-        }
-        return fields.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        searchResult.fields
     }
 
     var canFocusTable: Bool {
@@ -126,18 +197,41 @@ final class SARecordViewModel: ObservableObject {
                 rowIndex: Int = -1,
                 rowCount: Int = 0,
                 title: String = "") {
+        let previousSelection = selectedFieldID
         cancelEdit()
         self.selectedRowCount = selectedRowCount
         self.rowIndex = rowIndex
         self.rowCount = rowCount
         self.title = title
+        generation += 1
+        displayCache = [:]
+        searchCache = nil
         self.fields = selectedRowCount == 1 ? fields : []
-        selectedFieldID = nil
+        panelState = SAClaudeRecordFields.carry(panelState, toRowKey: selectedRowCount == 1 ? "\(title)#\(rowIndex)" : "")
+        var columns = Hasher()
+        for field in self.fields {
+            columns.combine(field.id)
+            columns.combine(field.name)
+        }
+        listKey = "\(panelState.rowKey)|\(self.fields.count)|\(columns.finalize())"
+        // The selected field follows a refresh or a row step when the new snapshot still has it.
+        selectedFieldID = self.fields.contains { $0.id == previousSelection } ? previousSelection : nil
     }
 
     func clear() {
         searchText = ""
         update(fields: [], selectedRowCount: 0)
+    }
+
+    func isExpanded(_ fieldID: SARecordField.ID) -> Bool {
+        panelState.expandedFieldIDs.contains(fieldID)
+    }
+
+    /// "Show all N lines" / "Show less".
+    func toggleExpanded(_ fieldID: SARecordField.ID) {
+        if panelState.expandedFieldIDs.remove(fieldID) == nil {
+            panelState.expandedFieldIDs.insert(fieldID)
+        }
     }
 
     /// Moves to the previous (-1) or next (+1) row through the host. Does
@@ -157,6 +251,53 @@ final class SARecordViewModel: ObservableObject {
         rowStepHandler?(delta < 0 ? -1 : 1)
     }
 
+    // MARK: - Keyboard on the field blocks
+
+    /// A click on a block: selects it and gives the panel the keyboard.
+    func selectField(_ fieldID: SARecordField.ID) {
+        selectedFieldID = fieldID
+        focusPanelHandler?()
+    }
+
+    /// ↑ / ↓ over the visible fields; never wraps. Without a visible selection, selects the first visible field.
+    func moveSelection(by delta: Int) {
+        let visible = visibleFields
+        guard !visible.isEmpty else {
+            return
+        }
+        guard let index = visible.firstIndex(where: { $0.id == selectedFieldID }) else {
+            selectedFieldID = visible.first?.id
+            return
+        }
+        selectedFieldID = visible[min(max(index + delta, 0), visible.count - 1)].id
+    }
+
+    /// Return on a selected block.
+    func editSelectedField() {
+        guard let field = visibleFields.first(where: { $0.id == selectedFieldID }) else {
+            return
+        }
+        requestEdit(field)
+    }
+
+    /// A printable character typed while a block is selected starts (or continues) the search with it.
+    func typeIntoSearch(_ characters: String) {
+        guard selectedFieldID != nil, !characters.isEmpty else {
+            return
+        }
+        searchText += characters
+        requestFocus(.filter)
+    }
+
+    /// Escape in the search field: clears the search; with nothing to clear, returns the keyboard to the grid.
+    func escapeInSearch() {
+        if searchText.isEmpty {
+            focusGridHandler?()
+        } else {
+            searchText = ""
+        }
+    }
+
     func requestEdit(_ field: SARecordField) {
         guard beginEditing?(field.id) == true else {
             return
@@ -173,6 +314,9 @@ final class SARecordViewModel: ObservableObject {
         }
         focusTarget = target
         focusRequestID += 1
+        if target == .table {
+            focusPanelHandler?()
+        }
     }
 
     func commitEdit() {
@@ -216,120 +360,6 @@ final class SARecordViewModel: ObservableObject {
         editingFieldID = nil
         focusedFieldID = nil
         editDraft = ""
-    }
-}
-
-private struct SARecordView: View {
-    @ObservedObject var model: SARecordViewModel
-    @FocusState private var focusedFieldID: SARecordField.ID?
-    @FocusState private var panelFocus: SARecordViewFocusTarget?
-
-    var body: some View {
-        VStack(spacing: 0) {
-            TextField("Filter fields", text: $model.searchText)
-                .textFieldStyle(.roundedBorder)
-                .focused($panelFocus, equals: .filter)
-                .padding(8)
-                .accessibilityLabel("Filter record fields")
-
-            content
-        }
-        .frame(minWidth: 240, idealWidth: 320)
-        .background(Color(nsColor: .windowBackgroundColor))
-        .onChange(of: model.focusedFieldID) { focusedFieldID = $0 }
-        .onChange(of: focusedFieldID) { model.editorFocusChanged($0) }
-        .onChange(of: model.focusRequestID) { _ in panelFocus = model.focusTarget }
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        if model.selectedRowCount == 0 {
-            emptyState("Select one row to view it", systemImage: "rectangle.and.hand.point.up.left")
-        } else if model.selectedRowCount > 1 {
-            emptyState("Select only one row", systemImage: "rectangle.stack")
-        } else if model.fields.isEmpty {
-            emptyState("This record has no fields", systemImage: "list.bullet.rectangle")
-        } else {
-            recordFieldsTable
-                .contextMenu(forSelectionType: SARecordField.ID.self) { selection in
-                    if let field = field(id: selection.first) {
-                        fieldMenu(field)
-                    }
-                } primaryAction: { selection in
-                    if let field = field(id: selection.first) {
-                        model.requestEdit(field)
-                    }
-                }
-        }
-    }
-
-    private var recordFieldsTable: some View {
-        Table(model.visibleFields, selection: $model.selectedFieldID) {
-            TableColumn("Field") { field in
-                Text(field.name)
-                    .help(field.name)
-            }
-            TableColumn("Value") { field in
-                if model.editingFieldID == field.id {
-                    TextField("Value", text: $model.validatedEditDraft)
-                        .textFieldStyle(.plain)
-                        .onSubmit(model.commitEdit)
-                        .focused($focusedFieldID, equals: field.id)
-                        .onExitCommand(perform: model.cancelEdit)
-                        .onAppear {
-                            DispatchQueue.main.async {
-                                focusedFieldID = field.id
-                            }
-                        }
-                } else {
-                    Text(Self.singleLinePreview(field.value))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-            }
-        }
-        .focused($panelFocus, equals: .table)
-    }
-
-    /// Interim single-line cell text until the Claude body (wrapped values) lands.
-    private static func singleLinePreview(_ value: String) -> String {
-        let prefix = value.prefix(4_097)
-        let flattened = String(prefix.prefix(4_096))
-            .components(separatedBy: .newlines)
-            .joined(separator: " ")
-            .replacingOccurrences(of: "\t", with: " ")
-        return prefix.count > 4_096 ? flattened + "…" : flattened
-    }
-
-    @ViewBuilder
-    private func fieldMenu(_ field: SARecordField) -> some View {
-        Button("Copy Value") {
-            copy(field.value)
-        }
-        Button("Edit Value") {
-            model.requestEdit(field)
-        }
-    }
-
-    private func field(id: SARecordField.ID?) -> SARecordField? {
-        model.visibleFields.first { $0.id == id }
-    }
-
-    private func emptyState(_ title: LocalizedStringKey, systemImage: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.title2)
-            Text(title)
-                .multilineTextAlignment(.center)
-        }
-        .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-    }
-
-    private func copy(_ value: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(value, forType: .string)
     }
 }
 
@@ -480,6 +510,68 @@ private final class SARecordViewOverlayView: NSView {
         return nil
     }
 
+    /// The panel's own keys. On the field blocks (the panel focused, not a text field): ↑/↓ move the selection,
+    /// Return edits it, ⌥↑/⌥↓ step rows, a printable character (no ⌘/⌃) with a block selected starts a search.
+    /// In the search field: Escape, ↓ to the blocks, ⌥↑/⌥↓. The inline value editor keeps all its keys.
+    static func panelKeyAction(_ event: NSEvent,
+                               firstResponder: NSResponder?,
+                               recordView: NSView,
+                               isRecordViewVisible: Bool,
+                               isEditing: Bool,
+                               hasSelection: Bool) -> SARecordViewPanelKey? {
+        guard isRecordViewVisible,
+              event.type == .keyDown,
+              let responderView = firstResponder as? NSView,
+              responderView === recordView || responderView.isDescendant(of: recordView) else {
+            return nil
+        }
+        let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+        let vertical: Int? = event.keyCode == 126 ? -1 : event.keyCode == 125 ? 1 : nil
+
+        if firstResponder is NSTextField || firstResponder is NSTextView {
+            guard !isEditing else {
+                return nil
+            }
+            if let vertical, modifiers == .option {
+                return .stepRow(vertical)
+            }
+            if vertical == 1, modifiers.isEmpty {
+                return .focusFields
+            }
+            if event.keyCode == 53, modifiers.isEmpty {
+                return .escapeSearch
+            }
+            return nil
+        }
+
+        if let vertical {
+            if modifiers == .option {
+                return .stepRow(vertical)
+            }
+            return modifiers.isEmpty ? .moveSelection(vertical) : nil
+        }
+        guard hasSelection else {
+            return nil
+        }
+        if (event.keyCode == 36 || event.keyCode == 76) && modifiers.isEmpty {
+            return .editSelection
+        }
+        if modifiers.isDisjoint(with: [.command, .control]),
+           let characters = event.characters,
+           isPrintable(characters) {
+            return .search(characters)
+        }
+        return nil
+    }
+
+    /// Text a key types into a field: no control characters (Return, Tab, Escape, Delete) and none of the
+    /// function-key private-use characters (arrows, F-keys, Home/End).
+    static func isPrintable(_ characters: String) -> Bool {
+        !characters.isEmpty && characters.unicodeScalars.allSatisfy { scalar in
+            !CharacterSet.controlCharacters.contains(scalar) && !(0xF700...0xF8FF).contains(scalar.value)
+        }
+    }
+
     @objc(makeToolbarItemWithTarget:)
     static func makeToolbarItem(target: AnyObject) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: NSToolbarItem.Identifier(itemIdentifier))
@@ -496,7 +588,10 @@ private final class SARecordViewOverlayView: NSView {
 
 @objc final class SARecordViewController: NSObject {
     private let model = SARecordViewModel()
-    private lazy var hostingView = NSHostingView(rootView: SARecordView(model: model))
+    /// The Claude panel (SAClaudeRecordPanel.swift, app target; a stand-in in Unit Tests): its hosting view, the
+    /// editor-theme palette it draws with, and the overlay's live hairline and surface.
+    private lazy var panel = MainActor.assumeIsolated { SARecordViewPanelHost(model: model) }
+    private var panelView: NSView { MainActor.assumeIsolated { panel.view } }
     private weak var overlayView: SARecordViewOverlayView?
     private weak var shortcutTableView: NSTableView?
     private var shortcutMonitor: Any?
@@ -516,16 +611,29 @@ private final class SARecordViewOverlayView: NSView {
                         topInset: CGFloat,
                         autosaveName: String) {
         self.shortcutTableView = shortcutTableView
+        model.focusPanelHandler = { [weak self] in
+            guard let self, let window = self.panelView.window, window.firstResponder !== self.panelView else {
+                return
+            }
+            window.makeFirstResponder(self.panelView)
+        }
+        model.focusGridHandler = { [weak self] in
+            guard let tableView = self?.shortcutTableView else {
+                return
+            }
+            tableView.window?.makeFirstResponder(tableView)
+        }
         shortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let tableView = self.shortcutTableView else {
                 return event
             }
             let firstResponder = event.window?.firstResponder
+            let recordView = self.panelView
             if SARecordViewToolbarSupport.shouldHandleSpace(
                 event,
                 firstResponder: firstResponder,
                 tableView: tableView,
-                recordView: self.hostingView
+                recordView: recordView
             ) {
                 self.toggle()
                 return nil
@@ -534,7 +642,7 @@ private final class SARecordViewOverlayView: NSView {
                 event,
                 firstResponder: firstResponder,
                 tableView: tableView,
-                recordView: self.hostingView,
+                recordView: recordView,
                 isRecordViewVisible: self.isVisible,
                 canFocusRecordView: self.model.canFocusTable
             ) {
@@ -548,8 +656,20 @@ private final class SARecordViewOverlayView: NSView {
                 self.model.requestFocus(.filter)
                 return nil
             case nil:
+                break
+            }
+            guard let action = SARecordViewToolbarSupport.panelKeyAction(
+                event,
+                firstResponder: firstResponder,
+                recordView: recordView,
+                isRecordViewVisible: self.isVisible,
+                isEditing: self.model.editingFieldID != nil,
+                hasSelection: self.model.selectedFieldID != nil
+            ) else {
                 return event
             }
+            self.perform(action)
+            return nil
         }
 
         let savedWidth = UserDefaults.standard.double(forKey: autosaveName)
@@ -562,17 +682,18 @@ private final class SARecordViewOverlayView: NSView {
         ))
         container.autoresizingMask = [.minXMargin, .height]
         container.wantsLayer = true
-        container.layer?.borderColor = NSColor.separatorColor.cgColor
-        container.layer?.borderWidth = 1
         container.layer?.masksToBounds = true
         container.resizedView = targetView
         container.resizedViewRightInset = parentView.bounds.width - targetView.frame.maxX
         container.widthDefaultsKey = autosaveName
         container.recordViewWidth = width
 
-        hostingView.frame = container.bounds
-        hostingView.autoresizingMask = [.width, .height]
-        container.addSubview(hostingView)
+        let panelView = self.panelView
+        panelView.frame = container.bounds
+        panelView.autoresizingMask = [.width, .height]
+        container.addSubview(panelView)
+        // The palette's surface behind the panel and its hairline down the left edge, live.
+        MainActor.assumeIsolated { panel.style(container) }
 
         let resizeHandle = SARecordViewResizeHandle(frame: NSRect(x: 0, y: 0, width: 10, height: container.bounds.height))
         resizeHandle.autoresizingMask = [.height]
@@ -583,6 +704,42 @@ private final class SARecordViewOverlayView: NSView {
         container.isHidden = true
         parentView.addSubview(container, positioned: .above, relativeTo: nil)
         overlayView = container
+    }
+
+    private func perform(_ action: SARecordViewPanelKey) {
+        switch action {
+        case .moveSelection(let delta):
+            model.moveSelection(by: delta)
+        case .editSelection:
+            model.editSelectedField()
+        case .stepRow(let delta):
+            model.stepRow(delta)
+        case .search(let characters):
+            model.typeIntoSearch(characters)
+            placeSearchCaretAtEnd()
+        case .escapeSearch:
+            model.escapeInSearch()
+        case .focusFields:
+            model.requestFocus(.table)
+        }
+    }
+
+    /// A search started by typing on a block keeps what was typed: the search field selects its whole text when it
+    /// takes focus, so once SwiftUI has moved focus there (a run-loop turn or two) the caret goes to the end.
+    private func placeSearchCaretAtEnd(attempts: Int = 4) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                return
+            }
+            let panelView = self.panelView
+            guard let editor = panelView.window?.firstResponder as? NSTextView, editor.isDescendant(of: panelView) else {
+                if attempts > 1 {
+                    self.placeSearchCaretAtEnd(attempts: attempts - 1)
+                }
+                return
+            }
+            editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
+        }
     }
 
     @objc var isVisible: Bool {

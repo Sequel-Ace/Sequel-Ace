@@ -208,6 +208,256 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertFalse(model.canFocusTable)
     }
 
+    func testSearchMatchesValuesAndCountsMatchingFields() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+
+        model.searchText = "ada"
+
+        XCTAssertEqual(model.visibleFields.map(\.id), [1])
+        XCTAssertEqual(model.searchResult.matchCount, 1)
+        XCTAssertEqual(model.searchResult.matches[1]?.valueRanges, [NSRange(location: 0, length: 3)])
+
+        model.searchText = ""
+        XCTAssertEqual(model.visibleFields, fields)
+        XCTAssertEqual(model.searchResult.matchCount, 0)
+        XCTAssertTrue(model.searchResult.matches.isEmpty)
+    }
+
+    func testSearchKeepsEditedFieldVisibleWithoutCountingIt() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+        model.beginEditing = { _ in true }
+        model.requestEdit(fields[0])
+
+        model.searchText = "lovelace"
+
+        XCTAssertEqual(model.visibleFields.map(\.id), [0, 2])
+        XCTAssertEqual(model.searchResult.matchCount, 1)
+    }
+
+    func testUpdateShowsNewValuesForSameFieldIDs() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 2, title: "t")
+        XCTAssertEqual(model.display(for: model.fields[1]), .text("Ada"))
+        model.searchText = "ada"
+        XCTAssertEqual(model.visibleFields.map(\.id), [1])
+
+        var edited = fields
+        edited[1].value = "Grace"
+        model.update(fields: edited, selectedRowCount: 1, rowIndex: 0, rowCount: 2, title: "t")
+
+        XCTAssertEqual(model.display(for: model.fields[1]), .text("Grace"))
+        XCTAssertEqual(model.visibleFields.map(\.id), [])
+    }
+
+    func testNullFieldDisplaysAsChipNotItsText() {
+        let model = SARecordViewModel()
+        let null = SARecordField(id: 0, name: "deleted_at", value: "NULL", isNull: true)
+        let literal = SARecordField(id: 1, name: "note", value: "NULL")
+        let empty = SARecordField(id: 2, name: "nick", value: "")
+        model.update(fields: [null, literal, empty], selectedRowCount: 1)
+
+        XCTAssertEqual(model.display(for: null), .null)
+        XCTAssertEqual(model.display(for: literal), .text("NULL"))
+        XCTAssertEqual(model.display(for: empty), .text(""))
+    }
+
+    func testExpansionBelongsToTheRow() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        model.toggleExpanded(2)
+        XCTAssertTrue(model.isExpanded(2))
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        XCTAssertTrue(model.isExpanded(2), "a refresh of the same row keeps it")
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        XCTAssertFalse(model.isExpanded(2), "another row drops it")
+
+        model.toggleExpanded(2)
+        model.toggleExpanded(2)
+        XCTAssertFalse(model.isExpanded(2))
+    }
+
+    func testListKeyFollowsRowAndColumns() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        let first = model.listKey
+
+        var edited = fields
+        edited[1].value = "Grace"
+        model.update(fields: edited, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        XCTAssertEqual(model.listKey, first, "a refreshed value keeps the list")
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        XCTAssertNotEqual(model.listKey, first)
+
+        model.update(fields: [SARecordField(id: 0, name: "other", value: "1")], selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        XCTAssertNotEqual(model.listKey, first, "another result's columns at the same position")
+    }
+
+    func testUpdateKeepsSelectionOnlyWhileTheFieldExists() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 0, rowCount: 3, title: "t")
+        model.selectedFieldID = 2
+
+        model.update(fields: fields, selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        XCTAssertEqual(model.selectedFieldID, 2)
+
+        model.update(fields: Array(fields.prefix(2)), selectedRowCount: 1, rowIndex: 1, rowCount: 3, title: "t")
+        XCTAssertNil(model.selectedFieldID)
+    }
+
+    func testMoveSelectionWalksVisibleFieldsWithoutWrapping() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 0, "without a selection, the first visible field")
+        model.moveSelection(by: 1)
+        model.moveSelection(by: 1)
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 2)
+        model.moveSelection(by: -1)
+        XCTAssertEqual(model.selectedFieldID, 1)
+
+        model.searchText = "display"
+        model.moveSelection(by: -1)
+        XCTAssertEqual(model.selectedFieldID, 1, "field 0 is hidden by the search")
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 2)
+
+        model.searchText = "id"
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 0, "a hidden selection restarts at the first visible field")
+
+        model.searchText = "missing"
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.selectedFieldID, 0)
+    }
+
+    func testReturnEditsSelectedVisibleField() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+        model.beginEditing = { _ in true }
+
+        model.editSelectedField()
+        XCTAssertNil(model.editingFieldID)
+
+        model.selectedFieldID = 2
+        model.editSelectedField()
+        XCTAssertEqual(model.editingFieldID, 2)
+        XCTAssertEqual(model.editDraft, "Lovelace")
+    }
+
+    func testTypingOnSelectedBlockStartsSearch() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+
+        model.typeIntoSearch("d")
+        XCTAssertEqual(model.searchText, "", "nothing selected")
+
+        model.selectedFieldID = 0
+        model.typeIntoSearch("d")
+        model.typeIntoSearch("i")
+        XCTAssertEqual(model.searchText, "di")
+        XCTAssertEqual(model.focusTarget, .filter)
+        XCTAssertEqual(model.focusRequestID, 2)
+    }
+
+    func testEscapeInSearchClearsThenReturnsToGrid() {
+        let model = SARecordViewModel()
+        var gridFocus = 0
+        model.focusGridHandler = { gridFocus += 1 }
+        model.update(fields: fields, selectedRowCount: 1)
+        model.searchText = "ada"
+
+        model.escapeInSearch()
+        XCTAssertEqual(model.searchText, "")
+        XCTAssertEqual(gridFocus, 0)
+
+        model.escapeInSearch()
+        XCTAssertEqual(gridFocus, 1)
+    }
+
+    func testFocusingFieldsAndClickingABlockFocusThePanel() {
+        let model = SARecordViewModel()
+        var panelFocus = 0
+        model.focusPanelHandler = { panelFocus += 1 }
+        model.update(fields: fields, selectedRowCount: 1)
+
+        model.requestFocus(.table)
+        XCTAssertEqual(panelFocus, 1)
+        model.requestFocus(.filter)
+        XCTAssertEqual(panelFocus, 1)
+
+        model.selectField(2)
+        XCTAssertEqual(model.selectedFieldID, 2)
+        XCTAssertEqual(panelFocus, 2)
+    }
+
+    func testPanelKeysOnTheFieldBlocks() {
+        let recordView = NSView()
+        let outside = NSView()
+        func action(_ event: NSEvent, responder: NSResponder? = nil, visible: Bool = true,
+                    editing: Bool = false, selection: Bool = true) -> SARecordViewPanelKey? {
+            SARecordViewToolbarSupport.panelKeyAction(event, firstResponder: responder ?? recordView, recordView: recordView,
+                                                      isRecordViewVisible: visible, isEditing: editing, hasSelection: selection)
+        }
+        let up = keyEvent(keyCode: 126, characters: "\u{F700}", modifiers: [.numericPad, .function])
+        let down = keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function])
+        let optionDown = keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function, .option])
+        let optionUp = keyEvent(keyCode: 126, characters: "\u{F700}", modifiers: [.numericPad, .function, .option])
+        let returnKey = keyEvent(keyCode: 36, characters: "\r")
+        let letter = keyEvent(keyCode: 0, characters: "a")
+        let capital = keyEvent(keyCode: 0, characters: "A", modifiers: .shift)
+
+        XCTAssertEqual(action(up), .moveSelection(-1))
+        XCTAssertEqual(action(down), .moveSelection(1))
+        XCTAssertEqual(action(down, selection: false), .moveSelection(1))
+        XCTAssertEqual(action(optionDown), .stepRow(1))
+        XCTAssertEqual(action(optionUp), .stepRow(-1))
+        XCTAssertEqual(action(returnKey), .editSelection)
+        XCTAssertNil(action(returnKey, selection: false))
+        XCTAssertEqual(action(letter), .search("a"))
+        XCTAssertEqual(action(capital), .search("A"))
+        XCTAssertNil(action(letter, selection: false))
+        XCTAssertNil(action(keyEvent(keyCode: 0, characters: "a", modifiers: .command)))
+        XCTAssertNil(action(keyEvent(keyCode: 0, characters: "a", modifiers: .control)))
+        XCTAssertNil(action(keyEvent(keyCode: 48, characters: "\t")))
+        XCTAssertNil(action(keyEvent(keyCode: 53, characters: "\u{1b}")))
+        XCTAssertNil(action(keyEvent(keyCode: 51, characters: "\u{7f}")))
+        XCTAssertNil(action(keyEvent(keyCode: 115, characters: "\u{F729}", modifiers: .function)))
+        XCTAssertNil(action(down, visible: false))
+        XCTAssertNil(action(down, responder: outside))
+    }
+
+    func testPanelKeysInTheSearchFieldAndEditor() {
+        let recordView = NSView()
+        let field = NSTextView()
+        recordView.addSubview(field)
+        func action(_ event: NSEvent, editing: Bool = false) -> SARecordViewPanelKey? {
+            SARecordViewToolbarSupport.panelKeyAction(event, firstResponder: field, recordView: recordView,
+                                                      isRecordViewVisible: true, isEditing: editing, hasSelection: true)
+        }
+        let escape = keyEvent(keyCode: 53, characters: "\u{1b}")
+        let down = keyEvent(keyCode: 125, characters: "\u{F701}", modifiers: [.numericPad, .function])
+        let up = keyEvent(keyCode: 126, characters: "\u{F700}", modifiers: [.numericPad, .function])
+        let optionUp = keyEvent(keyCode: 126, characters: "\u{F700}", modifiers: [.numericPad, .function, .option])
+
+        XCTAssertEqual(action(escape), .escapeSearch)
+        XCTAssertEqual(action(down), .focusFields)
+        XCTAssertEqual(action(optionUp), .stepRow(-1))
+        XCTAssertNil(action(up))
+        XCTAssertNil(action(keyEvent(keyCode: 0, characters: "a")))
+        XCTAssertNil(action(keyEvent(keyCode: 36, characters: "\r")))
+
+        XCTAssertNil(action(escape, editing: true), "the inline editor keeps Escape (cancel)")
+        XCTAssertNil(action(down, editing: true))
+        XCTAssertNil(action(optionUp, editing: true))
+    }
+
     func testRecordViewValidationUsesSelectionAwareFormatterRules() {
         let defaults = UserDefaults(suiteName: #function)!
         defaults.set("NULL", forKey: "NullValue")
