@@ -17,6 +17,9 @@ struct SAClaudeMenuEntry: Equatable {
     var isTicked = false
     var isFooter = false
     var isAlternate = false
+    /// The item's key-equivalent modifier mask contains ⌥: of a primary/alternate pair, AppKit shows the one whose
+    /// mask matches the held modifiers.
+    var requiresOption = false
     var toolTip: String? = nil
     var trailingChip: String? = nil
 }
@@ -48,6 +51,7 @@ enum SAClaudeMenuCardModel {
             entry.isHidden = item.isHidden
             entry.isTicked = item.state == .on
             entry.isAlternate = item.isAlternate
+            entry.requiresOption = item.keyEquivalentModifierMask.contains(.option)
             entry.toolTip = item.toolTip
             entry.shortcut = SAClaudeEditorChrome.shortcutString(keyEquivalent: item.keyEquivalent, modifiers: item.keyEquivalentModifierMask)
             result.append(entry)
@@ -77,9 +81,14 @@ enum SAClaudeMenuCardModel {
         for entry in entries {
             if entry.isAlternate && entry.kind == .item {
                 if let pending = pendingPrimary {
-                    // Pair: the primary stays unless option is held, then the alternate takes its place.
+                    // Pair: as AppKit, the entry whose modifier mask has ⌥ shows exactly while ⌥ is held (History:
+                    // Save History… without ⌥, Copy History with it). When neither or both have ⌥ in their mask, the
+                    // primary shows unless ⌥ is held.
                     pendingPrimary = nil
-                    if !entry.isHidden && optionHeld {
+                    let showAlternate = pending.requiresOption != entry.requiresOption
+                        ? entry.requiresOption == optionHeld
+                        : optionHeld
+                    if !entry.isHidden && showAlternate {
                         append(entry)
                     } else {
                         append(pending)
@@ -254,8 +263,9 @@ extension SAClaudeMenuCardModel {
     static let queryMenuFirstListIndex = 7
 
     /// The Query History pull-down: one detail-only row per query (`detail` = the tooltip, the query up to 256
-    /// characters, else the title), searched on it; the head actions (Copy History with its ⌥ alternate Save History…,
-    /// Clear History) as the footer. Item 0 (the title), the head separators and the search-field view item are dropped.
+    /// characters, else the title), searched on it; the head actions as the footer: Save History… (Copy History while
+    /// ⌥ is held, as the native menu shows the pair) and Clear History. Item 0 (the title), the head separators and
+    /// the search-field view item are dropped.
     static func queryHistoryEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
         var result: [SAClaudeMenuEntry] = []
         for var entry in entries(from: menu, skipping: [0]) {

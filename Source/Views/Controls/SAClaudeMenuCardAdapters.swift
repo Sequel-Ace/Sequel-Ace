@@ -54,9 +54,9 @@ final class SAClaudeHistoryEntriesMenuAdapter: SAClaudeMenuCardAdapter {
 
 // MARK: - Query editor bar (editor theme's palette, like the ⋯ card)
 
-/// The Query History pull-down: search, one row per query (the query in mono, up to two lines), Copy History
-/// (⌥ Save History…) and Clear History as the footer. The native search field item is not shown: it is cleared,
-/// with the items its filter hid, so the card lists every query.
+/// The Query History pull-down: search, one row per query (the query in mono, up to two lines), Save History…
+/// (⌥: Copy History, as the native menu) and Clear History as the footer. The native search field item is not
+/// shown: it is cleared, with the items its filter hid, so the card lists every query.
 final class SAClaudeQueryHistoryMenuAdapter: SAClaudeMenuCardAdapter {
     static let shared = SAClaudeQueryHistoryMenuAdapter()
 

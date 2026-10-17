@@ -57,6 +57,8 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         XCTAssertFalse(entries[1].isAlternate)
         XCTAssertTrue(entries[2].isAlternate)
         XCTAssertEqual(entries[2].shortcut, "⌥⌘C")
+        XCTAssertFalse(entries[1].requiresOption)
+        XCTAssertTrue(entries[2].requiresOption)
         XCTAssertTrue(entries[3].isHidden)
         XCTAssertFalse(entries[4].isEnabled)
         XCTAssertTrue(entries[5].isTicked)
@@ -98,6 +100,42 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         let held = rows(entries, option: true)
         XCTAssertEqual(shape(held.list), ["item Save History…"])
         XCTAssertEqual(held.list.first?.entry?.index, 1)
+    }
+
+    /// A pair read from a menu resolves as AppKit does: by which entry's modifier mask has ⌥.
+    private func pairMenu(primaryMask: NSEvent.ModifierFlags, alternateMask: NSEvent.ModifierFlags) -> [SAClaudeMenuEntry] {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.addItem(withTitle: "Copy History", action: #selector(NSText.copy(_:)), keyEquivalent: "").keyEquivalentModifierMask = primaryMask
+        let alternate = menu.addItem(withTitle: "Save History…", action: #selector(NSText.copy(_:)), keyEquivalent: "")
+        alternate.keyEquivalentModifierMask = alternateMask
+        alternate.isAlternate = true
+        return SAClaudeMenuCardModel.entries(from: menu)
+    }
+
+    func testAlternatePairAsInDBViewShowsTheUnmodifiedItemWithoutOption() {
+        // DBView.xib: Copy History carries ⌥ in its mask, Save History… is the alternate with an empty mask; the native
+        // menu shows Save History… with no modifier and Copy History while ⌥ is held.
+        let entries = pairMenu(primaryMask: .option, alternateMask: [])
+        let plain = rows(entries, option: false)
+        XCTAssertEqual(shape(plain.list), ["item Save History…"])
+        XCTAssertEqual(plain.list.first?.entry?.index, 1)
+        let held = rows(entries, option: true)
+        XCTAssertEqual(shape(held.list), ["item Copy History"])
+        XCTAssertEqual(held.list.first?.entry?.index, 0)
+    }
+
+    func testClassicAlternatePairShowsTheOptionItemWhileOptionHeld() {
+        // Primary without ⌥, alternate with ⌥ (e.g. ⌘C / ⌥⌘C): the alternate shows while ⌥ is held.
+        let entries = pairMenu(primaryMask: .command, alternateMask: [.command, .option])
+        XCTAssertEqual(shape(rows(entries, option: false).list), ["item Copy History"])
+        XCTAssertEqual(shape(rows(entries, option: true).list), ["item Save History…"])
+        // Neither or both with ⌥: the primary unless ⌥ is held (the fallback).
+        for masks in [([], []), ([.option], [.option])] as [(NSEvent.ModifierFlags, NSEvent.ModifierFlags)] {
+            let same = pairMenu(primaryMask: masks.0, alternateMask: masks.1)
+            XCTAssertEqual(shape(rows(same, option: false).list), ["item Copy History"])
+            XCTAssertEqual(shape(rows(same, option: true).list), ["item Save History…"])
+        }
     }
 
     func testOrphanAlternateIsKept() {
@@ -359,12 +397,13 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         XCTAssertEqual(second.toolTip, long)
         XCTAssertNil(second.symbol)
         XCTAssertEqual(second.title, long)            // detail-only row: title equal to the detail
-        XCTAssertEqual(shape(resolved.footer), ["item Copy History", "item Clear History"])
-        XCTAssertEqual(resolved.footer.map { $0.entry?.symbol }, ["doc.on.doc", "trash"])
-        // ⌥ swaps Copy History for Save History… inside the footer.
+        // As the native menu: Save History… without ⌥ (Copy History carries ⌥ in its mask, DBView.xib).
+        XCTAssertEqual(shape(resolved.footer), ["item Save History…", "item Clear History"])
+        XCTAssertEqual(resolved.footer.map { $0.entry?.symbol }, ["square.and.arrow.down", "trash"])
+        // ⌥ swaps Save History… for Copy History inside the footer.
         let option = rows(entries, option: true)
-        XCTAssertEqual(shape(option.footer), ["item Save History…", "item Clear History"])
-        XCTAssertEqual(option.footer.first?.entry?.symbol, "square.and.arrow.down")
+        XCTAssertEqual(shape(option.footer), ["item Copy History", "item Clear History"])
+        XCTAssertEqual(option.footer.first?.entry?.symbol, "doc.on.doc")
         XCTAssertTrue(option.list.count == 2)
         // Footer actions are never filtered.
         XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "b from")), ["item \(long)"])
@@ -374,7 +413,7 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         let (button, _) = historyPullDown([], target: QueryActions())
         let resolved = rows(SAClaudeMenuCardModel.queryHistoryEntries(from: button.menu!))
         XCTAssertTrue(resolved.list.isEmpty)
-        XCTAssertEqual(shape(resolved.footer), ["item Copy History", "item Clear History"])
+        XCTAssertEqual(shape(resolved.footer), ["item Save History…", "item Clear History"])
     }
 
     func testResetNativeSearchClearsFieldAndShowsFilteredItems() {
