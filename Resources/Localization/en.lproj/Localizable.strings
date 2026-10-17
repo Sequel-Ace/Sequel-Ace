@@ -5268,3 +5268,18 @@
 
 /* Claude menu card: the one line shown when the search matches no row */
 "ClaudeMenuNoMatches" = "No matches";
+
+/* Claude menu card: database card section header above the user's databases */
+"ClaudeMenuYourDatabases" = "Your databases";
+
+/* Claude menu card: database card section header above the system databases (mysql, sys, …) */
+"ClaudeMenuSystemDatabases" = "System";
+
+/* Claude menu card: placeholder of the database card's search field */
+"ClaudeMenuFindDatabase" = "Find a database";
+
+/* Claude menu card: placeholder of the Query History card's search field */
+"ClaudeMenuSearchHistory" = "Search history";
+
+/* Claude menu card: placeholder of the Query Favorites card's search field */
+"ClaudeMenuSearchFavorites" = "Search favorites";

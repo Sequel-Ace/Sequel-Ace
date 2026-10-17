@@ -188,3 +188,53 @@ enum SAClaudeMenuCardModel {
         return NSSize(width: width, height: height)
     }
 }
+
+// MARK: - Database pop-up sections
+
+extension SAClaudeMenuCardModel {
+    /// Indices of the two section headers the database card adds (no menu item behind them).
+    static let databaseUserHeaderIndex = -100
+    static let databaseSystemHeaderIndex = -101
+
+    /// The database pop-up's entries (menu built by `SADatabaseListManager.configurePopup`): the "Choose Database..."
+    /// placeholder (item 0) and the separators dropped; the database items (no action of their own: the pop-up cell's
+    /// item action) as `userHeader` then the user databases, `systemHeader` then the system databases (split by
+    /// `SADatabaseListManager.partition` on the titles, menu order kept), each with the cylinder glyph and the item at
+    /// `selectedIndex` ticked; the items with an action of their own (Add Database…, Refresh Databases) as the footer.
+    static func databaseEntries(from menu: NSMenu, selectedIndex: Int, userHeader: String, systemHeader: String) -> [SAClaudeMenuEntry] {
+        var databases: [SAClaudeMenuEntry] = []
+        var footer: [SAClaudeMenuEntry] = []
+        for var entry in entries(from: menu, skipping: [0]) where entry.kind == .item {
+            let item = menu.items[entry.index]
+            entry.isTicked = entry.index == selectedIndex
+            if hasOwnAction(item) {
+                entry.isFooter = true
+                entry.symbol = databaseFooterSymbol(item.action)
+                footer.append(entry)
+            } else {
+                entry.symbol = "cylinder"
+                databases.append(entry)
+            }
+        }
+        let system = Set(SADatabaseListManager.partition(databases: databases.map(\.title)).systemDatabases)
+        let user = databases.filter { !system.contains($0.title) }
+        let systemEntries = databases.filter { system.contains($0.title) }
+        return [SAClaudeMenuEntry(index: databaseUserHeaderIndex, kind: .header, title: userHeader)] + user
+            + [SAClaudeMenuEntry(index: databaseSystemHeaderIndex, kind: .header, title: systemHeader)] + systemEntries
+            + footer
+    }
+
+    /// A pop-up's own items carry the cell's private item action; an item added with an action (Add/Refresh) has its own.
+    private static func hasOwnAction(_ item: NSMenuItem) -> Bool {
+        guard let action = item.action, !(item.target is NSPopUpButtonCell) else { return false }
+        return action != NSSelectorFromString("_popUpItemAction:")
+    }
+
+    private static func databaseFooterSymbol(_ action: Selector?) -> String? {
+        switch action.map(NSStringFromSelector) {
+        case "addDatabase:": return "plus"
+        case "setDatabases:": return "arrow.clockwise"
+        default: return nil
+        }
+    }
+}

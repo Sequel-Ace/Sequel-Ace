@@ -182,4 +182,75 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         XCTAssertEqual(SAClaudeMenuCardModel.cardSize(contentWidth: 600, contentHeight: 900, screenVisibleHeight: 1000), NSSize(width: 420, height: 600))
         XCTAssertEqual(SAClaudeMenuCardModel.cardSize(contentWidth: 300, contentHeight: 200, screenVisibleHeight: 1000), NSSize(width: 300, height: 200))
     }
+
+    // MARK: Database pop-up sections
+
+    private final class DatabaseActions: NSObject {
+        @objc func addDatabase(_ sender: Any?) {}
+        @objc func setDatabases(_ sender: Any?) {}
+    }
+
+    /// The pop-up as `SPDatabaseDocument -setDatabases` builds it.
+    private func databasePopUp(_ names: [String], current: String?) -> NSPopUpButton {
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        _ = SADatabaseListManager.configurePopup(popup, databases: names, currentDatabase: current,
+                                                 addDatabaseSelector: #selector(DatabaseActions.addDatabase(_:)),
+                                                 refreshDatabasesSelector: #selector(DatabaseActions.setDatabases(_:)))
+        return popup
+    }
+
+    private func databaseEntries(_ popup: NSPopUpButton) -> [SAClaudeMenuEntry] {
+        SAClaudeMenuCardModel.databaseEntries(from: popup.menu!, selectedIndex: popup.indexOfSelectedItem,
+                                              userHeader: "Your databases", systemHeader: "System")
+    }
+
+    func testDatabaseEntriesSplitUserThenSystemWithFooter() {
+        let popup = databasePopUp(["mysql", "shop", "sys", "analytics", "information_schema"], current: "analytics")
+        let entries = databaseEntries(popup)
+        let resolved = rows(entries)
+        XCTAssertEqual(shape(resolved.list), ["header Your databases", "item shop", "item analytics",
+                                              "header System", "item mysql", "item sys", "item information_schema"])
+        XCTAssertEqual(shape(resolved.footer), ["item Add Database...", "item Refresh Databases"])
+        XCTAssertEqual(resolved.footer.map { $0.entry?.symbol }, ["plus", "arrow.clockwise"])
+        XCTAssertTrue(resolved.footer.allSatisfy { $0.entry?.isFooter == true })
+        let items = resolved.list.filter { $0.kind == .item }
+        XCTAssertTrue(items.allSatisfy { $0.entry?.symbol == "cylinder" && $0.entry?.isFooter == false })
+        // Every row points at its own menu item.
+        for row in items { XCTAssertEqual(popup.menu!.items[row.entry!.index].title, row.entry!.title) }
+        XCTAssertEqual(items.filter { $0.entry?.isTicked == true }.map { $0.entry!.title }, ["analytics"])
+    }
+
+    func testDatabaseEntriesSkipPlaceholderAndTickNothingWithoutDatabase() {
+        let popup = databasePopUp(["shop"], current: nil)
+        XCTAssertEqual(popup.indexOfSelectedItem, 0)
+        let entries = databaseEntries(popup)
+        XCTAssertFalse(entries.contains { $0.index == 0 })
+        XCTAssertFalse(entries.contains { $0.kind == .separator })
+        XCTAssertFalse(entries.contains { $0.isTicked })
+        // No system databases: the System header goes.
+        XCTAssertEqual(shape(rows(entries).list), ["header Your databases", "item shop"])
+    }
+
+    func testDatabaseEntriesOnlySystemOrNone() {
+        XCTAssertEqual(shape(rows(databaseEntries(databasePopUp(["sys", "mysql"], current: "sys"))).list),
+                       ["header System", "item sys", "item mysql"])
+        let none = rows(databaseEntries(databasePopUp([], current: nil)))
+        XCTAssertTrue(none.list.isEmpty)
+        XCTAssertEqual(shape(none.footer), ["item Add Database...", "item Refresh Databases"])
+    }
+
+    func testDatabaseEntriesKeepADatabaseAddedWithoutGlyph() {
+        // SADatabaseListManager.performSelection appends a database the list didn't have, without the glyph.
+        let popup = databasePopUp(["shop"], current: "shop")
+        popup.addItem(withTitle: "late")
+        popup.selectItem(withTitle: "late")
+        XCTAssertEqual(shape(rows(databaseEntries(popup)).list), ["header Your databases", "item shop", "item late"])
+        XCTAssertEqual(databaseEntries(popup).filter(\.isTicked).map(\.title), ["late"])
+    }
+
+    func testDatabaseEntriesFilterKeepsFooter() {
+        let resolved = rows(databaseEntries(databasePopUp(["mysql", "shop", "shipping"], current: nil)))
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "SH")), ["header Your databases", "item shop", "item shipping"])
+        XCTAssertEqual(shape(SAClaudeMenuCardModel.filter(resolved.list, query: "my")), ["header System", "item mysql"])
+    }
 }

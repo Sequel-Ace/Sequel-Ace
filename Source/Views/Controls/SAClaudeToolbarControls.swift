@@ -51,6 +51,32 @@ import AppKit
     override func mouseExited(with event: NSEvent) { isHovered = false }
     override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
 
+    // MARK: Claude card
+
+    private lazy var cardAdapter = SAClaudeDatabaseMenuAdapter(popup: self)
+
+    /// Opens the database card instead of the native menu (which stays attached); false when it can't (disabled,
+    /// no window, or the card refused the menu), and the caller opens the native menu.
+    private func showCard() -> Bool {
+        guard isEnabled, let menu else { return false }
+        return SAClaudeMenuCardPresenter.shared.show(menu: menu, from: self, adapter: cardAdapter)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if !showCard() { super.mouseDown(with: event) }
+    }
+
+    // The pop-up's only job is to open: Space, Return and ↓ (and VoiceOver's press) open the card too.
+    override func keyDown(with event: NSEvent) {
+        let opensCard = event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+            && [49, 36, 76, 125].contains(event.keyCode)  // Space, Return, keypad Enter, ↓
+        if !(opensCard && showCard()) { super.keyDown(with: event) }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        showCard() || super.accessibilityPerformPress()
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
@@ -122,6 +148,82 @@ import AppKit
     override func mouseEntered(with event: NSEvent) { hoveredSegment = segment(at: event) }
     override func mouseExited(with event: NSEvent) { hoveredSegment = nil }
     override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
+
+    // MARK: Claude card (press and hold)
+
+    /// How long a press waits for its mouse-up before it opens the segment's history card.
+    static let holdDelay: TimeInterval = 0.35
+    /// How far a press may move and still count as a click.
+    private static let dragSlop: CGFloat = 4
+
+    /// The segment a click handled here is navigating with, while its action runs.
+    private var clickedSegment: Int?
+
+    override var selectedSegment: Int {
+        get { clickedSegment ?? super.selectedSegment }
+        set { super.selectedSegment = newValue }
+    }
+
+    /// The segment's history menu when it can open one (control and segment enabled, entries present).
+    private func historyMenu(forSegment segment: Int) -> NSMenu? {
+        guard isEnabled, segment >= 0, segment < segmentCount, isEnabled(forSegment: segment),
+              let menu = menu(forSegment: segment), menu.numberOfItems > 0 else { return nil }
+        return menu
+    }
+
+    /// The drawn half of the pill for `segment`, in the control's coordinates: the card's anchor.
+    private func segmentRect(_ segment: Int) -> NSRect {
+        NSRect(x: bounds.minX + CGFloat(segment) * Self.segmentWidth, y: bounds.midY - 16, width: Self.segmentWidth, height: 32)
+    }
+
+    private func showCard(forSegment segment: Int) -> Bool {
+        guard let menu = historyMenu(forSegment: segment) else { return false }
+        return SAClaudeMenuCardPresenter.shared.show(menu: menu, from: self, adapter: SAClaudeHistoryEntriesMenuAdapter.shared,
+                                                     anchorRect: segmentRect(segment))
+    }
+
+    /// A click navigates once; a press held for `holdDelay` (or dragged) opens the segment's history card instead.
+    override func mouseDown(with event: NSEvent) {
+        guard let segment = segment(at: event), historyMenu(forSegment: segment) != nil, let window else {
+            super.mouseDown(with: event)
+            return
+        }
+        let deadline = Date(timeIntervalSinceNow: Self.holdDelay)
+        let start = event.locationInWindow
+        while let next = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged], until: deadline, inMode: .eventTracking, dequeue: true) {
+            if next.type == .leftMouseUp {
+                // Exactly one navigation. SPHistoryController -historyControlClicked: reads selectedSegment, which a
+                // momentary control reports only while it tracks a click itself (setting it is ignored): report the
+                // pressed segment for the action, -1 again after it, as a native click does.
+                clickedSegment = segment
+                defer { clickedSegment = nil }
+                sendAction(action, to: target)
+                return
+            }
+            // A real drag opens the card at once; a click's few points of jitter keep waiting for its mouse-up.
+            if hypot(next.locationInWindow.x - start.x, next.locationInWindow.y - start.y) > Self.dragSlop { break }
+        }
+        if !showCard(forSegment: segment) { super.mouseDown(with: event) }
+    }
+
+    /// The segment ↓ / VoiceOver's "show menu" opens: the selected one if it has history, else the first that has
+    /// (a momentary control has no selected segment outside a click, so in practice Back, else Forward).
+    private var keyboardSegment: Int? {
+        if historyMenu(forSegment: selectedSegment) != nil { return selectedSegment }
+        return (0..<segmentCount).first { historyMenu(forSegment: $0) != nil }
+    }
+
+    // Space/Return keep navigating (super); ↓ opens the card.
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 125, event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
+           let segment = keyboardSegment, showCard(forSegment: segment) { return }
+        super.keyDown(with: event)
+    }
+
+    override func accessibilityPerformShowMenu() -> Bool {
+        if let segment = keyboardSegment, showCard(forSegment: segment) { return true }
+        return super.accessibilityPerformShowMenu()
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.saveGraphicsState()
