@@ -5316,3 +5316,854 @@
 
 /* Record View: tooltip of the header button that shows the next row */
 "ClaudeRecordNextRow" = "Next row (⌥↓)";
+
+/* ===== Claude Settings window (2026-10-18): pane, section and row copy ===== */
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.appearance" = "Appearance";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.startup" = "Startup and connections";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.tablesData" = "Tables and data";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.queryEditor" = "Query editor";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.safety" = "Safety and alerts";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.queryConsole" = "Query console";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.sshSecurity" = "SSH and security";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.mcp" = "MCP server";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.updatesPrivacy" = "Updates and privacy";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.look" = "Look";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.editorGridColours" = "Editor and grid colours";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.fonts" = "Fonts";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.grids" = "Grids";
+
+/* Claude Settings: section heading in the Startup and connections pane */
+"ClaudeSettings.section.whenOpens" = "When Sequel Ace opens";
+
+/* Claude Settings: section heading in the Startup and connections pane */
+"ClaudeSettings.section.connecting" = "Connecting";
+
+/* Claude Settings: section heading in the Tables and data pane */
+"ClaudeSettings.section.loading" = "Loading";
+
+/* Claude Settings: section heading in the Tables and data pane */
+"ClaudeSettings.section.showing" = "Showing";
+
+/* Claude Settings: section heading in the Tables and data pane */
+"ClaudeSettings.section.editing" = "Editing";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.typing" = "Typing";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.highlighting" = "Highlighting";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.suggestions" = "Suggestions and help";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.history" = "History";
+
+/* Claude Settings: section heading in the Safety and alerts pane */
+"ClaudeSettings.section.beforeChanges" = "Before changes";
+
+/* Claude Settings: section heading in the Safety and alerts pane */
+"ClaudeSettings.section.warnings" = "Warnings";
+
+/* Claude Settings: section heading in the Query console pane */
+"ClaudeSettings.section.logging" = "Logging";
+
+/* Claude Settings: section heading in the SSH and security pane */
+"ClaudeSettings.section.sshTunnels" = "SSH tunnels";
+
+/* Claude Settings: section heading in the SSH and security pane */
+"ClaudeSettings.section.encryption" = "Encryption";
+
+/* Claude Settings: section heading in the SSH and security pane */
+"ClaudeSettings.section.fileAccess" = "File access";
+
+/* Claude Settings: section heading in the MCP server pane */
+"ClaudeSettings.section.mcpServer" = "Server";
+
+/* Claude Settings: name of a setting (row appAppearance) */
+"ClaudeSettings.appAppearance.name" = "App appearance";
+
+/* Claude Settings: one-line description under the setting "App appearance" */
+"ClaudeSettings.appAppearance.desc" = "Light, dark, or follow macOS";
+
+/* Claude Settings: the (i) explanation of the setting "App appearance" */
+"ClaudeSettings.appAppearance.info" = "Switches the whole app between light and dark. With Match macOS it changes when your Mac does. The editor and grid colours follow it too, unless you pick Custom colours below.";
+
+/* Claude Settings: last line of the (i) explanation of "App appearance": its old name and old Preferences pane */
+"ClaudeSettings.appAppearance.was" = "Was: Appearance (General)";
+
+/* Claude Settings: an option of the "App appearance" pop-up */
+"ClaudeSettings.appAppearance.option.matchMacOS" = "Match macOS";
+
+/* Claude Settings: an option of the "App appearance" pop-up */
+"ClaudeSettings.appAppearance.option.light" = "Light";
+
+/* Claude Settings: an option of the "App appearance" pop-up */
+"ClaudeSettings.appAppearance.option.dark" = "Dark";
+
+/* Claude Settings: name of a setting (row accentColour) */
+"ClaudeSettings.accentColour.name" = "Accent colour";
+
+/* Claude Settings: one-line description under the setting "Accent colour" */
+"ClaudeSettings.accentColour.desc" = "Buttons, highlights and selection marks";
+
+/* Claude Settings: the (i) explanation of the setting "Accent colour" */
+"ClaudeSettings.accentColour.info" = "The one colour used for buttons, focus outlines, ticks and selected icons everywhere in the app. Reset puts it back to clay.";
+
+/* Claude Settings: last line of the (i) explanation of "Accent colour": its old name and old Preferences pane */
+"ClaudeSettings.accentColour.was" = "Was: Accent colour (Query Editor)";
+
+/* Claude Settings: name of a setting (row titleBarColour) */
+"ClaudeSettings.titleBarColour.name" = "Colour the window with the connection colour";
+
+/* Claude Settings: one-line description under the setting "Colour the window with the connection colour" */
+"ClaudeSettings.titleBarColour.desc" = "Uses the favourite colour for the title bar";
+
+/* Claude Settings: the (i) explanation of the setting "Colour the window with the connection colour" */
+"ClaudeSettings.titleBarColour.info" = "When a saved connection has a colour, that window's title bar and toolbar take it, so production and local look different at a glance. Applies to open windows immediately.";
+
+/* Claude Settings: last line of the (i) explanation of "Colour the window with the connection colour": its old name and old Preferences pane */
+"ClaudeSettings.titleBarColour.was" = "Was: Color the title bar with the connection color (General)";
+
+/* Claude Settings: name of a setting (row editorColours) */
+"ClaudeSettings.editorColours.name" = "Colours";
+
+/* Claude Settings: one-line description under the setting "Colours" */
+"ClaudeSettings.editorColours.desc" = "Match the app appearance, or set your own";
+
+/* Claude Settings: the (i) explanation of the setting "Colours" */
+"ClaudeSettings.editorColours.info" = "Match appearance uses Claude Light in light mode and Claude Dark in dark mode for the editor, result grids, console and status bar. Custom keeps your own colours in both modes.";
+
+/* Claude Settings: last line of the (i) explanation of "Colours": its old name and old Preferences pane */
+"ClaudeSettings.editorColours.was" = "Was: Colours: Follow macOS / Customise (Query Editor)";
+
+/* Claude Settings: name of a setting (row startFromTheme) */
+"ClaudeSettings.startFromTheme.name" = "Start from a theme";
+
+/* Claude Settings: one-line description under the setting "Start from a theme" */
+"ClaudeSettings.startFromTheme.desc" = "Load a saved set of colours";
+
+/* Claude Settings: the (i) explanation of the setting "Start from a theme" */
+"ClaudeSettings.startFromTheme.info" = "Replaces the 11 colours below with a saved theme. Save, import, export and manage themes from the ⋯ menu.";
+
+/* Claude Settings: last line of the (i) explanation of "Start from a theme": its old name and old Preferences pane */
+"ClaudeSettings.startFromTheme.was" = "Was: Start from / gear menu (Query Editor)";
+
+/* Claude Settings: name of a setting (row colourList) */
+"ClaudeSettings.colourList.name" = "11 colours";
+
+/* Claude Settings: one-line description under the setting "11 colours" */
+"ClaudeSettings.colourList.desc" = "Text, background, keywords, selection…";
+
+/* Claude Settings: the (i) explanation of the setting "11 colours" */
+"ClaudeSettings.colourList.info" = "Each colour is used in the editor, and text, background, keyword and selection also colour the result grids and console.";
+
+/* Claude Settings: last line of the (i) explanation of "11 colours": its old name and old Preferences pane */
+"ClaudeSettings.colourList.was" = "Was: Colour table (Query Editor)";
+
+/* Claude Settings: name of a setting (row editorFont) */
+"ClaudeSettings.editorFont.name" = "Editor font";
+
+/* Claude Settings: one-line description under the setting "Editor font" */
+"ClaudeSettings.editorFont.desc" = "Query editor, completion list, script console";
+
+/* Claude Settings: the (i) explanation of the setting "Editor font" */
+"ClaudeSettings.editorFont.info" = "The font you write SQL in. Reset returns to SF Mono 13.";
+
+/* Claude Settings: last line of the (i) explanation of "Editor font": its old name and old Preferences pane */
+"ClaudeSettings.editorFont.was" = "Was: Font + Select… / Reset (Query Editor)";
+
+/* Claude Settings: name of a setting (row resultsFont) */
+"ClaudeSettings.resultsFont.name" = "Results font";
+
+/* Claude Settings: one-line description under the setting "Results font" */
+"ClaudeSettings.resultsFont.desc" = "Content, query results, Structure and other grids";
+
+/* Claude Settings: the (i) explanation of the setting "Results font" */
+"ClaudeSettings.resultsFont.info" = "The font of every data grid and the Query Console.";
+
+/* Claude Settings: last line of the (i) explanation of "Results font": its old name and old Preferences pane */
+"ClaudeSettings.resultsFont.was" = "Was: Font + Change… (General)";
+
+/* Claude Settings: name of a setting (row columnTypes) */
+"ClaudeSettings.columnTypes.name" = "Show column types in headers";
+
+/* Claude Settings: one-line description under the setting "Show column types in headers" */
+"ClaudeSettings.columnTypes.desc" = "VARCHAR, INT… under each column name";
+
+/* Claude Settings: the (i) explanation of the setting "Show column types in headers" */
+"ClaudeSettings.columnTypes.info" = "Adds the column type under the name in Content and query result headers.";
+
+/* Claude Settings: last line of the (i) explanation of "Show column types in headers": its old name and old Preferences pane */
+"ClaudeSettings.columnTypes.was" = "Was: Display column types in content and query views (General)";
+
+/* Claude Settings: name of a setting (row printGridLines) */
+"ClaudeSettings.printGridLines.name" = "Grid lines when printing";
+
+/* Claude Settings: one-line description under the setting "Grid lines when printing" */
+"ClaudeSettings.printGridLines.desc" = "Only affects printed and PDF output";
+
+/* Claude Settings: the (i) explanation of the setting "Grid lines when printing" */
+"ClaudeSettings.printGridLines.info" = "On screen the Claude grids always show their lines; this only changes printed tables.";
+
+/* Claude Settings: last line of the (i) explanation of "Grid lines when printing": its old name and old Preferences pane */
+"ClaudeSettings.printGridLines.was" = "Was: Display vertical grid lines (General)";
+
+/* Claude Settings: name of a setting (row defaultFavourite) */
+"ClaudeSettings.defaultFavourite.name" = "Favourite to select";
+
+/* Claude Settings: one-line description under the setting "Favourite to select" */
+"ClaudeSettings.defaultFavourite.desc" = "Picked on the connection screen";
+
+/* Claude Settings: the (i) explanation of the setting "Favourite to select" */
+"ClaudeSettings.defaultFavourite.info" = "Which saved connection is selected when the connection screen opens: the one you used last, or a fixed one.";
+
+/* Claude Settings: last line of the (i) explanation of "Favourite to select": its old name and old Preferences pane */
+"ClaudeSettings.defaultFavourite.was" = "Was: Default Favorite (General)";
+
+/* Claude Settings: name of a setting (row autoConnect) */
+"ClaudeSettings.autoConnect.name" = "Connect to it automatically";
+
+/* Claude Settings: one-line description under the setting "Connect to it automatically" */
+"ClaudeSettings.autoConnect.desc" = "Only on the first window at launch";
+
+/* Claude Settings: the (i) explanation of the setting "Connect to it automatically" */
+"ClaudeSettings.autoConnect.info" = "Connects to that favourite as soon as the app starts.";
+
+/* Claude Settings: last line of the (i) explanation of "Connect to it automatically": its old name and old Preferences pane */
+"ClaudeSettings.autoConnect.was" = "Was: Connect to default on startup (General)";
+
+/* Claude Settings: name of a setting (row tabToOpen) */
+"ClaudeSettings.tabToOpen.name" = "Tab to open first";
+
+/* Claude Settings: one-line description under the setting "Tab to open first" */
+"ClaudeSettings.tabToOpen.desc" = "After connecting";
+
+/* Claude Settings: the (i) explanation of the setting "Tab to open first" */
+"ClaudeSettings.tabToOpen.info" = "Which tab a new connection opens on: Structure, Content, Query… or whichever you used last.";
+
+/* Claude Settings: last line of the (i) explanation of "Tab to open first": its old name and old Preferences pane */
+"ClaudeSettings.tabToOpen.was" = "Was: Default View (General)";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.lastUsed" = "Last used";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.structure" = "Structure";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.content" = "Content";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.relations" = "Relations";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.tableInfo" = "Table Info";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.query" = "Query";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.triggers" = "Triggers";
+
+/* Claude Settings: name of a setting (row askBeforeQuitting) */
+"ClaudeSettings.askBeforeQuitting.name" = "Ask before quitting";
+
+/* Claude Settings: one-line description under the setting "Ask before quitting" */
+"ClaudeSettings.askBeforeQuitting.desc" = "Confirmation when you press ⌘Q";
+
+/* Claude Settings: the (i) explanation of the setting "Ask before quitting" */
+"ClaudeSettings.askBeforeQuitting.info" = "Shows a \"Close the app?\" check before quitting.";
+
+/* Claude Settings: last line of the (i) explanation of "Ask before quitting": its old name and old Preferences pane */
+"ClaudeSettings.askBeforeQuitting.was" = "Was: Prompt for confirmation before quitting (General)";
+
+/* Claude Settings: name of a setting (row connectTimeout) */
+"ClaudeSettings.connectTimeout.name" = "Give up connecting after";
+
+/* Claude Settings: one-line description under the setting "Give up connecting after" */
+"ClaudeSettings.connectTimeout.desc" = "0 waits forever";
+
+/* Claude Settings: the (i) explanation of the setting "Give up connecting after" */
+"ClaudeSettings.connectTimeout.info" = "How long to wait for the server (and an SSH tunnel) before showing an error.";
+
+/* Claude Settings: last line of the (i) explanation of "Give up connecting after": its old name and old Preferences pane */
+"ClaudeSettings.connectTimeout.was" = "Was: Connection Timeout (Network)";
+
+/* Claude Settings: name of a setting (row keepAlive) */
+"ClaudeSettings.keepAlive.name" = "Keep connections alive";
+
+/* Claude Settings: one-line description under the setting "Keep connections alive" */
+"ClaudeSettings.keepAlive.desc" = "Stops idle connections dropping";
+
+/* Claude Settings: the (i) explanation of the setting "Keep connections alive" */
+"ClaudeSettings.keepAlive.info" = "Pings the server every 60 seconds so idle connections and SSH tunnels stay open.";
+
+/* Claude Settings: last line of the (i) explanation of "Keep connections alive": its old name and old Preferences pane */
+"ClaudeSettings.keepAlive.was" = "Was: Keep connections alive (Network)";
+
+/* Claude Settings: name of a setting (row characterSet) */
+"ClaudeSettings.characterSet.name" = "Character set";
+
+/* Claude Settings: one-line description under the setting "Character set" */
+"ClaudeSettings.characterSet.desc" = "Used after connecting";
+
+/* Claude Settings: the (i) explanation of the setting "Character set" */
+"ClaudeSettings.characterSet.info" = "The text encoding for the connection. Autodetect switches to utf8mb4 when a table loads.";
+
+/* Claude Settings: last line of the (i) explanation of "Character set": its old name and old Preferences pane */
+"ClaudeSettings.characterSet.was" = "Was: Default Encoding (General)";
+
+/* Claude Settings: name of a setting (row readConnectionStrings) */
+"ClaudeSettings.readConnectionStrings.name" = "Read connection strings from the clipboard";
+
+/* Claude Settings: one-line description under the setting "Read connection strings from the clipboard" */
+"ClaudeSettings.readConnectionStrings.desc" = "When you choose Import on the connection screen";
+
+/* Claude Settings: the (i) explanation of the setting "Read connection strings from the clipboard" */
+"ClaudeSettings.readConnectionStrings.info" = "If the clipboard holds a mysql:// address, Import offers to save it as a new favourite instead of asking for a file.";
+
+/* Claude Settings: last line of the (i) explanation of "Read connection strings from the clipboard": its old name and old Preferences pane */
+"ClaudeSettings.readConnectionStrings.was" = "Was: Connection Strings (General)";
+
+/* Claude Settings: name of a setting (row pageSize) */
+"ClaudeSettings.pageSize.name" = "Show rows in pages of";
+
+/* Claude Settings: one-line description under the setting "Show rows in pages of" */
+"ClaudeSettings.pageSize.desc" = "Content tab";
+
+/* Claude Settings: the (i) explanation of the setting "Show rows in pages of" */
+"ClaudeSettings.pageSize.info" = "Content loads this many rows at a time, with page arrows. Off loads every row (slow on big tables).";
+
+/* Claude Settings: last line of the (i) explanation of "Show rows in pages of": its old name and old Preferences pane */
+"ClaudeSettings.pageSize.was" = "Was: Limit result to … rows (Tables)";
+
+/* Claude Settings: name of a setting (row countRows) */
+"ClaudeSettings.countRows.name" = "Count rows exactly";
+
+/* Claude Settings: one-line description under the setting "Count rows exactly" */
+"ClaudeSettings.countRows.desc" = "Exact counts can be slow on big tables";
+
+/* Claude Settings: the (i) explanation of the setting "Count rows exactly" */
+"ClaudeSettings.countRows.info" = "Never shows an estimate; Always runs COUNT on every table; Small tables only counts tables under 5 MB.";
+
+/* Claude Settings: last line of the (i) explanation of "Count rows exactly": its old name and old Preferences pane */
+"ClaudeSettings.countRows.was" = "Was: Table row counts (Tables)";
+
+/* Claude Settings: an option of the "Count rows exactly" pop-up */
+"ClaudeSettings.countRows.option.never" = "Never";
+
+/* Claude Settings: an option of the "Count rows exactly" pop-up */
+"ClaudeSettings.countRows.option.smallTables" = "Small tables only";
+
+/* Claude Settings: an option of the "Count rows exactly" pop-up */
+"ClaudeSettings.countRows.option.always" = "Always";
+
+/* Claude Settings: name of a setting (row lazyLoadBlobs) */
+"ClaudeSettings.lazyLoadBlobs.name" = "Load large text and binary only when opened";
+
+/* Claude Settings: one-line description under the setting "Load large text and binary only when opened" */
+"ClaudeSettings.lazyLoadBlobs.desc" = "Faster browsing of wide tables";
+
+/* Claude Settings: the (i) explanation of the setting "Load large text and binary only when opened" */
+"ClaudeSettings.lazyLoadBlobs.info" = "Leaves TEXT and BLOB columns out of the first load and fetches each value when you open the cell.";
+
+/* Claude Settings: last line of the (i) explanation of "Load large text and binary only when opened": its old name and old Preferences pane */
+"ClaudeSettings.lazyLoadBlobs.was" = "Was: Don't load blob and text fields until needed (Tables)";
+
+/* Claude Settings: name of a setting (row nullText) */
+"ClaudeSettings.nullText.name" = "Text for NULL";
+
+/* Claude Settings: one-line description under the setting "Text for NULL" */
+"ClaudeSettings.nullText.desc" = "Also what you type to store NULL";
+
+/* Claude Settings: the (i) explanation of the setting "Text for NULL" */
+"ClaudeSettings.nullText.info" = "How SQL NULL is drawn in grids, and the text you type in a cell to save NULL. Export and import use it too.";
+
+/* Claude Settings: last line of the (i) explanation of "Text for NULL": its old name and old Preferences pane */
+"ClaudeSettings.nullText.was" = "Was: Show NULL values as (Tables)";
+
+/* Claude Settings: name of a setting (row tableComments) */
+"ClaudeSettings.tableComments.name" = "Show table comments in the sidebar";
+
+/* Claude Settings: one-line description under the setting "Show table comments in the sidebar" */
+"ClaudeSettings.tableComments.desc" = "Under each table name";
+
+/* Claude Settings: the (i) explanation of the setting "Show table comments in the sidebar" */
+"ClaudeSettings.tableComments.info" = "Loads and shows each table's comment in the tables list (a slightly slower list query).";
+
+/* Claude Settings: last line of the (i) explanation of "Show table comments in the sidebar": its old name and old Preferences pane */
+"ClaudeSettings.tableComments.was" = "Was: Display comments in tables list (General)";
+
+/* Claude Settings: name of a setting (row filterDropZone) */
+"ClaudeSettings.filterDropZone.name" = "Show the filter drop zone";
+
+/* Claude Settings: one-line description under the setting "Show the filter drop zone" */
+"ClaudeSettings.filterDropZone.desc" = "\"Drop a value here\" bar on Content";
+
+/* Claude Settings: the (i) explanation of the setting "Show the filter drop zone" */
+"ClaudeSettings.filterDropZone.info" = "Shows the bar you can drop a cell value onto to filter by it.";
+
+/* Claude Settings: last line of the (i) explanation of "Show the filter drop zone": its old name and old Preferences pane */
+"ClaudeSettings.filterDropZone.was" = "Was: Show filter drop zone (Tables)";
+
+/* Claude Settings: name of a setting (row longValueSheet) */
+"ClaudeSettings.longValueSheet.name" = "Edit long values in a sheet";
+
+/* Claude Settings: one-line description under the setting "Edit long values in a sheet" */
+"ClaudeSettings.longValueSheet.desc" = "Values over this many characters";
+
+/* Claude Settings: the (i) explanation of the setting "Edit long values in a sheet" */
+"ClaudeSettings.longValueSheet.info" = "Long values open in the big editor sheet instead of editing in the cell.";
+
+/* Claude Settings: last line of the (i) explanation of "Edit long values in a sheet": its old name and old Preferences pane */
+"ClaudeSettings.longValueSheet.was" = "Was: Edit inline or popup / Intelligently switch at length (Tables)";
+
+/* Claude Settings: name of a setting (row multiLineSheet) */
+"ClaudeSettings.multiLineSheet.name" = "Always use the sheet for multi-line values";
+
+/* Claude Settings: one-line description under the setting "Always use the sheet for multi-line values" */
+"ClaudeSettings.multiLineSheet.desc" = "Values containing line breaks";
+
+/* Claude Settings: the (i) explanation of the setting "Always use the sheet for multi-line values" */
+"ClaudeSettings.multiLineSheet.info" = "Any value with a line break opens in the sheet.";
+
+/* Claude Settings: last line of the (i) explanation of "Always use the sheet for multi-line values": its old name and old Preferences pane */
+"ClaudeSettings.multiLineSheet.was" = "Was: Always use popup for multi-line content (Tables)";
+
+/* Claude Settings: name of a setting (row reloadAfterSaving) */
+"ClaudeSettings.reloadAfterSaving.name" = "Reload after saving";
+
+/* Claude Settings: one-line description under the setting "Reload after saving" */
+"ClaudeSettings.reloadAfterSaving.desc" = "Re-run the query after you add, edit or delete";
+
+/* Claude Settings: the (i) explanation of the setting "Reload after saving" */
+"ClaudeSettings.reloadAfterSaving.info" = "Re-reads rows from the server after a change so the grid shows exactly what was saved (including in editable query results).";
+
+/* Claude Settings: last line of the (i) explanation of "Reload after saving": its old name and old Preferences pane */
+"ClaudeSettings.reloadAfterSaving.was" = "Was: Reload table after: Adding / Editing / Removing a row (Tables)";
+
+/* Claude Settings: name of a setting (row newColumnsAllowNull) */
+"ClaudeSettings.newColumnsAllowNull.name" = "New columns allow NULL";
+
+/* Claude Settings: one-line description under the setting "New columns allow NULL" */
+"ClaudeSettings.newColumnsAllowNull.desc" = "Structure tab";
+
+/* Claude Settings: the (i) explanation of the setting "New columns allow NULL" */
+"ClaudeSettings.newColumnsAllowNull.info" = "Pre-ticks Allow NULL when you add a column.";
+
+/* Claude Settings: last line of the (i) explanation of "New columns allow NULL": its old name and old Preferences pane */
+"ClaudeSettings.newColumnsAllowNull.was" = "Was: New fields should allow NULL values (Tables)";
+
+/* Claude Settings: name of a setting (row keepIndentation) */
+"ClaudeSettings.keepIndentation.name" = "Keep indentation on new lines";
+
+/* Claude Settings: the (i) explanation of the setting "Keep indentation on new lines" */
+"ClaudeSettings.keepIndentation.info" = "A new line starts at the same indent as the previous one.";
+
+/* Claude Settings: last line of the (i) explanation of "Keep indentation on new lines": its old name and old Preferences pane */
+"ClaudeSettings.keepIndentation.was" = "Was: Indent new lines (Query Editor)";
+
+/* Claude Settings: name of a setting (row softIndent) */
+"ClaudeSettings.softIndent.name" = "Indent with spaces";
+
+/* Claude Settings: one-line description under the setting "Indent with spaces" */
+"ClaudeSettings.softIndent.desc" = "Spaces per level";
+
+/* Claude Settings: the (i) explanation of the setting "Indent with spaces" */
+"ClaudeSettings.softIndent.info" = "Tab inserts spaces, and backspace removes a whole level.";
+
+/* Claude Settings: last line of the (i) explanation of "Indent with spaces": its old name and old Preferences pane */
+"ClaudeSettings.softIndent.was" = "Was: Soft indent (Query Editor)";
+
+/* Claude Settings: name of a setting (row tabWidth) */
+"ClaudeSettings.tabWidth.name" = "Tab width";
+
+/* Claude Settings: one-line description under the setting "Tab width" */
+"ClaudeSettings.tabWidth.desc" = "In spaces";
+
+/* Claude Settings: the (i) explanation of the setting "Tab width" */
+"ClaudeSettings.tabWidth.info" = "How wide a tab character looks in the editor and bundle editor.";
+
+/* Claude Settings: last line of the (i) explanation of "Tab width": its old name and old Preferences pane */
+"ClaudeSettings.tabWidth.was" = "Was: Tab stop width (Query Editor)";
+
+/* Claude Settings: name of a setting (row closeBrackets) */
+"ClaudeSettings.closeBrackets.name" = "Close brackets and quotes";
+
+/* Claude Settings: one-line description under the setting "Close brackets and quotes" */
+"ClaudeSettings.closeBrackets.desc" = "Typing ( adds )";
+
+/* Claude Settings: the (i) explanation of the setting "Close brackets and quotes" */
+"ClaudeSettings.closeBrackets.info" = "Inserts the closing (, ', \" or ` for you.";
+
+/* Claude Settings: last line of the (i) explanation of "Close brackets and quotes": its old name and old Preferences pane */
+"ClaudeSettings.closeBrackets.was" = "Was: Auto pair characters (Query Editor)";
+
+/* Claude Settings: name of a setting (row uppercaseKeywords) */
+"ClaudeSettings.uppercaseKeywords.name" = "Uppercase keywords as you type";
+
+/* Claude Settings: one-line description under the setting "Uppercase keywords as you type" */
+"ClaudeSettings.uppercaseKeywords.desc" = "select → SELECT";
+
+/* Claude Settings: the (i) explanation of the setting "Uppercase keywords as you type" */
+"ClaudeSettings.uppercaseKeywords.info" = "Changes SQL keywords to capitals as you type.";
+
+/* Claude Settings: last line of the (i) explanation of "Uppercase keywords as you type": its old name and old Preferences pane */
+"ClaudeSettings.uppercaseKeywords.was" = "Was: Auto uppercase keywords (Query Editor)";
+
+/* Claude Settings: name of a setting (row dashComments) */
+"ClaudeSettings.dashComments.name" = "Comment lines with --";
+
+/* Claude Settings: one-line description under the setting "Comment lines with --" */
+"ClaudeSettings.dashComments.desc" = "Instead of /* … */";
+
+/* Claude Settings: the (i) explanation of the setting "Comment lines with --" */
+"ClaudeSettings.dashComments.info" = "Comment Current Query and comment selection use -- on each line.";
+
+/* Claude Settings: last line of the (i) explanation of "Comment lines with --": its old name and old Preferences pane */
+"ClaudeSettings.dashComments.was" = "Was: Use dash-style for block comment (Query Editor)";
+
+/* Claude Settings: name of a setting (row syntaxColouring) */
+"ClaudeSettings.syntaxColouring.name" = "Colour SQL syntax";
+
+/* Claude Settings: the (i) explanation of the setting "Colour SQL syntax" */
+"ClaudeSettings.syntaxColouring.info" = "Colours keywords, strings, numbers and comments.";
+
+/* Claude Settings: last line of the (i) explanation of "Colour SQL syntax": its old name and old Preferences pane */
+"ClaudeSettings.syntaxColouring.was" = "Was: Syntax highlighting (Query Editor)";
+
+/* Claude Settings: name of a setting (row highlightStatement) */
+"ClaudeSettings.highlightStatement.name" = "Highlight the current statement";
+
+/* Claude Settings: one-line description under the setting "Highlight the current statement" */
+"ClaudeSettings.highlightStatement.desc" = "The query ⌘R would run";
+
+/* Claude Settings: the (i) explanation of the setting "Highlight the current statement" */
+"ClaudeSettings.highlightStatement.info" = "Tints the statement under the cursor.";
+
+/* Claude Settings: last line of the (i) explanation of "Highlight the current statement": its old name and old Preferences pane */
+"ClaudeSettings.highlightStatement.was" = "Was: Highlight current query (Query Editor)";
+
+/* Claude Settings: name of a setting (row matchBrackets) */
+"ClaudeSettings.matchBrackets.name" = "Highlight matching brackets";
+
+/* Claude Settings: the (i) explanation of the setting "Highlight matching brackets" */
+"ClaudeSettings.matchBrackets.info" = "Marks the bracket that pairs with the one at the cursor.";
+
+/* Claude Settings: last line of the (i) explanation of "Highlight matching brackets": its old name and old Preferences pane */
+"ClaudeSettings.matchBrackets.was" = "Was: Bracket highlighting (Query Editor)";
+
+/* Claude Settings: name of a setting (row autoComplete) */
+"ClaudeSettings.autoComplete.name" = "Suggest completions as you type";
+
+/* Claude Settings: one-line description under the setting "Suggest completions as you type" */
+"ClaudeSettings.autoComplete.desc" = "After a pause of";
+
+/* Claude Settings: the (i) explanation of the setting "Suggest completions as you type" */
+"ClaudeSettings.autoComplete.info" = "Opens the completion list automatically. Off: press Esc to open it.";
+
+/* Claude Settings: last line of the (i) explanation of "Suggest completions as you type": its old name and old Preferences pane */
+"ClaudeSettings.autoComplete.was" = "Was: Auto-Completion + Delay by (Query Editor)";
+
+/* Claude Settings: name of a setting (row completeBackticks) */
+"ClaudeSettings.completeBackticks.name" = "Wrap names in backticks";
+
+/* Claude Settings: one-line description under the setting "Wrap names in backticks" */
+"ClaudeSettings.completeBackticks.desc" = "`table`.`column`";
+
+/* Claude Settings: the (i) explanation of the setting "Wrap names in backticks" */
+"ClaudeSettings.completeBackticks.info" = "Completed database, table and column names are inserted in backticks.";
+
+/* Claude Settings: last line of the (i) explanation of "Wrap names in backticks": its old name and old Preferences pane */
+"ClaudeSettings.completeBackticks.was" = "Was: Complete with backticks (Query Editor)";
+
+/* Claude Settings: name of a setting (row insertArguments) */
+"ClaudeSettings.insertArguments.name" = "Insert function arguments";
+
+/* Claude Settings: the (i) explanation of the setting "Insert function arguments" */
+"ClaudeSettings.insertArguments.info" = "Completing a function inserts its argument placeholders.";
+
+/* Claude Settings: last line of the (i) explanation of "Insert function arguments": its old name and old Preferences pane */
+"ClaudeSettings.insertArguments.was" = "Was: Insert function arguments (Query Editor)";
+
+/* Claude Settings: name of a setting (row autoHelp) */
+"ClaudeSettings.autoHelp.name" = "Show MySQL help for the word at the cursor";
+
+/* Claude Settings: one-line description under the setting "Show MySQL help for the word at the cursor" */
+"ClaudeSettings.autoHelp.desc" = "After a pause of";
+
+/* Claude Settings: the (i) explanation of the setting "Show MySQL help for the word at the cursor" */
+"ClaudeSettings.autoHelp.info" = "Opens the MySQL help viewer for the keyword you're typing.";
+
+/* Claude Settings: last line of the (i) explanation of "Show MySQL help for the word at the cursor": its old name and old Preferences pane */
+"ClaudeSettings.autoHelp.was" = "Was: Update help while typing + Delay by (Query Editor)";
+
+/* Claude Settings: name of a setting (row historySize) */
+"ClaudeSettings.historySize.name" = "Keep the last";
+
+/* Claude Settings: one-line description under the setting "Keep the last" */
+"ClaudeSettings.historySize.desc" = "Queries in History (max 100)";
+
+/* Claude Settings: the (i) explanation of the setting "Keep the last" */
+"ClaudeSettings.historySize.info" = "How many queries the History card remembers.";
+
+/* Claude Settings: last line of the (i) explanation of "Keep the last": its old name and old Preferences pane */
+"ClaudeSettings.historySize.was" = "Was: Remember Last … queries (General)";
+
+/* Claude Settings: name of a setting (row historyPerStatement) */
+"ClaudeSettings.historyPerStatement.name" = "Save each statement separately";
+
+/* Claude Settings: one-line description under the setting "Save each statement separately" */
+"ClaudeSettings.historyPerStatement.desc" = "When you run several at once";
+
+/* Claude Settings: the (i) explanation of the setting "Save each statement separately" */
+"ClaudeSettings.historyPerStatement.info" = "A run of three statements adds three history entries instead of one.";
+
+/* Claude Settings: last line of the (i) explanation of "Save each statement separately": its old name and old Preferences pane */
+"ClaudeSettings.historyPerStatement.was" = "Was: Save query history individually (General)";
+
+/* Claude Settings: name of a setting (row confirmChanges) */
+"ClaudeSettings.confirmChanges.name" = "Confirm before running changes";
+
+/* Claude Settings: one-line description under the setting "Confirm before running changes" */
+"ClaudeSettings.confirmChanges.desc" = "Destructive SQL, Run as Script, and row saves in Content";
+
+/* Claude Settings: the (i) explanation of the setting "Confirm before running changes" */
+"ClaudeSettings.confirmChanges.info" = "Asks first before a query that changes data, before Run All as Script, before every row save in Content, and before renaming a table or editing its comment.";
+
+/* Claude Settings: last line of the (i) explanation of "Confirm before running changes": its old name and old Preferences pane */
+"ClaudeSettings.confirmChanges.was" = "Was: Show warning before executing a query (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row askTwiceDelete) */
+"ClaudeSettings.askTwiceDelete.name" = "Ask twice before deleting rows";
+
+/* Claude Settings: one-line description under the setting "Ask twice before deleting rows" */
+"ClaudeSettings.askTwiceDelete.desc" = "Needs the setting above";
+
+/* Claude Settings: the (i) explanation of the setting "Ask twice before deleting rows" */
+"ClaudeSettings.askTwiceDelete.info" = "Adds a second \"Are you sure?\" when deleting rows. It only works while the setting above is on.";
+
+/* Claude Settings: last line of the (i) explanation of "Ask twice before deleting rows": its old name and old Preferences pane */
+"ClaudeSettings.askTwiceDelete.was" = "Was: Show double check warning when deleting rows (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row warnNoRowsAffected) */
+"ClaudeSettings.warnNoRowsAffected.name" = "Warn when a save changes nothing";
+
+/* Claude Settings: one-line description under the setting "Warn when a save changes nothing" */
+"ClaudeSettings.warnNoRowsAffected.desc" = "0 rows affected";
+
+/* Claude Settings: the (i) explanation of the setting "Warn when a save changes nothing" */
+"ClaudeSettings.warnNoRowsAffected.info" = "After saving a row that changed no rows on the server, shows an error and reloads.";
+
+/* Claude Settings: last line of the (i) explanation of "Warn when a save changes nothing": its old name and old Preferences pane */
+"ClaudeSettings.warnNoRowsAffected.was" = "Was: Show error when no rows are affected (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row warnHiddenDatabases) */
+"ClaudeSettings.warnHiddenDatabases.name" = "Warn when the server hides databases";
+
+/* Claude Settings: one-line description under the setting "Warn when the server hides databases" */
+"ClaudeSettings.warnHiddenDatabases.desc" = "skip_show_database is ON";
+
+/* Claude Settings: the (i) explanation of the setting "Warn when the server hides databases" */
+"ClaudeSettings.warnHiddenDatabases.info" = "After connecting, warns if the server only lists databases you have rights to.";
+
+/* Claude Settings: last line of the (i) explanation of "Warn when the server hides databases": its old name and old Preferences pane */
+"ClaudeSettings.warnHiddenDatabases.was" = "Was: Show warning when skip-show-database is set to ON (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logQueries) */
+"ClaudeSettings.logQueries.name" = "Log queries to the Query Console";
+
+/* Claude Settings: one-line description under the setting "Log queries to the Query Console" */
+"ClaudeSettings.logQueries.desc" = "Window ▸ Show Console";
+
+/* Claude Settings: the (i) explanation of the setting "Log queries to the Query Console" */
+"ClaudeSettings.logQueries.info" = "Master switch for the console log. The four below only matter while it is on.";
+
+/* Claude Settings: last line of the (i) explanation of "Log queries to the Query Console": its old name and old Preferences pane */
+"ClaudeSettings.logQueries.was" = "Was: Enable logging for queries (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logInterface) */
+"ClaudeSettings.logInterface.name" = "Queries the app runs for you";
+
+/* Claude Settings: one-line description under the setting "Queries the app runs for you" */
+"ClaudeSettings.logInterface.desc" = "Loading tables, structure…";
+
+/* Claude Settings: last line of the (i) explanation of "Queries the app runs for you": its old name and old Preferences pane */
+"ClaudeSettings.logInterface.was" = "Was: Interface (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logCustomQueries) */
+"ClaudeSettings.logCustomQueries.name" = "Queries you run";
+
+/* Claude Settings: one-line description under the setting "Queries you run" */
+"ClaudeSettings.logCustomQueries.desc" = "Query editor";
+
+/* Claude Settings: last line of the (i) explanation of "Queries you run": its old name and old Preferences pane */
+"ClaudeSettings.logCustomQueries.was" = "Was: Custom Query Editor (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logImportExport) */
+"ClaudeSettings.logImportExport.name" = "Import and export";
+
+/* Claude Settings: last line of the (i) explanation of "Import and export": its old name and old Preferences pane */
+"ClaudeSettings.logImportExport.was" = "Was: Import & Export (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logErrors) */
+"ClaudeSettings.logErrors.name" = "Errors";
+
+/* Claude Settings: last line of the (i) explanation of "Errors": its old name and old Preferences pane */
+"ClaudeSettings.logErrors.was" = "Was: Errors (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row sshProgram) */
+"ClaudeSettings.sshProgram.name" = "SSH program";
+
+/* Claude Settings: the (i) explanation of the setting "SSH program" */
+"ClaudeSettings.sshProgram.info" = "The ssh binary used for tunnels. Change only if you need a specific build.";
+
+/* Claude Settings: last line of the (i) explanation of "SSH program": its old name and old Preferences pane */
+"ClaudeSettings.sshProgram.was" = "Was: SSH Client (Network)";
+
+/* Claude Settings: name of a setting (row sshConfig) */
+"ClaudeSettings.sshConfig.name" = "SSH config file";
+
+/* Claude Settings: the (i) explanation of the setting "SSH config file" */
+"ClaudeSettings.sshConfig.info" = "Host aliases, keys and options passed to ssh with -F.";
+
+/* Claude Settings: last line of the (i) explanation of "SSH config file": its old name and old Preferences pane */
+"ClaudeSettings.sshConfig.was" = "Was: SSH Config (Network)";
+
+/* Claude Settings: name of a setting (row knownHosts) */
+"ClaudeSettings.knownHosts.name" = "Known hosts file";
+
+/* Claude Settings: the (i) explanation of the setting "Known hosts file" */
+"ClaudeSettings.knownHosts.info" = "Where server fingerprints are checked and saved.";
+
+/* Claude Settings: last line of the (i) explanation of "Known hosts file": its old name and old Preferences pane */
+"ClaudeSettings.knownHosts.was" = "Was: Known Hosts (Network)";
+
+/* Claude Settings: name of a setting (row cipherOrder) */
+"ClaudeSettings.cipherOrder.name" = "SSL cipher order";
+
+/* Claude Settings: one-line description under the setting "SSL cipher order" */
+"ClaudeSettings.cipherOrder.desc" = "Drag to reorder or disable";
+
+/* Claude Settings: the (i) explanation of the setting "SSL cipher order" */
+"ClaudeSettings.cipherOrder.info" = "Order of TLS ciphers offered to MySQL. Disabling too many can stop secure connections; Reset restores the default.";
+
+/* Claude Settings: last line of the (i) explanation of "SSL cipher order": its old name and old Preferences pane */
+"ClaudeSettings.cipherOrder.was" = "Was: SSL Cipher Suites (Network)";
+
+/* Claude Settings: name of a setting (row accessibleFiles) */
+"ClaudeSettings.accessibleFiles.name" = "Files Sequel Ace can open";
+
+/* Claude Settings: one-line description under the setting "Files Sequel Ace can open" */
+"ClaudeSettings.accessibleFiles.desc" = "Keys, SSH configs, SQL files";
+
+/* Claude Settings: the (i) explanation of the setting "Files Sequel Ace can open" */
+"ClaudeSettings.accessibleFiles.info" = "macOS only lets the app reopen files you granted. Add or revoke them here; red ones need re-granting.";
+
+/* Claude Settings: last line of the (i) explanation of "Files Sequel Ace can open": its old name and old Preferences pane */
+"ClaudeSettings.accessibleFiles.was" = "Was: Accessible Files (Files)";
+
+/* Claude Settings: name of a setting (row mcpServer) */
+"ClaudeSettings.mcpServer.name" = "Let AI tools connect";
+
+/* Claude Settings: one-line description under the setting "Let AI tools connect" */
+"ClaudeSettings.mcpServer.desc" = "This Mac only (127.0.0.1)";
+
+/* Claude Settings: the (i) explanation of the setting "Let AI tools connect" */
+"ClaudeSettings.mcpServer.info" = "Starts a local MCP server so tools like Claude can query your open connections.";
+
+/* Claude Settings: last line of the (i) explanation of "Let AI tools connect": its old name and old Preferences pane */
+"ClaudeSettings.mcpServer.was" = "Was: Enable MCP Server (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpReadOnly) */
+"ClaudeSettings.mcpReadOnly.name" = "Read only";
+
+/* Claude Settings: one-line description under the setting "Read only" */
+"ClaudeSettings.mcpReadOnly.desc" = "Reject queries that change data";
+
+/* Claude Settings: the (i) explanation of the setting "Read only" */
+"ClaudeSettings.mcpReadOnly.info" = "AI tools may only run SELECT, SHOW, DESCRIBE and EXPLAIN.";
+
+/* Claude Settings: last line of the (i) explanation of "Read only": its old name and old Preferences pane */
+"ClaudeSettings.mcpReadOnly.was" = "Was: Read-only mode (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpPort) */
+"ClaudeSettings.mcpPort.name" = "Port";
+
+/* Claude Settings: one-line description under the setting "Port" */
+"ClaudeSettings.mcpPort.desc" = "1024–65535";
+
+/* Claude Settings: last line of the (i) explanation of "Port": its old name and old Preferences pane */
+"ClaudeSettings.mcpPort.was" = "Was: Port (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpExportFolder) */
+"ClaudeSettings.mcpExportFolder.name" = "Export folder";
+
+/* Claude Settings: one-line description under the setting "Export folder" */
+"ClaudeSettings.mcpExportFolder.desc" = "Where AI tools may save files";
+
+/* Claude Settings: last line of the (i) explanation of "Export folder": its old name and old Preferences pane */
+"ClaudeSettings.mcpExportFolder.was" = "Was: Export folder (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpAddress) */
+"ClaudeSettings.mcpAddress.name" = "Address";
+
+/* Claude Settings: one-line description under the setting "Address" */
+"ClaudeSettings.mcpAddress.desc" = "Paste into your MCP client";
+
+/* Claude Settings: the (i) explanation of the setting "Address" */
+"ClaudeSettings.mcpAddress.info" = "http://127.0.0.1:<port>/mcp — SSE-only clients use /sse.";
+
+/* Claude Settings: last line of the (i) explanation of "Address": its old name and old Preferences pane */
+"ClaudeSettings.mcpAddress.was" = "Was: Endpoint (MCP Server)";
+
+/* Claude Settings: name of a setting (row checkUpdates) */
+"ClaudeSettings.checkUpdates.name" = "Check for updates at launch";
+
+/* Claude Settings: one-line description under the setting "Check for updates at launch" */
+"ClaudeSettings.checkUpdates.desc" = "GitHub builds only";
+
+/* Claude Settings: the (i) explanation of the setting "Check for updates at launch" */
+"ClaudeSettings.checkUpdates.info" = "Looks for a newer release on GitHub when the app starts.";
+
+/* Claude Settings: last line of the (i) explanation of "Check for updates at launch": its old name and old Preferences pane */
+"ClaudeSettings.checkUpdates.was" = "Was: Automatically check for updates (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row shareAnalytics) */
+"ClaudeSettings.shareAnalytics.name" = "Share analytics and crash reports";
+
+/* Claude Settings: one-line description under the setting "Share analytics and crash reports" */
+"ClaudeSettings.shareAnalytics.desc" = "Anonymous, helps the developers";
+
+/* Claude Settings: the (i) explanation of the setting "Share analytics and crash reports" */
+"ClaudeSettings.shareAnalytics.info" = "Sends usage analytics and crash reports to the Sequel Ace developers.";
+
+/* Claude Settings: last line of the (i) explanation of "Share analytics and crash reports": its old name and old Preferences pane */
+"ClaudeSettings.shareAnalytics.was" = "Was: Analytics (General)";

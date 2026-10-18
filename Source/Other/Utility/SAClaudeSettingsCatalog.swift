@@ -1,0 +1,378 @@
+//
+//  SAClaudeSettingsCatalog.swift
+//  Sequel Ace
+//
+//  The Settings window as data: nine panes grouped by outcome, their
+//  sections, and one row per setting with its defaults key(s), control,
+//  dependency and copy keys. Every view of the window renders from this
+//  table, and the unit tests check it against the 2026-10-18 settings
+//  inventory (every setting exactly once).
+//
+//  Pure Swift (app + Unit Tests targets): the defaults keys are the raw
+//  strings of their constants — keep in sync with SPConstants.m,
+//  SAClaudeAccent.defaultsKey, SAEditorColourMode,
+//  SAEditorAppearanceThemeSwitcher.matchesAppearanceKey and
+//  SPFilterRuleEditor's drop-zone key.
+//
+
+import Foundation
+
+// MARK: - Panes
+
+enum SAClaudeSettingsPaneID: String, CaseIterable {
+    case appearance, startup, tablesData, queryEditor, safety, queryConsole, sshSecurity, mcp, updatesPrivacy
+
+    /// SF Symbol shown beside the pane name in the sidebar (all available on macOS 13).
+    var symbol: String {
+        switch self {
+        case .appearance: return "paintbrush"
+        case .startup: return "power"
+        case .tablesData: return "tablecells"
+        case .queryEditor: return "chevron.left.forwardslash.chevron.right"
+        case .safety: return "exclamationmark.shield"
+        case .queryConsole: return "terminal"
+        case .sshSecurity: return "lock.shield"
+        case .mcp: return "network"
+        case .updatesPrivacy: return "arrow.triangle.2.circlepath"
+        }
+    }
+
+    var titleKey: String { "ClaudeSettings.pane.\(rawValue)" }
+}
+
+// MARK: - Controls
+
+enum SAClaudeSettingUnit { case none, seconds, rows, characters, spaces, queries }
+
+enum SAClaudeSettingChoiceSource: Equatable {
+    /// (title localization key, tag written to the defaults key).
+    case fixed([(String, Int)])
+    /// A list the view builds at run time: "favorites", "encodings",
+    /// "sshConfig", "knownHosts", "editorTheme".
+    case dynamic(String)
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs, rhs) {
+        case let (.fixed(a), .fixed(b)):
+            return a.count == b.count && zip(a, b).allSatisfy { $0.0 == $1.0 && $0.1 == $1.1 }
+        case let (.dynamic(a), .dynamic(b)):
+            return a == b
+        default:
+            return false
+        }
+    }
+}
+
+/// Rows whose control is a bespoke view that calls the existing pane
+/// controller code (fonts, colours, SSH choosers, lists, MCP).
+enum SAClaudeSettingCustom: String, CaseIterable {
+    case accent, colourMode, startFromTheme, colourRows, editorFont, resultsFont, reloadAfterSaving,
+         sshProgram, cipherList, accessibleFiles, mcpStatus, mcpExportFolder, mcpAddress
+}
+
+enum SAClaudeSettingControl: Equatable {
+    case toggle(key: String)
+    /// A switch plus a number field; the field is disabled while the switch is off.
+    case toggleNumber(toggleKey: String, numberKey: String, unit: SAClaudeSettingUnit, range: ClosedRange<Double>, step: Double)
+    case number(key: String, unit: SAClaudeSettingUnit, range: ClosedRange<Double>, step: Double)
+    case choice(key: String, source: SAClaudeSettingChoiceSource)
+    case text(key: String)
+    case custom(SAClaudeSettingCustom)
+
+    /// The bool key a dependent row reads to decide whether it is enabled.
+    var toggleKey: String? {
+        switch self {
+        case .toggle(let key): return key
+        case .toggleNumber(let key, _, _, _, _): return key
+        case .custom(.mcpStatus): return SAClaudeSettingsCatalog.mcpServerEnabledKey
+        default: return nil
+        }
+    }
+}
+
+// MARK: - Rows, sections, panes
+
+struct SAClaudeSettingRow: Identifiable, Equatable {
+    let id: String
+    let control: SAClaudeSettingControl
+    /// The row this one is indented under.
+    let parentID: String?
+    /// Shown disabled while the parent's switch is off.
+    let disabledWhenParentOff: Bool
+    let hasDescription: Bool
+    /// Has an (i) explanation. Every row has a "Was: …" line either way.
+    let hasInfo: Bool
+
+    var nameKey: String { "ClaudeSettings.\(id).name" }
+    var descKey: String { "ClaudeSettings.\(id).desc" }
+    var infoKey: String { "ClaudeSettings.\(id).info" }
+    var wasKey: String { "ClaudeSettings.\(id).was" }
+}
+
+struct SAClaudeSettingsSection {
+    let id: String
+    let titleKey: String?
+    let rows: [SAClaudeSettingRow]
+}
+
+struct SAClaudeSettingsPane {
+    let id: SAClaudeSettingsPaneID
+    let sections: [SAClaudeSettingsSection]
+}
+
+// MARK: - Catalog
+
+enum SAClaudeSettingsCatalog {
+
+    // Keys used in more than one place below.
+    fileprivate static let mcpServerEnabledKey = "SPMCPServerEnabled"   // SPMCPServerEnabled
+    private static let logMasterKey = "ConsoleEnableLogging"            // SPConsoleEnableLogging
+    private static let confirmChangesKey = "ShowWarningBeforeExecuteQuery" // SPQueryWarningEnabled
+
+    /// Keys a custom control writes (directly or through the pane
+    /// controller it calls), for the inventory check and `allKeys`.
+    static let customKeys: [SAClaudeSettingCustom: [String]] = [
+        .accent: ["ClaudeAccentColour"],
+        .colourMode: ["EditorThemeMatchesAppearance", "EditorCustomColours", "EditorCustomThemeName"],
+        .startFromTheme: ["CustomQueryEditorThemeName"],
+        .colourRows: [
+            "CustomQueryEditorTextColor", "CustomQueryEditorBackgroundColor", "CustomQueryEditorCaretColor",
+            "CustomQueryEditorCommentColor", "CustomQueryEditorSQLKeywordColor", "CustomQueryEditorNumericColor",
+            "CustomQueryEditorQuoteColor", "CustomQueryEditorBacktickColor", "CustomQueryEditorVariableColor",
+            "CustomQueryEditorHighlightQueryColor", "CustomQueryEditorSelectionColor",
+        ],
+        .editorFont: ["CustomQueryEditorFont"],
+        .resultsFont: ["fontSettings"],
+        .reloadAfterSaving: ["ReloadAfterAddingRow", "ReloadAfterEditingRow", "ReloadAfterRemovingRow"],
+        .sshProgram: ["SSHClientPath"],
+        .cipherList: ["SSLCipherList"],
+        // "Show hidden files" lives in the open panels the file choosers
+        // share (Add Files…, SSH program/config/known hosts "Other file…").
+        .accessibleFiles: ["SPSecureBookmarks", "SPStaleSecureBookmarks", "SPKnownHostsBookmarks",
+                           "KeySelectionHiddenFilesVisibility"],
+        .mcpStatus: [mcpServerEnabledKey],
+        .mcpExportFolder: ["SPMCPExportPath"],
+        .mcpAddress: [],
+    ]
+
+    /// Extra keys a dynamic choice writes besides its own key.
+    static let dynamicSourceKeys: [String: [String]] = [
+        "favorites": ["SelectLastFavoriteUsed"],
+        "knownHosts": ["SSHConfigContainsUserKnownHostsFile"],
+    ]
+
+    static let panes: [SAClaudeSettingsPane] = [
+        SAClaudeSettingsPane(id: .appearance, sections: [
+            section("look", [
+                row("appAppearance", .choice(key: "Appearance", source: fixed("appAppearance", [
+                    ("matchMacOS", 0), ("light", 1), ("dark", 2),
+                ]))),
+                row("accentColour", .custom(.accent)),
+                row("titleBarColour", .toggle(key: "DisplayConnectionColorInTitlebar")),
+            ]),
+            section("editorGridColours", [
+                row("editorColours", .custom(.colourMode)),
+                row("startFromTheme", .custom(.startFromTheme)),
+                row("colourList", .custom(.colourRows)),
+            ]),
+            section("fonts", [
+                row("editorFont", .custom(.editorFont)),
+                row("resultsFont", .custom(.resultsFont)),
+            ]),
+            section("grids", [
+                row("columnTypes", .toggle(key: "DisplayTableViewColumnTypes")),
+                row("printGridLines", .toggle(key: "DisplayTableViewVerticalGridlines")),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .startup, sections: [
+            section("whenOpens", [
+                row("defaultFavourite", .choice(key: "DefaultFavorite", source: .dynamic("favorites"))),
+                // "Last used" still auto-connects (the last favourite), so the
+                // pill has no off state: indented, never disabled.
+                row("autoConnect", .toggle(key: "AutoConnectToDefault"), parent: "defaultFavourite"),
+                row("tabToOpen", .choice(key: "DefaultViewMode", source: fixed("tabToOpen", [
+                    ("lastUsed", 0), ("structure", 1), ("content", 2), ("relations", 3),
+                    ("tableInfo", 4), ("query", 5), ("triggers", 6),
+                ]))),
+                row("askBeforeQuitting", .toggle(key: "ApplicationPromptOnQuit")),
+            ]),
+            section("connecting", [
+                row("connectTimeout", .number(key: "ConnectionTimeoutValue", unit: .seconds, range: 0...10_000, step: 1)),
+                row("keepAlive", .toggle(key: "UseKeepAlive")),
+                row("characterSet", .choice(key: "DefaultEncodingTag", source: .dynamic("encodings"))),
+                row("readConnectionStrings", .toggle(key: "AutoCheckClipboardForConnectionStrings")),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .tablesData, sections: [
+            section("loading", [
+                row("pageSize", .toggleNumber(toggleKey: "LimitResults", numberKey: "LimitResultsValue",
+                                              unit: .rows, range: 1...1_000_000, step: 1)),
+                row("countRows", .choice(key: "TableRowCountQueryLevel", source: fixed("countRows", [
+                    ("never", 0), ("smallTables", 1), ("always", 2),
+                ]))),
+                row("lazyLoadBlobs", .toggle(key: "LoadBlobsAsNeeded")),
+            ]),
+            section("showing", [
+                row("nullText", .text(key: "NullValue")),
+                row("tableComments", .toggle(key: "DisplayCommentsInTablesList")),
+                row("filterDropZone", .toggle(key: "RuleFilterShowDropZone")),
+            ]),
+            section("editing", [
+                row("longValueSheet", .toggleNumber(toggleKey: "EditInSheetForLongText",
+                                                    numberKey: "EditInSheetForLongTextLengthThreshold",
+                                                    unit: .characters, range: 1...1_000_000, step: 1)),
+                row("multiLineSheet", .toggle(key: "EditInSheetForMultiLineText")),
+                row("reloadAfterSaving", .custom(.reloadAfterSaving)),
+                row("newColumnsAllowNull", .toggle(key: "NewFieldsAllowNulls")),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .queryEditor, sections: [
+            section("typing", [
+                row("keepIndentation", .toggle(key: "CustomQueryAutoIndent"), desc: false),
+                row("softIndent", .toggleNumber(toggleKey: "CustomQuerySoftIndent", numberKey: "CustomQuerySoftIndentWidth",
+                                                unit: .spaces, range: 1...32, step: 1)),
+                row("tabWidth", .number(key: "CustomQueryEditorTabStopWidth", unit: .spaces, range: 1...20, step: 1)),
+                row("closeBrackets", .toggle(key: "CustomQueryAutoPairCharacters")),
+                row("uppercaseKeywords", .toggle(key: "CustomQueryAutoUppercaseKeywords")),
+                row("dashComments", .toggle(key: "UseDashStyleForBlockComment")),
+            ]),
+            section("highlighting", [
+                row("syntaxColouring", .toggle(key: "CustomQueryEnableSyntaxHighlighting"), desc: false),
+                row("highlightStatement", .toggle(key: "CustomQueryHighlightCurrentQuery")),
+                row("matchBrackets", .toggle(key: "CustomQueryEnableBracketHighlighting"), desc: false),
+            ]),
+            section("suggestions", [
+                row("autoComplete", .toggleNumber(toggleKey: "CustomQueryAutoComplete", numberKey: "CustomQueryAutoCompleteDelay",
+                                                  unit: .seconds, range: 0...5, step: 0.1)),
+                // Indented but enabled: they also apply when Esc opens the list.
+                row("completeBackticks", .toggle(key: "SPCustomQueryEditorCompleteWithBackticks"), parent: "autoComplete"),
+                row("insertArguments", .toggle(key: "CustomQueryFunctionCompletionInsertsArguments"),
+                    parent: "autoComplete", desc: false),
+                row("autoHelp", .toggleNumber(toggleKey: "CustomQueryUpdateAutoHelp", numberKey: "CustomQueryAutoHelpDelay",
+                                              unit: .seconds, range: 0.1...5, step: 0.1)),
+            ]),
+            section("history", [
+                row("historySize", .number(key: "CustomQueryMaxHistoryItems", unit: .queries, range: 0...100, step: 1)),
+                row("historyPerStatement", .toggle(key: "CustomQuerySaveHistoryIndividually")),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .safety, sections: [
+            section("beforeChanges", [
+                row("confirmChanges", .toggle(key: confirmChangesKey)),
+                row("askTwiceDelete", .toggle(key: "ShowWarningBeforeDeleteQuery"),
+                    parent: "confirmChanges", disabledWhenParentOff: true),
+            ]),
+            section("warnings", [
+                row("warnNoRowsAffected", .toggle(key: "ShowNoAffectedRowsError")),
+                row("warnHiddenDatabases", .toggle(key: "ShowWarningSkipShowDatabase")),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .queryConsole, sections: [
+            section("logging", [
+                row("logQueries", .toggle(key: logMasterKey)),
+                row("logInterface", .toggle(key: "ConsoleEnableInterfaceLogging"),
+                    parent: "logQueries", disabledWhenParentOff: true, info: false),
+                row("logCustomQueries", .toggle(key: "ConsoleEnableCustomQueryLogging"),
+                    parent: "logQueries", disabledWhenParentOff: true, info: false),
+                row("logImportExport", .toggle(key: "ConsoleEnableImportExportLogging"),
+                    parent: "logQueries", disabledWhenParentOff: true, desc: false, info: false),
+                row("logErrors", .toggle(key: "ConsoleEnableErrorLogging"),
+                    parent: "logQueries", disabledWhenParentOff: true, desc: false, info: false),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .sshSecurity, sections: [
+            section("sshTunnels", [
+                row("sshProgram", .custom(.sshProgram), desc: false),
+                row("sshConfig", .choice(key: "ssh_config", source: .dynamic("sshConfig")), desc: false),
+                row("knownHosts", .choice(key: "known_hosts", source: .dynamic("knownHosts")), desc: false),
+            ]),
+            section("encryption", [
+                row("cipherOrder", .custom(.cipherList)),
+            ]),
+            section("fileAccess", [
+                row("accessibleFiles", .custom(.accessibleFiles)),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .mcp, sections: [
+            section("mcpServer", [
+                row("mcpServer", .custom(.mcpStatus)),
+                // Indented but enabled: they can be set before the server is on.
+                row("mcpReadOnly", .toggle(key: "SPMCPReadOnly"), parent: "mcpServer"),
+                row("mcpPort", .number(key: "SPMCPServerPort", unit: .none, range: 1024...65535, step: 1),
+                    parent: "mcpServer", info: false),
+                row("mcpExportFolder", .custom(.mcpExportFolder), parent: "mcpServer", info: false),
+                row("mcpAddress", .custom(.mcpAddress), parent: "mcpServer"),
+            ]),
+        ]),
+        SAClaudeSettingsPane(id: .updatesPrivacy, sections: [
+            SAClaudeSettingsSection(id: "updatesPrivacy", titleKey: nil, rows: [
+                row("checkUpdates", .toggle(key: "ShowUpdateAvailable")),
+                row("shareAnalytics", .toggle(key: "SaveApplicationUsageAnalytics")),
+            ]),
+        ]),
+    ]
+
+    static func row(_ id: String) -> SAClaudeSettingRow? {
+        rowsByID[id]?.row
+    }
+
+    static func pane(containing rowID: String) -> SAClaudeSettingsPaneID? {
+        rowsByID[rowID]?.pane
+    }
+
+    /// Every defaults key one row writes, in display order.
+    static func keys(for row: SAClaudeSettingRow) -> [String] {
+        switch row.control {
+        case .toggle(let key), .text(let key), .number(let key, _, _, _):
+            return [key]
+        case let .toggleNumber(toggleKey, numberKey, _, _, _):
+            return [toggleKey, numberKey]
+        case let .choice(key, source):
+            if case .dynamic(let id) = source { return [key] + (dynamicSourceKeys[id] ?? []) }
+            return [key]
+        case .custom(let custom):
+            return customKeys[custom] ?? []
+        }
+    }
+
+    /// Every defaults key any row writes (not de-duplicated, so a key in two
+    /// rows would show twice).
+    static var allKeys: [String] {
+        panes.flatMap { $0.sections.flatMap { $0.rows.flatMap(keys(for:)) } }
+    }
+
+    /// A dependent row with `disabledWhenParentOff` is enabled only while
+    /// its parent's switch is on; every other row is always enabled.
+    static func isEnabled(_ row: SAClaudeSettingRow, bool: (String) -> Bool) -> Bool {
+        guard row.disabledWhenParentOff,
+              let parentID = row.parentID,
+              let key = self.row(parentID)?.control.toggleKey else { return true }
+        return bool(key)
+    }
+
+    // MARK: Building
+
+    private static let rowsByID: [String: (row: SAClaudeSettingRow, pane: SAClaudeSettingsPaneID)] = {
+        var map: [String: (row: SAClaudeSettingRow, pane: SAClaudeSettingsPaneID)] = [:]
+        for pane in panes {
+            for row in pane.sections.flatMap(\.rows) where map[row.id] == nil {
+                map[row.id] = (row, pane.id)
+            }
+        }
+        return map
+    }()
+
+    private static func section(_ id: String, _ rows: [SAClaudeSettingRow]) -> SAClaudeSettingsSection {
+        SAClaudeSettingsSection(id: id, titleKey: "ClaudeSettings.section.\(id)", rows: rows)
+    }
+
+    private static func row(_ id: String, _ control: SAClaudeSettingControl, parent: String? = nil,
+                            disabledWhenParentOff: Bool = false, desc: Bool = true, info: Bool = true) -> SAClaudeSettingRow {
+        SAClaudeSettingRow(id: id, control: control, parentID: parent, disabledWhenParentOff: disabledWhenParentOff,
+                           hasDescription: desc, hasInfo: info)
+    }
+
+    private static func fixed(_ rowID: String, _ options: [(String, Int)]) -> SAClaudeSettingChoiceSource {
+        .fixed(options.map { ("ClaudeSettings.\(rowID).option.\($0.0)", $0.1) })
+    }
+}
