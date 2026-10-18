@@ -99,8 +99,8 @@ import AppKit
     private let tabs: SAClaudeTabViewTabs
     private var chrome = SAClaudeCardLayout.Chrome.zero
     private var grids: [SAClaudeUtilityGridTableView] = []
-    /// Rows of the schemas list the controller marks as holding privileges for the selected host (it gives their cells a
-    /// background; the grid tints the row instead).
+    /// Rows of the schemas list the controller marks as holding privileges for the selected host, as their cells were
+    /// last prepared (each row's mark is drawn right after its cells, in the same pass).
     private var markedSchemaRows = IndexSet()
     private var isLayingOut = false
     private var hasGrown = false
@@ -224,8 +224,8 @@ import AppKit
         var byKey: [String: PrivilegeCard] = [:]
         for box in container.subviews.compactMap({ $0 as? NSBox }) {
             guard let content = box.contentView else { continue }
-            let checkboxes = content.subviews.compactMap { $0 as? NSButton }.filter { boundPrivilege(of: $0) != nil }
-                .sorted { ($0.frame.minX.rounded(), -$0.frame.midY) < ($1.frame.minX.rounded(), -$1.frame.midY) }
+            let bound = content.subviews.compactMap { $0 as? NSButton }.filter { boundPrivilege(of: $0) != nil }
+            let checkboxes = SAClaudeCheckboxGrid.readingOrder(of: bound.map(\.frame)).map { bound[$0] }
             guard let first = checkboxes.first, let key = boundPrivilege(of: first) else { continue }
             byKey[key] = PrivilegeCard(box: box, checkboxes: checkboxes)
         }
@@ -302,6 +302,9 @@ import AppKit
         for (index, table) in o.schemaTables.enumerated() {
             guard let grid = SAClaudeUtilityGridTableView.adopt(table) else { continue }
             grids.append(grid)
+            // The plain style (no inset style's padding around the rows), the text clear of the column lines.
+            if grid.style != .plain { grid.style = .plain }
+            grid.state?.cellPadding = Self.cellPadding
             grid.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
             grid.enclosingScrollView?.hasHorizontalScroller = false
             let isSchemas = index == 0
@@ -310,33 +313,36 @@ import AppKit
                 self.prepareSchemaCell(cell, in: grid, row: row, isSchemas: isSchemas)
             }
             if isSchemas {
-                grid.state?.rowTint = { [weak self] row in
-                    guard let self, self.markedSchemaRows.contains(row) else { return nil }
-                    return SAClaudeAccent.accent.withAlphaComponent(Self.markAlpha)
+                grid.state?.drawOverRow = { [weak self] row, rect in
+                    guard let self, self.markedSchemaRows.contains(row) else { return }
+                    Self.drawPrivilegesMark(in: rect)
                 }
             }
         }
     }
 
-    /// The schemas list's "has privileges" tint: the accent, lighter than the selection.
-    private static let markAlpha: CGFloat = 0.16
+    private static let cellPadding: CGFloat = 8
 
-    /// A schema list cell in the grid's colours. The controller greys the "All Databases" rows and gives schemas holding
-    /// privileges a pale background: the grey becomes the grid's muted colour and the background a row tint.
+    /// The schemas list's "has privileges for this host" mark: a 3pt accent edge at the row's leading side, drawn over the
+    /// row (selected or not), so it reads by shape as well as colour.
+    nonisolated static let markWidth: CGFloat = 3
+
+    nonisolated private static func drawPrivilegesMark(in rowRect: NSRect) {
+        SAClaudeAccent.accent.setFill()
+        NSRect(x: rowRect.minX, y: rowRect.minY, width: markWidth, height: rowRect.height).fill()
+    }
+
+    /// A schema list cell in the grid's colours. The controller greys the "All Databases" rows (now the grid's muted
+    /// colour) and gives a schema holding privileges for the selected host a pale cell background: that becomes the
+    /// mark drawn over the row, read here as the row's cells are prepared for drawing it (`drawRow` draws the mark
+    /// right after its cells).
     private func prepareSchemaCell(_ cell: NSCell, in grid: SAClaudeUtilityGridTableView, row: Int, isSchemas: Bool) {
         guard let cell = cell as? NSTextFieldCell, let palette = grid.state?.renderer.palette else { return }
         let muted = !grid.isEnabled || cell.textColor == NSColor.lightGray
         cell.textColor = muted ? palette.null : palette.text
         guard isSchemas else { return }
-        let marked = cell.drawsBackground
+        if cell.drawsBackground { markedSchemaRows.insert(row) } else { markedSchemaRows.remove(row) }
         cell.drawsBackground = false
-        guard marked != markedSchemaRows.contains(row) else { return }
-        if marked { markedSchemaRows.insert(row) } else { markedSchemaRows.remove(row) }
-        // Cells are prepared while the rows draw, after the backgrounds: draw the row again with its tint.
-        DispatchQueue.main.async { [weak grid] in
-            guard let grid, row < grid.numberOfRows else { return }
-            grid.setNeedsDisplay(grid.rect(ofRow: row))
-        }
     }
 
     private func observe() {
@@ -549,16 +555,21 @@ import AppKit
         for case let scrollView as NSScrollView in contentView.subviews {
             (scrollView.documentView as? NSTextView)?.textContainerInset = NSSize(width: 6, height: 6)
         }
-        let frame = { [weak contentView] in
-            let hairline = SAClaudeSheetColours.current().palette.hairline
-            for case let scrollView as NSScrollView in contentView?.subviews ?? [] {
-                SAClaudeUtilityChrome.frameList(scrollView, hairline: hairline)
+        frameErrorText(in: contentView)
+        // The sheet is styled as it begins, before its views have layers: frame the text again once it is on screen.
+        DispatchQueue.main.async { [weak contentView] in
+            MainActor.assumeIsolated {
+                if let contentView { frameErrorText(in: contentView) }
             }
         }
-        frame()
-        // The sheet is styled as it begins, before its views have layers: frame the text once it is on screen.
-        DispatchQueue.main.async(execute: frame)
         return true
+    }
+
+    private static func frameErrorText(in contentView: NSView) {
+        let hairline = SAClaudeSheetColours.current().palette.hairline
+        for case let scrollView as NSScrollView in contentView.subviews {
+            SAClaudeUtilityChrome.frameList(scrollView, hairline: hairline)
+        }
     }
 }
 

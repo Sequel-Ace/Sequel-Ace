@@ -16,141 +16,15 @@ import SwiftUI
 
 // MARK: - Table
 
-/// The XIB's table, its class swapped in place (it adds no stored properties): the shared Claude grid drawing, the
-/// search hits in each cell, and a reload hook that keeps the selection on the same variables.
-@objc(SAClaudeServerVariablesTableView) final class SAClaudeServerVariablesTableView: NSTableView {
-
-    private static var stateKey: UInt8 = 0
-
-    /// What the swapped table needs and can't store itself.
-    final class State {
-        let renderer: SAClaudeGridRenderer
-        /// The filter field's text, for the cell highlights.
-        var filter: () -> String = { "" }
-        var willReload: () -> Void = {}
-        var didReload: () -> Void = {}
-        init(renderer: SAClaudeGridRenderer) { self.renderer = renderer }
-    }
-
-    var state: State? { objc_getAssociatedObject(self, &Self.stateKey) as? State }
+/// The XIB's table, its class swapped in place: the shared Claude grid (`SAClaudeUtilityGridTableView`). The styler gives
+/// it the search hits in each cell and the reload notices that keep the selection on the same variables, through the
+/// grid's hooks; the subclass only names the table (the generic sheet skin and the harness tell it by its class).
+@objc(SAClaudeServerVariablesTableView) final class SAClaudeServerVariablesTableView: SAClaudeUtilityGridTableView {
 
     /// Turns the plain XIB table into this class and installs the grid look; nil when it can't (another class, or the
     /// table is observed by KVO, `SAClaudeClassSwap`).
     static func adopt(_ table: NSTableView) -> SAClaudeServerVariablesTableView? {
-        if let adopted = table as? SAClaudeServerVariablesTableView { return adopted }
-        guard Swift.type(of: table) == NSTableView.self, SAClaudeClassSwap.mayChangeClass(of: table) else { return nil }
-        object_setClass(table, SAClaudeServerVariablesTableView.self)
-        guard let adopted = table as? SAClaudeServerVariablesTableView else { return nil }
-        let renderer = SAClaudeGridRenderer(table: adopted)
-        // Plain NSTextFieldCells draw their text at the top of the frame (no SPTextAndLinkCell 2pt shift).
-        renderer.cellTextTopOffset = 0
-        objc_setAssociatedObject(adopted, &stateKey, State(renderer: renderer), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        adopted.installGrid()
-        return adopted
-    }
-
-    private func installGrid() {
-        guard let renderer = state?.renderer else { return }
-        // The Claude header (its palette is the renderer's) before the renderer sizes it to 30pt.
-        if let header = headerView, Swift.type(of: header) == NSTableHeaderView.self {
-            let claudeHeader = SAClaudeTableHeaderView(frame: header.frame)
-            claudeHeader.menu = header.menu
-            headerView = claudeHeader
-        }
-        // Cell-based tables mark the selected row's cells highlighted, which draws a system selection box over the
-        // theme selection; with no highlight style the cells stay plain and the selection is drawn below (as the
-        // Query Console does).
-        selectionHighlightStyle = .none
-        renderer.install()
-        // The controller set these before the swap: run them through the clamps now.
-        gridStyleMask = super.gridStyleMask
-        rowHeight = super.rowHeight
-        updateTrackingAreas()
-        needsDisplay = true
-    }
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        state?.renderer.applyPalette(force: true)
-    }
-
-    override var gridStyleMask: NSTableView.GridLineStyle {
-        get { super.gridStyleMask }
-        set { super.gridStyleMask = state?.renderer.gridMask(newValue) ?? newValue }
-    }
-
-    override var rowHeight: CGFloat {
-        get { super.rowHeight }
-        set { super.rowHeight = state?.renderer.clampedRowHeight(newValue) ?? newValue }
-    }
-
-    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        let frame = super.frameOfCell(atColumn: column, row: row)
-        return state?.renderer.frameOfCell(frame, column: column) ?? frame
-    }
-
-    /// No highlight style means AppKit skips highlightSelection(inClipRect:); hover and selection are filled here
-    /// instead, at the same point (after the background, before the lines and cells).
-    override func drawBackground(inClipRect clipRect: NSRect) {
-        guard let renderer = state?.renderer else { return super.drawBackground(inClipRect: clipRect) }
-        renderer.drawBackground(in: clipRect)
-        renderer.highlightSelection(in: clipRect)
-    }
-
-    override func drawGrid(inClipRect clipRect: NSRect) {
-        guard let renderer = state?.renderer else { return super.drawGrid(inClipRect: clipRect) }
-        renderer.drawGrid(in: clipRect)
-    }
-
-    /// Each cell's text in the theme text colour and the grid's value font, on one line, with the search hits washed in
-    /// the accent highlight (the Record View search's colour); a value whose first hit lies past the column's edge shows
-    /// from just before it.
-    // Cell-based tables only; overriding the deprecated hook is deliberate.
-    @available(macOS, deprecated: 10.10)
-    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
-        let cell = super.preparedCell(atColumn: column, row: row)
-        guard let state, let textCell = cell as? NSTextFieldCell else { return cell }
-        textCell.attributedStringValue = SAClaudeServerVariablesCellText.attributed(
-            textCell.stringValue, font: textCell.font, colour: state.renderer.palette.text, filter: state.filter(),
-            width: frameOfCell(atColumn: column, row: row).width)
-        textCell.isHighlighted = false
-        return textCell
-    }
-
-    // MARK: Hover
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        state?.renderer.updateTrackingArea()
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        super.mouseMoved(with: event)
-        state?.renderer.mouseMoved(event)
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        state?.renderer.mouseExited()
-    }
-
-    override func scrollWheel(with event: NSEvent) {
-        super.scrollWheel(with: event)
-        state?.renderer.scrolled()
-    }
-
-    // MARK: Reloads
-
-    override func reloadData() {
-        state?.renderer.rowsReloaded()
-        state?.willReload()
-        super.reloadData()
-        state?.didReload()
-    }
-
-    override func noteNumberOfRowsChanged() {
-        state?.renderer.rowsReloaded()
-        super.noteNumberOfRowsChanged()
+        SAClaudeUtilityGridTableView.adopt(table, as: SAClaudeServerVariablesTableView.self) as? SAClaudeServerVariablesTableView
     }
 }
 
@@ -342,7 +216,15 @@ enum SAClaudeServerVariablesCellText {
             button.font = Self.buttonFont
         }
 
-        table.state?.filter = { [weak self] in self?.searchField?.stringValue ?? "" }
+        // Each cell's text in the theme text colour and the grid's value font, on one line, with the search hits washed
+        // in the accent highlight (the Record View search's colour); a value whose first hit lies past the column's edge
+        // shows from just before it.
+        table.state?.prepareCell = { [weak self, weak table] cell, column, row in
+            guard let table, let textCell = cell as? NSTextFieldCell, let palette = table.state?.renderer.palette else { return }
+            textCell.attributedStringValue = SAClaudeServerVariablesCellText.attributed(
+                textCell.stringValue, font: textCell.font, colour: palette.text, filter: self?.searchField?.stringValue ?? "",
+                width: table.frameOfCell(atColumn: column, row: row).width)
+        }
         table.state?.willReload = { [weak self] in self?.isRestoring = true }
         table.state?.didReload = { [weak self] in self?.tableReloaded() }
         detailModel.onCopy = { [weak self] in self?.copyDetail() }

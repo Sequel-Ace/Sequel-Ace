@@ -2,8 +2,9 @@
 //  SAClaudeUtilityWindowLayoutTests.swift
 //  Unit Tests
 //
-//  The utility windows' pure geometry: the checkbox grid inside a card, form card rows, and the User Manager's pane,
-//  privilege cards (at the XIB size, with every privilege a server can show) and schema columns.
+//  The utility windows' pure geometry: the checkbox grid inside a card and a XIB's checkbox reading order, form card rows
+//  (SAClaudeUtilityWindowLayout.swift), and the User Manager's pane, privilege cards (at the XIB size, with every
+//  privilege a server can show) and schema columns (SAClaudeUserManagerLayout.swift).
 //
 
 import XCTest
@@ -75,6 +76,28 @@ final class SAClaudeUtilityWindowLayoutTests: XCTestCase {
         let frames = Grid.frames(count: 22, columns: 2, in: NSRect(x: 0, y: 0, width: 300, height: 400))
         let firstColumn = frames.prefix(11).map(\.minY)
         XCTAssertEqual(firstColumn, (0..<11).map { 400 - CGFloat($0) * Grid.rowPitch - Grid.rowHeight })
+    }
+
+    func testReadingOrderKeepsANudgedColumnTogether() {
+        // A XIB column whose checkboxes drifted by up to 2.4pt in x stays one column, read top to bottom, before the next.
+        let frames = [
+            NSRect(x: 186, y: 97, width: 140, height: 18),   // 0: second column, top
+            NSRect(x: 16.6, y: 78, width: 140, height: 18),  // 1: first column, second
+            NSRect(x: 18.4, y: 59, width: 140, height: 18),  // 2: first column, third (nudged 2.4pt right)
+            NSRect(x: 16, y: 97, width: 140, height: 18),    // 3: first column, top
+            NSRect(x: 187, y: 78, width: 140, height: 18),   // 4: second column, second
+            NSRect(x: 15.5, y: 40, width: 140, height: 18),  // 5: first column, last (nudged left)
+        ]
+        XCTAssertEqual(Grid.readingOrder(of: frames), [3, 1, 2, 5, 0, 4])
+        // Rounding x (the old grouping) would split the nudged column and scramble the order.
+        let rounded = frames.indices.sorted { (frames[$0].minX.rounded(), -frames[$0].midY) < (frames[$1].minX.rounded(), -frames[$1].midY) }
+        XCTAssertNotEqual(rounded, [3, 1, 2, 5, 0, 4])
+    }
+
+    func testReadingOrderSeparatesColumnsFurtherApartThanTheTolerance() {
+        let frames = [NSRect(x: 0, y: 0, width: 10, height: 10), NSRect(x: Grid.columnTolerance + 1, y: 20, width: 10, height: 10)]
+        XCTAssertEqual(Grid.readingOrder(of: frames), [0, 1])
+        XCTAssertEqual(Grid.readingOrder(of: []), [])
     }
 
     // MARK: Form cards

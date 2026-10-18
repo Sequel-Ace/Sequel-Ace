@@ -596,8 +596,8 @@ final class SAClaudeWindowSkin: NSObject {
     /// Tables already in the Claude look, source lists and colours the code chose are left alone. Also called for the
     /// AppKit tables Settings hosts inside its SwiftUI content, which the walk skips.
     static func styleTable(_ table: NSTableView, _ colours: SAClaudeSheetColours) {
-        if table is SAClaudeCopyTable || table is SAClaudeTableView || table is SAClaudeServerVariablesTableView
-            || table is SAClaudeUtilityGridTableView || SAClaudeUtilitySidebar.isAdopted(table) { return }
+        if table is SAClaudeCopyTable || table is SAClaudeTableView || table is SAClaudeUtilityGridTableView
+            || SAClaudeUtilitySidebar.isAdopted(table) { return }
         // The XIBs' older tables are source lists by their (deprecated) highlight style, raw value 1.
         let isSourceList = table.style == .sourceList || table.selectionHighlightStyle.rawValue == 1
         if !isSourceList {
