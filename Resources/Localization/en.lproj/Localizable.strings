@@ -5455,10 +5455,10 @@
 "ClaudeSettings.editorColours.name" = "Colours";
 
 /* Claude Settings: one-line description under the setting "Colours" */
-"ClaudeSettings.editorColours.desc" = "Match the app, choose light or dark, or set your own";
+"ClaudeSettings.editorColours.desc" = "Match the app appearance, or set your own";
 
 /* Claude Settings: the (i) explanation of the setting "Colours" */
-"ClaudeSettings.editorColours.info" = "Match appearance uses Claude Light in light mode and Claude Dark in dark mode. Choose keeps the one you click — light or dark — whatever the app's appearance. Custom keeps your own colours. These colour the editor, result grids, console and status bar.";
+"ClaudeSettings.editorColours.info" = "Match appearance uses Claude Light in light mode and Claude Dark in dark mode for the editor, result grids, console and status bar. Custom keeps your own colours in both modes.";
 
 /* Claude Settings: last line of the (i) explanation of "Colours": its old name and old Preferences pane */
 "ClaudeSettings.editorColours.was" = "Was: Colours: Follow macOS / Customise (Query Editor)";
@@ -6194,9 +6194,6 @@
 
 /* Claude Settings: Colours pill choice — the editor and grid colours follow the app appearance (Claude Light / Claude Dark) */
 "ClaudeSettings.editorColours.option.matchAppearance" = "Match appearance";
-
-/* Claude Settings: Colours pill choice — the editor and grid colours stay on the Light or Dark Claude theme you click, whatever the app appearance */
-"ClaudeSettings.editorColours.option.choose" = "Choose";
 
 /* Claude Settings: Colours pill choice — the user's own editor and grid colours */
 "ClaudeSettings.editorColours.option.custom" = "Custom";

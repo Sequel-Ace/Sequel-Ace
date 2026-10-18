@@ -133,7 +133,7 @@ enum SAClaudeSettingsCatalog {
     /// controller it calls), for the inventory check and `allKeys`.
     static let customKeys: [SAClaudeSettingCustom: [String]] = [
         .accent: ["ClaudeAccentColour"],
-        .colourMode: ["EditorThemeMatchesAppearance", "EditorChosenAppearance", "EditorCustomColours", "EditorCustomThemeName"],
+        .colourMode: ["EditorThemeMatchesAppearance", "EditorCustomColours", "EditorCustomThemeName"],
         .startFromTheme: ["CustomQueryEditorThemeName"],
         .colourRows: [
             "CustomQueryEditorTextColor", "CustomQueryEditorBackgroundColor", "CustomQueryEditorCaretColor",

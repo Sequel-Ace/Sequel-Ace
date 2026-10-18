@@ -382,7 +382,7 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         "CustomQueryFunctionCompletionInsertsArguments", // E16
         "CustomQueryEditorTabStopWidth",              // E17
         "UseDashStyleForBlockComment",                // E18
-        "EditorThemeMatchesAppearance", "EditorCustomColours", "EditorCustomThemeName", "EditorChosenAppearance", // E-m (+ Choose)
+        "EditorThemeMatchesAppearance", "EditorCustomColours", "EditorCustomThemeName", // E-m
         "CustomQueryEditorThemeName",                 // E-s (+ E-menu1…4)
         "CustomQueryEditorTextColor",                 // E-c1
         "CustomQueryEditorBackgroundColor",           // E-c2
@@ -600,20 +600,6 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         XCTAssertEqual(Self.strings["ClaudeSettings.askBeforeQuitting.info"], "Shows a \"Close the app?\" check before quitting.")
         XCTAssertEqual(Self.strings["ClaudeSettings.logInterface.name"], "Queries the app runs for you")
         XCTAssertEqual(Self.strings["ClaudeSettings.logInterface.was"], "Was: Interface (Alerts & Logs)")
-    }
-
-    /// The Colours row: Match appearance / Choose / Custom.
-    func testColoursRowCopy() {
-        let strings = Self.strings
-        XCTAssertEqual(strings["ClaudeSettings.editorColours.name"], "Colours")
-        XCTAssertEqual(strings["ClaudeSettings.editorColours.desc"], "Match the app, choose light or dark, or set your own")
-        XCTAssertEqual(strings["ClaudeSettings.editorColours.info"],
-                       "Match appearance uses Claude Light in light mode and Claude Dark in dark mode. Choose keeps the one you click \u{2014} light or dark \u{2014} whatever the app's appearance. Custom keeps your own colours. These colour the editor, result grids, console and status bar.")
-        XCTAssertEqual(strings["ClaudeSettings.editorColours.option.matchAppearance"], "Match appearance")
-        XCTAssertEqual(strings["ClaudeSettings.editorColours.option.choose"], "Choose")
-        XCTAssertEqual(strings["ClaudeSettings.editorColours.option.custom"], "Custom")
-        XCTAssertEqual(SAClaudeSettingsCatalog.customKeys[.colourMode],
-                       ["EditorThemeMatchesAppearance", "EditorChosenAppearance", "EditorCustomColours", "EditorCustomThemeName"])
     }
 
     // MARK: - Ranges

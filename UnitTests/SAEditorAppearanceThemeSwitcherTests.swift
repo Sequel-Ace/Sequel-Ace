@@ -107,51 +107,6 @@ final class SAEditorAppearanceThemeSwitcherTests: XCTestCase {
         XCTAssertFalse(defaults.bool(forKey: SAEditorAppearanceThemeSwitcher.matchesAppearanceKey))
     }
 
-    /// Choose keeps its theme whatever the app's appearance: an appearance change never overwrites it.
-    func testChooseSurvivesAppearanceChanges() {
-        defaults.set("Light One", forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey)
-        defaults.set("Dark One", forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey)
-        SAEditorColourMode.setMode(.choose(dark: false), in: defaults)
-        XCTAssertTrue(switcher.apply(isDark: true), "light editor in dark mode")
-        XCTAssertEqual(backgroundRed(), 252)
-        XCTAssertEqual(defaults.string(forKey: SAEditorThemeLoader.themeNameKey), "Light One")
-        XCTAssertFalse(switcher.apply(isDark: false))
-        XCTAssertFalse(switcher.apply(isDark: true))
-        XCTAssertEqual(backgroundRed(), 252)
-        XCTAssertEqual(SAEditorColourMode.mode(in: defaults), .choose(dark: false))
-
-        SAEditorColourMode.setMode(.choose(dark: true), in: defaults)
-        XCTAssertTrue(switcher.apply(isDark: false), "dark editor in light mode")
-        XCTAssertEqual(backgroundRed(), 21)
-        XCTAssertFalse(switcher.apply(isDark: true))
-        XCTAssertFalse(switcher.apply(isDark: false))
-        XCTAssertEqual(backgroundRed(), 21)
-
-        SAEditorColourMode.setMode(.matchAppearance, in: defaults)
-        XCTAssertTrue(switcher.apply(isDark: false), "Match appearance follows again")
-        XCTAssertEqual(backgroundRed(), 252)
-        XCTAssertTrue(switcher.apply(isDark: true))
-        XCTAssertEqual(backgroundRed(), 21)
-    }
-
-    /// Custom ignores the appearance, even with a stale choice stored.
-    func testCustomIgnoresTheAppearance() {
-        defaults.set("Light One", forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey)
-        defaults.set("Dark One", forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey)
-        defaults.set("dark", forKey: SAEditorColourMode.chosenAppearanceKey)
-        defaults.set(false, forKey: SAEditorAppearanceThemeSwitcher.matchesAppearanceKey)
-        XCTAssertFalse(switcher.apply(isDark: true))
-        XCTAssertFalse(switcher.apply(isDark: false))
-    }
-
-    /// A manual theme pick (import, hand edit) from Choose lands in Custom and drops the choice.
-    func testManualChoiceFromChooseIsCustom() {
-        SAEditorColourMode.setMode(.choose(dark: true), in: defaults)
-        switcher.userChoseThemeManually()
-        XCTAssertEqual(SAEditorColourMode.mode(in: defaults), .custom)
-        XCTAssertNil(defaults.object(forKey: SAEditorColourMode.chosenAppearanceKey))
-    }
-
     /// Verifies renaming a theme keeps the Light/Dark choices pointing at it.
     func testRenameFollowsTheChoice() {
         defaults.set("Light One", forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey)

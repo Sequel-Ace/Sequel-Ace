@@ -5,9 +5,7 @@
 //  Makes the query editor's colour theme follow the app's light/dark
 //  appearance: when "Match system appearance" is on, loads the chosen Light
 //  or Dark theme into the editor colour settings (which every editor already
-//  observes) — or, with Settings' Colours set to Choose, the picked one
-//  whatever the appearance (SAEditorColourMode). Pure Foundation/AppKit,
-//  shared with the Unit Tests target.
+//  observes). Pure Foundation/AppKit, shared with the Unit Tests target.
 //
 
 import AppKit
@@ -74,14 +72,12 @@ import AppKit
         apply(isDark: Self.isDark(app.effectiveAppearance))
     }
 
-    /// Loads the theme the colour mode calls for with the app in `isDark`: the matching one for Match appearance, the
-    /// picked one for Choose (so an appearance change never overwrites it), none for Custom.
+    /// Loads the theme for `isDark` if the settings call for one.
     /// - Returns: true when a theme was loaded.
     @discardableResult
-    func apply(isDark appIsDark: Bool) -> Bool {
-        let dark = SAEditorColourMode.mode(in: defaults).appliesDark(appIsDark: appIsDark)
-        guard let name = Self.themeToApply(isDark: dark ?? appIsDark,
-                                           matches: dark != nil,
+    func apply(isDark: Bool) -> Bool {
+        guard let name = Self.themeToApply(isDark: isDark,
+                                           matches: defaults.bool(forKey: Self.matchesAppearanceKey),
                                            light: defaults.string(forKey: Self.lightThemeKey),
                                            dark: defaults.string(forKey: Self.darkThemeKey),
                                            current: defaults.string(forKey: SAEditorThemeLoader.themeNameKey)) else { return false }
@@ -99,10 +95,9 @@ import AppKit
 
     // MARK: - Hooks from the preference pane
 
-    /// A hand-edited colour or a theme picked from the theme menu wins: matching (and Choose's pick) turns off.
+    /// A hand-edited colour or a theme picked from the theme menu wins: matching turns off.
     @objc func userChoseThemeManually() {
         defaults.set(false, forKey: Self.matchesAppearanceKey)
-        defaults.removeObject(forKey: SAEditorColourMode.chosenAppearanceKey)
     }
 
     /// Keeps the Light/Dark choices pointing at a theme renamed in Edit Theme List.

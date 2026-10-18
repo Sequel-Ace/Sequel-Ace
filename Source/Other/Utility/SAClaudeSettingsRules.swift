@@ -121,9 +121,8 @@ enum SAClaudeSettingsRules {
 
     // MARK: Editor and grid colours
 
-    /// The colour rows shown: while a Claude theme is in charge (Match appearance or Choose) only the mode row
-    /// ("editorColours"); while Custom all of them — Start from a theme and the 11 colours were the old section's
-    /// Customise-only part.
+    /// The colour rows shown: while the colours match the appearance only the mode row ("editorColours"); while Custom
+    /// all of them — Start from a theme and the 11 colours were the old section's Customise-only part.
     static func colourSectionRowIDs(_ rowIDs: [String], followsAppearance: Bool) -> [String] {
         followsAppearance ? rowIDs.filter { $0 == "editorColours" } : rowIDs
     }

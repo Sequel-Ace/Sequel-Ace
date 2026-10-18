@@ -170,15 +170,4 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: SAEditorAppearanceThemeSwitcher.lightThemeKey), "Claude Light")
         XCTAssertEqual(defaults.string(forKey: SAEditorAppearanceThemeSwitcher.darkThemeKey), "Claude Dark")
     }
-
-    /// Choose survives a relaunch: the launch-time resets leave the chosen appearance alone.
-    func testChooseSurvivesTheLaunchResets() {
-        SAEditorAppearanceThemeSwitcher.register(in: defaults)
-        SAClaudeEditorDefaults.register(in: defaults)
-        SAEditorColourMode.setMode(.choose(dark: false), in: defaults)
-        SAClaudeEditorDefaults.upgradeThemeMatching(in: defaults, userDomain: defaults.persistentDomain(forName: suite))
-        SAClaudeEditorDefaults.resetConsoleOverride(in: defaults)
-        SAClaudeEditorDefaults.resetFollowPair(in: defaults)
-        XCTAssertEqual(SAEditorColourMode.mode(in: defaults), .choose(dark: false))
-    }
 }
