@@ -726,6 +726,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 - (void)beginSheetModalForWindow:(NSWindow *)docWindow completionHandler:(void (^)(void))callback
 {
+	// The Claude look, laid out before the sheet's first frame.
+	[SAClaudeUserManagerStyler claimWindow:self.window];
 	[docWindow beginSheet:self.window completionHandler:^(NSModalResponse returnCode) {
 		callback();
 	}];

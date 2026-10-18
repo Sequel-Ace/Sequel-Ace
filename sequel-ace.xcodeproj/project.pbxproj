@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		5EC0DEC80000000000000007 /* SAClaudeServerVariablesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC80000000000000006 /* SAClaudeServerVariablesModelTests.swift */; };
+		5EC0DEC90000000000000002 /* SAClaudeUtilityWindowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC90000000000000001 /* SAClaudeUtilityWindowLayout.swift */; };
+		5EC0DEC90000000000000003 /* SAClaudeUtilityWindowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC90000000000000001 /* SAClaudeUtilityWindowLayout.swift */; };
+		5EC0DEC90000000000000005 /* SAClaudeUtilityWindowStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC90000000000000004 /* SAClaudeUtilityWindowStyler.swift */; };
+		5EC0DEC90000000000000007 /* SAClaudeUserManagerStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC90000000000000006 /* SAClaudeUserManagerStyler.swift */; };
+		5EC0DEC90000000000000009 /* SAClaudeUtilityWindowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC90000000000000008 /* SAClaudeUtilityWindowLayoutTests.swift */; };
 		5EC0DEC80000000000000005 /* SAClaudeServerVariablesStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC80000000000000004 /* SAClaudeServerVariablesStyler.swift */; };
 		5EC0DEC80000000000000003 /* SAClaudeServerVariablesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC80000000000000001 /* SAClaudeServerVariablesModel.swift */; };
 		5EC0DEC80000000000000002 /* SAClaudeServerVariablesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC80000000000000001 /* SAClaudeServerVariablesModel.swift */; };
@@ -1121,6 +1126,10 @@
 
 /* Begin PBXFileReference section */
 		5EC0DEC80000000000000006 /* SAClaudeServerVariablesModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeServerVariablesModelTests.swift; sourceTree = "<group>"; };
+		5EC0DEC90000000000000001 /* SAClaudeUtilityWindowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUtilityWindowLayout.swift; sourceTree = "<group>"; };
+		5EC0DEC90000000000000004 /* SAClaudeUtilityWindowStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUtilityWindowStyler.swift; sourceTree = "<group>"; };
+		5EC0DEC90000000000000006 /* SAClaudeUserManagerStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUserManagerStyler.swift; sourceTree = "<group>"; };
+		5EC0DEC90000000000000008 /* SAClaudeUtilityWindowLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUtilityWindowLayoutTests.swift; sourceTree = "<group>"; };
 		5EC0DEC80000000000000004 /* SAClaudeServerVariablesStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeServerVariablesStyler.swift; sourceTree = "<group>"; };
 		5EC0DEC80000000000000001 /* SAClaudeServerVariablesModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeServerVariablesModel.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000014 /* SAClaudeAlertCardStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertCardStyler.swift; sourceTree = "<group>"; };
@@ -3165,6 +3174,8 @@
 			isa = PBXGroup;
 			children = (
 				5EC0DEC80000000000000004 /* SAClaudeServerVariablesStyler.swift */,
+				5EC0DEC90000000000000006 /* SAClaudeUserManagerStyler.swift */,
+				5EC0DEC90000000000000004 /* SAClaudeUtilityWindowStyler.swift */,
 				A1E7CA2D0000000000000014 /* SAClaudeAlertCardStyler.swift */,
 				A1E7CA2D0000000000000012 /* SAClaudeAlertCard.swift */,
 				A1E7CA2D0000000000000010 /* SAClaudeAlertCardViews.swift */,
@@ -3358,6 +3369,7 @@
 			isa = PBXGroup;
 			children = (
 				5EC0DEC80000000000000001 /* SAClaudeServerVariablesModel.swift */,
+				5EC0DEC90000000000000001 /* SAClaudeUtilityWindowLayout.swift */,
 				A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */,
 				A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */,
 				A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */,
@@ -3438,6 +3450,7 @@
 			isa = PBXGroup;
 			children = (
 				5EC0DEC80000000000000006 /* SAClaudeServerVariablesModelTests.swift */,
+				5EC0DEC90000000000000008 /* SAClaudeUtilityWindowLayoutTests.swift */,
 				A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */,
 				A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */,
 				A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */,
@@ -4187,6 +4200,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				5EC0DEC80000000000000007 /* SAClaudeServerVariablesModelTests.swift in Sources */,
+				5EC0DEC90000000000000009 /* SAClaudeUtilityWindowLayoutTests.swift in Sources */,
+				5EC0DEC90000000000000003 /* SAClaudeUtilityWindowLayout.swift in Sources */,
 				5EC0DEC80000000000000003 /* SAClaudeServerVariablesModel.swift in Sources */,
 				A1E7CA2D000000000000000F /* SAClaudeAlertChromeTests.swift in Sources */,
 				A1E7CA2D000000000000000D /* SAClaudeAlertChrome.swift in Sources */,
@@ -4571,6 +4586,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				5EC0DEC80000000000000005 /* SAClaudeServerVariablesStyler.swift in Sources */,
+				5EC0DEC90000000000000007 /* SAClaudeUserManagerStyler.swift in Sources */,
+				5EC0DEC90000000000000005 /* SAClaudeUtilityWindowStyler.swift in Sources */,
+				5EC0DEC90000000000000002 /* SAClaudeUtilityWindowLayout.swift in Sources */,
 				5EC0DEC80000000000000002 /* SAClaudeServerVariablesModel.swift in Sources */,
 				A1E7CA2D0000000000000015 /* SAClaudeAlertCardStyler.swift in Sources */,
 				A1E7CA2D0000000000000013 /* SAClaudeAlertCard.swift in Sources */,

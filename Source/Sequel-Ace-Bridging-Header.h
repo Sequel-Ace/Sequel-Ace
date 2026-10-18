@@ -56,6 +56,8 @@
 #import "SPFavoritesController.h"
 #import "SPCompatibility.h"
 #import "SPSplitView.h"
+#import "SPOutlineView.h"
+#import "ImageAndTextCell.h"
 #import "SPComboPopupButton.h"
 #import "NoodleLineNumberView.h"
 #import "SPTreeNode.h"

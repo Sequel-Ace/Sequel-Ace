@@ -6436,3 +6436,21 @@
 
 /* server variables : accessibility name of the full value of the selected variable */
 "Variable value" = "Variable value";
+
+/* user manager : tooltip and accessibility name of the add-user button under the accounts list */
+"ClaudeUserManagerAddUser" = "Add user";
+
+/* user manager : tooltip and accessibility name of the remove-user button under the accounts list */
+"ClaudeUserManagerRemoveUser" = "Remove user";
+
+/* user manager : tooltip and accessibility name of the gear menu under the accounts list (Add Host, Remove Host, Refresh) */
+"ClaudeUserManagerAccountActions" = "Account actions";
+
+/* user manager : accessibility name of the General / Global Privileges / Schema Privileges / Resources tabs */
+"ClaudeUserManagerSections" = "User manager sections";
+
+/* user manager : schema privileges tab, tooltip of the arrow that moves the selected available privileges to the granted list */
+"ClaudeUserManagerGrantSchemaPrivileges" = "Grant the selected privileges";
+
+/* user manager : schema privileges tab, tooltip of the arrow that moves the selected granted privileges back to the available list */
+"ClaudeUserManagerRevokeSchemaPrivileges" = "Revoke the selected privileges";

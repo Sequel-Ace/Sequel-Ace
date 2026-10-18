@@ -97,8 +97,8 @@ import AppKit
 
     /// Restyles `window` if it is a target: already skinned windows are walked again with the current colours. Every
     /// window styled (and every open panel whose accessory is) is then offered to the Import flow's styler, which
-    /// claims its own; windows are also offered to the table/database sheets' form (`SAClaudeFormSheetStyler`) and the
-    /// Server Variables sheet (`SAClaudeServerVariablesStyler`).
+    /// claims its own; windows are also offered to the table/database sheets' form (`SAClaudeFormSheetStyler`), the
+    /// Server Variables sheet (`SAClaudeServerVariablesStyler`) and the User Manager (`SAClaudeUserManagerStyler`).
     static func consider(_ window: NSWindow) {
         if let skin = SAClaudeWindowSkin.skin(for: window) {
             skin.refresh(force: true)
@@ -106,6 +106,7 @@ import AppKit
             SAClaudeImportStyler.claim(window)
             SAClaudeFormSheetStyler.claim(window)
             MainActor.assumeIsolated { SAClaudeServerVariablesStyler.claim(window) }
+            MainActor.assumeIsolated { SAClaudeUserManagerStyler.claim(window) }
             return
         }
         let alert = (window.delegate as? NSAlert).flatMap { $0.window === window ? $0 : nil }
@@ -137,6 +138,7 @@ import AppKit
             SAClaudeImportStyler.claim(window)
             SAClaudeFormSheetStyler.claim(window)
             MainActor.assumeIsolated { SAClaudeServerVariablesStyler.claim(window) }
+            MainActor.assumeIsolated { SAClaudeUserManagerStyler.claim(window) }
         case .skip:
             break
         }
@@ -594,7 +596,8 @@ final class SAClaudeWindowSkin: NSObject {
     /// Tables already in the Claude look, source lists and colours the code chose are left alone. Also called for the
     /// AppKit tables Settings hosts inside its SwiftUI content, which the walk skips.
     static func styleTable(_ table: NSTableView, _ colours: SAClaudeSheetColours) {
-        if table is SAClaudeCopyTable || table is SAClaudeTableView || table is SAClaudeServerVariablesTableView { return }
+        if table is SAClaudeCopyTable || table is SAClaudeTableView || table is SAClaudeServerVariablesTableView
+            || table is SAClaudeUtilityGridTableView || SAClaudeUtilitySidebar.isAdopted(table) { return }
         // The XIBs' older tables are source lists by their (deprecated) highlight style, raw value 1.
         let isSourceList = table.style == .sourceList || table.selectionHighlightStyle.rawValue == 1
         if !isSourceList {
