@@ -14,10 +14,12 @@
 //  pull-down's click, and `popUp(positioning:at:in:)`. Menus that code
 //  rebuilds before each opening (the grids', the query editor's, the tab
 //  chips') are filled again each time. Only menus opened in a main document
-//  window (key, no sheet attached) are filled: sheets, panels, Settings and
-//  utility windows keep their menus as they are, and the main menu bar's
-//  menus are left to macOS (`SAClaudeMenuGlyphs.shouldApply`). App target
-//  only.
+//  window (key, no sheet attached) or in one of the utility windows and its
+//  sheets (User Manager, Process List, Server Variables, the two favourites
+//  managers, Navigator, Bundle Editor, Advanced Filter: by their owner) are
+//  filled: other sheets, panels, Settings and the Console keep their menus as
+//  they are, and the main menu bar's menus are left to macOS
+//  (`SAClaudeMenuGlyphs.shouldApply`). App target only.
 //
 
 import AppKit
@@ -36,7 +38,8 @@ import AppKit
             let window = openingWindow()
             guard SAClaudeMenuGlyphs.shouldApply(isMainMenu: SAClaudeMenuGlyphs.isInMainMenu(menu, mainMenu: NSApp.mainMenu),
                                                  isMainDocumentWindow: window.map(isMainDocumentWindow) ?? false,
-                                                 hasAttachedSheet: window?.attachedSheet != nil) else { return }
+                                                 hasAttachedSheet: window?.attachedSheet != nil,
+                                                 ownerClasses: window.map(ownerClasses) ?? []) else { return }
             SAClaudeMenuGlyphs.apply(to: menu, imageFor: image(named:))
         }
     }
@@ -49,6 +52,20 @@ import AppKit
     /// too, but not this) and not itself a sheet.
     private static func isMainDocumentWindow(_ window: NSWindow) -> Bool {
         window.windowController is SPWindowController && window.sheetParent == nil
+    }
+
+    /// The class names of the controllers and delegates of `window` and of the windows it is a sheet of (KVO's runtime
+    /// subclasses skipped), for the utility windows' gate.
+    private static func ownerClasses(of window: NSWindow) -> [String] {
+        var names: [String] = []
+        var current: NSWindow? = window
+        while let w = current {
+            for owner in [w.windowController as AnyObject?, w.delegate as AnyObject?].compactMap({ $0 }) {
+                names.append(NSStringFromClass(SAClaudeSheetStyler.visibleClass(of: owner)))
+            }
+            current = w.sheetParent
+        }
+        return names
     }
 
     /// The menu glyph for a symbol name: 15pt regular, a template, cached.

@@ -81,10 +81,32 @@ private enum SheetFieldText {
     }
 }
 
-/// A separator drawn as a 1pt hairline along its long axis (installed with `object_setClass`; on macOS 26 and
-/// later this also drops the private view NSBox draws its line with).
+/// What the Claude boxes share: hiding the views AppKit drew the box with before its class was swapped.
+enum SAClaudeSheetBoxDrawing {
+    /// Hides `box`'s own drawing views (macOS 26+: a SwiftUI box view drawing the native fill and border, and the text field
+    /// showing its title), which stay after the swap until AppKit happens to rebuild the box and draw over the Claude box: a
+    /// second title, offset from the Claude one. The box's content view is never touched. Called at every walk and layout.
+    static func hideNativeDrawing(of box: NSBox) {
+        let contentView = box.contentView
+        for subview in box.subviews where !subview.isHidden {
+            let field = subview as? NSTextField
+            if SAClaudeNativeDrawingViews.isBoxDrawingView(className: String(describing: type(of: subview)), isContentView: subview === contentView,
+                                                           isTextField: field != nil, text: field?.stringValue ?? "", boxTitle: box.title) {
+                subview.isHidden = true
+            }
+        }
+    }
+}
+
+/// A separator drawn as a 1pt hairline along its long axis (installed with `object_setClass`; AppKit's own drawing views
+/// inside it are hidden, `SAClaudeSheetBoxDrawing`).
 @objc(SAClaudeSheetSeparatorBox) final class SAClaudeSheetSeparatorBox: NSBox {
     override var wantsUpdateLayer: Bool { false }
+
+    override func layout() {
+        super.layout()
+        SAClaudeSheetBoxDrawing.hideNativeDrawing(of: self)
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         let line = bounds.width >= bounds.height
@@ -95,33 +117,54 @@ private enum SheetFieldText {
     }
 }
 
-/// A titled box drawn as a hairline card (radius 9) under its title in SF Pro 11, muted. Installed with
-/// `object_setClass`; NSBox keeps its border, title and content rects, only the drawing is Claude's.
+/// A titled box drawn as a Claude card (radius 9: the faint card fill and a hairline, as the Export sheet's cards) under its
+/// title in SF Pro 11, muted, drawn once. Installed with `object_setClass`; NSBox keeps its border, title and content rects,
+/// only the drawing is Claude's. AppKit's own box view and title field are hidden (`SAClaudeSheetBoxDrawing`). Where the
+/// title sits on the card's edge, the outline leaves a gap for it rather than painting a colour behind it, so whatever the
+/// box sits on (a sheet, a tab pane, a save panel's accessory) shows through.
 @objc(SAClaudeSheetTitledBox) final class SAClaudeSheetTitledBox: NSBox {
     private static let radius: CGFloat = 9
 
     override var wantsUpdateLayer: Bool { false }
 
+    override func layout() {
+        super.layout()
+        SAClaudeSheetBoxDrawing.hideNativeDrawing(of: self)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         let palette = SAClaudeFilterBarStyler.currentPalette
         let card = NSBezierPath(roundedRect: borderRect.insetBy(dx: 0.5, dy: 0.5), xRadius: Self.radius - 0.5, yRadius: Self.radius - 0.5)
         card.lineWidth = 1
+
+        var title: NSAttributedString?
+        var origin = NSPoint.zero
+        var gap: NSRect?
+        if titlePosition != .noTitle, !self.title.isEmpty {
+            let string = NSAttributedString(string: self.title, attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: palette.icon])
+            let size = string.size()
+            let titleArea = titleRect
+            origin = NSPoint(x: titleArea.minX, y: (titleArea.midY - size.height / 2).rounded())
+            gap = SAClaudeTitledBoxGeometry.titleGap(titleRect: titleArea, borderRect: borderRect, titleOriginX: origin.x, titleWidth: ceil(size.width))
+            title = string
+        }
+
+        NSGraphicsContext.saveGraphicsState()
+        if let gap {
+            // Everything but the title's gap.
+            let clip = NSBezierPath(rect: bounds)
+            clip.append(NSBezierPath(rect: gap))
+            clip.windingRule = .evenOdd
+            clip.addClip()
+        }
+        // The card fill as a tint of the theme's text, so it reads the same on any background.
+        SAClaudeFilterBarStyler.currentThemeText.withAlphaComponent(SAClaudeFilterChrome.cardFillRatio).setFill()
+        card.fill()
         palette.hairline.setStroke()
         card.stroke()
+        NSGraphicsContext.restoreGraphicsState()
 
-        guard titlePosition != .noTitle, !title.isEmpty else { return }
-        let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: palette.icon]
-        let string = NSAttributedString(string: title, attributes: attributes)
-        let size = string.size()
-        let titleArea = titleRect
-        let origin = NSPoint(x: titleArea.minX, y: (titleArea.midY - size.height / 2).rounded())
-        // The title sits on the card's top edge: clear the line behind it with the theme surface the box sits on
-        // (in a save panel's accessory too, where the panel's own background differs).
-        if titleArea.intersects(borderRect) {
-            SAClaudeSheetColours.currentSurface.setFill()
-            NSRect(x: origin.x - 3, y: titleArea.minY, width: size.width + 6, height: titleArea.height).fill()
-        }
-        string.draw(at: origin)
+        title?.draw(at: origin)
     }
 }
 

@@ -21,6 +21,10 @@ struct SAClaudeControlDescriptor: Equatable {
     var bezelStyle: NSButton.BezelStyle? = nil
     var title: String = ""
     var keyEquivalent: String = ""
+    /// The window's default button (its `defaultButtonCell`). AppKit blanks that button's key equivalent while its window
+    /// is not key (`-[NSWindow resignKeyWindow]`) and puts Return back when it becomes key again, so a walk of a window
+    /// that is not key reads "" for its Return button: this keeps it the primary all the same.
+    var isDefaultButton = false
     var isAlertButton = false
     /// 0 = the alert's first button.
     var alertButtonIndex: Int? = nil
@@ -69,13 +73,19 @@ enum SAClaudeSheetRules {
         if d.title.isEmpty || d.isDestructive { return .unchanged }
         if d.isAlertButton {
             // Primary: the alert button that answers Return, or its first button when none does.
-            let isPrimary = d.alertHasReturnButton ? d.keyEquivalent == "\r" : d.alertButtonIndex == 0
+            let isPrimary = d.alertHasReturnButton ? answersReturn(d) : d.alertButtonIndex == 0
             if isPrimary { return .primaryButton }
             return isPushLike(d.bezelStyle) ? .secondaryButton : .unchanged
         }
         // Primary: a push-family button that answers Return.
-        if d.keyEquivalent == "\r" && isPushLike(d.bezelStyle) { return .primaryButton }
+        if answersReturn(d) && isPushLike(d.bezelStyle) { return .primaryButton }
         return isPushLike(d.bezelStyle) ? .secondaryButton : .unchanged
+    }
+
+    /// Whether the button answers Return: its key equivalent, or (while its window is not key, when AppKit has blanked
+    /// that key equivalent) its being the window's default button.
+    static func answersReturn(_ d: SAClaudeControlDescriptor) -> Bool {
+        d.keyEquivalent == "\r" || d.isDefaultButton
     }
 
     /// The push / rounded / regular-square family. On this SDK `.rounded` and `.regularSquare` are
@@ -119,6 +129,53 @@ enum SAClaudeSheetButtonGeometry {
     }
 }
 
+/// The private views AppKit draws a control with on macOS 26 and later (an NSButton's bezel, title and image views, a
+/// pop-up's indicator, SwiftUI hosting views inside a control or an NSBox). A control the Claude skin makes draw through
+/// its cell keeps the ones it had before the swap until AppKit happens to rebuild them (it does for a window's default
+/// button whenever its key equivalent is blanked and restored, never for the others), and as subviews they draw on top of
+/// the Claude cell: the skin hides them at every walk.
+enum SAClaudeNativeDrawingViews {
+
+    /// AppKit's own drawing views inside a button or pop-up, by class name.
+    static let controlViewClasses: Set<String> = ["NSButtonBezelView", "NSButtonTextField", "NSButtonImageView", "NSPopUpIndicatorView"]
+
+    /// Whether a subview of a control with this class name (`String(describing: type(of:))`) is AppKit's drawing of it.
+    static func isControlDrawingView(className: String) -> Bool {
+        controlViewClasses.contains(className) || isHostingView(className: className)
+    }
+
+    /// A SwiftUI hosting view (`_NSCoreHostingView<AppKitButton>`, `_NSCoreHostingView<AppKitBoxView>`, `NSHostingView<…>`).
+    static func isHostingView(className: String) -> Bool {
+        className.contains("HostingView")
+    }
+
+    /// Whether a direct subview of a Claude-drawn titled box or separator is AppKit's drawing of it: a hosting view, or the
+    /// text field showing the box's title (the Claude box draws its title itself). The box's content view never is.
+    static func isBoxDrawingView(className: String, isContentView: Bool, isTextField: Bool, text: String, boxTitle: String) -> Bool {
+        if isContentView { return false }
+        if isHostingView(className: className) { return true }
+        return isTextField && !boxTitle.isEmpty && text == boxTitle
+    }
+}
+
+/// Where a Claude titled box leaves a gap in its outline for the title (pure, so it is tested).
+enum SAClaudeTitledBoxGeometry {
+    /// Clear space either side of the title.
+    static let titlePadding: CGFloat = 3
+
+    /// The part of the outline the title covers, or nil when the title sits clear of the outline (above the card, as
+    /// AppKit lays a titled box out on macOS 26+, even when its title rect overlaps the border rect by a point or two). The
+    /// title is on the outline when the card's top or bottom edge runs through the middle half of the title's height.
+    /// `titleOriginX` and `titleWidth` are where the title is drawn.
+    static func titleGap(titleRect: NSRect, borderRect: NSRect, titleOriginX: CGFloat, titleWidth: CGFloat) -> NSRect? {
+        guard titleWidth > 0, titleRect.maxX > borderRect.minX, titleRect.minX < borderRect.maxX else { return nil }
+        let band = titleRect.height / 4
+        let onEdge = [borderRect.minY, borderRect.maxY].contains { $0 > titleRect.minY + band && $0 < titleRect.maxY - band }
+        guard onEdge else { return nil }
+        return NSRect(x: titleOriginX - titlePadding, y: titleRect.minY, width: titleWidth + titlePadding * 2, height: titleRect.height)
+    }
+}
+
 /// Which windows the sheet styler restyles, decided from facts about the window (pure, so it is tested).
 enum SAClaudeSheetTargeting {
 
@@ -138,6 +195,7 @@ enum SAClaudeSheetTargeting {
         "SPUserManager",                   // User manager
         "SPGotoDatabaseController",        // Go to database
         "SPSSHTunnel",                     // SSH host question
+        "SPFilterTableController",         // Advanced filter panel
     ]
 
     /// Owners whose windows are never restyled, sheet or not: the main document window, the Query Console and

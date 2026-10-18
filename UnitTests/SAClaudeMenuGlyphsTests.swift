@@ -57,6 +57,42 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         "addEmptyFilterRow": "plus",
         "addEmptyFilterGroup": "plus.rectangle.on.rectangle",
         "copyPreviewClause:": "doc.on.doc",
+        // User Manager: gear pull-down (UserManagerView 1012) and the accounts list's menu (894).
+        "addHost:": "plus",
+        "removeHost:": "trash",
+        "removeUser:": "trash",
+        "refresh:": "arrow.clockwise",
+        // Process List: gear (DatabaseProcessList 78), right-click (51); Save As… and Refresh for its new gear.
+        "toggleShowProcessID:": "number",
+        "toggeleShowFullProcessList:": "text.alignleft",
+        "killProcessQuery:": "stop.circle",
+        "killProcessConnection:": "xmark.octagon",
+        "saveServerProcesses:": "arrow.down.doc",
+        "refreshProcessList:": "arrow.clockwise",
+        // Server Variables right-click (DatabaseServerVariables 33) and its Save As….
+        "copyServerVariableName:": "doc.on.doc",
+        "copyServerVariableValue:": "doc.on.doc",
+        "saveServerVariables:": "arrow.down.doc",
+        // Query Favorites manager: gear (QueryFavoriteManager 351) and right-click (205).
+        "duplicateQueryFavorite:": "plus.square.on.square",
+        "importFavoritesByReplacing:": "square.and.arrow.down",
+        "importFavoritesByAdding:": "square.and.arrow.down",
+        "saveFavoriteToFile:": "arrow.down.doc",
+        "removeAllQueryFavorites:": "trash",
+        "removeQueryFavorite:": "trash",
+        // Content Filter manager: gear (ContentFilterManager 393) and right-click (205).
+        "duplicateContentFilter:": "plus.square.on.square",
+        "exportContentFilter:": "square.and.arrow.up",
+        "importContentFilterByAdding:": "square.and.arrow.down",
+        "removeContentFilter:": "trash",
+        // Bundle Editor: gear (BundleEditor 1249) and right-click (899).
+        "duplicateCommandBundle:": "plus.square.on.square",
+        "revealCommandBundleInFinder:": "folder",
+        "saveBundle:": "square.and.arrow.up",
+        "undeleteDefaultBundles:": "arrow.uturn.backward",
+        "reloadBundles:": "arrow.clockwise",
+        "displayBundleMetaInfo:": "info.circle",
+        "removeCommandBundle:": "trash",
     ]
 
     private func symbol(_ selector: String, _ title: String = "Item") -> String? {
@@ -116,9 +152,11 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         for selector in ["executeBundleItemForDataTable:", "executeBundleItemForInputField:", "apply:", "sortFavorites:",
                          "reverseSortFavorites:", "toggleColumnView:", "toggleDisplayOverrideFormatter:", "submenuAction:",
                          "_popUpItemAction:", "somethingNew:", "",
-                         // No in-scope menu sends these: buttons (reloadTable:), the main menu (refreshTables:) and
-                         // the User Manager sheet's gear (refresh:).
-                         "refresh:", "refreshTables:", "reloadTable:"] {
+                         // No in-scope menu sends these: buttons (reloadTable:) and the main menu (refreshTables:).
+                         // The Process List's interval rows are choices: their parent row gets the glyph.
+                         "refreshTables:", "reloadTable:", "setAutoRefreshInterval:", "setCustomAutoRefreshInterval:",
+                         // The managers' Insert Placeholder pop-ups and the Bundle Editor's scope pop-ups.
+                         "inputPopupButtonChanged:", "scopeButtonChanged:", "triggerButtonChanged:"] {
             XCTAssertNil(symbol(selector), selector)
         }
     }
@@ -277,19 +315,110 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
 
     // MARK: Which menus
 
-    /// Only a main document window with no sheet attached, never the main menu: sheets (Query Favorites, User
-    /// Manager), panels, Settings and utility windows keep their menus native.
-    func testAppliesOnlyInMainDocumentWindowWithoutSheet() {
-        XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: true, hasAttachedSheet: false))
+    /// The utility windows whose menus get glyphs, by owner, exactly.
+    func testUtilityOwnerList() {
+        XCTAssertEqual(SAClaudeMenuGlyphs.utilityOwnerClasses, [
+            "SPUserManager", "SPProcessListController", "SPServerVariablesController", "SPQueryFavoriteManager",
+            "SPContentFilterManager", "SPNavigatorController", "SPBundleEditorController", "SPFilterTableController",
+        ])
+    }
+
+    /// The whole truth table: main menu × main document window × attached sheet × owner (none, a utility window's, another
+    /// skinned window's). Glyphs only off the main menu, with no sheet attached, in a main document window or a utility window.
+    func testGateTruthTable() {
+        let owners: [(String, [String], Bool)] = [
+            ("no owner", [], false),
+            ("utility", ["SPUserManager"], true),
+            ("other skinned window", ["SPPreferenceController"], false),
+        ]
         for isMainMenu in [false, true] {
             for isMainDocumentWindow in [false, true] {
-                for hasAttachedSheet in [false, true] where isMainMenu || !isMainDocumentWindow || hasAttachedSheet {
-                    XCTAssertFalse(SAClaudeMenuGlyphs.shouldApply(isMainMenu: isMainMenu, isMainDocumentWindow: isMainDocumentWindow,
-                                                                  hasAttachedSheet: hasAttachedSheet),
-                                   "mainMenu=\(isMainMenu) document=\(isMainDocumentWindow) sheet=\(hasAttachedSheet)")
+                for hasAttachedSheet in [false, true] {
+                    for (label, ownerClasses, isUtility) in owners {
+                        let expected = !isMainMenu && !hasAttachedSheet && (isMainDocumentWindow || isUtility)
+                        XCTAssertEqual(SAClaudeMenuGlyphs.shouldApply(isMainMenu: isMainMenu, isMainDocumentWindow: isMainDocumentWindow,
+                                                                      hasAttachedSheet: hasAttachedSheet, ownerClasses: ownerClasses),
+                                       expected, "mainMenu=\(isMainMenu) document=\(isMainDocumentWindow) sheet=\(hasAttachedSheet) owner=\(label)")
+                    }
                 }
             }
         }
+    }
+
+    /// Each utility window, and a sheet of one (its owners include the window's it is a sheet of), get glyphs; a Swift owner
+    /// matches module-qualified too.
+    func testEveryUtilityWindowAndItsSheetsGetGlyphs() {
+        for owner in SAClaudeMenuGlyphs.utilityOwnerClasses {
+            XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: false,
+                                                         ownerClasses: [owner]), owner)
+            XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: false,
+                                                         ownerClasses: ["Sequel_Ace." + owner]), owner)
+            // A sheet with no owner of its own (the Process List's Custom Interval, the Bundle Editor's Undelete) on the window.
+            XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: false,
+                                                         ownerClasses: ["NSObject", owner]), owner)
+            // The Query Favorites manager and the User Manager are sheets of the main window.
+            XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: false,
+                                                         ownerClasses: [owner, "SPWindowController"]), owner)
+            // A window of theirs with a sheet attached leaves the menus to the sheet.
+            XCTAssertFalse(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: true,
+                                                          ownerClasses: [owner]), owner)
+        }
+    }
+
+    /// Unchanged: Settings, Export, Import, the field editor, Go to database, the table / database sheets (step 3, sheets
+    /// of the main window owned by its document's controllers or none) and the Console stay glyph-free.
+    func testSettingsExportAndStep3SheetsStayGlyphFree() {
+        let unchanged: [[String]] = [
+            ["SPPreferenceController"], ["Sequel_Ace.SPPreferenceController"],
+            ["SPExportController", "SPWindowController"], ["SPDataImport", "SPWindowController"],
+            ["SPFieldMapperController", "SPWindowController"], ["SPFieldEditorController", "SPWindowController"],
+            ["SPGotoDatabaseController", "SPWindowController"],
+            ["SPWindowController"], ["SPDatabaseDocument", "SPWindowController"], ["SPTableStructure", "SPWindowController"],
+            ["SPQueryController"], ["SPSSHTunnel"],
+        ]
+        for owners in unchanged {
+            XCTAssertFalse(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: false,
+                                                          ownerClasses: owners), "\(owners)")
+        }
+        // The old three-argument call (no owners) is the main-document-window rule.
+        XCTAssertTrue(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: true, hasAttachedSheet: false))
+        XCTAssertFalse(SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: false, hasAttachedSheet: false))
+    }
+
+    /// A utility window's menu with no mapped item gets no glyph at all (the managers' Insert Placeholder pop-ups); one with
+    /// mapped items gets them only on those rows (the Content Filter gear's action-less "Import Filter by Replacing…").
+    func testUtilityMenusGetGlyphsOnlyOnMappedRows() {
+        let placeholders = NSMenu()
+        for title in ["Insert Placeholder", "Argument", "Quoted Argument", "Current Field"] { placeholders.addItem(item(title, nil)) }
+        SAClaudeMenuGlyphs.apply(to: placeholders, imageFor: image(_:), mainMenu: nil)
+        XCTAssertTrue(placeholders.items.allSatisfy { $0.image == nil })
+
+        let gear = NSMenu()
+        let duplicate = item("Duplicate", "duplicateContentFilter:")
+        let export = item("Export Selected Filters…", "exportContentFilter:")
+        let replacing = item("Import Filter by Replacing…", nil)
+        let importing = item("Import Filters…", "importContentFilterByAdding:")
+        [duplicate, export, replacing, importing].forEach(gear.addItem)
+        SAClaudeMenuGlyphs.apply(to: gear, imageFor: image(_:), mainMenu: nil)
+        XCTAssertEqual(nameOf(duplicate.image), "plus.square.on.square")
+        XCTAssertEqual(nameOf(export.image), "square.and.arrow.up")
+        XCTAssertNil(replacing.image)
+        XCTAssertEqual(nameOf(importing.image), "square.and.arrow.down")
+    }
+
+    /// The Process List's Auto Refresh Interval submenu: its rows are choices (no glyph), its parent row gets the timer.
+    func testAutoRefreshIntervalParentGetsTheTimer() {
+        let gear = NSMenu()
+        let interval = item("Auto Refresh Interval", nil)
+        let submenu = NSMenu()
+        for title in ["2 Seconds", "5 Seconds", "10 Seconds", "30 Seconds", "60 Seconds"] { submenu.addItem(item(title, "setAutoRefreshInterval:")) }
+        submenu.addItem(.separator())
+        submenu.addItem(item("Custom...", "setCustomAutoRefreshInterval:"))
+        interval.submenu = submenu
+        gear.addItem(interval)
+        SAClaudeMenuGlyphs.apply(to: gear, imageFor: image(_:), mainMenu: nil)
+        XCTAssertEqual(nameOf(interval.image), "timer")
+        XCTAssertTrue(submenu.items.allSatisfy { $0.image == nil })
     }
 
     func testIsInMainMenu() {

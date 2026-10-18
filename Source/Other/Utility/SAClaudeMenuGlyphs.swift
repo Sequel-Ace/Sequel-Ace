@@ -11,7 +11,8 @@
 //  are untouched. Pure (AppKit types only, no app state): built into the app
 //  and the Unit Tests targets. The pass that runs it before each menu opens
 //  is SAClaudeMenuGlyphPass; which menus it runs on (the main document
-//  windows' only) is `shouldApply`.
+//  windows' and the utility windows' named in `utilityOwnerClasses`, with
+//  their sheets) is `shouldApply`.
 //
 
 import AppKit
@@ -20,7 +21,9 @@ enum SAClaudeMenuGlyphs {
 
     /// Action selector → outline SF Symbol, from the surveyed menus: table list (and the sidebar gear), Content and
     /// query-result grids, Structure fields / indexes, Relations, Triggers, the query editor, the connection screen's
-    /// favourites (outline, gear, card grid), window tab chips, the filter bar and the query "Export Result" gear.
+    /// favourites (outline, gear, card grid), window tab chips, the filter bar and the query "Export Result" gear; and the
+    /// utility windows' gear and right-click menus (User Manager, Process List, Server Variables, Query Favorites and
+    /// Content Filter managers, Bundle Editor).
     private static let byAction: [String: String] = [
         // Copy
         "copy:": "doc.on.doc",                      // grids' Copy rows (tags 2001–2004), cell-value copies, text views
@@ -29,6 +32,8 @@ enum SAClaudeMenuGlyphs {
         "copyAsRTF": "doc.on.doc",
         "copyConnectionString:": "doc.on.doc",
         "copyPreviewClause:": "doc.on.doc",
+        "copyServerVariableName:": "doc.on.doc",    // Server Variables
+        "copyServerVariableValue:": "doc.on.doc",
         // Edit
         "cut:": "scissors",
         "paste:": "doc.on.clipboard",
@@ -45,6 +50,10 @@ enum SAClaudeMenuGlyphs {
         "duplicateRow:": "plus.square.on.square",
         "duplicateField:": "plus.square.on.square",
         "duplicateFavorite:": "plus.square.on.square",
+        "duplicateQueryFavorite:": "plus.square.on.square", // Query Favorites manager
+        "duplicateContentFilter:": "plus.square.on.square", // Content Filter manager
+        "duplicateCommandBundle:": "plus.square.on.square", // Bundle Editor
+        "addHost:": "plus",                                 // User Manager
         // Truncate / delete
         "truncateTable:": "eraser",
         "removeTable:": "trash",
@@ -54,11 +63,39 @@ enum SAClaudeMenuGlyphs {
         "removeRelation:": "trash",
         "removeTrigger:": "trash",
         "removeNode:": "trash",
+        "removeUser:": "trash",                     // User Manager
+        "removeHost:": "trash",
+        "removeQueryFavorite:": "trash",            // Query Favorites manager
+        "removeAllQueryFavorites:": "trash",
+        "removeContentFilter:": "trash",            // Content Filter manager
+        "removeCommandBundle:": "trash",            // Bundle Editor
         // Export / import
         "exportSelectedTablesAs:": "square.and.arrow.up",
         "exportCustomQueryResultAsFormat:": "square.and.arrow.up",
-        "exportFavorites:": "square.and.arrow.up",      // connection gear (Query Favorites' is in a sheet: skipped)
+        "exportFavorites:": "square.and.arrow.up",      // connection gear and the Query Favorites manager's
+        "exportContentFilter:": "square.and.arrow.up",
+        "saveBundle:": "square.and.arrow.up",           // Bundle Editor's Export Bundle…
         "importFavorites:": "square.and.arrow.down",
+        "importFavoritesByAdding:": "square.and.arrow.down",
+        "importFavoritesByReplacing:": "square.and.arrow.down",
+        "importContentFilterByAdding:": "square.and.arrow.down",
+        // Save to a file
+        "saveFavoriteToFile:": "arrow.down.doc",        // Query Favorites manager
+        "saveServerProcesses:": "arrow.down.doc",       // Process List's Save As…
+        "saveServerVariables:": "arrow.down.doc",       // Server Variables' Save As…
+        // Refresh / reload
+        "refresh:": "arrow.clockwise",                  // User Manager gear
+        "refreshProcessList:": "arrow.clockwise",
+        "reloadBundles:": "arrow.clockwise",
+        // Process List
+        "killProcessQuery:": "stop.circle",
+        "killProcessConnection:": "xmark.octagon",
+        "toggleShowProcessID:": "number",
+        "toggeleShowFullProcessList:": "text.alignleft",  // (sic) the controller's selector
+        // Bundle Editor
+        "revealCommandBundleInFinder:": "folder",
+        "undeleteDefaultBundles:": "arrow.uturn.backward",
+        "displayBundleMetaInfo:": "info.circle",
         // Windows and tabs
         "openTableInNewTab:": "macwindow.badge.plus",
         "openTableInNewWindow:": "macwindow",
@@ -83,6 +120,8 @@ enum SAClaudeMenuGlyphs {
         "sortFavorites:": "arrow.up.arrow.down",
         "reverseSortFavorites:": "arrow.up.arrow.down",
         "apply:": "line.3.horizontal.decrease",     // SACellFilterAction's operators
+        "setAutoRefreshInterval:": "timer",         // Process List's Auto Refresh Interval (and its Custom… row)
+        "setCustomAutoRefreshInterval:": "timer",
     ]
 
     /// Every symbol name the map can hand out (the tests check each exists).
@@ -94,12 +133,24 @@ enum SAClaudeMenuGlyphs {
         byAction[selector]
     }
 
-    /// Whether the pass glyphs a menu that is opening: only in a main document window (the database window, whose
-    /// connection screen is the same window) with no sheet attached, and never the main menu bar's menus. Menus
-    /// opened in sheets, panels, Settings and utility windows (Query Favorites, User Manager, Bundle Editor,
-    /// Console…) stay as they are, as the spec's non-goals ask.
-    static func shouldApply(isMainMenu: Bool, isMainDocumentWindow: Bool, hasAttachedSheet: Bool) -> Bool {
-        !isMainMenu && isMainDocumentWindow && !hasAttachedSheet
+    /// The owners (window controller or delegate) of the utility windows whose menus get glyphs too, in the window and
+    /// in its sheets: the User Manager, Process List, Server Variables, the Query Favorites and Content Filter managers,
+    /// the Navigator, the Bundle Editor and the Advanced Filter panel. Not every window the sheet styler skins: Settings,
+    /// Export, Import, the field editor and the table / database sheets keep their menus as they are.
+    static let utilityOwnerClasses: Set<String> = [
+        "SPUserManager", "SPProcessListController", "SPServerVariablesController", "SPQueryFavoriteManager",
+        "SPContentFilterManager", "SPNavigatorController", "SPBundleEditorController", "SPFilterTableController",
+    ]
+
+    /// Whether the pass glyphs a menu that is opening: never the main menu bar's menus, nor a window with a sheet attached
+    /// (the sheet takes the menus); then a main document window (the database window, whose connection screen is the same
+    /// window), or a window or sheet owned by one of `utilityOwnerClasses`. `ownerClasses` are the class names
+    /// (`NSStringFromClass`, module-qualified or not) of the window's controller and delegate and those of the windows it
+    /// is a sheet of. Menus opened in other sheets, panels, Settings and the Console stay as they are.
+    static func shouldApply(isMainMenu: Bool, isMainDocumentWindow: Bool, hasAttachedSheet: Bool, ownerClasses: [String] = []) -> Bool {
+        guard !isMainMenu, !hasAttachedSheet else { return false }
+        if isMainDocumentWindow { return true }
+        return ownerClasses.contains { utilityOwnerClasses.contains(SAClaudeSheetTargeting.unqualified($0)) }
     }
 
     /// Whether `menu` is the main menu bar's or one of its submenus (its top supermenu is `mainMenu`).

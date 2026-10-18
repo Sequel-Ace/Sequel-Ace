@@ -146,6 +146,31 @@ final class SAClaudeSheetRulesTests: XCTestCase {
         XCTAssertEqual(style(button("Help", bezel: .helpButton)), .unchanged)
     }
 
+    /// AppKit blanks the default button's key equivalent while its window is not key (and restores Return when it becomes
+    /// key again): a walk then must still see the Return button as the primary.
+    func testDefaultButtonStaysPrimaryWhileItsKeyEquivalentIsBlanked() {
+        XCTAssertEqual(style(button("Save") { $0.keyEquivalent = ""; $0.isDefaultButton = true }), .primaryButton)
+        XCTAssertEqual(style(button("Save") { $0.keyEquivalent = "\r"; $0.isDefaultButton = true }), .primaryButton)
+        XCTAssertEqual(style(button("Cancel") { $0.keyEquivalent = "" }), .secondaryButton)
+        // Still only a push-family button, and never a titleless or destructive one.
+        XCTAssertEqual(style(button("Save", bezel: .recessed) { $0.isDefaultButton = true }), .unchanged)
+        XCTAssertEqual(style(button("") { $0.isDefaultButton = true }), .unchanged)
+        XCTAssertEqual(style(button("Delete") { $0.isDefaultButton = true; $0.isDestructive = true }), .unchanged)
+    }
+
+    func testAlertDefaultButtonStaysPrimaryWhileItsKeyEquivalentIsBlanked() {
+        let second = button("Replace") { $0.isAlertButton = true; $0.alertButtonIndex = 1; $0.isDefaultButton = true; $0.alertHasReturnButton = true }
+        XCTAssertEqual(style(second), .primaryButton)
+        let first = button("Cancel") { $0.isAlertButton = true; $0.alertButtonIndex = 0; $0.alertHasReturnButton = true }
+        XCTAssertEqual(style(first), .secondaryButton)
+    }
+
+    func testAnswersReturn() {
+        XCTAssertTrue(SAClaudeSheetRules.answersReturn(button { $0.keyEquivalent = "\r" }))
+        XCTAssertTrue(SAClaudeSheetRules.answersReturn(button { $0.isDefaultButton = true }))
+        XCTAssertFalse(SAClaudeSheetRules.answersReturn(button { $0.keyEquivalent = "\u{1b}" }))
+    }
+
     // MARK: Text fields
 
     private func field(editable: Bool, bezeled: Bool, size: CGFloat = 13) -> SAClaudeControlDescriptor {
@@ -263,6 +288,11 @@ final class SAClaudeSheetTargetingTests: XCTestCase {
         XCTAssertEqual(decide { $0.ownerClasses = ["NSObject", "SPPreferenceController"] }, .window)
     }
 
+    func testAdvancedFilterPanelIsStyled() {
+        XCTAssertEqual(decide { $0.ownerClasses = ["SPFilterTableController"] }, .window)
+        XCTAssertTrue(SAClaudeSheetTargeting.auxiliaryOwnerClasses.contains("SPFilterTableController"))
+    }
+
     func testUnlistedWindowIsSkipped() {
         XCTAssertEqual(decide { $0.ownerClasses = ["SAAboutWindowController"] }, .skip)
         XCTAssertEqual(decide { _ in }, .skip)
@@ -284,6 +314,75 @@ final class SAClaudeSheetTargetingTests: XCTestCase {
     func testSystemPanelsAndPopoversAreSkipped() {
         XCTAssertEqual(decide { $0.isPlainOrAppWindowClass = false; $0.hasSheetParent = true }, .skip)
         XCTAssertEqual(decide { $0.isPlainOrAppWindowClass = false; $0.ownerClasses = ["SPPreferenceController"] }, .skip)
+    }
+}
+
+final class SAClaudeNativeDrawingViewsTests: XCTestCase {
+
+    func testAppKitsButtonAndPopUpDrawingViewsAreHidden() {
+        for name in ["NSButtonBezelView", "NSButtonTextField", "NSButtonImageView", "NSPopUpIndicatorView",
+                     "_NSCoreHostingView<AppKitButton>", "NSHostingView<Root>"] {
+            XCTAssertTrue(SAClaudeNativeDrawingViews.isControlDrawingView(className: name), name)
+        }
+    }
+
+    func testOtherSubviewsOfAControlStay() {
+        for name in ["NSView", "NSTextField", "NSImageView", "SAClaudeBadgeView", "NSButton", ""] {
+            XCTAssertFalse(SAClaudeNativeDrawingViews.isControlDrawingView(className: name), name)
+        }
+    }
+
+    func testBoxDrawingViews() {
+        func isDrawing(_ name: String, content: Bool = false, field: Bool = false, text: String = "", title: String = "Login Information") -> Bool {
+            SAClaudeNativeDrawingViews.isBoxDrawingView(className: name, isContentView: content, isTextField: field, text: text, boxTitle: title)
+        }
+        // macOS 27's NSBox: its SwiftUI box view and the text field showing its title.
+        XCTAssertTrue(isDrawing("_NSCoreHostingView<AppKitBoxView>"))
+        XCTAssertTrue(isDrawing("NSTextField", field: true, text: "Login Information"))
+        // The content view, any other text, and an untitled box's fields stay.
+        XCTAssertFalse(isDrawing("NSView", content: true))
+        XCTAssertFalse(isDrawing("NSTextField", content: true, field: true, text: "Login Information"))
+        XCTAssertFalse(isDrawing("NSTextField", field: true, text: "Username:"))
+        XCTAssertFalse(isDrawing("NSTextField", field: true, text: "", title: ""))
+        XCTAssertFalse(isDrawing("NSView"))
+    }
+}
+
+final class SAClaudeTitledBoxGeometryTests: XCTestCase {
+
+    func testTitleOnTheOutlineLeavesAPaddedGap() {
+        // A title straddling the card's top edge.
+        let gap = SAClaudeTitledBoxGeometry.titleGap(titleRect: NSRect(x: 12, y: 92, width: 120, height: 14),
+                                                     borderRect: NSRect(x: 0, y: 0, width: 300, height: 99),
+                                                     titleOriginX: 12, titleWidth: 80)
+        XCTAssertEqual(gap, NSRect(x: 9, y: 92, width: 86, height: 14))
+    }
+
+    func testTitleAboveTheCardLeavesNoGap() {
+        // macOS 26+ lays the title out above the border: the outline is drawn whole.
+        XCTAssertNil(SAClaudeTitledBoxGeometry.titleGap(titleRect: NSRect(x: 12, y: 100, width: 120, height: 14),
+                                                        borderRect: NSRect(x: 0, y: 0, width: 300, height: 99),
+                                                        titleOriginX: 12, titleWidth: 80))
+    }
+
+    func testTitleJustOverlappingTheCardLeavesNoGap() {
+        // The title rect dips 2pt into the border rect, but the outline runs below the text: no notch in the card.
+        XCTAssertNil(SAClaudeTitledBoxGeometry.titleGap(titleRect: NSRect(x: 12, y: 97, width: 120, height: 14),
+                                                        borderRect: NSRect(x: 0, y: 0, width: 300, height: 99),
+                                                        titleOriginX: 12, titleWidth: 80))
+    }
+
+    func testTitleOnTheBottomEdgeLeavesAGap() {
+        let gap = SAClaudeTitledBoxGeometry.titleGap(titleRect: NSRect(x: 12, y: 13, width: 120, height: 14),
+                                                     borderRect: NSRect(x: 0, y: 20, width: 300, height: 80),
+                                                     titleOriginX: 12, titleWidth: 80)
+        XCTAssertEqual(gap, NSRect(x: 9, y: 13, width: 86, height: 14))
+    }
+
+    func testEmptyTitleLeavesNoGap() {
+        XCTAssertNil(SAClaudeTitledBoxGeometry.titleGap(titleRect: NSRect(x: 12, y: 92, width: 120, height: 14),
+                                                        borderRect: NSRect(x: 0, y: 0, width: 300, height: 99),
+                                                        titleOriginX: 12, titleWidth: 0))
     }
 }
 

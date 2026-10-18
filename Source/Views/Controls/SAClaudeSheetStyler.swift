@@ -285,7 +285,6 @@ final class SAClaudeWindowSkin: NSObject {
         // The Claude cells read these at draw time.
         SAClaudeFilterBarStyler.currentPalette = colours.palette
         SAClaudeFilterBarStyler.currentThemeText = colours.theme.text
-        SAClaudeSheetColours.currentSurface = colours.surface
         if !force, let applied, applied == colours.theme { return }
         applied = colours.theme
         self.colours = colours
@@ -371,11 +370,12 @@ final class SAClaudeWindowSkin: NSObject {
         d.bezelStyle = button.bezelStyle
         d.title = button.title
         d.keyEquivalent = button.keyEquivalent
+        d.isDefaultButton = isDefaultButton(button)
         d.isDestructive = button.hasDestructiveAction
         if let alert, let index = alert.buttons.firstIndex(where: { $0 === button }) {
             d.isAlertButton = true
             d.alertButtonIndex = index
-            d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" }
+            d.alertHasReturnButton = alert.buttons.contains { $0.keyEquivalent == "\r" || isDefaultButton($0) }
         }
         // A forced-destructive push button (the alert card's red ones: the default filled, other delete-type ones a red
         // dashed outline) keeps its red look at every walk, whatever the rules say. Only a push button: a checkbox or radio
@@ -406,6 +406,13 @@ final class SAClaudeWindowSkin: NSObject {
         default:
             break
         }
+    }
+
+    /// Whether `button` is its window's default button (its Return button, whose key equivalent AppKit blanks while the
+    /// window is not key).
+    private static func isDefaultButton(_ button: NSButton) -> Bool {
+        guard let window = button.window, let cell = button.cell, let defaultCell = window.defaultButtonCell else { return false }
+        return defaultCell === cell
     }
 
     /// `.switch` for a checkbox, `.radio` for a radio button (by the cell's accessibility role and its
@@ -552,7 +559,9 @@ final class SAClaudeWindowSkin: NSObject {
     // MARK: Boxes
 
     /// A separator becomes a hairline; a titled primary box a hairline card under an SF Pro 11
-    /// muted title. Both by an isa swap to a drawing subclass, so the box's frame and content stay as they are.
+    /// muted title. Both by an isa swap to a drawing subclass, so the box's frame and content stay as they are. AppKit's
+    /// own drawing views inside the box (its SwiftUI box view and title field, which would draw the native box and a second
+    /// title over the Claude one) are hidden at every walk.
     private func styleBox(_ box: NSBox) {
         var d = SAClaudeControlDescriptor(kind: .box)
         d.isSeparatorBox = box.boxType == .separator
@@ -562,6 +571,7 @@ final class SAClaudeWindowSkin: NSObject {
         let style = SAClaudeSheetRules.style(for: d)
         let current: AnyClass = type(of: box)
         if current == SAClaudeSheetSeparatorBox.self || current == SAClaudeSheetTitledBox.self {
+            SAClaudeSheetBoxDrawing.hideNativeDrawing(of: box)
             box.needsDisplay = true
             return
         }
@@ -571,6 +581,7 @@ final class SAClaudeWindowSkin: NSObject {
         case .titledBox: object_setClass(box, SAClaudeSheetTitledBox.self)
         default: return
         }
+        SAClaudeSheetBoxDrawing.hideNativeDrawing(of: box)
         box.needsDisplay = true
     }
 
@@ -643,8 +654,6 @@ final class SAClaudeWindowSkin: NSObject {
 /// The colours one restyle uses, resolved for the app's appearance from the editor theme.
 struct SAClaudeSheetColours {
     static let fieldRadius: CGFloat = 7
-    /// The theme surface of the last restyle; the titled box reads it at draw time.
-    static var currentSurface: NSColor = .windowBackgroundColor
 
     let theme: SAClaudeThemeColours
     let palette: SAClaudeEditorChrome.Palette

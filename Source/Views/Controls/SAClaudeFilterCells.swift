@@ -17,7 +17,11 @@
 //  with false. AppKit's rule-editor controls and cells are private subclasses
 //  of NSPopUpButton / NSButton with extra behaviour (tracking, accessibility,
 //  sizing), so for those a runtime subclass of the actual class is derived and
-//  given the drawing methods, which keeps every inherited override.
+//  given the drawing methods, which keeps every inherited override. The
+//  views AppKit drew the control with until then (an NSButton's
+//  NSButtonBezelView and NSButtonTextField, hosting views) stay in place and
+//  would draw the native button over the Claude cell, so they are hidden, at
+//  the swap and at every later walk.
 //
 
 import AppKit
@@ -553,9 +557,13 @@ enum SAClaudeFilterCells {
         return nil
     }
 
-    /// Hides any SwiftUI hosting view AppKit put inside a control; a control that draws through its cell has no use for it.
-    private static func hideHostingViews(in control: NSControl) {
-        for subview in control.subviews where String(describing: type(of: subview)).contains("HostingView") {
+    /// Hides the views AppKit draws a control with on macOS 26+ (an NSButton's bezel, title and image views, a pop-up's
+    /// indicator, SwiftUI hosting views: `SAClaudeNativeDrawingViews`). A control that draws through its cell has no use for
+    /// them, and the ones it had before its class was swapped stay until AppKit rebuilds them, drawing the native button
+    /// on top of the Claude cell. Called at every walk.
+    static func hideNativeDrawingViews(in control: NSControl) {
+        for subview in control.subviews where !subview.isHidden
+            && SAClaudeNativeDrawingViews.isControlDrawingView(className: String(describing: type(of: subview))) {
             subview.isHidden = true
         }
     }
@@ -573,7 +581,7 @@ enum SAClaudeFilterCells {
         let cellInstalled = hasInstalledClass(cell)
         if viewInstalled && cellInstalled {
             if popUp.isBordered { popUp.isBordered = false }
-            hideHostingViews(in: popUp)
+            hideNativeDrawingViews(in: popUp)
             return true
         }
         guard !viewInstalled, !cellInstalled else { return false }
@@ -596,7 +604,7 @@ enum SAClaudeFilterCells {
         object_setClass(cell, newCellClass)
         object_setClass(popUp, newViewClass)
         if #available(macOS 14.0, *) { popUp.clipsToBounds = false }
-        hideHostingViews(in: popUp)
+        hideNativeDrawingViews(in: popUp)
         popUp.needsDisplay = true
         return true
     }
@@ -608,13 +616,13 @@ enum SAClaudeFilterCells {
     @discardableResult
     static func installCellDrawing(on button: NSButton) -> Bool {
         if hasInstalledClass(button) {
-            hideHostingViews(in: button)
+            hideNativeDrawingViews(in: button)
             return true
         }
         guard let newViewClass = hostClass(for: button), SAClaudeClassSwap.mayChangeClass(of: button) else { return false }
         object_setClass(button, newViewClass)
         if #available(macOS 14.0, *) { button.clipsToBounds = false }
-        hideHostingViews(in: button)
+        hideNativeDrawingViews(in: button)
         button.needsDisplay = true
         return true
     }
@@ -660,11 +668,16 @@ enum SAClaudeFilterCells {
         let wanted: AnyClass = sheetCellClass(for: look)
         let wantedName = NSStringFromClass(wanted)
         let current: AnyClass = type(of: cell)
-        if current == wanted || NSStringFromClass(current).hasPrefix(derivedPrefix + wantedName + "_") { return true }
+        if current == wanted || NSStringFromClass(current).hasPrefix(derivedPrefix + wantedName + "_") {
+            // Already this look: a later walk still hides AppKit's drawing views, whenever they came back.
+            hideNativeDrawingViews(in: button)
+            return true
+        }
         guard SAClaudeClassSwap.mayChangeClass(of: cell), SAClaudeClassSwap.mayChangeClass(of: button) else { return false }
         let others = SAClaudeSheetButtonLook.allCases.filter { $0 != look }.map(sheetCellClass(for:))
         if others.contains(where: { $0 == current }) {
             object_setClass(cell, wanted)
+            hideNativeDrawingViews(in: button)
             button.needsDisplay = true
             return true
         }
@@ -674,6 +687,7 @@ enum SAClaudeFilterCells {
               let base = class_getSuperclass(current),
               let derived = derivedClass(of: base, donor: wanted, selectors: [drawSelector]) else { return false }
         object_setClass(cell, derived)
+        hideNativeDrawingViews(in: button)
         button.needsDisplay = true
         return true
     }
