@@ -51,6 +51,7 @@ enum SAClaudeProcessListRefresh {
     /// Set (on main) once `open()` has decided; false until then.
     @objc private(set) var usesSharedConnection = false
     /// The dedicated connection's own server id (its row runs SHOW FULL PROCESSLIST); 0 on the shared fallback.
+    /// Read again with every fetch, so it follows the connection after a reconnect.
     @objc private(set) var ownConnectionId: Int64 = 0
     /// The latest fetched list, in server order.
     private(set) var processes: [SAClaudeProcess] = []
@@ -127,9 +128,10 @@ enum SAClaudeProcessListRefresh {
         refreshInFlight = true
         let busyNow = sharedIsBusy()
         queue.async {
-            let result = self.fetchOnQueue(sharedBusy: busyNow)
+            let (result, ownId) = self.fetchOnQueue(sharedBusy: busyNow)
             DispatchQueue.main.async {
                 self.refreshInFlight = false
+                if let ownId, self.state == .open { self.ownConnectionId = ownId }
                 self.deliver(result)
                 completion?(result)
             }
@@ -144,15 +146,19 @@ enum SAClaudeProcessListRefresh {
         }
     }
 
-    private func fetchOnQueue(sharedBusy: Bool) -> SAClaudeProcessListRefresh {
-        guard let backend else { return .skipped }
-        if backend === shared, sharedBusy { return .skipped }
-        switch backend.fetchProcessRows() {
+    /// The refresh, and the dedicated connection's id as it is after the fetch (nil on the shared fallback or when
+    /// nothing ran): a reconnect gives the connection a new id.
+    private func fetchOnQueue(sharedBusy: Bool) -> (SAClaudeProcessListRefresh, Int64?) {
+        guard let backend else { return (.skipped, nil) }
+        if backend === shared, sharedBusy { return (.skipped, nil) }
+        let fetched = backend.fetchProcessRows()
+        let ownId = backend === shared ? nil : backend.connectionId
+        switch fetched {
         case let .failure(error):
-            return .failed(message: error.message)
+            return (.failed(message: error.message), ownId)
         case let .success(raw):
             let rows = raw.map(SAClaudeProcessKillDecision.normalizedRow)
-            return .fetched(processes: rows.compactMap { SAClaudeProcess(row: $0) }, rows: rows)
+            return (.fetched(processes: rows.compactMap { SAClaudeProcess(row: $0) }, rows: rows), ownId)
         }
     }
 
@@ -338,6 +344,10 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
         let delegate = SAClaudeProcessListPasswordDelegate(forwardingTo: parent.delegate())
         copy.setDelegate(delegate)
         copy.delegateQueryLogging = false
+        // A failed statement is not run again after SPMySQL reconnects, and a lost connection is given up after one
+        // reconnect attempt (the delegate answers `connectionLost:`): `ensureConnected` reconnects on the parent's
+        // current port instead, so an SSH tunnel restart can't stall refreshes, kills and close for several timeouts.
+        copy.retryQueriesOnConnectionFailure = false
         copy.port = parent.port   // the tunnel's current local port, in case it moved since the copy's source was set up
         guard copy.connect() else {
             copy.setDelegate(nil)
@@ -355,7 +365,11 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
         if connection.queryErrored() {
             return .failure(SAClaudeProcessListError(message: connection.lastErrorMessage() ?? ""))
         }
-        guard let result else { return .success([]) }
+        // SHOW FULL PROCESSLIST always lists at least this connection: no result means the statement never ran (the
+        // connection was lost and given up), which must not read as "every connection ended".
+        guard let result else {
+            return .failure(SAClaudeProcessListError(message: connection.lastErrorMessage() ?? Self.notConnectedMessage))
+        }
         result.returnDataAsStrings = true
         var rows: [[String: Any]] = []
         rows.reserveCapacity(Int(clamping: result.numberOfRows()))
@@ -380,7 +394,13 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
     }
 
     /// The dedicated copy reconnects (to the parent's current port) when it dropped; the shared one is left alone.
+    /// When the parent's port has moved (its SSH tunnel restarted) the copy is disconnected first, so SPMySQL never
+    /// reconnects it to the old local port — which another window's tunnel may have taken since.
     private func ensureConnected() -> Bool {
+        if ownsConnection, let parent, parent.port != connection.port {
+            connection.disconnect()
+            connection.port = parent.port
+        }
         if connection.isConnected() { return true }
         guard ownsConnection, let parent, parent.isConnected() else { return false }
         connection.port = parent.port
@@ -395,7 +415,8 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
 }
 
 /// The dedicated connection's delegate: supplies the password exactly as the document does (keychain, AWS IAM token)
-/// and nothing else — no console logging, no reconnect sheets, no error alerts.
+/// and nothing else — no console logging, no reconnect sheets, no error alerts. A lost connection is given up after
+/// SPMySQL's one reconnect attempt (instead of its five silent retries); the session's next statement reconnects it.
 final class SAClaudeProcessListPasswordDelegate: NSObject, SPMySQLConnectionDelegate {
     private weak var target: (NSObjectProtocol & SPMySQLConnectionDelegate)?
 
@@ -411,5 +432,10 @@ final class SAClaudeProcessListPasswordDelegate: NSObject, SPMySQLConnectionDele
     @objc(credentialErrorMessageForConnection:)
     func credentialErrorMessage(forConnection connection: Any!) -> String! {
         target?.credentialErrorMessage?(forConnection: connection)
+    }
+
+    @objc(connectionLost:)
+    func connectionLost(_ connection: Any!) -> SPMySQLConnectionLostDecision {
+        SPMySQLConnectionLostDisconnect
     }
 }

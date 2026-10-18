@@ -66,8 +66,6 @@
 - (IBAction)saveServerProcesses:(id)sender;
 - (IBAction)killProcessQuery:(id)sender;
 - (IBAction)killProcessConnection:(id)sender;
-- (IBAction)toggleShowProcessID:(NSMenuItem *)sender;
-- (IBAction)toggeleShowFullProcessList:(NSMenuItem *)sender;
 - (IBAction)toggleProcessListAutoRefresh:(NSButton *)sender;
 - (IBAction)setAutoRefreshInterval:(id)sender;
 - (IBAction)setCustomAutoRefreshInterval:(id)sender;
@@ -78,5 +76,8 @@
 /// Kill query re-reads the connection first and asks again if it now runs something other than shownQuery.
 - (void)killQueryOnConnectionId:(long long)processId shownQuery:(NSString *)shownQuery;
 - (void)killConnectionWithConnectionId:(long long)processId;
+
+/// Turns auto refresh on or off (the Auto refresh switch, ⇧⌘R): the preference, the timer and the switch.
+- (void)setAutoRefreshEnabled:(BOOL)enable;
 
 @end

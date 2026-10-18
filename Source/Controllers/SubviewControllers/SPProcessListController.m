@@ -41,7 +41,6 @@
 // Constants
 static NSString *SPKillProcessQueryMode        = @"SPKillProcessQueryMode";
 static NSString *SPKillProcessConnectionMode   = @"SPKillProcessConnectionMode";
-static NSString *SPTableViewIDColumnIdentifier = @"Id";
 static NSString *SPTableViewProgressColumnIdentifier = @"Progress";
 
 static NSString * const SPKillModeKey = @"SPKillMode";
@@ -51,14 +50,16 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPProcessListController () <NSMenuItemValidation, NSControlTextEditingDelegate>
 @property (nonatomic, readwrite, strong) SAClaudeProcessListSession *processListSession;
+/// The triage view over the XIB's (hidden) views: chips, list, detail panel.
+@property (nonatomic, strong) SAClaudeProcessListContent *processListContent;
 - (SAClaudeProcessListSession *)_openSessionIfNeeded;
 - (void)_processListRefreshed;
+- (BOOL)_isContextMenuItem:(id)sender;
 - (void)_startAutoRefreshTimer;
 - (void)_killAutoRefreshTimer;
 - (void)_fireAutoRefresh:(NSTimer *)timer;
 - (void)_updateSelectedAutoRefreshIntervalInterface;
 - (void)_startAutoRefreshTimerWithInterval:(NSTimeInterval)interval;
-- (void)_updateServerProcessesFilterForFilterString:(NSString *)filterString;
 - (void)_addPreferenceObservers;
 - (void)_removePreferenceObservers;
 + (NSString *)_serializedProcessRow:(NSDictionary *)process includeProgress:(BOOL)includeProgress;
@@ -69,6 +70,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 
 @synthesize connection;
 @synthesize processListSession;
+@synthesize processListContent;
 
 #pragma mark -
 #pragma mark Serialization
@@ -109,8 +111,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	[self setWindowFrameAutosaveName:@"ProcessList"];
 	
-	// Show/hide table columns
-	[[processListTableView tableColumnWithIdentifier:SPTableViewIDColumnIdentifier] setHidden:![prefs boolForKey:SPProcessListShowProcessID]];
+	// Show/hide table columns (the old table stays loaded, hidden, under the triage view)
   [[processListTableView tableColumnWithIdentifier:SPTableViewProgressColumnIdentifier] setHidden:![connection isMariaDB]];
 	
 	// Set the process table view's vertical gridlines if required
@@ -133,6 +134,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	}
 
 	[self _addPreferenceObservers];
+
+	// The triage view (chips, list, detail panel) over the XIB's views; the gear keeps Auto Refresh Interval and
+	// gains Save As…; the right-click menu moves to the new list.
+	processListContent = [SAClaudeProcessListContent installInWindow:[self window] controller:self autoRefreshIntervalItem:autoRefreshIntervalMenuItem contextMenu:[processListTableView menu]];
 }
 
 /**
@@ -153,23 +158,24 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (IBAction)copy:(id)sender
 {	
-	NSResponder *firstResponder = [[self window] firstResponder];
-	
-	if ((firstResponder == processListTableView) && ([processListTableView numberOfSelectedRows] > 0)) {
+	// The right-click menu acts on the clicked row (or the selection it is part of); the Edit menu on the selection
+	// while the list has the focus.
+	BOOL fromContextMenu = [self _isContextMenuItem:sender];
+	if (!fromContextMenu && ![processListContent listIsFirstResponder]) return;
+
+	NSArray<NSDictionary *> *rows = [processListContent rowsToCopyFromContextMenu:fromContextMenu];
+
+	if ([rows count] > 0) {
 		
 		NSMutableString *string = [NSMutableString string];
-		NSIndexSet *rows = [processListTableView selectedRowIndexes];
 		
-		[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
-			if (i < [processesFiltered count]) {
-				NSDictionary *process = [processesFiltered safeObjectAtIndex:i];
-
-				NSString *stringTmp = [SPProcessListController _serializedProcessRow:process includeProgress:[connection isMariaDB]];
-				
-				[string appendString:stringTmp];
-				[string appendString:@"\n"];
-			}
-		}];
+		for (NSDictionary *process in rows)
+		{
+			NSString *stringTmp = [SPProcessListController _serializedProcessRow:process includeProgress:[connection isMariaDB]];
+			
+			[string appendString:stringTmp];
+			[string appendString:@"\n"];
+		}
 		
 		NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 		
@@ -216,18 +222,16 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	SAClaudeProcessListSession *session = processListSession;
 	if (!session) return;
 	
-	// Start progress Indicator
-	[refreshProgressIndicator startAnimation:self];
-	[refreshProgressIndicator setHidden:NO];
-	
-	// Disable controls
-	[refreshProcessesButton setEnabled:NO];
-	[saveProcessesButton setEnabled:NO];
-	[filterProcessesSearchField setEnabled:NO];
+	// The triage view shows a spinner if it takes a moment (it gets the rows from the session itself)
+	[processListContent refreshStarted];
 	
 	processListThreadRunning = YES;
 
 	[session refreshWithCompletion:^(NSArray<NSDictionary<NSString *, id> *> *rows) {
+		// A completion from a session whose window has since closed (and perhaps reopened on a new session) writes
+		// nothing: windowWillClose: already cleared the running flag.
+		if (session != self->processListSession) return;
+
 		// nil: skipped or failed — keep the current list
 		if (rows) [self->processes setArray:rows];
 
@@ -240,6 +244,9 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (IBAction)saveServerProcesses:(id)sender
 {
+	// What the list shows now (chip and search applied), in its order
+	NSArray<NSDictionary *> *shownProcesses = [processListContent shownRows];
+
 	NSSavePanel *panel = [NSSavePanel savePanel];
 		
 	[panel setExtensionHidden:NO];
@@ -249,10 +256,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
     [panel setNameFieldStringValue:@"ServerProcesses"];
     [panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            if ([self->processesFiltered count] > 0) {
+            if ([shownProcesses count] > 0) {
                 NSMutableString *processesString = [NSMutableString stringWithFormat:@"# MySQL server processes for %@\n\n", [[SPAppDelegate frontDocument] host]];
                 
-                for (NSDictionary *process in self->processesFiltered)
+                for (NSDictionary *process in shownProcesses)
                 {
                     NSString *stringTmp = [SPProcessListController _serializedProcessRow:process includeProgress:[self->connection isMariaDB]];
                     
@@ -267,26 +274,17 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 }
 
 /**
- * Kills the currently selected process' query.
+ * Kills the query of the clicked (or selected) connection, by the id that row shows.
  */
 - (IBAction)killProcessQuery:(id)sender {
-	// No process selected. Interface validation should prevent this.
-	if ([processListTableView numberOfSelectedRows] != 1) return;
-	
-	NSDictionary *process = [processesFiltered objectAtIndex:[processListTableView selectedRow]];
-	id info = [process objectForKey:@"Info"];
-
-	[self killQueryOnConnectionId:[[process valueForKey:@"Id"] longLongValue] shownQuery:([info isKindOfClass:[NSString class]] ? info : nil)];
+	[processListContent killQueryFromContextMenu:[self _isContextMenuItem:sender]];
 }
 
 /**
- * Kills the currently selected proceess' connection.
+ * Kills the clicked (or selected) connection, by the id that row shows.
  */
 - (IBAction)killProcessConnection:(id)sender {
-	// No process selected. Interface validation should prevent this.
-	if ([processListTableView numberOfSelectedRows] != 1) return;
-	
-	[self killConnectionWithConnectionId:[[[processesFiltered objectAtIndex:[processListTableView selectedRow]] valueForKey:@"Id"] longLongValue]];
+	[processListContent killConnectionFromContextMenu:[self _isContextMenuItem:sender]];
 }
 
 - (void)killQueryOnConnectionId:(long long)processId shownQuery:(NSString *)shownQuery
@@ -304,33 +302,21 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 }
 
 /**
- * Toggles the display of the process ID table column.
- */
-- (IBAction)toggleShowProcessID:(NSMenuItem *)sender
-{
-	[[processListTableView tableColumnWithIdentifier:SPTableViewIDColumnIdentifier] setHidden:([sender state])];
-}
-
-/**
- * Toggles the display of the FULL process list.
- */
-- (IBAction)toggeleShowFullProcessList:(NSMenuItem *)sender
-{
-	// The FULL list is always on now; the menu item (until it goes) just refreshes.
-	[self refreshProcessList:self];
-}
-
-/**
- * Toggles whether or not auto refresh is enabled.
+ * Toggles whether or not auto refresh is enabled (the XIB's hidden checkbox).
  */
 - (IBAction)toggleProcessListAutoRefresh:(NSButton *)sender
 {
-	BOOL enable = [sender state];
-	
-	// Enable/Disable the refresh button
-	[refreshProcessesButton setEnabled:(!enable)];
-	
-	(enable) ? [self _startAutoRefreshTimer] : [self _killAutoRefreshTimer];
+	[self setAutoRefreshEnabled:([sender state] == NSControlStateValueOn)];
+}
+
+- (void)setAutoRefreshEnabled:(BOOL)enable
+{
+	[prefs setBool:enable forKey:SPProcessListEnableAutoRefresh];
+	[processListContent autoRefreshChanged:enable];
+
+	// One timer at most
+	[self _killAutoRefreshTimer];
+	if (enable) [self _startAutoRefreshTimer];
 }
 
 /**
@@ -366,8 +352,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// Weak reference
 	processesFiltered = processes;
 
+	// Load the window (and the triage view) first
+	[self window];
+
 	// Open the Process List's own connection (closed again in windowWillClose:)
 	[self _openSessionIfNeeded];
+	[processListContent attachSession:processListSession user:[connection username]];
 
 	[self refreshProcessList:self];
 	 
@@ -382,11 +372,14 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	SEL action = [menuItem action];
 	
 	if (action == @selector(copy:)) {
-		return ([processListTableView numberOfSelectedRows] > 0);
+		BOOL fromContextMenu = [self _isContextMenuItem:menuItem];
+		if (!fromContextMenu && ![processListContent listIsFirstResponder]) return NO;
+		return ([[processListContent rowsToCopyFromContextMenu:fromContextMenu] count] > 0);
 	}
 	
+	// Exactly one connection, still listed (an ended one can't be killed)
 	if ((action == @selector(killProcessQuery:)) || (action == @selector(killProcessConnection:))) {
-		return ([processListTableView numberOfSelectedRows] == 1);
+		return [processListContent canKillFromContextMenu:[self _isContextMenuItem:menuItem]];
 	}
 	
 	if ((action == @selector(setAutoRefreshInterval:)) || (action == @selector(setCustomAutoRefreshInterval:))) {
@@ -436,10 +429,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 {
 	id object = [notification object];
 	
-	if (object == filterProcessesSearchField) {
-		[self _updateServerProcessesFilterForFilterString:[object stringValue]];
-	}
-	else if (object == customIntervalTextField) {
+	// (The XIB's search field is hidden: the triage view searches.)
+	if (object == customIntervalTextField) {
 		[customIntervalButton setEnabled:(([[customIntervalTextField stringValue] length] > 0) && ([customIntervalTextField integerValue] > 0))];
 	}
 }
@@ -460,9 +451,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// Kill the auto refresh timer if running
 	[self _killAutoRefreshTimer];
 
-	// Close the Process List's own connection; the next display opens a new one
+	// Close the Process List's own connection; the next display opens a new one. A refresh still in flight belongs
+	// to the closing session: its completion is ignored, so the flag mustn't hold up the next opening's first refresh.
 	[processListSession close];
 	processListSession = nil;
+	processListThreadRunning = NO;
+	[processListContent detachSession];
 }
 
 #pragma mark -
@@ -475,25 +469,16 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 {
 	processListThreadRunning = NO;
 	
-	// Reapply any filters is required
-	if ([[filterProcessesSearchField stringValue] length] > 0) {
-		[self _updateServerProcessesFilterForFilterString:[filterProcessesSearchField stringValue]];
-	}
-	
-	// Reset sort descriptors
-	[processesFiltered sortUsingDescriptors:[processListTableView sortDescriptors]];
-	
-	// Reload data
-	[processListTableView reloadData];
-	
-	// Enable controls
-	[filterProcessesSearchField setEnabled:YES];
-	[saveProcessesButton setEnabled:YES];
-	[refreshProcessesButton setEnabled:(![autoRefreshButton state])];
-	
-	// Stop progress Indicator
-	[refreshProgressIndicator stopAnimation:self];
-	[refreshProgressIndicator setHidden:YES];
+	// The triage view already has the rows (from the session); the old table stays hidden
+	[processListContent refreshFinished];
+}
+
+/**
+ * Whether sender is an item of the list's right-click menu (it acts on the clicked row).
+ */
+- (BOOL)_isContextMenuItem:(id)sender
+{
+	return [sender isKindOfClass:[NSMenuItem class]] && [(NSMenuItem *)sender menu] == [processListTableView menu];
 }
 
 /**
@@ -584,65 +569,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	}
 
 	return processListSession;
-}
-
-/**
- * Filter the displayed server processes against the supplied filter string.
- */
-- (void)_updateServerProcessesFilterForFilterString:(NSString *)filterString
-{
-	[saveProcessesButton setEnabled:NO];
-		
-	filterString = [[filterString lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	
-	// If the filtered array is allocated and its not a reference to the processes array,
-	// relase it to prevent memory leaks upon the next allocation.
-	if (processesFiltered && processesFiltered != processes) {
-		processesFiltered = nil;
-	}
-	
-	processesFiltered = [[NSMutableArray alloc] init];
-	
-	if ([filterString length] == 0) {
-		processesFiltered = processes;
-		
-		[saveProcessesButton setEnabled:YES];
-		[saveProcessesButton setTitle:NSLocalizedString(@"Save As...", @"save as button title")];
-		[processesCountTextField setStringValue:@""];
-		
-		[processListTableView reloadData];
-		
-		return;
-	}
-	
-	// Perform filtering
-	for (NSDictionary *process in processes) 
-	{
-    BOOL isProcessColumnHidden = [processListTableView tableColumnWithIdentifier:SPTableViewProgressColumnIdentifier].isHidden;
-    
-		if (([[[process objectForKey:@"Id"] stringValue] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
-			([[process objectForKey:@"User"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
-			([[process objectForKey:@"Host"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
-			((![[process objectForKey:@"db"] isNSNull]) && ([[process objectForKey:@"db"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
-			([[process objectForKey:@"Command"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
-			((![[process objectForKey:@"Time"] isNSNull]) && ([[[process objectForKey:@"Time"] stringValue] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
-			((![[process objectForKey:@"State"] isNSNull]) && ([[process objectForKey:@"State"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
-			((![[process objectForKey:@"Info"] isNSNull]) && ([[process objectForKey:@"Info"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
-      (!isProcessColumnHidden && (![[process objectForKey:@"Progress"] isNSNull]) && ([[process objectForKey:@"Progress"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)))
-		{
-			[processesFiltered addObject:process];
-		}
-	}
-	
-	[processListTableView reloadData];
-	
-	[processesCountTextField setStringValue:[NSString stringWithFormat:NSLocalizedString(@"Showing %lu of %lu processes", "filtered item count"), (unsigned long)[processesFiltered count], (unsigned long)[processes count]]];
-	[processesCountTextField setHidden:NO];
-	
-	if ([processesFiltered count] == 0) return;
-	
-	[saveProcessesButton setEnabled:YES];
-	[saveProcessesButton setTitle:NSLocalizedString(@"Save View As...", @"save view as button title")];
 }
 
 /**

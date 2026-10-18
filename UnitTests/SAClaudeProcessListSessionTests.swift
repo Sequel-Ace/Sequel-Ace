@@ -272,6 +272,23 @@ final class SAClaudeProcessListSessionTests: XCTestCase {
         XCTAssertEqual(session.processes.map(\.id), [1])
     }
 
+    /// The list's own connection id is read again with every fetch: after a reconnect the dedicated connection has a
+    /// new id, and the window must hide that row, not the old one.
+    func testOwnConnectionIdFollowsAReconnect() {
+        let dedicated = FakeProcessListBackend(rows: [row(1, info: "SELECT 1")])
+        dedicated.connectionId = 77
+        let session = makeSession(dedicated: dedicated)
+        _ = refreshed(session)
+        XCTAssertEqual(session.ownConnectionId, 77)
+        dedicated.connectionId = 78   // reconnected
+        _ = refreshed(session)
+        XCTAssertEqual(session.ownConnectionId, 78)
+        dedicated.fetchError = "Lost connection to MySQL server during query"
+        dedicated.connectionId = 0
+        _ = refreshed(session)
+        XCTAssertEqual(session.ownConnectionId, 0, "a failed fetch reports the connection as it is")
+    }
+
     func testOverlappingRefreshIsSkipped() {
         let release = DispatchSemaphore(value: 0)
         let dedicated = FakeProcessListBackend(rows: [row(1, info: "SELECT 1")])

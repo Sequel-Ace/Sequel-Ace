@@ -191,6 +191,8 @@
 - (IBAction)runSelectedQueries:(id)sender;
 - (IBAction)chooseQueryFavorite:(id)sender;
 - (IBAction)chooseQueryHistory:(id)sender;
+/// Inserts a query on its own line (History / Favorites insert mode; also the Process List's Open in editor).
+- (void)insertPickedQuery:(NSString *)query;
 - (IBAction)closeSheet:(id)sender;
 - (IBAction)gearMenuItemSelected:(id)sender;
 - (IBAction)filterQueryFavorites:(id)sender;

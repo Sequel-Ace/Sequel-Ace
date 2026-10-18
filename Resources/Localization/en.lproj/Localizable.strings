@@ -6313,3 +6313,105 @@
 
 /* process list : its connection is not connected */
 "Not connected" = "Not connected";
+
+/* process list : filter chip showing every connection */
+"All" = "All";
+
+/* process list : filter chip and status of lock waits and long-running queries */
+"Needs attention" = "Needs attention";
+
+/* process list : filter chip and status of connections running a command */
+"Running" = "Running";
+
+/* process list : filter chip and status of sleeping connections and background threads */
+"Idle" = "Idle";
+
+/* process list : filter chip showing connections of this window's user */
+"Mine" = "Mine";
+
+/* process list : threshold pill — a query running longer than 10 seconds needs attention */
+"Over 10 s" = "Over 10 s";
+
+/* process list : threshold pill — a query running longer than 1 minute needs attention */
+"Over 1 min" = "Over 1 min";
+
+/* process list : threshold pill — a query running longer than 5 minutes needs attention */
+"Over 5 min" = "Over 5 min";
+
+/* process list : threshold pill — a query running longer than 30 seconds needs attention */
+"Over 30 s" = "Over 30 s";
+
+/* process list : a row or panel of a connection running no query */
+"idle connection" = "idle connection";
+
+/* process list : accessibility label of the threshold pill */
+"Needs attention after" = "Needs attention after";
+
+/* process list : tooltip of the threshold pill */
+"A command running longer than this needs attention" = "A command running longer than this needs attention";
+
+/* process list : auto refresh switch */
+"Auto refresh" = "Auto refresh";
+
+/* process list : tooltip of the auto refresh switch */
+"Auto refresh the list (⇧⌘R)" = "Auto refresh the list (⇧⌘R)";
+
+/* process list : tooltip of the refresh button */
+"Refresh the list (⌘R)" = "Refresh the list (⌘R)";
+
+/* process list : search field placeholder */
+"Search user, host, database, state, query" = "Search user, host, database, state, query";
+
+/* process list : clear the search field */
+"Clear search" = "Clear search";
+
+/* process list : tooltip of the gear menu */
+"More" = "More";
+
+/* process list : detail panel with nothing selected */
+"Select a connection to see its whole query." = "Select a connection to see its whole query.";
+
+/* process list : detail panel title (connection id) */
+"Connection #%lld" = "Connection #%lld";
+
+/* process list : detail panel label of the state and time */
+"State" = "State";
+
+/* process list : detail panel of a connection no longer listed */
+"This connection has ended." = "This connection has ended.";
+
+/* process list : detail panel keeps the query it showed after the connection changed */
+"This connection has moved on — showing the query as it was" = "This connection has moved on — showing the query as it was";
+
+/* process list : show what the connection runs now */
+"Show current" = "Show current";
+
+/* process list : copy the query shown in the detail panel */
+"Copy query" = "Copy query";
+
+/* process list : insert the query into the window's Query editor */
+"Open in editor" = "Open in editor";
+
+/* process list : tooltip of Open in editor */
+"Insert this query into the window's Query editor" = "Insert this query into the window's Query editor";
+
+/* process list : kill the query of the connection shown */
+"Kill query" = "Kill query";
+
+/* process list : kill the connection shown */
+"Kill connection" = "Kill connection";
+
+/* process list : accessibility label of the list */
+"Connections" = "Connections";
+
+/* process list : gear menu item saving the list shown to a file */
+"Save As…" = "Save As…";
+
+/* process list : muted note when a refresh failed (the server's message) */
+"Couldn't refresh: %@ — showing the last list." = "Couldn't refresh: %@ — showing the last list.";
+
+/* process list : before the first refresh */
+"Loading…" = "Loading…";
+
+/* process list : the chip and search show nothing */
+"No connections match." = "No connections match.";
