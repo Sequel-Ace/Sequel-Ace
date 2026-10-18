@@ -69,6 +69,12 @@ final class SASSHAgentRelayInstaller {
     private let stateLock = NSLock()
     private let launchLock = NSLock()
     private var installedThisSessionFlag = false
+    /// How long a launch waits for another copy of the app that installed the
+    /// helper to quit; long enough to cover a relaunch.
+    let otherInstallerWait: TimeInterval
+    /// The scripts folder, held with a shared lock from this process's first
+    /// install until it exits. Guarded by `launchLock`.
+    private var installBarrier: Int32 = -1
 
     enum LaunchRefusal: Error, Equatable {
         case notInstalled
@@ -76,6 +82,9 @@ final class SASSHAgentRelayInstaller {
         /// Installed or updated by this process, which still holds the panel's
         /// write access to the folder.
         case relaunchRequired
+        /// Another copy of the app installed or updated the helper and is still
+        /// running, so it still holds write access to the folder.
+        case installedByAnotherCopy
     }
 
     /// Runs `body` with the installed script if it may be launched now, with
@@ -84,6 +93,8 @@ final class SASSHAgentRelayInstaller {
         launchLock.lock()
         defer { launchLock.unlock() }
         guard !installedThisSession else { throw LaunchRefusal.relaunchRequired }
+        let lockedOut = try lockOutOtherInstallers()
+        defer { close(lockedOut) }
         switch status {
         case .notInstalled: throw LaunchRefusal.notInstalled
         case .outdated: throw LaunchRefusal.outdated
@@ -91,11 +102,52 @@ final class SASSHAgentRelayInstaller {
         }
     }
 
-    init(scriptsDirectory: URL, bundledScript: URL?, bundledAllowlist: URL?, fileManager: FileManager = .default) {
+    /// The in-process flag above cannot see other copies of the app — the one
+    /// a relaunch opens while the installing copy is still quitting, or a
+    /// second instance. A copy that installs holds a shared lock on the
+    /// scripts folder until it exits, which macOS releases however it ends;
+    /// a launch takes the folder exclusively, waiting out such a copy for
+    /// `otherInstallerWait`. Holding it also keeps any copy from installing
+    /// while the launch is under way.
+    private func lockOutOtherInstallers() throws -> Int32 {
+        let folder = open(scriptsDirectory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard folder >= 0 else { throw LaunchRefusal.notInstalled }
+        let deadline = Date().addingTimeInterval(otherInstallerWait)
+        while flock(folder, LOCK_EX | LOCK_NB) != 0 {
+            guard errno == EWOULDBLOCK || errno == EINTR, Date() < deadline else {
+                close(folder)
+                throw LaunchRefusal.installedByAnotherCopy
+            }
+            usleep(50_000)
+        }
+        return folder
+    }
+
+    /// Taken before anything is written, waiting out a launch under way in
+    /// another copy, and kept until this process exits.
+    private func holdInstallBarrier() throws {
+        guard installBarrier < 0 else { return }
+        let folder = open(scriptsDirectory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard folder >= 0 else { throw InstallError.copyFailed(String(cString: strerror(errno))) }
+        guard flock(folder, LOCK_SH) == 0 else {
+            let reason = String(cString: strerror(errno))
+            close(folder)
+            throw InstallError.copyFailed(reason)
+        }
+        installBarrier = folder
+    }
+
+    init(scriptsDirectory: URL, bundledScript: URL?, bundledAllowlist: URL?, fileManager: FileManager = .default,
+         otherInstallerWait: TimeInterval = 5) {
         self.scriptsDirectory = scriptsDirectory
         self.bundledScript = bundledScript
         self.bundledAllowlist = bundledAllowlist
         self.fileManager = fileManager
+        self.otherInstallerWait = otherInstallerWait
+    }
+
+    deinit {
+        if installBarrier >= 0 { close(installBarrier) }
     }
 
     /// The installer for the running app. `nil` when the Application Scripts
@@ -167,9 +219,16 @@ final class SASSHAgentRelayInstaller {
               let allowlist = fileManager.contents(atPath: bundledAllowlist.path) else {
             throw InstallError.missingBundledHelper
         }
+        try holdInstallBarrier()
         let scriptDestination = folder.appendingPathComponent(Self.scriptName)
         let allowlistDestination = folder.appendingPathComponent(Self.allowlistName)
         do {
+            // A folder at the script's name would make every write fail; the
+            // script is never the user's to keep, so anything there is replaced.
+            if (try? fileManager.attributesOfItem(atPath: scriptDestination.path)) != nil,
+               !isRegularFileOrLinkToOne(scriptDestination.path) {
+                try fileManager.removeItem(at: scriptDestination)
+            }
             try script.write(to: scriptDestination, options: .atomic)
             try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: scriptDestination.path)
             // Something other than a plain file at the allowlist's name (a folder,

@@ -101,6 +101,8 @@ import Foundation
         /// The helper was installed or updated by this process; the app still
         /// holds the panel's write access to its folder until it relaunches.
         case relaunchRequired
+        /// Another running copy of the app installed or updated the helper.
+        case installedByAnotherCopy
         case listenPathTooLong(String)
         /// Something that is not a socket already sits at the socket's path.
         case listenPathBlocked(String)
@@ -234,8 +236,9 @@ import Foundation
     func listenPath(forTarget target: String) throws -> String {
         // Long enough for a launch already under way to finish or give up on
         // its own: it allows startTimeout from the helper's start, after the
-        // sweep and file reads that come first.
-        let deadline = Date().addingTimeInterval(startTimeout * 2 + 1)
+        // sweep and file reads that come first, and the two checks that may
+        // each wait for another copy that installed the helper to quit.
+        let deadline = Date().addingTimeInterval(startTimeout * 2 + 1 + (installer?.otherInstallerWait ?? 0) * 2)
         condition.lock()
         waiting: while true {
             switch entries[target] {
@@ -405,6 +408,7 @@ import Foundation
             case .notInstalled: throw RelayError.helperNotInstalled
             case .outdated: throw RelayError.helperOutdated
             case .relaunchRequired: throw RelayError.relaunchRequired
+            case .installedByAnotherCopy: throw RelayError.installedByAnotherCopy
             }
         }
     }
@@ -555,6 +559,8 @@ extension SASSHAgentRelay.RelayError: LocalizedError {
             return NSLocalizedString("The SSH agent helper needs to be updated. Update it in Preferences > Network.", comment: "SSH agent relay error")
         case .relaunchRequired:
             return NSLocalizedString("The SSH agent helper was just installed. Relaunch Sequel Ace to start using it.", comment: "SSH agent relay error")
+        case .installedByAnotherCopy:
+            return NSLocalizedString("The SSH agent helper was just installed by another Sequel Ace window that is still open. Quit that copy of Sequel Ace to start using the helper.", comment: "SSH agent relay error")
         case .listenPathTooLong:
             return NSLocalizedString("The SSH agent helper could not be started because the path to its socket is too long.", comment: "SSH agent relay error")
         case .listenPathBlocked(let path):

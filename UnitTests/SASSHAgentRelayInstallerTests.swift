@@ -137,6 +137,53 @@ final class SASSHAgentRelayInstallerTests: XCTestCase {
         XCTAssertFalse(launched)
     }
 
+    /// Another copy of the app (here, a second installer on the same folder)
+    /// must not launch the helper while the copy that installed it still runs
+    /// and so still holds write access to the folder.
+    func testAnotherCopyWaitsForTheInstallingCopyToQuit() throws {
+        var installing: SASSHAgentRelayInstaller? = makeInstaller()
+        try installing?.install(into: scripts)
+        let other = SASSHAgentRelayInstaller(scriptsDirectory: scripts, bundledScript: bundledScript,
+                                             bundledAllowlist: bundledAllowlist, otherInstallerWait: 0.2)
+        var launched = false
+        XCTAssertThrowsError(try other.whileLaunchable { _ in launched = true }) {
+            XCTAssertEqual($0 as? SASSHAgentRelayInstaller.LaunchRefusal, .installedByAnotherCopy)
+        }
+        XCTAssertFalse(launched)
+
+        // Quitting releases the barrier: macOS drops the lock with the process.
+        installing = nil
+        try other.whileLaunchable { _ in launched = true }
+        XCTAssertTrue(launched)
+    }
+
+    /// A relaunch opens the new copy before the old one has quit; the wait
+    /// covers that gap instead of failing the new copy's first connection.
+    func testALaunchWaitsOutAnInstallingCopyThatQuitsSoon() throws {
+        var installing: SASSHAgentRelayInstaller? = makeInstaller()
+        try installing?.install(into: scripts)
+        let other = SASSHAgentRelayInstaller(scriptsDirectory: scripts, bundledScript: bundledScript,
+                                             bundledAllowlist: bundledAllowlist, otherInstallerWait: 5)
+        let quit = DispatchSemaphore(value: 0)
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) {
+            installing = nil
+            quit.signal()
+        }
+        var launched = false
+        try other.whileLaunchable { _ in launched = true }
+        XCTAssertTrue(launched)
+        quit.wait()
+    }
+
+    func testAFolderInThePlaceOfTheScriptIsReplacedOnInstall() throws {
+        try FileManager.default.createDirectory(at: scripts.appendingPathComponent(SASSHAgentRelayInstaller.scriptName),
+                                                withIntermediateDirectories: true)
+        let installer = makeInstaller()
+        XCTAssertNotEqual(installer.status, .installed)
+        try installer.install(into: scripts)
+        XCTAssertEqual(installer.status, .installed)
+    }
+
     func testUpdatingReplacesTheScriptButKeepsTheUsersAllowlist() throws {
         let installer = makeInstaller()
         try installer.install(into: scripts)

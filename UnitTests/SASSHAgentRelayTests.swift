@@ -596,7 +596,8 @@ final class SASSHAgentRelayTests: XCTestCase {
 
     func testEveryRefusalAndFailureHasItsOwnMessage() {
         let errors: [SASSHAgentRelay.RelayError] = [
-            .helperUnavailable, .helperNotInstalled, .helperOutdated, .relaunchRequired, .listenPathTooLong("/p"),
+            .helperUnavailable, .helperNotInstalled, .helperOutdated, .relaunchRequired, .installedByAnotherCopy,
+            .listenPathTooLong("/p"),
             .listenPathBlocked("/p"), .listenFailed("x"), .startTimedOut, .launchFailed("x"), .helperExited(detail: "x"),
             .helperRefused(reason: "not-allowed", target: "/t", detail: ""),
             .helperRefused(reason: "no-target", target: "/t", detail: ""),

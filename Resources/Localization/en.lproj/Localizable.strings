@@ -333,6 +333,9 @@
 "The SSH agent helper stopped unexpectedly. %@" = "The SSH agent helper stopped unexpectedly. %@";
 
 /* SSH agent relay error */
+"The SSH agent helper was just installed by another Sequel Ace window that is still open. Quit that copy of Sequel Ace to start using the helper." = "The SSH agent helper was just installed by another Sequel Ace window that is still open. Quit that copy of Sequel Ace to start using the helper.";
+
+/* SSH agent relay error */
 "The SSH agent helper was just installed. Relaunch Sequel Ace to start using it." = "The SSH agent helper was just installed. Relaunch Sequel Ace to start using it.";
 
 /* SSH agent relay error; %@ is the system's reason */
