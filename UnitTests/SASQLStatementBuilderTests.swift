@@ -83,6 +83,28 @@ final class SASQLStatementBuilderTests: XCTestCase {
         XCTAssertTrue(sql?.contains("'\(wide)');\n\n\(header)") ?? false, "the oversized row ends its own statement")
     }
 
+    /// The batch limit counts UTF-16 units, as the NSString length it replaced did, however the
+    /// text is made up: 130,000 `é` stay under it (though they take 260,000 bytes in UTF-8), while
+    /// 130,000 emoji, two UTF-16 units each, go over it.
+    func testTheBatchLimitIsMeasuredInUTF16UnitsForNonASCIIText() {
+        let header = "INSERT INTO `t` (`a`)\nVALUES\n"
+
+        let accented = SASQLStatementBuilder.insertStatements(
+            table: "t",
+            columns: ["a"],
+            rows: [["'\(String(repeating: "é", count: 130_000))'"], ["'next'"]]
+        )
+        XCTAssertEqual(accented?.components(separatedBy: header).count, 2, "expected one statement")
+
+        let emoji = SASQLStatementBuilder.insertStatements(
+            table: "t",
+            columns: ["a"],
+            rows: [["'\(String(repeating: "😀", count: 130_000))'"], ["'next'"]]
+        )
+        XCTAssertEqual(emoji?.components(separatedBy: header).count, 3, "expected two statements")
+        XCTAssertTrue(emoji?.hasSuffix("\(header)\t('next');\n") ?? false)
+    }
+
     func testNothingToInsertYieldsNoStatement() {
         XCTAssertNil(SASQLStatementBuilder.insertStatements(table: "t", columns: [], rows: [["1"]]))
         XCTAssertNil(SASQLStatementBuilder.insertStatements(table: "t", columns: ["a"], rows: []))
@@ -792,5 +814,156 @@ final class SASQLStatementBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(sql, "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n")
+    }
+
+    // MARK: - Origin resolution
+
+    /// The reported case end to end, from the metadata a query result really carries: `SELECT id,
+    /// a, b` from `CREATE TABLE people (id INT PRIMARY KEY, a INT, b INT GENERATED ALWAYS AS (a+1)
+    /// STORED)`. Nothing in the fields marks `b`, so it is the origin table's columns, asked of
+    /// the server, that keep it out of `SET`.
+    func testAQueryResultsGeneratedColumnIsFoundOnTheServerAndNotAssigned() {
+        let lookup = CannedOriginLookup(columns: [["id", ""], ["a", ""], ["b", "STORED GENERATED"]])
+
+        let origin = SAUpdateCopyOriginResolver.origin(
+            fieldDefinitions: [
+                queryField("id", origin: "id", keyFlagged: true),
+                queryField("a", origin: "a"),
+                queryField("b", origin: "b"),
+            ],
+            table: nil,
+            database: nil,
+            tableColumnDefinitions: nil,
+            lookup: lookup
+        )!
+
+        XCTAssertEqual(origin.generatedColumnIndexes, IndexSet(integer: 2))
+        XCTAssertEqual(
+            SASQLStatementBuilder.updateStatements(
+                database: origin.database,
+                table: origin.table,
+                columns: origin.columns,
+                keyColumnIndexes: origin.keyColumnIndexes,
+                generatedColumnIndexes: origin.generatedColumnIndexes,
+                rows: [["1", "2", "3"]]
+            ),
+            "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n"
+        )
+
+        // Both lookups ask about the origin table, in its own database.
+        XCTAssertEqual(lookup.queries.count, 2)
+        XCTAssertTrue(lookup.queries.allSatisfy { $0.contains("TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'people'") })
+    }
+
+    /// MySQL 8 reports `DEFAULT_GENERATED` for a column with an expression default, such as a
+    /// `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`. That column is assignable like any other, so the
+    /// copied UPDATE has to keep the value that was selected.
+    func testADefaultGeneratedColumnIsStillAssigned() {
+        let lookup = CannedOriginLookup(columns: [
+            ["id", ""],
+            ["created", "DEFAULT_GENERATED"],
+            ["updated", "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"],
+        ])
+
+        let origin = SAUpdateCopyOriginResolver.origin(
+            fieldDefinitions: [
+                queryField("id", origin: "id", keyFlagged: true),
+                queryField("created", origin: "created"),
+                queryField("updated", origin: "updated"),
+            ],
+            table: nil,
+            database: nil,
+            tableColumnDefinitions: nil,
+            lookup: lookup
+        )!
+
+        XCTAssertEqual(origin.generatedColumnIndexes, IndexSet())
+        XCTAssertEqual(
+            SASQLStatementBuilder.updateStatements(
+                database: origin.database,
+                table: origin.table,
+                columns: origin.columns,
+                keyColumnIndexes: origin.keyColumnIndexes,
+                generatedColumnIndexes: origin.generatedColumnIndexes,
+                rows: [["1", "'2026-10-01 10:00:00'", "'2026-10-02 11:00:00'"]]
+            ),
+            "UPDATE `mydb`.`people` SET `created` = '2026-10-01 10:00:00', `updated` = '2026-10-02 11:00:00'\nWHERE `id` = 1;\n"
+        )
+    }
+
+    /// Every EXTRA a supported server reports for a generated column, and the ones it reports
+    /// for columns that are not generated, however much they look it.
+    func testGeneratedColumnsAreToldApartByTheirExtraWords() {
+        let generated = ["VIRTUAL GENERATED", "STORED GENERATED", "VIRTUAL", "PERSISTENT", "STORED GENERATED INVISIBLE"]
+        let assignable = ["", "auto_increment", "DEFAULT_GENERATED", "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+                          "on update current_timestamp()", "INVISIBLE"]
+
+        for extra in generated {
+            XCTAssertTrue(SAUpdateCopyOriginResolver.isGeneratedColumn(extra: extra), "\(extra) is generated")
+        }
+        for extra in assignable {
+            XCTAssertFalse(SAUpdateCopyOriginResolver.isGeneratedColumn(extra: extra), "\(extra) is assignable")
+        }
+    }
+
+    /// A lookup the server cannot answer leaves the copy refused rather than guessed at, as does
+    /// having no server to ask at all.
+    func testAQueryResultWhoseLookupsFailYieldsNoUpdateOrigin() {
+        let fields = [
+            queryField("id", origin: "id", keyFlagged: true),
+            queryField("a", origin: "a"),
+        ]
+
+        let keyFails = CannedOriginLookup(columns: [["id", ""], ["a", ""]])
+        keyFails.keyColumns = nil
+        XCTAssertNil(SAUpdateCopyOriginResolver.origin(fieldDefinitions: fields, table: nil, database: nil, tableColumnDefinitions: nil, lookup: keyFails))
+
+        let columnsFail = CannedOriginLookup(columns: nil)
+        XCTAssertNil(SAUpdateCopyOriginResolver.origin(fieldDefinitions: fields, table: nil, database: nil, tableColumnDefinitions: nil, lookup: columnsFail))
+
+        XCTAssertNil(SAUpdateCopyOriginResolver.origin(fieldDefinitions: fields, table: nil, database: nil, tableColumnDefinitions: nil, lookup: nil))
+    }
+
+    /// Table content metadata covers the whole table, so its key comes from the table's own column
+    /// definitions and nothing is asked of the server.
+    func testTableContentMetadataAsksTheServerNothing() {
+        let lookup = CannedOriginLookup(columns: [])
+
+        let origin = SAUpdateCopyOriginResolver.origin(
+            fieldDefinitions: [contentField("id", keyFlagged: true), contentField("a")],
+            table: "people",
+            database: "mydb",
+            tableColumnDefinitions: [contentField("id", keyFlagged: true), contentField("a"), contentField("b")],
+            lookup: lookup
+        )
+
+        XCTAssertEqual(origin?.keyColumnIndexes, IndexSet(integer: 0))
+        XCTAssertEqual(lookup.queries, [])
+    }
+}
+
+/// Answers the resolver's server lookups with canned rows, as `information_schema` would for
+/// `mydb`.`people`, and records the queries it was asked.
+private final class CannedOriginLookup: NSObject, SAUpdateOriginLookup {
+
+    /// The primary key columns, or `nil` for a lookup that fails.
+    var keyColumns: [String]? = ["id"]
+
+    /// COLUMN_NAME and EXTRA of every column, or `nil` for a lookup that fails.
+    let columns: [[String]]?
+
+    private(set) var queries: [String] = []
+
+    init(columns: [[String]]?) {
+        self.columns = columns
+    }
+
+    func rows(forQuery query: String, database: String) -> [[Any]]? {
+        queries.append(query)
+        return query.contains("KEY_COLUMN_USAGE") ? keyColumns?.map { [$0] } : columns
+    }
+
+    func quotedString(_ value: String) -> String? {
+        "'" + value.replacingOccurrences(of: "'", with: "''") + "'"
     }
 }

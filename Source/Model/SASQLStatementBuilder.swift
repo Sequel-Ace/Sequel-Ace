@@ -105,18 +105,26 @@ import Foundation
 
         var result = header
         var batch = ""
+        // The UTF-16 length of `batch`, kept up as rows are appended: asking a native String for
+        // its UTF-16 count walks the whole string once it holds non-ASCII text, which after every
+        // row would make a large copy quadratic.
+        var batchLength = 0
 
         for (index, row) in rows.enumerated() {
-            batch += "\t(" + row.joined(separator: ", ")
+            let rowText = "\t(" + row.joined(separator: ", ")
+            batch += rowText
+            batchLength += rowText.utf16.count
 
             let isLastRow = index == rows.count - 1
-            if !isLastRow, batch.utf16.count > insertBatchThreshold {
+            if !isLastRow, batchLength > insertBatchThreshold {
                 // Close this statement off and start the next one, so that the row just appended
                 // ends the batch rather than opening the next.
                 result += batch + ");\n\n" + header
                 batch = ""
+                batchLength = 0
             } else {
                 batch += "),\n"
+                batchLength += 3
                 if isLastRow {
                     result += batch
                 }

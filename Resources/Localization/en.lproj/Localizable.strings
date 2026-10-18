@@ -991,6 +991,9 @@
 /* Copy as RTF */
 "Copy as RTF" = "Copy as RTF";
 
+/* Edit menu and content / query result context menus : copy the selected rows as one UPDATE statement per row, matched on the table's primary key */
+"Copy as SQL UPDATE" = "Copy as SQL UPDATE";
+
 /* copy create func syntax menu item
  Table List : Context Menu : copy CREATE FUNCTION syntax */
 "Copy Create Function Syntax" = "Copy Create Function Syntax";

@@ -697,6 +697,9 @@
 		D10000012F8C000600C4C14A /* SAAppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000022F8C000600C4C14A /* SAAppearancePreference.swift */; };
 		D10000032F8C000600C4C14A /* SATooltipDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000052F8C000600C4C14A /* SATooltipDismissal.swift */; };
 		5B0000012F9C000100C4C14A /* SASQLStatementBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0000032F9C000100C4C14A /* SASQLStatementBuilder.swift */; };
+		5B0000062F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0000082F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift */; };
+		5B0000072F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0000082F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift */; };
+		5B0000092F9C000100C4C14A /* SAConnectionUpdateOriginLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B00000A2F9C000100C4C14A /* SAConnectionUpdateOriginLookup.swift */; };
 		D10000042F8C000600C4C14A /* SATooltipDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000052F8C000600C4C14A /* SATooltipDismissal.swift */; };
 		5B0000022F9C000100C4C14A /* SASQLStatementBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0000032F9C000100C4C14A /* SASQLStatementBuilder.swift */; };
 		D10000062F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */; };
@@ -1656,6 +1659,8 @@
 		D10000022F8C000600C4C14A /* SAAppearancePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAppearancePreference.swift; sourceTree = "<group>"; };
 		D10000052F8C000600C4C14A /* SATooltipDismissal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATooltipDismissal.swift; sourceTree = "<group>"; };
 		5B0000032F9C000100C4C14A /* SASQLStatementBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASQLStatementBuilder.swift; sourceTree = "<group>"; };
+		5B0000082F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUpdateCopyOriginResolver.swift; sourceTree = "<group>"; };
+		5B00000A2F9C000100C4C14A /* SAConnectionUpdateOriginLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionUpdateOriginLookup.swift; sourceTree = "<group>"; };
 		D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAQueryHistoryMerger.swift; sourceTree = "<group>"; };
 		D10000102F8C000600C4C14A /* SAProfilingFollowupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAProfilingFollowupTests.swift; sourceTree = "<group>"; };
 		D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowTabAccessory.swift; sourceTree = "<group>"; };
@@ -2440,6 +2445,8 @@
 				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
 				D10000052F8C000600C4C14A /* SATooltipDismissal.swift */,
 				5B0000032F9C000100C4C14A /* SASQLStatementBuilder.swift */,
+				5B0000082F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift */,
+				5B00000A2F9C000100C4C14A /* SAConnectionUpdateOriginLookup.swift */,
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
 				5AF0C3020000000000000002 /* SAPHPSerializedValue.swift */,
 				51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */,
@@ -3732,6 +3739,7 @@
 				D10000012F8C000600C4C14A /* SAAppearancePreference.swift in Sources */,
 				D10000042F8C000600C4C14A /* SATooltipDismissal.swift in Sources */,
 				5B0000022F9C000100C4C14A /* SASQLStatementBuilder.swift in Sources */,
+				5B0000072F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift in Sources */,
 				D10000072F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */,
 				D10000092F8C000600C4C14A /* SAProfilingFollowupTests.swift in Sources */,
 				CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
@@ -3880,6 +3888,8 @@
 				D10000002F8C000600C4C14A /* SAAppearancePreference.swift in Sources */,
 				D10000032F8C000600C4C14A /* SATooltipDismissal.swift in Sources */,
 				5B0000012F9C000100C4C14A /* SASQLStatementBuilder.swift in Sources */,
+				5B0000062F9C000100C4C14A /* SAUpdateCopyOriginResolver.swift in Sources */,
+				5B0000092F9C000100C4C14A /* SAConnectionUpdateOriginLookup.swift in Sources */,
 				D10000062F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */,
 				CF0000302F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
 				CF00000E2F8C000600C4C14A /* SACellFilterAction.swift in Sources */,
