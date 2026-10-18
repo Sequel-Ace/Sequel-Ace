@@ -207,11 +207,86 @@ enum SAClaudeUtilityChrome {
         if frame.colour != hairline { frame.colour = hairline }
     }
 
+    /// `frameList` now and again once the list is on screen (its layer exists only then): for a sheet styled as it begins.
+    static func frameListOnceShown(_ scrollView: NSScrollView) {
+        frameList(scrollView, hairline: SAClaudeSheetColours.current().palette.hairline)
+        DispatchQueue.main.async { [weak scrollView] in
+            if let scrollView { frameList(scrollView, hairline: SAClaudeSheetColours.current().palette.hairline) }
+        }
+    }
+
     /// Sets `view`'s frame (only when it changes) and drops its autoresizing, as a styler lays it out itself.
     static func place(_ view: NSView?, _ frame: NSRect) {
         guard let view else { return }
         if view.frame != frame { view.frame = frame }
         if !view.autoresizingMask.isEmpty { view.autoresizingMask = [] }
+    }
+
+    /// Sets `view`'s frame (only when it changes) and its autoresizing, for a view placed once that then follows its
+    /// superview as the XIB's views do.
+    static func pin(_ view: NSView?, _ frame: NSRect, _ mask: NSView.AutoresizingMask) {
+        guard let view else { return }
+        if view.frame != frame { view.frame = frame }
+        if view.autoresizingMask != mask { view.autoresizingMask = mask }
+    }
+
+    // MARK: Footer buttons
+
+    static let buttonFont = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+
+    /// A sheet's push button at the regular size (13pt), as the User Manager's Apply and Cancel.
+    static func makeRegular(_ button: NSButton) {
+        if button.controlSize != .regular { button.controlSize = .regular }
+        if button.font != buttonFont { button.font = buttonFont }
+    }
+
+    /// The frame width a push button needs: its widest title (`titles` and its own) at the Claude cells' medium weight, the
+    /// pill's padding and the classic margins either side; at least 84pt.
+    static func pushButtonWidth(_ button: NSButton, titles: [String] = []) -> CGFloat {
+        let medium = NSFont.systemFont(ofSize: (button.font ?? buttonFont).pointSize, weight: .medium)
+        let title = (titles + [button.title]).map { ceil(($0 as NSString).size(withAttributes: [.font: medium]).width) }.max() ?? 0
+        let inset = SAClaudeSheetButtonGeometry.metrics(for: button.controlSize).classicSideMargin
+        return max(84, title + 2 * SAClaudeFilterChrome.pillPadding + 2 * inset + 8)
+    }
+
+    /// Lays `buttons` (the rightmost first: Save, then Cancel) along the bottom of `container`, regular size, right-aligned
+    /// on the margin, pinned to the bottom right. Returns their frames.
+    @discardableResult
+    static func layoutFooter(_ buttons: [NSButton], in container: NSView) -> [NSRect] {
+        buttons.forEach(makeRegular)
+        let inset = SAClaudeSheetButtonGeometry.metrics(for: .regular).classicSideMargin
+        let bounds = container.bounds
+        let frames = SAClaudeFooterLayout.trailing(widths: buttons.map { pushButtonWidth($0) }, maxX: bounds.maxX,
+                                                   y: bounds.minY + SAClaudeFooterLayout.bottom, buttonInset: inset)
+        for (button, frame) in zip(buttons, frames) { pin(button, frame, [.minXMargin, .maxYMargin]) }
+        return frames
+    }
+
+    // MARK: Sidebar panes
+
+    /// A source list's pane in the main sidebar's recipe: the sidebar fill under everything, a 32pt bottom bar with a
+    /// hairline above it, its buttons (`bar`: add, remove, the gear…) as bar glyph buttons from the pill inset, the drag
+    /// handle muted, the split divider a hairline. Bar buttons keep to the bottom left as the pane resizes.
+    static func styleSidebarPane(_ pane: NSView, list: NSScrollView, bar: [(button: NSButton, glyph: SAClaudeGlyph, label: String)], split: NSSplitView) {
+        guard let first = bar.first?.button else { return }
+        SAClaudeSidebarChrome.addSidebarBackground(to: pane)
+        SAClaudeSidebarChrome.addBarDivider(to: pane, above: first)
+        SAClaudeSidebarChrome.setBarHeight(in: pane, below: list)
+        for item in bar {
+            if let popUp = item.button as? NSPopUpButton, item.glyph == .actions {
+                styleGearButton(popUp, label: item.label)
+            } else {
+                styleBarButton(item.button, glyph: item.glyph, label: item.label)
+            }
+        }
+        let frames = SAClaudeSidebarBarLayout.buttons(count: bar.count, x: SAClaudeUtilitySidebar.pillInset,
+                                                      midY: pane.bounds.minY + SAClaudeSidebarChrome.barHeight / 2)
+        for (item, frame) in zip(bar, frames) { pin(item.button, frame, [.maxXMargin, .maxYMargin]) }
+        // SPSplitView's drag handle (an outlet ivar, read by KVC).
+        if let handle: NSImageView = SAClaudeFormRecipes.outlet(split, "additionalDragHandleView"), handle.superview === pane {
+            handle.contentTintColor = SAClaudeStyle.textMuted
+        }
+        styleSplitDivider(split)
     }
 }
 
@@ -234,19 +309,33 @@ enum SAClaudeUtilityChrome {
 // MARK: - Sidebar source list
 
 /// A list in the Claude sidebar look. Adopted lists are of one of the subclasses below (marked by this protocol), which
-/// forward to `SAClaudeUtilitySidebar`. Another list class gets its own four-override subclass in `sidebarClass(for:)`.
+/// forward to `SAClaudeUtilitySidebar`. Another list class gets its own five-override subclass in `sidebarClass(for:)`.
 protocol SAClaudeUtilitySidebarList: NSTableView {}
 
 enum SAClaudeUtilitySidebar {
 
     static let rowHeight: CGFloat = 28
     static let font = NSFont.systemFont(ofSize: 13)
+    /// A detail column's text.
+    static let detailFont = NSFont.systemFont(ofSize: 11)
     /// The selection pill's inset from the list's sides.
     static let pillInset: CGFloat = 6
+    /// Rows the code makes shorter than this are spacers (the Navigator's), kept as the code made them.
+    static let spacerHeight: CGFloat = 10
 
-    /// What an adopted list can't store itself: the glyph for a row (nil: the cell keeps its own image).
+    /// How one adopted list looks, and what it can't store itself.
     final class State {
-        var glyph: ((NSTableView, Int) -> NSImage?)?
+        var rowHeight = SAClaudeUtilitySidebar.rowHeight
+        var font = SAClaudeUtilitySidebar.font
+        /// The glyph for a row, given the image its cell has now; unset, the cell keeps its own image.
+        var glyph: ((NSTableView, Int, NSImage?) -> NSImage?)?
+        /// Top-level group rows (the delegate's `isGroupRow` / `isGroupItem`) drawn as the main sidebar's section headers
+        /// ("Tables and views": muted, aligned with the rows' glyphs, on the row's bottom) instead of AppKit's group style.
+        var groupRowsAsHeaders = false
+        /// Columns (by identifier) of secondary detail (a tab trigger, a column type): muted, 11pt.
+        var detailColumns: Set<String> = []
+        /// The text a row shows instead of its cell's (nil: the cell's own, in the row colours).
+        var attributedText: ((NSTableView, Int, NSTextFieldCell) -> NSAttributedString?)?
     }
 
     private static var stateKey: UInt8 = 0
@@ -259,10 +348,10 @@ enum SAClaudeUtilitySidebar {
     static func isAdopted(_ table: NSTableView) -> Bool { table is SAClaudeUtilitySidebarList }
 
     /// Gives `table` the sidebar look: its class swapped in place, the plain style with the Claude selection pills, sidebar
-    /// fill, 28pt rows, 13pt row text in the sidebar colours, `glyph`'s image for each row, a quiet header. False (nothing
-    /// changed) when its class is not one this knows or something observes it by KVO. Idempotent.
+    /// fill, the state's rows (28pt, 13pt text in the sidebar colours by default; `configure` changes them), a quiet
+    /// header. False (nothing changed) when its class is not one this knows or something observes it by KVO. Idempotent.
     @discardableResult
-    static func adopt(_ table: NSTableView, glyph: ((NSTableView, Int) -> NSImage?)? = nil) -> Bool {
+    static func adopt(_ table: NSTableView, configure: (State) -> Void = { _ in }) -> Bool {
         if !isAdopted(table) {
             guard let sidebarClass = sidebarClass(for: table), SAClaudeClassSwap.mayChangeClass(of: table) else { return false }
             object_setClass(table, sidebarClass)
@@ -272,18 +361,21 @@ enum SAClaudeUtilitySidebar {
             objc_setAssociatedObject(table, &stateKey, state, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             return state
         }()
-        state.glyph = glyph
-        style(table)
+        configure(state)
+        style(table, state)
         return true
     }
 
     private static func sidebarClass(for table: NSTableView) -> AnyClass? {
         let cls: AnyClass = type(of: table)
         if cls == SPOutlineView.self { return SAClaudeSidebarSPOutlineView.self }
+        if cls == SPNavigatorOutlineView.self { return SAClaudeSidebarNavigatorOutlineView.self }
+        if cls == SPTableView.self { return SAClaudeSidebarSPTableView.self }
+        if cls == NSTableView.self { return SAClaudeSidebarTableView.self }
         return nil
     }
 
-    private static func style(_ table: NSTableView) {
+    private static func style(_ table: NSTableView, _ state: State) {
         if table.style != .plain { table.style = .plain }
         // A regular style (not the source list's) so AppKit draws no selection or vibrancy of its own: the pills are drawn
         // in `highlightSelection(inClipRect:)`.
@@ -292,7 +384,13 @@ enum SAClaudeUtilitySidebar {
         table.gridStyleMask = []
         table.focusRingType = .none
         table.backgroundColor = SAClaudeStyle.sidebarBackground
-        if table.rowHeight != rowHeight { table.rowHeight = rowHeight }
+        // Group rows stay in the list (AppKit would float them over the rows as they scroll).
+        if table.floatsGroupRows { table.floatsGroupRows = false }
+        if table.rowHeight != state.rowHeight { table.rowHeight = state.rowHeight }
+        // Rows meet (the pills carry the spacing), so a row is exactly the state's height.
+        if table.intercellSpacing.height != 0 { table.intercellSpacing.height = 0 }
+        // Heights a delegate gives (`SAClaudeUtilitySidebarMetrics`) are asked for again.
+        if table.numberOfRows > 0 { table.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<table.numberOfRows)) }
         if let scrollView = table.enclosingScrollView {
             scrollView.drawsBackground = true
             scrollView.backgroundColor = SAClaudeStyle.sidebarBackground
@@ -306,7 +404,39 @@ enum SAClaudeUtilitySidebar {
         table.headerView?.needsDisplay = true
     }
 
+    /// Whether `row` is a group row by the list's delegate (`tableView:isGroupRow:`, `outlineView:isGroupItem:`).
+    static func isGroupRow(_ table: NSTableView, _ row: Int) -> Bool {
+        if let outline = table as? NSOutlineView {
+            guard let delegate = outline.delegate, delegate.responds(to: #selector(NSOutlineViewDelegate.outlineView(_:isGroupItem:))),
+                  let item = outline.item(atRow: row) else { return false }
+            return delegate.outlineView?(outline, isGroupItem: item) ?? false
+        }
+        guard let delegate = table.delegate, delegate.responds(to: #selector(NSTableViewDelegate.tableView(_:isGroupRow:))) else { return false }
+        return delegate.tableView?(table, isGroupRow: row) ?? false
+    }
+
+    /// A row drawn as a section header: a top-level group row of a list whose state asks for headers.
+    static func isHeaderRow(_ table: NSTableView, _ row: Int) -> Bool {
+        guard state(of: table)?.groupRowsAsHeaders == true else { return false }
+        if let outline = table as? NSOutlineView, outline.level(forRow: row) > 0 { return false }
+        return isGroupRow(table, row)
+    }
+
     // MARK: Drawing (called by the adopted classes)
+
+    /// Draws `row` as a section header when it is one (its first column's value, from the data source, in the main
+    /// sidebar's header style); false for any other row, which the list draws itself.
+    static func drawHeaderRow(_ table: NSTableView, _ row: Int) -> Bool {
+        guard isHeaderRow(table, row), let column = table.tableColumns.first else { return false }
+        let value: Any?
+        if let outline = table as? NSOutlineView {
+            value = outline.dataSource?.outlineView?(outline, objectValueFor: column, byItem: outline.item(atRow: row))
+        } else {
+            value = table.dataSource?.tableView?(table, objectValueFor: column, row: row)
+        }
+        SAClaudeSidebarChrome.drawHeader((value as? String) ?? (value as? NSAttributedString)?.string ?? "", inRowRect: table.rect(ofRow: row))
+        return true
+    }
 
     /// The selection as rounded pills, the same colour focused or not (as the main window's tables list).
     static func drawSelection(_ table: NSTableView, in clipRect: NSRect) {
@@ -319,26 +449,52 @@ enum SAClaudeUtilitySidebar {
     }
 
     /// The row's cell after the table (and its delegate) prepared it: never highlighted (the pill shows the selection), the
-    /// row font, primary text when selected, secondary otherwise, muted while the list is disabled; the row's glyph.
-    static func prepare(_ cell: NSCell?, table: NSTableView, row: Int) {
+    /// row font, primary text when selected, secondary otherwise, muted while the list is disabled (and for headers and
+    /// detail columns); the row's glyph.
+    static func prepare(_ cell: NSCell?, table: NSTableView, column: Int, row: Int) {
         guard let cell = cell as? NSTextFieldCell else { return }
+        let state = state(of: table)
         cell.backgroundStyle = .normal
         cell.isHighlighted = false
-        if cell.font != font { cell.font = font }
         cell.drawsBackground = false
-        cell.textColor = !table.isEnabled ? SAClaudeStyle.textMuted
+        let identifier = column >= 0 && column < table.numberOfColumns ? table.tableColumns[column].identifier.rawValue : ""
+        let isHeader = isHeaderRow(table, row)
+        let isDetail = state?.detailColumns.contains(identifier) == true
+        let font = isHeader ? SAClaudeStyle.headerFont : isDetail ? detailFont : (state?.font ?? font)
+        if cell.font != font { cell.font = font }
+        cell.textColor = !table.isEnabled || isHeader || isDetail ? SAClaudeStyle.textMuted
             : table.isRowSelected(row) ? SAClaudeStyle.textPrimary : SAClaudeStyle.textSecondary
-        if let glyph = state(of: table)?.glyph, let imageCell = cell as? ImageAndTextCell {
-            imageCell.setImage(glyph(table, row))
+        if let attributed = state?.attributedText?(table, row, cell) { cell.attributedStringValue = attributed }
+        if let glyph = state?.glyph, let imageCell = cell as? ImageAndTextCell {
+            imageCell.setImage(glyph(table, row, imageCell.image()))
         }
     }
 
-    private static let textHeight = ceil(NSLayoutManager().defaultLineHeight(for: font)) + SAClaudeStyle.cellTextInset
+    private static var textHeights: [CGFloat: CGFloat] = [:]
 
-    /// The cell centred on one line of text (cells draw from the top of their frame); editing uses the same frame.
-    static func cellFrame(_ frame: NSRect) -> NSRect {
+    /// The cell centred on one line of text in `table`'s font (cells draw from the top of their frame); editing uses the
+    /// same frame.
+    static func cellFrame(_ frame: NSRect, table: NSTableView) -> NSRect {
+        let size = state(of: table)?.font.pointSize ?? font.pointSize
+        let textHeight = textHeights[size] ?? {
+            let height = ceil(NSLayoutManager().defaultLineHeight(for: .systemFont(ofSize: size))) + SAClaudeStyle.cellTextInset
+            textHeights[size] = height
+            return height
+        }()
         let height = min(frame.height, textHeight)
         return NSRect(x: frame.minX, y: frame.minY + floor((frame.height - height) / 2), width: max(0, frame.width - pillInset), height: height)
+    }
+}
+
+/// The row heights the sheets' delegates give their lists (thin hooks in the controllers' `heightOfRow` methods): an
+/// adopted sidebar's own height for a row, else what the controller proposed.
+@objc(SAClaudeUtilitySidebarMetrics) final class SAClaudeUtilitySidebarMetrics: NSObject {
+    /// `proposed` for a list in its own look or a spacer row (shorter than `spacerHeight`); the sidebar's row height for
+    /// an adopted list.
+    @objc(rowHeightForTable:proposed:) static func rowHeight(for table: NSTableView?, proposed: CGFloat) -> CGFloat {
+        guard let table, proposed >= SAClaudeUtilitySidebar.spacerHeight,
+              let state = SAClaudeUtilitySidebar.state(of: table), SAClaudeUtilitySidebar.isAdopted(table) else { return proposed }
+        return state.rowHeight
     }
 }
 
@@ -353,12 +509,100 @@ enum SAClaudeUtilitySidebar {
     @available(macOS, deprecated: 10.10)
     override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
         let cell = super.preparedCell(atColumn: column, row: row)
-        SAClaudeUtilitySidebar.prepare(cell, table: self, row: row)
+        SAClaudeUtilitySidebar.prepare(cell, table: self, column: column, row: row)
         return cell
     }
 
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        if !SAClaudeUtilitySidebar.drawHeaderRow(self, row) { super.drawRow(row, clipRect: clipRect) }
+    }
+
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row))
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+        headerView?.needsDisplay = true
+    }
+}
+
+/// The Navigator's `SPNavigatorOutlineView` in the sidebar look (as `SAClaudeSidebarSPOutlineView`).
+@objc(SAClaudeSidebarNavigatorOutlineView) final class SAClaudeSidebarNavigatorOutlineView: SPNavigatorOutlineView, SAClaudeUtilitySidebarList {
+    override func highlightSelection(inClipRect clipRect: NSRect) {
+        SAClaudeUtilitySidebar.drawSelection(self, in: clipRect)
+    }
+
+    @available(macOS, deprecated: 10.10)
+    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
+        let cell = super.preparedCell(atColumn: column, row: row)
+        SAClaudeUtilitySidebar.prepare(cell, table: self, column: column, row: row)
+        return cell
+    }
+
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        if !SAClaudeUtilitySidebar.drawHeaderRow(self, row) { super.drawRow(row, clipRect: clipRect) }
+    }
+
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+        headerView?.needsDisplay = true
+    }
+}
+
+/// An `SPTableView` source list (the Query Favorites and Content Filter managers') in the sidebar look.
+@objc(SAClaudeSidebarSPTableView) final class SAClaudeSidebarSPTableView: SPTableView, SAClaudeUtilitySidebarList {
+    override func highlightSelection(inClipRect clipRect: NSRect) {
+        SAClaudeUtilitySidebar.drawSelection(self, in: clipRect)
+    }
+
+    @available(macOS, deprecated: 10.10)
+    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
+        let cell = super.preparedCell(atColumn: column, row: row)
+        SAClaudeUtilitySidebar.prepare(cell, table: self, column: column, row: row)
+        return cell
+    }
+
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        if !SAClaudeUtilitySidebar.drawHeaderRow(self, row) { super.drawRow(row, clipRect: clipRect) }
+    }
+
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+        headerView?.needsDisplay = true
+    }
+}
+
+/// A plain NSTableView list in the sidebar look (the Navigator's information list).
+@objc(SAClaudeSidebarTableView) final class SAClaudeSidebarTableView: NSTableView, SAClaudeUtilitySidebarList {
+    override func highlightSelection(inClipRect clipRect: NSRect) {
+        SAClaudeUtilitySidebar.drawSelection(self, in: clipRect)
+    }
+
+    @available(macOS, deprecated: 10.10)
+    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
+        let cell = super.preparedCell(atColumn: column, row: row)
+        SAClaudeUtilitySidebar.prepare(cell, table: self, column: column, row: row)
+        return cell
+    }
+
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        if !SAClaudeUtilitySidebar.drawHeaderRow(self, row) { super.drawRow(row, clipRect: clipRect) }
+    }
+
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -409,14 +653,18 @@ enum SAClaudeUtilitySidebar {
     }
 }
 
+
 // MARK: - Grid list
 
-/// A plain NSTableView in the Claude grid look (theme background and zebra, hover, the theme selection, a 30pt Claude
-/// header, row and column lines, cells centred, live palette), its class swapped in place (no stored properties; the
-/// renderer and hooks live in `State`). The one grid class for swapped tables: the Server Variables list is a subclass
-/// (`SAClaudeServerVariablesTableView`) that adds nothing but its type; what a window needs beyond the grid goes through
-/// the hooks (its cells' text, reload notices, a mark drawn over a row).
-@objc(SAClaudeUtilityGridTableView) class SAClaudeUtilityGridTableView: NSTableView {
+/// A list in the Claude grid look (theme background and zebra, hover, the theme selection, a 30pt Claude header, row and
+/// column lines, cells centred, live palette), its class swapped in place to one of the grid classes below (no stored
+/// properties; the renderer and hooks live in `State`). Every grid class forwards to this one implementation: a plain
+/// NSTableView becomes `SAClaudeUtilityGridTableView` (the Server Variables list is a subclass of it that adds nothing but
+/// its type), an `SPCopyTable` (the Advanced Filter panel's) `SAClaudeUtilityGridCopyTable`. What a window needs beyond
+/// the grid goes through the hooks (its cells' text, reload notices, a mark drawn over a row).
+protocol SAClaudeUtilityGridList: NSTableView {}
+
+enum SAClaudeUtilityGrid {
 
     private static var stateKey: UInt8 = 0
 
@@ -434,128 +682,267 @@ enum SAClaudeUtilitySidebar {
         init(renderer: SAClaudeGridRenderer) { self.renderer = renderer }
     }
 
-    var state: State? { objc_getAssociatedObject(self, &Self.stateKey) as? State }
+    static func state(of table: NSTableView) -> State? {
+        objc_getAssociatedObject(table, &stateKey) as? State
+    }
 
-    /// Turns an exact NSTableView into `gridClass` (this class or a subclass of it) and installs the grid; the table
-    /// unchanged when it was already adopted. Nil when it can't (another class, or observed by KVO, `SAClaudeClassSwap`).
-    static func adopt(_ table: NSTableView, as gridClass: SAClaudeUtilityGridTableView.Type = SAClaudeUtilityGridTableView.self) -> SAClaudeUtilityGridTableView? {
-        if let adopted = table as? SAClaudeUtilityGridTableView { return Swift.type(of: adopted) == gridClass ? adopted : nil }
-        guard Swift.type(of: table) == NSTableView.self, SAClaudeClassSwap.mayChangeClass(of: table) else { return nil }
+    /// Turns `table` (exactly of class `from`) into `gridClass` and installs the grid; the table unchanged when it is
+    /// already of `gridClass`. Nil when it can't (another class, or observed by KVO, `SAClaudeClassSwap`).
+    /// `cellTextTopOffset`: where the columns' cells draw their text (0 for plain NSTextFieldCells, 2 for SPTextAndLinkCell).
+    static func adopt<T: NSTableView>(_ table: NSTableView, from: NSTableView.Type, as gridClass: T.Type, cellTextTopOffset: CGFloat) -> T? {
+        if let adopted = table as? SAClaudeUtilityGridList { return type(of: adopted) == gridClass ? adopted as? T : nil }
+        guard type(of: table) == from, SAClaudeClassSwap.mayChangeClass(of: table) else { return nil }
         object_setClass(table, gridClass)
-        guard let adopted = table as? SAClaudeUtilityGridTableView else { return nil }
+        guard let adopted = table as? T else { return nil }
         let renderer = SAClaudeGridRenderer(table: adopted)
-        // Plain NSTextFieldCells draw their text at the top of the frame (no SPTextAndLinkCell 2pt shift).
-        renderer.cellTextTopOffset = 0
+        renderer.cellTextTopOffset = cellTextTopOffset
         objc_setAssociatedObject(adopted, &stateKey, State(renderer: renderer), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        adopted.installGrid()
+        install(on: adopted)
         return adopted
     }
 
-    private func installGrid() {
-        guard let renderer = state?.renderer else { return }
+    private static func install(on table: NSTableView) {
+        guard let renderer = state(of: table)?.renderer else { return }
         // The Claude header (its palette is the renderer's) before the renderer sizes it to 30pt.
-        if let header = headerView, Swift.type(of: header) == NSTableHeaderView.self {
+        if let header = table.headerView, type(of: header) == NSTableHeaderView.self {
             let claudeHeader = SAClaudeTableHeaderView(frame: header.frame)
             claudeHeader.menu = header.menu
-            headerView = claudeHeader
+            table.headerView = claudeHeader
         }
         // Cell-based tables mark the selected row's cells highlighted, which draws a system selection box over the
         // theme selection; with no highlight style the cells stay plain and the selection is drawn below (as the
         // Query Console does).
-        selectionHighlightStyle = .none
+        table.selectionHighlightStyle = .none
         renderer.install()
         // The table's own values set before the swap: run them through the clamps now.
-        gridStyleMask = super.gridStyleMask
-        rowHeight = super.rowHeight
-        updateTrackingAreas()
-        needsDisplay = true
+        table.gridStyleMask = table.gridStyleMask
+        table.rowHeight = table.rowHeight
+        table.updateTrackingAreas()
+        table.needsDisplay = true
     }
 
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        state?.renderer.applyPalette(force: true)
+    // MARK: Forwarding (called by the grid classes' overrides)
+
+    static func gridMask(_ table: NSTableView, _ proposed: NSTableView.GridLineStyle) -> NSTableView.GridLineStyle {
+        state(of: table)?.renderer.gridMask(proposed) ?? proposed
     }
 
-    override var gridStyleMask: NSTableView.GridLineStyle {
-        get { super.gridStyleMask }
-        set { super.gridStyleMask = state?.renderer.gridMask(newValue) ?? newValue }
+    static func rowHeight(_ table: NSTableView, _ proposed: CGFloat) -> CGFloat {
+        state(of: table)?.renderer.clampedRowHeight(proposed) ?? proposed
     }
 
-    override var rowHeight: CGFloat {
-        get { super.rowHeight }
-        set { super.rowHeight = state?.renderer.clampedRowHeight(newValue) ?? newValue }
-    }
-
-    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        let frame = super.frameOfCell(atColumn: column, row: row)
-        guard let state else { return frame }
+    static func frameOfCell(_ table: NSTableView, _ frame: NSRect, column: Int) -> NSRect {
+        guard let state = state(of: table) else { return frame }
         let centred = state.renderer.frameOfCell(frame, column: column)
         guard state.cellPadding > 0 else { return centred }
         return NSRect(x: centred.minX + state.cellPadding, y: centred.minY, width: max(0, centred.width - 2 * state.cellPadding), height: centred.height)
     }
 
     /// No highlight style means AppKit skips highlightSelection(inClipRect:); hover and selection are filled here
-    /// instead, at the same point (after the background, before the lines and cells).
-    override func drawBackground(inClipRect clipRect: NSRect) {
-        guard let renderer = state?.renderer else { return super.drawBackground(inClipRect: clipRect) }
+    /// instead, at the same point (after the background, before the lines and cells). False: not a grid yet.
+    static func drawBackground(_ table: NSTableView, in clipRect: NSRect) -> Bool {
+        guard let renderer = state(of: table)?.renderer else { return false }
         renderer.drawBackground(in: clipRect)
         renderer.highlightSelection(in: clipRect)
+        return true
+    }
+
+    static func drawGrid(_ table: NSTableView, in clipRect: NSRect) -> Bool {
+        guard let renderer = state(of: table)?.renderer else { return false }
+        renderer.drawGrid(in: clipRect)
+        return true
+    }
+
+    static func didDrawRow(_ table: NSTableView, _ row: Int, clipRect: NSRect) {
+        state(of: table)?.drawOverRow?(row, table.rect(ofRow: row).intersection(clipRect))
+    }
+
+    static func prepared(_ cell: NSCell?, column: Int, row: Int, in table: NSTableView) {
+        guard let cell, let prepare = state(of: table)?.prepareCell else { return }
+        prepare(cell, column, row)
+        cell.isHighlighted = false
+    }
+
+    static func appearanceChanged(_ table: NSTableView) { state(of: table)?.renderer.applyPalette(force: true) }
+    static func updateTrackingArea(_ table: NSTableView) { state(of: table)?.renderer.updateTrackingArea() }
+    static func mouseMoved(_ table: NSTableView, _ event: NSEvent) { state(of: table)?.renderer.mouseMoved(event) }
+    static func mouseExited(_ table: NSTableView) { state(of: table)?.renderer.mouseExited() }
+    static func scrolled(_ table: NSTableView) { state(of: table)?.renderer.scrolled() }
+
+    /// Around a reload (`super.reloadData()` in between).
+    static func reload(_ table: NSTableView, _ reload: () -> Void) {
+        let state = state(of: table)
+        state?.renderer.rowsReloaded()
+        state?.willReload()
+        reload()
+        state?.didReload()
+    }
+
+    static func rowsChanged(_ table: NSTableView) { state(of: table)?.renderer.rowsReloaded() }
+}
+
+/// A plain NSTableView in the Claude grid look (`SAClaudeUtilityGrid`). Open for subclassing: the Server Variables list is
+/// `SAClaudeServerVariablesTableView`.
+@objc(SAClaudeUtilityGridTableView) class SAClaudeUtilityGridTableView: NSTableView, SAClaudeUtilityGridList {
+
+    typealias State = SAClaudeUtilityGrid.State
+
+    var state: State? { SAClaudeUtilityGrid.state(of: self) }
+
+    /// Turns an exact NSTableView into `gridClass` (this class or a subclass of it) and installs the grid; the table
+    /// unchanged when it was already adopted. Nil when it can't (another class, or observed by KVO, `SAClaudeClassSwap`).
+    static func adopt(_ table: NSTableView, as gridClass: SAClaudeUtilityGridTableView.Type = SAClaudeUtilityGridTableView.self) -> SAClaudeUtilityGridTableView? {
+        // Plain NSTextFieldCells draw their text at the top of the frame (no SPTextAndLinkCell 2pt shift).
+        SAClaudeUtilityGrid.adopt(table, from: NSTableView.self, as: gridClass, cellTextTopOffset: 0)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        SAClaudeUtilityGrid.appearanceChanged(self)
+    }
+
+    override var gridStyleMask: NSTableView.GridLineStyle {
+        get { super.gridStyleMask }
+        set { super.gridStyleMask = SAClaudeUtilityGrid.gridMask(self, newValue) }
+    }
+
+    override var rowHeight: CGFloat {
+        get { super.rowHeight }
+        set { super.rowHeight = SAClaudeUtilityGrid.rowHeight(self, newValue) }
+    }
+
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        SAClaudeUtilityGrid.frameOfCell(self, super.frameOfCell(atColumn: column, row: row), column: column)
+    }
+
+    override func drawBackground(inClipRect clipRect: NSRect) {
+        if !SAClaudeUtilityGrid.drawBackground(self, in: clipRect) { super.drawBackground(inClipRect: clipRect) }
     }
 
     override func drawGrid(inClipRect clipRect: NSRect) {
-        guard let renderer = state?.renderer else { return super.drawGrid(inClipRect: clipRect) }
-        renderer.drawGrid(in: clipRect)
+        if !SAClaudeUtilityGrid.drawGrid(self, in: clipRect) { super.drawGrid(inClipRect: clipRect) }
     }
 
     override func drawRow(_ row: Int, clipRect: NSRect) {
         super.drawRow(row, clipRect: clipRect)
-        state?.drawOverRow?(row, rect(ofRow: row).intersection(clipRect))
+        SAClaudeUtilityGrid.didDrawRow(self, row, clipRect: clipRect)
     }
 
     // Cell-based tables only; overriding the deprecated hook is deliberate.
     @available(macOS, deprecated: 10.10)
     override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
         let cell = super.preparedCell(atColumn: column, row: row)
-        if let cell, let prepare = state?.prepareCell {
-            prepare(cell, column, row)
-            cell.isHighlighted = false
-        }
+        SAClaudeUtilityGrid.prepared(cell, column: column, row: row, in: self)
         return cell
     }
 
-    // MARK: Hover
-
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
-        state?.renderer.updateTrackingArea()
+        SAClaudeUtilityGrid.updateTrackingArea(self)
     }
 
     override func mouseMoved(with event: NSEvent) {
         super.mouseMoved(with: event)
-        state?.renderer.mouseMoved(event)
+        SAClaudeUtilityGrid.mouseMoved(self, event)
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        state?.renderer.mouseExited()
+        SAClaudeUtilityGrid.mouseExited(self)
     }
 
     override func scrollWheel(with event: NSEvent) {
         super.scrollWheel(with: event)
-        state?.renderer.scrolled()
+        SAClaudeUtilityGrid.scrolled(self)
     }
 
-    // MARK: Reloads
-
     override func reloadData() {
-        state?.renderer.rowsReloaded()
-        state?.willReload()
-        super.reloadData()
-        state?.didReload()
+        SAClaudeUtilityGrid.reload(self) { super.reloadData() }
     }
 
     override func noteNumberOfRowsChanged() {
-        state?.renderer.rowsReloaded()
+        SAClaudeUtilityGrid.rowsChanged(self)
+        super.noteNumberOfRowsChanged()
+    }
+}
+
+/// An `SPCopyTable` (the Advanced Filter panel's) in the Claude grid look (`SAClaudeUtilityGrid`); SPCopyTable's own
+/// behaviour (copy, editing keys, menus) is untouched.
+@objc(SAClaudeUtilityGridCopyTable) final class SAClaudeUtilityGridCopyTable: SPCopyTable, SAClaudeUtilityGridList {
+
+    var state: SAClaudeUtilityGrid.State? { SAClaudeUtilityGrid.state(of: self) }
+
+    /// Turns an exact SPCopyTable into this class and installs the grid (its cells are SPTextAndLinkCells).
+    static func adopt(_ table: NSTableView) -> SAClaudeUtilityGridCopyTable? {
+        SAClaudeUtilityGrid.adopt(table, from: SPCopyTable.self, as: SAClaudeUtilityGridCopyTable.self, cellTextTopOffset: 2)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        SAClaudeUtilityGrid.appearanceChanged(self)
+    }
+
+    override var gridStyleMask: NSTableView.GridLineStyle {
+        get { super.gridStyleMask }
+        set { super.gridStyleMask = SAClaudeUtilityGrid.gridMask(self, newValue) }
+    }
+
+    override var rowHeight: CGFloat {
+        get { super.rowHeight }
+        set { super.rowHeight = SAClaudeUtilityGrid.rowHeight(self, newValue) }
+    }
+
+    override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
+        SAClaudeUtilityGrid.frameOfCell(self, super.frameOfCell(atColumn: column, row: row), column: column)
+    }
+
+    override func drawBackground(inClipRect clipRect: NSRect) {
+        if !SAClaudeUtilityGrid.drawBackground(self, in: clipRect) { super.drawBackground(inClipRect: clipRect) }
+    }
+
+    override func drawGrid(inClipRect clipRect: NSRect) {
+        if !SAClaudeUtilityGrid.drawGrid(self, in: clipRect) { super.drawGrid(inClipRect: clipRect) }
+    }
+
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        super.drawRow(row, clipRect: clipRect)
+        SAClaudeUtilityGrid.didDrawRow(self, row, clipRect: clipRect)
+    }
+
+    // Cell-based tables only; overriding the deprecated hook is deliberate.
+    @available(macOS, deprecated: 10.10)
+    override func preparedCell(atColumn column: Int, row: Int) -> NSCell? {
+        let cell = super.preparedCell(atColumn: column, row: row)
+        SAClaudeUtilityGrid.prepared(cell, column: column, row: row, in: self)
+        return cell
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        SAClaudeUtilityGrid.updateTrackingArea(self)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        SAClaudeUtilityGrid.mouseMoved(self, event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        SAClaudeUtilityGrid.mouseExited(self)
+    }
+
+    override func scrollWheel(with event: NSEvent) {
+        super.scrollWheel(with: event)
+        SAClaudeUtilityGrid.scrolled(self)
+    }
+
+    override func reloadData() {
+        SAClaudeUtilityGrid.reload(self) { super.reloadData() }
+    }
+
+    override func noteNumberOfRowsChanged() {
+        SAClaudeUtilityGrid.rowsChanged(self)
         super.noteNumberOfRowsChanged()
     }
 }

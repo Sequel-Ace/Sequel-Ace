@@ -543,7 +543,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (CGFloat)tableView:(NSTableView *)aTableView heightOfRow:(NSInteger)rowIndex
 {
-	return ([[contentFilters objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18;
+	// The Claude sidebar look gives the list its own row height (SAClaudeManagerSheetStyler).
+	return [SAClaudeUtilitySidebarMetrics rowHeightForTable:aTableView proposed:([[contentFilters objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18];
 }
 
 /**

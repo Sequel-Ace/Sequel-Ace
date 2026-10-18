@@ -114,6 +114,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (void)awakeFromNib
 {
     [super awakeFromNib];
+
+	// The Claude look's grid for the Edit Theme List sheet's list must be installed before AppKit first lays that sheet out.
+	[SAClaudeSmallUtilitySheetsStyler prepareThemeList:editThemeListTable];
     
 	[NSColor setIgnoresAlpha:NO];
 	

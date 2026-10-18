@@ -247,7 +247,7 @@ final class SAClaudeUtilityWindowLayoutTests: XCTestCase {
 
     func testBarButtonsLeftToRight() {
         let frames = Layout.barButtons(count: 3, x: 6, midY: 16)
-        XCTAssertEqual(frames.map(\.minX), [6, 6 + Layout.barButtonSize + Layout.barButtonGap, 6 + 2 * (Layout.barButtonSize + Layout.barButtonGap)])
-        XCTAssertTrue(frames.allSatisfy { $0.midY == 16 && $0.width == Layout.barButtonSize })
+        XCTAssertEqual(frames.map(\.minX), [6, 6 + SAClaudeSidebarBarLayout.buttonSize + SAClaudeSidebarBarLayout.buttonGap, 6 + 2 * (SAClaudeSidebarBarLayout.buttonSize + SAClaudeSidebarBarLayout.buttonGap)])
+        XCTAssertTrue(frames.allSatisfy { $0.midY == 16 && $0.width == SAClaudeSidebarBarLayout.buttonSize })
     }
 }

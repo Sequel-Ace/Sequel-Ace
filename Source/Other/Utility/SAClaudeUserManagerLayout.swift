@@ -167,14 +167,10 @@ enum SAClaudeUserManagerLayout {
 
     // MARK: Sidebar bar
 
-    /// The sidebar's bottom bar buttons (add, remove, gear), left to right from `x`, centred on `midY`.
-    static let barButtonSize: CGFloat = 28
-    static let barButtonGap: CGFloat = 2
-
+    /// The sidebar's bottom bar buttons (add, remove, gear), left to right from `x`, centred on `midY` (the shared
+    /// sidebar bar's).
     static func barButtons(count: Int, x: CGFloat, midY: CGFloat) -> [NSRect] {
-        (0..<count).map { index in
-            NSRect(x: x + CGFloat(index) * (barButtonSize + barButtonGap), y: (midY - barButtonSize / 2).rounded(),
-                   width: barButtonSize, height: barButtonSize)
-        }
+        SAClaudeSidebarBarLayout.buttons(count: count, x: x, midY: midY)
     }
 }
+

@@ -35,6 +35,7 @@
 #import "SPTextView.h"
 #import "RegexKitLite.h"
 #import "SPTextAndLinkCell.h"
+#import "sequel-ace-Swift.h"
 
 static NSString *SPTableFilterSetDefaultOperator = @"SPTableFilterSetDefaultOperator";
 static void *FilterTableKVOContext = &FilterTableKVOContext;
@@ -241,6 +242,9 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableLiveSearchCheckbox setState:NSControlStateValueOff];
 
 	filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]];
+
+	// The Claude look's grid for the filter table must be installed before the panel is first shown.
+	[SAClaudeSmallUtilitySheetsStyler claimWindow:[self window]];
     [super windowDidLoad];
 }
 

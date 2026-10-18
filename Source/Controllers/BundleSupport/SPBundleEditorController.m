@@ -344,6 +344,8 @@
 
 	[self _initTree];
 
+	// The Claude look's grid for the Undelete sheet's list must be installed before AppKit first lays that sheet out.
+	[SAClaudeBundleEditorStyler prepareUndeleteList:undeleteTableView];
 };
 
 #pragma mark -

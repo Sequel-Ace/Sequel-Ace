@@ -58,6 +58,8 @@
 #import "SPSplitView.h"
 #import "SPOutlineView.h"
 #import "ImageAndTextCell.h"
+#import "SPNavigatorOutlineView.h"
+#import <ShortcutRecorder/SRRecorderControl.h>
 #import "SPComboPopupButton.h"
 #import "NoodleLineNumberView.h"
 #import "SPTreeNode.h"

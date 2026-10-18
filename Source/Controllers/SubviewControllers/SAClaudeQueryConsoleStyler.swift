@@ -490,6 +490,7 @@ final class SAClaudeConsoleToolbarView: NSView {
     }
 
     override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        SAClaudeNativeTextLabel.hide(in: controlView)
         searchButtonCell?.draw(withFrame: searchButtonRect(forBounds: cellFrame), in: controlView)
         if !stringValue.isEmpty {
             cancelButtonCell?.draw(withFrame: cancelButtonRect(forBounds: cellFrame), in: controlView)
@@ -518,6 +519,20 @@ final class SAClaudeConsoleToolbarView: NSView {
         let editor = super.setUpFieldEditorAttributes(textObj)
         (editor as? NSTextView)?.insertionPointColor = textColor ?? .textColor
         return editor
+    }
+}
+
+/// The private view macOS 26+ draws a text field's text with while it is not being edited (`NSTextFieldSimpleLabel`). A
+/// Claude search cell draws its text and placeholder itself, so that view would draw them a second time, a few points off.
+/// AppKit hides and shows it as editing begins and ends (and may make a new one), so it is made transparent rather than
+/// hidden, each time the cell draws. Where the class doesn't exist nothing matches and nothing changes.
+enum SAClaudeNativeTextLabel {
+    static let className = "NSTextFieldSimpleLabel"
+
+    static func hide(in field: NSView) {
+        for view in field.subviews where view.alphaValue != 0 && String(describing: type(of: view)) == className {
+            view.alphaValue = 0
+        }
     }
 }
 

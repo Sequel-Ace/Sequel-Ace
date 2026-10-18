@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5EC0DECA000000000000000D /* SAClaudeBundleEditorLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA000000000000000C /* SAClaudeBundleEditorLayoutTests.swift */; };
+		5EC0DECA000000000000000B /* SAClaudeBundleEditorLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA0000000000000009 /* SAClaudeBundleEditorLayout.swift */; };
+		5EC0DECA000000000000000A /* SAClaudeBundleEditorLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA0000000000000009 /* SAClaudeBundleEditorLayout.swift */; };
+		5EC0DECA0000000000000008 /* SAClaudeSmallUtilitySheetsStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA0000000000000007 /* SAClaudeSmallUtilitySheetsStyler.swift */; };
+		5EC0DECA0000000000000006 /* SAClaudeBundleEditorStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA0000000000000005 /* SAClaudeBundleEditorStyler.swift */; };
+		5EC0DECA0000000000000004 /* SAClaudeNavigatorStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA0000000000000003 /* SAClaudeNavigatorStyler.swift */; };
+		5EC0DECA0000000000000002 /* SAClaudeManagerSheetStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DECA0000000000000001 /* SAClaudeManagerSheetStyler.swift */; };
 		5EC0DEC80000000000000007 /* SAClaudeServerVariablesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC80000000000000006 /* SAClaudeServerVariablesModelTests.swift */; };
 		5EC0DEC9000000000000000B /* SAClaudeUserManagerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC9000000000000000A /* SAClaudeUserManagerLayout.swift */; };
 		5EC0DEC9000000000000000C /* SAClaudeUserManagerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC9000000000000000A /* SAClaudeUserManagerLayout.swift */; };
@@ -1127,6 +1134,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5EC0DECA000000000000000C /* SAClaudeBundleEditorLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBundleEditorLayoutTests.swift; sourceTree = "<group>"; };
+		5EC0DECA0000000000000009 /* SAClaudeBundleEditorLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBundleEditorLayout.swift; sourceTree = "<group>"; };
+		5EC0DECA0000000000000007 /* SAClaudeSmallUtilitySheetsStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSmallUtilitySheetsStyler.swift; sourceTree = "<group>"; };
+		5EC0DECA0000000000000005 /* SAClaudeBundleEditorStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBundleEditorStyler.swift; sourceTree = "<group>"; };
+		5EC0DECA0000000000000003 /* SAClaudeNavigatorStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeNavigatorStyler.swift; sourceTree = "<group>"; };
+		5EC0DECA0000000000000001 /* SAClaudeManagerSheetStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeManagerSheetStyler.swift; sourceTree = "<group>"; };
 		5EC0DEC80000000000000006 /* SAClaudeServerVariablesModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeServerVariablesModelTests.swift; sourceTree = "<group>"; };
 		5EC0DEC9000000000000000A /* SAClaudeUserManagerLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUserManagerLayout.swift; sourceTree = "<group>"; };
 		5EC0DEC90000000000000001 /* SAClaudeUtilityWindowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUtilityWindowLayout.swift; sourceTree = "<group>"; };
@@ -3176,6 +3189,10 @@
 		17FDB0AC1280938000DBBBC2 /* Controls */ = {
 			isa = PBXGroup;
 			children = (
+				5EC0DECA0000000000000007 /* SAClaudeSmallUtilitySheetsStyler.swift */,
+				5EC0DECA0000000000000005 /* SAClaudeBundleEditorStyler.swift */,
+				5EC0DECA0000000000000003 /* SAClaudeNavigatorStyler.swift */,
+				5EC0DECA0000000000000001 /* SAClaudeManagerSheetStyler.swift */,
 				5EC0DEC80000000000000004 /* SAClaudeServerVariablesStyler.swift */,
 				5EC0DEC90000000000000006 /* SAClaudeUserManagerStyler.swift */,
 				5EC0DEC90000000000000004 /* SAClaudeUtilityWindowStyler.swift */,
@@ -3371,6 +3388,7 @@
 		507FF10E1BBCC4A900104523 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				5EC0DECA0000000000000009 /* SAClaudeBundleEditorLayout.swift */,
 				5EC0DEC80000000000000001 /* SAClaudeServerVariablesModel.swift */,
 				5EC0DEC90000000000000001 /* SAClaudeUtilityWindowLayout.swift */,
 				5EC0DEC9000000000000000A /* SAClaudeUserManagerLayout.swift */,
@@ -3453,6 +3471,7 @@
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				5EC0DECA000000000000000C /* SAClaudeBundleEditorLayoutTests.swift */,
 				5EC0DEC80000000000000006 /* SAClaudeServerVariablesModelTests.swift */,
 				5EC0DEC90000000000000008 /* SAClaudeUtilityWindowLayoutTests.swift */,
 				A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */,
@@ -4203,6 +4222,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EC0DECA000000000000000D /* SAClaudeBundleEditorLayoutTests.swift in Sources */,
+				5EC0DECA000000000000000B /* SAClaudeBundleEditorLayout.swift in Sources */,
 				5EC0DEC80000000000000007 /* SAClaudeServerVariablesModelTests.swift in Sources */,
 				5EC0DEC90000000000000009 /* SAClaudeUtilityWindowLayoutTests.swift in Sources */,
 				5EC0DEC90000000000000003 /* SAClaudeUtilityWindowLayout.swift in Sources */,
@@ -4590,6 +4611,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EC0DECA000000000000000A /* SAClaudeBundleEditorLayout.swift in Sources */,
+				5EC0DECA0000000000000008 /* SAClaudeSmallUtilitySheetsStyler.swift in Sources */,
+				5EC0DECA0000000000000006 /* SAClaudeBundleEditorStyler.swift in Sources */,
+				5EC0DECA0000000000000004 /* SAClaudeNavigatorStyler.swift in Sources */,
+				5EC0DECA0000000000000002 /* SAClaudeManagerSheetStyler.swift in Sources */,
 				5EC0DEC80000000000000005 /* SAClaudeServerVariablesStyler.swift in Sources */,
 				5EC0DEC90000000000000007 /* SAClaudeUserManagerStyler.swift in Sources */,
 				5EC0DEC90000000000000005 /* SAClaudeUtilityWindowStyler.swift in Sources */,

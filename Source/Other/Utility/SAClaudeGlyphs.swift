@@ -103,7 +103,9 @@ import AppKit
                      glyphX: SAClaudeStyle.sidebarIconLeading)
     }
 
-    private static func image(_ glyph: SAClaudeGlyph, tint: NSColor, canvas: NSSize, glyphX: CGFloat) -> NSImage {
+    /// The icon drawn at `glyphX` on a `canvas` (the gap after it is the canvas's; for an `ImageAndTextCell`, which draws its
+    /// text right after its image).
+    static func image(_ glyph: SAClaudeGlyph, tint: NSColor, canvas: NSSize, glyphX: CGFloat) -> NSImage {
         let image = NSImage(size: canvas, flipped: true) { _ in
             // `tint` is dynamic: it resolves against the appearance current at draw time.
             tint.setStroke()

@@ -148,3 +148,47 @@ enum SAClaudeFormCardLayout {
         }
     }
 }
+
+// MARK: - Footer
+
+/// Push buttons along the bottom of a sheet or pane, right-aligned on the margin (as the User Manager's Apply and Cancel):
+/// the rightmost first, each `gap` from the next as drawn. Frames carry the classic side margins inside them
+/// (`buttonInset`), so the drawn buttons line up with the margin.
+enum SAClaudeFooterLayout {
+    static let margin: CGFloat = 18
+    static let bottom: CGFloat = 12
+    /// A regular push button's XIB height (its classic margins included).
+    static let height: CGFloat = 32
+    /// Between two buttons as drawn.
+    static let gap: CGFloat = 12
+
+    /// One frame per width, right to left from `maxX - margin`, at `y`.
+    static func trailing(widths: [CGFloat], maxX: CGFloat, y: CGFloat, buttonInset: CGFloat, margin: CGFloat = margin) -> [NSRect] {
+        var right = maxX - margin + buttonInset
+        return widths.map { width in
+            let frame = NSRect(x: right - width, y: y, width: width, height: height)
+            right = frame.minX + 2 * buttonInset - gap
+            return frame
+        }
+    }
+
+    /// The leftmost x the drawn buttons reach (the left edge of the last frame, inside its margin).
+    static func leadingEdge(of frames: [NSRect], buttonInset: CGFloat) -> CGFloat {
+        (frames.map(\.minX).min() ?? 0) + buttonInset
+    }
+}
+
+// MARK: - Sidebar bar
+
+/// The bottom bar's glyph buttons under a source list: 28pt squares from `x`, 2pt apart, centred on the bar.
+enum SAClaudeSidebarBarLayout {
+    static let buttonSize: CGFloat = 28
+    static let buttonGap: CGFloat = 2
+
+    static func buttons(count: Int, x: CGFloat, midY: CGFloat) -> [NSRect] {
+        (0..<max(0, count)).map { index in
+            NSRect(x: x + CGFloat(index) * (buttonSize + buttonGap), y: (midY - buttonSize / 2).rounded(),
+                   width: buttonSize, height: buttonSize)
+        }
+    }
+}

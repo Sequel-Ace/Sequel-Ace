@@ -236,11 +236,6 @@ enum SAClaudeServerVariablesCellText {
         observers.append(centre.addObserver(forName: NSView.frameDidChangeNotification, object: contentView, queue: nil) { [weak self] _ in
             MainActor.assumeIsolated { self?.layout() }
         })
-        // AppKit may give the search field a new text label of its own when editing ends.
-        observers.append(centre.addObserver(forName: NSControl.textDidEndEditingNotification, object: searchField, queue: nil) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hideNativeSearchText() }
-            DispatchQueue.main.async { MainActor.assumeIsolated { self?.hideNativeSearchText() } }
-        })
         contentView.postsFrameChangedNotifications = true
         // The highlights are drawn in the accent; the hairlines follow the theme.
         SAClaudeAccent.observe(self) { styler in
@@ -258,7 +253,6 @@ enum SAClaudeServerVariablesCellText {
     private func apply() {
         layout()
         table?.sizeLastColumnToFit()
-        hideNativeSearchText()
         applyLineColour()
     }
 
@@ -268,19 +262,6 @@ enum SAClaudeServerVariablesCellText {
         guard topLine.colourOverride != hairline else { return }
         topLine.colourOverride = hairline
         bottomLine.colourOverride = hairline
-    }
-
-    /// The private view macOS 26+ draws a text field's text with while it is not being edited. The Claude search cell
-    /// draws the text (and placeholder) itself, so the label would draw it a second time, a few points off. AppKit
-    /// hides and shows it as editing begins and ends, so it is made transparent rather than hidden; checked again
-    /// whenever AppKit may have made a new one (each claim, editing end, filter reload).
-    private static let nativeTextLabelClass = "NSTextFieldSimpleLabel"
-
-    private func hideNativeSearchText() {
-        guard let searchField else { return }
-        for view in searchField.subviews where view.alphaValue != 0 && String(describing: type(of: view)) == Self.nativeTextLabelClass {
-            view.alphaValue = 0
-        }
     }
 
     private func layout() {
@@ -331,7 +312,6 @@ enum SAClaudeServerVariablesCellText {
         defer {
             isRestoring = false
             updateDetail()
-            hideNativeSearchText()
         }
         guard let table else { return }
         let visible = (0..<table.numberOfRows).map { variable(at: $0)?.name ?? "" }

@@ -98,7 +98,8 @@ import AppKit
     /// Restyles `window` if it is a target: already skinned windows are walked again with the current colours. Every
     /// window styled (and every open panel whose accessory is) is then offered to the Import flow's styler, which
     /// claims its own; windows are also offered to the table/database sheets' form (`SAClaudeFormSheetStyler`), the
-    /// Server Variables sheet (`SAClaudeServerVariablesStyler`) and the User Manager (`SAClaudeUserManagerStyler`).
+    /// Server Variables sheet (`SAClaudeServerVariablesStyler`), the User Manager (`SAClaudeUserManagerStyler`) and the
+    /// other utility windows (`claimUtilityWindow`).
     static func consider(_ window: NSWindow) {
         if let skin = SAClaudeWindowSkin.skin(for: window) {
             skin.refresh(force: true)
@@ -107,6 +108,7 @@ import AppKit
             SAClaudeFormSheetStyler.claim(window)
             MainActor.assumeIsolated { SAClaudeServerVariablesStyler.claim(window) }
             MainActor.assumeIsolated { SAClaudeUserManagerStyler.claim(window) }
+            MainActor.assumeIsolated { claimUtilityWindow(window) }
             return
         }
         let alert = (window.delegate as? NSAlert).flatMap { $0.window === window ? $0 : nil }
@@ -139,9 +141,19 @@ import AppKit
             SAClaudeFormSheetStyler.claim(window)
             MainActor.assumeIsolated { SAClaudeServerVariablesStyler.claim(window) }
             MainActor.assumeIsolated { SAClaudeUserManagerStyler.claim(window) }
+            MainActor.assumeIsolated { claimUtilityWindow(window) }
         case .skip:
             break
         }
+    }
+
+    /// The other utility windows' bespoke stylers (section D of the utility windows spec): each claims only its own window.
+    @MainActor
+    private static func claimUtilityWindow(_ window: NSWindow) {
+        SAClaudeManagerSheetStyler.claim(window)
+        SAClaudeNavigatorStyler.claim(window)
+        SAClaudeBundleEditorStyler.claim(window)
+        SAClaudeSmallUtilitySheetsStyler.claim(window)
     }
 
     /// The object's class as its code sees it: KVO's runtime subclasses are skipped.
@@ -596,7 +608,7 @@ final class SAClaudeWindowSkin: NSObject {
     /// Tables already in the Claude look, source lists and colours the code chose are left alone. Also called for the
     /// AppKit tables Settings hosts inside its SwiftUI content, which the walk skips.
     static func styleTable(_ table: NSTableView, _ colours: SAClaudeSheetColours) {
-        if table is SAClaudeCopyTable || table is SAClaudeTableView || table is SAClaudeUtilityGridTableView
+        if table is SAClaudeCopyTable || table is SAClaudeTableView || table is SAClaudeUtilityGridList
             || SAClaudeUtilitySidebar.isAdopted(table) { return }
         // The XIBs' older tables are source lists by their (deprecated) highlight style, raw value 1.
         let isSourceList = table.style == .sourceList || table.selectionHighlightStyle.rawValue == 1

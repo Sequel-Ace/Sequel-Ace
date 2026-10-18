@@ -275,8 +275,8 @@ import AppKit
     }
 
     private func buildSidebar() {
-        SAClaudeUtilitySidebar.adopt(o.outline) { table, row in
-            Self.accountGlyph(table: table, row: row)
+        SAClaudeUtilitySidebar.adopt(o.outline) { state in
+            state.glyph = { table, row, _ in Self.accountGlyph(table: table, row: row) }
         }
         let pane = o.sidebarPane
         SAClaudeSidebarChrome.addSidebarBackground(to: pane)
@@ -532,12 +532,8 @@ import AppKit
         frameSchemaLists()
     }
 
-    /// The title at the button font, the pill's padding and the classic margins either side; at least 84pt.
     private func buttonWidth(_ button: NSButton) -> CGFloat {
-        let medium = NSFont.systemFont(ofSize: (button.font ?? Self.buttonFont).pointSize, weight: .medium)
-        let title = ceil((button.title as NSString).size(withAttributes: [.font: medium]).width)
-        let inset = SAClaudeSheetButtonGeometry.metrics(for: button.controlSize).classicSideMargin
-        return max(84, title + 2 * SAClaudeFilterChrome.pillPadding + 2 * inset + 8)
+        SAClaudeUtilityChrome.pushButtonWidth(button)
     }
 
     // MARK: Errors sheet

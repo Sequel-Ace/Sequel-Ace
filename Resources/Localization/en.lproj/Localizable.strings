@@ -6454,3 +6454,45 @@
 
 /* user manager : schema privileges tab, tooltip of the arrow that moves the selected granted privileges back to the available list */
 "ClaudeUserManagerRevokeSchemaPrivileges" = "Revoke the selected privileges";
+
+/* query favorites manager : tooltip and accessibility name of the add button under the favorites list */
+"ClaudeQueryFavoritesAdd" = "Add query favorite";
+
+/* query favorites manager : tooltip and accessibility name of the remove button under the favorites list */
+"ClaudeQueryFavoritesRemove" = "Remove query favorite";
+
+/* query favorites manager : tooltip and accessibility name of the gear menu under the favorites list (Duplicate, Import, Export…) */
+"ClaudeQueryFavoritesActions" = "Favorite actions";
+
+/* content filter manager : tooltip and accessibility name of the add button under the filters list */
+"ClaudeContentFiltersAdd" = "Add content filter";
+
+/* content filter manager : tooltip and accessibility name of the remove button under the filters list */
+"ClaudeContentFiltersRemove" = "Remove content filter";
+
+/* content filter manager : tooltip and accessibility name of the gear menu under the filters list (Duplicate, Import, Export) */
+"ClaudeContentFiltersActions" = "Filter actions";
+
+/* utility windows : tooltip and accessibility name of a help (?) button */
+"ClaudeUtilityHelp" = "Help";
+
+/* navigator : tooltip and accessibility name of the reload button in the top bar */
+"ClaudeNavigatorReload" = "Reload all structures";
+
+/* bundle editor : label of the keyboard shortcut recorder in the bundle form */
+"ClaudeBundleEditorShortcutLabel" = "Shortcut:";
+
+/* bundle editor : tooltip and accessibility name of the add button under the bundles list */
+"ClaudeBundleEditorAdd" = "Add bundle";
+
+/* bundle editor : tooltip and accessibility name of the remove button under the bundles list */
+"ClaudeBundleEditorRemove" = "Remove bundle";
+
+/* bundle editor : tooltip and accessibility name of the gear menu under the bundles list (Duplicate, Export, Reveal…) */
+"ClaudeBundleEditorActions" = "Bundle actions";
+
+/* settings : edit theme list sheet : tooltip and accessibility name of the duplicate button under the themes list */
+"ClaudeThemeListDuplicate" = "Duplicate theme";
+
+/* settings : edit theme list sheet : tooltip and accessibility name of the remove button under the themes list */
+"ClaudeThemeListRemove" = "Remove theme";
