@@ -3755,20 +3755,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     SPLog(@"Cannot read sshConfigFile: %@", sshConfigFile);
 
     NSAlert *alert = [[NSAlert alloc] init];
-    [alert addButtonWithTitle:NSLocalizedString(@"Go to Network Settings", @"SSH config file error alert - Go to network settings button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"ClaudeSettings.pointer.openSettings", @"Claude Settings pointer: button that opens Settings on the place the message names (was \"Open Files Preferences\" / \"Go to Network Settings\")")];
     [alert addButtonWithTitle:NSLocalizedString(@"Reset to Default & Continue", @"SSH config file error alert - Reset to default button")];
     [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"SSH config file error alert - Cancel button")];
     [alert setMessageText:NSLocalizedString(@"Cannot Access SSH Config File", @"SSH config file error alert title")];
-    [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.", @"SSH config file error alert message"), sshConfigFile]];
+    [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"ClaudeSettings.pointer.sshConfigFile.message", @"Claude Settings pointer: SSH config file error alert message; %@ is the file's path"), sshConfigFile]];
     [alert setAlertStyle:NSAlertStyleWarning];
 
     NSInteger response = [alert runModal];
 
     if (response == NSAlertFirstButtonReturn) { // Go to Settings
         SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
-        [prefCon showWindow:nil];
-        id filePaneItem = prefCon->networkItem;
-        [prefCon displayPreferencePane:filePaneItem];
+        [prefCon showSettingsForPointer:SAClaudeSettingsPointerConnectionSSHConfigFile];
         [self _restoreConnectionInterface];
         return NO;
     } else if (response == NSAlertSecondButtonReturn) { // Reset to Default

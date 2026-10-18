@@ -632,7 +632,7 @@ private extension SPMCPServer {
 
         case "kill_query":
             if UserDefaults.standard.bool(forKey: SPMCPReadOnly) {
-                return toolError("Read-only mode is enabled; kill_query is not allowed. Disable read-only mode in Sequel Ace Preferences > MCP Server.")
+                return toolError("Read-only mode is enabled; kill_query is not allowed. Disable read-only mode in Sequel Ace \(SAClaudeSettingsPointers.mcpReadOnlyPlace).")
             }
             guard let pid = arguments["process_id"] else { return toolError("Missing required argument: process_id") }
             return dictResult(ds.mcpKillProcessID("\(pid)", connection: conn))
@@ -802,7 +802,7 @@ private extension SPMCPServer {
     func readOnlyRejection(for sql: String) -> [String: Any]? {
         guard UserDefaults.standard.bool(forKey: SPMCPReadOnly) else { return nil }
         guard SPMCPReadOnlyGuard.isReadOnly(sql) else {
-            return toolError("Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries.")
+            return toolError("Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace \(SAClaudeSettingsPointers.mcpReadOnlyPlace) to run write queries.")
         }
         return nil
     }

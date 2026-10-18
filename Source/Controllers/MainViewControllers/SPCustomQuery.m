@@ -2295,7 +2295,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             // This shouldn't happen – for safety reasons
             if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
                 if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
                 } else {
                     NSBeep();
                 }
@@ -2354,7 +2354,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                     // This shouldn't happen – for safety reasons
                     if ( ![self->mySQLConnection rowsAffectedByLastQuery] ) {
                         if ( [self->prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
                         } else {
                             NSBeep();
                         }

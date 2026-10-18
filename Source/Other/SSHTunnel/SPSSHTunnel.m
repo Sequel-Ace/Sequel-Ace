@@ -466,7 +466,7 @@ static unsigned short getRandomPort(void);
 			// And I'm sure we will get issue reports about it anyway!
 			[debugMessagesLock lock];
 			[debugMessages addObject:@"################################################################"];
-			[debugMessages addObject:[NSString stringWithFormat:@"# %@",NSLocalizedString(@"Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!", @"SSH connection : debug header with user-defined ssh binary")]];
+			[debugMessages addObject:[NSString stringWithFormat:@"# %@",NSLocalizedString(@"ClaudeSettings.pointer.customSSHBinary.message", @"Claude Settings pointer: SSH connection debug header with user-defined ssh binary")]];
 			[debugMessages addObject:@"################################################################"];
 			[debugMessagesLock unlock];
 		}
@@ -533,14 +533,14 @@ static unsigned short getRandomPort(void);
                     BOOL validFile = IsLocalFilePath(customKnownHostsFilePath);
 
                     if(validFile == YES){
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.", @"known hosts not writable message"), customKnownHostsFilePath];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"ClaudeSettings.pointer.knownHosts.notWritable", @"Claude Settings pointer: known hosts not writable message; %@ is the file's path"), customKnownHostsFilePath];
                     }
                     else{
-                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.", @"known hosts is invalid message")];
+                        alertMessage = [NSString stringWithFormat:NSLocalizedString(@"ClaudeSettings.pointer.knownHosts.invalid", @"Claude Settings pointer: known hosts is invalid message")];
                     }
 
                 } else if ([customKnownHostsFilePath containsString:@"\""]) {
-                    alertMessage = [NSString stringWithFormat:NSLocalizedString(@"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.", @"known hosts contains quote message"), customKnownHostsFilePath];
+                    alertMessage = [NSString stringWithFormat:NSLocalizedString(@"ClaudeSettings.pointer.knownHosts.quote", @"Claude Settings pointer: known hosts contains quote message; %@ is the file's path"), customKnownHostsFilePath];
                 }
             }
             else{

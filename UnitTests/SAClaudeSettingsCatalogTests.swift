@@ -133,8 +133,9 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
     }
 
     /// The old pane controllers asked to refresh (`preferencePaneWillBeShown`) when a pane is shown: the ones whose
-    /// settings it holds — every old pane is refreshed by some pane, and the Files pane (its stale-file re-grant) only by
-    /// SSH and security.
+    /// settings it holds — every old pane is refreshed by some pane, and the Files pane only by SSH and security. That
+    /// refresh only reloads the accessible-files list now: the re-select panel is never part of a pane switch
+    /// (`testStaleFileRegrantOnlyWhenAskedForTheFilesList`).
     func testLegacyPanesRefreshedWithEachPane() {
         typealias L = SAClaudeSettingsCatalog.LegacyPane
         let expected: [SAClaudeSettingsPaneID: [L]] = [
@@ -155,6 +156,125 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         XCTAssertEqual(Set(all), Set(L.allCases))
         XCTAssertEqual(SAClaudeSettingsPaneID.allCases.filter { SAClaudeSettingsCatalog.legacyPanes(for: $0).contains(.file) },
                        [.sshSecurity])
+    }
+
+    /// The stale-file re-select panel opens by itself only when a caller asks for it and the request lands on the
+    /// accessible-files list; the sidebar, a pane switch, `displayPreferencePane:` and other rows never open it.
+    func testStaleFileRegrantOnlyWhenAskedForTheFilesList() {
+        typealias D = SAClaudeSettingsCatalog.Destination
+        let files = D(pane: .sshSecurity, rowID: "accessibleFiles")
+        XCTAssertTrue(SAClaudeSettingsCatalog.regrantsStaleFiles(files, requested: true))
+        XCTAssertFalse(SAClaudeSettingsCatalog.regrantsStaleFiles(files, requested: false))
+        for pane in SAClaudeSettingsPaneID.allCases {
+            for requested in [false, true] {
+                XCTAssertFalse(SAClaudeSettingsCatalog.regrantsStaleFiles(D(pane: pane, rowID: nil), requested: requested),
+                               "\(pane.rawValue) top, requested \(requested)")
+            }
+        }
+        for rowID in ["sshConfig", "knownHosts", "cipherOrder", "sshProgram"] {
+            XCTAssertFalse(SAClaudeSettingsCatalog.regrantsStaleFiles(D(pane: .sshSecurity, rowID: rowID), requested: true), rowID)
+        }
+        // The old Files toolbar item still lands on the list, but `displayPreferencePane:` never asks for the panel.
+        let legacy = SAClaudeSettingsCatalog.destination(forLegacyPane: SAClaudeSettingsCatalog.LegacyPane.file.rawValue)
+        XCTAssertEqual(legacy, files)
+        XCTAssertFalse(SAClaudeSettingsCatalog.regrantsStaleFiles(legacy, requested: false))
+    }
+
+    // MARK: - Pointers from elsewhere
+
+    /// Each message or button outside the window that points to a setting: its pane, row and whether it opens the
+    /// re-select panel (only the launch alert and the file prompts).
+    func testPointersRouteToTheirPaneRowAndRegrant() {
+        typealias P = SAClaudeSettingsPointer
+        let expected: [(P, SAClaudeSettingsPaneID, String, Bool, Bool)] = [   // pointer, pane, row, re-grant, has button
+            (.launchStaleFiles, .sshSecurity, "accessibleFiles", true, true),
+            (.connectionSSHConfigFile, .sshSecurity, "accessibleFiles", true, true),
+            (.networkMissingFiles, .sshSecurity, "accessibleFiles", true, false),
+            (.mcpPortError, .mcp, "mcpPort", false, false),
+            (.customSSHBinary, .sshSecurity, "sshProgram", false, false),
+            (.analyticsConsent, .updatesPrivacy, "shareAnalytics", false, false),
+            (.knownHostsFile, .sshSecurity, "knownHosts", false, false),
+            (.noRowsAffected, .safety, "warnNoRowsAffected", false, false),
+            (.deleteDoubleCheck, .safety, "askTwiceDelete", false, false),
+            (.mcpReadOnly, .mcp, "mcpReadOnly", false, false),
+        ]
+        XCTAssertEqual(expected.map(\.0), P.allCases)
+        for (pointer, pane, rowID, regrant, hasButton) in expected {
+            let name = "\(pointer)"
+            let target = pointer.target
+            XCTAssertEqual(target.pane, pane, name)
+            XCTAssertEqual(target.rowID, rowID, name)
+            XCTAssertEqual(target.regrantStaleFiles, regrant, name)
+            XCTAssertEqual(target.buttonKey, hasButton ? P.openSettingsButtonKey : nil, name)
+            // The row is in that pane: the window resolves the request to the same place.
+            XCTAssertEqual(SAClaudeSettingsCatalog.destination(pane: pane.rawValue, rowID: rowID), pointer.destination, name)
+            XCTAssertEqual(SAClaudeSettingsCatalog.pane(containing: rowID), pane, name)
+            // What the window does with it: the panel only for the pointers that ask.
+            XCTAssertEqual(SAClaudeSettingsCatalog.regrantsStaleFiles(pointer.destination, requested: target.regrantStaleFiles),
+                           regrant, name)
+            // The Objective-C view of the table.
+            XCTAssertEqual(SAClaudeSettingsPointers.paneID(for: pointer), pane.rawValue, name)
+            XCTAssertEqual(SAClaudeSettingsPointers.rowID(for: pointer), rowID, name)
+            XCTAssertEqual(SAClaudeSettingsPointers.regrantsStaleFiles(for: pointer), regrant, name)
+        }
+    }
+
+    /// Every pointer's text names its place in the new words — "Settings ▸ <pane> ▸ <row>" with the window's own pane
+    /// and row names — and none still says Preferences or an old pane.
+    func testPointerTextsNameTheNewPlace() {
+        let strings = Self.strings
+        func place(_ pointer: SAClaudeSettingsPointer) -> String {
+            let target = pointer.target
+            let rowName = SAClaudeSettingsCatalog.row(target.rowID).flatMap { strings[$0.nameKey] } ?? "?"
+            return "Settings \u{25B8} \(strings[target.pane.titleKey] ?? "?") \u{25B8} \(rowName)"
+        }
+        XCTAssertEqual(strings[SAClaudeSettingsPointer.openSettingsButtonKey], "Open Settings")
+        for pointer in SAClaudeSettingsPointer.allCases {
+            let target = pointer.target
+            if pointer == .mcpReadOnly {
+                XCTAssertTrue(target.messageKeys.isEmpty)
+                XCTAssertEqual(SAClaudeSettingsPointers.mcpReadOnlyPlace, place(pointer))
+                continue
+            }
+            XCTAssertFalse(target.messageKeys.isEmpty, "\(pointer)")
+            for key in target.messageKeys {
+                guard let text = strings[key] else { XCTFail("missing \(key)"); continue }
+                XCTAssertTrue(text.contains(place(pointer)), "\(key): \(text) should name \(place(pointer))")
+                for old in ["Preferences", "preferences", "Network tab", "Files tab", "Network Settings"] {
+                    XCTAssertFalse(text.contains(old), "\(key) still says \(old)")
+                }
+            }
+        }
+        // The SSH config prompt also names the row for choosing a different file.
+        XCTAssertTrue(strings["ClaudeSettings.pointer.sshConfigFile.message"]?
+            .contains("Settings \u{25B8} SSH and security \u{25B8} \(strings["ClaudeSettings.sshConfig.name"] ?? "?")") ?? false)
+        // Format specifiers are those of the texts they replace.
+        let specifiers: [String: [String]] = [
+            "ClaudeSettings.pointer.staleFiles.many": ["%d"], "ClaudeSettings.pointer.missingFiles.many": ["%d"],
+            "ClaudeSettings.pointer.sshConfigFile.message": ["%@"], "ClaudeSettings.pointer.mcpPortError.message": ["%ld", "%@"],
+            "ClaudeSettings.pointer.knownHosts.notWritable": ["%@"], "ClaudeSettings.pointer.knownHosts.quote": ["%@"],
+        ]
+        for pointer in SAClaudeSettingsPointer.allCases {
+            for key in pointer.target.messageKeys {
+                let text = strings[key] ?? ""
+                let regex = try! NSRegularExpression(pattern: "%(ld|d|@)")
+                let found = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+                    .map { (text as NSString).substring(with: $0.range) }
+                XCTAssertEqual(found, specifiers[key] ?? [], key)
+            }
+        }
+    }
+
+    /// The bookmark alert texts carry their en value in code (the strings table isn't in every bundle); it is the
+    /// table's text.
+    func testBookmarkAlertTextsMatchTheStringsTable() {
+        let strings = Self.strings
+        XCTAssertEqual(SABookmarkAlertContent.staleBookmarksMessage(count: 1), strings["ClaudeSettings.pointer.staleFiles.one"])
+        XCTAssertEqual(SABookmarkAlertContent.staleBookmarksMessage(count: 7),
+                       strings["ClaudeSettings.pointer.staleFiles.many"].map { String(format: $0, 7) })
+        XCTAssertEqual(SABookmarkAlertContent.missingBookmarksMessage(count: 1), strings["ClaudeSettings.pointer.missingFiles.one"])
+        XCTAssertEqual(SABookmarkAlertContent.missingBookmarksMessage(count: 3),
+                       strings["ClaudeSettings.pointer.missingFiles.many"].map { String(format: $0, 3) })
     }
 
     func testWindowAndMenuTitles() {

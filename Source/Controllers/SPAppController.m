@@ -227,12 +227,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                                                      message:[SABookmarkAlertContent staleBookmarksMessageWithCount:secureBookmarkManager.staleBookmarks.count]
                                                    listItems:[SABookmarkAlertContent displayNamesForBookmarkPaths:staleBookmarkPaths]
                                                accessoryView:_staleBookmarkHelpView
-                                          primaryButtonTitle:NSLocalizedString(@"Open Files Preferences", @"open files preferences button")
+                                          primaryButtonTitle:NSLocalizedString(@"ClaudeSettings.pointer.openSettings", @"Claude Settings pointer: button that opens Settings on the place the message names (was \"Open Files Preferences\" / \"Go to Network Settings\")")
                                         secondaryButtonTitle:NSLocalizedString(@"Continue", @"continue launching button")
                           primaryButtonHandler:^{
             SPLog(@"re-request access now");
-            [self->prefsController showWindow:self];
-            [self->prefsController displayPreferencePane:self->prefsController->fileItem];
+            [self->prefsController showSettingsForPointer:SAClaudeSettingsPointerLaunchStaleFiles];
         } secondaryButtonHandler:^{
             SPLog(@"Continue launching with stale bookmarks");
         }];

@@ -49,21 +49,24 @@ enum SABookmarkPathNormalizer {
         return bookmarkPaths.map { displayName(forBookmarkPath: $0) }
     }
 
+    // The texts name the new Settings place (SAClaudeSettingsPointer.launchStaleFiles / .networkMissingFiles); the
+    // en value is also given here so the text reads right where the strings table has no entry (the unit tests).
+
     @objc static func staleBookmarksMessage(count: Int) -> String {
         if count == 1 {
-            return NSLocalizedString("Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it.", comment: "single stale bookmark alert message")
+            return NSLocalizedString("ClaudeSettings.pointer.staleFiles.one", value: "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open to refresh or revoke it.", comment: "Claude Settings pointer: single stale bookmark alert message")
         }
 
-        let format = NSLocalizedString("Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them.", comment: "multiple stale bookmarks alert message")
+        let format = NSLocalizedString("ClaudeSettings.pointer.staleFiles.many", value: "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open to refresh or revoke them.", comment: "Claude Settings pointer: multiple stale bookmarks alert message")
         return String.localizedStringWithFormat(format, count)
     }
 
     @objc static func missingBookmarksMessage(count: Int) -> String {
         if count == 1 {
-            return NSLocalizedString("Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences.", comment: "single missing bookmark alert message")
+            return NSLocalizedString("ClaudeSettings.pointer.missingFiles.one", value: "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open.", comment: "Claude Settings pointer: single missing bookmark alert message")
         }
 
-        let format = NSLocalizedString("Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences.", comment: "multiple missing bookmarks alert message")
+        let format = NSLocalizedString("ClaudeSettings.pointer.missingFiles.many", value: "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open.", comment: "Claude Settings pointer: multiple missing bookmarks alert message")
         return String.localizedStringWithFormat(format, count)
     }
 

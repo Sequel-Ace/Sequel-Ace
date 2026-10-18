@@ -2264,7 +2264,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if (retCode == YES && queryWarningEnabled == YES && queryDoubleCheckWarningEnabled == YES) {
         NSAlert *doubleCheckAlert = [[NSAlert alloc] init];
         [doubleCheckAlert setMessageText:NSLocalizedString(@"Double Check", @"Double Check")];
-        [doubleCheckAlert setInformativeText:NSLocalizedString(@"Double checking as you have 'Show warning before executing a query' set in Preferences", @"Double check delete query")];
+        [doubleCheckAlert setInformativeText:NSLocalizedString(@"ClaudeSettings.pointer.deleteDoubleCheck.message", @"Claude Settings pointer: Double check delete query")];
         [doubleCheckAlert addButtonWithTitle:NSLocalizedString(@"Proceed", @"Proceed")];
         [doubleCheckAlert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel")];
         [doubleCheckAlert setShowsSuppressionButton: YES];
@@ -2931,7 +2931,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If no rows have been changed, show error if appropriate.
 	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
 		} else {
 			NSBeep();
 		}
@@ -3679,7 +3679,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
 			} else {
 				NSBeep();
 			}

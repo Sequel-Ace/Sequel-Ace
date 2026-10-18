@@ -222,16 +222,23 @@
 }
 
 /**
- * Called shortly before the preference pane will be made visible
- *  so this is where we decide to show the stale file panel or not
+ * Called when Settings shows the pane holding the list: reloads it. Stale entries show red and are re-granted by
+ * double-click; the re-select panel opens by itself only through -regrantStaleFiles.
  */
 - (void)preferencePaneWillBeShown
 {
     SPLog(@"calling loadBookmarks");
     [self loadBookmarks];
+}
+
+- (void)regrantStaleFiles
+{
+    [self loadBookmarks];
 
     if(weHaveStaleBookmarks == YES){
         SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
+        // An explicit request: a panel cancelled earlier doesn't stop this one.
+        userClickedCancel = NO;
         [self doubleClick:nil];
     }
 }

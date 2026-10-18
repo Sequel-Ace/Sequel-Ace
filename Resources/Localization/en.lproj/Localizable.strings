@@ -6251,3 +6251,47 @@
 
 /* Claude Settings: button under the accessible files list that opens a panel to grant access to files or folders */
 "ClaudeSettings.accessibleFiles.add" = "Add Files…";
+
+/* ===== Claude Settings window (2026-10-18): pointers from elsewhere (SAClaudeSettingsPointer) ===== */
+
+/* Claude Settings pointer: button that opens Settings on the place the message names (was "Open Files Preferences" / "Go to Network Settings") */
+"ClaudeSettings.pointer.openSettings" = "Open Settings";
+
+/* Claude Settings pointer: single stale bookmark alert message */
+"ClaudeSettings.pointer.staleFiles.one" = "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Settings ▸ SSH and security ▸ Files Sequel Ace can open to refresh or revoke it.";
+
+/* Claude Settings pointer: multiple stale bookmarks alert message */
+"ClaudeSettings.pointer.staleFiles.many" = "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Settings ▸ SSH and security ▸ Files Sequel Ace can open to refresh or revoke them.";
+
+/* Claude Settings pointer: single missing bookmark alert message */
+"ClaudeSettings.pointer.missingFiles.one" = "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Settings ▸ SSH and security ▸ Files Sequel Ace can open.";
+
+/* Claude Settings pointer: multiple missing bookmarks alert message */
+"ClaudeSettings.pointer.missingFiles.many" = "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Settings ▸ SSH and security ▸ Files Sequel Ace can open.";
+
+/* Claude Settings pointer: SSH config file error alert message; %@ is the file's path */
+"ClaudeSettings.pointer.sshConfigFile.message" = "Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can choose a different file in Settings ▸ SSH and security ▸ SSH config file, or restore access to this one in Settings ▸ SSH and security ▸ Files Sequel Ace can open, or you can reset the path to the Sequel Ace default.";
+
+/* Claude Settings pointer: MCP start error message; %ld is the port, %@ the error */
+"ClaudeSettings.pointer.mcpPortError.message" = "The MCP server could not start on port %ld: %@\n\nYou can change the port in Settings ▸ MCP server ▸ Port.";
+
+/* Claude Settings pointer: SSH connection debug header with user-defined ssh binary */
+"ClaudeSettings.pointer.customSSHBinary.message" = "Custom SSH binary enabled. Disable in Settings ▸ SSH and security ▸ SSH program to rule out incompatibilities!";
+
+/* Claude Settings pointer: analytics consent dialog message */
+"ClaudeSettings.pointer.analyticsConsent.message" = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Settings ▸ Updates and privacy ▸ Share analytics and crash reports.";
+
+/* Claude Settings pointer: known hosts not writable message; %@ is the file's path */
+"ClaudeSettings.pointer.knownHosts.notWritable" = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Settings ▸ SSH and security ▸ Known hosts file and try again.";
+
+/* Claude Settings pointer: known hosts is invalid message */
+"ClaudeSettings.pointer.knownHosts.invalid" = "The selected known hosts file is invalid.\n\nPlease re-select the file in Settings ▸ SSH and security ▸ Known hosts file and try again.";
+
+/* Claude Settings pointer: known hosts contains quote message; %@ is the file's path */
+"ClaudeSettings.pointer.knownHosts.quote" = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Settings ▸ SSH and security ▸ Known hosts file or rename the file/path to remove the quote.";
+
+/* Claude Settings pointer: message of panel when no rows have been affected after writing to the db */
+"ClaudeSettings.pointer.noRowsAffected.message" = "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in Settings ▸ Safety and alerts ▸ Warn when a save changes nothing.)";
+
+/* Claude Settings pointer: Double check delete query */
+"ClaudeSettings.pointer.deleteDoubleCheck.message" = "Double checking as you have Settings ▸ Safety and alerts ▸ Ask twice before deleting rows turned on";

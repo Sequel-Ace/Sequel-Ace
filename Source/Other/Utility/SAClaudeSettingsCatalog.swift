@@ -394,7 +394,8 @@ enum SAClaudeSettingsCatalog {
     }
 
     /// The old pane controllers whose `preferencePaneWillBeShown` refresh runs when `pane` is shown: the panes its
-    /// rows came from. The Files pane (its load re-grants stale files) only for SSH and security.
+    /// rows came from. The Files pane's refresh only reloads its list (it no longer opens the re-select panel; that is
+    /// `regrantsStaleFiles(_:requested:)`).
     static func legacyPanes(for pane: SAClaudeSettingsPaneID) -> [LegacyPane] {
         switch pane {
         case .appearance: return [.general, .editor]        // appearance, title bar, results font, grids; accent, colours, editor font
@@ -407,6 +408,15 @@ enum SAClaudeSettingsCatalog {
         case .updatesPrivacy: return [.notifications, .general] // updates; analytics
         }
     }
+
+    /// Whether a request opens the stale-file re-select panel: only when the caller asked for it (the launch alert and
+    /// the file prompts, `SAClaudeSettingsPointer.regrantsStaleFiles`) and the request lands on the accessible-files
+    /// list, which it discloses. Switching panes, the sidebar and every other pointer never open it.
+    static func regrantsStaleFiles(_ destination: Destination, requested: Bool) -> Bool {
+        requested && destination.pane == .sshSecurity && destination.rowID == accessibleFilesRowID
+    }
+
+    static let accessibleFilesRowID = "accessibleFiles"
 
     // MARK: Building
 
@@ -433,4 +443,101 @@ enum SAClaudeSettingsCatalog {
     private static func fixed(_ rowID: String, _ options: [(String, Int)]) -> SAClaudeSettingChoiceSource {
         .fixed(options.map { ("ClaudeSettings.\(rowID).option.\($0.0)", $0.1) })
     }
+}
+
+// MARK: - Pointers from elsewhere
+
+/// Messages and buttons outside the window that send people to a setting. Each names its place in the new words
+/// ("Settings ▸ <pane> ▸ <row>", the catalog's own pane and row names) and, where it has a button, opens that pane on
+/// that row (`SPPreferenceController.showSettings(for:)`). Only the launch alert and the file prompts ask for the
+/// stale-file re-select panel.
+@objc enum SAClaudeSettingsPointer: Int, CaseIterable {
+    /// SPAppController launch alert "App Sandbox Issue" (stale bookmarks): "Open Settings" (was "Open Files Preferences").
+    case launchStaleFiles
+    /// SPConnectionController `_validateSSHConfigFile`: "Open Settings" (was "Go to Network Settings") and its message.
+    case connectionSSHConfigFile
+    /// SPNetworkPreferencePane known hosts (ADVANCED) "App Sandbox Issue" (missing bookmarks): "Request Access".
+    case networkMissingFiles
+    /// SPAppController+MCP: the server could not start (text only).
+    case mcpPortError
+    /// SPSSHTunnel: the debug header when a custom SSH binary is set (text only).
+    case customSSHBinary
+    /// SAAnalyticsConsentPolicy: the consent dialog (text only).
+    case analyticsConsent
+    /// SPSSHTunnel: the known hosts file is not writable, invalid or has a quote (text only).
+    case knownHostsFile
+    /// SPTableContent / SPCustomQuery: a save changed no rows (text only).
+    case noRowsAffected
+    /// SPTableContent: the second "Double Check" before deleting rows (text only).
+    case deleteDoubleCheck
+    /// SPMCPServer / SPAppController+MCP: read-only refusals sent to AI clients (text only, not localized).
+    case mcpReadOnly
+}
+
+/// Where a pointer goes and the strings that name it.
+struct SAClaudeSettingsPointerTarget: Equatable {
+    let pane: SAClaudeSettingsPaneID
+    let rowID: String
+    /// Opening Settings from this pointer opens the stale-file re-select panel (when there are stale files).
+    let regrantStaleFiles: Bool
+    /// The pointer's button title key, when it has a button that opens Settings.
+    let buttonKey: String?
+    /// The en keys of its message texts; each names "Settings ▸ <pane> ▸ <row>".
+    let messageKeys: [String]
+}
+
+extension SAClaudeSettingsPointer {
+    static let openSettingsButtonKey = "ClaudeSettings.pointer.openSettings"
+
+    var target: SAClaudeSettingsPointerTarget {
+        typealias T = SAClaudeSettingsPointerTarget
+        let files = SAClaudeSettingsCatalog.accessibleFilesRowID
+        switch self {
+        case .launchStaleFiles:
+            return T(pane: .sshSecurity, rowID: files, regrantStaleFiles: true, buttonKey: Self.openSettingsButtonKey,
+                     messageKeys: ["ClaudeSettings.pointer.staleFiles.one", "ClaudeSettings.pointer.staleFiles.many"])
+        case .connectionSSHConfigFile:
+            return T(pane: .sshSecurity, rowID: files, regrantStaleFiles: true, buttonKey: Self.openSettingsButtonKey,
+                     messageKeys: ["ClaudeSettings.pointer.sshConfigFile.message"])
+        case .networkMissingFiles:
+            return T(pane: .sshSecurity, rowID: files, regrantStaleFiles: true, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.missingFiles.one", "ClaudeSettings.pointer.missingFiles.many"])
+        case .mcpPortError:
+            return T(pane: .mcp, rowID: "mcpPort", regrantStaleFiles: false, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.mcpPortError.message"])
+        case .customSSHBinary:
+            return T(pane: .sshSecurity, rowID: "sshProgram", regrantStaleFiles: false, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.customSSHBinary.message"])
+        case .analyticsConsent:
+            return T(pane: .updatesPrivacy, rowID: "shareAnalytics", regrantStaleFiles: false, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.analyticsConsent.message"])
+        case .knownHostsFile:
+            return T(pane: .sshSecurity, rowID: "knownHosts", regrantStaleFiles: false, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.knownHosts.notWritable", "ClaudeSettings.pointer.knownHosts.invalid",
+                                   "ClaudeSettings.pointer.knownHosts.quote"])
+        case .noRowsAffected:
+            return T(pane: .safety, rowID: "warnNoRowsAffected", regrantStaleFiles: false, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.noRowsAffected.message"])
+        case .deleteDoubleCheck:
+            return T(pane: .safety, rowID: "askTwiceDelete", regrantStaleFiles: false, buttonKey: nil,
+                     messageKeys: ["ClaudeSettings.pointer.deleteDoubleCheck.message"])
+        case .mcpReadOnly:
+            return T(pane: .mcp, rowID: "mcpReadOnly", regrantStaleFiles: false, buttonKey: nil, messageKeys: [])
+        }
+    }
+
+    /// The request Settings gets from this pointer.
+    var destination: SAClaudeSettingsCatalog.Destination {
+        SAClaudeSettingsCatalog.Destination(pane: target.pane, rowID: target.rowID)
+    }
+}
+
+/// The pointer table for Objective-C callers.
+@objc final class SAClaudeSettingsPointers: NSObject {
+    @objc static func paneID(for pointer: SAClaudeSettingsPointer) -> String { pointer.target.pane.rawValue }
+    @objc static func rowID(for pointer: SAClaudeSettingsPointer) -> String { pointer.target.rowID }
+    @objc static func regrantsStaleFiles(for pointer: SAClaudeSettingsPointer) -> Bool { pointer.target.regrantStaleFiles }
+
+    /// The read-only refusals the MCP server sends to AI clients are not localized; they name the setting in English.
+    @objc static let mcpReadOnlyPlace = "Settings \u{25B8} MCP server \u{25B8} Read only"
 }

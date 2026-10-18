@@ -195,7 +195,10 @@ final class SAClaudeAlertKindTests: XCTestCase {
 
     /// Walkthrough (Kunal): a title that states a failure is a strong failure signal, even over a "Reset…" button.
     func testFailureTitleIsAStrongFailure() {
-        // SPConnectionController.m:_validateSSHConfigFile — the real buttons.
+        // SPConnectionController.m:_validateSSHConfigFile — the real buttons (the texts as reworded for Settings).
+        XCTAssertEqual(classify("Cannot Access SSH Config File", "Sequel Ace does not have permission to read the configured SSH config file at '/x'.\n\nThis might be due to Sandbox restrictions. You can choose a different file in Settings \u{25B8} SSH and security \u{25B8} SSH config file, or restore access to this one in Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open, or you can reset the path to the Sequel Ace default.",
+                           ["Open Settings", "Reset to Default & Continue", "Cancel"]), c(.error))
+        // The texts before the rewording.
         XCTAssertEqual(classify("Cannot Access SSH Config File", "Sequel Ace does not have permission to read the configured SSH config file at '/x'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.",
                            ["Go to Network Settings", "Reset to Default & Continue", "Cancel"]), c(.error))
         for title in ["Cannot open file", "can't open file", "Can\u{2019}t open file", "Can not open file", "Unable to open file", "Couldn't open file", "Couldn\u{2019}t open file", "Could not open file", "Failed to open file", "FAILED to open"] {

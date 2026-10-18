@@ -135,8 +135,10 @@ final class SAClaudeSettingsWindowHost: NSObject {
     // MARK: Routing
 
     /// Opens `pane` (a `SAClaudeSettingsPaneID` raw value) and scrolls to `revealRowID`, briefly tinting it; the row
-    /// decides the pane when it is known. `regrantStaleFiles` travels with the request (`model.reveal`) for the
-    /// accessible-files row. Doesn't show the window (SPPreferenceController's `showSettingsPane:…` does).
+    /// decides the pane when it is known. With `regrantStaleFiles` (the launch alert and the file prompts) a request
+    /// for the accessible-files row also opens the Files pane's re-select panel for the stale entries, once the list
+    /// is disclosed — the only way that panel opens by itself (`SAClaudeSettingsCatalog.regrantsStaleFiles`).
+    /// Doesn't show the window (SPPreferenceController's `showSettingsPane:…` does).
     @objc(showPane:revealRowID:regrantStaleFiles:)
     func show(pane: String?, revealRowID: String?, regrantStaleFiles: Bool) {
         guard let destination = SAClaudeSettingsCatalog.destination(pane: pane, rowID: revealRowID) else {
@@ -146,6 +148,11 @@ final class SAClaudeSettingsWindowHost: NSObject {
         // As `displayPreferencePane:` did, an outside request refreshes the old pane controllers even on the same pane.
         select(destination.pane, refreshingAlways: true)
         model.reveal(destination, regrantStaleFiles: regrantStaleFiles)
+        if SAClaudeSettingsCatalog.regrantsStaleFiles(destination, requested: regrantStaleFiles),
+           let files = legacyPanes[SAClaudeSettingsCatalog.LegacyPane.file.rawValue] as? SPFilePreferencePane {
+            // Next turn: the reveal has disclosed the list, so the panel opens over the highlighted stale entries.
+            DispatchQueue.main.async { files.regrantStaleFiles() }
+        }
     }
 
     @objc(showPane:revealRowID:)
@@ -647,5 +654,17 @@ struct SAClaudeSettingsPlaceholderControl: View {
             .frame(width: SAClaudeSettingsWindowMetrics.placeholderSize.width,
                    height: SAClaudeSettingsWindowMetrics.placeholderSize.height)
             .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Pointers from elsewhere
+
+extension SPPreferenceController {
+    /// Shows Settings on the pane and row a message outside the window points to (SAClaudeSettingsPointer), opening
+    /// the stale-file re-select panel only for the pointers that ask for it.
+    @objc(showSettingsForPointer:)
+    func showSettings(for pointer: SAClaudeSettingsPointer) {
+        let target = pointer.target
+        showSettingsPane(target.pane.rawValue, revealRow: target.rowID, regrantStaleFiles: target.regrantStaleFiles)
     }
 }

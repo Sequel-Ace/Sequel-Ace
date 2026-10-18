@@ -468,8 +468,7 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
                             SPLog(@"request access now");
                             [self->errorFileNames removeAllObjects];
                             SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
-                            [prefCon showWindow:nil];
-                            [prefCon displayPreferencePane:prefCon->fileItem];
+                            [prefCon showSettingsForPointer:SAClaudeSettingsPointerNetworkMissingFiles];
 
                         } secondaryButtonHandler:^{
                             SPLog(@"No not now");
