@@ -345,7 +345,7 @@ final class SAClaudeWindowSkin: NSObject {
             styleBox(box)
             view.subviews.forEach { style($0, colours) }
         case let table as NSTableView:
-            styleTable(table, colours)
+            Self.styleTable(table, colours)
         case let textView as NSTextView:
             styleTextView(textView, colours)
         case let tabView as NSTabView:
@@ -577,8 +577,9 @@ final class SAClaudeWindowSkin: NSObject {
     // MARK: Tables
 
     /// The quiet grid look: theme background without alternating rows, hairline grid lines, the Claude header.
-    /// Tables already in the Claude look, source lists and colours the code chose are left alone.
-    private func styleTable(_ table: NSTableView, _ colours: SAClaudeSheetColours) {
+    /// Tables already in the Claude look, source lists and colours the code chose are left alone. Also called for the
+    /// AppKit tables Settings hosts inside its SwiftUI content, which the walk skips.
+    static func styleTable(_ table: NSTableView, _ colours: SAClaudeSheetColours) {
         if table is SAClaudeCopyTable || table is SAClaudeTableView { return }
         // The XIBs' older tables are source lists by their (deprecated) highlight style, raw value 1.
         let isSourceList = table.style == .sourceList || table.selectionHighlightStyle.rawValue == 1

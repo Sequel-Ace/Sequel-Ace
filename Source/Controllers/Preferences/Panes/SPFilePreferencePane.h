@@ -53,4 +53,13 @@
 - (IBAction)revokeBookmark:(id)sender;
 - (IBAction)addBookmark:(id)sender;
 - (IBAction)doubleClick:(id)sender;
+
+// The Settings window (SAClaudeSettingsSecurity.swift) re-parents the list and draws the buttons and hint from these.
+
+/** The granted files list (its data source, delegate and double-click target are this pane). */
+@property (readonly) NSTableView *grantedFilesTableView;
+/** How many entries the list shows (granted files, then stale ones). */
+@property (readonly) NSUInteger grantedFileCount;
+/** Some entries are stale (red): the "Double-click red items" hint shows. */
+@property (readonly) BOOL weHaveStaleBookmarks;
 @end

@@ -213,6 +213,14 @@
 	return [self view];
 }
 
+- (NSTableView *)grantedFilesTableView {
+	return fileView;
+}
+
+- (NSUInteger)grantedFileCount {
+	return [fileNames count];
+}
+
 /**
  * Called shortly before the preference pane will be made visible
  *  so this is where we decide to show the stale file panel or not
@@ -333,6 +341,8 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     // reset the table view for the files
 	[fileView deselectAll:nil];
 	[fileView reloadData];
+
+	[SAClaudeSettingsFileAccess listDidReload];
 }
 
 #pragma mark -

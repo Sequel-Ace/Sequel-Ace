@@ -6221,3 +6221,33 @@
 
 /* Claude Settings: accessibility label of one "Reload after saving" switch; %@ is Add, Edit or Delete */
 "ClaudeSettings.reloadAfterSaving.switchLabel" = "Reload after saving: %@";
+
+/* Claude Settings: SSH program field while no custom ssh binary is set */
+"ClaudeSettings.sshProgram.systemDefault" = "System default";
+
+/* Claude Settings: SSH program button that opens the custom ssh binary chooser */
+"ClaudeSettings.sshProgram.change" = "Change…";
+
+/* Claude Settings: SSL cipher order button that shows or hides the cipher list under the row */
+"ClaudeSettings.cipherOrder.editList" = "Edit list";
+
+/* Claude Settings: button under the SSL cipher list that restores the default order */
+"ClaudeSettings.cipherOrder.reset" = "Reset";
+
+/* Claude Settings: tooltip of the SSL cipher list's Reset button */
+"ClaudeSettings.cipherOrder.resetHelp" = "Reset the cipher list to the default configuration";
+
+/* Claude Settings: accessible files button that shows or hides the list under the row, when one file is listed */
+"ClaudeSettings.accessibleFiles.oneFile" = "1 file";
+
+/* Claude Settings: accessible files button that shows or hides the list under the row; %ld is the number of files */
+"ClaudeSettings.accessibleFiles.files" = "%ld files";
+
+/* Claude Settings: hint under the accessible files list while some files (shown red) need access granted again */
+"ClaudeSettings.accessibleFiles.staleHint" = "Double-click red items to refresh bookmark";
+
+/* Claude Settings: button under the accessible files list that removes access to the selected files */
+"ClaudeSettings.accessibleFiles.revoke" = "Revoke Selected Files";
+
+/* Claude Settings: button under the accessible files list that opens a panel to grant access to files or folders */
+"ClaudeSettings.accessibleFiles.add" = "Add Files…";

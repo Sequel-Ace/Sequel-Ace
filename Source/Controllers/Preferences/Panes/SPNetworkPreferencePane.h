@@ -68,4 +68,19 @@
 - (void)chooseSSHConfigWithOptions:(PanelOptions*)options;
 - (BOOL)checkSSHConfigFileForUserKnownHostsFile:(NSString*)configFile;
 
+// The Settings window (SAClaudeSettingsSecurity.swift) re-parents the cipher table and drives the SSH config / known
+// hosts choosers through these.
+
+/** The SSL cipher list (its data source, delegate and drag registration are this pane). */
+@property (readonly) NSTableView *cipherTableView;
+
+/**
+ * Rebuilds the SSH config (NO) or known hosts (YES) chooser's menu from the granted files, as showing the pane does,
+ * without selecting or checking anything, and returns its item titles ([NSNull null] for a separator).
+ */
+- (NSArray *)sshFileMenuTitlesForKnownHosts:(BOOL)knownHosts;
+
+/** Chooses item `index` of that menu, as picking it in the chooser did (the "Other file..." item opens the file panel). */
+- (void)chooseSSHFileMenuItemAtIndex:(NSInteger)index knownHosts:(BOOL)knownHosts;
+
 @end

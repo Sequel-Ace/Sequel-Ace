@@ -6,7 +6,9 @@
 //  (the views in SAClaudeSettingsPanes.swift only draw what these return):
 //  the favourite pill's menu and the two keys it writes, a tag pill's
 //  selection (the encodings), the updates switch in App Store builds, the
-//  auto-complete delay warning and the font rows' label.
+//  auto-complete delay warning, the font rows' label, the SSH config / known
+//  hosts pills' selection, the accessible files count and the MCP port,
+//  address and status.
 //
 //  Pure Swift (app + Unit Tests targets).
 //
@@ -139,5 +141,84 @@ enum SAClaudeSettingsRules {
         let rounded = (pointSize * 10).rounded() / 10
         let size = rounded == rounded.rounded() ? String(Int(rounded)) : String(format: "%.1f", rounded)
         return "\(name) \(size)"
+    }
+
+    // MARK: SSH config and known hosts
+
+    /// What the SSH config or known hosts pill shows selected.
+    enum SSHFileSelection: Equatable {
+        /// An item of the menu.
+        case index(Int)
+        /// The stored path is none of the items (its file is no longer granted): shown after them, disabled.
+        case missing(String)
+    }
+
+    /// The selection SPNetworkPreferencePane -updateSSHConfigPopUp: made (:325-368) in the menu it built — `titles`, nil
+    /// for a separator: "Sequel Ace default" first, for known hosts the ADVANCED item third, the granted files, "Other
+    /// file..." last. With no granted file listed, "Sequel Ace default"; otherwise the item titled the stored path
+    /// (percent-decoded), or "Sequel Ace default" when the stored value is the default (`defaultValue`) or a number (the
+    /// tag the old pop-up's selectedTag binding wrote). A missing or empty value is the default too (the old pop-up
+    /// selected nothing then).
+    static func sshFileSelection(titles: [String?], knownHosts: Bool, stored: String?, defaultValue: String?,
+                                 advancedTitle: String) -> SSHFileSelection {
+        let lastIndex = titles.count - 1
+        let fileCount = titles.indices.filter { index in
+            guard index > 0, index < lastIndex, let title = titles[index] else { return false }
+            return !(knownHosts && title == advancedTitle)
+        }.count
+        guard fileCount > 0, let stored, !stored.isEmpty, stored != defaultValue, !isNumeric(stored) else { return .index(0) }
+        let title = stored.removingPercentEncoding ?? stored
+        if let index = titles.firstIndex(where: { $0 == title }) { return .index(index) }
+        return .missing(title)
+    }
+
+    /// NSString -isNumeric (StringExtension.swift): not empty, every character a number.
+    private static func isNumeric(_ text: String) -> Bool {
+        !text.isEmpty && text.allSatisfy(\.isNumber)
+    }
+
+    // MARK: Accessible files
+
+    /// The localization key of the accessible files row's disclosure title for `count` files ("1 file", "N files").
+    static func accessibleFilesCountKey(_ count: Int) -> String {
+        count == 1 ? "ClaudeSettings.accessibleFiles.oneFile" : "ClaudeSettings.accessibleFiles.files"
+    }
+
+    // MARK: MCP server
+
+    static let mcpDefaultPort = 8765
+    static let mcpPortRange = 1024...65535
+
+    /// The port SPMCPPreferencePane -updatePort: accepts from the typed text: spaces anywhere are ignored; anything but
+    /// digits, or a port outside 1024–65535, is refused (nil: the "Invalid Port" alert).
+    static func mcpPort(fromText text: String) -> Int? {
+        let digits = text.replacingOccurrences(of: " ", with: "")
+        guard !digits.isEmpty, digits.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) == nil,
+              let port = Int(digits), mcpPortRange.contains(port) else { return nil }
+        return port
+    }
+
+    /// The port the server listens on for a stored value: out of range (or unset) falls back to 8765, as
+    /// SPAppController+MCP's mcpClampedPort and the pane's currentPort do.
+    static func mcpEffectivePort(stored: Int) -> Int {
+        mcpPortRange.contains(stored) ? stored : mcpDefaultPort
+    }
+
+    /// The Streamable HTTP endpoint MCP clients are given.
+    static func mcpEndpoint(port: Int) -> String {
+        "http://127.0.0.1:\(port)/mcp"
+    }
+
+    enum MCPStatus: Equatable {
+        case disabled
+        case running(port: Int)
+        /// Enabled but not listening (starting, or failed to start).
+        case stopped
+    }
+
+    /// The pane's status line (SPMCPPreferencePane -refreshStatus): disabled, running on the port, or not running.
+    static func mcpStatus(enabled: Bool, running: Bool, port: Int) -> MCPStatus {
+        guard enabled else { return .disabled }
+        return running ? .running(port: port) : .stopped
     }
 }

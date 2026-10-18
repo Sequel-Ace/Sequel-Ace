@@ -88,6 +88,9 @@ enum SAClaudeSettingsPanes {
         registry.registerRow("checkUpdates") { context in
             SAClaudeSettingsUpdatesRow(context: context, isAppStore: Bundle.main.isMASVersion)
         }
+
+        // SSH and security, MCP server (SAClaudeSettingsSecurity.swift).
+        SAClaudeSettingsSecurityPanes.register(in: registry)
     }
 }
 
