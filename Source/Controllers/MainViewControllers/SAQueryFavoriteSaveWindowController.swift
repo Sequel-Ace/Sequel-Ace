@@ -240,52 +240,6 @@ private struct SAQueryFavoriteReplacePicker: View {
     }
 }
 
-/// A borderless NSPopUpButton (its own up-down chevron at the right) filling the pill, its title and chevron in
-/// `textColour`, in `font`: SwiftUI's own `Menu` opens only from its title's width, this from anywhere in the field.
-/// VoiceOver sees a pop-up button; the menu follows the panel's appearance.
-/// Items are added one by one (`addItems(withTitles:)` drops duplicate titles, and two favourites may share a name).
-private struct SAClaudeMenuPopUp: NSViewRepresentable {
-    let titles: [String]
-    let selectedIndex: Int
-    let font: NSFont
-    let textColour: Color
-    let accessibilityLabel: String
-    let onSelect: (Int) -> Void
-
-    final class Coordinator: NSObject {
-        var onSelect: (Int) -> Void = { _ in }
-        @objc func picked(_ sender: NSPopUpButton) { onSelect(sender.indexOfSelectedItem) }
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    func makeNSView(context: Context) -> NSPopUpButton {
-        let button = NSPopUpButton(frame: .zero, pullsDown: false)
-        button.isBordered = false
-        button.lineBreakMode = .byTruncatingTail
-        button.alignment = .left
-        button.target = context.coordinator
-        button.action = #selector(Coordinator.picked(_:))
-        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return button
-    }
-
-    func updateNSView(_ button: NSPopUpButton, context: Context) {
-        context.coordinator.onSelect = onSelect
-        if button.itemArray.map(\.title) != titles {
-            button.removeAllItems()
-            for title in titles { button.menu?.addItem(NSMenuItem(title: title, action: nil, keyEquivalent: "")) }
-        }
-        if button.indexOfSelectedItem != selectedIndex, button.itemArray.indices.contains(selectedIndex) {
-            button.selectItem(at: selectedIndex)
-        }
-        if button.font != font { button.font = font }
-        button.contentTintColor = NSColor(textColour)
-        button.setAccessibilityLabel(accessibilityLabel)
-    }
-}
-
 @MainActor
 @objc final class SAQueryFavoriteSaveWindowController: NSWindowController {
     private let query: String

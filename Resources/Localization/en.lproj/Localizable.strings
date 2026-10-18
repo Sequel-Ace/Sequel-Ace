@@ -6167,3 +6167,12 @@
 
 /* Claude Settings: last line of the (i) explanation of "Share analytics and crash reports": its old name and old Preferences pane */
 "ClaudeSettings.shareAnalytics.was" = "Was: Analytics (General)";
+
+/* Claude Settings: accessibility label of a setting's (i) button; %@ is the setting's name */
+"ClaudeSettings.ui.infoButton" = "About %@";
+
+/* Claude Settings: accessibility value of a setting's (i) button while its explanation is shown */
+"ClaudeSettings.ui.infoShown" = "Shown";
+
+/* Claude Settings: accessibility value of a setting's (i) button while its explanation is hidden */
+"ClaudeSettings.ui.infoHidden" = "Hidden";

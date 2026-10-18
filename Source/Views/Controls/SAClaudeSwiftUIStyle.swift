@@ -444,7 +444,7 @@ struct SAClaudeCheckboxToggleStyle: ToggleStyle {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(BareButtonStyle())
+            .buttonStyle(SAClaudeBareButtonStyle())
             .onHover { isHovered = $0 }
             .opacity(isEnabled ? 1 : SAClaudeSwiftUIMetrics.checkboxDisabledOpacity)
             .accessibilityRepresentation {
@@ -468,11 +468,6 @@ struct SAClaudeCheckboxToggleStyle: ToggleStyle {
             .frame(width: size.checkboxSize, height: size.checkboxSize)
         }
     }
-
-    /// A plain button look: the label as it is.
-    private struct BareButtonStyle: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View { configuration.label }
-    }
 }
 
 /// The tick: the AppKit Claude checkbox's path in its 14pt box, scaled to the box it is drawn in.
@@ -484,5 +479,299 @@ private struct SAClaudeCheckMark: Shape {
         path.addLine(to: CGPoint(x: rect.minX + 6 * s, y: rect.minY + 10 * s))
         path.addLine(to: CGPoint(x: rect.minX + 10.5 * s, y: rect.minY + 4.5 * s))
         return path
+    }
+}
+
+// MARK: - Switch
+
+/// Claude's small switch, as the editor ⋯ card draws it: a 26×15 capsule — the accent fill with an `onAccent` knob
+/// when on, the drop stroke with a white knob when off — after the label (hide it with `showsLabel: false` when the
+/// row already names the setting). The whole control toggles; VoiceOver sees an ordinary switch. 40% disabled, as the
+/// kit's checkbox.
+struct SAClaudeSwitchToggleStyle: ToggleStyle {
+    var showsLabel = true
+
+    static let trackSize = CGSize(width: 26, height: 15)
+    static let knobInset: CGFloat = 2
+
+    func makeBody(configuration: Configuration) -> some View {
+        Styled(configuration: configuration, showsLabel: showsLabel)
+    }
+
+    private struct Styled: View {
+        @EnvironmentObject var palette: SAClaudeSwiftUIPalette
+        @Environment(\.isEnabled) var isEnabled
+        let configuration: ToggleStyleConfiguration
+        let showsLabel: Bool
+
+        var body: some View {
+            Button { configuration.isOn.toggle() } label: {
+                HStack(spacing: SAClaudeSwiftUIMetrics.checkboxGap) {
+                    if showsLabel {
+                        configuration.label
+                            .font(SAClaudeControlSize.form.checkboxTitleFont)
+                            .foregroundColor(palette.text)
+                    }
+                    track
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(SAClaudeBareButtonStyle())
+            .opacity(isEnabled ? 1 : SAClaudeSwiftUIMetrics.checkboxDisabledOpacity)
+            .accessibilityRepresentation {
+                Toggle(isOn: configuration.$isOn) { configuration.label }
+                    .toggleStyle(.switch)
+            }
+        }
+
+        private var track: some View {
+            let size = SAClaudeSwitchToggleStyle.trackSize
+            let inset = SAClaudeSwitchToggleStyle.knobInset
+            return ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                Capsule().fill(configuration.isOn ? palette.accentFill : palette.stroke)
+                Circle()
+                    .fill(configuration.isOn ? palette.onAccent : Color.white)
+                    .frame(width: size.height - 2 * inset, height: size.height - 2 * inset)
+                    .padding(inset)
+            }
+            .frame(width: size.width, height: size.height)
+            .animation(.easeOut(duration: 0.12), value: configuration.isOn)
+        }
+    }
+}
+
+/// A plain button look: the label as it is.
+struct SAClaudeBareButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { configuration.label }
+}
+
+// MARK: - Pop-up pill
+
+/// One entry of a pop-up pill's menu.
+struct SAClaudePopUpItem: Equatable {
+    var title: String
+    var indentationLevel = 0
+    var isEnabled = true
+    var isSeparator = false
+
+    init(_ title: String, indentationLevel: Int = 0, isEnabled: Bool = true) {
+        self.title = title
+        self.indentationLevel = indentationLevel
+        self.isEnabled = isEnabled
+    }
+
+    static let separator: SAClaudePopUpItem = {
+        var item = SAClaudePopUpItem("")
+        item.isSeparator = true
+        item.isEnabled = false
+        return item
+    }()
+}
+
+/// A choice as the AppKit form's Claude pill (`SAClaudePillPopUpButtonCell`): a 24pt hover-filled pill with a 7pt
+/// radius (`.form`), the current choice at 12pt and the pop-up's own up-down chevron; the whole pill opens the menu,
+/// which ticks the current choice. Sized to its widest item (up to `maxWidth`, then truncated), or filling the width
+/// it is given with `fillsWidth`. A pop-up rather than a SwiftUI `Picker(.menu)`, whose bezel can't be removed.
+/// `selectedIndex` counts separators, as the menu does.
+struct SAClaudePopUpPill: View {
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
+    @Environment(\.isEnabled) private var isEnabled
+    let items: [SAClaudePopUpItem]
+    let selectedIndex: Int
+    let accessibilityLabel: String
+    var size: SAClaudeControlSize = .form
+    var fillsWidth = false
+    var maxWidth: CGFloat = 260
+    let onSelect: (Int) -> Void
+
+    init(items: [SAClaudePopUpItem], selectedIndex: Int, accessibilityLabel: String, size: SAClaudeControlSize = .form,
+         fillsWidth: Bool = false, maxWidth: CGFloat = 260, onSelect: @escaping (Int) -> Void) {
+        self.items = items
+        self.selectedIndex = selectedIndex
+        self.accessibilityLabel = accessibilityLabel
+        self.size = size
+        self.fillsWidth = fillsWidth
+        self.maxWidth = maxWidth
+        self.onSelect = onSelect
+    }
+
+    init(titles: [String], selectedIndex: Int, accessibilityLabel: String, size: SAClaudeControlSize = .form,
+         fillsWidth: Bool = false, maxWidth: CGFloat = 260, onSelect: @escaping (Int) -> Void) {
+        self.init(items: titles.map { SAClaudePopUpItem($0) }, selectedIndex: selectedIndex,
+                  accessibilityLabel: accessibilityLabel, size: size, fillsWidth: fillsWidth, maxWidth: maxWidth,
+                  onSelect: onSelect)
+    }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size.radius, style: .continuous)
+        SAClaudeMenuPopUp(items: items, selectedIndex: selectedIndex, font: size.popUpFont, textColour: palette.text,
+                          accessibilityLabel: accessibilityLabel, hugsTitle: !fillsWidth, onSelect: onSelect)
+            .frame(maxWidth: fillsWidth ? .infinity : maxWidth - SAClaudeFilterChrome.pillPadding + 1)
+            .padding(.leading, SAClaudeFilterChrome.pillPadding - 3)
+            .padding(.trailing, 2)
+            .frame(height: size.popUpHeight)
+            .background(shape.fill(palette.hover))
+            .opacity(isEnabled ? 1 : SAClaudeSwiftUIMetrics.checkboxDisabledOpacity)
+    }
+}
+
+/// A borderless NSPopUpButton (its own up-down chevron at the right) filling the pill, its title and chevron in
+/// `textColour`, in `font`: SwiftUI's own `Menu` opens only from its title's width, this from anywhere in the field.
+/// VoiceOver sees a pop-up button; the menu follows the panel's appearance. With `hugsTitle` it asks for its widest
+/// item's width (capped by the proposal); otherwise it takes the width it is offered.
+/// Items are added one by one (`addItems(withTitles:)` drops duplicate titles, and two favourites may share a name).
+struct SAClaudeMenuPopUp: NSViewRepresentable {
+    let items: [SAClaudePopUpItem]
+    let selectedIndex: Int
+    let font: NSFont
+    let textColour: Color
+    let accessibilityLabel: String
+    var hugsTitle = false
+    let onSelect: (Int) -> Void
+
+    init(items: [SAClaudePopUpItem], selectedIndex: Int, font: NSFont, textColour: Color, accessibilityLabel: String,
+         hugsTitle: Bool = false, onSelect: @escaping (Int) -> Void) {
+        self.items = items
+        self.selectedIndex = selectedIndex
+        self.font = font
+        self.textColour = textColour
+        self.accessibilityLabel = accessibilityLabel
+        self.hugsTitle = hugsTitle
+        self.onSelect = onSelect
+    }
+
+    init(titles: [String], selectedIndex: Int, font: NSFont, textColour: Color, accessibilityLabel: String,
+         onSelect: @escaping (Int) -> Void) {
+        self.init(items: titles.map { SAClaudePopUpItem($0) }, selectedIndex: selectedIndex, font: font,
+                  textColour: textColour, accessibilityLabel: accessibilityLabel, onSelect: onSelect)
+    }
+
+    final class Coordinator: NSObject {
+        var onSelect: (Int) -> Void = { _ in }
+        var items: [SAClaudePopUpItem] = []
+        @objc func picked(_ sender: NSPopUpButton) { onSelect(sender.indexOfSelectedItem) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSPopUpButton {
+        let button = NSPopUpButton(frame: .zero, pullsDown: false)
+        button.isBordered = false
+        button.lineBreakMode = .byTruncatingTail
+        button.alignment = .left
+        button.autoenablesItems = false
+        button.target = context.coordinator
+        button.action = #selector(Coordinator.picked(_:))
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return button
+    }
+
+    func updateNSView(_ button: NSPopUpButton, context: Context) {
+        context.coordinator.onSelect = onSelect
+        if context.coordinator.items != items || button.numberOfItems != items.count {
+            context.coordinator.items = items
+            button.removeAllItems()
+            for item in items {
+                if item.isSeparator { button.menu?.addItem(.separator()); continue }
+                let menuItem = NSMenuItem(title: item.title, action: nil, keyEquivalent: "")
+                menuItem.indentationLevel = item.indentationLevel
+                menuItem.isEnabled = item.isEnabled
+                button.menu?.addItem(menuItem)
+            }
+        }
+        if button.indexOfSelectedItem != selectedIndex, button.itemArray.indices.contains(selectedIndex) {
+            button.selectItem(at: selectedIndex)
+        }
+        if button.font != font { button.font = font }
+        button.contentTintColor = NSColor(textColour)
+        button.setAccessibilityLabel(accessibilityLabel)
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView button: NSPopUpButton, context: Context) -> CGSize? {
+        guard hugsTitle else { return nil }
+        let natural = button.intrinsicContentSize
+        let width = proposal.width.map { min($0, natural.width) } ?? natural.width
+        return CGSize(width: width, height: proposal.height ?? natural.height)
+    }
+}
+
+// MARK: - Number field
+
+/// A small Claude number field (`SAClaudeFieldChrome`): the number right-aligned in monospaced digits, the unit's
+/// suffix after it inside the field in the muted colour ("60 s"). Typing doesn't write; Return or leaving the field
+/// commits through `SAClaudeSettingsValues.parse` — a value outside `range` or not a number is refused with a beep and
+/// the field shows the old value again (as the XIB formatters refused it); Escape restores the old value. A value
+/// changed elsewhere shows while the field isn't being edited.
+struct SAClaudeNumberField: View {
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let step: Double
+    let unit: SAClaudeSettingUnit
+    let accessibilityLabel: String
+    var size: SAClaudeControlSize = .form
+
+    @State private var text = ""
+    @FocusState private var isFocused: Bool
+
+    init(value: Binding<Double>, range: ClosedRange<Double>, step: Double, unit: SAClaudeSettingUnit,
+         accessibilityLabel: String, size: SAClaudeControlSize = .form) {
+        _value = value
+        self.range = range
+        self.step = step
+        self.unit = unit
+        self.accessibilityLabel = accessibilityLabel
+        self.size = size
+    }
+
+    /// Wide enough for the range's longest number (and "0.0" for tenths) plus the suffix.
+    var width: CGFloat {
+        let digits = max(SAClaudeSettingsValues.numberText(range.upperBound).count,
+                         SAClaudeSettingsValues.isWholeStep(step) ? 1 : 3)
+        let suffix: CGFloat = SAClaudeSettingsValues.suffix(for: unit) == nil ? 0 : 12
+        return max(44, CGFloat(digits) * 7.5 + 2 * SAClaudeSwiftUIMetrics.fieldHorizontalPadding + suffix)
+    }
+
+    var body: some View {
+        SAClaudeFieldChrome(isFocused: isFocused, size: size) {
+            HStack(spacing: 3) {
+                TextField("", text: $text)
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.trailing)
+                    .font(SAClaudeSwiftUIMetrics.bodyFont.monospacedDigit())
+                    .focused($isFocused)
+                    .onSubmit(commit)
+                    .onExitCommand(perform: revert)
+                    .accessibilityLabel(Text(accessibilityLabel))
+                if let suffix = SAClaudeSettingsValues.suffix(for: unit) {
+                    Text(suffix)
+                        .font(SAClaudeSwiftUIMetrics.bodyFont)
+                        .foregroundColor(palette.muted)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .frame(width: width)
+        .onAppear(perform: revert)
+        .onChange(of: value) { _ in if !isFocused { revert() } }
+        .onChange(of: isFocused) { focused in if !focused { commit() } }
+    }
+
+    /// Shows the stored value.
+    private func revert() {
+        text = SAClaudeSettingsValues.numberText(value)
+    }
+
+    /// Writes the typed value, or refuses it and shows the old one. Unchanged text writes nothing.
+    private func commit() {
+        guard text != SAClaudeSettingsValues.numberText(value) else { return }
+        if let parsed = SAClaudeSettingsValues.parse(text, range: range, step: step) {
+            if parsed != value { value = parsed }
+            text = SAClaudeSettingsValues.numberText(parsed)
+        } else {
+            NSSound.beep()
+            revert()
+        }
     }
 }
