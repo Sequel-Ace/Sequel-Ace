@@ -50,15 +50,14 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPProcessListController () <NSMenuItemValidation, NSControlTextEditingDelegate>
+@property (nonatomic, readwrite, strong) SAClaudeProcessListSession *processListSession;
+- (SAClaudeProcessListSession *)_openSessionIfNeeded;
 - (void)_processListRefreshed;
 - (void)_startAutoRefreshTimer;
 - (void)_killAutoRefreshTimer;
 - (void)_fireAutoRefresh:(NSTimer *)timer;
 - (void)_updateSelectedAutoRefreshIntervalInterface;
 - (void)_startAutoRefreshTimerWithInterval:(NSTimeInterval)interval;
-- (void)_getDatabaseProcessListInBackground:(id)object;
-- (void)_killProcessQueryWithId:(long long)processId;
-- (void)_killProcessConnectionWithId:(long long)processId;
 - (void)_updateServerProcessesFilterForFilterString:(NSString *)filterString;
 - (void)_addPreferenceObservers;
 - (void)_removePreferenceObservers;
@@ -69,6 +68,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 @implementation SPProcessListController
 
 @synthesize connection;
+@synthesize processListSession;
 
 #pragma mark -
 #pragma mark Serialization
@@ -90,13 +90,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		autoRefreshTimer = nil;
 		processListThreadRunning = NO;
 		
-		showFullProcessList = [prefs boolForKey:SPProcessListShowFullProcessList];
-		
 		processes = [[NSMutableArray alloc] init];
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 		
-		showFullProcessList = [prefs boolForKey:SPProcessListShowFullProcessList];
+		// The list always fetches SHOW FULL PROCESSLIST (the "Show FULL list" option is retired).
+		showFullProcessList = YES;
 	}
 	
 	return self;
@@ -209,12 +208,13 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (IBAction)refreshProcessList:(id)sender
 {
-	// If the document is currently performing a task (most likely threaded) on the current connection, don't
-	// allow a refresh to prevent connection lock errors.
-	if ([(SPDatabaseDocument *)[connection delegate] isWorking]) return;
-	
-	// Also, only proceed if there is not already a background thread running.
+	// Only proceed if there is not already a refresh running. The session runs it on the Process List's own
+	// connection, so the document being busy no longer blocks it (on the shared fallback the session skips it).
 	if (processListThreadRunning) return;
+
+	// No session while the window is closed (e.g. a kill finishing after close): nothing to refresh
+	SAClaudeProcessListSession *session = processListSession;
+	if (!session) return;
 	
 	// Start progress Indicator
 	[refreshProgressIndicator startAnimation:self];
@@ -226,9 +226,13 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[filterProcessesSearchField setEnabled:NO];
 	
 	processListThreadRunning = YES;
-		
-	// Get the processes list on a background thread
-	[NSThread detachNewThreadWithName:@"SPProcessListController retrieving process list" target:self selector:@selector(_getDatabaseProcessListInBackground:) object:nil];
+
+	[session refreshWithCompletion:^(NSArray<NSDictionary<NSString *, id> *> *rows) {
+		// nil: skipped or failed — keep the current list
+		if (rows) [self->processes setArray:rows];
+
+		[self _processListRefreshed];
+	}];
 }
 
 /**
@@ -269,11 +273,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// No process selected. Interface validation should prevent this.
 	if ([processListTableView numberOfSelectedRows] != 1) return;
 	
-	long long processId = [[[processesFiltered objectAtIndex:[processListTableView selectedRow]] valueForKey:@"Id"] longLongValue];
+	NSDictionary *process = [processesFiltered objectAtIndex:[processListTableView selectedRow]];
+	id info = [process objectForKey:@"Info"];
 
-	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Kill query?", @"kill query message") message:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution.", @"kill query informative message"), processId] primaryButtonTitle:NSLocalizedString(@"Kill", @"kill button") primaryButtonHandler:^{
-		[self _killProcessQueryWithId:processId];
-	} cancelButtonHandler:nil];
+	[self killQueryOnConnectionId:[[process valueForKey:@"Id"] longLongValue] shownQuery:([info isKindOfClass:[NSString class]] ? info : nil)];
 }
 
 /**
@@ -283,11 +286,21 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// No process selected. Interface validation should prevent this.
 	if ([processListTableView numberOfSelectedRows] != 1) return;
 	
-	long long processId = [[[processesFiltered objectAtIndex:[processListTableView selectedRow]] valueForKey:@"Id"] longLongValue];
+	[self killConnectionWithConnectionId:[[[processesFiltered objectAtIndex:[processListTableView selectedRow]] valueForKey:@"Id"] longLongValue]];
+}
 
-	[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Kill connection?", @"kill connection message") message:[NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution.", @"kill connection informative message"), processId] primaryButtonTitle:NSLocalizedString(@"Kill", @"kill button") primaryButtonHandler:^{
-		[self _killProcessConnectionWithId:processId];
-	} cancelButtonHandler:nil];
+- (void)killQueryOnConnectionId:(long long)processId shownQuery:(NSString *)shownQuery
+{
+	[processListSession confirmAndKillQueryOnConnectionId:processId shownQuery:shownQuery didFinish:^{
+		[self refreshProcessList:self];
+	}];
+}
+
+- (void)killConnectionWithConnectionId:(long long)processId
+{
+	[processListSession confirmAndKillConnectionWithId:processId didFinish:^{
+		[self refreshProcessList:self];
+	}];
 }
 
 /**
@@ -303,8 +316,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (IBAction)toggeleShowFullProcessList:(NSMenuItem *)sender
 {
-	showFullProcessList = (!showFullProcessList);
-
+	// The FULL list is always on now; the menu item (until it goes) just refreshes.
 	[self refreshProcessList:self];
 }
 
@@ -353,7 +365,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 {
 	// Weak reference
 	processesFiltered = processes;
-	
+
+	// Open the Process List's own connection (closed again in windowWillClose:)
+	[self _openSessionIfNeeded];
+
 	[self refreshProcessList:self];
 	 
 	[self showWindow:self];
@@ -443,7 +458,11 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	}
 	
 	// Kill the auto refresh timer if running
-	[self _killAutoRefreshTimer];	
+	[self _killAutoRefreshTimer];
+
+	// Close the Process List's own connection; the next display opens a new one
+	[processListSession close];
+	processListSession = nil;
 }
 
 #pragma mark -
@@ -551,98 +570,20 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 }
 
 /**
- * Gets a list of current database processed on a background thread.
+ * The Process List's own connection, opened when the window is displayed and closed with the window.
  */
-- (void)_getDatabaseProcessListInBackground:(id)object;
-{	
-	@autoreleasepool {
-		NSUInteger i = 0;
-
-		// Get processes
-		if ([connection isConnected]) {
-
-			SPMySQLResult *processList = (showFullProcessList) ? [connection queryString:@"SHOW FULL PROCESSLIST"] : [connection listProcesses];
-
-			[processList setReturnDataAsStrings:YES];
-
-			[[processes onMainThread] removeAllObjects];
-
-			for (i = 0; i < [processList numberOfRows]; i++)
-			{
-				//SPMySQL.framewokr currently returns numbers as NSString, which will break sorting of numbers in this case.
-				NSMutableDictionary *rowsFixed = [[processList getRowAsDictionary] mutableCopy];
-
-				// The ID can be a 64-bit value on 64-bit servers
-				id idColumn = [rowsFixed objectForKey:@"Id"];
-				if (idColumn != nil && [idColumn isKindOfClass:[NSString class]]) {
-					long long numRaw = [(NSString *)idColumn longLongValue];
-					NSNumber *num = [NSNumber numberWithLongLong:numRaw];
-					[rowsFixed setObject:num forKey:@"Id"];
-				}
-
-				// Time is a signed int(7) - this is a 32 bit int value
-				id timeColumn = [rowsFixed objectForKey:@"Time"];
-				if(timeColumn != nil && [timeColumn isKindOfClass:[NSString class]]) {
-					int numRaw = [(NSString *)timeColumn intValue];
-					NSNumber *num = [NSNumber numberWithInt:numRaw];
-					[rowsFixed setObject:num forKey:@"Time"];
-				}
-
-				// This is pretty bad from a performance standpoint, but we must not
-				// interfere with the NSTableView's reload cycle and there is no way
-				// to know when it starts/ends. We only know it will happen on the
-				// main thread, so we have to interlock with that.
-				[[processes onMainThread] addObject:[rowsFixed copy]];
-			}
-		}
-
-		// Update the UI on the main thread
-		[self performSelectorOnMainThread:@selector(_processListRefreshed) withObject:nil waitUntilDone:NO];
-	}
-}
-
-/**
- * Attempts to kill the query executing on the connection associate with the supplied ID.
- */
-- (void)_killProcessQueryWithId:(long long)processId
+- (SAClaudeProcessListSession *)_openSessionIfNeeded
 {
-	// Kill the query
-	if ([[connection serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-		[connection queryString:[NSString stringWithFormat:@"KILL TIDB QUERY %lld", processId]];
-	}
-	else {
-		[connection queryString:[NSString stringWithFormat:@"KILL QUERY %lld", processId]];
-	}
-	
-	// Check for errors
-	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill query", @"error killing query message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
-	}
-	
-	// Refresh the process list
-	[self refreshProcessList:self];
-}
+	if (!processListSession && connection) {
+		SPMySQLConnection *documentConnection = connection;
 
-/**
- * Attempts the kill the connection associated with the supplied ID.
- */
-- (void)_killProcessConnectionWithId:(long long)processId
-{
-	// Kill the connection
-	if ([[connection serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-		[connection queryString:[NSString stringWithFormat:@"KILL TIDB CONNECTION %lld", processId]];
+		processListSession = [[SAClaudeProcessListSession alloc] initWithDocumentConnection:documentConnection documentIsBusy:^BOOL{
+			return [(SPDatabaseDocument *)[documentConnection delegate] isWorking];
+		}];
+		[processListSession open];
 	}
-	else {
-		[connection queryString:[NSString stringWithFormat:@"KILL CONNECTION %lld", processId]];
-	}
-	
-	// Check for errors
-	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill connection", @"error killing connection message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
-	}
-	
-	// Refresh the process list
-	[self refreshProcessList:self];
+
+	return processListSession;
 }
 
 /**
@@ -794,6 +735,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)dealloc
 {
 	processListThreadRunning = NO;
+
+	[processListSession close];
 
 	[self _removePreferenceObservers];
 

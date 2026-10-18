@@ -37,6 +37,11 @@
 		5EC0DEC50000000000000003 /* SAClaudeProcessClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC50000000000000001 /* SAClaudeProcessClassifier.swift */; };
 		5EC0DEC50000000000000004 /* SAClaudeProcessClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC50000000000000001 /* SAClaudeProcessClassifier.swift */; };
 		5EC0DEC50000000000000005 /* SAClaudeProcessClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC50000000000000002 /* SAClaudeProcessClassifierTests.swift */; };
+		5EC0DEC60000000000000004 /* SAClaudeProcessKill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC60000000000000001 /* SAClaudeProcessKill.swift */; };
+		5EC0DEC60000000000000005 /* SAClaudeProcessKill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC60000000000000001 /* SAClaudeProcessKill.swift */; };
+		5EC0DEC60000000000000006 /* SAClaudeProcessListSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC60000000000000002 /* SAClaudeProcessListSession.swift */; };
+		5EC0DEC60000000000000007 /* SAClaudeProcessListSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC60000000000000002 /* SAClaudeProcessListSession.swift */; };
+		5EC0DEC60000000000000008 /* SAClaudeProcessListSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC60000000000000003 /* SAClaudeProcessListSessionTests.swift */; };
 		5EC0DEC400000000000000B7 /* SAClaudeMenuGlyphPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC400000000000000B6 /* SAClaudeMenuGlyphPass.swift */; };
 		F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */; };
 		F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */; };
@@ -1129,6 +1134,9 @@
 		5EC0DEC400000000000000B2 /* SAClaudeMenuGlyphsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuGlyphsTests.swift; sourceTree = "<group>"; };
 		5EC0DEC50000000000000001 /* SAClaudeProcessClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProcessClassifier.swift; sourceTree = "<group>"; };
 		5EC0DEC50000000000000002 /* SAClaudeProcessClassifierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProcessClassifierTests.swift; sourceTree = "<group>"; };
+		5EC0DEC60000000000000001 /* SAClaudeProcessKill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProcessKill.swift; sourceTree = "<group>"; };
+		5EC0DEC60000000000000002 /* SAClaudeProcessListSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProcessListSession.swift; sourceTree = "<group>"; };
+		5EC0DEC60000000000000003 /* SAClaudeProcessListSessionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProcessListSessionTests.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000B6 /* SAClaudeMenuGlyphPass.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuGlyphPass.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000C /* SAClaudeBitEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeBitEditorForm.swift; sourceTree = "<group>"; };
 		F0A0C0DE000000000000000A /* SAClaudeFieldEditorStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFieldEditorStyler.swift; sourceTree = "<group>"; };
@@ -2435,6 +2443,7 @@
 				4D90B799101E0CDF00D116A1 /* SPUserManager.m */,
 				174CE14010AB9281008F892B /* SPProcessListController.h */,
 				174CE14110AB9281008F892B /* SPProcessListController.m */,
+				5EC0DEC60000000000000002 /* SAClaudeProcessListSession.swift */,
 				17F2FB322172561400CA4358 /* Help Viewer */,
 				EF5C9FD78A565D5260B38E55 /* SAUserManagerPrivilegeNormalizer.swift */,
 			);
@@ -3336,6 +3345,7 @@
 				5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */,
 				5EC0DEC400000000000000B1 /* SAClaudeMenuGlyphs.swift */,
 				5EC0DEC50000000000000001 /* SAClaudeProcessClassifier.swift */,
+				5EC0DEC60000000000000001 /* SAClaudeProcessKill.swift */,
 				F0A0C0DE0000000000000001 /* SAClaudeFormLayout.swift */,
 				1AD785E325B749760007E153 /* OSLog.swift */,
 				507FF1101BBCC4C400104523 /* SPFunctions.h */,
@@ -3413,6 +3423,7 @@
 				5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */,
 				5EC0DEC400000000000000B2 /* SAClaudeMenuGlyphsTests.swift */,
 				5EC0DEC50000000000000002 /* SAClaudeProcessClassifierTests.swift */,
+				5EC0DEC60000000000000003 /* SAClaudeProcessListSessionTests.swift */,
 				F0A0C0DE0000000000000004 /* SAClaudeFormLayoutTests.swift */,
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
 				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
@@ -4166,6 +4177,9 @@
 				5EC0DEC400000000000000B5 /* SAClaudeMenuGlyphsTests.swift in Sources */,
 				5EC0DEC50000000000000003 /* SAClaudeProcessClassifier.swift in Sources */,
 				5EC0DEC50000000000000005 /* SAClaudeProcessClassifierTests.swift in Sources */,
+				5EC0DEC60000000000000004 /* SAClaudeProcessKill.swift in Sources */,
+				5EC0DEC60000000000000006 /* SAClaudeProcessListSession.swift in Sources */,
+				5EC0DEC60000000000000008 /* SAClaudeProcessListSessionTests.swift in Sources */,
 				F0A0C0DE0000000000000005 /* SAClaudeFormLayoutTests.swift in Sources */,
 				F0A0C0DE0000000000000003 /* SAClaudeFormLayout.swift in Sources */,
 				51AC3B7430475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift in Sources */,
@@ -4539,6 +4553,8 @@
 				5EC0DEC400000000000000C4 /* SAClaudeRecordFields.swift in Sources */,
 				5EC0DEC400000000000000B4 /* SAClaudeMenuGlyphs.swift in Sources */,
 				5EC0DEC50000000000000004 /* SAClaudeProcessClassifier.swift in Sources */,
+				5EC0DEC60000000000000005 /* SAClaudeProcessKill.swift in Sources */,
+				5EC0DEC60000000000000007 /* SAClaudeProcessListSession.swift in Sources */,
 				F0A0C0DE000000000000000D /* SAClaudeBitEditorForm.swift in Sources */,
 				F0A0C0DE000000000000000B /* SAClaudeFieldEditorStyler.swift in Sources */,
 				F0A0C0DE0000000000000009 /* SAClaudeFormRecipes.swift in Sources */,

@@ -6295,3 +6295,21 @@
 
 /* Claude Settings pointer: Double check delete query */
 "ClaudeSettings.pointer.deleteDoubleCheck.message" = "Double checking as you have Settings ▸ Safety and alerts ▸ Ask twice before deleting rows turned on";
+
+/* process list : note shown when its own connection could not be opened */
+"Using this window's connection — the list can't refresh while it's busy." = "Using this window's connection — the list can't refresh while it's busy.";
+
+/* process list : kill attempted after its connection was closed */
+"The process list's connection is closed." = "The process list's connection is closed.";
+
+/* process list : kill query found the connection running another query (id, that query) */
+"Connection #%lld is now running a different query:\n\n%@\n\nKill it anyway?" = "Connection #%1$lld is now running a different query:\n\n%2$@\n\nKill it anyway?";
+
+/* process list : kill query found the connection idle (id) */
+"Connection #%lld has finished that query and is now idle — nothing was killed." = "Connection #%lld has finished that query and is now idle — nothing was killed.";
+
+/* process list : kill found the connection gone (id) */
+"Connection #%lld has ended." = "Connection #%lld has ended.";
+
+/* process list : its connection is not connected */
+"Not connected" = "Not connected";
