@@ -70,6 +70,9 @@
 #import "SPPreferencePane.h"
 // SAClaudeSettingsWindowHost (SAClaudeSettingsWindow.swift) installs the Settings content for this controller.
 #import "SPPreferenceController.h"
+// The Settings rows call these panes' font, favourite and theme code (SAClaudeSettingsPanes.swift).
+#import "SPGeneralPreferencePane.h"
+#import "SPEditorPreferencePane.h"
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 // Also pulls in SPMySQLResult and the querying category (queryString:,
 // escapeAndQuoteString:, queryErrored, ...) needed by SPAppController+MCP.swift.

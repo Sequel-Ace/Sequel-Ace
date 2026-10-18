@@ -307,10 +307,23 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
 }
 
+/**
+ * The editor font's Reset: back to the Claude default, SF Mono 13 (it used to install the proportional system font).
+ */
 - (IBAction)resetSystemFont:(id)sender
 {
-  [prefs setObject:[SAArchiving archivedDataForFont:[NSUserDefaults getSystemFont]] forKey:SPCustomQueryEditorFont];
+  [SAClaudeEditorDefaults resetEditorFontIn:prefs];
   [self updateDisplayedEditorFontName];
+}
+
+- (NSString *)themesDirectory
+{
+	return themePath ?: @"";
+}
+
+- (BOOL)confirmDiscardUnsavedTheme
+{
+	return [self _checkForUnsavedTheme];
 }
 
 /**
@@ -728,18 +741,11 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 - (NSView *)preferencePaneView
 {
-	// Claude look: the Follow macOS / Customise colours section takes the colour table's place (built once).
-	NSView *paneView = [self view]; // loads the nib before the outlets below are read
-	__weak SPEditorPreferencePane *weakSelf = self;
-	[SAClaudeEditorColoursSectionHost installInPaneView:paneView
-	                                     replacingViews:@[[colorSettingTableView enclosingScrollView], colorThemeName, colorThemeNameLabel]
-	                                    themesDirectory:themePath ?: @""
-	                              confirmDiscardUnsaved:^BOOL{ return [weakSelf _checkForUnsavedTheme]; }
-	                                             saveAs:^{ [weakSelf saveAsColorScheme:nil]; }
-	                                        importTheme:^{ [weakSelf importColorScheme:nil]; }
-	                                        exportTheme:^{ [weakSelf exportColorScheme:nil]; }
-	                                      editThemeList:^{ [weakSelf editThemeList:nil]; }];
-	return paneView;
+	// Claude look: the colours section (Follow / Custom, start from, ⋯, the 11 colours, the accent) is drawn by the
+	// Settings window's Appearance pane (SAClaudeSettingsPanes.swift), which calls this pane's theme actions. This view
+	// is parked hidden in the window, so nothing is installed into it any more (a second copy would hold its own colour
+	// panel hand-off and accent well).
+	return [self view];
 }
 
 - (NSImage *)preferencePaneIcon

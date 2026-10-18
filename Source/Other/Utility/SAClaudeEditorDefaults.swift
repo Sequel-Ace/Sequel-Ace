@@ -16,7 +16,15 @@ import AppKit
     static let fontMigratedKey = "SAClaudeEditorFontMigrated"
     static let themeUpgradeCheckedKey = "SAClaudeEditorThemeUpgradeChecked"
 
-    static var claudeFont: NSFont { .monospacedSystemFont(ofSize: 13, weight: .regular) }
+    @objc static var claudeFont: NSFont { .monospacedSystemFont(ofSize: 13, weight: .regular) }
+
+    /// The editor font's Reset (Settings ▸ Appearance ▸ Editor font, and SPEditorPreferencePane -resetSystemFont:):
+    /// back to the Claude default, SF Mono 13 — not the proportional system font it used to install.
+    @objc(resetEditorFontIn:)
+    static func resetEditorFont(in defaults: UserDefaults) {
+        guard let data = SAArchiving.archivedData(forFont: claudeFont) else { return }
+        defaults.set(data, forKey: fontKey)
+    }
 
     /// Registers the Claude defaults over Layer 1's neutral ones, then runs the
     /// one-time font migration and theme-matching upgrade guard against the

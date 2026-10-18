@@ -6185,3 +6185,39 @@
 
 /* Claude Settings: the app menu item that opens the Settings window (was "Preferences...") */
 "ClaudeSettings.ui.menuItem" = "Settings…";
+
+/* Claude Settings: a font row's button that opens the font panel for that font */
+"ClaudeSettings.ui.changeFont" = "Change…";
+
+/* Claude Settings: the editor font's button that puts it back to SF Mono 13 */
+"ClaudeSettings.editorFont.reset" = "Reset";
+
+/* Claude Settings: Colours pill choice — the editor and grid colours follow the app appearance (Claude Light / Claude Dark) */
+"ClaudeSettings.editorColours.option.matchAppearance" = "Match appearance";
+
+/* Claude Settings: Colours pill choice — the user's own editor and grid colours */
+"ClaudeSettings.editorColours.option.custom" = "Custom";
+
+/* Claude Settings: accessibility label of the ⋯ button beside "Start from a theme" (save, import, export, edit the theme list) */
+"ClaudeSettings.startFromTheme.actions" = "Theme actions";
+
+/* Claude Settings: accessibility label of one of the 11 editor colours; %@ is the colour's name (Text, Keyword…) */
+"ClaudeSettings.colourList.editColour" = "Change the %@ colour";
+
+/* Claude Settings: "Favourite to select" pill — select the favourite used last */
+"ClaudeSettings.defaultFavourite.option.lastUsed" = "Last used";
+
+/* Claude Settings: "Favourite to select" pill — shown (disabled) when there are no favourites */
+"ClaudeSettings.defaultFavourite.option.none" = "No favourites";
+
+/* Claude Settings: "Reload after saving" switch — after adding a row */
+"ClaudeSettings.reloadAfterSaving.option.add" = "Add";
+
+/* Claude Settings: "Reload after saving" switch — after editing a row */
+"ClaudeSettings.reloadAfterSaving.option.edit" = "Edit";
+
+/* Claude Settings: "Reload after saving" switch — after deleting rows */
+"ClaudeSettings.reloadAfterSaving.option.delete" = "Delete";
+
+/* Claude Settings: accessibility label of one "Reload after saving" switch; %@ is Add, Edit or Delete */
+"ClaudeSettings.reloadAfterSaving.switchLabel" = "Reload after saving: %@";

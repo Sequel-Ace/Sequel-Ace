@@ -56,6 +56,19 @@ final class SAClaudeEditorDefaultsTests: XCTestCase {
         XCTAssertEqual(SAArchiving.font(from: defaults.data(forKey: SAClaudeEditorDefaults.fontKey))?.fontName, "Menlo-Regular", "a later deliberate Menlo 14 is kept")
     }
 
+    /// Verifies the editor font's Reset gives the Claude default, SF Mono 13 (monospaced), not the proportional system
+    /// font it used to install.
+    func testResetEditorFontGivesSFMono13() {
+        let helvetica = SAArchiving.archivedData(forFont: NSFont(name: "Helvetica", size: 18)!)
+        defaults.set(helvetica, forKey: SAClaudeEditorDefaults.fontKey)
+        SAClaudeEditorDefaults.resetEditorFont(in: defaults)
+        let font = SAArchiving.font(from: defaults.data(forKey: SAClaudeEditorDefaults.fontKey))
+        XCTAssertEqual(font, NSFont.monospacedSystemFont(ofSize: 13, weight: .regular))
+        XCTAssertEqual(font?.pointSize, 13)
+        XCTAssertTrue(font?.isFixedPitch ?? false, "monospaced")
+        XCTAssertNotEqual(font, NSFont.systemFont(ofSize: 13), "not the proportional system font")
+    }
+
     // MARK: - Theme-matching upgrade guard
 
     private var matches: String { SAEditorAppearanceThemeSwitcher.matchesAppearanceKey }

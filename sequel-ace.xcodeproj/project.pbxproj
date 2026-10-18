@@ -110,6 +110,10 @@
 		5E77C0DE0000000000000022 /* SAClaudeSettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000019 /* SAClaudeSettingsStoreTests.swift */; };
 		5E77C0DE0000000000000024 /* SAClaudeSettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000023 /* SAClaudeSettingsWindow.swift */; };
 		5E77C0DE0000000000000026 /* SAClaudeSettingsPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000025 /* SAClaudeSettingsPanes.swift */; };
+		5E77C0DE0000000000000028 /* SAClaudeSettingsRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000027 /* SAClaudeSettingsRules.swift */; };
+		5E77C0DE0000000000000029 /* SAClaudeSettingsRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000027 /* SAClaudeSettingsRules.swift */; };
+		5E77C0DE0000000000000031 /* SAClaudeSettingsRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000030 /* SAClaudeSettingsRulesTests.swift */; };
+		5E77C0DE0000000000000033 /* SAClaudeSettingsColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E77C0DE0000000000000032 /* SAClaudeSettingsColours.swift */; };
 		A6D2F1E11B3C4D5E6F708192 /* SAClaudeGridChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */; };
 		C2A000012B3C4D5E6F708101 /* SAClaudeConsoleTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */; };
 		C2A000072B3C4D5E6F708107 /* SAClaudeConsoleToolbarLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */; };
@@ -1168,6 +1172,9 @@
 		5E77C0DE0000000000000019 /* SAClaudeSettingsStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSettingsStoreTests.swift; sourceTree = "<group>"; };
 		5E77C0DE0000000000000023 /* SAClaudeSettingsWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSettingsWindow.swift; sourceTree = "<group>"; };
 		5E77C0DE0000000000000025 /* SAClaudeSettingsPanes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSettingsPanes.swift; sourceTree = "<group>"; };
+		5E77C0DE0000000000000027 /* SAClaudeSettingsRules.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSettingsRules.swift; sourceTree = "<group>"; };
+		5E77C0DE0000000000000030 /* SAClaudeSettingsRulesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSettingsRulesTests.swift; sourceTree = "<group>"; };
+		5E77C0DE0000000000000032 /* SAClaudeSettingsColours.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSettingsColours.swift; sourceTree = "<group>"; };
 		A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeGridChromeTests.swift; sourceTree = "<group>"; };
 		C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleTextTests.swift; sourceTree = "<group>"; };
 		C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeConsoleToolbarLayoutTests.swift; sourceTree = "<group>"; };
@@ -2626,6 +2633,7 @@
 				B57747D30F7A8974003B34F9 /* SPPreferenceController.m */,
 				5E77C0DE0000000000000023 /* SAClaudeSettingsWindow.swift */,
 				5E77C0DE0000000000000025 /* SAClaudeSettingsPanes.swift */,
+				5E77C0DE0000000000000032 /* SAClaudeSettingsColours.swift */,
 				17D390A8127B556F00672B13 /* SPPreferencePaneProtocol.h */,
 				17D390A7127B551400672B13 /* Panes */,
 			);
@@ -3358,6 +3366,7 @@
 				5E77C0DE0000000000000001 /* SAClaudeSettingsCatalog.swift */,
 				5E77C0DE0000000000000011 /* SAClaudeSettingsValues.swift */,
 				5E77C0DE0000000000000018 /* SAClaudeSettingsStore.swift */,
+				5E77C0DE0000000000000027 /* SAClaudeSettingsRules.swift */,
 				A6D2F1E21B3C4D5E6F7081A1 /* SAClaudeGridChrome.swift */,
 				C2A000042B3C4D5E6F708104 /* SAClaudeConsoleText.swift */,
 				C2A000082B3C4D5E6F708108 /* SAClaudeConsoleToolbarLayout.swift */,
@@ -3494,6 +3503,7 @@
 				5E77C0DE0000000000000002 /* SAClaudeSettingsCatalogTests.swift */,
 				5E77C0DE0000000000000012 /* SAClaudeSettingsValuesTests.swift */,
 				5E77C0DE0000000000000019 /* SAClaudeSettingsStoreTests.swift */,
+				5E77C0DE0000000000000030 /* SAClaudeSettingsRulesTests.swift */,
 				A6D2F1E01B3C4D5E6F708191 /* SAClaudeGridChromeTests.swift */,
 				C2A000022B3C4D5E6F708102 /* SAClaudeConsoleTextTests.swift */,
 				C2A000062B3C4D5E6F708106 /* SAClaudeConsoleToolbarLayoutTests.swift */,
@@ -4417,6 +4427,8 @@
 				5E77C0DE0000000000000004 /* SAClaudeSettingsCatalog.swift in Sources */,
 				5E77C0DE0000000000000014 /* SAClaudeSettingsValues.swift in Sources */,
 				5E77C0DE0000000000000021 /* SAClaudeSettingsStore.swift in Sources */,
+				5E77C0DE0000000000000029 /* SAClaudeSettingsRules.swift in Sources */,
+				5E77C0DE0000000000000031 /* SAClaudeSettingsRulesTests.swift in Sources */,
 				5E77C0DE0000000000000022 /* SAClaudeSettingsStoreTests.swift in Sources */,
 				5E77C0DE0000000000000015 /* SAClaudeSettingsValuesTests.swift in Sources */,
 				A6D2F1E31B3C4D5E6F7081A2 /* SAClaudeGridChrome.swift in Sources */,
@@ -4930,6 +4942,8 @@
 				5E77C0DE0000000000000017 /* SAClaudeSettingsControls.swift in Sources */,
 				5E77C0DE0000000000000024 /* SAClaudeSettingsWindow.swift in Sources */,
 				5E77C0DE0000000000000026 /* SAClaudeSettingsPanes.swift in Sources */,
+				5E77C0DE0000000000000028 /* SAClaudeSettingsRules.swift in Sources */,
+				5E77C0DE0000000000000033 /* SAClaudeSettingsColours.swift in Sources */,
 				A6D2F1E41B3C4D5E6F7081A3 /* SAClaudeGridChrome.swift in Sources */,
 				C2A000052B3C4D5E6F708105 /* SAClaudeConsoleText.swift in Sources */,
 				C2A0000A2B3C4D5E6F70810A /* SAClaudeConsoleToolbarLayout.swift in Sources */,
