@@ -76,7 +76,7 @@ Sequel Ace is sandboxed, and the sandbox does not let it (or the `ssh` it runs) 
 
 1. Open _Preferences_ > _Network_ and click _Configure…_ next to _SSH Agent_.
 2. Click _Install Helper…_. A file panel opens on Sequel Ace's _Application Scripts_ folder; leave the folder as it is and click _Install_. Sequel Ace needs this one-time permission because it cannot write to that folder by itself.
-3. Click _Relaunch_. Sequel Ace will not use the helper until it has been relaunched, because the permission from step 2 lasts until the app quits.
+3. Click _Relaunch_. Sequel Ace will not use the helper until it has been relaunched, because the permission from step 2 lasts until the app quits. If you have more than one copy of Sequel Ace open, quit all of them; none will use the helper while the copy that installed it is still running.
 4. Choose a _Default agent_, or leave the default _Off_ and choose an agent per connection with the _SSH Agent_ option in the connection's SSH settings.
 
 **Agent choices**
