@@ -6415,3 +6415,9 @@
 
 /* process list : the chip and search show nothing */
 "No connections match." = "No connections match.";
+
+/* process list : a row or panel of a non-idle connection with no query text */
+"no query" = "no query";
+
+/* process list : its own connection was lost (shown in the notes line) */
+"Lost the Process List's connection; it reconnects on the next refresh" = "Lost the Process List's connection; it reconnects on the next refresh";

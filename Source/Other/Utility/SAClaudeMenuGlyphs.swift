@@ -90,8 +90,6 @@ enum SAClaudeMenuGlyphs {
         // Process List
         "killProcessQuery:": "stop.circle",
         "killProcessConnection:": "xmark.octagon",
-        "toggleShowProcessID:": "number",
-        "toggeleShowFullProcessList:": "text.alignleft",  // (sic) the controller's selector
         // Bundle Editor
         "revealCommandBundleInFinder:": "folder",
         "undeleteDefaultBundles:": "arrow.uturn.backward",

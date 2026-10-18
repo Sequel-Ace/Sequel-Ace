@@ -43,10 +43,13 @@ struct SAClaudeProcessListRow: Equatable {
     /// The meta line's state: the state (or, without one, the command); background threads say so first.
     let stateText: String
     let timeText: String
-    /// The start of the query, for the row's two lines; nil for an idle connection (no query).
+    /// The start of the query, for the row's two lines; nil when the connection runs no query.
     let preview: String?
 
     var id: Int64 { process.id }
+
+    /// What the query lines say when there is no query (`SAClaudeProcessListModel.emptyQueryText`).
+    var emptyQueryText: String { SAClaudeProcessListModel.emptyQueryText(process) }
 }
 
 /// What the list shows: its rows, in order, and the chip counts.
@@ -130,6 +133,15 @@ enum SAClaudeProcessListModel {
         return base.isEmpty ? label : label + " · " + base
     }
 
+    /// The muted text in place of a missing query: "idle connection" for a sleeping client only; any other connection
+    /// without query text (a replica or binlog thread, a Connect, a Query whose Info is NULL) says "no query".
+    static func emptyQueryText(_ process: SAClaudeProcess) -> String {
+        if process.command.caseInsensitiveCompare("Sleep") == .orderedSame {
+            return NSLocalizedString("idle connection", value: "idle connection", comment: "process list : a row or panel of a connection running no query")
+        }
+        return NSLocalizedString("no query", value: "no query", comment: "process list : a row or panel of a non-idle connection with no query text")
+    }
+
     static var backgroundLabel: String {
         NSLocalizedString("Background", comment: "process list : label of a replication or system thread")
     }
@@ -179,6 +191,30 @@ enum SAClaudeProcessListModel {
     static func commandTargets(clickedId: Int64?, selectedIds: [Int64]) -> [Int64] {
         guard let clickedId, !selectedIds.contains(clickedId) else { return selectedIds }
         return [clickedId]
+    }
+}
+
+/// What a right-click command acts on, captured when the menu opens: the connections (by id) and the query each row
+/// showed then. A refresh that lands while the menu is open can reorder the rows under it; the command still acts on
+/// these ids, and a connection that has ended by then is not killed.
+struct SAClaudeProcessListContextTarget: Equatable {
+    let ids: [Int64]
+    let queries: [Int64: String]
+
+    init(clickedId: Int64?, selectedIds: [Int64], rows: [SAClaudeProcessListRow]) {
+        ids = SAClaudeProcessListModel.commandTargets(clickedId: clickedId, selectedIds: selectedIds)
+        var queries: [Int64: String] = [:]
+        for row in rows where ids.contains(row.id) {
+            if let info = row.process.info, !info.isEmpty { queries[row.id] = info }
+        }
+        self.queries = queries
+    }
+
+    /// The single connection Kill Query / Kill Connection act on, with the query its row showed when the menu opened;
+    /// nil when the menu was not opened on exactly one connection or that connection is no longer listed.
+    func killTarget(in processes: [SAClaudeProcess]) -> (id: Int64, shownQuery: String?)? {
+        guard ids.count == 1, SAClaudeProcessKillDecision.canKill(shownId: ids[0], in: processes) else { return nil }
+        return (ids[0], queries[ids[0]])
     }
 }
 

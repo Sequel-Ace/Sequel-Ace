@@ -359,16 +359,16 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
 
     func fetchProcessRows() -> Result<[[String: Any]], SAClaudeProcessListError> {
         guard ensureConnected() else {
-            return .failure(SAClaudeProcessListError(message: connection.lastErrorMessage() ?? Self.notConnectedMessage))
+            return .failure(SAClaudeProcessListError(message: errorMessage()))
         }
         let result = connection.queryString("SHOW FULL PROCESSLIST")
         if connection.queryErrored() {
-            return .failure(SAClaudeProcessListError(message: connection.lastErrorMessage() ?? ""))
+            return .failure(SAClaudeProcessListError(message: errorMessage()))
         }
         // SHOW FULL PROCESSLIST always lists at least this connection: no result means the statement never ran (the
         // connection was lost and given up), which must not read as "every connection ended".
         guard let result else {
-            return .failure(SAClaudeProcessListError(message: connection.lastErrorMessage() ?? Self.notConnectedMessage))
+            return .failure(SAClaudeProcessListError(message: errorMessage()))
         }
         result.returnDataAsStrings = true
         var rows: [[String: Any]] = []
@@ -378,9 +378,9 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
     }
 
     func execute(_ statement: String) -> SAClaudeProcessStatementResult {
-        guard ensureConnected() else { return .error(id: 0, message: connection.lastErrorMessage() ?? Self.notConnectedMessage) }
+        guard ensureConnected() else { return .error(id: 0, message: errorMessage()) }
         connection.queryString(statement)
-        return connection.queryErrored() ? .error(id: connection.lastErrorID(), message: connection.lastErrorMessage() ?? "") : .ok
+        return connection.queryErrored() ? .error(id: connection.lastErrorID(), message: errorMessage()) : .ok
     }
 
     var serverVersion: String? { connection.serverVersionString() }
@@ -407,6 +407,22 @@ final class SAClaudeProcessListMySQLBackend: SAClaudeProcessListBackend {
         guard connection.connect() else { return false }
         if !connection.setEncoding("utf8mb4") { _ = connection.setEncoding("utf8") }
         return true
+    }
+
+    /// The last error, in words for the window: a connection the session gave up after losing it (SPMySQL then reports
+    /// "User triggered disconnection") reads as lost; an empty message reads as not connected.
+    private func errorMessage() -> String {
+        if connection.userTriggeredDisconnect() {
+            return ownsConnection ? Self.lostMessage : Self.notConnectedMessage
+        }
+        let message = (connection.lastErrorMessage() ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return message.isEmpty ? Self.notConnectedMessage : message
+    }
+
+    static var lostMessage: String {
+        NSLocalizedString("Lost the Process List's connection; it reconnects on the next refresh",
+                          value: "Lost the Process List's connection; it reconnects on the next refresh",
+                          comment: "process list : its own connection was lost (shown in the notes line)")
     }
 
     private static var notConnectedMessage: String {

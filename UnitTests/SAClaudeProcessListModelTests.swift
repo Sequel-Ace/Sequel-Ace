@@ -214,6 +214,46 @@ final class SAClaudeProcessListModelTests: XCTestCase {
         XCTAssertEqual(selection.detail?.shownQuery, "UPDATE stock SET n = n - 1")
     }
 
+    /// Review I1: the right-click target is captured as the menu opens; a refresh that reorders the rows before the
+    /// command fires doesn't move it to whichever connection now sits at the clicked row.
+    func testRightClickKillKeepsTheConnectionCapturedWhenTheMenuOpened() {
+        let rows = SAClaudeProcessListModel.contents(input()).rows       // [2, 1, 3, 4, 5, 6]
+        let clickedRow = 2
+        XCTAssertEqual(rows[clickedRow].id, 3)
+        let target = SAClaudeProcessListContextTarget(clickedId: rows[clickedRow].id, selectedIds: [5], rows: rows)
+
+        // While the menu is open: #8 and #9 arrive at the top — the rows shift down under the clicked row.
+        let later = server + [p(8, time: 600, info: "SELECT SLEEP(600)"), p(9, time: 500, info: "SELECT SLEEP(500)")]
+        let laterRows = SAClaudeProcessListModel.contents(.init(processes: later, threshold: 30, ownConnectionId: 900)).rows
+        XCTAssertNotEqual(laterRows[clickedRow].id, 3)
+
+        let kill = target.killTarget(in: later)
+        XCTAssertEqual(kill?.id, 3)
+        XCTAssertEqual(kill?.shownQuery, "UPDATE stock SET n = n - 1")
+
+        // Ended by the time the command fires: nothing to kill (the items are disabled).
+        XCTAssertNil(target.killTarget(in: later.filter { $0.id != 3 }))
+    }
+
+    func testRightClickOnTheSelectionTargetsItAndKillNeedsOne() {
+        let rows = SAClaudeProcessListModel.contents(input()).rows
+        let target = SAClaudeProcessListContextTarget(clickedId: 1, selectedIds: [2, 1], rows: rows)
+        XCTAssertEqual(target.ids, [2, 1])
+        XCTAssertNil(target.killTarget(in: server), "Kill acts on exactly one connection")
+        let idle = SAClaudeProcessListContextTarget(clickedId: 4, selectedIds: [], rows: rows)
+        XCTAssertEqual(idle.killTarget(in: server)?.id, 4)
+        XCTAssertNil(idle.killTarget(in: server)?.shownQuery)
+    }
+
+    /// Review M3: only a sleeping client is an "idle connection"; other connections without query text say "no query".
+    func testEmptyQueryText() {
+        let rows = SAClaudeProcessListModel.contents(input()).rows
+        XCTAssertEqual(rows.first { $0.id == 4 }?.emptyQueryText, "idle connection")
+        XCTAssertEqual(rows.first { $0.id == 6 }?.emptyQueryText, "no query")
+        XCTAssertEqual(SAClaudeProcessListModel.emptyQueryText(p(9, command: "Binlog Dump GTID", info: nil)), "no query")
+        XCTAssertEqual(SAClaudeProcessListModel.emptyQueryText(p(9, command: "Query", info: nil)), "no query")
+    }
+
     func testRightClickCommandTargets() {
         XCTAssertEqual(SAClaudeProcessListModel.commandTargets(clickedId: 5, selectedIds: [1, 2]), [5])
         XCTAssertEqual(SAClaudeProcessListModel.commandTargets(clickedId: 2, selectedIds: [1, 2]), [1, 2])

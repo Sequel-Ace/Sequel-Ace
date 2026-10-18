@@ -59,10 +59,6 @@ enum SAClaudeProcessListStrings {
         default: return NSLocalizedString("Over 30 s", value: "Over 30 s", comment: "process list : threshold pill — a query running longer than 30 seconds needs attention")
         }
     }
-
-    static var idleConnection: String {
-        NSLocalizedString("idle connection", value: "idle connection", comment: "process list : a row or panel of a connection running no query")
-    }
 }
 
 // MARK: - Header
@@ -390,7 +386,7 @@ struct SAClaudeProcessDetailPanel: View {
                         .buttonStyle(SAClaudeLinkButtonStyle())
                 }
             }
-            SAClaudeProcessQueryBox(query: detail.shownQuery)
+            SAClaudeProcessQueryBox(query: detail.shownQuery, emptyText: SAClaudeProcessListModel.emptyQueryText(process))
             buttons(detail)
         }
         .padding(16)
@@ -439,10 +435,12 @@ struct SAClaudeProcessDetailPanel: View {
     }
 }
 
-/// The whole query: mono 12pt, wrapped, selectable, scrollable, in a field-like box; "idle connection" without one.
+/// The whole query: mono 12pt, wrapped, selectable, scrollable, in a field-like box; without one, `emptyText`
+/// ("idle connection" for a sleeping client, "no query" otherwise).
 struct SAClaudeProcessQueryBox: View {
     @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     let query: String?
+    let emptyText: String
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: SAClaudeSheetColours.fieldRadius, style: .continuous)
@@ -452,7 +450,7 @@ struct SAClaudeProcessQueryBox: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
             } else {
-                Text(SAClaudeProcessListStrings.idleConnection)
+                Text(emptyText)
                     .font(.system(size: 12))
                     .foregroundColor(palette.muted)
                     .padding(10)

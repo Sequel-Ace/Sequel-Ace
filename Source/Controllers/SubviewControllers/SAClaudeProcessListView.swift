@@ -176,6 +176,7 @@ import SwiftUI
         tableView.menu = contextMenu
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.willShowContextMenu = { [weak self] in self?.captureContextTarget() }
         tableView.setAccessibilityLabel(NSLocalizedString("Connections", value: "Connections", comment: "process list : accessibility label of the list"))
 
         scrollView.documentView = tableView
@@ -412,13 +413,26 @@ import SwiftUI
         if detail.detail != selection.detail { detail.detail = selection.detail }
     }
 
-    /// The ids a right-click command (or the Edit menu's Copy) acts on, as rows of the current list.
-    private func commandRows(fromContextMenu: Bool) -> [SAClaudeProcessListRow] {
+    /// What the open right-click menu acts on, captured as it opened (`tableView.willShowContextMenu`): a refresh that
+    /// lands while the menu is open reorders the rows under `clickedRow`, never these ids.
+    private(set) var contextTarget: SAClaudeProcessListContextTarget?
+
+    /// Captures the right-click menu's target: the clicked row's connection (or the selection it is part of).
+    func captureContextTarget() {
         let rows = contents.rows
-        let selected = tableView.selectedRowIndexes.compactMap { rows.indices.contains($0) ? rows[$0].id : nil }
-        let clicked = fromContextMenu && rows.indices.contains(tableView.clickedRow) ? rows[tableView.clickedRow].id : nil
-        let ids = SAClaudeProcessListModel.commandTargets(clickedId: clicked, selectedIds: selected)
-        return ids.compactMap { id in rows.first { $0.id == id } }
+        let clicked = rows.indices.contains(tableView.clickedRow) ? rows[tableView.clickedRow].id : nil
+        contextTarget = SAClaudeProcessListContextTarget(clickedId: clicked, selectedIds: selectedIds(), rows: rows)
+    }
+
+    private func selectedIds() -> [Int64] {
+        let rows = contents.rows
+        return tableView.selectedRowIndexes.compactMap { rows.indices.contains($0) ? rows[$0].id : nil }
+    }
+
+    /// The target of a command: the captured right-click target, or (the Edit menu's Copy) the selection.
+    private func commandTarget(fromContextMenu: Bool) -> SAClaudeProcessListContextTarget {
+        if fromContextMenu, let contextTarget { return contextTarget }
+        return SAClaudeProcessListContextTarget(clickedId: nil, selectedIds: selectedIds(), rows: contents.rows)
     }
 
     // MARK: Commands for the controller
@@ -426,7 +440,7 @@ import SwiftUI
     /// The rows Copy puts on the pasteboard (today's dictionaries), in list order.
     @objc(rowsToCopyFromContextMenu:)
     func rowsToCopy(fromContextMenu: Bool) -> [[String: Any]] {
-        commandRows(fromContextMenu: fromContextMenu).compactMap { rawRows[$0.id] }
+        commandTarget(fromContextMenu: fromContextMenu).ids.compactMap { rawRows[$0] }
     }
 
     /// The rows the list shows now (chip and search applied), in list order, for Save As….
@@ -437,22 +451,21 @@ import SwiftUI
     /// Whether Kill Query / Kill Connection can act from the right-click menu: exactly one connection, still listed.
     @objc(canKillFromContextMenu:)
     func canKill(fromContextMenu: Bool) -> Bool {
-        let rows = commandRows(fromContextMenu: fromContextMenu)
-        return rows.count == 1 && SAClaudeProcessKillDecision.canKill(shownId: rows[0].id, in: processes)
+        commandTarget(fromContextMenu: fromContextMenu).killTarget(in: processes) != nil
     }
 
+    /// Kill Query on the captured connection, with the query its row showed when the menu opened (the session
+    /// re-reads it and asks if it changed since).
     @objc(killQueryFromContextMenu:)
     func killQuery(fromContextMenu: Bool) {
-        let rows = commandRows(fromContextMenu: fromContextMenu)
-        guard rows.count == 1, SAClaudeProcessKillDecision.canKill(shownId: rows[0].id, in: processes) else { return }
-        actions.killQuery(rows[0].id, rows[0].process.info)
+        guard let target = commandTarget(fromContextMenu: fromContextMenu).killTarget(in: processes) else { return }
+        actions.killQuery(target.id, target.shownQuery)
     }
 
     @objc(killConnectionFromContextMenu:)
     func killConnection(fromContextMenu: Bool) {
-        let rows = commandRows(fromContextMenu: fromContextMenu)
-        guard rows.count == 1, SAClaudeProcessKillDecision.canKill(shownId: rows[0].id, in: processes) else { return }
-        actions.killConnection(rows[0].id)
+        guard let target = commandTarget(fromContextMenu: fromContextMenu).killTarget(in: processes) else { return }
+        actions.killConnection(target.id)
     }
 
     /// Whether the list (not the panel's text) is where the Edit menu's Copy applies.
@@ -488,7 +501,8 @@ import SwiftUI
     // MARK: Keys and the gear
 
     fileprivate func performKeyEquivalent(_ event: NSEvent) -> Bool {
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        // Caps Lock (and the keypad / fn flags) don't change a shortcut.
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting([.capsLock, .numericPad, .function])
         guard let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
         if key == "r", flags == [.command] {
             if !header.autoRefresh { actions.refresh() }
@@ -516,6 +530,8 @@ import SwiftUI
         document.parentWindowControllerWindow()?.makeKeyAndOrderFront(nil)
         document.viewQuery()
         guard document.currentlySelectedView() == .customQuery else { return }
+        // One undo removes just this insert, as with a History pick.
+        document.customQueryInstance.textView.breakUndoCoalescing()
         document.customQueryInstance.insertPickedQuery(query)
     }
 
@@ -649,7 +665,16 @@ final class SAClaudeProcessListSplitView: NSSplitView {
 
 /// The list. A right-click selects nothing (AppKit outlines the clicked row); its commands act on that row unless it is
 /// part of the selection (`SAClaudeProcessListModel.commandTargets`).
-final class SAClaudeProcessListTableView: NSTableView {}
+final class SAClaudeProcessListTableView: NSTableView {
+    /// Called as the right-click menu opens, once `clickedRow` is set: the content captures what it acts on.
+    var willShowContextMenu: (() -> Void)?
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let menu = super.menu(for: event)
+        if menu != nil { willShowContextMenu?() }
+        return menu
+    }
+}
 
 /// A row's background: the hover and selection fills, the status stripe and the row line.
 final class SAClaudeProcessRowView: NSTableRowView {
@@ -791,7 +816,7 @@ final class SAClaudeProcessRowCell: NSView {
         } else {
             query.font = Self.idleFont
             query.textColor = colours.muted
-            query.stringValue = SAClaudeProcessListStrings.idleConnection
+            query.stringValue = row.emptyQueryText
         }
         setAccessibilityLabel("#\(process.id), \(host), \(row.stateText), \(row.timeText)")
         needsLayout = true

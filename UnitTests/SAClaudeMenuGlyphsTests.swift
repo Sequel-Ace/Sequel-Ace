@@ -62,9 +62,7 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         "removeHost:": "trash",
         "removeUser:": "trash",
         "refresh:": "arrow.clockwise",
-        // Process List: gear (DatabaseProcessList 78), right-click (51); Save As… and Refresh for its new gear.
-        "toggleShowProcessID:": "number",
-        "toggeleShowFullProcessList:": "text.alignleft",
+        // Process List: right-click (51); Save As… and Refresh for its new gear (Show Process ID / Show FULL are retired).
         "killProcessQuery:": "stop.circle",
         "killProcessConnection:": "xmark.octagon",
         "saveServerProcesses:": "arrow.down.doc",
@@ -156,7 +154,9 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
                          // The Process List's interval rows are choices: their parent row gets the glyph.
                          "refreshTables:", "reloadTable:", "setAutoRefreshInterval:", "setCustomAutoRefreshInterval:",
                          // The managers' Insert Placeholder pop-ups and the Bundle Editor's scope pop-ups.
-                         "inputPopupButtonChanged:", "scopeButtonChanged:", "triggerButtonChanged:"] {
+                         "inputPopupButtonChanged:", "scopeButtonChanged:", "triggerButtonChanged:",
+                         // The Process List's retired gear options (its id is always shown; the list is always FULL).
+                         "toggleShowProcessID:", "toggeleShowFullProcessList:"] {
             XCTAssertNil(symbol(selector), selector)
         }
     }
