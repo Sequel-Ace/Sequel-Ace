@@ -6176,3 +6176,6 @@
 
 /* Claude Settings: accessibility value of a setting's (i) button while its explanation is hidden */
 "ClaudeSettings.ui.infoHidden" = "Hidden";
+
+/* Claude Settings: a choice pill's title when the stored value matches none of its choices; %@ is the stored value */
+"ClaudeSettings.ui.otherValue" = "Other (%@)";

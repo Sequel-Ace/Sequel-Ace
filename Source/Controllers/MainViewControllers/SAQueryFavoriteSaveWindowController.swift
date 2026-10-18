@@ -209,34 +209,20 @@ private struct SAQueryFavoriteSaveView: View {
     }
 }
 
-/// The replace-existing choice as the AppKit form's Claude pill (`SAClaudePillPopUpButtonCell`): a 24pt hover-filled
-/// pill with a 7pt radius, the current choice at 12pt and an up-down chevron; the whole pill opens the menu, which
-/// ticks the current choice. A pop-up rather than a SwiftUI `Picker(.menu)`, whose bezel can't be removed.
+/// The replace-existing choice as the kit's Claude pill (`SAClaudePopUpPill`, filling the control column).
 private struct SAQueryFavoriteReplacePicker: View {
     @ObservedObject var model: SAQueryFavoriteSaveViewModel
-    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
-    @Environment(\.isEnabled) private var isEnabled
     let title: (SAQueryFavoriteSelection) -> String
 
-    private let size = SAClaudeControlSize.form
-
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: size.radius, style: .continuous)
         let ids: [String?] = [nil] + model.selections.map { Optional($0.id) }
-        SAClaudeMenuPopUp(
+        SAClaudePopUpPill(
             titles: [NSLocalizedString("None", comment: "No query favorite replacement selection")] + model.selections.map(title),
             selectedIndex: ids.firstIndex(of: model.selectedFavoriteID) ?? 0,
-            font: size.popUpFont,
-            textColour: palette.text,
             accessibilityLabel: NSLocalizedString("Favorite to replace", comment: "Query favorite replacement picker accessibility label"),
+            fillsWidth: true,
             onSelect: { index in model.selectedFavoriteID = ids.indices.contains(index) ? ids[index] : nil }
         )
-        .padding(.leading, SAClaudeFilterChrome.pillPadding - 3)
-        .padding(.trailing, 2)
-        .frame(maxWidth: .infinity)
-        .frame(height: size.popUpHeight)
-        .background(shape.fill(palette.hover))
-        .opacity(isEnabled ? 1 : SAClaudeSwiftUIMetrics.checkboxDisabledOpacity)
     }
 }
 

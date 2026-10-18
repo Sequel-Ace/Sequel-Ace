@@ -3,98 +3,17 @@
 //  Sequel Ace
 //
 //  The Settings window's building blocks, drawn with the Claude SwiftUI kit (`SAClaudeSwiftUIStyle.swift`, `.form`
-//  sizes): the defaults binding every control writes through, a section (small heading + card), a row (name + (i),
+//  sizes): a section (small heading + card), a row (name + (i),
 //  description, control at the right; dependents indented 22pt and dimmed while their parent is off; the (i)
 //  explanation inline under the row, ending in its muted "Was: …" line), and the standard control for each plain
 //  catalog row (switch, switch + number, number, fixed pill, text). Dynamic pills and custom rows supply their own
-//  control. Inject `SAClaudeSwiftUIPalette` (`.app`) and `SAClaudeDefaultsWatcher` with `.environmentObject` at the
-//  root. App target only.
+//  control. Every control binds through the window's `SAClaudeSettingsStore` by key path (`$store[bool: key]`), never
+//  a closure-built Binding. Inject `SAClaudeSwiftUIPalette` (`.app`) and `SAClaudeSettingsStore` (one per window) with
+//  `.environmentObject` at the root. App target only.
 //
 
 import AppKit
-import Combine
 import SwiftUI
-
-// MARK: - Defaults
-
-/// Reads a setting from `defaults` and writes it through `controller.values` — the same path a XIB binding to the
-/// shared user defaults controller takes — so every `NSUserDefaultsController` binding and observer of
-/// `values.<key>` fires as it did when the Preferences XIB wrote the key, and so does plain `UserDefaults` KVO and
-/// `UserDefaults.didChangeNotification` (the controller applies immediately). `.standard` is the app's defaults and
-/// the shared controller; a harness passes a scratch suite and its own controller.
-struct SAClaudeDefaultsBinding {
-    let defaults: UserDefaults
-    let controller: NSUserDefaultsController
-
-    static var standard: SAClaudeDefaultsBinding {
-        SAClaudeDefaultsBinding(defaults: .standard, controller: .shared)
-    }
-
-    func bool(_ key: String) -> Binding<Bool> {
-        Binding(get: { defaults.bool(forKey: key) }, set: { write($0, forKey: key) })
-    }
-
-    func double(_ key: String) -> Binding<Double> {
-        Binding(get: { defaults.double(forKey: key) }, set: { write($0, forKey: key) })
-    }
-
-    func int(_ key: String) -> Binding<Int> {
-        Binding(get: { defaults.integer(forKey: key) }, set: { write($0, forKey: key) })
-    }
-
-    func string(_ key: String) -> Binding<String> {
-        Binding(get: { defaults.string(forKey: key) ?? "" }, set: { write($0, forKey: key) })
-    }
-
-    /// A number field's value: read as a double, written as an integer for a whole-step field and a double for a
-    /// tenths field (`SAClaudeSettingsValues.storedValue`), as the XIB formatters stored them.
-    func number(_ key: String, step: Double) -> Binding<Double> {
-        Binding(get: { defaults.double(forKey: key) },
-                set: { write(SAClaudeSettingsValues.storedValue($0, step: step), forKey: key) })
-    }
-
-    /// Sets `values.<key>` on the controller (KVC on its values proxy), which writes `defaults`.
-    func write(_ value: Any?, forKey key: String) {
-        (controller.values as AnyObject).setValue(value, forKey: key)
-    }
-
-    static func bool(_ key: String) -> Binding<Bool> { standard.bool(key) }
-    static func double(_ key: String) -> Binding<Double> { standard.double(key) }
-    static func int(_ key: String) -> Binding<Int> { standard.int(key) }
-    static func string(_ key: String) -> Binding<String> { standard.string(key) }
-}
-
-/// Re-renders the settings views when their defaults change — from a control, a menu item, another window, or a
-/// pane controller's own code — so a value written elsewhere shows at once and a dependent row's enabled state
-/// follows its parent's switch. Main thread.
-@MainActor
-final class SAClaudeDefaultsWatcher: ObservableObject {
-    let binding: SAClaudeDefaultsBinding
-    private var observer: NSObjectProtocol?
-
-    init(binding: SAClaudeDefaultsBinding = .standard) {
-        self.binding = binding
-        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification,
-                                                          object: binding.defaults, queue: nil) { [weak self] _ in
-            if Thread.isMainThread {
-                MainActor.assumeIsolated { self?.objectWillChange.send() }
-            } else {
-                DispatchQueue.main.async { self?.objectWillChange.send() }
-            }
-        }
-    }
-
-    deinit {
-        if let observer { NotificationCenter.default.removeObserver(observer) }
-    }
-
-    var defaults: UserDefaults { binding.defaults }
-
-    /// Whether `row` is enabled now (a dependent with `disabledWhenParentOff` follows its parent's switch).
-    func isEnabled(_ row: SAClaudeSettingRow) -> Bool {
-        SAClaudeSettingsCatalog.isEnabled(row) { defaults.bool(forKey: $0) }
-    }
-}
 
 // MARK: - Metrics
 
@@ -208,7 +127,7 @@ extension SAClaudeSettingsSectionView where Control == SAClaudeSettingStandardCo
 /// pane>)" in the muted colour.
 struct SAClaudeSettingsRowView<Content: View>: View {
     @EnvironmentObject var palette: SAClaudeSwiftUIPalette
-    @EnvironmentObject var defaults: SAClaudeDefaultsWatcher
+    @EnvironmentObject var store: SAClaudeSettingsStore
     let row: SAClaudeSettingRow
     let infoOpen: Bool
     let onInfo: () -> Void
@@ -224,7 +143,7 @@ struct SAClaudeSettingsRowView<Content: View>: View {
     private typealias Metrics = SAClaudeSettingsMetrics
 
     var body: some View {
-        let isEnabled = defaults.isEnabled(row)
+        let isEnabled = store.isEnabled(row)
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: Metrics.controlGap) {
                 VStack(alignment: .leading, spacing: Metrics.nameToDescription) {
@@ -307,13 +226,17 @@ struct SAClaudeSettingsRowView<Content: View>: View {
 
 /// The control a plain catalog row gets: a switch; a number field then a switch (the field disabled while the switch
 /// is off, as the XIB bound the field's enabled state to it); a number field; a pill of the fixed choices; a text
-/// field. Custom rows and dynamic pills show nothing here (Tasks 4–5 build them; `handles(_:)` says which rows these
-/// are). Writes go through the watcher's `SAClaudeDefaultsBinding`.
+/// field. Each binds through the store by key path. Custom rows, dynamic pills and the rows in `customControlRowIDs`
+/// show nothing here (Tasks 4–5 build them; `handles(_:)` says which rows these are).
 struct SAClaudeSettingStandardControl: View {
-    @EnvironmentObject var defaults: SAClaudeDefaultsWatcher
+    @EnvironmentObject var store: SAClaudeSettingsStore
     let row: SAClaudeSettingRow
 
+    /// Plain-looking rows whose control must call pane code: the MCP port validates (alert) and restarts the server.
+    static let customControlRowIDs: Set<String> = ["mcpPort"]
+
     static func handles(_ row: SAClaudeSettingRow) -> Bool {
+        guard !customControlRowIDs.contains(row.id) else { return false }
         switch row.control {
         case .toggle, .toggleNumber, .number, .text, .choice(_, .fixed): return true
         case .choice(_, .dynamic), .custom: return false
@@ -323,39 +246,55 @@ struct SAClaudeSettingStandardControl: View {
     private var name: String { localized(row.nameKey) }
 
     var body: some View {
-        let binding = defaults.binding
+        if Self.handles(row) { control }
+    }
+
+    @ViewBuilder private var control: some View {
         switch row.control {
         case .toggle(let key):
-            switchControl(binding.bool(key))
+            switchControl($store[bool: key])
 
         case let .toggleNumber(toggleKey, numberKey, unit, range, step):
             HStack(spacing: 10) {
-                SAClaudeNumberField(value: binding.number(numberKey, step: step), range: range, step: step, unit: unit,
+                SAClaudeNumberField(value: $store[number: numberKey, step: step], range: range, step: step, unit: unit,
                                     accessibilityLabel: name)
-                    .disabled(!defaults.defaults.bool(forKey: toggleKey))
-                switchControl(binding.bool(toggleKey))
+                    .disabled(!store[bool: toggleKey])
+                switchControl($store[bool: toggleKey])
             }
 
         case let .number(key, unit, range, step):
-            SAClaudeNumberField(value: binding.number(key, step: step), range: range, step: step, unit: unit,
+            SAClaudeNumberField(value: $store[number: key, step: step], range: range, step: step, unit: unit,
                                 accessibilityLabel: name)
 
         case let .choice(key, .fixed(options)):
-            let current = defaults.defaults.integer(forKey: key)
-            SAClaudePopUpPill(titles: options.map { localized($0.0) },
-                              selectedIndex: options.firstIndex { $0.1 == current } ?? 0,
-                              accessibilityLabel: name) { index in
-                guard options.indices.contains(index) else { return }
-                binding.int(key).wrappedValue = options[index].1
-            }
-            .fixedSize()
+            fixedChoice(key: key, options: options)
 
         case .text(let key):
-            SAClaudeSettingsTextField(text: binding.string(key), accessibilityLabel: name)
+            SAClaudeSettingsTextField(text: $store[string: key], accessibilityLabel: name)
 
         case .choice(_, .dynamic), .custom:
             EmptyView()
         }
+    }
+
+    /// The fixed choices; a stored value that matches none shows as a disabled "Other (<value>)" item after a
+    /// separator, selected, and nothing is written until the user picks a choice.
+    private func fixedChoice(key: String, options: [(String, Int)]) -> some View {
+        let current = store[int: key]
+        var items = options.map { SAClaudePopUpItem(localized($0.0)) }
+        var selected = options.firstIndex { $0.1 == current }
+        if selected == nil {
+            let title = String(format: NSLocalizedString("ClaudeSettings.ui.otherValue",
+                                                         comment: "Claude Settings: a choice pill's title when the stored value matches none of its choices; %@ is the stored value"),
+                               String(current))
+            items += [.separator, SAClaudePopUpItem(title, isEnabled: false)]
+            selected = items.count - 1
+        }
+        return SAClaudePopUpPill(items: items, selectedIndex: selected ?? 0, accessibilityLabel: name) { index in
+            guard options.indices.contains(index) else { return }
+            store[int: key] = options[index].1
+        }
+        .fixedSize()
     }
 
     private func switchControl(_ isOn: Binding<Bool>) -> some View {

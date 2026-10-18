@@ -78,13 +78,16 @@ final class SAClaudeSettingsValuesTests: XCTestCase {
         XCTAssertNil(parse("10001", "connectTimeout"))
         XCTAssertNil(parse("2.5", "connectTimeout"))
 
-        // Page size 1–1,000,000 rows; thousands separators accepted, as the lenient page-size formatter does.
+        // Page size 1–1,000,000 rows. Thousands separators are refused in every field (only the page-size formatter
+        // took them; the MCP port's digits-only check and the other formatters refused "8,765").
         XCTAssertNil(parse("0", "pageSize"), "0 rows per page would load nothing")
         XCTAssertEqual(parse("1000", "pageSize"), 1000)
-        XCTAssertEqual(parse("1,000", "pageSize"), 1000)
-        XCTAssertEqual(parse("1,000,000", "pageSize"), 1_000_000)
-        XCTAssertNil(parse("1,000,001", "pageSize"))
-        XCTAssertNil(parse("10,00", "pageSize"), "misplaced separators are not a number")
+        XCTAssertEqual(parse("1000000", "pageSize"), 1_000_000)
+        for id in Self.numericRows.keys {
+            for text in ["1,000", "8,765", "1,000,000", "1,000,001", "10,00"] {
+                XCTAssertNil(parse(text, id), "\(id): \(text)")
+            }
+        }
 
         // Long-value sheet: 1–1,000,000 characters.
         XCTAssertEqual(parse("15", "longValueSheet"), 15)

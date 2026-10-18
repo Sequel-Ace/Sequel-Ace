@@ -10,10 +10,11 @@
 //  indent, page size and the MCP port refused them; the timeout, tab width
 //  and long-value fields stored a fraction their readers then truncated);
 //  tenth-of-a-second fields round to the tenth they show (the "#.0"
-//  formatter showed 1.55 as 1.6 but stored 1.55). Thousands separators are
-//  accepted in whole-number fields, as the page-size formatter did; nothing
-//  else (exponents, signs, a decimal comma) is a number. Decimal point "."
-//  whatever the locale, as the delay formatters fixed it.
+//  formatter showed 1.55 as 1.6 but stored 1.55). Only digits and one "."
+//  are a number: thousands separators (which only the lenient page-size
+//  formatter took; the MCP port and the others refused "8,765"), exponents,
+//  signs and a decimal comma are refused. Decimal point "." whatever the
+//  locale, as the delay formatters fixed it.
 //
 //  Pure Swift (app + Unit Tests targets).
 //
@@ -26,11 +27,8 @@ enum SAClaudeSettingsValues {
     /// A value outside `range` is refused before any rounding (as the formatters refused 0.05 and 5.04 for 0.1–5).
     /// A whole `step` (1) needs a whole number; a fractional step (0.1) rounds half-up to the nearest step.
     static func parse(_ text: String, range: ClosedRange<Double>, step: Double) -> Double? {
-        var digits = text.trimmingCharacters(in: .whitespaces)
+        let digits = text.trimmingCharacters(in: .whitespaces)
         let wholeStep = isWholeStep(step)
-        if wholeStep, digits.range(of: #"^[0-9]{1,3}(,[0-9]{3})+$"#, options: .regularExpression) != nil {
-            digits = digits.replacingOccurrences(of: ",", with: "")
-        }
         guard digits.range(of: #"^([0-9]+(\.[0-9]*)?|\.[0-9]+)$"#, options: .regularExpression) != nil,
               let typed = Decimal(string: digits, locale: posix) else { return nil }
         guard typed >= decimal(range.lowerBound), typed <= decimal(range.upperBound) else { return nil }
