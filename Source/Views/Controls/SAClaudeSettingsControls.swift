@@ -72,53 +72,6 @@ struct SAClaudeSettingsDivider: View {
     }
 }
 
-/// A section: its small secondary heading (none for a pane with one untitled section), then a card of its rows with
-/// hairlines between them. `openInfoRowID` is the one row whose (i) is open — shared by the whole window so opening
-/// one closes any other. `control` supplies each row's control; the convenience initialiser uses the standard one.
-struct SAClaudeSettingsSectionView<Control: View>: View {
-    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
-    let section: SAClaudeSettingsSection
-    @Binding var openInfoRowID: String?
-    @ViewBuilder let control: (SAClaudeSettingRow) -> Control
-
-    init(section: SAClaudeSettingsSection, openInfoRowID: Binding<String?>,
-         @ViewBuilder control: @escaping (SAClaudeSettingRow) -> Control) {
-        self.section = section
-        _openInfoRowID = openInfoRowID
-        self.control = control
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: SAClaudeSettingsMetrics.sectionTitleGap) {
-            if let titleKey = section.titleKey {
-                Text(localized(titleKey))
-                    .font(SAClaudeSettingsMetrics.sectionTitleFont)
-                    .foregroundColor(palette.secondary)
-                    .padding(.leading, 2)
-                    .accessibilityAddTraits(.isHeader)
-            }
-            SAClaudeSettingsCard {
-                ForEach(Array(section.rows.enumerated()), id: \.element.id) { index, row in
-                    if index > 0 { SAClaudeSettingsDivider() }
-                    SAClaudeSettingsRowView(row: row, infoOpen: openInfoRowID == row.id,
-                                            onInfo: { toggleInfo(row.id) }) { control(row) }
-                }
-            }
-        }
-    }
-
-    private func toggleInfo(_ rowID: String) {
-        openInfoRowID = openInfoRowID == rowID ? nil : rowID
-    }
-}
-
-extension SAClaudeSettingsSectionView where Control == SAClaudeSettingStandardControl {
-    /// Every row with its standard control (custom and dynamic rows show none).
-    init(section: SAClaudeSettingsSection, openInfoRowID: Binding<String?>) {
-        self.init(section: section, openInfoRowID: openInfoRowID) { SAClaudeSettingStandardControl(row: $0) }
-    }
-}
-
 // MARK: - Row
 
 /// One setting: its name (13pt) and (i) button, the description under it (11.5pt muted) when it has one, and its

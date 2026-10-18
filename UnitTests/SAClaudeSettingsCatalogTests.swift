@@ -140,7 +140,7 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         typealias L = SAClaudeSettingsCatalog.LegacyPane
         let expected: [SAClaudeSettingsPaneID: [L]] = [
             .appearance: [.general, .editor],
-            .startup: [.general, .network],
+            .startup: [.general],
             .tablesData: [.tables, .general],
             .queryEditor: [.editor, .general],
             .safety: [.notifications],
@@ -155,6 +155,9 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         let all = SAClaudeSettingsPaneID.allCases.flatMap(SAClaudeSettingsCatalog.legacyPanes(for:))
         XCTAssertEqual(Set(all), Set(L.allCases))
         XCTAssertEqual(SAClaudeSettingsPaneID.allCases.filter { SAClaudeSettingsCatalog.legacyPanes(for: $0).contains(.file) },
+                       [.sshSecurity])
+        // Only SSH and security refreshes the Network pane: its refresh can raise the known-hosts / sandbox alerts.
+        XCTAssertEqual(SAClaudeSettingsPaneID.allCases.filter { SAClaudeSettingsCatalog.legacyPanes(for: $0).contains(.network) },
                        [.sshSecurity])
     }
 

@@ -399,7 +399,7 @@ enum SAClaudeSettingsCatalog {
     static func legacyPanes(for pane: SAClaudeSettingsPaneID) -> [LegacyPane] {
         switch pane {
         case .appearance: return [.general, .editor]        // appearance, title bar, results font, grids; accent, colours, editor font
-        case .startup: return [.general, .network]          // favourite, view, quit, encoding, clipboard; timeout, keep-alive
+        case .startup: return [.general]                    // favourite, view, quit, encoding, clipboard (timeout, keep-alive are plain keys: no Network refresh)
         case .tablesData: return [.tables, .general]        // loading, editing; table comments
         case .queryEditor: return [.editor, .general]       // typing, highlighting, suggestions; history
         case .safety, .queryConsole: return [.notifications]

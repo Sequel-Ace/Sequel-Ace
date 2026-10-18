@@ -584,7 +584,7 @@ struct SAClaudeSettingsStandardSection: View {
     }
 }
 
-/// A section's small secondary heading, as SAClaudeSettingsSectionView draws it; nothing for an untitled section.
+/// A section's small secondary heading; nothing for an untitled section.
 struct SAClaudeSettingsSectionHeading: View {
     @EnvironmentObject private var palette: SAClaudeSwiftUIPalette
     let titleKey: String?
