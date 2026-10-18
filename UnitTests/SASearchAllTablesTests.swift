@@ -102,6 +102,32 @@ final class SASearchAllTablesTests: XCTestCase {
         XCTAssertEqual(Builder.tables(fromColumnRows: rows, options: options).map(\.name), ["Customers", "old_customers"])
     }
 
+    /// On a case-sensitive server `Foo` and `foo` are two tables, but a
+    /// case-insensitive collation sorts their names as equal and may
+    /// interleave their columns. Each table must still be searched once, with
+    /// all its own columns.
+    func testColumnsOfTablesWhoseNamesSortAsEqualStayWithTheirTable() {
+        let rows: [ColumnRow] = [
+            ("Foo", "a", "varchar", "BASE TABLE"),
+            ("foo", "a", "varchar", "BASE TABLE"),
+            ("Foo", "b", "varchar", "BASE TABLE"),
+            ("foo", "b", "varchar", "BASE TABLE"),
+        ]
+
+        let tables = Builder.tables(fromColumnRows: rows, options: SASearchAllTablesOptions(searchText: "x"))
+
+        XCTAssertEqual(tables, [
+            SASearchAllTablesTable(name: "Foo", isView: false, columns: [
+                SASearchAllTablesColumn(name: "a", kind: .text),
+                SASearchAllTablesColumn(name: "b", kind: .text),
+            ]),
+            SASearchAllTablesTable(name: "foo", isView: false, columns: [
+                SASearchAllTablesColumn(name: "a", kind: .text),
+                SASearchAllTablesColumn(name: "b", kind: .text),
+            ]),
+        ])
+    }
+
     // MARK: - SQL
 
     func testLikeEscapingEscapesWildcardsAndBackslash() {
@@ -132,10 +158,21 @@ final class SASearchAllTablesTests: XCTestCase {
             SASearchAllTablesColumn(name: "e mail", kind: .text),
         ])
 
-        let sql = Builder.countQuery(database: "shop", table: table, quotedPattern: #"'%50\\%%'"#)
+        let sql = Builder.countQuery(database: "shop", table: table, quotedPattern: #"'%50\\%%'"#, quotedEscape: #"'\\'"#)
 
-        XCTAssertEqual(sql, #"SELECT COUNT(*), SUM(`name` LIKE '%50\\%%'), SUM(`e mail` LIKE '%50\\%%')"#
-            + #" FROM `shop`.`we``ird` WHERE `name` LIKE '%50\\%%' OR `e mail` LIKE '%50\\%%'"#)
+        XCTAssertEqual(sql, #"SELECT COUNT(*), SUM(`name` LIKE '%50\\%%' ESCAPE '\\'), SUM(`e mail` LIKE '%50\\%%' ESCAPE '\\')"#
+            + #" FROM `shop`.`we``ird` WHERE `name` LIKE '%50\\%%' ESCAPE '\\' OR `e mail` LIKE '%50\\%%' ESCAPE '\\'"#)
+    }
+
+    /// Under NO_BACKSLASH_ESCAPES LIKE has no default escape character, so the
+    /// query names it, in the session's own quoting: there a backslash is
+    /// quoted as is, and the pattern's `\%` still matches a literal `%`.
+    func testCountQueryNamesItsEscapeCharacterAsTheConnectionQuotedIt() {
+        let table = SASearchAllTablesTable(name: "t", isView: false, columns: [SASearchAllTablesColumn(name: "c", kind: .text)])
+
+        let sql = Builder.countQuery(database: "shop", table: table, quotedPattern: #"'%50\%%'"#, quotedEscape: #"'\'"#)
+
+        XCTAssertEqual(sql, #"SELECT COUNT(*), SUM(`c` LIKE '%50\%%' ESCAPE '\') FROM `shop`.`t` WHERE `c` LIKE '%50\%%' ESCAPE '\'"#)
     }
 
     func testMatchReadsCountsInColumnOrderAndSkipsColumnsWithoutMatches() {
@@ -181,6 +218,21 @@ final class SASearchAllTablesTests: XCTestCase {
             }
         }
         XCTAssertNotNil(SASearchAllTablesFilterBuilder.filterRow(column: SASearchAllTablesColumn(name: "c", kind: .text), text: #"C:\Temp\x"#, mode: .contains))
+    }
+
+    /// The rule filter escapes with backslashes only, which a session with
+    /// NO_BACKSLASH_ESCAPES reads literally: `O'Reilly` would become `O\'Reilly`
+    /// there, and `50%` a pattern for a backslash. Text needing no escape is
+    /// unaffected.
+    func testTextNeedingEscapesGetsNoFilterWithoutBackslashEscapes() {
+        let column = SASearchAllTablesColumn(name: "c", kind: .text)
+        for text in ["O'Reilly", #"say "hi""#, "50%", "a_b", #"C:\Temp"#] {
+            for mode in SASearchAllTablesMatchMode.allCases {
+                XCTAssertNil(SASearchAllTablesFilterBuilder.filterRow(column: column, text: text, mode: mode, backslashEscapes: false), text)
+                XCTAssertNotNil(SASearchAllTablesFilterBuilder.filterRow(column: column, text: text, mode: mode, backslashEscapes: true), text)
+            }
+        }
+        XCTAssertNotNil(SASearchAllTablesFilterBuilder.filterRow(column: column, text: "Reilly 東京", mode: .contains, backslashEscapes: false))
     }
 
     func testSerializedFilterCombinesMatchedColumnsWithOr() throws {

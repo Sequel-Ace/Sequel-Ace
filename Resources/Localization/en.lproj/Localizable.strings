@@ -211,6 +211,9 @@
 /* Search in All Tables sheet : window title */
 "Search in All Tables" = "Search in All Tables";
 
+/* Database menu : open the Search in All Tables sheet */
+"Search in All Tables…" = "Search in All Tables…";
+
 /* Search in All Tables sheet : status after the search was stopped */
 "Search stopped." = "Search stopped.";
 

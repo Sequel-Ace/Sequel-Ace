@@ -20,11 +20,14 @@ import SwiftUI
 /// off the main thread.
 private final class SASearchAllTablesRunner {
     enum Event {
-        case started(tableCount: Int)
+        /// `backslashEscapes` is false when the session has NO_BACKSLASH_ESCAPES.
+        case started(tableCount: Int, backslashEscapes: Bool)
         case searching(index: Int, table: String)
         case found(SASearchAllTablesMatch, SASearchAllTablesTable)
         case tableFailed(table: String, message: String)
-        case finished(cancelled: Bool)
+        /// `tablesSearched` counts the tables whose query ran to completion,
+        /// fewer than were to be searched when the search was stopped.
+        case finished(cancelled: Bool, tablesSearched: Int)
         case failed(message: String)
     }
 
@@ -44,23 +47,41 @@ private final class SASearchAllTablesRunner {
     func start(options: SASearchAllTablesOptions, handler: @escaping (Event) -> Void) {
         let send: (Event) -> Void = { event in DispatchQueue.main.async { handler(event) } }
         queue.async { [self] in
-            guard let rows = columnRows() else {
+            // The column listing is a query of the search like the per-table
+            // ones, so Stop interrupts it the same way.
+            guard beginQuery() else {
+                send(.finished(cancelled: true, tablesSearched: 0))
+                return
+            }
+            let rows = columnRows()
+            guard endQuery() else {
+                send(.finished(cancelled: true, tablesSearched: 0))
+                return
+            }
+            guard let rows else {
                 send(.failed(message: connection.lastErrorMessage() ?? ""))
                 return
             }
             let tables = SASearchAllTablesQueryBuilder.tables(fromColumnRows: rows, options: options)
-            send(.started(tableCount: tables.count))
+
+            // The connection quotes a backslash as is, rather than doubling it,
+            // when the session has NO_BACKSLASH_ESCAPES.
+            let quotedEscape = quoted("\\")
+            send(.started(tableCount: tables.count, backslashEscapes: quotedEscape != "'\\'"))
 
             let pattern = SASearchAllTablesQueryBuilder.likePattern(for: options.searchText, mode: options.matchMode)
             let quotedPattern = quoted(pattern)
+            var tablesSearched = 0
 
             for (index, table) in tables.enumerated() {
                 guard beginQuery() else { break }
                 send(.searching(index: index, table: table.name))
                 let result = connection.queryString(
-                    SASearchAllTablesQueryBuilder.countQuery(database: database, table: table, quotedPattern: quotedPattern)
+                    SASearchAllTablesQueryBuilder.countQuery(database: database, table: table,
+                                                             quotedPattern: quotedPattern, quotedEscape: quotedEscape)
                 )
                 guard endQuery() else { break }
+                tablesSearched += 1
 
                 if connection.queryErrored() || result == nil {
                     send(.tableFailed(table: table.name, message: connection.lastErrorMessage() ?? ""))
@@ -72,7 +93,7 @@ private final class SASearchAllTablesRunner {
                     send(.found(match, table))
                 }
             }
-            send(.finished(cancelled: cancelled))
+            send(.finished(cancelled: cancelled, tablesSearched: tablesSearched))
         }
     }
 
@@ -82,10 +103,17 @@ private final class SASearchAllTablesRunner {
         isCancelled = true
         let interrupt = isQuerying
         lock.unlock()
+        guard interrupt else { return }
         // cancelCurrentQuery opens a short-lived connection to run KILL QUERY,
-        // so keep it off the main thread.
-        if interrupt {
-            DispatchQueue.global(qos: .userInitiated).async { [connection] in connection.cancelCurrentQuery() }
+        // so keep it off the main thread. KILL QUERY stops whatever the
+        // connection is running, so check again once there that it is still
+        // the search's query: if that has finished meanwhile, the connection
+        // may already be running other work (an MCP request, a menu action).
+        // A query finishing while the KILL itself is being sent stays exposed;
+        // that window is cancelCurrentQuery's, for every caller.
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            guard isSearchQueryRunning else { return }
+            connection.cancelCurrentQuery()
         }
     }
 
@@ -93,6 +121,12 @@ private final class SASearchAllTablesRunner {
         lock.lock()
         defer { lock.unlock() }
         return isCancelled
+    }
+
+    private var isSearchQueryRunning: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return isQuerying
     }
 
     /// Marks a query as running; `false` when the search was cancelled.
@@ -137,7 +171,7 @@ private final class SASearchAllTablesRunner {
 // MARK: - Model
 
 /// One row of the results list.
-private struct SASearchAllTablesResultRow: Identifiable {
+private struct SASearchAllTablesResultRow: Identifiable, Equatable {
     let id: String
     let table: SASearchAllTablesTable
     let match: SASearchAllTablesMatch?
@@ -170,6 +204,8 @@ private final class SASearchAllTablesViewModel: ObservableObject {
     /// Search text and mode of the results shown, used when opening one.
     var searchedText = ""
     var searchedMode = SASearchAllTablesMatchMode.contains
+    /// Whether the session searched reads backslash escapes, likewise.
+    var searchedBackslashEscapes = true
 
     let database: String
 
@@ -205,7 +241,16 @@ private struct SASearchAllTablesView: View {
             SASearchAllTablesFormView(model: model, isSearchFieldFocused: $isSearchFieldFocused)
                 .disabled(model.isSearching)
 
-            SASearchAllTablesResultsView(model: model, onOpen: onOpen)
+            // Gated on the results and selection alone: the model publishes
+            // progress and status for every table searched, which must not
+            // rebuild a long results table each time.
+            SASearchAllTablesResultsView(
+                results: model.results,
+                selection: model.selection,
+                onSelect: { [model] in model.selection = $0 },
+                onOpen: onOpen
+            )
+            .equatable()
 
             HStack(spacing: 8) {
                 if model.isSearching {
@@ -280,12 +325,18 @@ private struct SASearchAllTablesFormView: View {
     }
 }
 
-private struct SASearchAllTablesResultsView: View {
-    @ObservedObject var model: SASearchAllTablesViewModel
+private struct SASearchAllTablesResultsView: View, Equatable {
+    let results: [SASearchAllTablesResultRow]
+    let selection: SASearchAllTablesResultRow.ID?
+    let onSelect: (SASearchAllTablesResultRow.ID?) -> Void
     let onOpen: (SASearchAllTablesResultRow.ID) -> Void
 
+    static func == (a: Self, b: Self) -> Bool {
+        a.results == b.results && a.selection == b.selection
+    }
+
     var body: some View {
-        Table(model.results, selection: $model.selection) {
+        Table(results, selection: selectionBinding) {
             TableColumn(NSLocalizedString("Table", comment: "Search in All Tables sheet : results column : table name")) { row in
                 Text(row.table.name)
             }
@@ -304,6 +355,12 @@ private struct SASearchAllTablesResultsView: View {
         .contextMenu(forSelectionType: SASearchAllTablesResultRow.ID.self, menu: { _ in }, primaryAction: { ids in
             if let id = ids.first { onOpen(id) }
         })
+    }
+
+    /// Built inside the gated body from its own snapshot, so it never crosses
+    /// the view boundary as an input — see `SATimeZonePicker.selection`.
+    private var selectionBinding: Binding<SASearchAllTablesResultRow.ID?> {
+        Binding(get: { selection }, set: { onSelect($0) })
     }
 }
 
@@ -398,8 +455,9 @@ private struct SASearchAllTablesResultsView: View {
             guard let self, self.runner === runner else { return }
             let model = self.model
             switch event {
-            case .started(let count):
+            case .started(let count, let backslashEscapes):
                 tableCount = count
+                model.searchedBackslashEscapes = backslashEscapes
             case .searching(let index, let table):
                 model.progress = tableCount > 0 ? Double(index) / Double(tableCount) : 0
                 model.status = String(format: NSLocalizedString("Searching %1$@ (%2$ld of %3$ld)…", comment: "Search in All Tables sheet : progress status ($1 = table name, $2 = table number, $3 = table count)"), table, index + 1, tableCount)
@@ -409,10 +467,10 @@ private struct SASearchAllTablesResultsView: View {
                 failedCount += 1
                 let row = SASearchAllTablesResultRow(id: table, table: SASearchAllTablesTable(name: table, isView: false, columns: []), match: nil, errorMessage: message)
                 model.results.append(row)
-            case .finished(let cancelled):
+            case .finished(let cancelled, let tablesSearched):
                 model.isSearching = false
                 self.runner = nil
-                model.status = Self.summary(results: model.results, tableCount: tableCount, failedCount: failedCount, cancelled: cancelled)
+                model.status = Self.summary(results: model.results, tablesSearched: tablesSearched, failedCount: failedCount, cancelled: cancelled)
             case .failed(let message):
                 model.isSearching = false
                 self.runner = nil
@@ -421,7 +479,7 @@ private struct SASearchAllTablesResultsView: View {
         }
     }
 
-    private static func summary(results: [SASearchAllTablesResultRow], tableCount: Int, failedCount: Int, cancelled: Bool) -> String {
+    private static func summary(results: [SASearchAllTablesResultRow], tablesSearched: Int, failedCount: Int, cancelled: Bool) -> String {
         let matches = results.compactMap(\.match)
         var parts: [String] = []
         if cancelled {
@@ -429,12 +487,12 @@ private struct SASearchAllTablesResultsView: View {
         }
         if !matches.isEmpty {
             let rows = matches.reduce(0) { $0 + $1.matchingRows }
-            parts.append(String(format: NSLocalizedString("%1$ld matching rows in %2$ld of %3$ld tables.", comment: "Search in All Tables sheet : status after a search ($1 = matching rows, $2 = tables with matches, $3 = tables searched)"), rows, matches.count, tableCount))
+            parts.append(String(format: NSLocalizedString("%1$ld matching rows in %2$ld of %3$ld tables.", comment: "Search in All Tables sheet : status after a search ($1 = matching rows, $2 = tables with matches, $3 = tables searched)"), rows, matches.count, tablesSearched))
         } else if !cancelled {
             // After a stop, the tables not reached were never searched.
-            parts.append(tableCount == 0
+            parts.append(tablesSearched == 0
                 ? NSLocalizedString("No tables with searchable columns.", comment: "Search in All Tables sheet : status when no table has a column to search")
-                : String(format: NSLocalizedString("No matches in %ld tables.", comment: "Search in All Tables sheet : status when nothing matched ($1 = number of tables searched)"), tableCount))
+                : String(format: NSLocalizedString("No matches in %ld tables.", comment: "Search in All Tables sheet : status when nothing matched ($1 = number of tables searched)"), tablesSearched))
         }
         if failedCount > 0 {
             parts.append(String(format: NSLocalizedString("%ld tables could not be searched.", comment: "Search in All Tables sheet : status when some tables returned an error ($1 = number of tables)"), failedCount))
@@ -445,7 +503,8 @@ private struct SASearchAllTablesResultsView: View {
     /// Closes the sheet and shows the result's table content, filtered to the matching rows.
     private func open(_ id: SASearchAllTablesResultRow.ID) {
         guard !model.isSearching, let row = model.results.first(where: { $0.id == id }), let match = row.match else { return }
-        let filter = SASearchAllTablesFilterBuilder.serializedFilter(for: match, table: row.table, text: model.searchedText, mode: model.searchedMode)
+        let filter = SASearchAllTablesFilterBuilder.serializedFilter(for: match, table: row.table, text: model.searchedText,
+                                                                     mode: model.searchedMode, backslashEscapes: model.searchedBackslashEscapes)
         dismissSheet()
         showContent(of: row.table.name, filter: filter)
     }

@@ -134,6 +134,10 @@ enum SASearchAllTablesQueryBuilder {
                        options: SASearchAllTablesOptions) -> [SASearchAllTablesTable] {
         let nameFilter = options.tableNameFilter.trimmingCharacters(in: .whitespacesAndNewlines)
         var tables: [SASearchAllTablesTable] = []
+        // Columns are grouped by exact table name rather than by being next to
+        // each other: the query sorts names by their collation, which can hold
+        // `Foo` and `foo` equal and interleave their columns.
+        var tableIndexes: [String: Int] = [:]
         for row in rows {
             let tableType = row.tableType.uppercased()
             // MariaDB reports system-versioned tables separately; sequences and
@@ -144,9 +148,10 @@ enum SASearchAllTablesQueryBuilder {
             guard let kind = columnKind(forDataType: row.dataType, textColumnsOnly: options.textColumnsOnly) else { continue }
 
             let column = SASearchAllTablesColumn(name: row.column, kind: kind)
-            if let last = tables.last, last.name == row.table {
-                tables[tables.count - 1].columns.append(column)
+            if let index = tableIndexes[row.table] {
+                tables[index].columns.append(column)
             } else {
+                tableIndexes[row.table] = tables.count
                 tables.append(SASearchAllTablesTable(name: row.table, isView: isView, columns: [column]))
             }
         }
@@ -160,8 +165,8 @@ enum SASearchAllTablesQueryBuilder {
         "`" + name.replacingOccurrences(of: "`", with: "``") + "`"
     }
 
-    /// Escapes the LIKE metacharacters `\`, `%` and `_` so they match literally
-    /// (MySQL's default LIKE escape character is `\`).
+    /// Escapes the LIKE metacharacters `\`, `%` and `_` so they match literally,
+    /// with `\` as the escape character `countQuery` names.
     static func likeEscaped(_ text: String) -> String {
         var escaped = ""
         for character in text {
@@ -184,20 +189,26 @@ enum SASearchAllTablesQueryBuilder {
     /// One query per table: the number of rows matching in any column plus the
     /// number of matching rows per column, reading the table only once.
     ///
-    ///     SELECT COUNT(*), SUM(`a` LIKE p), SUM(`b` LIKE p)
-    ///     FROM `db`.`t` WHERE `a` LIKE p OR `b` LIKE p
+    ///     SELECT COUNT(*), SUM(`a` LIKE p ESCAPE e), SUM(`b` LIKE p ESCAPE e)
+    ///     FROM `db`.`t` WHERE `a` LIKE p ESCAPE e OR `b` LIKE p ESCAPE e
     ///
     /// LIKE is used for every column type: MySQL compares non-string values by
     /// their string form, so `5` never equals `'abc'` the way `5 = 'abc'`
     /// would coerce the text to a number.
+    ///
+    /// The escape character is named rather than left to the default, which is
+    /// `\` except under the NO_BACKSLASH_ESCAPES SQL mode, where there is none.
     ///
     /// - Parameters:
     ///   - database: Database name, unquoted.
     ///   - table: Table with at least one column.
     ///   - quotedPattern: The LIKE pattern as a quoted SQL string literal
     ///     (quoted by the connection, so it follows its escaping rules).
-    static func countQuery(database: String, table: SASearchAllTablesTable, quotedPattern: String) -> String {
-        let conditions = table.columns.map { "\(quoteIdentifier($0.name)) LIKE \(quotedPattern)" }
+    ///   - quotedEscape: A single `\` as a quoted SQL string literal, quoted by
+    ///     the connection for the same reason: `'\\'`, or `'\'` under
+    ///     NO_BACKSLASH_ESCAPES.
+    static func countQuery(database: String, table: SASearchAllTablesTable, quotedPattern: String, quotedEscape: String) -> String {
+        let conditions = table.columns.map { "\(quoteIdentifier($0.name)) LIKE \(quotedPattern) ESCAPE \(quotedEscape)" }
         let sums = conditions.map { "SUM(\($0))" }
         return "SELECT COUNT(*), " + sums.joined(separator: ", ")
             + " FROM \(quoteIdentifier(database)).\(quoteIdentifier(table.name))"
@@ -270,9 +281,18 @@ enum SASearchAllTablesFilterBuilder {
     /// The parser leaves a backslash before `n`, `r` or `t` alone so it reads
     /// as a newline, carriage return or tab; a search for a literal `\t` (a
     /// Windows path, say) cannot be expressed and gets no filter.
+    ///
+    /// Every escape the filter makes — the parser's for quotes and backslashes,
+    /// and the one above for LIKE wildcards — is a backslash, which a session
+    /// with the NO_BACKSLASH_ESCAPES SQL mode reads as a literal character.
+    /// There, text that needs any escape gets no filter either.
+    ///
+    /// - Parameter backslashEscapes: Whether the session reads backslash
+    ///   escapes, that is, has no NO_BACKSLASH_ESCAPES.
     static func filterRow(column: SASearchAllTablesColumn, text: String,
-                          mode: SASearchAllTablesMatchMode) -> [String: Any]? {
+                          mode: SASearchAllTablesMatchMode, backslashEscapes: Bool = true) -> [String: Any]? {
         if text.range(of: #"\\[nrt]"#, options: .regularExpression) != nil { return nil }
+        if !backslashEscapes && text.contains(where: { "\\'\"%_".contains($0) }) { return nil }
         let comparison: String
         let value: String
         switch (column.kind, mode) {
@@ -305,11 +325,12 @@ enum SASearchAllTablesFilterBuilder {
     /// when any of them cannot be expressed (the table then opens unfiltered
     /// rather than showing a subset of the matching rows).
     static func serializedFilter(for match: SASearchAllTablesMatch, table: SASearchAllTablesTable,
-                                 text: String, mode: SASearchAllTablesMatchMode) -> [String: Any]? {
+                                 text: String, mode: SASearchAllTablesMatchMode,
+                                 backslashEscapes: Bool = true) -> [String: Any]? {
         var rows: [[String: Any]] = []
         for columnMatch in match.columnMatches {
             guard let column = table.columns.first(where: { $0.name == columnMatch.column }),
-                  let row = filterRow(column: column, text: text, mode: mode) else { return nil }
+                  let row = filterRow(column: column, text: text, mode: mode, backslashEscapes: backslashEscapes) else { return nil }
             rows.append(row)
         }
         guard !rows.isEmpty else { return nil }
