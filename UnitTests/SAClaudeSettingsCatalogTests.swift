@@ -35,6 +35,133 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         XCTAssertEqual(Set(SAClaudeSettingsPaneID.allCases.map(\.symbol)).count, 9, "each pane has its own symbol")
     }
 
+    // MARK: - Routing (the window shell)
+
+    /// Every custom, dynamic and pane-code row lands on its pane, so a pointer or a builder keyed by it finds it.
+    func testCustomAndDynamicRowsRouteToTheirPanes() throws {
+        let custom: [SAClaudeSettingCustom: (row: String, pane: SAClaudeSettingsPaneID)] = [
+            .accent: ("accentColour", .appearance),
+            .colourMode: ("editorColours", .appearance),
+            .startFromTheme: ("startFromTheme", .appearance),
+            .colourRows: ("colourList", .appearance),
+            .editorFont: ("editorFont", .appearance),
+            .resultsFont: ("resultsFont", .appearance),
+            .reloadAfterSaving: ("reloadAfterSaving", .tablesData),
+            .sshProgram: ("sshProgram", .sshSecurity),
+            .cipherList: ("cipherOrder", .sshSecurity),
+            .accessibleFiles: ("accessibleFiles", .sshSecurity),
+            .mcpStatus: ("mcpServer", .mcp),
+            .mcpExportFolder: ("mcpExportFolder", .mcp),
+            .mcpAddress: ("mcpAddress", .mcp),
+        ]
+        XCTAssertEqual(Set(custom.keys), Set(SAClaudeSettingCustom.allCases), "every custom control is routed")
+        for (control, want) in custom {
+            let row = try XCTUnwrap(SAClaudeSettingsCatalog.row(want.row), want.row)
+            XCTAssertEqual(row.control, .custom(control), want.row)
+            XCTAssertEqual(SAClaudeSettingsCatalog.pane(containing: want.row), want.pane, want.row)
+            XCTAssertEqual(SAClaudeSettingsCatalog.destination(pane: nil, rowID: want.row),
+                           SAClaudeSettingsCatalog.Destination(pane: want.pane, rowID: want.row), want.row)
+        }
+        let dynamic: [String: (row: String, pane: SAClaudeSettingsPaneID)] = [
+            "favorites": ("defaultFavourite", .startup),
+            "encodings": ("characterSet", .startup),
+            "sshConfig": ("sshConfig", .sshSecurity),
+            "knownHosts": ("knownHosts", .sshSecurity),
+        ]
+        var seen: Set<String> = []
+        for row in SAClaudeSettingsCatalog.panes.flatMap({ $0.sections.flatMap(\.rows) }) {
+            if case .choice(_, .dynamic(let source)) = row.control { seen.insert(source) }
+        }
+        XCTAssertEqual(seen, Set(dynamic.keys), "every dynamic source is routed")
+        for (source, want) in dynamic {
+            let row = try XCTUnwrap(SAClaudeSettingsCatalog.row(want.row), want.row)
+            guard case .choice(_, .dynamic(let got)) = row.control else { XCTFail("\(want.row) is dynamic"); continue }
+            XCTAssertEqual(got, source)
+            XCTAssertEqual(SAClaudeSettingsCatalog.pane(containing: want.row), want.pane, want.row)
+        }
+        // Plain-looking rows whose control calls pane code.
+        XCTAssertEqual(SAClaudeSettingsCatalog.pane(containing: "mcpPort"), .mcp)
+    }
+
+    func testDestinationForPaneAndRow() {
+        typealias D = SAClaudeSettingsCatalog.Destination
+        let resolve = SAClaudeSettingsCatalog.destination(pane:rowID:)
+        XCTAssertEqual(resolve("mcp", nil), D(pane: .mcp, rowID: nil))
+        XCTAssertEqual(resolve("sshSecurity", "accessibleFiles"), D(pane: .sshSecurity, rowID: "accessibleFiles"))
+        XCTAssertEqual(resolve(nil, "accessibleFiles"), D(pane: .sshSecurity, rowID: "accessibleFiles"))
+        XCTAssertEqual(resolve("", "accessibleFiles"), D(pane: .sshSecurity, rowID: "accessibleFiles"))
+        XCTAssertEqual(resolve("noSuchPane", "historySize"), D(pane: .queryEditor, rowID: "historySize"))
+        // The row is the more specific request: a row in another pane wins.
+        XCTAssertEqual(resolve("appearance", "mcpPort"), D(pane: .mcp, rowID: "mcpPort"))
+        // An unknown row still opens the pane.
+        XCTAssertEqual(resolve("tablesData", "noSuchRow"), D(pane: .tablesData, rowID: nil))
+        XCTAssertEqual(resolve("tablesData", ""), D(pane: .tablesData, rowID: nil))
+        XCTAssertNil(resolve(nil, nil))
+        XCTAssertNil(resolve("noSuchPane", nil))
+        XCTAssertNil(resolve("noSuchPane", "noSuchRow"))
+        for pane in SAClaudeSettingsPaneID.allCases {
+            XCTAssertEqual(resolve(pane.rawValue, nil), D(pane: pane, rowID: nil), pane.rawValue)
+        }
+    }
+
+    /// `displayPreferencePane:` callers pass the old toolbar items; each lands on the pane that now holds its settings.
+    func testLegacyPaneIdentifiersRoute() {
+        typealias L = SAClaudeSettingsCatalog.LegacyPane
+        typealias D = SAClaudeSettingsCatalog.Destination
+        // SPConstants.m SPPreferenceToolbar*.
+        XCTAssertEqual(L.allCases.map(\.rawValue), [
+            "SPPreferenceToolbarGeneral", "SPPreferenceToolbarTables", "SPPreferenceToolbarNotifications",
+            "SPPreferenceToolbarEditor", "SPPreferenceToolbarNetwork", "SPPreferenceToolbarFile", "SPPreferenceToolbarMCP",
+        ])
+        let expected: [String: D] = [
+            "SPPreferenceToolbarGeneral": D(pane: .appearance, rowID: nil),
+            "SPPreferenceToolbarTables": D(pane: .tablesData, rowID: nil),
+            "SPPreferenceToolbarNotifications": D(pane: .safety, rowID: nil),
+            "SPPreferenceToolbarEditor": D(pane: .queryEditor, rowID: nil),
+            "SPPreferenceToolbarNetwork": D(pane: .sshSecurity, rowID: nil),
+            "SPPreferenceToolbarFile": D(pane: .sshSecurity, rowID: "accessibleFiles"),
+            "SPPreferenceToolbarMCP": D(pane: .mcp, rowID: nil),
+        ]
+        for (identifier, want) in expected {
+            XCTAssertEqual(SAClaudeSettingsCatalog.destination(forLegacyPane: identifier), want, identifier)
+        }
+        // No sender (the old default), the never-shown Shortcuts/Favorites items, or anything else: the first pane.
+        for identifier in [nil, "", "SPPreferenceToolbarShortcuts", "SPPreferenceToolbarFavorites", "nonsense"] as [String?] {
+            XCTAssertEqual(SAClaudeSettingsCatalog.destination(forLegacyPane: identifier), D(pane: .appearance, rowID: nil),
+                           identifier ?? "nil")
+        }
+    }
+
+    /// The old pane controllers asked to refresh (`preferencePaneWillBeShown`) when a pane is shown: the ones whose
+    /// settings it holds — every old pane is refreshed by some pane, and the Files pane (its stale-file re-grant) only by
+    /// SSH and security.
+    func testLegacyPanesRefreshedWithEachPane() {
+        typealias L = SAClaudeSettingsCatalog.LegacyPane
+        let expected: [SAClaudeSettingsPaneID: [L]] = [
+            .appearance: [.general, .editor],
+            .startup: [.general, .network],
+            .tablesData: [.tables, .general],
+            .queryEditor: [.editor, .general],
+            .safety: [.notifications],
+            .queryConsole: [.notifications],
+            .sshSecurity: [.network, .file],
+            .mcp: [.mcp],
+            .updatesPrivacy: [.notifications, .general],
+        ]
+        for pane in SAClaudeSettingsPaneID.allCases {
+            XCTAssertEqual(SAClaudeSettingsCatalog.legacyPanes(for: pane), expected[pane], pane.rawValue)
+        }
+        let all = SAClaudeSettingsPaneID.allCases.flatMap(SAClaudeSettingsCatalog.legacyPanes(for:))
+        XCTAssertEqual(Set(all), Set(L.allCases))
+        XCTAssertEqual(SAClaudeSettingsPaneID.allCases.filter { SAClaudeSettingsCatalog.legacyPanes(for: $0).contains(.file) },
+                       [.sshSecurity])
+    }
+
+    func testWindowAndMenuTitles() {
+        XCTAssertEqual(Self.strings["ClaudeSettings.ui.windowTitle"], "Settings")
+        XCTAssertEqual(Self.strings["ClaudeSettings.ui.menuItem"], "Settings\u{2026}")
+    }
+
     func testRowAndSectionIDsAreUniqueAndFindable() {
         let rows = SAClaudeSettingsCatalog.panes.flatMap { $0.sections.flatMap(\.rows) }
         XCTAssertEqual(Set(rows.map(\.id)).count, rows.count, "row ids are unique")

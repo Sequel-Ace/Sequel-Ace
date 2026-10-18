@@ -197,6 +197,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
     [SAClaudeToolbarMenu install];
+    [SAClaudeSettingsWindowHost applySettingsMenuTitle];
     [SAClaudeSheetStyler start];
     [SAClaudeMenuGlyphPass start];
     [SAClaudeWindowTabBarController installWindowMenuMergeItem];

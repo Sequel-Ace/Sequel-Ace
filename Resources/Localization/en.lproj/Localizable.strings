@@ -6179,3 +6179,9 @@
 
 /* Claude Settings: a choice pill's title when the stored value matches none of its choices; %@ is the stored value */
 "ClaudeSettings.ui.otherValue" = "Other (%@)";
+
+/* Claude Settings: the title of the Settings window (was "Preferences") */
+"ClaudeSettings.ui.windowTitle" = "Settings";
+
+/* Claude Settings: the app menu item that opens the Settings window (was "Preferences...") */
+"ClaudeSettings.ui.menuItem" = "Settings…";

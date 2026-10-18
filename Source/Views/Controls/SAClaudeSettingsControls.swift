@@ -13,6 +13,7 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 // MARK: - Metrics
@@ -307,7 +308,8 @@ struct SAClaudeSettingStandardControl: View {
 
 /// A Claude text field for a string setting that, like the XIB field it replaces, writes when editing ends (Return or
 /// leaving the field), not on every keystroke; Escape restores the stored text. A value changed elsewhere shows while
-/// the field isn't being edited.
+/// the field isn't being edited. A commit request (`claudeCommitRequests`: the window closing, a pane switch) writes the
+/// edit in progress.
 struct SAClaudeSettingsTextField: View {
     @Binding var text: String
     let accessibilityLabel: String
@@ -315,6 +317,7 @@ struct SAClaudeSettingsTextField: View {
 
     @State private var draft = ""
     @FocusState private var isFocused: Bool
+    @Environment(\.claudeCommitRequests) private var commitRequests
 
     init(text: Binding<String>, accessibilityLabel: String, width: CGFloat = SAClaudeSettingsMetrics.textFieldWidth) {
         _text = text
@@ -333,6 +336,7 @@ struct SAClaudeSettingsTextField: View {
             .onAppear { draft = text }
             .onChange(of: text) { stored in if !isFocused { draft = stored } }
             .onChange(of: isFocused) { focused in if !focused { commit() } }
+            .onReceive(commitRequests) { if isFocused { commit() } }
     }
 
     private func commit() {

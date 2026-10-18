@@ -11,6 +11,7 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 // MARK: - Palette
@@ -254,6 +255,23 @@ enum SAClaudeSwiftUIMetrics {
     static let checkboxGap: CGFloat = SAClaudeToggleTitleMetrics.gap
     /// A disabled checkbox or pill (the AppKit Claude cells' 40%).
     static let checkboxDisabledOpacity: Double = Double(FilterCellDrawing.disabledAlpha)
+}
+
+// MARK: - Commit requests
+
+/// A window's request that its focused Claude field commit the edit in progress now, as leaving the field would —
+/// sent before the window closes or its content is swapped (a Settings pane switch), when SwiftUI's focus change would
+/// come too late. Fields that aren't focused ignore it. The root of a hosted window sets one publisher for its views;
+/// elsewhere nothing is ever sent.
+private struct SAClaudeCommitRequestsKey: EnvironmentKey {
+    static var defaultValue: AnyPublisher<Void, Never> { Empty(completeImmediately: false).eraseToAnyPublisher() }
+}
+
+extension EnvironmentValues {
+    var claudeCommitRequests: AnyPublisher<Void, Never> {
+        get { self[SAClaudeCommitRequestsKey.self] }
+        set { self[SAClaudeCommitRequestsKey.self] = newValue }
+    }
 }
 
 // MARK: - Field
@@ -702,7 +720,8 @@ struct SAClaudeMenuPopUp: NSViewRepresentable {
 /// suffix after it inside the field in the muted colour ("60 s"). Typing doesn't write; Return or leaving the field
 /// commits through `SAClaudeSettingsValues.parse` — a value outside `range` or not a number is refused with a beep and
 /// the field shows the old value again (as the XIB formatters refused it); Escape restores the old value. A value
-/// changed elsewhere shows while the field isn't being edited.
+/// changed elsewhere shows while the field isn't being edited. A commit request (`claudeCommitRequests`) commits the
+/// edit in progress as leaving the field would.
 struct SAClaudeNumberField: View {
     @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     @Binding var value: Double
@@ -714,6 +733,7 @@ struct SAClaudeNumberField: View {
 
     @State private var text = ""
     @FocusState private var isFocused: Bool
+    @Environment(\.claudeCommitRequests) private var commitRequests
 
     init(value: Binding<Double>, range: ClosedRange<Double>, step: Double, unit: SAClaudeSettingUnit,
          accessibilityLabel: String, size: SAClaudeControlSize = .form) {
@@ -756,6 +776,7 @@ struct SAClaudeNumberField: View {
         .onAppear(perform: revert)
         .onChange(of: value) { _ in if !isFocused { revert() } }
         .onChange(of: isFocused) { focused in if !focused { commit() } }
+        .onReceive(commitRequests) { if isFocused { commit() } }
     }
 
     /// Shows the stored value.

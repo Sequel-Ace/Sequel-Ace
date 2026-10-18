@@ -68,6 +68,8 @@
 #import "SPHelpViewerClient.h"
 // Base class + protocol for the Swift preference pane SPMCPPreferencePane.swift.
 #import "SPPreferencePane.h"
+// SAClaudeSettingsWindowHost (SAClaudeSettingsWindow.swift) installs the Settings content for this controller.
+#import "SPPreferenceController.h"
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 // Also pulls in SPMySQLResult and the querying category (queryString:,
 // escapeAndQuoteString:, queryErrored, ...) needed by SPAppController+MCP.swift.

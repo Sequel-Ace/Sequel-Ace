@@ -350,6 +350,64 @@ enum SAClaudeSettingsCatalog {
         return bool(key)
     }
 
+    // MARK: Routing
+
+    /// Where the window opens: a pane, and the row to scroll to (nil: the top of the pane).
+    struct Destination: Equatable {
+        let pane: SAClaudeSettingsPaneID
+        let rowID: String?
+    }
+
+    /// The old Preferences panes, by their toolbar identifiers (SPConstants.m `SPPreferenceToolbar*`; Shortcuts and
+    /// Favorites were never shown). Their controllers stay loaded and own the code many rows call.
+    enum LegacyPane: String, CaseIterable {
+        case general = "SPPreferenceToolbarGeneral"
+        case tables = "SPPreferenceToolbarTables"
+        case notifications = "SPPreferenceToolbarNotifications"
+        case editor = "SPPreferenceToolbarEditor"
+        case network = "SPPreferenceToolbarNetwork"
+        case file = "SPPreferenceToolbarFile"
+        case mcp = "SPPreferenceToolbarMCP"
+    }
+
+    /// `show(pane:revealRowID:)`: the row decides the pane when it is known (it is the more specific request); an
+    /// unknown row still opens a known pane; nil when neither is known.
+    static func destination(pane paneID: String?, rowID: String?) -> Destination? {
+        if let rowID, let pane = pane(containing: rowID) {
+            return Destination(pane: pane, rowID: rowID)
+        }
+        guard let paneID, let pane = SAClaudeSettingsPaneID(rawValue: paneID) else { return nil }
+        return Destination(pane: pane, rowID: nil)
+    }
+
+    /// Where `displayPreferencePane:` with an old toolbar item lands; no item, or one never shown, opens the first pane.
+    static func destination(forLegacyPane identifier: String?) -> Destination {
+        switch identifier.flatMap(LegacyPane.init(rawValue:)) {
+        case .general?, nil: return Destination(pane: .appearance, rowID: nil)
+        case .tables?: return Destination(pane: .tablesData, rowID: nil)
+        case .notifications?: return Destination(pane: .safety, rowID: nil)
+        case .editor?: return Destination(pane: .queryEditor, rowID: nil)
+        case .network?: return Destination(pane: .sshSecurity, rowID: nil)
+        case .file?: return Destination(pane: .sshSecurity, rowID: "accessibleFiles")
+        case .mcp?: return Destination(pane: .mcp, rowID: nil)
+        }
+    }
+
+    /// The old pane controllers whose `preferencePaneWillBeShown` refresh runs when `pane` is shown: the panes its
+    /// rows came from. The Files pane (its load re-grants stale files) only for SSH and security.
+    static func legacyPanes(for pane: SAClaudeSettingsPaneID) -> [LegacyPane] {
+        switch pane {
+        case .appearance: return [.general, .editor]        // appearance, title bar, results font, grids; accent, colours, editor font
+        case .startup: return [.general, .network]          // favourite, view, quit, encoding, clipboard; timeout, keep-alive
+        case .tablesData: return [.tables, .general]        // loading, editing; table comments
+        case .queryEditor: return [.editor, .general]       // typing, highlighting, suggestions; history
+        case .safety, .queryConsole: return [.notifications]
+        case .sshSecurity: return [.network, .file]         // SSH, ciphers; accessible files
+        case .mcp: return [.mcp]
+        case .updatesPrivacy: return [.notifications, .general] // updates; analytics
+        }
+    }
+
     // MARK: Building
 
     private static let rowsByID: [String: (row: SAClaudeSettingRow, pane: SAClaudeSettingsPaneID)] = {
