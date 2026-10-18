@@ -2,8 +2,9 @@
 //  SAClaudeEditorColoursSection.swift
 //  Sequel Ace
 //
-//  The editor colours' model in the Claude look: Follow macOS (Claude
-//  Light/Dark) or Custom (a theme to start from, the Query Editor pane's theme
+//  The editor colours' model in the Claude look: Match appearance (Claude
+//  Light/Dark with the appearance), Choose (the one picked, whatever the
+//  appearance) or Custom (a theme to start from, the Query Editor pane's theme
 //  actions, all 11 colours), the accent colour, and the shared colour panel's
 //  hand-off between the colour rows and the accent well. The Settings
 //  window's Appearance pane draws it (SAClaudeSettingsColours.swift).
@@ -84,7 +85,7 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
     let panelTarget: SAClaudeEditorColourPanelTarget
     private var observer: NSObjectProtocol?
 
-    @Published private(set) var followsMacOS = true
+    @Published private(set) var mode: SAEditorColourMode.Mode = .matchAppearance
     @Published private(set) var themeNames: [String] = []
     @Published private(set) var themeName = ""
     @Published private(set) var colours: [String: NSColor] = [:]
@@ -118,8 +119,8 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
     deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
 
     func refresh() {
-        let follows = SAEditorColourMode.isFollowingMacOS(defaults)
-        if follows != followsMacOS { followsMacOS = follows }
+        let newMode = SAEditorColourMode.mode(in: defaults)
+        if newMode != mode { mode = newMode }
         let names = SAEditorAppearanceThemeSwitcher.availableThemeNames(in: themesDirectory)
         if names != themeNames { themeNames = names }
         let name = defaults.string(forKey: SAEditorThemeLoader.themeNameKey) ?? ""
@@ -158,12 +159,12 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
         panelTarget.edit(key)
     }
 
-    var modeSetting: Bool {
-        get { followsMacOS }
+    var modeSetting: SAEditorColourMode.Mode {
+        get { mode }
         set {
             deactivateAccentWell()
             panelTarget.close()
-            SAEditorColourMode.setFollowsMacOS(newValue)
+            SAEditorColourMode.apply(newValue)
             refresh()
         }
     }
@@ -215,7 +216,7 @@ final class SAClaudeEditorColoursSettings: ObservableObject {
             : String(format: NSLocalizedString("%@ (missing)", comment: "Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists"), name)
     }
 
-    /// The bundled Claude theme's colours, for the Follow macOS preview tiles.
+    /// The bundled Claude theme's colours, for the Match appearance / Choose tiles.
     static func bundledThemeColours(_ name: String) -> [String: NSColor] {
         guard let support = Bundle.main.sharedSupportPath,
               let data = FileManager.default.contents(atPath: "\(support)/Default Themes/\(name).spTheme"),

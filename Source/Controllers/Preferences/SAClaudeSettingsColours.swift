@@ -4,9 +4,10 @@
 //
 //  Settings ▸ Appearance's colour rows, drawn with the Claude kit over the editor colours' model
 //  (SAClaudeEditorColoursSettings, SAClaudeEditorColoursSection.swift — behaviour unchanged): the accent well + Reset to
-//  clay (Look), and the "Editor and grid colours" section — Colours (Match appearance / Custom, with the Light/Dark
-//  preview tiles while matching), Start from a theme (pill + ⋯ with the Query Editor pane's theme actions) and the 11
-//  colours, both shown only while Custom, as the Customise half of the old section showed them.
+//  clay (Look), and the "Editor and grid colours" section — Colours (Match appearance / Choose / Custom, with the
+//  Light/Dark tiles under it: previews while matching, clickable while Choose), Start from a theme (pill + ⋯ with the
+//  Query Editor pane's theme actions) and the 11 colours, both shown only while Custom, as the Customise half of the
+//  old section showed them.
 //
 //  One model per Settings window (SAClaudeSettingsColoursModel), so the colour rows and the accent well share the one
 //  colour-panel hand-off. App target only.
@@ -75,7 +76,7 @@ struct SAClaudeSettingsColoursSection: View {
     @ObservedObject var settings: SAClaudeEditorColoursSettings
 
     var body: some View {
-        let ids = SAClaudeSettingsRules.colourSectionRowIDs(context.section.rows.map(\.id), followsAppearance: settings.followsMacOS)
+        let ids = SAClaudeSettingsRules.colourSectionRowIDs(context.section.rows.map(\.id), followsAppearance: settings.mode != .custom)
         let rows = context.section.rows.filter { ids.contains($0.id) }
         VStack(alignment: .leading, spacing: SAClaudeSettingsMetrics.sectionTitleGap) {
             context.heading
@@ -91,7 +92,8 @@ struct SAClaudeSettingsColoursSection: View {
     }
 }
 
-/// Colours: Match appearance / Custom; while matching, the bundled Claude Light / Dark previews under the row.
+/// Colours: Match appearance / Choose / Custom. Under the row, the bundled Claude Light / Dark tiles: previews while
+/// matching; while Choose, clicking one keeps it whatever the appearance (the chosen one outlined in the accent).
 struct SAClaudeSettingsColourModeRow: View {
     let context: SAClaudeSettingsRowContext
     @ObservedObject var settings: SAClaudeEditorColoursSettings
@@ -103,25 +105,46 @@ struct SAClaudeSettingsColourModeRow: View {
         VStack(alignment: .leading, spacing: 0) {
             context.standardRow {
                 SAClaudePopUpPill(titles: [localized("ClaudeSettings.editorColours.option.matchAppearance"),
+                                           localized("ClaudeSettings.editorColours.option.choose"),
                                            localized("ClaudeSettings.editorColours.option.custom")],
-                                  selectedIndex: settings.followsMacOS ? 0 : 1,
+                                  selectedIndex: settings.mode.pillIndex,
                                   accessibilityLabel: localized(context.row.nameKey)) { index in
-                    let follows = index == 0
-                    // The pop-up reports a re-pick of the current item too; the old segmented control didn't.
-                    if follows != settings.followsMacOS { settings.modeSetting = follows }
+                    // The pop-up reports a re-pick of the current item too (no change); Choose starts on the theme
+                    // the app's appearance shows now.
+                    let appIsDark = NSApp.map { SAEditorAppearanceThemeSwitcher.isDark($0.effectiveAppearance) } ?? false
+                    if let mode = SAEditorColourMode.Mode.picked(index: index, from: settings.mode, appIsDark: appIsDark) {
+                        settings.modeSetting = mode
+                    }
                 }
                 .fixedSize()
             }
-            if settings.followsMacOS {
+            if settings.mode != .custom {
                 HStack(spacing: 10) {
-                    SAClaudeSettingsThemeTile(title: NSLocalizedString("Light", comment: "Preferences > Query Editor: caption of the light-mode theme preview"),
-                                              colours: Self.light)
-                    SAClaudeSettingsThemeTile(title: NSLocalizedString("Dark", comment: "Preferences > Query Editor: caption of the dark-mode theme preview"),
-                                              colours: Self.dark)
+                    tile(dark: false, title: NSLocalizedString("Light", comment: "Preferences > Query Editor: caption of the light-mode theme preview"))
+                    tile(dark: true, title: NSLocalizedString("Dark", comment: "Preferences > Query Editor: caption of the dark-mode theme preview"))
                 }
                 .padding(.horizontal, SAClaudeSettingsMetrics.rowHorizontalPadding)
                 .padding(.bottom, 12)
             }
+        }
+    }
+
+    /// A preview while matching; while Choose, a button that keeps this theme (a click on the chosen one is no change).
+    @ViewBuilder
+    private func tile(dark: Bool, title: String) -> some View {
+        let colours = dark ? Self.dark : Self.light
+        if case .choose(let chosenDark) = settings.mode {
+            Button {
+                if chosenDark != dark { settings.modeSetting = .choose(dark: dark) }
+            } label: {
+                SAClaudeSettingsThemeTile(title: title, colours: colours, selected: chosenDark == dark)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(SAClaudeBareButtonStyle())
+            .accessibilityLabel(Text(title))
+            .accessibilityAddTraits(chosenDark == dark ? .isSelected : [])
+        } else {
+            SAClaudeSettingsThemeTile(title: title, colours: colours)
         }
     }
 }
@@ -198,11 +221,13 @@ struct SAClaudeSettingsColourListRow: View {
     }
 }
 
-/// A bundled theme's preview: three lines of SQL in its colours on its background, captioned.
+/// A bundled theme's preview: three lines of SQL in its colours on its background, captioned. `selected` is nil for a
+/// preview; true/false for a Choose tile (the chosen one outlined in the accent, its caption in the primary text).
 struct SAClaudeSettingsThemeTile: View {
     @EnvironmentObject private var palette: SAClaudeSwiftUIPalette
     let title: String
     let colours: [String: NSColor]
+    var selected: Bool? = nil
 
     private func colour(_ key: String, _ fallback: NSColor) -> Color { Color(nsColor: colours[key] ?? fallback) }
 
@@ -221,12 +246,14 @@ struct SAClaudeSettingsThemeTile: View {
             .frame(height: 54)
             .background(shape.fill(colour(SAEditorThemeLoader.backgroundColourKey, .textBackgroundColor)))
             .overlay(shape.strokeBorder(palette.hairline, lineWidth: 1))
+            .overlay(selected == true ? shape.inset(by: -2).strokeBorder(palette.accent, lineWidth: 2) : nil)
             Text(title)
                 .font(SAClaudeSettingsMetrics.descriptionFont)
-                .foregroundColor(palette.muted)
+                .foregroundColor(selected == true ? palette.text : palette.muted)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(title))
+        .accessibilityAddTraits(selected == true ? .isSelected : [])
     }
 }
 
