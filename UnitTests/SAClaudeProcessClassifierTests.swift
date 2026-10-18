@@ -11,9 +11,25 @@ final class SAClaudeProcessClassifierTests: XCTestCase {
     // MARK: - Groups
 
     func testLockStatesNeedAttentionRegardlessOfTime() {
-        for state in ["Waiting for table metadata lock", "Locked", "waiting for handler commit", "WAITING FOR TABLE FLUSH",
-                      "Waiting for global read lock", "System lock", "Waiting for row lock"] {
+        for state in ["Waiting for table metadata lock", "Locked", "waiting for global READ LOCK", "System lock",
+                      "Waiting for row lock", "Table lock", "Waiting for lock_wait"] {
             XCTAssertEqual(C.group(p(time: 0, state: state), threshold: 30), .needsAttention, state)
+        }
+    }
+
+    func testOnlyTheWordLockIsAnImmediateLockWait() {
+        for state in ["Sending data", "blocking", "Waiting on clock tick", "unblocked"] {
+            XCTAssertEqual(C.group(p(time: 0, state: state), threshold: 30), .running, state)
+        }
+    }
+
+    func testOtherWaitingForStatesFollowTheThreshold() {
+        for state in ["waiting for handler commit", "Waiting for semi-sync ACK from replica", "WAITING FOR TABLE FLUSH",
+                      "Waiting for tables", "Waiting for GTID to be committed"] {
+            XCTAssertEqual(C.group(p(time: 0, state: state), threshold: 30), .running, state)
+            XCTAssertEqual(C.group(p(time: 30, state: state), threshold: 30), .running, state)
+            XCTAssertEqual(C.group(p(time: 31, state: state), threshold: 30), .needsAttention, state)
+            XCTAssertEqual(C.group(p(time: 11, state: state), threshold: 10), .needsAttention, state)
         }
     }
 
@@ -60,6 +76,7 @@ final class SAClaudeProcessClassifierTests: XCTestCase {
             p(user: "repl", command: "Connect", time: 999_999, state: "Waiting for master to send event", info: nil),
             p(user: "repl", command: "Connect", time: 999_999, state: "WAITING FOR MASTER TO SEND EVENT", info: nil),
             p(user: "repl", command: "Binlog Dump", time: 0, state: nil, info: nil),
+            p(command: "Delayed insert", time: 999_999, state: "Waiting for INSERT", info: nil),
         ]
         for process in background {
             XCTAssertTrue(C.isBackground(process), "\(process.command)/\(process.user)/\(process.state ?? "-")")
@@ -135,10 +152,12 @@ final class SAClaudeProcessClassifierTests: XCTestCase {
             p(7, time: 90),
             p(8, command: "Binlog Dump", time: 100_000, state: nil, info: nil),
             p(9, time: 5),
+            p(10, user: "system user", command: "Connect", time: 7_000_000, state: "Waiting for source to send event", info: nil),
         ]
         let ids = C.sorted(all, threshold: 30).map(\.id)
-        // needsAttention: 3 (90), 7 (90), 6 (40), 4 (2, lock)  | running: 2 (5), 9 (5) | idle: 8 (bg 100000), 5 (900), 1 (500)
-        XCTAssertEqual(ids, [3, 7, 6, 4, 2, 9, 8, 5, 1])
+        // needsAttention: 3 (90), 7 (90), 6 (40), 4 (2, lock) | running: 2 (5), 9 (5)
+        // idle: sleepers 5 (900), 1 (500), then background 10 (7000000), 8 (100000)
+        XCTAssertEqual(ids, [3, 7, 6, 4, 2, 9, 5, 1, 10, 8])
         XCTAssertEqual(C.sorted(all.reversed(), threshold: 30).map(\.id), ids, "input order must not matter")
         XCTAssertEqual(C.sorted([], threshold: 30), [])
     }
@@ -187,6 +206,21 @@ final class SAClaudeProcessClassifierTests: XCTestCase {
         let big = try XCTUnwrap(SAClaudeProcess(row: ["Id": NSNumber(value: Int64(5_000_000_000)), "Time": "7.9"]))
         XCTAssertEqual(big.id, 5_000_000_000)
         XCTAssertEqual(big.time, 7)
+    }
+
+    func testRowParsingDecimalAndLargeTimeAndMariaDBColumns() throws {
+        let decimal = try XCTUnwrap(SAClaudeProcess(row: ["Id": NSDecimalNumber(string: "17"), "Time": NSDecimalNumber(string: "12.7")]))
+        XCTAssertEqual(decimal.id, 17)
+        XCTAssertEqual(decimal.time, 12)
+        let huge = try XCTUnwrap(SAClaudeProcess(row: ["Id": 1, "Time": NSNumber(value: Int64(Int32.max) + 10)]))
+        XCTAssertEqual(huge.time, Int(Int32.max) + 10)
+        let maria: [String: Any] = ["Id": NSNumber(value: 8), "User": "app", "Host": "h:1", "db": "d", "Command": "Query",
+                                    "Time": NSNumber(value: 3), "State": "Sending data", "Info": "SELECT 1",
+                                    "Stage": NSNumber(value: 1), "Max_stage": NSNumber(value: 2), "Progress": "12.500",
+                                    "Memory_used": NSNumber(value: 123456), "Max_memory_used": NSNumber(value: 234567),
+                                    "Examined_rows": NSNumber(value: 0), "Query_id": NSNumber(value: 99), "Info_binary": NSNull(), "TID": NSNumber(value: 4321)]
+        XCTAssertEqual(SAClaudeProcess(row: maria),
+                       SAClaudeProcess(id: 8, user: "app", host: "h:1", db: "d", command: "Query", time: 3, state: "Sending data", info: "SELECT 1"))
     }
 
     func testRowParsingAcceptsTheControllersRowShape() throws {

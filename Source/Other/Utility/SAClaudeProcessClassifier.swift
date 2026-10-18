@@ -64,14 +64,16 @@ struct SAClaudeProcess: Equatable {
 enum SAClaudeProcessGroup { case needsAttention, running, idle }
 
 /// Pure triage rules for the Process List. Precedence: Sleep or a background (replication/system) thread is idle
-/// and never red; then a lock wait ("lock" in the state, or a state starting "Waiting for") needs attention at
-/// any time; then a command running longer than the threshold needs attention; anything else is running.
+/// and never red; then a lock wait (the word "lock" starts a word in the state: "metadata lock", "Locked", but not
+/// "block"/"clock") needs attention at any time; then a command running longer than the threshold needs attention
+/// (this includes other "Waiting for …" states such as handler commit or semi-sync ACK, which are normally brief);
+/// anything else is running.
 enum SAClaudeProcessClassifier {
     static let thresholds: [Int] = [10, 30, 60, 300]
     static let defaultThreshold = 30
     static let thresholdKey = "ClaudeProcessListAttentionSeconds"
 
-    private static let backgroundCommands = ["binlog dump", "daemon"]   // prefix match covers "Binlog Dump GTID"
+    private static let backgroundCommands = ["binlog dump", "daemon", "delayed insert"]   // prefix match covers "Binlog Dump GTID"
     private static let backgroundUsers = ["system user", "event_scheduler"]
     private static let backgroundStatePrefixes = ["waiting for source", "waiting for an event from coordinator", "waiting for master"]
 
@@ -88,8 +90,7 @@ enum SAClaudeProcessClassifier {
     }
 
     private static func isLockWait(_ p: SAClaudeProcess) -> Bool {
-        let state = (p.state ?? "").lowercased()
-        return state.contains("lock") || state.hasPrefix("waiting for")
+        return (p.state ?? "").range(of: "\\block", options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     static func group(_ p: SAClaudeProcess, threshold: Int) -> SAClaudeProcessGroup {
@@ -122,12 +123,14 @@ enum SAClaudeProcessClassifier {
         !user.isEmpty && p.user == user
     }
 
-    /// Needs attention, then running, then idle; longest time first within a group; ties by id.
+    /// Needs attention, then running, then idle (sleeping clients before background threads); longest time first
+    /// within a group; ties by id.
     static func sorted(_ ps: [SAClaudeProcess], threshold: Int) -> [SAClaudeProcess] {
         func rank(_ g: SAClaudeProcessGroup) -> Int {
             switch g { case .needsAttention: return 0; case .running: return 1; case .idle: return 2 }
         }
-        let keyed = ps.map { (process: $0, rank: rank(group($0, threshold: threshold))) }
+        // Real sleeping clients come before background threads (whose times are huge) inside the idle group.
+        let keyed = ps.map { (process: $0, rank: rank(group($0, threshold: threshold)) * 2 + (isBackground($0) ? 1 : 0)) }
         return keyed.sorted { a, b in
             if a.rank != b.rank { return a.rank < b.rank }
             if a.process.time != b.process.time { return a.process.time > b.process.time }
