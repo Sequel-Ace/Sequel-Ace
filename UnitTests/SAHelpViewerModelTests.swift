@@ -248,7 +248,7 @@ final class SAHelpViewerModelTests: XCTestCase {
         let dark = SAClaudeHintCardPalette.make(theme: theme(background: 0x1F1E1D, text: 0xF0EFEC), accent: accent)
         let darkScript = SAHelpViewerModel.themeChangeScript(palette: dark)
         XCTAssertTrue(darkScript.hasPrefix("window.onThemeChange('dark', {"), darkScript)
-        XCTAssertTrue(darkScript.contains("\"--sa-accent\":\"\(SAClaudeHintCardCSS.colour(accent))\""), darkScript)
+        XCTAssertTrue(darkScript.contains("\"--sa-accent\":\"\(SAClaudeHintCardCSS.colour(dark.accent))\""), darkScript)
         XCTAssertTrue(darkScript.contains("\"--sa-surface\":\"\(SAClaudeHintCardCSS.colour(dark.surface))\""), darkScript)
         XCTAssertEqual(darkScript, "window.onThemeChange('dark', \(SAClaudeHintCardCSS.json(dark)))")
 

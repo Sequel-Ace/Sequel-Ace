@@ -35,7 +35,8 @@ final class SAClaudeHintCardView: NSView {
 extension SAClaudeHintCardPalette {
 
     /// The card for Sequel Ace's present look: the editor theme as resolved in the app's appearance,
-    /// links in the accent (its fill on a light card, as the database tint).
+    /// links in the accent (its fill on a light card, as the database tint), made readable on the card's surface
+    /// (`make`); the help viewer's selected tab uses this same colour.
     static func current() -> SAClaudeHintCardPalette {
         var palette: SAClaudeHintCardPalette?
         NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {

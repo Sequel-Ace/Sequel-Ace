@@ -85,6 +85,24 @@ final class SAClaudePaperBaseTests: XCTestCase {
         XCTAssertEqual(inject(bomBeforeDoctype), "\u{FEFF}<!DOCTYPE html>\n" + sheet + "<p>x</p>")
     }
 
+    /// A head-less, doctype-less fragment led by many comments (a bundle's usual "Show as HTML" output) must not make the
+    /// doctype search backtrack through every way to split the comments: 24 of them took 24 s, 40 would not finish.
+    func testInjectIntoManyLeadingCommentsIsFast() {
+        let page = String(repeating: "<!--x-->", count: 40) + "<p>x"
+        let stylesheet = sheet
+        let start = Date()
+        let result = SAClaudePaperBase.inject(stylesheet, into: page)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 0.5)
+        XCTAssertEqual(result, stylesheet + page)
+        XCTAssertEqual(SAClaudePaperBase.strip(result), page)
+        // With a doctype behind the comments it is still found, just as quickly.
+        let doctyped = "\u{FEFF}" + String(repeating: "<!--x--> ", count: 40) + "<!DOCTYPE html>\n<p>x"
+        let doctypeStart = Date()
+        let doctypeResult = SAClaudePaperBase.inject(stylesheet, into: doctyped)
+        XCTAssertLessThan(Date().timeIntervalSince(doctypeStart), 0.5)
+        XCTAssertEqual(doctypeResult, "\u{FEFF}" + String(repeating: "<!--x--> ", count: 40) + "<!DOCTYPE html>\n" + stylesheet + "<p>x")
+    }
+
     func testInjectIsIdempotent() {
         for page in fixtures {
             XCTAssertEqual(inject(inject(page)), inject(page))

@@ -70,7 +70,7 @@ enum SAClaudePaperBase {
         if let root = firstTag("<html(?:\\s[^>]*)?>\\s*", in: html), root.lowerBound < prologueEnd {
             return root.upperBound
         }
-        if let doctype = html.range(of: "^\u{FEFF}?(?:\\s|<!--[\\s\\S]*?-->)*<!DOCTYPE[^>]*>\\s*",
+        if let doctype = html.range(of: "^\u{FEFF}?(?>\\s|<!--[\\s\\S]*?-->)*<!DOCTYPE[^>]*>\\s*",
                                     options: [.regularExpression, .caseInsensitive]) {
             return doctype.upperBound
         }

@@ -19,14 +19,17 @@ struct SAClaudeHintCardPalette: Equatable {
     /// Opacity of the accent behind a text selection.
     static let selectionAlpha: CGFloat = 0.28
 
-    /// The card for an editor theme: the theme's popup surface with its text, `accent` for links.
+    /// The card for an editor theme: the theme's popup surface with its text, `accent` for links. An accent below the
+    /// body-text contrast of 4.5:1 on the surface is darkened (lightened on a dark surface), keeping its hue, until it
+    /// reaches it; an accent that already reads is kept.
     static func make(theme: SAClaudeThemeColours, accent: NSColor) -> SAClaudeHintCardPalette {
         let isDark = SAClaudeGridChrome.isDark(theme.background)
-        return build(surface: SAClaudeStatusChrome.popupSurface(theme: theme),
+        let surface = SAClaudeStatusChrome.popupSurface(theme: theme)
+        return build(surface: surface,
                      text: theme.text,
                      muted: SAClaudeStatusChrome.muted(theme: theme),
                      hairline: SAClaudeStatusChrome.hairline(theme: theme),
-                     accent: accent,
+                     accent: readable(accent, on: surface),
                      destructive: isDark ? SAClaudeAlertChrome.redGlyphDark : SAClaudeAlertChrome.red,
                      isDark: isDark)
     }
@@ -65,20 +68,37 @@ struct SAClaudeHintCardPalette: Equatable {
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 
-    /// `colour` itself when it reads on `background` (contrast ≥ 4.5), else the same hue and saturation
-    /// with the HSB brightness stepped down until it does.
+    /// `colour` itself when it reads on `background` (contrast ≥ 4.5), else the same hue and saturation with the HSB
+    /// brightness stepped down (up, on a dark background) until it does. On a dark background that brightness alone
+    /// can't lift (a pure blue), the saturation is then stepped down too.
     static func readable(_ colour: NSColor, on background: NSColor) -> NSColor {
         guard contrast(colour, background) < readableContrast, let rgb = colour.usingColorSpace(.sRGB) else { return colour }
         var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
         rgb.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        func made() -> NSColor {
+            NSColor(hue: hue, saturation: saturation, brightness: brightness, alpha: alpha).usingColorSpace(.sRGB) ?? rgb
+        }
         var result = rgb
-        while brightness > 0, contrast(result, background) < readableContrast {
-            brightness = max(0, brightness - 0.01)
-            result = NSColor(hue: hue, saturation: saturation, brightness: brightness, alpha: alpha)
-                .usingColorSpace(.sRGB) ?? result
+        if SAClaudeAccent.relativeLuminance(background) < darkSurfaceLuminance {
+            while brightness < 1, contrast(result, background) < readableContrast {
+                brightness = min(1, brightness + 0.01)
+                result = made()
+            }
+            while saturation > 0, contrast(result, background) < readableContrast {
+                saturation = max(0, saturation - 0.01)
+                result = made()
+            }
+        } else {
+            while brightness > 0, contrast(result, background) < readableContrast {
+                brightness = max(0, brightness - 0.01)
+                result = made()
+            }
         }
         return result
     }
+
+    /// Below this luminance black no longer reads at 4.5:1, white does: lighten instead of darken.
+    private static let darkSurfaceLuminance: CGFloat = 0.179
 }
 
 // MARK: - Metrics

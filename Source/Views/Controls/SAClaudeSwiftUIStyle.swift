@@ -720,13 +720,14 @@ struct SAClaudeMenuPopUp: NSViewRepresentable {
 /// segments, the selected one on the field fill inside a hairline, the hover fill under the pointer), its titles in
 /// the secondary colour and the selected title in the accent. Sized to fit every title; arrow keys move the selection
 /// while it has focus, and VoiceOver sees a radio group named `accessibilityLabel`. `help` is the whole control's
-/// tooltip.
+/// tooltip. `selectedText` replaces the palette accent as the selected title's colour.
 struct SAClaudeSegmentedTabs: NSViewRepresentable {
     @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     let titles: [String]
     @Binding var selection: Int
     var help: String?
     var accessibilityLabel: String?
+    var selectedText: NSColor?
 
     func makeNSView(context: Context) -> SAClaudeConnectionTypeTabs {
         let tabs = SAClaudeConnectionTypeTabs()
@@ -742,7 +743,7 @@ struct SAClaudeSegmentedTabs: NSViewRepresentable {
         if tabs.toolTip != help { tabs.toolTip = help }
         tabs.accessibilityGroupLabel = accessibilityLabel
         tabs.colours = SAClaudeConnectionTypeTabs.Colours(selectedFill: NSColor(palette.fieldFill), selectedStroke: NSColor(palette.hairline),
-                                                          hoverFill: NSColor(palette.hover), text: NSColor(palette.accent),
+                                                          hoverFill: NSColor(palette.hover), text: selectedText ?? NSColor(palette.accent),
                                                           mutedText: NSColor(palette.secondary))
     }
 

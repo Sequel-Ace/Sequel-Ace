@@ -69,6 +69,37 @@ final class SAClaudeHintCardTests: XCTestCase {
         XCTAssertEqual(p.codeFill, SAClaudeEditorChrome.derivedColour(text: p.text, background: p.surface, ratio: 0.05))
     }
 
+    /// A link must read on the card: the user's accent is darkened on a light card (cyan is 1.99:1 on white), keeping
+    /// its hue, and an accent that already reads is kept.
+    func testThemeAccentIsReadableOnALightCard() {
+        let cyan = NSColor(srgbRed: 0, green: 199 / 255.0, blue: 252 / 255.0, alpha: 1)
+        for accent in [cyan, clay] {
+            let p = SAClaudeHintCardPalette.make(theme: light, accent: accent)
+            XCTAssertGreaterThanOrEqual(contrast(p.accent, p.surface), 4.5, "\(accent)")
+            var h0: CGFloat = 0, h1: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            accent.usingColorSpace(.sRGB)!.getHue(&h0, saturation: &s, brightness: &b, alpha: &a)
+            p.accent.usingColorSpace(.sRGB)!.getHue(&h1, saturation: &s, brightness: &b, alpha: &a)
+            XCTAssertEqual(h0, h1, accuracy: 0.02)
+        }
+        let already = srgb(0x1A4D8F)
+        XCTAssertEqual(SAClaudeHintCardPalette.make(theme: light, accent: already).accent, already)
+    }
+
+    /// Clay already reads on the dark card and stays as it is; a dark accent on it is lightened, keeping its hue.
+    func testThemeAccentOnADarkCard() {
+        let p = SAClaudeHintCardPalette.make(theme: dark, accent: clay)
+        XCTAssertEqual(p.accent, clay)
+        let navy = srgb(0x1A3A8F)
+        let lifted = SAClaudeHintCardPalette.make(theme: dark, accent: navy)
+        XCTAssertGreaterThanOrEqual(contrast(lifted.accent, lifted.surface), 4.5)
+        var h0: CGFloat = 0, h1: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        navy.getHue(&h0, saturation: &s, brightness: &b, alpha: &a)
+        lifted.accent.usingColorSpace(.sRGB)!.getHue(&h1, saturation: &s, brightness: &b, alpha: &a)
+        XCTAssertEqual(h0, h1, accuracy: 0.02)
+        let blue = SAClaudeHintCardPalette.make(theme: dark, accent: srgb(0x0000FF))
+        XCTAssertGreaterThanOrEqual(contrast(blue.accent, blue.surface), 4.5)
+    }
+
     func testTextContrastOnSurfaceIsReadable() {
         let palettes = [SAClaudeHintCardPalette.make(theme: light, accent: clay),
                         SAClaudeHintCardPalette.make(theme: dark, accent: clay),

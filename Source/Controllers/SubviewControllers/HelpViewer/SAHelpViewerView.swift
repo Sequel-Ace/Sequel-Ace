@@ -106,7 +106,9 @@ struct SAHelpViewerView: View {
             titles: Self.targetTitles,
             selection: $model.targetIndex,
             help: SAHelpTarget.selectorHelpText,
-            accessibilityLabel: NSLocalizedString("Search target", comment: "help viewer : search target selector accessibility label")
+            accessibilityLabel: NSLocalizedString("Search target", comment: "help viewer : search target selector accessibility label"),
+            // The page's link colour (the card palette's readable accent), so the tab and the links agree.
+            selectedText: SAClaudeHintCardPalette.current().accent
         )
     }
 
