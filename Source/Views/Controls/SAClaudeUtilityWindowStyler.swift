@@ -244,6 +244,41 @@ enum SAClaudeUtilityChrome {
         if view.autoresizingMask != mask { view.autoresizingMask = mask }
     }
 
+    // MARK: Baselines
+
+    private static let baselineLayout = NSLayoutManager()
+
+    /// How far below `view`'s top its text's baseline sits: a text field's (a label's, a Claude sheet field's) line drawn
+    /// from the top of its cell's drawing rect; a Claude pill pop-up's title centred on its pill; anything else a line of
+    /// `fallbackFont` centred on it.
+    static func baselineFromTop(of view: NSView, fallbackFont: NSFont) -> CGFloat {
+        let bounds = view.bounds
+        func fromTop(_ rect: NSRect) -> CGFloat { view.isFlipped ? rect.minY - bounds.minY : bounds.maxY - rect.maxY }
+        if let field = view as? NSTextField, let cell = field.cell, let font = field.font {
+            return fromTop(cell.drawingRect(forBounds: bounds)) + baselineLayout.defaultBaselineOffset(for: font)
+        }
+        let font = view is NSPopUpButton && (view as? NSPopUpButton)?.cell is SAClaudePillPopUpButtonCell ? FilterCellDrawing.font : fallbackFont
+        let pill = view is NSPopUpButton ? SAClaudeFilterChrome.controlFrame(in: bounds) : bounds
+        let height = ceil(NSAttributedString(string: "Xg", attributes: [.font: font]).size().height)
+        let line = NSRect(x: pill.minX, y: (pill.midY - height / 2).rounded(), width: pill.width, height: height)
+        return fromTop(line) + baselineLayout.defaultBaselineOffset(for: font)
+    }
+
+    /// Moves `label` up or down (only) so its text sits on `control`'s text baseline. Both in one superview.
+    static func alignBaseline(of label: NSTextField, to control: NSView) {
+        guard let container = control.superview, label.superview === container, let labelFont = label.font else { return }
+        let controlBaseline = baselineFromTop(of: control, fallbackFont: labelFont)
+        let labelBaseline = baselineFromTop(of: label, fallbackFont: labelFont)
+        var frame = label.frame
+        if container.isFlipped {
+            frame.origin.y = ((control.frame.minY + controlBaseline - labelBaseline) * 2).rounded() / 2
+        } else {
+            frame.origin.y = SAClaudeFormBaseline.labelY(baselineY: control.frame.maxY - controlBaseline, labelHeight: frame.height,
+                                                         labelBaselineFromTop: labelBaseline)
+        }
+        if label.frame != frame { label.frame = frame }
+    }
+
     // MARK: Footer buttons
 
     static let buttonFont = NSFont.systemFont(ofSize: NSFont.systemFontSize)
@@ -355,6 +390,8 @@ enum SAClaudeUtilitySidebar {
         /// How far an outline list's rows (chevrons and cells) sit right of where AppKit puts them, so its first chevrons
         /// start inside the selection pill (`SAClaudeSidebarListLayout.chevronShift`); set as the list is styled.
         var chevronShift: CGFloat = 0
+        /// `contentLeading` as last measured, for that many rows; dropped on a reload (`invalidateContentLeading`).
+        var contentLeadingCache: (rows: Int, value: CGFloat?)?
     }
 
     private static var stateKey: UInt8 = 0
@@ -413,6 +450,7 @@ enum SAClaudeUtilitySidebar {
             state.chevronShift = SAClaudeSidebarListLayout.chevronShift(chevronLevel: state.groupRowsAsHeaders ? 1 : 0,
                                                                         indentation: outline.indentationPerLevel, pillInset: pillInset)
         }
+        state.contentLeadingCache = nil
         // Heights a delegate gives (`SAClaudeUtilitySidebarMetrics`) are asked for again.
         if table.numberOfRows > 0 { table.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<table.numberOfRows)) }
         if let scrollView = table.enclosingScrollView {
@@ -472,6 +510,21 @@ enum SAClaudeUtilitySidebar {
     /// text, after any indentation the controller gives the cell. The list's header and its section header rows start
     /// their text here. Nil for an empty list.
     static func contentLeading(_ table: NSTableView) -> CGFloat? {
+        let state = state(of: table)
+        if let cached = state?.contentLeadingCache, cached.rows == table.numberOfRows { return cached.value }
+        let value = measureContentLeading(table)
+        state?.contentLeadingCache = (table.numberOfRows, value)
+        return value
+    }
+
+    /// Forgets the measured content edge (the rows were reloaded) and redraws the header that starts there.
+    static func invalidateContentLeading(_ table: NSTableView) {
+        guard let state = state(of: table), state.contentLeadingCache != nil else { return }
+        state.contentLeadingCache = nil
+        table.headerView?.needsDisplay = true
+    }
+
+    private static func measureContentLeading(_ table: NSTableView) -> CGFloat? {
         guard let column = table.tableColumns.first else { return nil }
         let limit = min(table.numberOfRows, 200)
         guard let row = (0..<limit).first(where: { !isHeaderRow(table, $0) && table.rect(ofRow: $0).height >= spacerHeight }) else { return nil }
@@ -505,8 +558,15 @@ enum SAClaudeUtilitySidebar {
 
     /// The selection as rounded pills, the same colour focused or not (as the main window's tables list).
     static func drawSelection(_ table: NSTableView, in clipRect: NSRect) {
-        let rects = SAClaudeSelectionLayout.pillRects(selectedRows: Array(table.selectedRowIndexes), rowRect: { table.rect(ofRow: $0) },
-                                                      inset: pillInset)
+        // Rows of a list wider than its scroll view (a column wider than the list) end out of sight: the pill keeps its
+        // inset from the visible edge.
+        let visible = table.visibleRect
+        let rects = SAClaudeSelectionLayout.pillRects(selectedRows: Array(table.selectedRowIndexes), rowRect: { row in
+            var rect = table.rect(ofRow: row)
+            let minX = max(rect.minX, visible.minX), maxX = min(rect.maxX, visible.maxX)
+            if maxX > minX { rect.origin.x = minX; rect.size.width = maxX - minX }
+            return rect
+        }, inset: pillInset)
         SAClaudeStyle.selection.setFill()
         for rect in rects where rect.intersects(clipRect) {
             NSBezierPath(roundedRect: rect, xRadius: SAClaudeStyle.pillRadius, yRadius: SAClaudeStyle.pillRadius).fill()
@@ -603,6 +663,11 @@ enum SAClaudeUtilitySidebar {
         SAClaudeUtilitySidebar.outlineCellFrame(super.frameOfOutlineCell(atRow: row), table: self)
     }
 
+    override func reloadData() {
+        super.reloadData()
+        SAClaudeUtilitySidebar.invalidateContentLeading(self)
+    }
+
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         needsDisplay = true
@@ -635,6 +700,11 @@ enum SAClaudeUtilitySidebar {
         SAClaudeUtilitySidebar.outlineCellFrame(super.frameOfOutlineCell(atRow: row), table: self)
     }
 
+    override func reloadData() {
+        super.reloadData()
+        SAClaudeUtilitySidebar.invalidateContentLeading(self)
+    }
+
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         needsDisplay = true
@@ -663,6 +733,11 @@ enum SAClaudeUtilitySidebar {
         SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self, column: column)
     }
 
+    override func reloadData() {
+        super.reloadData()
+        SAClaudeUtilitySidebar.invalidateContentLeading(self)
+    }
+
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         needsDisplay = true
@@ -689,6 +764,11 @@ enum SAClaudeUtilitySidebar {
 
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
         SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self, column: column)
+    }
+
+    override func reloadData() {
+        super.reloadData()
+        SAClaudeUtilitySidebar.invalidateContentLeading(self)
     }
 
     override func viewDidChangeEffectiveAppearance() {

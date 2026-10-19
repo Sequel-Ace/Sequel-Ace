@@ -19,7 +19,9 @@
 //  managers, Navigator, Bundle Editor, Advanced Filter: by their owner) are
 //  filled: other sheets, panels, Settings and the Console keep their menus as
 //  they are, and the main menu bar's menus are left to macOS
-//  (`SAClaudeMenuGlyphs.shouldApply`). App target only.
+//  (`SAClaudeMenuGlyphs.shouldApply`). In those same windows, context menus go
+//  without macOS 27's "Ask Siri" field (`allowsContextMenuPlugIns` off, set as
+//  a right-click arrives, before AppKit builds the menu). App target only.
 //
 
 import AppKit
@@ -28,6 +30,8 @@ import AppKit
 
     private static var observer: NSObjectProtocol?
     private static var images: [String: NSImage] = [:]
+
+    private static var contextClickMonitor: Any?
 
     /// Starts filling menus as they open (once; call at launch).
     @objc static func start() {
@@ -41,6 +45,39 @@ import AppKit
                                                  hasAttachedSheet: window?.attachedSheet != nil,
                                                  ownerClasses: window.map(ownerClasses) ?? []) else { return }
             SAClaudeMenuGlyphs.apply(to: menu, imageFor: image(named:))
+            // Too late for this opening (AppKit decides on the "Ask Siri" field before tracking starts), but a menu
+            // shown again (a rebuilt or keyboard-opened one) opens without it.
+            suppressAssistant(in: menu)
+        }
+        // A right-click (or control-click) in a gated window: the menus of the clicked view and its ancestors lose the
+        // "Ask Siri" field before AppKit asks the view for its menu.
+        contextClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.rightMouseDown, .leftMouseDown]) { event in
+            if event.type == .rightMouseDown || event.modifierFlags.contains(.control) { prepareContextMenus(for: event) }
+            return event
+        }
+    }
+
+    /// macOS 27 puts an "Ask Siri" field on top of a context menu that allows plug-ins; the Claude look's menus (in the
+    /// windows this pass glyphs) go without it. Only matters when the menu is used as a context menu.
+    static func suppressAssistant(in menu: NSMenu?) {
+        guard let menu, menu.allowsContextMenuPlugIns else { return }
+        menu.allowsContextMenuPlugIns = false
+    }
+
+    /// Before a right-click is dispatched: when it lands in a window whose menus this pass glyphs, the context menus of
+    /// the view under it and of its ancestors (a table's, an outline's: the instances their `menuForEvent:` returns) are
+    /// set not to allow plug-ins, which is what keeps the "Ask Siri" field out of them (it has to be set before the menu
+    /// is presented; at `didBeginTracking` it only affects the next opening).
+    private static func prepareContextMenus(for event: NSEvent) {
+        guard let window = event.window,
+              SAClaudeMenuGlyphs.shouldApply(isMainMenu: false, isMainDocumentWindow: isMainDocumentWindow(window),
+                                             hasAttachedSheet: window.attachedSheet != nil, ownerClasses: ownerClasses(of: window)),
+              let frameView = window.contentView?.superview else { return }
+        // The frame view has no superview: hit-testing takes window coordinates.
+        var view = frameView.hitTest(event.locationInWindow)
+        while let current = view {
+            suppressAssistant(in: current.menu)
+            view = current.superview
         }
     }
 
@@ -70,11 +107,11 @@ import AppKit
 
     // MARK: Uniform glyphs
 
-    /// The box a uniform menu glyph is drawn in, and the height every glyph's ink takes inside it: the size macOS 27 draws
-    /// the pass's circle glyphs at in a menu (it redraws symbol images at its own size, so a tall symbol such as
-    /// doc.on.doc shows taller than a circle beside it).
+    /// The box a uniform menu glyph is drawn in, and the height every glyph's ink takes inside it: the height macOS 27
+    /// draws the pass's circle glyphs at in a menu (measured from a popped menu: info.circle's ink is 10.5pt tall; the
+    /// menu redraws symbol images at its own size, so a tall symbol such as doc.on.doc shows taller than a circle).
     static let uniformCanvas: CGFloat = 14
-    static let uniformInkHeight: CGFloat = 12
+    static let uniformInkHeight: CGFloat = 10.5
     private static var uniformImages: [String: NSImage] = [:]
 
     /// A menu glyph of one size and one optical weight with the others made here: the symbol drawn (not a symbol image, so

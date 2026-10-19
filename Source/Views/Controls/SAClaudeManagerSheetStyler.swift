@@ -280,6 +280,8 @@ import AppKit
             place(o.textScroll, frames.editor)
             place(triggerLabel, frames.trigger.label)
             place(trigger, frames.trigger.field)
+            SAClaudeUtilityChrome.alignBaseline(of: o.nameLabel, to: o.name)
+            SAClaudeUtilityChrome.alignBaseline(of: triggerLabel, to: trigger)
             if let accessory = frames.footer.accessory { place(o.placeholder, accessory) }
             footer = frames.footer
         case .filter(let f):
@@ -296,6 +298,8 @@ import AppKit
             place(o.placeholder, frames.placeholder)
             place(f.conjunctionLabel, frames.conjunction.label)
             place(f.conjunction, frames.conjunction.field)
+            SAClaudeUtilityChrome.alignBaseline(of: o.nameLabel, to: o.name)
+            SAClaudeUtilityChrome.alignBaseline(of: f.conjunctionLabel, to: f.conjunction)
             place(f.resultLabel, frames.resultLabel)
             place(f.result, frames.result)
             footer = frames.footer

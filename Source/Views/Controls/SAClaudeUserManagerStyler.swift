@@ -450,6 +450,7 @@ import AppKit
         for (views, frames) in zip(card.rows, rows) {
             SAClaudeUtilityChrome.place(views.label, frames.label)
             SAClaudeUtilityChrome.place(views.field, frames.field)
+            SAClaudeUtilityChrome.alignBaseline(of: views.label, to: views.field)
         }
     }
 

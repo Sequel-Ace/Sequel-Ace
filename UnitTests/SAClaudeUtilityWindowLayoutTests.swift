@@ -329,4 +329,14 @@ final class SAClaudeUtilityWindowLayoutTests: XCTestCase {
         XCTAssertEqual(f.footer.cancel.midY, f.footer.save.midY)
         XCTAssertEqual(f.footer.save.maxX - 6, 286 - Form.margin)
     }
+
+    // MARK: Baselines
+
+    /// A 16pt label whose baseline is 11pt below its top lands with that baseline on the field's.
+    func testLabelSitsOnTheFieldBaseline() {
+        let y = SAClaudeFormBaseline.labelY(baselineY: 100, labelHeight: 16, labelBaselineFromTop: 11)
+        XCTAssertEqual(y + 16 - 11, 100)
+        // Rounded to the half point.
+        XCTAssertEqual(SAClaudeFormBaseline.labelY(baselineY: 100.3, labelHeight: 16, labelBaselineFromTop: 11), 95.5)
+    }
 }

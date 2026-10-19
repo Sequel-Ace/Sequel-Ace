@@ -384,3 +384,16 @@ enum SAClaudeManagerFormLayout {
                             placeholder: placeholder, conjunction: conjunction, resultLabel: resultLabel, result: result, footer: footer)
     }
 }
+
+// MARK: - Baselines
+
+/// A form label on its control's text baseline (walkthrough fix 1, round 1): labels and fields centred on one line still
+/// put their text on different baselines when they draw it differently (a label from its frame's top, a field centred in
+/// a taller frame, a pill in another size).
+enum SAClaudeFormBaseline {
+    /// The y of a label frame `labelHeight` tall, in a non-flipped container, whose text baseline (`labelBaselineFromTop`
+    /// below its top) sits at `baselineY`; rounded to the half point.
+    static func labelY(baselineY: CGFloat, labelHeight: CGFloat, labelBaselineFromTop: CGFloat) -> CGFloat {
+        ((baselineY + labelBaselineFromTop - labelHeight) * 2).rounded() / 2
+    }
+}

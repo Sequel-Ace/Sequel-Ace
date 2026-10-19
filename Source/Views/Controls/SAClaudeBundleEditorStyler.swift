@@ -244,8 +244,11 @@ import AppKit
                 let height = min(row.control.height, Self.recorderMaxHeight)
                 place(o.recorder, NSRect(x: row.control.minX + 2, y: (row.control.midY - height / 2).rounded(),
                                          width: max(0, row.control.width - 4), height: height))
+                // Its text is centred on the field, in the labels' size.
+                SAClaudeUtilityChrome.alignBaseline(of: views.label, to: recorderField)
             } else {
                 place(views.control, row.control)
+                SAClaudeUtilityChrome.alignBaseline(of: views.label, to: views.control)
             }
         }
         let rightViews = o.right.map { [$0] } + [o.alternatives]
@@ -253,6 +256,7 @@ import AppKit
             for views in pairs {
                 place(views.label, row.label)
                 place(views.control, row.control)
+                SAClaudeUtilityChrome.alignBaseline(of: views.label, to: views.control)
             }
         }
         place(o.commandLabel, frames.commandLabel)

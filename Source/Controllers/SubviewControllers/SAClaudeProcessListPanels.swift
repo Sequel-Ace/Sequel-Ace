@@ -247,6 +247,8 @@ struct SAClaudeProcessListSearchField: View {
                     .font(.system(size: 12))
                     .focused($focused)
                     .onExitCommand { model.search = "" }
+                    // On the text field itself (on the field's chrome it would also name the clear button).
+                    .accessibilityLabel(NSLocalizedString("Search user, host, database, state, query", value: "Search user, host, database, state, query", comment: "process list : search field placeholder"))
                 if !model.search.isEmpty {
                     Button { model.search = "" } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 11)).foregroundColor(palette.muted)
@@ -257,7 +259,6 @@ struct SAClaudeProcessListSearchField: View {
             }
         }
         .help(NSLocalizedString("Search user, host, database, state, query", value: "Search user, host, database, state, query", comment: "process list : search field placeholder"))
-        .accessibilityLabel(NSLocalizedString("Search user, host, database, state, query", value: "Search user, host, database, state, query", comment: "process list : search field placeholder"))
         .onChange(of: model.searchFocusRequest) { _ in focused = true }
     }
 }
