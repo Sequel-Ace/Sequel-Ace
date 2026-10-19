@@ -7,8 +7,9 @@
 //  with add, remove and gear buttons under it; a form on the right (name, the query or clause in a syntax-coloured text
 //  view, Insert Placeholder); Save and Cancel.
 //
-//  - The list is a Claude sidebar (sidebar fill, selection pills, 28pt rows, the Global / file rows as muted section
-//    headers, the tab trigger column muted); its bar buttons are glyph buttons over a hairline; the divider a hairline.
+//  - The list is a Claude sidebar (sidebar fill, selection pills, 28pt rows, the Global / file rows as 11pt muted
+//    captions on shorter rows, the tab trigger column muted; the Query Favorites list without its own "Favorites"
+//    header); its bar buttons are glyph buttons over a hairline; the divider a hairline.
 //  - The query / clause editor is framed by a rounded hairline; the help button (Query Favorites) a ghost "?".
 //  - Save (Return) the accent primary, Cancel secondary, both regular size on the right margin.
 //  - The form laid out in one rule (`SAClaudeManagerFormLayout`): one right-aligned label column (Name and Tab Trigger;
@@ -216,7 +217,15 @@ import AppKit
         let detailColumns = kind.detailColumns
         SAClaudeUtilitySidebar.adopt(o.list) { state in
             state.groupRowsAsHeaders = true
+            // "Global" and the file rows group the favourites / filters and can't be selected: captions, not rows.
+            state.headerRowsAsCaptions = true
             state.detailColumns = detailColumns
+        }
+        // The Query Favorites list's own "Favorites" header would sit as a second caption over "Global": the captions
+        // carry the list. (The Content Filter list's header names the field type its filters are for, and stays.)
+        if kind.controllerClass == "SPQueryFavoriteManager", o.list.headerView != nil {
+            o.list.headerView = nil
+            o.listScroll.tile()
         }
         SAClaudeUtilityChrome.styleSidebarPane(o.sidebarPane, list: o.listScroll,
                                                bar: [(o.add, .add, kind.addLabel), (o.remove, .remove, kind.removeLabel),

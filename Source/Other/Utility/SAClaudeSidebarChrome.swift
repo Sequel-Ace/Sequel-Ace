@@ -21,15 +21,21 @@ import AppKit
     /// `drawHeader(_:inRowRect:)` with its text starting at `x` (a list whose rows start their content elsewhere than the
     /// main sidebar's icons); nil for the icons' place.
     static func drawHeader(_ title: String, inRowRect rowRect: NSRect, x: CGFloat?) {
+        drawHeader(title, inRowRect: rowRect, x: x, font: SAClaudeStyle.headerFont, bottomPadding: SAClaudeStyle.headerBottomPadding)
+    }
+
+    /// `drawHeader(_:inRowRect:x:)` in `font`, its text `bottomPadding` above the row's bottom (a smaller caption).
+    static func drawHeader(_ title: String, inRowRect rowRect: NSRect, x: CGFloat?, font: NSFont, bottomPadding: CGFloat) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: SAClaudeStyle.headerFont,
+            .font: font,
             .foregroundColor: SAClaudeStyle.textMuted,
             .paragraphStyle: paragraph,
         ]
         let text = NSAttributedString(string: title, attributes: attributes)
         var frame = SAClaudeSidebarGeometry.headerTextFrame(in: rowRect, textHeight: ceil(text.size().height))
+        frame.origin.y += SAClaudeStyle.headerBottomPadding - bottomPadding
         if let x {
             frame.size.width = max(0, frame.maxX - x)
             frame.origin.x = x

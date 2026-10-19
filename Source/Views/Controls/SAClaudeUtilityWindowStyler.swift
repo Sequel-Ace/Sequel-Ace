@@ -371,6 +371,11 @@ enum SAClaudeUtilitySidebar {
     static let pillInset: CGFloat = 6
     /// Rows the code makes shorter than this are spacers (the Navigator's), kept as the code made them.
     static let spacerHeight: CGFloat = 10
+    /// A caption header row: its height, its text (the list header's caption style), the text's distance from the row's
+    /// bottom (as the main sidebar's section headers sit on their row's bottom, scaled to the caption).
+    static let captionRowHeight: CGFloat = 26
+    static let captionFont = NSFont.systemFont(ofSize: 11, weight: .medium)
+    static let captionBottomPadding: CGFloat = 5
 
     /// How one adopted list looks, and what it can't store itself.
     final class State {
@@ -390,6 +395,9 @@ enum SAClaudeUtilitySidebar {
         /// How far an outline list's rows (chevrons and cells) sit right of where AppKit puts them, so its first chevrons
         /// start inside the selection pill (`SAClaudeSidebarListLayout.chevronShift`); set as the list is styled.
         var chevronShift: CGFloat = 0
+        /// Section header rows drawn as captions (the managers' "Global" and file rows, which can't be selected): 11pt
+        /// medium muted text on a shorter row (`captionRowHeight`), so they don't read as rows to click.
+        var headerRowsAsCaptions = false
         /// `contentLeading` as last measured, for that many rows; dropped on a reload (`invalidateContentLeading`).
         var contentLeadingCache: (rows: Int, value: CGFloat?)?
     }
@@ -501,7 +509,11 @@ enum SAClaudeUtilitySidebar {
         let rowRect = table.rect(ofRow: row)
         // Level with the rows' content (their chevrons, glyphs or text), as the list's own header.
         let x = contentLeading(table) ?? rowRect.minX + pillInset + SAClaudeStyle.rowContentPadding
-        SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x)
+        if state(of: table)?.headerRowsAsCaptions == true {
+            SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x, font: captionFont, bottomPadding: captionBottomPadding)
+        } else {
+            SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x)
+        }
         return true
     }
 
@@ -633,6 +645,15 @@ enum SAClaudeUtilitySidebar {
         guard let table, proposed >= SAClaudeUtilitySidebar.spacerHeight,
               let state = SAClaudeUtilitySidebar.state(of: table), SAClaudeUtilitySidebar.isAdopted(table) else { return proposed }
         return state.rowHeight
+    }
+
+    /// `rowHeight(for:proposed:)` for a given row: a section header row of a list that draws them as captions gets the
+    /// caption's shorter height.
+    @objc(rowHeightForTable:row:proposed:) static func rowHeight(for table: NSTableView?, row: Int, proposed: CGFloat) -> CGFloat {
+        let height = rowHeight(for: table, proposed: proposed)
+        guard let table, height != proposed, SAClaudeUtilitySidebar.state(of: table)?.headerRowsAsCaptions == true,
+              row >= 0, row < table.numberOfRows, SAClaudeUtilitySidebar.isHeaderRow(table, row) else { return height }
+        return SAClaudeUtilitySidebar.captionRowHeight
     }
 }
 

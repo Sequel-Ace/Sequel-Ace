@@ -555,7 +555,7 @@
 {
 
 	// The Claude sidebar look gives the list its own row height (SAClaudeManagerSheetStyler).
-	return [SAClaudeUtilitySidebarMetrics rowHeightForTable:aTableView proposed:([[favorites safeObjectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18];
+	return [SAClaudeUtilitySidebarMetrics rowHeightForTable:aTableView row:rowIndex proposed:([[favorites safeObjectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18];
 }
 
 /*
