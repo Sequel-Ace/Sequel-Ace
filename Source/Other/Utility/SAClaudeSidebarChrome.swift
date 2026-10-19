@@ -15,6 +15,12 @@ import AppKit
     /// style, aligned with the icons below it. Call inside a flipped view.
     @objc(drawHeader:inRowRect:)
     static func drawHeader(_ title: String, inRowRect rowRect: NSRect) {
+        drawHeader(title, inRowRect: rowRect, x: nil)
+    }
+
+    /// `drawHeader(_:inRowRect:)` with its text starting at `x` (a list whose rows start their content elsewhere than the
+    /// main sidebar's icons); nil for the icons' place.
+    static func drawHeader(_ title: String, inRowRect rowRect: NSRect, x: CGFloat?) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
         let attributes: [NSAttributedString.Key: Any] = [
@@ -23,7 +29,11 @@ import AppKit
             .paragraphStyle: paragraph,
         ]
         let text = NSAttributedString(string: title, attributes: attributes)
-        let frame = SAClaudeSidebarGeometry.headerTextFrame(in: rowRect, textHeight: ceil(text.size().height))
+        var frame = SAClaudeSidebarGeometry.headerTextFrame(in: rowRect, textHeight: ceil(text.size().height))
+        if let x {
+            frame.size.width = max(0, frame.maxX - x)
+            frame.origin.x = x
+        }
         guard frame.width > 0 else { return }
         text.draw(with: frame, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
     }

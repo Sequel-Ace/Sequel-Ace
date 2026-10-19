@@ -174,6 +174,18 @@ import SwiftUI
         tableView.focusRingType = .none
         tableView.style = .plain
         tableView.menu = contextMenu
+        if let contextMenu {
+            // No "Ask Siri" field on top (macOS 27 adds it to context menus that allow plug-ins).
+            contextMenu.allowsContextMenuPlugIns = false
+            // Copy, Kill Query and Kill Connection in one glyph size and weight (AppKit's own Copy image, a symbol the menu
+            // redraws at its size, would show taller than the circles). The glyph pass leaves images set here alone.
+            for item in contextMenu.items where !item.isSeparatorItem {
+                guard let action = item.action, let name = SAClaudeMenuGlyphs.symbol(forAction: NSStringFromSelector(action), title: item.title),
+                      let image = SAClaudeMenuGlyphPass.uniformImage(named: name) else { continue }
+                item.image = image
+                if #available(macOS 27.0, *) { item.preferredImageVisibility = .visible }
+            }
+        }
         tableView.dataSource = self
         tableView.delegate = self
         tableView.willShowContextMenu = { [weak self] in self?.captureContextTarget() }

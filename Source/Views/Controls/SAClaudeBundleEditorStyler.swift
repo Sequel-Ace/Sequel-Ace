@@ -32,6 +32,7 @@ import AppKit
         static var addBundle: String { NSLocalizedString("ClaudeBundleEditorAdd", value: "Add bundle", comment: "bundle editor : tooltip and accessibility name of the add button under the bundles list") }
         static var removeBundle: String { NSLocalizedString("ClaudeBundleEditorRemove", value: "Remove bundle", comment: "bundle editor : tooltip and accessibility name of the remove button under the bundles list") }
         static var actions: String { NSLocalizedString("ClaudeBundleEditorActions", value: "Bundle actions", comment: "bundle editor : tooltip and accessibility name of the gear menu under the bundles list (Duplicate, Export, Reveal…)") }
+        static var bundlesHeader: String { NSLocalizedString("ClaudeBundleEditorBundlesHeader", value: "Bundles", comment: "bundle editor : the section header over the bundles list (the list's root row), in title case like the other utility windows' list headers") }
     }
 
     struct Outlets {
@@ -148,6 +149,10 @@ import AppKit
     private func build() {
         SAClaudeUtilitySidebar.adopt(o.outline) { state in
             state.groupRowsAsHeaders = true
+            // The root row ("BUNDLES") in title case, as the other lists' headers ("Favorites", "Accounts").
+            state.headerTitle = { table, row, title in
+                (table as? NSOutlineView)?.level(forRow: row) == 0 ? Strings.bundlesHeader : title
+            }
         }
         SAClaudeUtilityChrome.styleSidebarPane(o.sidebarPane, list: o.outlineScroll,
                                                bar: [(o.add, .add, Strings.addBundle), (o.remove, .remove, Strings.removeBundle),
@@ -157,6 +162,9 @@ import AppKit
             label.alignment = .right
             label.lineBreakMode = .byTruncatingTail
         }
+        // The summary sits right before Bundle Info, in the right column's spare row.
+        o.summary.alignment = .right
+        o.summary.lineBreakMode = .byTruncatingTail
         SAClaudeUtilityChrome.makeRegular(o.info)
         SAClaudeFormChrome.force(o.info, primary: false)
         SAClaudeFormChrome.force(o.save, primary: true)
@@ -195,6 +203,11 @@ import AppKit
     // MARK: Applying
 
     private func apply() {
+        // The bound fields' placeholders ("optional", the XIB's hints) in the muted placeholder colour, never a value's.
+        // Again at each apply: the sheet skin may give the fields its own cell after the claim.
+        for field in [o.left[1].control, o.right[1].control, o.right[2].control].compactMap({ $0 as? NSTextField }) {
+            SAClaudeSheetPlaceholderFieldCell.install(on: field)
+        }
         layout()
         recolour()
     }

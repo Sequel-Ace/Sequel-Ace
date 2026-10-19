@@ -114,13 +114,16 @@ final class SAClaudeUtilityWindowLayoutTests: XCTestCase {
         XCTAssertEqual(rows[1].label.maxX, rows[1].field.minX - SAClaudeFormCardLayout.labelGap)
     }
 
-    func testFormCardSitsTopLeftAndCapsItsWidth() {
+    /// A form card spans the tab content (the tabs' left edge to the pane's margin), however wide the pane.
+    func testFormCardSpansTheContentWidth() {
         let area = NSRect(x: 20, y: 0, width: 652, height: 424)
         let card = Layout.formCard(in: area, rows: 3, chrome: chrome)
         XCTAssertEqual(card.minX, area.minX + chrome.left)
         XCTAssertEqual(card.maxY, area.maxY - chrome.top)
-        XCTAssertEqual(card.width + chrome.width, Layout.formCardMaxWidth)
+        XCTAssertEqual(card.minX - chrome.left, area.minX)
+        XCTAssertEqual(card.maxX + chrome.right, area.maxX)
         XCTAssertEqual(Layout.formCard(in: NSRect(x: 0, y: 0, width: 300, height: 200), rows: 1, chrome: chrome).width, 300 - chrome.width)
+        XCTAssertEqual(Layout.formCard(in: NSRect(x: 0, y: 0, width: 1200, height: 200), rows: 1, chrome: chrome).width, 1200 - chrome.width)
     }
 
     // MARK: Pane
@@ -245,9 +248,85 @@ final class SAClaudeUtilityWindowLayoutTests: XCTestCase {
 
     // MARK: Sidebar bar
 
-    func testBarButtonsLeftToRight() {
-        let frames = Layout.barButtons(count: 3, x: 6, midY: 16)
-        XCTAssertEqual(frames.map(\.minX), [6, 6 + SAClaudeSidebarBarLayout.buttonSize + SAClaudeSidebarBarLayout.buttonGap, 6 + 2 * (SAClaudeSidebarBarLayout.buttonSize + SAClaudeSidebarBarLayout.buttonGap)])
-        XCTAssertTrue(frames.allSatisfy { $0.midY == 16 && $0.width == SAClaudeSidebarBarLayout.buttonSize })
+    /// Add and remove are 28pt squares; the gear pull-down takes the width its glyph and chevron need, and nothing after
+    /// it overlaps it.
+    func testBarButtonsLeftToRightWithAWiderGear() {
+        let size = SAClaudeSidebarBarLayout.buttonSize, gap = SAClaudeSidebarBarLayout.buttonGap
+        let frames = Layout.barButtons(widths: [size, size, 35], x: 6, midY: 16)
+        XCTAssertEqual(frames.map(\.minX), [6, 6 + size + gap, 6 + 2 * (size + gap)])
+        XCTAssertEqual(frames.map(\.width), [size, size, 35])
+        XCTAssertTrue(frames.allSatisfy { $0.midY == 16 && $0.height == size })
+    }
+
+    // MARK: Manager forms
+
+    private typealias Form = SAClaudeManagerFormLayout
+
+    /// The Query Favorites manager's right pane at the XIB's size (385 × 359), its labels measured at 11pt.
+    private func favorites(_ bounds: NSRect = NSRect(x: 0, y: 0, width: 385, height: 359)) -> Form.FavoritesFrames {
+        Form.favorites(in: bounds, nameLabelWidth: 34, triggerLabelWidth: 63, saveWidth: 84, cancelWidth: 84, buttonInset: 6,
+                       placeholderSize: NSSize(width: 144, height: 25), help: true)
+    }
+
+    /// One label column: Name and Tab Trigger end at the same x, their fields start at the same x, the longest label's
+    /// text on the left margin with the editor's left edge.
+    func testFavoritesLabelsShareOneColumn() {
+        let f = favorites()
+        XCTAssertEqual(f.name.label.maxX, f.trigger.label.maxX)
+        XCTAssertEqual(f.name.field.minX, f.trigger.field.minX)
+        XCTAssertEqual(f.name.label.minX + Form.labelInset, Form.margin)
+        XCTAssertEqual(f.editor.minX, Form.margin)
+        XCTAssertEqual(f.name.field.minX - (f.name.label.maxX - Form.labelInset), Form.labelGap)
+        XCTAssertEqual(f.name.field.maxX, 385 - Form.margin)
+        XCTAssertEqual(f.editor.maxX, 385 - Form.margin)
+        XCTAssertEqual(f.name.label.midY, f.name.field.midY, accuracy: 0.5)
+        XCTAssertEqual(f.trigger.label.midY, f.trigger.field.midY, accuracy: 0.5)
+    }
+
+    func testFavoritesEditorBetweenTheRowsAndTheFooterOnOneLine() {
+        let f = favorites()
+        XCTAssertEqual(f.name.field.maxY, 359 - Form.top)
+        XCTAssertEqual(f.editor.maxY, f.name.field.minY - Form.editorGap)
+        XCTAssertEqual(f.editor.minY, f.trigger.field.maxY + Form.editorGap)
+        XCTAssertEqual(f.trigger.field.minY, f.footer.save.maxY + Form.editorGap)
+        XCTAssertGreaterThan(f.editor.height, 150)
+        let midY = f.footer.save.midY
+        for rect in [f.footer.cancel, f.footer.help!, f.footer.accessory!] { XCTAssertEqual(rect.midY, midY, accuracy: 0.5) }
+        XCTAssertEqual(f.footer.help!.minX + Form.helpInset, Form.margin)
+        XCTAssertEqual(f.footer.accessory!.minX, f.footer.help!.maxX + Form.itemGap)
+        XCTAssertLessThan(f.footer.accessory!.maxX, f.footer.cancel.minX + 6)
+    }
+
+    private func contentFilter(_ bounds: NSRect = NSRect(x: 0, y: 0, width: 286, height: 361)) -> Form.FilterFrames {
+        Form.contentFilter(in: bounds, nameLabelWidth: 34, conjunctionLabelWidth: 98, saveWidth: 84, cancelWidth: 84, buttonInset: 6,
+                           placeholderSize: NSSize(width: 146, height: 25), suppressWidth: 252,
+                           argumentCountWidth: 128, resultHeight: 55)
+    }
+
+    func testContentFilterLabelsShareOneColumnAndTheLeftEdge() {
+        let f = contentFilter()
+        XCTAssertEqual(f.name.label.maxX, f.conjunction.label.maxX)
+        XCTAssertEqual(f.name.field.minX, f.conjunction.field.minX)
+        let left = Form.margin
+        XCTAssertEqual(f.name.label.minX + Form.labelInset, left)
+        XCTAssertEqual(f.clauseLabel.minX + Form.labelInset, left)
+        XCTAssertEqual(f.resultLabel.minX + Form.labelInset, left)
+        XCTAssertEqual(f.result.minX + Form.labelInset, left)
+        XCTAssertEqual(f.editor.minX, left)
+        XCTAssertEqual(f.placeholder.minX, left)
+        XCTAssertEqual(f.suppress.minX, left)
+        XCTAssertEqual(f.argumentCount.maxX - Form.labelInset, 286 - Form.margin)
+        XCTAssertEqual(f.argumentCount.midY, f.clauseLabel.midY)
+        XCTAssertEqual(f.argumentCount.width, 128 + 2 * Form.labelInset)
+        XCTAssertEqual(f.clauseLabel.maxX, f.argumentCount.minX)
+    }
+
+    func testContentFilterTopToBottomWithoutOverlaps() {
+        let f = contentFilter()
+        let order = [f.name.field, f.clauseLabel, f.editor, f.suppress, f.placeholder, f.conjunction.field, f.resultLabel, f.result, f.footer.save]
+        for (upper, lower) in zip(order, order.dropFirst()) { XCTAssertGreaterThan(upper.minY, lower.maxY - 0.5, "\(upper) over \(lower)") }
+        XCTAssertGreaterThan(f.editor.height, 50)
+        XCTAssertEqual(f.footer.cancel.midY, f.footer.save.midY)
+        XCTAssertEqual(f.footer.save.maxX - 6, 286 - Form.margin)
     }
 }

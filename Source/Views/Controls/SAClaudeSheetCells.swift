@@ -33,8 +33,9 @@ private enum SheetFieldText {
     }
 }
 
-/// A plain sheet field's cell once its bezel is off (installed with `object_setClass`, no stored properties).
-@objc(SAClaudeSheetFieldCell) final class SAClaudeSheetFieldCell: NSTextFieldCell {
+/// A plain sheet field's cell once its bezel is off (installed with `object_setClass`, no stored properties). Open for
+/// `SAClaudeSheetPlaceholderFieldCell`.
+@objc(SAClaudeSheetFieldCell) class SAClaudeSheetFieldCell: NSTextFieldCell {
     override func drawingRect(forBounds rect: NSRect) -> NSRect {
         let drawingRect = super.drawingRect(forBounds: rect)
         return isBezeled || isBordered ? drawingRect : SheetFieldText.rect(drawingRect, font: font)
@@ -47,6 +48,56 @@ private enum SheetFieldText {
 
     override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
         super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
+    }
+}
+
+/// A sheet field whose placeholder must never read as a value (the Bundle Editor's Menu Label, Menu Category and Tooltip,
+/// whose bindings set "optional" or the XIB's hint as the placeholder): while the field is empty it draws its placeholder
+/// itself, in the sheet's muted colour, dimmed (more while disabled), where the value would be. Installed with
+/// `object_setClass` over an `SAClaudeSheetFieldCell` or a plain NSTextFieldCell (no stored properties); the sheet skin
+/// takes it as one of its own.
+@objc(SAClaudeSheetPlaceholderFieldCell) final class SAClaudeSheetPlaceholderFieldCell: SAClaudeSheetFieldCell {
+    /// The placeholder: the muted colour at this alpha (dimmer than a value), and dimmer still while the field is disabled
+    /// (dimmer than a disabled pop-up's value beside it).
+    static let enabledAlpha: CGFloat = 0.7
+    static let disabledAlpha: CGFloat = 0.3
+
+    /// Swaps `field`'s cell for this one; false when it can't (another cell class, or observed by KVO).
+    @discardableResult
+    static func install(on field: NSTextField) -> Bool {
+        guard let cell = field.cell else { return false }
+        if cell is SAClaudeSheetPlaceholderFieldCell { return true }
+        let cellClass: AnyClass = Swift.type(of: cell)
+        guard cellClass == NSTextFieldCell.self || cellClass == SAClaudeSheetFieldCell.self, SAClaudeClassSwap.mayChangeClass(of: cell) else { return false }
+        object_setClass(cell, SAClaudeSheetPlaceholderFieldCell.self)
+        field.needsDisplay = true
+        return true
+    }
+
+    /// The placeholder the field shows now: its text while the field is empty and not being edited, else nil.
+    private func shownPlaceholder(in controlView: NSView) -> String? {
+        guard stringValue.isEmpty, (controlView as? NSControl)?.currentEditor() == nil else { return nil }
+        let text = placeholderString ?? placeholderAttributedString?.string
+        return text?.isEmpty == false ? text : nil
+    }
+
+    override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        guard let text = shownPlaceholder(in: controlView) else {
+            super.drawInterior(withFrame: cellFrame, in: controlView)
+            return
+        }
+        let muted = SAClaudeSheetColours.current().muted
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = alignment
+        paragraph.lineBreakMode = .byTruncatingTail
+        let placeholder = NSAttributedString(string: text, attributes: [
+            .font: font ?? NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+            .foregroundColor: muted.withAlphaComponent(isEnabled ? Self.enabledAlpha : Self.disabledAlpha),
+            .paragraphStyle: paragraph,
+        ])
+        // Where AppKit draws the value: the text container's 2pt padding inside the drawing rect.
+        let rect = drawingRect(forBounds: cellFrame).insetBy(dx: SAClaudeStyle.cellTextInset, dy: 0)
+        placeholder.draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
     }
 }
 

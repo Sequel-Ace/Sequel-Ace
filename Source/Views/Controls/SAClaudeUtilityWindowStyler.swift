@@ -91,6 +91,20 @@ enum SAClaudeUtilityChrome {
         styleBarButton(popUp, glyph: .actions, label: label)
     }
 
+    /// The frame width a bar pull-down needs to draw its whole glyph and its chevron: its own measure once styled (35pt
+    /// for the 16pt gear, as the main window's sidebar gear in DBView.xib), never under the bar's 28pt square. In a 28pt
+    /// square the pull-down's arrow area clips the glyph to its left half.
+    static func pullDownWidth(_ popUp: NSPopUpButton) -> CGFloat {
+        let measured = popUp.intrinsicContentSize.width
+        return max(SAClaudeSidebarBarLayout.buttonSize, ceil(measured > 0 ? measured : popUp.cell?.cellSize.width ?? 0))
+    }
+
+    /// A bar button's frame width: a pull-down's own (`pullDownWidth`), else the 28pt square.
+    static func barWidth(_ button: NSButton) -> CGFloat {
+        if let popUp = button as? NSPopUpButton, popUp.pullsDown { return pullDownWidth(popUp) }
+        return SAClaudeSidebarBarLayout.buttonSize
+    }
+
     /// The tint of the ghost icons: the sheets' muted colour and hover fill.
     static func recolourGhostIcons(_ buttons: [NSButton], _ colours: SAClaudeSheetColours) {
         for button in buttons {
@@ -279,7 +293,7 @@ enum SAClaudeUtilityChrome {
                 styleBarButton(item.button, glyph: item.glyph, label: item.label)
             }
         }
-        let frames = SAClaudeSidebarBarLayout.buttons(count: bar.count, x: SAClaudeUtilitySidebar.pillInset,
+        let frames = SAClaudeSidebarBarLayout.buttons(widths: bar.map { barWidth($0.button) }, x: SAClaudeUtilitySidebar.pillInset,
                                                       midY: pane.bounds.minY + SAClaudeSidebarChrome.barHeight / 2)
         for (item, frame) in zip(bar, frames) { pin(item.button, frame, [.maxXMargin, .maxYMargin]) }
         // SPSplitView's drag handle (an outlet ivar, read by KVC).
@@ -336,6 +350,11 @@ enum SAClaudeUtilitySidebar {
         var detailColumns: Set<String> = []
         /// The text a row shows instead of its cell's (nil: the cell's own, in the row colours).
         var attributedText: ((NSTableView, Int, NSTextFieldCell) -> NSAttributedString?)?
+        /// The title a section header row shows, given its data source title (nil: that title).
+        var headerTitle: ((NSTableView, Int, String) -> String)?
+        /// How far an outline list's rows (chevrons and cells) sit right of where AppKit puts them, so its first chevrons
+        /// start inside the selection pill (`SAClaudeSidebarListLayout.chevronShift`); set as the list is styled.
+        var chevronShift: CGFloat = 0
     }
 
     private static var stateKey: UInt8 = 0
@@ -389,6 +408,11 @@ enum SAClaudeUtilitySidebar {
         if table.rowHeight != state.rowHeight { table.rowHeight = state.rowHeight }
         // Rows meet (the pills carry the spacing), so a row is exactly the state's height.
         if table.intercellSpacing.height != 0 { table.intercellSpacing.height = 0 }
+        // The first chevrons inside the selection pill: a top-level row's, or (under section header rows) the next level's.
+        if let outline = table as? NSOutlineView {
+            state.chevronShift = SAClaudeSidebarListLayout.chevronShift(chevronLevel: state.groupRowsAsHeaders ? 1 : 0,
+                                                                        indentation: outline.indentationPerLevel, pillInset: pillInset)
+        }
         // Heights a delegate gives (`SAClaudeUtilitySidebarMetrics`) are asked for again.
         if table.numberOfRows > 0 { table.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<table.numberOfRows)) }
         if let scrollView = table.enclosingScrollView {
@@ -434,9 +458,50 @@ enum SAClaudeUtilitySidebar {
         } else {
             value = table.dataSource?.tableView?(table, objectValueFor: column, row: row)
         }
-        SAClaudeSidebarChrome.drawHeader((value as? String) ?? (value as? NSAttributedString)?.string ?? "", inRowRect: table.rect(ofRow: row))
+        var title = (value as? String) ?? (value as? NSAttributedString)?.string ?? ""
+        if let headerTitle = state(of: table)?.headerTitle { title = headerTitle(table, row, title) }
+        let rowRect = table.rect(ofRow: row)
+        // Level with the rows' content (their chevrons, glyphs or text), as the list's own header.
+        let x = contentLeading(table) ?? rowRect.minX + pillInset + SAClaudeStyle.rowContentPadding
+        SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x)
         return true
     }
+
+    /// The row content's leading edge (list coordinates): where the first row that is not a header or a spacer starts its
+    /// content — the chevrons' glyph when that row's level shows disclosure chevrons, else its cell's image (a glyph) or
+    /// text, after any indentation the controller gives the cell. The list's header and its section header rows start
+    /// their text here. Nil for an empty list.
+    static func contentLeading(_ table: NSTableView) -> CGFloat? {
+        guard let column = table.tableColumns.first else { return nil }
+        let limit = min(table.numberOfRows, 200)
+        guard let row = (0..<limit).first(where: { !isHeaderRow(table, $0) && table.rect(ofRow: $0).height >= spacerHeight }) else { return nil }
+        if let outline = table as? NSOutlineView, outline.outlineTableColumn === column {
+            let level = outline.level(forRow: row)
+            if let expandable = (0..<limit).first(where: { outline.level(forRow: $0) == level && outline.isExpandable(outline.item(atRow: $0)) }) {
+                let chevron = outline.frameOfOutlineCell(atRow: expandable)
+                if !chevron.isEmpty { return chevron.minX + SAClaudeSidebarListLayout.chevronInkInset }
+            }
+        }
+        // The column's cell as the delegate prepares it for that row (its indentation, its image).
+        let cell = column.dataCell(forRow: row) as? NSCell
+        if let cell {
+            if let outline = table as? NSOutlineView {
+                outline.delegate?.outlineView?(outline, willDisplayCell: cell, for: column, item: outline.item(atRow: row) as Any)
+            } else {
+                table.delegate?.tableView?(table, willDisplayCell: cell, for: column, row: row)
+            }
+        }
+        let imageCell = cell as? ImageAndTextCell
+        var hasImage = imageCell?.image() != nil
+        if let glyph = state(of: table)?.glyph, let imageCell { hasImage = glyph(table, row, imageCell.image()) != nil }
+        return SAClaudeSidebarListLayout.cellContentLeading(frame: table.frameOfCell(atColumn: 0, row: row),
+                                                            indentationLevel: imageCell?.indentationLevel() ?? 0,
+                                                            indentationStep: imageAndTextIndent, hasImage: hasImage,
+                                                            imageInset: SAClaudeStyle.cellImageInset, textInset: SAClaudeStyle.cellTextInset)
+    }
+
+    /// `ImageAndTextCell`'s indentation per level (INDENT_AMOUNT, keep in sync with ImageAndTextCell.h).
+    private static let imageAndTextIndent: CGFloat = 17
 
     /// The selection as rounded pills, the same colour focused or not (as the main window's tables list).
     static func drawSelection(_ table: NSTableView, in clipRect: NSRect) {
@@ -472,17 +537,30 @@ enum SAClaudeUtilitySidebar {
 
     private static var textHeights: [CGFloat: CGFloat] = [:]
 
-    /// The cell centred on one line of text in `table`'s font (cells draw from the top of their frame); editing uses the
-    /// same frame.
-    static func cellFrame(_ frame: NSRect, table: NSTableView) -> NSRect {
-        let size = state(of: table)?.font.pointSize ?? font.pointSize
+    /// The cell centred on one line of text in `table`'s font (cells draw from the top of their frame), the outline
+    /// column's moved right with its chevrons (`State.chevronShift`); editing uses the same frame.
+    static func cellFrame(_ frame: NSRect, table: NSTableView, column: Int) -> NSRect {
+        let state = state(of: table)
+        let size = state?.font.pointSize ?? font.pointSize
         let textHeight = textHeights[size] ?? {
             let height = ceil(NSLayoutManager().defaultLineHeight(for: .systemFont(ofSize: size))) + SAClaudeStyle.cellTextInset
             textHeights[size] = height
             return height
         }()
         let height = min(frame.height, textHeight)
-        return NSRect(x: frame.minX, y: frame.minY + floor((frame.height - height) / 2), width: max(0, frame.width - pillInset), height: height)
+        var shift: CGFloat = 0
+        if let state, state.chevronShift > 0, let outline = table as? NSOutlineView, column >= 0, column < outline.numberOfColumns,
+           outline.tableColumns[column] === outline.outlineTableColumn {
+            shift = state.chevronShift
+        }
+        return NSRect(x: frame.minX + shift, y: frame.minY + floor((frame.height - height) / 2),
+                      width: max(0, frame.width - pillInset - shift), height: height)
+    }
+
+    /// A disclosure chevron's frame, moved right with the rows (`State.chevronShift`).
+    static func outlineCellFrame(_ frame: NSRect, table: NSTableView) -> NSRect {
+        guard !frame.isEmpty, let shift = state(of: table)?.chevronShift, shift > 0 else { return frame }
+        return frame.offsetBy(dx: shift, dy: 0)
     }
 }
 
@@ -518,7 +596,11 @@ enum SAClaudeUtilitySidebar {
     }
 
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self, column: column)
+    }
+
+    override func frameOfOutlineCell(atRow row: Int) -> NSRect {
+        SAClaudeUtilitySidebar.outlineCellFrame(super.frameOfOutlineCell(atRow: row), table: self)
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -546,7 +628,11 @@ enum SAClaudeUtilitySidebar {
     }
 
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self, column: column)
+    }
+
+    override func frameOfOutlineCell(atRow row: Int) -> NSRect {
+        SAClaudeUtilitySidebar.outlineCellFrame(super.frameOfOutlineCell(atRow: row), table: self)
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -574,7 +660,7 @@ enum SAClaudeUtilitySidebar {
     }
 
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self, column: column)
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -602,7 +688,7 @@ enum SAClaudeUtilitySidebar {
     }
 
     override func frameOfCell(atColumn column: Int, row: Int) -> NSRect {
-        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self)
+        SAClaudeUtilitySidebar.cellFrame(super.frameOfCell(atColumn: column, row: row), table: self, column: column)
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -636,12 +722,15 @@ enum SAClaudeUtilitySidebar {
                 }.draw(in: indicatorRect)
                 rect.size.width = max(0, indicatorRect.minX - rect.minX)
             }
-            // Level with the rows' text: the row pill's inset plus its padding.
+            guard !column.title.isEmpty else { continue }
             let title = NSAttributedString(string: column.title, attributes: [
                 .font: NSFont.systemFont(ofSize: 11, weight: .medium), .foregroundColor: SAClaudeStyle.textMuted,
             ])
             let height = ceil(title.size().height)
-            let x = rect.minX + SAClaudeUtilitySidebar.pillInset + 8
+            // The first column's title level with the rows' content (chevrons, glyphs or text); another column's with its
+            // text (the row pill's inset plus its padding).
+            let rowContent = index == 0 ? SAClaudeUtilitySidebar.contentLeading(table) : nil
+            let x = rowContent ?? rect.minX + SAClaudeUtilitySidebar.pillInset + 8
             title.draw(with: NSRect(x: x, y: (rect.midY - height / 2).rounded(), width: max(0, rect.maxX - x), height: height),
                        options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
         }

@@ -273,6 +273,8 @@ final class SAClaudeWindowTabChipView: NSView {
         let hasOtherTabs = group.contains { $0 !== window }
         let menu = NSMenu()
         menu.autoenablesItems = false
+        // No "Ask Siri" field on top (macOS 27 adds it to context menus that allow plug-ins).
+        menu.allowsContextMenuPlugIns = false
         func add(_ title: String, _ action: Selector, enabled: Bool = true) {
             let menuItem = menu.addItem(withTitle: title, action: action, keyEquivalent: "")
             menuItem.target = self

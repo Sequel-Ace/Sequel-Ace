@@ -122,6 +122,14 @@ enum SAClaudeMenuGlyphs {
         "setCustomAutoRefreshInterval:": "timer",
     ]
 
+    /// The weight of a uniform menu glyph (`SAClaudeMenuGlyphPass.uniformImage`) drawn at `scale` × the point size a circle
+    /// glyph gets: a symbol drawn smaller (a tall one, doc.on.doc) gets thinner strokes, so it is drawn heavier to match.
+    static func uniformWeight(scale: CGFloat) -> NSFont.Weight {
+        if scale >= 0.92 { return .regular }
+        if scale >= 0.84 { return .medium }
+        return .semibold
+    }
+
     /// Every symbol name the map can hand out (the tests check each exists).
     static var allSymbolNames: Set<String> { Set(byAction.values).union(parentOnly.values) }
 

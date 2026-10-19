@@ -85,13 +85,18 @@ final class SAClaudeBundleEditorLayoutTests: XCTestCase {
 
     // MARK: Header, command, footer
 
-    func testHeaderSitsAboveTheFormWithBundleInfoOnTheMargin() {
+    /// No header band above the form: the form starts at the top margin, and Bundle Info (with the summary before it)
+    /// takes the right column's spare row, level with the left column's last row, its right edge on the form's.
+    func testFormStartsAtTheTopAndBundleInfoTakesTheSpareRow() {
         let frames = Layout.frames(in: pane, measures())
+        XCTAssertEqual(frames.left[0].control.maxY, pane.maxY - Layout.top)
+        XCTAssertEqual(frames.right[0].control.maxY, pane.maxY - Layout.top)
         XCTAssertEqual(frames.info.maxX - 6, pane.maxX - Layout.margin)
-        XCTAssertEqual(frames.info.maxY, pane.maxY - Layout.top)
+        XCTAssertEqual(frames.info.midY, frames.left[4].control.midY, accuracy: 0.5)
+        XCTAssertEqual(frames.summary.midY, frames.left[4].control.midY, accuracy: 0.5)
+        XCTAssertEqual(frames.summary.minX, frames.right[0].label.minX)
         XCTAssertLessThanOrEqual(frames.summary.maxX, frames.info.minX + 6 - Layout.itemGap)
-        XCTAssertEqual(frames.summary.minX, Layout.margin)
-        XCTAssertGreaterThan(frames.info.minY, frames.left[0].control.maxY)
+        XCTAssertLessThan(frames.info.maxY, frames.right[3].control.minY)
     }
 
     func testCommandFillsBetweenTheFormAndTheFooter() {
@@ -150,5 +155,36 @@ final class SAClaudeBundleEditorLayoutTests: XCTestCase {
         XCTAssertEqual(frames.map(\.minX), [6, 36, 66])
         XCTAssertTrue(frames.allSatisfy { $0.midY == 16 && $0.width == 28 && $0.height == 28 })
         XCTAssertTrue(SAClaudeSidebarBarLayout.buttons(count: 0, x: 6, midY: 16).isEmpty)
+    }
+
+    /// The gear pull-down gets its own width (its glyph and chevron, as the main window's 35pt gear); the buttons after it
+    /// start after it; a width under 28pt still gets the 28pt square.
+    func testSidebarBarGearGetsItsOwnWidth() {
+        let frames = SAClaudeSidebarBarLayout.buttons(widths: [28, 35, 28, 20], x: 6, midY: 16)
+        XCTAssertEqual(frames.map(\.width), [28, 35, 28, 28])
+        XCTAssertEqual(frames.map(\.minX), [6, 36, 73, 103])
+        for (a, b) in zip(frames, frames.dropFirst()) { XCTAssertEqual(b.minX - a.maxX, SAClaudeSidebarBarLayout.buttonGap) }
+    }
+
+    // MARK: Sidebar list
+
+    /// A list whose top-level rows carry chevrons (the User Manager's accounts, the Navigator) moves its rows right so the
+    /// chevron starts inside the selection pill, the pill's inset in from its edge; one whose chevrons are a level deeper
+    /// (the Bundle Editor, under its "Bundles" header) already does and stays put.
+    func testChevronShiftPutsTheFirstChevronsInsideThePill() {
+        let inset: CGFloat = 6
+        let topLevel = SAClaudeSidebarListLayout.chevronShift(chevronLevel: 0, indentation: 16, pillInset: inset)
+        let ink = SAClaudeSidebarListLayout.nativeOutlineInset + SAClaudeSidebarListLayout.chevronInkInset + topLevel
+        XCTAssertGreaterThanOrEqual(ink, 2 * inset)
+        XCTAssertLessThan(ink, 2 * inset + 1)
+        XCTAssertEqual(SAClaudeSidebarListLayout.chevronShift(chevronLevel: 1, indentation: 14, pillInset: inset), 0)
+    }
+
+    func testCellContentLeadingFollowsIndentationAndImage() {
+        let frame = NSRect(x: 1, y: 0, width: 100, height: 18)
+        XCTAssertEqual(SAClaudeSidebarListLayout.cellContentLeading(frame: frame, indentationLevel: 1, indentationStep: 17, hasImage: false,
+                                                                    imageInset: 3, textInset: 2), 20)
+        XCTAssertEqual(SAClaudeSidebarListLayout.cellContentLeading(frame: frame, indentationLevel: 0, indentationStep: 17, hasImage: true,
+                                                                    imageInset: 3, textInset: 2), 4)
     }
 }

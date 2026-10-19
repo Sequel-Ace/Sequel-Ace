@@ -128,6 +128,13 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
 
     // MARK: Map
 
+    /// A uniform menu glyph drawn smaller than a circle (a tall symbol) is drawn heavier, so its strokes match.
+    func testUniformWeightGetsHeavierAsTheGlyphShrinks() {
+        XCTAssertEqual(SAClaudeMenuGlyphs.uniformWeight(scale: 1), .regular)
+        XCTAssertEqual(SAClaudeMenuGlyphs.uniformWeight(scale: 0.88), .medium)
+        XCTAssertEqual(SAClaudeMenuGlyphs.uniformWeight(scale: 0.8), .semibold)
+    }
+
     func testKnownActionsMap() {
         for (selector, name) in expected {
             XCTAssertEqual(symbol(selector), name, selector)

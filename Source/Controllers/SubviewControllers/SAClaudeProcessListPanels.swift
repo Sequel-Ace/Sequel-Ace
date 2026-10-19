@@ -127,7 +127,9 @@ struct SAClaudeProcessListHeader: View {
                 chips(compact: true)
             }
             .layoutPriority(1)
-            Spacer(minLength: 8)
+            // No minimum: the HStack's spacing keeps the chips apart from the pill, so the named chips fit at the
+            // window's usual width (≈925pt) with the search field at its 160pt minimum.
+            Spacer(minLength: 0)
             SAClaudePopUpPill(titles: model.thresholds.map(SAClaudeProcessListStrings.thresholdTitle),
                               selectedIndex: model.thresholdIndex,
                               accessibilityLabel: NSLocalizedString("Needs attention after", value: "Needs attention after", comment: "process list : accessibility label of the threshold pill"),
@@ -187,7 +189,7 @@ struct SAClaudeProcessListChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 if let dot = dotColour { Circle().fill(dot).frame(width: 7, height: 7) }
                 if !compact || dotColour == nil {
                     Text(SAClaudeProcessListStrings.chipTitle(filter))
@@ -199,7 +201,7 @@ struct SAClaudeProcessListChip: View {
             }
             .font(.system(size: 12, weight: isSelected ? .medium : .regular))
             .lineLimit(1)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 8)
             .frame(height: 24)
             .background(Capsule().fill(isSelected ? palette.selected : isHovered ? palette.hover : Color.clear))
             .overlay(Capsule().strokeBorder(isSelected ? Color.clear : palette.hairline, lineWidth: 1))
@@ -239,7 +241,7 @@ struct SAClaudeProcessListSearchField: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
                     .foregroundColor(palette.muted)
-                TextField(NSLocalizedString("Search user, host, database, state, query", value: "Search user, host, database, state, query", comment: "process list : search field placeholder"),
+                TextField(NSLocalizedString("ClaudeProcessListSearchPlaceholder", value: "Search", comment: "process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches)"),
                           text: $model.search)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
@@ -254,6 +256,8 @@ struct SAClaudeProcessListSearchField: View {
                 }
             }
         }
+        .help(NSLocalizedString("Search user, host, database, state, query", value: "Search user, host, database, state, query", comment: "process list : search field placeholder"))
+        .accessibilityLabel(NSLocalizedString("Search user, host, database, state, query", value: "Search user, host, database, state, query", comment: "process list : search field placeholder"))
         .onChange(of: model.searchFocusRequest) { _ in focused = true }
     }
 }

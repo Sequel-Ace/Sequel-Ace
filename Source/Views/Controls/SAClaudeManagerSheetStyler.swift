@@ -11,8 +11,10 @@
 //    headers, the tab trigger column muted); its bar buttons are glyph buttons over a hairline; the divider a hairline.
 //  - The query / clause editor is framed by a rounded hairline; the help button (Query Favorites) a ghost "?".
 //  - Save (Return) the accent primary, Cancel secondary, both regular size on the right margin.
-//  The form keeps the XIB's frames and autoresizing; Insert Placeholder is a pill (the generic skin) and, in the Query
-//  Favorites manager, sits next to the help button in the footer as the XIB has it.
+//  - The form laid out in one rule (`SAClaudeManagerFormLayout`): one right-aligned label column (Name and Tab Trigger;
+//    Name and the conjunction label), every field starting at the same x after it, the editor across the form from the
+//    labels' left edge; the footer's help, Insert Placeholder (Query Favorites), Cancel and Save on one centre line. Laid
+//    out again whenever the right pane changes size; the controller's hidden states stay its own.
 //
 //  Claimed by owner identity (the manager is the window's controller; its outlets are in the XIB's places), from the
 //  generic sheet skin's `consider`. Anything missing leaves the sheet in the generic skin. App target only.
@@ -43,6 +45,7 @@ import AppKit
         let addAction: Selector
         let closeAction: Selector
         let placeholderKey: String?
+        let nameKey: String
         let detailColumns: Set<String>
         let addLabel: String
         let removeLabel: String
@@ -51,13 +54,31 @@ import AppKit
         static var all: [Kind] {
             [Kind(controllerClass: "SPQueryFavoriteManager", splitKey: "favoritesSplitView", listKey: "favoritesTableView",
                   textKey: "favoriteQueryTextView", addAction: NSSelectorFromString("addQueryFavorite:"),
-                  closeAction: NSSelectorFromString("closeQueryManagerSheet:"), placeholderKey: nil, detailColumns: ["tabtrigger"],
+                  closeAction: NSSelectorFromString("closeQueryManagerSheet:"), placeholderKey: nil,
+                  nameKey: "favoriteNameTextField", detailColumns: ["tabtrigger"],
                   addLabel: Strings.addFavorite, removeLabel: Strings.removeFavorite, actionsLabel: Strings.favoriteActions),
              Kind(controllerClass: "SPContentFilterManager", splitKey: "contentFilterSplitView", listKey: "contentFilterTableView",
                   textKey: "contentFilterTextView", addAction: NSSelectorFromString("addContentFilter:"),
                   closeAction: NSSelectorFromString("closeContentFilterManagerSheet:"), placeholderKey: "insertPlaceholderButton",
-                  detailColumns: [], addLabel: Strings.addFilter, removeLabel: Strings.removeFilter, actionsLabel: Strings.filterActions)]
+                  nameKey: "contentFilterNameTextField", detailColumns: [], addLabel: Strings.addFilter, removeLabel: Strings.removeFilter, actionsLabel: Strings.filterActions)]
         }
+    }
+
+    /// The Content Filter manager's own form views (keep in sync with SPContentFilterManager.h).
+    struct FilterViews {
+        let clauseLabel: NSTextField
+        let argumentCount: NSTextField
+        let conjunctionLabel: NSTextField
+        let conjunction: NSTextField
+        let suppress: NSButton
+        let resultLabel: NSTextField
+        let result: NSTextField
+    }
+
+    enum Form {
+        /// Tab Trigger's label and field.
+        case favorites(triggerLabel: NSTextField, trigger: NSTextField)
+        case filter(FilterViews)
     }
 
     struct Outlets {
@@ -74,6 +95,9 @@ import AppKit
         let help: NSButton?
         let placeholder: NSPopUpButton
         let textScroll: NSScrollView
+        let nameLabel: NSTextField
+        let name: NSTextField
+        let form: Form
     }
 
     private static var associationKey: UInt8 = 0
@@ -84,12 +108,23 @@ import AppKit
     private let o: Outlets
     private let kind: Kind
     private var appearanceObservation: NSKeyValueObservation?
+    private var frameObserver: NSObjectProtocol?
+    private var isLayingOut = false
+    /// The resulting clause's height as the XIB has it (room for a few wrapped lines).
+    private lazy var resultHeight: CGFloat = {
+        if case .filter(let f) = o.form { return f.result.frame.height }
+        return 0
+    }()
 
     private init(window: NSWindow, outlets: Outlets, kind: Kind) {
         self.window = window
         self.o = outlets
         self.kind = kind
         super.init()
+    }
+
+    deinit {
+        if let frameObserver { NotificationCenter.default.removeObserver(frameObserver) }
     }
 
     // MARK: Claiming
@@ -133,8 +168,46 @@ import AppKit
               let placeholder, placeholder.superview === rightPane,
               let textScroll = text.enclosingScrollView, textScroll.superview === rightPane else { return nil }
         let help = rightPane.subviews.compactMap { $0 as? NSButton }.first { !($0 is NSPopUpButton) && $0.action == showHelp }
+        guard let nameField: NSTextField = outlet(controller, kind.nameKey), nameField.superview === rightPane,
+              let nameLabel = label(beside: nameField),
+              let form = findForm(controller, kind: kind, rightPane: rightPane, nameLabel: nameLabel, textScroll: textScroll) else { return nil }
         return Outlets(split: split, sidebarPane: sidebarPane, rightPane: rightPane, list: list, listScroll: listScroll, add: add,
-                       remove: remove, gear: gear, save: save, cancel: cancel, help: help, placeholder: placeholder, textScroll: textScroll)
+                       remove: remove, gear: gear, save: save, cancel: cancel, help: help, placeholder: placeholder, textScroll: textScroll,
+                       nameLabel: nameLabel, name: nameField, form: form)
+    }
+
+    /// The static label left of `field` (`SAClaudeFormFind`), or one that starts left of it on its line and runs into it
+    /// (the Content Filter manager's "Name:" overlaps its field in the XIB).
+    private static func label(beside field: NSTextField) -> NSTextField? {
+        if let label = SAClaudeFormFind.label(beside: field) { return label }
+        return field.superview?.subviews.compactMap { $0 as? NSTextField }.first { label in
+            label !== field && !label.isEditable && label.frame.minX < field.frame.minX
+                && label.frame.midY >= field.frame.minY && label.frame.midY <= field.frame.maxY
+        }
+    }
+
+    /// Tab Trigger (by its outlet, its label beside it) or the Content Filter manager's own views (by their outlets; the
+    /// "Clause:" label is the one static label between the name and the editor). Found before anything moves.
+    private static func findForm(_ controller: NSObject, kind: Kind, rightPane: NSView, nameLabel: NSTextField, textScroll: NSScrollView) -> Form? {
+        if kind.controllerClass == "SPQueryFavoriteManager" {
+            guard let trigger: NSTextField = outlet(controller, "favoriteTabTriggerTextField"), trigger.superview === rightPane,
+                  let triggerLabel = label(beside: trigger) else { return nil }
+            return .favorites(triggerLabel: triggerLabel, trigger: trigger)
+        }
+        guard let argumentCount: NSTextField = outlet(controller, "numberOfArgsLabel"),
+              let conjunctionLabel: NSTextField = outlet(controller, "contentFilterConjunctionLabel"),
+              let conjunction: NSTextField = outlet(controller, "contentFilterConjunctionTextField"),
+              let suppress: NSButton = outlet(controller, "suppressLeadingFieldPlaceholderCheckbox"),
+              let resultLabel: NSTextField = outlet(controller, "resultingClauseLabel"),
+              let result: NSTextField = outlet(controller, "resultingClauseContentLabel"),
+              [argumentCount, conjunctionLabel, conjunction, suppress, resultLabel, result].allSatisfy({ $0.superview === rightPane }) else { return nil }
+        let known: [NSView] = [nameLabel, argumentCount, conjunctionLabel, resultLabel, result]
+        let clauseLabel = rightPane.subviews.compactMap { $0 as? NSTextField }.first { label in
+            !label.isEditable && !known.contains { $0 === label } && label.frame.minY >= textScroll.frame.maxY - 2 && label.frame.maxY <= nameLabel.frame.minY + 2
+        }
+        guard let clauseLabel else { return nil }
+        return .filter(FilterViews(clauseLabel: clauseLabel, argumentCount: argumentCount, conjunctionLabel: conjunctionLabel,
+                                   conjunction: conjunction, suppress: suppress, resultLabel: resultLabel, result: result))
     }
 
     // MARK: Building
@@ -152,6 +225,23 @@ import AppKit
         SAClaudeFormChrome.force(o.save, primary: true)
         SAClaudeFormChrome.force(o.cancel, primary: false)
         if let help = o.help { SAClaudeUtilityChrome.styleHelpButton(help, label: Strings.help) }
+        [o.save, o.cancel].forEach(SAClaudeUtilityChrome.makeRegular)
+        // Inline labels right-aligned in their column; the conjunction field in the form's field font.
+        var inlineLabels = [o.nameLabel]
+        if case .favorites(let triggerLabel, _) = o.form { inlineLabels.append(triggerLabel) }
+        if case .filter(let f) = o.form {
+            inlineLabels.append(f.conjunctionLabel)
+            if let font = o.name.font, f.conjunction.font != font { f.conjunction.font = font }
+        }
+        for label in inlineLabels {
+            label.alignment = .right
+            label.lineBreakMode = .byTruncatingTail
+        }
+
+        o.rightPane.postsFrameChangedNotifications = true
+        frameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: o.rightPane, queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.layout() }
+        }
 
         SAClaudeThemeWatcher.observe(self) { styler in
             MainActor.assumeIsolated { styler.recolour() }
@@ -168,17 +258,57 @@ import AppKit
         recolour()
     }
 
-    /// The footer: Save and Cancel on the right margin; the help button on the left margin with Insert Placeholder beside
-    /// it (Query Favorites; the Content Filter manager keeps its Insert Placeholder under the clause, as the XIB has it).
+    private typealias Layout = SAClaudeManagerFormLayout
+
+    /// The form and footer in `SAClaudeManagerFormLayout`'s rule (every apply, every resize of the right pane).
     private func layout() {
-        let frames = SAClaudeUtilityChrome.layoutFooter([o.save, o.cancel], in: o.rightPane)
-        guard let help = o.help, let footer = frames.first else { return }
-        let size = SAClaudeSidebarBarLayout.buttonSize
-        let helpFrame = NSRect(x: o.rightPane.bounds.minX + SAClaudeFooterLayout.margin - 4, y: (footer.midY - size / 2).rounded(), width: size, height: size)
-        SAClaudeUtilityChrome.pin(help, helpFrame, [.maxXMargin, .maxYMargin])
-        let pill = o.placeholder.frame
-        SAClaudeUtilityChrome.pin(o.placeholder, NSRect(x: helpFrame.maxX + 8, y: (footer.midY - pill.height / 2).rounded(), width: pill.width, height: pill.height),
-                                  [.maxXMargin, .maxYMargin])
+        guard !isLayingOut else { return }
+        isLayingOut = true
+        defer { isLayingOut = false }
+        let place = SAClaudeUtilityChrome.place
+        let bounds = o.rightPane.bounds
+        let inset = SAClaudeSheetButtonGeometry.metrics(for: .regular).classicSideMargin
+        let saveWidth = SAClaudeUtilityChrome.pushButtonWidth(o.save), cancelWidth = SAClaudeUtilityChrome.pushButtonWidth(o.cancel)
+        let footer: Layout.Footer
+        switch o.form {
+        case .favorites(let triggerLabel, let trigger):
+            let frames = Layout.favorites(in: bounds, nameLabelWidth: Self.textWidth(o.nameLabel), triggerLabelWidth: Self.textWidth(triggerLabel),
+                                          saveWidth: saveWidth, cancelWidth: cancelWidth, buttonInset: inset,
+                                          placeholderSize: o.placeholder.frame.size, help: o.help != nil)
+            place(o.nameLabel, frames.name.label)
+            place(o.name, frames.name.field)
+            place(o.textScroll, frames.editor)
+            place(triggerLabel, frames.trigger.label)
+            place(trigger, frames.trigger.field)
+            if let accessory = frames.footer.accessory { place(o.placeholder, accessory) }
+            footer = frames.footer
+        case .filter(let f):
+            let frames = Layout.contentFilter(in: bounds, nameLabelWidth: Self.textWidth(o.nameLabel), conjunctionLabelWidth: Self.textWidth(f.conjunctionLabel),
+                                              saveWidth: saveWidth, cancelWidth: cancelWidth, buttonInset: inset,
+                                              placeholderSize: o.placeholder.frame.size, suppressWidth: f.suppress.cell?.cellSize.width ?? f.suppress.frame.width,
+                                              argumentCountWidth: Self.textWidth(f.argumentCount), resultHeight: resultHeight)
+            place(o.nameLabel, frames.name.label)
+            place(o.name, frames.name.field)
+            place(f.clauseLabel, frames.clauseLabel)
+            place(f.argumentCount, frames.argumentCount)
+            place(o.textScroll, frames.editor)
+            place(f.suppress, frames.suppress)
+            place(o.placeholder, frames.placeholder)
+            place(f.conjunctionLabel, frames.conjunction.label)
+            place(f.conjunction, frames.conjunction.field)
+            place(f.resultLabel, frames.resultLabel)
+            place(f.result, frames.result)
+            footer = frames.footer
+        }
+        place(o.save, footer.save)
+        place(o.cancel, footer.cancel)
+        if let help = o.help, let frame = footer.help { place(help, frame) }
+        SAClaudeUtilityChrome.frameList(o.textScroll, hairline: SAClaudeSheetColours.current().palette.hairline)
+    }
+
+    /// A label's text width at its font.
+    private static func textWidth(_ label: NSTextField) -> CGFloat {
+        ceil(label.attributedStringValue.size().width)
     }
 
     private func recolour() {

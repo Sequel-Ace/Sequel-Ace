@@ -2,21 +2,22 @@
 //  SAClaudeBundleEditorLayout.swift
 //  Sequel Ace
 //
-//  The Bundle Editor's pure geometry (spec 2026-10-18-claude-utility-windows-design.md, section D): the right pane's
-//  header (the bundle summary and Bundle Info), the bundle's settings as a two-column form (label + control rows, rows
-//  level across the columns: Bundle Scope | Trigger, Menu Label | Menu Category, Shortcut | Tooltip, Input | Or / And,
-//  Output), the command below it and the footer (Disable Bundle, help, Cancel, Save). Rects are in the pane's
-//  non-flipped coordinates. Applied by SAClaudeBundleEditorStyler.swift. Shared with the Unit Tests target.
+//  The Bundle Editor's pure geometry (spec 2026-10-18-claude-utility-windows-design.md, section D): the bundle's
+//  settings as a two-column form from the pane's top margin (label + control rows, rows level across the columns:
+//  Bundle Scope | Trigger, Menu Label | Menu Category, Shortcut | Tooltip, Input | Or / And, Output | the bundle summary
+//  and Bundle Info, which take the right column's spare row), the command below it and the footer (Disable Bundle, help,
+//  Cancel, Save). Rects are in the pane's non-flipped coordinates. Applied by SAClaudeBundleEditorStyler.swift. Shared
+//  with the Unit Tests target.
 //
 
 import AppKit
 
 enum SAClaudeBundleEditorLayout {
     static let margin: CGFloat = SAClaudeFooterLayout.margin
-    static let top: CGFloat = 12
-    /// The header row: a regular push button's XIB height (Bundle Info).
-    static let headerHeight: CGFloat = 32
-    static let headerGap: CGFloat = 12
+    /// The form's first row starts this far below the pane's top (the User Manager's tabs' top margin).
+    static let top: CGFloat = 16
+    /// Bundle Info's frame height: a regular push button's XIB height (its classic margins included).
+    static let infoHeight: CGFloat = 32
     static let rowHeight: CGFloat = 24
     static let rowGap: CGFloat = 8
     static let labelGap: CGFloat = 8
@@ -90,21 +91,24 @@ enum SAClaudeBundleEditorLayout {
         let innerMinX = bounds.minX + margin
         let innerMaxX = bounds.maxX - margin
 
-        // Header: Bundle Info on the right margin, the summary filling the rest.
-        let headerY = bounds.maxY - top - headerHeight
-        let info = SAClaudeFooterLayout.trailing(widths: [m.infoWidth], maxX: bounds.maxX, y: headerY, buttonInset: m.buttonInset)[0]
-        let summaryMaxX = info.minX + m.buttonInset - itemGap
-        let summary = NSRect(x: innerMinX, y: (headerY + headerHeight / 2 - m.labelHeight / 2).rounded(),
-                             width: max(0, summaryMaxX - innerMinX), height: m.labelHeight)
-
-        // The form: two columns of rows, level across the columns.
+        // The form from the top margin: two columns of rows, level across the columns.
         let column = columnWidth(paneWidth: bounds.width)
-        let formTop = headerY - headerGap
+        let formTop = bounds.maxY - top
+        let rightX = innerMinX + column + columnGap
         let left = rows(count: m.leftRows, x: innerMinX, width: column, top: formTop,
                         labelWidth: labelWidth(m.leftLabelWidth, columnWidth: column), labelHeight: m.labelHeight)
-        let right = rows(count: m.rightRows, x: innerMinX + column + columnGap, width: column, top: formTop,
-                         labelWidth: labelWidth(m.rightLabelWidth, columnWidth: column), labelHeight: m.labelHeight)
-        let formBottom = (left + right).map(\.control.minY).min() ?? formTop
+        let rightAndSpare = rows(count: m.rightRows + 1, x: rightX, width: column, top: formTop,
+                                 labelWidth: labelWidth(m.rightLabelWidth, columnWidth: column), labelHeight: m.labelHeight)
+        let right = Array(rightAndSpare.prefix(m.rightRows))
+
+        // Bundle Info in the right column's spare row (level with the left column's row there), its right edge on the
+        // form's; the summary right-aligned before it, across the rest of the right column.
+        let band = rightAndSpare[m.rightRows].control
+        let info = SAClaudeFooterLayout.trailing(widths: [m.infoWidth], maxX: bounds.maxX, y: (band.midY - infoHeight / 2).rounded(),
+                                                 buttonInset: m.buttonInset)[0]
+        let summaryMaxX = info.minX + m.buttonInset - itemGap
+        let summary = NSRect(x: rightX, y: (band.midY - m.labelHeight / 2).rounded(), width: max(0, summaryMaxX - rightX), height: m.labelHeight)
+        let formBottom = (left + right).map(\.control.minY).min().map { min($0, band.minY) } ?? band.minY
 
         // Footer: Save and Cancel on the right margin, help just left of them, Disable Bundle on the left margin.
         let footerY = bounds.minY + SAClaudeFooterLayout.bottom

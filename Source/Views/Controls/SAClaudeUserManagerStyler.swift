@@ -417,8 +417,8 @@ import AppKit
         place(o.cancel, frames.cancel)
         place(o.apply, frames.apply)
 
-        let addRemoveGear: [NSView] = [o.addUser, o.removeUser, o.gear]
-        let bar = Layout.barButtons(count: addRemoveGear.count, x: SAClaudeUtilitySidebar.pillInset,
+        let addRemoveGear: [NSButton] = [o.addUser, o.removeUser, o.gear]
+        let bar = Layout.barButtons(widths: addRemoveGear.map(SAClaudeUtilityChrome.barWidth), x: SAClaudeUtilitySidebar.pillInset,
                                     midY: o.sidebarPane.bounds.minY + SAClaudeSidebarChrome.barHeight / 2)
         for (view, frame) in zip(addRemoveGear, bar) { place(view, frame) }
 

@@ -6491,6 +6491,12 @@
 /* bundle editor : tooltip and accessibility name of the gear menu under the bundles list (Duplicate, Export, Reveal…) */
 "ClaudeBundleEditorActions" = "Bundle actions";
 
+/* bundle editor : the section header over the bundles list (the list's root row), in title case like the other utility windows' list headers */
+"ClaudeBundleEditorBundlesHeader" = "Bundles";
+
+/* process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches) */
+"ClaudeProcessListSearchPlaceholder" = "Search";
+
 /* settings : edit theme list sheet : tooltip and accessibility name of the duplicate button under the themes list */
 "ClaudeThemeListDuplicate" = "Duplicate theme";
 

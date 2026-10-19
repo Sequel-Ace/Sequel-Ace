@@ -23,8 +23,6 @@ enum SAClaudeUserManagerLayout {
     static let footerGap: CGFloat = 10
     /// Between Cancel and Apply as drawn.
     static let buttonGap: CGFloat = 12
-    /// The widest a Login Information / Resource Limits card gets.
-    static let formCardMaxWidth: CGFloat = 460
     static let pillHeight: CGFloat = 28
     static let pillGap: CGFloat = 8
     /// The schema tab's ◀ / ▶ buttons.
@@ -63,12 +61,12 @@ enum SAClaudeUserManagerLayout {
 
     // MARK: Form cards (General, Resources)
 
-    /// The content frame of a form card at the top left of `area`, `rows` rows tall.
+    /// The content frame of a form card at the top of `area`, `rows` rows tall, as wide as the area (the tabs' left edge to
+    /// the pane's margin), so its fields stretch with the pane.
     static func formCard(in area: NSRect, rows: Int, chrome: SAClaudeCardLayout.Chrome) -> NSRect {
-        let outerWidth = min(formCardMaxWidth, area.width)
         let height = SAClaudeFormCardLayout.contentHeight(rows: rows)
         return NSRect(x: area.minX + chrome.left, y: area.maxY - chrome.top - height,
-                      width: max(0, outerWidth - chrome.width), height: height)
+                      width: max(0, area.width - chrome.width), height: height)
     }
 
     // MARK: Global privileges
@@ -167,10 +165,10 @@ enum SAClaudeUserManagerLayout {
 
     // MARK: Sidebar bar
 
-    /// The sidebar's bottom bar buttons (add, remove, gear), left to right from `x`, centred on `midY` (the shared
-    /// sidebar bar's).
-    static func barButtons(count: Int, x: CGFloat, midY: CGFloat) -> [NSRect] {
-        SAClaudeSidebarBarLayout.buttons(count: count, x: x, midY: midY)
+    /// The sidebar's bottom bar buttons (add, remove, gear: each its frame width), left to right from `x`, centred on
+    /// `midY` (the shared sidebar bar's).
+    static func barButtons(widths: [CGFloat], x: CGFloat, midY: CGFloat) -> [NSRect] {
+        SAClaudeSidebarBarLayout.buttons(widths: widths, x: x, midY: midY)
     }
 }
 
