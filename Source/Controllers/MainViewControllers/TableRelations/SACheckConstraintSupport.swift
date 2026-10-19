@@ -286,8 +286,9 @@ import Foundation
     /// - `drop` / `add`: table-level check clauses, before and after the column change (see `renameClauses`)
     /// - `redefinedRows`: other columns whose inline check mentions `column`, with `unparsed` rewritten.
     ///   Only where the server won't rewrite those itself; the caller turns each into a `CHANGE` clause.
-    @objc(renamePlanRenamingColumn:to:checks:rows:mariaDB:major:minor:release:)
-    static func renamePlan(renamingColumn column: String, to newName: String, checks: [[String: Any]], rows: [[String: Any]], isMariaDB: Bool, major: Int, minor: Int, release: Int) -> [String: [Any]] {
+    /// - `editedRow`: `editedRow` with its own inline checks renamed, for the column's `CHANGE` clause
+    @objc(renamePlanRenamingColumn:to:editedRow:checks:rows:mariaDB:major:minor:release:)
+    static func renamePlan(renamingColumn column: String, to newName: String, editedRow: [String: Any], checks: [[String: Any]], rows: [[String: Any]], isMariaDB: Bool, major: Int, minor: Int, release: Int) -> [String: Any] {
         let clauses = renameClauses(renamingColumn: column, to: newName, checks: checks, isMariaDB: isMariaDB, major: major, minor: minor, release: release)
         var redefined: [[String: Any]] = []
 
@@ -303,7 +304,12 @@ import Foundation
                 redefined.append(redefinedRow)
             }
         }
-        return ["drop": clauses["drop"] ?? [], "add": clauses["add"] ?? [], "redefinedRows": redefined]
+
+        var renamedEditedRow = editedRow
+        if let details = editedRow["unparsed"] as? String, !details.isEmpty {
+            renamedEditedRow["unparsed"] = renamingColumn(column, to: newName, inColumnDetails: details)
+        }
+        return ["drop": clauses["drop"] ?? [], "add": clauses["add"] ?? [], "redefinedRows": redefined, "editedRow": renamedEditedRow]
     }
 
     /// Everything deleting `column` needs besides dropping the column itself. Returns

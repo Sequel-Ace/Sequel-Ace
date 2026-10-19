@@ -1008,23 +1008,17 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	BOOL columnIsRenamed = ([oldColumnName length] && [newColumnName length] && ![oldColumnName isEqualToString:newColumnName]);
 
 	if (columnIsRenamed) {
-		NSString *unparsedDetails = [theRow objectForKey:@"unparsed"];
-
-		if ([unparsedDetails length]) {
-			NSMutableDictionary *rowCpy = [theRow mutableCopy];
-			[rowCpy setObject:[SACheckConstraintSupport renamingColumn:oldColumnName to:newColumnName inColumnDetails:unparsedDetails] forKey:@"unparsed"];
-			theRow = rowCpy;
-		}
-
 		NSArray<NSNumber *> *version = [self _serverVersionParts];
-		NSDictionary<NSString *, NSArray *> *plan = [SACheckConstraintSupport renamePlanRenamingColumn:oldColumnName
+		NSDictionary<NSString *, id> *plan = [SACheckConstraintSupport renamePlanRenamingColumn:oldColumnName
 		                                                                                            to:newColumnName
+		                                                                                    editedRow:theRow
 		                                                                                        checks:[tableDataInstance getCheckConstraints]
 		                                                                                          rows:tableFields
 		                                                                                       mariaDB:[mySQLConnection isMariaDB]
 		                                                                                         major:[version[0] integerValue]
 		                                                                                         minor:[version[1] integerValue]
 		                                                                                       release:[version[2] integerValue]];
+		theRow = plan[@"editedRow"];
 		checkDropClauses = plan[@"drop"] ?: @[];
 		[checkAddClauses addObjectsFromArray:plan[@"add"] ?: @[]];
 

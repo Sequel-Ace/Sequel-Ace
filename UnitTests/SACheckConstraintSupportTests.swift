@@ -565,16 +565,24 @@ final class SACheckConstraintSupportTests: XCTestCase {
             ["name": "b", "unparsed": "int(11) CHECK (`a` > 0)"],
             ["name": "c", "unparsed": "int(11) CHECK (`a` < 9)"],
         ]
-        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", checks: [], rows: rows, isMariaDB: true, major: 10, minor: 2, release: 5)
+        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", editedRow: edited, checks: [], rows: rows, isMariaDB: true, major: 10, minor: 2, release: 5)
         let redefined = plan["redefinedRows"] as? [[String: Any]]
 
         XCTAssertEqual(redefined?.compactMap { $0["name"] as? String }, ["c"])
         XCTAssertEqual(redefined?.first?["unparsed"] as? String, "int(11) CHECK (`b` < 9)")
     }
 
+    func testRenamePlanRenamesTheEditedRowsOwnChecks() {
+        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", editedRow: edited, checks: [], rows: [], isMariaDB: true, major: 10, minor: 6, release: 0)
+        let row = plan["editedRow"] as? [String: Any]
+
+        XCTAssertEqual(row?["unparsed"] as? String, "int(11) CHECK (`b` > 0)")
+        XCTAssertEqual(row?["name"] as? String, "b")
+    }
+
     func testRenamePlanLeavesRowsAloneWhereTheServerRewritesChecks() {
         let rows: [[String: Any]] = [["name": "c", "unparsed": "int(11) CHECK (`a` < 9)"]]
-        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", checks: [], rows: rows, isMariaDB: true, major: 10, minor: 6, release: 0)
+        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", editedRow: edited, checks: [], rows: rows, isMariaDB: true, major: 10, minor: 6, release: 0)
 
         XCTAssertEqual((plan["redefinedRows"] as? [Any])?.count, 0)
     }
@@ -590,6 +598,8 @@ final class SACheckConstraintSupportTests: XCTestCase {
         XCTAssertEqual((plan["drop"] as? [String])?.count, 1)
         XCTAssertEqual((plan["redefinedRows"] as? [[String: Any]])?.compactMap { $0["name"] as? String }, ["c"])
     }
+
+    private let edited: [String: Any] = ["name": "b", "unparsed": "int(11) CHECK (`a` > 0)"]
 
     private func check(_ name: String, _ expression: String, enforced: Bool = true) -> [String: Any] {
         [
