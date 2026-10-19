@@ -293,6 +293,13 @@ final class SAClaudeSheetTargetingTests: XCTestCase {
         XCTAssertTrue(SAClaudeSheetTargeting.auxiliaryOwnerClasses.contains("SPFilterTableController"))
     }
 
+    func testUpdateDownloadWindowIsSkinned() {
+        var facts = Facts()
+        facts.ownerClasses = ["Sequel_Ace.ProgressWindowController"]
+        XCTAssertEqual(SAClaudeSheetTargeting.decision(for: facts), .window)
+        XCTAssertEqual(decide { $0.ownerClasses = ["NSObject", "ProgressWindowController"] }, .window)
+    }
+
     func testUnlistedWindowIsSkipped() {
         XCTAssertEqual(decide { $0.ownerClasses = ["SAAboutWindowController"] }, .skip)
         XCTAssertEqual(decide { _ in }, .skip)

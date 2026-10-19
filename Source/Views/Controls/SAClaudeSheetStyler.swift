@@ -154,6 +154,7 @@ import AppKit
         SAClaudeNavigatorStyler.claim(window)
         SAClaudeBundleEditorStyler.claim(window)
         SAClaudeSmallUtilitySheetsStyler.claim(window)
+        SAClaudeUpdateProgressStyler.claim(window)
     }
 
     /// The object's class as its code sees it: KVO's runtime subclasses are skipped.

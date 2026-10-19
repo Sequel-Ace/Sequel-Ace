@@ -196,6 +196,7 @@ enum SAClaudeSheetTargeting {
         "SPGotoDatabaseController",        // Go to database
         "SPSSHTunnel",                     // SSH host question
         "SPFilterTableController",         // Advanced filter panel
+        "ProgressWindowController",        // Update download window
     ]
 
     /// Owners whose windows are never restyled, sheet or not: the main document window, the Query Console and

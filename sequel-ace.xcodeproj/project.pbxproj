@@ -837,6 +837,7 @@
 		BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */ = {isa = PBXBuildFile; fileRef = BCA6271B1031B9D40047E5D5 /* SPTooltip.m */; };
 		BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */ = {isa = PBXBuildFile; fileRef = BCD0AD480FBBFC340066EA5C /* SPSQLTokenizer.l */; };
 		BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */ = {isa = PBXBuildFile; fileRef = BCE0025C11173D2A009DA533 /* SPFieldMapperController.m */; };
+		BDF8224D960AB8552F2DFD24 /* SAClaudeUpdateProgressStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C382314CB76EE67AD10E1E8 /* SAClaudeUpdateProgressStyler.swift */; };
 		C0D3A0012F8D000100000001 /* PreferenceDefaults.plist in Resources */ = {isa = PBXBuildFile; fileRef = B58731270F838C9E00087794 /* PreferenceDefaults.plist */; };
 		C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */; };
 		C15BC205A797F1C3C14733CB /* SAImportProgressReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7383424B751DCE7B1E781C44 /* SAImportProgressReporterTests.swift */; };
@@ -1918,6 +1919,7 @@
 		8EA35EE6FE32D801FDF15E23 /* SAScriptConsoleAppearanceSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptConsoleAppearanceSection.swift; sourceTree = "<group>"; };
 		30EC973A18AF92665C943276 /* SAEditorThemeAppearanceSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAEditorThemeAppearanceSection.swift; sourceTree = "<group>"; };
 		2B97BFD9F5085B81FB41D966 /* SAClaudeEditorColoursSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorColoursSection.swift; sourceTree = "<group>"; };
+		2C382314CB76EE67AD10E1E8 /* SAClaudeUpdateProgressStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeUpdateProgressStyler.swift; sourceTree = "<group>"; };
 		8F7D127BB5BCD94B0E794C5E /* SAHelpViewerWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAHelpViewerWindowController.swift; sourceTree = "<group>"; };
 		8F90845BF563ACDEE8129AA0 /* SAClaudeTypeInfoText.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTypeInfoText.swift; sourceTree = "<group>"; };
 		91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCache.swift; sourceTree = "<group>"; };
@@ -3284,6 +3286,7 @@
 				17DCC7D8BE124286DCF2D7F7 /* SAClaudeHintCardView.swift */,
 				CDD41038EA8C82C49CF02BC1 /* SAClaudeTooltipCard.swift */,
 				306890FC7EF4C70DA1FF7342 /* SAClaudeTypeInfoCard.swift */,
+				2C382314CB76EE67AD10E1E8 /* SAClaudeUpdateProgressStyler.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -5130,6 +5133,7 @@
 				007752D0441624BE761514F8 /* SAClaudeTooltipCard.swift in Sources */,
 				453FD66D32890B4927B4120C /* SAClaudeTypeInfoText.swift in Sources */,
 				F95E0BF0DEB6192FD11D38E5 /* SAClaudeTypeInfoCard.swift in Sources */,
+				BDF8224D960AB8552F2DFD24 /* SAClaudeUpdateProgressStyler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
