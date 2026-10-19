@@ -27,6 +27,7 @@ import Darwin
     private var nativeOnlyCancellationThreads: Set<ObjectIdentifier> = []
     private var queryCancellationGeneration: UInt = 0
     private var queryCancellationTokens: [UInt] = []
+    private var questionsAwaitingTheMainThread = 0
 
     /// Remember cancellation across setup queries run by the interrupted query's
     /// reconnect. Each nested query has its own token; it cannot erase its caller's.
@@ -157,6 +158,51 @@ import Darwin
         }
     }
 
+    /// Marks, for this thread only, that the session was refused rather than the work having
+    /// simply returned nothing.
+    private static let refusalMarker = "SAConnectionSessionAccess.theSessionWasRefused"
+
+    /// Takes the record of whether the call this thread just made was refused the session,
+    /// rather than its work running and returning nothing.
+    ///
+    /// Both come back as nothing, and a caller that cannot tell them apart would read a
+    /// statement that was never sent as one that ran and changed nothing. Asked right after a
+    /// call that came back empty, on the thread that made it.
+    ///
+    /// It speaks for that one call. Waiting for the session pumps the main thread's run loop,
+    /// and a query delivered in there can be refused while this one goes on to succeed; a
+    /// refusal from inside is cleared rather than left to answer for its caller. Reading it
+    /// takes it, so a refusal nobody asked about cannot answer for a later call either.
+    /// - Returns: Whether that call was refused.
+    @objc public func takeTheRefusalOfThisThreadsLastCall() -> Bool {
+        let refused = (Thread.current.threadDictionary[Self.refusalMarker] as? Bool) ?? false
+        forgetAnyRefusal()
+        return refused
+    }
+
+    /// Forgets a refusal recorded on this thread, so it cannot speak for a later call.
+    private func forgetAnyRefusal() {
+        Thread.current.threadDictionary[Self.refusalMarker] = false
+    }
+
+    /// Records that a question about this connection has gone to the main thread.
+    ///
+    /// The session stays held while it is asked - what is being asked about is this session -
+    /// but the answer can only come through the main thread. A main-thread caller that waited
+    /// for the session meanwhile would be the one holding that answer up, so from here until
+    /// the answer is in, such a caller is turned away instead of made to wait. Paired with
+    /// ``noteTheQuestionWasAnswered()``, and nested questions are counted.
+    @objc public func noteAQuestionWentToTheMainThread() {
+        socketLock.withLock { questionsAwaitingTheMainThread += 1 }
+    }
+
+    /// Records that the question is answered and the main thread is free to wait again.
+    @objc public func noteTheQuestionWasAnswered() {
+        socketLock.withLock {
+            if questionsAwaitingTheMainThread > 0 { questionsAwaitingTheMainThread -= 1 }
+        }
+    }
+
     /// Runs a query only after the current reconnect (including restoration) ends.
     @objc(performQuery:)
     public func performQuery(_ operation: () -> Any?) -> Any? {
@@ -166,8 +212,13 @@ import Darwin
     @objc(performQuery:recover:)
     public func performQuery(_ operation: () -> Any?, recover: () -> Bool) -> Any? {
         guard acquire() else { return nil }
+        // Anything refused while this call waited was somebody else's call, delivered by the
+        // run loop this one pumped. It has been reported where it happened.
+        forgetAnyRefusal()
         socketLock.withLock { queryCancellationTokens.append(queryCancellationGeneration) }
         defer {
+            // And anything refused inside the work answers for itself, not for this call.
+            forgetAnyRefusal()
             socketLock.withLock { _ = queryCancellationTokens.popLast() }
             sessionLock.unlock()
         }
@@ -200,6 +251,12 @@ import Darwin
         return succeeded
     }
 
+    /// Whether the session has to be recovered before it is used again, using up that record.
+    ///
+    /// Asked once by the reconnect that acts on it: a read that was cut off cannot be carried
+    /// on with, and the next use has to recover rather than pick it up. Taking the record is
+    /// what keeps a second reconnect from recovering a session that has already been restored.
+    /// - Returns: Whether recovery was required.
     private func takeRecoveryRequirement() -> Bool {
         socketLock.withLock {
             let required = recoveryRequired
@@ -211,11 +268,22 @@ import Darwin
     /// Waiting must remain cancellable: disconnect can be waiting for a keepalive
     /// thread to exit. The main thread also services SSH authentication/teardown.
     private func acquire() -> Bool {
+        forgetAnyRefusal()
         while !Thread.current.isCancelled {
             if sessionLock.try() {
                 let ready = socketLock.withLock { cancellingQuery == nil && activeNativeQuery == nil }
                 if ready { return true }
                 sessionLock.unlock()
+            }
+            // A question about this connection is out, and the main thread is what answers it.
+            // Waiting here would hold up that answer, and the session is not let go until the
+            // answer is in - neither side would ever move. The caller is told there is no
+            // session to be had instead, which is what the user is being asked about, and the
+            // refusal is marked so it is not read as work that ran and did nothing.
+            if Thread.isMainThread,
+               socketLock.withLock({ questionsAwaitingTheMainThread > 0 }) {
+                Thread.current.threadDictionary[Self.refusalMarker] = true
+                return false
             }
             let deadline = Date(timeIntervalSinceNow: 0.01)
             if Thread.isMainThread {

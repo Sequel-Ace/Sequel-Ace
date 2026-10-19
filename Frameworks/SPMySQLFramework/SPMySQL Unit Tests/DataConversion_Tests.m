@@ -31,8 +31,9 @@
 #import <Cocoa/Cocoa.h>
 #import <XCTest/XCTest.h>
 
-// this function is inaccessible outside of unit tests
+// these functions are inaccessible outside of unit tests
 extern NSString * _bitStringWithBytes(const char *bytes, NSUInteger length, NSUInteger padLength);
+extern NSString * _convertStringData(const void *dataBytes, NSUInteger dataLength, NSStringEncoding aStringEncoding, NSUInteger previewLength);
 
 @interface DataConversion_Tests : XCTestCase
 
@@ -72,6 +73,51 @@ extern NSString * _bitStringWithBytes(const char *bytes, NSUInteger length, NSUI
 		NSString *res = _bitStringWithBytes(input,sizeof(input),bitSize);
 		XCTAssertEqualObjects(res, @"11111100110011110000");
 	}
+}
+
+/**
+ * A preview counts characters, so it has to know how many bytes each character of the session's
+ * character set takes. The three character sets this framework carries Chinese and Korean
+ * sessions in - CP949 for euckr, EUC-CN for gb2312, and GB18030 - are one or more bytes per
+ * character, and before they were named here a preview of them was cut after as many bytes as
+ * characters were asked for: half the characters, the last one through the middle.
+ */
+- (void)test_convertStringDataPreviewCountsMultibyteCharacters
+{
+	// The character sets the scanner compares against are set up in the result's class
+	// initialisation, which nothing in this test has reached yet.
+	[NSClassFromString(@"SPMySQLResult") class];
+
+	// Three CP949 characters, two bytes each, previewed two characters deep.
+	const unsigned char cp949[] = {0xC7, 0xD1, 0xB1, 0xB9, 0xBE, 0xEE};
+	NSStringEncoding korean = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingDOSKorean);
+	NSString *expectedKorean = [[NSString alloc] initWithBytes:cp949 length:4 encoding:korean];
+	XCTAssertEqual([expectedKorean length], (NSUInteger)2, "two characters is what four of these bytes are");
+	XCTAssertEqualObjects(_convertStringData(cp949, sizeof(cp949), korean, 2),
+	                      [expectedKorean stringByAppendingString:@"..."]);
+
+	// Three EUC-CN characters, two bytes each.
+	const unsigned char euccn[] = {0xD6, 0xD0, 0xCE, 0xC4, 0xBA, 0xC3};
+	NSStringEncoding chinese = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingEUC_CN);
+	NSString *expectedChinese = [[NSString alloc] initWithBytes:euccn length:4 encoding:chinese];
+	XCTAssertEqual([expectedChinese length], (NSUInteger)2);
+	XCTAssertEqualObjects(_convertStringData(euccn, sizeof(euccn), chinese, 2),
+	                      [expectedChinese stringByAppendingString:@"..."]);
+
+	// GB18030 takes four bytes where the byte after the lead is 0x30-0x39: two four-byte
+	// characters followed by a two-byte one, previewed two characters deep.
+	const unsigned char gb18030[] = {0x81, 0x30, 0x81, 0x30, 0x81, 0x30, 0x81, 0x31, 0xD6, 0xD0};
+	NSStringEncoding gb = CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_18030_2000);
+	NSString *expectedGB = [[NSString alloc] initWithBytes:gb18030 length:8 encoding:gb];
+	XCTAssertNotNil(expectedGB);
+	XCTAssertEqualObjects(_convertStringData(gb18030, sizeof(gb18030), gb, 2),
+	                      [expectedGB stringByAppendingString:@"..."]);
+
+	// An ASCII byte in any of them still counts as one character.
+	const unsigned char mixed[] = {'a', 0xC7, 0xD1, 'b', 0xB1, 0xB9};
+	NSString *expectedMixed = [[NSString alloc] initWithBytes:mixed length:3 encoding:korean];
+	XCTAssertEqualObjects(_convertStringData(mixed, sizeof(mixed), korean, 2),
+	                      [expectedMixed stringByAppendingString:@"..."]);
 }
 
 @end
