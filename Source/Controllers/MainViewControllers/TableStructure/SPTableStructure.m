@@ -2646,64 +2646,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	const SPFieldTypeHelp *help = [[self class] helpForFieldType:selected];
 
 	if (help) {
-		NSMutableAttributedString *as = [[NSMutableAttributedString alloc] init];
-
-		//title
-		{
-			NSDictionary *titleAttr = @{NSFontAttributeName: [NSFont boldSystemFontOfSize:[NSFont systemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
-			NSAttributedString *title = [[NSAttributedString alloc] initWithString:[help typeDefinition] attributes:titleAttr];
-			[as appendAttributedString:title];
-			[[as mutableString] appendString:@"\n"];
-		}
-
-		//range
-		if ([[help typeRange] length]) {
-			NSDictionary *rangeAttr = @{NSFontAttributeName: [NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
-			NSAttributedString *range = [[NSAttributedString alloc] initWithString:[help typeRange] attributes:rangeAttr];
-			[as appendAttributedString:range];
-			[[as mutableString] appendString:@"\n"];
-		}
-
-		[[as mutableString] appendString:@"\n"];
-
-		//description
-		{
-			NSDictionary *descAttr = @{NSFontAttributeName: [NSFont systemFontOfSize:[NSFont systemFontSize]], NSForegroundColorAttributeName: [NSColor controlTextColor]};
-			NSAttributedString *desc = [[NSAttributedString alloc] initWithString:[help typeDescription] attributes:descAttr];
-			[as appendAttributedString:desc];
-		}
-
-		[as addAttribute:NSParagraphStyleAttributeName value:[NSParagraphStyle defaultParagraphStyle] range:NSMakeRange(0, [as length])];
-
-		[[structureHelpText textStorage] setAttributedString:as];
-
-		NSRect rect = [as boundingRectWithSize:NSMakeSize([structureHelpText frame].size.width-2, CGFLOAT_MAX) options:NSStringDrawingUsesFontLeading|NSStringDrawingUsesLineFragmentOrigin];
-
-		NSRect winRect = [structureHelpPanel frame];
-
-		CGFloat winAddonSize = (winRect.size.height - [[structureHelpPanel contentView] frame].size.height) + (6*2);
-
-		NSRect popUpFrame = [[cell spPopUpWindow] frame];
-
-		//determine the side on which to add our window based on the space left on screen
-		NSPoint topRightCorner = NSMakePoint(popUpFrame.origin.x, NSMaxY(popUpFrame));
-		NSRect screenRect = [NSScreen rectOfScreenAtPoint:topRightCorner];
-
-		if (NSMaxX(popUpFrame)+10+winRect.size.width > NSMaxX(screenRect)-10) {
-			// exceeds right border, display on the left
-			winRect.origin.x = popUpFrame.origin.x - 10 - winRect.size.width;
-		}
-		else {
-			// display on the right
-			winRect.origin.x = NSMaxX(popUpFrame)+10;
-		}
-
-		winRect.size.height = rect.size.height + winAddonSize;
-		winRect.origin.y = NSMaxY(popUpFrame) - winRect.size.height;
-
-		[structureHelpPanel setFrame:winRect display:YES];
-
-		[structureHelpPanel orderFront:nil];
+		[SAClaudeTypeInfoCard showDefinition:[help typeDefinition]
+		                               range:[help typeRange]
+		                     typeDescription:[help typeDescription]
+		                             inPanel:structureHelpPanel
+		                            textView:structureHelpText
+		                   besidePopUpWindow:[cell spPopUpWindow]];
 	}
 	else {
 		[structureHelpPanel orderOut:nil];
