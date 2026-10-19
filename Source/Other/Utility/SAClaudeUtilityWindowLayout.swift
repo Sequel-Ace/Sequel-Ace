@@ -222,6 +222,18 @@ enum SAClaudeSidebarListLayout {
         return max(0, ceil(2 * pillInset - nativeInk))
     }
 
+    /// One indentation level of an `ImageAndTextCell` (INDENT_AMOUNT, keep in sync with ImageAndTextCell.h): the managers
+    /// indent their favourites / filters one level under "Global" and the file header (17pt in the upstream look).
+    static let indentationStep: CGFloat = 17
+
+    /// Under caption headers (the managers' "Global" and file rows): how far the first column's cells move right so a cell's
+    /// text at indentation level 0 starts `contentPadding` inside the selection pill — where the captions start. The rows
+    /// under a caption keep the managers' one indentation level (`indentationStep`), so their text starts one level right
+    /// of the caption text, as upstream lists them; 0 when the cells already start that far in.
+    static func captionCellShift(cellMinX: CGFloat, pillInset: CGFloat, contentPadding: CGFloat, textInset: CGFloat) -> CGFloat {
+        max(0, pillInset + contentPadding - textInset - cellMinX)
+    }
+
     /// The row content's leading edge for a cell drawn in `frame`: the image after an `ImageAndTextCell`'s indentation
     /// (`indentationStep` per level, its image `imageInset` in), else the text (a borderless text cell's `textInset`).
     static func cellContentLeading(frame: NSRect, indentationLevel: Int, indentationStep: CGFloat, hasImage: Bool,

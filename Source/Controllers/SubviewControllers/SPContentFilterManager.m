@@ -153,6 +153,9 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	// Register drag types
 	[contentFilterTableView registerForDraggedTypes:@[SPContentFilterPasteboardDragType]];
 
+	// A window that isn't a saved file lists no empty document ("Untitled") section (SAManagerDocumentSection).
+	[SAManagerDocumentSection hideEmptySectionIn:contentFilterArrayController items:contentFilters documentIsUntitled:[tableDocumentInstance isUntitled]];
+
 	[contentFilterArrayController setContent:contentFilters];
 	[contentFilterTableView reloadData];
 
@@ -474,7 +477,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
 {
-	return [contentFilters count];
+	return [SAManagerDocumentSection visibleRowCountOf:contentFilters];
 }
 
 /**

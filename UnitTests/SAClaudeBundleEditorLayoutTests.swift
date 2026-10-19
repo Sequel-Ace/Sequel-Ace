@@ -187,4 +187,20 @@ final class SAClaudeBundleEditorLayoutTests: XCTestCase {
         XCTAssertEqual(SAClaudeSidebarListLayout.cellContentLeading(frame: frame, indentationLevel: 0, indentationStep: 17, hasImage: true,
                                                                     imageInset: 3, textInset: 2), 4)
     }
+
+    /// Under the managers' captions: the first column's cells move right so level-0 text (where the captions start) sits the
+    /// pill's padding inside the pill; a favourite at the managers' level 1 then starts one indentation step right of it.
+    func testCaptionCellShiftPutsCaptionsInsideThePillAndRowsOneLevelRight() {
+        let shift = SAClaudeSidebarListLayout.captionCellShift(cellMinX: 1, pillInset: 6, contentPadding: 10, textInset: 2)
+        XCTAssertEqual(shift, 13)
+        let frame = NSRect(x: 1 + shift, y: 0, width: 100, height: 18)
+        let caption = SAClaudeSidebarListLayout.cellContentLeading(frame: frame, indentationLevel: 0, indentationStep: SAClaudeSidebarListLayout.indentationStep,
+                                                                   hasImage: false, imageInset: 3, textInset: 2)
+        let row = SAClaudeSidebarListLayout.cellContentLeading(frame: frame, indentationLevel: 1, indentationStep: SAClaudeSidebarListLayout.indentationStep,
+                                                               hasImage: false, imageInset: 3, textInset: 2)
+        XCTAssertEqual(caption, 6 + 10)
+        XCTAssertEqual(row - caption, 17)
+        // Cells already that far in stay put.
+        XCTAssertEqual(SAClaudeSidebarListLayout.captionCellShift(cellMinX: 20, pillInset: 6, contentPadding: 10, textInset: 2), 0)
+    }
 }

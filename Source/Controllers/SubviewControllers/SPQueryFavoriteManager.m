@@ -135,6 +135,9 @@
 	// Register drag types
 	[favoritesTableView registerForDraggedTypes:@[SPFavoritesPasteboardDragType]];
 	
+	// A window that isn't a saved file lists no empty document ("Untitled") section (SAManagerDocumentSection).
+	[SAManagerDocumentSection hideEmptySectionIn:favoritesArrayController items:favorites documentIsUntitled:[tableDocumentInstance isUntitled]];
+
 	[favoritesArrayController setContent:favorites];
 	[favoritesTableView reloadData];
 
@@ -483,7 +486,7 @@
  */
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
 {
-	return [favorites count];
+	return [SAManagerDocumentSection visibleRowCountOf:favorites];
 }
 
 /**

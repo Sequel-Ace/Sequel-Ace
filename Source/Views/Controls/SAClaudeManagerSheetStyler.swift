@@ -8,8 +8,10 @@
 //  view, Insert Placeholder); Save and Cancel.
 //
 //  - The list is a Claude sidebar (sidebar fill, selection pills, 28pt rows, the Global / file rows as 11pt muted
-//    captions on shorter rows, the tab trigger column muted; the Query Favorites list without its own "Favorites"
-//    header); its bar buttons are glyph buttons over a hairline; the divider a hairline.
+//    captions on shorter rows with the favourites / filters one indentation level right of them, the tab trigger column
+//    muted; the Query Favorites list without its own "Favorites" header); its bar buttons are glyph buttons over a
+//    hairline; the divider a hairline. (An empty "Untitled" document section is left out by the controllers:
+//    `SAManagerDocumentSection`.)
 //  - The query / clause editor is framed by a rounded hairline; the help button (Query Favorites) a ghost "?".
 //  - Save (Return) the accent primary, Cancel secondary, both regular size on the right margin.
 //  - The form laid out in one rule (`SAClaudeManagerFormLayout`): one right-aligned label column (Name and Tab Trigger;

@@ -396,7 +396,8 @@ enum SAClaudeUtilitySidebar {
         /// start inside the selection pill (`SAClaudeSidebarListLayout.chevronShift`); set as the list is styled.
         var chevronShift: CGFloat = 0
         /// Section header rows drawn as captions (the managers' "Global" and file rows, which can't be selected): 11pt
-        /// medium muted text on a shorter row (`captionRowHeight`), so they don't read as rows to click.
+        /// medium muted text on a shorter row (`captionRowHeight`), so they don't read as rows to click; the rows under
+        /// them one indentation level right of their text (`captionLeading`, `cellFrame`).
         var headerRowsAsCaptions = false
         /// `contentLeading` as last measured, for that many rows; dropped on a reload (`invalidateContentLeading`).
         var contentLeadingCache: (rows: Int, value: CGFloat?)?
@@ -507,14 +508,25 @@ enum SAClaudeUtilitySidebar {
         var title = (value as? String) ?? (value as? NSAttributedString)?.string ?? ""
         if let headerTitle = state(of: table)?.headerTitle { title = headerTitle(table, row, title) }
         let rowRect = table.rect(ofRow: row)
+        if let x = captionLeading(table) {
+            // A caption: the rows under it start one indentation level right of its text.
+            SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x, font: captionFont, bottomPadding: captionBottomPadding)
+            return true
+        }
         // Level with the rows' content (their chevrons, glyphs or text), as the list's own header.
         let x = contentLeading(table) ?? rowRect.minX + pillInset + SAClaudeStyle.rowContentPadding
-        if state(of: table)?.headerRowsAsCaptions == true {
-            SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x, font: captionFont, bottomPadding: captionBottomPadding)
-        } else {
-            SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x)
-        }
+        SAClaudeSidebarChrome.drawHeader(title, inRowRect: rowRect, x: x)
         return true
+    }
+
+    /// Where a list with caption headers (`State.headerRowsAsCaptions`) starts its captions' text, and its list header's:
+    /// the text of a first-column cell at indentation level 0 (`cellFrame` puts it `rowContentPadding` inside the selection
+    /// pill), one indentation level left of the rows' text. Nil for any other list.
+    static func captionLeading(_ table: NSTableView) -> CGFloat? {
+        guard state(of: table)?.headerRowsAsCaptions == true, table.numberOfColumns > 0 else { return nil }
+        let frame = table.numberOfRows > 0 ? table.frameOfCell(atColumn: 0, row: 0)
+            : cellFrame(NSRect(x: table.intercellSpacing.width / 2, y: 0, width: table.tableColumns[0].width, height: table.rowHeight), table: table, column: 0)
+        return frame.minX + SAClaudeStyle.cellTextInset
     }
 
     /// The row content's leading edge (list coordinates): where the first row that is not a header or a spacer starts its
@@ -561,12 +573,9 @@ enum SAClaudeUtilitySidebar {
         if let glyph = state(of: table)?.glyph, let imageCell { hasImage = glyph(table, row, imageCell.image()) != nil }
         return SAClaudeSidebarListLayout.cellContentLeading(frame: table.frameOfCell(atColumn: 0, row: row),
                                                             indentationLevel: imageCell?.indentationLevel() ?? 0,
-                                                            indentationStep: imageAndTextIndent, hasImage: hasImage,
+                                                            indentationStep: SAClaudeSidebarListLayout.indentationStep, hasImage: hasImage,
                                                             imageInset: SAClaudeStyle.cellImageInset, textInset: SAClaudeStyle.cellTextInset)
     }
-
-    /// `ImageAndTextCell`'s indentation per level (INDENT_AMOUNT, keep in sync with ImageAndTextCell.h).
-    private static let imageAndTextIndent: CGFloat = 17
 
     /// The selection as rounded pills, the same colour focused or not (as the main window's tables list).
     static func drawSelection(_ table: NSTableView, in clipRect: NSRect) {
@@ -610,7 +619,9 @@ enum SAClaudeUtilitySidebar {
     private static var textHeights: [CGFloat: CGFloat] = [:]
 
     /// The cell centred on one line of text in `table`'s font (cells draw from the top of their frame), the outline
-    /// column's moved right with its chevrons (`State.chevronShift`); editing uses the same frame.
+    /// column's moved right with its chevrons (`State.chevronShift`), the first column's under caption headers moved right so
+    /// its level-0 text starts where the captions do (`SAClaudeSidebarListLayout.captionCellShift`; the rows' own
+    /// indentation level then puts them one level right of the captions); editing uses the same frame.
     static func cellFrame(_ frame: NSRect, table: NSTableView, column: Int) -> NSRect {
         let state = state(of: table)
         let size = state?.font.pointSize ?? font.pointSize
@@ -624,6 +635,9 @@ enum SAClaudeUtilitySidebar {
         if let state, state.chevronShift > 0, let outline = table as? NSOutlineView, column >= 0, column < outline.numberOfColumns,
            outline.tableColumns[column] === outline.outlineTableColumn {
             shift = state.chevronShift
+        } else if let state, state.headerRowsAsCaptions, column == 0 {
+            shift = SAClaudeSidebarListLayout.captionCellShift(cellMinX: frame.minX, pillInset: pillInset,
+                                                               contentPadding: SAClaudeStyle.rowContentPadding, textInset: SAClaudeStyle.cellTextInset)
         }
         return NSRect(x: frame.minX + shift, y: frame.minY + floor((frame.height - height) / 2),
                       width: max(0, frame.width - pillInset - shift), height: height)
@@ -828,9 +842,9 @@ enum SAClaudeUtilitySidebar {
                 .font: NSFont.systemFont(ofSize: 11, weight: .medium), .foregroundColor: SAClaudeStyle.textMuted,
             ])
             let height = ceil(title.size().height)
-            // The first column's title level with the rows' content (chevrons, glyphs or text); another column's with its
-            // text (the row pill's inset plus its padding).
-            let rowContent = index == 0 ? SAClaudeUtilitySidebar.contentLeading(table) : nil
+            // The first column's title level with the rows' content (chevrons, glyphs or text) — with the captions in a list
+            // that has them; another column's with its text (the row pill's inset plus its padding).
+            let rowContent = index == 0 ? SAClaudeUtilitySidebar.captionLeading(table) ?? SAClaudeUtilitySidebar.contentLeading(table) : nil
             let x = rowContent ?? rect.minX + SAClaudeUtilitySidebar.pillInset + 8
             title.draw(with: NSRect(x: x, y: (rect.midY - height / 2).rounded(), width: max(0, rect.maxX - x), height: height),
                        options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
