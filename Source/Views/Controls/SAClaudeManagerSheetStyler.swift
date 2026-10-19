@@ -265,6 +265,7 @@ import AppKit
         guard !isLayingOut else { return }
         isLayingOut = true
         defer { isLayingOut = false }
+        fillSheet()
         let place = SAClaudeUtilityChrome.place
         let bounds = o.rightPane.bounds
         let inset = SAClaudeSheetButtonGeometry.metrics(for: .regular).classicSideMargin
@@ -308,6 +309,17 @@ import AppKit
         place(o.cancel, footer.cancel)
         if let help = o.help, let frame = footer.help { place(help, frame) }
         SAClaudeUtilityChrome.frameList(o.textScroll, hairline: SAClaudeSheetColours.current().palette.hairline)
+    }
+
+    /// The sidebar and form reach the sheet's top edge: the XIB leaves a 10pt band above the split view with a separator
+    /// line in it (left from the old toolbar-style sheets), which shows as a strip with a hairline across the sheet. The
+    /// separator is hidden and the split view fills the content view (and follows it).
+    private func fillSheet() {
+        guard let content = window?.contentView, o.split.superview === content else { return }
+        for case let box as NSBox in content.subviews where box.boxType == .separator && box.frame.minY >= o.split.frame.maxY - 6 && !box.isHidden {
+            box.isHidden = true
+        }
+        SAClaudeUtilityChrome.pin(o.split, content.bounds, [.width, .height])
     }
 
     /// A label's text width at its font.
