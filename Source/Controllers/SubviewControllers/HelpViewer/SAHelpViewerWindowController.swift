@@ -25,6 +25,8 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
 
     private let model = SAHelpViewerModel()
     private let webViewModel = SAWebViewModel()
+    /// The Claude kit's colours for the toolbar row (the sheets' colours, from the editor theme).
+    private let palette: SAClaudeSwiftUIPalette
     private var titleSubscription: AnyCancellable?
     private var appearanceObservation: NSKeyValueObservation?
 
@@ -45,6 +47,8 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
         panel.hidesOnDeactivate = true
         panel.isReleasedWhenClosed = false
         panel.title = SAHelpViewerModel.windowTitle(pageTitle: nil)
+
+        palette = SAClaudeSwiftUIPalette(source: .app)
 
         super.init(window: panel)
 
@@ -70,6 +74,7 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
                 onSubmitSearch: { [weak self] in self?.submitSearch() },
                 onNavigate: { [weak self] navigation in self?.navigate(navigation) }
             )
+            .environmentObject(palette)
         )
         panel.setFrameAutosaveName("MYSQL_HELP_WINDOW")
         panel.delegate = self
@@ -84,8 +89,14 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
             }
 
         // The help template re-themes itself through a JS hook rather than by
-        // being re-rendered (the legacy controller did the same via KVO).
-        appearanceObservation = panel.observe(\.effectiveAppearance) { [weak self] _, _ in
+        // being re-rendered (the legacy controller did the same via KVO). The
+        // palette follows the editor theme and the accent; the app's appearance
+        // resolves the theme's dynamic fallback colours. (The panel's own
+        // appearance is set from the palette, so the app's is the one to watch.)
+        themeChanged()
+        SAClaudeThemeWatcher.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
+        SAClaudeAccent.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
+        appearanceObservation = NSApp.observe(\.effectiveAppearance) { [weak self] _, _ in
             // Apple advises against doing slow work in the change handler, as it
             // may interrupt animations.
             DispatchQueue.main.async {
@@ -302,15 +313,15 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: - Theme
 
+    /// Restyles the window and the open page from the current palette: the window's surface and appearance, the
+    /// colour under the page, and the page's CSS variables through the template's theme hook (no reload).
     private func themeChanged() {
-        guard let appearance = window?.effectiveAppearance else { return }
-
-        let match = appearance.bestMatch(from: [.aqua, .darkAqua])
-        guard let match else { return }
-
-        webViewModel.evaluateJavaScript(
-            SAHelpViewerModel.themeChangeScript(isDarkAppearance: match == .darkAqua)
-        )
+        let palette = SAClaudeHintCardPalette.current()
+        if let window {
+            SAClaudeRareWindowChrome.apply(to: window, palette: palette)
+        }
+        webViewModel.underPageBackgroundColor = palette.surface
+        webViewModel.evaluateJavaScript(SAHelpViewerModel.themeChangeScript(palette: palette))
     }
 
     // MARK: - Window delegate

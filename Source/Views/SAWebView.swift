@@ -58,6 +58,19 @@ final class SAWebViewModel: NSObject, ObservableObject {
     /// First chance at key events; return true when handled.
     var handleKeyDown: ((NSEvent) -> Bool)?
 
+    /// The colour WebKit shows outside the page (rubber-band scrolling, before the first paint); nil is WebKit's
+    /// default. Applied when the web view attaches and on every change.
+    var underPageBackgroundColor: NSColor? {
+        didSet { applyUnderPageBackgroundColor() }
+    }
+
+    /// WebKit reads the colour's components as sRGB whatever its colour space (a theme's Generic RGB surface came out
+    /// darker than the same colour in the page's CSS), so it is handed over in sRGB.
+    private func applyUnderPageBackgroundColor() {
+        guard let webView else { return }
+        webView.underPageBackgroundColor = underPageBackgroundColor.map { $0.usingColorSpace(.sRGB) ?? $0 }
+    }
+
     // MARK: - Loading
 
     /// Loads HTML. Pass a `baseURL` when the document contains relative links that
@@ -151,6 +164,9 @@ final class SAWebViewModel: NSObject, ObservableObject {
 
     fileprivate func attach(_ webView: WKWebView) {
         self.webView = webView
+        if underPageBackgroundColor != nil {
+            applyUnderPageBackgroundColor()
+        }
         titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
             self?.pageTitle = webView.title ?? ""
         }

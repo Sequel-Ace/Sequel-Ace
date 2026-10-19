@@ -4,10 +4,10 @@
 //
 //  The shared Claude look for SwiftUI surfaces: one palette (`SAClaudeSwiftUIPalette`, from the editor theme for
 //  panels that sit in the editor's chrome, or the sheets' colours for sheets) and the styles that read it from the
-//  environment — the field, the primary / secondary / ghost-icon / link buttons and the checkbox — in two sizes:
-//  `.form`, the AppKit Claude form sheets' own metrics (SAClaudeFormLayout, SAClaudeSheetStyler, SAClaudeFilterCells),
-//  so a SwiftUI sheet sits beside them unchanged, and `.panel`, the roomier Record View panel's. Inject the palette
-//  with `.environmentObject(palette)` at the root of the hosted view. App target only.
+//  environment — the field, the primary / secondary / ghost-icon / link buttons, the checkbox and the segmented tabs —
+//  in two sizes: `.form`, the AppKit Claude form sheets' own metrics (SAClaudeFormLayout, SAClaudeSheetStyler,
+//  SAClaudeFilterCells), so a SwiftUI sheet sits beside them unchanged, and `.panel`, the roomier Record View panel's.
+//  Inject the palette with `.environmentObject(palette)` at the root of the hosted view. App target only.
 //
 
 import AppKit
@@ -711,6 +711,43 @@ struct SAClaudeMenuPopUp: NSViewRepresentable {
         let natural = button.intrinsicContentSize
         let width = proposal.width.map { min($0, natural.width) } ?? natural.width
         return CGSize(width: width, height: proposal.height ?? natural.height)
+    }
+}
+
+// MARK: - Segmented tabs
+
+/// A segmented choice in the kit's look: the AppKit Claude segmented tabs (`SAClaudeConnectionTypeTabs`, 26pt ghost
+/// segments, the selected one on the field fill inside a hairline, the hover fill under the pointer), its titles in
+/// the secondary colour and the selected title in the accent. Sized to fit every title; arrow keys move the selection
+/// while it has focus, and VoiceOver sees a radio group named `accessibilityLabel`. `help` is the whole control's
+/// tooltip.
+struct SAClaudeSegmentedTabs: NSViewRepresentable {
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
+    let titles: [String]
+    @Binding var selection: Int
+    var help: String?
+    var accessibilityLabel: String?
+
+    func makeNSView(context: Context) -> SAClaudeConnectionTypeTabs {
+        let tabs = SAClaudeConnectionTypeTabs()
+        tabs.setContentHuggingPriority(.required, for: .horizontal)
+        return tabs
+    }
+
+    func updateNSView(_ tabs: SAClaudeConnectionTypeTabs, context: Context) {
+        if tabs.titles != titles { tabs.titles = titles }
+        if tabs.selectedIndex != selection { tabs.selectedIndex = selection }
+        let binding = $selection
+        tabs.onSelect = { binding.wrappedValue = $0 }
+        if tabs.toolTip != help { tabs.toolTip = help }
+        tabs.accessibilityGroupLabel = accessibilityLabel
+        tabs.colours = SAClaudeConnectionTypeTabs.Colours(selectedFill: NSColor(palette.fieldFill), selectedStroke: NSColor(palette.hairline),
+                                                          hoverFill: NSColor(palette.hover), text: NSColor(palette.accent),
+                                                          mutedText: NSColor(palette.secondary))
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView tabs: SAClaudeConnectionTypeTabs, context: Context) -> CGSize? {
+        CGSize(width: tabs.preferredWidth, height: SAClaudeConnectionTypeTabs.height)
     }
 }
 
