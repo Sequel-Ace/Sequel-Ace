@@ -147,6 +147,11 @@ final class SAClaudeHintCardTests: XCTestCase {
         XCTAssertEqual(SAClaudeHintCard.imageFit(NSSize(width: 100, height: 400)), NSSize(width: 50, height: 200))
         XCTAssertEqual(SAClaudeHintCard.imageFit(NSSize(width: 150, height: 120)), NSSize(width: 150, height: 120))
         XCTAssertEqual(SAClaudeHintCard.imageFit(.zero), .zero)
+        // Whole points: fractions truncate, as SPTooltip's NSIntegers did.
+        XCTAssertEqual(SAClaudeHintCard.imageFit(NSSize(width: 400.9, height: 100.9)), NSSize(width: 200, height: 50))
+        XCTAssertEqual(SAClaudeHintCard.imageFit(NSSize(width: 150.9, height: 120.9)), NSSize(width: 150, height: 120))
+        // A square image over the limit takes the height branch.
+        XCTAssertEqual(SAClaudeHintCard.imageFit(NSSize(width: 300, height: 300)), NSSize(width: 200, height: 200))
     }
 
     func testImageCardSizeAddsPadding() {

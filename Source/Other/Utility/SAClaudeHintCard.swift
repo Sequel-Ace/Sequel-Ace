@@ -59,16 +59,9 @@ struct SAClaudeHintCardPalette: Equatable {
 
     // MARK: Contrast
 
-    /// WCAG relative luminance of a colour (in sRGB).
-    static func luminance(_ colour: NSColor) -> CGFloat {
-        guard let c = colour.usingColorSpace(.sRGB) else { return 0 }
-        func linear(_ v: CGFloat) -> CGFloat { v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
-        return 0.2126 * linear(c.redComponent) + 0.7152 * linear(c.greenComponent) + 0.0722 * linear(c.blueComponent)
-    }
-
     /// WCAG contrast ratio of two colours, 1...21.
     static func contrast(_ a: NSColor, _ b: NSColor) -> CGFloat {
-        let la = luminance(a), lb = luminance(b)
+        let la = SAClaudeAccent.relativeLuminance(a), lb = SAClaudeAccent.relativeLuminance(b)
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 
