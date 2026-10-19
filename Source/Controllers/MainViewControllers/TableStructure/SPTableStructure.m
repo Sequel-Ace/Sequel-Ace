@@ -716,33 +716,23 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// check is dropped in the same statement as the field, and listed in the confirmation below.
 	NSMutableArray<NSString *> *dependentCheckDescriptions = [NSMutableArray array];
 	NSMutableArray<NSString *> *additionalAlterClauses = [NSMutableArray array];
-	NSArray *tableChecks = [tableDataInstance getCheckConstraints];
 
-	for (NSDictionary *check in [SACheckConstraintSupport checksReferencingColumn:field inChecks:tableChecks])
+	// MariaDB keeps a column's own check in that column's definition, so a check on another column that
+	// mentions this field goes by redefining that column. The plan scans every column, not
+	// -activeFieldsSource, which leaves out the columns a Structure filter currently hides.
+	NSDictionary<NSString *, NSArray *> *removalPlan = [SACheckConstraintSupport removalPlanRemovingColumn:field
+	                                                                                                checks:[tableDataInstance getCheckConstraints]
+	                                                                                                  rows:tableFields
+	                                                                                               mariaDB:[mySQLConnection isMariaDB]];
+	[dependentCheckDescriptions addObjectsFromArray:removalPlan[@"checkNames"]];
+	[additionalAlterClauses addObjectsFromArray:removalPlan[@"drop"]];
+
+	for (NSDictionary *redefinedRow in removalPlan[@"redefinedRows"])
 	{
-		[dependentCheckDescriptions addObject:[check objectForKey:SACheckConstraintSupport.nameKey]];
-	}
-	[additionalAlterClauses addObjectsFromArray:[SACheckConstraintSupport dropClausesRemovingColumn:field
-	                                                                                         checks:tableChecks
-	                                                                                        mariaDB:[mySQLConnection isMariaDB]]];
+		NSString *otherName = [redefinedRow objectForKey:@"name"];
 
-	// MariaDB keeps a column's own check in that column's definition. A check on another column that
-	// mentions this field can only go by redefining that column without it. This scans every column,
-	// not -activeFieldsSource, which leaves out the columns a Structure filter currently hides.
-	for (NSDictionary *otherRow in tableFields)
-	{
-		NSString *otherName = [otherRow objectForKey:@"name"];
-		NSString *otherDetails = [otherRow objectForKey:@"unparsed"];
-
-		if ([otherName isEqualToString:field] || ![otherDetails length]) continue;
-
-		if ([SACheckConstraintSupport columnDetails:otherDetails referencesColumn:field]) {
-			NSMutableDictionary *redefinedRow = [otherRow mutableCopy];
-			[redefinedRow setObject:[SACheckConstraintSupport strippingChecksReferencing:field fromColumnDetails:otherDetails] forKey:@"unparsed"];
-
-			[additionalAlterClauses addObject:[NSString stringWithFormat:@"CHANGE %@ %@", [otherName backtickQuotedString], [self _buildPartialColumnDefinitionString:redefinedRow]]];
-			[dependentCheckDescriptions addObject:[NSString stringWithFormat:NSLocalizedString(@"check on column ‘%@’", @"description of a check constraint declared on a column, used in the delete field confirmation"), otherName]];
-		}
+		[additionalAlterClauses addObject:[NSString stringWithFormat:@"CHANGE %@ %@", [otherName backtickQuotedString], [self _buildPartialColumnDefinitionString:redefinedRow]]];
+		[dependentCheckDescriptions addObject:[NSString stringWithFormat:NSLocalizedString(@"check on column ‘%@’", @"description of a check constraint declared on a column, used in the delete field confirmation"), otherName]];
 	}
 
 	NSString *alertMessage;
@@ -1027,36 +1017,22 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		NSArray<NSNumber *> *version = [self _serverVersionParts];
-		NSDictionary<NSString *, NSArray<NSString *> *> *clauses = [SACheckConstraintSupport renameClausesRenamingColumn:oldColumnName
-		                                                                                                              to:newColumnName
-		                                                                                                          checks:[tableDataInstance getCheckConstraints]
-		                                                                                                         mariaDB:[mySQLConnection isMariaDB]
-		                                                                                                           major:[version[0] integerValue]
-		                                                                                                           minor:[version[1] integerValue]
-		                                                                                                         release:[version[2] integerValue]];
-		checkDropClauses = clauses[@"drop"] ?: @[];
-		[checkAddClauses addObjectsFromArray:clauses[@"add"] ?: @[]];
+		NSDictionary<NSString *, NSArray *> *plan = [SACheckConstraintSupport renamePlanRenamingColumn:oldColumnName
+		                                                                                            to:newColumnName
+		                                                                                        checks:[tableDataInstance getCheckConstraints]
+		                                                                                          rows:tableFields
+		                                                                                       mariaDB:[mySQLConnection isMariaDB]
+		                                                                                         major:[version[0] integerValue]
+		                                                                                         minor:[version[1] integerValue]
+		                                                                                       release:[version[2] integerValue]];
+		checkDropClauses = plan[@"drop"] ?: @[];
+		[checkAddClauses addObjectsFromArray:plan[@"add"] ?: @[]];
 
-		// Where the server won't rewrite checks itself, another column's inline check that mentions the
-		// renamed column is redefined with the new name in the same statement
-		if ([mySQLConnection isMariaDB] && ![SACheckConstraintSupport serverRewritesChecksOnRenameWithMariaDB:YES
-		                                                                                              major:[version[0] integerValue]
-		                                                                                              minor:[version[1] integerValue]
-		                                                                                            release:[version[2] integerValue]]) {
-			for (NSDictionary *otherRow in tableFields)
-			{
-				NSString *otherName = [otherRow objectForKey:@"name"];
-				NSString *otherDetails = [otherRow objectForKey:@"unparsed"];
-
-				if ([otherName isEqualToString:oldColumnName] || ![otherDetails length]) continue;
-
-				if ([SACheckConstraintSupport columnDetails:otherDetails referencesColumn:oldColumnName]) {
-					NSMutableDictionary *redefinedRow = [otherRow mutableCopy];
-					[redefinedRow setObject:[SACheckConstraintSupport renamingColumn:oldColumnName to:newColumnName inColumnDetails:otherDetails] forKey:@"unparsed"];
-
-					[checkAddClauses addObject:[NSString stringWithFormat:@"CHANGE %@ %@", [otherName backtickQuotedString], [self _buildPartialColumnDefinitionString:redefinedRow]]];
-				}
-			}
+		// Where the server won't rewrite checks itself, other columns' inline checks that mention the
+		// renamed column are redefined with the new name in the same statement
+		for (NSDictionary *redefinedRow in plan[@"redefinedRows"])
+		{
+			[checkAddClauses addObject:[NSString stringWithFormat:@"CHANGE %@ %@", [[redefinedRow objectForKey:@"name"] backtickQuotedString], [self _buildPartialColumnDefinitionString:redefinedRow]]];
 		}
 	}
 

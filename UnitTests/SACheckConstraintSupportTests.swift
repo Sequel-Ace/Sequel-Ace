@@ -559,6 +559,38 @@ final class SACheckConstraintSupportTests: XCTestCase {
         )
     }
 
+    func testRenamePlanSkipsTheEditedRowUnderItsNewName() {
+        // On MariaDB 10.2.1-10.2.12 the edited row already carries the new name in the shared field list
+        let rows: [[String: Any]] = [
+            ["name": "b", "unparsed": "int(11) CHECK (`a` > 0)"],
+            ["name": "c", "unparsed": "int(11) CHECK (`a` < 9)"],
+        ]
+        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", checks: [], rows: rows, isMariaDB: true, major: 10, minor: 2, release: 5)
+        let redefined = plan["redefinedRows"] as? [[String: Any]]
+
+        XCTAssertEqual(redefined?.compactMap { $0["name"] as? String }, ["c"])
+        XCTAssertEqual(redefined?.first?["unparsed"] as? String, "int(11) CHECK (`b` < 9)")
+    }
+
+    func testRenamePlanLeavesRowsAloneWhereTheServerRewritesChecks() {
+        let rows: [[String: Any]] = [["name": "c", "unparsed": "int(11) CHECK (`a` < 9)"]]
+        let plan = SACheckConstraintSupport.renamePlan(renamingColumn: "a", to: "b", checks: [], rows: rows, isMariaDB: true, major: 10, minor: 6, release: 0)
+
+        XCTAssertEqual((plan["redefinedRows"] as? [Any])?.count, 0)
+    }
+
+    func testRemovalPlanStripsOtherColumnsChecksAndNamesTableChecks() {
+        let rows: [[String: Any]] = [
+            ["name": "a", "unparsed": "int(11)"],
+            ["name": "c", "unparsed": "int(11) CHECK (`a` < 9)"],
+        ]
+        let plan = SACheckConstraintSupport.removalPlan(removingColumn: "a", checks: [check("ck", "`a` > `c`")], rows: rows, isMariaDB: false)
+
+        XCTAssertEqual(plan["checkNames"] as? [String], ["ck"])
+        XCTAssertEqual((plan["drop"] as? [String])?.count, 1)
+        XCTAssertEqual((plan["redefinedRows"] as? [[String: Any]])?.compactMap { $0["name"] as? String }, ["c"])
+    }
+
     private func check(_ name: String, _ expression: String, enforced: Bool = true) -> [String: Any] {
         [
             SACheckConstraintSupport.nameKey: name,

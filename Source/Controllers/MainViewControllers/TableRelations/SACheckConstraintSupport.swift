@@ -278,6 +278,58 @@ import Foundation
         }
     }
 
+    // MARK: - Planning a column change
+
+    /// Everything a rename of `column` to `newName` needs besides the column's own CHANGE clause.
+    /// `rows` are the Structure tab's column dictionaries (`name`, `unparsed`, ...) and may already
+    /// carry the edited column under its new name. Returns
+    /// - `drop` / `add`: table-level check clauses, before and after the column change (see `renameClauses`)
+    /// - `redefinedRows`: other columns whose inline check mentions `column`, with `unparsed` rewritten.
+    ///   Only where the server won't rewrite those itself; the caller turns each into a `CHANGE` clause.
+    @objc(renamePlanRenamingColumn:to:checks:rows:mariaDB:major:minor:release:)
+    static func renamePlan(renamingColumn column: String, to newName: String, checks: [[String: Any]], rows: [[String: Any]], isMariaDB: Bool, major: Int, minor: Int, release: Int) -> [String: [Any]] {
+        let clauses = renameClauses(renamingColumn: column, to: newName, checks: checks, isMariaDB: isMariaDB, major: major, minor: minor, release: release)
+        var redefined: [[String: Any]] = []
+
+        if isMariaDB, !serverRewritesChecksOnRename(isMariaDB: true, major: major, minor: minor, release: release) {
+            for row in rows {
+                // The edited row is skipped under either name: its own CHANGE clause already carries the
+                // rewritten definition, and a second CHANGE from the new name does not exist yet on the server
+                guard let name = row[nameKey] as? String, !isSameColumn(name, column), !isSameColumn(name, newName),
+                      let details = row["unparsed"] as? String, columnDetails(details, referencesColumn: column) else { continue }
+
+                var redefinedRow = row
+                redefinedRow["unparsed"] = renamingColumn(column, to: newName, inColumnDetails: details)
+                redefined.append(redefinedRow)
+            }
+        }
+        return ["drop": clauses["drop"] ?? [], "add": clauses["add"] ?? [], "redefinedRows": redefined]
+    }
+
+    /// Everything deleting `column` needs besides dropping the column itself. Returns
+    /// - `drop`: clauses dropping the table-level checks that use it
+    /// - `checkNames`: those checks' names
+    /// - `redefinedRows`: other columns whose inline check mentions it, with those checks stripped
+    ///   from `unparsed`; the caller turns each into a `CHANGE` clause
+    @objc(removalPlanRemovingColumn:checks:rows:mariaDB:)
+    static func removalPlan(removingColumn column: String, checks: [[String: Any]], rows: [[String: Any]], isMariaDB: Bool) -> [String: [Any]] {
+        var redefined: [[String: Any]] = []
+
+        for row in rows {
+            guard let name = row[nameKey] as? String, !isSameColumn(name, column),
+                  let details = row["unparsed"] as? String, columnDetails(details, referencesColumn: column) else { continue }
+
+            var redefinedRow = row
+            redefinedRow["unparsed"] = strippingChecks(referencing: column, fromColumnDetails: details)
+            redefined.append(redefinedRow)
+        }
+        return [
+            "drop": dropClauses(removingColumn: column, checks: checks, isMariaDB: isMariaDB),
+            "checkNames": self.checks(referencing: column, in: checks).compactMap { $0[nameKey] as? String },
+            "redefinedRows": redefined,
+        ]
+    }
+
     // MARK: - Helpers
 
     private static func isSameColumn(_ lhs: String, _ rhs: String) -> Bool {
