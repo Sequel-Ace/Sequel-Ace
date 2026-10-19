@@ -485,7 +485,10 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  * Starts the auto refresh timer.
  */
 - (void)_startAutoRefreshTimer
-{		
+{
+	// Never two timers: showWindow: runs again when the window is already open, and an overwritten timer could not be stopped
+	[self _killAutoRefreshTimer];
+
 	autoRefreshTimer = [NSTimer scheduledTimerWithTimeInterval:[prefs doubleForKey:SPProcessListAutoRrefreshInterval] target:self selector:@selector(_fireAutoRefresh:) userInfo:nil repeats:YES];
 }
 
@@ -495,10 +498,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_killAutoRefreshTimer
 {
 	// If the auto refresh timer is running, kill it
-	if (autoRefreshTimer && [autoRefreshTimer isValid]) {		
-		[autoRefreshTimer invalidate];
-		
-	}
+	[autoRefreshTimer invalidate];
+	autoRefreshTimer = nil;
 }
 
 /**
