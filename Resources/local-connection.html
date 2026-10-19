@@ -57,7 +57,8 @@
 		margin-bottom: 20px;
 		padding-bottom: 14px;
 		border-bottom: 1px solid var(--sa-hairline, var(--fallback-hairline));
-		color: var(--sa-muted, var(--fallback-muted));
+		/* Softer than the body text but still body-text contrast (the muted colour alone is below 4.5:1 on paper). */
+		color: color-mix(in srgb, var(--sa-text, var(--fallback-text)) 50%, var(--sa-muted, var(--fallback-muted)));
 	}
 
 	strong {

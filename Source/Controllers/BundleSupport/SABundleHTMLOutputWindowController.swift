@@ -30,6 +30,10 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     private let bridge = SABundleJSBridge()
     private var titleSubscription: AnyCancellable?
 
+    /// Whether the web view shows the HTML this window was handed (on the paper), rather than a page reached by a link
+    /// or loaded from a URL (as the page draws itself).
+    private var showsPaper = false
+
     // Saves the window's frame when a caller supplies a temporary one, so it can be
     // restored when the window closes.
     private var restoreFrame = false
@@ -90,19 +94,30 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         if let window {
             SAClaudeRareWindowChrome.apply(to: window, palette: palette)
         }
-        model.underPageBackgroundColor = palette.surface
+        model.underPageBackgroundColor = showsPaper ? SAClaudeHintCardPalette.currentPaper().surface : palette.surface
+    }
+
+    /// Sets the web view up for what it shows. The HTML the window was handed sits on the paper: no page background of
+    /// its own, a light appearance (bundle HTML has always rendered on a light page, so a page supporting both colour
+    /// schemes takes its light one, readable on the paper), and the paper outside the page. Any other page (a link
+    /// followed from it, a URL, a new window's page) draws its own background in the window's appearance, as before.
+    private func showPaper(_ paper: Bool) {
+        showsPaper = paper
+        model.drawsPageBackground = !paper
+        model.pageAppearance = paper ? NSAppearance(named: .aqua) : nil
+        themeChanged()
     }
 
     // MARK: - Legacy ObjC API (display content)
 
     /// HTML Sequel Ace hands the window (bundle output, its own help page) sits on the paper: the base stylesheet goes
     /// in ahead of the page's own styles and the web view draws no background of its own, so the paper behind it shows
-    /// wherever the page paints none.
+    /// wherever the page paints none. (Set up front so the page is parsed in the light appearance; each commit confirms.)
     @objc(displayHTMLContent:withOptions:)
     func displayHTMLContent(_ content: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.orderFront(nil)
         applyDisplayOptions(displayOptions)
-        model.drawsPageBackground = false
+        showPaper(true)
         let base = SAClaudePaperBase.stylesheet(paper: .currentPaper(), theme: .current())
         model.loadHTMLString(SAClaudePaperBase.inject(base, into: content))
     }
@@ -112,7 +127,7 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     func displayURLString(_ urlString: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.makeKeyAndOrderFront(nil)
         applyDisplayOptions(displayOptions)
-        model.drawsPageBackground = true
+        showPaper(false)
         if let url = URL(string: urlString) {
             model.load(URLRequest(url: url))
         }
@@ -269,6 +284,11 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     // MARK: - Web view hooks
 
     private func configureModelHooks() {
+        // What is shown decides the paper, whichever way it got there (a link, a reload, back and forward).
+        model.onCommit = { [weak self] isLoadedHTML in
+            self?.showPaper(isLoadedHTML)
+        }
+
         model.onSequelaceURL = { url in
             (NSApp.delegate as? SPAppController)?.handleEvent(with: url)
         }

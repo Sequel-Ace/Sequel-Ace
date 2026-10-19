@@ -83,6 +83,22 @@ final class SAWebViewModel: NSObject, ObservableObject {
         webView.setValue(drawsPageBackground, forKey: "drawsBackground")
     }
 
+    /// The web view's own appearance, which decides the page's `prefers-color-scheme` and the colour scheme of a page
+    /// that supports both; nil inherits the window's. Applied when the web view attaches and on every change.
+    var pageAppearance: NSAppearance? {
+        didSet { webView?.appearance = pageAppearance }
+    }
+
+    /// Called whenever a navigation commits, with whether the committed document is the HTML handed to
+    /// `loadHTMLString` (at its base URL, `about:blank` without one) rather than anything else: a link, a URL load, a
+    /// new window's page. Lets the owner style the page by what is actually shown, not by how the window was opened.
+    var onCommit: ((_ isLoadedHTML: Bool) -> Void)?
+
+    fileprivate func didCommit(_ webView: WKWebView) {
+        let htmlURL = initialBaseURL ?? URL(string: "about:blank")
+        onCommit?(!initialHTMLString.isEmpty && webView.url == htmlURL)
+    }
+
     // MARK: - Loading
 
     /// Loads HTML. Pass a `baseURL` when the document contains relative links that
@@ -181,6 +197,9 @@ final class SAWebViewModel: NSObject, ObservableObject {
         }
         if !drawsPageBackground {
             applyDrawsPageBackground()
+        }
+        if let pageAppearance {
+            webView.appearance = pageAppearance
         }
         titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
             self?.pageTitle = webView.title ?? ""
@@ -312,6 +331,10 @@ struct SAWebView: NSViewRepresentable {
             let path = String(url.absoluteString.dropFirst("\(scheme):/".count))
             guard !path.isEmpty else { return nil }
             return path.removingPercentEncoding ?? path
+        }
+
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            model.didCommit(webView)
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

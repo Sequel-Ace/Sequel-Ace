@@ -10,6 +10,9 @@
 //  presentational hints, which a later zero-specificity author rule on the same element would beat, so the base names
 //  none of those elements: it styles `html` (inherited, so an element's own hint still wins) and links, the link colour
 //  only while the body sets none (`<body link>` reaches links through the UA's link colour, which any author rule beats).
+//  The one element rule is `table{font-size:inherit}`, the standards-mode behaviour: a page without a doctype (DB Report)
+//  is in quirks mode, whose UA sheet resets tables to the 16px default while the rest of the page takes the 13px type;
+//  `<table>` has no font-size attribute, so no hint is overridden.
 //  There is no background rule: the paper is drawn behind a transparent web view, so any page background paints over
 //  it. Pure Foundation/AppKit so it is shared with the Unit Tests target.
 //
@@ -27,15 +30,17 @@ enum SAClaudePaperBase {
         let css = ":where(:root){\(SAClaudeHintCardCSS.declarations(theme))}"
             + ":where(html){color:\(SAClaudeHintCardCSS.colour(paper.text));"
             + "font:13px/1.5 -apple-system,system-ui,sans-serif;color-scheme:light}"
+            + ":where(table){font-size:inherit}"
             + ":where(body:not([link]):not([vlink]):not([alink]) a:any-link){color:\(SAClaudeHintCardCSS.colour(paper.accent))}"
             + "@media print{:where(:root){\(SAClaudeHintCardCSS.declarations(paper))}}"
         return "<style \(marker)>\(css)</style>"
     }
 
     /// `html` with `stylesheet` ahead of the page's own styles: right after `<head…>`; with no head, after `<html…>`;
-    /// with neither, after a leading `<!DOCTYPE…>`; otherwise (a fragment) at the start. Whitespace after an `<html>` or
-    /// doctype tag stays before the base, where the parser drops it (after the base it would become text in the head).
-    /// Unchanged when the page already carries the marker.
+    /// with neither, after a leading `<!DOCTYPE…>` (comments, whitespace and a byte order mark may precede it);
+    /// otherwise (a fragment) at the start, after a byte order mark. Tags inside HTML comments don't count. Whitespace
+    /// after an `<html>` or doctype tag stays before the base, where the parser drops it (after the base it would become
+    /// text in the head). Unchanged when the page already carries the marker.
     static func inject(_ stylesheet: String, into html: String) -> String {
         guard !html.contains(marker) else { return html }
         var result = html
@@ -58,17 +63,29 @@ enum SAClaudePaperBase {
 
     private static func insertionIndex(in html: String) -> String.Index {
         // A head or html tag counts only before the body (not one written inside the page's content or scripts).
-        let prologueEnd = html.range(of: "<body[\\s>]", options: [.regularExpression, .caseInsensitive])?.lowerBound ?? html.endIndex
-        let prologue = html.startIndex..<prologueEnd
-        if let head = html.range(of: "<head(?:\\s[^>]*)?>", options: [.regularExpression, .caseInsensitive], range: prologue) {
+        let prologueEnd = firstTag("<body[\\s>]", in: html)?.lowerBound ?? html.endIndex
+        if let head = firstTag("<head(?:\\s[^>]*)?>", in: html), head.upperBound <= prologueEnd {
             return head.upperBound
         }
-        if let root = html.range(of: "<html(?:\\s[^>]*)?>\\s*", options: [.regularExpression, .caseInsensitive], range: prologue) {
+        if let root = firstTag("<html(?:\\s[^>]*)?>\\s*", in: html), root.lowerBound < prologueEnd {
             return root.upperBound
         }
-        if let doctype = html.range(of: "^\\s*<!DOCTYPE[^>]*>\\s*", options: [.regularExpression, .caseInsensitive]) {
+        if let doctype = html.range(of: "^\u{FEFF}?(?:\\s|<!--[\\s\\S]*?-->)*<!DOCTYPE[^>]*>\\s*",
+                                    options: [.regularExpression, .caseInsensitive]) {
             return doctype.upperBound
         }
-        return html.startIndex
+        return html.hasPrefix("\u{FEFF}") ? html.index(after: html.startIndex) : html.startIndex
+    }
+
+    /// The first match of `pattern` (case-insensitive) outside HTML comments (an unclosed one runs to the end).
+    private static func firstTag(_ pattern: String, in html: String) -> Range<String.Index>? {
+        let regex = try! NSRegularExpression(pattern: "<!--[\\s\\S]*?(?:-->|\\z)|(\(pattern))", options: [.caseInsensitive])
+        var found: Range<String.Index>?
+        regex.enumerateMatches(in: html, range: NSRange(html.startIndex..., in: html)) { match, _, stop in
+            guard let match, match.range(at: 1).location != NSNotFound else { return }
+            found = Range(match.range(at: 1), in: html)
+            stop.pointee = true
+        }
+        return found
     }
 }

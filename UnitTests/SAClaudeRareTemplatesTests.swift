@@ -132,6 +132,8 @@ final class SAClaudeRareTemplatesTests: XCTestCase {
         assertRule("body", in: html, contains: ["var(--sa-surface,", "var(--sa-text,", "13px", "-apple-system"])
         assertRule("a", in: html, contains: ["var(--sa-accent,"])
         assertRule("pre", in: html, contains: ["var(--sa-code,", "border-radius: 8px", "SF Mono"])
+        // The lead is a full sentence: half text, half muted keeps it ≥ 4.5:1 (the muted colour alone is not on paper).
+        assertRule(".lead", in: html, contains: ["color-mix(in srgb, var(--sa-text, var(--fallback-text)) 50%, var(--sa-muted, var(--fallback-muted)))"])
     }
 
     func testSocketPageKeepsItsInstructions() throws {
