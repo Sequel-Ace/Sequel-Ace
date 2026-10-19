@@ -71,6 +71,18 @@ final class SAWebViewModel: NSObject, ObservableObject {
         webView.underPageBackgroundColor = underPageBackgroundColor.map { $0.usingColorSpace(.sRGB) ?? $0 }
     }
 
+    /// Whether the web view paints the default page background (white) behind a page that sets none; false makes it
+    /// transparent, so the view behind it shows through (the bundle window's paper). Applied when the web view attaches
+    /// and on every change, through WebKit's `drawsBackground` where the web view has it.
+    var drawsPageBackground = true {
+        didSet { applyDrawsPageBackground() }
+    }
+
+    private func applyDrawsPageBackground() {
+        guard let webView, webView.responds(to: Selector(("_setDrawsBackground:"))) else { return }
+        webView.setValue(drawsPageBackground, forKey: "drawsBackground")
+    }
+
     // MARK: - Loading
 
     /// Loads HTML. Pass a `baseURL` when the document contains relative links that
@@ -166,6 +178,9 @@ final class SAWebViewModel: NSObject, ObservableObject {
         self.webView = webView
         if underPageBackgroundColor != nil {
             applyUnderPageBackgroundColor()
+        }
+        if !drawsPageBackground {
+            applyDrawsPageBackground()
         }
         titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
             self?.pageTitle = webView.title ?? ""

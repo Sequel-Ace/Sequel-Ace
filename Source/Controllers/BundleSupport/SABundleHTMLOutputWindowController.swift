@@ -69,6 +69,11 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             .sink { [weak self] title in
                 self?.window?.title = title
             }
+
+        // The window's surface and appearance follow the palette, which follows the editor theme and the accent.
+        themeChanged()
+        SAClaudeThemeWatcher.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
+        SAClaudeAccent.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
     }
 
     @available(*, unavailable)
@@ -76,19 +81,38 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         fatalError("init(coder:) is not supported; use init()")
     }
 
+    // MARK: - Theme
+
+    /// The window chrome and the colour outside the page follow the current palette. (The page itself keeps the
+    /// palette it was loaded with.)
+    private func themeChanged() {
+        let palette = SAClaudeHintCardPalette.current()
+        if let window {
+            SAClaudeRareWindowChrome.apply(to: window, palette: palette)
+        }
+        model.underPageBackgroundColor = palette.surface
+    }
+
     // MARK: - Legacy ObjC API (display content)
 
+    /// HTML Sequel Ace hands the window (bundle output, its own help page) sits on the paper: the base stylesheet goes
+    /// in ahead of the page's own styles and the web view draws no background of its own, so the paper behind it shows
+    /// wherever the page paints none.
     @objc(displayHTMLContent:withOptions:)
     func displayHTMLContent(_ content: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.orderFront(nil)
         applyDisplayOptions(displayOptions)
-        model.loadHTMLString(content)
+        model.drawsPageBackground = false
+        let base = SAClaudePaperBase.stylesheet(paper: .currentPaper(), theme: .current())
+        model.loadHTMLString(SAClaudePaperBase.inject(base, into: content))
     }
 
+    /// Remote pages (and `window.open` targets) are shown as they are: no base, the web view's own background.
     @objc(displayURLString:withOptions:)
     func displayURLString(_ urlString: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.makeKeyAndOrderFront(nil)
         applyDisplayOptions(displayOptions)
+        model.drawsPageBackground = true
         if let url = URL(string: urlString) {
             model.load(URLRequest(url: url))
         }
@@ -336,7 +360,7 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
 
     @objc func showSourceCode() {
         model.fetchOuterHTML { sourceCode in
-            guard let sourceCode = sourceCode else { return }
+            guard let sourceCode = sourceCode.map(SAClaudePaperBase.strip) else { return }
 
             let controller = SABundleHTMLOutputWindowController()
             let escaped = (sourceCode as NSString).htmlEscape() ?? ""
@@ -360,7 +384,8 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             guard response == .OK, let url = panel.url else { return }
 
             self?.model.fetchOuterHTML { sourceCode in
-                guard let sourceCode = sourceCode else { return }
+                // The page as the bundle wrote it, without the paper base.
+                guard let sourceCode = sourceCode.map(SAClaudePaperBase.strip) else { return }
                 do {
                     try sourceCode.write(to: url, atomically: true, encoding: .utf8)
                 } catch {
