@@ -2568,6 +2568,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 #pragma mark Data accessors
 
 /**
+ * Returns the number of rows in the table content view, without loading or copying them.
+ */
+- (NSUInteger)currentResultRowCount
+{
+	return tableRowsCount;
+}
+
+/**
  * Returns the current result (as shown in table content view) as array, the first object containing the field
  * names as array, the following objects containing the rows as array.
  */

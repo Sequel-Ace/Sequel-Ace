@@ -42,7 +42,7 @@ final class SAJSONExportFormatterTests: XCTestCase {
             ("float", false),
             ("bit", false), // a bit string such as "0101"
             ("date", false),
-            ("enum", false),
+            ("enum", true), // ENUM / SET: their labels, collation aside
             ("geometry", false), // listed for completeness: turned into WKT text before textCell
         ]
 
@@ -113,6 +113,29 @@ final class SAJSONExportFormatterTests: XCTestCase {
         }
 
         XCTAssertEqual(formatter.row(cells, index: 0), "\n{\"code\":\"hej\",\"payload\":\"QUI=\"}")
+    }
+
+    /// ENUM and SET on the filtered path: a binary collation (`COLLATE utf8mb4_bin`) makes the
+    /// server flag them BINARY, so SPMySQL hands their labels over as bytes, and the table metadata
+    /// carries no charsetnr to say otherwise. The labels are text and belong in the file as strings.
+    func testBinaryCollationEnumAndSetFromTableMetadataStayText() {
+        let definitions: [[String: Any]] = [
+            ["name": "size", "typegrouping": "enum"],
+            ["name": "tags", "typegrouping": "enum"],
+        ]
+
+        let characterSets = SAJSONExportFormatter.characterSetNumbers(definitions)
+        let formatter = SAJSONExportFormatter(columnNames: ["size", "tags"],
+                                              numericColumns: SAJSONExportFormatter.numericColumnFlags(definitions),
+                                              tableKey: nil,
+                                              prettyPrint: false)
+
+        let producedRow: [Any] = [Data("small".utf8), Data("x,y".utf8)]
+        let cells = producedRow.enumerated().map { column, cell in
+            SAJSONExportFormatter.textCell(cell, characterSetNumber: characterSets[column], encoding: .utf8)
+        }
+
+        XCTAssertEqual(formatter.row(cells, index: 0), "\n{\"size\":\"small\",\"tags\":\"x,y\"}")
     }
 
     /// The reported case, assembled from the metadata a query result really carries: the numeric

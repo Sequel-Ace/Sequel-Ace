@@ -1240,10 +1240,10 @@ set_input:
 
 		if (isJSON && ((exportSource == SPFilteredExport) || (exportSource == SPQueryExport))) {
 			// A query or filtered result exports whatever its result holds, so gate on
-			// availability — the headers row plus at least one data row, the same test that
-			// enables these sources in the Input popup — not on table selection: the table
-			// list is disabled for these sources and its checkboxes are not read.
-			enable = ([[uiStateDict objectForKey:(exportSource == SPFilteredExport) ? SPFilteredResultRows : SPQueryResultRows] integerValue] > 1);
+			// availability — at least one data row, as the Input popup requires to enable these
+			// sources — not on table selection: the table list is disabled for these sources and
+			// its checkboxes are not read.
+			enable = ([[uiStateDict objectForKey:(exportSource == SPFilteredExport) ? SPFilteredResultRows : SPQueryResultRows] integerValue] > 0);
 		}
 		else if (isCSV || isXML || isJSON || isHTML || isPDF || (isSQL && ((!structureEnabled) || (!dropEnabled)))) {
 			enable = NO;
@@ -1303,10 +1303,15 @@ set_input:
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeContentCheck state]] forKey:SPSQLExportContentEnabled];
 	[uiStateDict setObject:[NSNumber numberWithInteger:[exportSQLIncludeDropSyntaxCheck state]] forKey:SPSQLExportDropEnabled];
 
-	// Captured here on the main thread: _toggleExportButton: runs on a background thread and
-	// must not read the result arrays there.
-	[uiStateDict setObject:[NSNumber numberWithInteger:[[tableContentInstance currentResult] count]] forKey:SPFilteredResultRows];
-	[uiStateDict setObject:[NSNumber numberWithInteger:[[customQueryInstance currentResult] count]] forKey:SPQueryResultRows];
+	// Captured here on the main thread, as _toggleExportButton: runs on a background thread and
+	// must not read the results there. Only the row count of the result a JSON export would
+	// write is taken: this runs on every checkbox click, for every export type.
+	if (exportType == SPJSONExport && exportSource == SPFilteredExport) {
+		[uiStateDict setObject:@([tableContentInstance currentResultRowCount]) forKey:SPFilteredResultRows];
+	}
+	else if (exportType == SPJSONExport && exportSource == SPQueryExport) {
+		[uiStateDict setObject:@([customQueryInstance currentResultRowCount]) forKey:SPQueryResultRows];
+	}
 
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController export button updater",tableDocumentInstance) target:self selector:@selector(_toggleExportButton:) object:uiStateDict];
 }

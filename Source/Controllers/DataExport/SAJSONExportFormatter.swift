@@ -159,9 +159,10 @@ final class SAJSONExportFormatter: NSObject {
 
     /// The `typegrouping`s of columns that hold text yet can arrive as bytes, because a binary
     /// collation (`utf8mb4_bin`, `VARCHAR(n) BINARY`, MariaDB's JSON type) sets the BINARY flag
-    /// SPMySQL reads to decide that. The other groupings either really are bytes or never reach
-    /// the exporter as bytes at all.
-    static let textTypeGroupings: Set<String> = ["string", "textdata"]
+    /// SPMySQL reads to decide that. `enum` covers ENUM and SET, whose values are their labels:
+    /// the server flags a binary-collated one BINARY too. The other groupings either really are
+    /// bytes or never reach the exporter as bytes at all.
+    static let textTypeGroupings: Set<String> = ["string", "textdata", "enum"]
 
     /// Per-column character set ids from a result's field definitions, used to decide which cells
     /// are bytes to carry as base64 and which are text that merely arrived as bytes.
