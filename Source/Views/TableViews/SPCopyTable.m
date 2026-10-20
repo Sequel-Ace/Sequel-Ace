@@ -515,12 +515,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSArray *tbColumns = [self _sqlColumnsSkippingAutoIncrement:skipAutoIncrementColumn skippingGenerated:skipGeneratedColumn];
 	if (!tbColumns) return nil;
 
-	NSArray *rows = [self _sqlLiteralsForRowsOnlySelectedRows:onlySelected columns:tbColumns];
-	if (!rows) return nil;
+	SAInsertStatementWriter *writer = [[SAInsertStatementWriter alloc] initWithTable:selectedTable
+	                                                                         columns:[self _headersOfSqlColumns:tbColumns]];
+	if (![self _writeSqlLiteralsForRowsOnlySelectedRows:onlySelected columns:tbColumns toWriter:writer]) return nil;
 
-	return [SASQLStatementBuilder insertStatementsForTable:selectedTable
-	                                               columns:[self _headersOfSqlColumns:tbColumns]
-	                                                  rows:rows];
+	return [writer finish];
 }
 
 /*
@@ -548,15 +547,19 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 		return nil;
 	}
 
-	NSArray *rows = [self _sqlLiteralsForRowsOnlySelectedRows:onlySelected columns:tbColumns];
-	if (!rows) return nil;
+	SAUpdateStatementWriter *writer = [[SAUpdateStatementWriter alloc] initWithDatabase:origin.database
+	                                                                              table:origin.table
+	                                                                            columns:origin.columns
+	                                                                   keyColumnIndexes:origin.keyColumnIndexes
+	                                                             generatedColumnIndexes:origin.generatedColumnIndexes];
+	if (!writer) {
+		NSBeep();
+		return nil;
+	}
 
-	NSString *result = [SASQLStatementBuilder updateStatementsForDatabase:origin.database
-	                                                                 table:origin.table
-	                                                              columns:origin.columns
-	                                                     keyColumnIndexes:origin.keyColumnIndexes
-	                                               generatedColumnIndexes:origin.generatedColumnIndexes
-	                                                                 rows:rows];
+	if (![self _writeSqlLiteralsForRowsOnlySelectedRows:onlySelected columns:tbColumns toWriter:writer]) return nil;
+
+	NSString *result = [writer finish];
 	if (!result) NSBeep();
 
 	return result;
@@ -730,26 +733,28 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 }
 
 /**
- * The SQL literals of every row to be copied, one array of literals per row, ready to be dropped
- * into a statement as they are. Returns nil if any value could not be turned into one.
+ * Hand the SQL literals of every row to be copied to writer, a row at a time, so that a large
+ * selection is never held twice over — once as literals and again as the statements made from
+ * them. Returns NO if any value could not be turned into a literal, or if writer refused a row.
  */
-- (NSArray *)_sqlLiteralsForRowsOnlySelectedRows:(BOOL)onlySelected columns:(NSArray *)tbColumns
+- (BOOL)_writeSqlLiteralsForRowsOnlySelectedRows:(BOOL)onlySelected columns:(NSArray *)tbColumns toWriter:(id<SASQLStatementWriter>)writer
 {
-	NSIndexSet *selectedRows = (onlySelected) ? [self selectedRowIndexes] : [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [tableStorage count])];
+	if (!writer) return NO;
 
-	NSMutableArray *rows = [[NSMutableArray alloc] initWithCapacity:[selectedRows count]];
+	NSIndexSet *selectedRows = (onlySelected) ? [self selectedRowIndexes] : [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [tableStorage count])];
 	NSUInteger rowIndex = [selectedRows firstIndex];
 
 	while (rowIndex != NSNotFound)
 	{
-		NSArray *rowValues = [self _sqlLiteralsForRow:rowIndex columns:tbColumns];
-		if (!rowValues) return nil;
-
-		[rows addObject:rowValues];
+		// Release each row's literals as soon as the writer has them.
+		@autoreleasepool {
+			NSArray *rowValues = [self _sqlLiteralsForRow:rowIndex columns:tbColumns];
+			if (!rowValues || ![writer appendRow:rowValues]) return NO;
+		}
 		rowIndex = [selectedRows indexGreaterThanIndex:rowIndex];
 	}
 
-	return rows;
+	return YES;
 }
 
 /**

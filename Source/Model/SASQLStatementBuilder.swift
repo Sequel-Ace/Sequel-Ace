@@ -84,11 +84,12 @@ import Foundation
     /// often far smaller, and editors are happier with several medium statements than one huge
     /// one. The limit is checked after appending a row, so a single oversized row still gets a
     /// statement of its own rather than being split.
-    private static let insertBatchThreshold = 250_000
+    fileprivate static let insertBatchThreshold = 250_000
 
     // MARK: - INSERT
 
-    /// Builds `INSERT` statements covering every row.
+    /// Builds `INSERT` statements covering every row; see `SAInsertStatementWriter`, which takes
+    /// the rows one at a time.
     ///
     /// - Parameters:
     ///   - table: Table to insert into, or `nil` to use `placeholderTableName`.
@@ -98,45 +99,17 @@ import Foundation
     ///   width.
     @objc(insertStatementsForTable:columns:rows:)
     public class func insertStatements(table: String?, columns: [String], rows: [[String]]) -> String? {
-        guard !columns.isEmpty, !rows.isEmpty else { return nil }
-        guard rows.allSatisfy({ $0.count == columns.count }) else { return nil }
-
-        let header = "INSERT INTO \(quotedTableName(table)) (\(joinBacktickQuoted(columns)))\nVALUES\n"
-
-        var result = header
-        var batch = ""
-        // The UTF-16 length of `batch`, kept up as rows are appended: asking a native String for
-        // its UTF-16 count walks the whole string once it holds non-ASCII text, which after every
-        // row would make a large copy quadratic.
-        var batchLength = 0
-
-        for (index, row) in rows.enumerated() {
-            let rowText = "\t(" + row.joined(separator: ", ")
-            batch += rowText
-            batchLength += rowText.utf16.count
-
-            let isLastRow = index == rows.count - 1
-            if !isLastRow, batchLength > insertBatchThreshold {
-                // Close this statement off and start the next one, so that the row just appended
-                // ends the batch rather than opening the next.
-                result += batch + ");\n\n" + header
-                batch = ""
-                batchLength = 0
-            } else {
-                batch += "),\n"
-                batchLength += 3
-                if isLastRow {
-                    result += batch
-                }
-            }
+        guard let writer = SAInsertStatementWriter(table: table, columns: columns) else { return nil }
+        for row in rows {
+            guard writer.append(row: row) else { return nil }
         }
-
-        return result.droppingTrailingRowSeparator() + ";\n"
+        return writer.finish()
     }
 
     // MARK: - UPDATE
 
-    /// Builds one `UPDATE` statement per row, each identified by the row's key columns.
+    /// Builds one `UPDATE` statement per row, each identified by the row's key columns; see
+    /// `SAUpdateStatementWriter`, which takes the rows one at a time.
     ///
     /// Key columns are left out of `SET`: they are what the statement matches on, and assigning
     /// them their own value again is noise at best and a different row's identity at worst.
@@ -160,25 +133,13 @@ import Foundation
     ///   key or generated column and so nothing is left to set, or if a row is the wrong width.
     @objc(updateStatementsForDatabase:table:columns:keyColumnIndexes:generatedColumnIndexes:rows:)
     public class func updateStatements(database: String?, table: String?, columns: [String], keyColumnIndexes: IndexSet, generatedColumnIndexes: IndexSet, rows: [[String]]) -> String? {
-        guard !columns.isEmpty, !rows.isEmpty else { return nil }
-        guard rows.allSatisfy({ $0.count == columns.count }) else { return nil }
-
-        let keyIndexes = keyColumnIndexes.filter { columns.indices.contains($0) }
-        let settableIndexes = columns.indices.filter { !keyColumnIndexes.contains($0) && !generatedColumnIndexes.contains($0) }
-        guard !keyIndexes.isEmpty, !settableIndexes.isEmpty else { return nil }
-
-        let quotedTable = updateTargetName(database: database, table: table)
-
-        return rows.map { row -> String in
-            let assignments = settableIndexes
-                .map { "\(backtickQuoted(columns[$0])) = \(row[$0])" }
-                .joined(separator: ", ")
-            let conditions = keyIndexes
-                .map { comparison(column: columns[$0], literal: row[$0]) }
-                .joined(separator: " AND ")
-
-            return "UPDATE \(quotedTable) SET \(assignments)\nWHERE \(conditions);\n"
-        }.joined()
+        guard let writer = SAUpdateStatementWriter(database: database, table: table, columns: columns,
+                                                   keyColumnIndexes: keyColumnIndexes,
+                                                   generatedColumnIndexes: generatedColumnIndexes) else { return nil }
+        for row in rows {
+            guard writer.append(row: row) else { return nil }
+        }
+        return writer.finish()
     }
 
     // MARK: - UPDATE origin eligibility
@@ -317,13 +278,13 @@ import Foundation
     // MARK: - Helpers
 
     /// Compares a column against a literal, using `IS NULL` where `= NULL` would match nothing.
-    private class func comparison(column: String, literal: String) -> String {
+    fileprivate class func comparison(column: String, literal: String) -> String {
         literal == "NULL"
             ? "\(backtickQuoted(column)) IS NULL"
             : "\(backtickQuoted(column)) = \(literal)"
     }
 
-    private class func quotedTableName(_ table: String?) -> String {
+    fileprivate class func quotedTableName(_ table: String?) -> String {
         guard let table, !table.isEmpty else { return backtickQuoted(placeholderTableName) }
         return backtickQuoted(table)
     }
@@ -332,13 +293,13 @@ import Foundation
     /// so the statement lands on the table it was copied from, not on whichever table of that
     /// name the database it runs in happens to hold — `table` alone where it is not, and the
     /// placeholder where there is no table to name at all.
-    private class func updateTargetName(database: String?, table: String?) -> String {
+    fileprivate class func updateTargetName(database: String?, table: String?) -> String {
         guard let table, !table.isEmpty else { return backtickQuoted(placeholderTableName) }
         guard let database, !database.isEmpty else { return backtickQuoted(table) }
         return backtickQuoted(database) + "." + backtickQuoted(table)
     }
 
-    private class func joinBacktickQuoted(_ names: [String]) -> String {
+    fileprivate class func joinBacktickQuoted(_ names: [String]) -> String {
         names.map { backtickQuoted($0) }.joined(separator: ", ")
     }
 
@@ -346,15 +307,143 @@ import Foundation
     ///
     /// Keep in sync with `-[NSString backtickQuotedString]` in `SPStringAdditions.m`; the test
     /// target has no bridging header, so the category is out of reach here.
-    private class func backtickQuoted(_ identifier: String) -> String {
+    fileprivate class func backtickQuoted(_ identifier: String) -> String {
         "`" + identifier.replacingOccurrences(of: "`", with: "``") + "`"
     }
 }
 
-private extension String {
+// MARK: - Writers
 
-    /// Drops the `,\n` that every appended row leaves behind.
-    func droppingTrailingRowSeparator() -> String {
-        hasSuffix(",\n") ? String(dropLast(2)) : self
+/// Builds SQL statements from rows of literals handed over one at a time, so that a caller
+/// copying a large selection holds only the row in hand and the statements written so far —
+/// never every row's literals at once on top of the statements made from them.
+@objc public protocol SASQLStatementWriter: NSObjectProtocol {
+
+    /// Appends one row: its SQL literals, one per column, in column order.
+    ///
+    /// - Returns: `false`, appending nothing, if the row is the wrong width or the writer has
+    ///   finished.
+    @objc(appendRow:)
+    func append(row: [String]) -> Bool
+
+    /// Finishes the statements and returns them, or `nil` if no row was appended. The writer
+    /// takes no more rows afterwards: the statements are completed in place rather than copied.
+    func finish() -> String?
+}
+
+/// Writes the `INSERT` statements of `SASQLStatementBuilder.insertStatements(table:columns:rows:)`
+/// a row at a time.
+@objcMembers public final class SAInsertStatementWriter: NSObject, SASQLStatementWriter {
+
+    private let header: String
+    private let columnCount: Int
+    private var statements: String
+    private var rowCount = 0
+    private var isFinished = false
+
+    /// The UTF-16 length of the rows in the current statement, kept up as rows are appended:
+    /// asking a native String for its UTF-16 count walks the whole string once it holds non-ASCII
+    /// text, which after every row would make a large copy quadratic.
+    private var batchLength = 0
+
+    /// Whether the current statement has passed `insertBatchThreshold`, so that the next row
+    /// starts a new one. Decided when a row is appended, but acted on only once another row
+    /// arrives, so that the last row never opens a statement of its own.
+    private var batchIsFull = false
+
+    /// - Parameters:
+    ///   - table: Table to insert into, or `nil` to use `SASQLStatementBuilder.placeholderTableName`.
+    ///   - columns: Column names, in the order the literals of each row appear.
+    /// - Returns: `nil` if there are no columns.
+    @objc(initWithTable:columns:)
+    public init?(table: String?, columns: [String]) {
+        guard !columns.isEmpty else { return nil }
+        header = "INSERT INTO \(SASQLStatementBuilder.quotedTableName(table)) (\(SASQLStatementBuilder.joinBacktickQuoted(columns)))\nVALUES\n"
+        columnCount = columns.count
+        statements = header
+    }
+
+    @objc(appendRow:)
+    public func append(row: [String]) -> Bool {
+        guard !isFinished, row.count == columnCount else { return false }
+
+        if rowCount > 0 {
+            if batchIsFull {
+                // Close the full statement off and start the next one with this row.
+                statements += ");\n\n" + header
+                batchLength = 0
+            } else {
+                statements += "),\n"
+                batchLength += 3
+            }
+        }
+
+        let rowText = "\t(" + row.joined(separator: ", ")
+        statements += rowText
+        batchLength += rowText.utf16.count
+        batchIsFull = batchLength > SASQLStatementBuilder.insertBatchThreshold
+        rowCount += 1
+        return true
+    }
+
+    public func finish() -> String? {
+        guard !isFinished, rowCount > 0 else { return nil }
+        isFinished = true
+        statements += ");\n"
+        return statements
+    }
+}
+
+/// Writes the `UPDATE` statements of
+/// `SASQLStatementBuilder.updateStatements(database:table:columns:keyColumnIndexes:generatedColumnIndexes:rows:)`
+/// a row at a time.
+@objcMembers public final class SAUpdateStatementWriter: NSObject, SASQLStatementWriter {
+
+    private let target: String
+    private let columns: [String]
+    private let keyIndexes: [Int]
+    private let settableIndexes: [Int]
+    private var statements = ""
+    private var rowCount = 0
+    private var isFinished = false
+
+    /// Takes the same arguments as
+    /// `SASQLStatementBuilder.updateStatements(database:table:columns:keyColumnIndexes:generatedColumnIndexes:rows:)`,
+    /// less the rows.
+    ///
+    /// - Returns: `nil` if the rows cannot be identified, or if every column is a key or generated
+    ///   column and so nothing is left to set.
+    @objc(initWithDatabase:table:columns:keyColumnIndexes:generatedColumnIndexes:)
+    public init?(database: String?, table: String?, columns: [String], keyColumnIndexes: IndexSet, generatedColumnIndexes: IndexSet) {
+        let keyIndexes = keyColumnIndexes.filter { columns.indices.contains($0) }
+        let settableIndexes = columns.indices.filter { !keyColumnIndexes.contains($0) && !generatedColumnIndexes.contains($0) }
+        guard !keyIndexes.isEmpty, !settableIndexes.isEmpty else { return nil }
+
+        target = SASQLStatementBuilder.updateTargetName(database: database, table: table)
+        self.columns = columns
+        self.keyIndexes = keyIndexes
+        self.settableIndexes = settableIndexes
+    }
+
+    @objc(appendRow:)
+    public func append(row: [String]) -> Bool {
+        guard !isFinished, row.count == columns.count else { return false }
+
+        let assignments = settableIndexes
+            .map { "\(SASQLStatementBuilder.backtickQuoted(columns[$0])) = \(row[$0])" }
+            .joined(separator: ", ")
+        let conditions = keyIndexes
+            .map { SASQLStatementBuilder.comparison(column: columns[$0], literal: row[$0]) }
+            .joined(separator: " AND ")
+
+        statements += "UPDATE \(target) SET \(assignments)\nWHERE \(conditions);\n"
+        rowCount += 1
+        return true
+    }
+
+    public func finish() -> String? {
+        guard !isFinished, rowCount > 0 else { return nil }
+        isFinished = true
+        return statements
     }
 }

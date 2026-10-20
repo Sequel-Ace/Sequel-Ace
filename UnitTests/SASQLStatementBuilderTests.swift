@@ -105,6 +105,21 @@ final class SASQLStatementBuilderTests: XCTestCase {
         XCTAssertTrue(emoji?.hasSuffix("\(header)\t('next');\n") ?? false)
     }
 
+    /// A batch is closed off only once another row arrives, so an oversized last row ends the
+    /// statement it joined rather than leaving an empty one behind it.
+    func testAnOversizedLastRowOpensNoFurtherStatement() {
+        let wide = String(repeating: "x", count: 300_000)
+        let sql = SASQLStatementBuilder.insertStatements(
+            table: "t",
+            columns: ["a"],
+            rows: [["'first'"], ["'\(wide)'"]]
+        )
+
+        let header = "INSERT INTO `t` (`a`)\nVALUES\n"
+        XCTAssertEqual(sql?.components(separatedBy: header).count, 2, "expected one statement")
+        XCTAssertTrue(sql?.hasSuffix("\t('first'),\n\t('\(wide)');\n") ?? false)
+    }
+
     func testNothingToInsertYieldsNoStatement() {
         XCTAssertNil(SASQLStatementBuilder.insertStatements(table: "t", columns: [], rows: [["1"]]))
         XCTAssertNil(SASQLStatementBuilder.insertStatements(table: "t", columns: ["a"], rows: []))
@@ -120,6 +135,33 @@ final class SASQLStatementBuilderTests: XCTestCase {
                 rows: [["1", "2"], ["3"]]
             )
         )
+    }
+
+    // MARK: - Writers
+
+    /// `SPCopyTable` hands rows to a writer one at a time and never keeps them. Once the writer
+    /// has finished, it takes no more rows and gives nothing further back.
+    func testAFinishedWriterTakesNoMoreRows() {
+        let insert = SAInsertStatementWriter(table: "t", columns: ["a"])!
+        XCTAssertTrue(insert.append(row: ["1"]))
+        XCTAssertEqual(insert.finish(), "INSERT INTO `t` (`a`)\nVALUES\n\t(1);\n")
+        XCTAssertFalse(insert.append(row: ["2"]))
+        XCTAssertNil(insert.finish())
+
+        let update = SAUpdateStatementWriter(database: "mydb", table: "people", columns: ["id", "a"],
+                                             keyColumnIndexes: IndexSet(integer: 0), generatedColumnIndexes: IndexSet())!
+        XCTAssertTrue(update.append(row: ["1", "2"]))
+        XCTAssertEqual(update.finish(), "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n")
+        XCTAssertFalse(update.append(row: ["3", "4"]))
+        XCTAssertNil(update.finish())
+    }
+
+    /// A writer refuses a row of the wrong width and appends nothing of it.
+    func testAWriterRefusesARowOfTheWrongWidth() {
+        let writer = SAInsertStatementWriter(table: "t", columns: ["a", "b"])!
+        XCTAssertTrue(writer.append(row: ["1", "2"]))
+        XCTAssertFalse(writer.append(row: ["3"]))
+        XCTAssertEqual(writer.finish(), "INSERT INTO `t` (`a`, `b`)\nVALUES\n\t(1, 2);\n")
     }
 
     // MARK: - UPDATE
@@ -925,9 +967,9 @@ final class SASQLStatementBuilderTests: XCTestCase {
     }
 
     /// Table content metadata covers the whole table, so its key comes from the table's own column
-    /// definitions and nothing is asked of the server.
-    func testTableContentMetadataAsksTheServerNothing() {
-        let lookup = CannedOriginLookup(columns: [])
+    /// definitions; only the generated columns are asked of the server.
+    func testTableContentMetadataAsksTheServerOnlyForGeneratedColumns() {
+        let lookup = CannedOriginLookup(columns: [["id", ""], ["a", ""], ["b", ""]])
 
         let origin = SAUpdateCopyOriginResolver.origin(
             fieldDefinitions: [contentField("id", keyFlagged: true), contentField("a")],
@@ -938,7 +980,49 @@ final class SASQLStatementBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(origin?.keyColumnIndexes, IndexSet(integer: 0))
-        XCTAssertEqual(lookup.queries, [])
+        XCTAssertEqual(origin?.generatedColumnIndexes, IndexSet())
+        XCTAssertEqual(lookup.queries.count, 1)
+        XCTAssertTrue(lookup.queries.allSatisfy { $0.contains("information_schema.COLUMNS") && $0.contains("TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'people'") })
+    }
+
+    /// MariaDB before 10.2 writes generated columns as `AS (a+1) VIRTUAL` and
+    /// `AS (a*2) PERSISTENT` in SHOW CREATE TABLE, without `GENERATED ALWAYS`, so the table
+    /// definition parser leaves them unmarked and they reach the copy as ordinary content
+    /// columns. The server's own EXTRA (`VIRTUAL`, `PERSISTENT` on 10.1) keeps them out of `SET`.
+    func testTableContentGeneratedColumnsTheParserMissesAreFoundOnTheServer() {
+        let lookup = CannedOriginLookup(columns: [["id", ""], ["a", ""], ["v", "VIRTUAL"], ["p", "PERSISTENT"]])
+
+        let origin = SAUpdateCopyOriginResolver.origin(
+            fieldDefinitions: [contentField("id", keyFlagged: true), contentField("a"), contentField("v"), contentField("p")],
+            table: "people",
+            database: "mydb",
+            tableColumnDefinitions: [contentField("id", keyFlagged: true), contentField("a"), contentField("v"), contentField("p")],
+            lookup: lookup
+        )!
+
+        XCTAssertEqual(origin.generatedColumnIndexes, IndexSet([2, 3]))
+        XCTAssertEqual(
+            SASQLStatementBuilder.updateStatements(
+                database: origin.database,
+                table: origin.table,
+                columns: origin.columns,
+                keyColumnIndexes: origin.keyColumnIndexes,
+                generatedColumnIndexes: origin.generatedColumnIndexes,
+                rows: [["1", "2", "3", "4"]]
+            ),
+            "UPDATE `mydb`.`people` SET `a` = 2\nWHERE `id` = 1;\n"
+        )
+    }
+
+    /// Table content rows are refused too when the generated columns cannot be asked of the
+    /// server, rather than copied with a `SET` the server may reject.
+    func testTableContentWhoseGeneratedColumnLookupFailsYieldsNoUpdateOrigin() {
+        let fields = [contentField("id", keyFlagged: true), contentField("a")]
+
+        XCTAssertNil(SAUpdateCopyOriginResolver.origin(fieldDefinitions: fields, table: "people", database: "mydb",
+                                                        tableColumnDefinitions: fields, lookup: CannedOriginLookup(columns: nil)))
+        XCTAssertNil(SAUpdateCopyOriginResolver.origin(fieldDefinitions: fields, table: "people", database: "mydb",
+                                                        tableColumnDefinitions: fields, lookup: nil))
     }
 }
 

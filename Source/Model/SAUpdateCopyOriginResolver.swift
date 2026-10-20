@@ -33,11 +33,16 @@ import Foundation
     /// `SASQLStatementBuilder.updateOrigin(forFields:tableKeyColumns:generatedColumns:)`, and
     /// also whenever a server lookup it needs fails.
     ///
-    /// Which metadata the rows carry decides where the origin table's complete key and its
-    /// generated columns come from. A query result may project only part of the table, and its
-    /// metadata marks neither every key part nor any generated column, so both have to be asked
-    /// of the server. Table content metadata covers the whole table and marks both — its
-    /// generated columns have already been left out of `fieldDefinitions` by then.
+    /// Which metadata the rows carry decides where the origin table's complete key comes from. A
+    /// query result may project only part of the table, and its metadata does not mark every key
+    /// part, so the key has to be asked of the server. Table content metadata covers the whole
+    /// table, so its column definitions give the key.
+    ///
+    /// The generated columns are asked of the server either way. A query result's metadata marks
+    /// none of them, and table content metadata marks only those its definition parser
+    /// recognizes: MariaDB before 10.2 writes `AS (…) VIRTUAL` and `AS (…) PERSISTENT`, with no
+    /// `GENERATED ALWAYS`, so on those servers its generated columns reach `fieldDefinitions`
+    /// unmarked.
     ///
     /// - Parameters:
     ///   - fieldDefinitions: The field metadata of the columns the statement includes, in
@@ -46,7 +51,7 @@ import Foundation
     ///   - database: The database being shown, likewise.
     ///   - tableColumnDefinitions: Every column definition of the table being shown, for table
     ///     content metadata, whose key parts may lie outside the projection.
-    ///   - lookup: The server to ask, for query result metadata; `nil` refuses such rows.
+    ///   - lookup: The server to ask; `nil` refuses the rows.
     @objc(originForFieldDefinitions:table:database:tableColumnDefinitions:lookup:)
     public class func origin(fieldDefinitions: [Any],
                              table: String?,
@@ -57,19 +62,17 @@ import Foundation
         let fields = SASQLStatementBuilder.fieldOrigins(fromFieldDefinitions: fieldDefinitions, table: table, database: database)
         guard let first = fields.first else { return nil }
 
-        let tableKeyColumns: [String]?
-        var generatedColumns: [String] = []
+        guard let lookup else { return nil }
 
+        let tableKeyColumns: [String]?
         if let firstField = fieldDefinitions.first as? [String: Any], firstField["org_name"] != nil {
-            guard let lookup else { return nil }
             tableKeyColumns = primaryKeyColumns(ofTable: first.table, database: first.database, lookup: lookup)
-            guard let generated = self.generatedColumns(ofTable: first.table, database: first.database, lookup: lookup) else { return nil }
-            generatedColumns = generated
         } else {
             tableKeyColumns = primaryKeyColumnNames(ofColumnDefinitions: tableColumnDefinitions)
         }
 
         guard let tableKeyColumns, !tableKeyColumns.isEmpty else { return nil }
+        guard let generatedColumns = self.generatedColumns(ofTable: first.table, database: first.database, lookup: lookup) else { return nil }
 
         return SASQLStatementBuilder.updateOrigin(forFields: fields, tableKeyColumns: tableKeyColumns, generatedColumns: generatedColumns)
     }
