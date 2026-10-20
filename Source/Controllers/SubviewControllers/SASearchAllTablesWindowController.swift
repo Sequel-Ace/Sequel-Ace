@@ -83,12 +83,18 @@ private final class SASearchAllTablesRunner {
                 guard endQuery() else { break }
                 tablesSearched += 1
 
-                if connection.queryErrored() || result == nil {
+                // Judge the scan by its own result, not by the connection's
+                // latest-query state: another request on this connection (an
+                // MCP request) can run between queryString returning and that
+                // state being read. A failed query returns no result, and a
+                // count query that ran returns exactly one row. SPMySQL keeps no
+                // per-query error, so the message is the connection's latest.
+                result?.defaultRowReturnType = SPMySQLResultRowAsArray
+                guard let countRow = result?.getRowAsArray() else {
                     send(.tableFailed(table: table.name, message: connection.lastErrorMessage() ?? ""))
                     continue
                 }
-                result?.defaultRowReturnType = SPMySQLResultRowAsArray
-                let row = (result?.getRowAsArray() ?? []).map { $0 is NSNull ? nil : $0 }
+                let row = countRow.map { $0 is NSNull ? nil : $0 }
                 if let match = SASearchAllTablesQueryBuilder.match(fromCountRow: row, table: table) {
                     send(.found(match, table))
                 }
@@ -146,11 +152,13 @@ private final class SASearchAllTablesRunner {
     }
 
     private func columnRows() -> [(table: String, column: String, dataType: String, tableType: String)]? {
-        let result = connection.queryString(SASearchAllTablesQueryBuilder.columnsQuery(quotedDatabase: quoted(database)))
-        if connection.queryErrored() { return nil }
-        result?.defaultRowReturnType = SPMySQLResultRowAsArray
+        // A failed query returns no result. That alone decides failure here,
+        // as for the per-table scans: the connection's queryErrored() can stay
+        // false (a dropped connection) or belong to another request.
+        guard let result = connection.queryString(SASearchAllTablesQueryBuilder.columnsQuery(quotedDatabase: quoted(database))) else { return nil }
+        result.defaultRowReturnType = SPMySQLResultRowAsArray
         var rows: [(table: String, column: String, dataType: String, tableType: String)] = []
-        while let row = result?.getRowAsArray(), row.count >= 4 {
+        while let row = result.getRowAsArray(), row.count >= 4 {
             guard let table = SASearchAllTablesQueryBuilder.string(from: row[0]),
                   let column = SASearchAllTablesQueryBuilder.string(from: row[1]),
                   let dataType = SASearchAllTablesQueryBuilder.string(from: row[2]),

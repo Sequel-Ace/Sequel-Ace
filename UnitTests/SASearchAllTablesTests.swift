@@ -152,6 +152,18 @@ final class SASearchAllTablesTests: XCTestCase {
         XCTAssertTrue(sql.hasSuffix("ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION"), sql)
     }
 
+    /// `information_schema` names compare case-insensitively on MariaDB, so the
+    /// schema filter and the join to TABLES must also match the names' bytes:
+    /// otherwise, on a case-sensitive server, `Foo` joins `foo` (and a view `V1`
+    /// takes the BASE TABLE type of a table `v1`), and a schema `SHOP` joins in
+    /// beside `shop`.
+    func testColumnsQueryComparesSchemaAndTableNamesByteForByte() {
+        let sql = Builder.columnsQuery(quotedDatabase: "'shop'")
+        XCTAssertTrue(sql.contains("CAST(c.TABLE_SCHEMA AS BINARY) = CAST('shop' AS BINARY)"), sql)
+        XCTAssertTrue(sql.contains("CAST(t.TABLE_SCHEMA AS BINARY) = CAST(c.TABLE_SCHEMA AS BINARY)"), sql)
+        XCTAssertTrue(sql.contains("CAST(t.TABLE_NAME AS BINARY) = CAST(c.TABLE_NAME AS BINARY)"), sql)
+    }
+
     func testCountQueryCountsRowsAndMatchesPerColumnInOneStatement() {
         let table = SASearchAllTablesTable(name: "we`ird", isView: false, columns: [
             SASearchAllTablesColumn(name: "name", kind: .text),

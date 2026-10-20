@@ -115,12 +115,23 @@ enum SASearchAllTablesQueryBuilder {
     /// Lists every column of every table and view in `quotedDatabase`, in
     /// table and column order. Result columns: table, column, data type, table type.
     ///
+    /// Schema and table names are compared byte for byte as well as with `=`.
+    /// The `information_schema` name columns use a case-insensitive collation
+    /// on MariaDB (`utf8mb3_general_ci`), so on a case-sensitive server `=`
+    /// alone joins table `Foo` to `foo`, and to `Foo` of a schema `SHOP` beside
+    /// `shop`, duplicating columns and giving a view the `BASE TABLE` type of a
+    /// table that differs from it only in case. The `=` comparisons stay so the
+    /// server can still restrict its lookup to the one schema.
+    ///
     /// - Parameter quotedDatabase: The database name as a quoted SQL string literal.
     static func columnsQuery(quotedDatabase: String) -> String {
         "SELECT c.TABLE_NAME, c.COLUMN_NAME, c.DATA_TYPE, t.TABLE_TYPE"
             + " FROM information_schema.COLUMNS c"
             + " JOIN information_schema.TABLES t ON t.TABLE_SCHEMA = c.TABLE_SCHEMA AND t.TABLE_NAME = c.TABLE_NAME"
+            + " AND CAST(t.TABLE_SCHEMA AS BINARY) = CAST(c.TABLE_SCHEMA AS BINARY)"
+            + " AND CAST(t.TABLE_NAME AS BINARY) = CAST(c.TABLE_NAME AS BINARY)"
             + " WHERE c.TABLE_SCHEMA = \(quotedDatabase)"
+            + " AND CAST(c.TABLE_SCHEMA AS BINARY) = CAST(\(quotedDatabase) AS BINARY)"
             + " ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION"
     }
 
