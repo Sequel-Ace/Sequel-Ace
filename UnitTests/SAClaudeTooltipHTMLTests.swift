@@ -39,8 +39,45 @@ final class SAClaudeTooltipHTMLTests: XCTestCase {
 
     func testTextBodyKeepsCallerFont() {
         let body = SAClaudeTooltipHTML.textBody("x", options: ["fontname": "Menlo-Regular", "fontsize": NSNumber(value: 11)])
-        XCTAssertTrue(body.contains("font-family:'Menlo-Regular'; font-size: 11px"), body)
+        XCTAssertTrue(body.contains("font-family:'Menlo-Regular', ui-monospace, monospace; font-size: 11px"), body)
         XCTAssertFalse(body.contains("sa-prose"), body)
+    }
+
+    /// The grid's default results font is the system font (".AppleSystemUIFont"): WebKit can't load it by name and drew
+    /// the value in its serif default (walkthrough fix 1).
+    func testSystemUIFontNamesBecomeAppleSystem() {
+        let sans = "-apple-system, system-ui, sans-serif"
+        for name in [".AppleSystemUIFont", ".AppleSystemUIFontBold", ".SFNS-Regular", "SFNSText-Regular", "-apple-system", "system-ui",
+                     NSFont.systemFont(ofSize: 13).fontName, NSFont.boldSystemFont(ofSize: 13).fontName] {
+            XCTAssertEqual(SAClaudeTooltipHTML.fontFamily(name), sans, name)
+        }
+        let body = SAClaudeTooltipHTML.textBody("gautam@beatoapp.com", options: ["fontname": ".AppleSystemUIFont", "fontsize": NSNumber(value: 14)])
+        XCTAssertTrue(body.contains("font-family:-apple-system, system-ui, sans-serif; font-size: 14px"), body)
+        XCTAssertFalse(body.contains("AppleSystemUIFont"), body)
+    }
+
+    func testMonospacedSystemFontBecomesUIMonospace() {
+        for name in [".AppleSystemUIFontMonospaced-Regular", ".AppleSystemUIFontMonospaced-Bold", ".SFNSMono-Regular",
+                     NSFont.monospacedSystemFont(ofSize: 11, weight: .regular).fontName] {
+            XCTAssertEqual(SAClaudeTooltipHTML.fontFamily(name), "ui-monospace, monospace", name)
+        }
+    }
+
+    func testNamedFontStaysFirstWithAGenericFallback() {
+        XCTAssertEqual(SAClaudeTooltipHTML.fontFamily("Menlo-Regular"), "'Menlo-Regular', ui-monospace, monospace")
+        XCTAssertEqual(SAClaudeTooltipHTML.fontFamily("SFMono-Regular"), "'SFMono-Regular', ui-monospace, monospace")
+        XCTAssertEqual(SAClaudeTooltipHTML.fontFamily("Helvetica"), "'Helvetica', -apple-system, system-ui, sans-serif")
+        XCTAssertEqual(SAClaudeTooltipHTML.fontFamily("No Such Font"), "'No Such Font', -apple-system, system-ui, sans-serif")
+    }
+
+    func testEveryFamilyListEndsOnAGenericFamilyNeverSerif() {
+        for name in ["Menlo-Regular", "Helvetica", "Times-Roman", ".AppleSystemUIFont", ".AppleSystemUIFontMonospaced-Regular", "",
+                     "  ", "No Such Font", "Evil'; } body{x"] {
+            let family = SAClaudeTooltipHTML.fontFamily(name)
+            XCTAssertTrue(family.hasSuffix(", sans-serif") || family.hasSuffix(", monospace"), "\(name) → \(family)")
+            let generics = family.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            XCTAssertFalse(generics.contains("serif"), "\(name) → \(family)")
+        }
     }
 
     func testTextBodyFontSizeAsStringAndFloor() {
@@ -68,6 +105,26 @@ final class SAClaudeTooltipHTMLTests: XCTestCase {
         XCTAssertEqual(SAClaudeTooltipHTML.sanitisedFontName("SF Mono"), "SF Mono")
         let body = SAClaudeTooltipHTML.textBody("x", options: ["fontname": "Evil'; } body{x"])
         XCTAssertFalse(body.contains("body{"), body)
+        XCTAssertEqual(SAClaudeTooltipHTML.sanitisedFontName("A&quot;B&#39;C"), "AquotB#39C")
+    }
+
+    /// Whatever the font name, the `<pre>`'s style attribute holds exactly the two declarations it writes.
+    func testHostileFontNameStaysInsideItsDeclaration() {
+        for name in ["Evil'; } body{x", "A&quot;; color:red", "x\"><script>alert(1)</script>", "a\\'b", "Tab\tName\n"] {
+            let body = SAClaudeTooltipHTML.textBody("v", options: ["fontname": name, "fontsize": NSNumber(value: 12)])
+            guard let start = body.range(of: "style=\""), let end = body.range(of: "\">", range: start.upperBound..<body.endIndex) else {
+                XCTFail("no style attribute in \(body)")
+                continue
+            }
+            let style = body[start.upperBound..<end.lowerBound]
+            for forbidden in ["\"", "{", "}", "<", ">", "&", "\\", "\t", "\n"] {
+                XCTAssertFalse(style.contains(forbidden), "\(forbidden) in \(style)")
+            }
+            XCTAssertEqual(style.filter { $0 == ";" }.count, 1, String(style))
+            XCTAssertEqual(style.filter { $0 == "'" }.count, 2, String(style))
+            XCTAssertTrue(style.hasSuffix("; font-size: 12px"), String(style))
+            XCTAssertTrue(body.hasSuffix(">v</pre>"), body)
+        }
     }
 
     // MARK: Document

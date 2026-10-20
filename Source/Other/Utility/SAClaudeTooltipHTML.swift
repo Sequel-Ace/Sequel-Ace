@@ -27,7 +27,7 @@ enum SAClaudeTooltipHTML {
             .replacingOccurrences(of: ">", with: "&gt;")
         let size = fontSize(options?["fontsize"])
         if let name = options?["fontname"] as? String {
-            return "<pre style=\"font-family:'\(sanitisedFontName(name))'; font-size: \(size ?? defaultFontSize)px\">\(escaped)</pre>"
+            return "<pre style=\"font-family:\(fontFamily(name)); font-size: \(size ?? defaultFontSize)px\">\(escaped)</pre>"
         }
         if let size {
             return "<pre class=\"sa-prose\" style=\"font-size: \(size)px\">\(escaped)</pre>"
@@ -64,14 +64,44 @@ enum SAClaudeTooltipHTML {
             + "</html>"
     }
 
-    /// A font name safe inside `font-family:'…'`: quotes, `;`, braces, angle brackets, backslashes and
-    /// control characters dropped.
+    /// The CSS `font-family` list for a caller's font (a grid cell's `NSFont.fontName`). WebKit can't reach the
+    /// system UI fonts by name (".AppleSystemUIFont", ".SFNS-Regular", ".AppleSystemUIFontMonospaced-Regular", …) and
+    /// would draw them in its serif default: those become `-apple-system` (monospaced: `ui-monospace`). A named font
+    /// (Menlo-Regular, SF Mono, Helvetica) stays the first choice, quoted. Every list ends on a generic family that
+    /// matches the font's pitch, so a name WebKit can't resolve never falls back to serif.
+    static func fontFamily(_ name: String) -> String {
+        let fixedPitch = isMonospacedName(name) || NSFont(name: name, size: 12)?.isFixedPitch == true
+        let fallback = fixedPitch ? monospacedFallback : proportionalFallback
+        let safe = sanitisedFontName(name).trimmingCharacters(in: .whitespaces)
+        if safe.isEmpty || isSystemUIFontName(safe) { return fallback }
+        return "'\(safe)', \(fallback)"
+    }
+
+    /// The generic families after a proportional / a fixed-pitch font.
+    static let proportionalFallback = "-apple-system, system-ui, sans-serif"
+    static let monospacedFallback = "ui-monospace, monospace"
+
+    /// A font name safe inside `font-family:'…'` in a double-quoted `style` attribute: quotes, `;`, braces, angle
+    /// brackets, `&` (an entity would be decoded inside the attribute), backslashes and control characters dropped.
     static func sanitisedFontName(_ name: String) -> String {
-        let forbidden = CharacterSet(charactersIn: "'\";{}<>\\").union(.controlCharacters)
+        let forbidden = CharacterSet(charactersIn: "'\";{}<>&\\").union(.controlCharacters)
         return String(String.UnicodeScalarView(name.unicodeScalars.filter { !forbidden.contains($0) }))
     }
 
+    /// The system UI font as AppKit names it (hidden, dot-prefixed fonts; the SF NS PostScript names) or as CSS does.
+    static func isSystemUIFontName(_ name: String) -> Bool {
+        let lower = name.lowercased()
+        return name.hasPrefix(".") || name.hasPrefix("SFNS")
+            || ["-apple-system", "system-ui", "blinkmacsystemfont", "ui-monospace", "ui-sans-serif"].contains(lower)
+    }
+
     // MARK: Private
+
+    /// A monospaced system UI font name (`NSFont.monospacedSystemFont`), which NSFont may not resolve by name.
+    private static func isMonospacedName(_ name: String) -> Bool {
+        let lower = name.lowercased()
+        return lower.contains("monospaced") || lower == "ui-monospace" || lower.hasPrefix(".sfnsmono") || lower.hasPrefix("sfnsmono")
+    }
 
     private static func fontSize(_ value: Any?) -> Int? {
         let size: Int
