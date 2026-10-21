@@ -15,7 +15,7 @@ import AppKit
 
 /// Where a bezel-less sheet field puts its text: inset from the rounded outline and centred on one line (a field
 /// taller than two lines keeps its text at the top).
-private enum SheetFieldText {
+enum SheetFieldText {
     static let horizontalInset: CGFloat = 6
     static let multiLineTopInset: CGFloat = 3
 
@@ -111,6 +111,35 @@ enum SAClaudeFieldPlaceholder {
         if !SAClaudeFieldPlaceholder.draw(self, withFrame: cellFrame, in: controlView) {
             super.drawInterior(withFrame: cellFrame, in: controlView)
         }
+    }
+}
+
+/// The token twin of `SAClaudeSheetFieldCell`: a bezel-less token field (the export dialog's custom filename) keeps its
+/// text and tokens inset from the rounded outline and centred on one line, as every Claude field. Installed with
+/// `object_setClass` (no stored properties).
+@objc(SAClaudeSheetTokenFieldCell) final class SAClaudeSheetTokenFieldCell: NSTokenFieldCell {
+    /// Swaps `field`'s cell for this one; false when it can't (another cell class, or observed by KVO).
+    @discardableResult
+    static func install(on field: NSTokenField) -> Bool {
+        guard let cell = field.cell else { return false }
+        if cell is SAClaudeSheetTokenFieldCell { return true }
+        guard Swift.type(of: cell) == NSTokenFieldCell.self, SAClaudeClassSwap.mayChangeClass(of: cell) else { return false }
+        object_setClass(cell, SAClaudeSheetTokenFieldCell.self)
+        field.needsDisplay = true
+        return true
+    }
+
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        let drawingRect = super.drawingRect(forBounds: rect)
+        return isBezeled || isBordered ? drawingRect : SheetFieldText.rect(drawingRect, font: font)
+    }
+
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+    }
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
     }
 }
 

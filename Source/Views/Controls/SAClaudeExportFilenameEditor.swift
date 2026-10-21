@@ -262,6 +262,8 @@ final class SAClaudeExportFilenameEditor: NSObject {
         tokenField.wantsLayer = true
         tokenField.layer?.cornerRadius = Self.fieldRadius
         tokenField.layer?.borderWidth = 1
+        // Text and tokens inset from the outline and centred on one line, as the other Claude fields.
+        SAClaudeSheetTokenFieldCell.install(on: tokenField)
         tokenPool.drawsBackground = false
     }
 
