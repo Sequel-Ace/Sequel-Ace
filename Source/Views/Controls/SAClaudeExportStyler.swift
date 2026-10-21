@@ -109,7 +109,8 @@ import AppKit
         styler.progressStyler = SAClaudeProgressSheetStyler(   // Task 5
             progress: SAClaudeProgressSheetStyler.Outlets(controller, title: "exportProgressTitle", status: "exportProgressText",
                                                           indicator: "exportProgressIndicator"),
-            errors: SAClaudeProgressSheetStyler.ErrorOutlets(controller, window: "errorsWindow", textView: "errorsTextView"))
+            errors: SAClaudeProgressSheetStyler.ErrorOutlets(controller, window: "errorsWindow", textView: "errorsTextView"),
+            card: outlet(controller, "exportProgressWindow"))
         // A chip changes the filename field programmatically, which posts no text notification: the controller
         // updates its preview as after its own programmatic changes.
         styler.filenameEditor.onFieldChanged = { [weak controller] in

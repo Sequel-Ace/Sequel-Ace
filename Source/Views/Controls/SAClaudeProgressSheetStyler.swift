@@ -4,11 +4,13 @@
 //
 //  The Claude look of a progress sheet and an errors sheet, shared by Export (`SAClaudeExportStyler`, once per
 //  `SPExportController`) and Import (`SAClaudeImportStyler`, once per `SPDataImport`); each passes its own outlets.
-//  The progress sheet: medium title, muted middle-truncated status line, the Claude progress bar over the XIB's
-//  indicator. The errors sheet: medium label, the log in the editor font inside a hairline frame. The sheets'
-//  surface, buttons and text colours stay the generic sheet skin's. No card is added behind either sheet's content:
-//  on the skin's surface it would be a box inside a box. Each sheet is styled only when its outlets are all there.
-//  App target only.
+//  The progress sheet: semibold title, muted middle-truncated status line, the Claude progress bar over the XIB's
+//  indicator. Export's and Import's progress sheets (`card`) are also re-laid out as a Claude card
+//  (`SAClaudeProgressCardLayout`): no app icon, the title over the muted detail line with the percentage at its end,
+//  the bar, Cancel as a secondary button at the bottom right, 20pt padding. The errors sheet: medium label, the log
+//  in the editor font inside a hairline frame. The sheets' surface, buttons and text colours stay the generic sheet
+//  skin's. No card is added behind either sheet's content: on the skin's surface it would be a box inside a box. Each
+//  sheet is styled only when its outlets are all there. App target only.
 //
 
 import AppKit
@@ -28,8 +30,11 @@ final class SAClaudeProgressSheetStyler {
         var textView: NSTextView
     }
 
-    private static let titleFont = NSFont.systemFont(ofSize: 13, weight: .medium)
+    private static let titleFont = NSFont.systemFont(ofSize: 13, weight: .semibold)
+    private static let errorsTitleFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let statusFont = NSFont.systemFont(ofSize: 11)
+    private static let percentFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+    private static let cancelTitleFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     /// The errors label's height for the 13pt medium title (its XIB frame is 14pt and clips the descenders).
     private static let errorsLabelHeight: CGFloat = 17
     private static let logFrameRadius: CGFloat = 7
@@ -41,6 +46,9 @@ final class SAClaudeProgressSheetStyler {
         let indicator: NSProgressIndicator
         let status: NSTextField
         let bar = SAClaudeProgressBar()
+        /// The card's percentage at the end of the detail line (card layout only).
+        var percent: NSTextField?
+        var cancel: NSButton?
         var observations: [NSKeyValueObservation] = []
     }
 
@@ -53,13 +61,17 @@ final class SAClaudeProgressSheetStyler {
     private var log: Log?
 
     /// Styles the progress sheet of `progress` and the errors sheet of `errors`; nil when neither is given (or
-    /// neither has its views in place).
-    init?(progress outlets: Outlets?, errors errorOutlets: ErrorOutlets?) {
+    /// neither has its views in place). `card` is the progress sheet itself when it is to be re-laid out as the Claude
+    /// card (Export's and Import's, which share one XIB layout); nil keeps the views where they are (the update window).
+    init?(progress outlets: Outlets?, errors errorOutlets: ErrorOutlets?, card: NSWindow? = nil) {
         if let outlets, let parent = outlets.indicator.superview {
             outlets.title.font = Self.titleFont
             outlets.status.font = Self.statusFont
             outlets.status.lineBreakMode = .byTruncatingMiddle
             progress = Progress(indicator: outlets.indicator, status: outlets.status)
+            if let card, outlets.indicator.window === card, parent === card.contentView {
+                layOutCard(card, outlets: outlets)
+            }
             installBar(over: outlets.indicator, in: parent)
         }
         if let errorOutlets, let scrollView = errorOutlets.textView.enclosingScrollView,
@@ -69,7 +81,7 @@ final class SAClaudeProgressSheetStyler {
             let label = errorOutlets.window.contentView?.subviews.compactMap { $0 as? NSTextField }
                 .filter { !$0.isEditable && !$0.isHidden }.max { $0.frame.maxY < $1.frame.maxY }
             if let label {
-                label.font = Self.titleFont
+                label.font = Self.errorsTitleFont
                 // Taller for the bigger font, keeping its top edge (the label is pinned to the top of the sheet).
                 if label.frame.height < Self.errorsLabelHeight {
                     label.frame = NSRect(x: label.frame.minX, y: label.frame.maxY - Self.errorsLabelHeight,
@@ -92,8 +104,10 @@ final class SAClaudeProgressSheetStyler {
     func recolour(palette: SAClaudeEditorChrome.Palette) {
         if let progress {
             if progress.status.textColor != palette.icon { progress.status.textColor = palette.icon }
+            if let percent = progress.percent, percent.textColor != palette.icon { percent.textColor = palette.icon }
             progress.bar.trackColour = palette.hairline
             progress.bar.needsDisplay = true
+            if let cancel = progress.cancel { SAClaudeFormChrome.force(cancel, primary: false) }
         }
         if let log {
             log.frame.fill = palette.background
@@ -116,13 +130,20 @@ final class SAClaudeProgressSheetStyler {
         bar.autoresizingMask = indicator.autoresizingMask
         bar.indicator = indicator
         parent.addSubview(bar, positioned: .above, relativeTo: indicator)
-        let sync: () -> Void = { [weak indicator, weak bar] in
+        let percent = progress.percent
+        let sync: () -> Void = { [weak indicator, weak bar, weak percent] in
             guard let indicator, let bar else { return }
             let hidden = indicator.isHidden || indicator.isIndeterminate
             if bar.isHidden != hidden { bar.isHidden = hidden }
             let alpha: CGFloat = indicator.isIndeterminate ? 1 : 0
             if indicator.alphaValue != alpha { indicator.alphaValue = alpha }
             bar.needsDisplay = true
+            if let percent {
+                let text = indicator.isHidden ? nil : SAClaudeProgressCardLayout.percentText(
+                    value: indicator.doubleValue, minimum: indicator.minValue, maximum: indicator.maxValue,
+                    indeterminate: indicator.isIndeterminate)
+                if percent.stringValue != (text ?? "") { percent.stringValue = text ?? "" }
+            }
         }
         // The exporters and importers may report progress from a background thread.
         let onMain: () -> Void = { Thread.isMainThread ? sync() : DispatchQueue.main.async(execute: sync) }
@@ -135,6 +156,40 @@ final class SAClaudeProgressSheetStyler {
         ]
         self.progress = progress
         sync()
+    }
+
+    // MARK: - Card
+
+    /// Export's and Import's progress sheet as the Claude card: the app icon hidden, the sheet resized to the card,
+    /// title / detail / percentage / indicator / Cancel at `SAClaudeProgressCardLayout`'s frames. The indicator keeps
+    /// its size (its width is the export's progress scale). Before the sheet is first shown; frames only.
+    private func layOutCard(_ window: NSWindow, outlets: Outlets) {
+        guard var progress, let content = window.contentView else { return }
+        let buttons = content.subviews.compactMap { $0 as? NSButton }.filter { !$0.isHidden }
+        guard buttons.count == 1, let cancel = buttons.first else { return }
+        for icon in content.subviews.compactMap({ $0 as? NSImageView }) { icon.isHidden = true }
+
+        let titleWidth = NSAttributedString(string: cancel.title, attributes: [.font: Self.cancelTitleFont]).size().width
+        let frames = SAClaudeProgressCardLayout.frames(barSize: outlets.indicator.frame.size, cancelTitleWidth: titleWidth)
+        if content.frame.size != frames.size { window.setContentSize(frames.size) }
+
+        let percent = NSTextField(labelWithString: "")
+        percent.font = Self.percentFont
+        percent.alignment = .right
+        percent.lineBreakMode = .byClipping
+        percent.identifier = NSUserInterfaceItemIdentifier("SAClaudeProgressPercent")
+        content.addSubview(percent)
+
+        let place: [(NSView, NSRect)] = [(outlets.title, frames.title), (outlets.status, frames.detail), (percent, frames.percent),
+                                         (outlets.indicator, frames.bar), (cancel, frames.cancel)]
+        for (view, frame) in place {
+            view.autoresizingMask = []
+            if view.frame != frame { view.frame = frame }
+        }
+        SAClaudeFormChrome.force(cancel, primary: false)
+        progress.percent = percent
+        progress.cancel = cancel
+        self.progress = progress
     }
 
     // MARK: - Errors

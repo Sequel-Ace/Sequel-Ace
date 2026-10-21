@@ -74,8 +74,8 @@ private final class SAClaudeImportSheets {
         let progress = SAClaudeProgressSheetStyler.Outlets(importer, title: "singleProgressTitle",
                                                            status: "singleProgressText", indicator: "singleProgressBar")
         let errors = SAClaudeProgressSheetStyler.ErrorOutlets(importer, window: "errorsSheet", textView: "errorsView")
-        guard let styler = SAClaudeProgressSheetStyler(progress: progress, errors: errors) else { return }
         let progressSheet: NSWindow? = SAClaudeExportStyler.outlet(importer, "singleProgressSheet")
+        guard let styler = SAClaudeProgressSheetStyler(progress: progress, errors: errors, card: progressSheet) else { return }
         let sheets = SAClaudeImportSheets(styler: styler, appearanceWindow: progressSheet ?? errors?.window)
         objc_setAssociatedObject(importer, &associationKey, sheets, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         sheets.observe()

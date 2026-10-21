@@ -36,8 +36,11 @@
 		A1E7CA2D000000000000000D /* SAClaudeAlertChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */; };
 		A1E7CA2D000000000000000C /* SAClaudeAlertChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */; };
 		A1E7CA2D000000000000000A /* SAClaudeAlertLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */; };
+		EC6960CC70163518C0967DC8 /* SAClaudeProgressCardLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB7DBA916A5B1B5FFFCDD88 /* SAClaudeProgressCardLayoutTests.swift */; };
 		A1E7CA2D0000000000000008 /* SAClaudeAlertLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */; };
+		8E24AE87FF92F2C8AE9DC494 /* SAClaudeProgressCardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856DC16B584AE6F28C71CC12 /* SAClaudeProgressCardLayout.swift */; };
 		A1E7CA2D0000000000000007 /* SAClaudeAlertLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */; };
+		F6C4CC9DB1E97B610C48A50A /* SAClaudeProgressCardLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856DC16B584AE6F28C71CC12 /* SAClaudeProgressCardLayout.swift */; };
 		A1E7CA2D0000000000000005 /* SAClaudeAlertKindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */; };
 		A1E7CA2D0000000000000003 /* SAClaudeAlertKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */; };
 		A1E7CA2D0000000000000002 /* SAClaudeAlertKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */; };
@@ -1180,7 +1183,9 @@
 		A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertChromeTests.swift; sourceTree = "<group>"; };
 		A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertChrome.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertLayoutTests.swift; sourceTree = "<group>"; };
+		FCB7DBA916A5B1B5FFFCDD88 /* SAClaudeProgressCardLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProgressCardLayoutTests.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertLayout.swift; sourceTree = "<group>"; };
+		856DC16B584AE6F28C71CC12 /* SAClaudeProgressCardLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeProgressCardLayout.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKindTests.swift; sourceTree = "<group>"; };
 		A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAlertKind.swift; sourceTree = "<group>"; };
 		5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeMenuCardModel.swift; sourceTree = "<group>"; };
@@ -3442,6 +3447,7 @@
 				5EC0DEC9000000000000000A /* SAClaudeUserManagerLayout.swift */,
 				A1E7CA2D000000000000000B /* SAClaudeAlertChrome.swift */,
 				A1E7CA2D0000000000000006 /* SAClaudeAlertLayout.swift */,
+				856DC16B584AE6F28C71CC12 /* SAClaudeProgressCardLayout.swift */,
 				A1E7CA2D0000000000000001 /* SAClaudeAlertKind.swift */,
 				5EC0DEC400000000000000A1 /* SAClaudeMenuCardModel.swift */,
 				5EC0DEC400000000000000C1 /* SAClaudeRecordFields.swift */,
@@ -3530,6 +3536,7 @@
 				5EC0DEC90000000000000008 /* SAClaudeUtilityWindowLayoutTests.swift */,
 				A1E7CA2D000000000000000E /* SAClaudeAlertChromeTests.swift */,
 				A1E7CA2D0000000000000009 /* SAClaudeAlertLayoutTests.swift */,
+				FCB7DBA916A5B1B5FFFCDD88 /* SAClaudeProgressCardLayoutTests.swift */,
 				A1E7CA2D0000000000000004 /* SAClaudeAlertKindTests.swift */,
 				5EC0DEC400000000000000A2 /* SAClaudeMenuCardModelTests.swift */,
 				5EC0DEC400000000000000C2 /* SAClaudeRecordFieldsTests.swift */,
@@ -4294,7 +4301,9 @@
 				A1E7CA2D000000000000000F /* SAClaudeAlertChromeTests.swift in Sources */,
 				A1E7CA2D000000000000000D /* SAClaudeAlertChrome.swift in Sources */,
 				A1E7CA2D000000000000000A /* SAClaudeAlertLayoutTests.swift in Sources */,
+				EC6960CC70163518C0967DC8 /* SAClaudeProgressCardLayoutTests.swift in Sources */,
 				A1E7CA2D0000000000000008 /* SAClaudeAlertLayout.swift in Sources */,
+				8E24AE87FF92F2C8AE9DC494 /* SAClaudeProgressCardLayout.swift in Sources */,
 				A1E7CA2D0000000000000005 /* SAClaudeAlertKindTests.swift in Sources */,
 				A1E7CA2D0000000000000003 /* SAClaudeAlertKind.swift in Sources */,
 				5EC0DEC400000000000000A3 /* SAClaudeMenuCardModel.swift in Sources */,
@@ -4701,6 +4710,7 @@
 				A1E7CA2D0000000000000011 /* SAClaudeAlertCardViews.swift in Sources */,
 				A1E7CA2D000000000000000C /* SAClaudeAlertChrome.swift in Sources */,
 				A1E7CA2D0000000000000007 /* SAClaudeAlertLayout.swift in Sources */,
+				F6C4CC9DB1E97B610C48A50A /* SAClaudeProgressCardLayout.swift in Sources */,
 				A1E7CA2D0000000000000002 /* SAClaudeAlertKind.swift in Sources */,
 				5EC0DEC400000000000000A4 /* SAClaudeMenuCardModel.swift in Sources */,
 				5EC0DEC400000000000000C4 /* SAClaudeRecordFields.swift in Sources */,
