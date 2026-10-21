@@ -436,6 +436,26 @@ enum SARuleFilterContextMenu {
     }
 }
 
+/// The rule editor's autoresizing mask.
+///
+/// `NSRuleEditor` sizes its own height to its rows: `setFrameSize(_:)` refuses any other height. DBView.xib
+/// still gives the filter rule editor a flexible height and a flexible top margin. Under Auto Layout (the
+/// document window has constraints) AppKit turns that mask into constraints; when the engine moves a view whose
+/// mask has two flexible items on one axis, AppKit regenerates its constraints and asks the window for another
+/// Update Constraints pass. With the height refused, the engine's answer at some fractional clip heights (the
+/// filter bar's animation passes through them) never matched, every pass asked for another, and AppKit raised for
+/// a window with more Update Constraints passes than views - the crash on Table History Forward.
+///
+/// The vertical items are dropped: the height belongs to the rule editor, so nothing is derived from the clip
+/// view, and a mask with at most one flexible item per axis is updated in place instead of regenerated.
+enum SARuleFilterRuleEditorSizing {
+    /// - Parameter mask: The mask the rule editor was given.
+    /// - Returns: The mask it keeps: the same without a flexible height or vertical margin.
+    static func autoresizingMask(from mask: NSView.AutoresizingMask) -> NSView.AutoresizingMask {
+        return mask.subtracting([.height, .minYMargin, .maxYMargin])
+    }
+}
+
 /// `NSRuleEditor` subclass that extends the content-tab filter with
 /// drag-and-drop support for the
 /// `SPCellValuePasteboard.pasteboardRowTypeRaw` payload. Dropping a
@@ -461,6 +481,14 @@ enum SARuleFilterContextMenu {
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([Self.rowDropType])
+        // The nib's mask is decoded without the setter below.
+        autoresizingMask = super.autoresizingMask
+    }
+
+    /// Never vertically flexible: the rule editor sizes its own height (see `SARuleFilterRuleEditorSizing`).
+    override public var autoresizingMask: NSView.AutoresizingMask {
+        get { super.autoresizingMask }
+        set { super.autoresizingMask = SARuleFilterRuleEditorSizing.autoresizingMask(from: newValue) }
     }
 
     /// Right-click on a row's background (the controls inside a row keep

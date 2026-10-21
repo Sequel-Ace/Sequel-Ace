@@ -310,6 +310,100 @@ final class SARuleFilterDropBoxLayoutCycleTests: XCTestCase {
     }
 }
 
+/// The rule editor sizes its own height to its rows: `NSRuleEditor.setFrameSize(_:)` refuses any other
+/// height. DBView.xib gives it a flexible height and a flexible top margin, so whenever Auto Layout applied a
+/// frame to it (its clip view laid out at a fractional height, as during the filter bar's animation) AppKit
+/// regenerated its autoresizing constraints and asked for another Update Constraints pass; at some heights the
+/// engine's answer never matched the refused height and the passes repeated until AppKit raised (the Table
+/// History Forward crash, 2026-10-21).
+final class SARuleFilterRuleEditorLayoutCycleTests: XCTestCase {
+
+    /// Counts the frame sizes the rule editor is given.
+    private final class CountingRuleEditor: SPFilterRuleEditor {
+        var frameSizeCalls = 0
+
+        /// Counts the call.
+        override func setFrameSize(_ newSize: NSSize) {
+            frameSizeCalls += 1
+            super.setFrameSize(newSize)
+        }
+    }
+
+    /// One plain criterion, so rows can be added without the filter controller.
+    private final class Criteria: NSObject, NSRuleEditorDelegate {
+        func ruleEditor(_ editor: NSRuleEditor, numberOfChildrenForCriterion criterion: Any?, with rowType: NSRuleEditor.RowType) -> Int {
+            criterion == nil ? 1 : 0
+        }
+
+        func ruleEditor(_ editor: NSRuleEditor, child index: Int, forCriterion criterion: Any?, with rowType: NSRuleEditor.RowType) -> Any {
+            "name"
+        }
+
+        func ruleEditor(_ editor: NSRuleEditor, displayValueForCriterion criterion: Any, inRow row: Int) -> Any {
+            "name"
+        }
+    }
+
+    /// Verifies the XIB's mask loses its vertical flexibility: the height is the rule editor's own.
+    func testVerticalFlexibilityIsDropped() {
+        let editor = SPFilterRuleEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 29))
+        editor.autoresizingMask = [.width, .height, .maxYMargin]
+        XCTAssertEqual(editor.autoresizingMask, [.width])
+        XCTAssertEqual(SARuleFilterRuleEditorSizing.autoresizingMask(from: [.width, .height, .minYMargin, .maxYMargin, .minXMargin]), [.width, .minXMargin])
+    }
+
+    /// Verifies the rule editor settles within two frame updates at clip heights that looped before (a short,
+    /// fractional clip under three rows), given the XIB's mask.
+    func testLayoutSettlesAtFractionalClipHeights() {
+        let criteria = Criteria()
+        for height in [5.8, 20.7, 32.5, 94.666_666] as [CGFloat] {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 500), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            defer { window.close() }
+            let content = NSView()
+            window.contentView = content
+            // A constraint anywhere in the window puts it under Auto Layout, as in the document window.
+            let constrained = NSView()
+            constrained.translatesAutoresizingMaskIntoConstraints = false
+            content.addSubview(constrained)
+            NSLayoutConstraint.activate([
+                constrained.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                constrained.topAnchor.constraint(equalTo: content.topAnchor),
+                constrained.widthAnchor.constraint(equalToConstant: 10),
+                constrained.heightAnchor.constraint(equalToConstant: 10),
+            ])
+            let container = NSView(frame: NSRect(x: 0, y: 300, width: 900, height: 150))
+            container.autoresizingMask = [.width, .minYMargin]
+            content.addSubview(container)
+            let scrollView = NSScrollView(frame: NSRect(x: 1, y: 41, width: 898, height: 33))
+            scrollView.autoresizingMask = [.width, .height]
+            scrollView.hasVerticalScroller = true
+            scrollView.autohidesScrollers = true
+            scrollView.borderType = .noBorder
+            container.addSubview(scrollView)
+            let editor = CountingRuleEditor(frame: NSRect(x: 0, y: 0, width: 898, height: 29))
+            // DBView.xib's mask for the filter rule editor.
+            editor.autoresizingMask = [.width, .height, .maxYMargin]
+            editor.delegate = criteria
+            editor.nestingMode = .list
+            editor.rowHeight = 32
+            scrollView.documentView = editor
+            for _ in 0..<3 { editor.addRow(nil) }
+            window.layoutIfNeeded()
+
+            editor.frameSizeCalls = 0
+            var frame = scrollView.frame
+            frame.size.height = height
+            scrollView.frame = frame
+            scrollView.contentView.needsLayout = true
+            window.layoutIfNeeded()
+
+            XCTAssertLessThanOrEqual(editor.frameSizeCalls, 2, "clip height \(height)")
+            XCTAssertEqual(editor.frame.height, 96, "clip height \(height)")
+        }
+    }
+}
+
 /// The row seeded when another table is selected starts unchecked: it is an empty
 /// template, and a checked one made the WHERE preview show `column = ''` while the
 /// table was unfiltered. Its first edit checks it, and it keeps waiting across
