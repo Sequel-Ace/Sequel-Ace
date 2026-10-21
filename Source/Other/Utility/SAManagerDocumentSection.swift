@@ -11,8 +11,8 @@
 //  (they are kept only if the connection is saved as a file). Empty, it is a heading with no purpose: the list hides it
 //  (walkthrough fix 2). The model keeps the header — the managers' loops walk to it, and saving reads the sections from
 //  it — and the list leaves it out only while it is the last item, so row i is always item i. Kept as is when the window
-//  came from a saved file or when the section already has items. The Query Favorites manager also keeps it for an
-//  untitled window on a saved connection: that section is the connection's own list (SAQueryFavoriteLocalScope).
+//  came from a saved file or when the section already has items. Both managers also keep it for an untitled window on
+//  a saved connection: that section is the connection's own list (SAQueryFavoriteLocalScope, SAContentFilterLocalScope).
 //
 //  Shared with the unit tests.
 //
@@ -54,6 +54,22 @@ import AppKit
     @objc(visibleRowCountOf:)
     static func visibleRowCount(of items: NSArray) -> Int {
         items.count > 0 && isHidden(items.lastObject as AnyObject?, in: items) ? items.count - 1 : items.count
+    }
+
+    /// The items of the section headed by `header` (its `headerKey` value), in order, up to the next header or the end
+    /// — the managers' own section walk (empty when no header has that value).
+    @objc(itemsIn:sectionHeader:)
+    static func items(in items: NSArray, sectionHeader header: String) -> [Any] {
+        func headerValue(_ item: Any) -> Any? { (item as? NSDictionary)?.object(forKey: headerKey) }
+        let start = items.indexOfObject(passingTest: { item, _, _ in (headerValue(item) as? String) == header })
+        guard start != NSNotFound else { return [] }
+        var section: [Any] = []
+        for index in (start + 1)..<items.count {
+            let item = items[index]
+            if headerValue(item) != nil { break }
+            section.append(item)
+        }
+        return section
     }
 
     /// Whether `object` is `items`' hidden header and still its last item.

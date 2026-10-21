@@ -830,6 +830,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 // Security check if file really exists
                 if ([fileManager fileExistsAtPath:fileName]) {
                     [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
+                    // Claude look: a restored bundle window keeps its bundle's favourites and filters (SASessionBundleRestoreMark)
+                    if (isBundleFile) [SASessionBundleRestoreMark markDocument:newWindowController.databaseDocument];
                     if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
                         break;
                     }

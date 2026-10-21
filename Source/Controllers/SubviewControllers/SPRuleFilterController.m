@@ -68,6 +68,20 @@ static Class<SAClaudeFilterBarStyling> SAClaudeFilterBarStylerClass(void)
 	return (Class<SAClaudeFilterBarStyling>)NSClassFromString(@"SAClaudeFilterBarStyler");
 }
 
+// SAContentFilterLocalScope (a window's own filters: its saved connection's, headed by its name, or its file's) is
+// app-target Swift too, looked up the same way (Nil in the tests, which keep the file's filters).
+@protocol SAContentFilterLocalScoping <NSObject>
++ (id<SAContentFilterLocalScoping>)filterScopeForDocument:(SPDatabaseDocument *)document;
+- (NSArray *)filtersOfType:(NSString *)filterType;
+- (NSString *)connectionName;
+- (NSString *)connectionHeaderToolTip;
+@end
+
+static Class<SAContentFilterLocalScoping> SAContentFilterLocalScopeClass(void)
+{
+	return (Class<SAContentFilterLocalScoping>)NSClassFromString(@"SAContentFilterLocalScope");
+}
+
 /**
  * The type of filter rule that the current item represents.
  */
@@ -681,6 +695,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			NSMenuItem *item;
 			if ([[[node settings] objectForKey:@"isSeparator"] boolValue]) {
 				item = [NSMenuItem separatorItem];
+			}
+			else if ([[[node settings] objectForKey:@"isHeader"] boolValue]) {
+				// a section heading (the connection's filters): a title that can't be chosen
+				item = [[NSMenuItem alloc] initWithTitle:[[node settings] objectForKey:@"title"] action:NULL keyEquivalent:@""];
+				[item setToolTip:[[node settings] objectForKey:@"tooltip"]];
+				[item setEnabled:NO];
 			}
 			else {
 				/* NOTE:
@@ -1433,16 +1453,29 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[[prefs objectForKey:SPContentFilters] objectForKey:compareType]];
 	}
 
-	// Load doc-based user-defined content filters
-	if([[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]]) {
+	// Load doc-based user-defined content filters (Claude look: a window on a saved connection lists that
+	// connection's filters, under a heading with its name — SAContentFilterLocalScope)
+	id<SAContentFilterLocalScoping> localScope = [SAContentFilterLocalScopeClass() filterScopeForDocument:tableDocumentInstance];
+	NSString *localHeading = [localScope connectionName];
+	NSUInteger localStart = [[contentFilters objectForKey:definitionGroup] count];
+	if (localScope) {
+		[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[localScope filtersOfType:compareType]];
+	}
+	else if([[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]]) {
 		id filters = [[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]];
 		if([filters objectForKey:compareType])
 			[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[filters objectForKey:compareType]];
 	}
 
 	NSUInteger i = 0;
+	NSUInteger position = 0;
 	if([contentFilters objectForKey:definitionGroup]) {
 		for (id filter in [contentFilters objectForKey:definitionGroup]) {
+			if (localHeading && position == localStart) {
+				[compareItems addObjectsFromArray:[self _localFiltersHeadingNodes:localHeading toolTip:[localScope connectionHeaderToolTip] forColumn:colNode]];
+			}
+			position++;
+
 			// Create the tooltip
 			NSString *tooltip;
 			if ([filter objectForKey:@"Tooltip"])
@@ -1511,6 +1544,29 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
 	return compareItems;
+}
+
+/**
+ * A separator and a disabled title item heading the window's connection filters in an operator menu (their settings
+ * differ from the closing separator's, so the nodes never compare equal to it).
+ */
+- (NSArray *)_localFiltersHeadingNodes:(NSString *)heading toolTip:(NSString *)toolTip forColumn:(ColumnNode *)colNode
+{
+	OpNode *separator = [[OpNode alloc] init];
+	[separator setParentColumn:colNode];
+	[separator setSettings:@{
+		@"isSeparator": @YES,
+		@"isLocalFiltersHeading": @YES,
+	}];
+
+	OpNode *header = [[OpNode alloc] init];
+	[header setParentColumn:colNode];
+	[header setSettings:@{
+		@"isHeader": @YES,
+		@"title": heading,
+		@"tooltip": toolTip ?: @"",
+	}];
+	return @[separator, header];
 }
 
 - (IBAction)_editFiltersAction:(id)sender

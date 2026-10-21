@@ -39,22 +39,28 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
     // MARK: - Scope
 
     func testUntitledWindowOnASavedConnectionStoresAgainstTheConnection() {
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: true, isSavedInBundle: false, connectionID: "1234"), .connection(id: "1234"))
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: true, isRestoredFromSessionBundle: false, connectionID: "1234"), .connection(id: "1234"))
     }
 
     func testQuickConnectAndSpfWindowsKeepTheFileList() {
         // Quick connect: no saved connection.
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: true, isSavedInBundle: false, connectionID: nil), .document)
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: true, isSavedInBundle: false, connectionID: ""), .document)
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: true, isSavedInBundle: false, connectionID: "  "), .document)
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: true, isRestoredFromSessionBundle: false, connectionID: nil), .document)
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: true, isRestoredFromSessionBundle: false, connectionID: ""), .document)
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: true, isRestoredFromSessionBundle: false, connectionID: "  "), .document)
         // A window opened from (or saved to) an .spf file keeps the file's favourites, even with a connection id.
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: false, isSavedInBundle: false, connectionID: "1234"), .document)
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: false, isSavedInBundle: false, connectionID: nil), .document)
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: false, isRestoredFromSessionBundle: false, connectionID: "1234"), .document)
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: false, isRestoredFromSessionBundle: false, connectionID: nil), .document)
     }
 
     func testSessionBundleWindowsKeepTheirBundleList() {
-        // A window restored from (or saved into) an .spfs counts as untitled, but its favourites live in the bundle.
-        XCTAssertEqual(SAQueryFavoriteLocalScopeKind.resolve(isUntitled: true, isSavedInBundle: true, connectionID: "1234"), .document)
+        // A window restored from an .spfs counts as untitled, but its favourites live in the bundle.
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: true, isRestoredFromSessionBundle: true, connectionID: "1234"), .document)
+    }
+
+    func testSaveSessionDoesNotMoveAnOpenConnectionWindowOffItsConnection() {
+        // "Save Session" writes open untitled windows into the bundle (they stay untitled) but doesn't restore them:
+        // they keep their connection's list.
+        XCTAssertEqual(SAConnectionLocalScopeKind.resolve(isUntitled: true, isRestoredFromSessionBundle: false, connectionID: "1234"), .connection(id: "1234"))
     }
 
     // MARK: - Store
@@ -157,10 +163,10 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         let base: [Any] = [favorite("L1"), favorite("L2")]
         let opened = copies(base)
         let theirs: [Any] = base + [favorite("From B")]
-        XCTAssertNil(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: opened, theirs: theirs))
+        XCTAssertNil(SAConnectionListMerge.merge(base: base, opened: opened, mine: opened, theirs: theirs))
         // Edited in place back to the same value is unchanged too.
         (opened[0] as! NSMutableDictionary)["query"] = "SELECT 1"
-        XCTAssertNil(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: opened, theirs: theirs))
+        XCTAssertNil(SAConnectionListMerge.merge(base: base, opened: opened, mine: opened, theirs: theirs))
     }
 
     func testMyAddKeepsAnotherWindowsAdd() throws {
@@ -168,7 +174,7 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         let opened = copies(base)
         let mine: [Any] = opened + [favorite("Mine")]
         let theirs: [Any] = base + [favorite("From B")]
-        let merged = try XCTUnwrap(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
+        let merged = try XCTUnwrap(SAConnectionListMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
         XCTAssertEqual(names(merged), ["L1", "Mine", "From B"])
     }
 
@@ -178,7 +184,7 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         (opened[0] as! NSMutableDictionary)["query"] = "SELECT 'edited'"
         let mine: [Any] = [opened[2], opened[0]]   // B deleted, C moved up, A edited
         let theirs: [Any] = base + [favorite("From B")]
-        let merged = try XCTUnwrap(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
+        let merged = try XCTUnwrap(SAConnectionListMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
         XCTAssertEqual(names(merged), ["C", "A", "From B"])
         XCTAssertEqual((merged[1] as? NSDictionary)?["query"] as? String, "SELECT 'edited'")
     }
@@ -189,7 +195,7 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         // The manager's drag re-creates the row: same value, new object.
         let mine: [Any] = [NSMutableDictionary(dictionary: opened[1] as! NSDictionary), opened[0]]
         let theirs: [Any] = [favorite("A")]   // another window deleted B meanwhile
-        let merged = try XCTUnwrap(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
+        let merged = try XCTUnwrap(SAConnectionListMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
         XCTAssertEqual(names(merged), ["A"])
     }
 
@@ -198,7 +204,7 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         let opened = copies(base)
         let mine: [Any] = opened + [favorite("Mine")]
         let theirs: [Any] = [favorite("A", query: "SELECT 'replaced in B'"), favorite("B")]
-        let merged = try XCTUnwrap(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
+        let merged = try XCTUnwrap(SAConnectionListMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
         XCTAssertEqual(names(merged), ["A", "B", "Mine"])
         XCTAssertEqual((merged[0] as? NSDictionary)?["query"] as? String, "SELECT 'replaced in B'")
     }
@@ -208,7 +214,7 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         let opened = copies(base)
         (opened[0] as! NSMutableDictionary)["query"] = "SELECT 'mine'"
         let theirs: [Any] = [favorite("A", query: "SELECT 'theirs'")]
-        let merged = try XCTUnwrap(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: opened, theirs: theirs))
+        let merged = try XCTUnwrap(SAConnectionListMerge.merge(base: base, opened: opened, mine: opened, theirs: theirs))
         // Mine kept; theirs is a different value, kept too (never dropped silently).
         XCTAssertEqual(merged.compactMap { ($0 as? NSDictionary)?["query"] as? String }, ["SELECT 'mine'", "SELECT 'theirs'"])
     }
@@ -218,7 +224,7 @@ final class SAConnectionQueryFavoriteStoreTests: XCTestCase {
         let opened = copies(base)
         let mine: [Any] = opened + [favorite("Mine")]
         let theirs: [Any] = [favorite("B")]
-        let merged = try XCTUnwrap(SAQueryFavoriteMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
+        let merged = try XCTUnwrap(SAConnectionListMerge.merge(base: base, opened: opened, mine: mine, theirs: theirs))
         XCTAssertEqual(names(merged), ["B", "Mine"])
     }
 

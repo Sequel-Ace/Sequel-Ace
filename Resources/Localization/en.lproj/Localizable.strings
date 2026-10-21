@@ -6515,10 +6515,10 @@
 /* Claude query history: Clear History? text for an unsaved window (its history is shared by all unsaved windows) */
 "ClaudeQueryHistory.clearAllWindows.message" = "Are you sure you want to clear the query history shared by all unsaved windows (every window not saved to a file)? This action cannot be undone.";
 
-/* Query favorites: heading of the section saved for the window's connection when its name is unknown */
+/* Query favorites and content filters: heading of the section saved for the window's connection when its name is unknown */
 "ClaudeQueryFavoritesThisConnection" = "This connection";
 
-/* Query favorites: note that a favorite is kept only for this saved connection (arg is the connection's name) */
+/* Query favorites and content filters: note that a favorite or filter is kept only for this saved connection (arg is the connection's name) */
 "ClaudeQueryFavoritesSavedForConnectionOnly" = "Saved for %@ only";
 
 /* Query favorite save sheet: checkbox that saves the favorite globally (was “Save globally”) */
