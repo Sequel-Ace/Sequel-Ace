@@ -352,6 +352,21 @@ final class SARuleFilterRuleEditorLayoutCycleTests: XCTestCase {
         XCTAssertEqual(SARuleFilterRuleEditorSizing.autoresizingMask(from: [.width, .height, .minYMargin, .maxYMargin, .minXMargin]), [.width, .minXMargin])
     }
 
+    /// Verifies the mask decoded from a nib (DBView.xib's) loses its vertical flexibility too: the app's editor comes
+    /// through `init(coder:)`, which decodes the mask without the setter.
+    func testDecodedMaskLosesVerticalFlexibility() throws {
+        let plain = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 29))
+        plain.autoresizingMask = [.width, .height, .maxYMargin]
+        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
+        archiver.encode(plain, forKey: NSKeyedArchiveRootObjectKey)
+        archiver.finishEncoding()
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: archiver.encodedData)
+        unarchiver.requiresSecureCoding = false
+        unarchiver.setClass(SPFilterRuleEditor.self, forClassName: "NSRuleEditor")
+        let decoded = try XCTUnwrap(unarchiver.decodeObject(forKey: NSKeyedArchiveRootObjectKey) as? SPFilterRuleEditor)
+        XCTAssertEqual(decoded.autoresizingMask, [.width])
+    }
+
     /// Verifies the rule editor settles within two frame updates at clip heights that looped before (a short,
     /// fractional clip under three rows), given the XIB's mask.
     func testLayoutSettlesAtFractionalClipHeights() {
