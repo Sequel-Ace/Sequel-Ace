@@ -120,6 +120,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 											   object:tableDocumentInstance];
 
 	[SAClaudeTabBarStyler attachToContainer:[addRelationButton superview] barTop:35 content:[relationsTableView enclosingScrollView] status:nil search:nil label:labelTextField];
+	// Columns sized to their content, the last one filling the grid (see SAClaudeCopyTable).
+	if ([relationsTableView isKindOfClass:[SAClaudeCopyTable class]]) [(SAClaudeCopyTable *)relationsTableView setFitsColumnsToContent:YES];
 }
 
 #pragma mark -

@@ -135,6 +135,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 											   object:tableDocumentInstance];
 
 	[SAClaudeTabBarStyler attachToContainer:[addTriggerButton superview] barTop:35 content:[triggersTableView enclosingScrollView] status:nil search:nil label:labelTextField];
+	// Columns sized to their content, the last one filling the grid (see SAClaudeCopyTable).
+	if ([triggersTableView isKindOfClass:[SAClaudeCopyTable class]]) [(SAClaudeCopyTable *)triggersTableView setFitsColumnsToContent:YES];
 }
 
 /**

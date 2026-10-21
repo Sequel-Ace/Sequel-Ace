@@ -98,4 +98,24 @@ final class SAClaudeGridChromeTests: XCTestCase {
         XCTAssertEqual(parts.name, "first name")
         XCTAssertNil(parts.type)
     }
+
+    // MARK: Fitted columns (Relations, Triggers)
+
+    /// Verifies each column gets its content's width, whole points, and the last one fills what is left.
+    func testFittedColumnsTakeTheirContentAndTheLastFills() {
+        let widths = SAClaudeGridChrome.fittedColumnWidths(natural: [120.2, 61, 90], available: 1000)
+        XCTAssertEqual(widths, [121, 61, 1000 - 121 - 61])
+    }
+
+    /// Verifies a long value is capped and a tiny column keeps the minimum width.
+    func testFittedColumnsAreCappedAndKeepAMinimum() {
+        let widths = SAClaudeGridChrome.fittedColumnWidths(natural: [2000, 3, 50], available: 300)
+        XCTAssertEqual(widths, [SAClaudeGridChrome.fittedColumnCap, SAClaudeGridChrome.fittedColumnMinimum, 50])
+    }
+
+    /// Verifies nothing is squeezed when the columns need more than the width available (the grid scrolls).
+    func testFittedColumnsWiderThanTheGridKeepTheirWidths() {
+        XCTAssertEqual(SAClaudeGridChrome.fittedColumnWidths(natural: [300, 300], available: 400), [300, 300])
+        XCTAssertEqual(SAClaudeGridChrome.fittedColumnWidths(natural: [], available: 400), [])
+    }
 }

@@ -185,14 +185,66 @@ extension Notification.Name {
     override func reloadData() {
         renderer.rowsReloaded()
         super.reloadData()
+        if fitsColumnsToContent { fitColumnsToContent() }
         NotificationCenter.default.post(name: .SAClaudeCopyTableDidReload, object: self)
     }
 
     override func noteNumberOfRowsChanged() {
         renderer.rowsReloaded()
         super.noteNumberOfRowsChanged()
+        if fitsColumnsToContent { fitColumnsToContent() }
         NotificationCenter.default.post(name: .SAClaudeCopyTableDidReload, object: self)
     }
+
+    // MARK: Fitted columns
+
+    /// Whether the columns are sized to their content on every reload, the last one filling the grid's width and
+    /// following it as the window resizes (Relations and Triggers: their XIB widths left most of the grid empty
+    /// and truncated names and values). Content and Query keep their own column widths.
+    @objc var fitsColumnsToContent = false {
+        didSet {
+            guard fitsColumnsToContent, !oldValue else { return }
+            columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+            fitColumnsToContent()
+        }
+    }
+
+    /// The most rows measured for a column's width; Relations and Triggers have a handful.
+    private static let fittedRowLimit = 500
+    /// Room beside a cell's own text width so the widest value isn't flush with the column's edge.
+    private static let fittedCellPadding: CGFloat = 8
+
+    /// Sizes each column to its header or widest value (see `SAClaudeGridChrome.fittedColumnWidths`).
+    @objc func fitColumnsToContent() {
+        guard numberOfColumns > 0 else { return }
+        let rows = min(numberOfRows, Self.fittedRowLimit)
+        let natural = tableColumns.enumerated().map { index, column -> CGFloat in
+            var width = SAClaudeTableHeaderView.titleWidth(of: column)
+            for row in 0..<rows {
+                guard let cell = preparedCell(atColumn: index, row: row) else { continue }
+                width = max(width, ceil(cell.cellSize.width) + Self.fittedCellPadding)
+            }
+            return width
+        }
+        let visibleWidth = enclosingScrollView?.contentSize.width ?? bounds.width
+        let available = visibleWidth - intercellSpacing.width * CGFloat(numberOfColumns)
+        let widths = SAClaudeGridChrome.fittedColumnWidths(natural: natural, available: available)
+        // The last column follows the grid's width; as the window narrows it stops at its content's width (the grid
+        // then scrolls) instead of AppKit's 10pt minimum. Only the current last column keeps such a minimum.
+        for (index, column) in tableColumns.enumerated() {
+            let original = xibMinimumWidths[column.identifier] ?? column.minWidth
+            xibMinimumWidths[column.identifier] = original
+            column.minWidth = index == tableColumns.count - 1
+                ? min(max(original, ceil(natural[index]), SAClaudeGridChrome.fittedColumnMinimum), SAClaudeGridChrome.fittedColumnCap)
+                : original
+        }
+        for (column, width) in zip(tableColumns, widths) where column.width != width {
+            column.width = min(max(width, column.minWidth), column.maxWidth)
+        }
+    }
+
+    /// Each column's minimum width before `fitColumnsToContent` raised the last one's.
+    private var xibMinimumWidths: [NSUserInterfaceItemIdentifier: CGFloat] = [:]
 
     // MARK: Copy
 
@@ -236,6 +288,19 @@ extension Notification.Name {
 
     private static let nameFont = NSFont.systemFont(ofSize: 11.5, weight: .medium)
     private static let tagFont = NSFont.systemFont(ofSize: 9.5, weight: .medium)
+    /// The space `drawColumn` leaves each side of the title.
+    private static let titleInset: CGFloat = 8
+
+    /// The width a column needs for its whole title as the header draws it (name and type tag, both insets).
+    static func titleWidth(of column: NSTableColumn) -> CGFloat {
+        let parts = SAClaudeGridChrome.headerParts(column.headerCell.attributedStringValue)
+        var width = NSAttributedString(string: parts.name, attributes: [.font: nameFont]).size().width
+        if let type = parts.type {
+            width += NSAttributedString(string: "  ", attributes: [.font: tagFont]).size().width
+            width += NSAttributedString(string: type.uppercased(), attributes: [.font: tagFont, .kern: 0.4]).size().width
+        }
+        return ceil(width) + titleInset * 2
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         let area = bounds.intersection(dirtyRect)
@@ -257,7 +322,7 @@ extension Notification.Name {
 
     private func drawColumn(_ column: NSTableColumn, in rect: NSRect, table: NSTableView) {
         let parts = SAClaudeGridChrome.headerParts(column.headerCell.attributedStringValue)
-        var textRect = rect.insetBy(dx: 8, dy: 0)
+        var textRect = rect.insetBy(dx: Self.titleInset, dy: 0)
         if let indicator = table.indicatorImage(in: column) {
             let size = indicator.size
             let indicatorRect = NSRect(x: rect.maxX - 8 - size.width, y: rect.midY - size.height / 2, width: size.width, height: size.height)

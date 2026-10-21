@@ -22,6 +22,28 @@ import AppKit
     @objc static let headerHeight: CGFloat = 30
     @objc static let minimumRowHeight: CGFloat = 30
 
+    /// The narrowest column `fittedColumnWidths` gives.
+    static let fittedColumnMinimum: CGFloat = 48
+    /// The widest column `fittedColumnWidths` gives from its content (a trigger's statement can be very long).
+    static let fittedColumnCap: CGFloat = 420
+
+    /// Column widths for grids whose columns fit their content (Relations, Triggers): each column as wide as its
+    /// header or widest value, on whole points, between `fittedColumnMinimum` and `fittedColumnCap`; the last one
+    /// also takes whatever width is left, so the grid has no empty band at its right. Columns that need more than
+    /// `available` keep their widths and the grid scrolls.
+    ///
+    /// - Parameters:
+    ///   - natural: Each column's content width (header or widest value, padding included).
+    ///   - available: The width the columns can share (the clip width less the inter-cell spacing).
+    /// - Returns: One width per column.
+    static func fittedColumnWidths(natural: [CGFloat], available: CGFloat) -> [CGFloat] {
+        var widths = natural.map { min(max(ceil($0), fittedColumnMinimum), fittedColumnCap) }
+        guard let last = widths.indices.last else { return widths }
+        let spare = floor(available - widths.reduce(0, +))
+        if spare > 0 { widths[last] += spare }
+        return widths
+    }
+
     struct Palette: Equatable {
         let background, text, rowLine, headerLine, zebra, headerBackground, headerLabel, typeTag, hover, selection, null, displayOverride, caret: NSColor
     }
