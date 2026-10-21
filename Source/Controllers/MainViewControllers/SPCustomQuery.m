@@ -635,7 +635,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSString *infoString;
     
     if ([tableDocumentInstance isUntitled]) {
-        infoString = NSLocalizedString(@"Are you sure you want to clear the global history list? This action cannot be undone.", @"clear global history list informative message");
+        infoString = NSLocalizedString(@"ClaudeQueryHistory.clearAllWindows.message", @"Claude query history: Clear History? text for an unsaved window (its history is shared by all unsaved windows)");
     } else {
         infoString = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to clear the history list for “%@”? This action cannot be undone.", @"clear history list for “%@” informative message"), [tableDocumentInstance displayName]];
     }
@@ -3572,8 +3572,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // Control Clear History menu item title according to isUntitled
     else if ( [menuItem tag] == SP_HISTORY_CLEAR_MENUITEM_TAG ) {
         if ( [tableDocumentInstance isUntitled] ) {
-            [menuItem setTitle:NSLocalizedString(@"Clear Global History", @"clear global history menu item title")];
-            [menuItem setToolTip:NSLocalizedString(@"Clear the global history list", @"clear the global history list tooltip message")];
+            [menuItem setTitle:NSLocalizedString(@"ClaudeQueryHistory.clearAllWindows.title", @"Claude query history: Clear History item in an unsaved window (its history is shared by all unsaved windows)")];
+            [menuItem setToolTip:NSLocalizedString(@"ClaudeQueryHistory.clearAllWindows.tooltip", @"Claude query history: tooltip of the Clear History item in an unsaved window")];
         } else {
             [menuItem setTitle:[NSString stringWithFormat:NSLocalizedString(@"Clear History for “%@”", @"clear history for “%@” menu title"), [tableDocumentInstance displayName]]];
             [menuItem setToolTip:NSLocalizedString(@"Clear the document-based history list", @"clear the document-based history list tooltip message")];

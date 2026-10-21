@@ -6505,3 +6505,12 @@
 
 /* settings : edit theme list sheet : tooltip and accessibility name of the remove button under the themes list */
 "ClaudeThemeListRemove" = "Remove theme";
+
+/* Claude query history: Clear History item in an unsaved window (its history is shared by all unsaved windows) */
+"ClaudeQueryHistory.clearAllWindows.title" = "Clear History (all windows)";
+
+/* Claude query history: tooltip of the Clear History item in an unsaved window */
+"ClaudeQueryHistory.clearAllWindows.tooltip" = "Clear the query history shared by all windows not saved to a file";
+
+/* Claude query history: Clear History? text for an unsaved window (its history is shared by all unsaved windows) */
+"ClaudeQueryHistory.clearAllWindows.message" = "Are you sure you want to clear the query history shared by all unsaved windows (every window not saved to a file)? This action cannot be undone.";
