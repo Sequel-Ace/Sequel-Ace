@@ -10,7 +10,8 @@ import AppKit
 
 @objc(SAClaudeTooltipCard) final class SAClaudeTooltipCard: NSObject {
 
-    /// The tooltip page around `body`: `"text"` on the theme card, anything else (bundle HTML) on the paper.
+    /// The tooltip page around `body`: `"text"` and plain bundle HTML on the theme card, bundle HTML that styles itself
+    /// on the paper.
     @objc(documentWithBody:type:options:)
     static func document(body: String, type: String, options: [String: Any]?) -> String {
         SAClaudeTooltipHTML.document(body: body, kind: type == "text" ? .text : .html, options: options,

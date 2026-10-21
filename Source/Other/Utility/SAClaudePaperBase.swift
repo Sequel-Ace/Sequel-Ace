@@ -14,7 +14,8 @@
 //  is in quirks mode, whose UA sheet resets tables to the 16px default while the rest of the page takes the 13px type;
 //  `<table>` has no font-size attribute, so no hint is overridden.
 //  There is no background rule: the paper is drawn behind a transparent web view, so any page background paints over
-//  it. Pure Foundation/AppKit so it is shared with the Unit Tests target.
+//  it. A plain page (no colours or fonts of its own, `SAClaudePlainPage`) gets the theme base instead, which follows the
+//  theme and goes in the same way (`themeStylesheet`). Pure Foundation/AppKit so it is shared with the Unit Tests target.
 //
 
 import AppKit
@@ -34,6 +35,25 @@ enum SAClaudePaperBase {
             + ":where(body:not([link]):not([vlink]):not([alink]) a:any-link){color:\(SAClaudeHintCardCSS.colour(paper.accent))}"
             + "@media print{:where(:root){\(SAClaudeHintCardCSS.declarations(paper))}}"
         return "<style \(marker)>\(css)</style>"
+    }
+
+    /// The theme base, for a plain page (`SAClaudePlainPage`: no colours or fonts of its own), which follows the theme
+    /// instead of sitting on the paper: the theme's variables, Claude type in the theme's text colour, links in the
+    /// theme's (readable) accent, and the paper's variables when printed. The theme's surface is drawn behind the
+    /// transparent web view, as the paper is. Colours go through the variables, so the print rule (and a live theme
+    /// change, which rewrites the element's CSS) reaches the text and links too. Same marker, so `inject`, `strip` and
+    /// the rules above hold for it.
+    static func themeStylesheet(theme: SAClaudeHintCardPalette, paper: SAClaudeHintCardPalette) -> String {
+        "<style \(marker)>\(themeCSS(theme: theme, paper: paper))</style>"
+    }
+
+    /// The CSS inside `themeStylesheet`.
+    static func themeCSS(theme: SAClaudeHintCardPalette, paper: SAClaudeHintCardPalette) -> String {
+        ":where(:root){\(SAClaudeHintCardCSS.declarations(theme))}"
+            + ":where(html){color:var(--sa-text);font:13px/1.5 -apple-system,system-ui,sans-serif}"
+            + ":where(table){font-size:inherit}"
+            + ":where(a:any-link){color:var(--sa-accent)}"
+            + "@media print{:where(:root){\(SAClaudeHintCardCSS.declarations(paper))}}"
     }
 
     /// `html` with `stylesheet` ahead of the page's own styles: right after `<head…>`; with no head, after `<html…>`;

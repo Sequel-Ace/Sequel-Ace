@@ -223,6 +223,54 @@ final class SAClaudePaperBaseTests: XCTestCase {
         XCTAssertEqual(link.body, "color:\(SAClaudeHintCardCSS.colour(paper.accent))")
     }
 
+    // MARK: The theme base (plain pages, walkthrough 16)
+
+    private var themeSheet: String { SAClaudePaperBase.themeStylesheet(theme: darkTheme, paper: paper) }
+
+    func testThemeBaseHasZeroSpecificityAndNoBackground() {
+        let text = css(themeSheet)
+        XCTAssertEqual(text, SAClaudePaperBase.themeCSS(theme: darkTheme, paper: paper))
+        let all = rules(text)
+        XCTAssertEqual(all.count, 5, "\(all)")
+        for rule in all {
+            for selector in rule.selector.split(separator: ",") {
+                XCTAssertTrue(isWholeWhere(String(selector)), "\(selector) has specificity")
+            }
+        }
+        XCTAssertFalse(text.contains("background"), "the theme surface is behind the web view, never a page background")
+    }
+
+    /// Text and links go through the variables: the theme's on screen (dark in dark), the paper's when printed.
+    func testThemeBaseFollowsTheThemeAndPrintsLight() throws {
+        let all = rules(css(themeSheet))
+        let roots = all.filter { $0.selector == ":where(:root)" }
+        XCTAssertEqual(roots.count, 2)
+        XCTAssertEqual(roots[0].body, SAClaudeHintCardCSS.declarations(darkTheme))
+        XCTAssertTrue(roots[0].body.hasSuffix("color-scheme:dark"), roots[0].body)
+        XCTAssertEqual(roots[1].body, SAClaudeHintCardCSS.declarations(paper))
+        XCTAssertTrue(roots[1].body.hasSuffix("color-scheme:light"), roots[1].body)
+        XCTAssertTrue(css(themeSheet).contains("@media print{:where(:root){"))
+
+        let html = try XCTUnwrap(all.first { $0.selector == ":where(html)" })
+        XCTAssertEqual(html.body, "color:var(--sa-text);font:13px/1.5 -apple-system,system-ui,sans-serif")
+        XCTAssertFalse(html.body.contains("color-scheme"), "the scheme comes from the root rule: dark on screen, light printed")
+        let link = try XCTUnwrap(all.first { $0.selector == ":where(a:any-link)" })
+        XCTAssertEqual(link.body, "color:var(--sa-accent)")
+        let table = try XCTUnwrap(all.first { $0.selector == ":where(table)" })
+        XCTAssertEqual(table.body, "font-size:inherit")
+        // The accent the variable carries reads on the theme's surface.
+        XCTAssertGreaterThanOrEqual(SAClaudeHintCardPalette.contrast(darkTheme.accent, darkTheme.surface), 4.5)
+    }
+
+    func testThemeBaseInjectsAndStripsLikeThePaper() {
+        for page in fixtures {
+            let injected = SAClaudePaperBase.inject(themeSheet, into: page)
+            XCTAssertEqual(SAClaudePaperBase.strip(injected), page)
+            XCTAssertEqual(SAClaudePaperBase.inject(themeSheet, into: injected), injected)
+        }
+        XCTAssertEqual(SAClaudePaperBase.inject(themeSheet, into: "<b>x</b>"), themeSheet + "<b>x</b>")
+    }
+
     /// A dark theme's declarations end in `color-scheme:dark`; the paper is light only because the html rule, at the same
     /// (zero) specificity on the same element, comes after the root rule.
     func testHtmlRuleFollowsRootRuleSoThePaperStaysLight() throws {

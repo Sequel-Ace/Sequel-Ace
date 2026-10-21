@@ -36,11 +36,13 @@ enum SAClaudeTooltipHTML {
     }
 
     /// The whole page: SPTooltip's skeleton with the card's padding and colours — the theme card for
-    /// text, the light paper for HTML a bundle wrote for a light page. `backgroundcolor` (a `#hex` or
-    /// a colour word) and `transparent` passed by a caller still win.
+    /// text and for plain bundle HTML (no colours or fonts of its own, `SAClaudePlainPage`; its links in
+    /// the theme's readable accent), the light paper for HTML a bundle styled for a light page.
+    /// `backgroundcolor` (a `#hex` or a colour word) and `transparent` passed by a caller still win.
     static func document(body: String, kind: Kind, options: [String: Any]?, theme: SAClaudeHintCardPalette,
                          paper: SAClaudeHintCardPalette) -> String {
-        let palette = kind == .text ? theme : paper
+        let plainHTML = kind == .html && SAClaudePlainPage.isPlain(body)
+        let palette = kind == .text || plainHTML ? theme : paper
         let background: String
         if options?["transparent"] != nil {
             background = "transparent"
@@ -58,6 +60,7 @@ enum SAClaudeTooltipHTML {
             + "pre { white-space: pre-wrap; margin: 0; }"
             + ".sa-prose { font-family: -apple-system, system-ui, sans-serif; "
             + "font-size: \(Int(SAClaudeHintCard.proseFontSize))px; white-space: pre-wrap; }"
+            + (plainHTML ? "a:any-link { color: \(SAClaudeHintCardCSS.colour(theme.accent)); }" : "")
             + "</style>"
             + "</head>"
             + "<body>\(body)</body>"

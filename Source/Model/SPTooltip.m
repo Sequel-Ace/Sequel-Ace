@@ -53,7 +53,8 @@
 //	                 if no displayOptions are passed or if a key doesn't exist the tooltip is drawn
 //	                 as the Claude hint card (see SAClaudeTooltipHTML): text as 12px system prose
 //	                 (10px when only a fontname is passed) on the theme's card colours, html on the
-//	                 light paper, not transparent
+//	                 theme's card when plain (no colours or fonts of its own), else on the light
+//	                 paper; not transparent
 //
 //	See more possible syntaxa in SPTooltip to init a tooltip
 

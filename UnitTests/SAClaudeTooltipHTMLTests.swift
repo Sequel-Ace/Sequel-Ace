@@ -147,11 +147,37 @@ final class SAClaudeTooltipHTMLTests: XCTestCase {
         XCTAssertTrue(html.contains("<body><pre>x</pre></body>"), html)
     }
 
-    func testHTMLDocumentSitsOnPaper() {
-        let html = SAClaudeTooltipHTML.document(body: "<p>bundle</p>", kind: .html, options: nil, theme: darkTheme, paper: paper)
+    /// Bundle HTML that styles itself keeps the light paper, exactly as before (walkthrough 16).
+    func testStyledHTMLDocumentSitsOnPaper() {
+        for body in ["<p><font color=blue>bundle</font></p>", "<style>p{color:#333}</style><p>bundle</p>",
+                     "<p style=\"color:#333\">bundle</p>", "<table bgcolor=#ECECEC><tr><td>x</td></tr></table>"] {
+            let html = SAClaudeTooltipHTML.document(body: body, kind: .html, options: nil, theme: darkTheme, paper: paper)
+            let rule = bodyRule(html)
+            XCTAssertTrue(rule.contains("background: #FAF9F5"), rule)
+            XCTAssertTrue(rule.contains("color: #0B0B0B"), rule)
+            XCTAssertFalse(html.contains("a:any-link"), html)
+        }
+    }
+
+    /// Plain bundle HTML (no colours or fonts of its own) follows the theme like a text tooltip, links in the theme's
+    /// readable accent (walkthrough 16).
+    func testPlainHTMLDocumentFollowsTheTheme() {
+        let dark = darkTheme
+        let html = SAClaudeTooltipHTML.document(body: "<p>bundle <a href=\"x\">link</a></p>", kind: .html, options: nil,
+                                                theme: dark, paper: paper)
         let rule = bodyRule(html)
-        XCTAssertTrue(rule.contains("background: #FAF9F5"), rule)
-        XCTAssertTrue(rule.contains("color: #0B0B0B"), rule)
+        XCTAssertTrue(rule.contains("background: \(SAClaudeHintCardCSS.colour(dark.surface))"), rule)
+        XCTAssertTrue(rule.contains("color: \(SAClaudeHintCardCSS.colour(dark.text))"), rule)
+        XCTAssertFalse(html.contains("#FAF9F5"), html)
+        XCTAssertTrue(html.contains("a:any-link { color: \(SAClaudeHintCardCSS.colour(dark.accent)); }"), html)
+        XCTAssertGreaterThanOrEqual(SAClaudeHintCardPalette.contrast(dark.accent, dark.surface), 4.5)
+        // A caller's background still wins.
+        let explicit = SAClaudeTooltipHTML.document(body: "<p>x</p>", kind: .html, options: ["backgroundcolor": "#EEEEEE"],
+                                                    theme: dark, paper: paper)
+        XCTAssertTrue(bodyRule(explicit).contains("background: #EEEEEE"), explicit)
+        // Text tooltips are unchanged: no link rule.
+        let text = SAClaudeTooltipHTML.document(body: "<pre>x</pre>", kind: .text, options: nil, theme: dark, paper: paper)
+        XCTAssertFalse(text.contains("a:any-link"), text)
     }
 
     func testExplicitBackgroundOptionWins() {
