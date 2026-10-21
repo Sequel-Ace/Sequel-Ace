@@ -38,6 +38,8 @@ import AppKit
         // A segmented control still gets the glass capsule; inside a plain container it's a custom view.
         if let control = item.view as? NSSegmentedControl {
             item.view = SAClaudeToolbarItemContainer(wrapping: control)
+            // Its control sets the item's enabled state (the Table History label follows its chevrons).
+            item.autovalidates = false
         }
         guard item.view == nil, let glyph = SAClaudeToolbarLayout.glyph(for: item.itemIdentifier.rawValue) else { return item }
         let styled = SAClaudeToolbarItem(itemIdentifier: item.itemIdentifier)

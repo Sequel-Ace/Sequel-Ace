@@ -80,4 +80,14 @@ final class SAClaudeToolbarLayoutTests: XCTestCase {
         XCTAssertEqual(L.databasePillWidth(textWidth: 100.2), 157)
         XCTAssertEqual(L.databasePillWidth(textWidth: 400), 220)
     }
+
+    /// Verifies the Table History label dims with its chevrons: enabled only while the control and at least one
+    /// segment are (it drew bright on the connection page, where both chevrons were dimmed).
+    func testHistoryLabelFollowsItsChevrons() {
+        XCTAssertFalse(SAClaudeToolbarLayout.historyLabelEnabled(controlEnabled: true, segmentsEnabled: [false, false]))
+        XCTAssertFalse(SAClaudeToolbarLayout.historyLabelEnabled(controlEnabled: false, segmentsEnabled: [true, true]))
+        XCTAssertFalse(SAClaudeToolbarLayout.historyLabelEnabled(controlEnabled: true, segmentsEnabled: []))
+        XCTAssertTrue(SAClaudeToolbarLayout.historyLabelEnabled(controlEnabled: true, segmentsEnabled: [true, false]))
+        XCTAssertTrue(SAClaudeToolbarLayout.historyLabelEnabled(controlEnabled: true, segmentsEnabled: [false, true]))
+    }
 }

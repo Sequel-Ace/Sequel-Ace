@@ -136,6 +136,30 @@ import AppKit
     override var intrinsicContentSize: NSSize { NSSize(width: Self.segmentWidth * CGFloat(max(segmentCount, 1)), height: 32) }
     override func sizeToFit() { setFrameSize(intrinsicContentSize) }
 
+    // MARK: Toolbar label
+
+    override var isEnabled: Bool { didSet { syncToolbarItemEnabled() } }
+
+    override func setEnabled(_ enabled: Bool, forSegment segment: Int) {
+        super.setEnabled(enabled, forSegment: segment)
+        syncToolbarItemEnabled()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        syncToolbarItemEnabled()
+    }
+
+    /// Dims the toolbar item (its "Table History" label) with the chevrons (see `SAClaudeToolbarLayout.historyLabelEnabled`).
+    private func syncToolbarItemEnabled() {
+        guard let items = window?.toolbar?.items else { return }
+        let enabled = SAClaudeToolbarLayout.historyLabelEnabled(controlEnabled: isEnabled,
+                                                                segmentsEnabled: (0..<segmentCount).map { isEnabled(forSegment: $0) })
+        for item in items where item.view.map({ isDescendant(of: $0) }) == true && item.isEnabled != enabled {
+            item.isEnabled = enabled
+        }
+    }
+
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let trackingArea { removeTrackingArea(trackingArea) }

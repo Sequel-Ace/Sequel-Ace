@@ -31,6 +31,13 @@ enum SAClaudeToolbarLayout {
     static let defaultItems = [database, flexibleSpace, structure, content, relations, triggers, tableInfo, query,
                                flexibleSpace, history, recordView, users, showConsole]
 
+    /// Whether the Table History item's label draws enabled: as its chevrons do, so while the control and at least one
+    /// of its segments are enabled. AppKit dims a custom-view item's label only by the item's own `isEnabled`, which
+    /// nothing validated, so the label stayed bright on the connection page while both chevrons were dimmed.
+    static func historyLabelEnabled(controlEnabled: Bool, segmentsEnabled: [Bool]) -> Bool {
+        controlEnabled && segmentsEnabled.contains(true)
+    }
+
     /// The views the toolbar marks as selected.
     static let selectableItems: Set<String> = [structure, content, query, tableInfo, relations, triggers, recordView]
 
