@@ -26,6 +26,10 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     /// without this generic controller needing to know the specifics.
     @objc var windowWillCloseHandler: (() -> Void)?
 
+    /// When set, a web link the user clicks (http or https, also one opening a new window) opens in the default browser
+    /// instead of in this window. For pages of ours that point to the online documentation (the socket help page).
+    @objc var opensWebLinksInBrowser = false
+
     private let model = SAWebViewModel()
     private let bridge = SABundleJSBridge()
     private let backdrop = SABundleHTMLBackdrop(colour: SAClaudeHintCardPalette.currentPaper().surface)
@@ -342,6 +346,13 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             self.show(isLoadedHTML ? self.loadedBase : .none)
         }
 
+        model.decideNavigationPolicy = { [weak self] action in
+            guard self?.opensWebLinksInBrowser == true, action.navigationType == .linkActivated,
+                  let url = action.request.url, Self.isWebURL(url) else { return nil }
+            NSWorkspace.shared.open(url)
+            return .cancel
+        }
+
         model.onSequelaceURL = { url in
             (NSApp.delegate as? SPAppController)?.handleEvent(with: url)
         }
@@ -353,8 +364,12 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         // the child's window.system handler to the opener's window. Because no web view
         // is returned, the two windows have no script connection and don't need to
         // share a web process. Trade-off: JS window.open() gets no handle back.
-        model.onCreateWebView = { _, request in
+        model.onCreateWebView = { [weak self] _, request in
             guard let url = request.url else {
+                return nil
+            }
+            if self?.opensWebLinksInBrowser == true, Self.isWebURL(url) {
+                NSWorkspace.shared.open(url)
                 return nil
             }
             let controller = SABundleHTMLOutputWindowController()
@@ -393,6 +408,10 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         model.handleKeyDown = { [weak self] event in
             self?.handleKeyDown(event) ?? false
         }
+    }
+
+    private static func isWebURL(_ url: URL) -> Bool {
+        ["http", "https"].contains(url.scheme?.lowercased() ?? "")
     }
 
     /// Ports the legacy keyDown: zoom and history shortcuts.

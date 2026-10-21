@@ -143,11 +143,37 @@ final class SAClaudeRareTemplatesTests: XCTestCase {
                      "Making sure your MySQL server is running", "Connecting via a socket connection",
                      "Connecting via a standard connection",
                      "[mysqld]\nsocket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock",
-                     "~/Library/Containers/com.sequel-ace.sequel-ace/Data", "my.cnf", "127.0.0.1", "3306", "port 8889",
+                     "my.cnf", "127.0.0.1", "3306", "port 8889",
                      "href=\"https://sequel-ace.com/get-started/mamp-xampp.html\"",
                      "href=\"https://dev.mysql.com/doc/refman/en/connecting.html\""] {
             XCTAssertTrue(html.contains(text), "lost \(text)")
         }
+    }
+
+    /// Walkthrough 17: the page is always the one shown (online or offline), so it carries the current online text —
+    /// the sandbox notes, both options with their steps and code blocks — and a link to the full online docs.
+    func testSocketPageMatchesTheOnlineDocs() throws {
+        let html = try socketPage()
+        for text in ["On macOS, Sequel Ace is sandboxed.", "Full Disk Access does <strong>not</strong> bypass this sandbox restriction.",
+                     "The socket’s real path must be inside Sequel Ace’s container.",
+                     "A symlink-based workaround by itself is not enough.",
+                     "Option 1: Keep using a socket (set socket path inside Sequel Ace)",
+                     "Option 2: Use standard TCP/IP instead of a socket",
+                     "my_print_defaults mysqld | tr ' ' '\\n' | grep '^--socket='",
+                     "[client]\nsocket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock",
+                     "Could not create unix socket lock file", "[mysqld]\nskip_networking=0\nbind_address=127.0.0.1",
+                     "port select --show mysql", "sudo port reload {variant-version}-server",
+                     "/opt/local/etc/&lt;variant&gt;/my.cnf", "port=&lt;number&gt;",
+                     "href=\"https://dev.mysql.com/doc/refman/8.0/en/option-files.html\""] {
+            XCTAssertTrue(html.contains(text), "lacks \(text)")
+        }
+        XCTAssertTrue(html.contains("<a href=\"https://sequel-ace.com/get-started/local-connection.html\""), "no Open online docs link")
+        XCTAssertTrue(html.contains("Open online docs"))
+        // Self-contained: no scripts, stylesheets or fonts from anywhere, and the old sandbox advice is gone.
+        for remote in ["<script", "<link", "@import", "@font-face", "<iframe", "<img"] {
+            XCTAssertFalse(html.contains(remote), "has \(remote)")
+        }
+        XCTAssertFalse(html.contains("Unfortunately, due to sandboxing nature"))
     }
 
     // MARK: - Print templates

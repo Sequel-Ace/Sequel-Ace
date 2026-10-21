@@ -2,7 +2,7 @@
 <html lang="en-US">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Sequel Ace | MySQL/MariaDB database management for macOS</title>
+<title>Connect to a Local MySQL Server</title>
 <style>
 	/* In Sequel Ace the page reads the palette (--sa-*) that the window injects with it, so it follows the editor theme
 	   and the accent. Opened anywhere else it falls back to the light look, or the dark one with the system. */
@@ -49,8 +49,35 @@
 		font-weight: 600;
 	}
 
+	h5 {
+		margin: 18px 0 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: color-mix(in srgb, var(--sa-text, var(--fallback-text)) 50%, var(--sa-muted, var(--fallback-muted)));
+	}
+
 	p {
 		margin: 0 0 12px;
+	}
+
+	ul, ol {
+		margin: 0 0 12px;
+		padding-left: 22px;
+	}
+
+	li {
+		margin: 0 0 6px;
+	}
+
+	li > pre {
+		margin: 6px 0 8px;
+	}
+
+	/* The link to the full online documentation, above the title. */
+	.docs {
+		margin: 0 0 14px;
+		text-align: right;
+		font-size: 12px;
 	}
 
 	.lead {
@@ -113,6 +140,8 @@
 </head>
 <body>
 
+<p class="docs"><a href="https://sequel-ace.com/get-started/local-connection.html" title="Opens in your browser">Open online docs ↗</a></p>
+
 <h3 id="connect-to-a-local-mysql-server">Connect to a Local MySQL Server</h3>
 
 <p class="lead">This document describes how to connect to a server running on the same computer as Sequel Ace.</p>
@@ -123,10 +152,111 @@
 
 <h4 id="connecting-via-a-socket-connection">Connecting via a socket connection</h4>
 
-<p>Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in <code>~/Library/Containers/com.sequel-ace.sequel-ace/Data</code> and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, <code>my.cnf</code>):</p>
+<p>On macOS, Sequel Ace is sandboxed. It can only use a socket if the database server creates the socket file inside Sequel Ace’s container path.</p>
+
+<p>Important notes:</p>
+
+<ul>
+	<li>Full Disk Access does <strong>not</strong> bypass this sandbox restriction.</li>
+	<li>The socket’s real path must be inside Sequel Ace’s container.</li>
+	<li>A symlink-based workaround by itself is not enough. In particular, a symlink from <code>/tmp/mysql.sock</code> to a Sequel Ace path does not fix Sequel Ace unless the server itself is configured to create the socket in Sequel Ace’s container.</li>
+</ul>
+
+<p>There are two supported approaches:</p>
+
+<h5 id="option-1-keep-using-a-socket-set-socket-path-inside-sequel-ace">Option 1: Keep using a socket (set socket path inside Sequel Ace)</h5>
+
+<ol>
+	<li>
+		<p>Find which config file your server actually reads.</p>
+		<p>Use whichever server binary you have:</p>
+<pre><code>mysqld --verbose --help | sed -n '/Default options are read from the following files in the given order:/,/^$/p'
+mariadbd --verbose --help | sed -n '/Default options are read from the following files in the given order:/,/^$/p'
+</code></pre>
+		<p>You can also check the current socket setting:</p>
+<pre><code>my_print_defaults mysqld | tr ' ' '\n' | grep '^--socket='
+my_print_defaults mariadbd | tr ' ' '\n' | grep '^--socket='
+</code></pre>
+		<p>Common locations on macOS:</p>
+		<ul>
+			<li>Homebrew (Apple Silicon): <code>/opt/homebrew/etc/my.cnf</code></li>
+			<li>Homebrew (Intel): <code>/usr/local/etc/my.cnf</code></li>
+			<li>MacPorts: <code>/opt/local/etc/&lt;variant&gt;/my.cnf</code></li>
+			<li>Oracle MySQL packages: often <code>/etc/my.cnf</code> (or files included from there)</li>
+			<li>MAMP / MAMP PRO / XAMPP: app-managed config files</li>
+		</ul>
+	</li>
+	<li>
+		<p>Set the socket path to a Sequel Ace container location, for example:</p>
+<pre><code>/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+</code></pre>
+		<p>Add or update:</p>
 <pre><code>[mysqld]
 socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+
+[client]
+socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
 </code></pre>
+	</li>
+	<li>
+		<p>Restart MySQL/MariaDB.</p>
+	</li>
+	<li>
+		<p>If startup fails with an error like <code>Could not create unix socket lock file</code>, verify permissions so the server process user can write in that directory:</p>
+<pre><code>ps -Ao user,comm | grep -E 'mariadbd|mysqld'
+ls -ld /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data
+</code></pre>
+	</li>
+	<li>
+		<p>In Sequel Ace, use a <strong>Socket</strong> connection with the same socket path.</p>
+	</li>
+</ol>
+
+<h5 id="option-2-use-standard-tcpip-instead-of-a-socket">Option 2: Use standard TCP/IP instead of a socket</h5>
+
+<p>If socket setup is not practical on your install, enable local TCP networking:</p>
+<pre><code>[mysqld]
+skip_networking=0
+bind_address=127.0.0.1
+</code></pre>
+
+<p>Then restart MySQL/MariaDB and connect in Sequel Ace using a <strong>Standard</strong> connection with:</p>
+
+<ul>
+	<li>Host: <code>127.0.0.1</code> (not <code>localhost</code>)</li>
+	<li>Username/password: same credentials you used before</li>
+	<li>Port: <code>3306</code> unless you configured another port</li>
+</ul>
+
+<p>For MacPorts installs:</p>
+
+<ol>
+	<li>
+		<p>Find your active variant:</p>
+<pre><code>port select --show mysql    # MySQL
+port select --show mariadb  # MariaDB
+</code></pre>
+	</li>
+	<li>
+		<p>Edit that variant’s config file:</p>
+<pre><code>/opt/local/etc/{variant-version}/my.cnf
+</code></pre>
+	</li>
+	<li>
+		<p>Restart it:</p>
+<pre><code>sudo port reload {variant-version}-server
+</code></pre>
+	</li>
+</ol>
+
+<p>If you run multiple versions at once, assign a different <code>port=&lt;number&gt;</code> to each version and use the same port in Sequel Ace.</p>
+
+<p>References:</p>
+<ul>
+	<li><a href="https://dev.mysql.com/doc/refman/8.0/en/option-files.html">MySQL Option Files</a></li>
+	<li><a href="https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/configuring-mariadb/configuring-mariadb-with-option-files">MariaDB: Configuring MariaDB with Option Files</a></li>
+	<li><a href="https://dev.mysql.com/doc/refman/8.0/en/can-not-connect-to-server.html">MySQL: Can’t connect to local MySQL server</a></li>
+</ul>
 
 <h4 id="connecting-via-a-standard-connection">Connecting via a standard connection</h4>
 

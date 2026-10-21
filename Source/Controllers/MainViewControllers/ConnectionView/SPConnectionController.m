@@ -4311,27 +4311,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     [[NSUserDefaults standardUserDefaults] setBool:YES forKey:SPConnectionShownSocketHelp];
                 };
 
-                NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
-                NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : tmpDic2};
+                // Always our own page (online or offline), its links in the browser; it links to the online docs.
+                bundleController.opensWebLinksInBrowser = YES;
+                NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @600}};
+                NSString *path = [[NSBundle mainBundle] pathForResource:@"local-connection" ofType:@"html"];
+                SPLog(@"path: %@", path);
 
-                if ([self connected]) {
-                    SPLog(@"Connected, loading remote URL");
-                    [bundleController displayURLString:SPDocsSocketConnection withOptions:tmpDict];
-                }
-                else{
-                    SPLog(@"Not connected, loading local file");
-                    NSString *path = [[NSBundle mainBundle] pathForResource:@"local-connection" ofType:@"html"];
-                    SPLog(@"path: %@", path);
+                NSString *html = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
 
-                    NSString *html = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
-
-                    if(error == nil){
-                        // slightly larger
-                        NSMutableDictionary *mutDict = [tmpDict mutableCopy];
-                        mutDict[@"frame"] = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @600};
-
-                        [bundleController displayHTMLContent:html withOptions:mutDict];
-                    }
+                if(error == nil){
+                    [bundleController displayHTMLContent:html withOptions:tmpDict];
                 }
                 if(error == nil){
                     [SPBundleManager.shared addHTMLOutputController:bundleController];
