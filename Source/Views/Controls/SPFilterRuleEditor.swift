@@ -409,6 +409,46 @@ enum SARuleFilterContextMenu {
     /// the button row (Apply/Add Filter + AND/OR popup, 27 pt plus padding).
     private static let buttonBarHeight: CGFloat = 31
 
+    /// The line the bar's controls (the AND/OR pop-up, Apply / Add Filter) are centred on: the drop zone's centre
+    /// while it shows - at the XIB's places they sat lower than the zone and touched the grid header - else the
+    /// middle of the plain button bar, which is where the XIB puts them.
+    ///
+    /// - Parameters:
+    ///   - dropZoneVisible: Whether the drop zone shows.
+    ///   - dropZoneFrame: The drop zone's frame in the filter container.
+    ///   - barHeight: The height reserved for the bottom bar.
+    /// - Returns: The centre line's y in the filter container.
+    @objc(barCentreYWithDropZoneVisible:dropZoneFrame:barHeight:)
+    public static func barCentreY(dropZoneVisible: Bool, dropZoneFrame: NSRect, barHeight: CGFloat) -> CGFloat {
+        return dropZoneVisible ? dropZoneFrame.midY : barHeight / 2
+    }
+
+    /// The origin y, on whole points, that centres a bar control's pill on `centreY`. The filter cells draw their
+    /// pill centred in the control's frame and round it up from a half point, so the frame rounds down.
+    ///
+    /// - Parameters:
+    ///   - height: The control's height.
+    ///   - centreY: The centre line (`barCentreY`).
+    /// - Returns: The control's origin y.
+    @objc(barControlOriginYForHeight:centreY:)
+    public static func barControlOriginY(height: CGFloat, centreY: CGFloat) -> CGFloat {
+        return (centreY - height / 2).rounded(.down)
+    }
+
+    /// Centres the bar's controls on `centreY`, moving only their vertical origin (their masks pin them to the
+    /// container's bottom, so it holds when the container resizes).
+    ///
+    /// - Parameters:
+    ///   - controls: The AND/OR pop-up and the Apply / Add Filter buttons.
+    ///   - centreY: The centre line (`barCentreY`).
+    @objc(centreBarControls:onY:)
+    public static func centreBarControls(_ controls: [NSView], onY centreY: CGFloat) {
+        for control in controls {
+            let y = barControlOriginY(height: control.frame.height, centreY: centreY)
+            if control.frame.minY != y { control.setFrameOrigin(NSPoint(x: control.frame.minX, y: y)) }
+        }
+    }
+
     static func metrics(
         editorVisible: Bool,
         editorHasRows: Bool,

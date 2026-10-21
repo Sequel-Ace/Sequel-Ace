@@ -4054,6 +4054,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 	[dropBox setHidden:![layout dropZoneVisible]];
 
+	// The AND/OR pop-up and Apply / Add Filter sit on the drop zone's centre line (on the plain bar's middle
+	// without it). Not animated: the line only moves when the drop zone preference changes.
+	if (dropBoxReserved > 0) {
+		[SARuleFilterDropZoneLayoutPolicy centreBarControls:[ruleFilterController barControls]
+		                                               onY:[SARuleFilterDropZoneLayoutPolicy barCentreYWithDropZoneVisible:[layout dropZoneVisible]
+		                                                                                                    dropZoneFrame:dropBoxRect
+		                                                                                                        barHeight:dropBoxReserved]];
+	}
+
 	//disable rubberband scrolling as long as there is nothing to scroll
     NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
     if (ruleEditorRect.size.height >= MAX(requestedHeight, 29)) {

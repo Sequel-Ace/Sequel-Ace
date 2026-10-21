@@ -971,6 +971,38 @@ final class SARuleFilterBottomBarLayoutTests: XCTestCase {
         XCTAssertEqual(m.dropZoneReservedHeight, 0)
         XCTAssertEqual(m.containerRequestedHeight, 0)
     }
+
+    /// Verifies the AND/OR pill and the Apply pill sit on the drop zone's centre line (they sat 5.5pt lower, at the
+    /// XIB's y, and touched the grid header).
+    func testBarPillsCentreOnTheDropZone() {
+        let zone = NSRect(x: 10, y: 7, width: 600, height: 28)
+        let centreY = SARuleFilterDropZoneLayoutPolicy.barCentreY(dropZoneVisible: true, dropZoneFrame: zone, barHeight: 40)
+        XCTAssertEqual(centreY, zone.midY)
+        // The XIB's heights: the AND/OR pop-up 22pt, Apply / Add Filter 27pt. Both draw a 24pt pill centred in the frame.
+        for height in [22, 27] as [CGFloat] {
+            let y = SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: height, centreY: centreY)
+            XCTAssertEqual(y, y.rounded(), "whole points, height \(height)")
+            let pill = SAClaudeFilterChrome.controlFrame(in: NSRect(x: 0, y: y, width: 100, height: height))
+            XCTAssertEqual(pill.midY, zone.midY, "height \(height)")
+            XCTAssertGreaterThanOrEqual(pill.minY, zone.minY, "a gap above the grid header, height \(height)")
+        }
+    }
+
+    /// Verifies the controls keep the XIB's places when the drop zone is hidden: the middle of the 31pt button bar.
+    func testBarControlsKeepTheirPlacesWithoutTheDropZone() {
+        let centreY = SARuleFilterDropZoneLayoutPolicy.barCentreY(dropZoneVisible: false, dropZoneFrame: .zero, barHeight: 31)
+        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: 27, centreY: centreY), 2)
+        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: 22, centreY: centreY), 4)
+    }
+
+    /// Verifies `centreBarControls(_:onY:)` moves only the vertical origin.
+    func testCentringMovesControlsVertically() {
+        let popUp = NSView(frame: NSRect(x: 458, y: 4, width: 118, height: 22))
+        let apply = NSView(frame: NSRect(x: 579, y: 2, width: 101, height: 27))
+        SARuleFilterDropZoneLayoutPolicy.centreBarControls([popUp, apply], onY: 21)
+        XCTAssertEqual(popUp.frame, NSRect(x: 458, y: 10, width: 118, height: 22))
+        XCTAssertEqual(apply.frame, NSRect(x: 579, y: 7, width: 101, height: 27))
+    }
 }
 
 final class SARuleFilterResizePolicyTests: XCTestCase {

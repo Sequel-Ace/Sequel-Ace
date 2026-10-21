@@ -410,6 +410,15 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	return dropBox;
 }
 
+- (NSArray<NSView *> *)barControls
+{
+	NSMutableArray<NSView *> *controls = [NSMutableArray arrayWithCapacity:3];
+	if (rootConjunctionPopUp) [controls addObject:rootConjunctionPopUp];
+	if (filterButton) [controls addObject:filterButton];
+	if (addFilterButton) [controls addObject:addFilterButton];
+	return controls;
+}
+
 - (CGFloat)dropBoxReservedHeight
 {
 	// Drop box visual height (28pt) + 5pt padding above + 7pt padding
