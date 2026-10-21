@@ -167,7 +167,8 @@ final class SAClaudeRareTemplatesTests: XCTestCase {
                      "href=\"https://dev.mysql.com/doc/refman/8.0/en/option-files.html\""] {
             XCTAssertTrue(html.contains(text), "lacks \(text)")
         }
-        XCTAssertTrue(html.contains("<a href=\"https://sequel-ace.com/get-started/local-connection.html\""), "no Open online docs link")
+        XCTAssertTrue(html.contains("<a href=\"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection\""),
+                      "no Open online docs link (to the socket section, as SPDocsSocketConnection)")
         XCTAssertTrue(html.contains("Open online docs"))
         // Self-contained: no scripts, stylesheets or fonts from anywhere, and the old sandbox advice is gone.
         for remote in ["<script", "<link", "@import", "@font-face", "<iframe", "<img"] {
