@@ -22,7 +22,7 @@ enum SAClaudeAlertLayout {
     }
 
     /// Measured at `textColumnWidth(cardWidth:)`. 0 = absent (message: no explanation line; block: no MySQL block).
-    /// `suppression` is the checkbox's height with its title wrapped to the card's content width (`width(spec) - 2 * margin`);
+    /// `suppression` is the checkbox's height with its title wrapped to the text column (`textColumnWidth(cardWidth:)`);
     /// it counts only when the checkbox takes its own row (0 = its natural height).
     struct TextHeights: Equatable { var title: CGFloat; var message: CGFloat = 0; var block: CGFloat = 0; var suppression: CGFloat = 0 }
 
@@ -75,7 +75,8 @@ enum SAClaudeAlertLayout {
                                                        : textColumnX + accessory.size.width + margin)
         }
         if let suppression = spec.suppressionSize {
-            let need = suppression.width + suppressionGap + buttons + 2 * margin
+            // Beside the buttons, starting at the text column (the checkbox lines up with the title and message).
+            let need = textColumnX + suppression.width + suppressionGap + buttons + margin
             if need <= maximumFooterWidth { width = max(width, need) }
         }
         return width
@@ -109,10 +110,10 @@ enum SAClaudeAlertLayout {
         var footerHeight = buttonHeight
         var suppressionHeight = spec.suppressionSize?.height ?? 0
         if let s = spec.suppressionSize {
-            if s.width + suppressionGap + buttons <= cardWidth - 2 * margin {
+            if textColumnX + s.width + suppressionGap + buttons <= cardWidth - margin {
                 footerHeight = max(buttonHeight, s.height)
             } else {
-                // Its own row, as wide as the content: the title wraps onto as many lines as it needs.
+                // Its own row, as wide as the text column: the title wraps onto as many lines as it needs.
                 suppressionOnOwnRow = true
                 suppressionHeight = max(s.height, text.suppression)
                 footerHeight = suppressionHeight + footerRowGap + buttonHeight
@@ -146,12 +147,13 @@ enum SAClaudeAlertLayout {
         var suppressionFrame: NSRect?
         var buttonsY = y
         if let s = spec.suppressionSize {
+            // In the text column, like the title and message (not under the glyph tile).
             if suppressionOnOwnRow {
                 // Never past the right margin; a wider title wraps (the card measured `text.suppression` at this width).
-                suppressionFrame = NSRect(x: margin, y: y, width: min(s.width, cardWidth - 2 * margin), height: suppressionHeight)
+                suppressionFrame = NSRect(x: textColumnX, y: y, width: min(s.width, columnWidth), height: suppressionHeight)
                 buttonsY = y + suppressionHeight + footerRowGap
             } else {
-                suppressionFrame = NSRect(x: margin, y: y + (footerHeight - s.height) / 2, width: s.width, height: s.height)
+                suppressionFrame = NSRect(x: textColumnX, y: y + (footerHeight - s.height) / 2, width: s.width, height: s.height)
             }
         }
         let buttonRowY = buttonsY + (suppressionOnOwnRow || spec.suppressionSize == nil ? 0 : (footerHeight - buttonHeight) / 2)

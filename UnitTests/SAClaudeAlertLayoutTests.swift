@@ -66,43 +66,44 @@ final class SAClaudeAlertLayoutTests: XCTestCase {
 
     func testSuppressionSharesFooterRowAndWidens() {
         let text = L.TextHeights(title: 17, message: 30)
+        // The checkbox starts at the text column (walkthrough item 14), so the card widens for it from there.
         var f = L.frames(spec([72, 72], suppression: NSSize(width: 260, height: 18)), text: text)
-        XCTAssertEqual(f.size, NSSize(width: 468, height: 142))
-        XCTAssertEqual(f.suppression, NSRect(x: 20, y: 99, width: 260, height: 18))
-        XCTAssertEqual(f.buttons, [NSRect(x: 376, y: 94, width: 72, height: 28), NSRect(x: 296, y: 94, width: 72, height: 28)])
+        XCTAssertEqual(f.size, NSSize(width: 512, height: 142))
+        XCTAssertEqual(f.suppression, NSRect(x: 64, y: 99, width: 260, height: 18))
+        XCTAssertEqual(f.buttons, [NSRect(x: 420, y: 94, width: 72, height: 28), NSRect(x: 340, y: 94, width: 72, height: 28)])
         f = L.frames(spec([72, 72], suppression: NSSize(width: 120, height: 18)), text: text)
         XCTAssertEqual(f.size.width, 420)
-        XCTAssertEqual(f.suppression, NSRect(x: 20, y: 99, width: 120, height: 18))
+        XCTAssertEqual(f.suppression, NSRect(x: 64, y: 99, width: 120, height: 18))
     }
 
     func testLongSuppressionGetsOwnRow() {
         let f = L.frames(spec([150, 190, 72], suppression: NSSize(width: 230, height: 28)), text: L.TextHeights(title: 17, message: 30))
         XCTAssertEqual(f.size, NSSize(width: 468, height: 178))
-        XCTAssertEqual(f.suppression, NSRect(x: 20, y: 94, width: 230, height: 28))
+        XCTAssertEqual(f.suppression, NSRect(x: 64, y: 94, width: 230, height: 28))
         XCTAssertEqual(f.buttons, [NSRect(x: 298, y: 130, width: 150, height: 28),
                                    NSRect(x: 100, y: 130, width: 190, height: 28),
                                    NSRect(x: 20, y: 130, width: 72, height: 28)])
     }
 
-    /// A suppression checkbox wider than the card on its own row is cut to the margins (its title truncates).
+    /// A suppression checkbox wider than the text column on its own row is cut to the column (its title wraps).
     func testOwnRowSuppressionStaysWithinTheMargins() {
         let f = L.frames(spec([150, 190, 72], suppression: NSSize(width: 500, height: 16)), text: L.TextHeights(title: 17, message: 30))
         XCTAssertEqual(f.size.width, 468)
-        XCTAssertEqual(f.suppression, NSRect(x: 20, y: 94, width: 428, height: 16))
+        XCTAssertEqual(f.suppression, NSRect(x: 64, y: 94, width: 384, height: 16))
         XCTAssertEqual(f.buttons.first, NSRect(x: 298, y: 118, width: 150, height: 28))
     }
 
     /// Walkthrough: "Reset AUTO_INCREMENT after delete (only for Delete ALL ROWS IN TABLE)" beside three long buttons. The
-    /// checkbox takes its own row spanning the content width and is as tall as its wrapped title: nothing truncates.
+    /// checkbox takes its own row spanning the text column and is as tall as its wrapped title: nothing truncates.
     func testLongSuppressionTitleWrapsOnItsOwnRowAtTheContentWidth() throws {
         let s = spec([150, 190, 72], suppression: NSSize(width: 520, height: 16))
-        let content = L.width(s) - 2 * L.margin
+        let content = L.textColumnWidth(cardWidth: L.width(s))
         // The card measured the title wrapped at `content`: three lines of 16.
         let f = L.frames(s, text: L.TextHeights(title: 17, message: 30, suppression: 48))
         let box = try XCTUnwrap(f.suppression)
         XCTAssertEqual(box.height, 48)
         XCTAssertLessThanOrEqual(box.width, content)
-        XCTAssertEqual(box.minX, L.margin)
+        XCTAssertEqual(box.minX, L.textColumnX)
         XCTAssertLessThanOrEqual(box.maxX, f.size.width - L.margin)
         // The buttons sit below it, the card is tall enough for both rows.
         XCTAssertEqual(f.buttons.first?.minY, box.maxY + L.footerRowGap)
@@ -111,6 +112,19 @@ final class SAClaudeAlertLayoutTests: XCTestCase {
         let beside = L.frames(spec([72, 72], suppression: NSSize(width: 260, height: 18)), text: L.TextHeights(title: 17, message: 30, suppression: 54))
         XCTAssertEqual(beside.suppression?.height, 18)
         XCTAssertEqual(beside.size.height, 142)
+    }
+
+    /// Walkthrough item 14 (Delete rows? with Reset AUTO_INCREMENT): the checkbox lines up with the title and message
+    /// (the text column), never under the glyph tile, on its own row and beside the buttons alike.
+    func testSuppressionLinesUpWithTheTextColumn() throws {
+        let text = L.TextHeights(title: 17, message: 30, suppression: 32)
+        for s in [spec([150, 190, 72], suppression: NSSize(width: 230, height: 32)), spec([72, 72], suppression: NSSize(width: 200, height: 18))] {
+            let f = L.frames(s, text: text)
+            let box = try XCTUnwrap(f.suppression)
+            XCTAssertEqual(box.minX, f.textViewport.minX)
+            XCTAssertGreaterThanOrEqual(box.minX, f.tile.maxX + L.tileTextGap)
+            XCTAssertLessThanOrEqual(box.maxX, f.size.width - L.margin)
+        }
     }
 
     /// AWS MFA: a fixed-size accessory in the text column.

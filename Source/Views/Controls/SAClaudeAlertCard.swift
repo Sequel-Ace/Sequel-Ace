@@ -285,9 +285,9 @@ final class SAClaudeAlertCard: NSObject {
     }
 
     private func textHeights(width: CGFloat, spec: SAClaudeAlertLayout.Spec) -> SAClaudeAlertLayout.TextHeights {
-        // The suppression checkbox on its own row is as wide as the card's content: its title wraps there.
+        // The suppression checkbox on its own row is as wide as the text column: its title wraps there.
         let suppressionHeight = suppression.map {
-            FilterCellDrawing.wrappedToggleTitleHeight($0.title, cellWidth: SAClaudeAlertLayout.width(spec) - 2 * SAClaudeAlertLayout.margin)
+            FilterCellDrawing.wrappedToggleTitleHeight($0.title, cellWidth: SAClaudeAlertLayout.textColumnWidth(cardWidth: SAClaudeAlertLayout.width(spec)))
         } ?? 0
         return SAClaudeAlertLayout.TextHeights(title: Self.height(of: titleLabel, width: width),
                                                message: messageLabel.map { Self.height(of: $0, width: width) } ?? 0,
