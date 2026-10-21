@@ -51,17 +51,50 @@ private enum SheetFieldText {
     }
 }
 
-/// A sheet field whose placeholder must never read as a value (the Bundle Editor's Menu Label, Menu Category and Tooltip,
-/// whose bindings set "optional" or the XIB's hint as the placeholder): while the field is empty it draws its placeholder
-/// itself, in the sheet's muted colour, dimmed (more while disabled), where the value would be. Installed with
-/// `object_setClass` over an `SAClaudeSheetFieldCell` or a plain NSTextFieldCell (no stored properties); the sheet skin
-/// takes it as one of its own.
-@objc(SAClaudeSheetPlaceholderFieldCell) final class SAClaudeSheetPlaceholderFieldCell: SAClaudeSheetFieldCell {
+/// Draws the placeholder of a field whose placeholder must never read as a value: in the theme's muted colour (the sheet
+/// palette's `muted`, as the sheets and the connection panel use), dimmed (more while disabled), where the value would be.
+/// Shared by `SAClaudeSheetPlaceholderFieldCell` and the connection panel's field cell, so the rule lives in one place.
+enum SAClaudeFieldPlaceholder {
     /// The placeholder: the muted colour at this alpha (dimmer than a value), and dimmer still while the field is disabled
     /// (dimmer than a disabled pop-up's value beside it).
     static let enabledAlpha: CGFloat = 0.7
     static let disabledAlpha: CGFloat = 0.3
 
+    /// The placeholder `cell` shows now: its text while the field is empty - its value, or the field editor's text while
+    /// it is being edited (AppKit keeps the placeholder up then, and would draw it as bright as a value) - else nil.
+    static func shownText(of cell: NSTextFieldCell, in controlView: NSView) -> String? {
+        let isEmpty = (controlView as? NSControl)?.currentEditor().map { $0.string.isEmpty } ?? cell.stringValue.isEmpty
+        guard isEmpty else { return nil }
+        let text = cell.placeholderString ?? cell.placeholderAttributedString?.string
+        return text?.isEmpty == false ? text : nil
+    }
+
+    /// Draws `cell`'s placeholder when it shows one.
+    ///
+    /// - Returns: Whether it drew; when not, the cell draws its interior as usual.
+    static func draw(_ cell: NSTextFieldCell, withFrame cellFrame: NSRect, in controlView: NSView) -> Bool {
+        guard let text = shownText(of: cell, in: controlView) else { return false }
+        let muted = SAClaudeSheetColours.current().muted
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = cell.alignment
+        paragraph.lineBreakMode = .byTruncatingTail
+        let placeholder = NSAttributedString(string: text, attributes: [
+            .font: cell.font ?? NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+            .foregroundColor: muted.withAlphaComponent(cell.isEnabled ? enabledAlpha : disabledAlpha),
+            .paragraphStyle: paragraph,
+        ])
+        // Where AppKit draws the value: the text container's 2pt padding inside the drawing rect.
+        let rect = cell.drawingRect(forBounds: cellFrame).insetBy(dx: SAClaudeStyle.cellTextInset, dy: 0)
+        placeholder.draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+        return true
+    }
+}
+
+/// A sheet field whose placeholder must never read as a value (the Bundle Editor's Menu Label, Menu Category and Tooltip,
+/// whose bindings set "optional" or the XIB's hint as the placeholder): while the field is empty it draws its placeholder
+/// itself (`SAClaudeFieldPlaceholder`). Installed with `object_setClass` over an `SAClaudeSheetFieldCell` or a plain
+/// NSTextFieldCell (no stored properties); the sheet skin takes it as one of its own.
+@objc(SAClaudeSheetPlaceholderFieldCell) final class SAClaudeSheetPlaceholderFieldCell: SAClaudeSheetFieldCell {
     /// Swaps `field`'s cell for this one; false when it can't (another cell class, or observed by KVO).
     @discardableResult
     static func install(on field: NSTextField) -> Bool {
@@ -74,30 +107,10 @@ private enum SheetFieldText {
         return true
     }
 
-    /// The placeholder the field shows now: its text while the field is empty and not being edited, else nil.
-    private func shownPlaceholder(in controlView: NSView) -> String? {
-        guard stringValue.isEmpty, (controlView as? NSControl)?.currentEditor() == nil else { return nil }
-        let text = placeholderString ?? placeholderAttributedString?.string
-        return text?.isEmpty == false ? text : nil
-    }
-
     override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
-        guard let text = shownPlaceholder(in: controlView) else {
+        if !SAClaudeFieldPlaceholder.draw(self, withFrame: cellFrame, in: controlView) {
             super.drawInterior(withFrame: cellFrame, in: controlView)
-            return
         }
-        let muted = SAClaudeSheetColours.current().muted
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = alignment
-        paragraph.lineBreakMode = .byTruncatingTail
-        let placeholder = NSAttributedString(string: text, attributes: [
-            .font: font ?? NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
-            .foregroundColor: muted.withAlphaComponent(isEnabled ? Self.enabledAlpha : Self.disabledAlpha),
-            .paragraphStyle: paragraph,
-        ])
-        // Where AppKit draws the value: the text container's 2pt padding inside the drawing rect.
-        let rect = drawingRect(forBounds: cellFrame).insetBy(dx: SAClaudeStyle.cellTextInset, dy: 0)
-        placeholder.draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
     }
 }
 
