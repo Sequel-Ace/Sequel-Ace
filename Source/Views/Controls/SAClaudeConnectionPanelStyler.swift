@@ -1053,7 +1053,13 @@ private final class SAClaudePanelForm {
                 note.alignment = .left
                 note.drawsBackground = false
             }
-            for field in form.fields { styleField(field, text: text) }
+            // Placeholders ("optional" on Database) drew as bright as values: the fields draw them muted themselves.
+            SAClaudeMutedPlaceholderCell.colour = palette.icon
+            for field in form.fields {
+                styleField(field, text: text)
+                // The name field has its own placeholder cell (below).
+                if field !== form.nameField { SAClaudeMutedPlaceholderCell.install(on: field) }
+            }
             if let nameField = form.nameField {
                 // The title: SF Pro 15 medium in the theme's text colour; "New favourite" while empty.
                 nameField.font = Self.nameFont
@@ -1719,6 +1725,49 @@ private final class SAClaudePanelForm {
             if view.nextKeyView === next { view.nextKeyView = nil }
             view.nextKeyView = next
         }
+    }
+}
+
+/// A connection field whose placeholder never reads as a value: AppKit drew "optional" (the Database field's binding
+/// placeholder) as bright as "3306" beside it. While the field is empty and not being edited, the cell draws its
+/// placeholder itself in the panel's muted colour, where the value would be. Installed with `object_setClass` over a plain
+/// NSTextFieldCell (no stored properties); the colour is shared, recoloured on each theme refresh.
+private final class SAClaudeMutedPlaceholderCell: NSTextFieldCell {
+    static var colour = NSColor.secondaryLabelColor
+
+    /// Swaps `field`'s cell for this one when it is a plain text field cell that may change class.
+    static func install(on field: NSTextField) {
+        guard let cell = field.cell else { return }
+        if !(cell is SAClaudeMutedPlaceholderCell) {
+            guard Swift.type(of: cell) == NSTextFieldCell.self, SAClaudeClassSwap.mayChangeClass(of: cell) else { return }
+            object_setClass(cell, SAClaudeMutedPlaceholderCell.self)
+        }
+        field.needsDisplay = true
+    }
+
+    /// The placeholder the field shows now: its text while the field is empty and not being edited, else nil.
+    private func shownPlaceholder(in controlView: NSView) -> String? {
+        guard stringValue.isEmpty, (controlView as? NSControl)?.currentEditor() == nil else { return nil }
+        let text = placeholderString ?? placeholderAttributedString?.string
+        return text?.isEmpty == false ? text : nil
+    }
+
+    override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        guard let text = shownPlaceholder(in: controlView) else {
+            super.drawInterior(withFrame: cellFrame, in: controlView)
+            return
+        }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = alignment
+        paragraph.lineBreakMode = .byTruncatingTail
+        let placeholder = NSAttributedString(string: text, attributes: [
+            .font: font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize),
+            .foregroundColor: isEnabled ? Self.colour : Self.colour.withAlphaComponent(0.5),
+            .paragraphStyle: paragraph,
+        ])
+        // Where AppKit draws the value: the text container's padding inside the drawing rect.
+        let rect = drawingRect(forBounds: cellFrame).insetBy(dx: SAClaudeStyle.cellTextInset, dy: 0)
+        placeholder.draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
     }
 }
 
