@@ -186,6 +186,7 @@
 // IBAction methods
 - (IBAction)runPrimaryQueryAction:(id)sender;
 - (IBAction)runSecondaryQueryAction:(id)sender;
+- (IBAction)runTertiaryQueryAction:(id)sender;
 - (IBAction)switchDefaultQueryAction:(id)sender;
 - (IBAction)runAllQueries:(id)sender;
 - (IBAction)runSelectedQueries:(id)sender;

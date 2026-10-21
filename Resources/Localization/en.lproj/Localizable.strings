@@ -4702,6 +4702,9 @@
 /* Query bar Copy button label shown briefly after copying */
 "ClaudeCopyLabelCopied" = "Copied";
 
+/* Query editor Run button title while it runs all statements as a script (keep short) */
+"ClaudeRunButtonScript" = "Run as script";
+
 /* Query bar Copy button tooltip: one selected result row will be copied */
 "ClaudeCopyScopeOneSelected" = "Copy 1 selected row";
 

@@ -117,6 +117,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
 @property (assign) BOOL recordViewNeedsSelectionRestoreRefresh;
 @property (assign) BOOL suppressRecordViewTaskRefresh;
+/// Shown in the run menu only while the Run button remembers the script: the Run current / Run all it showed before.
+@property (nonatomic, strong) NSMenuItem *runTertiaryActionMenuItem;
 
 @end
 
@@ -155,36 +157,66 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 #pragma mark IBAction methods
 
 /**
- * Run the primary query task, as per the user preference
+ * Run the remembered run action (⌘R and the Run button's main half; see SAClaudeQueryRunDefault)
  */
 - (IBAction)runPrimaryQueryAction:(id)sender
 {
-    if ([prefs boolForKey:SPQueryPrimaryControlRunsAll]) {
-        [self runAllQueries:sender];
-    } else {
-        [self runSelectedQueries:sender];
-    }
+    [self _runQueryAction:[SAClaudeQueryRunDefault primaryActionIn:prefs] sender:sender];
 }
 
 /**
- * Run the secondary query task, as per the user preference
+ * Run the other of Run current / Run all (⌥⌘R)
  */
 - (IBAction)runSecondaryQueryAction:(id)sender
 {
-    if ([prefs boolForKey:SPQueryPrimaryControlRunsAll]) {
-        [self runSelectedQueries:sender];
-    } else {
-        [self runAllQueries:sender];
+    [self _runQueryAction:[SAClaudeQueryRunDefault secondaryActionIn:prefs] sender:sender];
+}
+
+/**
+ * While the script is remembered: run the Run current / Run all the button showed before it
+ */
+- (IBAction)runTertiaryQueryAction:(id)sender
+{
+    [self _runQueryAction:[SAClaudeQueryRunDefault tertiaryActionIn:prefs] sender:sender];
+}
+
+/**
+ * Runs a run action and makes it the Run button's (the script remembers itself in -runAllAsScriptAction:).
+ */
+- (void)_runQueryAction:(SAClaudeQueryRunAction)action sender:(id)sender
+{
+    switch (action) {
+        case SAClaudeQueryRunActionScript:
+            [self runAllAsScriptAction:sender];
+            return;
+        case SAClaudeQueryRunActionAll:
+            [self rememberQueryRunAction:action];
+            [self runAllQueries:sender];
+            return;
+        case SAClaudeQueryRunActionCurrent:
+            [self rememberQueryRunAction:action];
+            [self runSelectedQueries:sender];
+            return;
     }
 }
 
 /**
- * Swap the primary and secondary query run actions
+ * Makes a run action the Run button's and relabels the button and the run menu.
+ */
+- (void)rememberQueryRunAction:(SAClaudeQueryRunAction)action
+{
+    // A run refused while another is working changes nothing.
+    if ([tableDocumentInstance isWorking] || [SAClaudeQueryRunDefault primaryActionIn:prefs] == action) return;
+    [SAClaudeQueryRunDefault rememberAction:action in:prefs];
+    [self updateQueryInteractionInterface];
+}
+
+/**
+ * Swap the Run button between Run current and Run all
  */
 - (IBAction)switchDefaultQueryAction:(id)sender
 {
-    BOOL newValue = ![prefs boolForKey:SPQueryPrimaryControlRunsAll];
-    [prefs setBool:newValue forKey:SPQueryPrimaryControlRunsAll];
+    [SAClaudeQueryRunDefault switchDefaultIn:prefs];
     [self updateQueryInteractionInterface];
 }
 
@@ -1651,21 +1683,48 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (void)updateQueryInteractionInterface
 {
-    
-    // By default, the interface uses Run Query/Run Selection as the primary interface,
-    // but the user can switch this.
-    BOOL primaryActionIsRunAll = [prefs boolForKey:SPQueryPrimaryControlRunsAll];
-    
-    // Update the links as appropriate
-    if (primaryActionIsRunAll) {
-        runPrimaryActionButtonAsSelection = nil;
-        [runPrimaryActionButton setTitle:NSLocalizedString(@"Run all", @"query editor run button title: run all queries")];
-        [runPrimaryActionMenuItem setTitle:NSLocalizedString(@"Run All Queries", @"Run All menu item title")];
-    } else {
-        runPrimaryActionButtonAsSelection = runPrimaryActionButton;
-        [runSecondaryActionMenuItem setTitle:NSLocalizedString(@"Run All Queries", @"Run All menu item title")];
+    // The Run button runs the remembered action (Run current by default); see SAClaudeQueryRunDefault.
+    SAClaudeQueryRunAction primary = [SAClaudeQueryRunDefault primaryActionIn:prefs];
+    SAClaudeQueryRunAction secondary = [SAClaudeQueryRunDefault secondaryActionIn:prefs];
+    SAClaudeQueryRunAction tertiary = [SAClaudeQueryRunDefault tertiaryActionIn:prefs];
+
+    NSMenu *runMenu = [runSecondaryActionMenuItem menu];
+    if (!self.runTertiaryActionMenuItem && runMenu) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"" action:@selector(runTertiaryQueryAction:) keyEquivalent:@""];
+        [item setTarget:self];
+        [runMenu insertItem:item atIndex:[runMenu indexOfItem:runSecondaryActionMenuItem] + 1];
+        self.runTertiaryActionMenuItem = item;
     }
-    
+    [self.runTertiaryActionMenuItem setHidden:![SAClaudeQueryRunDefault showsTertiaryIn:prefs]];
+
+    // Each run item carries what it runs (the Run card's glyphs and order follow it).
+    [runPrimaryActionMenuItem setRepresentedObject:@(primary)];
+    [runSecondaryActionMenuItem setRepresentedObject:@(secondary)];
+    [self.runTertiaryActionMenuItem setRepresentedObject:@(tertiary)];
+    for (NSMenuItem *item in [runMenu itemArray]) {
+        if ([item action] == @selector(runAllAsScriptAction:)) [item setRepresentedObject:@(SAClaudeQueryRunActionScript)];
+    }
+
+    NSString *runAllMenuTitle = NSLocalizedString(@"Run All Queries", @"Run All menu item title");
+    for (NSMenuItem *item in @[runPrimaryActionMenuItem ?: [NSNull null], runSecondaryActionMenuItem ?: [NSNull null], self.runTertiaryActionMenuItem ?: [NSNull null]]) {
+        if ([item isKindOfClass:[NSMenuItem class]] && [[item representedObject] integerValue] == SAClaudeQueryRunActionAll) [item setTitle:runAllMenuTitle];
+    }
+
+    switch (primary) {
+        case SAClaudeQueryRunActionScript:
+            runPrimaryActionButtonAsSelection = nil;
+            [runPrimaryActionButton setTitle:[SAClaudeQueryRunDefault scriptButtonTitle]];
+            [runPrimaryActionMenuItem setTitle:NSLocalizedString(@"Run All as Script", @"Query editor run menu: run all statements and print every result as plain text")];
+            break;
+        case SAClaudeQueryRunActionAll:
+            runPrimaryActionButtonAsSelection = nil;
+            [runPrimaryActionButton setTitle:NSLocalizedString(@"Run all", @"query editor run button title: run all queries")];
+            break;
+        case SAClaudeQueryRunActionCurrent:
+            runPrimaryActionButtonAsSelection = runPrimaryActionButton;
+            break;
+    }
+
     // Update the Run Current/Previous/Selection menu item (and button if appropriate)
     [self updateContextualRunInterface];
 }
@@ -1678,11 +1737,13 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 {
     NSMenuItem *runSelectionMenuItem;
     
-    // Determine the menu item to change
-    if (runPrimaryActionButtonAsSelection) {
+    // Determine the menu item to change: the one that runs the current query
+    if ([SAClaudeQueryRunDefault primaryActionIn:prefs] == SAClaudeQueryRunActionCurrent) {
         runSelectionMenuItem = runPrimaryActionMenuItem;
-    } else {
+    } else if ([SAClaudeQueryRunDefault secondaryActionIn:prefs] == SAClaudeQueryRunActionCurrent) {
         runSelectionMenuItem = runSecondaryActionMenuItem;
+    } else {
+        runSelectionMenuItem = self.runTertiaryActionMenuItem;
     }
     
     // If the current selection is a single caret position, update the button based on
@@ -3498,7 +3559,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         if ([tableDocumentInstance isWorking]) return NO;
         return ([[textView string] length] > 0);
     }
-    else if ([menuItem action] == @selector(runAllAsScriptAction:)) {
+    else if ([menuItem action] == @selector(runAllAsScriptAction:)
+             || ([[menuItem representedObject] isKindOfClass:[NSNumber class]] && [[menuItem representedObject] integerValue] == SAClaudeQueryRunActionScript
+                 && ([menuItem action] == @selector(runPrimaryQueryAction:) || [menuItem action] == @selector(runSecondaryQueryAction:)))) {
         if ([tableDocumentInstance isWorking]) return NO;
         return ([[textView string] length] > 0);
     }

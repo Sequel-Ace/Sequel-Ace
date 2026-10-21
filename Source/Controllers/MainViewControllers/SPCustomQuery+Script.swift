@@ -51,6 +51,12 @@ extension SPCustomQuery {
             return
         }
 
+        // The Run button now runs the script until another run action is picked.
+        if SAClaudeQueryRunDefault.primaryAction(in: .standard) != .script {
+            SAClaudeQueryRunDefault.remember(.script, in: .standard)
+            updateInteractionInterface()
+        }
+
         let queries = statements.map(\.text)
         guard UserDefaults.standard.bool(forKey: SPQueryWarningEnabled), queriesContainDestructiveSQL(queries) else {
             startScriptRun(statements)

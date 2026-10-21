@@ -372,7 +372,7 @@ extension SAClaudeMenuCardModel {
     static func runEntries(from menu: NSMenu) -> [SAClaudeMenuEntry] {
         let native = entries(from: menu, skipping: [0]).map { entry -> SAClaudeMenuEntry in
             var entry = entry
-            if entry.kind == .item { entry.symbol = runSymbol(menu.items[entry.index].action) }
+            if entry.kind == .item { entry.symbol = runSymbol(menu.items[entry.index]) }
             return entry
         }
 
@@ -408,6 +408,13 @@ extension SAClaudeMenuCardModel {
         }
         while tail.last?.kind == .separator { tail.removeLast() }
 
+        // The run actions once each: while the Run button remembers the script, the primary item (⌘R) runs it too and
+        // the script item (⇧⌥⌘R, kept for its shortcut) is left out of the card.
+        var listedRuns = Set<Int>()
+        grouped[0] = grouped[0].sorted { $0.rank < $1.rank }.filter { placed in
+            guard let runs = runAction(of: menu.items[placed.unit[0].index]), !menu.items[placed.unit[0].index].isHidden else { return true }
+            return listedRuns.insert(runs.rawValue).inserted
+        }
         var sections = grouped.map { $0.sorted { $0.rank < $1.rank }.flatMap(\.unit) } + [tail]
         sections.removeAll { $0.isEmpty }
         var result: [SAClaudeMenuEntry] = []
@@ -418,15 +425,32 @@ extension SAClaudeMenuCardModel {
         return result
     }
 
-    /// Where the card puts a run-menu item: section 0 the run actions, section 1 Switch Default and Explain.
+    /// Where the card puts a run-menu item: section 0 the run actions (the remembered one first), section 1 Switch
+    /// Default and Explain.
     private static func runPlacement(_ action: Selector?) -> (section: Int, rank: Int)? {
         switch action.map(NSStringFromSelector) {
         case "runPrimaryQueryAction:": return (0, 0)
-        case "runSecondaryQueryAction:": return (0, 1)
-        case "runAllAsScriptAction:": return (0, 2)
+        case "runTertiaryQueryAction:": return (0, 1)
+        case "runSecondaryQueryAction:": return (0, 2)
+        case "runAllAsScriptAction:": return (0, 3)
         case "switchDefaultQueryAction:": return (1, 0)
         case "runExplainQueryAction:": return (1, 1)
         default: return nil
+        }
+    }
+
+    /// What a run-menu item runs, when SPCustomQuery marked it (`SAClaudeQueryRunAction` as its represented object).
+    private static func runAction(of item: NSMenuItem) -> SAClaudeQueryRunAction? {
+        (item.representedObject as? NSNumber).flatMap { SAClaudeQueryRunAction(rawValue: $0.intValue) }
+    }
+
+    /// A run-menu item's glyph: by what it runs when marked (the primary item runs the remembered action), else by action.
+    private static func runSymbol(_ item: NSMenuItem) -> String? {
+        switch runAction(of: item) {
+        case .current: return "play"
+        case .all: return "forward.end"
+        case .script: return "scroll"
+        case nil: return runSymbol(item.action)
         }
     }
 

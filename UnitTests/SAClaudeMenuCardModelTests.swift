@@ -585,6 +585,56 @@ final class SAClaudeMenuCardModelTests: XCTestCase {
         @objc func switchDefaultQueryAction(_ sender: Any?) {}
         @objc func runExplainQueryAction(_ sender: Any?) {}
         @objc func runAllAsScriptAction(_ sender: Any?) {}
+        @objc func runTertiaryQueryAction(_ sender: Any?) {}
+    }
+
+    /// The run menu as SPCustomQuery sets it up while `primary` is the remembered action: each run item carries what it
+    /// runs, the primary item is titled after it, and a tertiary item follows the secondary (shown only for the script).
+    private func rememberingRunMenu(primary: SAClaudeQueryRunAction, target: RunActions) -> NSMenu {
+        let menu = runMenu(target: target)
+        let defaults = UserDefaults(suiteName: "SAClaudeMenuCardModelTests.run")!
+        defer { UserDefaults().removePersistentDomain(forName: "SAClaudeMenuCardModelTests.run") }
+        defaults.removePersistentDomain(forName: "SAClaudeMenuCardModelTests.run")
+        if primary == .all { SAClaudeQueryRunDefault.remember(.all, in: defaults) }
+        if primary == .script { SAClaudeQueryRunDefault.remember(.script, in: defaults) }
+        func title(_ action: SAClaudeQueryRunAction) -> String {
+            switch action { case .current: return "Run Current Query"; case .all: return "Run All Queries"; case .script: return "Run All as Script" }
+        }
+        let tertiary = NSMenuItem(title: "", action: #selector(RunActions.runTertiaryQueryAction(_:)), keyEquivalent: "")
+        tertiary.target = target
+        menu.insertItem(tertiary, at: 4)
+        let roles: [(Selector, SAClaudeQueryRunAction)] = [
+            (#selector(RunActions.runPrimaryQueryAction(_:)), SAClaudeQueryRunDefault.primaryAction(in: defaults)),
+            (#selector(RunActions.runSecondaryQueryAction(_:)), SAClaudeQueryRunDefault.secondaryAction(in: defaults)),
+            (#selector(RunActions.runTertiaryQueryAction(_:)), SAClaudeQueryRunDefault.tertiaryAction(in: defaults)),
+            (#selector(RunActions.runAllAsScriptAction(_:)), .script),
+        ]
+        for (action, runs) in roles {
+            let item = menu.items.first { $0.action == action }!
+            item.representedObject = NSNumber(value: runs.rawValue)
+            item.title = title(runs)
+        }
+        tertiary.isHidden = !SAClaudeQueryRunDefault.showsTertiary(in: defaults)
+        return menu
+    }
+
+    /// Verifies the card follows the remembered action: it comes first with ⌘R and its own glyph, the other run
+    /// actions follow, and the script is listed once.
+    func testRunEntriesFollowTheRememberedAction() {
+        let expected: [SAClaudeQueryRunAction: ([String], [String], [String])] = [
+            .current: (["Run Current Query", "Run All Queries", "Run All as Script"], ["play", "forward.end", "scroll"], ["⌘R", "⌥⌘R", "⌥⇧⌘R"]),
+            .all: (["Run All Queries", "Run Current Query", "Run All as Script"], ["forward.end", "play", "scroll"], ["⌘R", "⌥⌘R", "⌥⇧⌘R"]),
+            .script: (["Run All as Script", "Run Current Query", "Run All Queries"], ["scroll", "play", "forward.end"], ["⌘R", "", "⌥⌘R"]),
+        ]
+        for (primary, (titles, symbols, shortcuts)) in expected {
+            let entries = SAClaudeMenuCardModel.runEntries(from: rememberingRunMenu(primary: primary, target: RunActions()))
+            assertSymbolsExist(entries)
+            let list = rows(entries).list
+            XCTAssertEqual(shape(list), titles.map { "item \($0)" } + ["separator", "item Switch Default", "item Explain Current Query"], "\(primary)")
+            let items = list.compactMap { $0.kind == .item ? $0.entry : nil }.prefix(3)
+            XCTAssertEqual(items.map(\.symbol), symbols, "\(primary)")
+            XCTAssertEqual(items.map(\.shortcut), shortcuts, "\(primary)")
+        }
     }
 
     /// The run menu as DBView.xib builds it (item 0 is the pull-down's hidden title). `currentTitle` is the run-current

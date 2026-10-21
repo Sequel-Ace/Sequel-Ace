@@ -123,12 +123,15 @@
 		A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */; };
 		B7C2D1E01C3D4E5F70819203 /* SAClaudeStatusChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */; };
 		D02C237055644956AA3EAE9E /* SAClaudeQueryCopyAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */; };
+		53B02D4176AEEF0414DBB040 /* SAClaudeQueryRunAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89E476288182FF82DC95D50 /* SAClaudeQueryRunAction.swift */; };
 		0205873773AEE9282BFB0448 /* SAClaudeEditorOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE433845AF6C1FDE7125C29A /* SAClaudeEditorOption.swift */; };
 		B7C2D1E01C3D4E5F70819204 /* SAClaudeStatusChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */; };
 		6F820F81C5F30F07306DCFB8 /* SAClaudeQueryCopyAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */; };
+		609C2457C30F481AD56AA3FD /* SAClaudeQueryRunAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89E476288182FF82DC95D50 /* SAClaudeQueryRunAction.swift */; };
 		05D1631A59CC85C11DF7AE80 /* SAClaudeEditorOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE433845AF6C1FDE7125C29A /* SAClaudeEditorOption.swift */; };
 		B7C2D1E01C3D4E5F70819205 /* SAClaudeStatusChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C2D1E01C3D4E5F70819202 /* SAClaudeStatusChromeTests.swift */; };
 		5EA285706FFE7F0CE3AA88D9 /* SAClaudeQueryCopyActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCE28E8C0432DCC01E291C9 /* SAClaudeQueryCopyActionTests.swift */; };
+		116A1D2524E944E9B90256F0 /* SAClaudeQueryRunActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C601D18AA3AC4DCE10CF08AA /* SAClaudeQueryRunActionTests.swift */; };
 		5EC0DEC40000000000000B03 /* SAClaudeQueryInsertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC40000000000000B01 /* SAClaudeQueryInsertion.swift */; };
 		5EC0DEC40000000000000B04 /* SAClaudeQueryInsertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC40000000000000B01 /* SAClaudeQueryInsertion.swift */; };
 		5EC0DEC40000000000000B05 /* SAClaudeQueryInsertionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DEC40000000000000B02 /* SAClaudeQueryInsertionTests.swift */; };
@@ -1236,9 +1239,11 @@
 		A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorChromeTests.swift; sourceTree = "<group>"; };
 		B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStatusChrome.swift; sourceTree = "<group>"; };
 		53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryCopyAction.swift; sourceTree = "<group>"; };
+		E89E476288182FF82DC95D50 /* SAClaudeQueryRunAction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryRunAction.swift; sourceTree = "<group>"; };
 		BE433845AF6C1FDE7125C29A /* SAClaudeEditorOption.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorOption.swift; sourceTree = "<group>"; };
 		B7C2D1E01C3D4E5F70819202 /* SAClaudeStatusChromeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeStatusChromeTests.swift; sourceTree = "<group>"; };
 		EDCE28E8C0432DCC01E291C9 /* SAClaudeQueryCopyActionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryCopyActionTests.swift; sourceTree = "<group>"; };
+		C601D18AA3AC4DCE10CF08AA /* SAClaudeQueryRunActionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryRunActionTests.swift; sourceTree = "<group>"; };
 		5EC0DEC40000000000000B01 /* SAClaudeQueryInsertion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryInsertion.swift; sourceTree = "<group>"; };
 		5EC0DEC40000000000000B02 /* SAClaudeQueryInsertionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeQueryInsertionTests.swift; sourceTree = "<group>"; };
 		3D0430EA2583FBE02C0021BD /* SAClaudeEditorOptionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeEditorOptionTests.swift; sourceTree = "<group>"; };
@@ -3478,6 +3483,7 @@
 				A5C1E0D01A2B3C4D5E6F7081 /* SAClaudeEditorChrome.swift */,
 				B7C2D1E01C3D4E5F70819201 /* SAClaudeStatusChrome.swift */,
 				53F76665CD41D38D6BD17B45 /* SAClaudeQueryCopyAction.swift */,
+				E89E476288182FF82DC95D50 /* SAClaudeQueryRunAction.swift */,
 				5EC0DEC40000000000000B01 /* SAClaudeQueryInsertion.swift */,
 				BE433845AF6C1FDE7125C29A /* SAClaudeEditorOption.swift */,
 				5E77C0DE0000000000000001 /* SAClaudeSettingsCatalog.swift */,
@@ -3626,6 +3632,7 @@
 				A5C1E0D11A2B3C4D5E6F7082 /* SAClaudeEditorChromeTests.swift */,
 				B7C2D1E01C3D4E5F70819202 /* SAClaudeStatusChromeTests.swift */,
 				EDCE28E8C0432DCC01E291C9 /* SAClaudeQueryCopyActionTests.swift */,
+				C601D18AA3AC4DCE10CF08AA /* SAClaudeQueryRunActionTests.swift */,
 				5EC0DEC40000000000000B02 /* SAClaudeQueryInsertionTests.swift */,
 				3D0430EA2583FBE02C0021BD /* SAClaudeEditorOptionTests.swift */,
 				5E77C0DE0000000000000002 /* SAClaudeSettingsCatalogTests.swift */,
@@ -4571,6 +4578,7 @@
 				A5C1E0D31A2B3C4D5E6F7084 /* SAClaudeEditorChrome.swift in Sources */,
 				B7C2D1E01C3D4E5F70819204 /* SAClaudeStatusChrome.swift in Sources */,
 				6F820F81C5F30F07306DCFB8 /* SAClaudeQueryCopyAction.swift in Sources */,
+				609C2457C30F481AD56AA3FD /* SAClaudeQueryRunAction.swift in Sources */,
 				5EC0DEC40000000000000B03 /* SAClaudeQueryInsertion.swift in Sources */,
 				05D1631A59CC85C11DF7AE80 /* SAClaudeEditorOption.swift in Sources */,
 				5E77C0DE0000000000000004 /* SAClaudeSettingsCatalog.swift in Sources */,
@@ -4602,6 +4610,7 @@
 				A5C1E0D41A2B3C4D5E6F7085 /* SAClaudeEditorChromeTests.swift in Sources */,
 				B7C2D1E01C3D4E5F70819205 /* SAClaudeStatusChromeTests.swift in Sources */,
 				5EA285706FFE7F0CE3AA88D9 /* SAClaudeQueryCopyActionTests.swift in Sources */,
+				116A1D2524E944E9B90256F0 /* SAClaudeQueryRunActionTests.swift in Sources */,
 				5EC0DEC40000000000000B05 /* SAClaudeQueryInsertionTests.swift in Sources */,
 				94A814549F2CD60C2721BC1D /* SAClaudeEditorOptionTests.swift in Sources */,
 				5E77C0DE0000000000000005 /* SAClaudeSettingsCatalogTests.swift in Sources */,
@@ -5110,6 +5119,7 @@
 				A5C1E0D21A2B3C4D5E6F7083 /* SAClaudeEditorChrome.swift in Sources */,
 				B7C2D1E01C3D4E5F70819203 /* SAClaudeStatusChrome.swift in Sources */,
 				D02C237055644956AA3EAE9E /* SAClaudeQueryCopyAction.swift in Sources */,
+				53B02D4176AEEF0414DBB040 /* SAClaudeQueryRunAction.swift in Sources */,
 				5EC0DEC40000000000000B04 /* SAClaudeQueryInsertion.swift in Sources */,
 				0205873773AEE9282BFB0448 /* SAClaudeEditorOption.swift in Sources */,
 				5E77C0DE0000000000000003 /* SAClaudeSettingsCatalog.swift in Sources */,
