@@ -47,6 +47,7 @@ import Foundation
         let isUntitled = document.isUntitled()
         let connectionController = document.connectionController()
         let kind = SAQueryFavoriteLocalScopeKind.resolve(isUntitled: isUntitled,
+                                                         isSavedInBundle: document.isSaveInBundle(),
                                                          connectionID: connectionController.connectionKeychainID)
         var name: String?
         if case .connection(let id) = kind {
@@ -91,6 +92,37 @@ import Foundation
             guard let fileURL else { return }
             SPQueryController.shared().replaceFavorites(by: favorites, forFileURL: fileURL)
         }
+    }
+
+    // MARK: - The manager's editing session
+
+    /// The list as read when the manager opened, and the manager's mutable copy of each item (it edits them in place).
+    private var editingBase: [Any] = []
+    private var editingCopies: [AnyObject] = []
+
+    /// The local favourites as mutable copies for the Query Favorites manager, remembered so its Save can merge
+    /// (`saveEditedFavorites`).
+    @objc func editableFavorites() -> [Any] {
+        editingBase = favorites()
+        editingCopies = editingBase.map { item -> AnyObject in
+            if let favorite = item as? NSDictionary { return NSMutableDictionary(dictionary: favorite) }
+            return item as AnyObject
+        }
+        return editingCopies
+    }
+
+    /// The manager's Save of its local section. A connection's list is shared by every window on it, so other
+    /// windows' saves since the manager opened are kept (SAQueryFavoriteMerge), and nothing is written when the
+    /// section is unchanged. A file's list is replaced as before.
+    @objc(saveEditedFavorites:)
+    func saveEditedFavorites(_ mine: [Any]) {
+        guard case .connection(let id) = kind else {
+            replaceFavorites(mine)
+            return
+        }
+        guard let merged = SAQueryFavoriteMerge.merge(base: editingBase, opened: editingCopies, mine: mine,
+                                                      theirs: store.favorites(forConnectionID: id)) else { return }
+        store.setFavorites(merged, forConnectionID: id)
     }
 
     /// The favourites the editor expands for `trigger`: the local ones with it, then the first global one.

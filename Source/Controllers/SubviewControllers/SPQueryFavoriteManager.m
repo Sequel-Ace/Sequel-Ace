@@ -125,8 +125,7 @@
 		@"", @"query",
 		nil]];
 
-	for(id fav in [self.localScope favorites])
-		[favorites addObject:[fav mutableCopy]];
+	[favorites addObjectsFromArray:[self.localScope editableFavorites]];
 
 	// Select the first query if any		
 	for (NSDictionary *favorite in favorites) 
@@ -467,7 +466,8 @@
 		}
 
 		// Update current document's query favorites (the saved connection's, or the file's in the SPQueryController)
-		[self.localScope replaceFavorites:[self queryFavoritesForFileURL:delegatesFileURL]];
+		// (a connection's list keeps other windows' saves made while this was open)
+		[self.localScope saveEditedFavorites:[self queryFavoritesForFileURL:delegatesFileURL]];
 
 		// Update global preferences' list
 		[prefs setObject:[self queryFavoritesForFileURL:nil] forKey:SPQueryFavorites];
