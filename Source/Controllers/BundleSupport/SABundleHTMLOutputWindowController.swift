@@ -120,6 +120,7 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             refreshThemeBase(palette: palette)
         case .none:
             model.underPageBackgroundColor = palette.surface
+            backdrop.colour = palette.surface
         }
     }
 

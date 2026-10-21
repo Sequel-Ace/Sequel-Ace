@@ -171,13 +171,28 @@ final class SAClaudeTooltipHTMLTests: XCTestCase {
         XCTAssertFalse(html.contains("#FAF9F5"), html)
         XCTAssertTrue(html.contains("a:any-link { color: \(SAClaudeHintCardCSS.colour(dark.accent)); }"), html)
         XCTAssertGreaterThanOrEqual(SAClaudeHintCardPalette.contrast(dark.accent, dark.surface), 4.5)
-        // A caller's background still wins.
-        let explicit = SAClaudeTooltipHTML.document(body: "<p>x</p>", kind: .html, options: ["backgroundcolor": "#EEEEEE"],
-                                                    theme: dark, paper: paper)
-        XCTAssertTrue(bodyRule(explicit).contains("background: #EEEEEE"), explicit)
         // Text tooltips are unchanged: no link rule.
         let text = SAClaudeTooltipHTML.document(body: "<pre>x</pre>", kind: .text, options: nil, theme: dark, paper: paper)
         XCTAssertFalse(text.contains("a:any-link"), text)
+    }
+
+    /// Plain bundle HTML on a caller's own background or transparent (review 2c I2) keeps the paper's dark text: the
+    /// theme's light text on the caller's light card would not read.
+    func testPlainHTMLOnCallerBackgroundKeepsPaperText() {
+        let dark = darkTheme
+        for options: [String: Any] in [["backgroundcolor": "#EEEEEE"], ["backgroundcolor": "white"], ["transparent": "1"],
+                                       ["transparent": "1", "backgroundcolor": "#EEEEEE"]] {
+            let html = SAClaudeTooltipHTML.document(body: "<p>x <a href=\"y\">y</a></p>", kind: .html, options: options,
+                                                    theme: dark, paper: paper)
+            let rule = bodyRule(html)
+            XCTAssertTrue(rule.contains("color: \(SAClaudeHintCardCSS.colour(paper.text))"), "\(options): \(rule)")
+            XCTAssertFalse(rule.contains("color: \(SAClaudeHintCardCSS.colour(dark.text))"), "\(options): \(rule)")
+            XCTAssertFalse(html.contains("a:any-link"), html)
+            if let requested = options["backgroundcolor"] as? String, options["transparent"] == nil {
+                XCTAssertTrue(rule.contains("background: \(requested)"), rule)
+                XCTAssertGreaterThanOrEqual(SAClaudeHintCardPalette.contrast(paper.text, SAClaudeStyle.srgb(0xEEEEEE)), 4.5)
+            }
+        }
     }
 
     func testExplicitBackgroundOptionWins() {
