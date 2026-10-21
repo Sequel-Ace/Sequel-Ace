@@ -259,8 +259,8 @@ enum SAClaudeSettingsCatalog {
         SAClaudeSettingsPane(id: .safety, sections: [
             section("beforeChanges", [
                 row("confirmChanges", .toggle(key: confirmChangesKey)),
-                row("askTwiceDelete", .toggle(key: "ShowWarningBeforeDeleteQuery"),
-                    parent: "confirmChanges", disabledWhenParentOff: true),
+                // Its own row: the second confirmation works whether or not changes are confirmed.
+                row("askTwiceDelete", .toggle(key: "ShowWarningBeforeDeleteQuery")),
             ]),
             section("warnings", [
                 row("warnNoRowsAffected", .toggle(key: "ShowNoAffectedRowsError")),

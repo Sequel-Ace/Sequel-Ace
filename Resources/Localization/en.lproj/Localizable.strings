@@ -5968,10 +5968,10 @@
 "ClaudeSettings.askTwiceDelete.name" = "Ask twice before deleting rows";
 
 /* Claude Settings: one-line description under the setting "Ask twice before deleting rows" */
-"ClaudeSettings.askTwiceDelete.desc" = "Needs the setting above";
+"ClaudeSettings.askTwiceDelete.desc" = "A second confirmation after the delete card in Content";
 
 /* Claude Settings: the (i) explanation of the setting "Ask twice before deleting rows" */
-"ClaudeSettings.askTwiceDelete.info" = "Adds a second \"Are you sure?\" when deleting rows. It only works while the setting above is on.";
+"ClaudeSettings.askTwiceDelete.info" = "Adds a second \"Are you sure?\" (Double Check) when deleting rows in Content, selected rows or all of them, whether or not Confirm before running changes is on.";
 
 /* Claude Settings: last line of the (i) explanation of "Ask twice before deleting rows": its old name and old Preferences pane */
 "ClaudeSettings.askTwiceDelete.was" = "Was: Show double check warning when deleting rows (Alerts & Logs)";

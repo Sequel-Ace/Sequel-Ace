@@ -503,7 +503,6 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
             "logCustomQueries": ("logQueries", "ConsoleEnableLogging"),
             "logImportExport": ("logQueries", "ConsoleEnableLogging"),
             "logErrors": ("logQueries", "ConsoleEnableLogging"),
-            "askTwiceDelete": ("confirmChanges", "ShowWarningBeforeExecuteQuery"),
         ]
         for (id, dep) in disabledDependents {
             XCTAssertEqual(try row(id).parentID, dep.parent, id)
@@ -528,6 +527,23 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
             XCTAssertEqual(try row(id).parentID, parent, id)
             XCTAssertFalse(try row(id).disabledWhenParentOff, id)
             XCTAssertTrue(try enabled(id, [:]), "\(id) stays enabled with everything off")
+        }
+
+        // "Ask twice before deleting rows" works on its own (walkthrough 11b): its own row in the same section, always
+        // enabled, whether or not "Confirm before running changes" is on.
+        let askTwice = try row("askTwiceDelete")
+        XCTAssertNil(askTwice.parentID)
+        XCTAssertFalse(askTwice.disabledWhenParentOff)
+        XCTAssertEqual(askTwice.control, .toggle(key: "ShowWarningBeforeDeleteQuery"))
+        XCTAssertTrue(try enabled("askTwiceDelete", [:]))
+        XCTAssertTrue(try enabled("askTwiceDelete", ["ShowWarningBeforeExecuteQuery": false]))
+        let safety = try XCTUnwrap(SAClaudeSettingsCatalog.panes.first { $0.id == .safety })
+        XCTAssertEqual(safety.sections.first?.rows.map(\.id), ["confirmChanges", "askTwiceDelete"])
+        let askTwiceDesc = try XCTUnwrap(Self.strings["ClaudeSettings.askTwiceDelete.desc"])
+        let askTwiceInfo = try XCTUnwrap(Self.strings["ClaudeSettings.askTwiceDelete.info"])
+        for copy in [askTwiceDesc, askTwiceInfo] {
+            XCTAssertFalse(copy.localizedCaseInsensitiveContains("setting above"), copy)
+            XCTAssertFalse(copy.localizedCaseInsensitiveContains("only works"), copy)
         }
 
         // Nothing else is a dependent; top-level rows are always enabled.

@@ -160,10 +160,14 @@ final class SAClaudeSettingsStoreTests: XCTestCase {
 
     func testIsEnabledFollowsTheParentSwitch() throws {
         let catalogStore = SAClaudeSettingsStore(controller: controller)
-        let row = try XCTUnwrap(SAClaudeSettingsCatalog.row("askTwiceDelete"))
-        catalogStore[bool: "ShowWarningBeforeExecuteQuery"] = false
+        let row = try XCTUnwrap(SAClaudeSettingsCatalog.row("logInterface"))
+        catalogStore[bool: "ConsoleEnableLogging"] = false
         XCTAssertFalse(catalogStore.isEnabled(row))
-        catalogStore[bool: "ShowWarningBeforeExecuteQuery"] = true
+        catalogStore[bool: "ConsoleEnableLogging"] = true
         XCTAssertTrue(catalogStore.isEnabled(row))
+        // "Ask twice before deleting rows" no longer hangs off "Confirm before running changes".
+        let askTwice = try XCTUnwrap(SAClaudeSettingsCatalog.row("askTwiceDelete"))
+        catalogStore[bool: "ShowWarningBeforeExecuteQuery"] = false
+        XCTAssertTrue(catalogStore.isEnabled(askTwice))
     }
 }

@@ -2254,14 +2254,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	BOOL reloadAfterRemovingRow = [prefs boolForKey:SPReloadAfterRemovingRow];
 
 
-	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
+	// "Ask twice before deleting rows" works on its own, whether or not "Confirm before running changes" is on.
 	BOOL queryDoubleCheckWarningEnabled = [prefs boolForKey:SPShowWarningBeforeDeleteQuery];
     BOOL isDeleteSomeRowsRequest = alertReturnCode == NSAlertFirstButtonReturn;
     BOOL isDeleteAllRowsRequest = allowDeletingAllRows && alertReturnCode == NSAlertSecondButtonReturn;
 
     BOOL retCode = (isDeleteSomeRowsRequest || isDeleteAllRowsRequest);
 
-	if (retCode == YES && queryWarningEnabled == YES && queryDoubleCheckWarningEnabled == YES) {
+	if (retCode == YES && queryDoubleCheckWarningEnabled == YES) {
         NSAlert *doubleCheckAlert = [[NSAlert alloc] init];
         [doubleCheckAlert setMessageText:NSLocalizedString(@"Double Check", @"Double Check")];
         [doubleCheckAlert setInformativeText:NSLocalizedString(@"ClaudeSettings.pointer.deleteDoubleCheck.message", @"Claude Settings pointer: Double check delete query")];
