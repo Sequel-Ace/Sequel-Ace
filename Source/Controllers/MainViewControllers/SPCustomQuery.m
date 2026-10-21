@@ -349,7 +349,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
     SAQueryFavoriteSaveWindowController *saveController = [[SAQueryFavoriteSaveWindowController alloc]
         initWithQuery:query
-        fileURL:fileURL
+        localScope:[SAQueryFavoriteLocalScope scopeForDocument:tableDocumentInstance]
         defaultSaveGlobally:[tableDocumentInstance isUntitled]];
     [parentWindow beginSheet:[saveController window] completionHandler:^(__unused NSModalResponse returnCode) {
         (void)[saveController window];
@@ -3363,16 +3363,18 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     while([queryFavoritesButton numberOfItems] > 7)
         [queryFavoritesButton removeItemAtIndex:[queryFavoritesButton numberOfItems]-1];
     
-    // Build document-based list
-    NSString *tblDocName = [[[fileURL absoluteString] stringByRemovingPercentEncoding] lastPathComponent];
+    // Build document-based list (Claude look: a window on a saved connection lists that connection's favourites,
+    // headed by its name — SAQueryFavoriteLocalScope)
+    SAQueryFavoriteLocalScope *localScope = [SAQueryFavoriteLocalScope scopeForDocument:tableDocumentInstance];
+    NSString *tblDocName = [localScope connectionName] ?: [[[fileURL absoluteString] stringByRemovingPercentEncoding] lastPathComponent];
     {
         NSMenuItem *headerMenuItem = [[NSMenuItem alloc] initWithTitle:tblDocName action:NULL keyEquivalent:@""];
         [headerMenuItem setTag:SP_FAVORITE_HEADER_MENUITEM_TAG];
-        [headerMenuItem setToolTip:[NSString stringWithFormat:NSLocalizedString(@"‘%@’ based favorites",@"Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file)"), tblDocName]];
+        [headerMenuItem setToolTip:[localScope connectionHeaderToolTip] ?: [NSString stringWithFormat:NSLocalizedString(@"‘%@’ based favorites",@"Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file)"), tblDocName]];
         [headerMenuItem setIndentationLevel:0];
         [menu addItem:headerMenuItem];
     }
-    for (NSDictionary *favorite in [[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]) {
+    for (NSDictionary *favorite in [localScope favorites]) {
         if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
         NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
         [paraStyle setTabStops:@[]];

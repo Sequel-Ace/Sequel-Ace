@@ -11,7 +11,8 @@
 //  (they are kept only if the connection is saved as a file). Empty, it is a heading with no purpose: the list hides it
 //  (walkthrough fix 2). The model keeps the header — the managers' loops walk to it, and saving reads the sections from
 //  it — and the list leaves it out only while it is the last item, so row i is always item i. Kept as is when the window
-//  came from a saved file or when the section already has items.
+//  came from a saved file or when the section already has items. The Query Favorites manager also keeps it for an
+//  untitled window on a saved connection: that section is the connection's own list (SAQueryFavoriteLocalScope).
 //
 //  Shared with the unit tests.
 //

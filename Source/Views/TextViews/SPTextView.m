@@ -2400,7 +2400,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 		// Check if tab trigger is defined; if so insert it, otherwise pass through event
 		if(snippetControlCounter < 0 && [tabTrigger length] && [tableDocumentInstance fileURL]) {
-			NSArray *snippets = [[SPQueryController sharedQueryController] queryFavoritesForFileURL:[tableDocumentInstance fileURL] andTabTrigger:tabTrigger includeGlobals:YES];
+			NSArray *snippets = [[SAQueryFavoriteLocalScope scopeForDocument:tableDocumentInstance] favoritesForTabTrigger:tabTrigger];
 			if([snippets count] > 0 && [(NSString*)[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] length]) {
 				[self insertAsSnippet:[(NSDictionary*)[snippets objectAtIndex:0] objectForKey:@"query"] atRange:targetRange];
 				return;

@@ -53,6 +53,10 @@
 
 - (void)_initWithNoSelection;
 
+/// Where this window's local favourites live, resolved when the list opens (SAQueryFavoriteLocalScope): the saved
+/// connection's list, headed by its name, or the file's list as before. Save writes back to the same place.
+@property (nonatomic, strong) SAQueryFavoriteLocalScope *localScope;
+
 @end
 
 @implementation SPQueryFavoriteManager
@@ -112,16 +116,17 @@
 		delegatesFileURLStr = delegatesFileURLStr.stringByRemovingPercentEncoding;
 	}
 
+	// Claude look: a window on a saved connection lists that connection's favourites, headed by its name.
+	self.localScope = [SAQueryFavoriteLocalScope scopeForDocument:tableDocumentInstance];
+
 	[favorites addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-		[delegatesFileURLStr lastPathComponent], @"name",
+		[self.localScope connectionName] ?: [delegatesFileURLStr lastPathComponent], @"name",
 		[delegatesFileURL absoluteString], @"headerOfFileURL", 
 		@"", @"query",
 		nil]];
 
-	if([[SPQueryController sharedQueryController] favoritesForFileURL:delegatesFileURL]) {
-		for(id fav in [[SPQueryController sharedQueryController] favoritesForFileURL:delegatesFileURL])
-			[favorites addObject:[fav mutableCopy]];
-	}
+	for(id fav in [self.localScope favorites])
+		[favorites addObject:[fav mutableCopy]];
 
 	// Select the first query if any		
 	for (NSDictionary *favorite in favorites) 
@@ -136,7 +141,8 @@
 	[favoritesTableView registerForDraggedTypes:@[SPFavoritesPasteboardDragType]];
 	
 	// A window that isn't a saved file lists no empty document ("Untitled") section (SAManagerDocumentSection).
-	[SAManagerDocumentSection hideEmptySectionIn:favoritesArrayController items:favorites documentIsUntitled:[tableDocumentInstance isUntitled]];
+	// (A saved connection's section is a real place and stays listed when empty.)
+	[SAManagerDocumentSection hideEmptySectionIn:favoritesArrayController items:favorites documentIsUntitled:[self.localScope hidesEmptySection]];
 
 	[favoritesArrayController setContent:favorites];
 	[favoritesTableView reloadData];
@@ -460,9 +466,8 @@
 			[[self window] makeFirstResponder:favoritesTableView];
 		}
 
-		// Update current document's query favorites in the SPQueryController
-		[[SPQueryController sharedQueryController] replaceFavoritesByArray:
-			[self queryFavoritesForFileURL:delegatesFileURL] forFileURL:delegatesFileURL];
+		// Update current document's query favorites (the saved connection's, or the file's in the SPQueryController)
+		[self.localScope replaceFavorites:[self queryFavoritesForFileURL:delegatesFileURL]];
 
 		// Update global preferences' list
 		[prefs setObject:[self queryFavoritesForFileURL:nil] forKey:SPQueryFavorites];

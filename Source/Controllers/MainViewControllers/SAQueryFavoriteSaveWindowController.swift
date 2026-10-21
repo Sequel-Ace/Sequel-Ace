@@ -56,6 +56,8 @@ private struct SAQueryFavoriteSaveView: View {
     @ObservedObject var model: SAQueryFavoriteSaveViewModel
     @ObservedObject var palette: SAClaudeSwiftUIPalette
     let title: String
+    /// The saved connection's name when the window's local favourites are stored for it, else nil.
+    let connectionName: String?
     let onSave: () -> Void
     let onCancel: () -> Void
 
@@ -112,13 +114,21 @@ private struct SAQueryFavoriteSaveView: View {
 
             row(nil) {
                 Toggle(
-                    NSLocalizedString("Save globally", comment: "Query favorite save sheet global checkbox"),
+                    NSLocalizedString("ClaudeQueryFavoriteSaveForAllConnections", value: "Save for all connections",
+                                      comment: "Query favorite save sheet: checkbox that saves the favorite globally (was “Save globally”)"),
                     isOn: $model.saveGlobally
                 )
                 .toggleStyle(SAClaudeCheckboxToggleStyle(size: .form))
                 .disabled(isReplacing)
             }
-            .padding(.bottom, Layout.rowGap)
+
+            // Off, for a window on a saved connection: where the favourite goes.
+            if let connectionName, !model.saveGlobally, !isReplacing {
+                note(SAQueryFavoriteLocalScope.savedOnlyText(connectionName), colour: palette.muted)
+                    .padding(.top, -2)
+            }
+
+            Color.clear.frame(height: Layout.rowGap)
 
             row(Self.replaceLabel) {
                 SAQueryFavoriteReplacePicker(model: model, title: selectionTitle)
@@ -201,7 +211,7 @@ private struct SAQueryFavoriteSaveView: View {
         let scope: String
         switch selection.scope {
         case .document:
-            scope = NSLocalizedString("Document", comment: "Document query favorite scope")
+            scope = connectionName ?? NSLocalizedString("Document", comment: "Document query favorite scope")
         case .global:
             scope = NSLocalizedString("Global", comment: "Global query favorite scope")
         }
@@ -229,19 +239,20 @@ private struct SAQueryFavoriteReplacePicker: View {
 @MainActor
 @objc final class SAQueryFavoriteSaveWindowController: NSWindowController {
     private let query: String
-    private let fileURL: URL
+    private let localScope: SAQueryFavoriteLocalScope
     private let model: SAQueryFavoriteSaveViewModel
     private let palette = SAClaudeSwiftUIPalette(source: .app)
     private var appearanceSubscription: AnyCancellable?
     private let preferences = UserDefaults.standard
 
-    @objc(initWithQuery:fileURL:defaultSaveGlobally:)
-    init(query: String, fileURL: URL, defaultSaveGlobally: Bool) {
+    /// `localScope`: where the window's local favourites live (the saved connection's list or the file's).
+    @objc(initWithQuery:localScope:defaultSaveGlobally:)
+    init(query: String, localScope: SAQueryFavoriteLocalScope, defaultSaveGlobally: Bool) {
         self.query = query
-        self.fileURL = fileURL
+        self.localScope = localScope
 
         let selections = SAQueryFavoriteStore.selections(
-            documentFavorites: Self.documentFavorites(for: fileURL),
+            documentFavorites: localScope.favorites(),
             globalFavorites: Self.globalFavorites()
         )
         model = SAQueryFavoriteSaveViewModel(
@@ -265,6 +276,7 @@ private struct SAQueryFavoriteReplacePicker: View {
                 model: model,
                 palette: palette,
                 title: panel.title,
+                connectionName: localScope.connectionName,
                 onSave: { [weak self] in self?.save() },
                 onCancel: { [weak self] in self?.finish(returnCode: .cancel) }
             )
@@ -281,7 +293,7 @@ private struct SAQueryFavoriteReplacePicker: View {
     }
 
     private func save() {
-        let documentFavorites = Self.documentFavorites(for: fileURL)
+        let documentFavorites = localScope.favorites()
         let globalFavorites = Self.globalFavorites()
 
         do {
@@ -296,10 +308,7 @@ private struct SAQueryFavoriteReplacePicker: View {
 
             switch mutation.scope {
             case .document:
-                SPQueryController.shared().replaceFavorites(
-                    by: mutation.favorites,
-                    forFileURL: fileURL
-                )
+                localScope.replaceFavorites(mutation.favorites)
             case .global:
                 preferences.set(mutation.favorites, forKey: SPQueryFavorites)
             }
@@ -340,13 +349,6 @@ private struct SAQueryFavoriteReplacePicker: View {
         } else {
             window.close()
         }
-    }
-
-    private static func documentFavorites(for fileURL: URL) -> [Any] {
-        guard let favorites = SPQueryController.shared().favorites(forFileURL: fileURL) else {
-            return []
-        }
-        return favorites.map { $0 }
     }
 
     private static func globalFavorites() -> [Any] {
