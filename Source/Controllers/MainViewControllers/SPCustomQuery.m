@@ -157,19 +157,34 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 #pragma mark IBAction methods
 
 /**
+ * What a run item runs: what this tab shows on it (its represented object, set by -updateQueryInteractionInterface),
+ * so a label can never differ from what runs; the remembered state before the first relabel.
+ */
+- (SAClaudeQueryRunAction)_runActionOfItem:(NSMenuItem *)item fallback:(SAClaudeQueryRunAction)fallback
+{
+    id runs = [item representedObject];
+    return [runs isKindOfClass:[NSNumber class]] ? (SAClaudeQueryRunAction)[runs integerValue] : fallback;
+}
+
+/**
  * Run the remembered run action (⌘R and the Run button's main half; see SAClaudeQueryRunDefault)
  */
 - (IBAction)runPrimaryQueryAction:(id)sender
 {
-    [self _runQueryAction:[SAClaudeQueryRunDefault primaryActionIn:prefs] sender:sender];
+    [self _runQueryAction:[self _runActionOfItem:runPrimaryActionMenuItem fallback:[SAClaudeQueryRunDefault primaryActionIn:prefs]]
+                 sender:sender
+               remember:YES];
 }
 
 /**
- * Run the other of Run current / Run all (⌥⌘R)
+ * Run the other of Run current / Run all. Picked from the Run card or the menu it becomes the button's; its
+ * shortcut (⌥⌘R) runs it once, as it always did, and leaves the button alone.
  */
 - (IBAction)runSecondaryQueryAction:(id)sender
 {
-    [self _runQueryAction:[SAClaudeQueryRunDefault secondaryActionIn:prefs] sender:sender];
+    [self _runQueryAction:[self _runActionOfItem:runSecondaryActionMenuItem fallback:[SAClaudeQueryRunDefault secondaryActionIn:prefs]]
+                 sender:sender
+               remember:[SAClaudeQueryRunDefault remembersRunTriggeredByKeyEquivalent:([[NSApp currentEvent] type] == NSEventTypeKeyDown)]];
 }
 
 /**
@@ -177,24 +192,31 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)runTertiaryQueryAction:(id)sender
 {
-    [self _runQueryAction:[SAClaudeQueryRunDefault tertiaryActionIn:prefs] sender:sender];
+    [self _runQueryAction:[self _runActionOfItem:self.runTertiaryActionMenuItem fallback:[SAClaudeQueryRunDefault tertiaryActionIn:prefs]]
+                 sender:sender
+               remember:YES];
 }
 
 /**
- * Runs a run action and makes it the Run button's (the script remembers itself in -runAllAsScriptAction:).
+ * Runs a run action and, when `remember`, makes it the Run button's (the script remembers itself in
+ * -runAllAsScriptAction:, unless `remember` is NO).
  */
-- (void)_runQueryAction:(SAClaudeQueryRunAction)action sender:(id)sender
+- (void)_runQueryAction:(SAClaudeQueryRunAction)action sender:(id)sender remember:(BOOL)remember
 {
+    // Key equivalents also arrive on key-up (see -runAllQueries:); those run nothing and change nothing.
+    if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) return;
     switch (action) {
         case SAClaudeQueryRunActionScript:
+            self.skipsRememberingScriptRun = !remember;
             [self runAllAsScriptAction:sender];
+            self.skipsRememberingScriptRun = NO;
             return;
         case SAClaudeQueryRunActionAll:
-            [self rememberQueryRunAction:action];
+            if (remember) [self rememberQueryRunAction:action];
             [self runAllQueries:sender];
             return;
         case SAClaudeQueryRunActionCurrent:
-            [self rememberQueryRunAction:action];
+            if (remember) [self rememberQueryRunAction:action];
             [self runSelectedQueries:sender];
             return;
     }
@@ -3505,6 +3527,12 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         [self _updateColumnHeadersForCurrentPreference];
 
         [customQueryView reloadData];
+    } else if ([keyPath isEqualToString:[SAClaudeQueryRunDefault runsAllKey]] || [keyPath isEqualToString:[SAClaudeQueryRunDefault runsScriptKey]]) {
+        if ([NSThread isMainThread]) {
+            [self updateQueryInteractionInterface];
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{ [self updateQueryInteractionInterface]; });
+        }
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
     } else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
@@ -3935,6 +3963,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
+    // The Run button's remembered action is app-wide: every Query tab relabels its button when another one changes it.
+    [prefs addObserver:self forKeyPath:[SAClaudeQueryRunDefault runsAllKey] options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:[SAClaudeQueryRunDefault runsScriptKey] options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
 
@@ -4133,6 +4164,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
+    [prefs removeObserver:self forKeyPath:[SAClaudeQueryRunDefault runsAllKey]];
+    [prefs removeObserver:self forKeyPath:[SAClaudeQueryRunDefault runsScriptKey]];
     [NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
     
     [self clearQueryLoadTimer];

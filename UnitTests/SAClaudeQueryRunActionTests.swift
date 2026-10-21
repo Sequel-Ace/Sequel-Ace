@@ -84,4 +84,11 @@ final class SAClaudeQueryRunActionTests: XCTestCase {
     func testScriptButtonTitle() {
         XCTAssertEqual(SAClaudeQueryRunDefault.scriptButtonTitle, "Run as script")
     }
+
+    /// Verifies ⌥⌘R (a key equivalent) runs the other action once without moving the button, while a pick from the
+    /// card or the menu does move it.
+    func testKeyEquivalentRunsDoNotChangeTheButton() {
+        XCTAssertFalse(SAClaudeQueryRunDefault.remembersRun(triggeredByKeyEquivalent: true))
+        XCTAssertTrue(SAClaudeQueryRunDefault.remembersRun(triggeredByKeyEquivalent: false))
+    }
 }

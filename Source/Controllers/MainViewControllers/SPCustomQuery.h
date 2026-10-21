@@ -187,6 +187,8 @@
 - (IBAction)runPrimaryQueryAction:(id)sender;
 - (IBAction)runSecondaryQueryAction:(id)sender;
 - (IBAction)runTertiaryQueryAction:(id)sender;
+/// Set while a run that must not change the Run button (⌥⌘R) calls -runAllAsScriptAction:.
+@property (nonatomic, assign) BOOL skipsRememberingScriptRun;
 - (IBAction)switchDefaultQueryAction:(id)sender;
 - (IBAction)runAllQueries:(id)sender;
 - (IBAction)runSelectedQueries:(id)sender;

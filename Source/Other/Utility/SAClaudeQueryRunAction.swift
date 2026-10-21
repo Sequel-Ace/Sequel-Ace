@@ -61,6 +61,15 @@ import Foundation
         primaryAction(in: defaults) == .script
     }
 
+    /// Whether running a run item makes its action the button's: a pick from the Run card or the menu does; a key
+    /// equivalent (⌥⌘R) runs the other of Run current / Run all once, as it always did, without moving the button -
+    /// otherwise repeated presses would alternate between the two. (⌘R runs what the button already shows, and
+    /// ⇧⌥⌘R is the script's own shortcut, which does remember.)
+    @objc(remembersRunTriggeredByKeyEquivalent:)
+    static func remembersRun(triggeredByKeyEquivalent: Bool) -> Bool {
+        !triggeredByKeyEquivalent
+    }
+
     /// Remembers `action` as the button's: it was just run.
     @objc(rememberAction:in:)
     static func remember(_ action: SAClaudeQueryRunAction, in defaults: UserDefaults) {

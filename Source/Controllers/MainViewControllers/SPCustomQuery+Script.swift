@@ -52,7 +52,7 @@ extension SPCustomQuery {
         }
 
         // The Run button now runs the script until another run action is picked.
-        if SAClaudeQueryRunDefault.primaryAction(in: .standard) != .script {
+        if !skipsRememberingScriptRun, SAClaudeQueryRunDefault.primaryAction(in: .standard) != .script {
             SAClaudeQueryRunDefault.remember(.script, in: .standard)
             updateInteractionInterface()
         }
