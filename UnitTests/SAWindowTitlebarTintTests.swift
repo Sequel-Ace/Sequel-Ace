@@ -125,8 +125,8 @@ final class SAWindowTitlebarTintTests: XCTestCase {
 
     /// A window that loses its colour (disconnected, back to the connection
     /// screen, or a favourite without one) must look exactly like Off. Tab
-    /// lines are left out: they only say how chips would be lined, and with
-    /// one tab there are no chips.
+    /// lines can differ (Tab underline keeps `.connection`), but every chip
+    /// without a colour is lined as in Off.
     func testNoColourMatchesOffWithOneTab() {
         let off = tint(.off, nil, tabs: false)
         for style in [SAConnectionColourStyle.underline, .namePill, .tabUnderline] {
@@ -137,6 +137,11 @@ final class SAWindowTitlebarTintTests: XCTestCase {
             XCTAssertNil(t.bottomLine, "\(style)")
             XCTAssertEqual(t.bottomLineInTabBar, off.bottomLineInTabBar, "\(style)")
             XCTAssertEqual(t.showsNamePill, off.showsNamePill, "\(style)")
+            for selected in [true, false] {
+                XCTAssertEqual(SAWindowTitlebarTint.chipLine(isSelected: selected, colour: nil, tabLines: t.tabLines),
+                               SAWindowTitlebarTint.chipLine(isSelected: selected, colour: nil, tabLines: off.tabLines),
+                               "\(style) selected \(selected)")
+            }
         }
     }
 

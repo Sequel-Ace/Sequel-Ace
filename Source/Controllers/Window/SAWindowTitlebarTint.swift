@@ -17,7 +17,7 @@ import AppKit
 /// title bar over `SAClaudeStyle.toolbarBackground`. The colour shows as one of:
 /// - Underline: a 2pt line at the very bottom of the window chrome, in place
 ///   of the hairline there - drawn by the tab bar when it shows, otherwise by
-///   a line accessory under the toolbar.
+///   a 2pt overlay right under the toolbar.
 /// - Name pill: a pill with the connection's name in the window title (drawn
 ///   elsewhere); no line, the hairline stays.
 /// - Tab underline: each tab chip is underlined in its connection's colour.
@@ -62,7 +62,7 @@ struct SAWindowTitlebarTint {
     let bottomLine: NSColor?
 
     /// Whether `bottomLine` is drawn by the tab bar (it is the bottom of the
-    /// chrome while it shows) rather than by the line accessory.
+    /// chrome while it shows) rather than by the overlay under the toolbar.
     let bottomLineInTabBar: Bool
 
     /// Whether the window title shows the connection's name pill.

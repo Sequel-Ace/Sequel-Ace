@@ -59,8 +59,8 @@ import SnapKit
             let tabBar = SAClaudeWindowTabBarController(window: window)
             tabBar.onVisibilityChange = { [weak self] _ in self?.applyConnectionColourChrome() }
             self.tabBar = tabBar
-            // Added after the tab bar's accessory; only one of the two draws the line at a time.
-            window.addTitlebarAccessoryViewController(colourLineAccessory)
+            // Only one of the bar and the overlay draws the line at a time.
+            colourLine.attach(to: window)
         }
         applyConnectionColourChrome()
         databaseListSubscription = NotificationCenter.default.observe(name: .SPDatabaseCreatedRemovedRenamed, object: nil) { [weak self] _ in
@@ -92,9 +92,9 @@ import SnapKit
     /// The "Show the connection colour as" choice the chips were last built for.
     private var chipConnectionColourStyle = SAConnectionColourStyle.current(.standard)
 
-    /// The connection's Underline line under the toolbar while the tab bar is
-    /// hidden (see `applyConnectionColourChrome`).
-    private lazy var colourLineAccessory = SAConnectionColourLineAccessory()
+    /// The connection's Underline line right under the toolbar while the tab
+    /// bar is hidden (see `applyConnectionColourChrome`).
+    private lazy var colourLine = SAConnectionColourLineOverlay()
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
@@ -164,8 +164,9 @@ private extension SPWindowController {
 
     /// Show the connection colour of this tab the way "Show the connection
     /// colour as" asks: never a filled title bar, but the Underline line (in
-    /// the tab bar while it shows, else in the line accessory under the
-    /// toolbar) or, with Tab underline, the chips' lines (built by the tab bar).
+    /// the tab bar while it shows, else an overlay along the top edge of the
+    /// content, right under the toolbar) or, with Tab underline, the chips' lines (built by the tab bar).
+    /// Neither line changes the title bar's height.
     ///
     /// `SAWindowTitlebarTint` decides what the chrome should look like; this
     /// only applies it. Every tab is its own `NSWindow`, so the colour follows
@@ -197,7 +198,7 @@ private extension SPWindowController {
         guard let tabBar = tabBar else {
             return
         }
-        colourLineAccessory.colour = tint.bottomLineInTabBar ? nil : tint.bottomLine
+        colourLine.colour = tint.bottomLineInTabBar ? nil : tint.bottomLine
         tabBar.bottomLineColour = tint.bottomLineInTabBar ? tint.bottomLine : nil
     }
 
