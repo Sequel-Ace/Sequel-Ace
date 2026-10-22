@@ -99,9 +99,12 @@ final class SAConnectionNamePillTitleView: NSView {
     }
 
     enum Metrics {
-        /// The pill starts where the native title view does; the toolbar adds its own gap after the view.
-        static let leadingInset: CGFloat = 4
-        static let trailingInset: CGFloat = 0
+        /// In the accessory: the pill starts where the native title view does; the toolbar adds its own gap after
+        /// the view.
+        static let accessoryInsets = NSEdgeInsets(top: 0, left: 4, bottom: 0, right: 0)
+        /// Over the native title view (which starts where the accessory's pill does): 8pt clear of the first
+        /// toolbar item, whose view starts 5pt inside the title view's frame.
+        static let nativeTitleInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 13)
         static let pillHeight: CGFloat = 20
         static let pillRadius: CGFloat = 7
         static let pillPadding: CGFloat = 8
@@ -120,6 +123,13 @@ final class SAConnectionNamePillTitleView: NSView {
         /// The native one-line title (a short title bar, the subtitle inline) sits a point higher.
         static let inlineTitleBaselineBelowLights: CGFloat = 3.5
     }
+
+    /// The room kept clear before and after the content (`Metrics`, by where the view is hosted).
+    var insets = Metrics.accessoryInsets {
+        didSet { needsDisplay = true }
+    }
+    private var leadingInset: CGFloat { insets.left }
+    private var trailingInset: CGFloat { insets.right }
 
     /// Called when the view's height changes (the toolbar shown or hidden) or the subtitle's place no longer
     /// matches the one the width was measured for, so the accessory can re-measure.
@@ -172,13 +182,13 @@ final class SAConnectionNamePillTitleView: NSView {
         let row = Widths(content).row
         let placement = subtitlePlacement
         measuredPlacement = placement
-        if content.subtitle.isEmpty { return Metrics.leadingInset + row + Metrics.trailingInset }
+        if content.subtitle.isEmpty { return leadingInset + row + trailingInset }
         if placement == .inline {
             let inline = Self.inlineSubtitle(content)
-            return Metrics.leadingInset + row + inline.gap + inline.width + Metrics.trailingInset
+            return leadingInset + row + inline.gap + inline.width + trailingInset
         }
         let subtitle = ceil(Self.width(content.subtitle, Self.subtitleFont))
-        return Metrics.leadingInset + max(row, subtitle) + Metrics.trailingInset
+        return leadingInset + max(row, subtitle) + trailingInset
     }
 
     /// The widths of the title row's pieces; `fit(_:)` shrinks them to a width.
@@ -269,13 +279,13 @@ final class SAConnectionNamePillTitleView: NSView {
         let inline = !content.subtitle.isEmpty && placement == .inline
         let inlineSubtitle = Self.inlineSubtitle(content)
         var widths = Widths(content)
-        let available = bounds.width - Metrics.leadingInset - Metrics.trailingInset
+        let available = bounds.width - leadingInset - trailingInset
         // Inline, the title row leaves the subtitle its room (the accessory's cap is the row's plus the subtitle's).
         widths.fit(inline ? max(0, available - inlineSubtitle.gap - inlineSubtitle.width) : available)
 
         let lightsMid = lightsMidY(hasSubtitle: !content.subtitle.isEmpty && !inline)
         let titleBaseline = lightsMid - (inline ? Metrics.inlineTitleBaselineBelowLights : Metrics.titleBaselineBelowLights)
-        var x = Metrics.leadingInset
+        var x = leadingInset
 
         /// One line of text with its baseline at `baseline`, truncated to `width`.
         func drawText(_ text: String, font: NSFont, colour: NSColor, width: CGFloat, baseline: CGFloat,
@@ -316,11 +326,11 @@ final class SAConnectionNamePillTitleView: NSView {
             // After the title on its line, in what room the title leaves.
             x = (widths.hasRest ? x + widths.rest : x) + inlineSubtitle.gap
             drawText(inlineSubtitle.text, font: Self.inlineSubtitleFont, colour: SAClaudeStyle.textMuted,
-                     width: min(inlineSubtitle.width, bounds.width - Metrics.trailingInset - x), baseline: titleBaseline)
+                     width: min(inlineSubtitle.width, bounds.width - trailingInset - x), baseline: titleBaseline)
         } else if !content.subtitle.isEmpty {
-            x = Metrics.leadingInset
+            x = leadingInset
             drawText(content.subtitle, font: Self.subtitleFont, colour: SAClaudeStyle.textMuted,
-                     width: bounds.width - Metrics.leadingInset - Metrics.trailingInset,
+                     width: bounds.width - leadingInset - trailingInset,
                      baseline: lightsMid - Metrics.subtitleBaselineBelowLights)
         }
     }
@@ -347,25 +357,47 @@ final class SAConnectionNamePillTitleView: NSView {
     override func accessibilityHitTest(_ point: NSPoint) -> Any? { content == nil ? nil : self }
 }
 
-/// Name pill mode's title, as a leading title bar accessory: right of the traffic lights, left of the toolbar's
-/// first item. Installed once per window and never removed; `hide()` takes it to zero width (AppKit keeps a hidden
-/// leading accessory's width in the toolbar layout), so the toolbar gets its room back. Neither changes the title
-/// bar's height. The width is the content's, capped at 30% of the window's and at 240pt, so the toolbar keeps its
-/// items about as the native title (which truncates to make room) does. In a short title bar (toolbar hidden) the
-/// subtitle follows the title on its line and its width comes on top of that cap, within 60% of the window. The
-/// width is measured again when the bar's height changes, so it follows the toolbar being shown or hidden.
+/// Name pill mode's title. Where it is drawn depends on the toolbar (`SAWindowNamePillHost`):
+///
+/// - Toolbar shown: over AppKit's native title view, which stays visible with its own text made transparent. In the
+///   unified toolbar that view is the flexible leading area that takes the spare room and keeps the items packed to
+///   the trailing side; hiding it would hand the room to the toolbar's flexible spaces and slide the database picker
+///   and the view buttons left. Drawn over it, the pill leaves every item exactly where it is without the pill, and
+///   gets the room the native title has (it truncates within it, as the native title does). The pill view rides in
+///   the title view (frame and full screen follow it); this accessory stays installed at zero width.
+/// - Toolbar hidden (no items to keep in place), or no native title view to be found: as a leading title bar
+///   accessory with the native title hidden, right of the traffic lights. Its width is the content's, capped at 30%
+///   of the window's and at 240pt; in a short title bar the subtitle follows the title on its line and its width
+///   comes on top of that cap, within 60% of the window. The width is measured again when the bar's height changes.
+///
+/// Installed once per window and never removed; with nothing to show, or while the pill is drawn over the native
+/// title, it is at zero width (AppKit keeps a hidden leading accessory's width in the toolbar layout). Neither host
+/// changes the title bar's height. The window's `titleVisibility` is set here, by the host.
 final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
     static let maxWidthFraction: CGFloat = 0.3
     static let maxWidth: CGFloat = 240
     static let maxInlineWidthFraction: CGFloat = 0.6
+    /// AppKit's title view in a unified toolbar (private; looked up by name, with the accessory as the fallback).
+    private static let nativeTitleViewClassName = "NSToolbarTitleView"
 
+    /// The pill in the accessory (toolbar hidden).
     private let titleView = SAConnectionNamePillTitleView(frame: NSRect(x: 0, y: 0, width: 0, height: 28))
+    /// The pill over the native title view (toolbar shown).
+    private let overlayView = SAConnectionNamePillTitleView(frame: .zero)
+    private var content: SAConnectionNamePillTitleView.Content?
+    /// The native title view's own subviews this made transparent, to restore when the pill goes.
+    private let dimmedViews = NSHashTable<NSView>.weakObjects()
     private var resizeObserver: NSObjectProtocol?
-    /// The document window (in full screen the accessory moves to AppKit's toolbar window).
+    private var toolbarVisibilityObservation: NSKeyValueObservation?
+    private weak var observedToolbar: NSToolbar?
+    /// The document window (in full screen the toolbar moves to AppKit's toolbar window).
     private weak var hostWindow: NSWindow?
 
+    /// Where the pill is drawn now.
+    private(set) var host = SAWindowNamePillHost.none
+
     /// Whether the pill shows.
-    var isShowing: Bool { titleView.content != nil }
+    var isShowing: Bool { content != nil }
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -376,6 +408,8 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         view = titleView
         // Toolbar shown or hidden: the subtitle may move between its own line and the title's.
         titleView.onPlacementChange = { [weak self] in self?.updateWidth() }
+        overlayView.insets = SAConnectionNamePillTitleView.Metrics.nativeTitleInsets
+        overlayView.autoresizingMask = [.width, .height]
     }
 
     required init?(coder: NSCoder) {
@@ -386,27 +420,111 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
     }
 
-    /// Adds the accessory to `window` (empty: zero width until `show`), and keeps its width capped as the window
-    /// resizes.
+    /// Adds the accessory to `window` (empty: zero width until `show`), keeps its width capped as the window
+    /// resizes, and follows the toolbar being shown or hidden.
     func attach(to window: NSWindow) {
         hostWindow = window
         window.addTitlebarAccessoryViewController(self)
         resizeObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: window, queue: nil) { [weak self] _ in
             self?.updateWidth()
         }
+        observeToolbar(of: window)
     }
 
     func show(parts: SAWindowNamePillParts, subtitle: String, colour: NSColor, accessibilityTitle: String) {
-        titleView.content = .init(parts: parts, subtitle: subtitle, colour: colour, accessibilityTitle: accessibilityTitle)
-        if titleView.isHidden { titleView.isHidden = false }
-        updateWidth()
+        content = .init(parts: parts, subtitle: subtitle, colour: colour, accessibilityTitle: accessibilityTitle)
+        apply()
     }
 
+    /// No pill: the native title, fully drawn.
     func hide() {
-        guard titleView.content != nil else { return }
-        titleView.content = nil
-        titleView.isHidden = true
+        content = nil
+        apply()
+    }
+
+    /// Puts the content in the host the toolbar calls for and sets the native title's visibility to match.
+    private func apply() {
+        guard let window = hostWindow else { return }
+        observeToolbar(of: window)
+        let toolbarVisible = window.toolbar?.isVisible == true
+        let native = content != nil && toolbarVisible ? nativeTitleView(in: window) : nil
+        host = .choose(showsPill: content != nil, toolbarVisible: toolbarVisible, nativeTitleAvailable: native != nil)
+
+        if host == .nativeTitle, let native {
+            drawOver(native)
+        } else {
+            removeOverlay()
+        }
+
+        let accessoryContent = host == .accessory ? content : nil
+        titleView.content = accessoryContent
+        if titleView.isHidden != (accessoryContent == nil) { titleView.isHidden = accessoryContent == nil }
         updateWidth()
+
+        let visibility: NSWindow.TitleVisibility = host.hidesNativeTitle ? .hidden : .visible
+        if window.titleVisibility != visibility { window.titleVisibility = visibility }
+    }
+
+    /// The pill over `native`, filling it, with the title view's own text transparent (its room in the toolbar stays).
+    private func drawOver(_ native: NSView) {
+        if overlayView.superview !== native {
+            removeOverlay()
+            overlayView.frame = native.bounds
+            native.addSubview(overlayView, positioned: .above, relativeTo: nil)
+        }
+        overlayView.content = content
+        // Every pass: AppKit may add or replace the title's views (a title or subtitle change).
+        for subview in native.subviews where subview !== overlayView && subview.alphaValue != 0 {
+            subview.alphaValue = 0
+            dimmedViews.add(subview)
+        }
+    }
+
+    private func removeOverlay() {
+        for view in dimmedViews.allObjects { view.alphaValue = 1 }
+        dimmedViews.removeAllObjects()
+        overlayView.content = nil
+        if overlayView.superview != nil { overlayView.removeFromSuperview() }
+    }
+
+    /// The window's native title view: the one the pill is in while it is still in a window (it keeps the same view
+    /// across title changes, resizes and full screen), else found in the title bar, after making the title visible and
+    /// laying the title bar out (AppKit makes a new view when the title or the toolbar shows again). Nil when there is
+    /// none, for the accessory to take over.
+    private func nativeTitleView(in window: NSWindow) -> NSView? {
+        if let current = overlayView.superview, current.window != nil, Self.isNativeTitleView(current) {
+            return current
+        }
+        if window.titleVisibility != .visible { window.titleVisibility = .visible }
+        guard let frameView = window.contentView?.superview else { return nil }
+        if let found = Self.findNativeTitleView(in: frameView, of: window) { return found }
+        frameView.layoutSubtreeIfNeeded()
+        return Self.findNativeTitleView(in: frameView, of: window)
+    }
+
+    private static func isNativeTitleView(_ view: NSView) -> Bool {
+        NSStringFromClass(type(of: view)) == nativeTitleViewClassName
+    }
+
+    /// Searches the title bar side of the frame view (not the window's content).
+    private static func findNativeTitleView(in frameView: NSView, of window: NSWindow) -> NSView? {
+        var stack = frameView.subviews.filter { $0 !== window.contentView }
+        while let view = stack.popLast() {
+            if isNativeTitleView(view) { return view }
+            stack.append(contentsOf: view.subviews)
+        }
+        return nil
+    }
+
+    /// Re-applies when the toolbar is shown or hidden (View ▸ Show/Hide Toolbar), at once and once AppKit has
+    /// settled, so the pill changes host without the native title showing in between.
+    private func observeToolbar(of window: NSWindow) {
+        guard let toolbar = window.toolbar, toolbar !== observedToolbar else { return }
+        observedToolbar = toolbar
+        toolbarVisibilityObservation = toolbar.observe(\.isVisible) { [weak self] _, _ in
+            self?.apply()
+            RunLoop.main.perform { [weak self] in self?.apply() }
+        }
     }
 
     private func updateWidth() {

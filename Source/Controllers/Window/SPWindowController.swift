@@ -97,8 +97,8 @@ import SnapKit
     /// bar is hidden (see `applyConnectionColourChrome`).
     private lazy var colourLine = SAConnectionColourLineOverlay()
 
-    /// The window title in Name pill mode, in place of the native one (see
-    /// `applyNamePill`). Installed in `windowDidLoad`.
+    /// The window title in Name pill mode, in place of the native one's text
+    /// (see `applyNamePill`). Installed in `windowDidLoad`.
     private lazy var namePill = SAConnectionNamePillAccessory()
 
     /// The window's subtitle (the MySQL version, when shown), kept for the name
@@ -212,11 +212,14 @@ private extension SPWindowController {
         applyNamePill(showsNamePill: tint.showsNamePill)
     }
 
-    /// Name pill mode: swap the native title for the pill title (the connection's
-    /// name in its colour, then "db/table", the subtitle under it) while the
-    /// window has a colour and a connected title; otherwise the native title.
+    /// Name pill mode: show the pill title (the connection's name in its colour,
+    /// then "db/table", the subtitle under it) in place of the native title's
+    /// text while the window has a colour and a connected title; otherwise the
+    /// native title. The pill decides where it draws and sets `titleVisibility`
+    /// to match (see `SAConnectionNamePillAccessory`): with the toolbar shown it
+    /// draws over the native title, which keeps its room, so no toolbar item moves.
     /// `window.title` is always kept, for the Window menu and Mission Control.
-    /// Neither swap changes the title bar's height.
+    /// Neither changes the title bar's height.
     func applyNamePill(showsNamePill: Bool) {
         guard let window = window, tabBar != nil else {
             return
@@ -226,10 +229,8 @@ private extension SPWindowController {
             : nil
         if let parts = parts, let colour = favoriteColor {
             namePill.show(parts: parts, subtitle: windowSubtitle, colour: colour, accessibilityTitle: window.title)
-            if window.titleVisibility != .hidden { window.titleVisibility = .hidden }
         } else {
             namePill.hide()
-            if window.titleVisibility != .visible { window.titleVisibility = .visible }
         }
     }
 

@@ -333,4 +333,31 @@ final class SAWindowTitleBuilderTests: XCTestCase {
     func testInlineSubtitleTextMatchesTheNativeForm() {
         XCTAssertEqual(Placement.inlineText("MySQL 8.4"), "– MySQL 8.4")
     }
+
+    // MARK: - Name pill host
+
+    private typealias Host = SAWindowNamePillHost
+
+    func testNoPillKeepsTheNativeTitle() {
+        let host = Host.choose(showsPill: false, toolbarVisible: true, nativeTitleAvailable: true)
+        XCTAssertEqual(host, .none)
+        XCTAssertFalse(host.hidesNativeTitle)
+    }
+
+    func testToolbarShownDrawsOverTheNativeTitle() {
+        // The native title keeps its flexible room in the toolbar, so the items stay where Off has them.
+        let host = Host.choose(showsPill: true, toolbarVisible: true, nativeTitleAvailable: true)
+        XCTAssertEqual(host, .nativeTitle)
+        XCTAssertFalse(host.hidesNativeTitle)
+    }
+
+    func testToolbarHiddenUsesTheAccessory() {
+        XCTAssertEqual(Host.choose(showsPill: true, toolbarVisible: false, nativeTitleAvailable: true), .accessory)
+        XCTAssertEqual(Host.choose(showsPill: true, toolbarVisible: false, nativeTitleAvailable: false), .accessory)
+        XCTAssertTrue(Host.accessory.hidesNativeTitle)
+    }
+
+    func testMissingNativeTitleFallsBackToTheAccessory() {
+        XCTAssertEqual(Host.choose(showsPill: true, toolbarVisible: true, nativeTitleAvailable: false), .accessory)
+    }
 }

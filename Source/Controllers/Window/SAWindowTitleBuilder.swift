@@ -56,6 +56,32 @@ enum SAWindowNamePillSubtitlePlacement: Equatable {
     }
 }
 
+/// Where Name pill mode draws its title.
+///
+/// In the unified toolbar the native title is the flexible leading area: it takes the toolbar's spare room, so the
+/// items (and the flexible spaces between them) pack to the trailing side. Hiding it (`titleVisibility = .hidden`)
+/// hands that room to the flexible spaces instead, and the database picker and the view buttons slide left. So while
+/// the toolbar shows, the pill is drawn over the native title, which stays visible (its text made transparent) and
+/// keeps its room: every item stays where it is without the pill. With the toolbar hidden there are no items to keep
+/// in place, and the pill is a leading accessory with the native title hidden (it then sits on the title's line); the
+/// accessory is also the fallback when AppKit's title view cannot be found.
+enum SAWindowNamePillHost: Equatable {
+    /// No pill: the native title.
+    case none
+    /// Drawn over the native title view, whose text is transparent.
+    case nativeTitle
+    /// The leading title bar accessory, with the native title hidden.
+    case accessory
+
+    static func choose(showsPill: Bool, toolbarVisible: Bool, nativeTitleAvailable: Bool) -> Self {
+        guard showsPill else { return .none }
+        return toolbarVisible && nativeTitleAvailable ? .nativeTitle : .accessory
+    }
+
+    /// Whether the window's `titleVisibility` is `.hidden` for this host.
+    var hidesNativeTitle: Bool { self == .accessory }
+}
+
 /// Three-state classification used by the title composer. Mirrors the
 /// branching in the original `-updateWindowTitle:`.
 @objc enum SAWindowConnectionState: Int {
