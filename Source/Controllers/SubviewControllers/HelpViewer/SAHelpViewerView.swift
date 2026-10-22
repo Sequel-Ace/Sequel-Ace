@@ -132,6 +132,8 @@ struct SAHelpViewerView: View {
 /// chrome around it draws the field, and its accent outline follows `isFocused`.
 struct SAHelpSearchField: NSViewRepresentable {
 
+    /// The placeholder's colour (`muted`); a palette change (theme, appearance) updates the view.
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     @Binding var text: String
     /// Whether the field (or its field editor) is the window's first responder.
     @Binding var isFocused: Bool
@@ -146,6 +148,11 @@ struct SAHelpSearchField: NSViewRepresentable {
         Coordinator(self)
     }
 
+    private var placeholderText: NSAttributedString {
+        NSAttributedString(string: placeholder, attributes: [.font: NSFont.systemFont(ofSize: 12),
+                                                             .foregroundColor: NSColor(palette.muted)])
+    }
+
     func makeNSView(context: Context) -> SAHelpSearchFieldView {
         let searchField = SAHelpSearchFieldView()
         searchField.font = .systemFont(ofSize: 12)
@@ -153,7 +160,7 @@ struct SAHelpSearchField: NSViewRepresentable {
         searchField.isBezeled = false
         searchField.drawsBackground = false
         searchField.focusRingType = .none
-        searchField.placeholderString = placeholder
+        searchField.placeholderAttributedString = placeholderText
         searchField.delegate = context.coordinator
         searchField.target = context.coordinator
         searchField.action = #selector(Coordinator.searchFieldAction(_:))
@@ -172,8 +179,11 @@ struct SAHelpSearchField: NSViewRepresentable {
         if nsView.stringValue != text {
             nsView.stringValue = text
         }
-        if nsView.placeholderString != placeholder {
-            nsView.placeholderString = placeholder
+        // In the palette's muted grey, as the other Claude search fields: AppKit's own placeholder colour follows the
+        // window's appearance, not the theme, and read as strong as text under a crossed theme/appearance.
+        let placeholderText = placeholderText
+        if nsView.placeholderAttributedString != placeholderText {
+            nsView.placeholderAttributedString = placeholderText
         }
         (nsView.cell as? NSSearchFieldCell)?.sendsWholeSearchString = sendsWholeSearchString
 
