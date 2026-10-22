@@ -22,6 +22,8 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         /// Quick connect's dashed outline.
         var dashedStroke: NSColor = .tertiaryLabelColor
         var dropFill: NSColor = .selectedContentBackgroundColor
+        /// The theme's background is dark: cards use the dark fill, ink and tint of their favourite colour.
+        var isDark = false
     }
 
     /// The private drag type: the dragged card's ID, within this app only.
@@ -47,8 +49,6 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     var onDrop: ((String, Layout.DropTarget) -> Bool)?
     /// `false` while connecting (the outline is disabled then): clicks, keys and drags are ignored.
     var isInteractive: () -> Bool = { true }
-    /// The colour for a favourite colour index, resolved at draw time under the view's appearance.
-    var favouriteColour: (Int) -> NSColor? = { _ in nil }
 
     // MARK: State
 
@@ -98,8 +98,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     private static let dotSize: CGFloat = 6
     private static let dragThreshold: CGFloat = 4
     private static let autoscrollMargin: CGFloat = 20
-    private static let gradientStart: CGFloat = 0.33
-    private static let gradientEnd: CGFloat = 0.07
+    private static let circleSize: CGFloat = 28
+    private static let circleGap: CGFloat = 10
+    private static let databaseGlyphSize: CGFloat = 16
+    private static let symbolPointSize: CGFloat = 13
 
     private static let noMatches = NSLocalizedString("ClaudeFavoriteCardsNoMatches", value: "No favourites match",
                                                      comment: "connection screen : shown in the favourite cards when the search matches nothing")
@@ -177,26 +179,27 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         let fill = cardPath(frame, inset: 0)
         colours.cardFill.setFill()
         fill.fill()
-        if let index = card.colorIndex, let colour = favouriteColour(index) {
-            // A diagonal wash of the favourite colour over the card fill, strongest at the top left.
-            let start = SAClaudeEditorChrome.derivedColour(text: colour, background: colours.cardFill, ratio: Self.gradientStart)
-            let end = SAClaudeEditorChrome.derivedColour(text: colour, background: colours.cardFill, ratio: Self.gradientEnd)
-            NSGradient(starting: start, ending: end)?.draw(in: fill, angle: 45)
-        }
-        drawOutline(card, in: frame)
+        let vivid = card.colorIndex.flatMap(SAVividColour.init(index:))
+        drawOutline(card, colour: vivid, in: frame)
 
-        // Badge (top right), then the name beside it and the summary below.
+        // The icon circle at the left, then the badge (top right), the name beside it and the summary below.
+        let dark = colours.isDark
+        let circle = NSRect(x: frame.minX + Self.padding, y: frame.midY - Self.circleSize / 2, width: Self.circleSize, height: Self.circleSize)
+        (vivid?.tint(dark: dark) ?? colours.text.withAlphaComponent(0.07)).setFill()
+        NSBezierPath(ovalIn: circle).fill()
+        drawIcon(SAClaudeFavoriteCardIcon.icon(type: card.type), colour: vivid?.ink(dark: dark) ?? colours.muted, in: circle)
+
         var nameMaxX = frame.maxX - Self.padding
         if !card.badge.isEmpty {
-            let badge = NSAttributedString(string: card.badge, attributes: [.font: Self.badgeFont, .foregroundColor: colours.muted])
+            let badge = NSAttributedString(string: card.badge, attributes: [.font: Self.badgeFont, .foregroundColor: vivid?.ink(dark: dark) ?? colours.muted])
             let size = badge.size()
             let pill = NSRect(x: frame.maxX - 10 - ceil(size.width) - 12, y: frame.minY + 11, width: ceil(size.width) + 12, height: 16)
-            colours.text.withAlphaComponent(0.07).setFill()
-            NSBezierPath(roundedRect: pill, xRadius: 8, yRadius: 8).fill()
+            (vivid?.tint(dark: dark) ?? colours.text.withAlphaComponent(0.07)).setFill()
+            NSBezierPath(roundedRect: pill, xRadius: 6, yRadius: 6).fill()
             badge.draw(at: NSPoint(x: pill.minX + 6, y: pill.midY - size.height / 2))
             nameMaxX = pill.minX - 8
         }
-        let x = frame.minX + Self.padding
+        let x = circle.maxX + Self.circleGap
         drawText(card.name, font: Self.nameFont, colour: colours.text,
                  in: NSRect(x: x, y: frame.minY + 11, width: max(0, nameMaxX - x), height: 18))
         drawText(card.summary, font: Self.summaryFont, colour: colours.muted,
@@ -208,13 +211,26 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         }
     }
 
+    /// The connection type's icon, centred in the card's circle.
+    private func drawIcon(_ icon: SAClaudeFavoriteCardIcon, colour: NSColor, in circle: NSRect) {
+        switch icon {
+        case .databaseGlyph:
+            let image = SAClaudeGlyphs.image(.database, tint: colour)
+            let size = Self.databaseGlyphSize
+            image.draw(in: NSRect(x: circle.midX - size / 2, y: circle.midY - size / 2, width: size, height: size),
+                       from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+        case .symbol(let name):
+            drawSymbol(name, pointSize: Self.symbolPointSize, colour: colour, in: circle)
+        }
+    }
+
     private func drawQuickConnect(_ card: SAClaudeFavoriteCard, in frame: NSRect) {
         let path = cardPath(frame, inset: 0.5)
         path.lineWidth = 1
         path.setLineDash([4, 3], count: 2, phase: 0)
         (card.id == hoverID ? colours.hoverStroke : colours.dashedStroke).setStroke()
         path.stroke()
-        if card.id == selectedID { drawSelection(in: frame) }
+        if card.id == selectedID { drawSelection(in: frame, colour: SAClaudeStatusChrome.clay) }
 
         let glyphSize: CGFloat = 16
         let glyph = NSRect(x: frame.minX + Self.padding + 2, y: frame.midY - glyphSize / 2, width: glyphSize, height: glyphSize)
@@ -225,9 +241,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         drawText(card.summary, font: Self.summaryFont, colour: colours.muted, in: NSRect(x: x, y: frame.minY + 35, width: width, height: 16))
     }
 
-    private func drawOutline(_ card: SAClaudeFavoriteCard, in frame: NSRect) {
+    private func drawOutline(_ card: SAClaudeFavoriteCard, colour: SAVividColour?, in frame: NSRect) {
         if card.id == selectedID {
-            drawSelection(in: frame)
+            // The ring is the favourite's colour, the accent when it has none.
+            drawSelection(in: frame, colour: colour?.fill(dark: colours.isDark) ?? SAClaudeStatusChrome.clay)
             return
         }
         let path = cardPath(frame, inset: 0.5)
@@ -236,10 +253,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         path.stroke()
     }
 
-    private func drawSelection(in frame: NSRect) {
+    private func drawSelection(in frame: NSRect, colour: NSColor) {
         let path = cardPath(frame, inset: 1)
         path.lineWidth = 2
-        SAClaudeStatusChrome.clay.setStroke()
+        colour.setStroke()
         path.stroke()
     }
 

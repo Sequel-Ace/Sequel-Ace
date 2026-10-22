@@ -22,6 +22,27 @@ struct SAClaudeFavoriteCard: Equatable {
     var badge: String
     var colorIndex: Int?
     var folderID: String?
+    /// The favourite's connection type (`SAClaudeConnectionType` raw value); Quick connect is 0.
+    var type = 0
+}
+
+/// The glyph in a card's colour circle.
+enum SAClaudeFavoriteCardIcon: Equatable {
+    /// The app's own database icon.
+    case databaseGlyph
+    /// An SF Symbol, by name.
+    case symbol(String)
+
+    /// TCP/IP and any unknown type show the database glyph; the other connection types a symbol of their own.
+    static func icon(type: Int) -> SAClaudeFavoriteCardIcon {
+        switch SAClaudeConnectionType(rawValue: type) {
+        case .socket: return .symbol("powerplug")
+        case .ssh: return .symbol("lock")
+        case .awsIAM: return .symbol("cloud")
+        case .vault: return .symbol("key")
+        case .tcpip, .none: return .databaseGlyph
+        }
+    }
 }
 
 struct SAClaudeFavoriteFolder: Equatable {
@@ -101,7 +122,8 @@ extension SAClaudeFavoriteGridModel {
                                      summary: SAClaudeFavoriteSummary.summary(type: entry.type, user: entry.user, host: entry.host,
                                                                               port: entry.port, socket: entry.socket, sshHost: entry.sshHost),
                                      badge: SAClaudeFavoriteSummary.badge(type: entry.type),
-                                     colorIndex: entry.colorIndex.flatMap { $0 >= 0 ? $0 : nil }, folderID: folderID)
+                                     colorIndex: entry.colorIndex.flatMap { $0 >= 0 ? $0 : nil }, folderID: folderID,
+                                     type: entry.type)
             }
         }
 

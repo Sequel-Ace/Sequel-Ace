@@ -216,7 +216,6 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
         }
         gridView.onDrop = { [weak self] id, target in self?.drop(id, at: target) ?? false }
         gridView.isInteractive = { [weak self] in self?.outline?.isEnabled ?? false }
-        gridView.favouriteColour = { SPFavoriteColorSupport.sharedInstance().color(for: $0) }
     }
 
     /// Selects the node's outline row (expanding collapsed folders above it first, since a row only exists for a
@@ -379,8 +378,8 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
 
     // MARK: - Colours
 
-    /// Re-derives the colours when the editor theme changed (or always, when `force`); the favourite colours are
-    /// read at draw time, so a redraw picks up a changed colour list.
+    /// Re-derives the colours when the editor theme changed (or always, when `force`). The favourite colours come
+    /// from `SAVividColour` at draw time, in the ink and tint the theme's lightness calls for.
     private func refreshColours(force: Bool) {
         var resolved: (SAClaudeEditorChrome.Palette, NSColor)?
         view.effectiveAppearance.performAsCurrentDrawingAppearance {
@@ -400,6 +399,7 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
             hoverStroke: SAClaudeEditorChrome.derivedColour(text: text, background: palette.background, ratio: 0.18),
             cardFill: cardFill,
             dashedStroke: SAClaudeFilterChrome.dropStroke(text: text, background: palette.background),
-            dropFill: SAClaudeFilterChrome.dropHoverFill(background: palette.background))
+            dropFill: SAClaudeFilterChrome.dropHoverFill(background: palette.background),
+            isDark: SAClaudeGridChrome.isDark(palette.background))
     }
 }

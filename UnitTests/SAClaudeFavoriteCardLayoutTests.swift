@@ -328,6 +328,31 @@ final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
         XCTAssertEqual(model.folders, [])
     }
 
+    func testCardsCarryTheirType() {
+        let tree = [fav("ssh", host: "h", type: 2), fav("sock", type: 1), fav("tcp")]
+        let model = Model.make(from: tree, quickConnectName: "Q", quickConnectSummary: "S", query: "")
+        XCTAssertEqual(model.allCards.map(\.type), [0, 2, 1, 0])
+        XCTAssertEqual(model.allCards.first { $0.id == "ssh" }?.type, 2)
+        XCTAssertEqual(model.allCards.first { $0.id == "sock" }?.type, 1)
+        XCTAssertEqual(model.topLevel[0].type, 0, "Quick connect")
+
+        // Favourites in a folder carry theirs too.
+        let nested = Model.make(from: [Entry.folder(id: "F", name: "F", children: [fav("v", type: 4)])],
+                                quickConnectName: "Q", quickConnectSummary: "S", query: "")
+        XCTAssertEqual(nested.folders[0].cards[0].type, 4)
+    }
+
+    func testCardIconPerType() {
+        typealias Icon = SAClaudeFavoriteCardIcon
+        XCTAssertEqual(Icon.icon(type: 0), .databaseGlyph)
+        XCTAssertEqual(Icon.icon(type: 1), .symbol("powerplug"))
+        XCTAssertEqual(Icon.icon(type: 2), .symbol("lock"))
+        XCTAssertEqual(Icon.icon(type: 3), .symbol("cloud"))
+        XCTAssertEqual(Icon.icon(type: 4), .symbol("key"))
+        XCTAssertEqual(Icon.icon(type: 9), .databaseGlyph)
+        XCTAssertEqual(Icon.icon(type: -1), .databaseGlyph)
+    }
+
     // MARK: Drop target → tree position
 
     private func destination(_ target: L.DropTarget, moving id: String) -> L.TreeDestination? {
