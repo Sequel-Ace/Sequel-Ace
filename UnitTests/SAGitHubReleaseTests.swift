@@ -81,6 +81,23 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: true, isPrivateBuild: true))
     }
 
+    func testPrivateBuildsSkipTheStaleBookmarkLaunchAlert() {
+        // The normal (sandboxed) build: the "App Sandbox Issue" alert when bookmarks are stale, none otherwise.
+        XCTAssertTrue(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: false, staleBookmarkCount: 1))
+        XCTAssertTrue(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: false, staleBookmarkCount: 7))
+        XCTAssertFalse(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: false, staleBookmarkCount: 0))
+        // A private (unsandboxed) build never shows it.
+        XCTAssertFalse(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: true, staleBookmarkCount: 1))
+        XCTAssertFalse(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: true, staleBookmarkCount: 0))
+    }
+
+    func testStaleBookmarksHoldBackAutoConnectOnlyInTheNormalBuild() {
+        XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: false, staleBookmarkCount: 0))
+        XCTAssertFalse(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: false, staleBookmarkCount: 2))
+        XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: true, staleBookmarkCount: 0))
+        XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: true, staleBookmarkCount: 2))
+    }
+
     func testAutomaticRolloutMatchesAppleSevenDayPercentages() {
         let start = Date(timeIntervalSince1970: 1_000_000)
         let oneDay: TimeInterval = 24 * 60 * 60

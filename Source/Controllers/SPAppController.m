@@ -213,8 +213,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // this reRequests access to all bookmarks
     SecureBookmarkManager *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
 
-    // prompt user to recreate secure bookmarks
-    if(secureBookmarkManager.staleBookmarks.count > 0){
+    // prompt user to recreate secure bookmarks (not in a private build: it is unsandboxed and needs no bookmarks)
+    if([NSBundle.mainBundle showsStaleBookmarkAlertForCount:secureBookmarkManager.staleBookmarks.count]){
 
         SPLog(@"We have stale bookmarks");
 
@@ -300,7 +300,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
 
         // Set autoconnection if appropriate
-        if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
+        if ([prefs boolForKey:SPAutoConnectToDefault] && [NSBundle.mainBundle staleBookmarksAllowAutoConnectForCount:secureBookmarkManager.staleBookmarks.count]) {
             [newWindowController.databaseDocument connect];
         }
     }

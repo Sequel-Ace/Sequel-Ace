@@ -57,6 +57,18 @@ import Foundation
         SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: isMASVersion, isPrivateBuild: isPrivateBuild)
     }
 
+    /// Whether launch shows the stale secure-bookmark alert for `count` stale bookmarks (never in a private build).
+    @objc(showsStaleBookmarkAlertForCount:)
+    public func showsStaleBookmarkAlert(forCount count: Int) -> Bool {
+        SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
+    }
+
+    /// Whether launch may auto-connect with `count` stale secure bookmarks (always in a private build).
+    @objc(staleBookmarksAllowAutoConnectForCount:)
+    public func staleBookmarksAllowAutoConnect(forCount count: Int) -> Bool {
+        SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
+    }
+
     public var versionString: String {
         guard
             let version: String = self.version,

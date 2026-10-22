@@ -45,6 +45,17 @@ enum SAPrivateBuildPolicy {
     static func offersGitHubUpdates(isAppStoreInstall: Bool, isPrivateBuild: Bool) -> Bool {
         !isAppStoreInstall && !isPrivateBuild
     }
+
+    /// The launch-time "App Sandbox Issue" alert for stale secure bookmarks. A private build is unsandboxed and reads
+    /// files without bookmarks, so it never shows it.
+    static func showsStaleBookmarkAlert(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
+        !isPrivateBuild && staleBookmarkCount > 0
+    }
+
+    /// Stale bookmarks hold back the launch auto-connect only where they matter: in the sandboxed build.
+    static func staleBookmarksAllowAutoConnect(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
+        isPrivateBuild || staleBookmarkCount == 0
+    }
 }
 
 /// Prevents App Store builds and opted-out background checks from using the GitHub updater.
