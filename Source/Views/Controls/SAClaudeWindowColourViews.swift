@@ -85,7 +85,8 @@ final class SAConnectionColourLineOverlay: NSView {
 // MARK: - Name pill
 
 /// The window title in Name pill mode, in place of the native title: the `.spf` file prefix, a pill with a dot and
-/// the connection's name tinted in its colour, then "db/table"; the subtitle (the MySQL version) under it.
+/// the connection's name tinted in its colour, then "db/table"; the subtitle (the MySQL version) under it, or after
+/// it on the same line ("– MySQL 8.4") when the title bar is too short for a second line (the toolbar hidden).
 ///
 /// Frames only: everything is measured and drawn here. Colours are resolved at draw time, so the view follows light
 /// and dark. It ignores the mouse, so the title bar under it still drags and zooms the window.
@@ -116,7 +117,15 @@ final class SAConnectionNamePillTitleView: NSView {
         /// draws above its baseline).
         static let titleBaselineBelowLights: CGFloat = 4.5
         static let subtitleBaselineBelowLights: CGFloat = 18.5
+        /// The native one-line title (a short title bar, the subtitle inline) sits a point higher.
+        static let inlineTitleBaselineBelowLights: CGFloat = 3.5
     }
+
+    /// Called when the view's height changes (the toolbar shown or hidden) or the subtitle's place no longer
+    /// matches the one the width was measured for, so the accessory can re-measure.
+    var onPlacementChange: (() -> Void)?
+    /// The subtitle placement `naturalWidth` was last measured with.
+    private var measuredPlacement: SAWindowNamePillSubtitlePlacement?
 
     var content: Content? {
         didSet {
@@ -131,12 +140,44 @@ final class SAConnectionNamePillTitleView: NSView {
     private static let titleFont = NSFont.systemFont(ofSize: 13, weight: .semibold)
     private static let nameFont = NSFont.systemFont(ofSize: 12, weight: .medium)
     private static let subtitleFont = NSFont.systemFont(ofSize: 11)
+    /// The subtitle on the title's line: the title's size, regular, muted.
+    private static let inlineSubtitleFont = NSFont.systemFont(ofSize: 13)
+
+    /// Where the subtitle goes in the title bar as it is now: under the title when the second line fits above the
+    /// bar's bottom, else after the title on its line (a short title bar: the toolbar hidden).
+    var subtitlePlacement: SAWindowNamePillSubtitlePlacement {
+        guard let content, !content.subtitle.isEmpty else { return .below }
+        let centre = lightsMidY(hasSubtitle: true)
+        return .forSpace(belowCentre: centre - bounds.minY, baselineBelowCentre: Metrics.subtitleBaselineBelowLights,
+                         descent: ceil(-Self.subtitleFont.descender))
+    }
+
+    /// The inline subtitle's text and the gap before it (a space after "db/table", the rest gap after the pill).
+    private static func inlineSubtitle(_ content: Content) -> (text: String, gap: CGFloat, width: CGFloat) {
+        let text = SAWindowNamePillSubtitlePlacement.inlineText(content.subtitle)
+        let gap = content.parts.rest.isEmpty ? Metrics.restGap : ceil(width(" ", inlineSubtitleFont))
+        return (text, gap, ceil(width(text, inlineSubtitleFont)))
+    }
+
+    /// The room the inline subtitle takes after the title row (its gap and text), 0 when it goes under the title.
+    var inlineSubtitleWidth: CGFloat {
+        guard let content, !content.subtitle.isEmpty, subtitlePlacement == .inline else { return 0 }
+        let inline = Self.inlineSubtitle(content)
+        return inline.gap + inline.width
+    }
 
     /// The width the content asks for, with nothing truncated except a name past `Metrics.maxNameWidth`.
     var naturalWidth: CGFloat {
         guard let content else { return 0 }
         let row = Widths(content).row
-        let subtitle = content.subtitle.isEmpty ? 0 : ceil(Self.width(content.subtitle, Self.subtitleFont))
+        let placement = subtitlePlacement
+        measuredPlacement = placement
+        if content.subtitle.isEmpty { return Metrics.leadingInset + row + Metrics.trailingInset }
+        if placement == .inline {
+            let inline = Self.inlineSubtitle(content)
+            return Metrics.leadingInset + row + inline.gap + inline.width + Metrics.trailingInset
+        }
+        let subtitle = ceil(Self.width(content.subtitle, Self.subtitleFont))
         return Metrics.leadingInset + max(row, subtitle) + Metrics.trailingInset
     }
 
@@ -209,13 +250,31 @@ final class SAConnectionNamePillTitleView: NSView {
 
     override var isFlipped: Bool { false }
 
+    override func setFrameSize(_ newSize: NSSize) {
+        let heightChanged = newSize.height != frame.height
+        super.setFrameSize(newSize)
+        if heightChanged {
+            needsDisplay = true
+            onPlacementChange?()
+        }
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         guard let content else { return }
+        let placement = subtitlePlacement
+        if let measuredPlacement, measuredPlacement != placement {
+            // The traffic lights moved after the height did: re-measure once this pass is over.
+            RunLoop.main.perform { [weak self] in self?.onPlacementChange?() }
+        }
+        let inline = !content.subtitle.isEmpty && placement == .inline
+        let inlineSubtitle = Self.inlineSubtitle(content)
         var widths = Widths(content)
-        widths.fit(bounds.width - Metrics.leadingInset - Metrics.trailingInset)
+        let available = bounds.width - Metrics.leadingInset - Metrics.trailingInset
+        // Inline, the title row leaves the subtitle its room (the accessory's cap is the row's plus the subtitle's).
+        widths.fit(inline ? max(0, available - inlineSubtitle.gap - inlineSubtitle.width) : available)
 
-        let lightsMid = lightsMidY(hasSubtitle: !content.subtitle.isEmpty)
-        let titleBaseline = lightsMid - Metrics.titleBaselineBelowLights
+        let lightsMid = lightsMidY(hasSubtitle: !content.subtitle.isEmpty && !inline)
+        let titleBaseline = lightsMid - (inline ? Metrics.inlineTitleBaselineBelowLights : Metrics.titleBaselineBelowLights)
         var x = Metrics.leadingInset
 
         /// One line of text with its baseline at `baseline`, truncated to `width`.
@@ -253,7 +312,12 @@ final class SAConnectionNamePillTitleView: NSView {
                      baseline: titleBaseline, truncation: .byTruncatingMiddle)
         }
 
-        if !content.subtitle.isEmpty {
+        if inline {
+            // After the title on its line, in what room the title leaves.
+            x = (widths.hasRest ? x + widths.rest : x) + inlineSubtitle.gap
+            drawText(inlineSubtitle.text, font: Self.inlineSubtitleFont, colour: SAClaudeStyle.textMuted,
+                     width: min(inlineSubtitle.width, bounds.width - Metrics.trailingInset - x), baseline: titleBaseline)
+        } else if !content.subtitle.isEmpty {
             x = Metrics.leadingInset
             drawText(content.subtitle, font: Self.subtitleFont, colour: SAClaudeStyle.textMuted,
                      width: bounds.width - Metrics.leadingInset - Metrics.trailingInset,
@@ -287,10 +351,13 @@ final class SAConnectionNamePillTitleView: NSView {
 /// first item. Installed once per window and never removed; `hide()` takes it to zero width (AppKit keeps a hidden
 /// leading accessory's width in the toolbar layout), so the toolbar gets its room back. Neither changes the title
 /// bar's height. The width is the content's, capped at 30% of the window's and at 240pt, so the toolbar keeps its
-/// items about as the native title (which truncates to make room) does.
+/// items about as the native title (which truncates to make room) does. In a short title bar (toolbar hidden) the
+/// subtitle follows the title on its line and its width comes on top of that cap, within 60% of the window. The
+/// width is measured again when the bar's height changes, so it follows the toolbar being shown or hidden.
 final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
     static let maxWidthFraction: CGFloat = 0.3
     static let maxWidth: CGFloat = 240
+    static let maxInlineWidthFraction: CGFloat = 0.6
 
     private let titleView = SAConnectionNamePillTitleView(frame: NSRect(x: 0, y: 0, width: 0, height: 28))
     private var resizeObserver: NSObjectProtocol?
@@ -307,6 +374,8 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         automaticallyAdjustsSize = false
         titleView.isHidden = true
         view = titleView
+        // Toolbar shown or hidden: the subtitle may move between its own line and the title's.
+        titleView.onPlacementChange = { [weak self] in self?.updateWidth() }
     }
 
     required init?(coder: NSCoder) {
@@ -344,7 +413,12 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         var width: CGFloat = 0
         if titleView.content != nil {
             let windowWidth = (hostWindow ?? view.window)?.frame.width ?? .greatestFiniteMagnitude
-            width = ceil(min(titleView.naturalWidth, windowWidth * Self.maxWidthFraction, Self.maxWidth))
+            // The title row keeps its cap; a subtitle on its line (a short title bar, no toolbar to share it with)
+            // comes on top, within `maxInlineWidthFraction` of the window.
+            let natural = titleView.naturalWidth
+            let rowCap = min(windowWidth * Self.maxWidthFraction, Self.maxWidth)
+            let inline = titleView.inlineSubtitleWidth
+            width = ceil(min(natural, rowCap + inline, windowWidth * Self.maxInlineWidthFraction))
         }
         guard titleView.frame.width != width else { return }
         titleView.setFrameSize(NSSize(width: width, height: titleView.frame.height))

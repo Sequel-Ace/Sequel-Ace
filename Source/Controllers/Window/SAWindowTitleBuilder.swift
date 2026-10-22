@@ -36,6 +36,26 @@ struct SAWindowNamePillParts: Equatable {
     let rest: String
 }
 
+/// Where the name pill puts the subtitle (the MySQL version): on a second line under the title when the title bar
+/// has room for it, else after the title on the same line, as the native title does in a short title bar (toolbar
+/// hidden): "Localhost/shop/orders – MySQL 8.4". Nothing is ever drawn below the title bar.
+enum SAWindowNamePillSubtitlePlacement: Equatable {
+    case below
+    case inline
+
+    /// `.below` when the second line fits: its baseline sits `baselineBelowCentre` under the title row's centre
+    /// (the traffic lights' centre) and its text reaches `descent` lower, all within `belowCentre`, the room from
+    /// that centre to the bottom of the title bar. Otherwise `.inline`.
+    static func forSpace(belowCentre: CGFloat, baselineBelowCentre: CGFloat, descent: CGFloat) -> Self {
+        baselineBelowCentre + descent <= belowCentre + 0.001 ? .below : .inline
+    }
+
+    /// The subtitle as it follows the title on one line, after a space.
+    static func inlineText(_ subtitle: String) -> String {
+        "– " + subtitle
+    }
+}
+
 /// Three-state classification used by the title composer. Mirrors the
 /// branching in the original `-updateWindowTitle:`.
 @objc enum SAWindowConnectionState: Int {

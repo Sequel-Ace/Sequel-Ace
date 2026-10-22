@@ -306,4 +306,31 @@ final class SAWindowTitleBuilderTests: XCTestCase {
         XCTAssertNil(pill("Localhost/shop", "Localhost/shop", "Local"))
         XCTAssertNil(pill("Localhost", "Localhost", "Local"))
     }
+    // MARK: - Name pill subtitle placement
+
+    private typealias Placement = SAWindowNamePillSubtitlePlacement
+
+    /// The pill's subtitle hangs 18.5pt under the traffic lights' centre; 11pt text reaches about 2.6pt lower.
+    private func placement(spaceBelowLights space: CGFloat) -> Placement {
+        Placement.forSpace(belowCentre: space, baselineBelowCentre: 18.5, descent: 2.6)
+    }
+
+    func testSubtitleGoesUnderTheTitleWhenTheToolbarShows() {
+        // With the toolbar the title bar reaches 40pt under the lights' centre.
+        XCTAssertEqual(placement(spaceBelowLights: 40), .below)
+    }
+
+    func testSubtitleGoesInlineInAShortTitleBar() {
+        // Toolbar hidden: a 32pt bar, the lights' centre 16pt above its bottom.
+        XCTAssertEqual(placement(spaceBelowLights: 16), .inline)
+    }
+
+    func testSubtitleGoesUnderOnlyWhenItsDescentFits() {
+        XCTAssertEqual(placement(spaceBelowLights: 21.1), .below)
+        XCTAssertEqual(placement(spaceBelowLights: 21.0), .inline)
+    }
+
+    func testInlineSubtitleTextMatchesTheNativeForm() {
+        XCTAssertEqual(Placement.inlineText("MySQL 8.4"), "– MySQL 8.4")
+    }
 }
