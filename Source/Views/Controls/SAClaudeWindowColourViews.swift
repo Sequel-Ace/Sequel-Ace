@@ -103,8 +103,11 @@ final class SAConnectionNamePillTitleView: NSView {
         /// the view.
         static let accessoryInsets = NSEdgeInsets(top: 0, left: 4, bottom: 0, right: 0)
         /// Over the native title view (which starts where the accessory's pill does): 8pt clear of the first
-        /// toolbar item, whose view starts 5pt inside the title view's frame.
+        /// toolbar item, whose view starts 5pt inside the title view's frame. In full screen the left inset is where
+        /// the native title's text starts instead (`SAConnectionNamePillAccessory`).
         static let nativeTitleInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 13)
+        /// How far a text field's text starts inside its title rect (the cell's line fragment padding).
+        static let textFieldTextInset: CGFloat = 2
         static let pillHeight: CGFloat = 20
         static let pillRadius: CGFloat = 7
         static let pillPadding: CGFloat = 8
@@ -381,10 +384,11 @@ final class SAConnectionNamePillTitleView: NSView {
 ///   the title view (frame and full screen follow it); this accessory stays installed at zero width. VoiceOver reads
 ///   the native title's fields, which carry the same text.
 /// - Toolbar hidden (no items to keep in place), or no native title view to be found (looked for again only when the
-///   toolbar is shown or hidden or full screen changes, so a title change never toggles the native title): as a leading title bar
-///   accessory with the native title hidden, right of the traffic lights. Its width is the content's, capped at 30%
-///   of the window's and at 240pt; in a short title bar the subtitle follows the title on its line and its width
-///   comes on top of that cap, within 60% of the window. The width is measured again when the bar's height changes.
+///   toolbar is shown or hidden, full screen changes or the window becomes key or main, so a title change never toggles
+///   the native title): as a leading title bar accessory with the native title hidden, right of the traffic lights.
+///   Its width is the content's, capped at 30% of the window's and at 240pt; in a short title bar the subtitle follows
+///   the title on its line and its width comes on top of that cap, within 60% of the window. The width is measured
+///   again when the bar's height changes.
 ///
 /// Installed once per window and never removed; with nothing to show, or while the pill is drawn over the native
 /// title, it is at zero width (AppKit keeps a hidden leading accessory's width in the toolbar layout). Neither host
@@ -416,6 +420,7 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
     }
     private var resizeObserver: NSObjectProtocol?
     private var fullScreenObservers: [NSObjectProtocol] = []
+    private var keyObservers: [NSObjectProtocol] = []
     private var toolbarVisibilityObservation: NSKeyValueObservation?
     private weak var observedToolbar: NSToolbar?
     /// The document window (in full screen the toolbar moves to AppKit's toolbar window).
@@ -453,6 +458,7 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
     deinit {
         if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
         fullScreenObservers.forEach { NotificationCenter.default.removeObserver($0) }
+        keyObservers.forEach { NotificationCenter.default.removeObserver($0) }
     }
 
     /// Adds the accessory to `window` (empty: zero width until `show`), keeps its width capped as the window
@@ -471,6 +477,25 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
                 self?.reapplyAfterChromeChange()
             }
         }
+        // A lookup that failed for a passing reason (say, a background tab in full screen whose toolbar window was
+        // not attached yet) is not stuck until the next chrome change: the window coming to the front retries it.
+        keyObservers = [NSWindow.didBecomeKeyNotification, NSWindow.didBecomeMainNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                self?.retryAfterBecomingKey()
+            }
+        }
+    }
+
+    /// The window became key or main: forget a failed lookup and, while the pill shows in the accessory with the
+    /// toolbar shown (a lookup failed) or over a title view that has gone, apply again, at once and once AppKit has
+    /// settled. A pill already over a live title view, or in the accessory because the toolbar is hidden, is left
+    /// alone, so a key change costs nothing.
+    private func retryAfterBecomingKey() {
+        failedLookup = nil
+        let lookupFailed = host == .accessory && hostWindow?.toolbar?.isVisible == true
+        let titleViewGone = host == .nativeTitle && overlayView.window == nil
+        guard content != nil, lookupFailed || titleViewGone else { return }
+        reapplyAfterChromeChange()
     }
 
     /// The toolbar was shown or hidden, or full screen changed: look for the title view again, at once and once
@@ -530,6 +555,13 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
             overlayView.frame = native.bounds
             native.addSubview(overlayView, positioned: .above, relativeTo: nil)
         }
+        // In full screen (AppKit's toolbar window, no traffic lights before the title) the pill starts where the
+        // native title's text does, not at the view's edge, which there is right by the screen's.
+        var insets = SAConnectionNamePillTitleView.Metrics.nativeTitleInsets
+        if native.window !== hostWindow, let start = Self.nativeTextStart(in: native, skipping: overlayView) {
+            insets.left = start
+        }
+        if overlayView.insets.left != insets.left || overlayView.insets.right != insets.right { overlayView.insets = insets }
         overlayView.content = content
         // Every pass: AppKit may add or replace the title's views (a title or subtitle change).
         for subview in native.subviews where subview !== overlayView {
@@ -563,6 +595,21 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         disabledRecognizers.removeAllObjects()
         overlayView.content = nil
         if overlayView.superview != nil { overlayView.removeFromSuperview() }
+    }
+
+    /// Where the native title's text starts in `native`: its first text field with text (the title, then the
+    /// subtitle; both start at the same x), plus the cell's text inset. Nil when there is none.
+    private static func nativeTextStart(in native: NSView, skipping overlay: NSView) -> CGFloat? {
+        var queue = native.subviews.filter { $0 !== overlay }
+        while !queue.isEmpty {
+            let view = queue.removeFirst()
+            if let field = view as? NSTextField, !field.stringValue.isEmpty, !field.isHidden {
+                let titleRect = field.cell?.titleRect(forBounds: field.bounds) ?? field.bounds
+                return field.convert(titleRect, to: native).minX + SAConnectionNamePillTitleView.Metrics.textFieldTextInset
+            }
+            queue.append(contentsOf: view.subviews)
+        }
+        return nil
     }
 
     /// The title view's document proxy view (where AppKit reveals the represented file's icon on hover).
