@@ -5481,7 +5481,7 @@
 /* Claude Settings: an option of the "Show the connection colour as" pop-up: each tab gets a line in its connection's colour */
 "ClaudeSettings.connectionColour.option.tabUnderline" = "Tab underline";
 
-/* Claude Settings: an option of the "Show the connection colour as" pop-up: both the name pill in the window title and a line under each tab in its connection's colour (with one tab, only the pill) */
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: both the name pill in the window title and a line under each tab in its connection's colour (with one tab, the window gets the Underline line instead of the tab lines) */
 "ClaudeSettings.connectionColour.option.tabUnderlineAndNamePill" = "Tab underline + Name pill";
 
 /* Claude Settings: name of a setting (row editorColours) */

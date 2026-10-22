@@ -140,17 +140,21 @@ final class SAWindowTitlebarTintTests: XCTestCase {
         XCTAssertEqual(t.separatorStyle, tabUnderline.separatorStyle)
     }
 
-    /// With one tab there are no chips, and the pill already carries the colour: the pill only, no Underline line
-    /// (unlike Tab underline on its own, which falls back to it).
-    func testTabUnderlineAndNamePillWithOneTabIsThePillOnly() {
+    /// With one tab the tab bar is hidden, so there are no chips to line: the pill, and the window line Tab underline
+    /// falls back to (the Underline line under the toolbar, in place of the hairline).
+    func testTabUnderlineAndNamePillWithOneTabShowsThePillAndTheUnderline() {
         let t = tint(.tabUnderlineAndNamePill, rose, tabs: false)
-        let pill = tint(.namePill, rose, tabs: false)
         XCTAssertTrue(t.showsNamePill)
-        XCTAssertNil(t.bottomLine)
+        XCTAssertIdentical(t.bottomLine, rose)
         XCTAssertFalse(t.bottomLineInTabBar)
-        XCTAssertEqual(t.separatorStyle, pill.separatorStyle)
-        XCTAssertEqual(t.showsNamePill, pill.showsNamePill)
-        XCTAssertIdentical(t.backgroundColor, pill.backgroundColor)
+        XCTAssertEqual(t.separatorStyle, .none)
+
+        let tabUnderline = tint(.tabUnderline, rose, tabs: false)
+        XCTAssertIdentical(t.bottomLine, tabUnderline.bottomLine)
+        XCTAssertEqual(t.bottomLineInTabBar, tabUnderline.bottomLineInTabBar)
+        XCTAssertEqual(t.separatorStyle, tabUnderline.separatorStyle)
+        XCTAssertEqual(t.tabLines, tabUnderline.tabLines)
+        XCTAssertEqual(t.showsNamePill, tint(.namePill, rose, tabs: false).showsNamePill)
     }
 
     /// Without a colour: no pill, no line, chips as in Off, with one tab and with two.
@@ -258,7 +262,8 @@ final class SAWindowTitlebarTintTests: XCTestCase {
     /// they have to reach the line unresolved or it would keep whichever
     /// appearance happened to be active when the window connected.
     func testLineColourIsPassedThroughUnresolved() {
-        for (style, tabs) in [(SAConnectionColourStyle.underline, false), (.underline, true), (.tabUnderline, false)] {
+        for (style, tabs) in [(SAConnectionColourStyle.underline, false), (.underline, true), (.tabUnderline, false),
+                              (.tabUnderlineAndNamePill, false)] {
             XCTAssertIdentical(tint(style, dynamicColour, tabs: tabs).bottomLine, dynamicColour, "\(style) tabs \(tabs)")
         }
         guard case .colour(let chip) = SAWindowTitlebarTint.chipLine(isSelected: false, colour: dynamicColour, tabLines: .connection) else {

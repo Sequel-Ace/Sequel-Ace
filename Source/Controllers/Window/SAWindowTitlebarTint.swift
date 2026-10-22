@@ -23,9 +23,9 @@ import AppKit
 /// - Tab underline: each tab chip is underlined in its connection's colour.
 ///   With one tab the tab bar is hidden, so the window falls back to the
 ///   Underline line until a second tab appears.
-/// - Tab underline + Name pill: the Name pill, and each chip underlined as in
-///   Tab underline while the tab bar shows. With one tab, the pill only: it
-///   already carries the colour, so there is no Underline fallback.
+/// - Tab underline + Name pill: the Name pill, and the lines exactly as in Tab
+///   underline: each chip underlined while the tab bar shows, the Underline
+///   line with one tab.
 ///
 /// A window without a colour looks exactly like Off, whatever the choice, so
 /// losing the colour (disconnect, a favourite without one) leaves nothing
@@ -85,18 +85,19 @@ struct SAWindowTitlebarTint {
         backgroundColor = SAClaudeStyle.toolbarBackground
         titlebarAppearsTransparent = true
         tabLines = Self.tabLines(for: style)
+        showsNamePill = style.showsNamePill && favoriteColor != nil
 
-        let drawsLine = style == .underline || (style == .tabUnderline && !tabBarVisible)
-        if drawsLine, let favoriteColor = favoriteColor {
+        // Tab underline (alone or with the pill) has no chips to line with one
+        // tab, so it falls back to the Underline line.
+        let fallsBackToUnderline = (style == .tabUnderline || style == .tabUnderlineAndNamePill) && !tabBarVisible
+        if style == .underline || fallsBackToUnderline, let favoriteColor = favoriteColor {
             bottomLine = favoriteColor
             bottomLineInTabBar = tabBarVisible
             separatorStyle = .none
-            showsNamePill = false
         } else {
             bottomLine = nil
             bottomLineInTabBar = false
             separatorStyle = .line
-            showsNamePill = style.showsNamePill && favoriteColor != nil
         }
     }
 
@@ -130,7 +131,7 @@ enum SAConnectionColourStyle: Int, CaseIterable {
     case underline = 1
     case namePill = 2
     case tabUnderline = 3
-    /// The Name pill, and the chips lined as in Tab underline.
+    /// The Name pill, and the lines as in Tab underline.
     case tabUnderlineAndNamePill = 4
 
     /// Whether the window title shows the connection's name pill (given a colour).
