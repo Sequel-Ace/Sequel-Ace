@@ -5442,17 +5442,29 @@
 /* Claude Settings: last line of the (i) explanation of "Accent colour": its old name and old Preferences pane */
 "ClaudeSettings.accentColour.was" = "Was: Accent colour (Query Editor)";
 
-/* Claude Settings: name of a setting (row titleBarColour) */
-"ClaudeSettings.titleBarColour.name" = "Colour the window with the connection colour";
+/* Claude Settings: name of a setting (row connectionColour) */
+"ClaudeSettings.connectionColour.name" = "Show the connection colour as";
 
-/* Claude Settings: one-line description under the setting "Colour the window with the connection colour" */
-"ClaudeSettings.titleBarColour.desc" = "Uses the favourite colour for the title bar";
+/* Claude Settings: one-line description under the setting "Show the connection colour as" */
+"ClaudeSettings.connectionColour.desc" = "How a saved connection's colour marks its window";
 
-/* Claude Settings: the (i) explanation of the setting "Colour the window with the connection colour" */
-"ClaudeSettings.titleBarColour.info" = "When a saved connection has a colour, that window's title bar and toolbar take it, so production and local look different at a glance. Applies to open windows immediately.";
+/* Claude Settings: the (i) explanation of the setting "Show the connection colour as" */
+"ClaudeSettings.connectionColour.info" = "Off: no colour on the window. Underline: a line in the connection's colour along the bottom of the toolbar. Name pill: the connection's name in a coloured pill in the window title. Tab underline: each tab gets a line in its connection's colour; with one tab, the window gets the underline. The colour dot on each tab shows in every mode. Applies to open windows immediately.";
 
-/* Claude Settings: last line of the (i) explanation of "Colour the window with the connection colour": its old name and old Preferences pane */
-"ClaudeSettings.titleBarColour.was" = "Was: Color the title bar with the connection color (General)";
+/* Claude Settings: last line of the (i) explanation of "Show the connection colour as": its old name */
+"ClaudeSettings.connectionColour.was" = "Was: Colour the window with the connection colour";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: no colour on the window */
+"ClaudeSettings.connectionColour.option.off" = "Off";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: a line in the connection's colour along the bottom of the toolbar */
+"ClaudeSettings.connectionColour.option.underline" = "Underline";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: the connection's name in a coloured pill in the window title */
+"ClaudeSettings.connectionColour.option.namePill" = "Name pill";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: each tab gets a line in its connection's colour */
+"ClaudeSettings.connectionColour.option.tabUnderline" = "Tab underline";
 
 /* Claude Settings: name of a setting (row editorColours) */
 "ClaudeSettings.editorColours.name" = "Colours";

@@ -162,7 +162,7 @@ private extension SPWindowController {
 
         let tint = SAWindowTitlebarTint(
             favoriteColor: color,
-            isEnabled: UserDefaults.standard.bool(forKey: SPDisplayConnectionColorInTitlebar)
+            isEnabled: SAConnectionColourStyle.current(.standard) != .off
         )
 
         // Every defaults change wakes the observer below, so skip the work -

@@ -335,7 +335,7 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         "DisplayTableViewColumnTypes",                // G9
         "CustomQueryMaxHistoryItems",                 // G10
         "Appearance",                                 // G11
-        "DisplayConnectionColorInTitlebar",           // G13
+        "ClaudeConnectionColourStyle",                // G13 (now a choice; migrated from DisplayConnectionColorInTitlebar)
         "fontSettings",                               // G14
         "SaveApplicationUsageAnalytics",              // G15
         "AutoCheckClipboardForConnectionStrings",     // G16
@@ -480,7 +480,13 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         XCTAssertEqual(try control("sshConfig"), .choice(key: "ssh_config", source: .dynamic("sshConfig")))
         XCTAssertEqual(try control("knownHosts"), .choice(key: "known_hosts", source: .dynamic("knownHosts")))
         XCTAssertEqual(try control("nullText"), .text(key: "NullValue"))
-        XCTAssertEqual(try control("titleBarColour"), .toggle(key: "DisplayConnectionColorInTitlebar"))
+        XCTAssertEqual(try control("connectionColour"),
+                       .choice(key: "ClaudeConnectionColourStyle", source: .fixed([
+                        ("ClaudeSettings.connectionColour.option.off", 0),
+                        ("ClaudeSettings.connectionColour.option.underline", 1),
+                        ("ClaudeSettings.connectionColour.option.namePill", 2),
+                        ("ClaudeSettings.connectionColour.option.tabUnderline", 3),
+                       ])))
         XCTAssertEqual(try control("printGridLines"), .toggle(key: "DisplayTableViewVerticalGridlines"))
         XCTAssertEqual(try control("accentColour"), .custom(.accent))
         XCTAssertEqual(try control("reloadAfterSaving"), .custom(.reloadAfterSaving))
@@ -607,6 +613,9 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         // Spot-check the copy against the spec, including the three corrected (i) texts.
         XCTAssertEqual(Self.strings["ClaudeSettings.appAppearance.name"], "App appearance")
         XCTAssertEqual(Self.strings["ClaudeSettings.appAppearance.was"], "Was: Appearance (General)")
+        XCTAssertEqual(Self.strings["ClaudeSettings.connectionColour.name"], "Show the connection colour as")
+        XCTAssertEqual(Self.strings["ClaudeSettings.connectionColour.was"],
+                       "Was: Colour the window with the connection colour")
         XCTAssertEqual(Self.strings["ClaudeSettings.characterSet.info"],
                        "The text encoding for the connection. Autodetect switches to utf8mb4 when a table loads.")
         XCTAssertEqual(Self.strings["ClaudeSettings.readConnectionStrings.info"],

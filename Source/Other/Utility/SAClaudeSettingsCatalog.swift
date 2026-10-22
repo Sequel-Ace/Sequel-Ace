@@ -168,7 +168,9 @@ enum SAClaudeSettingsCatalog {
                     ("matchMacOS", 0), ("light", 1), ("dark", 2),
                 ]))),
                 row("accentColour", .custom(.accent)),
-                row("titleBarColour", .toggle(key: "DisplayConnectionColorInTitlebar")),
+                row("connectionColour", .choice(key: "ClaudeConnectionColourStyle", source: fixed("connectionColour", [
+                    ("off", 0), ("underline", 1), ("namePill", 2), ("tabUnderline", 3),
+                ]))),
             ]),
             section("editorGridColours", [
                 row("editorColours", .custom(.colourMode)),

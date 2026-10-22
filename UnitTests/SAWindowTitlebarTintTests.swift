@@ -109,3 +109,71 @@ final class SAWindowTitlebarTintTests: XCTestCase {
         XCTAssertEqual(colored.separatorStyle, uncolored.separatorStyle)
     }
 }
+
+// MARK: - Show the connection colour as
+
+/// The "Show the connection colour as" choice and its one-time migration from
+/// the old "Colour the window" switch. Each test uses its own suite-named
+/// `UserDefaults`, never the real domain.
+final class SAConnectionColourStyleTests: XCTestCase {
+
+    private var suiteName = ""
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "SAConnectionColourStyleTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
+        super.tearDown()
+    }
+
+    func testResolveMigratesTheOldSwitch() {
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: nil, legacyEnabled: true), .underline)
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: nil, legacyEnabled: false), .off)
+    }
+
+    func testResolveKeepsAStoredChoice() {
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 2), legacyEnabled: true), .namePill)
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 3), legacyEnabled: false), .tabUnderline)
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 0), legacyEnabled: true), .off)
+    }
+
+    func testResolveUnknownStoredValueIsOff() {
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 7), legacyEnabled: true), .off)
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: "x", legacyEnabled: true), .off)
+    }
+
+    func testMigrateWritesOnce() {
+        defaults.set(true, forKey: SAConnectionColourStyle.legacyKey)
+        SAConnectionColourStyle.migrateIfNeeded(defaults)
+        XCTAssertEqual(defaults.integer(forKey: SAConnectionColourStyle.defaultsKey), 1)
+
+        defaults.set(false, forKey: SAConnectionColourStyle.legacyKey)
+        SAConnectionColourStyle.migrateIfNeeded(defaults)
+        XCTAssertEqual(defaults.integer(forKey: SAConnectionColourStyle.defaultsKey), 1)
+        XCTAssertEqual(defaults.object(forKey: SAConnectionColourStyle.legacyKey) as? Bool, false,
+                       "the legacy key is left alone")
+
+        defaults.set(3, forKey: SAConnectionColourStyle.defaultsKey)
+        SAConnectionColourStyle.migrateIfNeeded(defaults)
+        XCTAssertEqual(defaults.integer(forKey: SAConnectionColourStyle.defaultsKey), 3)
+        XCTAssertEqual(SAConnectionColourStyle.current(defaults), .tabUnderline)
+    }
+
+    func testMigrateWithoutLegacyWritesOff() {
+        SAConnectionColourStyle.migrateIfNeeded(defaults)
+        XCTAssertNotNil(defaults.object(forKey: SAConnectionColourStyle.defaultsKey))
+        XCTAssertEqual(defaults.integer(forKey: SAConnectionColourStyle.defaultsKey), 0)
+    }
+
+    func testCurrentNeverWrites() {
+        defaults.set(true, forKey: SAConnectionColourStyle.legacyKey)
+        XCTAssertEqual(SAConnectionColourStyle.current(defaults), .underline)
+        XCTAssertNil(defaults.object(forKey: SAConnectionColourStyle.defaultsKey))
+    }
+}

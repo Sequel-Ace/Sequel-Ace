@@ -196,6 +196,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
+    [SAConnectionColourStyleMigration migrateStandardDefaults];
     [SAClaudeToolbarMenu install];
     [SAClaudeSettingsWindowHost applySettingsMenuTitle];
     [SAClaudeSheetStyler start];

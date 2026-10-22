@@ -59,3 +59,58 @@ struct SAWindowTitlebarTint {
         }
     }
 }
+
+/// How a saved connection's colour marks its window ("Show the connection
+/// colour as" in Settings). Replaces the old on/off "Colour the window with
+/// the connection colour" switch.
+enum SAConnectionColourStyle: Int, CaseIterable {
+    case off = 0
+    case underline
+    case namePill
+    case tabUnderline
+
+    /// Where the choice is stored. Not registered in PreferenceDefaults.plist:
+    /// "no value yet" is what tells the migration to run.
+    static let defaultsKey = "ClaudeConnectionColourStyle"
+
+    /// The old switch (`SPDisplayConnectionColorInTitlebar`). Never rewritten,
+    /// so older builds keep reading it.
+    static let legacyKey = "DisplayConnectionColorInTitlebar"
+
+    /// A stored number picks its case (an unknown one is `.off`), anything else
+    /// stored is `.off`, and no stored value follows the old switch: on is
+    /// `.underline`, off is `.off`.
+    static func resolve(stored: Any?, legacyEnabled: Bool) -> SAConnectionColourStyle {
+        guard let stored = stored else {
+            return legacyEnabled ? .underline : .off
+        }
+        guard let number = stored as? NSNumber else {
+            return .off
+        }
+        return SAConnectionColourStyle(rawValue: number.intValue) ?? .off
+    }
+
+    /// The style in effect. Never writes, so a window is right even before the
+    /// migration has run.
+    static func current(_ defaults: UserDefaults) -> SAConnectionColourStyle {
+        resolve(stored: defaults.object(forKey: defaultsKey),
+                legacyEnabled: defaults.bool(forKey: legacyKey))
+    }
+
+    /// Stores `current(defaults)` when nothing is stored yet. The legacy key is
+    /// left untouched.
+    static func migrateIfNeeded(_ defaults: UserDefaults) {
+        guard defaults.object(forKey: defaultsKey) == nil else {
+            return
+        }
+        defaults.set(current(defaults).rawValue, forKey: defaultsKey)
+    }
+}
+
+/// Objective-C entry point for the one-time migration at launch.
+@objc(SAConnectionColourStyleMigration)
+final class SAConnectionColourStyleMigration: NSObject {
+    @objc static func migrateStandardDefaults() {
+        SAConnectionColourStyle.migrateIfNeeded(.standard)
+    }
+}
