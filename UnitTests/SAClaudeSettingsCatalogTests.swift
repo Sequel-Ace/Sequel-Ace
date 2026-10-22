@@ -486,6 +486,7 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
                         ("ClaudeSettings.connectionColour.option.underline", 1),
                         ("ClaudeSettings.connectionColour.option.namePill", 2),
                         ("ClaudeSettings.connectionColour.option.tabUnderline", 3),
+                        ("ClaudeSettings.connectionColour.option.tabUnderlineAndNamePill", 4),
                        ])))
         XCTAssertEqual(try control("printGridLines"), .toggle(key: "DisplayTableViewVerticalGridlines"))
         XCTAssertEqual(try control("accentColour"), .custom(.accent))
@@ -616,6 +617,14 @@ final class SAClaudeSettingsCatalogTests: XCTestCase {
         XCTAssertEqual(Self.strings["ClaudeSettings.connectionColour.name"], "Show the connection colour as")
         XCTAssertEqual(Self.strings["ClaudeSettings.connectionColour.was"],
                        "Was: Colour the window with the connection colour")
+        XCTAssertEqual(Self.strings["ClaudeSettings.connectionColour.option.tabUnderlineAndNamePill"],
+                       "Tab underline + Name pill")
+        XCTAssertEqual(Self.strings["ClaudeSettings.connectionColour.info"],
+                       "Underline: a coloured line under the window's top bars.\n"
+                       + "Name pill: the connection's name in a coloured pill in the title.\n"
+                       + "Tab underline: a coloured line under each tab (one tab gets the underline).\n"
+                       + "Tab underline + Name pill: both.\n"
+                       + "Tab dots always show the colour.")
         XCTAssertEqual(Self.strings["ClaudeSettings.characterSet.info"],
                        "The text encoding for the connection. Autodetect switches to utf8mb4 when a table loads.")
         XCTAssertEqual(Self.strings["ClaudeSettings.readConnectionStrings.info"],

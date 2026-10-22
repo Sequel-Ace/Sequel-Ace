@@ -5448,8 +5448,8 @@
 /* Claude Settings: one-line description under the setting "Show the connection colour as" */
 "ClaudeSettings.connectionColour.desc" = "How a saved connection's colour marks its window";
 
-/* Claude Settings: the (i) explanation of the setting "Show the connection colour as". Underline: the line sits where the window's top bars end, under the tab bar when it shows (two or more tabs), otherwise along the top edge of the window's content */
-"ClaudeSettings.connectionColour.info" = "Off: no colour on the window. Underline: a line in the connection's colour where the window's top bars end: under the tab bar when it shows, otherwise along the top edge of the content. Name pill: the connection's name in a coloured pill in the window title. Tab underline: each tab gets a line in its connection's colour; with one tab, the window gets the underline. The colour dot on each tab shows in every mode. Applies to open windows immediately.";
+/* Claude Settings: the (i) explanation of the setting "Show the connection colour as", one line per choice (keep the line breaks). Underline: the line sits where the window's top bars end. Tab underline with one tab (no tab bar): the window gets the Underline line instead. "Tab underline + Name pill: both." means the name pill and the tab lines together. Last line: the colour dot on each tab shows whatever the choice */
+"ClaudeSettings.connectionColour.info" = "Underline: a coloured line under the window's top bars.\nName pill: the connection's name in a coloured pill in the title.\nTab underline: a coloured line under each tab (one tab gets the underline).\nTab underline + Name pill: both.\nTab dots always show the colour.";
 
 /* Claude Settings: last line of the (i) explanation of "Show the connection colour as": its old name */
 "ClaudeSettings.connectionColour.was" = "Was: Colour the window with the connection colour";
@@ -5465,6 +5465,9 @@
 
 /* Claude Settings: an option of the "Show the connection colour as" pop-up: each tab gets a line in its connection's colour */
 "ClaudeSettings.connectionColour.option.tabUnderline" = "Tab underline";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: both the name pill in the window title and a line under each tab in its connection's colour (with one tab, only the pill) */
+"ClaudeSettings.connectionColour.option.tabUnderlineAndNamePill" = "Tab underline + Name pill";
 
 /* Claude Settings: name of a setting (row editorColours) */
 "ClaudeSettings.editorColours.name" = "Colours";

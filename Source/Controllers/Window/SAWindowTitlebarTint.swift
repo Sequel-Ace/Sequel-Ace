@@ -23,6 +23,9 @@ import AppKit
 /// - Tab underline: each tab chip is underlined in its connection's colour.
 ///   With one tab the tab bar is hidden, so the window falls back to the
 ///   Underline line until a second tab appears.
+/// - Tab underline + Name pill: the Name pill, and each chip underlined as in
+///   Tab underline while the tab bar shows. With one tab, the pill only: it
+///   already carries the colour, so there is no Underline fallback.
 ///
 /// A window without a colour looks exactly like Off, whatever the choice, so
 /// losing the colour (disconnect, a favourite without one) leaves nothing
@@ -34,7 +37,7 @@ struct SAWindowTitlebarTint {
         /// Only the selected chip, in the accent (Off, Underline, Name pill).
         case accent
         /// Every chip with a colour, in that colour; the selected chip in the
-        /// accent when it has none (Tab underline).
+        /// accent when it has none (Tab underline, Tab underline + Name pill).
         case connection
     }
 
@@ -93,14 +96,17 @@ struct SAWindowTitlebarTint {
             bottomLine = nil
             bottomLineInTabBar = false
             separatorStyle = .line
-            showsNamePill = style == .namePill && favoriteColor != nil
+            showsNamePill = style.showsNamePill && favoriteColor != nil
         }
     }
 
-    /// Tab underline lines the chips in their connection colours; every other
-    /// choice keeps the selected chip's accent line.
+    /// Tab underline (alone or with the Name pill) lines the chips in their
+    /// connection colours; every other choice keeps the selected chip's accent line.
     static func tabLines(for style: SAConnectionColourStyle) -> TabLines {
-        style == .tabUnderline ? .connection : .accent
+        switch style {
+        case .tabUnderline, .tabUnderlineAndNamePill: return .connection
+        case .off, .underline, .namePill: return .accent
+        }
     }
 
     /// The line of one chip, given its connection colour (`nil` for none).
@@ -117,12 +123,20 @@ struct SAWindowTitlebarTint {
 
 /// How a saved connection's colour marks its window ("Show the connection
 /// colour as" in Settings). Replaces the old on/off "Colour the window with
-/// the connection colour" switch.
+/// the connection colour" switch. The raw values are what is stored: new
+/// choices are appended, never renumbered.
 enum SAConnectionColourStyle: Int, CaseIterable {
     case off = 0
-    case underline
-    case namePill
-    case tabUnderline
+    case underline = 1
+    case namePill = 2
+    case tabUnderline = 3
+    /// The Name pill, and the chips lined as in Tab underline.
+    case tabUnderlineAndNamePill = 4
+
+    /// Whether the window title shows the connection's name pill (given a colour).
+    var showsNamePill: Bool {
+        self == .namePill || self == .tabUnderlineAndNamePill
+    }
 
     /// Where the choice is stored. Not registered in PreferenceDefaults.plist:
     /// "no value yet" is what tells the migration to run.

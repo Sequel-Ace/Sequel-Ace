@@ -121,6 +121,91 @@ final class SAWindowTitlebarTintTests: XCTestCase {
         XCTAssertEqual(tabUnderline.showsNamePill, underline.showsNamePill)
     }
 
+    // MARK: - Tab underline + Name pill
+
+    /// With the tab bar showing: the pill exactly as Name pill draws it, and every chip lined as Tab underline lines it.
+    func testTabUnderlineAndNamePillWithTabsShowsBoth() {
+        let t = tint(.tabUnderlineAndNamePill, rose, tabs: true)
+        XCTAssertTrue(t.showsNamePill)
+        XCTAssertNil(t.bottomLine)
+        XCTAssertFalse(t.bottomLineInTabBar)
+        XCTAssertEqual(t.separatorStyle, .line)
+        XCTAssertEqual(t.tabLines, .connection)
+
+        let pill = tint(.namePill, rose, tabs: true)
+        let tabUnderline = tint(.tabUnderline, rose, tabs: true)
+        XCTAssertEqual(t.showsNamePill, pill.showsNamePill)
+        XCTAssertEqual(t.tabLines, tabUnderline.tabLines)
+        XCTAssertIdentical(t.bottomLine, tabUnderline.bottomLine)
+        XCTAssertEqual(t.separatorStyle, tabUnderline.separatorStyle)
+    }
+
+    /// With one tab there are no chips, and the pill already carries the colour: the pill only, no Underline line
+    /// (unlike Tab underline on its own, which falls back to it).
+    func testTabUnderlineAndNamePillWithOneTabIsThePillOnly() {
+        let t = tint(.tabUnderlineAndNamePill, rose, tabs: false)
+        let pill = tint(.namePill, rose, tabs: false)
+        XCTAssertTrue(t.showsNamePill)
+        XCTAssertNil(t.bottomLine)
+        XCTAssertFalse(t.bottomLineInTabBar)
+        XCTAssertEqual(t.separatorStyle, pill.separatorStyle)
+        XCTAssertEqual(t.showsNamePill, pill.showsNamePill)
+        XCTAssertIdentical(t.backgroundColor, pill.backgroundColor)
+    }
+
+    /// Without a colour: no pill, no line, chips as in Off, with one tab and with two.
+    func testTabUnderlineAndNamePillWithoutAColourIsOff() {
+        for tabs in [true, false] {
+            let t = tint(.tabUnderlineAndNamePill, nil, tabs: tabs)
+            let off = tint(.off, nil, tabs: tabs)
+            XCTAssertFalse(t.showsNamePill, "tabs \(tabs)")
+            XCTAssertNil(t.bottomLine, "tabs \(tabs)")
+            XCTAssertEqual(t.bottomLineInTabBar, off.bottomLineInTabBar, "tabs \(tabs)")
+            XCTAssertEqual(t.separatorStyle, off.separatorStyle, "tabs \(tabs)")
+            for selected in [true, false] {
+                XCTAssertEqual(SAWindowTitlebarTint.chipLine(isSelected: selected, colour: nil, tabLines: t.tabLines),
+                               SAWindowTitlebarTint.chipLine(isSelected: selected, colour: nil, tabLines: off.tabLines),
+                               "tabs \(tabs) selected \(selected)")
+            }
+        }
+    }
+
+    // MARK: - The first four choices are unchanged
+
+    /// Every field of the four older choices, with and without a colour and a tab bar, as they were before the fifth
+    /// choice was added.
+    func testEarlierChoicesAreUnchanged() {
+        typealias Expected = (line: Bool, inTabBar: Bool, separator: NSTitlebarSeparatorStyle, pill: Bool, tabLines: SAWindowTitlebarTint.TabLines)
+        let table: [(SAConnectionColourStyle, Bool, Bool, Expected)] = [
+            (.off, true, true, (false, false, .line, false, .accent)),
+            (.off, true, false, (false, false, .line, false, .accent)),
+            (.off, false, true, (false, false, .line, false, .accent)),
+            (.off, false, false, (false, false, .line, false, .accent)),
+            (.underline, true, true, (true, true, .none, false, .accent)),
+            (.underline, true, false, (true, false, .none, false, .accent)),
+            (.underline, false, true, (false, false, .line, false, .accent)),
+            (.underline, false, false, (false, false, .line, false, .accent)),
+            (.namePill, true, true, (false, false, .line, true, .accent)),
+            (.namePill, true, false, (false, false, .line, true, .accent)),
+            (.namePill, false, true, (false, false, .line, false, .accent)),
+            (.namePill, false, false, (false, false, .line, false, .accent)),
+            (.tabUnderline, true, true, (false, false, .line, false, .connection)),
+            (.tabUnderline, true, false, (true, false, .none, false, .connection)),
+            (.tabUnderline, false, true, (false, false, .line, false, .connection)),
+            (.tabUnderline, false, false, (false, false, .line, false, .connection)),
+        ]
+        for (style, coloured, tabs, expected) in table {
+            let t = tint(style, coloured ? rose : nil, tabs: tabs)
+            let label = "\(style) colour \(coloured) tabs \(tabs)"
+            XCTAssertEqual(t.bottomLine != nil, expected.line, label)
+            if expected.line { XCTAssertIdentical(t.bottomLine, rose, label) }
+            XCTAssertEqual(t.bottomLineInTabBar, expected.inTabBar, label)
+            XCTAssertEqual(t.separatorStyle, expected.separator, label)
+            XCTAssertEqual(t.showsNamePill, expected.pill, label)
+            XCTAssertEqual(t.tabLines, expected.tabLines, label)
+        }
+    }
+
     // MARK: - Losing the colour
 
     /// A window that loses its colour (disconnected, back to the connection
@@ -129,7 +214,7 @@ final class SAWindowTitlebarTintTests: XCTestCase {
     /// without a colour is lined as in Off.
     func testNoColourMatchesOffWithOneTab() {
         let off = tint(.off, nil, tabs: false)
-        for style in [SAConnectionColourStyle.underline, .namePill, .tabUnderline] {
+        for style in [SAConnectionColourStyle.underline, .namePill, .tabUnderline, .tabUnderlineAndNamePill] {
             let t = tint(style, nil, tabs: false)
             XCTAssertIdentical(t.backgroundColor, off.backgroundColor, "\(style)")
             XCTAssertEqual(t.titlebarAppearsTransparent, off.titlebarAppearsTransparent, "\(style)")
@@ -153,6 +238,7 @@ final class SAWindowTitlebarTintTests: XCTestCase {
         XCTAssertEqual(Tint.tabLines(for: .underline), .accent)
         XCTAssertEqual(Tint.tabLines(for: .namePill), .accent)
         XCTAssertEqual(Tint.tabLines(for: .tabUnderline), .connection)
+        XCTAssertEqual(Tint.tabLines(for: .tabUnderlineAndNamePill), .connection)
 
         // Accent tab lines: only the selected chip, always in the accent.
         XCTAssertEqual(Tint.chipLine(isSelected: true, colour: rose, tabLines: .accent), .accent)
@@ -215,7 +301,17 @@ final class SAConnectionColourStyleTests: XCTestCase {
         XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 0), legacyEnabled: true), .off)
     }
 
+    /// The stored numbers keep their meaning; the fifth choice is appended as 4.
+    func testStoredValuesAreStable() {
+        XCTAssertEqual(SAConnectionColourStyle.allCases.map(\.rawValue), [0, 1, 2, 3, 4])
+        XCTAssertEqual(SAConnectionColourStyle.allCases,
+                       [.off, .underline, .namePill, .tabUnderline, .tabUnderlineAndNamePill])
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 4), legacyEnabled: false), .tabUnderlineAndNamePill)
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 4), legacyEnabled: true), .tabUnderlineAndNamePill)
+    }
+
     func testResolveUnknownStoredValueIsOff() {
+        XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 5), legacyEnabled: true), .off)
         XCTAssertEqual(SAConnectionColourStyle.resolve(stored: NSNumber(value: 7), legacyEnabled: true), .off)
         XCTAssertEqual(SAConnectionColourStyle.resolve(stored: "x", legacyEnabled: true), .off)
     }

@@ -169,7 +169,7 @@ enum SAClaudeSettingsCatalog {
                 ]))),
                 row("accentColour", .custom(.accent)),
                 row("connectionColour", .choice(key: "ClaudeConnectionColourStyle", source: fixed("connectionColour", [
-                    ("off", 0), ("underline", 1), ("namePill", 2), ("tabUnderline", 3),
+                    ("off", 0), ("underline", 1), ("namePill", 2), ("tabUnderline", 3), ("tabUnderlineAndNamePill", 4),
                 ]))),
             ]),
             section("editorGridColours", [
