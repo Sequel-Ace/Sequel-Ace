@@ -47,27 +47,34 @@ final class SAClaudeConnectionsMenuModelTests: XCTestCase {
 
     // MARK: - ⋯ menu
 
+    private let importAction = NSSelectorFromString("importConnections:")
+    private let exportAction = NSSelectorFromString("exportConnections:")
+
+    private func moreMenu(gearMenu: NSMenu?, router: AnyObject) -> NSMenu {
+        SAClaudeConnectionsMenuModel.moreMenu(gearMenu: gearMenu, target: router, importAction: importAction, exportAction: exportAction)
+    }
+
     func testMoreMenuListsImportExportAndSortBy() {
-        let controller = Target()
+        let controller = Target(), router = Target()
         let gear = gearMenu(target: controller)
-        let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: gear, target: controller)
+        let menu = moreMenu(gearMenu: gear, router: router)
 
         XCTAssertEqual(menu.items.map { $0.isSeparatorItem ? "-" : $0.title },
                        [SAClaudeConnectionsMenuModel.importTitle, SAClaudeConnectionsMenuModel.exportTitle, "-", "Sort By"])
         XCTAssertEqual(SAClaudeConnectionsMenuModel.importTitle, "Import Connections…")
         XCTAssertEqual(SAClaudeConnectionsMenuModel.exportTitle, "Export Connections…")
-        // The card menu's own actions, sent to the connection controller.
-        XCTAssertEqual(menu.items[0].action, NSSelectorFromString("importFavorites:"))
-        XCTAssertEqual(menu.items[1].action, NSSelectorFromString("exportFavorites:"))
-        XCTAssertTrue(menu.items[0].target === controller)
-        XCTAssertTrue(menu.items[1].target === controller)
+        // Import / Export go to the connections router (it picks the controller's import, export or export-all).
+        XCTAssertEqual(menu.items[0].action, importAction)
+        XCTAssertEqual(menu.items[1].action, exportAction)
+        XCTAssertTrue(menu.items[0].target === router)
+        XCTAssertTrue(menu.items[1].target === router)
     }
 
     func testSortByIsACopyOfTheGearMenusWithTheSameActionsOrderAndChecks() {
         let controller = Target()
         let gear = gearMenu(target: controller)
         let gearSort = gear.items.last!.submenu!
-        let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: gear, target: controller)
+        let menu = moreMenu(gearMenu: gear, router: Target())
 
         guard let sort = menu.items.last?.submenu else { return XCTFail("no Sort By submenu") }
         // `sortFavorites:` reads the sort from the item's index in its menu: the order must be the gear's.
@@ -86,15 +93,34 @@ final class SAClaudeConnectionsMenuModelTests: XCTestCase {
     func testMoreMenuWithoutTheGearMenuHasImportAndExportOnly() {
         let controller = Target()
         for gear in [nil, gearMenu(target: controller, withSortBy: false)] {
-            let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: gear, target: controller)
-            XCTAssertEqual(menu.items.map(\.action), [NSSelectorFromString("importFavorites:"), NSSelectorFromString("exportFavorites:")])
+            let menu = moreMenu(gearMenu: gear, router: Target())
+            XCTAssertEqual(menu.items.map(\.action), [importAction, exportAction])
         }
     }
 
     func testMoreMenuItemsUseTheMenusAutoEnabling() {
         // Validation (Export needs a selection, Sort By two favourites) stays the controller's `validateMenuItem:`.
-        let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: gearMenu(target: Target()), target: Target())
+        let menu = moreMenu(gearMenu: gearMenu(target: Target()), router: Target())
         XCTAssertTrue(menu.autoenablesItems)
+    }
+
+    // MARK: - Export: selection or everything
+
+    func testExportWithNothingSelectedExportsEverything() {
+        let command = SAClaudeConnectionsMenuModel.exportCommand(selectedFavoriteCount: 0)
+        XCTAssertEqual(command.title, "Export All Connections…")
+        XCTAssertEqual(command.action, NSSelectorFromString("exportAllFavorites:"))
+    }
+
+    func testExportWithASelectionExportsTheSelection() {
+        let one = SAClaudeConnectionsMenuModel.exportCommand(selectedFavoriteCount: 1)
+        XCTAssertEqual(one.title, "Export Connections…")
+        XCTAssertEqual(one.action, NSSelectorFromString("exportFavorites:"))
+        for count in [2, 5] {
+            let several = SAClaudeConnectionsMenuModel.exportCommand(selectedFavoriteCount: count)
+            XCTAssertEqual(several.title, "Export Selected…")
+            XCTAssertEqual(several.action, NSSelectorFromString("exportFavorites:"))
+        }
     }
 
     // MARK: - File menu

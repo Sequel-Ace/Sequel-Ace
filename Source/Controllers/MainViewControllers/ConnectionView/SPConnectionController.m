@@ -2721,12 +2721,39 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // additional empty selection check
     if(![[self selectedFavoriteNodes] count]) return;
 
-    NSSavePanel *savePanel = [NSSavePanel savePanel];
-
     // suggest the name of the favorite or a default name for multiple selection
     NSString *fileName = ([[self selectedFavoriteNodes] count] == 1)? [[(id<SPNamedNode>)[[self selectedFavoriteNode] representedObject] nodeName] stringByAppendingPathExtension:@"plist"] : nil;
     // This if() is so we can also catch nil due to favorite corruption (NSSavePanel will @throw if nil is passed in)
     if(!fileName) fileName = SPExportFavoritesFilename;
+
+    [self _exportFavoriteNodes:^NSArray *{ return [self selectedFavoriteNodes]; } suggestedFileName:fileName];
+}
+
+/**
+ * Claude look: displays the same save panel and writes every favourite, folders included (the top level of the
+ * favourites tree), in the same file format — the ⋯ menu's and the File menu's Export with nothing selected.
+ */
+- (IBAction)exportAllFavorites:(id)sender
+{
+    if (![[favoritesRoot allChildLeafs] count]) return;
+
+    [self _exportFavoriteNodes:^NSArray *{ return [self _allFavoriteNodes]; } suggestedFileName:SPExportFavoritesFilename];
+}
+
+/**
+ * The favourites folder's children (the tree's root holds that one folder): every favourite and folder.
+ */
+- (NSArray *)_allFavoriteNodes
+{
+    return [[[[favoritesRoot childNodes] firstObject] childNodes] copy] ?: @[];
+}
+
+/**
+ * Shows the export save panel and writes the nodes `nodes` returns (read when the panel is confirmed).
+ */
+- (void)_exportFavoriteNodes:(NSArray *(^)(void))nodes suggestedFileName:(NSString *)fileName
+{
+    NSSavePanel *savePanel = [NSSavePanel savePanel];
 
     [savePanel setAccessoryView:exportPanelAccessoryView];
     [savePanel setNameFieldStringValue:fileName];
@@ -2738,7 +2765,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
             [exporter setDelegate:self];
 
-            [exporter writeFavorites:[self selectedFavoriteNodes] toFile:[[savePanel URL] path]];
+            [exporter writeFavorites:nodes() toFile:[[savePanel URL] path]];
          }
      }];
 }
@@ -4422,6 +4449,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // import does not depend on a selection
     if(action == @selector(importFavorites:)) return YES;
+
+    // Claude look: exporting everything needs a favourite, not a selection
+    if (action == @selector(exportAllFavorites:)) return [[favoritesRoot allChildLeafs] count] > 0;
 
     // Copy connection string requires a single non-group favorite
     if (action == @selector(copyConnectionString:)) {

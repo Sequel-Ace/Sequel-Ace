@@ -76,6 +76,8 @@ enum SAClaudeMenuGlyphs {
         "exportContentFilter:": "square.and.arrow.up",
         "saveBundle:": "square.and.arrow.up",           // Bundle Editor's Export Bundle…
         "importFavorites:": "square.and.arrow.down",
+        "exportConnections:": "square.and.arrow.up",    // connection screen ⋯ menu (SAClaudeConnectionsCommands)
+        "importConnections:": "square.and.arrow.down",
         "importFavoritesByAdding:": "square.and.arrow.down",
         "importFavoritesByReplacing:": "square.and.arrow.down",
         "importContentFilterByAdding:": "square.and.arrow.down",

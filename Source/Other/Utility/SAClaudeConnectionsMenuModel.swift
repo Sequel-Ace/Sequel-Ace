@@ -4,10 +4,11 @@
 //
 //  Connection import, export and sorting outside a favourite card's right-click menu: the connection screen's "⋯"
 //  menu (Import Connections…, Export Connections…, Sort By ▸) and the File menu's Import / Export Connections… items.
-//  Every item sends the favourites gear menu's own actions (`importFavorites:`, `exportFavorites:`, `sortFavorites:`,
-//  `reverseSortFavorites:`), so the panels, alerts, file formats, validation and checkmarks are the card menu's.
-//  Pure (AppKit types only, no app state): built into the app and the Unit Tests targets. The File menu's router is
-//  SAClaudeConnectionsFileMenu; the ⋯ button is SAClaudeConnectionPageStyler's.
+//  Import and Export go through the connections router (SAClaudeConnectionsCommands), which sends the favourites gear
+//  menu's own `importFavorites:` / `exportFavorites:` — or, with no favourite selected, `exportAllFavorites:` (every
+//  favourite and folder, same writer and file format) — so panels, alerts and file formats are the card menu's.
+//  Sort By is the gear menu's own (`sortFavorites:`, `reverseSortFavorites:`). Pure (AppKit types only, no app
+//  state): built into the app and the Unit Tests targets. The ⋯ button is SAClaudeConnectionPageStyler's.
 //
 
 import AppKit
@@ -16,6 +17,7 @@ enum SAClaudeConnectionsMenuModel {
 
     static let importAction = NSSelectorFromString("importFavorites:")
     static let exportAction = NSSelectorFromString("exportFavorites:")
+    static let exportAllAction = NSSelectorFromString("exportAllFavorites:")
     private static let sortAction = NSSelectorFromString("sortFavorites:")
     private static let fileExportAction = NSSelectorFromString("export:")
 
@@ -33,6 +35,29 @@ enum SAClaudeConnectionsMenuModel {
                           comment: "connection screen ⋯ menu and File menu : exports the selected connection favourites to a file")
     }
 
+    static var exportAllTitle: String {
+        NSLocalizedString("ClaudeConnectionsExportAll", value: "Export All Connections…",
+                          comment: "connection screen ⋯ menu and File menu : exports every connection favourite (with its folders) to a file; shown when no favourite is selected")
+    }
+
+    static var exportSelectedTitle: String {
+        NSLocalizedString("ClaudeConnectionsExportSelected", value: "Export Selected…",
+                          comment: "connection screen ⋯ menu and File menu : exports the several selected connection favourites to a file")
+    }
+
+    // MARK: - Export: the selection, or everything
+
+    /// What Export Connections… does for `selectedFavoriteCount` selected favourites and folders (Quick Connect not
+    /// counted): the selection with the controller's `exportFavorites:`, or with none every favourite with
+    /// `exportAllFavorites:`; and the item's title for it.
+    static func exportCommand(selectedFavoriteCount: Int) -> (title: String, action: Selector) {
+        switch selectedFavoriteCount {
+        case ..<1: return (exportAllTitle, exportAllAction)
+        case 1: return (exportTitle, exportAction)
+        default: return (exportSelectedTitle, exportAction)
+        }
+    }
+
     // MARK: - ⋯ menu
 
     /// The gear menu's Sort By item: the one whose submenu sends `sortFavorites:`.
@@ -40,11 +65,12 @@ enum SAClaudeConnectionsMenuModel {
         gearMenu.items.first { $0.submenu?.items.contains { $0.action == sortAction } ?? false }
     }
 
-    /// The connection screen's ⋯ menu: Import Connections… and Export Connections… sent to `target` (the connection
-    /// controller), then a copy of the gear menu's Sort By. The copy keeps its items' titles, actions, targets, states
-    /// and order (`sortFavorites:` reads the sort from the item's index); the gear menu keeps its own. Items are
-    /// auto-enabled, so the controller's `validateMenuItem:` enables them and ticks the sort, as in the card menu.
-    static func moreMenu(gearMenu: NSMenu?, target: AnyObject?) -> NSMenu {
+    /// The connection screen's ⋯ menu: Import Connections… and Export Connections… sending `importAction` /
+    /// `exportAction` to `target` (the connections router), then a copy of the gear menu's Sort By. The copy keeps its
+    /// items' titles, actions, targets, states and order (`sortFavorites:` reads the sort from the item's index); the
+    /// gear menu keeps its own. Items are auto-enabled: the router (Import, Export and its title) and the connection
+    /// controller (Sort By and its ticks, as in the card menu) validate them.
+    static func moreMenu(gearMenu: NSMenu?, target: AnyObject?, importAction: Selector, exportAction: Selector) -> NSMenu {
         let menu = NSMenu(title: "")
         menu.autoenablesItems = true
         for (title, action) in [(importTitle, importAction), (exportTitle, exportAction)] {

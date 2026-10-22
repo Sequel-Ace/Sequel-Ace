@@ -7,7 +7,8 @@
 //  right pane paints the theme background, and the details scroll view's document view becomes the page — one
 //  centred column of `min(pane − 48, 960)` with, from the top: a top bar (the favourites search field, moved and
 //  restyled; "Folder" / "Favourite" ghost buttons for `addGroup:` / `addFavorite:`, and a "⋯" ghost button whose menu
-//  imports, exports and sorts connections with the card menu's actions — `SAClaudeConnectionsMenuModel`), the favourite cards
+//  imports, exports (the selection, or all with none selected) and sorts connections — `SAClaudeConnectionsMenuModel`,
+//  `SAClaudeConnectionsCommands`), the favourite cards
 //  (`SAClaudeFavoriteCardGridController`), the connection panel (`SAClaudeConnectionPanelStyler`, given the
 //  column width) and the instruction line (moved and restyled).
 //
@@ -124,6 +125,8 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
     private let folderButton = NSButton(title: "", target: nil, action: nil)
     private let favouriteButton = NSButton(title: "", target: nil, action: nil)
     private let moreButton = NSButton(title: "", target: nil, action: nil)
+    /// The ⋯ menu's Import / Export target (menu items hold their targets weakly).
+    private lazy var connectionsCommands = SAClaudeConnectionsCommands { [weak self] in self?.controller }
     private var placeholder = ""
 
     /// How far the visible top is below the page's top: kept across relayouts (the controller's short-window
@@ -618,9 +621,12 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
 
     // MARK: - ⋯ menu
 
-    /// Opens the ⋯ menu under the button, its right edge on the button's (the gear menu's Import, Export and Sort By).
+    /// Opens the ⋯ menu under the button, its right edge on the button's: Import, Export (the selection, or every
+    /// favourite with none selected) and the gear menu's Sort By.
     @objc private func showMoreMenu(_ sender: NSButton) {
-        let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: grid.gearMenu(), target: controller)
+        let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: grid.gearMenu(), target: connectionsCommands,
+                                                         importAction: SAClaudeConnectionsCommands.importSelector,
+                                                         exportAction: SAClaudeConnectionsCommands.exportSelector)
         // The same "no Ask Siri field" as the card menu (the glyph pass fills the item icons as it opens).
         SAClaudeMenuGlyphPass.suppressAssistant(in: menu)
         menu.popUp(positioning: nil, at: NSPoint(x: sender.bounds.maxX - menu.size.width, y: sender.bounds.maxY + 4), in: sender)

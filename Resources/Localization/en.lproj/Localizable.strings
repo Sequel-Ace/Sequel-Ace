@@ -4996,6 +4996,12 @@
 /* connection screen ⋯ menu and File menu : exports the selected connection favourites to a file */
 "ClaudeConnectionsExport" = "Export Connections…";
 
+/* connection screen ⋯ menu and File menu : exports every connection favourite (with its folders) to a file; shown when no favourite is selected */
+"ClaudeConnectionsExportAll" = "Export All Connections…";
+
+/* connection screen ⋯ menu and File menu : exports the several selected connection favourites to a file */
+"ClaudeConnectionsExportSelected" = "Export Selected…";
+
 /* connection page : folder rename : cancel button */
 "ClaudeFolderRenameCancel" = "Cancel renaming";
 

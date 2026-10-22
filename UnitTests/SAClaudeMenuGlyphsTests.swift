@@ -48,6 +48,9 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
         "makeSelectedFavoriteDefault:": "star",
         "exportFavorites:": "square.and.arrow.up",
         "importFavorites:": "square.and.arrow.down",
+        // Connection screen ⋯ menu (the connections router's actions).
+        "exportConnections:": "square.and.arrow.up",
+        "importConnections:": "square.and.arrow.down",
         // Window tab chips.
         "closeTab:": "xmark",
         "closeOtherTabs:": "xmark.circle",
