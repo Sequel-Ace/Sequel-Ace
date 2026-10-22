@@ -11,7 +11,8 @@ import AppKit
 // MARK: - Bar view
 
 /// The bar: chips in a horizontally scrolling strip, and "+" at the right. Transparent, so the Claude bar colour
-/// or the favourite tint of the window shows through, with a divider line along its bottom. A chip dragged along
+/// of the window shows through, with a divider line along its bottom - or the connection's 2pt Underline line in
+/// its place (`bottomLineColour`). A chip dragged along
 /// the strip reorders the tabs. For accessibility it is a tab group whose tabs are the chips.
 final class SAClaudeWindowTabBarView: NSView {
     /// The document window this bar belongs to. In full screen AppKit moves the bar into its own toolbar window,
@@ -20,6 +21,17 @@ final class SAClaudeWindowTabBarView: NSView {
 
     /// Called with the strip's new horizontal offset whenever it scrolls (but not when it adopts one).
     var onScroll: ((CGFloat) -> Void)?
+
+    /// When set, a 2pt line in this colour along the bar's bottom replaces the 1pt divider. Resolved at draw time,
+    /// so an asset colour follows light and dark.
+    var bottomLineColour: NSColor? {
+        didSet {
+            guard bottomLineColour != oldValue else { return }
+            needsDisplay = true
+        }
+    }
+
+    static let bottomLineHeight: CGFloat = 2
 
     var items: [SAClaudeWindowTabItem] = [] {
         didSet {
@@ -127,8 +139,13 @@ final class SAClaudeWindowTabBarView: NSView {
             SAClaudeStyle.toolbarBackground.setFill()
             bounds.fill()
         }
-        SAClaudeStyle.divider.setFill()
-        NSRect(x: 0, y: 0, width: bounds.width, height: 1).fill()
+        if let bottomLineColour {
+            bottomLineColour.setFill()
+            NSRect(x: 0, y: 0, width: bounds.width, height: Self.bottomLineHeight).fill()
+        } else {
+            SAClaudeStyle.divider.setFill()
+            NSRect(x: 0, y: 0, width: bounds.width, height: 1).fill()
+        }
     }
 
     override func setFrameSize(_ newSize: NSSize) {

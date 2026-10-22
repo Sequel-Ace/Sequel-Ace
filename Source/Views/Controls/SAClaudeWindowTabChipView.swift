@@ -10,9 +10,9 @@ import AppKit
 
 /// One tab, shaped as one: a rounded card with a hairline border, holding the favourite dot, title and SSL
 /// padlock centred as a group (`SAClaudeTabContentLayout`, as the native tab content did) left of the close
-/// button. Selected: raised - a lighter card with a soft shadow and an accent line along its bottom, medium
-/// primary title, close button always shown. Others: regular secondary title; hover lightens the card and shows
-/// the close button. A press is tracked by the bar (click to select, drag to reorder); right-click shows the
+/// button. Selected: raised - a lighter card with a soft shadow, medium primary title, close button always shown.
+/// Others: regular secondary title; hover lightens the card and shows the close button. The line along the bottom
+/// is the item's `line`: the selected chip's accent, or with Tab underline each chip's connection colour. A press is tracked by the bar (click to select, drag to reorder); right-click shows the
 /// tab's menu.
 final class SAClaudeWindowTabChipView: NSView {
     static let cornerRadius: CGFloat = 8
@@ -26,7 +26,7 @@ final class SAClaudeWindowTabChipView: NSView {
     static let dotGap: CGFloat = 6
     static let lockGap: CGFloat = 5
     static let accentLineWidth: CGFloat = 2
-    /// The accent line's distance from either side of the chip.
+    /// The line's distance from either side of the chip.
     static let accentLineInset: CGFloat = 10
     /// Lightens an unselected card under the pointer: the selected fill at this opacity over the tab fill.
     static let hoverOpacity: CGFloat = 0.6
@@ -174,16 +174,6 @@ final class SAClaudeWindowTabChipView: NSView {
             card.fill()
             SAClaudeStyle.tabSelectedBorder.setStroke()
             card.stroke()
-            // The accent line, just inside the bottom border; its round caps end `accentLineInset` from the sides.
-            let cap = Self.accentLineWidth / 2
-            let y = 1 + cap
-            let line = NSBezierPath()
-            line.move(to: NSPoint(x: Self.accentLineInset + cap, y: y))
-            line.line(to: NSPoint(x: bounds.width - Self.accentLineInset - cap, y: y))
-            line.lineWidth = Self.accentLineWidth
-            line.lineCapStyle = .round
-            SAClaudeAccent.accent.setStroke()
-            line.stroke()
         } else {
             SAClaudeStyle.tabFill.setFill()
             card.fill()
@@ -194,10 +184,30 @@ final class SAClaudeWindowTabChipView: NSView {
             SAClaudeStyle.tabBorder.setStroke()
             card.stroke()
         }
+        drawLine()
         if let colour = item.colour, let dotFrame {
             colour.setFill()
             NSBezierPath(ovalIn: dotFrame).fill()
         }
+    }
+
+    /// The item's line, just inside the bottom border; its round caps end `accentLineInset` from the sides.
+    private func drawLine() {
+        let colour: NSColor
+        switch item.line {
+        case .none: return
+        case .accent: colour = SAClaudeAccent.accent
+        case .colour(let lineColour): colour = lineColour
+        }
+        let cap = Self.accentLineWidth / 2
+        let y = 1 + cap
+        let line = NSBezierPath()
+        line.move(to: NSPoint(x: Self.accentLineInset + cap, y: y))
+        line.line(to: NSPoint(x: bounds.width - Self.accentLineInset - cap, y: y))
+        line.lineWidth = Self.accentLineWidth
+        line.lineCapStyle = .round
+        colour.setStroke()
+        line.stroke()
     }
 
     override func viewDidChangeEffectiveAppearance() {

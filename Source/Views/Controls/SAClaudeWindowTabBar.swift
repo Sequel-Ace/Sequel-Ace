@@ -21,6 +21,8 @@ struct SAClaudeWindowTabItem {
     var colour: NSColor?
     var isSSL: Bool
     var isSelected: Bool
+    /// The line along the chip's bottom, for the "Show the connection colour as" choice.
+    var line: SAWindowTitlebarTint.ChipLine = .none
 }
 
 // MARK: - Controller
@@ -39,6 +41,19 @@ struct SAClaudeWindowTabItem {
     /// The strip offset the shown bar last scrolled to, for when this bar is next shown.
     private var sharedScrollOffset: CGFloat?
 
+    /// Whether the bar shows (two tabs or more in the group).
+    var isShowing: Bool { isVisible }
+
+    /// Called when the bar shows or hides, with whether it now shows.
+    var onVisibilityChange: ((Bool) -> Void)?
+
+    /// The colour of a 2pt line along the bar's bottom, in place of its divider (the connection's Underline while
+    /// the bar is the bottom of the window chrome); `nil` for the divider.
+    var bottomLineColour: NSColor? {
+        get { barView.bottomLineColour }
+        set { barView.bottomLineColour = newValue }
+    }
+
     /// AppKit also shows its strip on a lone window, with no group change, when "Show Tab Bar" was once chosen
     /// for this kind of window (it keeps that choice in the app's defaults); these hide it there too.
     private static let hidingNotifications: [Notification.Name] = [
@@ -47,7 +62,7 @@ struct SAClaudeWindowTabItem {
         NSWindow.didChangeOcclusionStateNotification,   // ordered on screen
     ]
 
-    init(window: NSWindow) {
+    @objc init(window: NSWindow) {
         self.window = window
         barView = SAClaudeWindowTabBarView(frame: NSRect(x: 0, y: 0, width: window.frame.width, height: SAClaudeWindowTabBarLayout.height))
         barView.hostWindow = window
@@ -88,7 +103,7 @@ struct SAClaudeWindowTabItem {
     /// to repeat, and cheap. Only the controller is hidden - hiding the strip view alone would leave an empty band.
     static func hideNativeTabBar(in window: NSWindow) {
         for controller in window.titlebarAccessoryViewControllers
-        where !(controller is SAClaudeWindowTabBarAccessory) && controller.layoutAttribute == .bottom && !controller.isHidden {
+        where !(controller is SAClaudeOwnedTitlebarAccessory) && controller.layoutAttribute == .bottom && !controller.isHidden {
             controller.isHidden = true
         }
         #if DEBUG
@@ -229,8 +244,10 @@ struct SAClaudeWindowTabItem {
 
     private func setVisible(_ visible: Bool) {
         guard accessory.isHidden == visible || barView.isHidden == visible else { return }
+        let changed = isVisible != visible
         accessory.isHidden = !visible
         barView.isHidden = !visible
+        if changed { onVisibilityChange?(visible) }
     }
 
     /// The model's callback, synchronous from KVO: hide macOS's strip in every window of the group right away (it
@@ -256,14 +273,17 @@ struct SAClaudeWindowTabItem {
         guard let window else { return [] }
         let windows = groupWindows
         let selected = shownWindow ?? window
+        let tabLines = SAWindowTitlebarTint.tabLines(for: SAConnectionColourStyle.current(.standard))
         let items = windows.map { tab -> SAClaudeWindowTabItem in
             let controller = tab.windowController as? SPWindowController
+            let colour = controller?.tabBarColour
             return SAClaudeWindowTabItem(window: tab,
                                          title: controller?.tabBarTitle ?? tab.title,
                                          tooltip: tab.title,
-                                         colour: controller?.tabBarColour,
+                                         colour: colour,
                                          isSSL: controller?.tabBarIsSSL ?? false,
-                                         isSelected: tab === selected)
+                                         isSelected: tab === selected,
+                                         line: SAWindowTitlebarTint.chipLine(isSelected: tab === selected, colour: colour, tabLines: tabLines))
         }
         for (tab, item) in zip(windows, items) {
             let controller = tab.windowController as? SPWindowController
@@ -338,8 +358,8 @@ struct SAClaudeWindowTabItem {
     #endif
 }
 
-/// Our accessory controller, a class of its own so the hiding above can tell it from AppKit's.
-private final class SAClaudeWindowTabBarAccessory: NSTitlebarAccessoryViewController {}
+/// Our accessory controller, one of ours so the hiding above can tell it from AppKit's.
+private final class SAClaudeWindowTabBarAccessory: SAClaudeOwnedTitlebarAccessory {}
 
 // MARK: - Model
 
