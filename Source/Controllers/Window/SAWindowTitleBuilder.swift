@@ -26,6 +26,16 @@ import Foundation
     }
 }
 
+/// The window title around the connection's name pill (see `SAWindowTitleBuilder.namePillParts`).
+struct SAWindowNamePillParts: Equatable {
+    /// The `.spf` file's `"<fileName> — "`, or "".
+    let prefix: String
+    /// The connection's name, shown in the pill.
+    let name: String
+    /// "db/table" (or "db"), "" when no database is selected.
+    let rest: String
+}
+
 /// Three-state classification used by the title composer. Mirrors the
 /// branching in the original `-updateWindowTitle:`.
 @objc enum SAWindowConnectionState: Int {
@@ -114,6 +124,19 @@ import Foundation
     @objc static func subtitle(connectionState: SAWindowConnectionState, mySQLVersion: String?, showServerVersionInTitle: Bool) -> String {
         guard connectionState == .connected, showServerVersionInTitle, let version = mySQLVersion, !version.isEmpty else { return "" }
         return "MySQL \(version)"
+    }
+
+    /// The window title split for the connection's name pill: what comes before the pill (the `.spf` file's
+    /// `"<fileName> — "`, else ""), the connection's name in the pill, and the "db/table" after it.
+    ///
+    /// `nil` when the title is not a connected one for `connectionName` (connecting, disconnected, no name), so
+    /// the window keeps its plain title. The name is matched as a whole against the tab title, which starts with
+    /// it, so a "/" inside the name stays in the pill.
+    static func namePillParts(windowTitle: String, tabTitle: String, connectionName: String) -> SAWindowNamePillParts? {
+        guard !connectionName.isEmpty, tabTitle.hasPrefix(connectionName), windowTitle.hasSuffix(tabTitle) else { return nil }
+        var rest = tabTitle.dropFirst(connectionName.count)
+        if rest.hasPrefix("/") { rest = rest.dropFirst() }
+        return SAWindowNamePillParts(prefix: String(windowTitle.dropLast(tabTitle.count)), name: connectionName, rest: String(rest))
     }
 
     /// `<fileName> — ` when there is a real file URL and the document has

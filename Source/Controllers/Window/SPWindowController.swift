@@ -61,6 +61,7 @@ import SnapKit
             self.tabBar = tabBar
             // Only one of the bar and the overlay draws the line at a time.
             colourLine.attach(to: window)
+            namePill.attach(to: window)
         }
         applyConnectionColourChrome()
         databaseListSubscription = NotificationCenter.default.observe(name: .SPDatabaseCreatedRemovedRenamed, object: nil) { [weak self] _ in
@@ -95,6 +96,14 @@ import SnapKit
     /// The connection's Underline line right under the toolbar while the tab
     /// bar is hidden (see `applyConnectionColourChrome`).
     private lazy var colourLine = SAConnectionColourLineOverlay()
+
+    /// The window title in Name pill mode, in place of the native one (see
+    /// `applyNamePill`). Installed in `windowDidLoad`.
+    private lazy var namePill = SAConnectionNamePillAccessory()
+
+    /// The window's subtitle (the MySQL version, when shown), kept for the name
+    /// pill, which draws it itself while the native title is hidden.
+    private var windowSubtitle = ""
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
@@ -200,6 +209,38 @@ private extension SPWindowController {
         }
         colourLine.colour = tint.bottomLineInTabBar ? nil : tint.bottomLine
         tabBar.bottomLineColour = tint.bottomLineInTabBar ? tint.bottomLine : nil
+        applyNamePill(showsNamePill: tint.showsNamePill)
+    }
+
+    /// Name pill mode: swap the native title for the pill title (the connection's
+    /// name in its colour, then "db/table", the subtitle under it) while the
+    /// window has a colour and a connected title; otherwise the native title.
+    /// `window.title` is always kept, for the Window menu and Mission Control.
+    /// Neither swap changes the title bar's height.
+    func applyNamePill(showsNamePill: Bool) {
+        guard let window = window, tabBar != nil else {
+            return
+        }
+        let parts = showsNamePill
+            ? SAWindowTitleBuilder.namePillParts(windowTitle: window.title, tabTitle: tabBarTitle, connectionName: databaseDocument.name())
+            : nil
+        if let parts = parts, let colour = favoriteColor {
+            namePill.show(parts: parts, subtitle: windowSubtitle, colour: colour, accessibilityTitle: window.title)
+            if window.titleVisibility != .hidden { window.titleVisibility = .hidden }
+        } else {
+            namePill.hide()
+            if window.titleVisibility != .visible { window.titleVisibility = .visible }
+        }
+    }
+
+    /// `applyNamePill` for the current choice and colour, after a title change.
+    func refreshNamePill() {
+        let tint = SAWindowTitlebarTint(
+            style: SAConnectionColourStyle.current(.standard),
+            favoriteColor: favoriteColor,
+            tabBarVisible: tabBar?.isShowing ?? false
+        )
+        applyNamePill(showsNamePill: tint.showsNamePill)
     }
 
     /// Redo the chrome when the choice changes, so it reaches open windows
@@ -239,9 +280,11 @@ private extension SPWindowController {
         tabAccessoryView.setToolTipPath(title)
         tabBarTitle = tabTitle
         tabBarItemDidChange()
+        refreshNamePill()
     }
 
     func updateWindow(title: String, tabTitle: String, subtitle: String) {
+        windowSubtitle = subtitle
         updateWindow(title: title, tabTitle: tabTitle)
         if window?.subtitle != subtitle { window?.subtitle = subtitle }
     }

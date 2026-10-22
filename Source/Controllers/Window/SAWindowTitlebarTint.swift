@@ -19,7 +19,7 @@ import AppKit
 ///   of the hairline there - drawn by the tab bar when it shows, otherwise by
 ///   a 2pt overlay right under the toolbar.
 /// - Name pill: a pill with the connection's name in the window title (drawn
-///   elsewhere); no line, the hairline stays.
+///   by `SAConnectionNamePillAccessory`); no line, the hairline stays.
 /// - Tab underline: each tab chip is underlined in its connection's colour.
 ///   With one tab the tab bar is hidden, so the window falls back to the
 ///   Underline line until a second tab appears.

@@ -261,4 +261,43 @@ final class SAWindowTitleBuilderTests: XCTestCase {
         XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .disconnected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
         XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connecting, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
     }
+
+    // MARK: - Name pill
+
+    private func pill(_ windowTitle: String, _ tabTitle: String, _ name: String) -> SAWindowNamePillParts? {
+        SAWindowTitleBuilder.namePillParts(windowTitle: windowTitle, tabTitle: tabTitle, connectionName: name)
+    }
+
+    func testPillPartsForConnectionDatabaseAndTable() {
+        XCTAssertEqual(pill("Localhost/shop/orders", "Localhost/shop/orders", "Localhost"),
+                       SAWindowNamePillParts(prefix: "", name: "Localhost", rest: "shop/orders"))
+    }
+
+    func testPillPartsWithoutDatabase() {
+        XCTAssertEqual(pill("Localhost", "Localhost", "Localhost"),
+                       SAWindowNamePillParts(prefix: "", name: "Localhost", rest: ""))
+    }
+
+    /// The `.spf` file name is not part of the connection: it stays in front of the pill, in the title's own type.
+    func testFilePrefixStaysOutsideThePill() {
+        XCTAssertEqual(pill("work.spf — Localhost/shop", "Localhost/shop", "Localhost"),
+                       SAWindowNamePillParts(prefix: "work.spf — ", name: "Localhost", rest: "shop"))
+    }
+
+    /// The name is matched as a whole, so a "/" inside it is not mistaken for the database separator.
+    func testSlashInNameStaysInThePill() {
+        XCTAssertEqual(pill("a/b/shop", "a/b/shop", "a/b"),
+                       SAWindowNamePillParts(prefix: "", name: "a/b", rest: "shop"))
+    }
+
+    func testPillNeedsAName() {
+        XCTAssertNil(pill("Localhost/shop", "Localhost/shop", ""))
+    }
+
+    /// While connecting (or disconnected) the title is not the connection's: no pill.
+    func testPillNeedsAConnectedTitle() {
+        XCTAssertNil(pill("Connecting…", "Connecting…", "Localhost"))
+        XCTAssertNil(pill("Sequel Ace", "Sequel Ace", "Localhost"))
+        XCTAssertNil(pill("Localhost/shop", "Localhost/shop", "Production"))
+    }
 }
