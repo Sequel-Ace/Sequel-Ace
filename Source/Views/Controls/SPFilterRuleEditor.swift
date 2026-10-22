@@ -423,8 +423,12 @@ enum SARuleFilterContextMenu {
         return dropZoneVisible ? dropZoneFrame.midY : barHeight / 2
     }
 
-    /// The origin y, on whole points, that centres a bar control's pill on `centreY`. The filter cells draw their
-    /// pill centred in the control's frame and round it up from a half point, so the frame rounds down.
+    /// The gap between the drop zone, the AND/OR pill and the Apply / Add Filter pill.
+    @objc public static let barControlGap: CGFloat = 8
+
+    /// The origin y, on whole points, that centres a bar control of `height` on `centreY`. The filter cells draw
+    /// their pill centred in the control's frame, so with the frame at the pill's own height (`centreBarControls`)
+    /// the pill's edges land on whole points too.
     ///
     /// - Parameters:
     ///   - height: The control's height.
@@ -435,18 +439,38 @@ enum SARuleFilterContextMenu {
         return (centreY - height / 2).rounded(.down)
     }
 
-    /// Centres the bar's controls on `centreY`, moving only their vertical origin (their masks pin them to the
-    /// container's bottom, so it holds when the container resizes).
+    /// Gives the bar's controls the height of the rule rows' pills (`SAClaudeFilterChrome.controlHeight`: the XIB's
+    /// 22pt pop-up drew a 24pt pill past its frame and the 27pt buttons a 24pt pill off their middle, so the pills
+    /// differed in where they sat) and centres them on `centreY`. Frames only - their masks pin them to the
+    /// container's bottom, so it holds when the container resizes, and nothing touches the constraints.
     ///
     /// - Parameters:
     ///   - controls: The AND/OR pop-up and the Apply / Add Filter buttons.
     ///   - centreY: The centre line (`barCentreY`).
     @objc(centreBarControls:onY:)
     public static func centreBarControls(_ controls: [NSView], onY centreY: CGFloat) {
-        for control in controls {
-            let y = barControlOriginY(height: control.frame.height, centreY: centreY)
-            if control.frame.minY != y { control.setFrameOrigin(NSPoint(x: control.frame.minX, y: y)) }
+        let height = SAClaudeFilterChrome.controlHeight
+        let y = barControlOriginY(height: height, centreY: centreY)
+        for control in controls where control.frame.minY != y || control.frame.height != height {
+            control.frame = NSRect(x: control.frame.minX, y: y, width: control.frame.width, height: height)
         }
+    }
+
+    /// Spaces the bar's controls `barControlGap` apart, starting that far right of the drop zone: the AND/OR pop-up,
+    /// then the Apply / Add Filter buttons (which share one place, one of them hidden). Moves only their x origin.
+    ///
+    /// - Parameters:
+    ///   - controls: The AND/OR pop-up and the Apply / Add Filter buttons.
+    ///   - zoneMaxX: The drop zone's right edge in the filter container.
+    @objc(spaceBarControls:afterX:)
+    public static func spaceBarControls(_ controls: [NSView], afterX zoneMaxX: CGFloat) {
+        var x = zoneMaxX + barControlGap
+        func place(_ views: [NSView]) {
+            for view in views where view.frame.minX != x { view.setFrameOrigin(NSPoint(x: x, y: view.frame.minY)) }
+            x += (views.map { $0.frame.width }.max() ?? 0) + barControlGap
+        }
+        place(controls.filter { $0 is NSPopUpButton })
+        place(controls.filter { !($0 is NSPopUpButton) })
     }
 
     static func metrics(

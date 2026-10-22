@@ -987,36 +987,56 @@ final class SARuleFilterBottomBarLayoutTests: XCTestCase {
         XCTAssertEqual(m.containerRequestedHeight, 0)
     }
 
-    /// Verifies the AND/OR pill and the Apply pill sit on the drop zone's centre line (they sat 5.5pt lower, at the
-    /// XIB's y, and touched the grid header).
+    /// Verifies the AND/OR pill and the Apply pill sit on the drop zone's centre line, at the rule rows' pill height
+    /// (the XIB's 22pt pop-up and 27pt buttons drew pills that differed in where they sat).
     func testBarPillsCentreOnTheDropZone() {
         let zone = NSRect(x: 10, y: 7, width: 600, height: 28)
         let centreY = SARuleFilterDropZoneLayoutPolicy.barCentreY(dropZoneVisible: true, dropZoneFrame: zone, barHeight: 40)
         XCTAssertEqual(centreY, zone.midY)
-        // The XIB's heights: the AND/OR pop-up 22pt, Apply / Add Filter 27pt. Both draw a 24pt pill centred in the frame.
-        for height in [22, 27] as [CGFloat] {
-            let y = SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: height, centreY: centreY)
-            XCTAssertEqual(y, y.rounded(), "whole points, height \(height)")
-            let pill = SAClaudeFilterChrome.controlFrame(in: NSRect(x: 0, y: y, width: 100, height: height))
-            XCTAssertEqual(pill.midY, zone.midY, "height \(height)")
-            XCTAssertGreaterThanOrEqual(pill.minY, zone.minY, "a gap above the grid header, height \(height)")
+        let popUp = NSPopUpButton(frame: NSRect(x: 458, y: 4, width: 118, height: 22))
+        let apply = NSButton(frame: NSRect(x: 579, y: 2, width: 101, height: 27))
+        SARuleFilterDropZoneLayoutPolicy.centreBarControls([popUp, apply], onY: centreY)
+        for control in [popUp, apply] as [NSView] {
+            XCTAssertEqual(control.frame.height, SAClaudeFilterChrome.controlHeight)
+            XCTAssertEqual(control.frame.minY, control.frame.minY.rounded(), "whole points")
+            let pill = SAClaudeFilterChrome.controlFrame(in: control.frame)
+            XCTAssertEqual(pill, control.frame, "the pill fills the control")
+            XCTAssertEqual(pill.midY, zone.midY)
+            XCTAssertGreaterThanOrEqual(pill.minY, zone.minY, "a gap above the grid header")
         }
+        XCTAssertEqual(popUp.frame.minX, 458)
+        XCTAssertEqual(apply.frame.width, 101)
     }
 
-    /// Verifies the controls keep the XIB's places when the drop zone is hidden: the middle of the 31pt button bar.
-    func testBarControlsKeepTheirPlacesWithoutTheDropZone() {
+    /// Verifies the controls stay in the middle of the 31pt button bar (on whole points) when the drop zone is hidden.
+    func testBarControlsCentreInThePlainBarWithoutTheDropZone() {
         let centreY = SARuleFilterDropZoneLayoutPolicy.barCentreY(dropZoneVisible: false, dropZoneFrame: .zero, barHeight: 31)
-        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: 27, centreY: centreY), 2)
-        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: 22, centreY: centreY), 4)
+        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: SAClaudeFilterChrome.controlHeight, centreY: centreY), 3)
     }
 
-    /// Verifies `centreBarControls(_:onY:)` moves only the vertical origin.
-    func testCentringMovesControlsVertically() {
+    /// Verifies centring sets the pill height and moves only the vertical origin and the height.
+    func testCentringSetsTheHeightAndMovesControlsVertically() {
         let popUp = NSView(frame: NSRect(x: 458, y: 4, width: 118, height: 22))
         let apply = NSView(frame: NSRect(x: 579, y: 2, width: 101, height: 27))
         SARuleFilterDropZoneLayoutPolicy.centreBarControls([popUp, apply], onY: 21)
-        XCTAssertEqual(popUp.frame, NSRect(x: 458, y: 10, width: 118, height: 22))
-        XCTAssertEqual(apply.frame, NSRect(x: 579, y: 7, width: 101, height: 27))
+        XCTAssertEqual(popUp.frame, NSRect(x: 458, y: 9, width: 118, height: 24))
+        XCTAssertEqual(apply.frame, NSRect(x: 579, y: 9, width: 101, height: 24))
+    }
+
+    /// Verifies the pop-up and the buttons are one gap apart, and the pop-up one gap from the drop zone; the hidden
+    /// button (same place as Apply) moves with it.
+    func testBarControlsKeepOneGapBetweenZoneAndPills() {
+        let popUp = NSPopUpButton(frame: NSRect(x: 912.5, y: 10, width: 118, height: 22))
+        let apply = NSButton(frame: NSRect(x: 1033.5, y: 7, width: 101, height: 27))
+        let add = NSButton(frame: NSRect(x: 1033.5, y: 7, width: 101, height: 27))
+        let zoneMaxX: CGFloat = 899.5
+        SARuleFilterDropZoneLayoutPolicy.spaceBarControls([popUp, apply, add], afterX: zoneMaxX)
+        let gap = SARuleFilterDropZoneLayoutPolicy.barControlGap
+        XCTAssertEqual(popUp.frame.minX - zoneMaxX, gap)
+        XCTAssertEqual(apply.frame.minX - popUp.frame.maxX, gap)
+        XCTAssertEqual(add.frame, apply.frame)
+        XCTAssertEqual(popUp.frame.minY, 10, "x only")
+        XCTAssertEqual(apply.frame.size, NSSize(width: 101, height: 27))
     }
 }
 
