@@ -342,6 +342,20 @@ final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
         XCTAssertEqual(nested.folders[0].cards[0].type, 4)
     }
 
+    func testNameKeepsItsFullWidthWhenTheBadgeShows() {
+        for cardWidth: CGFloat in [180, 190, 245, 400] {
+            let plain = L.textWidths(cardWidth: cardWidth, pillWidth: nil)
+            let badged = L.textWidths(cardWidth: cardWidth, pillWidth: 46)
+            // Circle (12 + 28 + 10) on the left, the 12pt padding on the right.
+            XCTAssertEqual(plain.name, cardWidth - 62)
+            XCTAssertEqual(plain.summary, plain.name)
+            XCTAssertEqual(badged.name, plain.name, "the badge sits on the summary row and costs the name nothing")
+            XCTAssertEqual(badged.summary, plain.name - 46 - L.badgeGap, "the summary stops 8pt before the pill")
+        }
+        XCTAssertEqual(L.textWidths(cardWidth: 30, pillWidth: 46).name, 0)
+        XCTAssertEqual(L.textWidths(cardWidth: 100, pillWidth: 60).summary, 0)
+    }
+
     func testCardIconPerType() {
         typealias Icon = SAClaudeFavoriteCardIcon
         XCTAssertEqual(Icon.icon(type: 0), .databaseGlyph)

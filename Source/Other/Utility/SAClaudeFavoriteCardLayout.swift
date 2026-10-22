@@ -157,6 +157,24 @@ enum SAClaudeFavoriteCardLayout {
     static let radius: CGFloat = 10
     static let visibleCardRows = 3
 
+    // MARK: Card content
+
+    /// Inset of a card's content from its left and right edges.
+    static let contentPadding: CGFloat = 12
+    static let circleSize: CGFloat = 28
+    static let circleGap: CGFloat = 10
+    /// Space between the summary text and the badge pill that ends its row.
+    static let badgeGap: CGFloat = 8
+
+    /// Widths of a card's name and summary lines. Both start after the icon circle; the name takes the card's
+    /// full width up to the right padding, the badge pill (`pillWidth`, nil without a badge) sits at the right end
+    /// of the summary row, so only the summary gives way to it.
+    static func textWidths(cardWidth: CGFloat, pillWidth: CGFloat?) -> (name: CGFloat, summary: CGFloat) {
+        let name = max(0, cardWidth - contentPadding - (contentPadding + circleSize + circleGap))
+        guard let pillWidth else { return (name, name) }
+        return (name, max(0, name - pillWidth - badgeGap))
+    }
+
     static func columns(for width: CGFloat) -> Int {
         max(1, min(maxColumns, Int(floor((width + gap) / (minCardWidth + gap)))))
     }

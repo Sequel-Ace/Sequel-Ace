@@ -94,12 +94,10 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     /// Folder names: the same size and weight as the card names (Quick connect).
     private static let headerFont = NSFont.systemFont(ofSize: 13, weight: .medium)
     private static let messageFont = NSFont.systemFont(ofSize: 12)
-    private static let padding: CGFloat = 12
+    private static let padding = Layout.contentPadding
     private static let dotSize: CGFloat = 6
     private static let dragThreshold: CGFloat = 4
     private static let autoscrollMargin: CGFloat = 20
-    private static let circleSize: CGFloat = 28
-    private static let circleGap: CGFloat = 10
     private static let databaseGlyphSize: CGFloat = 16
     private static let symbolPointSize: CGFloat = 13
 
@@ -182,28 +180,25 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         let vivid = card.colorIndex.flatMap(SAVividColour.init(index:))
         drawOutline(card, colour: vivid, in: frame)
 
-        // The icon circle at the left, then the badge (top right), the name beside it and the summary below.
+        // The icon circle at the left, then the name and, below it, the summary with the badge at the row's right end.
         let dark = colours.isDark
-        let circle = NSRect(x: frame.minX + Self.padding, y: frame.midY - Self.circleSize / 2, width: Self.circleSize, height: Self.circleSize)
+        let circle = NSRect(x: frame.minX + Self.padding, y: frame.midY - Layout.circleSize / 2, width: Layout.circleSize, height: Layout.circleSize)
         (vivid?.tint(dark: dark) ?? colours.text.withAlphaComponent(0.07)).setFill()
         NSBezierPath(ovalIn: circle).fill()
         drawIcon(SAClaudeFavoriteCardIcon.icon(type: card.type), colour: vivid?.ink(dark: dark) ?? colours.muted, in: circle)
 
-        var nameMaxX = frame.maxX - Self.padding
-        if !card.badge.isEmpty {
-            let badge = NSAttributedString(string: card.badge, attributes: [.font: Self.badgeFont, .foregroundColor: vivid?.ink(dark: dark) ?? colours.muted])
-            let size = badge.size()
-            let pill = NSRect(x: frame.maxX - 10 - ceil(size.width) - 12, y: frame.minY + 11, width: ceil(size.width) + 12, height: 16)
+        let badge = card.badge.isEmpty ? nil : NSAttributedString(string: card.badge, attributes: [.font: Self.badgeFont, .foregroundColor: vivid?.ink(dark: dark) ?? colours.muted])
+        let pillWidth = badge.map { ceil($0.size().width) + 12 }
+        let widths = Layout.textWidths(cardWidth: frame.width, pillWidth: pillWidth)
+        if let badge, let pillWidth {
+            let pill = NSRect(x: frame.maxX - Self.padding - pillWidth, y: frame.minY + 34, width: pillWidth, height: 16)
             (vivid?.tint(dark: dark) ?? colours.text.withAlphaComponent(0.07)).setFill()
             NSBezierPath(roundedRect: pill, xRadius: 6, yRadius: 6).fill()
-            badge.draw(at: NSPoint(x: pill.minX + 6, y: pill.midY - size.height / 2))
-            nameMaxX = pill.minX - 8
+            badge.draw(at: NSPoint(x: pill.minX + 6, y: pill.midY - badge.size().height / 2))
         }
-        let x = circle.maxX + Self.circleGap
-        drawText(card.name, font: Self.nameFont, colour: colours.text,
-                 in: NSRect(x: x, y: frame.minY + 11, width: max(0, nameMaxX - x), height: 18))
-        drawText(card.summary, font: Self.summaryFont, colour: colours.muted,
-                 in: NSRect(x: x, y: frame.minY + 35, width: max(0, frame.maxX - Self.padding - x), height: 16))
+        let x = circle.maxX + Layout.circleGap
+        drawText(card.name, font: Self.nameFont, colour: colours.text, in: NSRect(x: x, y: frame.minY + 11, width: widths.name, height: 18))
+        drawText(card.summary, font: Self.summaryFont, colour: colours.muted, in: NSRect(x: x, y: frame.minY + 35, width: widths.summary, height: 16))
 
         if showsUnsavedDot, card.id == selectedID {
             SAClaudeStatusChrome.clay.setFill()
