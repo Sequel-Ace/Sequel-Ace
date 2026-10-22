@@ -14,27 +14,25 @@ import SwiftUI
 
 // MARK: - Tones
 
-/// The status colours: red for needs attention (the alert card's red), amber for running (its warning amber), the
-/// muted grey for idle — each in its light or dark tone, following the theme's lightness.
+/// The status colours: the vivid palette by group (`SAClaudeKindColours`: Rose needs attention, Amber running, Slate
+/// idle), the ink for dots, stripes and text and the tint for a selected chip, each following the theme's lightness.
+/// The alert colours (`red`, `amber`) stay for the Kill buttons and alerts.
 enum SAClaudeProcessListTones {
     static func red(dark: Bool) -> NSColor { dark ? SAClaudeAlertChrome.redGlyphDark : SAClaudeAlertChrome.red }
     static func amber(dark: Bool) -> NSColor { dark ? SAClaudeAlertChrome.amberDark : SAClaudeAlertChrome.amberLight }
 
-    static func colour(for group: SAClaudeProcessGroup, dark: Bool, muted: NSColor) -> NSColor {
-        switch group {
-        case .needsAttention: return red(dark: dark)
-        case .running: return amber(dark: dark)
-        case .idle: return muted
-        }
+    static func colour(for group: SAClaudeProcessGroup, dark: Bool) -> NSColor {
+        SAClaudeKindColours.colour(for: group).ink(dark: dark)
     }
 
     @MainActor
     static func colour(for group: SAClaudeProcessGroup, palette: SAClaudeSwiftUIPalette) -> Color {
-        switch group {
-        case .needsAttention: return Color(nsColor: red(dark: palette.isDark))
-        case .running: return Color(nsColor: amber(dark: palette.isDark))
-        case .idle: return palette.muted
-        }
+        Color(nsColor: colour(for: group, dark: palette.isDark))
+    }
+
+    @MainActor
+    static func tint(for group: SAClaudeProcessGroup, palette: SAClaudeSwiftUIPalette) -> Color {
+        Color(nsColor: SAClaudeKindColours.colour(for: group).tint(dark: palette.isDark))
     }
 }
 
@@ -188,22 +186,23 @@ struct SAClaudeProcessListChip: View {
     let action: () -> Void
 
     var body: some View {
+        let ink = group.map { SAClaudeProcessListTones.colour(for: $0, palette: palette) }
         Button(action: action) {
             HStack(spacing: 4) {
-                if let dot = dotColour { Circle().fill(dot).frame(width: 7, height: 7) }
-                if !compact || dotColour == nil {
+                if let ink { Circle().fill(ink).frame(width: 7, height: 7) }
+                if !compact || ink == nil {
                     Text(SAClaudeProcessListStrings.chipTitle(filter))
-                        .foregroundColor(isSelected ? palette.text : palette.secondary)
+                        .foregroundColor(isSelected ? (ink ?? palette.text) : palette.secondary)
                 }
                 Text(verbatim: String(count))
                     .monospacedDigit()
-                    .foregroundColor(countColour)
+                    .foregroundColor(ink ?? palette.muted)
             }
             .font(.system(size: 12, weight: isSelected ? .medium : .regular))
             .lineLimit(1)
             .padding(.horizontal, 8)
             .frame(height: 24)
-            .background(Capsule().fill(isSelected ? palette.selected : isHovered ? palette.hover : Color.clear))
+            .background(Capsule().fill(isSelected ? selectedFill : isHovered ? palette.hover : Color.clear))
             .overlay(Capsule().strokeBorder(isSelected ? Color.clear : palette.hairline, lineWidth: 1))
             .contentShape(Capsule())
         }
@@ -214,18 +213,19 @@ struct SAClaudeProcessListChip: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var dotColour: Color? {
+    /// The status group a status chip filters on; nil for All and Mine.
+    private var group: SAClaudeProcessGroup? {
         switch filter {
-        case .needsAttention: return SAClaudeProcessListTones.colour(for: .needsAttention, palette: palette)
-        case .running: return SAClaudeProcessListTones.colour(for: .running, palette: palette)
-        case .idle: return SAClaudeProcessListTones.colour(for: .idle, palette: palette)
+        case .needsAttention: return .needsAttention
+        case .running: return .running
+        case .idle: return .idle
         case .all, .mine: return nil
         }
     }
 
-    private var countColour: Color {
-        if filter == .needsAttention, count > 0 { return SAClaudeProcessListTones.colour(for: .needsAttention, palette: palette) }
-        return palette.muted
+    /// A selected status chip is filled with its group's tint, the others with the selected fill.
+    private var selectedFill: Color {
+        group.map { SAClaudeProcessListTones.tint(for: $0, palette: palette) } ?? palette.selected
     }
 }
 

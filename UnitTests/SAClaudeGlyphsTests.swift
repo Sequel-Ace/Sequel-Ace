@@ -65,8 +65,8 @@ final class SAClaudeGlyphsTests: XCTestCase {
     /// Verifies the object icons carry their type tints in both appearances.
     func testTypeTints() {
         let expected: [(SAClaudeGlyph, UInt32, UInt32)] = [
-            (.database, 0xD97757, 0xC6613F), (.table, 0x6DA7EC, 0x2A78D6), (.view, 0xA096EB, 0x7161E0),
-            (.procedure, 0xEC835A, 0xC25124), (.function, 0x55BF50, 0x008300),
+            (.database, 0xD97757, 0xC6613F), (.table, 0x38BDF8, 0x075985), (.view, 0xA78BFA, 0x5B21B6),
+            (.procedure, 0xFBBF24, 0x92400E), (.function, 0x4ADE80, 0x166534),
         ]
         for (glyph, dark, light) in expected {
             let image = SAClaudeGlyphs.image(glyph, tint: SAClaudeGlyphs.tint(for: glyph))
@@ -78,31 +78,49 @@ final class SAClaudeGlyphsTests: XCTestCase {
     /// Verifies one image instance re-tints when the appearance changes (no stale cache).
     func testSameImageInstanceRetintsPerAppearance() {
         let image = SAClaudeGlyphs.image(.table, tint: SAClaudeStyle.tintTable)
-        assertClose(strokeColour(render(image, .darkAqua)), 0x6DA7EC, "first dark draw")
-        assertClose(strokeColour(render(image, .aqua)), 0x2A78D6, "then light")
-        assertClose(strokeColour(render(image, .darkAqua)), 0x6DA7EC, "back to dark")
+        assertClose(strokeColour(render(image, .darkAqua)), 0x38BDF8, "first dark draw")
+        assertClose(strokeColour(render(image, .aqua)), 0x075985, "then light")
+        assertClose(strokeColour(render(image, .darkAqua)), 0x38BDF8, "back to dark")
     }
 
-    /// Verifies the sidebar images use the padded canvas, map the table types, and skip headers.
+    /// Verifies the sidebar images use the padded canvas (as tall as the chip), map the table types, and skip headers.
     func testSidebarImagesByTableType() {
         XCTAssertNil(SAClaudeGlyphs.sidebarImage(forTableType: -1))
         let names = [0: "Table", 1: "View", 2: "Procedure", 3: "Function", 4: "Table", 5: "Table"]
         for (type, name) in names {
             let image = SAClaudeGlyphs.sidebarImage(forTableType: type)
-            XCTAssertEqual(image?.size, NSSize(width: SAClaudeStyle.sidebarIconCanvasWidth, height: 16))
+            XCTAssertEqual(image?.size, NSSize(width: SAClaudeStyle.sidebarIconCanvasWidth, height: 20))
             XCTAssertEqual(image?.accessibilityDescription, name)
         }
     }
 
-    /// Verifies the glyph inside the padded canvas starts at sidebarIconLeading.
+    /// Verifies nothing (chip or glyph) is drawn left of the chip, which starts 2pt before sidebarIconLeading.
     func testSidebarImageLeavesLeadingSpaceClear() {
         let rep = render(SAClaudeGlyphs.sidebarImage(forTableType: 0)!, .darkAqua)
-        let leadingPixels = Int(SAClaudeStyle.sidebarIconLeading * 2)
+        let leadingPixels = Int((SAClaudeStyle.sidebarIconLeading - 2) * 2)
         for x in 0..<(leadingPixels - 1) {
             for y in 0..<rep.pixelsHigh {
                 XCTAssertLessThan(rep.colorAt(x: x, y: y)?.alphaComponent ?? 0, 0.01, "ink at x=\(x)")
             }
         }
+    }
+
+    /// Verifies the sidebar image lays its glyph on a tinted chip: in dark, a point inside the chip and left of the glyph is
+    /// the Sky tint (0x38BDF8 at 16%).
+    func testSidebarImageDrawsTheChip() {
+        let rep = render(SAClaudeGlyphs.sidebarImage(forTableType: 0)!, .darkAqua)
+        // The bitmap's rows run top down, like the image's flipped canvas; 2x.
+        let x = Int((SAClaudeStyle.sidebarIconLeading - 1) * 2), y = 10 * 2
+        guard let pixel = rep.colorAt(x: x, y: y) else { return XCTFail("no pixel") }
+        XCTAssertEqual(pixel.alphaComponent, SAVividColour.tintAlphaDark, accuracy: 0.02, "chip alpha")
+        // `colorAt` returns the colour without the alpha premultiplied in.
+        let rgb = pixel.usingColorSpace(.sRGB)!
+        let sky = SAClaudeStyle.srgb(0x38BDF8)
+        XCTAssertEqual(rgb.redComponent, sky.redComponent, accuracy: 0.06, "chip red")
+        XCTAssertEqual(rgb.greenComponent, sky.greenComponent, accuracy: 0.06, "chip green")
+        XCTAssertEqual(rgb.blueComponent, sky.blueComponent, accuracy: 0.06, "chip blue")
+        // Left of the chip stays clear.
+        XCTAssertLessThan(rep.colorAt(x: Int((SAClaudeStyle.sidebarIconLeading - 3) * 2), y: y)?.alphaComponent ?? 1, 0.01)
     }
 
     /// Verifies the editor bar's glyphs render and are named.

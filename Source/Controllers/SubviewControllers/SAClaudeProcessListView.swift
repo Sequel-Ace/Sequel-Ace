@@ -571,7 +571,7 @@ extension SAClaudeProcessListContent: NSTableViewDataSource, NSTableViewDelegate
             ?? SAClaudeProcessRowView()
         if contents.rows.indices.contains(row) {
             let item = contents.rows[row]
-            rowView.stripe = SAClaudeProcessListTones.colour(for: item.group, dark: colours.isDark, muted: colours.muted)
+            rowView.stripe = SAClaudeProcessListTones.colour(for: item.group, dark: colours.isDark)
                 .withAlphaComponent(item.isBackground ? 0.45 : 1)
         }
         rowView.colours = colours
@@ -617,7 +617,8 @@ struct SAClaudeProcessListColours {
     let selection: NSColor
     let isDark: Bool
 
-    var red: NSColor { SAClaudeProcessListTones.red(dark: isDark) }
+    /// The needs-attention text of a row (its state and time), in the group's colour like its stripe.
+    var attention: NSColor { SAClaudeProcessListTones.colour(for: .needsAttention, dark: isDark) }
 
     static func current() -> SAClaudeProcessListColours {
         let sheet = SAClaudeSheetColours.current()
@@ -811,7 +812,7 @@ final class SAClaudeProcessRowCell: NSView {
         if let db = process.db, !db.isEmpty { text.append(NSAttributedString(string: separator + db, attributes: plain)) }
         if !row.stateText.isEmpty {
             text.append(NSAttributedString(string: separator, attributes: plain))
-            text.append(NSAttributedString(string: row.stateText, attributes: [.font: Self.metaFont, .foregroundColor: attention ? colours.red : colours.muted]))
+            text.append(NSAttributedString(string: row.stateText, attributes: [.font: Self.metaFont, .foregroundColor: attention ? colours.attention : colours.muted]))
         }
         let style = NSMutableParagraphStyle()
         style.lineBreakMode = .byTruncatingTail
@@ -819,7 +820,7 @@ final class SAClaudeProcessRowCell: NSView {
         meta.attributedStringValue = text
 
         time.stringValue = row.timeText
-        time.textColor = attention ? colours.red : colours.muted
+        time.textColor = attention ? colours.attention : colours.muted
 
         if let preview = row.preview {
             query.font = Self.queryFont

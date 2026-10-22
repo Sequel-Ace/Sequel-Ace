@@ -401,9 +401,9 @@ enum SAClaudeSettingsWindowMetrics {
     static let sidebarRowHeight: CGFloat = 28
     static let sidebarRowSpacing: CGFloat = 2
     static let sidebarRowRadius: CGFloat = 8
-    static let sidebarIconWidth: CGFloat = 18
     static let sidebarFont = Font.system(size: 13)
-    static let sidebarIconFont = Font.system(size: 12.5)
+    /// The pane's symbol, in its colour's ink on a `SAClaudeKindColours.settingsChipSize` chip of its tint.
+    static let sidebarIconFont = Font.system(size: 11)
     static let paneTitleFont = Font.system(size: 16, weight: .medium)
     static let paneHorizontalPadding: CGFloat = 28
     static let paneTopPadding: CGFloat = 20
@@ -481,10 +481,7 @@ struct SAClaudeSettingsSidebarRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: pane.symbol)
-                    .font(Metrics.sidebarIconFont)
-                    .frame(width: Metrics.sidebarIconWidth)
-                    .accessibilityHidden(true)
+                SAClaudeSettingsPaneChip(pane: pane)
                 Text(NSLocalizedString(pane.titleKey, comment: ""))
                     .font(Metrics.sidebarFont)
                     .lineLimit(1)
@@ -500,6 +497,25 @@ struct SAClaudeSettingsSidebarRow: View {
         .buttonStyle(SAClaudeBareButtonStyle())
         .onHover { isHovered = $0 }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// A pane's symbol on its colour chip: the symbol in the colour's ink on a rounded square of its tint, picked by the
+/// palette's lightness.
+struct SAClaudeSettingsPaneChip: View {
+    @EnvironmentObject private var palette: SAClaudeSwiftUIPalette
+    let pane: SAClaudeSettingsPaneID
+
+    var body: some View {
+        let colour = SAClaudeKindColours.colour(for: pane)
+        let size = SAClaudeKindColours.settingsChipSize
+        Image(systemName: pane.symbol)
+            .font(SAClaudeSettingsWindowMetrics.sidebarIconFont)
+            .foregroundColor(Color(nsColor: colour.ink(dark: palette.isDark)))
+            .frame(width: size, height: size)
+            .background(RoundedRectangle(cornerRadius: SAClaudeKindColours.chipRadius, style: .continuous)
+                .fill(Color(nsColor: colour.tint(dark: palette.isDark))))
+            .accessibilityHidden(true)
     }
 }
 

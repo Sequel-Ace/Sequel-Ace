@@ -3,9 +3,10 @@
 //  Sequel Ace
 //
 //  Draws the main window toolbar's image items as Claude buttons: a 16pt
-//  outline glyph, a hover fill, and a pill with a clay glyph on the selected
-//  view. Identifiers, labels, tooltips, targets, actions and validation stay
-//  the document's; only the drawing changes. App target only.
+//  outline glyph, a hover fill, and an accent-tinted chip with an accent
+//  glyph on the selected view. Identifiers, labels, tooltips, targets,
+//  actions and validation stay the document's; only the drawing changes.
+//  App target only.
 //
 
 import AppKit
@@ -141,6 +142,13 @@ final class SAClaudeToolbarButton: NSButton {
         needsDisplay = true
     }
 
+    private var isDark: Bool { effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua }
+
+    /// The selected view's chip: the accent at the vivid palette's tint alpha (its glyph is the accent).
+    static func selectedFill(dark: Bool) -> NSColor {
+        SAClaudeAccent.accent.withAlphaComponent(dark ? SAVividColour.tintAlphaDark : SAVividColour.tintAlphaLight)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
@@ -149,7 +157,7 @@ final class SAClaudeToolbarButton: NSButton {
         let selected = isSelectedItem
         let pressed = cell?.isHighlighted ?? false
         if selected || (isEnabled && (isHovered || pressed)) {
-            (selected ? SAClaudeStyle.selection : SAClaudeStyle.hoverFill).setFill()
+            (selected ? Self.selectedFill(dark: isDark) : SAClaudeStyle.hoverFill).setFill()
             NSBezierPath(roundedRect: bounds, xRadius: 8, yRadius: 8).fill()
         }
         let tint = selected ? SAClaudeStatusChrome.clay : SAClaudeStyle.textMuted

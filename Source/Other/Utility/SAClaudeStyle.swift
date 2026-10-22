@@ -44,10 +44,11 @@ import AppKit
             appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? SAClaudeAccent.accent : SAClaudeAccent.fill
         }
     }
-    @objc static let tintTable = dynamic("tintTable", dark: 0x6DA7EC, light: 0x2A78D6)
-    @objc static let tintView = dynamic("tintView", dark: 0xA096EB, light: 0x7161E0)
-    @objc static let tintProcedure = dynamic("tintProcedure", dark: 0xEC835A, light: 0xC25124)
-    @objc static let tintFunction = dynamic("tintFunction", dark: 0x55BF50, light: 0x008300)
+    /// The object type tints: the ink of the type's vivid colour (`SAClaudeKindColours`), so a glyph reads on its chip.
+    @objc static let tintTable = SAVividColour.sky.inkColour
+    @objc static let tintView = SAVividColour.violet.inkColour
+    @objc static let tintProcedure = SAVividColour.amber.inkColour
+    @objc static let tintFunction = SAVividColour.emerald.inkColour
     /// The main window's title bar and toolbar.
     @objc static let toolbarBackground = dynamic("toolbarBackground", dark: 0x1A1A19, light: 0xF4F3EF)
     /// The window tab bar's chips: every tab, and the selected (raised) one.

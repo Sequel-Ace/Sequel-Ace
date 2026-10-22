@@ -81,8 +81,8 @@ import AppKit
         image(glyph, tint: tint, canvas: NSSize(width: 16, height: 16), glyphX: 0)
     }
 
-    /// The icon for a tables-list row, on the padded canvas that positions it
-    /// and the name (see `SAClaudeStyle.sidebarIconLeading`).
+    /// The icon for a tables-list row: the glyph on its kind's colour chip, on the padded canvas that positions it and
+    /// the name (see `SAClaudeStyle.sidebarIconLeading`; the chip starts 2pt before it, the name where it always did).
     ///
     /// - Parameter type: An `SPTableType` value. Keep in sync with SPTableType in
     ///   SPConstants.h: -1 none, 0 table, 1 view, 2 procedure, 3 function,
@@ -98,9 +98,41 @@ import AppKit
         case 3: glyph = .function
         default: glyph = .table
         }
-        return image(glyph, tint: tint(for: glyph),
-                     canvas: NSSize(width: SAClaudeStyle.sidebarIconCanvasWidth, height: 16),
-                     glyphX: SAClaudeStyle.sidebarIconLeading)
+        let chip = SAClaudeKindColours.sidebarChipSize
+        return chipImage(glyph, colour: SAClaudeKindColours.colour(forTableType: type) ?? .sky,
+                         canvas: NSSize(width: SAClaudeStyle.sidebarIconCanvasWidth, height: chip),
+                         chipX: SAClaudeStyle.sidebarIconLeading - (chip - SAClaudeStyle.iconSize) / 2)
+    }
+
+    /// Size of a glyph on a chip.
+    static let chipGlyphSize: CGFloat = 14
+
+    /// `glyph` at `chipGlyphSize`, centred on a `sidebarChipSize` rounded square at `chipX` (centred vertically on the
+    /// canvas): the square in `colour`'s tint, the glyph in its ink, both following the appearance at draw time.
+    static func chipImage(_ glyph: SAClaudeGlyph, colour: SAVividColour, canvas: NSSize, chipX: CGFloat) -> NSImage {
+        let size = SAClaudeKindColours.sidebarChipSize
+        let chip = NSRect(x: chipX, y: floor((canvas.height - size) / 2), width: size, height: size)
+        let scale = chipGlyphSize / 16
+        let place = AffineTransform(m11: scale, m12: 0, m21: 0, m22: scale,
+                                    tX: chip.minX + (size - chipGlyphSize) / 2, tY: chip.minY + (size - chipGlyphSize) / 2)
+        let image = NSImage(size: canvas, flipped: true) { _ in
+            let radius = SAClaudeKindColours.chipRadius
+            colour.tintColour.setFill()
+            NSBezierPath(roundedRect: chip, xRadius: radius, yRadius: radius).fill()
+            colour.inkColour.setStroke()
+            for path in paths(for: glyph) {
+                path.transform(using: place)
+                path.lineWidth = SAClaudeStyle.iconStrokeWidth
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.stroke()
+            }
+            return true
+        }
+        // Redraw on every use so an appearance change re-tints immediately.
+        image.cacheMode = .never
+        image.accessibilityDescription = accessibilityName(for: glyph)
+        return image
     }
 
     /// The icon drawn at `glyphX` on a `canvas` (the gap after it is the canvas's; for an `ImageAndTextCell`, which draws its

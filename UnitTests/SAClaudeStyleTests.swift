@@ -31,10 +31,10 @@ final class SAClaudeStyleTests: XCTestCase {
             (SAClaudeStyle.textSecondary, 0xC3C2B7, 0x52514E, "textSecondary"),
             (SAClaudeStyle.textMuted, 0x898781, 0x7B7974, "textMuted"),
             (SAClaudeStyle.tintDatabase, 0xD97757, 0xC6613F, "tintDatabase"),
-            (SAClaudeStyle.tintTable, 0x6DA7EC, 0x2A78D6, "tintTable"),
-            (SAClaudeStyle.tintView, 0xA096EB, 0x7161E0, "tintView"),
-            (SAClaudeStyle.tintProcedure, 0xEC835A, 0xC25124, "tintProcedure"),
-            (SAClaudeStyle.tintFunction, 0x55BF50, 0x008300, "tintFunction"),
+            (SAClaudeStyle.tintTable, 0x38BDF8, 0x075985, "tintTable"),
+            (SAClaudeStyle.tintView, 0xA78BFA, 0x5B21B6, "tintView"),
+            (SAClaudeStyle.tintProcedure, 0xFBBF24, 0x92400E, "tintProcedure"),
+            (SAClaudeStyle.tintFunction, 0x4ADE80, 0x166534, "tintFunction"),
         ]
         for (color, dark, light, name) in expected {
             XCTAssertEqual(hex(color, .darkAqua), dark, "\(name) dark")
