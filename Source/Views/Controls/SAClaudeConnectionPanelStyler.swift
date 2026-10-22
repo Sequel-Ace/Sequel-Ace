@@ -1034,6 +1034,15 @@ private final class SAClaudePanelForm {
         pencilButton.image = SAClaudeGlyphs.image(.editMode, tint: palette.icon)
         SAClaudeHoverHighlighter.setFillColour(palette.hover, for: pencilButton)
         dot.ringColour = SAClaudeFilterChrome.dropStroke(text: text, background: cardFill)
+        // The header dot and the colour picker sit on the theme's card, not on macOS's surface: they resolve their
+        // colours (the dots, the picker's selected halo and None X) in the appearance of the card's lightness.
+        let cardAppearance = SAClaudeGridChrome.scrollerAppearance(for: palette.background)
+        dot.appearance = cardAppearance
+        for form in forms {
+            guard let picker = form.rows.first(where: { $0.id == "colour" })?.control else { continue }
+            picker.appearance = cardAppearance
+            picker.needsDisplay = true
+        }
         for title in sectionTitles.values { title.textColor = palette.icon }
         disclosure.titleColour = palette.icon
         typeTabs.colours = SAClaudeConnectionTypeTabs.Colours(

@@ -13,8 +13,6 @@ import AppKit
 enum SAClaudeProcessListTones {
     /// The alert card's red: the Kill buttons.
     static func red(dark: Bool) -> NSColor { dark ? SAClaudeAlertChrome.redGlyphDark : SAClaudeAlertChrome.red }
-    /// The alert card's warning amber, kept beside `red` for alert-style warnings (the status tones no longer use it).
-    static func amber(dark: Bool) -> NSColor { dark ? SAClaudeAlertChrome.amberDark : SAClaudeAlertChrome.amberLight }
 
     /// A group's dots, row stripe and attention text: its colour's ink.
     static func colour(for group: SAClaudeProcessGroup, dark: Bool) -> NSColor {

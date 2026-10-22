@@ -377,6 +377,7 @@
 		296DC8BB0F909194002A3258 /* NSDictionary_DeepMutableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8B10F909194002A3258 /* NSDictionary_DeepMutableCopy.m */; };
 		296DC8BC0F909194002A3258 /* MGTemplateStandardFilters.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8B40F909194002A3258 /* MGTemplateStandardFilters.m */; };
 		296DC8BF0F9091DF002A3258 /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
+		29DA4493A11705E490531C6D /* SPFavoriteColorSupportTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BA32DAB4C84EF301489BD518 /* SPFavoriteColorSupportTests.m */; };
 		29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */ = {isa = PBXBuildFile; fileRef = 29FA88221114619E00D1AF3D /* SPTableTriggers.m */; };
 		2A0129AA121A225FB6CCA2AA /* SAKeyboardShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644FFD84B58CEAE73585045B /* SAKeyboardShortcut.swift */; };
 		2A7D5700E8EA895137AA6F91 /* SPMCPHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B91D4A5EC24F24F7A7BCA7D /* SPMCPHTTP.swift */; };
@@ -978,6 +979,7 @@
 		D6A079D8AD9D1B1571B8EE66 /* SAFavoriteColourSelectorLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F12BD25C4D08250C855D6D48 /* SAFavoriteColourSelectorLayout.swift */; };
 		D877EB7F27977CC35E75E996 /* SATypeAheadMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704B29F988D5B46E73D169FA /* SATypeAheadMatcherTests.swift */; };
 		D95E363059FDC83627417D74 /* SAQueryFavoriteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7878B22CA20B0D814D30C42 /* SAQueryFavoriteStore.swift */; };
+		DACDB5331A276135ECB302D9 /* SPFavoriteColorSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = 50E217B518174280009D3580 /* SPFavoriteColorSupport.m */; };
 		DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */; };
 		DD00DD00DD00DD00DD000003 /* SPFilterRuleEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000004 /* SPFilterRuleEditor.swift */; };
 		DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000006 /* SPRuleFilterDropBox.swift */; };
@@ -1312,6 +1314,7 @@
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
 		0830448F21CA14E21CB9D255 /* SACompletionWindowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACompletionWindowLayout.swift; sourceTree = "<group>"; };
 		B8E3F2A01C2D3E4F50617280 /* SAClaudeCompletionStyler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeCompletionStyler.swift; sourceTree = "<group>"; };
+		BA32DAB4C84EF301489BD518 /* SPFavoriteColorSupportTests.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SPFavoriteColorSupportTests.m; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -3725,6 +3728,7 @@
 				1BDC82C7758AE0912D42CD26 /* SAVividPaletteTests.swift */,
 				B75F2FE63602D21AD18C6876 /* SAFavoriteColourSelectorLayoutTests.swift */,
 				7A4E7CD9D596176EFC788B47 /* SAClaudeKindColoursTests.swift */,
+				BA32DAB4C84EF301489BD518 /* SPFavoriteColorSupportTests.m */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -4724,6 +4728,8 @@
 				A91D76B78EBA6299762DCFD8 /* SAClaudeKindColours.swift in Sources */,
 				1A81AA76686C303869217D01 /* SAClaudeKindColoursTests.swift in Sources */,
 				74FF870F9494FE05CF550997 /* SAClaudeProcessListTones.swift in Sources */,
+				DACDB5331A276135ECB302D9 /* SPFavoriteColorSupport.m in Sources */,
+				29DA4493A11705E490531C6D /* SPFavoriteColorSupportTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
