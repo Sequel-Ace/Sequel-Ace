@@ -240,22 +240,11 @@ struct SAClaudeProcessListSearchField: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
                     .foregroundColor(palette.muted)
-                // The placeholder is drawn here in the palette's muted grey, as the other Claude search fields draw
-                // theirs: AppKit's own placeholder took the system colour for the window's appearance, not the theme's,
-                // so a light theme under dark macOS (and the reverse) drew it nearly invisible on the field.
                 TextField("", text: $model.search)
                     .textFieldStyle(.plain)
+                    .claudePlaceholder(NSLocalizedString("ClaudeProcessListSearchPlaceholder", value: "Search", comment: "process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches)"),
+                                       isShown: model.search.isEmpty)
                     .font(.system(size: 12))
-                    .background(alignment: .leading) {
-                        if model.search.isEmpty {
-                            Text(NSLocalizedString("ClaudeProcessListSearchPlaceholder", value: "Search", comment: "process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches)"))
-                                .font(.system(size: 12))
-                                .foregroundColor(palette.muted)
-                                .lineLimit(1)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                    }
                     .focused($focused)
                     .onExitCommand { model.search = "" }
                     // On the text field itself (on the field's chrome it would also name the clear button).

@@ -279,17 +279,57 @@ extension EnvironmentValues {
 /// A Claude text field: the field fill inside a 1pt hairline, the accent outline while focused; `.form` 24pt high
 /// with a 7pt radius and a 1pt accent border, as the AppKit sheet fields; `.panel` 28pt, 8pt and a 1.5pt ring.
 /// SwiftUI cannot tell a style about focus: pass the field's `@FocusState` in.
+/// A style can't see the field's text either: pass the `placeholder` and whether the text `isEmpty`
+/// (`SAClaudePlaceholderModifier`; the field's own title stays empty).
 struct SAClaudeFieldStyle: TextFieldStyle {
     var isFocused: Bool
     var size: SAClaudeControlSize
+    var placeholder: String?
+    var isEmpty: Bool
 
-    init(isFocused: Bool, size: SAClaudeControlSize = .panel) {
+    init(isFocused: Bool, size: SAClaudeControlSize = .panel, placeholder: String? = nil, isEmpty: Bool = false) {
         self.isFocused = isFocused
         self.size = size
+        self.placeholder = placeholder
+        self.isEmpty = isEmpty
     }
 
     func _body(configuration: TextField<Self._Label>) -> some View {
-        SAClaudeFieldChrome(isFocused: isFocused, size: size) { configuration.textFieldStyle(.plain) }
+        SAClaudeFieldChrome(isFocused: isFocused, size: size) {
+            configuration.textFieldStyle(.plain)
+                .claudePlaceholder(placeholder ?? "", isShown: placeholder != nil && isEmpty)
+        }
+    }
+}
+
+/// A Claude field's placeholder: the hint drawn behind the empty text field in the palette's muted grey, at the
+/// field's font (the environment's — apply `.font` outside this modifier, as `SAClaudeFieldChrome` does). AppKit's own
+/// placeholder (a `TextField` title) takes the system colour for the window's appearance rather than the theme's, so a
+/// light theme under dark macOS drew it near-white on the light fill, and the reverse near-black. A field using this
+/// has an empty title and names its hint in its accessibility label (VoiceOver reads that); the drawn hint takes no
+/// clicks and is hidden from accessibility.
+struct SAClaudePlaceholderModifier: ViewModifier {
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
+    let text: String
+    let isShown: Bool
+
+    func body(content: Content) -> some View {
+        content.background(alignment: .leading) {
+            if isShown {
+                Text(verbatim: text)
+                    .foregroundColor(palette.muted)
+                    .lineLimit(1)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+extension View {
+    /// `SAClaudePlaceholderModifier`: `text` behind the field while `isShown` (its text is empty).
+    func claudePlaceholder(_ text: String, isShown: Bool) -> some View {
+        modifier(SAClaudePlaceholderModifier(text: text, isShown: isShown))
     }
 }
 

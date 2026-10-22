@@ -241,9 +241,10 @@ private struct SAClaudeRecordPanelView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(palette.muted)
-                TextField(NSLocalizedString("ClaudeRecordSearchPlaceholder", value: "Search fields and values", comment: "Record View: placeholder of the search field above the fields"),
-                          text: $model.searchText)
+                TextField("", text: $model.searchText)
                     .textFieldStyle(.plain)
+                    .claudePlaceholder(NSLocalizedString("ClaudeRecordSearchPlaceholder", value: "Search fields and values", comment: "Record View: placeholder of the search field above the fields"),
+                                       isShown: model.searchText.isEmpty)
                     .focused($searchFocused)
                     .onExitCommand(perform: model.escapeInSearch)
                     .accessibilityLabel(Text(NSLocalizedString("ClaudeRecordSearchPlaceholder", value: "Search fields and values", comment: "Record View: placeholder of the search field above the fields")))
@@ -530,10 +531,15 @@ private struct SAClaudeRecordEditor: View {
     let fieldID: SARecordField.ID
     var editorFocus: FocusState<SARecordField.ID?>.Binding
 
+    /// The empty value's placeholder (the "Value" the field's title showed, same key).
+    static let placeholder = NSLocalizedString("Value", comment: "Record View: placeholder of the inline value editor while the value is empty")
+
     var body: some View {
-        TextField("Value", text: $model.validatedEditDraft)
-            .textFieldStyle(SAClaudeFieldStyle(isFocused: editorFocus.wrappedValue == fieldID, size: .panel))
+        TextField("", text: $model.validatedEditDraft)
+            .textFieldStyle(SAClaudeFieldStyle(isFocused: editorFocus.wrappedValue == fieldID, size: .panel,
+                                               placeholder: Self.placeholder, isEmpty: model.editDraft.isEmpty))
             .focused(editorFocus, equals: fieldID)
+            .accessibilityLabel(Text(Self.placeholder))
             .onSubmit {
                 model.commitEdit()
                 returnToBlocks()
