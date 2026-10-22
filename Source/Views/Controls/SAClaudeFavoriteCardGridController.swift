@@ -273,8 +273,9 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
         return gearMenu() ?? outline?.menu
     }
 
-    /// The sidebar's gear pull-down menu (Rename … Sort By), found by its Import action next to the outline.
-    private func gearMenu() -> NSMenu? {
+    /// The sidebar's gear pull-down menu (Rename … Sort By), found by its Import action next to the outline. Also the
+    /// source of the page's ⋯ menu.
+    func gearMenu() -> NSMenu? {
         guard let sidebar = outline?.enclosingScrollView?.superview else { return nil }
         let importAction = #selector(SPConnectionController.importFavorites(_:))
         func find(in view: NSView) -> NSMenu? {

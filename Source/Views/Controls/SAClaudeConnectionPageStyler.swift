@@ -6,7 +6,8 @@
 //  outline stays in the hierarchy, hidden, and keeps owning selection, editing state, menus and persistence), the
 //  right pane paints the theme background, and the details scroll view's document view becomes the page — one
 //  centred column of `min(pane − 48, 960)` with, from the top: a top bar (the favourites search field, moved and
-//  restyled; "Folder" / "Favourite" ghost buttons for `addGroup:` / `addFavorite:`), the favourite cards
+//  restyled; "Folder" / "Favourite" ghost buttons for `addGroup:` / `addFavorite:`, and a "⋯" ghost button whose menu
+//  imports, exports and sorts connections with the card menu's actions — `SAClaudeConnectionsMenuModel`), the favourite cards
 //  (`SAClaudeFavoriteCardGridController`), the connection panel (`SAClaudeConnectionPanelStyler`, given the
 //  column width) and the instruction line (moved and restyled).
 //
@@ -122,6 +123,7 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
     private let searchFieldView = SAClaudePageSearchFieldView()
     private let folderButton = NSButton(title: "", target: nil, action: nil)
     private let favouriteButton = NSButton(title: "", target: nil, action: nil)
+    private let moreButton = NSButton(title: "", target: nil, action: nil)
     private var placeholder = ""
 
     /// How far the visible top is below the page's top: kept across relayouts (the controller's short-window
@@ -304,6 +306,21 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
             SAClaudeHoverHighlighter.attach(to: button)
         }
 
+        // "⋯": Import Connections…, Export Connections…, Sort By (the card menu's actions), an icon-only ghost button.
+        let moreHelp = NSLocalizedString("ClaudeConnectionPageMore", value: "Import, export and sort connections",
+                                         comment: "connection screen : tooltip and accessibility name of the top bar ⋯ button (its menu imports, exports and sorts connection favourites)")
+        moreButton.toolTip = moreHelp
+        moreButton.setAccessibilityLabel(moreHelp)
+        moreButton.target = self
+        moreButton.action = #selector(showMoreMenu(_:))
+        moreButton.bezelStyle = .regularSquare
+        moreButton.imagePosition = .imageOnly
+        moreButton.autoresizingMask = []
+        SAClaudeFilterCells.installCellDrawing(on: moreButton)
+        moreButton.isBordered = false
+        topBar.addSubview(moreButton)
+        SAClaudeHoverHighlighter.attach(to: moreButton)
+
         document.addSubview(grid.view)
 
         // The instruction line moves under the panel, muted.
@@ -463,6 +480,11 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
             SAClaudeHoverHighlighter.setFillColour(palette.hover, for: button)
             button.needsDisplay = true
         }
+        let moreImage = SAClaudeGlyphs.image(.more, tint: palette.buttonText)
+        moreImage.accessibilityDescription = moreButton.accessibilityLabel()
+        moreButton.image = moreImage
+        SAClaudeHoverHighlighter.setFillColour(palette.hover, for: moreButton)
+        moreButton.needsDisplay = true
         instructionsField?.textColor = palette.icon
         updateFocus()
         rightPane.needsDisplay = true
@@ -576,17 +598,32 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
 
     private func layOutTopBar(width: CGFloat) {
         let height = Self.topBarHeight
+        // Right to left: ⋯ (square), Favourite, Folder.
+        let moreWidth = height
         let favouriteWidth = Self.ghostWidth(favouriteButton)
         let folderWidth = Self.ghostWidth(folderButton)
-        Self.place(favouriteButton, NSRect(x: width - favouriteWidth, y: 0, width: favouriteWidth, height: height))
-        Self.place(folderButton, NSRect(x: width - favouriteWidth - Self.buttonGap - folderWidth, y: 0, width: folderWidth, height: height))
-        let searchWidth = max(80, min(Self.searchMaximumWidth, width - favouriteWidth - folderWidth - Self.buttonGap - Self.sectionGap))
+        let favouriteX = width - moreWidth - Self.buttonGap - favouriteWidth
+        Self.place(moreButton, NSRect(x: width - moreWidth, y: 0, width: moreWidth, height: height))
+        Self.place(favouriteButton, NSRect(x: favouriteX, y: 0, width: favouriteWidth, height: height))
+        Self.place(folderButton, NSRect(x: favouriteX - Self.buttonGap - folderWidth, y: 0, width: folderWidth, height: height))
+        let buttonsWidth = moreWidth + favouriteWidth + folderWidth + 2 * Self.buttonGap
+        let searchWidth = max(80, min(Self.searchMaximumWidth, width - buttonsWidth - Self.sectionGap))
         Self.place(searchFieldView, NSRect(x: 0, y: 0, width: searchWidth, height: height))
         if let searchField {
             let fieldHeight = ceil(searchField.cell?.cellSize.height ?? 16)
             Self.place(searchField, NSRect(x: Self.searchInset, y: ((height - fieldHeight) / 2).rounded(.down),
                                            width: max(0, searchWidth - 2 * Self.searchInset), height: fieldHeight))
         }
+    }
+
+    // MARK: - ⋯ menu
+
+    /// Opens the ⋯ menu under the button, its right edge on the button's (the gear menu's Import, Export and Sort By).
+    @objc private func showMoreMenu(_ sender: NSButton) {
+        let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: grid.gearMenu(), target: controller)
+        // The same "no Ask Siri field" as the card menu (the glyph pass fills the item icons as it opens).
+        SAClaudeMenuGlyphPass.suppressAssistant(in: menu)
+        menu.popUp(positioning: nil, at: NSPoint(x: sender.bounds.maxX - menu.size.width, y: sender.bounds.maxY + 4), in: sender)
     }
 
     /// Remembers how far down the user scrolled, unless the controller has just moved the panel (its own centring

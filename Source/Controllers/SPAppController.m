@@ -202,6 +202,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [SAClaudeSheetStyler start];
     [SAClaudeMenuGlyphPass start];
     [SAClaudeWindowTabBarController installWindowMenuMergeItem];
+    [SAClaudeConnectionsFileMenu install];
 
     [SAAnalyticsConsentPolicy requestConsentIfNeeded];
     [SAAnalyticsConsentPolicy applyAnalyticsConsent];

@@ -4987,6 +4987,15 @@
 /* connection screen : top bar button adding a favourite */
 "ClaudeConnectionPageFavourite" = "Favourite";
 
+/* connection screen : tooltip and accessibility name of the top bar ⋯ button (its menu imports, exports and sorts connection favourites) */
+"ClaudeConnectionPageMore" = "Import, export and sort connections";
+
+/* connection screen ⋯ menu and File menu : imports connection favourites from a file (or a copied connection string) */
+"ClaudeConnectionsImport" = "Import Connections…";
+
+/* connection screen ⋯ menu and File menu : exports the selected connection favourites to a file */
+"ClaudeConnectionsExport" = "Export Connections…";
+
 /* connection page : folder rename : cancel button */
 "ClaudeFolderRenameCancel" = "Cancel renaming";
 
