@@ -131,6 +131,18 @@ final class SAConnectionNamePillTitleView: NSView {
     private var leadingInset: CGFloat { insets.left }
     private var trailingInset: CGFloat { insets.right }
 
+    /// Whether VoiceOver sees this view. Off over the native title, whose (transparent) fields already carry the
+    /// same text.
+    var exposesAccessibility = true
+
+    /// Called when the view leaves or joins a window (AppKit discarding or moving the view it is in).
+    var onWindowChange: (() -> Void)?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onWindowChange?()
+    }
+
     /// Called when the view's height changes (the toolbar shown or hidden) or the subtitle's place no longer
     /// matches the one the width was measured for, so the accessory can re-measure.
     var onPlacementChange: (() -> Void)?
@@ -141,7 +153,7 @@ final class SAConnectionNamePillTitleView: NSView {
         didSet {
             guard content != oldValue else { return }
             needsDisplay = true
-            if content.map(Self.accessibilityText) != oldValue.map(Self.accessibilityText) {
+            if exposesAccessibility, content.map(Self.accessibilityText) != oldValue.map(Self.accessibilityText) {
                 NSAccessibility.post(element: self, notification: .valueChanged)
             }
         }
@@ -349,23 +361,27 @@ final class SAConnectionNamePillTitleView: NSView {
         content.subtitle.isEmpty ? content.accessibilityTitle : content.accessibilityTitle + ", " + content.subtitle
     }
 
-    override func isAccessibilityElement() -> Bool { content != nil }
+    override func isAccessibilityElement() -> Bool { exposesAccessibility && content != nil }
     override func accessibilityRole() -> NSAccessibility.Role? { .staticText }
     override func accessibilityLabel() -> String? { content.map(Self.accessibilityText) }
     override func accessibilityValue() -> Any? { content.map(Self.accessibilityText) }
     /// The mouse passes through (`hitTest`), but VoiceOver still finds the title under the pointer.
-    override func accessibilityHitTest(_ point: NSPoint) -> Any? { content == nil ? nil : self }
+    override func accessibilityHitTest(_ point: NSPoint) -> Any? { exposesAccessibility && content != nil ? self : nil }
 }
 
 /// Name pill mode's title. Where it is drawn depends on the toolbar (`SAWindowNamePillHost`):
 ///
-/// - Toolbar shown: over AppKit's native title view, which stays visible with its own text made transparent. In the
+/// - Toolbar shown: over AppKit's native title view (in the window, or in full screen in AppKit's toolbar window),
+///   which stays visible with its own text made transparent and its document proxy off (the `.spf` file's icon is
+///   not revealed under the pill and cannot be dragged), so a drag on the pill moves the window. In the
 ///   unified toolbar that view is the flexible leading area that takes the spare room and keeps the items packed to
 ///   the trailing side; hiding it would hand the room to the toolbar's flexible spaces and slide the database picker
 ///   and the view buttons left. Drawn over it, the pill leaves every item exactly where it is without the pill, and
 ///   gets the room the native title has (it truncates within it, as the native title does). The pill view rides in
-///   the title view (frame and full screen follow it); this accessory stays installed at zero width.
-/// - Toolbar hidden (no items to keep in place), or no native title view to be found: as a leading title bar
+///   the title view (frame and full screen follow it); this accessory stays installed at zero width. VoiceOver reads
+///   the native title's fields, which carry the same text.
+/// - Toolbar hidden (no items to keep in place), or no native title view to be found (looked for again only when the
+///   toolbar is shown or hidden or full screen changes, so a title change never toggles the native title): as a leading title bar
 ///   accessory with the native title hidden, right of the traffic lights. Its width is the content's, capped at 30%
 ///   of the window's and at 240pt; in a short title bar the subtitle follows the title on its line and its width
 ///   comes on top of that cap, within 60% of the window. The width is measured again when the bar's height changes.
@@ -385,9 +401,21 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
     /// The pill over the native title view (toolbar shown).
     private let overlayView = SAConnectionNamePillTitleView(frame: .zero)
     private var content: SAConnectionNamePillTitleView.Content?
-    /// The native title view's own subviews this made transparent, to restore when the pill goes.
-    private let dimmedViews = NSHashTable<NSView>.weakObjects()
+    /// The native title view's own subviews this made transparent, with their alpha before, to restore.
+    private let dimmedViews = NSMapTable<NSView, NSNumber>.weakToStrongObjects()
+    /// The native title view's document proxy views this hid, with their hidden state before, to restore.
+    private let hiddenViews = NSMapTable<NSView, NSNumber>.weakToStrongObjects()
+    /// The native title view's document-drag recognizers this turned off (all were on), to turn back on.
+    private let disabledRecognizers = NSHashTable<NSGestureRecognizer>.weakObjects()
+    /// The toolbar and full-screen state a lookup of the native title view last failed in: not tried again (with
+    /// the title made visible and the bar laid out) until one of them changes.
+    private var failedLookup: LookupState?
+    private struct LookupState: Equatable {
+        let toolbarVisible: Bool
+        let fullScreen: Bool
+    }
     private var resizeObserver: NSObjectProtocol?
+    private var fullScreenObservers: [NSObjectProtocol] = []
     private var toolbarVisibilityObservation: NSKeyValueObservation?
     private weak var observedToolbar: NSToolbar?
     /// The document window (in full screen the toolbar moves to AppKit's toolbar window).
@@ -410,6 +438,12 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         titleView.onPlacementChange = { [weak self] in self?.updateWidth() }
         overlayView.insets = SAConnectionNamePillTitleView.Metrics.nativeTitleInsets
         overlayView.autoresizingMask = [.width, .height]
+        overlayView.exposesAccessibility = false
+        // AppKit discarded the title view it was in (or moved it between windows): find the current one.
+        overlayView.onWindowChange = { [weak self] in
+            guard let self, self.host == .nativeTitle, self.overlayView.window == nil else { return }
+            RunLoop.main.perform { [weak self] in self?.apply() }
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -418,6 +452,7 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
 
     deinit {
         if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
+        fullScreenObservers.forEach { NotificationCenter.default.removeObserver($0) }
     }
 
     /// Adds the accessory to `window` (empty: zero width until `show`), keeps its width capped as the window
@@ -429,6 +464,24 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
             self?.updateWidth()
         }
         observeToolbar(of: window)
+        // In full screen the toolbar, and the title view with it, lives in AppKit's toolbar window.
+        fullScreenObservers = [NSWindow.willEnterFullScreenNotification, NSWindow.didEnterFullScreenNotification,
+                               NSWindow.didExitFullScreenNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                self?.reapplyAfterChromeChange()
+            }
+        }
+    }
+
+    /// The toolbar was shown or hidden, or full screen changed: look for the title view again, at once and once
+    /// AppKit has settled.
+    private func reapplyAfterChromeChange() {
+        failedLookup = nil
+        apply()
+        RunLoop.main.perform { [weak self] in
+            self?.failedLookup = nil
+            self?.apply()
+        }
     }
 
     func show(parts: SAWindowNamePillParts, subtitle: String, colour: NSColor, accessibilityTitle: String) {
@@ -447,7 +500,9 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         guard let window = hostWindow else { return }
         observeToolbar(of: window)
         let toolbarVisible = window.toolbar?.isVisible == true
-        let native = content != nil && toolbarVisible ? nativeTitleView(in: window) : nil
+        let native = content != nil && toolbarVisible
+            ? nativeTitleView(in: window, state: LookupState(toolbarVisible: true, fullScreen: window.styleMask.contains(.fullScreen)))
+            : nil
         host = .choose(showsPill: content != nil, toolbarVisible: toolbarVisible, nativeTitleAvailable: native != nil)
 
         if host == .nativeTitle, let native {
@@ -465,7 +520,10 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         if window.titleVisibility != visibility { window.titleVisibility = visibility }
     }
 
-    /// The pill over `native`, filling it, with the title view's own text transparent (its room in the toolbar stays).
+    /// The pill over `native`, filling it, with the title view's own text transparent (its room in the toolbar stays)
+    /// and its document proxy off: the proxy's view hidden and the title view's document-drag recognizer disabled, so a
+    /// drag on the pill goes to the toolbar's window-drag recognizer and moves the window rather than dragging the
+    /// `.spf` file out of an invisible icon.
     private func drawOver(_ native: NSView) {
         if overlayView.superview !== native {
             removeOverlay()
@@ -474,41 +532,82 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         }
         overlayView.content = content
         // Every pass: AppKit may add or replace the title's views (a title or subtitle change).
-        for subview in native.subviews where subview !== overlayView && subview.alphaValue != 0 {
-            subview.alphaValue = 0
-            dimmedViews.add(subview)
+        for subview in native.subviews where subview !== overlayView {
+            if Self.isDocumentProxy(subview) {
+                if !subview.isHidden {
+                    if hiddenViews.object(forKey: subview) == nil { hiddenViews.setObject(NSNumber(value: false), forKey: subview) }
+                    subview.isHidden = true
+                }
+            } else if subview.alphaValue != 0 {
+                if dimmedViews.object(forKey: subview) == nil { dimmedViews.setObject(NSNumber(value: Double(subview.alphaValue)), forKey: subview) }
+                subview.alphaValue = 0
+            }
+        }
+        for recognizer in native.gestureRecognizers where recognizer.isEnabled && Self.isDocumentDrag(recognizer) {
+            recognizer.isEnabled = false
+            disabledRecognizers.add(recognizer)
         }
     }
 
+    /// Takes the pill off the native title and gives its views back what they had.
     private func removeOverlay() {
-        for view in dimmedViews.allObjects { view.alphaValue = 1 }
+        for case let view? in dimmedViews.keyEnumerator().allObjects.map({ $0 as? NSView }) {
+            if let alpha = dimmedViews.object(forKey: view) { view.alphaValue = CGFloat(alpha.doubleValue) }
+        }
         dimmedViews.removeAllObjects()
+        for case let view? in hiddenViews.keyEnumerator().allObjects.map({ $0 as? NSView }) {
+            if let hidden = hiddenViews.object(forKey: view) { view.isHidden = hidden.boolValue }
+        }
+        hiddenViews.removeAllObjects()
+        disabledRecognizers.allObjects.forEach { $0.isEnabled = true }
+        disabledRecognizers.removeAllObjects()
         overlayView.content = nil
         if overlayView.superview != nil { overlayView.removeFromSuperview() }
     }
 
+    /// The title view's document proxy view (where AppKit reveals the represented file's icon on hover).
+    private static func isDocumentProxy(_ view: NSView) -> Bool {
+        NSStringFromClass(type(of: view)).contains("DocumentProxy")
+    }
+
+    /// The title view's recognizer that drags the represented file out of its proxy icon.
+    private static func isDocumentDrag(_ recognizer: NSGestureRecognizer) -> Bool {
+        NSStringFromClass(type(of: recognizer)).contains("ProxyDocumentDrag")
+    }
+
     /// The window's native title view: the one the pill is in while it is still in a window (it keeps the same view
-    /// across title changes, resizes and full screen), else found in the title bar, after making the title visible and
-    /// laying the title bar out (AppKit makes a new view when the title or the toolbar shows again). Nil when there is
-    /// none, for the accessory to take over.
-    private func nativeTitleView(in window: NSWindow) -> NSView? {
+    /// across title changes, resizes and full screen), else found in the title bar or, in full screen, AppKit's
+    /// toolbar window (a child window), after making the title visible and laying the bar out (AppKit makes a new view
+    /// when the title or the toolbar shows again). Nil when there is none, for the accessory to take over; a failed
+    /// lookup is not repeated in the same `state`.
+    private func nativeTitleView(in window: NSWindow, state: LookupState) -> NSView? {
         if let current = overlayView.superview, current.window != nil, Self.isNativeTitleView(current) {
             return current
         }
+        guard failedLookup != state else { return nil }
         if window.titleVisibility != .visible { window.titleVisibility = .visible }
-        guard let frameView = window.contentView?.superview else { return nil }
-        if let found = Self.findNativeTitleView(in: frameView, of: window) { return found }
-        frameView.layoutSubtreeIfNeeded()
-        return Self.findNativeTitleView(in: frameView, of: window)
+        let roots = ([window] + (window.childWindows ?? [])).compactMap { $0.contentView?.superview }
+        for pass in 0..<2 {
+            for root in roots {
+                if let found = Self.findNativeTitleView(in: root, skipping: window.contentView) {
+                    failedLookup = nil
+                    return found
+                }
+            }
+            if pass == 0 { roots.forEach { $0.layoutSubtreeIfNeeded() } }
+        }
+        failedLookup = state
+        return nil
     }
 
     private static func isNativeTitleView(_ view: NSView) -> Bool {
         NSStringFromClass(type(of: view)) == nativeTitleViewClassName
     }
 
-    /// Searches the title bar side of the frame view (not the window's content).
-    private static func findNativeTitleView(in frameView: NSView, of window: NSWindow) -> NSView? {
-        var stack = frameView.subviews.filter { $0 !== window.contentView }
+    /// Searches a frame view, skipping the document window's content (the full-screen toolbar window's content is
+    /// the toolbar itself).
+    private static func findNativeTitleView(in frameView: NSView, skipping documentContent: NSView?) -> NSView? {
+        var stack = frameView.subviews.filter { $0 !== documentContent }
         while let view = stack.popLast() {
             if isNativeTitleView(view) { return view }
             stack.append(contentsOf: view.subviews)
@@ -522,8 +621,7 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         guard let toolbar = window.toolbar, toolbar !== observedToolbar else { return }
         observedToolbar = toolbar
         toolbarVisibilityObservation = toolbar.observe(\.isVisible) { [weak self] _, _ in
-            self?.apply()
-            RunLoop.main.perform { [weak self] in self?.apply() }
+            self?.reapplyAfterChromeChange()
         }
     }
 
