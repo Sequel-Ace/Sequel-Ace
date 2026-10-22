@@ -139,9 +139,11 @@ enum SAVividColour: Int, CaseIterable {
     }
 }
 
-/// The palette as the favourite colour list: asset colours in stored-index order.
+/// The palette as the favourite colour list: one colour per stored index, in index order.
 @objc(SAFavoritePalette) final class SAFavoritePalette: NSObject {
-    @objc static var assetColours: [NSColor] {
-        SAVividColour.allCases.compactMap { NSColor(named: NSColor.Name($0.assetName)) }
+    /// The asset colours, resolved once. An asset that fails to load falls back to the palette's own
+    /// dynamic fill, so an entry is never dropped and a stored index can never shift to another colour.
+    @objc static let assetColours: [NSColor] = SAVividColour.allCases.map {
+        NSColor(named: NSColor.Name($0.assetName)) ?? $0.fillColour
     }
 }

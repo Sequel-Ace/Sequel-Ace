@@ -35,6 +35,11 @@ final class SAVividPaletteTests: XCTestCase {
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 
+    private func assertComponents(_ a: [CGFloat], _ b: [CGFloat], accuracy: CGFloat, _ message: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(a.count, b.count, message, file: file, line: line)
+        for (x, y) in zip(a, b) { XCTAssertEqual(x, y, accuracy: accuracy, message, file: file, line: line) }
+    }
+
     private func resolved(_ colour: NSColor, _ appearance: NSAppearance.Name) -> NSColor {
         var result = colour
         NSAppearance(named: appearance)!.performAsCurrentDrawingAppearance { result = colour.usingColorSpace(.sRGB)! }
@@ -164,8 +169,22 @@ final class SAVividPaletteTests: XCTestCase {
                         XCTAssertEqual(actual[i], expected[i], accuracy: 1.0 / 255, "\(name) \(appearance ?? "universal") component \(i)")
                     }
                 }
-                XCTAssertEqual(entries.filter { $0["appearances"] == nil }.count, 1, name)
+                let appearances = entries.map { ($0["appearances"] as? [[String: String]])?.first?["value"] ?? "universal" }
+                XCTAssertEqual(appearances.sorted(), ["dark", "light", "universal"], name)
             }
+        }
+    }
+
+    func testAssetColoursKeepEveryIndex() {
+        let colours = SAFavoritePalette.assetColours
+        XCTAssertEqual(colours.count, SAVividColour.allCases.count)
+        for (index, colour) in colours.enumerated() {
+            let expected = SAVividColour(index: index)
+            XCTAssertNotNil(expected, "\(index)")
+            guard let expected else { continue }
+            let light = resolved(colour, .aqua), dark = resolved(colour, .darkAqua)
+            assertComponents(rgba(light), rgba(expected.fill(dark: false)), accuracy: 1.0 / 255, "\(expected) light")
+            assertComponents(rgba(dark), rgba(expected.fill(dark: true)), accuracy: 1.0 / 255, "\(expected) dark")
         }
     }
 
