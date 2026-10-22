@@ -250,7 +250,8 @@
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
     [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
 
-    if(staleBookmarks.count > 0){
+    // A private (unsandboxed) build lists the stale entries like the others: no red, no hint, no re-select panel.
+    if([NSBundle.mainBundle marksStaleBookmarksForCount:staleBookmarks.count]){
         staleLabel.hidden = NO;
         weHaveStaleBookmarks = YES;
     }

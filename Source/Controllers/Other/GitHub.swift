@@ -56,6 +56,13 @@ enum SAPrivateBuildPolicy {
     static func staleBookmarksAllowAutoConnect(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
         isPrivateBuild || staleBookmarkCount == 0
     }
+
+    /// Settings ▸ Files marks stale bookmarks (red entries, the stale hint, the re-select panel) only in the sandboxed
+    /// build: an unsandboxed private build can't resolve security-scoped bookmarks, and opens the files without them.
+    /// The stored bookmarks are left as they are.
+    static func marksStaleBookmarks(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
+        !isPrivateBuild && staleBookmarkCount > 0
+    }
 }
 
 /// Prevents App Store builds and opted-out background checks from using the GitHub updater.

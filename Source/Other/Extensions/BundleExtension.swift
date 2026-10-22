@@ -70,6 +70,12 @@ import Foundation
         SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
     }
 
+    /// Whether Settings ▸ Files marks `count` stale bookmarks as stale; never in a private build.
+    @objc(marksStaleBookmarksForCount:)
+    public func marksStaleBookmarks(forCount count: Int) -> Bool {
+        SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
+    }
+
     public var versionString: String {
         guard
             let version: String = self.version,

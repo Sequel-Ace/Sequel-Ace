@@ -98,6 +98,16 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: true, staleBookmarkCount: 2))
     }
 
+    func testSettingsFilesListMarksStaleBookmarksOnlyInTheNormalBuild() {
+        // The normal (sandboxed) build: stale entries red, the stale hint and the re-select panel while there are any.
+        XCTAssertTrue(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: false, staleBookmarkCount: 1))
+        XCTAssertTrue(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: false, staleBookmarkCount: 3))
+        XCTAssertFalse(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: false, staleBookmarkCount: 0))
+        // A private (unsandboxed) build can't resolve security-scoped bookmarks and doesn't need them: never marked.
+        XCTAssertFalse(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: true, staleBookmarkCount: 3))
+        XCTAssertFalse(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: true, staleBookmarkCount: 0))
+    }
+
     func testAutomaticRolloutMatchesAppleSevenDayPercentages() {
         let start = Date(timeIntervalSince1970: 1_000_000)
         let oneDay: TimeInterval = 24 * 60 * 60
