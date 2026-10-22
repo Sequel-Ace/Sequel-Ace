@@ -232,7 +232,8 @@ private final class SAClaudePanelForm {
     private static let pickerSize: CGFloat = 24
     private static let accessoryGap: CGFloat = 4
     private static let checkboxHeight: CGFloat = 18
-    private static let colourSelectorMinimumWidth: CGFloat = 187
+    private static let colourSelectorMinimumWidth: CGFloat =
+        SAFavoriteColourSelectorLayout.contentWidth(colourCount: SAVividColour.allCases.count) + 3
     private static let colourSelectorMaximumWidth: CGFloat = 247
     private static let colourSelectorHeight: CGFloat = 22
     private static let connectHeight: CGFloat = 28
