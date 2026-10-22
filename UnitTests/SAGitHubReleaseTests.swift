@@ -56,6 +56,31 @@ final class SAGitHubReleaseTests: XCTestCase {
                                                               isAppStoreInstall: true))
     }
 
+    func testPrivateBuildFlagIsReadFromInfoPlistValues() {
+        let key = SAPrivateBuildPolicy.infoPlistKey
+        XCTAssertEqual(key, "SAPrivateBuild")
+
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: true]))
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: NSNumber(value: 1)]))
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "YES"]))
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "true"]))
+
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: nil))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [:]))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: false]))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "NO"]))
+        // An unexpanded or empty build setting must not turn the updater off.
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: ""]))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "$(SA_PRIVATE_BUILD)"]))
+    }
+
+    func testPrivateBuildsAndAppStoreInstallsDoNotOfferGitHubUpdates() {
+        XCTAssertTrue(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: false, isPrivateBuild: false))
+        XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: false, isPrivateBuild: true))
+        XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: true, isPrivateBuild: false))
+        XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: true, isPrivateBuild: true))
+    }
+
     func testAutomaticRolloutMatchesAppleSevenDayPercentages() {
         let start = Date(timeIntervalSince1970: 1_000_000)
         let oneDay: TimeInterval = 24 * 60 * 60

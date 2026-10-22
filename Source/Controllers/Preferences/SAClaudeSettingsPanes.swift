@@ -84,9 +84,9 @@ enum SAClaudeSettingsPanes {
             SAClaudeSettingsAutoCompleteRow(context: context)
         }
 
-        // Updates and privacy: the App Store gate.
+        // Updates and privacy: the App Store gate (private builds have no GitHub updater either).
         registry.registerRow("checkUpdates") { context in
-            SAClaudeSettingsUpdatesRow(context: context, isAppStore: Bundle.main.isMASVersion)
+            SAClaudeSettingsUpdatesRow(context: context, isAppStore: !Bundle.main.offersGitHubUpdates)
         }
 
         // SSH and security, MCP server (SAClaudeSettingsSecurity.swift).

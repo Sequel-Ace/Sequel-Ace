@@ -320,7 +320,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (void)addCheckForUpdatesMenuItem {
-    if (NSBundle.mainBundle.isMASVersion == NO) {
+    if (NSBundle.mainBundle.offersGitHubUpdates) {
         SPLog(@"Adding menu item to check for updates");
         NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];

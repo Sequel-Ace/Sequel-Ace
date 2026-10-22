@@ -47,6 +47,16 @@ import Foundation
         }
     }
 
+    /// A private build of the fork (`SAPrivateBuild` in Info.plist) — see SAPrivateBuildPolicy.
+    public var isPrivateBuild: Bool {
+        SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: infoDictionary)
+    }
+
+    /// Whether this build uses the GitHub updater at all: not App Store installs, not private builds.
+    public var offersGitHubUpdates: Bool {
+        SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: isMASVersion, isPrivateBuild: isPrivateBuild)
+    }
+
     public var versionString: String {
         guard
             let version: String = self.version,
@@ -75,7 +85,7 @@ import Foundation
 
     public func checkForNewVersion(isFromMenuCheck: Bool) {
 
-        if isMASVersion == false {
+        if offersGitHubUpdates {
             let isBetaBuild = isSnapshotBuild
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
                                                                    project: "Sequel-Ace",

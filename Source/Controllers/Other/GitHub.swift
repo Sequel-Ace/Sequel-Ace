@@ -22,6 +22,31 @@ enum SAAppStoreReceiptPolicy {
     }
 }
 
+/// A private build — a personally signed build of a fork, stamped by Scripts/claude-package.sh — carries
+/// `SAPrivateBuild = YES` in its Info.plist. It is not an upstream release, so like an App Store install it
+/// never uses the upstream GitHub updater: no "Check for Updates…" item and no automatic check.
+enum SAPrivateBuildPolicy {
+    /// Keep in sync with Scripts/claude-package.sh.
+    static let infoPlistKey = "SAPrivateBuild"
+
+    static func isPrivateBuild(infoDictionary: [String: Any]?) -> Bool {
+        switch infoDictionary?[infoPlistKey] {
+        case let flag as Bool:
+            return flag
+        case let number as NSNumber:
+            return number.boolValue
+        case let text as String:
+            return ["yes", "true", "1"].contains(text.lowercased())
+        default:
+            return false
+        }
+    }
+
+    static func offersGitHubUpdates(isAppStoreInstall: Bool, isPrivateBuild: Bool) -> Bool {
+        !isAppStoreInstall && !isPrivateBuild
+    }
+}
+
 /// Prevents App Store builds and opted-out background checks from using the GitHub updater.
 @objc final class SAGitHubReleaseCheckPolicy: NSObject {
     @objc(shouldCheckWithIsUserInitiated:automaticChecksEnabled:isAppStoreInstall:)
