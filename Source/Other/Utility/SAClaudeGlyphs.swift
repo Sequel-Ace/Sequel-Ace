@@ -99,7 +99,7 @@ import AppKit
         default: glyph = .table
         }
         let chip = SAClaudeKindColours.sidebarChipSize
-        return chipImage(glyph, colour: SAClaudeKindColours.colour(forTableType: type) ?? .sky,
+        return chipImage(glyph, colour: SAClaudeKindColours.colour(forTableType: type) ?? .sky, chipSize: chip,
                          canvas: NSSize(width: SAClaudeStyle.sidebarIconCanvasWidth, height: chip),
                          chipX: SAClaudeStyle.sidebarIconLeading - (chip - SAClaudeStyle.iconSize) / 2)
     }
@@ -107,10 +107,9 @@ import AppKit
     /// Size of a glyph on a chip.
     static let chipGlyphSize: CGFloat = 14
 
-    /// `glyph` at `chipGlyphSize`, centred on a `sidebarChipSize` rounded square at `chipX` (centred vertically on the
-    /// canvas): the square in `colour`'s tint, the glyph in its ink, both following the appearance at draw time.
-    static func chipImage(_ glyph: SAClaudeGlyph, colour: SAVividColour, canvas: NSSize, chipX: CGFloat) -> NSImage {
-        let size = SAClaudeKindColours.sidebarChipSize
+    /// `glyph` at `chipGlyphSize`, centred on a `chipSize` rounded square at `chipX` (centred vertically on the canvas):
+    /// the square in `colour`'s tint, the glyph in its ink, both following the appearance at draw time.
+    static func chipImage(_ glyph: SAClaudeGlyph, colour: SAVividColour, chipSize size: CGFloat, canvas: NSSize, chipX: CGFloat) -> NSImage {
         let chip = NSRect(x: chipX, y: floor((canvas.height - size) / 2), width: size, height: size)
         let scale = chipGlyphSize / 16
         let place = AffineTransform(m11: scale, m12: 0, m21: 0, m22: scale,

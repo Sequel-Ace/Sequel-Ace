@@ -14,17 +14,8 @@ import SwiftUI
 
 // MARK: - Tones
 
-/// The status colours: the vivid palette by group (`SAClaudeKindColours`: Rose needs attention, Amber running, Slate
-/// idle), the ink for dots, stripes and text and the tint for a selected chip, each following the theme's lightness.
-/// The alert colours (`red`, `amber`) stay for the Kill buttons and alerts.
-enum SAClaudeProcessListTones {
-    static func red(dark: Bool) -> NSColor { dark ? SAClaudeAlertChrome.redGlyphDark : SAClaudeAlertChrome.red }
-    static func amber(dark: Bool) -> NSColor { dark ? SAClaudeAlertChrome.amberDark : SAClaudeAlertChrome.amberLight }
-
-    static func colour(for group: SAClaudeProcessGroup, dark: Bool) -> NSColor {
-        SAClaudeKindColours.colour(for: group).ink(dark: dark)
-    }
-
+/// The status tones as SwiftUI colours, from the palette's lightness (the tones themselves: SAClaudeProcessListTones.swift).
+extension SAClaudeProcessListTones {
     @MainActor
     static func colour(for group: SAClaudeProcessGroup, palette: SAClaudeSwiftUIPalette) -> Color {
         Color(nsColor: colour(for: group, dark: palette.isDark))
@@ -32,7 +23,7 @@ enum SAClaudeProcessListTones {
 
     @MainActor
     static func tint(for group: SAClaudeProcessGroup, palette: SAClaudeSwiftUIPalette) -> Color {
-        Color(nsColor: SAClaudeKindColours.colour(for: group).tint(dark: palette.isDark))
+        Color(nsColor: tint(for: group, dark: palette.isDark))
     }
 }
 
@@ -196,7 +187,7 @@ struct SAClaudeProcessListChip: View {
                 }
                 Text(verbatim: String(count))
                     .monospacedDigit()
-                    .foregroundColor(ink ?? palette.muted)
+                    .foregroundColor(countColour)
             }
             .font(.system(size: 12, weight: isSelected ? .medium : .regular))
             .lineLimit(1)
@@ -221,6 +212,14 @@ struct SAClaudeProcessListChip: View {
         case .idle: return .idle
         case .all, .mine: return nil
         }
+    }
+
+    /// A status chip's count is in its group's ink while it counts something, muted at 0; All and Mine are muted.
+    private var countColour: Color {
+        guard let group, let colour = SAClaudeProcessListTones.countColour(for: group, count: count, dark: palette.isDark) else {
+            return palette.muted
+        }
+        return Color(nsColor: colour)
     }
 
     /// A selected status chip is filled with its group's tint, the others with the selected fill.

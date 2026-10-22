@@ -12,7 +12,7 @@
 import AppKit
 
 /// The main window toolbar. It keeps the selected view itself rather than passing it to AppKit, which
-/// would draw its own selection bezel and accent-coloured label under the Claude pill; the document
+/// would draw its own selection bezel and accent-coloured label under the Claude chip; the document
 /// reads and writes the selection through this same property, so nothing else changes.
 @objc(SAClaudeToolbar) final class SAClaudeToolbar: NSToolbar {
     private var claudeSelectedItemIdentifier: NSToolbarItem.Identifier?

@@ -38,6 +38,44 @@ final class SAClaudeKindColoursTests: XCTestCase {
         XCTAssertEqual(SAClaudeKindColours.colour(for: SAClaudeProcessGroup.idle), .slate)
     }
 
+    /// Verifies the Process List tones are the group's vivid ink and tint in both lightnesses, not the alert colours
+    /// (which stay for the Kill buttons).
+    func testProcessListTonesAreTheGroupInkAndTint() {
+        for group in [SAClaudeProcessGroup.needsAttention, .running, .idle] {
+            let colour = SAClaudeKindColours.colour(for: group)
+            for dark in [false, true] {
+                XCTAssertEqual(SAClaudeProcessListTones.colour(for: group, dark: dark), colour.ink(dark: dark), "\(group) dark \(dark) ink")
+                XCTAssertEqual(SAClaudeProcessListTones.tint(for: group, dark: dark), colour.tint(dark: dark), "\(group) dark \(dark) tint")
+            }
+        }
+        XCTAssertNotEqual(SAClaudeProcessListTones.colour(for: .needsAttention, dark: true), SAClaudeProcessListTones.red(dark: true))
+        XCTAssertEqual(SAClaudeProcessListTones.red(dark: true), SAClaudeAlertChrome.redGlyphDark, "Kill buttons keep the alert red")
+        XCTAssertEqual(SAClaudeProcessListTones.red(dark: false), SAClaudeAlertChrome.red)
+    }
+
+    /// Verifies a status chip's count is in the group's ink while it counts something and muted (nil) at 0.
+    func testZeroCountIsMuted() {
+        for group in [SAClaudeProcessGroup.needsAttention, .running, .idle] {
+            for dark in [false, true] {
+                XCTAssertNil(SAClaudeProcessListTones.countColour(for: group, count: 0, dark: dark), "\(group) 0")
+                XCTAssertEqual(SAClaudeProcessListTones.countColour(for: group, count: 3, dark: dark),
+                               SAClaudeKindColours.colour(for: group).ink(dark: dark), "\(group) 3")
+            }
+        }
+    }
+
+    /// Verifies a needs-attention row's text reads (≥ 4.5:1) on the Claude themes' row selection: the light ink is kept
+    /// on Claude Light's, the dark ink lightened just enough on Claude Dark's (4.4:1 as is), and stays Rose-ish.
+    func testAttentionTextReadsOnTheSelection() {
+        let lightSelection = SAClaudeStyle.srgb(0xE3E3DE), darkSelection = SAClaudeStyle.srgb(0x383735)
+        XCTAssertEqual(SAClaudeProcessListTones.attentionText(dark: false, selection: lightSelection), SAVividColour.rose.ink(dark: false))
+        XCTAssertLessThan(SAClaudeHintCardPalette.contrast(SAVividColour.rose.ink(dark: true), darkSelection), 4.5)
+        let lifted = SAClaudeProcessListTones.attentionText(dark: true, selection: darkSelection).usingColorSpace(.sRGB)!
+        XCTAssertGreaterThanOrEqual(SAClaudeHintCardPalette.contrast(lifted, darkSelection), 4.5)
+        XCTAssertGreaterThan(lifted.redComponent, lifted.greenComponent + 0.2, "still a rose")
+        XCTAssertGreaterThanOrEqual(SAClaudeHintCardPalette.contrast(lifted, SAClaudeStyle.srgb(0x151515)), 4.5, "and on the list background")
+    }
+
     /// Verifies the chip metrics: 20pt chips with a 6pt radius in both sidebars.
     func testChipMetrics() {
         XCTAssertEqual(SAClaudeKindColours.sidebarChipSize, 20)

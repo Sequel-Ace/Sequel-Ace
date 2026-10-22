@@ -617,8 +617,9 @@ struct SAClaudeProcessListColours {
     let selection: NSColor
     let isDark: Bool
 
-    /// The needs-attention text of a row (its state and time), in the group's colour like its stripe.
-    var attention: NSColor { SAClaudeProcessListTones.colour(for: .needsAttention, dark: isDark) }
+    /// The needs-attention text of a row (its state and time), in the group's colour like its stripe, readable on the
+    /// selection too.
+    var attention: NSColor { SAClaudeProcessListTones.attentionText(dark: isDark, selection: selection) }
 
     static func current() -> SAClaudeProcessListColours {
         let sheet = SAClaudeSheetColours.current()
