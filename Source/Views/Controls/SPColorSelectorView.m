@@ -146,7 +146,7 @@ static const NSInteger kTrackingAreaNone = -1;
 // -------------------------------------------------------------------------------
 - (NSRect)rectForColorViewAtIndex:(NSInteger)index
 {
-	return [SAFavoriteColourSelectorLayout rectForSlot:index colourCount:[colorList count] width:[self bounds].size.width];
+	return [SAFavoriteColourSelectorLayout rectForSlot:index colourCount:[colorList count] width:[self bounds].size.width height:[self bounds].size.height];
 }
 
 - (BOOL)isDarkAppearance

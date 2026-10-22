@@ -82,12 +82,12 @@ final class SAFavoriteColourSelectorLayout: NSObject {
     /// The gap kept between two neighbouring slots once they shrink.
     private static let slotGap: CGFloat = 3
 
-    /// The slot's rect in a control `width` points wide.
-    @objc(rectForSlot:colourCount:width:)
-    static func rect(forSlot slot: Int, colourCount: Int, width: CGFloat) -> NSRect {
+    /// The slot's rect in a control `width` points wide and `height` high, centred vertically at every size.
+    @objc(rectForSlot:colourCount:width:height:)
+    static func rect(forSlot slot: Int, colourCount: Int, width: CGFloat, height: CGFloat) -> NSRect {
         let pitch = pitch(colourCount: colourCount, width: width)
         let size = slotSize(forPitch: pitch)
-        return NSRect(x: originX + CGFloat(slot) * pitch, y: originY, width: size, height: size)
+        return NSRect(x: originX + CGFloat(slot) * pitch, y: (height - size) / 2, width: size, height: size)
     }
 
     /// The narrowest control the slots of `colourCount` colours are squeezed into.

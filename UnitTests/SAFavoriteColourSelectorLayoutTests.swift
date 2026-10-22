@@ -50,10 +50,13 @@ final class SAFavoriteColourSelectorLayoutTests: XCTestCase {
 
     // MARK: Narrow controls
 
+    /// The height the styler gives the colour control (`colourSelectorHeight`).
+    private static let viewHeight: CGFloat = 22
+
     /// The slots of a control `width` wide, as (rect, last slot).
     private func slotRects(colourCount: Int = 10, width: CGFloat) -> [NSRect] {
         (0..<SAFavoriteColourSelectorLayout.slotCount(colourCount: colourCount)).map {
-            SAFavoriteColourSelectorLayout.rect(forSlot: $0, colourCount: colourCount, width: width)
+            SAFavoriteColourSelectorLayout.rect(forSlot: $0, colourCount: colourCount, width: width, height: Self.viewHeight)
         }
     }
 
@@ -68,13 +71,23 @@ final class SAFavoriteColourSelectorLayoutTests: XCTestCase {
                                     "dots keep their size at \(width)", file: file, line: line)
     }
 
-    func testRoomyControlKeepsTheFullSizeLayout() {
+    func testRoomyControlKeepsTheFullSizeSlots() {
         for width in [232, 247] as [CGFloat] {
             for slot in 0..<11 {
-                XCTAssertEqual(SAFavoriteColourSelectorLayout.rect(forSlot: slot, colourCount: 10, width: width),
-                               SAFavoriteColourSelectorLayout.rect(forSlot: slot), "slot \(slot) at \(width)")
+                let rect = SAFavoriteColourSelectorLayout.rect(forSlot: slot, colourCount: 10, width: width, height: Self.viewHeight)
+                let full = SAFavoriteColourSelectorLayout.rect(forSlot: slot)
+                XCTAssertEqual([rect.minX, rect.width, rect.height], [full.minX, full.width, full.height], "slot \(slot) at \(width)")
             }
         }
+    }
+
+    func testSlotsAreCentredVerticallyAtEveryWidth() {
+        for width in [157, 170, 176, 208, 212, 232] as [CGFloat] {
+            for rect in slotRects(width: width) {
+                XCTAssertEqual(rect.midY, Self.viewHeight / 2, accuracy: 0.001, "width \(width)")
+            }
+        }
+        XCTAssertEqual(SAFavoriteColourSelectorLayout.rect(forSlot: 0, colourCount: 10, width: 170, height: 30).midY, 15, accuracy: 0.001)
     }
 
     func testDotsFitTheNarrowestControl() {
