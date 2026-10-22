@@ -135,6 +135,8 @@ struct SAWindowNamePillParts: Equatable {
     static func namePillParts(windowTitle: String, tabTitle: String, connectionName: String) -> SAWindowNamePillParts? {
         guard !connectionName.isEmpty, tabTitle.hasPrefix(connectionName), windowTitle.hasSuffix(tabTitle) else { return nil }
         var rest = tabTitle.dropFirst(connectionName.count)
+        // The name must be the whole first component: "Local" is not the name of a "Localhost/shop" title.
+        guard rest.isEmpty || rest.hasPrefix("/") else { return nil }
         if rest.hasPrefix("/") { rest = rest.dropFirst() }
         return SAWindowNamePillParts(prefix: String(windowTitle.dropLast(tabTitle.count)), name: connectionName, rest: String(rest))
     }

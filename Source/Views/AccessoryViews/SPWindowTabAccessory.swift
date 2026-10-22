@@ -188,10 +188,3 @@ private final class TabColourDot: NSView {
         NSBezierPath(ovalIn: bounds).fill()
     }
 }
-
-extension NSColor {
-    /// The catalog name of a named colour, `nil` for any other colour (`colorNameComponent` raises for those).
-    var colorNameComponentIfNamed: String? {
-        type == .catalog ? colorNameComponent : nil
-    }
-}

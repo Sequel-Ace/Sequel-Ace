@@ -98,25 +98,33 @@ final class SAConnectionNamePillTitleView: NSView {
     }
 
     enum Metrics {
-        static let leadingInset: CGFloat = 14
-        static let trailingInset: CGFloat = 8
+        /// The pill starts where the native title view does; the toolbar adds its own gap after the view.
+        static let leadingInset: CGFloat = 4
+        static let trailingInset: CGFloat = 0
         static let pillHeight: CGFloat = 20
         static let pillRadius: CGFloat = 7
         static let pillPadding: CGFloat = 8
         static let dotSize: CGFloat = 8
         static let dotGap: CGFloat = 6
-        static let maxNameWidth: CGFloat = 200
+        static let maxNameWidth: CGFloat = 140
         static let restGap: CGFloat = 6
         /// What "db/table" keeps before the name starts giving way, and the least the name keeps.
         static let restFloor: CGFloat = 48
         static let nameFloor: CGFloat = 40
-        static let subtitleGap: CGFloat = 1
+        /// Where the native title's and subtitle's text sits, below the traffic lights' centre (their baselines,
+        /// measured against the native title in the same window: 5 and 19, less the half point the text field
+        /// draws above its baseline).
+        static let titleBaselineBelowLights: CGFloat = 4.5
+        static let subtitleBaselineBelowLights: CGFloat = 18.5
     }
 
     var content: Content? {
         didSet {
             guard content != oldValue else { return }
             needsDisplay = true
+            if content.map(Self.accessibilityText) != oldValue.map(Self.accessibilityText) {
+                NSAccessibility.post(element: self, notification: .valueChanged)
+            }
         }
     }
 
@@ -127,8 +135,7 @@ final class SAConnectionNamePillTitleView: NSView {
     /// The width the content asks for, with nothing truncated except a name past `Metrics.maxNameWidth`.
     var naturalWidth: CGFloat {
         guard let content else { return 0 }
-        let widths = Widths(content)
-        let row = widths.row
+        let row = Widths(content).row
         let subtitle = content.subtitle.isEmpty ? 0 : ceil(Self.width(content.subtitle, Self.subtitleFont))
         return Metrics.leadingInset + max(row, subtitle) + Metrics.trailingInset
     }
@@ -171,9 +178,9 @@ final class SAConnectionNamePillTitleView: NSView {
         (string as NSString).size(withAttributes: [.font: font]).width
     }
 
-    private static func attributes(_ font: NSFont, _ colour: NSColor) -> [NSAttributedString.Key: Any] {
+    private static func attributes(_ font: NSFont, _ colour: NSColor, _ truncation: NSLineBreakMode) -> [NSAttributedString.Key: Any] {
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineBreakMode = .byTruncatingTail
+        paragraph.lineBreakMode = truncation
         return [.font: font, .foregroundColor: colour, .paragraphStyle: paragraph]
     }
 
@@ -189,63 +196,68 @@ final class SAConnectionNamePillTitleView: NSView {
         return (colour.withAlphaComponent(alpha), colour, SAClaudeStyle.textPrimary)
     }
 
-    /// The vertical centre of the title row: level with the traffic lights, like the native title, else the middle
-    /// of the view (with the subtitle, of the two lines).
-    private func titleRowMidY(subtitleHeight: CGFloat) -> CGFloat {
+    /// The traffic lights' vertical centre, which the native title and subtitle hang from; without them (full
+    /// screen) a centre that puts the two lines in the middle of the view.
+    private func lightsMidY(hasSubtitle: Bool) -> CGFloat {
         if let button = window?.standardWindowButton(.closeButton), button.window === window, !button.isHidden {
             let mid = convert(NSPoint(x: 0, y: button.bounds.midY), from: button).y
             if mid > bounds.minY, mid < bounds.maxY { return mid }
         }
-        let rowHeight = Metrics.pillHeight
-        let stack = rowHeight + (subtitleHeight > 0 ? Metrics.subtitleGap + subtitleHeight : 0)
-        let top = bounds.midY + (isFlipped ? -stack / 2 : stack / 2)
-        return isFlipped ? top + rowHeight / 2 : top - rowHeight / 2
+        // The pill spans about mid + 10 ... mid - 10 and the subtitle reaches about mid - 22, so the pair is centred 6pt up.
+        return bounds.midY + (hasSubtitle ? 6 : 0)
     }
+
+    override var isFlipped: Bool { false }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let content else { return }
         var widths = Widths(content)
         widths.fit(bounds.width - Metrics.leadingInset - Metrics.trailingInset)
 
-        let subtitleHeight = content.subtitle.isEmpty ? 0 : ceil(Self.subtitleFont.ascender - Self.subtitleFont.descender)
-        let midY = titleRowMidY(subtitleHeight: subtitleHeight)
-        let down: CGFloat = isFlipped ? 1 : -1
+        let lightsMid = lightsMidY(hasSubtitle: !content.subtitle.isEmpty)
+        let titleBaseline = lightsMid - Metrics.titleBaselineBelowLights
         var x = Metrics.leadingInset
 
-        func drawText(_ text: String, font: NSFont, colour: NSColor, width: CGFloat, midY: CGFloat) {
+        /// One line of text with its baseline at `baseline`, truncated to `width`.
+        func drawText(_ text: String, font: NSFont, colour: NSColor, width: CGFloat, baseline: CGFloat,
+                      truncation: NSLineBreakMode = .byTruncatingTail) {
             guard width > 0 else { return }
             let height = ceil(font.ascender - font.descender + font.leading)
-            let rect = NSRect(x: x, y: midY - height / 2, width: width, height: height)
+            let rect = NSRect(x: x, y: baseline + font.ascender - height, width: width, height: height)
             (text as NSString).draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine],
-                                    attributes: Self.attributes(font, colour))
+                                    attributes: Self.attributes(font, colour, truncation))
         }
 
         if widths.prefix > 0 {
-            drawText(content.parts.prefix, font: Self.titleFont, colour: SAClaudeStyle.textPrimary, width: widths.prefix, midY: midY)
+            drawText(content.parts.prefix, font: Self.titleFont, colour: SAClaudeStyle.textPrimary, width: widths.prefix, baseline: titleBaseline)
             x += widths.prefix
         }
 
+        // The pill and its name are centred on the title's capitals, level with the title text.
+        let rowMid = titleBaseline + Self.titleFont.capHeight / 2
         let colours = pillColours(for: content.colour)
-        let pillRect = NSRect(x: x, y: midY - Metrics.pillHeight / 2, width: widths.pill, height: Metrics.pillHeight)
+        let pillRect = NSRect(x: x, y: rowMid - Metrics.pillHeight / 2, width: widths.pill, height: Metrics.pillHeight)
         colours.tint.setFill()
         NSBezierPath(roundedRect: pillRect, xRadius: Metrics.pillRadius, yRadius: Metrics.pillRadius).fill()
-        let dotRect = NSRect(x: pillRect.minX + Metrics.pillPadding, y: midY - Metrics.dotSize / 2, width: Metrics.dotSize, height: Metrics.dotSize)
+        let dotRect = NSRect(x: pillRect.minX + Metrics.pillPadding, y: rowMid - Metrics.dotSize / 2, width: Metrics.dotSize, height: Metrics.dotSize)
         colours.dot.setFill()
         NSBezierPath(ovalIn: dotRect).fill()
         x = dotRect.maxX + Metrics.dotGap
-        drawText(content.parts.name, font: Self.nameFont, colour: colours.ink, width: widths.name, midY: midY)
+        drawText(content.parts.name, font: Self.nameFont, colour: colours.ink, width: widths.name,
+                 baseline: rowMid - Self.nameFont.capHeight / 2)
         x = pillRect.maxX
 
         if widths.hasRest {
             x += Metrics.restGap
-            drawText(content.parts.rest, font: Self.titleFont, colour: SAClaudeStyle.textPrimary, width: widths.rest, midY: midY)
+            drawText(content.parts.rest, font: Self.titleFont, colour: SAClaudeStyle.textPrimary, width: widths.rest,
+                     baseline: titleBaseline, truncation: .byTruncatingMiddle)
         }
 
-        if subtitleHeight > 0 {
+        if !content.subtitle.isEmpty {
             x = Metrics.leadingInset
-            let subtitleMidY = midY + down * (Metrics.pillHeight / 2 + Metrics.subtitleGap + subtitleHeight / 2)
             drawText(content.subtitle, font: Self.subtitleFont, colour: SAClaudeStyle.textMuted,
-                     width: bounds.width - Metrics.leadingInset - Metrics.trailingInset, midY: subtitleMidY)
+                     width: bounds.width - Metrics.leadingInset - Metrics.trailingInset,
+                     baseline: lightsMid - Metrics.subtitleBaselineBelowLights)
         }
     }
 
@@ -258,17 +270,27 @@ final class SAConnectionNamePillTitleView: NSView {
 
     // MARK: Accessibility
 
+    /// The window title, then the subtitle (the native title bar shows both).
+    private static func accessibilityText(_ content: Content) -> String {
+        content.subtitle.isEmpty ? content.accessibilityTitle : content.accessibilityTitle + ", " + content.subtitle
+    }
+
     override func isAccessibilityElement() -> Bool { content != nil }
     override func accessibilityRole() -> NSAccessibility.Role? { .staticText }
-    override func accessibilityLabel() -> String? { content?.accessibilityTitle }
+    override func accessibilityLabel() -> String? { content.map(Self.accessibilityText) }
+    override func accessibilityValue() -> Any? { content.map(Self.accessibilityText) }
+    /// The mouse passes through (`hitTest`), but VoiceOver still finds the title under the pointer.
+    override func accessibilityHitTest(_ point: NSPoint) -> Any? { content == nil ? nil : self }
 }
 
 /// Name pill mode's title, as a leading title bar accessory: right of the traffic lights, left of the toolbar's
 /// first item. Installed once per window and never removed; `hide()` takes it to zero width (AppKit keeps a hidden
 /// leading accessory's width in the toolbar layout), so the toolbar gets its room back. Neither changes the title
-/// bar's height. The width is the content's, capped at 40% of the window's.
+/// bar's height. The width is the content's, capped at 30% of the window's and at 240pt, so the toolbar keeps its
+/// items about as the native title (which truncates to make room) does.
 final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
-    static let maxWidthFraction: CGFloat = 0.4
+    static let maxWidthFraction: CGFloat = 0.3
+    static let maxWidth: CGFloat = 240
 
     private let titleView = SAConnectionNamePillTitleView(frame: NSRect(x: 0, y: 0, width: 0, height: 28))
     private var resizeObserver: NSObjectProtocol?
@@ -322,7 +344,7 @@ final class SAConnectionNamePillAccessory: SAClaudeOwnedTitlebarAccessory {
         var width: CGFloat = 0
         if titleView.content != nil {
             let windowWidth = (hostWindow ?? view.window)?.frame.width ?? .greatestFiniteMagnitude
-            width = ceil(min(titleView.naturalWidth, windowWidth * Self.maxWidthFraction))
+            width = ceil(min(titleView.naturalWidth, windowWidth * Self.maxWidthFraction, Self.maxWidth))
         }
         guard titleView.frame.width != width else { return }
         titleView.setFrameSize(NSSize(width: width, height: titleView.frame.height))

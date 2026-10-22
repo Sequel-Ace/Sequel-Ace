@@ -300,4 +300,10 @@ final class SAWindowTitleBuilderTests: XCTestCase {
         XCTAssertNil(pill("Sequel Ace", "Sequel Ace", "Localhost"))
         XCTAssertNil(pill("Localhost/shop", "Localhost/shop", "Production"))
     }
+
+    /// A name that only starts the first component of the title is not that title's connection.
+    func testPillNeedsTheWholeName() {
+        XCTAssertNil(pill("Localhost/shop", "Localhost/shop", "Local"))
+        XCTAssertNil(pill("Localhost", "Localhost", "Local"))
+    }
 }

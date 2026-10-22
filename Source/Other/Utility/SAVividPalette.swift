@@ -139,6 +139,14 @@ enum SAVividColour: Int, CaseIterable {
     }
 }
 
+extension NSColor {
+    /// The catalog name of a named colour (a favourite's asset name), `nil` for any other colour
+    /// (`colorNameComponent` raises for those).
+    var colorNameComponentIfNamed: String? {
+        type == .catalog ? colorNameComponent : nil
+    }
+}
+
 /// The palette as the favourite colour list: one colour per stored index, in index order.
 @objc(SAFavoritePalette) final class SAFavoritePalette: NSObject {
     /// The asset colours, resolved once. An asset that fails to load falls back to the palette's own
