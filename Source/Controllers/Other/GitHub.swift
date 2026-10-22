@@ -58,8 +58,9 @@ enum SAPrivateBuildPolicy {
     }
 
     /// Settings ▸ Files marks stale bookmarks (red entries, the stale hint, the re-select panel) only in the sandboxed
-    /// build: an unsandboxed private build can't resolve security-scoped bookmarks, and opens the files without them.
-    /// The stored bookmarks are left as they are.
+    /// build: an unsandboxed private build doesn't need security-scoped bookmarks — it opens the files without them (its
+    /// stale entries are typically bookmarks minted for a differently signed, sandboxed app). The stored bookmarks are
+    /// left as they are.
     static func marksStaleBookmarks(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
         !isPrivateBuild && staleBookmarkCount > 0
     }

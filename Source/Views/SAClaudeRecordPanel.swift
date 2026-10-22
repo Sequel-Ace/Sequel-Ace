@@ -241,10 +241,9 @@ private struct SAClaudeRecordPanelView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(palette.muted)
-                TextField("", text: $model.searchText)
+                TextField("", text: $model.searchText,
+                          prompt: palette.prompt(NSLocalizedString("ClaudeRecordSearchPlaceholder", value: "Search fields and values", comment: "Record View: placeholder of the search field above the fields")))
                     .textFieldStyle(.plain)
-                    .claudePlaceholder(NSLocalizedString("ClaudeRecordSearchPlaceholder", value: "Search fields and values", comment: "Record View: placeholder of the search field above the fields"),
-                                       isShown: model.searchText.isEmpty)
                     .focused($searchFocused)
                     .onExitCommand(perform: model.escapeInSearch)
                     .accessibilityLabel(Text(NSLocalizedString("ClaudeRecordSearchPlaceholder", value: "Search fields and values", comment: "Record View: placeholder of the search field above the fields")))
@@ -527,6 +526,7 @@ private struct SAClaudeRecordBlockClicks: ViewModifier {
 /// The inline value editor (today's semantics): Return commits, Escape cancels, losing focus commits; Return or
 /// Escape hands the keyboard back to the blocks.
 private struct SAClaudeRecordEditor: View {
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     @ObservedObject var model: SARecordViewModel
     let fieldID: SARecordField.ID
     var editorFocus: FocusState<SARecordField.ID?>.Binding
@@ -535,11 +535,9 @@ private struct SAClaudeRecordEditor: View {
     static let placeholder = NSLocalizedString("Value", comment: "Record View: placeholder of the inline value editor while the value is empty")
 
     var body: some View {
-        TextField("", text: $model.validatedEditDraft)
-            .textFieldStyle(SAClaudeFieldStyle(isFocused: editorFocus.wrappedValue == fieldID, size: .panel,
-                                               placeholder: Self.placeholder, isEmpty: model.editDraft.isEmpty))
+        TextField("", text: $model.validatedEditDraft, prompt: palette.prompt(Self.placeholder))
+            .textFieldStyle(SAClaudeFieldStyle(isFocused: editorFocus.wrappedValue == fieldID, size: .panel))
             .focused(editorFocus, equals: fieldID)
-            .accessibilityLabel(Text(Self.placeholder))
             .onSubmit {
                 model.commitEdit()
                 returnToBlocks()

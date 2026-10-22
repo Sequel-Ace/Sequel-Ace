@@ -149,8 +149,12 @@ struct SAHelpSearchField: NSViewRepresentable {
     }
 
     private var placeholderText: NSAttributedString {
-        NSAttributedString(string: placeholder, attributes: [.font: NSFont.systemFont(ofSize: 12),
-                                                             .foregroundColor: NSColor(palette.muted)])
+        // Ends in "…" when the field is too narrow (an attributed placeholder otherwise wraps and clips).
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        return NSAttributedString(string: placeholder, attributes: [.font: NSFont.systemFont(ofSize: 12),
+                                                                    .foregroundColor: NSColor(palette.muted),
+                                                                    .paragraphStyle: paragraph])
     }
 
     func makeNSView(context: Context) -> SAHelpSearchFieldView {

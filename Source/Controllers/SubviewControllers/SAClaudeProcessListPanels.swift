@@ -240,10 +240,9 @@ struct SAClaudeProcessListSearchField: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
                     .foregroundColor(palette.muted)
-                TextField("", text: $model.search)
+                TextField("", text: $model.search,
+                          prompt: palette.prompt(NSLocalizedString("ClaudeProcessListSearchPlaceholder", value: "Search", comment: "process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches)")))
                     .textFieldStyle(.plain)
-                    .claudePlaceholder(NSLocalizedString("ClaudeProcessListSearchPlaceholder", value: "Search", comment: "process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches)"),
-                                       isShown: model.search.isEmpty)
                     .font(.system(size: 12))
                     .focused($focused)
                     .onExitCommand { model.search = "" }
