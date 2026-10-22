@@ -6523,3 +6523,33 @@
 
 /* Query favorite save sheet: checkbox that saves the favorite globally (was “Save globally”) */
 "ClaudeQueryFavoriteSaveForAllConnections" = "Save for all connections";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.rose" = "Rose";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.orange" = "Orange";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.amber" = "Amber";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.emerald" = "Emerald";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.sky" = "Sky";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.violet" = "Violet";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.slate" = "Slate";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.teal" = "Teal";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.blue" = "Blue";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.pink" = "Pink";

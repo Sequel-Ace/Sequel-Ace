@@ -76,19 +76,11 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 
 - (NSArray<NSColor *>*)populateUserColorList
 {
+	// The vivid palette replaces the preference-archived list (the archived path below is dead code).
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+	return [SAFavoritePalette assetColours];
 
-	if (@available(macOS 10.13, *)) {
-		return @[
-			[NSColor colorNamed:@"favoriteRed"],
-			[NSColor colorNamed:@"favoriteOrange"],
-			[NSColor colorNamed:@"favoriteYellow"],
-			[NSColor colorNamed:@"favoriteGreen"],
-			[NSColor colorNamed:@"favoriteBlue"],
-			[NSColor colorNamed:@"favoritePurple"],
-			[NSColor colorNamed:@"favoriteGraphite"]
-		];
-	}
-	
 	NSArray *archivedColors = [prefs objectForKey:SPFavoriteColorList];
 	NSMutableArray *colorList = [NSMutableArray arrayWithCapacity:[archivedColors count]];
 
@@ -100,6 +92,7 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 	}
 	
 	return [colorList copy];
+#pragma clang diagnostic pop
 }
 
 #pragma mark -
