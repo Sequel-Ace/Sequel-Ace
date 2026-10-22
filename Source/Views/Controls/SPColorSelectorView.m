@@ -141,10 +141,27 @@ static const NSInteger kTrackingAreaNone = -1;
 
 // -------------------------------------------------------------------------------
 //	Returns the rectangle of the slot at the given position (0 is the "none" slot).
+//	The dots keep their size when the view is wide enough and are squeezed
+//	together (then shrunk) when it is narrower, so they always fit the view.
 // -------------------------------------------------------------------------------
 - (NSRect)rectForColorViewAtIndex:(NSInteger)index
 {
-	return [SAFavoriteColourSelectorLayout rectForSlot:index];
+	return [SAFavoriteColourSelectorLayout rectForSlot:index colourCount:[colorList count] width:[self bounds].size.width];
+}
+
+- (BOOL)isDarkAppearance
+{
+	NSAppearanceName match = [[self effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
+	return [match isEqualToString:NSAppearanceNameDarkAqua];
+}
+
+- (void)setFrameSize:(NSSize)newSize
+{
+	[super setFrameSize:newSize];
+
+	// the slot positions depend on the width
+	[self setupTrackingAreas];
+	[self setNeedsDisplay:YES];
 }
 
 - (NSInteger)slotCount
@@ -247,6 +264,8 @@ static const NSInteger kTrackingAreaNone = -1;
 	
 	NSInteger colourCount = [colorList count];
 	NSInteger slots = [self slotCount];
+	NSInteger selectedSlot = [SAFavoriteColourSelectorLayout slotForTag:currentlySelectedTag colourCount:colourCount];
+	BOOL dark = [self isDarkAppearance];
 	
 	for (NSInteger slot = 0; slot < slots; slot++)
 	{
@@ -258,42 +277,62 @@ static const NSInteger kTrackingAreaNone = -1;
 			continue;
 		
 		//do not draw a selection around the X item
-		if (index > kTrackingAreaNone && index == currentlySelectedTag)
+		BOOL hovered = (index == hoverTag && trackEntered);
+		if (slot > 0 && slot == selectedSlot)
 		{
+			// light: a pale disc; dark: a translucent white disc with a clear ring, so light dots keep their edge
 			NSBezierPath *highlightPath = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(colorSquareRect, -1.5, -1.5)];
-			[[NSColor colorWithCalibratedRed:0.76 green:0.78 blue:0.82 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.18] set];
+			} else {
+				[[NSColor colorWithCalibratedRed:0.76 green:0.78 blue:0.82 alpha:1.0] set];
+			}
 			[highlightPath fill];
 			
-			[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.55] set];
+			} else {
+				[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			}
 			[highlightPath setLineWidth:1.0];
 			[highlightPath stroke];
 			
 		}
-		else if (index == hoverTag && trackEntered)
+		else if (hovered)
 		{
 			// if we are tracking inside any tag, we want outline the color choice
 			NSBezierPath *highlightPath = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(colorSquareRect, -1.5, -1.5)];
-			[[NSColor colorWithCalibratedWhite:0.94 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.10] set];
+			} else {
+				[[NSColor colorWithCalibratedWhite:0.94 alpha:1.0] set];
+			}
 			[highlightPath fill];
 			
-			[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.30] set];
+			} else {
+				[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			}
 			[highlightPath setLineWidth:1.0];
 			[highlightPath stroke];
 		}
 		
 		if (index == kTrackingAreaNone) {
 			
-			[[NSColor disabledControlTextColor] set];
+			// in the dark the disabled colour is too faint on the hover disc
+			[((dark && hovered) ? [NSColor secondaryLabelColor] : [NSColor disabledControlTextColor]) set];
 			
-			// Draw an X
+			// Draw an X, scaled with the slot
+			CGFloat unit = colorSquareRect.size.width / 16.0;
 			NSBezierPath *left = [NSBezierPath bezierPath];
 			
-			[left setLineWidth:3.0];
+			[left setLineWidth:3.0 * unit];
 			[left setLineCapStyle:NSLineCapStyleButt];
-			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0, colorSquareRect.origin.y +  4.0)];
-			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y + 12.0)];
-			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y +  4.0)];
-			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0, colorSquareRect.origin.y + 12.0)];
+			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0 * unit, colorSquareRect.origin.y +  4.0 * unit)];
+			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0 * unit, colorSquareRect.origin.y + 12.0 * unit)];
+			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0 * unit, colorSquareRect.origin.y +  4.0 * unit)];
+			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0 * unit, colorSquareRect.origin.y + 12.0 * unit)];
 			[left stroke];
 		}
 		else {
@@ -341,7 +380,9 @@ static const NSInteger kTrackingAreaNone = -1;
 
 - (void)_drawDotFlatStyleWithColor:(NSColor *)color insideRect:(NSRect)colorSquareRect
 {
-	NSRect dotRect = NSInsetRect(colorSquareRect, 2.0, 2.0);
+	// the dot is 12pt in a full-size slot, and fills a squeezed one
+	CGFloat inset = MAX(0.0, (colorSquareRect.size.width - [SAFavoriteColourSelectorLayout visualDotSize]) / 2.0);
+	NSRect dotRect = NSInsetRect(colorSquareRect, inset, inset);
 	NSBezierPath *circlePath = [NSBezierPath bezierPathWithOvalInRect:dotRect];
 	[color set];
 	[circlePath fill];

@@ -3,6 +3,7 @@
 //  Unit Tests
 //
 
+import AppKit
 import XCTest
 
 final class SAFavoriteColourSelectorLayoutTests: XCTestCase {
@@ -44,6 +45,57 @@ final class SAFavoriteColourSelectorLayoutTests: XCTestCase {
     func testElevenSlotsFitTheStylerWidth() {
         XCTAssertEqual(SAFavoriteColourSelectorLayout.contentWidth(colourCount: 10), 229)
         XCTAssertEqual(SAFavoriteColourSelectorLayout.rect(forSlot: 10), NSRect(x: 213, y: 2, width: 16, height: 16))
-        XCTAssertLessThanOrEqual(229 + 3, 247)
+        XCTAssertLessThanOrEqual(SAFavoriteColourSelectorLayout.contentWidth(colourCount: 10) + 3, 247)
+    }
+
+    // MARK: Narrow controls
+
+    /// The slots of a control `width` wide, as (rect, last slot).
+    private func slotRects(colourCount: Int = 10, width: CGFloat) -> [NSRect] {
+        (0..<SAFavoriteColourSelectorLayout.slotCount(colourCount: colourCount)).map {
+            SAFavoriteColourSelectorLayout.rect(forSlot: $0, colourCount: colourCount, width: width)
+        }
+    }
+
+    private func assertFits(_ width: CGFloat, colourCount: Int = 10, file: StaticString = #filePath, line: UInt = #line) {
+        let rects = slotRects(colourCount: colourCount, width: width)
+        XCTAssertLessThanOrEqual((rects.last?.maxX ?? 0) + SAFavoriteColourSelectorLayout.originX, width + 0.001,
+                                 "last dot inside \(width)", file: file, line: line)
+        for (a, b) in zip(rects, rects.dropFirst()) {
+            XCTAssertLessThanOrEqual(a.maxX, b.minX, "slots do not overlap at \(width)", file: file, line: line)
+        }
+        XCTAssertGreaterThanOrEqual(rects[1].width, SAFavoriteColourSelectorLayout.visualDotSize - 1,
+                                    "dots keep their size at \(width)", file: file, line: line)
+    }
+
+    func testRoomyControlKeepsTheFullSizeLayout() {
+        for width in [232, 247] as [CGFloat] {
+            for slot in 0..<11 {
+                XCTAssertEqual(SAFavoriteColourSelectorLayout.rect(forSlot: slot, colourCount: 10, width: width),
+                               SAFavoriteColourSelectorLayout.rect(forSlot: slot), "slot \(slot) at \(width)")
+            }
+        }
+    }
+
+    func testDotsFitTheNarrowestControl() {
+        let narrowest = SAFavoriteColourSelectorLayout.minimumWidth(colourCount: 10)
+        XCTAssertEqual(narrowest, 157)
+        assertFits(narrowest)
+        assertFits(narrowest, colourCount: 7)
+        for width in stride(from: narrowest, through: 247, by: 1) { assertFits(width) }
+    }
+
+    /// The colour row's control in the real panel layout at the widths the panel can take (one column
+    /// from 320, two columns from 620): the eleven dots fit all of them.
+    func testDotsFitTheColourControlAtEveryPanelWidth() {
+        let rows = [SAClaudeConnectionRowSpec(id: "colour", label: "Colour", kind: .colour, section: .advanced),
+                    SAClaudeConnectionRowSpec(id: "timeZone", label: "Time zone", kind: .field, section: .advanced)]
+        let narrowest = SAFavoriteColourSelectorLayout.minimumWidth(colourCount: 10)
+        for panel in [320, 376, 445, 620, 696, 744, 1000] as [CGFloat] {
+            let frames = SAClaudeConnectionPanelLayout.frames(type: .tcpip, rows: rows, width: panel, advancedOpen: true, tabsWidth: 200)
+            let control = frames.rows.first { $0.id == "colour" }!.control
+            XCTAssertGreaterThanOrEqual(control.width, narrowest, "panel \(panel)")
+            assertFits(min(control.width, 247))
+        }
     }
 }
