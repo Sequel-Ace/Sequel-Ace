@@ -49,8 +49,10 @@ enum SAClaudeConnectionsMenuModel {
 
     /// What Export Connections… does for `selectedFavoriteCount` selected favourites and folders (Quick Connect not
     /// counted): the selection with the controller's `exportFavorites:`, or with none every favourite with
-    /// `exportAllFavorites:`; and the item's title for it.
-    static func exportCommand(selectedFavoriteCount: Int) -> (title: String, action: Selector) {
+    /// `exportAllFavorites:`; and the item's title for it. Nil (no connection page to act on, the item is disabled):
+    /// the plain "Export Connections…", so a disabled item never keeps a stale title.
+    static func exportCommand(selectedFavoriteCount: Int?) -> (title: String, action: Selector) {
+        guard let selectedFavoriteCount else { return (exportTitle, exportAction) }
         switch selectedFavoriteCount {
         case ..<1: return (exportAllTitle, exportAllAction)
         case 1: return (exportTitle, exportAction)
@@ -83,6 +85,13 @@ enum SAClaudeConnectionsMenuModel {
             menu.addItem(copy(of: sortBy))
         }
         return menu
+    }
+
+    /// Where the ⋯ menu's top-left goes in its button's coordinates: under the button (4pt below), its right edge on
+    /// the button's. `menuWidth` is the menu's width as it will be shown — measured after its glyphs are in.
+    static func popUpOrigin(buttonBounds: NSRect, isFlipped: Bool, menuWidth: CGFloat) -> NSPoint {
+        let gap: CGFloat = 4
+        return NSPoint(x: buttonBounds.maxX - menuWidth, y: isFlipped ? buttonBounds.maxY + gap : buttonBounds.minY - gap)
     }
 
     /// A menu item with its own copy of its submenu (a menu can be the submenu of one item only).

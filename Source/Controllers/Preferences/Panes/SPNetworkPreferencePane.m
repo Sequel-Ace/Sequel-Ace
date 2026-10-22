@@ -453,8 +453,8 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
                         SPLog(@"fileNames adding missing file: %@", missingFile.lastPathComponent);
                     }
 
-                    // prompt user to recreate secure bookmarks
-                    if(missingBookmarkPaths.count > 0){
+                    // prompt user to recreate secure bookmarks (not in a private build: it is unsandboxed and needs no bookmarks)
+                    if([NSBundle.mainBundle showsStaleBookmarkAlertForCount:missingBookmarkPaths.count]){
 
                         NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 

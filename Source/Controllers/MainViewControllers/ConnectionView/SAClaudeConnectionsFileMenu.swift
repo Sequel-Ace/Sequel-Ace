@@ -43,17 +43,25 @@ final class SAClaudeConnectionsCommands: NSObject, NSMenuItemValidation {
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        guard let controller = resolve() else { return false }
+        guard let controller = resolve() else {
+            // Disabled: Export goes back to its plain title (not the last page's "Export Selected…").
+            if menuItem.action == Self.exportSelector { Self.setTitle(SAClaudeConnectionsMenuModel.exportCommand(selectedFavoriteCount: nil).title, of: menuItem) }
+            return false
+        }
         switch menuItem.action {
         case Self.importSelector:
             return Self.controller(controller, validates: SAClaudeConnectionsMenuModel.importAction)
         case Self.exportSelector:
             let command = Self.exportCommand(for: controller)
-            if menuItem.title != command.title { menuItem.title = command.title }
+            Self.setTitle(command.title, of: menuItem)
             return Self.controller(controller, validates: command.action)
         default:
             return false
         }
+    }
+
+    private static func setTitle(_ title: String, of item: NSMenuItem) {
+        if item.title != title { item.title = title }
     }
 
     /// The selection's export, or everything's when no favourite or folder is selected (Quick Connect isn't one).

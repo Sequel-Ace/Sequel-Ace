@@ -123,6 +123,29 @@ final class SAClaudeConnectionsMenuModelTests: XCTestCase {
         }
     }
 
+    func testExportItemWithoutAConnectionPageGoesBackToExportConnections() {
+        // A disabled File item (no connection page in front) must not keep the last "Export Selected…" / "Export All…".
+        let none = SAClaudeConnectionsMenuModel.exportCommand(selectedFavoriteCount: nil)
+        XCTAssertEqual(none.title, "Export Connections…")
+        XCTAssertEqual(none.action, NSSelectorFromString("exportFavorites:"))
+    }
+
+    // MARK: - ⋯ menu position
+
+    func testMoreMenuOpensUnderTheButtonWithRightEdgesLinedUp() {
+        let button = NSRect(x: 0, y: 0, width: 28, height: 28)
+        // A button is flipped: "under" is past maxY.
+        XCTAssertEqual(SAClaudeConnectionsMenuModel.popUpOrigin(buttonBounds: button, isFlipped: true, menuWidth: 220),
+                       NSPoint(x: -192, y: 32))
+        XCTAssertEqual(SAClaudeConnectionsMenuModel.popUpOrigin(buttonBounds: button, isFlipped: false, menuWidth: 220),
+                       NSPoint(x: -192, y: -4))
+        // The menu's right edge is the button's, whatever its width (measured after its glyphs are in).
+        for width: CGFloat in [120, 241.5] {
+            let origin = SAClaudeConnectionsMenuModel.popUpOrigin(buttonBounds: button, isFlipped: true, menuWidth: width)
+            XCTAssertEqual(origin.x + width, button.maxX, accuracy: 0.001)
+        }
+    }
+
     // MARK: - File menu
 
     private func fileMenu() -> NSMenu {

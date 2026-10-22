@@ -46,8 +46,8 @@ enum SAPrivateBuildPolicy {
         !isAppStoreInstall && !isPrivateBuild
     }
 
-    /// The launch-time "App Sandbox Issue" alert for stale secure bookmarks. A private build is unsandboxed and reads
-    /// files without bookmarks, so it never shows it.
+    /// The "App Sandbox Issue" alerts for stale or missing secure bookmarks (at launch, and in Settings ▸ Network's
+    /// known-hosts check). A private build is unsandboxed and reads files without bookmarks, so it never shows them.
     static func showsStaleBookmarkAlert(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
         !isPrivateBuild && staleBookmarkCount > 0
     }

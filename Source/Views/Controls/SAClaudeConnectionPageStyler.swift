@@ -627,9 +627,14 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
         let menu = SAClaudeConnectionsMenuModel.moreMenu(gearMenu: grid.gearMenu(), target: connectionsCommands,
                                                          importAction: SAClaudeConnectionsCommands.importSelector,
                                                          exportAction: SAClaudeConnectionsCommands.exportSelector)
-        // The same "no Ask Siri field" as the card menu (the glyph pass fills the item icons as it opens).
+        // The same "no Ask Siri field" as the card menu.
         SAClaudeMenuGlyphPass.suppressAssistant(in: menu)
-        menu.popUp(positioning: nil, at: NSPoint(x: sender.bounds.maxX - menu.size.width, y: sender.bounds.maxY + 4), in: sender)
+        // Glyphs (which widen the menu by their column) and the validated titles go in before it is measured, so its
+        // right edge lands on the button's; the pass, as it opens, then finds nothing left to fill.
+        SAClaudeMenuGlyphPass.applyGlyphs(to: menu)
+        menu.update()
+        let origin = SAClaudeConnectionsMenuModel.popUpOrigin(buttonBounds: sender.bounds, isFlipped: sender.isFlipped, menuWidth: menu.size.width)
+        menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
     /// Remembers how far down the user scrolled, unless the controller has just moved the panel (its own centring

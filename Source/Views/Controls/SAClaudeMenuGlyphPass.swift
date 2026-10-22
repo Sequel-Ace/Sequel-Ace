@@ -177,6 +177,13 @@ import AppKit
     }
 
     /// The menu glyph for a symbol name: 15pt regular, a template, cached.
+    /// Fills `menu`'s glyphs now, as the pass would when it opens: for a menu whose position depends on its width,
+    /// measured before it is shown (the pass adds them only once tracking has begun).
+    @objc(applyGlyphsToMenu:)
+    static func applyGlyphs(to menu: NSMenu) {
+        SAClaudeMenuGlyphs.apply(to: menu, imageFor: image(named:))
+    }
+
     private static func image(named name: String) -> NSImage? {
         if let image = images[name] { return image }
         guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
