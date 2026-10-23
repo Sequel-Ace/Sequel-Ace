@@ -248,6 +248,12 @@ import AppKit
         "sys",
     ]
 
+    /// Tag carried by the popup's header command items ("Add Database...",
+    /// "Refresh Databases"). Database items keep the default tag of 0, so
+    /// `SADatabasePickerModel` can separate the two without relying on
+    /// their position or on the popup cell's private item actions.
+    @objc static let commandMenuItemTag: Int = 0x5344_4243
+
     /// Split a flat list of database names into a (system, user) pair,
     /// preserving the input order within each bucket.
     @objc static func partition(databases: [String]) -> SADatabasePartition {
@@ -300,12 +306,15 @@ import AppKit
         popup.menu?.addItem(NSMenuItem.separator())
 
         // Nil-target so the message goes through the responder chain.
-        popup.menu?.addItem(withTitle: NSLocalizedString("Add Database...", comment: "menu item to add db"),
-                            action: addDatabaseSelector,
-                            keyEquivalent: "")
-        popup.menu?.addItem(withTitle: NSLocalizedString("Refresh Databases", comment: "menu item to refresh databases"),
-                            action: refreshDatabasesSelector,
-                            keyEquivalent: "")
+        let addItem = popup.menu?.addItem(withTitle: NSLocalizedString("Add Database...", comment: "menu item to add db"),
+                                          action: addDatabaseSelector,
+                                          keyEquivalent: "")
+        let refreshItem = popup.menu?.addItem(withTitle: NSLocalizedString("Refresh Databases", comment: "menu item to refresh databases"),
+                                              action: refreshDatabasesSelector,
+                                              keyEquivalent: "")
+        // Lets the searchable picker tell commands apart from databases.
+        addItem?.tag = commandMenuItemTag
+        refreshItem?.tag = commandMenuItemTag
 
         popup.menu?.addItem(NSMenuItem.separator())
 
