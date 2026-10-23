@@ -52,6 +52,7 @@ module SequelAceRelease
       when "validate-publish-handoff" then validate_publish_handoff(argv)
       when "validate-forward-recovery" then validate_forward_recovery(argv)
       when "cloud-status" then cloud_status(argv)
+      when "cloud-workflow-status" then cloud_workflow_status(argv)
       when "wait-cloud" then wait_cloud(argv)
       when "download-cloud-artifacts" then download_cloud_artifacts(argv)
       when "retry-alpha" then retry_alpha(argv)
@@ -816,15 +817,18 @@ module SequelAceRelease
     end
 
     def cloud_status(arguments)
-      options = { allow_any_build: false }
+      options = { allow_any_build: false, require_downloadable_artifact: true }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release cloud-status --workflow-id ID --app-id ID --version VERSION --tag TAG --build BUILD --commit SHA"
+        value.banner = "Usage: sa-release cloud-status --workflow-id ID --app-id ID --version VERSION --tag TAG --build BUILD --commit SHA [--artifacts-already-verified]"
         value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
         value.on("--app-id ID") { |item| options[:app_id] = item }
         value.on("--version VERSION") { |item| options[:version] = item }
         value.on("--tag TAG") { |item| options[:tag] = item }
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--allow-any-build") { options[:allow_any_build] = true }
+        value.on("--artifacts-already-verified", "Inspect identity without downloading resources after archive verification") do
+          options[:require_downloadable_artifact] = false
+        end
         value.on("--run-id ID") { |item| options[:run_id] = item }
         value.on("--commit SHA") { |item| options[:commit] = item }
         value.on("--output FILE") { |item| options[:output] = item }
@@ -836,8 +840,30 @@ module SequelAceRelease
       Version.validate!(options[:version])
 
       result = CloudRunStatus.new(client: app_store_client).readiness(**options.slice(
-        :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit
+        :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit, :require_downloadable_artifact
       ))
+      emit(result, options[:output])
+    end
+
+    # Read-only preflight: never repair a missed tag event by creating a run.
+    def cloud_workflow_status(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release cloud-workflow-status --workflow-id ID --tag TAG [--require-automatic]"
+        value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--require-automatic") { options[:require_automatic] = true }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :workflow_id, :tag)
+      unless options[:tag].match?(/\A(?:production|beta)\/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*\z/)
+        raise ValidationError, "Cloud preflight requires a canonical release tag"
+      end
+      inspector = CloudWorkflowTrigger.new(client: app_store_client)
+      arguments = options.slice(:workflow_id, :tag)
+      result = options[:require_automatic] ? inspector.validate!(**arguments) : inspector.inspect(**arguments)
       emit(result, options[:output])
     end
 
@@ -1850,6 +1876,7 @@ module SequelAceRelease
           validate-publish-handoff   Validate an archived prerelease continuation
           validate-forward-recovery  Validate a preserved forward-only build mismatch
           cloud-status               Inspect an exact Xcode Cloud build without waiting
+          cloud-workflow-status      Inspect tag triggers; optionally require automatic start
           wait-cloud                 Wait for an exact Xcode Cloud build
           download-cloud-artifacts   Download every artifact for an exact Cloud build run
           retry-alpha                Reuse or start an Alpha-only retry for a failed beta run

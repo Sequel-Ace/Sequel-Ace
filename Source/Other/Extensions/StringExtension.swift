@@ -1078,3 +1078,16 @@ public class SPProcessListRowSerializer: NSObject {
         return nil
     }
 }
+
+
+/// Final conversion is stricter than partial typing: a NULL prefix is useful
+/// while editing a BIT cell but cannot be sent to MySQL as a binary literal.
+@objcMembers public final class SABitFieldCommitValidation: NSObject {
+    @objc(isValidCommittedText:fieldType:nullValue:)
+    public static func isValid(text: String, fieldType: String?, nullValue: String?) -> Bool {
+        guard fieldType?.uppercased() == "BIT" else { return true }
+        if let nullValue, text.utf16.elementsEqual(nullValue.utf16) { return true }
+        // Empty input keeps the existing save policy, which writes the bit zero.
+        return text.unicodeScalars.allSatisfy { $0 == "0" || $0 == "1" }
+    }
+}

@@ -55,6 +55,10 @@
 
 - (BOOL) getObjectValue:(id*) object forString:(NSString*) string errorDescription:(NSString**) error
 {
+	if (![SABitFieldCommitValidation isValidCommittedText:string fieldType:fieldType nullValue:[[NSUserDefaults standardUserDefaults] objectForKey:SPNullValue]]) {
+		if (error) *error = NSLocalizedString(@"For BIT fields only “1” or “0” are allowed.", @"For BIT fields only “1” or “0” are allowed.");
+		return NO;
+	}
 	*object = string;
 	return YES;
 }

@@ -157,6 +157,8 @@
 		// The core of result fetching in streaming mode is still based around mysql_fetch_row,
 		// so use the super to perform normal processing.
 		theRow = [super getRowAsType:theType];
+		// Snapshot EOF/fetch failure before unlock can drain another result.
+		if (!theRow) [parentConnection _updateLastErrorInfos];
 	}
 
 	// If no row was returned, the end of the result set has been reached.  Clear markers,
@@ -192,6 +194,7 @@
 
 		// If no data was returned, we're at the end of the result set - return.
 		if (theRow == NULL) {
+			[parentConnection _updateLastErrorInfos];
 			dataDownloaded = YES;
 			if (!connectionUnlocked) {
 				[parentConnection _unlockConnection];

@@ -46,9 +46,9 @@ import OSLog
         case .invalidProfile:
             return NSLocalizedString("The profile is not configured for AWS IAM Identity Center", comment: "sso error")
         case .tokenNotFound:
-            return NSLocalizedString("No cached AWS SSO session was found. Run `aws sso login` and try again.", comment: "sso error")
+            return NSLocalizedString("No cached AWS SSO session was found.", comment: "sso error")
         case .tokenExpired:
-            return NSLocalizedString("The cached AWS SSO token has expired. Run `aws sso login` and reconnect.", comment: "sso error")
+            return NSLocalizedString("The cached AWS SSO token has expired.", comment: "sso error")
         case .networkFailure:
             return NSLocalizedString("Network request to AWS IAM Identity Center failed", comment: "sso error")
         case .invalidResponse:
@@ -75,7 +75,11 @@ import OSLog
 
     /// Resolve temporary credentials for an IAM Identity Center profile by reading the cached
     /// bearer token and exchanging it via the SSO Portal `GetRoleCredentials` API.
-    static func resolveCredentials(for profileCredentials: AWSCredentials) async throws -> AWSCredentials {
+    @nonobjc static func resolveCredentials(
+        for profileCredentials: AWSCredentials,
+        cacheDirectory: String? = nil,
+        session: URLSession = .shared
+    ) async throws -> AWSCredentials {
         guard profileCredentials.isSSOProfile,
               let accountID = profileCredentials.ssoAccountID, !accountID.isEmpty,
               let roleName = profileCredentials.ssoRoleName, !roleName.isEmpty else {
@@ -86,7 +90,7 @@ import OSLog
             throw AWSSSOClientError.invalidProfile
         }
 
-        let cachePath = tokenCacheDirectory + "/" + cacheFileName(forKey: cacheKey)
+        let cachePath = (cacheDirectory ?? tokenCacheDirectory) + "/" + cacheFileName(forKey: cacheKey)
         guard let contents = readFileContents(at: cachePath) else {
             log.error("SSO token cache file not found")
             throw AWSSSOClientError.tokenNotFound
@@ -103,7 +107,8 @@ import OSLog
             accountID: accountID,
             roleName: roleName,
             accessToken: token.accessToken,
-            region: region
+            region: region,
+            session: session
         )
     }
 
@@ -157,11 +162,12 @@ import OSLog
     // MARK: - GetRoleCredentials
 
     /// Call the SSO Portal `GetRoleCredentials` endpoint and return the temporary credentials.
-    private static func fetchRoleCredentials(
+    @nonobjc static func fetchRoleCredentials(
         accountID: String,
         roleName: String,
         accessToken: String,
-        region: String
+        region: String,
+        session: URLSession = .shared
     ) async throws -> AWSCredentials {
         var components = URLComponents()
         components.scheme = "https"
@@ -171,6 +177,9 @@ import OSLog
             URLQueryItem(name: "account_id", value: accountID),
             URLQueryItem(name: "role_name", value: roleName)
         ]
+
+        // AWS query parameters must preserve literal '+' characters in role names.
+        components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
 
         guard let url = components.url else {
             throw AWSSSOClientError.invalidProfile
@@ -184,9 +193,14 @@ import OSLog
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            (data, response) = try await session.data(for: request)
         } catch {
-            log.error("SSO GetRoleCredentials request failed: \(error.localizedDescription)")
+            // Log only the code: transport descriptions can contain request URLs.
+            let transportError = error as NSError
+            log.error("SSO GetRoleCredentials transport failure (code \(transportError.code))")
+            if transportError.domain == NSURLErrorDomain && transportError.code == NSURLErrorTimedOut {
+                throw AWSSSOClientError.requestTimeout
+            }
             throw AWSSSOClientError.networkFailure
         }
 
@@ -245,19 +259,18 @@ import OSLog
         let outcome = SAAsyncResultBox<AWSCredentials>()
         let semaphore = DispatchSemaphore(value: 0)
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            Task {
-                do {
-                    let credentials = try await resolveCredentials(for: profileCredentials)
-                    outcome.succeed(credentials)
-                } catch {
-                    outcome.fail(error)
-                }
-                semaphore.signal()
+        let task = Task.detached(priority: .userInitiated) {
+            defer { semaphore.signal() }
+            do {
+                let credentials = try await resolveCredentials(for: profileCredentials)
+                outcome.succeed(credentials)
+            } catch {
+                outcome.fail(error)
             }
         }
 
         if semaphore.wait(timeout: .now() + requestTimeout + 5) == .timedOut {
+            task.cancel()
             throw AWSSSOClientError.requestTimeout
         }
 

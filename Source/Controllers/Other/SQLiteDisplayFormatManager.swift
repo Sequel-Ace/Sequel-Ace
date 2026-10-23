@@ -307,11 +307,18 @@ fileprivate extension FMDatabase {
 }
 
 /// One table of one database on one host: what the formats chosen in a
-/// session are kept under.
+/// session are kept under. Match the store's byte-exact identifier comparison:
+/// Swift String equality would merge canonically equivalent Unicode names.
 private struct SADisplayFormatTableKey: Hashable {
-    let hostName: String
-    let databaseName: String
-    let tableName: String
+    let hostName: Data
+    let databaseName: Data
+    let tableName: Data
+
+    init(hostName: String, databaseName: String, tableName: String) {
+        self.hostName = Data(hostName.utf8)
+        self.databaseName = Data(databaseName.utf8)
+        self.tableName = Data(tableName.utf8)
+    }
 }
 
 // MARK: - Store problems

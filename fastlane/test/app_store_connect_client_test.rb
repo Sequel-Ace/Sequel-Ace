@@ -3,6 +3,21 @@
 require "test_helper"
 
 class AppStoreConnectClientTest < Minitest::Test
+  def test_reads_an_exact_cloud_workflow_without_mutation
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    resource = { "id" => "workflow-id", "type" => "ciWorkflows", "attributes" => { "isEnabled" => true } }
+    transport = FakeTransport.new([http_response(body: { "data" => resource })])
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123", private_key: key.to_pem, transport: transport
+    )
+
+    assert_equal resource, client.workflow("workflow-id")
+    assert_equal 1, transport.requests.length
+    assert_equal "GET", transport.requests.first.fetch(:method)
+    assert_equal "/v1/ciWorkflows/workflow-id", transport.requests.first.fetch(:path)
+    assert_nil transport.requests.first.fetch(:body)
+  end
+
   def test_normalizes_cloud_runs_and_uses_individual_key_jwt
     key = OpenSSL::PKey::EC.generate("prime256v1")
     transport = FakeTransport.new([

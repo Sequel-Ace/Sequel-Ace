@@ -131,6 +131,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "Choose the private key instead — the file without the .pub extension.";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
 
@@ -2173,6 +2176,9 @@
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
 
+/* database picker : shown when the search matches no database */
+"No Matching Databases" = "No Matching Databases";
+
 /* header for no matches in filtered list */
 "NO MATCHES" = "NO MATCHES";
 
@@ -2650,6 +2656,9 @@
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
+
+/* database picker : search field placeholder */
+"Search Databases" = "Search Databases";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
@@ -3882,10 +3891,10 @@
 "The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
 
 /* AWS console sign-in (aws login) error: no cached session on disk */
-"No cached AWS console sign-in session was found. Run `aws login` and try again." = "No cached AWS console sign-in session was found. Run `aws login` and try again.";
+"No cached AWS console sign-in session was found." = "No cached AWS console sign-in session was found.";
 
-/* AWS console sign-in (aws login) error: cached credentials have expired */
-"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect.";
+/* AWS console sign-in (aws login) error: the sign-in session can no longer be renewed */
+"Your AWS console sign-in session has ended." = "Your AWS console sign-in session has ended.";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
@@ -3894,10 +3903,10 @@
 "The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
 
 /* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
-"No cached AWS SSO session was found. Run `aws sso login` and try again." = "No cached AWS SSO session was found. Run `aws sso login` and try again.";
+"No cached AWS SSO session was found." = "No cached AWS SSO session was found.";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The cached AWS SSO token has expired. Run `aws sso login` and reconnect." = "The cached AWS SSO token has expired. Run `aws sso login` and reconnect.";
+"The cached AWS SSO token has expired." = "The cached AWS SSO token has expired.";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
 "Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
@@ -4367,6 +4376,60 @@
 /* Vault OIDC login already in progress */
 "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";
 
+/* aws login refresh error: the user's AWS password or credentials changed */
+"Your AWS sign-in credentials changed after you signed in." = "Your AWS sign-in credentials changed after you signed in.";
+
+/* aws login refresh error: missing IAM permission */
+"AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission." = "AWS did not allow Sequel Ace to renew your console sign-in session. Your IAM identity needs the signin:CreateOAuth2Token permission.";
+
+/* aws login refresh error: AWS rejected the refresh token */
+"AWS rejected the renewal of your console sign-in session." = "AWS rejected the renewal of your console sign-in session.";
+
+/* aws login refresh error: no region for the sign-in session */
+"Sequel Ace could not tell which AWS region your console sign-in session belongs to." = "Sequel Ace could not tell which AWS region your console sign-in session belongs to.";
+
+/* aws login refresh error: the .aws folder is read-only for Sequel Ace */
+"Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window." = "Your AWS console sign-in credentials have expired. To renew them automatically, Sequel Ace needs permission to update your .aws folder, which it asks for when you connect from the connection window.";
+
+/* aws login refresh error: the cached DPoP key cannot be read */
+"The cached AWS console sign-in session has an unreadable signing key." = "The cached AWS console sign-in session has an unreadable signing key.";
+
+/* aws login refresh error: malformed response */
+"AWS returned an unexpected response while renewing your console sign-in session." = "AWS returned an unexpected response while renewing your console sign-in session.";
+
+/* aws login refresh error: request failed; %@ is the underlying error */
+"Sequel Ace could not renew your AWS console sign-in session: %@" = "Sequel Ace could not renew your AWS console sign-in session: %@";
+
+/* AWS directory write access panel message */
+"Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically." = "Allow Sequel Ace to update your .aws folder so it can renew your AWS console sign-in (aws login) credentials automatically.";
+
+/* AWS directory write access panel button */
+"Allow" = "Allow";
+
+/* Connection lost sheet: default title */
+"Connection Lost" = "Connection Lost";
+
+/* Connection lost sheet: default message */
+"Sequel Ace appears to have lost the connection to the server, or the server has stopped responding." = "Sequel Ace appears to have lost the connection to the server, or the server has stopped responding.";
+
+/* Connection lost sheet: title when the AWS session has lapsed */
+"AWS Sign-In Required" = "AWS Sign-In Required";
+
+/* Connection lost sheet: message when the AWS session has lapsed; %@ is an AWS CLI command */
+"Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect." = "Sequel Ace lost the connection to the server and cannot reconnect until you sign in to AWS again.\n\nIn Terminal, run `%@`, then click Reconnect.";
+
+/* Connection lost sheet: message when an AWS IAM token could not be generated; %@ is the AWS error description */
+"Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect." = "Sequel Ace lost the connection to the server and could not create a new RDS IAM authentication token:\n%@\n\nFix the AWS credentials, then click Reconnect.";
+
+/* Connection lost sheet: fallback AWS error description */
+"Unknown AWS IAM error" = "Unknown AWS IAM error";
+
+/* Connection lost sheet: reconnect button */
+"Reconnect" = "Reconnect";
+
+/* Connection lost sheet: close connection button */
+"Close connection" = "Close connection";
+
 /* SQLite store problem alert title: the pinned-tables store is unusable */
 "Pinned tables are not being saved" = "Pinned tables are not being saved";
 
@@ -4403,8 +4466,20 @@
 /* button that reveals a file in Finder */
 "Show in Finder" = "Show in Finder";
 
+/* AWS sign-in recovery; %@ is an AWS CLI command */
+"Run `%@` in Terminal, then try again." = "Run `%@` in Terminal, then try again.";
+
+/* AWS IAM credentials status message */
+"Getting AWS credentials..." = "Getting AWS credentials...";
+
+/* content tab : rule filter : drop zone tooltip while it shows the WHERE preview */
+"Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause" = "Click for the filter menu: add a filter or an AND/OR group, or copy the WHERE clause";
+
 /* Connection error: the cleartext authentication plugin requires TLS */
 "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent." = "This connection has the cleartext authentication plugin enabled, which sends the password in plain text, so it is only made over TLS. TLS could not be established with the server and no password was sent.";
+
+/* aws login refresh error: the renewed session could not be written to the cache file; %@ is the underlying error */
+"Sequel Ace renewed your AWS console sign-in session but could not save it: %@" = "Sequel Ace renewed your AWS console sign-in session but could not save it: %@";
 
 /* rename database: a column of a recreated view that the server no longer presents; %@ is the column's signature */
 "the column '%@' is missing" = "the column '%@' is missing";
@@ -4426,3 +4501,15 @@
 
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
+
+/* Error shown for a statement refused while the lost-connection question is open */
+"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "“%@” is a public key.";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "“%@” is not a valid client certificate file.";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "“%@” is not a valid private key file.";

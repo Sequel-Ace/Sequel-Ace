@@ -164,6 +164,17 @@ NSString * const SPRuleFilterHeightChangedNotification;
 - (void)addFilterExpression;
 
 /**
+ * Adds the starter row the table content seeds when the editor appears or another table is selected.
+ * The row starts unchecked: it is an empty template, not a filter, so the WHERE preview must not show
+ * it as `column = ''` while the table is unfiltered. The first edit of the row - a value typed, a column
+ * or operator picked, or a click on the drop zone's "add a filter" prompt - checks it; a click on its
+ * checkbox is the user's own decision and is left alone.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (void)addStarterFilterExpression;
+
+/**
  * Append a fully-populated rule (column, a sensible default operator for
  * the column's type, and one value) to the current filter set,
  * preserving any existing rules. The filter is NOT auto-applied; the
@@ -192,7 +203,9 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * -appendFilterForColumn:value:isNull: but target an existing row
  * instead of appending. Filtering is not auto-run.
  *
- * @param row        0-indexed top-level row in the rule editor. For a
+ * @param row        0-indexed ordinal among the top-level rows, which
+ *                   counts none of a nested group's subrows - not a rule
+ *                   editor row index, which counts all of them. For a
  *                   tree that's a single expression, the only valid
  *                   index is 0. For an AND-group tree, the index maps
  *                   directly to a child of that group.

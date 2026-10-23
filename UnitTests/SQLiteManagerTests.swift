@@ -119,6 +119,89 @@ final class SASQLiteDisplayFormatManagerTests: XCTestCase {
 }
 
 extension SASQLiteDisplayFormatManagerTests {
+    /// Verifies the session cache and store keep Unicode-equivalent table names independent.
+    func testCanonicallyEquivalentTableNamesStayIndependentWithAStore() {
+        assertIndependentDisplayScopes(
+            databasePath: directory.appendingPathComponent("formats.db").path,
+            first: ("db", "caf\u{00E9}"), second: ("db", "cafe\u{0301}")
+        )
+    }
+
+    /// Verifies table-name isolation also holds when formats are kept only in memory.
+    func testCanonicallyEquivalentTableNamesStayIndependentWithoutAStore() {
+        assertIndependentDisplayScopes(
+            databasePath: nil,
+            first: ("db", "caf\u{00E9}"), second: ("db", "cafe\u{0301}")
+        )
+    }
+
+    /// Verifies the session cache and store keep Unicode-equivalent database names independent.
+    func testCanonicallyEquivalentDatabaseNamesStayIndependentWithAStore() {
+        assertIndependentDisplayScopes(
+            databasePath: directory.appendingPathComponent("formats.db").path,
+            first: ("caf\u{00E9}", "orders"), second: ("cafe\u{0301}", "orders")
+        )
+    }
+
+    /// Verifies database-name isolation also holds when formats are kept only in memory.
+    func testCanonicallyEquivalentDatabaseNamesStayIndependentWithoutAStore() {
+        assertIndependentDisplayScopes(
+            databasePath: nil,
+            first: ("caf\u{00E9}", "orders"), second: ("cafe\u{0301}", "orders")
+        )
+    }
+
+    /// Exercises both lookup APIs after independent writes and after either scope is disabled.
+    /// The ASCII column name isolates the table-scope key from column-key comparison.
+    private func assertIndependentDisplayScopes(
+        databasePath: String?,
+        first: (database: String, table: String),
+        second: (database: String, table: String),
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let manager = SQLiteDisplayFormatManager(databasePath: databasePath)
+        XCTAssertEqual(manager.isPersistent, databasePath != nil, file: file, line: line)
+
+        func setFormat(_ format: String, for scope: (database: String, table: String)) {
+            manager.replaceOverrideFor(hostName: "host", databaseName: scope.database,
+                                       tableName: scope.table, colName: "id", format: format)
+        }
+
+        func assertFormat(_ expected: String?, for scope: (database: String, table: String), in reader: SQLiteDisplayFormatManager) {
+            XCTAssertEqual(reader.displayOverrideFor(hostName: "host", databaseName: scope.database,
+                                                     tableName: scope.table, columnName: "id"),
+                           expected, file: file, line: line)
+            XCTAssertEqual(reader.allDisplayOverridesFor(hostName: "host", databaseName: scope.database,
+                                                         tableName: scope.table),
+                           expected.map { ["id": $0] } ?? [:], file: file, line: line)
+        }
+
+        setFormat("UUID", for: first)
+        assertFormat("UUID", for: first, in: manager)
+        assertFormat(nil, for: second, in: manager)
+
+        setFormat("hex", for: second)
+        assertFormat("UUID", for: first, in: manager)
+        assertFormat("hex", for: second, in: manager)
+
+        setFormat("", for: second)
+        assertFormat("UUID", for: first, in: manager)
+        assertFormat("", for: second, in: manager)
+
+        setFormat("UUID", for: second)
+        setFormat("", for: first)
+        assertFormat("", for: first, in: manager)
+        assertFormat("UUID", for: second, in: manager)
+
+        let reopened = SQLiteDisplayFormatManager(databasePath: databasePath)
+        XCTAssertEqual(reopened.isPersistent, databasePath != nil, file: file, line: line)
+        assertFormat(databasePath == nil ? nil : "", for: first, in: reopened)
+        assertFormat(databasePath == nil ? nil : "UUID", for: second, in: reopened)
+    }
+}
+
+extension SASQLiteDisplayFormatManagerTests {
     /// Verifies that a format the store refuses still answers for the running session, and
     /// replaces a stored one, while the file keeps what it had.
     func testFormatRefusedByTheStoreStillAnswersForTheSession() throws {

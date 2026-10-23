@@ -1269,7 +1269,11 @@ import Foundation
             "SHOW EVENTS FROM \(quotedSource)",
             fallback: "SELECT db, name FROM mysql.event WHERE \(Self.schemaMatch(column: "db", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY name"
         ).map { Array($0.dropFirst()) }
-        let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = \(schema) ORDER BY TRIGGER_NAME")
+        // The one place the server does not compare the way it stores names; see
+        // `inventorySchemaMatch`. Without it, a rename of `Foo` on a case-sensitive MariaDB
+        // inventories the triggers of a separate `foo`, reports them as objects it cannot
+        // move, and refuses a rename that is perfectly possible.
+        let triggerRows = rows("SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE FROM information_schema.TRIGGERS WHERE \(Self.inventorySchemaMatch(column: "TRIGGER_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)) ORDER BY TRIGGER_NAME")
         let libraryRows = libraryRowsForInspection(schema: schema, inspectionError: &inspectionError)
         let objectPrivileges = privilegeDescriptions(forDatabase: source, serverLoweredName: serverLoweredSource, caseInsensitiveNames: caseInsensitiveNames, inspectionError: &inspectionError)
         // The server keeps grants for databases that do not exist, so the
@@ -1820,7 +1824,7 @@ import Foundation
             inspectionError = reason
             return []
         }
-        guard let schemaGrantMatch = databaseGrantMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants) else {
+        guard let schemaGrantMatch = databaseGrantMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames, literal: literalGrants, columnIgnoresCase: true) else {
             inspectionError = Self.quoteFailureReason
             return []
         }
@@ -1829,7 +1833,7 @@ import Foundation
             inspectionError = schemas.error
             return []
         }
-        let schemaMatch = Self.schemaMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+        let schemaMatch = Self.privilegeViewSchemaMatch(column: "TABLE_SCHEMA", schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         var rows: [[Any]] = []
         for view in ["TABLE_PRIVILEGES", "COLUMN_PRIVILEGES"] {
             let result = run("SELECT TABLE_NAME, GRANTEE FROM information_schema.\(view) WHERE \(schemaMatch) ORDER BY TABLE_NAME, GRANTEE")
@@ -1970,6 +1974,51 @@ import Foundation
         caseInsensitiveNames ? "LOWER(\(column)) = LOWER(\(schema))" : "\(column) = \(schema)"
     }
 
+    /// How to match a schema name in `information_schema`, where the server mostly compares the
+    /// way it stores names - but not everywhere.
+    ///
+    /// `information_schema.TRIGGERS.TRIGGER_SCHEMA` is collated case-insensitively on MariaDB
+    /// (`utf8mb3_general_ci` on 11.8) whatever `lower_case_table_names` says, so on a
+    /// case-sensitive server `TRIGGER_SCHEMA = 'Foo'` also lists the triggers of a separate
+    /// `foo`. `TABLES`, `ROUTINES`, `VIEWS` and `SCHEMATA` follow the setting on both MariaDB and
+    /// MySQL, and MySQL follows it for `TRIGGERS` too - so the binary comparison is asked for
+    /// only where the server does not fold, and only where it is needed. Where the server does
+    /// fold, the plain comparison is right and is left as it was: the names it stores are folded
+    /// already, so there is nothing to tell apart. The comparison is made binary with `CAST`
+    /// rather than `BINARY expr`, which MySQL 8.4 reports as deprecated and says it will remove;
+    /// both forms give the same answer on MySQL 8.4 and MariaDB 11, measured. (The folding in
+    /// `schemaMatch` is for the grant
+    /// tables, which are matched against a name the user typed rather than one the server
+    /// stored.)
+    /// - Parameters:
+    ///   - column: The `information_schema` column holding the schema name.
+    ///   - schema: The name to match, already a literal.
+    ///   - caseInsensitiveNames: Whether the server folds the case of names.
+    /// - Returns: The condition for a `WHERE` clause.
+    /// How to match a schema name in the `information_schema` privilege views.
+    ///
+    /// `SCHEMA_PRIVILEGES`, `TABLE_PRIVILEGES` and `COLUMN_PRIVILEGES` keep their `TABLE_SCHEMA`
+    /// in a case-insensitive collation on MySQL and MariaDB alike - unlike the binary-collated
+    /// `Db` of the `mysql` tables, which is what `schemaMatch` is for. Measured on MySQL 8.4 and
+    /// MariaDB 11 with `lower_case_table_names = 0`: `TABLE_SCHEMA = 'Foo'` lists the grants of a
+    /// separate `foo` as well, and the rename is then refused over a right the database does not
+    /// have. Where the server folds names this is left exactly as it was - the folding comparison
+    /// is right there, and the names it stores are folded already.
+    /// - Parameters:
+    ///   - column: The column holding the schema name.
+    ///   - schema: The name to match, already a literal.
+    ///   - caseInsensitiveNames: Whether the server folds the case of names.
+    /// - Returns: The condition for a `WHERE` clause.
+    private static func privilegeViewSchemaMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
+        caseInsensitiveNames
+            ? "LOWER(\(column)) = LOWER(\(schema))"
+            : "CAST(\(column) AS BINARY) = \(schema)"
+    }
+
+    private static func inventorySchemaMatch(column: String, schema: String, caseInsensitiveNames: Bool) -> String {
+        caseInsensitiveNames ? "\(column) = \(schema)" : "CAST(\(column) AS BINARY) = \(schema)"
+    }
+
     /// The condition under which a database grant in a schema-name column
     /// (`mysql.db`, `SCHEMA_PRIVILEGES`) covers the source. A grant names a
     /// `LIKE` pattern, so the source is the value and the column the
@@ -1980,16 +2029,30 @@ import Foundation
     /// quoted by the connection, which knows the mode (`'\\'`, or `'\'`
     /// under that mode). With partial revokes on the server reads `_` and
     /// `%` in database grants literally; `literal` compares for equality
-    /// then. `nil` when the connection cannot quote the escape character.
-    private func databaseGrantMatch(column: String, schema: String, caseInsensitiveNames: Bool, literal: Bool) -> String? {
+    /// then. `columnIgnoresCase` is for the `information_schema` privilege
+    /// views, whose `TABLE_SCHEMA` is collated case-insensitively on both
+    /// servers where the `mysql` tables' `Db` is binary; the comparison is
+    /// made binary there so a grant on a separate `foo` is not read as one
+    /// on `Foo`. `nil` when the connection cannot quote the escape character.
+    private func databaseGrantMatch(column: String, schema: String, caseInsensitiveNames: Bool,
+                                    literal: Bool, columnIgnoresCase: Bool = false) -> String? {
         if literal {
-            return Self.schemaMatch(column: column, schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+            return columnIgnoresCase
+                ? Self.privilegeViewSchemaMatch(column: column, schema: schema, caseInsensitiveNames: caseInsensitiveNames)
+                : Self.schemaMatch(column: column, schema: schema, caseInsensitiveNames: caseInsensitiveNames)
         }
         guard let backslash = quote("\\") else {
             return nil
         }
         let escape = "ESCAPE \(backslash)"
-        return caseInsensitiveNames ? "LOWER(\(schema)) LIKE LOWER(\(column)) \(escape)" : "\(schema) LIKE \(column) \(escape)"
+        if caseInsensitiveNames {
+            return "LOWER(\(schema)) LIKE LOWER(\(column)) \(escape)"
+        }
+        // A column that ignores case on its own needs the comparison made binary, or the pattern
+        // of a grant on a separate `foo` matches `Foo`. Casting the value is enough: `LIKE`
+        // compares both sides in one collation.
+        let value = columnIgnoresCase ? "CAST(\(schema) AS BINARY)" : schema
+        return "\(value) LIKE \(column) \(escape)"
     }
 
     /// One view's definition, rewritten for the target, with the source

@@ -38,12 +38,12 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+      - uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
@@ -73,6 +73,14 @@ jobs:
             --manifest "${archive_directory}/manifest.json" \
             --notes "${archive_directory}/app-store-notes.txt" \
             --output "${RUNNER_TEMP}/release-status.json"
+          bundle exec ruby fastlane/bin/sa-release cloud-workflow-status \
+            --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}" --tag "${RELEASE_TAG}" \
+            --output "${RUNNER_TEMP}/cloud-workflow-status.json"
+          ruby -rjson -e '
+            report = JSON.parse(File.read(ARGV.fetch(0)))
+            report["cloud_workflow"] = JSON.parse(File.read(ARGV.fetch(1)))
+            File.write(ARGV.fetch(0), JSON.pretty_generate(report) + "\n")
+          ' "${RUNNER_TEMP}/release-status.json" "${RUNNER_TEMP}/cloud-workflow-status.json"
           {
             echo 'Read-only status; a successful inspection is not proof of release completion.'
             echo '```json'
@@ -80,7 +88,7 @@ jobs:
             echo '```'
           } >> "${GITHUB_STEP_SUMMARY}"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-status
           path: ${{ runner.temp }}/release-status.json

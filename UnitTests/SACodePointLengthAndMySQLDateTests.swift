@@ -432,3 +432,41 @@ final class SAMySQLDateTimeTests: XCTestCase {
         }
     }
 }
+
+
+final class SABitFieldCommitValidationTests: XCTestCase {
+    func testNullPrefixesRemainEditableButCannotCommit() {
+        for prefix in ["N", "NU", "NUL"] {
+            let decision = SACellEditLimit.evaluate(text: "" as NSString,
+                                                  replacing: NSRange(location: 0, length: 0),
+                                                  with: prefix as NSString, limit: 1,
+                                                  fieldType: "BIT", nullValue: "NULL")
+            XCTAssertTrue(decision.allowsEdit, prefix)
+            XCTAssertTrue(decision.isExempt, prefix)
+            XCTAssertFalse(SABitFieldCommitValidation.isValid(text: prefix, fieldType: "BIT", nullValue: "NULL"), prefix)
+        }
+    }
+
+    func testFinalBinaryValuesAndCompleteNullStillCommit() {
+        for text in ["", "0", "1", "00101", "NULL"] {
+            XCTAssertTrue(SABitFieldCommitValidation.isValid(text: text, fieldType: "bit", nullValue: "NULL"), text)
+        }
+        for text in ["2", "10N", "null", "1\u{301}"] {
+            XCTAssertFalse(SABitFieldCommitValidation.isValid(text: text, fieldType: "BIT", nullValue: "NULL"), text)
+        }
+    }
+
+    func testCustomNullPlaceholderMustBeCompleteAndByteExact() {
+        XCTAssertTrue(SABitFieldCommitValidation.isValid(text: "(nil)", fieldType: "BIT", nullValue: "(nil)"))
+        XCTAssertFalse(SABitFieldCommitValidation.isValid(text: "(ni", fieldType: "BIT", nullValue: "(nil)"))
+        XCTAssertFalse(SABitFieldCommitValidation.isValid(text: "NULL", fieldType: "BIT", nullValue: nil))
+        XCTAssertTrue(SABitFieldCommitValidation.isValid(text: "caf\u{e9}", fieldType: "BIT", nullValue: "caf\u{e9}"))
+        XCTAssertFalse(SABitFieldCommitValidation.isValid(text: "cafe\u{301}", fieldType: "BIT", nullValue: "caf\u{e9}"))
+    }
+
+    func testOtherColumnTypesKeepTheirFinalConversion() {
+        for type: String? in [nil, "VARCHAR", "INTEGER", "DATE"] {
+            XCTAssertTrue(SABitFieldCommitValidation.isValid(text: "N", fieldType: type, nullValue: "NULL"))
+        }
+    }
+}

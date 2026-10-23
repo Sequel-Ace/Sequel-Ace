@@ -1,5 +1,5 @@
 ## OSX generated files
-.DS_store
+.DS_Store
 
 ## User settings
 xcuserdata/
@@ -7,6 +7,8 @@ xcuserdata/
 ## Build generated
 build/
 DerivedData/
+*.xcarchive
+*.xcresult
 Frameworks/**/*.tar.gz
 
 ## Obj-C/Swift specific

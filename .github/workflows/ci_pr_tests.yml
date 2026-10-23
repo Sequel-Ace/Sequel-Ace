@@ -32,9 +32,11 @@ jobs:
       with:
         persist-credentials: false
     - name: Set up Ruby and locked gems
-      uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+      uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
       with:
         ruby-version: '3.3'
         bundler-cache: true
     - name: Run release infrastructure tests
       run: bundle exec rake -f fastlane/Rakefile test
+    - name: Verify ORAS checksums against upstream release manifests
+      run: bundle exec ruby Scripts/verify-oras-checksums.rb
