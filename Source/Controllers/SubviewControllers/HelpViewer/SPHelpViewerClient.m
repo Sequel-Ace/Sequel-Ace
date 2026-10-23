@@ -290,8 +290,17 @@ NSString * const SPUserClosedHelpViewerNotification = @"SPUserClosedHelpViewer";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	[controller setDataSource:nil]; // we are the (unretained) datasource, but the controller may outlive us (if retained by other objects)
-	[controller close]; // hide the window if it is still visible (can't update anymore without delegate anyway)
+	// Dealloc can run off the main thread (the query thread may drain our last
+	// autoreleased reference after the window closed on main). Dropping the data
+	// source and closing the window are main-thread-only, so hop to main, using a
+	// local strong ref — the `controller` ivar would capture (unretained) self,
+	// already gone when the block runs, and wouldn't retain the controller.
+	SAHelpViewerWindowController *controllerToClose = controller;
+	controller = nil; // transfer sole ownership to the block
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[controllerToClose setDataSource:nil]; // drop the weak data source before closing
+		[controllerToClose close]; // hide the window if still visible
+	});
 
 	mySQLConnection = nil;
 

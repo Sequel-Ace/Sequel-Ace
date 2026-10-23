@@ -37,7 +37,7 @@
 #import "Locking.h"
 #import "Conversion.h"
 
-@class SAConnectionSessionAccess;
+@class SAConnectionSessionAccess, SAConnectionSetupDeadline;
 
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
@@ -53,14 +53,30 @@
 + (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
 + (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
+/** Whether a recently used connection's socket already reports a lost peer. */
+- (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+
 @end
 
 @interface SPMySQLConnection (PrivateAPI)
 
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
+- (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster connectTimeout:(NSUInteger)connectTimeoutOrZero;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
-- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry;
+- (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
+- (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
+- (BOOL)_connectUsingConnectTimeout:(NSUInteger)connectTimeoutOrZero;
+/** Sets the session up once the handshake is through, on a finite budget; whether the session is still up afterwards. */
+- (BOOL)_runSessionSetup;
+/** The socket a deadline on setup is armed on, or -1 while there is no session; called with the connection locked. */
+- (int)_socketForSetupDeadline;
+/** Arms the deadline on a setup phase and makes it the active one, which the phase's statements report to; nil, with the error recorded, when none could be armed. */
+- (SAConnectionSetupDeadline *)_beginSetupDeadline;
+/** How long the statements that set a session up may take, in seconds; SAConnectionCheckBudget decides. */
+- (NSTimeInterval)_setupDeadlineSeconds;
+/** Ends a setup phase, lifting its deadline; whether the session came through it. */
+- (BOOL)_endSetupPhase:(SAConnectionSetupDeadline *)setupDeadline;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (BOOL)_abortCancelledReconnectWhileLocked;
@@ -82,6 +98,10 @@
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection;
+/** Asks the delegate what to do about the lost connection and remembers the answer. */
+- (SPMySQLConnectionLostDecision)_askDelegateForLostConnectionDecision;
+/** Records whether the application shows something modal; main thread only. */
+- (void)_recordWhetherAModalWindowIsShowing;
 
 @end
 

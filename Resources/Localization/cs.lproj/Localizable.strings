@@ -125,6 +125,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* POZOR: Žádné řádky nebyly ovlivněny */\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "Místo toho vyberte soukromý klíč - soubor bez přípony .pub.";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Vytvoření databáze '%1$@' selhalo: %2$@";
 
@@ -4427,3 +4430,12 @@ příkazy budou spuštěny pro každé textové vstupní pole";
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "Připojení nelze použít, dokud se vás ptá, co s ním udělat. Odpovězte na tuto otázku a zkuste to znovu.";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "„%@“ je veřejný klíč.";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "„%@“ není platný soubor klientských certifikátů.";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "„%@“ není platný soubor se soukromým klíčem.";

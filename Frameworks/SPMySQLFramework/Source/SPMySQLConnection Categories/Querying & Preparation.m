@@ -406,8 +406,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Ensure per-thread variables are set up
 	[self _validateThreadSetup];
 
-	// Check the connection if necessary, returning nil if the state couldn't be validated
-	if (![self checkConnectionIfNecessary]) return nil;
+	// Check the connection if necessary, returning nil if the state couldn't be validated.
+	// A statement that sets the session up, or restores it, runs on a session made moments ago
+	// and does not check it: a check that found it gone would reconnect from inside the attempt
+	// that is still setting it up. Once a statement of that phase has lost the session, the ones
+	// after it have none to run on.
+	if (activeSetupDeadline) {
+		if ([activeSetupDeadline aStatementLostTheSession]) return nil;
+	} else if (![self checkConnectionIfNecessary]) {
+		return nil;
+	}
 
 	// Determine whether a maximum query size needs to be restored from a previous query
 	if (queryActionShouldRestoreMaxQuerySize != NSNotFound) {
@@ -512,6 +520,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 			// Prevent retries if the query was cancelled or not a connection error
 			if (self.sessionAccess.currentQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
+				break;
+			}
+
+			// A statement that sets the session up, or restores it, does not recover the session
+			// it is setting up: its loss fails the attempt it belongs to, which has its own
+			// retries and its own question for the user. Checking and reconnecting from here
+			// would nest a second attempt inside the first, once per statement.
+			if (activeSetupDeadline) {
+				[activeSetupDeadline noteAStatementLostTheSession];
 				break;
 			}
 		}
