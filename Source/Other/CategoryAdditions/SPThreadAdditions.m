@@ -81,14 +81,18 @@
 	
 	void (*msgsend)(id, SEL, id) = (void (*)(id, SEL, id)) objc_msgSend; //hint for the compiler
 	
-	msgsend(object,selector,argument); // TODO: this leaks
+	// Own pool: references to the target autoreleased by the task are dropped here, before the hand-off below,
+	// not when the thread exits.
+	@autoreleasepool {
+		msgsend(object,selector,argument); // TODO: this leaks
+	}
 
 	// The target is usually a document's controller. If its tab closed while this thread ran, our reference may be
-	// its last one, and its -dealloc releases views and windows, which must happen on the main thread: hand the
-	// final release to the main queue instead of letting it happen when this thread ends.
-	id target = object;
+	// its last one, and its -dealloc releases views and windows, which must happen on the main thread. Transfer the
+	// reference to the main queue (no ARC copy is left on this thread to release after the enqueue).
+	CFTypeRef target = (__bridge_retained CFTypeRef)object;
 	object = nil;
-	dispatch_async(dispatch_get_main_queue(), ^{ (void)target; });
+	if (target) dispatch_async(dispatch_get_main_queue(), ^{ CFRelease(target); });
 }
 
 - (void)dealloc
