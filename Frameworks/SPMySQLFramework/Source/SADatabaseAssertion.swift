@@ -121,13 +121,16 @@ public final class SADatabaseAssertionState: NSObject {
             databaseIsSelected: databaseIsSelected,
             stringEncodingProvider: stringEncodingProvider,
             queryActiveDatabaseData: {
-                let lookup = self.querySessionValue(
-                    "SELECT CAST(DATABASE() AS BINARY)",
-                    on: connection,
-                    errorStringEncodingValue: errorStringEncodingValue,
-                    queryErrorMessage: "Unable to query the selected database before asserting an empty database context.",
-                    resultErrorMessage: "Unable to read the selected database before asserting an empty database context."
-                )
+                let lookup = SADatabaseAssertion.queryActiveDatabaseData { query, returnRowPresence in
+                    self.querySessionValue(
+                        query,
+                        on: connection,
+                        errorStringEncodingValue: errorStringEncodingValue,
+                        queryErrorMessage: "Unable to query the selected database before asserting an empty database context.",
+                        resultErrorMessage: "Unable to read the selected database before asserting an empty database context.",
+                        returnRowPresence: returnRowPresence
+                    )
+                }
                 liveDatabaseLookup = lookup
                 return lookup
             },
@@ -237,7 +240,8 @@ public final class SADatabaseAssertionState: NSObject {
         on connection: UnsafeMutablePointer<MYSQL>,
         errorStringEncodingValue: UInt,
         queryErrorMessage: String,
-        resultErrorMessage: String
+        resultErrorMessage: String,
+        returnRowPresence: Bool = false
     ) -> SADatabaseSessionValueLookup {
         if realQuery(query, on: connection) != 0 {
             return .init(
@@ -261,6 +265,12 @@ public final class SADatabaseAssertionState: NSObject {
             )
         }
         defer { mysql_free_result(result) }
+
+        if returnRowPresence {
+            // Only an empty database list establishes the Sphinx fallback's
+            // empty context. Any row, even a NULL or empty name, fails closed.
+            return .init(data: mysql_num_rows(result) == 0 ? nil : Data([1]), error: nil)
+        }
 
         guard mysql_num_fields(result) >= 1,
               let row = mysql_fetch_row(result) else {
@@ -398,6 +408,25 @@ final class SADatabaseAssertion: NSObject {
     private static let dropDatabaseRegex = makeRegex(
         pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\(identifierSeparator)(?:IF\\s+EXISTS\(identifierSeparator))?\(identifierPattern)\\s*;?\\s*$"
     )
+
+    static func queryActiveDatabaseData(
+        querySessionValue: (String, Bool) -> SADatabaseSessionValueLookup
+    ) -> SADatabaseSessionValueLookup {
+        let lookup = querySessionValue("SELECT CAST(DATABASE() AS BINARY)", false)
+        guard let error = lookup.error,
+              error.errorID == 1064,
+              error.sqlState == "42000",
+              error.message == "sphinxql: syntax error, unexpected AS, expecting ')' or ',' near 'AS BINARY)'" else {
+            return lookup
+        }
+
+        // Sphinx 3.7.1 rejects CAST(... AS BINARY), returns a dummy "main"
+        // from DATABASE(), and has no selectable database namespaces. Verify
+        // its empty SHOW DATABASES result instead. Match this probe's exact diagnostic,
+        // not its configurable MySQL version string; other servers retain the
+        // original probe and all errors. A nonempty list still rejects nil.
+        return querySessionValue("SHOW DATABASES", true)
+    }
 
     static func safeCharacterSetName(from data: Data?) -> String? {
         guard let data,
