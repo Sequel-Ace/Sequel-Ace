@@ -204,7 +204,7 @@ jobs:
 
       - name: Set up Ruby and locked gems
         if: steps.authorization.outputs.enabled == 'true'
-        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -451,7 +451,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -544,7 +544,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -647,7 +647,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
@@ -1152,7 +1152,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83 # v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
