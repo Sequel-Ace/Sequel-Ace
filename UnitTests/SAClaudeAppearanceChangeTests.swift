@@ -161,6 +161,20 @@ final class SAClaudeAppearanceChangeTests: XCTestCase {
         XCTAssertEqual(SAClaudeAppearanceChange.changedKeys(from: [:], to: [:]), [])
     }
 
+    func testRecordDiffsAgainstAndReplacesTheStoredSnapshot() {
+        defaults.set(1, forKey: "a")
+        let tracker = SAClaudeAppearanceChange.Tracker(defaults: defaults, keys: ["a", "b"])
+        let first: [String: NSObject] = ["a": NSNumber(value: 2), "b": "x" as NSString]
+        XCTAssertEqual(tracker.record(first), ["a", "b"])
+        XCTAssertEqual(tracker.record(first), [], "the stored snapshot is now `first`")
+        // An out-of-order (older) snapshot swapped in after a newer one is reported, then the next read corrects it.
+        XCTAssertEqual(tracker.record(["a": NSNumber(value: 1)]), ["a", "b"])
+        defaults.set(2, forKey: "a")
+        defaults.set("x", forKey: "b")
+        XCTAssertEqual(tracker.update(), ["a", "b"])
+        XCTAssertEqual(tracker.update(), [])
+    }
+
     func testSnapshotReadsOnlyTheGivenPresentKeys() {
         defaults.set(3, forKey: "watched")
         defaults.set(4, forKey: "other")

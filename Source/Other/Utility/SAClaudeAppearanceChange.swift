@@ -6,7 +6,8 @@
 //  feature settings Claude views show), and the check that tells a write to one of them apart from every other
 //  defaults write: window frames, split positions and column widths are saved continuously, and every write posts
 //  `UserDefaults.didChangeNotification`, which carries no key. The app runs the check from one defaults observer
-//  and posts `didChangeNotification`; Claude views observe that instead (`SAClaudeAppearanceMonitor`).
+//  and posts `SAClaudeAppearanceChange.didChangeNotification` ("SAClaudeAppearanceDidChange"); Claude views observe
+//  that instead (`SAClaudeAppearanceMonitor`).
 //  Shared with the Unit Tests target.
 //
 
@@ -77,10 +78,17 @@ enum SAClaudeAppearanceChange {
         }
 
         /// Re-reads the watched values; returns the keys that changed since the previous call (empty for none).
+        /// The defaults are read outside the lock (a read never runs under it, whatever Foundation does inside one);
+        /// two racing writers can then swap their snapshots out of order, which costs a spurious extra post at most,
+        /// never a missed change.
         func update() -> Set<String> {
+            record(SAClaudeAppearanceChange.snapshot(of: defaults, keys: keys))
+        }
+
+        /// Diffs `current` against the stored snapshot and stores it; returns the changed keys.
+        func record(_ current: [String: NSObject]) -> Set<String> {
             lock.lock()
             defer { lock.unlock() }
-            let current = SAClaudeAppearanceChange.snapshot(of: defaults, keys: keys)
             let changed = SAClaudeAppearanceChange.changedKeys(from: last, to: current)
             last = current
             return changed
