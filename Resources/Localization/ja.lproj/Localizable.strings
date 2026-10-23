@@ -125,6 +125,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "代わりに秘密鍵を選択してください — .pub拡張子のないファイル。";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "データベース '%1$@' の作成に失敗しました: %2$@";
 
@@ -4425,3 +4428,12 @@
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "接続は、何をすべきか尋ねられている間は使用できません。その質問に答えてから、もう一度やり直してください。";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "“%@” は公開鍵です。";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "“%@” は有効なクライアント証明書ファイルではありません。";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "“%@” は有効な秘密鍵ファイルではありません。";
