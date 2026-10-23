@@ -87,6 +87,27 @@ import Darwin
         socketLock.withLock { socketGeneration }
     }
 
+    /// Runs `work` while `socketToken` still names the current session, under the lock a new
+    /// session is put in place under.
+    ///
+    /// Reading ``socketToken`` and then acting on the answer is not the same thing: a reconnect
+    /// can finish in between, and what was recorded about the session that has gone would be
+    /// recorded against the one that replaced it - which is how a healthy session comes to be
+    /// closed, and a transaction somebody else had just opened rolled back.
+    /// - Parameters:
+    ///   - socketToken: ``socketToken`` as it was when the caller started out.
+    ///   - work: What to record. It runs under the lock, so it must not wait for anything.
+    /// - Returns: Whether it ran, which is whether that session is still the current one.
+    @objc(whileStillOnSocket:perform:)
+    @discardableResult
+    public func whileStillOnSocket(_ socketToken: UInt, perform work: () -> Void) -> Bool {
+        socketLock.withLock {
+            guard socketGeneration == socketToken else { return false }
+            work()
+            return true
+        }
+    }
+
     /// Called with the native connection locked, before any statement is sent.
     /// The socket and server ID were published together from the same MYSQL handle.
     @discardableResult
@@ -127,10 +148,24 @@ import Darwin
     /// Own cancellation through the auxiliary KILL, including its connection setup.
     /// Query admission and reconnect both wait for this lease to end. Failure only
     /// interrupts the socket: the next use recovers after the native result is done.
+    ///
+    /// - Parameter kill: Sends the request for the server session it is given, and reports whether
+    ///   the server accepted it. Not called when this cancellation does not own the query.
+    /// - Returns: Whether this cancellation is the one the query belongs to. `false` says another
+    ///   cancellation for the same query already holds it and its request may still be accepted -
+    ///   so the caller must leave that query's socket alone, where closing it would end the
+    ///   session and roll back a transaction open in it on the strength of a failure this call
+    ///   never observed. `true` when the request went out, and when there was no native statement
+    ///   to send one for.
+    @discardableResult
     @objc(cancelQueryUsingKill:)
-    public func cancelQuery(usingKill kill: (UInt) -> Bool) {
+    public func cancelQuery(usingKill kill: (UInt) -> Bool) -> Bool {
+        var anotherCancellationHoldsTheQuery = false
         let target = socketLock.withLock { () -> (query: UInt, socket: UInt, thread: UInt)? in
-            guard cancellingQuery == nil else { return nil }
+            guard cancellingQuery == nil else {
+                anotherCancellationHoldsTheQuery = true
+                return nil
+            }
             guard let query = activeNativeQuery,
                   cancellationSocket >= 0, serverThreadID != 0 else {
                 // A caller can stop during connection setup, before there is a
@@ -146,15 +181,34 @@ import Darwin
             queryCancellationGeneration &+= 1
             return (query, socketGeneration, serverThreadID)
         }
-        guard let target else { return }
-        let succeeded = kill(target.thread)
+        guard let target else { return !anotherCancellationHoldsTheQuery }
+        // What happens when the server cannot be reached is the caller's: it holds the grace
+        // period the query is given before its socket is closed, and it knows whether the server
+        // accepted the kill for a session with a transaction open - one that must be left to end
+        // its own statement rather than have its session taken away. This reserves the
+        // cancellation, hands out the thread to kill, and lets go again.
+        _ = kill(target.thread)
         socketLock.withLock {
-            if !succeeded && activeNativeQuery == target.query
-                && socketGeneration == target.socket && cancellationSocket >= 0 {
-                _ = Darwin.shutdown(cancellationSocket, SHUT_RDWR)
-                recoveryRequired = true
-            }
             cancellingQuery = nil
+        }
+        return true
+    }
+
+    /// Records that the caller ended the native read itself, so the next use recovers.
+    ///
+    /// The decision belongs to the caller, for the reasons above; what is kept here is the
+    /// consequence - a read that was cut off cannot simply be carried on with.
+    ///
+    /// It is the session that was cut off that has to recover. A reconnect can put a new one in
+    /// place between the socket closing and this being told about it, and marking that one would
+    /// send a session nothing is wrong with through a reconnect it does not need - rolling back a
+    /// transaction it had just opened. The token names the session the caller closed.
+    /// - Parameter socketToken: ``socketToken`` as it was when the caller closed the socket.
+    @objc(noteCancellationEndedTheNativeReadOnSocket:)
+    public func noteCancellationEndedTheNativeRead(onSocket socketToken: UInt) {
+        socketLock.withLock {
+            guard socketGeneration == socketToken else { return }
+            recoveryRequired = true
         }
     }
 
@@ -178,6 +232,35 @@ import Darwin
         let refused = (Thread.current.threadDictionary[Self.refusalMarker] as? Bool) ?? false
         forgetAnyRefusal()
         return refused
+    }
+
+    /// Whether a question about the connection is out to the main thread and still unanswered.
+    ///
+    /// The thread that asked keeps the session until it has an answer. A caller that would hand
+    /// its work to another thread asks this first: handing it over does not get around the wait,
+    /// it only changes who waits, and the main thread is still the one that has to answer.
+    @objc public var aQuestionAwaitsTheMainThread: Bool {
+        socketLock.withLock { questionsAwaitingTheMainThread > 0 }
+    }
+
+    /// Forgets a refusal this thread was told about earlier, so that what is read after this call
+    /// can only describe the call that follows it.
+    ///
+    /// A refusal is marked on the thread that was turned away, and only the statement path reads
+    /// that mark. The connection's other work - a check, a session replacement - is turned away by
+    /// the same gate and reads nothing, so a mark left standing there would be read by the next
+    /// statement on that thread and reported as its own.
+    @objc public func forgetAnyRefusalOfThisThread() {
+        forgetAnyRefusal()
+    }
+
+    /// Records that this thread's call was refused the session, for a caller that turned it away
+    /// before it reached ``performQuery(_:recover:)``.
+    ///
+    /// The refusal has to read the same whichever side of a hand-off turned the call away: a
+    /// statement that was never sent must not be taken for one that ran and returned nothing.
+    @objc public func noteThisThreadsCallWasRefused() {
+        Thread.current.threadDictionary[Self.refusalMarker] = true
     }
 
     /// Forgets a refusal recorded on this thread, so it cannot speak for a later call.

@@ -340,3 +340,53 @@ final class SASessionLeaseQuestionTests: XCTestCase {
     }
 
 }
+
+/// Who a cancellation belongs to while another one is still working on the same query.
+final class SACancellationOwnershipTests: XCTestCase {
+
+    /// A second cancellation for the same query is told it does not hold it, and sends nothing.
+    /// Its caller closes the query's socket on a failed kill, which ends the session and rolls
+    /// back a transaction open in it - on the strength of a failure it never observed.
+    func testASecondCancellationIsToldItDoesNotHoldTheQuery() throws {
+        let access = SAConnectionSessionAccess()
+        let descriptors = try XCTUnwrap(Pipe() as Pipe?)
+        try access.trackSocket(descriptors.fileHandleForReading.fileDescriptor, serverThreadID: 17)
+        access.beginNativeQuery()
+
+        let firstIsSending = DispatchSemaphore(value: 0)
+        let firstMayFinish = DispatchSemaphore(value: 0)
+        var firstWasCalled = false
+        Thread.detachNewThread {
+            _ = access.cancelQuery { _ in
+                firstWasCalled = true
+                firstIsSending.signal()
+                firstMayFinish.wait()
+                return false
+            }
+        }
+        XCTAssertEqual(firstIsSending.wait(timeout: .now() + 2), .success, "the first request goes out")
+
+        var secondWasCalled = false
+        let secondHoldsTheQuery = access.cancelQuery { _ in
+            secondWasCalled = true
+            return false
+        }
+        XCTAssertFalse(secondHoldsTheQuery, "the first one holds it")
+        XCTAssertFalse(secondWasCalled, "so the second sends nothing")
+
+        firstMayFinish.signal()
+        XCTAssertTrue(firstWasCalled)
+    }
+
+    /// With no statement to kill there is nothing to hold, and the caller is not held back.
+    func testWithNothingToKillTheCancellationStillHoldsItsOwnAnswer() {
+        let access = SAConnectionSessionAccess()
+        var wasCalled = false
+        let holdsTheQuery = access.cancelQuery { _ in
+            wasCalled = true
+            return false
+        }
+        XCTAssertTrue(holdsTheQuery, "nothing else is working on it")
+        XCTAssertFalse(wasCalled, "and there is no statement to send a request for")
+    }
+}

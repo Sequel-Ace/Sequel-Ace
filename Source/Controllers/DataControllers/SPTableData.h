@@ -80,6 +80,8 @@
 - (NSDictionary *) informationForView:(NSString *)viewName;
 - (NSDictionary *) informationForView:(NSString *)viewName fromDatabase:(NSString *)database;
 - (BOOL) updateStatusInformationForCurrentTable;
+/** Records that loading the current table was stopped, so its information and status are not asked for again until it is loaded anew. */
+- (void) recordLoadsStoppedForCurrentTable;
 - (BOOL) updateTriggersForCurrentTable;
 - (BOOL) updateAccurateNumberOfRowsForCurrentTableForcingUpdate:(BOOL)alwaysUpdate;
 - (NSDictionary *) parseFieldDefinitionStringParts:(NSArray *)definitionParts;
