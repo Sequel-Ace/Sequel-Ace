@@ -309,37 +309,27 @@ extension SAClaudeSidebarChrome {
     }
 }
 
-/// Fills its bounds with the Claude sidebar colour, redrawn for light/dark.
+/// Fills its bounds with the Claude sidebar colour (a layer colour), following light/dark.
 /// Never takes clicks, so the views above it behave as before.
-@objc final class SAClaudeSidebarBackgroundView: NSView {
-    override func draw(_ dirtyRect: NSRect) {
-        SAClaudeStyle.sidebarBackground.setFill()
-        bounds.intersection(dirtyRect).fill()
+@objc final class SAClaudeSidebarBackgroundView: SAClaudeFlatFillView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        fillColour = SAClaudeStyle.sidebarBackground
     }
 
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
-    }
-
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 }
 
-/// A 1pt line in the Claude divider colour, redrawn for light/dark.
-@objc final class SAClaudeDividerLine: NSView {
+/// A 1pt line in the Claude divider colour (a layer colour), following light/dark.
+/// Never takes clicks from the views under it.
+@objc final class SAClaudeDividerLine: SAClaudeFlatFillView {
     /// Replaces the Claude divider colour (e.g. with a theme-derived hairline).
-    @objc var colourOverride: NSColor? { didSet { needsDisplay = true } }
+    @objc var colourOverride: NSColor? { didSet { fillColour = colourOverride ?? SAClaudeStyle.divider } }
 
-    override func draw(_ dirtyRect: NSRect) {
-        (colourOverride ?? SAClaudeStyle.divider).setFill()
-        bounds.fill()
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        fillColour = SAClaudeStyle.divider
     }
 
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
-    }
-
-    /// Never takes clicks from the views under it.
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 }

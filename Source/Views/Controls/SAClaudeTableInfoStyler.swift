@@ -20,20 +20,15 @@
 import AppKit
 
 /// A Table Info card: rounded fill and hairline, behind the form's controls; never takes clicks.
-final class SAClaudeTableInfoCardView: NSView {
-    var fill: NSColor = .clear { didSet { needsDisplay = true } }
-    var stroke: NSColor = .clear { didSet { needsDisplay = true } }
-    var radius: CGFloat = SAClaudeTableInfoLayout.cardRadius { didSet { needsDisplay = true } }
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    override func draw(_ dirtyRect: NSRect) {
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
-                                xRadius: radius, yRadius: radius)
-        fill.setFill()
-        path.fill()
-        stroke.setStroke()
-        path.lineWidth = 1
-        path.stroke()
+final class SAClaudeTableInfoCardView: SAClaudeOutlinedFillView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        radius = SAClaudeTableInfoLayout.cardRadius
     }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 @objc(SAClaudeTableInfoStyler) final class SAClaudeTableInfoStyler: NSObject {

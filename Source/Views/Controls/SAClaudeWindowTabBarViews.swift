@@ -17,7 +17,7 @@ import AppKit
 final class SAClaudeWindowTabBarView: NSView {
     /// The document window this bar belongs to. In full screen AppKit moves the bar into its own toolbar window,
     /// so `window` is not it then.
-    weak var hostWindow: NSWindow?
+    weak var hostWindow: NSWindow? { didSet { updateChrome() } }
 
     /// Called with the strip's new horizontal offset whenever it scrolls (but not when it adopts one).
     var onScroll: ((CGFloat) -> Void)?
@@ -27,7 +27,7 @@ final class SAClaudeWindowTabBarView: NSView {
     var bottomLineColour: NSColor? {
         didSet {
             guard bottomLineColour != oldValue else { return }
-            needsDisplay = true
+            updateChrome()
         }
     }
 
@@ -80,6 +80,10 @@ final class SAClaudeWindowTabBarView: NSView {
         var insertion: Int?
     }
 
+    /// The bar colour behind everything in full screen (above the line), clear otherwise; and the line. Layer
+    /// colours, not a drawn bar: a drawn one kept a window-wide bitmap in every tab.
+    private let fullScreenFill = SAClaudeFlatFillView()
+    private let bottomLine = SAClaudeFlatFillView()
     private let scrollView = SAClaudeWindowTabScrollView()
     private let stripView = SAClaudeWindowTabStripView()
     private var chips: [SAClaudeWindowTabChipView] = []
@@ -97,6 +101,9 @@ final class SAClaudeWindowTabBarView: NSView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        addSubview(fullScreenFill)
+        addSubview(bottomLine)
+        updateChrome()
         scrollView.drawsBackground = false
         scrollView.hasHorizontalScroller = false
         scrollView.hasVerticalScroller = false
@@ -133,19 +140,17 @@ final class SAClaudeWindowTabBarView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        if window !== hostWindow {
-            // Full screen: the bar sits in AppKit's toolbar window, which has no window colour behind it.
-            SAClaudeStyle.toolbarBackground.setFill()
-            bounds.fill()
-        }
-        if let bottomLineColour {
-            bottomLineColour.setFill()
-            NSRect(x: 0, y: 0, width: bounds.width, height: Self.bottomLineHeight).fill()
-        } else {
-            SAClaudeStyle.divider.setFill()
-            NSRect(x: 0, y: 0, width: bounds.width, height: 1).fill()
-        }
+    /// The line along the bottom (the 2pt connection line, or the 1pt divider) and, in full screen, the bar colour
+    /// above it: the bar sits in AppKit's toolbar window then, which has no window colour behind it. The two never
+    /// overlap, so the line shows over what is under the bar, as when it was drawn over the fill with a copy.
+    private func updateChrome() {
+        let lineHeight = bottomLineColour == nil ? 1 : Self.bottomLineHeight
+        bottomLine.fillColour = bottomLineColour ?? SAClaudeStyle.divider
+        fullScreenFill.fillColour = window != nil && window !== hostWindow ? SAClaudeStyle.toolbarBackground : .clear
+        let line = NSRect(x: 0, y: 0, width: bounds.width, height: min(lineHeight, bounds.height))
+        let fill = NSRect(x: 0, y: line.maxY, width: bounds.width, height: max(0, bounds.height - line.maxY))
+        if bottomLine.frame != line { bottomLine.frame = line }
+        if fullScreenFill.frame != fill { fullScreenFill.frame = fill }
     }
 
     override func setFrameSize(_ newSize: NSSize) {
@@ -155,6 +160,7 @@ final class SAClaudeWindowTabBarView: NSView {
 
     override func layout() {
         super.layout()
+        updateChrome()
         let frames = SAClaudeWindowTabBarLayout.frames(preferredWidths: chips.map { SAClaudeWindowTabChipView.preferredWidth(for: $0.item) },
                                                        barWidth: bounds.width)
         scrollView.frame = frames.scrollArea
@@ -187,7 +193,7 @@ final class SAClaudeWindowTabBarView: NSView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         // Entering or leaving full screen moves the bar between windows; the fill depends on which.
-        needsDisplay = true
+        updateChrome()
     }
 
     override func viewDidChangeEffectiveAppearance() {

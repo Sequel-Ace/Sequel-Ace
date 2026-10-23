@@ -111,16 +111,20 @@ private final class SAClaudeColourDot: NSView {
 
 /// A field's outline: the rounded field fill and a hairline (clay while the field is edited), behind the field.
 /// A click in its margin focuses the field it frames (whichever of a secure field and its plain twin is shown).
-private final class SAClaudeFieldOutline: NSView {
-    var fill: NSColor = .clear { didSet { needsDisplay = true } }
-    var stroke: NSColor = .clear { didSet { needsDisplay = true } }
-    var radius: CGFloat = 7 { didSet { needsDisplay = true } }
+private final class SAClaudeFieldOutline: SAClaudeOutlinedFillView {
     /// The field (and its plain twin) this outline frames; never retains anything that retains the outline.
     var fields: [NSTextField] = []
 
     private var target: NSTextField? {
         fields.first { !$0.isHidden && $0.isEnabled && $0.isEditable }
     }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        radius = 7
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard !isHidden, frame.contains(point), target != nil else { return nil }
@@ -134,15 +138,6 @@ private final class SAClaudeFieldOutline: NSView {
         if let editor = field.currentEditor() {
             editor.selectedRange = NSRange(location: (editor.string as NSString).length, length: 0)
         }
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: radius, yRadius: radius)
-        fill.setFill()
-        path.fill()
-        stroke.setStroke()
-        path.lineWidth = 1
-        path.stroke()
     }
 }
 

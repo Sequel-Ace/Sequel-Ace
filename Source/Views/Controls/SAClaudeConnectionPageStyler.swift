@@ -30,29 +30,18 @@ import AppKit
 // MARK: - Page pieces
 
 /// A plain fill (the right pane's theme background); never takes clicks.
-private final class SAClaudePageFillView: NSView {
-    var fill: NSColor = .clear { didSet { needsDisplay = true } }
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    override func draw(_ dirtyRect: NSRect) {
-        fill.setFill()
-        bounds.intersection(dirtyRect).fill()
-    }
-}
+private final class SAClaudePageFillView: SAClaudeFlatFillView {}
 
 /// The search field's rounded field look (fill, hairline; clay while editing); a click on its padding focuses it.
-private final class SAClaudePageSearchFieldView: NSView {
-    var fill: NSColor = .clear { didSet { needsDisplay = true } }
-    var stroke: NSColor = .clear { didSet { needsDisplay = true } }
+private final class SAClaudePageSearchFieldView: SAClaudeOutlinedFillView {
     var onClick: (() -> Void)?
 
-    override func draw(_ dirtyRect: NSRect) {
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 7, yRadius: 7)
-        fill.setFill()
-        path.fill()
-        stroke.setStroke()
-        path.lineWidth = 1
-        path.stroke()
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        radius = 7
     }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
     override func mouseDown(with event: NSEvent) {
         onClick?()
@@ -463,7 +452,7 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
         guard force || palette != theme?.palette || text != theme?.text else { return }
         theme = (palette, text, fieldFill)
 
-        background.fill = palette.background
+        background.fillColour = palette.background
         searchFieldView.fill = fieldFill
         if let searchField {
             searchField.textColor = text

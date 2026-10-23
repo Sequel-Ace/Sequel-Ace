@@ -199,8 +199,4 @@ import AppKit
 }
 
 /// A plain fill in the editor theme's background, behind the bar's controls.
-final class SAClaudeEditorBarBackgroundView: NSView {
-    var fillColour: NSColor = .clear { didSet { needsDisplay = true } }
-    override func draw(_ dirtyRect: NSRect) { fillColour.setFill(); bounds.intersection(dirtyRect).fill() }
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-}
+final class SAClaudeEditorBarBackgroundView: SAClaudeFlatFillView {}
