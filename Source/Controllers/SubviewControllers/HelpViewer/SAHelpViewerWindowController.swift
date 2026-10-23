@@ -29,6 +29,8 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
     private let palette: SAClaudeSwiftUIPalette
     private var titleSubscription: AnyCancellable?
     private var appearanceObservation: NSKeyValueObservation?
+    /// Keeps the page's theme script from running before a help page has been requested (see `themeChanged()`).
+    private var pageTheming = SAHelpViewerModel.PageTheming()
 
     /// Name of the message handler the injected selection listener posts to.
     private static let selectionMessageHandlerName = "saHelpViewerSelection"
@@ -82,6 +84,12 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
             self?.handleKeyEquivalent(event) ?? false
         }
 
+        webViewModel.onCommit = { [weak self] isLoadedHTML in
+            // A palette change that came in while the page was loading may have hit the previous document.
+            guard isLoadedHTML, self?.pageTheming.pageCommitted() == true else { return }
+            self?.runThemeScript()
+        }
+
         titleSubscription = webViewModel.$pageTitle
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageTitle in
@@ -93,6 +101,8 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
         // palette follows the editor theme and the accent; the app's appearance
         // resolves the theme's dynamic fallback colours. (The panel's own
         // appearance is set from the palette, so the app's is the one to watch.)
+        // Every document owns one of these controllers, so this must stay free of
+        // web view work until the help is first used.
         themeChanged()
         SAClaudeThemeWatcher.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
         SAClaudeAccent.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
@@ -148,6 +158,8 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
         // The selection belongs to the document being replaced.
         model.clearSelection()
 
+        // The HTML above was generated from the current palette.
+        pageTheming.requestPage()
         webViewModel.loadHTMLString(helpString, baseURL: SAHelpViewerModel.internalHelpBaseURL)
     }
 
@@ -315,13 +327,23 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
 
     /// Restyles the window and the open page from the current palette: the window's surface and appearance, the
     /// colour under the page, and the page's CSS variables through the template's theme hook (no reload).
+    ///
+    /// The page part waits for the first help page: script run in a web view that has loaded nothing starts a WebContent
+    /// process and a display-link thread, which every tab's controller would pay on creation. That first page is
+    /// generated from the then-current palette, so nothing is lost.
     private func themeChanged() {
         let palette = SAClaudeHintCardPalette.current()
         if let window {
             SAClaudeRareWindowChrome.apply(to: window, palette: palette)
         }
         webViewModel.underPageBackgroundColor = palette.surface
-        webViewModel.evaluateJavaScript(SAHelpViewerModel.themeChangeScript(palette: palette))
+        if pageTheming.themeChanged() {
+            webViewModel.evaluateJavaScript(SAHelpViewerModel.themeChangeScript(palette: palette))
+        }
+    }
+
+    private func runThemeScript() {
+        webViewModel.evaluateJavaScript(SAHelpViewerModel.themeChangeScript(palette: SAClaudeHintCardPalette.current()))
     }
 
     // MARK: - Window delegate

@@ -258,6 +258,57 @@ final class SAHelpViewerModelTests: XCTestCase {
         XCTAssertTrue(lightScript.contains("\"--sa-text\":\"#000000\""), lightScript)
     }
 
+    // MARK: - Page theming gate
+
+    func testThemingBeforeAnyPageRunsNoScript() {
+        var theming = SAHelpViewerModel.PageTheming()
+
+        XCTAssertFalse(theming.themeChanged())
+        XCTAssertFalse(theming.themeChanged())
+        // A commit with no page requested has nothing to re-theme either.
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
+    func testRequestingAPageNeedsNoScriptForEarlierChanges() {
+        var theming = SAHelpViewerModel.PageTheming()
+
+        _ = theming.themeChanged()
+        _ = theming.themeChanged()
+        theming.requestPage()
+
+        // The page was generated from the latest palette: nothing is left to apply when it commits.
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
+    func testChangesAfterTheFirstPageApplyLive() {
+        var theming = SAHelpViewerModel.PageTheming()
+        theming.requestPage()
+        XCTAssertFalse(theming.pageCommitted())
+
+        XCTAssertTrue(theming.themeChanged())
+        XCTAssertTrue(theming.themeChanged())
+    }
+
+    func testAChangeWhileAPageIsLoadingIsAppliedAgainWhenItCommits() {
+        var theming = SAHelpViewerModel.PageTheming()
+        theming.requestPage()
+
+        XCTAssertTrue(theming.themeChanged())
+        XCTAssertTrue(theming.pageCommitted())
+        // Once applied, a further commit (the next navigation) has nothing pending.
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
+    func testRequestingAnotherPageDropsChangesItsHTMLAlreadyHas() {
+        var theming = SAHelpViewerModel.PageTheming()
+        theming.requestPage()
+        XCTAssertTrue(theming.themeChanged())
+
+        theming.requestPage()
+
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
     // MARK: - Context menu
 
     func testSelectionSearchItemsNeedANonEmptySelection() {

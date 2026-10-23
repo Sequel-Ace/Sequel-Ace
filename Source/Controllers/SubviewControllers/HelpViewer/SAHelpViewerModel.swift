@@ -254,6 +254,37 @@ final class SAHelpViewerModel: ObservableObject {
         "window.onThemeChange('\(palette.isDark ? "dark" : "light")', \(SAClaudeHintCardCSS.json(palette)))"
     }
 
+    /// Decides when a theme change has to reach the page through JavaScript. Running script in a web view that has not
+    /// loaded anything starts a WebContent process (and a display link) for every document's help viewer, whether or
+    /// not the help is ever opened; until a page is requested there is nothing to restyle, and the page that is
+    /// requested is generated from the then-current palette.
+    struct PageTheming {
+
+        private var hasRequestedPage = false
+        private var changedSinceRequest = false
+
+        /// A theme, accent or appearance change. Returns whether to run the theme script on the page now.
+        mutating func themeChanged() -> Bool {
+            guard hasRequestedPage else { return false }
+            changedSinceRequest = true
+            return true
+        }
+
+        /// A help page is being handed to the web view. Its HTML was generated from the current palette, so earlier
+        /// changes are already in it.
+        mutating func requestPage() {
+            hasRequestedPage = true
+            changedSinceRequest = false
+        }
+
+        /// The requested page committed. Returns whether the palette changed while it was loading, in which case the
+        /// script may have run against the previous document and has to run again on this one.
+        mutating func pageCommitted() -> Bool {
+            defer { changedSinceRequest = false }
+            return hasRequestedPage && changedSinceRequest
+        }
+    }
+
     // MARK: - Context menu (pure)
 
     /// WebKit's identifiers for the default context-menu items that make no sense
