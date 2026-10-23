@@ -5447,7 +5447,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
-    [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
+    // SPBookmarksChangedNotification is a notification-centre registration (removed by
+    // -removeObserver: above), not KVO; removing it as a key path raised once this controller
+    // could actually deallocate.
 
 
     [self setConnectionKeychainID:nil];

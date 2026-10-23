@@ -4259,6 +4259,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
             [self clearTableLoadTimer];
             [_comboBoxSelectionTracker discardPendingSelection];
+            // The Advanced Filter window is free-standing: a window still on screen would outlive its tab
+            if ([filterTableController isWindowLoaded]) [filterTableController close];
         }
     }
 }

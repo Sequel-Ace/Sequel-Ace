@@ -48,16 +48,18 @@
 @interface SPTablesList : NSObject <NSTextFieldDelegate, NSTableViewDelegate>
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
-	IBOutlet SPTableStructure *tableSourceInstance;
-	IBOutlet SPTableContent *tableContentInstance;
-	IBOutlet SPDatabaseData *databaseDataInstance;
-	IBOutlet SPHistoryController *spHistoryControllerInstance;
-	IBOutlet SPCustomQuery *customQueryInstance;
-	IBOutlet SPDataImport *tableDumpInstance;
-	IBOutlet SPTableData *tableDataInstance;
-	IBOutlet SPExtendedTableInfo *extendedTableInfoInstance;
-	IBOutlet SPTableInfo *tableInfoInstance;
-	IBOutlet SPTableTriggers *tableTriggersInstance;
+	// Weak: these controllers are the document's (it owns them); every one of them also points back at
+	// this tables list, so strong outlets here kept a closed tab's whole controller graph alive.
+	IBOutlet __weak SPTableStructure *tableSourceInstance;
+	IBOutlet __weak SPTableContent *tableContentInstance;
+	IBOutlet __weak SPDatabaseData *databaseDataInstance;
+	IBOutlet __weak SPHistoryController *spHistoryControllerInstance;
+	IBOutlet __weak SPCustomQuery *customQueryInstance;
+	IBOutlet __weak SPDataImport *tableDumpInstance;
+	IBOutlet __weak SPTableData *tableDataInstance;
+	IBOutlet __weak SPExtendedTableInfo *extendedTableInfoInstance;
+	IBOutlet __weak SPTableInfo *tableInfoInstance;
+	IBOutlet __weak SPTableTriggers *tableTriggersInstance;
 
 	IBOutlet NSWindow *copyTableSheet;
 	@public IBOutlet SPTableView *tablesListView;
@@ -134,7 +136,7 @@
 	SPCharsetCollationHelper *addTableCharsetHelper;
 }
 
-@property (readonly, strong, nullable) SPDatabaseData *databaseDataInstance;
+@property (readonly, weak, nullable) SPDatabaseData *databaseDataInstance;
 
 // IBAction methods
 - (IBAction)updateTables:(nullable id)sender;

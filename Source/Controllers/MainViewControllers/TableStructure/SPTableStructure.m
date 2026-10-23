@@ -282,6 +282,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 												 name:SPDocumentTaskEndNotification
 											   object:tableDocumentInstance];
 
+	// The Type Info panel is a free-standing window: hide it with its tab (see -documentWillClose:)
+	[[NSNotificationCenter defaultCenter] addObserver:self
+											 selector:@selector(documentWillClose:)
+												 name:SPDocumentWillCloseNotification
+											   object:nil];
+
 	// Init the view column submenu according to saved hidden status;
 	// menu items are identified by their tag number which represents the initial column index
 	for (NSMenuItem *item in [viewColumnsMenu itemArray]) [item setState:NSControlStateValueOn]; // Set all items to NSControlStateValueOn
@@ -2737,6 +2743,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 }
 
 #pragma mark -
+
+/**
+ * The tab is closing: a Type Info panel still on screen would outlive it (an ordered-in window is kept by AppKit).
+ */
+- (void)documentWillClose:(NSNotification *)notification
+{
+	if ([notification object] == tableDocumentInstance) {
+		[structureHelpPanel orderOut:nil];
+	}
+}
 
 - (void)dealloc
 {
