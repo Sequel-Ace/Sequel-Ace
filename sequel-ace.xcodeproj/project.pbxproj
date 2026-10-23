@@ -95,6 +95,9 @@
 		B07CCDCCD960D7977C32E316 /* SAClaudeToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCFA37404A7B7E6DAD73294 /* SAClaudeToolbarLayout.swift */; };
 		B00F744B7A33F01E098C816A /* SAClaudeTabBarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */; };
 		59FF8FCB9DB5318FCDB3173E /* SAClaudeFilterChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */; };
+		5E1A0DE00000000000000B01 /* SAClaudeLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */; };
+		5E1A0DE00000000000000B02 /* SAClaudeLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */; };
+		5E1A0DE00000000000000B03 /* SAClaudeLineHeightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */; };
 		ED60C397E8DB8344F30CC6D8 /* SAClaudeAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706B9F08AD7882845E635836 /* SAClaudeAccent.swift */; };
 		B2C3D4E5F60718293A4B5C6D /* SAClaudeSheetRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */; };
 		B4B598BAED8D58E3E5CA31A7 /* SAFavoriteColourSelectorLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75F2FE63602D21AD18C6876 /* SAFavoriteColourSelectorLayoutTests.swift */; };
@@ -1260,6 +1263,8 @@
 		BBCFA37404A7B7E6DAD73294 /* SAClaudeToolbarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeToolbarLayout.swift; sourceTree = "<group>"; };
 		135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTabBarLayout.swift; sourceTree = "<group>"; };
 		87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterChrome.swift; sourceTree = "<group>"; };
+		5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineHeight.swift; sourceTree = "<group>"; };
+		5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineHeightTests.swift; sourceTree = "<group>"; };
 		706B9F08AD7882845E635836 /* SAClaudeAccent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAccent.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSheetRules.swift; sourceTree = "<group>"; };
 		D3A1C0DE0000000000000001 /* SAClaudeTableInfoLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableInfoLayout.swift; sourceTree = "<group>"; };
@@ -3556,6 +3561,7 @@
 				135A8B02B4A139F0C1EFE5AE /* SAClaudeTabBarLayout.swift */,
 				87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */,
 				706B9F08AD7882845E635836 /* SAClaudeAccent.swift */,
+				5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */,
 				A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */,
 				5AC1A0DE5EE7000000000003 /* SAClaudeClassSwap.swift */,
 				D3A1C0DE0000000000000001 /* SAClaudeTableInfoLayout.swift */,
@@ -3712,6 +3718,7 @@
 				A366D99C2FC7F1BA406F26BC /* SAClaudeTabBarLayoutTests.swift */,
 				CE21CB61AAE1BC6C33F06BEC /* SAClaudeFilterChromeTests.swift */,
 				47AFB07FFFC5341AC9A07BA0 /* SAClaudeAccentTests.swift */,
+				5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */,
 				D4E5F60718293A4B5C6D7E8F /* SAClaudeSheetRulesTests.swift */,
 				D3A1C0DE0000000000000004 /* SAClaudeTableInfoLayoutTests.swift */,
 				EA0C0DE00000000000000004 /* SAClaudeExportLayoutTests.swift */,
@@ -4669,6 +4676,7 @@
 				E663D6294651E0DAA7282EE4 /* SAClaudeTabBarLayout.swift in Sources */,
 				1D28EB1B8248D1CF24DD8732 /* SAClaudeFilterChrome.swift in Sources */,
 				C6EDCA2BD0D45CFFDA28EC4C /* SAClaudeAccent.swift in Sources */,
+				5E1A0DE00000000000000B02 /* SAClaudeLineHeight.swift in Sources */,
 				A7C21E5B9D3F4A60B18E2C47 /* SAClaudeEditorColoursSection.swift in Sources */,
 				C3D4E5F60718293A4B5C6D7E /* SAClaudeSheetRules.swift in Sources */,
 				5AC1A0DE5EE7000000000005 /* SAClaudeClassSwap.swift in Sources */,
@@ -4695,6 +4703,7 @@
 				38A55E30EB6F93CFF0947469 /* SAClaudeTabBarLayoutTests.swift in Sources */,
 				9242C22BCECD674608BB3226 /* SAClaudeFilterChromeTests.swift in Sources */,
 				C918E498DEDF4DE83DA953C5 /* SAClaudeAccentTests.swift in Sources */,
+				5E1A0DE00000000000000B03 /* SAClaudeLineHeightTests.swift in Sources */,
 				E5F60718293A4B5C6D7E8F90 /* SAClaudeSheetRulesTests.swift in Sources */,
 				D3A1C0DE0000000000000005 /* SAClaudeTableInfoLayoutTests.swift in Sources */,
 				EA0C0DE00000000000000005 /* SAClaudeExportLayoutTests.swift in Sources */,
@@ -5229,6 +5238,7 @@
 				B00F744B7A33F01E098C816A /* SAClaudeTabBarLayout.swift in Sources */,
 				59FF8FCB9DB5318FCDB3173E /* SAClaudeFilterChrome.swift in Sources */,
 				ED60C397E8DB8344F30CC6D8 /* SAClaudeAccent.swift in Sources */,
+				5E1A0DE00000000000000B01 /* SAClaudeLineHeight.swift in Sources */,
 				B2C3D4E5F60718293A4B5C6D /* SAClaudeSheetRules.swift in Sources */,
 				D3A1C0DE0000000000000002 /* SAClaudeTableInfoLayout.swift in Sources */,
 				EA0C0DE00000000000000002 /* SAClaudeExportLayout.swift in Sources */,

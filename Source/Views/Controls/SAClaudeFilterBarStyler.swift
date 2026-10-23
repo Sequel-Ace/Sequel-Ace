@@ -375,7 +375,7 @@ private final class SAClaudePaginationFieldCell: NSTextFieldCell {
         var drawingRect = super.drawingRect(forBounds: rect)
         guard !isBezeled else { return drawingRect }
         drawingRect = drawingRect.insetBy(dx: Self.textInset, dy: 0)
-        let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: 12)))
+        let lineHeight = SAClaudeLineHeight.ceiledHeight(for: font ?? .systemFont(ofSize: 12))
         let spare = drawingRect.height - lineHeight
         if spare > 0 {
             drawingRect.origin.y += (spare / 2).rounded(.down)
@@ -493,7 +493,7 @@ extension SAClaudeFilterBarStyler {
         let font = NSFont.systemFont(ofSize: 12)
         guard label.font != font else { return }
         label.font = font
-        let height = ceil(NSLayoutManager().defaultLineHeight(for: font)) + 1
+        let height = SAClaudeLineHeight.ceiledHeight(for: font) + 1
         if label.frame.height < height {
             var frame = label.frame
             frame.origin.y -= ((height - frame.height) / 2).rounded(.down)

@@ -211,7 +211,7 @@ import AppKit
 
         if let status, status.superview === container {
             let font = status.font ?? Self.statusFont
-            let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: font))
+            let lineHeight = SAClaudeLineHeight.ceiledHeight(for: font)
             let x = leftEdge + SAClaudeTabBarLayout.groupGap
             let maxX = rightEdge - SAClaudeTabBarLayout.groupGap
             status.frame = NSRect(x: x, y: ((Self.stripHeight - lineHeight) / 2).rounded(.down),
@@ -405,7 +405,7 @@ private final class SAClaudeSectionHeaderStyler: NSObject {
         if let titleField {
             titleField.stringValue = NSLocalizedString("ClaudeTabBarIndexesHeader", value: "Indexes", comment: "Structure tab: header above the indexes list")
             titleField.font = SAClaudeStyle.headerFont
-            let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: SAClaudeStyle.headerFont))
+            let lineHeight = SAClaudeLineHeight.ceiledHeight(for: SAClaudeStyle.headerFont)
             // Text starts in line with the bar buttons' icons below (the cell draws it 2pt in).
             var frame = titleField.frame
             frame.origin.x = SAClaudeTabBarLayout.sideInset + (SAClaudeTabBarLayout.buttonSize - 16) / 2 - 2

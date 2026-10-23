@@ -770,7 +770,7 @@ final class SAClaudeProcessRowCell: NSView {
     static let top: CGFloat = 8
     static let metaHeight: CGFloat = 15
     static let gap: CGFloat = 3
-    static let queryHeight: CGFloat = ceil(NSLayoutManager().defaultLineHeight(for: queryFont)) * 2
+    static let queryHeight: CGFloat = SAClaudeLineHeight.ceiledHeight(for: queryFont) * 2
     static let rowHeight: CGFloat = top + metaHeight + gap + queryHeight + top
 
     private let meta = SAClaudeProcessRowCell.label(lines: 1)

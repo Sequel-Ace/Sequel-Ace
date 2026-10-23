@@ -178,7 +178,7 @@ final class SPFilterRuleTextFieldCell: NSTextFieldCell {
         var drawingRect = super.drawingRect(forBounds: rect)
         guard !isBezeled else { return drawingRect }
         drawingRect = drawingRect.insetBy(dx: Self.textInset, dy: 0)
-        let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: NSFont.smallSystemFontSize)))
+        let lineHeight = SAClaudeLineHeight.ceiledHeight(for: font ?? .systemFont(ofSize: NSFont.smallSystemFontSize))
         let spare = drawingRect.height - lineHeight
         if spare > 0 {
             drawingRect.origin.y += (spare / 2).rounded(.down)

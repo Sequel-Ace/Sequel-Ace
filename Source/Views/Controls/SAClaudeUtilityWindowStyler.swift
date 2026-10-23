@@ -616,8 +616,6 @@ enum SAClaudeUtilitySidebar {
         }
     }
 
-    private static var textHeights: [CGFloat: CGFloat] = [:]
-
     /// The cell centred on one line of text in `table`'s font (cells draw from the top of their frame), the outline
     /// column's moved right with its chevrons (`State.chevronShift`), the first column's under caption headers moved right so
     /// its level-0 text starts where the captions do (`SAClaudeSidebarListLayout.captionCellShift`; the rows' own
@@ -625,11 +623,7 @@ enum SAClaudeUtilitySidebar {
     static func cellFrame(_ frame: NSRect, table: NSTableView, column: Int) -> NSRect {
         let state = state(of: table)
         let size = state?.font.pointSize ?? font.pointSize
-        let textHeight = textHeights[size] ?? {
-            let height = ceil(NSLayoutManager().defaultLineHeight(for: .systemFont(ofSize: size))) + SAClaudeStyle.cellTextInset
-            textHeights[size] = height
-            return height
-        }()
+        let textHeight = SAClaudeLineHeight.ceiledHeight(for: .systemFont(ofSize: size)) + SAClaudeStyle.cellTextInset
         let height = min(frame.height, textHeight)
         var shift: CGFloat = 0
         if let state, state.chevronShift > 0, let outline = table as? NSOutlineView, column >= 0, column < outline.numberOfColumns,

@@ -24,7 +24,6 @@ final class SAClaudeGridRenderer {
     /// Clay `#D97757`, the error accent.
     private static let clay = SAClaudeStatusChrome.errorClay
     private static let errorTintRatio: CGFloat = 0.06
-    private static var lineHeights: [String: CGFloat] = [:]
 
     private var errorTint: NSColor
     private var observer: NSObjectProtocol?
@@ -89,21 +88,12 @@ final class SAClaudeGridRenderer {
         max(proposed, SAClaudeGridChrome.minimumRowHeight)
     }
 
-    /// One line of the cell's text (cached per font).
-    private static func lineHeight(for font: NSFont) -> CGFloat {
-        let key = "\(font.fontName)|\(font.pointSize)"
-        if let height = lineHeights[key] { return height }
-        let height = NSLayoutManager().defaultLineHeight(for: font)
-        lineHeights[key] = height
-        return height
-    }
-
     /// Cells lay their text out from the top; centre one line in the taller rows. This frame
     /// feeds drawing, the field editor and link-arrow hit testing alike; selection and hover
     /// use rect(ofRow:) and keep the full row.
     func frameOfCell(_ superFrame: NSRect, column: Int) -> NSRect {
         guard column >= 0, column < table.numberOfColumns, let cell = table.tableColumns[column].dataCell as? NSCell, let cellFont = cell.font else { return superFrame }
-        let inset = max(0, floor((superFrame.height - (Self.lineHeight(for: cellFont) + cellTextTopOffset)) / 2))
+        let inset = max(0, floor((superFrame.height - (SAClaudeLineHeight.height(for: cellFont) + cellTextTopOffset)) / 2))
         return superFrame.insetBy(dx: 0, dy: inset)
     }
 

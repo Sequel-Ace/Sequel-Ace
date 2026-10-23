@@ -95,7 +95,7 @@ import AppKit
     @objc static var sidebarIconCanvasWidth: CGFloat { sidebarIconLeading + iconSize + iconTextGap - cellTextInset }
 
     /// Height of one line of row text plus the text cell's insets.
-    @objc static var rowTextHeight: CGFloat { ceil(NSLayoutManager().defaultLineHeight(for: rowFont)) + cellTextInset }
+    @objc static var rowTextHeight: CGFloat { SAClaudeLineHeight.ceiledHeight(for: rowFont) + cellTextInset }
 }
 
 /// Frames for the sidebar's cells and headers. Pure so it can be unit-tested.

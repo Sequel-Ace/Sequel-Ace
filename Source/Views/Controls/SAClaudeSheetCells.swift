@@ -21,7 +21,7 @@ enum SheetFieldText {
 
     static func rect(_ rect: NSRect, font: NSFont?) -> NSRect {
         var text = rect.insetBy(dx: horizontalInset, dy: 0)
-        let line = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: NSFont.systemFontSize)))
+        let line = SAClaudeLineHeight.ceiledHeight(for: font ?? .systemFont(ofSize: NSFont.systemFontSize))
         let spare = text.height - line
         if spare >= line {
             text = text.insetBy(dx: 0, dy: multiLineTopInset)
@@ -164,7 +164,7 @@ enum SAClaudeFieldPlaceholder {
 @objc(SAClaudeSheetSearchFieldCell) final class SAClaudeSheetSearchFieldCell: SAClaudeSearchFieldCell {
     override func searchTextRect(forBounds rect: NSRect) -> NSRect {
         var text = super.searchTextRect(forBounds: rect)
-        let line = ceil(NSLayoutManager().defaultLineHeight(for: font ?? .systemFont(ofSize: NSFont.systemFontSize)))
+        let line = SAClaudeLineHeight.ceiledHeight(for: font ?? .systemFont(ofSize: NSFont.systemFontSize))
         let spare = text.height - line
         if spare > 0 {
             text.origin.y += (spare / 2).rounded(.down)

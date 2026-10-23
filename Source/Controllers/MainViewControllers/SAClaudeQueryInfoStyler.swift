@@ -312,7 +312,7 @@ import AppKit
                 frame.size.width += frame.minX - newX
                 frame.origin.x = newX
             }
-            let lineHeight = ceil(NSLayoutManager().defaultLineHeight(for: statusField.font ?? .systemFont(ofSize: 11)))
+            let lineHeight = SAClaudeLineHeight.ceiledHeight(for: statusField.font ?? .systemFont(ofSize: 11))
             frame.size.height = lineHeight
             frame.origin.y = (centreY - lineHeight / 2).rounded()
             statusField.frame = frame
