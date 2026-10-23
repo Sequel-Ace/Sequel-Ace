@@ -203,6 +203,24 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         }
     }
 
+    /// Setup has a budget of its own: never shorter than the check's connect limit, a longer
+    /// configured timeout honoured, finite with no timeout configured - and not what is left of
+    /// the attempt's connect budget, which a handshake can spend down to a second.
+    func testSetupHasABudgetOfItsOwn() {
+        XCTAssertEqual(SAConnectionCheckBudget.setupTimeout(forConfiguredTimeout: 0), SAConnectionCheckBudget.setupMinimum,
+                       "no timeout configured still means a finite setup")
+        XCTAssertEqual(SAConnectionCheckBudget.setupTimeout(forConfiguredTimeout: 2), SAConnectionCheckBudget.setupMinimum,
+                       "a short configured timeout does not shorten setup further")
+        XCTAssertEqual(SAConnectionCheckBudget.setupTimeout(forConfiguredTimeout: 10), 10)
+        XCTAssertEqual(SAConnectionCheckBudget.setupTimeout(forConfiguredTimeout: 60), 60, "a longer configured timeout is honoured")
+        XCTAssertGreaterThanOrEqual(SAConnectionCheckBudget.setupMinimum, SAConnectionCheckBudget.connectLimit)
+
+        let spent = SAConnectionCheckBudget.attemptBudget(forConfiguredTimeout: 0, userEndedWait: false, afterFailedCheck: true)
+        XCTAssertEqual(spent.remainingConnectTimeout(afterSeconds: 9.9), 1, "a handshake that spent the attempt leaves the connect a second")
+        XCTAssertGreaterThan(SAConnectionCheckBudget.setupTimeout(forConfiguredTimeout: 0), spent.remainingConnectTimeout(afterSeconds: 9.9),
+                             "and setup is not held to that second")
+    }
+
     func testCheckStaysWellBelowTheDefaultTimeout() {
         let worstCase = Double(SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: 30))
             + SAConnectionCheckBudget.networkWait(forConfiguredTimeout: 30)

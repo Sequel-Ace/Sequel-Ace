@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		09584614D4B176F7BE8DC59E /* SAConnectionSocketTimeouts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E051E89ACCA860F7CDF253C /* SAConnectionSocketTimeouts.swift */; };
+		915159842E3F0C69E7B6CB5D /* SAConnectionSetupDeadline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D654137BB531D4616C1CD48 /* SAConnectionSetupDeadline.swift */; };
 		146DA79A8767FB3D567B99A0 /* SAConnectionRetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C03AD50FA4D01E0368365E7 /* SAConnectionRetryPolicy.swift */; };
 		177916A21E88733000EE3043 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 177916A01E88733000EE3043 /* LICENSE */; };
 		17E3A57B1885A286009CF372 /* SPMySQLDataTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E3A5791885A286009CF372 /* SPMySQLDataTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -18,6 +19,7 @@
 		1A96314E25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A96314C25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m */; };
 		1A96314F25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A96314D25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		28022E61592AE06E0BB78334 /* SAConnectionSocketTimeoutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */; };
+		E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */; };
 		2CE0080756AA2FB1962B704B /* SAConnectionLostDecisionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */; };
 		7F4C2A83E51D609B4A72C8D1 /* SAConnectionLostQuestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38B61E5C70A492F815DA6B4 /* SAConnectionLostQuestion.swift */; };
 		2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */; };
@@ -174,6 +176,7 @@
 		32DBCF5E0370ADEE00C91783 /* SPMySQLFramework_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLFramework_Prefix.pch; path = Source/SPMySQLFramework_Prefix.pch; sourceTree = "<group>"; };
 		386B159A6D535F0686530898 /* SADatabaseAssertion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SADatabaseAssertion.swift; path = Source/SADatabaseAssertion.swift; sourceTree = "<group>"; };
 		3E051E89ACCA860F7CDF253C /* SAConnectionSocketTimeouts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionSocketTimeouts.swift; path = Source/SAConnectionSocketTimeouts.swift; sourceTree = "<group>"; };
+		7D654137BB531D4616C1CD48 /* SAConnectionSetupDeadline.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Source/SAConnectionSetupDeadline.swift; sourceTree = "<group>"; };
 		464127511C53496503FB21A6 /* SAConnectionCheckBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionCheckBudget.swift; path = Source/SAConnectionCheckBudget.swift; sourceTree = "<group>"; };
 		507FF1811BC0C64100104523 /* DataConversion_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DataConversion_Tests.m; sourceTree = "<group>"; };
 		507FF1D51BC0D7D300104523 /* SPMySQL Unit Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SPMySQL Unit Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -264,6 +267,7 @@
 		B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionRetryPolicyTests.swift; sourceTree = "<group>"; };
 		CEC9E88A68BDCD93E64F9AA6 /* SAConnectionCheckBudgetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCheckBudgetTests.swift; sourceTree = "<group>"; };
 		D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSocketTimeoutsTests.swift; sourceTree = "<group>"; };
+		DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSetupDeadlineTests.swift; sourceTree = "<group>"; };
 		A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAByteStringDecoder.swift; path = Source/SAByteStringDecoder.swift; sourceTree = "<group>"; };
 		D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SACleartextAuthPolicy.swift; path = Source/SACleartextAuthPolicy.swift; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
@@ -400,6 +404,7 @@
 				D38B61E5C70A492F815DA6B4 /* SAConnectionLostQuestion.swift */,
 				5C03AD50FA4D01E0368365E7 /* SAConnectionRetryPolicy.swift */,
 				3E051E89ACCA860F7CDF253C /* SAConnectionSocketTimeouts.swift */,
+				7D654137BB531D4616C1CD48 /* SAConnectionSetupDeadline.swift */,
 				DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */,
 				1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */,
 				7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */,
@@ -431,6 +436,7 @@
 				A6D2F83B51C7490E8273BA16 /* SAConnectionLostQuestionTests.swift */,
 				B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */,
 				D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */,
+				DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */,
 				7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */,
 			);
 			name = "Unit Tests";
@@ -801,6 +807,7 @@
 				5E91C47A2D8306B914FE7C25 /* SAConnectionLostQuestionTests.swift in Sources */,
 				1988710E90072A9C473B50E4 /* SAConnectionRetryPolicyTests.swift in Sources */,
 				28022E61592AE06E0BB78334 /* SAConnectionSocketTimeoutsTests.swift in Sources */,
+				E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */,
 				2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -844,6 +851,7 @@
 				7F4C2A83E51D609B4A72C8D1 /* SAConnectionLostQuestion.swift in Sources */,
 				146DA79A8767FB3D567B99A0 /* SAConnectionRetryPolicy.swift in Sources */,
 				09584614D4B176F7BE8DC59E /* SAConnectionSocketTimeouts.swift in Sources */,
+				915159842E3F0C69E7B6CB5D /* SAConnectionSetupDeadline.swift in Sources */,
 				B92F8A45F3BC77529ECDCB10 /* SAOfflineEscapingHandle.swift in Sources */,
 				B7AC94D227A75501D3967BD6 /* SAConnectionCharacterSets.swift in Sources */,
 				A3E7C91D5B284F06A1D7E340 /* SASessionStateTracking.swift in Sources */,

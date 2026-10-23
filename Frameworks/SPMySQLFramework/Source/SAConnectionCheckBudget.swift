@@ -122,6 +122,19 @@ public final class SAConnectionCheckBudget: NSObject {
     /// the connection but never greets is tried a second time without TLS, which doubles the wait.
     public static let sideConnectionConnectLimit: UInt = connectLimit
 
+    /// The shortest the statements that set a session up after the handshake may be given, in seconds.
+    ///
+    /// Reading the server's variables and the largest query size, and restoring the database, the
+    /// character set and the time zone after a reconnect, are a handful of short statements - but
+    /// each is a reply waited for, and behind a tunnel or relay whose far end has stopped replying
+    /// that wait had no end of its own. The budget is setup's own, not what is left of the
+    /// attempt's: a handshake that spent most of the connect budget leaves a second, and a session
+    /// that cannot be set up inside a second on a loaded server over a slow link would be thrown
+    /// away while the connection is in fact back. Like the keepalive ping it is never shorter than
+    /// the check's connect limit, so a failed check stays bounded at ping, connect and setup in
+    /// turn, inside the default timeout.
+    public static let setupMinimum: UInt = connectLimit
+
     /// The shortest a keepalive ping may take before it is cut off, in seconds.
     ///
     /// A ping cut off before its answer costs the session - and any transaction it has open - so a
@@ -129,6 +142,17 @@ public final class SAConnectionCheckBudget: NSObject {
     /// connection for that long on a route that has gone, and whatever the user does next waits
     /// behind it; this is the limit a check-triggered reconnect gets.
     public static let keepAlivePingMinimum: UInt = connectLimit
+
+    /// The budget for setting a session up on a connection with this timeout.
+    ///
+    /// A longer configured timeout is honoured, a shorter one does not shorten setup further, and
+    /// no timeout configured still means a finite setup: the budget exists to be an end.
+    /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.
+    /// - Returns: The longer of the configured timeout and ``setupMinimum``, in seconds.
+    @objc(setupTimeoutForConfiguredTimeout:)
+    public static func setupTimeout(forConfiguredTimeout configuredTimeout: UInt) -> UInt {
+        max(configuredTimeout, setupMinimum)
+    }
 
     /// The ping timeout a keepalive uses on a connection with this timeout.
     /// - Parameter configuredTimeout: The connection's configured timeout in seconds, zero for none.

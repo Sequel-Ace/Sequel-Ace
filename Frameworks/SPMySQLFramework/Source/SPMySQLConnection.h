@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionEscaper, SAConnectionLostDecisionGate, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -95,6 +95,9 @@
 	// Escapes values from what the session last reported instead of from the connection's own
 	// handle, which work nobody waits for any more can be using or closing.
 	SAConnectionEscaper *valueEscaper;
+	// The deadline on the statements that set the session up, or restore it, while they run: a
+	// statement that loses the session under it fails the attempt rather than starting another.
+	SAConnectionSetupDeadline *activeSetupDeadline;
 
 	// Timeout and keep-alive
 	NSUInteger timeout;

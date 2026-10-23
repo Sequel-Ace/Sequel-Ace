@@ -37,7 +37,7 @@
 #import "Locking.h"
 #import "Conversion.h"
 
-@class SAConnectionSessionAccess;
+@class SAConnectionSessionAccess, SAConnectionSetupDeadline;
 
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
@@ -67,6 +67,16 @@
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
 - (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
 - (BOOL)_connectUsingConnectTimeout:(NSUInteger)connectTimeoutOrZero;
+/** Sets the session up once the handshake is through, on a finite budget; whether the session is still up afterwards. */
+- (BOOL)_runSessionSetup;
+/** The socket a deadline on setup is armed on, or -1 while there is no session; called with the connection locked. */
+- (int)_socketForSetupDeadline;
+/** Arms the deadline on a setup phase and makes it the active one, which the phase's statements report to; nil, with the error recorded, when none could be armed. */
+- (SAConnectionSetupDeadline *)_beginSetupDeadline;
+/** How long the statements that set a session up may take, in seconds; SAConnectionCheckBudget decides. */
+- (NSTimeInterval)_setupDeadlineSeconds;
+/** Ends a setup phase, lifting its deadline; whether the session came through it. */
+- (BOOL)_endSetupPhase:(SAConnectionSetupDeadline *)setupDeadline;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (BOOL)_abortCancelledReconnectWhileLocked;

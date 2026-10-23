@@ -39,6 +39,24 @@ private final class SASessionTimeZoneTestConnection: SPMySQLConnection {
         true
     }
 
+    // The restore runs under a deadline armed on the session's socket, and is refused a session
+    // that has none to arm it on. This stand-in's session is a local socket pair.
+    private var sessionSockets: [Int32] = [-1, -1]
+
+    deinit {
+        for socket in sessionSockets where socket >= 0 {
+            Darwin.close(socket)
+        }
+    }
+
+    /// The stand-in session's socket, opened on first use.
+    @objc(_socketForSetupDeadline) func socketForSetupDeadline() -> Int32 {
+        if sessionSockets[0] < 0 {
+            _ = socketpair(AF_UNIX, SOCK_STREAM, 0, &sessionSockets)
+        }
+        return sessionSockets[0]
+    }
+
     override func queryString(_ query: String!) -> SPMySQLResult! {
         guard query.hasPrefix("SET time_zone") else { return SPMySQLEmptyResult() }
         statements.append(query)

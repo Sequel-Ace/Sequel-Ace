@@ -912,29 +912,117 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Unlock the connection
 	[self _unlockConnection];
 
-	// Update connection variables to be in sync with the server state.  As this performs
-	// a query, ensure the connection is still up afterwards (!)
-	[self _updateConnectionVariables];
-	if (state != SPMySQLConnected) return NO;
+	return [self _runSessionSetup];
+}
 
-	// What a session starts with is only known once it has run a statement: a server's
-	// init_connect runs after the handshake has been answered, and can turn
-	// NO_BACKSLASH_ESCAPES on for every session without the global mode saying so. The escaping
-	// mode is taken from here, so that a session forgotten at teardown falls back to the mode the
-	// session after it will start under rather than to what the handshake alone showed.
-	[self _lockConnection];
-	if (mySQLConnection) {
-		[valueEscaper recordStartingModeWithNoBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0];
+/**
+ * Sets the session up once the handshake is through - the server's variables, what the session
+ * starts with, the largest query size - and returns whether the session is still up afterwards.
+ *
+ * These run as ordinary queries, read with no deadline: the main connection carries none, since
+ * one would also cut short the long queries people run on purpose. Behind a tunnel or relay whose
+ * near end keeps acknowledging while its far end has stopped replying they would wait with no
+ * limit, so setup runs on a finite budget of its own. The deadline ends the wait by shutting the
+ * socket down, and is lifted once setup is through, so what follows runs as before.
+ */
+- (BOOL)_runSessionSetup
+{
+	SAConnectionSetupDeadline *setupDeadline = [self _beginSetupDeadline];
+
+	// Without a deadline setup does not run: it would wait with no limit, which is the wait this
+	// exists to end. What kept the deadline from being armed is on the error record.
+	if (setupDeadline) {
+		// Update connection variables to be in sync with the server state.  As this performs
+		// a query, ensure the connection is still up afterwards (!)
+		[self _updateConnectionVariables];
+
+		if ([setupDeadline phaseContinuesWhileConnected:state == SPMySQLConnected]) {
+			// What a session starts with is only known once it has run a statement: a server's
+			// init_connect runs after the handshake has been answered, and can turn
+			// NO_BACKSLASH_ESCAPES on for every session without the global mode saying so. The
+			// escaping mode is taken from here, so that a session forgotten at teardown falls back
+			// to the mode the session after it will start under rather than to what the handshake
+			// alone showed.
+			[self _lockConnection];
+			if (mySQLConnection) {
+				[valueEscaper recordStartingModeWithNoBackslashEscapes:(mySQLConnection->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES) != 0];
+			}
+			[self _unlockConnection];
+
+			// Update the maximum query size
+			[self _updateMaxQuerySize];
+		}
 	}
-	[self _unlockConnection];
 
-	// Now connection is established and verified, reset the counter
+	if (![self _endSetupPhase:setupDeadline]) {
+		// A session lost while being set up is closed here rather than handed on: the attempt it
+		// belongs to - the connect, or the reconnect around it - fails as one that never came up,
+		// and that attempt has its own retries and its own question for the user.
+		[self _disconnectPreservingProxyReconnect:YES];
+		return NO;
+	}
+
+	// Now connection is established and verified, reset the counter. Only now: an attempt that
+	// came up and was lost again in setup is one of the attempts the counter bounds.
 	reconnectionRetryAttempts = 0;
 
-	// Update the maximum query size
-	[self _updateMaxQuerySize];
-
 	return YES;
+}
+
+/**
+ * The socket a deadline on setup is armed on: the session's, or none while there is no session.
+ * Called with the connection locked, so the descriptor is still the session's when the deadline
+ * duplicates it.
+ */
+- (int)_socketForSetupDeadline
+{
+	return mySQLConnection ? mySQLConnection->net.fd : -1;
+}
+
+/**
+ * Arms the deadline on a setup phase and makes it the active one: a statement that loses the
+ * session while it stands reports that to it instead of recovering the session on its own.
+ */
+- (SAConnectionSetupDeadline *)_beginSetupDeadline
+{
+	NSError *deadlineError = nil;
+	// Duplicated under the lock: a disconnect running alongside could otherwise close the
+	// descriptor between reading its number and duplicating it, and the number be another
+	// socket's by then.
+	[self _lockConnection];
+	SAConnectionSetupDeadline *setupDeadline = [SAConnectionSetupDeadline deadlineForSocket:[self _socketForSetupDeadline]
+	                                                                                  seconds:[self _setupDeadlineSeconds]
+	                                                                                    error:&deadlineError];
+	[self _unlockConnection];
+	if (!setupDeadline) {
+		[self _updateLastErrorMessage:deadlineError.localizedDescription];
+	}
+	activeSetupDeadline = setupDeadline;
+	return setupDeadline;
+}
+
+/**
+ * How long the statements that set a session up may take, in seconds.
+ * SAConnectionCheckBudget decides; the budget is setup's own, not what is left of the attempt's.
+ */
+- (NSTimeInterval)_setupDeadlineSeconds
+{
+	return (NSTimeInterval)[SAConnectionCheckBudget setupTimeoutForConfiguredTimeout:timeout];
+}
+
+/**
+ * Ends a setup phase, lifting its deadline.
+ * @return Whether the session came through the phase: connected, no statement having lost it, and
+ *         the deadline not having had to end a wait. Without a deadline, no.
+ */
+- (BOOL)_endSetupPhase:(SAConnectionSetupDeadline *)setupDeadline
+{
+	activeSetupDeadline = nil;
+	BOOL sessionCameThrough = [setupDeadline endPhaseWhileConnected:state == SPMySQLConnected];
+	if ([setupDeadline endedTheWaitOnTheSocket]) {
+		SPLog(@"session setup did not finish within its budget; the socket was shut down to end the wait");
+	}
+	return sessionCameThrough;
 }
 
 /**
@@ -1453,10 +1541,19 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-            reconnectSucceeded = [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+			// Restoring the session is setup too - the database, the character set and the time
+			// zone, each a reply waited for - and runs on the same finite budget as the setup the
+			// connect has just been through.
+			SAConnectionSetupDeadline *restoreDeadline = [self _beginSetupDeadline];
+			// Without a deadline the restore does not run either: it would wait with no limit.
+            reconnectSucceeded = restoreDeadline != nil
+                && [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
+			// A restore that lost the session along the way, or ran out of time at its end, did
+			// not restore it, whatever the last of its statements reported.
+			if (![self _endSetupPhase:restoreDeadline]) reconnectSucceeded = NO;
             if (!reconnectSucceeded) {
                 // Never hand a session with the server's default time zone to a query.
                 // Preserve all saved state so the next use can retry restoration.
