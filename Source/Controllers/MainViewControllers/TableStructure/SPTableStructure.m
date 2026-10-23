@@ -216,7 +216,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Note that changing the contents or ordering of this array will affect the implementation of 
 	// SPTableFieldValidation. See it's implementation file for more details.
-	typeSuggestions = @[
+	typeSuggestions = [@[
 		SPMySQLTinyIntType,
 		SPMySQLSmallIntType,
 		SPMySQLMediumIntType,
@@ -265,10 +265,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		SPMySQLMultiLineStringType,
 		SPMySQLMultiPolygonType,
 		SPMySQLGeometryCollectionType,
-		@"--------",
-		SPMySQLInet4Type,
-		SPMySQLInet6Type,
-	];
+	] mutableCopy];
 
 	[fieldValidation setFieldTypes:typeSuggestions];
 	
