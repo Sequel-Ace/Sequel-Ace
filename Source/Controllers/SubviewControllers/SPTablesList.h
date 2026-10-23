@@ -48,8 +48,9 @@
 @interface SPTablesList : NSObject <NSTextFieldDelegate, NSTableViewDelegate>
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
-	// Weak: these controllers are the document's (it owns them); every one of them also points back at
-	// this tables list, so strong outlets here kept a closed tab's whole controller graph alive.
+	// Weak: each of these controllers points back at this tables list, so strong outlets here kept a closed
+	// tab's whole controller graph alive. Their owners: the document's outlets, except the table info, which
+	// the table content and table structure hold.
 	IBOutlet __weak SPTableStructure *tableSourceInstance;
 	IBOutlet __weak SPTableContent *tableContentInstance;
 	IBOutlet __weak SPDatabaseData *databaseDataInstance;

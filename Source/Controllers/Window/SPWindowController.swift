@@ -319,6 +319,20 @@ private extension SPWindowController {
     }
 }
 
+private extension SPWindowController {
+    /// Ends `window`'s sheets as cancelled in one pass, newest first and a sheet's own sheets before it. A sheet
+    /// that a completion handler already ended (no parent any more) is skipped; one begun by a handler is left.
+    static func endSheets(of window: NSWindow, depth: Int = 0) {
+        guard depth < 4 else { return }
+        for sheet in window.sheets.reversed() {
+            endSheets(of: sheet, depth: depth + 1)
+            guard let parent = sheet.sheetParent else { continue }
+            parent.endSheet(sheet, returnCode: .abort)
+            sheet.orderOut(nil)
+        }
+    }
+}
+
 extension SPWindowController: NSWindowDelegate {
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
         if !databaseDocument.parentTabShouldClose() {
@@ -338,13 +352,8 @@ extension SPWindowController: NSWindowDelegate {
         window?.saveFrame(usingName: Self.frameAutosaveName)
 
         // ⌘W and the tab bar refuse a tab with a sheet up, but a direct -close (quit, scripted closes) doesn't:
-        // a sheet left attached keeps this window and the sheet alive after the tab is gone. End it as cancelled.
-        if let window {
-            while let sheet = window.attachedSheet {
-                window.endSheet(sheet, returnCode: .abort)
-                sheet.orderOut(nil)
-            }
-        }
+        // a sheet left attached keeps this window and the sheet alive after the tab is gone. End each as cancelled.
+        if let window { Self.endSheets(of: window) }
 
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
         NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)

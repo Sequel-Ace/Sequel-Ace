@@ -98,6 +98,8 @@
 		5E1A0DE00000000000000B01 /* SAClaudeLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */; };
 		5E1A0DE00000000000000B02 /* SAClaudeLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */; };
 		5E1A0DE00000000000000B03 /* SAClaudeLineHeightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */; };
+		5E1A0DE50000000000000B01 /* SAThreadTargetReleaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE50000000000000A01 /* SAThreadTargetReleaseTests.m */; };
+		5E1A0DE50000000000000B02 /* SPThreadAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 5843E246162B555B00EAA6D1 /* SPThreadAdditions.m */; };
 		3A9E0C000000000000000B01 /* SAClaudeAppearanceChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */; };
 		3A9E0C000000000000000B02 /* SAClaudeAppearanceChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */; };
 		3A9E0C000000000000000B03 /* SAClaudeAppearanceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A02 /* SAClaudeAppearanceMonitor.swift */; };
@@ -1273,6 +1275,7 @@
 		87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterChrome.swift; sourceTree = "<group>"; };
 		5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineHeight.swift; sourceTree = "<group>"; };
 		5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineHeightTests.swift; sourceTree = "<group>"; };
+		5E1A0DE50000000000000A01 /* SAThreadTargetReleaseTests.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SAThreadTargetReleaseTests.m; sourceTree = "<group>"; };
 		3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAppearanceChange.swift; sourceTree = "<group>"; };
 		3A9E0C000000000000000A02 /* SAClaudeAppearanceMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAppearanceMonitor.swift; sourceTree = "<group>"; };
 		3A9E0D000000000000000A01 /* SAClaudeLayerFillViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLayerFillViews.swift; sourceTree = "<group>"; };
@@ -3735,6 +3738,7 @@
 				CE21CB61AAE1BC6C33F06BEC /* SAClaudeFilterChromeTests.swift */,
 				47AFB07FFFC5341AC9A07BA0 /* SAClaudeAccentTests.swift */,
 				5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */,
+				5E1A0DE50000000000000A01 /* SAThreadTargetReleaseTests.m */,
 				3A9E0C000000000000000A03 /* SAClaudeAppearanceChangeTests.swift */,
 				3A9E0D000000000000000A02 /* SAClaudeLayerFillViewsTests.swift */,
 				D4E5F60718293A4B5C6D7E8F /* SAClaudeSheetRulesTests.swift */,
@@ -4725,6 +4729,8 @@
 				9242C22BCECD674608BB3226 /* SAClaudeFilterChromeTests.swift in Sources */,
 				C918E498DEDF4DE83DA953C5 /* SAClaudeAccentTests.swift in Sources */,
 				5E1A0DE00000000000000B03 /* SAClaudeLineHeightTests.swift in Sources */,
+				5E1A0DE50000000000000B01 /* SAThreadTargetReleaseTests.m in Sources */,
+				5E1A0DE50000000000000B02 /* SPThreadAdditions.m in Sources */,
 				3A9E0C000000000000000B04 /* SAClaudeAppearanceChangeTests.swift in Sources */,
 				3A9E0D000000000000000B03 /* SAClaudeLayerFillViewsTests.swift in Sources */,
 				E5F60718293A4B5C6D7E8F90 /* SAClaudeSheetRulesTests.swift in Sources */,

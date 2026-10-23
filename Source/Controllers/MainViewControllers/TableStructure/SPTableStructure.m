@@ -286,7 +286,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(documentWillClose:)
 												 name:SPDocumentWillCloseNotification
-											   object:nil];
+											   object:tableDocumentInstance];
 
 	// Init the view column submenu according to saved hidden status;
 	// menu items are identified by their tag number which represents the initial column index
@@ -2749,9 +2749,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)documentWillClose:(NSNotification *)notification
 {
-	if ([notification object] == tableDocumentInstance) {
-		[structureHelpPanel orderOut:nil];
-	}
+	[structureHelpPanel orderOut:nil];
 }
 
 - (void)dealloc

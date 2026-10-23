@@ -67,8 +67,7 @@ import AppKit
 
         setAccessibilityHelp(NSLocalizedString("ClaudeCopyOptions", value: "Copy options", comment: "accessibility help of the query bar Copy button: its chevron lists the copy actions"))
 
-        // No target/action: SPComboPopupButton's setTarget: stores a strong reference, so `target = self`
-        // would retain the button forever. A main-part click (or Space) arrives in performClick(_:) instead.
+        // No target/action: a main-part click (or Space) arrives in performClick(_:), overridden below.
 
         let centre = NotificationCenter.default
         // NSMenu tracking swallows mouseExited, so follow the menu to draw the chevron's open state and re-read the hover.

@@ -165,6 +165,22 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 @implementation SPConnectionController
 
+/**
+ * Whether Vault connection attempt `attemptID` is still the live one, asked from the background Vault queue.
+ *
+ * A closed tab's controller can now be freed, and its -dealloc tears down the connection view and its panels,
+ * which must happen on the main thread. So the background queue never keeps its own strong reference: the one
+ * taken here is handed to the main queue, which then drops it, even when it was the last one.
+ */
+static BOOL SAVaultAttemptIsLive(__weak SPConnectionController *weakController, NSUInteger attemptID)
+{
+	SPConnectionController *controller = weakController;
+	if (!controller) return NO;
+	BOOL live = !controller->cancellingConnection && controller->connectionAttemptID == attemptID;
+	dispatch_async(dispatch_get_main_queue(), ^{ (void)controller; });
+	return live;
+}
+
 // Associated object keys for password visibility toggle (shared between methods)
 static void *kOriginalStringKey = &kOriginalStringKey;
 static void *kRedactedStringKey = &kRedactedStringKey;
@@ -691,8 +707,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *outUsername = nil;
             NSString *outPassword = nil;
 
-            SPConnectionController *strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+            // No strong reference to self on this queue (see SAVaultAttemptIsLive): it may outlive the tab.
+            if (!SAVaultAttemptIsLive(weakSelf, vaultConnectionAttemptID)) {
                 [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
                 return;
             }
@@ -708,8 +724,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
 
             // User may cancel while the OIDC browser is open; bail without showing an error.
-            strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+            if (!SAVaultAttemptIsLive(weakSelf, vaultConnectionAttemptID)) {
                 [VaultAuthManager clearCachedCredentialsForHost:credHost
                                                            port:credPort
                                                      oidcMount:credMount
