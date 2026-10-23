@@ -195,6 +195,103 @@ final class SARuleFilterDropBoxClickTests: XCTestCase {
     }
 }
 
+/// Where the drop zone puts its label and chevron.
+final class SARuleFilterDropBoxLayoutTests: XCTestCase {
+
+    private let labelSize = NSSize(width: 214, height: 14)
+    private let indicatorSize = NSSize(width: 12.5, height: 8)
+
+    /// Verifies the prompt is centred at its natural width, with no chevron.
+    func testPromptIsCentred() {
+        let frames = SARuleFilterDropBoxLayout.frames(bounds: NSSize(width: 540, height: 48), labelSize: labelSize, indicatorSize: indicatorSize, showingPreview: false)
+        XCTAssertEqual(frames.label, NSRect(x: 163, y: 17, width: 214, height: 14))
+        XCTAssertNil(frames.indicator)
+    }
+
+    /// Verifies a narrow zone clips the prompt to its own width instead of letting it spill out.
+    func testPromptIsClampedToANarrowZone() {
+        let frames = SARuleFilterDropBoxLayout.frames(bounds: NSSize(width: 100, height: 48), labelSize: labelSize, indicatorSize: indicatorSize, showingPreview: false)
+        XCTAssertEqual(frames.label, NSRect(x: 0, y: 17, width: 100, height: 14))
+    }
+
+    /// Verifies the preview runs from the left inset up to the chevron at the right end.
+    func testPreviewLeavesRoomForTheChevron() {
+        let frames = SARuleFilterDropBoxLayout.frames(bounds: NSSize(width: 540, height: 48), labelSize: labelSize, indicatorSize: indicatorSize, showingPreview: true)
+        XCTAssertEqual(frames.indicator, NSRect(x: 517.5, y: 20, width: 12.5, height: 8))
+        XCTAssertEqual(frames.label, NSRect(x: 10, y: 17, width: 503.5, height: 14))
+    }
+
+    /// Verifies a zero-sized zone - the container passes through one while the Content
+    /// tab loads - yields no negative widths.
+    func testZeroSizedZoneYieldsNoNegativeWidths() {
+        for showingPreview in [false, true] {
+            let frames = SARuleFilterDropBoxLayout.frames(bounds: .zero, labelSize: labelSize, indicatorSize: indicatorSize, showingPreview: showingPreview)
+            XCTAssertEqual(frames.label.width, 0)
+            XCTAssertGreaterThanOrEqual(frames.indicator?.minX ?? 0, 0)
+        }
+    }
+}
+
+/// Placing the subviews from `layout()` crashed the app while tables loaded: Auto
+/// Layout solved the label's translated autoresizing constraints to a frame snapped
+/// to the pixel grid (or 4 pt wide in a zero-sized zone), `layout()` put back its
+/// own frame, which dirtied the constraints for another pass, until AppKit raised
+/// for a window needing more Update Constraints passes than it has views.
+final class SARuleFilterDropBoxLayoutCycleTests: XCTestCase {
+
+    /// Counts the layout passes the drop box gets.
+    private final class CountingDropBox: SPRuleFilterDropBox {
+        var layoutPasses = 0
+
+        /// Counts the pass.
+        override func layout() {
+            layoutPasses += 1
+            super.layout()
+        }
+    }
+
+    /// Verifies the zone settles within two layout passes at sizes the layout engine
+    /// cannot honour exactly - off the pixel grid, and narrower than a label can be -
+    /// with the prompt and with the preview.
+    func testLayoutSettlesAtSizesTheEngineRounds() {
+        let sizes = [NSSize(width: 540.3, height: 47.7), .zero, NSSize(width: 5, height: 3)]
+        for showingPreview in [false, true] {
+            for size in sizes {
+                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 400), styleMask: [.titled], backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                defer { window.close() }
+                let content = NSView()
+                window.contentView = content
+                // A constraint anywhere in the window puts it under Auto Layout, as in
+                // the document window; the filter container itself is frame-based.
+                let constrained = NSView()
+                constrained.translatesAutoresizingMaskIntoConstraints = false
+                content.addSubview(constrained)
+                NSLayoutConstraint.activate([
+                    constrained.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                    constrained.topAnchor.constraint(equalTo: content.topAnchor),
+                    constrained.widthAnchor.constraint(equalToConstant: 10),
+                    constrained.heightAnchor.constraint(equalToConstant: 10),
+                ])
+                let container = NSView(frame: NSRect(x: 0, y: 200, width: 800, height: 60))
+                container.autoresizingMask = [.width, .minYMargin]
+                content.addSubview(container)
+                let box = CountingDropBox(frame: .zero)
+                box.autoresizingMask = [.width, .maxYMargin]
+                container.addSubview(box)
+                box.setPreviewClause(showingPreview ? "`id` = 1" : nil)
+                window.layoutIfNeeded()
+
+                box.layoutPasses = 0
+                box.frame = NSRect(origin: NSPoint(x: 10, y: 7), size: size)
+                window.layoutIfNeeded()
+
+                XCTAssertLessThanOrEqual(box.layoutPasses, 2, "size \(size), preview \(showingPreview)")
+            }
+        }
+    }
+}
+
 /// The row seeded when another table is selected starts unchecked: it is an empty
 /// template, and a checked one made the WHERE preview show `column = ''` while the
 /// table was unfiltered. Its first edit checks it, and it keeps waiting across

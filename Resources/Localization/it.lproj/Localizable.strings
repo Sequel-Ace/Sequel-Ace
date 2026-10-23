@@ -125,6 +125,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* ATTENZIONE: Nessuna riga è stata colpita */\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "Scegliere invece la chiave privata — il file senza l'estensione .pub.";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Creazione del database '%1$@' non riuscita: %2$@";
 
@@ -4435,3 +4438,12 @@ i comandi verranno eseguiti a livello dell'applicazione";
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "La connessione non può essere utilizzata mentre ti viene chiesto cosa fare al riguardo. Rispondi a quella domanda, quindi riprova.";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "“%@” è una chiave pubblica.";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "“%@” non è un file di certificato client valido.";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "“%@” non è un file di chiave privata valido.";

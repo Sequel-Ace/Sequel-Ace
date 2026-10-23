@@ -577,6 +577,33 @@ The API client follows Apple's documented
 and binds a release run to its workflow, source tag, commit, and related App
 Store build rather than selecting the newest result.
 
+## Automatic Cloud trigger preflight
+
+The release engine reads the configured Production workflow before preparation
+and again immediately before creating the exact release tag. It requires an
+enabled workflow and an automatic tag condition that matches that tag, with no
+restrictive file filters. Manual-start conditions alone do not satisfy this
+check. Apple tag patterns are exact names or prefixes; a literal `production/*`
+with `isPrefix: false` is not a wildcard.
+
+The exact-tag recovery path (`resume_after_tag`) retains diagnostics but does
+not require a new automatic trigger: its existing tag and run are independently
+validated by reconciliation. Both sanitized snapshots are preserved in the
+initial private release archive.
+`release_status.yml` also reports the current automatic and manual conditions,
+workflow modification date, and whether the automatic condition matches the
+existing tag. It performs GET requests only, even if the trigger is missing.
+
+A matching configuration does not prove Apple received the Git event. If the
+exact run is absent, inspect these snapshots and the source-control integration.
+Do not automatically POST a replacement run: Apple exposes no idempotency key
+for that operation, and a delayed event or manual start can create a second
+build and consume another number. An authorized operator may start the exact
+existing tag after checking for a run; keep its publisher wake tag armed. Fix
+trigger settings through the normal Apple configuration interface, preserving
+all automatic and manual start-condition fields, then read them back through
+the status workflow. Never retag or create another RC merely to retry a trigger.
+
 ## Release component responsibilities
 
 ### Inspect before retrying

@@ -103,7 +103,7 @@
 	NSInteger currentlyEditingRow;
 	NSUserDefaults *prefs;
 	NSArray *collations;
-	NSArray *typeSuggestions;
+	@public NSMutableArray *typeSuggestions;
 	NSArray *extraFieldSuggestions;
 	BOOL isCurrentExtraAutoIncrement;
 	NSString *autoIncrementIndex;

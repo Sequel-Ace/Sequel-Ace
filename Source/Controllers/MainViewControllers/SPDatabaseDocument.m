@@ -579,6 +579,25 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[tablesListInstance onMainThread] makeTableListFilterHaveFocus];
     }
 
+    NSUInteger serverMajorVersion = [mySQLConnection serverMajorVersion];
+    NSUInteger serverMinorVersion = [mySQLConnection serverMinorVersion];
+
+    BOOL supportsInetTypes = [[mySQLConnection serverVersionString] containsString:@"MariaDB"]
+    && (serverMajorVersion > 10 || (serverMajorVersion == 10 && serverMinorVersion >= 10));
+
+    if (supportsInetTypes) {
+        if (![tableSourceInstance->typeSuggestions containsObject:SPMySQLInet4Type]) {
+            [tableSourceInstance->typeSuggestions addObject:@"--------"];
+            [tableSourceInstance->typeSuggestions addObject:SPMySQLInet4Type];
+            [tableSourceInstance->typeSuggestions addObject:SPMySQLInet6Type];
+        }
+    } else {
+        [tableSourceInstance->typeSuggestions removeObject:SPMySQLInet4Type];
+        [tableSourceInstance->typeSuggestions removeObject:SPMySQLInet6Type];
+        if ([tableSourceInstance->typeSuggestions.lastObject isEqual:@"--------"]) {
+            [tableSourceInstance->typeSuggestions removeLastObject];
+        }
+    }
 }
 
 /**
