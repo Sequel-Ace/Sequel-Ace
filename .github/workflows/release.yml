@@ -207,7 +207,7 @@ jobs:
 
       - name: Mint repository-scoped release App token
         id: app_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
@@ -633,7 +633,7 @@ jobs:
       - name: Refresh release App token before merging
         if: steps.release_context.outputs.resume_without_pr != 'true'
         id: merge_app_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
@@ -746,7 +746,7 @@ jobs:
 
       - name: Mint exact-target release tag token
         id: release_mutation_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
@@ -911,7 +911,7 @@ jobs:
         if: (failure() || cancelled()) && steps.release_context.outputs.branch != ''
         id: cleanup_app_token
         continue-on-error: true
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
