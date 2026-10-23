@@ -125,6 +125,9 @@
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
 
+/* connection view : ssh : key file picker : public key error description */
+"Choose the private key instead — the file without the .pub extension." = "Choose the private key instead — the file without the .pub extension.";
+
 /* rename database: creating the target database failed; %1$@ target name, %2$@ server error */
 "Creating the database '%@' failed: %@" = "Creating the database '%1$@' failed: %2$@";
 
@@ -2108,6 +2111,9 @@
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
 
+/* database picker : shown when the search matches no database */
+"No Matching Databases" = "No Matching Databases";
+
 /* header for no matches in filtered list */
 "NO MATCHES" = "NO MATCHES";
 
@@ -2588,6 +2594,9 @@
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
+
+/* database picker : search field placeholder */
+"Search Databases" = "Search Databases";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
@@ -4433,3 +4442,12 @@
 
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.";
+
+/* connection view : ssh : key file picker : public key error title */
+"“%@” is a public key." = "“%@” is a public key.";
+
+/* connection view : ssl : client cert file picker : wrong format error title */
+"“%@” is not a valid client certificate file." = "“%@” is not a valid client certificate file.";
+
+/* connection view : ssl : key file picker : wrong format error title */
+"“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
