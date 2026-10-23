@@ -19,7 +19,7 @@ import AppKit
         super.init(scrollView: aScrollView)
         setFont(.monospacedSystemFont(ofSize: 11, weight: .regular))
         applyPalette()
-        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        observer = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.applyPalette()
         }
     }
@@ -31,7 +31,7 @@ import AppKit
     deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
 
     /// Re-derives the gutter colours from the editor theme. The observer fires on every
-    /// app-wide defaults write, so unchanged palettes are skipped.
+    /// Claude setting change (accent, fonts…), so unchanged palettes are skipped.
     private func applyPalette() {
         let palette = SAClaudeEditorChrome.palette(from: .standard)
         guard palette != appliedPalette else { return }

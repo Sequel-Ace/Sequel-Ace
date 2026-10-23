@@ -96,7 +96,7 @@ import AppKit
         styler.buildStrip()
         styler.refresh(force: true)
 
-        styler.defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak styler] _ in
+        styler.defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak styler] _ in
             styler?.refresh(force: false)
         }
         // Dynamic fallback colours (no theme saved yet) resolve differently in light and dark.

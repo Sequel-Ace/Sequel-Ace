@@ -258,17 +258,14 @@ final class SAClaudeWindowSkin: NSObject {
         }
     }
 
-    /// One observer for all skins: any defaults write may be a theme change.
+    /// One observer for all skins: a Claude setting change may be a theme change.
     private static func observeDefaults() {
         guard defaultsObserver == nil else { return }
-        // No `queue: .main`: a defaults write on a background thread must not wait for the main queue.
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.async { scheduleThemeCheck() }
-        }
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { _ in scheduleThemeCheck() }
     }
 
-    /// One theme check on the next main-queue turn, however many defaults writes ask for it before then (window
-    /// frames and split positions are saved continuously); skins restyle only when the theme changed.
+    /// One theme check on the next main-queue turn, however many setting changes ask for it before then (a theme
+    /// writes several colours in a row); skins restyle only when the theme changed.
     private static func scheduleThemeCheck() {
         guard !themeCheckPending else { return }
         themeCheckPending = true

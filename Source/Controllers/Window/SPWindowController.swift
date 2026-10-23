@@ -191,7 +191,7 @@ private extension SPWindowController {
             tabBarVisible: tabBar?.isShowing ?? false
         )
 
-        // Every defaults change wakes the observer below, so skip the work -
+        // Every Claude setting change wakes the observer below, so skip the work -
         // and the redraw it triggers - for what is already right.
         if window.titlebarAppearsTransparent != tint.titlebarAppearsTransparent {
             window.titlebarAppearsTransparent = tint.titlebarAppearsTransparent
@@ -248,11 +248,7 @@ private extension SPWindowController {
     /// immediately rather than at the next title update; the chips are rebuilt
     /// too when the choice changes their lines.
     func observeConnectionColourStyle() {
-        connectionColourSubscription = NotificationCenter.default.observe(
-            name: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
+        connectionColourSubscription = NotificationToken(token: SAClaudeAppearanceChange.addObserver { [weak self] _ in
             guard let self = self else {
                 return
             }
@@ -262,7 +258,7 @@ private extension SPWindowController {
                 self.chipConnectionColourStyle = style
                 self.tabBar?.refresh()
             }
-        }
+        })
     }
 }
 

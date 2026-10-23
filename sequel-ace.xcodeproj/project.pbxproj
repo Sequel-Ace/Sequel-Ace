@@ -98,6 +98,11 @@
 		5E1A0DE00000000000000B01 /* SAClaudeLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */; };
 		5E1A0DE00000000000000B02 /* SAClaudeLineHeight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */; };
 		5E1A0DE00000000000000B03 /* SAClaudeLineHeightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */; };
+		3A9E0C000000000000000B01 /* SAClaudeAppearanceChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */; };
+		3A9E0C000000000000000B02 /* SAClaudeAppearanceChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */; };
+		3A9E0C000000000000000B03 /* SAClaudeAppearanceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A02 /* SAClaudeAppearanceMonitor.swift */; };
+		3A9E0C000000000000000B05 /* SAClaudeAppearanceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A02 /* SAClaudeAppearanceMonitor.swift */; };
+		3A9E0C000000000000000B04 /* SAClaudeAppearanceChangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9E0C000000000000000A03 /* SAClaudeAppearanceChangeTests.swift */; };
 		ED60C397E8DB8344F30CC6D8 /* SAClaudeAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706B9F08AD7882845E635836 /* SAClaudeAccent.swift */; };
 		B2C3D4E5F60718293A4B5C6D /* SAClaudeSheetRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */; };
 		B4B598BAED8D58E3E5CA31A7 /* SAFavoriteColourSelectorLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75F2FE63602D21AD18C6876 /* SAFavoriteColourSelectorLayoutTests.swift */; };
@@ -1265,6 +1270,9 @@
 		87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFilterChrome.swift; sourceTree = "<group>"; };
 		5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineHeight.swift; sourceTree = "<group>"; };
 		5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeLineHeightTests.swift; sourceTree = "<group>"; };
+		3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAppearanceChange.swift; sourceTree = "<group>"; };
+		3A9E0C000000000000000A02 /* SAClaudeAppearanceMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAppearanceMonitor.swift; sourceTree = "<group>"; };
+		3A9E0C000000000000000A03 /* SAClaudeAppearanceChangeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAppearanceChangeTests.swift; sourceTree = "<group>"; };
 		706B9F08AD7882845E635836 /* SAClaudeAccent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeAccent.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeSheetRules.swift; sourceTree = "<group>"; };
 		D3A1C0DE0000000000000001 /* SAClaudeTableInfoLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeTableInfoLayout.swift; sourceTree = "<group>"; };
@@ -3338,6 +3346,7 @@
 				EA0C0DE0000000000000010A /* SAClaudeImportMapperStyler.swift */,
 				EA0C0DE0000000000000010C /* SAClaudeImportOptionsStyler.swift */,
 				EA0C0DE0000000000000010E /* SAClaudeThemeWatcher.swift */,
+				3A9E0C000000000000000A02 /* SAClaudeAppearanceMonitor.swift */,
 				5EC0DEC400000000000000A6 /* SAClaudeMenuCard.swift */,
 				5EC0DEC400000000000000A8 /* SAClaudeMenuCardAdapters.swift */,
 				5EC0DEC400000000000000D1 /* SAClaudeSwiftUIStyle.swift */,
@@ -3562,6 +3571,7 @@
 				87913D9215B31690E769FCBE /* SAClaudeFilterChrome.swift */,
 				706B9F08AD7882845E635836 /* SAClaudeAccent.swift */,
 				5E1A0DE00000000000000A01 /* SAClaudeLineHeight.swift */,
+				3A9E0C000000000000000A01 /* SAClaudeAppearanceChange.swift */,
 				A1B2C3D4E5F60718293A4B5C /* SAClaudeSheetRules.swift */,
 				5AC1A0DE5EE7000000000003 /* SAClaudeClassSwap.swift */,
 				D3A1C0DE0000000000000001 /* SAClaudeTableInfoLayout.swift */,
@@ -3719,6 +3729,7 @@
 				CE21CB61AAE1BC6C33F06BEC /* SAClaudeFilterChromeTests.swift */,
 				47AFB07FFFC5341AC9A07BA0 /* SAClaudeAccentTests.swift */,
 				5E1A0DE00000000000000A02 /* SAClaudeLineHeightTests.swift */,
+				3A9E0C000000000000000A03 /* SAClaudeAppearanceChangeTests.swift */,
 				D4E5F60718293A4B5C6D7E8F /* SAClaudeSheetRulesTests.swift */,
 				D3A1C0DE0000000000000004 /* SAClaudeTableInfoLayoutTests.swift */,
 				EA0C0DE00000000000000004 /* SAClaudeExportLayoutTests.swift */,
@@ -4677,6 +4688,8 @@
 				1D28EB1B8248D1CF24DD8732 /* SAClaudeFilterChrome.swift in Sources */,
 				C6EDCA2BD0D45CFFDA28EC4C /* SAClaudeAccent.swift in Sources */,
 				5E1A0DE00000000000000B02 /* SAClaudeLineHeight.swift in Sources */,
+				3A9E0C000000000000000B02 /* SAClaudeAppearanceChange.swift in Sources */,
+				3A9E0C000000000000000B05 /* SAClaudeAppearanceMonitor.swift in Sources */,
 				A7C21E5B9D3F4A60B18E2C47 /* SAClaudeEditorColoursSection.swift in Sources */,
 				C3D4E5F60718293A4B5C6D7E /* SAClaudeSheetRules.swift in Sources */,
 				5AC1A0DE5EE7000000000005 /* SAClaudeClassSwap.swift in Sources */,
@@ -4704,6 +4717,7 @@
 				9242C22BCECD674608BB3226 /* SAClaudeFilterChromeTests.swift in Sources */,
 				C918E498DEDF4DE83DA953C5 /* SAClaudeAccentTests.swift in Sources */,
 				5E1A0DE00000000000000B03 /* SAClaudeLineHeightTests.swift in Sources */,
+				3A9E0C000000000000000B04 /* SAClaudeAppearanceChangeTests.swift in Sources */,
 				E5F60718293A4B5C6D7E8F90 /* SAClaudeSheetRulesTests.swift in Sources */,
 				D3A1C0DE0000000000000005 /* SAClaudeTableInfoLayoutTests.swift in Sources */,
 				EA0C0DE00000000000000005 /* SAClaudeExportLayoutTests.swift in Sources */,
@@ -4848,6 +4862,7 @@
 				EA0C0DE0000000000000010B /* SAClaudeImportMapperStyler.swift in Sources */,
 				EA0C0DE0000000000000010D /* SAClaudeImportOptionsStyler.swift in Sources */,
 				EA0C0DE0000000000000010F /* SAClaudeThemeWatcher.swift in Sources */,
+				3A9E0C000000000000000B03 /* SAClaudeAppearanceMonitor.swift in Sources */,
 				5EC0DEC400000000000000A7 /* SAClaudeMenuCard.swift in Sources */,
 				5EC0DEC400000000000000A9 /* SAClaudeMenuCardAdapters.swift in Sources */,
 				5EC0DEC400000000000000D2 /* SAClaudeSwiftUIStyle.swift in Sources */,
@@ -5239,6 +5254,7 @@
 				59FF8FCB9DB5318FCDB3173E /* SAClaudeFilterChrome.swift in Sources */,
 				ED60C397E8DB8344F30CC6D8 /* SAClaudeAccent.swift in Sources */,
 				5E1A0DE00000000000000B01 /* SAClaudeLineHeight.swift in Sources */,
+				3A9E0C000000000000000B01 /* SAClaudeAppearanceChange.swift in Sources */,
 				B2C3D4E5F60718293A4B5C6D /* SAClaudeSheetRules.swift in Sources */,
 				D3A1C0DE0000000000000002 /* SAClaudeTableInfoLayout.swift in Sources */,
 				EA0C0DE00000000000000002 /* SAClaudeExportLayout.swift in Sources */,

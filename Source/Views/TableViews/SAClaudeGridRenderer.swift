@@ -49,7 +49,7 @@ final class SAClaudeGridRenderer {
         if var frame = table.headerView?.frame { frame.size.height = SAClaudeGridChrome.headerHeight; table.headerView?.frame = frame }
         table.cornerView = SAClaudeGridCornerView(frame: NSRect(x: 0, y: 0, width: 16, height: SAClaudeGridChrome.headerHeight))
         applyPalette(force: true)
-        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        observer = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.applyPalette(force: false)
         }
     }

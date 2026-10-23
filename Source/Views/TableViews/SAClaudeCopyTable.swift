@@ -23,7 +23,7 @@ import AppKit
 
     static var palette: SAClaudeGridChrome.Palette {
         if observer == nil {
-            observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+            observer = SAClaudeAppearanceChange.addObserver { _ in
                 cachedPalette = nil
             }
         }

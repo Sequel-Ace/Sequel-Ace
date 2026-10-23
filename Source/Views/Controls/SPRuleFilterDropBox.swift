@@ -260,14 +260,8 @@ enum SARuleFilterDropBoxLayout {
         registerForDraggedTypes([Self.rowDropType])
         toolTip = SPRuleFilterDropBox.promptTooltip
         refreshPalette()
-        // No `queue: .main`: a defaults write on a background thread posts synchronously there, and an observer
-        // queue makes the writer wait for the main queue (a deadlock while main waits on that writer).
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
-            if Thread.isMainThread {
-                self?.refreshPalette()
-            } else {
-                DispatchQueue.main.async { [weak self] in self?.refreshPalette() }
-            }
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
+            self?.refreshPalette()
         }
         // The drag-over fill and stroke are the accent; they are drawn, so a redraw picks the new one up.
         SAClaudeAccent.observe(self) { $0.needsDisplay = true }

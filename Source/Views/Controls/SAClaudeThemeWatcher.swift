@@ -2,10 +2,10 @@
 //  SAClaudeThemeWatcher.swift
 //  Sequel Ace
 //
-//  The coalesced editor-theme check the bespoke Claude stylers share (Export, Import): one UserDefaults observer for
-//  the whole app, one theme check per main-queue turn however many defaults writes ask for it (window frames are
-//  saved continuously), and the registered handlers called only when the theme colours changed. As
-//  `SAClaudeWindowSkin`'s own check. App target only.
+//  The coalesced editor-theme check the bespoke Claude stylers share (Export, Import): one Claude setting observer
+//  (`SAClaudeAppearanceChange`) for the whole app, one theme check per main-queue turn however many setting changes
+//  ask for it (a theme writes several colours in a row), and the registered handlers called only when the theme
+//  colours changed. As `SAClaudeWindowSkin`'s own check. App target only.
 //
 
 import AppKit
@@ -38,10 +38,7 @@ enum SAClaudeThemeWatcher {
             if let owner { handler(owner) }
         })
         guard defaultsObserver == nil else { return }
-        // No `queue: .main`: a defaults write on a background thread must not wait for the main queue.
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.async { scheduleCheck() }
-        }
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { _ in scheduleCheck() }
     }
 
     /// One theme check on the next main-queue turn; the handlers run only when the theme changed since the last one.

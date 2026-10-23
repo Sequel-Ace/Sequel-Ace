@@ -353,9 +353,7 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
 
     private func observe() {
         guard let scrollView, let container, let rightPane else { return }
-        // No `queue: .main`: a defaults write on a background thread posts synchronously there, and an observer
-        // queue makes the writer wait for the main queue (a deadlock while main waits on that writer).
-        notificationObservers.append(NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
+        notificationObservers.append(SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.onMain { $0.refresh(force: false) }
         })
         observations.append(rightPane.observe(\.effectiveAppearance) { [weak self] _, _ in

@@ -83,7 +83,7 @@ import AppKit
         })
         observers.append(centre.addObserver(forName: NSTableView.selectionDidChangeNotification, object: table, queue: .main) { [weak self] _ in self?.refreshState() })
         observers.append(centre.addObserver(forName: .SAClaudeCopyTableDidReload, object: table, queue: .main) { [weak self] _ in self?.refreshState() })
-        observers.append(centre.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        observers.append(SAClaudeAppearanceChange.addObserver { [weak self] _ in
             guard let self, SAClaudeQueryCopyAction.storedDefault(in: .standard) != self.currentAction else { return }
             self.refreshState()
         })

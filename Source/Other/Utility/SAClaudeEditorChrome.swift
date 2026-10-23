@@ -54,9 +54,9 @@ import AppKit
 
     /// The palette for the editor's current theme colours.
     static func palette(from defaults: UserDefaults) -> Palette {
-        let text = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.textColourKey)) ?? .textColor
-        let background = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.backgroundColourKey)) ?? .textBackgroundColor
-        return palette(text: text, background: background)
+        // Same text / background fallbacks; decoded once per theme.
+        let theme = SAClaudeThemeColours.from(defaults: defaults)
+        return palette(text: theme.text, background: theme.background)
     }
 
     // MARK: - Run button

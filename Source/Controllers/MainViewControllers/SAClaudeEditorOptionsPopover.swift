@@ -139,7 +139,7 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
     private var defaultsObserver: NSObjectProtocol?
 
     init() {
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.refresh()
         }
         // The switches are accent-coloured: rebuild the colours although the theme is unchanged.
@@ -180,7 +180,7 @@ final class SAClaudeEditorOptionsModel: ObservableObject {
         let available = Set(items.filter { $0.value.isEnabled }.map(\.key))
         if available != enabled { enabled = available }
 
-        // This runs on every app-wide defaults write; only rebuild the colours when the theme changed.
+        // This runs on every Claude setting change (a switch, the fonts, the accent); only rebuild the colours when the theme changed.
         let theme = SAClaudeThemeColours.from(defaults: defaults)
         guard theme != appliedTheme else { return }
         appliedTheme = theme

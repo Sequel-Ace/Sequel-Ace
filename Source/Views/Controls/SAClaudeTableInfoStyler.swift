@@ -303,9 +303,7 @@ final class SAClaudeTableInfoCardView: NSView {
         frameObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: statusView, queue: nil) { [weak self] _ in
             self?.onMain { $0.layOut() }
         }
-        // No `queue: .main`: a defaults write on a background thread posts synchronously there, and an observer
-        // queue makes the writer wait for the main queue (a deadlock while main waits on that writer).
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.onMain { $0.refresh(force: false) }
         }
         // The Comments field's focus outline is the accent.

@@ -76,14 +76,8 @@ import AppKit
         ruleEditor.rowHeight = SAClaudeFilterChrome.rowHeight
 
         styler.applyColours(force: true)
-        // No `queue: .main`: a defaults write on a background thread posts synchronously there, and an observer
-        // queue makes the writer wait for the main queue (a deadlock while main waits on that writer).
-        styler.defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak styler] _ in
-            if Thread.isMainThread {
-                styler?.applyColours(force: false)
-            } else {
-                DispatchQueue.main.async { styler?.applyColours(force: false) }
-            }
+        styler.defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak styler] _ in
+            styler?.applyColours(force: false)
         }
         // The checkbox, Apply button and focus outlines draw in the accent: restyle and redraw them.
         SAClaudeAccent.observe(styler) { $0.applyColours(force: true) }

@@ -99,7 +99,7 @@ import AppKit
         }
 
         styler.applyPalette()
-        styler.observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak styler] _ in
+        styler.observer = SAClaudeAppearanceChange.addObserver { [weak styler] _ in
             styler?.applyPalette()
         }
         // Re-lay out when the window (and so the bar) is resized.
@@ -124,7 +124,7 @@ import AppKit
     private func applyPalette() {
         guard let bar else { return }
         let palette = SAClaudeEditorChrome.palette(from: .standard)
-        // The defaults observer fires on every app-wide defaults write; only react when the palette changed.
+        // The observer fires on every Claude setting change (accent, fonts…); only react when the palette changed.
         guard palette != appliedPalette else { return }
         appliedPalette = palette
         if background.fillColour != palette.background { background.fillColour = palette.background }

@@ -85,7 +85,7 @@ final class SAConsoleChrome: ObservableObject {
     private var observer: NSObjectProtocol?
     init() {
         SAClaudeAccent.observe(self) { $0.accentFill = SAClaudeEditorChrome.runFill }
-        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        observer = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             let palette = SAClaudeEditorChrome.palette(from: .standard)
             if palette != self?.palette { self?.palette = palette }
         }
@@ -219,9 +219,9 @@ private struct SAScriptConsoleTextView: NSViewRepresentable {
                 }
                 .store(in: &subscriptions)
             // Preferences → Query Editor (font, colours) and the theme switcher.
-            // didChangeNotification fires for every default on any thread, so
-            // coalesce onto the main queue; refresh skips unchanged looks.
-            NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            // A theme writes several settings in a row, so coalesce; refresh
+            // skips unchanged looks.
+            SAClaudeAppearanceChange.publisher()
                 .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
                 .sink { [weak self, weak textView, weak layoutManager] _ in
                     guard let self, let textView, let layoutManager else { return }

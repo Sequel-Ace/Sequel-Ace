@@ -41,17 +41,43 @@ enum SAClaudeCompletionKind: Equatable {
 struct SAClaudeThemeColours: Equatable {
     var background, text, keyword, variable, caret, quote, backtick, selection: NSColor
 
+    private static let keys = [SAEditorThemeLoader.textColourKey, SAEditorThemeLoader.backgroundColourKey,
+                               SAEditorThemeLoader.keywordColourKey, SAEditorThemeLoader.variableColourKey,
+                               SAEditorThemeLoader.caretColourKey, SAEditorThemeLoader.quoteColourKey,
+                               SAEditorThemeLoader.backtickColourKey, SAEditorThemeLoader.selectionColourKey]
+    private static let cacheLock = NSLock()
+    /// The last decoded colours and the stored data they came from: unarchiving runs only when the data changed.
+    /// The fallbacks are dynamic colours, so a cached value stays right in either appearance.
+    private static var cache: (data: [Data?], colours: SAClaudeThemeColours)?
+
+    /// The theme colours stored in `defaults`, decoded once per distinct theme data. Any thread.
     static func from(defaults: UserDefaults) -> SAClaudeThemeColours {
-        func colour(_ key: String, _ fallback: NSColor) -> NSColor { SAArchiving.color(from: defaults.data(forKey: key)) ?? fallback }
-        let text = colour(SAEditorThemeLoader.textColourKey, .textColor)
-        return SAClaudeThemeColours(background: colour(SAEditorThemeLoader.backgroundColourKey, .textBackgroundColor),
+        let data = keys.map { defaults.data(forKey: $0) }
+        cacheLock.lock()
+        if let cache, cache.data == data {
+            cacheLock.unlock()
+            return cache.colours
+        }
+        cacheLock.unlock()
+        let colours = decode(data)
+        cacheLock.lock()
+        cache = (data, colours)
+        cacheLock.unlock()
+        return colours
+    }
+
+    /// `data` in `keys` order.
+    private static func decode(_ data: [Data?]) -> SAClaudeThemeColours {
+        func colour(_ index: Int, _ fallback: NSColor) -> NSColor { SAArchiving.color(from: data[index]) ?? fallback }
+        let text = colour(0, .textColor)
+        return SAClaudeThemeColours(background: colour(1, .textBackgroundColor),
                                     text: text,
-                                    keyword: colour(SAEditorThemeLoader.keywordColourKey, text),
-                                    variable: colour(SAEditorThemeLoader.variableColourKey, text),
-                                    caret: colour(SAEditorThemeLoader.caretColourKey, text),
-                                    quote: colour(SAEditorThemeLoader.quoteColourKey, text),
-                                    backtick: colour(SAEditorThemeLoader.backtickColourKey, text),
-                                    selection: colour(SAEditorThemeLoader.selectionColourKey, .selectedTextBackgroundColor))
+                                    keyword: colour(2, text),
+                                    variable: colour(3, text),
+                                    caret: colour(4, text),
+                                    quote: colour(5, text),
+                                    backtick: colour(6, text),
+                                    selection: colour(7, .selectedTextBackgroundColor))
     }
 }
 

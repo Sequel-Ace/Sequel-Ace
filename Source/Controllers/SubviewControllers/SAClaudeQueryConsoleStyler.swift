@@ -107,10 +107,10 @@ import AppKit
     private static var cachedStyle: SAClaudeConsoleTextStyle?
     private static var styleObserver: NSObjectProtocol?
 
-    /// The text style for console cells (cached; dropped on any defaults change).
+    /// The text style for console cells (cached; dropped on any Claude setting change).
     private static var textStyle: SAClaudeConsoleTextStyle {
         if styleObserver == nil {
-            styleObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+            styleObserver = SAClaudeAppearanceChange.addObserver { _ in
                 cachedStyle = nil
             }
         }
@@ -286,7 +286,7 @@ import AppKit
         toolbar.onResize = { [weak self] in self?.layoutToolbar() }
         applyPalette(force: true)
         observeColumnFit()
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.applyPalette(force: false)
             // The controller sets the logging note's text from its own observer of the same write; lay out after it.
             DispatchQueue.main.async { self?.layoutToolbar() }

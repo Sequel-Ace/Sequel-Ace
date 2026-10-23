@@ -90,7 +90,7 @@ import AppKit
         if let table = (content as? NSScrollView)?.documentView as? SAClaudeCopyTable { table.stylesCells = true }
 
         styler.applyColours(force: true)
-        styler.defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak styler] _ in
+        styler.defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak styler] _ in
             styler?.applyColours(force: false)
         }
         // The on-state filter / edit glyphs are tinted images: re-render them with the new accent.
@@ -420,7 +420,7 @@ private final class SAClaudeSectionHeaderStyler: NSObject {
         }
 
         applyColours(force: true)
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.applyColours(force: false)
         }
         appearanceObservation = header.observe(\.effectiveAppearance) { [weak self] _, _ in

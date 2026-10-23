@@ -335,9 +335,7 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
 
     private func observe() {
         guard let outline, let connectionController else { return }
-        // No `queue: .main`: a defaults write on a background thread posts synchronously there, and an observer
-        // queue makes the writer wait for the main queue (a deadlock while main waits on that writer).
-        notificationObservers.append(NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
+        notificationObservers.append(SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.onMain { $0.refreshColours(force: false) }
         })
         // The drop fill is derived from the accent and the cards draw it: re-derive and redraw.

@@ -117,7 +117,7 @@ private final class SAClaudeCompletionCardView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         layerContentsRedrawPolicy = .onSetNeedsDisplay
-        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
             self?.refresh(force: false)
         }
     }
