@@ -328,6 +328,16 @@
 		51AC3B8D3047622700BCE2B9 /* SASSHTunnelSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8C3047622700BCE2B9 /* SASSHTunnelSocketClient.swift */; };
 		51AC3B903047623E00BCE2B9 /* SASSHTunnelAskpass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */; };
 		51AC3B963047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */; };
+		3C33408C4098D289842E50C2 /* SASSHAgentPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEAA9E542A465EB761EFAB29 /* SASSHAgentPreferences.swift */; };
+		B95B0119EF68AB3C45A32E0E /* SASSHAgentRelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454E5D9040AD829B94F3ED03 /* SASSHAgentRelayTests.swift */; };
+		944BBE310538A1726D388173 /* SASSHAgentRelayInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C9070D135FDE62A03AE67E /* SASSHAgentRelayInstallerTests.swift */; };
+		FD580659DBFA8C424DC0E9BF /* SASSHAgentSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B75A64CE17FEFB1F121153F /* SASSHAgentSourceTests.swift */; };
+		A16A204505233EAE4C04E093 /* SASSHAgentRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDE2FB84B2C9208CFE047CE /* SASSHAgentRelay.swift */; };
+		47D697A46588D79167B5EE2D /* SASSHAgentRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDE2FB84B2C9208CFE047CE /* SASSHAgentRelay.swift */; };
+		2F483C4546FF3D8CC326E80B /* SASSHAgentRelayInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0511A25933836D1417B41D /* SASSHAgentRelayInstaller.swift */; };
+		82413064B267494E75762839 /* SASSHAgentRelayInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0511A25933836D1417B41D /* SASSHAgentRelayInstaller.swift */; };
+		2FC0115A618AB5A81FD81DE9 /* SASSHAgentSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439C0D9071304EA166E7A057 /* SASSHAgentSource.swift */; };
+		C9725535B11CB80274D58C43 /* SASSHAgentSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439C0D9071304EA166E7A057 /* SASSHAgentSource.swift */; };
 		51AC3B973047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */; };
 		51AC3B993047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */; };
 		51AC3B9B304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */; };
@@ -564,6 +574,10 @@
 		963DA1C72CACC71000B5A544 /* QuickLookUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		963DA1C82CACC71B00B5A544 /* QuickLookUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		964908C8249A77D00052FC4A /* ssh_config in Resources */ = {isa = PBXBuildFile; fileRef = 964908C4249A77CF0052FC4A /* ssh_config */; };
+		27BFE084BED24D31572E112E /* ssh-agent-relay.allow in Resources */ = {isa = PBXBuildFile; fileRef = 32595881B70EDA0CD2021DEF /* ssh-agent-relay.allow */; };
+		4D3F52F23F3B2434342C38E3 /* ssh-agent-relay.allow in Resources */ = {isa = PBXBuildFile; fileRef = 32595881B70EDA0CD2021DEF /* ssh-agent-relay.allow */; };
+		EE0BBE21771FA4A7CC0BFE8D /* ssh-agent-relay.zsh in Resources */ = {isa = PBXBuildFile; fileRef = 8327326FBBE28F5B92314C70 /* ssh-agent-relay.zsh */; };
+		BF3C2789D3D69E43A62E7D08 /* ssh-agent-relay.zsh in Resources */ = {isa = PBXBuildFile; fileRef = 8327326FBBE28F5B92314C70 /* ssh-agent-relay.zsh */; };
 		9651262224926F1200E65B53 /* QueryKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; };
 		9651262324926F1200E65B53 /* QueryKit.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; };
@@ -1274,6 +1288,13 @@
 		51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAskpass.swift; sourceTree = "<group>"; };
 		51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAssistantSocketMain.swift; sourceTree = "<group>"; };
 		51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelTransport.swift; sourceTree = "<group>"; };
+		AEAA9E542A465EB761EFAB29 /* SASSHAgentPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentPreferences.swift; sourceTree = "<group>"; };
+		454E5D9040AD829B94F3ED03 /* SASSHAgentRelayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentRelayTests.swift; sourceTree = "<group>"; };
+		09C9070D135FDE62A03AE67E /* SASSHAgentRelayInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentRelayInstallerTests.swift; sourceTree = "<group>"; };
+		9B75A64CE17FEFB1F121153F /* SASSHAgentSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentSourceTests.swift; sourceTree = "<group>"; };
+		6EDE2FB84B2C9208CFE047CE /* SASSHAgentRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentRelay.swift; sourceTree = "<group>"; };
+		BE0511A25933836D1417B41D /* SASSHAgentRelayInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentRelayInstaller.swift; sourceTree = "<group>"; };
+		439C0D9071304EA166E7A057 /* SASSHAgentSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHAgentSource.swift; sourceTree = "<group>"; };
 		51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelSocketTransportTests.swift; sourceTree = "<group>"; };
 		51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelAskpassTests.swift; sourceTree = "<group>"; };
 		51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASSHTunnelTransportTests.swift; sourceTree = "<group>"; };
@@ -1522,6 +1543,8 @@
 		961210D1302E7233009A9A2A /* SAGitHubReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAGitHubReleaseTests.swift; sourceTree = "<group>"; };
 		963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
+		32595881B70EDA0CD2021DEF /* ssh-agent-relay.allow */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "ssh-agent-relay.allow"; sourceTree = "<group>"; };
+		8327326FBBE28F5B92314C70 /* ssh-agent-relay.zsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "ssh-agent-relay.zsh"; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; usesTabs = 0; };
 		9651261F24926C7900E65B53 /* Sequel Ace.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Sequel Ace.entitlements"; sourceTree = "<group>"; };
 		967D875A24B67B4300BAE934 /* SPAutosizingTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAutosizingTextView.swift; sourceTree = "<group>"; };
@@ -2529,6 +2552,10 @@
 				51AC3B8F3047623E00BCE2B9 /* SASSHTunnelAskpass.swift */,
 				51AC3B923047624A00BCE2B9 /* SASSHTunnelAssistantSocketMain.swift */,
 				51AC3B953047625800BCE2B9 /* SASSHTunnelTransport.swift */,
+				AEAA9E542A465EB761EFAB29 /* SASSHAgentPreferences.swift */,
+				6EDE2FB84B2C9208CFE047CE /* SASSHAgentRelay.swift */,
+				BE0511A25933836D1417B41D /* SASSHAgentRelayInstaller.swift */,
+				439C0D9071304EA166E7A057 /* SASSHAgentSource.swift */,
 				51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */,
 				51AC6E6D3047F8AB00BCE2B9 /* SASSHTunnelPromptCoordinator.swift */,
 			);
@@ -2973,6 +3000,9 @@
 				51AC3B983047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift */,
 				51AC3B9A304762C400BCE2B9 /* SASSHTunnelAskpassTests.swift */,
 				51AC3B9C304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift */,
+				454E5D9040AD829B94F3ED03 /* SASSHAgentRelayTests.swift */,
+				09C9070D135FDE62A03AE67E /* SASSHAgentRelayInstallerTests.swift */,
+				9B75A64CE17FEFB1F121153F /* SASSHAgentSourceTests.swift */,
 				51AC3BA83047658D00BCE2B9 /* SASSHTunnelPeerValidatorTests.swift */,
 				51AC6E733047F8C400BCE2B9 /* SASSHTunnelPromptCoordinatorTests.swift */,
 				49A74A9F19E546A0AB95B7AA /* SATableReloadRetryPolicyTests.swift */,
@@ -3110,6 +3140,8 @@
 			isa = PBXGroup;
 			children = (
 				964908C4249A77CF0052FC4A /* ssh_config */,
+				32595881B70EDA0CD2021DEF /* ssh-agent-relay.allow */,
+				8327326FBBE28F5B92314C70 /* ssh-agent-relay.zsh */,
 			);
 			name = "SSH Helpers";
 			sourceTree = "<group>";
@@ -3423,6 +3455,8 @@
 				CF0000082F8C000600C4C14A /* ContentFilters.plist in Resources */,
 				C0D3A0012F8D000100000001 /* PreferenceDefaults.plist in Resources */,
 				A946E44AA14C458182205CFF /* CompletionTokens.plist in Resources */,
+				27BFE084BED24D31572E112E /* ssh-agent-relay.allow in Resources */,
+				EE0BBE21771FA4A7CC0BFE8D /* ssh-agent-relay.zsh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3523,6 +3557,8 @@
 				C9C994491678B3E6001F5DA8 /* table-small-square.png in Resources */,
 				C9C9944A1678B3E6001F5DA8 /* table-small-square@2x.png in Resources */,
 				964908C8249A77D00052FC4A /* ssh_config in Resources */,
+				4D3F52F23F3B2434342C38E3 /* ssh-agent-relay.allow in Resources */,
+				BF3C2789D3D69E43A62E7D08 /* ssh-agent-relay.zsh in Resources */,
 				8831EFCA224016E000D10172 /* button_edit_modeTemplate.pdf in Resources */,
 				C9C9944D1678BCFA001F5DA8 /* table-small.png in Resources */,
 				C9C9944E1678BCFA001F5DA8 /* table-small@2x.png in Resources */,
@@ -3664,6 +3700,12 @@
 				FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */,
 				51AC3B85304761F800BCE2B9 /* SASSHTunnelSocketIO.swift in Sources */,
 				51AC3B963047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */,
+				B95B0119EF68AB3C45A32E0E /* SASSHAgentRelayTests.swift in Sources */,
+				944BBE310538A1726D388173 /* SASSHAgentRelayInstallerTests.swift in Sources */,
+				FD580659DBFA8C424DC0E9BF /* SASSHAgentSourceTests.swift in Sources */,
+				47D697A46588D79167B5EE2D /* SASSHAgentRelay.swift in Sources */,
+				82413064B267494E75762839 /* SASSHAgentRelayInstaller.swift in Sources */,
+				C9725535B11CB80274D58C43 /* SASSHAgentSource.swift in Sources */,
 				51AC3B9D304762CE00BCE2B9 /* SASSHTunnelTransportTests.swift in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				C2E7A3B52E5E1A1A00D22990 /* SPDatabaseData.m in Sources */,
@@ -4151,6 +4193,10 @@
 				58D2A6A716FBDEFF002EB401 /* SPComboPopupButton.m in Sources */,
 				65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */,
 				51AC3B973047625800BCE2B9 /* SASSHTunnelTransport.swift in Sources */,
+				3C33408C4098D289842E50C2 /* SASSHAgentPreferences.swift in Sources */,
+				A16A204505233EAE4C04E093 /* SASSHAgentRelay.swift in Sources */,
+				2F483C4546FF3D8CC326E80B /* SASSHAgentRelayInstaller.swift in Sources */,
+				2FC0115A618AB5A81FD81DE9 /* SASSHAgentSource.swift in Sources */,
 				501B1D181728A3DA0017C92E /* SPCharsetCollationHelper.m in Sources */,
 				50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */,
 				50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */,
