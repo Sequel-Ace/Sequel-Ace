@@ -23,15 +23,15 @@ class SAClaudeOwnedTitlebarAccessory: NSTitlebarAccessoryViewController {}
 /// some new windows' title bars without their container, and the tab bar in them stopped laying out. The overlay
 /// sits in the content view, above the document, and never changes any layout: it keeps to the top edge by its
 /// autoresizing mask and only hides itself. It ignores the mouse.
-final class SAConnectionColourLineOverlay: NSView {
+final class SAConnectionColourLineOverlay: SAClaudeFlatFillView {
     static let height: CGFloat = 2
 
-    /// The line's colour, `nil` for no line. Kept unresolved and set at draw time, so an asset colour follows light
-    /// and dark.
+    /// The line's colour, `nil` for no line. Kept unresolved and resolved for the layer under the view's appearance,
+    /// so an asset colour follows light and dark.
     var colour: NSColor? {
         didSet {
             guard colour != oldValue else { return }
-            needsDisplay = true
+            fillColour = colour ?? .clear
             update()
         }
     }
@@ -66,19 +66,6 @@ final class SAConnectionColourLineOverlay: NSView {
         if !shouldHide, let contentView, contentView.subviews.last !== self {
             contentView.addSubview(self, positioned: .above, relativeTo: nil)
         }
-    }
-
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-
-    override func draw(_ dirtyRect: NSRect) {
-        guard let colour else { return }
-        colour.setFill()
-        bounds.intersection(dirtyRect).fill()
-    }
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
     }
 }
 

@@ -544,18 +544,25 @@ final class SAClaudeConsoleFieldView: NSView {
     var cornerRadius: CGFloat = SAClaudeStyle.barButtonRadius { didSet { needsDisplay = true } }
     var onClick: (() -> Void)?
 
-    override func draw(_ dirtyRect: NSRect) {
-        NSGraphicsContext.saveGraphicsState()
-        NSBezierPath.clip(bounds.intersection(dirtyRect))
-        fillColour.setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius).fill()
-        if let borderColour {
-            borderColour.setStroke()
-            let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: cornerRadius - 0.5, yRadius: cornerRadius - 0.5)
-            outline.lineWidth = 1
-            outline.stroke()
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    /// Layer properties, not a drawn picture (no bitmap per field per tab): the rounded fill, and the outline as the
+    /// layer's 1pt border over it — the rounded rect inset half a point, stroked 1pt, that it used to draw.
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        guard let layer else { return }
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer.backgroundColor = fillColour.cgColor
+            layer.borderColor = borderColour?.cgColor
         }
-        NSGraphicsContext.restoreGraphicsState()
+        layer.borderWidth = borderColour == nil ? 0 : 1
+        layer.cornerRadius = cornerRadius
     }
 
     /// A dynamic fill colour resolves again under the new appearance.
