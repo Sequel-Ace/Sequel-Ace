@@ -102,6 +102,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	NSObject <SPMySQLConnectionProxy> *proxy;
 	SPMySQLConnectionProxyState previousProxyState;
 	BOOL proxyStateChangeNotificationsIgnored;
+	// Set when a marked session was closed over a proxy that was left as it was, so the
+	// reconnect that follows connects through it instead of waiting for it to go idle.
+	BOOL proxyUntouchedBySessionReplacement;
 
 	// Connection lock to prevent non-thread-safe query misuse
 	NSConditionLock *connectionLock;

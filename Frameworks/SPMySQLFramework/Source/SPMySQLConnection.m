@@ -1581,8 +1581,18 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
+		// A proxy that only had the MySQL session over it replaced, and still reports a
+		// connection, is used as it stands: nothing was asked of it, so there is nothing to wait
+		// for, and the wait for it to go idle would otherwise run the attempt's budget out.
+		BOOL reconnectsThroughTheProxyAsItStands = proxy && [_proxyReconnectCoordinator reconnectsThroughProxyInState:[proxy state] untouchedBySessionReplacement:proxyUntouchedBySessionReplacement];
+		proxyUntouchedBySessionReplacement = NO;
+		if (reconnectsThroughTheProxyAsItStands) {
+			port = [proxy localPort];
+			previousProxyState = [proxy state];
+			proxyStateChangeNotificationsIgnored = NO;
+
 		// If there is a proxy, attempt to reconnect it in blocking fashion
-		if (proxy) {
+		} else if (proxy) {
 
             SPLog(@"we have a proxy");
 
@@ -1907,6 +1917,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If using a connection proxy, disconnect that too
 	if (proxy) {
+		proxyUntouchedBySessionReplacement = NO;
 		[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:preserveProxyReconnect];
 	}
 }

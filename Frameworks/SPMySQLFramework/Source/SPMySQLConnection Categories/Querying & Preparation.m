@@ -855,6 +855,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		mySQLConnection = NULL;
 	}
 	state = SPMySQLConnectionLostInBackground;
+	// Only the MySQL session goes; a tunnel under it stays as it is, and the reconnect that
+	// follows connects through it rather than waiting for it to go idle, which a connected
+	// tunnel never does on its own.
+	proxyUntouchedBySessionReplacement = (proxy != nil);
 	// What the session reported about its server goes with it, as a connect starts without it:
 	// the version readings answer "no connection" until the next session reports its own,
 	// instead of the closed session's version for a connection that may never come back.

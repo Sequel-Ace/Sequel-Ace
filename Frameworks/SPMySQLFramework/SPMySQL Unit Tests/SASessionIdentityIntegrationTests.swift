@@ -68,6 +68,24 @@ private final class SACheckFailingAfterTheMarkConnection: SPMySQLConnection {
     }
 }
 
+/// A proxy that stands for a tunnel which is up and stays up: it reports a connection to the
+/// local server's own port, and records whether anybody asked it to connect or disconnect.
+private final class SAConnectedTunnelStandIn: NSObject, SPMySQLConnectionProxy {
+    private(set) var connectRequests = 0
+    private(set) var disconnectRequests = 0
+    private let port: UInt
+
+    init(port: UInt) {
+        self.port = port
+    }
+
+    func connect() { connectRequests += 1 }
+    func disconnect() { disconnectRequests += 1 }
+    func state() -> SPMySQLConnectionProxyState { SPMySQLProxyConnected }
+    func localPort() -> UInt { port }
+    func setConnectionStateChange(_ theStateChangeSelector: Selector!, delegate theDelegate: Any!) -> Bool { true }
+}
+
 /// A connection that records whether its session was pinged.
 private final class SAPingWatchingConnection: SPMySQLConnection {
     private(set) var pingedTheSession = false
@@ -144,6 +162,20 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         try configureForTheLocalServer(connection)
         guard connection.connect() else {
             throw XCTSkip("Local MySQL connection is unavailable: \(connection.lastErrorMessage() ?? "no error")")
+        }
+        return connection
+    }
+
+    /// Connects over TCP to the local server's port - the way a connection through a tunnel is
+    /// made - instead of over the socket the other tests use.
+    private func connectedOverTCP<T: SPMySQLConnection>(_ connection: T) throws -> T {
+        try configureForTheLocalServer(connection)
+        let environment = ProcessInfo.processInfo.environment
+        connection.useSocket = false
+        connection.host = environment["SPMYSQL_TEST_HOST"].flatMap { $0.isEmpty ? nil : $0 } ?? "127.0.0.1"
+        connection.port = environment["SPMYSQL_TEST_PORT"].flatMap(UInt.init) ?? 3306
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL is not reachable over TCP at \(connection.host ?? ""):\(connection.port): \(connection.lastErrorMessage() ?? "no error")")
         }
         return connection
     }
@@ -475,6 +507,31 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.lastErrorID(), 2013)
         XCTAssertEqual(connection.rowsAffectedByLastQuery(), 0, "and it changed nothing")
         XCTAssertEqual(rowCount(observer), 1, "the server never saw it")
+    }
+
+    /// A session replaced over a tunnel that stayed up is reconnected through that tunnel as it
+    /// stands. Before, the reconnect waited for the tunnel to go idle - which a connected tunnel
+    /// never does on its own - for the whole configured timeout, or the whole attempt budget,
+    /// before connecting through it after all.
+    func testASessionReplacedOverAConnectedTunnelReconnectsThroughItWithoutWaiting() throws {
+        let connection = try connectedOverTCP(SPMySQLConnection())
+        defer { connection.disconnect() }
+        connection.timeout = 3
+        let tunnel = SAConnectedTunnelStandIn(port: connection.port)
+        connection.setProxy(tunnel)
+        try prepare(connection)
+
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+        let started = Date()
+        connection.queryString("INSERT INTO t (v) VALUES ('after the replacement')")
+        let elapsed = Date().timeIntervalSince(started)
+
+        XCTAssertFalse(connection.queryErrored(), "the statement ran on the replacement session: \(connection.lastErrorMessage() ?? "")")
+        XCTAssertEqual(rowCount(connection), 1)
+        XCTAssertEqual(tunnel.connectRequests, 0, "a connected tunnel is not asked to connect")
+        XCTAssertEqual(tunnel.disconnectRequests, 0, "nor to disconnect")
+        XCTAssertLessThan(elapsed, 2, "no wait for a tunnel that is up to go idle (the timeout is three seconds)")
+        connection.setProxy(nil)
     }
 
     /// The version a closed session reported goes with it: a connection left without a session

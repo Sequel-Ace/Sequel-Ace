@@ -25,6 +25,7 @@
 		2E11BCC66E25F3F21E4112DB /* SASessionIdentityIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */; };
 		70DD928A0C23B6C3742ADB95 /* SAConnectionCancellationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */; };
 		DF7CBF53A66B46D8E00EEEBA /* SASessionGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F6642BBA102C26F382431E /* SASessionGateTests.swift */; };
+		C30E9959138A4967A49C4275 /* SAProxyReconnectCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429907AB69CC4DFE9E0082AC /* SAProxyReconnectCoordinatorTests.swift */; };
 		A750A1BA77354E0DB1834284 /* SAStatementBytesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFD0C60BB6745D3892CB599 /* SAStatementBytesTests.swift */; };
 		E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */; };
 		2CE0080756AA2FB1962B704B /* SAConnectionLostDecisionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */; };
@@ -280,6 +281,7 @@
 		31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionIdentityIntegrationTests.swift; sourceTree = "<group>"; };
 		EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCancellationTests.swift; sourceTree = "<group>"; };
 		C3F6642BBA102C26F382431E /* SASessionGateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionGateTests.swift; sourceTree = "<group>"; };
+		429907AB69CC4DFE9E0082AC /* SAProxyReconnectCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAProxyReconnectCoordinatorTests.swift; sourceTree = "<group>"; };
 		6DFD0C60BB6745D3892CB599 /* SAStatementBytesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAStatementBytesTests.swift; sourceTree = "<group>"; };
 		DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSetupDeadlineTests.swift; sourceTree = "<group>"; };
 		A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAByteStringDecoder.swift; path = Source/SAByteStringDecoder.swift; sourceTree = "<group>"; };
@@ -456,6 +458,7 @@
 				31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */,
 				EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */,
 				C3F6642BBA102C26F382431E /* SASessionGateTests.swift */,
+				429907AB69CC4DFE9E0082AC /* SAProxyReconnectCoordinatorTests.swift */,
 				6DFD0C60BB6745D3892CB599 /* SAStatementBytesTests.swift */,
 				DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */,
 				7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */,
@@ -831,6 +834,7 @@
 				2E11BCC66E25F3F21E4112DB /* SASessionIdentityIntegrationTests.swift in Sources */,
 				70DD928A0C23B6C3742ADB95 /* SAConnectionCancellationTests.swift in Sources */,
 				DF7CBF53A66B46D8E00EEEBA /* SASessionGateTests.swift in Sources */,
+				C30E9959138A4967A49C4275 /* SAProxyReconnectCoordinatorTests.swift in Sources */,
 				A750A1BA77354E0DB1834284 /* SAStatementBytesTests.swift in Sources */,
 				E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */,
 				2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */,
