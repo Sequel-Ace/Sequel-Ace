@@ -103,7 +103,8 @@ private final class SASwitchingConnection: SPMySQLConnection {
 
 /// A statement whose serialisation waits for the test: the window a stop can land in once the
 /// lease has been told of the query. The first serialisation - the size estimate made before the
-/// session is taken - runs through; the one inside the attempt, for the session that is held, waits.
+/// session is taken - runs through; the one inside the attempt, for a held session that reads
+/// another character set than the statement was measured in, waits.
 private final class SASlowlySerialisedStatement: NSString {
     private var text: NSString = ""
     private var serialisationsSoFar = 0
@@ -219,7 +220,7 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
     /// the query, and for a large statement a while before anything is sent - keeps the statement
     /// from the server.
     func testAStopWhileTheStatementIsBeingSerialisedKeepsItFromTheServer() throws {
-        let connection = try connected(SPMySQLConnection())
+        let connection = try connected(SASwitchingConnection())
         let observer = try connected(SPMySQLConnection())
         defer {
             dropTheDatabase(observer)
@@ -227,7 +228,11 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
             observer.disconnect()
         }
         try prepare(connection)
+        XCTAssertTrue(connection.setEncoding("utf8mb4"))
 
+        // Measured in utf8mb4, sent on a session that reads latin1 by the time it is taken: the
+        // bytes are built again inside the attempt, which is where the stop lands.
+        connection.characterSetToSwitchToBeforeTheNextStatement = "latin1"
         let statement = SASlowlySerialisedStatement(statement: "INSERT INTO t (v) VALUES ('written')")
         let returned = expectation(description: "the statement returned")
         var result: SPMySQLResult?

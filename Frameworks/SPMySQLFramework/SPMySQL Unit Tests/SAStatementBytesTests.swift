@@ -81,6 +81,35 @@ final class SAStatementBytesTests: XCTestCase {
 
         XCTAssertEqual(attempt.bytes.map { Data(referencing: $0) }, Data([0xE9]))
         XCTAssertEqual(attempt.encoding, latin1)
+        XCTAssertEqual(bytes.length(onSessionReading: utf8), 1, "measured in the caller's encoding as well")
+    }
+
+    /// The bytes measured against the packet limit before the session is held are the ones the
+    /// first attempt sends; the statement is not serialised a second time for nothing.
+    func testTheBytesMeasuredBeforeTheFirstAttemptAreTheOnesItSends() {
+        let statement = SACountingStatement(statement: "SELECT 'é'")
+        let bytes = SAStatementBytes(statement: statement, encodingNamedByTheCaller: noEncodingNamed)
+
+        XCTAssertEqual(bytes.length(onSessionReading: utf8), 11)
+        let attempt = bytes.attempt(onSessionReading: utf8, maximumSize: 1024)
+
+        XCTAssertEqual(statement.serialisations, 1, "measured once, sent as measured")
+        XCTAssertEqual(attempt.bytes.map { Data(referencing: $0) }, "SELECT 'é'".data(using: .utf8))
+        XCTAssertEqual(bytes.encoding, utf8)
+    }
+
+    /// A session that reads another character set than the statement was measured in - the one a
+    /// reconnect in between restored - gets the bytes built again for it.
+    func testASessionReadingAnotherCharacterSetThanMeasuredGetsTheBytesBuiltAgain() {
+        let statement = SACountingStatement(statement: "SELECT 'é'")
+        let bytes = SAStatementBytes(statement: statement, encodingNamedByTheCaller: noEncodingNamed)
+
+        XCTAssertEqual(bytes.length(onSessionReading: utf8), 11)
+        let attempt = bytes.attempt(onSessionReading: latin1, maximumSize: 1024)
+
+        XCTAssertEqual(statement.serialisations, 2)
+        XCTAssertEqual(attempt.bytes.map { Data(referencing: $0) }, "SELECT 'é'".data(using: .isoLatin1))
+        XCTAssertEqual(attempt.encoding, latin1)
     }
 
     /// The same text needs more bytes in another character set: a statement that fit the session

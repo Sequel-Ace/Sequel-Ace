@@ -443,11 +443,17 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		[delegate willQueryString:theQueryString connection:self];
 	}
 
+	// The statement's bytes belong to the session that sends them (`SAStatementBytes`): measured
+	// here in the encoding in force now, for the one check that can still raise the packet limit
+	// and reconnect, and kept for the first attempt - which builds them again only when the session
+	// it holds reads another character set, as one does after a reconnect in between. Built once
+	// up front and sent as they were, they went out in the wrong character set on such a session.
+	SAStatementBytes *statementBytes = [[SAStatementBytes alloc] initWithStatement:theQueryString encodingNamedByTheCaller:theEncoding];
+
 	// Check the query length against the current maximum query length.  If it is
 	// larger, the query would error (and probably cause a disconnect), so if
-	// the maximum size is editable, increase it and reconnect. Measured in the encoding in
-	// force now; the bytes themselves are built once the session is held.
-	NSUInteger estimatedQueryLength = [[theQueryString dataUsingEncoding:(theEncoding ?: stringEncoding) allowLossyConversion:YES] length];
+	// the maximum size is editable, increase it and reconnect.
+	NSUInteger estimatedQueryLength = [statementBytes lengthOnSessionReading:stringEncoding];
 	if (estimatedQueryLength > maxQuerySize) {
 		queryActionShouldRestoreMaxQuerySize = maxQuerySize;
 		if (![self _attemptMaxQuerySizeIncreaseTo:(estimatedQueryLength + 1024)]) {
@@ -461,11 +467,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	if (retryQueriesOnConnectionFailure) queryAttemptsAllowed++;
 	int queryStatus;
 
-	// The statement's bytes belong to the session that sends them, and are built once that session
-	// is held - for each attempt, since a retry after a reconnect lands on a session that may read
-	// statements in another character set (`SAStatementBytes`). Built once up front, before any
-	// session was held, they were sent on the next session as they were.
-	SAStatementBytes *statementBytes = [[SAStatementBytes alloc] initWithStatement:theQueryString encodingNamedByTheCaller:theEncoding];
+	// The bytes of the attempt under way, held while they are sent.
 	NSData *queryData = nil;
 
 	// Lock the connection while it's actively in use, replacing a session that is marked to be
