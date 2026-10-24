@@ -241,6 +241,45 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "the server is ending the query; the first stop's grace period must not cut it off")
     }
 
+    /// A refusal does not shut the socket down while a later stop's request is still on its way:
+    /// that request may yet be accepted, and the later stop decides for itself when its answer
+    /// comes. An acceptance then leaves the socket alone.
+    func testARefusalDefersToALaterRequestStillOnItsWayAndItsAcceptanceLeavesTheSocketAlone() {
+        host.sessionAccess.beginNativeQuery()
+        host.killAnswer = .refused
+        cancellation.requestCancellation(synchronously: true)
+        host.killAnswer = .blockedThenAccepted
+        DispatchQueue.global().async {
+            self.cancellation.requestCancellation(synchronously: true)
+        }
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "the first ask")
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "the second ask is out")
+
+        XCTAssertFalse(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 0.5),
+                       "the first stop's grace period is over, but the second's request is still out")
+        host.letTheKillReturn.signal()
+        XCTAssertFalse(waitForTheSocketToBeShutDown(within: 0.5), "and the server accepted it")
+    }
+
+    /// A refusal that defers to a later request is not lost: when that request is refused as well,
+    /// the later stop shuts the socket down at once - its own grace period is over by then.
+    func testARefusalDefersToALaterRequestAndItsRefusalShutsTheSocketDown() {
+        host.sessionAccess.beginNativeQuery()
+        host.killAnswer = .refused
+        cancellation.requestCancellation(synchronously: true)
+        host.killAnswer = .blockedThenRefused
+        DispatchQueue.global().async {
+            self.cancellation.requestCancellation(synchronously: true)
+        }
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success)
+
+        XCTAssertFalse(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 0.5),
+                       "deferred to the request still out")
+        host.letTheKillReturn.signal()
+        XCTAssertTrue(waitForTheSocketToBeShutDown(within: 0.5), "refused as well: the later stop shuts the socket down at once")
+    }
+
     /// A query that finished before the grace period ran out is not cut off, and neither is the
     /// query that took its place.
     func testAQueryThatFinishedBeforeTheGraceIsNotCutOffAndNeitherIsItsSuccessor() {
