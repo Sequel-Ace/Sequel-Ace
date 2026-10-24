@@ -3901,7 +3901,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     NSString *errorMessage = errorDetail ? : @"";
     if (theErrorMessage) {
-        errorMessage = [errorMessage stringByAppendingString:@"\n"];
+        if ([errorMessage length] > 0) errorMessage = [errorMessage stringByAppendingString:@"\n"];
         errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
     }
 
@@ -3933,30 +3933,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             return;
         }
 
-        NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0,0,488,140)];
-        [scrollView setDrawsBackground:NO];
-        [scrollView setHasVerticalScroller:YES];
-        
-        NSScroller *verticalScroller = [scrollView verticalScroller];
-        CGFloat scrollbarWidth = NSWidth([verticalScroller frame]);
-        NSRect textViewFrame = scrollView.bounds;
-        textViewFrame.size.width = scrollView.frame.size.width - scrollbarWidth;
-
-        NSText *errorMessageTextView = [[NSText alloc] initWithFrame:textViewFrame];
-        [errorMessageTextView setString:errorMessage];
-        [errorMessageTextView setEditable:NO];
-        [errorMessageTextView setDrawsBackground:NO];
-
-        [scrollView setDocumentView:errorMessageTextView];
-
         errorShowing = YES;
         NSAlert *alert = [[NSAlert alloc] init];
         [alert setMessageText:theTitle];
-        [alert setAccessoryView:scrollView];
         [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
         if (isSSHTunnelBindError) {
             [alert addButtonWithTitle:NSLocalizedString(@"Use Standard Connection", @"use standard connection button")];
         }
+        [alert setScrollableInformativeText:errorMessage];
         NSModalResponse returnCode = [alert runModal];
         if (returnCode == NSAlertSecondButtonReturn) {
             // Extract the local port number that SSH attempted to bind to from the debug output

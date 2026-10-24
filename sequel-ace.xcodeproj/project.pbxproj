@@ -197,6 +197,10 @@
 		4E8A6BDE2BE55B29DBAB2F22 /* SAClaudeGlyphsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F8E84B26B19CC1794B5975 /* SAClaudeGlyphsTests.swift */; };
 		9A4E4FB3C951EE026CCA1F30 /* SAClaudeStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1D24F2DE03A1BD09E13F3D /* SAClaudeStyleTests.swift */; };
 		03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */; };
+		EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
+		7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
+		55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */; };
+		5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		041B45A08135991F3C5E8DA0 /* SAClaudeConnectionsMenuModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C43B57E131A75817E8F481D /* SAClaudeConnectionsMenuModelTests.swift */; };
 		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
@@ -1339,6 +1343,9 @@
 		F8B2C0DE0000000000000004 /* SAClaudeFavoriteCardLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeFavoriteCardLayoutTests.swift; sourceTree = "<group>"; };
 		2A3EC439C38911AE036FD33A /* SAInitialViewPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAInitialViewPolicyTests.swift; sourceTree = "<group>"; };
 		D09D7EEB6E31A39DF1C906CC /* SAClaudeInfoRowLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAClaudeInfoRowLayoutTests.swift; sourceTree = "<group>"; };
+		D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePopUpButton.swift; sourceTree = "<group>"; };
+		6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePicker.swift; sourceTree = "<group>"; };
+		4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePickerModelTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -3072,6 +3079,8 @@
 				51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */,
 				5A1EC0A12FF0000100000012 /* SARecordView.swift */,
 				5EC0DEC400000000000000E1 /* SAClaudeRecordPanel.swift */,
+				6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */,
+				D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3775,6 +3784,7 @@
 				7A4E7CD9D596176EFC788B47 /* SAClaudeKindColoursTests.swift */,
 				BA32DAB4C84EF301489BD518 /* SPFavoriteColorSupportTests.m */,
 				0C43B57E131A75817E8F481D /* SAClaudeConnectionsMenuModelTests.swift */,
+				4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -4789,6 +4799,8 @@
 				29DA4493A11705E490531C6D /* SPFavoriteColorSupportTests.m in Sources */,
 				CC9A830ED8A0CF378AEFE14C /* SAClaudeConnectionsMenuModel.swift in Sources */,
 				041B45A08135991F3C5E8DA0 /* SAClaudeConnectionsMenuModelTests.swift in Sources */,
+				7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */,
+				55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5316,6 +5328,8 @@
 				BDECADD53B06E7497745E22B /* SAClaudeProcessListTones.swift in Sources */,
 				0A8FB8E17F8616791F99E615 /* SAClaudeConnectionsMenuModel.swift in Sources */,
 				F01737717858E6A2595E1A26 /* SAClaudeConnectionsFileMenu.swift in Sources */,
+				EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */,
+				5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5519,7 +5533,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -5840,7 +5854,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -6179,7 +6193,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -6262,7 +6276,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

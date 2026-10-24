@@ -12,7 +12,7 @@ group :jekyll_plugins do
   gem "jekyll-gist", "= 1.5.0"
   gem "jekyll-github-metadata", "= 2.16.1"
   gem "jekyll-paginate", "= 1.1.0"
-  gem "jekyll-relative-links", "= 0.6.1"
+  gem "jekyll-relative-links", "0.9.1"
   gem "jekyll-optional-front-matter", "0.3.4"
   gem "jekyll-readme-index", "0.5.1"
   gem "jekyll-default-layout", "0.2.1"

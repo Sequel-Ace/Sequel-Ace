@@ -82,6 +82,39 @@ enum SAAlertPresentation {
 }
 
 @objc extension NSAlert {
+    /// Use the standard alert layout, with a scrollable fallback for lengthy diagnostics.
+    @objc(setScrollableInformativeText:)
+    func setScrollableInformativeText(_ text: String) {
+        informativeText = text
+        // Claude look: measured on a stand-in with the same texts and buttons, so this alert is not laid out before it
+        // is presented. The Claude alert card styles the buttons as the alert is presented, before its first layout;
+        // buttons an earlier `layout()` already put in NSAlert's stack view stay native (`SAClaudeSheetStyler.styleAlert`).
+        let measure = NSAlert()
+        measure.alertStyle = alertStyle
+        measure.messageText = messageText
+        measure.informativeText = text
+        for button in buttons { measure.addButton(withTitle: button.title) }
+        measure.showsSuppressionButton = showsSuppressionButton
+        measure.layout()
+        let maximumHeight = min(600, (NSScreen.main?.visibleFrame.height ?? 800) * 0.7)
+        guard measure.window.frame.height > maximumHeight else { return }
+
+        informativeText = ""
+        let scrollView = NSTextView.scrollableTextView()
+        scrollView.frame = NSRect(x: 0, y: 0, width: 400, height: 160)
+        scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
+        scrollView.autohidesScrollers = true
+        if let textView = scrollView.documentView as? NSTextView {
+            textView.string = text
+            textView.font = .preferredFont(forTextStyle: .body)
+            textView.textColor = .labelColor
+            textView.isEditable = false
+            textView.drawsBackground = false
+        }
+        accessoryView = scrollView
+    }
+
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message.
 	/// - Parameters:
 	///   - title: String for title of the alert
