@@ -543,6 +543,70 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT HEX(v) FROM t") as? String, "615C62", "a, backslash, b - not a and a backspace, which is what the replacement makes of the backslash and the b")
     }
 
+    /// A value escaped for a marked session that is kept for its transaction follows that session,
+    /// decided the way the statement decides when it takes the session: the kept session is in
+    /// `NO_BACKSLASH_ESCAPES`, so `a\b` goes out as it is and arrives as 61 5C 62 - escaped for the
+    /// replacement instead, it would arrive as 61 5C 5C 62.
+    func testAValueEscapedForASessionKeptForItsTransactionFollowsThatSession() throws {
+        let connection = try connected(SAMarkedAfterTheCheckConnection())
+        defer {
+            dropTheDatabase(connection)
+            connection.disconnect()
+        }
+        try prepare(connection)
+        connection.queryString("SET SESSION sql_mode = CONCAT(@@sql_mode, ',NO_BACKSLASH_ESCAPES')")
+        XCTAssertFalse(connection.queryErrored())
+        connection.queryString("START TRANSACTION")
+        connection.queryString("INSERT INTO t (v) VALUES ('open')")
+        XCTAssertFalse(connection.queryErrored())
+        let theSessionWithTheTransaction = connection.mysqlConnectionThreadId
+
+        connection.markAfterTheNextCheck = .whenNothingIsOpen
+        let escaped = try XCTUnwrap(connection.escapeAndQuoteString("a\\b"))
+        XCTAssertNil(connection.markAfterTheNextCheck, "the mark landed")
+
+        connection.queryString("INSERT INTO t (v) VALUES (\(escaped))")
+        XCTAssertFalse(connection.queryErrored())
+        XCTAssertEqual(connection.mysqlConnectionThreadId, theSessionWithTheTransaction, "sent on the kept session")
+        connection.queryString("COMMIT")
+        XCTAssertFalse(connection.queryErrored())
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT HEX(v) FROM t WHERE id = 2") as? String, "615C62", "escaped for the session that sent it")
+    }
+
+    /// A value is refused while nobody can tell which session will send it: the session is marked
+    /// to go once nothing is open in it, and another statement holds the connection - it may open
+    /// something before it ends. Escaping does not wait for it.
+    func testAValueIsRefusedWhileNobodyCanTellWhichSessionWillSendIt() throws {
+        let connection = try connected(SPMySQLConnection())
+        defer { connection.disconnect() }
+
+        let lockHeld = DispatchSemaphore(value: 0)
+        let letGoOfTheLock = DispatchSemaphore(value: 0)
+        let lockReleased = expectation(description: "the lock was released")
+        Thread.detachNewThread {
+            _ = connection.perform(NSSelectorFromString("_lockConnection"))
+            lockHeld.signal()
+            _ = letGoOfTheLock.wait(timeout: .now() + 10)
+            _ = connection.perform(NSSelectorFromString("_unlockConnection"))
+            lockReleased.fulfill()
+        }
+        XCTAssertEqual(lockHeld.wait(timeout: .now() + 5), .success)
+        connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
+
+        let escaped = expectation(description: "escaping returned")
+        var value: String? = "not yet"
+        Thread.detachNewThread {
+            value = connection.escapeAndQuoteString("x")
+            escaped.fulfill()
+        }
+        wait(for: [escaped], timeout: 3)
+        XCTAssertNil(value, "refused rather than escaped for a guess")
+
+        letGoOfTheLock.signal()
+        wait(for: [lockReleased], timeout: 5)
+        XCTAssertNotNil(connection.escapeAndQuoteString("x"), "decidable again once the connection is free")
+    }
+
     /// A character set restored on a session that is kept - marked, with a transaction open -
     /// reaches that session: the restore goes out as a statement, and a statement takes the session
     /// the way everything else does. The next non-ASCII value is serialised for the character set

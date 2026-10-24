@@ -15,12 +15,20 @@ private final class SAScriptedGateHost: NSObject, SASessionGateHost {
     var hasSessionToUse = true
     var sessionReplacementMark = SASessionReplacementMark.notMarked
     var sessionReportsOpenTransaction = false
+    /// Whether the connection lock is free for a try.
+    var lockIsFree = true
     /// What the check does, and answers.
     var check: () -> Bool = { true }
     private(set) var calls: [String] = []
 
     func lockConnection() { calls.append("lock") }
     func unlockConnection() { calls.append("unlock") }
+    func tryLockConnection() -> Bool {
+        calls.append("trylock")
+        if lockIsFree { locksHeldThroughATry += 1 }
+        return lockIsFree
+    }
+    private var locksHeldThroughATry = 0
     func closeSessionMarkedForReplacement() {
         calls.append("close")
         hasSessionToUse = false
@@ -33,12 +41,17 @@ private final class SAScriptedGateHost: NSObject, SASessionGateHost {
 
     /// Whether the connection is held on the way out - one lock more than unlocks.
     var holdsTheConnection: Bool {
-        calls.filter { $0 == "lock" }.count == calls.filter { $0 == "unlock" }.count + 1
+        locksTaken == calls.filter { $0 == "unlock" }.count + 1
     }
 
     /// Whether the connection is released on the way out.
     var holdsNothing: Bool {
-        calls.filter { $0 == "lock" }.count == calls.filter { $0 == "unlock" }.count
+        locksTaken == calls.filter { $0 == "unlock" }.count
+    }
+
+    /// Locks taken by waiting or by a successful try.
+    private var locksTaken: Int {
+        calls.filter { $0 == "lock" }.count + locksHeldThroughATry
     }
 }
 
@@ -92,6 +105,38 @@ final class SASessionGateTests: XCTestCase {
         XCTAssertFalse(SASessionGate.lock(host))
         XCTAssertEqual(host.calls, ["lock", "unlock", "check"])
         XCTAssertTrue(host.holdsNothing)
+    }
+
+    // MARK: - Which session a value is escaped for
+
+    /// Escaping asks the mark the way the gate does: an unmarked session is the one there, one
+    /// marked regardless is replaced, and one marked to go once nothing is open in it is decided
+    /// from the session's own answer with the connection held.
+    func testEscapingFollowsTheMarkTheWayTheGateDoes() {
+        XCTAssertEqual(SASessionGate.sessionForEscaping(on: host), .theSessionThere)
+        XCTAssertEqual(host.calls, [], "an unmarked session needs no lock")
+
+        host.sessionReplacementMark = .regardless
+        XCTAssertEqual(SASessionGate.sessionForEscaping(on: host), .theReplacement)
+        XCTAssertEqual(host.calls, [], "nor does one that goes regardless")
+
+        host.sessionReplacementMark = .whenNothingIsOpen
+        XCTAssertEqual(SASessionGate.sessionForEscaping(on: host), .theReplacement)
+        XCTAssertEqual(host.calls, ["trylock", "unlock"], "decided with the connection held, and released")
+
+        host.sessionReportsOpenTransaction = true
+        XCTAssertEqual(SASessionGate.sessionForEscaping(on: host), .theSessionThere, "kept for its transaction, so followed")
+        XCTAssertTrue(host.holdsNothing)
+    }
+
+    /// While another statement runs, whether a session marked to go once nothing is open in it
+    /// goes cannot be told, and escaping does not wait to find out: the answer is undecidable.
+    func testEscapingCannotBeDecidedForAMarkedSessionWhileAStatementRuns() {
+        host.sessionReplacementMark = .whenNothingIsOpen
+        host.lockIsFree = false
+
+        XCTAssertEqual(SASessionGate.sessionForEscaping(on: host), .undecidable)
+        XCTAssertEqual(host.calls, ["trylock"], "nothing waited, nothing was released that was never held")
     }
 
     /// A session marked to go while the last check restored it is not taken on the strength of

@@ -177,6 +177,14 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 }
 
 /**
+ * Takes the connection lock for the gate if it is free, without waiting.
+ */
+- (BOOL)tryLockConnectionForGate
+{
+	return [self _tryLockConnection];
+}
+
+/**
  * Closes a session marked to be replaced, for the gate, while the connection is held.
  */
 - (void)closeMarkedSessionForGate

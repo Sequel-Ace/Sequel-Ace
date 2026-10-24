@@ -21,6 +21,10 @@ public protocol SASessionGateHost: AnyObject {
     /// Releases the connection lock.
     @objc(unlockConnectionForGate) func unlockConnection()
 
+    /// Takes the connection lock if it is free, without waiting.
+    /// - Returns: Whether it is held now.
+    @objc(tryLockConnectionForGate) func tryLockConnection() -> Bool
+
     /// Whether there is a session to use: connected, and not lost in the background.
     @objc var hasSessionToUse: Bool { get }
 
@@ -36,6 +40,18 @@ public protocol SASessionGateHost: AnyObject {
     /// Restores a session that was closed or lost, if one is needed.
     /// - Returns: Whether there is a session afterwards.
     @objc(checkConnectionForGate) func checkIfNecessary() -> Bool
+}
+
+/// Which session a value escaped now is escaped for.
+@objc(SAEscapingSession)
+public enum SAEscapingSession: Int {
+    /// The session the connection has.
+    case theSessionThere = 0
+    /// The session that replaces it before the next statement.
+    case theReplacement = 1
+    /// Cannot be told: the session goes unless something is open in it, and a statement running
+    /// right now may open something. The value is refused rather than escaped for a guess.
+    case undecidable = 2
 }
 
 /// The gate a statement passes to take the session: on the way out the connection is held with a
@@ -85,6 +101,35 @@ public final class SASessionGate: NSObject {
         }
         host.unlockConnection()
         return false
+    }
+
+    /// The session a value escaped now will be sent on - asked the way the gate asks when the
+    /// statement takes the session, from the session's own answer with the connection held, so
+    /// that escaping and the gate cannot disagree about the same session.
+    ///
+    /// A session marked to go once nothing is open in it is the one case that needs the lock: a
+    /// statement running right now may open something, and until it has ended nobody can tell.
+    /// Escaping does not wait for it - it is called from threads that must not block behind a
+    /// statement, and from the thread that holds the lock while it reads a streaming result - so
+    /// a busy connection makes the answer undecidable, and the value is refused.
+    /// - Parameter host: The connection.
+    /// - Returns: Which session to escape for, or that it cannot be told.
+    @objc(sessionForEscapingOnHost:)
+    public static func sessionForEscaping(on host: SASessionGateHost) -> SAEscapingSession {
+        switch host.sessionReplacementMark {
+        case .notMarked:
+            return .theSessionThere
+        case .regardless:
+            return .theReplacement
+        case .whenNothingIsOpen:
+            guard host.tryLockConnection() else {
+                return .undecidable
+            }
+            defer { host.unlockConnection() }
+            return host.sessionReportsOpenTransaction ? .theSessionThere : .theReplacement
+        @unknown default:
+            return .undecidable
+        }
     }
 
     /// Whether the session the host has goes before it is used, by its mark and what is open in it.

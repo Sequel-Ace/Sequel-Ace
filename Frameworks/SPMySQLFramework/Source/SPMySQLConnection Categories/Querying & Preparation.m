@@ -95,6 +95,17 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 
 	if (![self checkConnectionIfNecessary]) return nil;
 
+	// Which session the value is escaped for is asked the way the statement asks when it takes
+	// the session - of the same one-word mark, and with the connection held where it matters -
+	// so the two answers agree. A session marked to go once nothing is open in it, while another
+	// statement runs, is the one case nobody can answer yet; the value is refused rather than
+	// escaped for a guess, since the two escaping modes are not interchangeable.
+	SAEscapingSession sessionForEscaping = [SASessionGate sessionForEscapingOnHost:self];
+	if (sessionForEscaping == SAEscapingSessionUndecidable) {
+		SPLog(@"[escapeString:includingQuotes]: the value is refused - whether the session is replaced before the next statement cannot be told while another statement runs");
+		return nil;
+	}
+
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
@@ -118,9 +129,7 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	// next session is connected with, and the mode sessions start in on this server. The two modes
 	// are not interchangeable - a backslash left as it is for a NO_BACKSLASH_ESCAPES session is an
 	// escape on the next one, and the quote after it ends the literal. A marked session that is
-	// kept, because a transaction is open in it, is the one that sends, and is followed. The same
-	// question is asked of the same one-word mark when the statement takes the session, so the two
-	// answers agree.
+	// kept, because a transaction is open in it, is the one that sends, and is followed.
 	// Latin1 transport sets the session's client character set to latin1 while `encoding` keeps
 	// the name the connection was put on, so the transport character set is what the server
 	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
@@ -131,8 +140,7 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	NSString *transportCharacterSet = encodingUsesLatin1Transport
 		? @"latin1"
 		: (sqlInputEncoding ?: encoding);
-	BOOL sessionIsBeingReplaced = [SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
-	                                                                            openTransaction:[self sessionHasOpenTransaction]];
+	BOOL sessionIsBeingReplaced = (sessionForEscaping == SAEscapingSessionTheReplacement);
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1
