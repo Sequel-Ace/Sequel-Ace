@@ -45,7 +45,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 /// Stands for "the string encoding of the session that sends the statement", resolved once that
 /// session is held rather than when the call is made. Zero is no string encoding, so it cannot
-/// be mistaken for one a caller named.
+/// be mistaken for one a caller named; `SAStatementBytes.encodingOfTheSession` is the same value.
 static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 
 @implementation SPMySQLConnection (Querying_and_Preparation)
@@ -463,12 +463,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// The statement's bytes belong to the session that sends them, and are built once that session
 	// is held - for each attempt, since a retry after a reconnect lands on a session that may read
-	// statements in another character set. Built once up front, before any session was held, they
-	// were sent on the next session as they were.
+	// statements in another character set (`SAStatementBytes`). Built once up front, before any
+	// session was held, they were sent on the next session as they were.
+	SAStatementBytes *statementBytes = [[SAStatementBytes alloc] initWithStatement:theQueryString encodingNamedByTheCaller:theEncoding];
 	NSData *queryData = nil;
-	NSStringEncoding queryDataEncoding = SAStringEncodingOfTheSession;
-	NSUInteger queryBytesLength = 0;
-	const char *queryBytes = NULL;
 
 	// Lock the connection while it's actively in use, replacing a session that is marked to be
 	// replaced first. A statement refused here never reached the server, and says so: the error
@@ -490,28 +488,22 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		BOOL databaseAssertionFailed = NO;
 		BOOL queryWasCancelled = ![self.sessionAccess beginNativeQuery];
 
-		// A caller that named an encoding gets that one, as the import does for the file it reads;
-		// any other statement is serialised in the character set this session reads statements
-		// in, which after a reconnect need not be the one in force when the call was made.
-		NSStringEncoding attemptEncoding = theEncoding ?: stringEncoding;
-		if (!queryWasCancelled && (!queryData || attemptEncoding != queryDataEncoding)) {
-			queryData = [theQueryString dataUsingEncoding:attemptEncoding allowLossyConversion:YES];
-			queryDataEncoding = attemptEncoding;
-			queryBytesLength = [queryData length];
-			queryBytes = [queryData bytes];
-		}
-
-		// Measured again for the bytes that go out: a session a retry lands on can read statements
-		// in a character set that needs more bytes for the same text, and the check before the
-		// loop measured the one in force then. A statement this session cannot take is refused
-		// here, with the error the server would give, rather than sent for the server to refuse
-		// and close the connection over.
-		if (!queryWasCancelled && queryBytesLength > maxQuerySize) {
-			queryStatus = 1;
-			theErrorID = 1153; // ER_NET_PACKET_TOO_LARGE
-			theErrorMessage = [NSString stringWithFormat:NSLocalizedString(@"The query length of %lu bytes is larger than max_allowed_packet size (%lu).", @"error message if max_allowed_packet < query size"), (unsigned long)queryBytesLength, (unsigned long)maxQuerySize];
-			theSqlstate = @"08S01";
-			break;
+		// The bytes for this attempt, built for the session it is on: in the character set the
+		// caller named or, for any other statement, the one this session reads statements in, and
+		// measured against this session's packet limit - a session a retry lands on can need more
+		// bytes for the same text than the check before the loop measured. A statement the session
+		// cannot take is refused here with the server's error rather than sent for the server to
+		// refuse and close the connection over.
+		if (!queryWasCancelled) {
+			SAStatementAttempt *attempt = [statementBytes attemptOnSessionReading:stringEncoding maximumSize:maxQuerySize];
+			queryData = attempt.bytes;
+			if (!queryData) {
+				queryStatus = 1;
+				theErrorID = attempt.errorID;
+				theErrorMessage = attempt.message;
+				theSqlstate = attempt.sqlState;
+				break;
+			}
 		}
 
 		// While recording the overall execution time (including network lag!), run
@@ -547,7 +539,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 
 		if (!queryStatus) {
-			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
+			queryStatus = mysql_real_query(mySQLConnection, queryData.bytes, queryData.length);
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
 		lastConnectionUsedTime = _monotonicTime();
@@ -632,25 +624,25 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				// update the affected row count.
 				case SPMySQLResultAsResult:
 					mysqlResult = mysql_store_result(mySQLConnection);
-					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding version:self.serverMajorVersion];
+					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding version:self.serverMajorVersion];
 					theAffectedRowCount = mysql_affected_rows(mySQLConnection);
 					break;
 
 				// For fast streaming and low memory streaming result sets, set up the result
 				case SPMySQLResultAsLowMemStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
-					theResult = [[SPMySQLStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding connection:self];
+					theResult = [[SPMySQLStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 
 				case SPMySQLResultAsFastStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
-					theResult = [[SPMySQLFastStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding connection:self];
+					theResult = [[SPMySQLFastStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 
 				// Also set up the result for streaming result data stores, but note the data download does not start yet
 				case SPMySQLResultAsStreamingResultStore:
 					mysqlResult = mysql_use_result(mySQLConnection);
-					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding connection:self];
+					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 			}
 
