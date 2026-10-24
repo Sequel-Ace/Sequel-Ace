@@ -164,6 +164,9 @@
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
 
+/* error message if max_allowed_packet < query size */
+"The query length of %lu bytes is larger than max_allowed_packet size (%lu)." = "The query length of %lu bytes is larger than max_allowed_packet size (%lu).";
+
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
 "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
 

@@ -39,7 +39,7 @@
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-@interface SPMySQLConnection () <SAConnectionCancellationHost>
+@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost>
 @end
 
 @interface SPMySQLConnection ()
@@ -155,6 +155,42 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (void)markRunningQueryCancelled
 {
 	lastQueryWasCancelled = YES;
+}
+
+#pragma mark -
+#pragma mark What the session gate asks of the connection
+
+/**
+ * Whether there is a session to use: connected, and not lost in the background.
+ */
+- (BOOL)hasSessionToUse
+{
+	return mySQLConnection != NULL && state != SPMySQLConnectionLostInBackground;
+}
+
+/**
+ * Whether the session is marked to be replaced before its next use.
+ */
+- (BOOL)sessionIsMarkedForReplacement
+{
+	return sessionMustBeReplacedBeforeUse;
+}
+
+/**
+ * Whether an answer nobody read may still be on its way in this session.
+ */
+- (BOOL)sessionProtocolCannotBeTrusted
+{
+	return sessionIsProtocolInvalid;
+}
+
+/**
+ * Whether the session reports a transaction open now. Read from the handle, so only while the
+ * connection is held - which is when the gate asks.
+ */
+- (BOOL)sessionReportsOpenTransaction
+{
+	return mySQLConnection != NULL && (mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0;
 }
 
 - (void)addClientFlags:(SPMySQLClientFlags)opts

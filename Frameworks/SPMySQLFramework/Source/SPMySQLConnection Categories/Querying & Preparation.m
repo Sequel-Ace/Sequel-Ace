@@ -825,43 +825,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 /**
  * Takes the connection for a statement, replacing a session that is marked to be replaced first.
- *
- * A marked session with a transaction open is kept, and the mark left standing: closing it would
- * roll back work somebody is still doing, and the session is still replaced once nothing is open
- * in it. One the protocol cannot be trusted on goes regardless. A session that is closed here, or
- * was lost in the background, is restored through the ordinary check before the statement runs.
+ * The gate itself is SASessionGate; this connection is its host.
  * @return Whether the connection is held with a usable session; NO leaves it released.
  */
 - (BOOL)_lockUsableConnectionForQuery
 {
-	[self _lockConnection];
-
-	for (NSUInteger attempt = 0; attempt < 2; attempt++) {
-		if (mySQLConnection && state != SPMySQLConnectionLostInBackground) {
-			if (!sessionMustBeReplacedBeforeUse) return YES;
-
-			// The mark can be much older than this moment, and a query that took the connection
-			// over in between can have opened a transaction of its own. The connection is held
-			// here, so the session's own answer is the one to go by.
-			if (![SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
-			                                                         sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
-				return YES;
-			}
-
-			[self _closeSessionMarkedForReplacement];
-		}
-
-		[self _unlockConnection];
-
-		if (![self checkConnectionIfNecessary]) return NO;
-
-		[self _lockConnection];
-	}
-
-	if (mySQLConnection && state != SPMySQLConnectionLostInBackground) return YES;
-
-	[self _unlockConnection];
-	return NO;
+	return [SASessionGate lockHost:self];
 }
 
 /**
