@@ -459,8 +459,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	const char *queryBytes = NULL;
 
 	// Lock the connection while it's actively in use, replacing a session that is marked to be
-	// replaced first.
-	if (![self _lockUsableConnectionForQuery]) return nil;
+	// replaced first. A statement refused here never reached the server, and says so: the error
+	// and the row count would otherwise still describe the statement before it, and a caller
+	// reading them together would take a statement that was never sent for one that ran.
+	if (![self _lockUsableConnectionForQuery]) {
+		lastQueryAffectedRowCount = 0;
+		[self _updateLastErrorMessage:NSLocalizedString(@"The statement was not sent: the connection's session could not be used and is being replaced. Please try again.", @"Error for a statement refused because no usable session could be taken for it; the next statement reconnects")];
+		[self _updateLastErrorID:2013];
+		[self _updateLastSqlstate:@"HY000"];
+		return nil;
+	}
 	if (!databaseAssertionState) {
 		databaseAssertionState = [[SADatabaseAssertionState alloc] init];
 	}

@@ -46,6 +46,28 @@ private final class SAMarkedAfterTheCheckConnection: SPMySQLConnection {
     }
 }
 
+/// A connection on which, once armed, the mark lands after the next statement's early check, and
+/// the check after that - the one the gate makes after closing the marked session - cannot
+/// restore a session.
+private final class SACheckFailingAfterTheMarkConnection: SPMySQLConnection {
+    private var checksSinceArming = 0
+    var armed = false
+
+    override func checkIfNecessary() -> Bool {
+        guard armed else {
+            return super.checkIfNecessary()
+        }
+        checksSinceArming += 1
+        if checksSinceArming == 1 {
+            let usable = super.checkIfNecessary()
+            setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+            return usable
+        }
+        armed = false
+        return false
+    }
+}
+
 /// A connection that records whether its session was pinged.
 private final class SAPingWatchingConnection: SPMySQLConnection {
     private(set) var pingedTheSession = false
@@ -378,6 +400,35 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         wait(for: [lockReleased], timeout: 5)
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 1") as? String, "1")
         XCTAssertNotEqual(connection.mysqlConnectionThreadId, theMarkedSession, "the next statement replaced it")
+    }
+
+    /// A statement refused because no usable session could be taken says so: the error and the row
+    /// count describe this statement, not the one before it, so nobody takes a statement that was
+    /// never sent for one that ran.
+    func testAStatementRefusedTheSessionReportsThatItWasNotSent() throws {
+        let connection = try connected(SACheckFailingAfterTheMarkConnection())
+        let observer = try connected(SPMySQLConnection())
+        defer {
+            dropTheDatabase(observer)
+            connection.disconnect()
+            observer.disconnect()
+        }
+        try prepare(connection)
+        connection.queryString("INSERT INTO t (v) VALUES ('before')")
+        XCTAssertFalse(connection.queryErrored())
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 1)
+
+        // The mark lands after the early check; the gate closes the session, and the check it then
+        // makes cannot restore one.
+        connection.armed = true
+        let result = connection.queryString("INSERT INTO t (v) VALUES ('refused')")
+        XCTAssertFalse(connection.armed, "the refusal happened")
+
+        XCTAssertNil(result)
+        XCTAssertTrue(connection.queryErrored(), "a statement that was never sent is an error, not a success with no rows")
+        XCTAssertEqual(connection.lastErrorID(), 2013)
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 0, "and it changed nothing")
+        XCTAssertEqual(rowCount(observer), 1, "the server never saw it")
     }
 
     /// A marked session with a transaction open is kept until that transaction is over: closing it
