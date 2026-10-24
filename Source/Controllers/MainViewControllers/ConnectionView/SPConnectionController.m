@@ -934,8 +934,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         SPLog(@"self->keySelectionPanel.URL.class: %@", classStr);
 
+        // A cancelled panel (the user's Cancel, or the tab closing under it) has no URL to check or bookmark; the
+        // per-sender branches below clear the setting.
+        if (returnCode == NSModalResponseCancel) {
+            SPLog(@"key selection cancelled");
+        }
         // check it's really a URL
-        if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
+        else if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
 
             SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
@@ -2704,8 +2709,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [alert setAlertStyle:NSAlertStyleWarning];
 
     [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
-        if (returnCode == NSAlertThirdButtonReturn) {
-            // Cancel
+        // Proceed only for the two copy buttons: Cancel (third button) and a sheet ended without a button (a tab closed
+        // under it, NSModalResponseCancel) copy nothing.
+        if (returnCode != NSAlertFirstButtonReturn && returnCode != NSAlertSecondButtonReturn) {
             return;
         }
 

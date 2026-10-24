@@ -16,9 +16,19 @@ import Foundation
 enum SAClaudeAppearanceChange {
 
     /// Posted on the main thread when a watched setting's value changed. `userInfo[changedKeysKey]` holds the
-    /// changed keys as a `Set<String>`.
+    /// changed keys as a `Set<String>`. Post it only through `post(changed:to:)`, which owns the main-thread
+    /// guarantee: Claude views and stylers touch AppKit straight from their observers.
     static let didChangeNotification = Notification.Name("SAClaudeAppearanceDidChange")
     static let changedKeysKey = "changedKeys"
+
+    /// Posts `didChangeNotification` for `changed` on `center`: right away on the main thread, else on the next
+    /// main-queue turn (a defaults write may happen on any thread).
+    static func post(changed: Set<String>, to center: NotificationCenter = .default) {
+        let deliver = {
+            center.post(name: didChangeNotification, object: nil, userInfo: [changedKeysKey: changed])
+        }
+        if Thread.isMainThread { deliver() } else { DispatchQueue.main.async(execute: deliver) }
+    }
 
     /// Every colour the editor theme loader writes.
     static let themeKeys: [String] = [
@@ -100,11 +110,7 @@ enum SAClaudeAppearanceChange {
             let changed = update()
             guard !changed.isEmpty else { return }
             beforePosting?(changed)
-            let post = {
-                center.post(name: SAClaudeAppearanceChange.didChangeNotification, object: nil,
-                            userInfo: [SAClaudeAppearanceChange.changedKeysKey: changed])
-            }
-            if Thread.isMainThread { post() } else { DispatchQueue.main.async(execute: post) }
+            SAClaudeAppearanceChange.post(changed: changed, to: center)
         }
     }
 }

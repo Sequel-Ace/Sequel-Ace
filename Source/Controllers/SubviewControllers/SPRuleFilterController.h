@@ -58,7 +58,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
 
 	CGFloat preferredHeight;
 	
-	id __unsafe_unretained target;
+	id __weak target;
 	SEL action;
 
 	BOOL enabled;
@@ -274,7 +274,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * SHOULD be called on the UI thread, or results may be inconsistent!
  */
-@property (unsafe_unretained, nonatomic, nullable) id target;
+@property (weak, nonatomic, nullable) id target;
 @property (assign, nonatomic, nullable) SEL action;
 
 - (BOOL)isEnabled;

@@ -111,6 +111,58 @@ final class SAClaudeAppearanceChangeTests: XCTestCase {
         XCTAssertEqual(posted, [["CustomQueryEditorFont"]])
     }
 
+    /// `post(changed:to:)` is the one poster: from a worker it lands on the main thread.
+    func testPostFromABackgroundThreadDeliversOnTheMainThread() {
+        let done = expectation(description: "posted")
+        let observer = centre.addObserver(forName: SAClaudeAppearanceChange.didChangeNotification, object: nil, queue: nil) { _ in done.fulfill() }
+        DispatchQueue.global().async { SAClaudeAppearanceChange.post(changed: ["fontSettings"], to: self.centre) }
+        wait(for: [done], timeout: 5)
+        centre.removeObserver(observer)
+        XCTAssertEqual(posted, [["fontSettings"]])
+    }
+
+    /// An observer added with `addObserver` runs its block on the main thread even when someone posts the
+    /// notification straight from a worker thread.
+    func testAnObserverBlockRunsOnTheMainThreadForAWorkerThreadPost() {
+        let raw = NotificationCenter()
+        let done = expectation(description: "block ran")
+        var ranOnMain: Bool?
+        var keys: Set<String>?
+        let observer = SAClaudeAppearanceChange.addObserver(on: raw) { changed in
+            ranOnMain = Thread.isMainThread
+            keys = changed
+            done.fulfill()
+        }
+        DispatchQueue.global().async {
+            raw.post(name: SAClaudeAppearanceChange.didChangeNotification, object: nil,
+                     userInfo: [SAClaudeAppearanceChange.changedKeysKey: Set(["fontSettings"])])
+        }
+        wait(for: [done], timeout: 5)
+        raw.removeObserver(observer)
+        XCTAssertEqual(ranOnMain, true)
+        XCTAssertEqual(keys, ["fontSettings"])
+    }
+
+    /// On the main thread the block still runs synchronously inside the post (no extra main-queue turn).
+    func testAnObserverBlockRunsSynchronouslyForAMainThreadPost() {
+        let raw = NotificationCenter()
+        var received: [Set<String>] = []
+        let observer = SAClaudeAppearanceChange.addObserver(on: raw) { received.append($0) }
+        SAClaudeAppearanceChange.post(changed: ["ClaudeAccent"], to: raw)
+        XCTAssertEqual(received, [["ClaudeAccent"]])
+        raw.removeObserver(observer)
+    }
+
+    /// A post without user info reads as no changed keys rather than crashing.
+    func testAnObserverBlockGetsNoKeysForAPostWithoutUserInfo() {
+        let raw = NotificationCenter()
+        var received: [Set<String>] = []
+        let observer = SAClaudeAppearanceChange.addObserver(on: raw) { received.append($0) }
+        raw.post(name: SAClaudeAppearanceChange.didChangeNotification, object: nil)
+        XCTAssertEqual(received, [[]])
+        raw.removeObserver(observer)
+    }
+
     /// The app's monitor on `.standard`: a watched write reaches `addObserver` once, an autosave never does.
     func testTheMonitorPostsWatchedStandardWritesOnly() {
         let standard = UserDefaults.standard
