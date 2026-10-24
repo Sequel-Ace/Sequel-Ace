@@ -64,6 +64,38 @@ enum SAPrivateBuildPolicy {
     static func marksStaleBookmarks(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
         !isPrivateBuild && staleBookmarkCount > 0
     }
+
+    /// Whether ~/.aws is reached through a security-scoped bookmark the user grants ("Authorize Access to ~/.aws…",
+    /// the write-access re-grant for console sign-in). The sandboxed build needs one; an unsandboxed private build
+    /// reads ~/.aws directly, with no authorization step.
+    static func usesAWSDirectoryBookmark(isPrivateBuild: Bool) -> Bool {
+        !isPrivateBuild
+    }
+
+    /// Whether AWS IAM favourites can save, test, connect and list profiles now, the one decision every AWS directory
+    /// gate goes through (`AWSDirectoryBookmarkManager.directoryAccess`).
+    /// - Parameters:
+    ///   - sandboxedAccess: the sandboxed build's check (a bookmark that resolves, or a directly readable
+    ///     credentials file); not consulted in a private build.
+    ///   - awsFilesExist: a private build's check: ~/.aws, or the credentials / config file, exists.
+    static func awsDirectoryAccess(isPrivateBuild: Bool, sandboxedAccess: () -> Bool, awsFilesExist: () -> Bool) -> SAAWSDirectoryAccess {
+        if usesAWSDirectoryBookmark(isPrivateBuild: isPrivateBuild) {
+            return sandboxedAccess() ? .available : .needsAuthorization
+        }
+        return awsFilesExist() ? .available : .missing
+    }
+}
+
+/// How AWS IAM favourites reach ~/.aws (`SAPrivateBuildPolicy.awsDirectoryAccess`).
+@objc enum SAAWSDirectoryAccess: Int {
+    /// Profiles can be read: through the bookmark (sandboxed) or directly (private build).
+    case available
+    /// Sandboxed build without a working bookmark: the user must authorize ~/.aws first (saving, testing and
+    /// connecting are refused until then).
+    case needsAuthorization
+    /// Private build without ~/.aws (nor the credentials / config file): nothing to authorize, no profiles to list;
+    /// saving is allowed, connecting reports the missing profile.
+    case missing
 }
 
 /// Prevents App Store builds and opted-out background checks from using the GitHub updater.

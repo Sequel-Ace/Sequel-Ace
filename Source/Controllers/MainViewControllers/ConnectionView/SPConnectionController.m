@@ -1235,6 +1235,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     BOOL isAWSDirectoryAuthorized = [self isAWSDirectoryAuthorized];
     BOOL showAWSAuthorizationPrompt = (isAWSIAMConnection && !isAWSDirectoryAuthorized);
     BOOL showAWSProfileRegionSelectors = (isAWSIAMConnection && isAWSDirectoryAuthorized);
+    // A private build without ~/.aws: the authorize note's place says so instead of an empty profile picker.
+    BOOL showAWSDirectoryMissingNote = (showAWSProfileRegionSelectors && [AWSDirectoryBookmarkManager.shared showsMissingAWSDirectoryNote]);
 
     // IAM connections always use TLS internally, so manual SSL settings are disabled for that mode.
     if (isAWSIAMConnection && [self useSSL]) {
@@ -1261,15 +1263,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     }
 
     if (awsAuthorizeInfoLabel) {
-        [awsAuthorizeInfoLabel setHidden:!showAWSAuthorizationPrompt];
+        static NSString *authorizeInfoText = nil;
+        if (!authorizeInfoText) authorizeInfoText = [[awsAuthorizeInfoLabel stringValue] copy];
+        NSString *infoText = showAWSDirectoryMissingNote
+            ? NSLocalizedString(@"No ~/.aws folder found. Set up a profile with the AWS CLI (aws configure, or aws sso login) to connect with AWS IAM.", @"AWS IAM : note in place of the profile picker when a private build finds no ~/.aws folder")
+            : authorizeInfoText;
+        if (![[awsAuthorizeInfoLabel stringValue] isEqualToString:infoText]) [awsAuthorizeInfoLabel setStringValue:infoText];
+        [awsAuthorizeInfoLabel setHidden:!(showAWSAuthorizationPrompt || showAWSDirectoryMissingNote)];
     }
 
     if (awsProfileLabel) {
-        [awsProfileLabel setHidden:!isAWSIAMConnection];
+        [awsProfileLabel setHidden:(!isAWSIAMConnection || showAWSDirectoryMissingNote)];
     }
 
     if (awsProfilePopup) {
-        [awsProfilePopup setHidden:!showAWSProfileRegionSelectors];
+        [awsProfilePopup setHidden:(!showAWSProfileRegionSelectors || showAWSDirectoryMissingNote)];
     }
 
     if (awsRegionLabel) {

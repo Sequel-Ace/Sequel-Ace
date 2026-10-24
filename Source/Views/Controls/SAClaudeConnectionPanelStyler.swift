@@ -143,7 +143,9 @@ private final class SAClaudeFieldOutline: SAClaudeOutlinedFillView {
 
 /// One classified row of a type's form: its control and everything that moves with it.
 private final class SAClaudePanelRow {
-    enum Condition { case always, ssl, awsAuthorised, awsUnauthorised, sshPassword, sshKey }
+    /// `awsProfiles`: ~/.aws can be read and has something to pick from (not a private build without ~/.aws);
+    /// `awsNote`: the note under Authorize, or (private build without ~/.aws) the note in the profile picker's place.
+    enum Condition { case always, ssl, awsAuthorised, awsUnauthorised, awsProfiles, awsNote, sshPassword, sshKey }
 
     let id: String
     let kind: SAClaudeConnectionRowKind
@@ -560,7 +562,9 @@ private final class SAClaudePanelForm {
                 kind = .fileRow
                 condition = .sshKey
                 accessory = pickers["sshKeyLocation"]
-            case "awsProfile", "awsRegion":
+            case "awsProfile":
+                condition = .awsProfiles
+            case "awsRegion":
                 condition = .awsAuthorised
             case "vaultCredentialsRole":
                 kind = .comboWithButton
@@ -586,7 +590,7 @@ private final class SAClaudePanelForm {
         }
         if let awsInfo, let place = placement("awsRegion") {
             rows.append(SAClaudePanelRow(id: "awsNote", kind: .note(height: 30), section: place.section, order: place.order,
-                                         condition: .awsUnauthorised, control: awsInfo))
+                                         condition: .awsNote, control: awsInfo))
         }
         // Accessories that belong to no row (a picker whose field is missing, Refresh without the role combo).
         let placedAccessories = Set(rows.compactMap(\.accessory).map { ObjectIdentifier($0) })
@@ -906,6 +910,10 @@ private final class SAClaudePanelForm {
         // (`updateAWSAuthorizationUI` after the bookmark is added), so the panel follows the Authorize button.
         for button in forms.flatMap(\.ghostButtons) where Self.action(of: button) == "authorizeAWSDirectory:" {
             observations.append(button.observe(\.isHidden) { [weak self] _, _ in self?.onMain { $0.setNeedsLayoutSoon() } })
+        }
+        // A private build without ~/.aws swaps the profile picker for the note (Authorize never shows there).
+        for note in forms.flatMap(\.notes) {
+            observations.append(note.observe(\.isHidden) { [weak self] _, _ in self?.onMain { $0.setNeedsLayoutSoon() } })
         }
         // Connecting: Connect turns into Cancel (and back); the primary follows on the next turn, once the
         // controller's state has settled.
@@ -1344,6 +1352,8 @@ private final class SAClaudePanelForm {
         case .ssl: return controller.useSSL != 0
         case .awsAuthorised: return controller.isAWSDirectoryAuthorized()
         case .awsUnauthorised: return !controller.isAWSDirectoryAuthorized()
+        case .awsProfiles: return controller.isAWSDirectoryAuthorized() && !AWSDirectoryBookmarkManager.shared.showsMissingAWSDirectoryNote
+        case .awsNote: return !controller.isAWSDirectoryAuthorized() || AWSDirectoryBookmarkManager.shared.showsMissingAWSDirectoryNote
         case .sshPassword: return controller.sshKeyLocationEnabled == 0
         case .sshKey: return controller.sshKeyLocationEnabled != 0
         }

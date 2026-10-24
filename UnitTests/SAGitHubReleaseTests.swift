@@ -806,3 +806,40 @@ final class SAGitHubReleaseTests: XCTestCase {
                                                                     underlyingError: NSError(domain: "Decode", code: 1)))
     }
 }
+
+/// The AWS directory decision every ~/.aws gate goes through (save, test, connect, the profile list, the panel's
+/// Authorize / profile / note rows, the console sign-in write-access prompt).
+final class SAPrivateBuildAWSDirectoryPolicyTests: XCTestCase {
+
+    func testSandboxedBuildUsesTheBookmarkAndPrivateBuildDoesNot() {
+        XCTAssertTrue(SAPrivateBuildPolicy.usesAWSDirectoryBookmark(isPrivateBuild: false))
+        XCTAssertFalse(SAPrivateBuildPolicy.usesAWSDirectoryBookmark(isPrivateBuild: true))
+    }
+
+    func testSandboxedBuildNeedsAuthorizationUntilItHasAccess() {
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: false, sandboxedAccess: { false }, awsFilesExist: { true }),
+                       .needsAuthorization)
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: false, sandboxedAccess: { true }, awsFilesExist: { false }),
+                       .available)
+    }
+
+    func testPrivateBuildNeverNeedsAuthorization() {
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: true, sandboxedAccess: { false }, awsFilesExist: { true }),
+                       .available)
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: true, sandboxedAccess: { false }, awsFilesExist: { false }),
+                       .missing)
+    }
+
+    func testPrivateBuildNeverConsultsTheSandboxedCheck() {
+        // The sandboxed check resolves (and may revoke) bookmarks: a private build must not run it.
+        var consulted = false
+        _ = SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: true, sandboxedAccess: { consulted = true; return true }, awsFilesExist: { true })
+        XCTAssertFalse(consulted)
+    }
+
+    func testSandboxedBuildNeverConsultsThePrivateCheck() {
+        var consulted = false
+        _ = SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: false, sandboxedAccess: { true }, awsFilesExist: { consulted = true; return true })
+        XCTAssertFalse(consulted)
+    }
+}
