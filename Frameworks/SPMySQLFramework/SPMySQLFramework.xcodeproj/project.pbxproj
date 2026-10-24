@@ -20,6 +20,7 @@
 		1A96314E25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A96314C25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m */; };
 		1A96314F25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A96314D25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		28022E61592AE06E0BB78334 /* SAConnectionSocketTimeoutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */; };
+		2E11BCC66E25F3F21E4112DB /* SASessionIdentityIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */; };
 		70DD928A0C23B6C3742ADB95 /* SAConnectionCancellationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */; };
 		E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */; };
 		2CE0080756AA2FB1962B704B /* SAConnectionLostDecisionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */; };
@@ -270,6 +271,7 @@
 		B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionRetryPolicyTests.swift; sourceTree = "<group>"; };
 		CEC9E88A68BDCD93E64F9AA6 /* SAConnectionCheckBudgetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCheckBudgetTests.swift; sourceTree = "<group>"; };
 		D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSocketTimeoutsTests.swift; sourceTree = "<group>"; };
+		31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionIdentityIntegrationTests.swift; sourceTree = "<group>"; };
 		EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCancellationTests.swift; sourceTree = "<group>"; };
 		DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSetupDeadlineTests.swift; sourceTree = "<group>"; };
 		A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAByteStringDecoder.swift; path = Source/SAByteStringDecoder.swift; sourceTree = "<group>"; };
@@ -441,6 +443,7 @@
 				A6D2F83B51C7490E8273BA16 /* SAConnectionLostQuestionTests.swift */,
 				B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */,
 				D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */,
+				31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */,
 				EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */,
 				DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */,
 				7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */,
@@ -813,6 +816,7 @@
 				5E91C47A2D8306B914FE7C25 /* SAConnectionLostQuestionTests.swift in Sources */,
 				1988710E90072A9C473B50E4 /* SAConnectionRetryPolicyTests.swift in Sources */,
 				28022E61592AE06E0BB78334 /* SAConnectionSocketTimeoutsTests.swift in Sources */,
+				2E11BCC66E25F3F21E4112DB /* SASessionIdentityIntegrationTests.swift in Sources */,
 				70DD928A0C23B6C3742ADB95 /* SAConnectionCancellationTests.swift in Sources */,
 				E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */,
 				2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */,

@@ -43,6 +43,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 @end
 
+/// Stands for "the string encoding of the session that sends the statement", resolved once that
+/// session is held rather than when the call is made. Zero is no string encoding, so it cannot
+/// be mistaken for one a caller named.
+static const NSStringEncoding SAStringEncodingOfTheSession = 0;
+
 @implementation SPMySQLConnection (Querying_and_Preparation)
 
 #pragma mark -
@@ -243,12 +248,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
 {
-	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsResult assertingDatabase:databaseName];
+	return [self queryString:theQueryString usingEncoding:SAStringEncodingOfTheSession withResultType:SPMySQLResultAsResult assertingDatabase:databaseName];
 }
 
 - (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabaseContext:(NSString *)databaseName
 {
-	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
+	return [self queryString:theQueryString usingEncoding:SAStringEncodingOfTheSession withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
 }
 
 /**
@@ -263,7 +268,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
 {
-	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
+	return [self queryString:theQueryString usingEncoding:SAStringEncodingOfTheSession withResultType:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
 }
 
 /**
@@ -278,12 +283,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
 {
-	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsStreamingResultStore assertingDatabase:databaseName];
+	return [self queryString:theQueryString usingEncoding:SAStringEncodingOfTheSession withResultType:SPMySQLResultAsStreamingResultStore assertingDatabase:databaseName];
 }
 
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabaseContext:(NSString *)databaseName
 {
-	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsStreamingResultStore assertingDatabaseContext:databaseName];
+	return [self queryString:theQueryString usingEncoding:SAStringEncodingOfTheSession withResultType:SPMySQLResultAsStreamingResultStore assertingDatabaseContext:databaseName];
 }
 
 /**
@@ -303,7 +308,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 
 - (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming assertingDatabase:(NSString *)databaseName
 {
-	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:fullStreaming?SPMySQLResultAsLowMemStreamingResult:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
+	return [self queryString:theQueryString usingEncoding:SAStringEncodingOfTheSession withResultType:fullStreaming?SPMySQLResultAsLowMemStreamingResult:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
 }
 
 /**
@@ -427,17 +432,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		[delegate willQueryString:theQueryString connection:self];
 	}
 
-	// Retrieve a byte buffer from the supplied NSString
-	NSData *queryData = [theQueryString dataUsingEncoding:theEncoding allowLossyConversion:YES];
-	NSUInteger queryBytesLength = [queryData length];
-	const char *queryBytes = [queryData bytes];
-
 	// Check the query length against the current maximum query length.  If it is
 	// larger, the query would error (and probably cause a disconnect), so if
-	// the maximum size is editable, increase it and reconnect.
-	if (queryBytesLength > maxQuerySize) {
+	// the maximum size is editable, increase it and reconnect. Measured in the encoding in
+	// force now; the bytes themselves are built once the session is held.
+	NSUInteger estimatedQueryLength = [[theQueryString dataUsingEncoding:(theEncoding ?: stringEncoding) allowLossyConversion:YES] length];
+	if (estimatedQueryLength > maxQuerySize) {
 		queryActionShouldRestoreMaxQuerySize = maxQuerySize;
-		if (![self _attemptMaxQuerySizeIncreaseTo:(queryBytesLength + 1024)]) {
+		if (![self _attemptMaxQuerySizeIncreaseTo:(estimatedQueryLength + 1024)]) {
 			queryActionShouldRestoreMaxQuerySize = NSNotFound;
 			return nil;
 		}
@@ -448,8 +450,18 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	if (retryQueriesOnConnectionFailure) queryAttemptsAllowed++;
 	int queryStatus;
 
-	// Lock the connection while it's actively in use
-	[self _lockConnection];
+	// The statement's bytes belong to the session that sends them, and are built once that session
+	// is held - for each attempt, since a retry after a reconnect lands on a session that may read
+	// statements in another character set. Built once up front, before any session was held, they
+	// were sent on the next session as they were.
+	NSData *queryData = nil;
+	NSStringEncoding queryDataEncoding = SAStringEncodingOfTheSession;
+	NSUInteger queryBytesLength = 0;
+	const char *queryBytes = NULL;
+
+	// Lock the connection while it's actively in use, replacing a session that is marked to be
+	// replaced first.
+	if (![self _lockUsableConnectionForQuery]) return nil;
 	if (!databaseAssertionState) {
 		databaseAssertionState = [[SADatabaseAssertionState alloc] init];
 	}
@@ -458,6 +470,17 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	do {
 		BOOL databaseAssertionFailed = NO;
 		BOOL queryWasCancelled = ![self.sessionAccess beginNativeQuery];
+
+		// A caller that named an encoding gets that one, as the import does for the file it reads;
+		// any other statement is serialised in the character set this session reads statements
+		// in, which after a reconnect need not be the one in force when the call was made.
+		NSStringEncoding attemptEncoding = theEncoding ?: stringEncoding;
+		if (!queryWasCancelled && (!queryData || attemptEncoding != queryDataEncoding)) {
+			queryData = [theQueryString dataUsingEncoding:attemptEncoding allowLossyConversion:YES];
+			queryDataEncoding = attemptEncoding;
+			queryBytesLength = [queryData length];
+			queryBytes = [queryData bytes];
+		}
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query. If the caller supplied an expected database, assert it
@@ -541,7 +564,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			[self _updateLastSqlstate:theSqlstate];
 			return nil;
 		}
-		[self _lockConnection];
+		if (![self _lockUsableConnectionForQuery]) {
+			[self _updateLastErrorMessage:theErrorMessage];
+			[self _updateLastErrorID:theErrorID];
+			[self _updateLastSqlstate:theSqlstate];
+			return nil;
+		}
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
 		if (self.sessionAccess.currentQueryWasCancelled) {
 			queryStatus = 1;
@@ -563,25 +591,25 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				// update the affected row count.
 				case SPMySQLResultAsResult:
 					mysqlResult = mysql_store_result(mySQLConnection);
-					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding version:self.serverMajorVersion];
+					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding version:self.serverMajorVersion];
 					theAffectedRowCount = mysql_affected_rows(mySQLConnection);
 					break;
 
 				// For fast streaming and low memory streaming result sets, set up the result
 				case SPMySQLResultAsLowMemStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
-					theResult = [[SPMySQLStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding connection:self];
+					theResult = [[SPMySQLStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding connection:self];
 					break;
 
 				case SPMySQLResultAsFastStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
-					theResult = [[SPMySQLFastStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding connection:self];
+					theResult = [[SPMySQLFastStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding connection:self];
 					break;
 
 				// Also set up the result for streaming result data stores, but note the data download does not start yet
 				case SPMySQLResultAsStreamingResultStore:
 					mysqlResult = mysql_use_result(mySQLConnection);
-					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:theEncoding connection:self];
+					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:queryDataEncoding connection:self];
 					break;
 			}
 
@@ -774,6 +802,67 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 #pragma mark Private API
 
 @implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/**
+ * Takes the connection for a statement, replacing a session that is marked to be replaced first.
+ *
+ * A marked session with a transaction open is kept, and the mark left standing: closing it would
+ * roll back work somebody is still doing, and the session is still replaced once nothing is open
+ * in it. One the protocol cannot be trusted on goes regardless. A session that is closed here, or
+ * was lost in the background, is restored through the ordinary check before the statement runs.
+ * @return Whether the connection is held with a usable session; NO leaves it released.
+ */
+- (BOOL)_lockUsableConnectionForQuery
+{
+	[self _lockConnection];
+
+	for (NSUInteger attempt = 0; attempt < 2; attempt++) {
+		if (mySQLConnection && state != SPMySQLConnectionLostInBackground) {
+			if (!sessionMustBeReplacedBeforeUse) return YES;
+
+			// The mark can be much older than this moment, and a query that took the connection
+			// over in between can have opened a transaction of its own. The connection is held
+			// here, so the session's own answer is the one to go by.
+			if (![SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:(mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0
+			                                                         sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
+				return YES;
+			}
+
+			[self _closeSessionMarkedForReplacement];
+		}
+
+		[self _unlockConnection];
+
+		if (![self checkConnectionIfNecessary]) return NO;
+
+		[self _lockConnection];
+	}
+
+	if (mySQLConnection && state != SPMySQLConnectionLostInBackground) return YES;
+
+	[self _unlockConnection];
+	return NO;
+}
+
+/**
+ * Closes a session marked to be replaced, while the connection is held so nothing can use it in
+ * between. The next use reconnects and restores the connection's record on the new session.
+ */
+- (void)_closeSessionMarkedForReplacement
+{
+	// The lease's own handle goes before the handle it belongs to is released - the contract every
+	// other disconnect here follows. Left behind, it would still name a server session that no
+	// longer exists, and whose number the server is free to give to another client.
+	[self.sessionAccess clearSocket];
+	if (mySQLConnection) {
+		mysql_close(mySQLConnection);
+		mySQLConnection = NULL;
+	}
+	state = SPMySQLConnectionLostInBackground;
+
+	// Until the next session connects, values follow the record, which its handshake uses.
+	[valueEscaper forgetSession];
+}
 
 /**
  * Asks the server over a second connection to kill the query in this server session.

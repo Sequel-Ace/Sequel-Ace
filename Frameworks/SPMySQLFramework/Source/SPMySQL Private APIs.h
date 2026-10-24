@@ -55,6 +55,8 @@
 
 /** Whether a recently used connection's socket already reports a lost peer. */
 - (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+/** Whether the session last reported an open transaction; a plain value, no handle is read. */
+- (BOOL)sessionHasOpenTransaction;
 
 @end
 
@@ -125,6 +127,10 @@
 
 /** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
+/** Takes the connection for a statement, replacing a session marked to be replaced first; NO if no usable session results. */
+- (BOOL)_lockUsableConnectionForQuery;
+/** Closes a session marked to be replaced; the connection must be held. The next use reconnects. */
+- (void)_closeSessionMarkedForReplacement;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

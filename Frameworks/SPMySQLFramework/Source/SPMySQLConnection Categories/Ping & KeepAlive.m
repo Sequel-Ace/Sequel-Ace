@@ -121,6 +121,18 @@ typedef struct {
 			goto end_cleanup;
 		}
 
+		// A session that is replaced before its next use is not kept alive either: a ping would
+		// only hold the connection, on a route that may have gone. A marked session that is kept,
+		// though, stays in normal use - the mark does not mean it goes, and one with a transaction
+		// open in it is deliberately kept rather than closed. Leaving that one unpinged is how the
+		// server's interactive_timeout, or a NAT's idle timeout, takes the uncommitted work that
+		// keeping it was for.
+		if (sessionMustBeReplacedBeforeUse
+		    && [SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:[self sessionHasOpenTransaction]
+		                                                    sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
+			goto end_cleanup;
+		}
+
 		// Otherwise, perform a background ping.
 		BOOL pingResult = [self _pingConnectionUsingLoopDelay:10000];
 		if (pingResult) {
@@ -244,6 +256,17 @@ end_cleanup:
 	// Clean up
 	keepAlivePingThread_t = NULL;
 	pthread_attr_destroy(&attr);
+
+	// A ping cut off before its answer came may still get that answer, and the next statement
+	// would read it as its own. The session is replaced before it is used again; a transaction
+	// lost with it is reported like any other.
+	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
+	                                               pingSucceeded:keepAliveLastPingSuccess]) {
+		sessionMustBeReplacedBeforeUse = YES;
+		// Not merely better not reused: the answer to that ping may still arrive, so this session
+		// cannot be spoken on at all and goes even if a transaction is open in it.
+		sessionIsProtocolInvalid = YES;
+	}
 
 	// Unlock the connection
 	[self _unlockConnection];

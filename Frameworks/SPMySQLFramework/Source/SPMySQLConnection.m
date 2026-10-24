@@ -898,6 +898,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
+	// A new session is in step with the record it was connected with, and nothing is on its way to it.
+	sessionMustBeReplacedBeforeUse = NO;
+	sessionIsProtocolInvalid = NO;
 	// What the new session reports is recorded for the escaper, which escapes from this rather
 	// than from the connection's own handle.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
