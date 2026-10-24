@@ -361,6 +361,30 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "and the new session starts unmarked")
     }
 
+    /// The check keeps a marked session with a transaction open in it, deciding from the session's
+    /// own answer with the connection held: closing it would roll back work somebody is still
+    /// doing. The transaction's row is still there afterwards, and the mark stands.
+    func testTheCheckKeepsAMarkedSessionWithATransactionOpen() throws {
+        let connection = try connected(SAPingWatchingConnection())
+        defer {
+            dropTheDatabase(connection)
+            connection.disconnect()
+        }
+        try prepare(connection)
+        connection.queryString("START TRANSACTION")
+        connection.queryString("INSERT INTO t (v) VALUES ('kept')")
+        XCTAssertFalse(connection.queryErrored())
+        let theSessionWithTheTransaction = connection.mysqlConnectionThreadId
+
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
+
+        XCTAssertTrue(connection.checkIfNecessary())
+        XCTAssertEqual(connection.mysqlConnectionThreadId, theSessionWithTheTransaction, "the session with the transaction was kept")
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.whenNothingIsOpen.rawValue, "and the mark stands")
+        XCTAssertEqual(rowCount(connection), 1, "its work is still there")
+    }
+
     /// A session marked to go while something holds the connection - the keepalive marks it while
     /// it holds the lock - is not pinged by the check either: the check neither waits for the lock
     /// to speak on the session nor replaces it under somebody's feet. It answers at once and

@@ -751,19 +751,23 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 {
 	// A session marked to go is not spoken on - a ping would read an answer still on its way as
 	// its own - and so is not pinged to find out whether it is alive: it goes here, before any
-	// other use, and is restored like a session lost in the background. It is closed under the
-	// connection lock, so nothing is using its handle meanwhile. A session something is using
-	// right now - the keepalive that has just marked it, or a statement - is not pinged on top
-	// of that either, which waiting for the lock and checking would do: it is left to the
-	// statement that next takes the connection, which replaces it then.
-	if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
-	                                                 openTransaction:[self sessionHasOpenTransaction]]) {
+	// other use, and is restored like a session lost in the background. Whether it goes is
+	// decided with the connection held, from the session's own answer about what is open in it:
+	// a statement that finished a moment ago can have opened a transaction the record does not
+	// show yet. A marked session something is using right now - the keepalive that has just
+	// marked it, or a statement - is not pinged on top of that either, which waiting for the
+	// lock and checking would do: it is left to the statement that next takes the connection.
+	if ([self sessionReplacementMark] != SASessionReplacementMarkNotMarked) {
 		if (![self _tryLockConnection]) {
 			return YES;
 		}
-		[self _closeSessionMarkedForReplacement];
+		if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+		                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
+			[self _closeSessionMarkedForReplacement];
+			[self _unlockConnection];
+			return [self _reconnectAllowingRetries:YES];
+		}
 		[self _unlockConnection];
-		return [self _reconnectAllowingRetries:YES];
 	}
 
 	// If the connection has been dropped in the background, trigger a

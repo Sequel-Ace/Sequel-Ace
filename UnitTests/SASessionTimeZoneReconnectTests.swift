@@ -894,6 +894,31 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         XCTAssertEqual(outcome, "cancelled", "the statement of a stopped operation is never sent")
     }
 
+    /// An operation's token belongs to the lease it entered: nested inside an operation on another
+    /// connection, on the same thread, each lease answers from its own stack - the other's token,
+    /// compared with this lease's generation, would call an operation stopped that never was.
+    func testOperationTokensBelongToTheirOwnLease() {
+        let first = SAConnectionSessionAccess()
+        let second = SAConnectionSessionAccess()
+        // The second lease's generation has moved on; the first's has not.
+        second.recordQueryCancellation()
+        second.recordQueryCancellation()
+
+        var firstStoppedInsideTheSecond: Bool?
+        var secondStoppedInsideTheSecond: Bool?
+        _ = first.performQuery {
+            _ = second.performQuery {
+                firstStoppedInsideTheSecond = first.currentQueryWasCancelled
+                secondStoppedInsideTheSecond = second.currentQueryWasCancelled
+                return nil
+            }
+            return nil
+        }
+
+        XCTAssertEqual(firstStoppedInsideTheSecond, false, "the first lease was never stopped; the second's token must not answer for it")
+        XCTAssertEqual(secondStoppedInsideTheSecond, false)
+    }
+
     /// A stop asked for before an operation begins does not reach it.
     func testAStopDoesNotReachAnOperationBegunAfterIt() {
         let access = SAConnectionSessionAccess()

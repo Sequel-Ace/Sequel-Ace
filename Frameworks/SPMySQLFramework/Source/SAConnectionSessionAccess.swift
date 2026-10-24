@@ -34,15 +34,17 @@ import Darwin
     private var queryWithAcceptedKill: UInt?
     private var questionsAwaitingTheMainThread = 0
 
-    /// The key under which a thread keeps the tokens of the operations it is inside, outermost
-    /// first. One stack per thread: an operation waiting for the session on one thread must not
-    /// read the token of a query another thread is running.
-    private static let operationTokensKey = "SAConnectionSessionAccess.operationTokens"
+    /// The key under which a thread keeps the tokens of the operations it is inside on this
+    /// lease, outermost first. One stack per thread and per lease: an operation waiting for the
+    /// session on one thread must not read the token of a query another thread is running, and
+    /// an operation on one connection, nested inside one on another, must not read the other
+    /// connection's token and compare it with this lease's generation.
+    private let operationTokensKey = "SAConnectionSessionAccess.operationTokens.\(UUID().uuidString)"
 
-    /// The tokens of the operations the current thread is inside, outermost first.
+    /// The tokens of the operations the current thread is inside on this lease, outermost first.
     private var operationTokensOfThisThread: [UInt] {
-        get { (Thread.current.threadDictionary[Self.operationTokensKey] as? [UInt]) ?? [] }
-        set { Thread.current.threadDictionary[Self.operationTokensKey] = newValue.isEmpty ? nil : newValue }
+        get { (Thread.current.threadDictionary[operationTokensKey] as? [UInt]) ?? [] }
+        set { Thread.current.threadDictionary[operationTokensKey] = newValue.isEmpty ? nil : newValue }
     }
 
     /// Gives the operation this thread is entering its identity: the cancellation generation as
