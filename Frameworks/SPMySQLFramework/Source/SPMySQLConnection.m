@@ -161,6 +161,38 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 #pragma mark What the session gate asks of the connection
 
 /**
+ * Takes the connection lock for the gate, waiting for it.
+ */
+- (void)lockConnectionForGate
+{
+	[self _lockConnection];
+}
+
+/**
+ * Releases the connection lock for the gate.
+ */
+- (void)unlockConnectionForGate
+{
+	[self _unlockConnection];
+}
+
+/**
+ * Closes a session marked to be replaced, for the gate, while the connection is held.
+ */
+- (void)closeMarkedSessionForGate
+{
+	[self _closeSessionMarkedForReplacement];
+}
+
+/**
+ * Restores a session that was closed or lost, for the gate, through the ordinary check.
+ */
+- (BOOL)checkConnectionForGate
+{
+	return [self checkConnectionIfNecessary];
+}
+
+/**
  * Whether there is a session to use: connected, and not lost in the background.
  */
 - (BOOL)hasSessionToUse
@@ -858,6 +890,16 @@ char *__crashreporter_info__ = NULL;
 asm(".desc ___crashreporter_info__, 0x10");
 
 @implementation SPMySQLConnection (PrivateAPI)
+
+/**
+ * Takes the connection for a statement, replacing a session that is marked to be replaced first.
+ * The gate itself is SASessionGate; this connection is its host.
+ * @return Whether the connection is held with a usable session; NO leaves it released.
+ */
+- (BOOL)_lockUsableConnectionForQuery
+{
+	return [SASessionGate lockHost:self];
+}
 
 /**
  * Handle a connection using previously set parameters, returning success or failure.

@@ -383,7 +383,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
-	double queryExecutionTime;
+	// Zero for a statement that was never sent - refused before the send, or stopped there.
+	double queryExecutionTime = 0;
 	NSString *theErrorMessage;
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
@@ -822,16 +823,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 #pragma mark Private API
 
 @implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
-
-/**
- * Takes the connection for a statement, replacing a session that is marked to be replaced first.
- * The gate itself is SASessionGate; this connection is its host.
- * @return Whether the connection is held with a usable session; NO leaves it released.
- */
-- (BOOL)_lockUsableConnectionForQuery
-{
-	return [SASessionGate lockHost:self];
-}
 
 /**
  * Closes a session marked to be replaced, while the connection is held so nothing can use it in

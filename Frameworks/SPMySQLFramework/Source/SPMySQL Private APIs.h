@@ -64,6 +64,8 @@
 
 @interface SPMySQLConnection (PrivateAPI)
 
+- (BOOL)_lockUsableConnectionForQuery;
+
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster connectTimeout:(NSUInteger)connectTimeoutOrZero;
@@ -130,7 +132,6 @@
 /** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
 /** Takes the connection for a statement, replacing a session marked to be replaced first; NO if no usable session results. */
-- (BOOL)_lockUsableConnectionForQuery;
 /** Closes a session marked to be replaced; the connection must be held. The next use reconnects. */
 - (void)_closeSessionMarkedForReplacement;
 

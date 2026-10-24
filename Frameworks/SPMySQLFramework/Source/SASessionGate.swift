@@ -10,16 +10,16 @@
 import Foundation
 
 /// What taking the connection for a statement asks of the connection, without handing over its
-/// internals. The lock and the check are the connection's own; the rest are plain readings of its
-/// state, made while the lock is held.
+/// internals: its lock and its check, forwarded, and plain readings of its state made while the
+/// lock is held.
 @objc(SASessionGateHost)
 public protocol SASessionGateHost: AnyObject {
 
     /// Takes the connection lock, waiting for it.
-    @objc(_lockConnection) func lockConnection()
+    @objc(lockConnectionForGate) func lockConnection()
 
     /// Releases the connection lock.
-    @objc(_unlockConnection) func unlockConnection()
+    @objc(unlockConnectionForGate) func unlockConnection()
 
     /// Whether there is a session to use: connected, and not lost in the background.
     @objc var hasSessionToUse: Bool { get }
@@ -31,11 +31,11 @@ public protocol SASessionGateHost: AnyObject {
     @objc var sessionReportsOpenTransaction: Bool { get }
 
     /// Closes a session marked to be replaced, while the connection is held.
-    @objc(_closeSessionMarkedForReplacement) func closeSessionMarkedForReplacement()
+    @objc(closeMarkedSessionForGate) func closeSessionMarkedForReplacement()
 
     /// Restores a session that was closed or lost, if one is needed.
     /// - Returns: Whether there is a session afterwards.
-    @objc(checkConnectionIfNecessary) func checkIfNecessary() -> Bool
+    @objc(checkConnectionForGate) func checkIfNecessary() -> Bool
 }
 
 /// The gate a statement passes to take the session: on the way out the connection is held with a
