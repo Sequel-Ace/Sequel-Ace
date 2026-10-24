@@ -74,8 +74,12 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
  * escapes any characters within the string using the current connection encoding.
  * Allows control over whether to also wrap the string in single quotes.
  *
- * WARNING: This method may return nil if the current thread is cancelled!
- *          You MUST check the isCancelled flag before using the result!
+ * WARNING: This method may return nil - when the current thread is cancelled, when no
+ *          connection is available, when there is no character set to escape for, or when
+ *          nobody can tell yet which session will send the value (a session marked to go
+ *          once nothing is open in it, while another statement runs). A nil result is a value
+ *          that was refused, not an empty one: check for it before building a statement, and
+ *          send nothing with it.
  */
 - (NSString *)escapeString:(NSString *)theString includingQuotes:(BOOL)includeQuotes
 {
