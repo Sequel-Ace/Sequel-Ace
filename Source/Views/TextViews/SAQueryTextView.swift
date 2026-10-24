@@ -132,7 +132,8 @@ import AppKit
         }
 
         let flags = event.modifierFlags
-        let stroke = SAVimKeyStroke(characters: event.charactersIgnoringModifiers,
+        let stroke = SAVimKeyStroke(charactersIgnoringModifiers: event.charactersIgnoringModifiers,
+                                    producedCharacters: event.characters,
                                     keyCode: event.keyCode,
                                     control: flags.contains(.control),
                                     option: flags.contains(.option),
@@ -387,24 +388,22 @@ import AppKit
         let inserted = (typed > 0 && typed == grew)
             ? text.substring(with: NSRange(location: start, length: typed))
             : ""
-        if !command.needsInsertPayloadForRepeat || !inserted.isEmpty {
-            lastChange = (command: command, insertedText: inserted)
-        }
-
-        // The extra copies a count asks for go in here, while the caret is
-        // still the insert caret — normal mode pulls it back onto the last
-        // character, and writing there would split the text. Being inside the
-        // session's undo group also keeps `3Afoo` a single undo step.
+        var appliedRepeats = 1
         if applyingRepeat, repeats > 1, !inserted.isEmpty {
             let extra = repeatedInsertion(of: inserted, for: command, copies: repeats - 1)
             if !extra.isEmpty {
                 insert(extra)
             }
+            appliedRepeats = max(repeats, 1)
+        }
+
+        if !command.needsInsertPayloadForRepeat || !inserted.isEmpty {
+            lastChange = (command: command.withInsertRepeatCount(appliedRepeats), insertedText: inserted)
         }
 
         // Nothing was typed, so there is nothing to repeat — and repeating an
         // empty session used to leave the editor in insert mode.
-        return inserted.isEmpty ? 1 : max(repeats, 1)
+        return inserted.isEmpty ? 1 : appliedRepeats
     }
 
     private func replayLastChange(count: Int) {
@@ -652,6 +651,18 @@ import AppKit
         desiredColumn = nil
         refreshBadge()
         refreshInsertionPoint()
+    }
+}
+
+extension SAVimCommand {
+
+    func withInsertRepeatCount(_ repeatCount: Int) -> SAVimCommand {
+        switch self {
+        case .enterInsert(let placement, _):
+            return .enterInsert(placement, count: max(repeatCount, 1))
+        default:
+            return self
+        }
     }
 }
 

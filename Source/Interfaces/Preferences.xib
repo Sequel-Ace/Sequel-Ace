@@ -1961,7 +1961,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <constraints>
-                        <constraint firstAttribute="height" constant="33" id="LMj-pz-5qi"/>
+                        <constraint firstAttribute="height" constant="22" id="LMj-pz-5qi"/>
                     </constraints>
                     <connections>
                         <binding destination="117" name="value" keyPath="values.CustomQueryUpdateAutoHelp" id="1107"/>

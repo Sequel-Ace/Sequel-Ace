@@ -80,6 +80,18 @@ final class SAVimTextEngineTests: XCTestCase {
         XCTAssertEqual(applied(outcome, to: "foo bar"), " bar")
     }
 
+    func testChangeWordOnWhitespaceUsesTheForwardWordMotion() {
+        let spaced = "foo   bar baz"
+        let outcome = run(.operate(.change, .motion(.wordForward(big: false)), count: 1), spaced, caret: 3)
+        XCTAssertEqual(applied(outcome, to: spaced), "foobar baz")
+    }
+
+    func testBackwardFindDeleteIsInclusive() {
+        let text = "abcda"
+        let outcome = run(.operate(.delete, .motion(.findChar("a", forward: false, till: false)), count: 1), text, caret: 4)
+        XCTAssertEqual(applied(outcome, to: text), "")
+    }
+
     func testDeleteToEndOfLineOnAnEmptyLineDoesNotRemoveTheNewline() {
         let blank = "a\n\nb"
         let outcome = run(.operate(.delete, .motion(.lineEnd), count: 1), blank, caret: 2)
@@ -141,6 +153,7 @@ final class SAVimTextEngineTests: XCTestCase {
         let outcome = run(.operate(.yank, .wholeLines, count: 1), sql, caret: 17)
         XCTAssertNil(outcome.edit)
         XCTAssertEqual(outcome.register?.text, "FROM users\n")
+        XCTAssertEqual(outcome.caret, 17)
     }
 
     func testShiftIsDelegatedToTheTextViewWithTheLineSpan() {
@@ -467,6 +480,21 @@ final class SAVimTextEngineTests: XCTestCase {
     func testVisualLineModeSelectsTheWholeLine() {
         let outcome = run(.enterVisual(line: true), sql, caret: 17)
         XCTAssertEqual(outcome.selection, NSRange(location: 16, length: 11))
+    }
+
+    func testSwitchingVisualKindKeepsTheCurrentExtent() {
+        let charwise = run(.enterVisual(line: false), sql, caret: 0)
+        let extended = run(.move(.wordForward(big: false), count: 1), sql,
+                           caret: charwise.caret ?? 0,
+                           mode: .visual,
+                           selection: charwise.selection ?? NSRange(location: 0, length: 1),
+                           visualAnchor: charwise.visualAnchor ?? 0)
+        let linewise = run(.enterVisual(line: true), sql,
+                           caret: extended.caret ?? 0,
+                           mode: .visualLine,
+                           selection: extended.selection ?? NSRange(location: 0, length: 1),
+                           visualAnchor: extended.visualAnchor ?? 0)
+        XCTAssertEqual(linewise.selection, NSRange(location: 0, length: 16))
     }
 
     func testMotionInVisualModeExtendsTheSelection() {

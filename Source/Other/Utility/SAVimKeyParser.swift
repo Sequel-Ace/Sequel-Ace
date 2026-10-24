@@ -180,12 +180,30 @@ struct SAVimKeyStroke: Equatable {
     /// US position of the key stand in, so normal mode keeps working without
     /// switching input sources.
     init(characters: String?, keyCode: UInt16, control: Bool = false, option: Bool = false, command: Bool = false, shift: Bool = false) {
+        self.init(charactersIgnoringModifiers: characters,
+                  producedCharacters: characters,
+                  keyCode: keyCode,
+                  control: control,
+                  option: option,
+                  command: command,
+                  shift: shift)
+    }
+
+    init(charactersIgnoringModifiers: String?,
+         producedCharacters: String?,
+         keyCode: UInt16,
+         control: Bool = false,
+         option: Bool = false,
+         command: Bool = false,
+         shift: Bool = false) {
         var layout: Character?
-        if let first = characters?.first, !first.isControlCharacter {
+        if let first = producedCharacters?.first, !first.isControlCharacter {
+            layout = first
+        } else if let first = charactersIgnoringModifiers?.first, !first.isControlCharacter {
             layout = first
         }
         var resolved: Character?
-        if let first = characters?.first, first.isASCII, !first.isControlCharacter {
+        if let first = charactersIgnoringModifiers?.first, first.isASCII, !first.isControlCharacter {
             resolved = first
         } else if let fallback = SAVimKeyStroke.usLayoutCharacter(keyCode: keyCode, shift: shift) {
             resolved = fallback
@@ -322,7 +340,7 @@ final class SAVimKeyParser {
         }
 
         if stroke.option {
-            return .passthrough
+            return reject()
         }
 
         if let awaiting {
@@ -548,7 +566,10 @@ final class SAVimKeyParser {
             self.awaiting = nil
             switch character {
             case "g":
-                return motion(.fileStart)
+                let line = min(max(activeCount ?? 1, 1), SAVimKeyParser.maximumCount)
+                clearCounts()
+                let target: SAVimMotion = line <= 1 ? .fileStart : .goToLine(line)
+                return motion(target, explicitCount: 1)
             default:
                 return reject()
             }
@@ -574,6 +595,10 @@ final class SAVimKeyParser {
     private func handleSearchKey(_ stroke: SAVimKeyStroke) -> SAVimParseResult {
         guard var entry = search else { return reject() }
 
+        if searchShouldPassthrough(stroke) {
+            return .passthrough
+        }
+
         if stroke.isReturn {
             resetSequence()
             guard !entry.pattern.isEmpty else { return .cancelled }
@@ -591,14 +616,28 @@ final class SAVimKeyParser {
             return .pending(display: pendingDisplay)
         }
 
-        guard let character = stroke.layoutCharacter ?? stroke.character, !stroke.control else {
-            return .pending(display: pendingDisplay)
+        guard let character = stroke.layoutCharacter ?? stroke.character else {
+            return reject()
         }
 
         entry.pattern.append(character)
         search = entry
         pendingDisplay = (entry.forward ? "/" : "?") + entry.pattern
         return .pending(display: pendingDisplay)
+    }
+
+    /// Keys that must keep working while a `/` or `?` pattern is being typed.
+    private func searchShouldPassthrough(_ stroke: SAVimKeyStroke) -> Bool {
+        if stroke.command || stroke.control || stroke.option {
+            return true
+        }
+        if stroke.keyCode == SAVimKeyStroke.keypadEnterKeyCode {
+            return true
+        }
+        if SAVimKeyStroke.navigationKeyCodes.contains(stroke.keyCode) {
+            return true
+        }
+        return false
     }
 
     // MARK: - Building commands

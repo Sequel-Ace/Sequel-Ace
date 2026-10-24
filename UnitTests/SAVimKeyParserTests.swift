@@ -55,6 +55,14 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(type("g"), .command(.move(.fileStart, count: 1)))
     }
 
+    func testGGWithACountGoesToThatLine() {
+        XCTAssertEqual(type("2gg"), .command(.move(.goToLine(2), count: 1)))
+    }
+
+    func testDeleteToGGWithACountUsesThatLine() {
+        XCTAssertEqual(type("d2gg"), .command(.operate(.delete, .motion(.goToLine(2)), count: 1)))
+    }
+
     func testGWithACountGoesToThatLine() {
         XCTAssertEqual(type("G"), .command(.move(.fileEnd, count: 1)))
         XCTAssertEqual(type("42G"), .command(.move(.goToLine(42), count: 1)))
@@ -297,6 +305,18 @@ final class SAVimKeyParserTests: XCTestCase {
 
     func testUnsupportedControlKeysAreConsumedInNormalMode() {
         XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "d", keyCode: 2, control: true)), .rejected)
+    }
+
+    func testOptionOnlyKeysAreConsumedInNormalMode() {
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "e", keyCode: 14, option: true)), .rejected)
+    }
+
+    func testSearchLeavesRunQueryAndNavigationKeysAlone() {
+        type("/ab")
+        XCTAssertEqual(press(keyCode: SAVimKeyStroke.returnKeyCode, control: true), .passthrough)
+        XCTAssertEqual(press(keyCode: 125), .passthrough)
+        XCTAssertEqual(press(keyCode: SAVimKeyStroke.returnKeyCode),
+                       .command(.search(pattern: "ab", forward: true)))
     }
 
     func testSearchKeepsNonLatinLayoutCharacters() {

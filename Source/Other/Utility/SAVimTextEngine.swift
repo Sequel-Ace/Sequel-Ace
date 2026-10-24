@@ -131,6 +131,17 @@ enum SAVimTextEngine {
             return runEnterInsert(placement, context: context)
 
         case .enterVisual(let line):
+            if context.selection.length > 0, context.mode.isVisual {
+                let head = context.caret
+                let range = visualRange(anchor: context.visualAnchor,
+                                        head: head,
+                                        linewise: line,
+                                        in: context.text)
+                return SAVimOutcome(caret: head,
+                                    selection: clampRange(range, in: context.text),
+                                    mode: line ? .visualLine : .visual,
+                                    visualAnchor: context.visualAnchor)
+            }
             let range = line
                 ? lineRange(at: context.caret, in: context.text)
                 : characterRange(at: context.caret, in: context.text)
@@ -326,7 +337,7 @@ enum SAVimTextEngine {
             guard let location = findCharacter(character, forward: forward, till: till, count: repeats, from: caret, in: text) else {
                 return nil
             }
-            return (location, forward ? .inclusive : .exclusive, nil)
+            return (location, .inclusive, nil)
 
         case .paragraphForward:
             return (paragraphBoundary(from: caret, forward: true, count: repeats, in: text), .exclusive, nil)
@@ -434,7 +445,9 @@ enum SAVimTextEngine {
             return (range, false)
 
         case .motion(let motion):
-            if op == .change, case .wordForward(let big) = motion {
+            if op == .change,
+               case .wordForward(let big) = motion,
+               characterClass(at: caret, big: big, in: text) != .whitespace {
                 guard let resolved = destination(for: .wordEnd(big: big), count: count, context: context) else {
                     return nil
                 }
@@ -499,7 +512,14 @@ enum SAVimTextEngine {
         switch op {
         case .yank:
             let register = SAVimRegister(text: text.substring(with: clamped), isLinewise: linewise)
-            let caret = linewise ? firstNonBlank(at: clamped.location, in: text) : clamped.location
+            let caret: Int
+            if linewise, !context.mode.isVisual {
+                caret = context.caret
+            } else if linewise {
+                caret = firstNonBlank(at: clamped.location, in: text)
+            } else {
+                caret = clamped.location
+            }
             return SAVimOutcome(caret: caret,
                                 selection: NSRange(location: caret, length: 0),
                                 register: register,
