@@ -169,19 +169,11 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 }
 
 /**
- * Whether the session is marked to be replaced before its next use.
+ * How the session is to be replaced before its next use. One word, read once.
  */
-- (BOOL)sessionIsMarkedForReplacement
+- (SASessionReplacementMark)sessionReplacementMark
 {
-	return sessionMustBeReplacedBeforeUse;
-}
-
-/**
- * Whether an answer nobody read may still be on its way in this session.
- */
-- (BOOL)sessionProtocolCannotBeTrusted
-{
-	return sessionIsProtocolInvalid;
+	return (SASessionReplacementMark)sessionReplacement;
 }
 
 /**
@@ -935,8 +927,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
 	// A new session is in step with the record it was connected with, and nothing is on its way to it.
-	sessionMustBeReplacedBeforeUse = NO;
-	sessionIsProtocolInvalid = NO;
+	sessionReplacement = SASessionReplacementMarkNotMarked;
 	// What the new session reports is recorded for the escaper, which escapes from this rather
 	// than from the connection's own handle.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]

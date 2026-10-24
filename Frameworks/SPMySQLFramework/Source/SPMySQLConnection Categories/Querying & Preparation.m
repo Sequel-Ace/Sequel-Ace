@@ -119,7 +119,8 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	// are not interchangeable - a backslash left as it is for a NO_BACKSLASH_ESCAPES session is an
 	// escape on the next one, and the quote after it ends the literal. A marked session that is
 	// kept, because a transaction is open in it, is the one that sends, and is followed. The same
-	// question is asked when the statement takes the session, so the two answers agree.
+	// question is asked of the same one-word mark when the statement takes the session, so the two
+	// answers agree.
 	// Latin1 transport sets the session's client character set to latin1 while `encoding` keeps
 	// the name the connection was put on, so the transport character set is what the server
 	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
@@ -130,9 +131,8 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	NSString *transportCharacterSet = encodingUsesLatin1Transport
 		? @"latin1"
 		: (sqlInputEncoding ?: encoding);
-	BOOL sessionIsBeingReplaced = sessionMustBeReplacedBeforeUse
-		&& [SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:[self sessionHasOpenTransaction]
-		                                                  sessionIsProtocolInvalid:sessionIsProtocolInvalid];
+	BOOL sessionIsBeingReplaced = [SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:(SASessionReplacementMark)sessionReplacement
+	                                                                            openTransaction:[self sessionHasOpenTransaction]];
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1

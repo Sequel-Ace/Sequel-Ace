@@ -101,13 +101,11 @@
 	// How a query is stopped: recorded first, the server asked, the socket shut down after a
 	// grace period. The lease keeps the books; this holds the policy.
 	SAConnectionCancellation *connectionCancellation;
-	// Whether the session is replaced before its next use, and whether it cannot be spoken on at
-	// all rather than merely being better not reused: a ping cut off before its answer came may
-	// still get that answer, and the next statement would read it as its own result. A marked
-	// session with a transaction open is kept until that transaction is over; one the protocol
-	// cannot be trusted on goes regardless.
-	BOOL sessionMustBeReplacedBeforeUse;
-	BOOL sessionIsProtocolInvalid;
+	// How the session is to be replaced before its next use - a SASessionReplacementMark: not at
+	// all; once nothing is open in it; or regardless, because a ping cut off before its answer
+	// came may still get that answer, which the next statement would read as its own result. One
+	// word, written and read in one go, so a reader never sees half of a mark being published.
+	NSInteger sessionReplacement;
 
 	// Timeout and keep-alive
 	NSUInteger timeout;

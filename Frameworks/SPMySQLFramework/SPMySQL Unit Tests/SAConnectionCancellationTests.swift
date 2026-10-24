@@ -273,6 +273,17 @@ final class SAConnectionCancellationTests: XCTestCase {
                                                                         sessionIsProtocolInvalid: true))
     }
 
+    /// The mark is one word: unmarked is kept whatever is open, marked follows the decision above,
+    /// and a session marked regardless goes with a transaction open.
+    func testTheMarkIsReadAsOneWord() {
+        XCTAssertFalse(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .notMarked, sessionHasOpenTransaction: false))
+        XCTAssertFalse(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .notMarked, sessionHasOpenTransaction: true))
+        XCTAssertTrue(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .whenNothingIsOpen, sessionHasOpenTransaction: false))
+        XCTAssertFalse(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .whenNothingIsOpen, sessionHasOpenTransaction: true))
+        XCTAssertTrue(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .regardless, sessionHasOpenTransaction: true))
+        XCTAssertTrue(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .regardless, sessionHasOpenTransaction: false))
+    }
+
     /// A session whose ping was cut off before its answer came is replaced; any other is kept.
     func testASessionIsReplacedOnlyAfterAPingCutOffBeforeItsAnswer() {
         XCTAssertTrue(SAConnectionCancellation.replacesSessionAfterPing(cutOff: true, pingSucceeded: false))

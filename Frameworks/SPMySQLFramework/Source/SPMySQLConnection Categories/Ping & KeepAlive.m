@@ -127,9 +127,8 @@ typedef struct {
 		// open in it is deliberately kept rather than closed. Leaving that one unpinged is how the
 		// server's interactive_timeout, or a NAT's idle timeout, takes the uncommitted work that
 		// keeping it was for.
-		if (sessionMustBeReplacedBeforeUse
-		    && [SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:[self sessionHasOpenTransaction]
-		                                                    sessionIsProtocolInvalid:sessionIsProtocolInvalid]) {
+		if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:(SASessionReplacementMark)sessionReplacement
+		                                                 openTransaction:[self sessionHasOpenTransaction]]) {
 			goto end_cleanup;
 		}
 
@@ -262,10 +261,10 @@ end_cleanup:
 	// lost with it is reported like any other.
 	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
 	                                               pingSucceeded:keepAliveLastPingSuccess]) {
-		sessionMustBeReplacedBeforeUse = YES;
 		// Not merely better not reused: the answer to that ping may still arrive, so this session
-		// cannot be spoken on at all and goes even if a transaction is open in it.
-		sessionIsProtocolInvalid = YES;
+		// cannot be spoken on at all and goes even if a transaction is open in it. One word, so no
+		// reader sees the session marked and the reason not yet.
+		sessionReplacement = SASessionReplacementMarkRegardless;
 	}
 
 	// Unlock the connection

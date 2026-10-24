@@ -284,11 +284,11 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         try prepare(connection)
         let theMarkedSession = connection.mysqlConnectionThreadId
 
-        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 1") as? String, "1")
 
         XCTAssertNotEqual(connection.mysqlConnectionThreadId, theMarkedSession, "the statement ran on a new session")
-        XCTAssertEqual(connection.value(forKey: "sessionMustBeReplacedBeforeUse") as? Bool, false, "which starts unmarked")
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "which starts unmarked")
     }
 
     /// A marked session with a transaction open is kept until that transaction is over: closing it
@@ -306,10 +306,10 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.queryErrored())
         let theSessionWithTheTransaction = connection.mysqlConnectionThreadId
 
-        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
         XCTAssertEqual(rowCount(connection), 1, "the transaction's own session still sees its row")
         XCTAssertEqual(connection.mysqlConnectionThreadId, theSessionWithTheTransaction, "the session was kept")
-        XCTAssertEqual(connection.value(forKey: "sessionMustBeReplacedBeforeUse") as? Bool, true, "and the mark stands")
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.whenNothingIsOpen.rawValue, "and the mark stands")
 
         connection.queryString("COMMIT")
         XCTAssertFalse(connection.queryErrored())
@@ -317,7 +317,7 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
 
         XCTAssertEqual(rowCount(connection), 1, "the committed row is there")
         XCTAssertNotEqual(connection.mysqlConnectionThreadId, theSessionWithTheTransaction, "and the session was replaced once nothing was open in it")
-        XCTAssertEqual(connection.value(forKey: "sessionMustBeReplacedBeforeUse") as? Bool, false)
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue)
     }
 
     /// A session the protocol cannot be trusted on goes even with a transaction open: an answer
@@ -335,12 +335,11 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.queryErrored())
         let theSessionWithTheTransaction = connection.mysqlConnectionThreadId
 
-        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
-        connection.setValue(true, forKey: "sessionIsProtocolInvalid")
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
 
         XCTAssertEqual(rowCount(connection), 0, "the transaction was rolled back with its session")
         XCTAssertNotEqual(connection.mysqlConnectionThreadId, theSessionWithTheTransaction)
-        XCTAssertEqual(connection.value(forKey: "sessionIsProtocolInvalid") as? Bool, false, "the new session can be trusted")
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "the new session can be trusted")
     }
 
     // MARK: - Escaped for the session that sends it
@@ -365,8 +364,7 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.escape(value, includingQuotes: false), "a\\b", "the escaper follows the session it has: the backslash stays")
         let theOutgoingSession = connection.mysqlConnectionThreadId
 
-        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
-        connection.setValue(true, forKey: "sessionIsProtocolInvalid")
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
         let escaped = try XCTUnwrap(connection.escapeAndQuoteString(value))
         XCTAssertEqual(connection.mysqlConnectionThreadId, theOutgoingSession, "escaping sends nothing, so the marked session is still the one there is")
 
@@ -397,7 +395,7 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.queryErrored())
         let theKeptSession = connection.mysqlConnectionThreadId
 
-        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
         connection.restoreStoredEncoding()
         XCTAssertEqual(connection.mysqlConnectionThreadId, theKeptSession, "the session with the transaction was kept")
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@character_set_client") as? String, "utf8mb4", "and it is the session the character set was restored on")

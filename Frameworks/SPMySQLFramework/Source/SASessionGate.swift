@@ -24,11 +24,8 @@ public protocol SASessionGateHost: AnyObject {
     /// Whether there is a session to use: connected, and not lost in the background.
     @objc var hasSessionToUse: Bool { get }
 
-    /// Whether the session is marked to be replaced before its next use.
-    @objc var sessionIsMarkedForReplacement: Bool { get }
-
-    /// Whether an answer nobody read may still be on its way in this session.
-    @objc var sessionProtocolCannotBeTrusted: Bool { get }
+    /// How the session is to be replaced before its next use - one word, read once.
+    @objc var sessionReplacementMark: SASessionReplacementMark { get }
 
     /// Whether the session reports a transaction open now, read from its handle while it is held.
     @objc var sessionReportsOpenTransaction: Bool { get }
@@ -65,14 +62,15 @@ public final class SASessionGate: NSObject {
 
         for _ in 0..<checks {
             if host.hasSessionToUse {
-                if !host.sessionIsMarkedForReplacement {
+                let mark = host.sessionReplacementMark
+                if mark == .notMarked {
                     return true
                 }
                 // The mark can be much older than this moment, and a query that took the
                 // connection over in between can have opened a transaction of its own. The
                 // connection is held here, so the session's own answer is the one to go by.
-                if !SAConnectionCancellation.markedSessionIsClosedNow(sessionHasOpenTransaction: host.sessionReportsOpenTransaction,
-                                                                      sessionIsProtocolInvalid: host.sessionProtocolCannotBeTrusted) {
+                if !SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: mark,
+                                                                        sessionHasOpenTransaction: host.sessionReportsOpenTransaction) {
                     return true
                 }
                 host.closeSessionMarkedForReplacement()

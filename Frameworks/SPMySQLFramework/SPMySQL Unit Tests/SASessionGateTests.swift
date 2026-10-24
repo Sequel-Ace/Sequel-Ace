@@ -13,8 +13,7 @@ import XCTest
 /// A connection stand-in whose state the test sets, recording what the gate does with it.
 private final class SAScriptedGateHost: NSObject, SASessionGateHost {
     var hasSessionToUse = true
-    var sessionIsMarkedForReplacement = false
-    var sessionProtocolCannotBeTrusted = false
+    var sessionReplacementMark = SASessionReplacementMark.notMarked
     var sessionReportsOpenTransaction = false
     /// What the check does, and answers.
     var check: () -> Bool = { true }
@@ -25,8 +24,7 @@ private final class SAScriptedGateHost: NSObject, SASessionGateHost {
     func closeSessionMarkedForReplacement() {
         calls.append("close")
         hasSessionToUse = false
-        sessionIsMarkedForReplacement = false
-        sessionProtocolCannotBeTrusted = false
+        sessionReplacementMark = .notMarked
     }
     func checkIfNecessary() -> Bool {
         calls.append("check")
@@ -58,7 +56,7 @@ final class SASessionGateTests: XCTestCase {
     /// A marked session is closed under the lock, the connection checked - which restores one -
     /// and taken again.
     func testAMarkedSessionIsClosedCheckedAndTakenAgain() {
-        host.sessionIsMarkedForReplacement = true
+        host.sessionReplacementMark = .whenNothingIsOpen
         host.check = { [host] in host.hasSessionToUse = true; return true }
 
         XCTAssertTrue(SASessionGate.lock(host))
@@ -68,19 +66,18 @@ final class SASessionGateTests: XCTestCase {
 
     /// A marked session with a transaction open is kept, and the mark stands.
     func testAMarkedSessionWithATransactionOpenIsKept() {
-        host.sessionIsMarkedForReplacement = true
+        host.sessionReplacementMark = .whenNothingIsOpen
         host.sessionReportsOpenTransaction = true
 
         XCTAssertTrue(SASessionGate.lock(host))
         XCTAssertEqual(host.calls, ["lock"])
-        XCTAssertTrue(host.sessionIsMarkedForReplacement, "the mark stands until nothing is open in the session")
+        XCTAssertEqual(host.sessionReplacementMark, .whenNothingIsOpen, "the mark stands until nothing is open in the session")
     }
 
     /// A marked session the protocol cannot be trusted on goes, transaction or not.
     func testAMarkedSessionTheProtocolCannotBeTrustedOnGoesDespiteTheTransaction() {
-        host.sessionIsMarkedForReplacement = true
+        host.sessionReplacementMark = .regardless
         host.sessionReportsOpenTransaction = true
-        host.sessionProtocolCannotBeTrusted = true
         host.check = { [host] in host.hasSessionToUse = true; return true }
 
         XCTAssertTrue(SASessionGate.lock(host))

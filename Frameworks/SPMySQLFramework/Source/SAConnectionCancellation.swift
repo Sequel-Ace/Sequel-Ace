@@ -27,6 +27,19 @@ public protocol SAConnectionCancellationHost: AnyObject {
     @objc func markRunningQueryCancelled()
 }
 
+/// How a session is to be replaced before its next use. One word, so that a reader sees the whole
+/// mark or none of it - never half of a mark somebody is still publishing.
+@objc(SASessionReplacementMark)
+public enum SASessionReplacementMark: Int {
+    /// The session is in step with what the connection knows of it.
+    case notMarked = 0
+    /// Replaced before its next use, once nothing is open in it.
+    case whenNothingIsOpen = 1
+    /// Replaced before its next use whatever is open in it: an answer nobody read may still be on
+    /// its way, and the next statement would read it as its own result.
+    case regardless = 2
+}
+
 /// How a connection stops the query it is running, or the operation still waiting to run one.
 ///
 /// Stopping takes three steps, in this order. The request is recorded at once, under the lease's
@@ -155,6 +168,21 @@ public final class SAConnectionCancellation: NSObject {
     public static func markedSessionIsClosedNow(sessionHasOpenTransaction: Bool,
                                                 sessionIsProtocolInvalid: Bool) -> Bool {
         return sessionIsProtocolInvalid || !sessionHasOpenTransaction
+    }
+
+    /// Whether a session carrying this mark goes before its next use, or is kept.
+    /// - Parameters:
+    ///   - mark: The session's mark, read once.
+    ///   - sessionHasOpenTransaction: Whether the session reports a transaction open now.
+    /// - Returns: Whether the session is replaced before it is used again.
+    @objc(sessionIsReplacedBeforeUseWithMark:openTransaction:)
+    public static func sessionIsReplacedBeforeUse(mark: SASessionReplacementMark,
+                                                  sessionHasOpenTransaction: Bool) -> Bool {
+        guard mark != .notMarked else {
+            return false
+        }
+        return markedSessionIsClosedNow(sessionHasOpenTransaction: sessionHasOpenTransaction,
+                                        sessionIsProtocolInvalid: mark == .regardless)
     }
 
     /// Whether a session is replaced after a ping to it was cut off.
