@@ -14,6 +14,7 @@ import Foundation
     case csv
     case xml
     case dot
+    case json
 }
 
 /// Decides which encoding an exporter writes its output file in.
@@ -29,6 +30,7 @@ import Foundation
 /// - XML files declare `encoding="utf-8"` in their prolog, so the body is UTF-8 too (#2637).
 ///   The XML exporter does not switch the connection: cells that arrive as raw bytes are decoded
 ///   with the connection encoding and re-encoded on the way out.
+/// - JSON text is UTF-8 by definition (RFC 8259 §8.1). Like XML, the exporter does not switch the connection.
 /// - CSV has no way to declare an encoding and follows the connection encoding.
 @objc final class SAExportOutputEncoding: NSObject {
 
@@ -41,7 +43,7 @@ import Foundation
     @objc(outputEncodingForFormat:connectionEncoding:)
     static func outputEncoding(for format: SAExportOutputFormat, connectionEncoding: UInt) -> UInt {
         switch format {
-        case .sql, .dot, .xml:
+        case .sql, .dot, .xml, .json:
             return utf8
         case .csv:
             return connectionEncoding

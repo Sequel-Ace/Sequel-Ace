@@ -27,6 +27,7 @@
                 <outlet property="exportCustomFilenameViewLabelButton" destination="1101" id="1293"/>
                 <outlet property="exportDeselectAllTablesButton" destination="1414" id="1419"/>
                 <outlet property="exportDotForceLowerTableNamesCheck" destination="1375" id="1377"/>
+                <outlet property="exportJSONPrettyPrintCheck" destination="JSp-bt-005" id="JSp-ol-007"/>
                 <outlet property="exportFilePerTableCheck" destination="1092" id="1288"/>
                 <outlet property="exportFilenameDividerBox" destination="1095" id="1294"/>
                 <outlet property="exportFormatInfoText" destination="1378" id="1380"/>
@@ -100,6 +101,12 @@
                             </tabViewItem>
                             <tabViewItem label="Dot" identifier="dot" id="580">
                                 <view key="view" id="581">
+                                    <rect key="frame" x="10" y="33" width="513" height="377"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </view>
+                            </tabViewItem>
+                            <tabViewItem label="JSON" identifier="json" id="JSn-tb-001">
+                                <view key="view" id="JSn-vw-002">
                                     <rect key="frame" x="10" y="33" width="513" height="377"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </view>
@@ -819,6 +826,22 @@ Gw
                                                 </attributes>
                                             </fragment>
                                         </attributedString>
+                                    </button>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="JSON" identifier="json" id="JSo-tb-003">
+                            <view key="view" id="JSo-vw-004">
+                                <rect key="frame" x="10" y="7" width="256" height="248"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JSp-bt-005">
+                                        <rect key="frame" x="2" y="217" width="262" height="18"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <buttonCell key="cell" type="check" title="Pretty print" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" state="on" inset="2" id="JSp-cl-006">
+                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                            <font key="font" metaFont="message" size="11"/>
+                                        </buttonCell>
                                     </button>
                                 </subviews>
                             </view>
