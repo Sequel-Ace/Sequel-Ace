@@ -81,8 +81,8 @@ struct SAAnalyticsInstallationContext: Equatable {
             comment: "analytics consent dialog title"
         )
         alert.informativeText = NSLocalizedString(
-            "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.",
-            comment: "analytics consent dialog message"
+            "ClaudeSettings.pointer.analyticsConsent.message",
+            comment: "Claude Settings pointer: analytics consent dialog message"
         )
 
         // The positive action is the default button to encourage opt-in, while

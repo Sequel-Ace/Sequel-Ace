@@ -252,4 +252,112 @@ final class SAWindowTitleBuilderTests: XCTestCase {
         )
         XCTAssertEqual(name, "")
     }
+
+    func testSubtitleCarriesTheServerVersionOnlyWhenConnectedAndEnabled() {
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "MySQL 9.6.0")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "9.6.0", showServerVersionInTitle: false), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: nil, showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "", showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .disconnected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connecting, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
+    }
+
+    // MARK: - Name pill
+
+    private func pill(_ windowTitle: String, _ tabTitle: String, _ name: String) -> SAWindowNamePillParts? {
+        SAWindowTitleBuilder.namePillParts(windowTitle: windowTitle, tabTitle: tabTitle, connectionName: name)
+    }
+
+    func testPillPartsForConnectionDatabaseAndTable() {
+        XCTAssertEqual(pill("Localhost/shop/orders", "Localhost/shop/orders", "Localhost"),
+                       SAWindowNamePillParts(prefix: "", name: "Localhost", rest: "shop/orders"))
+    }
+
+    func testPillPartsWithoutDatabase() {
+        XCTAssertEqual(pill("Localhost", "Localhost", "Localhost"),
+                       SAWindowNamePillParts(prefix: "", name: "Localhost", rest: ""))
+    }
+
+    /// The `.spf` file name is not part of the connection: it stays in front of the pill, in the title's own type.
+    func testFilePrefixStaysOutsideThePill() {
+        XCTAssertEqual(pill("work.spf — Localhost/shop", "Localhost/shop", "Localhost"),
+                       SAWindowNamePillParts(prefix: "work.spf — ", name: "Localhost", rest: "shop"))
+    }
+
+    /// The name is matched as a whole, so a "/" inside it is not mistaken for the database separator.
+    func testSlashInNameStaysInThePill() {
+        XCTAssertEqual(pill("a/b/shop", "a/b/shop", "a/b"),
+                       SAWindowNamePillParts(prefix: "", name: "a/b", rest: "shop"))
+    }
+
+    func testPillNeedsAName() {
+        XCTAssertNil(pill("Localhost/shop", "Localhost/shop", ""))
+    }
+
+    /// While connecting (or disconnected) the title is not the connection's: no pill.
+    func testPillNeedsAConnectedTitle() {
+        XCTAssertNil(pill("Connecting…", "Connecting…", "Localhost"))
+        XCTAssertNil(pill("Sequel Ace", "Sequel Ace", "Localhost"))
+        XCTAssertNil(pill("Localhost/shop", "Localhost/shop", "Production"))
+    }
+
+    /// A name that only starts the first component of the title is not that title's connection.
+    func testPillNeedsTheWholeName() {
+        XCTAssertNil(pill("Localhost/shop", "Localhost/shop", "Local"))
+        XCTAssertNil(pill("Localhost", "Localhost", "Local"))
+    }
+    // MARK: - Name pill subtitle placement
+
+    private typealias Placement = SAWindowNamePillSubtitlePlacement
+
+    /// The pill's subtitle hangs 18.5pt under the traffic lights' centre; 11pt text reaches about 2.6pt lower.
+    private func placement(spaceBelowLights space: CGFloat) -> Placement {
+        Placement.forSpace(belowCentre: space, baselineBelowCentre: 18.5, descent: 2.6)
+    }
+
+    func testSubtitleGoesUnderTheTitleWhenTheToolbarShows() {
+        // With the toolbar the title bar reaches 40pt under the lights' centre.
+        XCTAssertEqual(placement(spaceBelowLights: 40), .below)
+    }
+
+    func testSubtitleGoesInlineInAShortTitleBar() {
+        // Toolbar hidden: a 32pt bar, the lights' centre 16pt above its bottom.
+        XCTAssertEqual(placement(spaceBelowLights: 16), .inline)
+    }
+
+    func testSubtitleGoesUnderOnlyWhenItsDescentFits() {
+        XCTAssertEqual(placement(spaceBelowLights: 21.1), .below)
+        XCTAssertEqual(placement(spaceBelowLights: 21.0), .inline)
+    }
+
+    func testInlineSubtitleTextMatchesTheNativeForm() {
+        XCTAssertEqual(Placement.inlineText("MySQL 8.4"), "– MySQL 8.4")
+    }
+
+    // MARK: - Name pill host
+
+    private typealias Host = SAWindowNamePillHost
+
+    func testNoPillKeepsTheNativeTitle() {
+        let host = Host.choose(showsPill: false, toolbarVisible: true, nativeTitleAvailable: true)
+        XCTAssertEqual(host, .none)
+        XCTAssertFalse(host.hidesNativeTitle)
+    }
+
+    func testToolbarShownDrawsOverTheNativeTitle() {
+        // The native title keeps its flexible room in the toolbar, so the items stay where Off has them.
+        let host = Host.choose(showsPill: true, toolbarVisible: true, nativeTitleAvailable: true)
+        XCTAssertEqual(host, .nativeTitle)
+        XCTAssertFalse(host.hidesNativeTitle)
+    }
+
+    func testToolbarHiddenUsesTheAccessory() {
+        XCTAssertEqual(Host.choose(showsPill: true, toolbarVisible: false, nativeTitleAvailable: true), .accessory)
+        XCTAssertEqual(Host.choose(showsPill: true, toolbarVisible: false, nativeTitleAvailable: false), .accessory)
+        XCTAssertTrue(Host.accessory.hidesNativeTitle)
+    }
+
+    func testMissingNativeTitleFallsBackToTheAccessory() {
+        XCTAssertEqual(Host.choose(showsPill: true, toolbarVisible: true, nativeTitleAvailable: false), .accessory)
+    }
 }

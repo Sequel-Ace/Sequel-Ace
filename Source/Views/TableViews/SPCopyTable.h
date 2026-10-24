@@ -53,7 +53,7 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 */
 @interface SPCopyTable : SPTableView
 {
-	SPTableContent* tableInstance;    // the table content view instance
+	__weak SPTableContent* tableInstance; // the table content view instance (weak: it owns this table view)
 	id mySQLConnection;               // current MySQL connection
 	NSArray* columnDefinitions;       // array of NSDictionary containing info about columns
 	NSString* selectedTable;          // the name of the current selected table
@@ -88,6 +88,13 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 	@param	  sender who asked for this copy?
 */
 - (void)copy:(id)sender;
+
+/// Puts the rows on the general pasteboard as the copy action with this SPEditMenuCopy… tag does;
+/// every row when onlySelected is NO. Returns NO when there was nothing to copy.
+- (BOOL)copyRowsForTag:(NSInteger)tag onlySelectedRows:(BOOL)onlySelected;
+
+/// Whether the table has the column definitions SQL INSERT copies need.
+@property (readonly) BOOL hasColumnDefinitions;
 
 /*!
 	@method	 draggedRowsAsTabString:

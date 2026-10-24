@@ -6,69 +6,78 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 	<style type="text/css" media="all">
+		/* Printed pages are paper: always light, in the system font, with hairline rules. */
 		html {
 			font-size: 12px;
+			color-scheme: light;
 		}
-		
+
+		body {
+			background-color: #FFFFFF;
+			color: #0B0B0B;
+			font-family: -apple-system, system-ui, sans-serif;
+			line-height: 1.4;
+		}
+
 		.nowrap {
 			white-space: nowrap;
 		}
-		
+
 		div.nowrap {
 			margin: 0;
 			padding: 0;
 		}
-		
-		body, table, th, td {
-			background-color: #FFFFFF;
-			color: #000000;
-		}
-		
+
 		h1 {
+			margin: 0 0 6px;
 			font-size: 16px;
+			font-weight: 600;
 		}
-		
+
 		h2 {
-			font-size: 14px;
+			margin: 18px 0 6px;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		strong {
+			font-weight: 600;
 		}
 
 		table {
 			width: 100%;
-			border: 1px solid #CCCCCC;
+			border: none;
 			border-collapse: collapse;
 			border-spacing: 0;
 		}
 
-		th, td {
-			padding: 0.2em;
-		}
-
+		/* The header row: muted labels over a hairline, no fill. */
 		th {
+			padding: 3px 6px;
 			text-align: left;
-			font-weight: bold;
-			background-color: #E5E5E5;
-			border: 1px solid #CCCCCC;
+			font-weight: 600;
+			color: #7B7974;
+			border-left: {{gridlines}};
+			border-right: {{gridlines}};
+			border-left-color: #E7E6E1;
+			border-right-color: #E7E6E1;
+			border-bottom: 1px solid #D9D8D2;
 		}
-		
+
+		/* The vertical rules follow the vertical grid lines preference (a 1px rule or none), drawn as hairlines. */
 		td {
-			font-family: {{font}};
-			border: {{gridlines}};
-		}
-
-		tr > td {
+			padding: 3px 6px;
 			text-align: left;
+			border-left: {{gridlines}};
+			border-right: {{gridlines}};
+			border-left-color: #E7E6E1;
+			border-right-color: #E7E6E1;
+			border-bottom: 1px solid #E7E6E1;
 		}
 
-		tr.even > td {
-			background-color: #EDF3FE;
-		}
-
-		tr.odd > td {
-			background-color: #FFFFFF;
-		}
-		
 		code {
-			font-family: Courier;
+			font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+			font-size: 11px;
 		}
 	</style>
 </head>

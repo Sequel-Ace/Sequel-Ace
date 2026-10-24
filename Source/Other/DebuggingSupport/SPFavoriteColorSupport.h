@@ -44,6 +44,11 @@
  */
 + (SPFavoriteColorSupport *)sharedInstance;
 
+/**
+ * An instance reading the given defaults (the shared instance reads the standard defaults).
+ */
+- (instancetype)initWithDefaults:(NSUserDefaults *)defaults;
+
 /** 
  * Get the current color for a specific index.
  * 
@@ -52,8 +57,8 @@
 - (NSColor *)colorForIndex:(NSInteger)colorIndex;
 
 /** 
- * The current list of colors from user prefs.
- * 
+ * The favourite colour list: the vivid palette, one colour per stored index.
+ *
  * @return An array with NSColor * items.
  */
 - (NSArray<NSColor *>*)populateUserColorList;

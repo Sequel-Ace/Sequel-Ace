@@ -109,6 +109,16 @@ import Network
 
     @objc public weak var dataSource: SPMCPDataSource?
 
+    /// Posted on the main queue when the listener starts accepting connections, fails, or is stopped — `isRunning`
+    /// has its new value (the Settings window's MCP status line follows it).
+    @objc public static let runningStateDidChangeNotification = Notification.Name("SPMCPServerRunningStateDidChange")
+
+    private static func postRunningStateDidChange() {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: runningStateDidChangeNotification, object: SPMCPServer.shared)
+        }
+    }
+
     /// `true` while the listener is running and accepting connections.
     @objc public var isRunning: Bool {
         listenerLock.lock()
@@ -146,6 +156,7 @@ import Network
                 switch state {
                 case .ready:
                     DispatchQueue.main.async { completion(true, nil) }
+                    SPMCPServer.postRunningStateDidChange()
                 case .failed(let error):
                     DispatchQueue.main.async { completion(false, error.localizedDescription) }
                     self?.stop()
@@ -189,6 +200,7 @@ import Network
             DispatchQueue.main.async { completion?() }
             return
         }
+        Self.postRunningStateDidChange()
 
         // Signal completion once the listener reports .cancelled.
         l.stateUpdateHandler = { state in
@@ -620,7 +632,7 @@ private extension SPMCPServer {
 
         case "kill_query":
             if UserDefaults.standard.bool(forKey: SPMCPReadOnly) {
-                return toolError("Read-only mode is enabled; kill_query is not allowed. Disable read-only mode in Sequel Ace Preferences > MCP Server.")
+                return toolError("Read-only mode is enabled; kill_query is not allowed. Disable read-only mode in Sequel Ace \(SAClaudeSettingsPointers.mcpReadOnlyPlace).")
             }
             guard let pid = arguments["process_id"] else { return toolError("Missing required argument: process_id") }
             return dictResult(ds.mcpKillProcessID("\(pid)", connection: conn))
@@ -790,7 +802,7 @@ private extension SPMCPServer {
     func readOnlyRejection(for sql: String) -> [String: Any]? {
         guard UserDefaults.standard.bool(forKey: SPMCPReadOnly) else { return nil }
         guard SPMCPReadOnlyGuard.isReadOnly(sql) else {
-            return toolError("Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries.")
+            return toolError("Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace \(SAClaudeSettingsPointers.mcpReadOnlyPlace) to run write queries.")
         }
         return nil
     }

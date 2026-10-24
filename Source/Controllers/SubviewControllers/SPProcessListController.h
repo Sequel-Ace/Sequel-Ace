@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPMySQLConnection;
+@class SAClaudeProcessListSession;
 
 @interface SPProcessListController : NSWindowController 
 {
@@ -56,18 +57,27 @@
 
 @property (readwrite, strong) SPMySQLConnection *connection;
 
+/// The Process List's own connection (opened with the window, closed with it); nil while the window is closed.
+@property (nonatomic, readonly, strong) SAClaudeProcessListSession *processListSession;
+
 - (IBAction)copy:(id)sender;
 - (IBAction)closeSheet:(id)sender;
 - (IBAction)refreshProcessList:(id)sender;
 - (IBAction)saveServerProcesses:(id)sender;
 - (IBAction)killProcessQuery:(id)sender;
 - (IBAction)killProcessConnection:(id)sender;
-- (IBAction)toggleShowProcessID:(NSMenuItem *)sender;
-- (IBAction)toggeleShowFullProcessList:(NSMenuItem *)sender;
 - (IBAction)toggleProcessListAutoRefresh:(NSButton *)sender;
 - (IBAction)setAutoRefreshInterval:(id)sender;
 - (IBAction)setCustomAutoRefreshInterval:(id)sender;
 
 - (void)displayProcessListWindow;
+
+/// Kill query / Kill connection on a connection id the caller showed (never a row index): today's confirmations, and
+/// Kill query re-reads the connection first and asks again if it now runs something other than shownQuery.
+- (void)killQueryOnConnectionId:(long long)processId shownQuery:(NSString *)shownQuery;
+- (void)killConnectionWithConnectionId:(long long)processId;
+
+/// Turns auto refresh on or off (the Auto refresh switch, ⇧⌘R): the preference, the timer and the switch.
+- (void)setAutoRefreshEnabled:(BOOL)enable;
 
 @end

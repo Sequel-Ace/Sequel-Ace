@@ -49,21 +49,24 @@ enum SABookmarkPathNormalizer {
         return bookmarkPaths.map { displayName(forBookmarkPath: $0) }
     }
 
+    // The texts name the new Settings place (SAClaudeSettingsPointer.launchStaleFiles / .networkMissingFiles); the
+    // en value is also given here so the text reads right where the strings table has no entry (the unit tests).
+
     @objc static func staleBookmarksMessage(count: Int) -> String {
         if count == 1 {
-            return NSLocalizedString("Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it.", comment: "single stale bookmark alert message")
+            return NSLocalizedString("ClaudeSettings.pointer.staleFiles.one", value: "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open to refresh or revoke it.", comment: "Claude Settings pointer: single stale bookmark alert message")
         }
 
-        let format = NSLocalizedString("Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them.", comment: "multiple stale bookmarks alert message")
+        let format = NSLocalizedString("ClaudeSettings.pointer.staleFiles.many", value: "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open to refresh or revoke them.", comment: "Claude Settings pointer: multiple stale bookmarks alert message")
         return String.localizedStringWithFormat(format, count)
     }
 
     @objc static func missingBookmarksMessage(count: Int) -> String {
         if count == 1 {
-            return NSLocalizedString("Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences.", comment: "single missing bookmark alert message")
+            return NSLocalizedString("ClaudeSettings.pointer.missingFiles.one", value: "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open.", comment: "Claude Settings pointer: single missing bookmark alert message")
         }
 
-        let format = NSLocalizedString("Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences.", comment: "multiple missing bookmarks alert message")
+        let format = NSLocalizedString("ClaudeSettings.pointer.missingFiles.many", value: "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Settings \u{25B8} SSH and security \u{25B8} Files Sequel Ace can open.", comment: "Claude Settings pointer: multiple missing bookmarks alert message")
         return String.localizedStringWithFormat(format, count)
     }
 
@@ -72,14 +75,29 @@ enum SABookmarkPathNormalizer {
     }
 }
 
+/// Called by the alert helpers below right before an alert is shown. The app's Claude sheet styler sets it at
+/// launch (`SAClaudeSheetStyler.start()`); the Unit Tests target builds this file without the styler.
+enum SAAlertPresentation {
+    static var willPresent: ((NSAlert) -> Void)?
+}
+
 @objc extension NSAlert {
     /// Use the standard alert layout, with a scrollable fallback for lengthy diagnostics.
     @objc(setScrollableInformativeText:)
     func setScrollableInformativeText(_ text: String) {
         informativeText = text
-        layout()
+        // Claude look: measured on a stand-in with the same texts and buttons, so this alert is not laid out before it
+        // is presented. The Claude alert card styles the buttons as the alert is presented, before its first layout;
+        // buttons an earlier `layout()` already put in NSAlert's stack view stay native (`SAClaudeSheetStyler.styleAlert`).
+        let measure = NSAlert()
+        measure.alertStyle = alertStyle
+        measure.messageText = messageText
+        measure.informativeText = text
+        for button in buttons { measure.addButton(withTitle: button.title) }
+        measure.showsSuppressionButton = showsSuppressionButton
+        measure.layout()
         let maximumHeight = min(600, (NSScreen.main?.visibleFrame.height ?? 800) * 0.7)
-        guard window.frame.height > maximumHeight else { return }
+        guard measure.window.frame.height > maximumHeight else { return }
 
         informativeText = ""
         let scrollView = NSTextView.scrollableTextView()
@@ -118,6 +136,7 @@ enum SABookmarkPathNormalizer {
             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -153,6 +172,7 @@ enum SABookmarkPathNormalizer {
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
 
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -189,6 +209,7 @@ enum SABookmarkPathNormalizer {
             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: secondaryButtonTitle)
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -213,6 +234,7 @@ enum SABookmarkPathNormalizer {
             alert.messageText = title
             alert.informativeText = message
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            SAAlertPresentation.willPresent?(alert)
             alert.runModal()
             callback?()
         }
@@ -232,6 +254,7 @@ enum SABookmarkPathNormalizer {
             alert.messageText = title
             alert.informativeText = message
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            SAAlertPresentation.willPresent?(alert)
             alert.runModal()
             callback?()
         }
@@ -260,6 +283,7 @@ enum SABookmarkPathNormalizer {
             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -288,6 +312,7 @@ enum SABookmarkPathNormalizer {
             alert.addButton(withTitle: primaryButtonTitle)
             alert.addButton(withTitle: secondaryButtonTitle)
 
+            SAAlertPresentation.willPresent?(alert)
             if alert.runModal() == .alertFirstButtonReturn {
                 primaryButtonHandler?()
             } else {
@@ -314,6 +339,7 @@ enum SABookmarkPathNormalizer {
             alert.informativeText = message
             alert.accessoryView = accessoryView
             alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK button"))
+            SAAlertPresentation.willPresent?(alert)
             alert.runModal()
             callback?()
         }

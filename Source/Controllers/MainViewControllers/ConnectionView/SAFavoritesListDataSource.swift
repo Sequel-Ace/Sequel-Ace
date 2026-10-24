@@ -48,7 +48,8 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
 
     /// Active search query. Setting this rebuilds the visible-node set.
     /// Empty / whitespace-only query disables the filter (all nodes visible).
-    @objc var searchQuery: String = "" {
+    /// `dynamic` so the connection page's favourite cards can follow it with KVO.
+    @objc dynamic var searchQuery: String = "" {
         didSet { rebuildVisibleNodes() }
     }
 
@@ -257,38 +258,21 @@ extension SAFavoritesListDataSource: NSOutlineViewDataSource {
         let targetNode = (item as? SPTreeNode) ?? favoritesRoot.children?.first
         guard let targetNode = targetNode else { return false }
 
-        var insertIndex = childIndex
-        if targetNode.isGroup && insertIndex == NSOutlineViewDropOnItemIndex {
-            insertIndex = 0
+        if targetNode.isGroup && childIndex == NSOutlineViewDropOnItemIndex {
             outlineView.expandItem(targetNode)
         }
 
-        let childArray = targetNode.mutableChildren
         guard !draggedNodes.isEmpty else { return false }
 
         // Cache selection for restoration
         let preDragSelection = outlineView.selectedRowIndexes.map { outlineView.item(atRow: $0) as? SPTreeNode }
 
-        for draggedNode in draggedNodes {
-            let oldIndex = childArray.index(of: draggedNode)
-            var newIndex = insertIndex
+        // Moves the nodes, saves favorites and notifies the delegate to handle sort state
+        // reset and notifications (shared with the connection screen's favourite cards).
+        guard SAFavoritesMover.move(draggedNodes, into: targetNode, at: childIndex,
+                                    controller: favoritesController, delegate: delegate) else { return false }
 
-            if oldIndex != NSNotFound {
-                childArray.removeObject(at: oldIndex)
-                if insertIndex > oldIndex { newIndex -= 1 }
-            } else {
-                (draggedNode.parent as? SPTreeNode)?.mutableChildren.remove(draggedNode)
-            }
-
-            childArray.insert(draggedNode, at: newIndex)
-            insertIndex = newIndex + 1
-        }
-
-        favoritesController.saveFavorites()
         reloadData(in: outlineView)
-
-        // Notify delegate to handle sort state reset and notifications
-        delegate?.favoritesListDidReorderNodes?()
 
         // Restore selection
         let restoredIndexes = NSMutableIndexSet()

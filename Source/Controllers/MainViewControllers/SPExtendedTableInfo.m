@@ -94,6 +94,19 @@ static NSString *SPMySQLCommentField          = @"Comment";
 											 selector:@selector(_updateDisplayedInfo:)
 												 name:SPTableInfoChangedNotification
 											   object:tableDocumentInstance];
+
+	// Claude look: restyles the Status tab (a no-op if any outlet is missing).
+	if (tableCreateSyntaxTextView && tableCommentsTextView && tableTypePopUpButton && tableEncodingPopUpButton && tableCollationPopUpButton
+		&& tableCreatedAt && tableUpdatedAt && tableRowNumber && tableRowFormat && tableRowAvgLength && tableRowAutoIncrement
+		&& tableDataSize && tableMaxDataSize && tableIndexSize && tableSizeFree) {
+		[SAClaudeTableInfoStyler attachWithCreateSyntaxView:tableCreateSyntaxTextView
+		                                       commentsView:tableCommentsTextView
+		                                             popUps:@[tableTypePopUpButton, tableEncodingPopUpButton, tableCollationPopUpButton]
+		                                      generalValues:@[tableCreatedAt, tableUpdatedAt]
+		                                      storageValues:@[tableRowNumber, tableRowFormat, tableRowAvgLength, tableRowAutoIncrement,
+		                                                      tableDataSize, tableMaxDataSize, tableIndexSize, tableSizeFree]
+		                           resetAutoIncrementButton:resetAutoIncrementResetButton];
+	}
 }
 
 #pragma mark -
