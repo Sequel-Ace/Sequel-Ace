@@ -94,6 +94,22 @@ final class SASessionGateTests: XCTestCase {
         XCTAssertTrue(host.holdsNothing)
     }
 
+    /// A session marked to go while the last check restored it is not taken on the strength of
+    /// being there: it is closed and the statement refused, with the connection released - and
+    /// a keepalive that marks every restored session cannot keep the gate going round.
+    func testASessionMarkedDuringTheLastCheckIsNotTaken() {
+        host.hasSessionToUse = false
+        host.check = { [host] in
+            host.hasSessionToUse = true
+            host.sessionReplacementMark = .regardless
+            return true
+        }
+
+        XCTAssertFalse(SASessionGate.lock(host))
+        XCTAssertEqual(host.calls, ["lock", "unlock", "check", "lock", "close", "unlock", "check", "lock", "close", "unlock"])
+        XCTAssertTrue(host.holdsNothing)
+    }
+
     /// A check that says yes without a session appearing is not repeated for ever: the gate gives
     /// up after its checks, with the connection released.
     func testTheGateGivesUpAfterItsChecksAndReleasesTheConnection() {

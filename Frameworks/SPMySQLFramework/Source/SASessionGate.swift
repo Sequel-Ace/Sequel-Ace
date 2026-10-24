@@ -53,7 +53,9 @@ public final class SASessionGate: NSObject {
     /// would roll back work somebody is still doing, and the session is still replaced once nothing
     /// is open in it. One the protocol cannot be trusted on goes regardless. A session that is
     /// closed here, or was lost in the background, is restored through the ordinary check before
-    /// the statement runs.
+    /// the statement runs. Once the checks are spent, a session marked to go meanwhile - by a
+    /// keepalive that gave up on it before the lock came back - is not spoken on either: it is
+    /// closed, so the next use reconnects, and this statement is refused.
     /// - Parameter host: The connection.
     /// - Returns: Whether the connection is held with a usable session; `false` leaves it released.
     @objc(lockHost:)
@@ -62,15 +64,7 @@ public final class SASessionGate: NSObject {
 
         for _ in 0..<checks {
             if host.hasSessionToUse {
-                let mark = host.sessionReplacementMark
-                if mark == .notMarked {
-                    return true
-                }
-                // The mark can be much older than this moment, and a query that took the
-                // connection over in between can have opened a transaction of its own. The
-                // connection is held here, so the session's own answer is the one to go by.
-                if !SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: mark,
-                                                                        sessionHasOpenTransaction: host.sessionReportsOpenTransaction) {
+                if !sessionGoes(on: host) {
                     return true
                 }
                 host.closeSessionMarkedForReplacement()
@@ -84,9 +78,28 @@ public final class SASessionGate: NSObject {
         }
 
         if host.hasSessionToUse {
-            return true
+            if !sessionGoes(on: host) {
+                return true
+            }
+            host.closeSessionMarkedForReplacement()
         }
         host.unlockConnection()
         return false
+    }
+
+    /// Whether the session the host has goes before it is used, by its mark and what is open in it.
+    ///
+    /// The mark can be much older than this moment, and a query that took the connection over in
+    /// between can have opened a transaction of its own. The connection is held here, so the
+    /// session's own answer is the one to go by.
+    /// - Parameter host: The connection, holding its lock.
+    /// - Returns: Whether the session is replaced rather than used.
+    private static func sessionGoes(on host: SASessionGateHost) -> Bool {
+        let mark = host.sessionReplacementMark
+        guard mark != .notMarked else {
+            return false
+        }
+        return SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: mark,
+                                                                   sessionHasOpenTransaction: host.sessionReportsOpenTransaction)
     }
 }
