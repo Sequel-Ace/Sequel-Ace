@@ -51,8 +51,9 @@ private final class SASwitchingConnection: SPMySQLConnection {
 }
 
 /// The session identity against a real server: a stop reaches a statement before its first send,
-/// a statement is serialised for the session that sends it, and a session marked to be replaced
-/// is replaced - unless a transaction is open in it, which keeps it until that is over.
+/// a statement is serialised and a value escaped for the session that sends it, and a session
+/// marked to be replaced is replaced - unless a transaction is open in it, which keeps it until
+/// that is over, and a character set restored meanwhile reaches it.
 final class SASessionIdentityIntegrationTests: XCTestCase {
 
     /// A database of this test's own, dropped afterwards.
@@ -68,12 +69,13 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
     }
 
     /// Makes the test's database and a table with one VARBINARY column, so the server stores the
-    /// literal's bytes as they arrive.
+    /// literal's bytes as they arrive. The database is selected through the connection, which
+    /// selects it again on a session that replaces this one.
     private func prepare(_ connection: SPMySQLConnection) throws {
         database = "sa_identity_\(UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_"))"
         connection.queryString("CREATE DATABASE \(database)")
         try XCTSkipIf(connection.queryErrored(), "Cannot create a database for the regression.")
-        connection.queryString("USE \(database)")
+        XCTAssertTrue(connection.selectDatabase(database))
         connection.queryString("CREATE TABLE t (id INT PRIMARY KEY AUTO_INCREMENT, v VARBINARY(100)) ENGINE=InnoDB")
         try XCTSkipIf(connection.queryErrored(), "Cannot create the table for the regression.")
     }
@@ -248,6 +250,79 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(rowCount(connection), 0, "the transaction was rolled back with its session")
         XCTAssertNotEqual(connection.mysqlConnectionThreadId, theSessionWithTheTransaction)
         XCTAssertEqual(connection.value(forKey: "sessionIsProtocolInvalid") as? Bool, false, "the new session can be trusted")
+    }
+
+    // MARK: - Escaped for the session that sends it
+
+    /// A value escaped while the session is marked to go is escaped for the session that will send
+    /// it, not for the one on its way out: the two escaping modes are not interchangeable.
+    ///
+    /// The outgoing session is in `NO_BACKSLASH_ESCAPES`, where a backslash is an ordinary byte and
+    /// `a\b` needs no escaping. The session that replaces it starts in the server's own mode, which
+    /// a mode set in a session does not outlive, and there `a\b` is `a` followed by a backspace. A
+    /// VARBINARY column keeps whichever arrived.
+    func testAValueEscapedWhileTheSessionIsMarkedIsEscapedForTheSessionThatSendsIt() throws {
+        let connection = try connected(SPMySQLConnection())
+        defer {
+            dropTheDatabase(connection)
+            connection.disconnect()
+        }
+        try prepare(connection)
+        connection.queryString("SET SESSION sql_mode = CONCAT(@@sql_mode, ',NO_BACKSLASH_ESCAPES')")
+        XCTAssertFalse(connection.queryErrored())
+        let value = "a\\b"
+        XCTAssertEqual(connection.escape(value, includingQuotes: false), "a\\b", "the escaper follows the session it has: the backslash stays")
+        let theOutgoingSession = connection.mysqlConnectionThreadId
+
+        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.setValue(true, forKey: "sessionIsProtocolInvalid")
+        let escaped = try XCTUnwrap(connection.escapeAndQuoteString(value))
+        XCTAssertEqual(connection.mysqlConnectionThreadId, theOutgoingSession, "escaping sends nothing, so the marked session is still the one there is")
+
+        connection.queryString("INSERT INTO t (v) VALUES (\(escaped))")
+        XCTAssertFalse(connection.queryErrored())
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, theOutgoingSession, "the statement ran on the replacement")
+        let replacementMode = connection.getFirstField(fromQuery: "SELECT @@sql_mode") as? String ?? ""
+        try XCTSkipIf(replacementMode.contains("NO_BACKSLASH_ESCAPES"), "this server starts sessions in NO_BACKSLASH_ESCAPES, so the two modes cannot be told apart here")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT HEX(v) FROM t") as? String, "615C62", "a, backslash, b - not a and a backspace, which is what the replacement makes of the backslash and the b")
+    }
+
+    /// A character set restored on a session that is kept - marked, with a transaction open -
+    /// reaches that session: the restore goes out as a statement, and a statement takes the session
+    /// the way everything else does. The next non-ASCII value is serialised for the character set
+    /// the session reads it in, on the kept session and on the one that replaces it afterwards.
+    func testACharacterSetRestoredOnAKeptSessionReachesThatSession() throws {
+        let connection = try connected(SPMySQLConnection())
+        defer {
+            dropTheDatabase(connection)
+            connection.disconnect()
+        }
+        try prepare(connection)
+        XCTAssertTrue(connection.setEncoding("utf8mb4"))
+        connection.storeEncodingForRestoration()
+        XCTAssertTrue(connection.setEncoding("latin1"))
+        connection.queryString("START TRANSACTION")
+        connection.queryString("INSERT INTO t (v) VALUES ('\u{00E9}')")
+        XCTAssertFalse(connection.queryErrored())
+        let theKeptSession = connection.mysqlConnectionThreadId
+
+        connection.setValue(true, forKey: "sessionMustBeReplacedBeforeUse")
+        connection.restoreStoredEncoding()
+        XCTAssertEqual(connection.mysqlConnectionThreadId, theKeptSession, "the session with the transaction was kept")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT @@character_set_client") as? String, "utf8mb4", "and it is the session the character set was restored on")
+        connection.queryString("INSERT INTO t (v) VALUES ('\u{00E9}')")
+        XCTAssertFalse(connection.queryErrored())
+        connection.queryString("COMMIT")
+        XCTAssertFalse(connection.queryErrored())
+
+        // Nothing is open in it any more: the next statement runs on the replacement, which reads
+        // the restored character set too.
+        connection.queryString("INSERT INTO t (v) VALUES ('\u{00E9}')")
+        XCTAssertFalse(connection.queryErrored())
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, theKeptSession, "replaced once the transaction was over")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT HEX(v) FROM t WHERE id = 1") as? String, "E9", "written while the session read latin1")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT HEX(v) FROM t WHERE id = 2") as? String, "C3A9", "written on the kept session after the restore")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT HEX(v) FROM t WHERE id = 3") as? String, "C3A9", "written on the replacement")
     }
 
     // MARK: - The local server

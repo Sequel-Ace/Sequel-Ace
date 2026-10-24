@@ -113,10 +113,13 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	// Escape starting one character in. The session's own handle is not used: work nobody waits
 	// for any more can still be using it, or close it, while this runs. The escaper follows what
 	// the session last reported - its character set and its NO_BACKSLASH_ESCAPES mode.
-	// A session on its way out is being replaced: the next one is connected with the character
-	// set on record, so a value built now - which may well be sent on that next session - follows
-	// the record rather than what the old session last reported. Without this the safeguard had
-	// no caller that ever enabled it.
+	// A session marked to go is replaced before the statement this value is for is sent, so the
+	// value follows the session that will send it instead: the character set on record, which the
+	// next session is connected with, and the mode sessions start in on this server. The two modes
+	// are not interchangeable - a backslash left as it is for a NO_BACKSLASH_ESCAPES session is an
+	// escape on the next one, and the quote after it ends the literal. A marked session that is
+	// kept, because a transaction is open in it, is the one that sends, and is followed. The same
+	// question is asked when the statement takes the session, so the two answers agree.
 	// Latin1 transport sets the session's client character set to latin1 while `encoding` keeps
 	// the name the connection was put on, so the transport character set is what the server
 	// reads a value in. Escaping for `encoding` there would leave `BF 5C` - one GBK character -
@@ -127,19 +130,14 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	NSString *transportCharacterSet = encodingUsesLatin1Transport
 		? @"latin1"
 		: (sqlInputEncoding ?: encoding);
+	BOOL sessionIsBeingReplaced = sessionMustBeReplacedBeforeUse
+		&& [SAConnectionCancellation markedSessionIsClosedNowWithOpenTransaction:[self sessionHasOpenTransaction]
+		                                                  sessionIsProtocolInvalid:sessionIsProtocolInvalid];
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1
 	                               characterSetOnRecord:transportCharacterSet
-	                             sessionIsBeingReplaced:NO];
-	// Not marked as being replaced. `SPMySQLDisconnecting` looks like the signal for it, but it
-	// does not say that the next statement runs on the replacement session:
-	// `_disconnectPreservingProxyReconnect:` releases the connection before closing the old
-	// handle, and `queryString:` still accepts a connection used a moment ago. A value escaped
-	// for the replacement and then run on the outgoing session is worse than the other way round,
-	// because the two escaping modes are not interchangeable: backslashes in a literal a
-	// `NO_BACKSLASH_ESCAPES` session reads leave the quote after one unescaped. Setting this needs
-	// the state that says the replacement is in hand, which #2676 introduces.
+	                             sessionIsBeingReplaced:sessionIsBeingReplaced];
 	if (escapedLength < 0) {
 		// A value that cannot be escaped for this character set is not written. Before, an
 		// unexpected error raised an assertion, which ends the application in a debug build and
