@@ -472,6 +472,22 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(rowCount(observer), 1, "the server never saw it")
     }
 
+    /// The version a closed session reported goes with it: a connection left without a session
+    /// answers the version readings as a connection without one, not with the closed session's.
+    func testAClosedMarkedSessionLeavesNoServerVersionBehind() throws {
+        let connection = try connected(SACheckFailingAfterTheMarkConnection())
+        defer { connection.disconnect() }
+        XCTAssertGreaterThan(connection.serverMajorVersion(), 0, "connected, the version is the server's")
+
+        connection.armed = true
+        XCTAssertNil(connection.queryString("SELECT 1"))
+        XCTAssertFalse(connection.armed, "the session was closed and none restored")
+
+        XCTAssertEqual(connection.serverMajorVersion(), 0)
+        XCTAssertNil(connection.serverVersionString())
+        XCTAssertFalse(connection.serverVersionIsGreaterThanOrEqual(to: 1, minorVersion: 0, releaseVersion: 0), "no connection is active")
+    }
+
     /// A marked session with a transaction open is kept until that transaction is over: closing it
     /// would roll back work somebody is still doing. Once the transaction is committed, the next
     /// statement runs on a new session, and the work is there.

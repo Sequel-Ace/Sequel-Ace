@@ -853,6 +853,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		mySQLConnection = NULL;
 	}
 	state = SPMySQLConnectionLostInBackground;
+	// What the session reported about its server goes with it, as a connect starts without it:
+	// the version readings answer "no connection" until the next session reports its own,
+	// instead of the closed session's version for a connection that may never come back.
+	serverVariableVersion = nil;
+	serverVersionNumber = 0;
 	// The mark was about this session, which is gone.
 	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
 
