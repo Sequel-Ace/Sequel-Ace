@@ -203,6 +203,12 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
         page(for: scrollView)?.grid.reload()
     }
 
+    /// Whether the favourites show as the page's cards (no tree): the controller's `-addGroup:` adds top-level folders.
+    @objc(showsCardsIn:)
+    static func showsCards(in scrollView: NSScrollView) -> Bool {
+        page(for: scrollView)?.isAttached ?? false
+    }
+
     private static func page(for scrollView: NSScrollView) -> SAClaudeConnectionPageStyler? {
         objc_getAssociatedObject(scrollView, &associationKey) as? SAClaudeConnectionPageStyler
     }

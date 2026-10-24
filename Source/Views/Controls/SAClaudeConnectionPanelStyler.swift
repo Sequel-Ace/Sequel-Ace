@@ -302,6 +302,8 @@ private final class SAClaudePanelForm {
     private var lastWidth: CGFloat = 0
 
     private var defaultsObserver: NSObjectProtocol?
+    private var nameEditObservers: [NSObjectProtocol] = []
+    private var nameAtEditStart: String?
     private var scrollFrameObserver: NSObjectProtocol?
 
     // MARK: Page (set by `SAClaudeConnectionPageStyler` when the connection page owns the layout)
@@ -372,6 +374,14 @@ private final class SAClaudePanelForm {
         styler(for: container)?.chainKeyViews()
     }
 
+    /// The controller's `control(_:textView:doCommandBy:)`: the title's name field takes Return (save) and Escape
+    /// (restore the name the edit started with) itself, so neither reaches the default button (Connect). `false` for
+    /// any other control or command.
+    @objc(handleNameCommand:inControl:container:)
+    static func handleNameCommand(_ selector: Selector, in control: NSControl, container: NSView) -> Bool {
+        styler(for: container)?.handleNameCommand(selector, in: control) ?? false
+    }
+
     static func styler(for container: NSView) -> SAClaudeConnectionPanelStyler? {
         objc_getAssociatedObject(container, &associationKey) as? SAClaudeConnectionPanelStyler
     }
@@ -385,6 +395,7 @@ private final class SAClaudePanelForm {
     deinit {
         if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
         if let scrollFrameObserver { NotificationCenter.default.removeObserver(scrollFrameObserver) }
+        nameEditObservers.forEach { NotificationCenter.default.removeObserver($0) }
         observations.forEach { $0.invalidate() }
         windowObservation?.invalidate()
         firstResponderObservation?.invalidate()
@@ -866,6 +877,15 @@ private final class SAClaudePanelForm {
                 }
             }
         }
+        // The title's name: the value Escape restores is the one before the edit's first change.
+        nameEditObservers = [
+            NotificationCenter.default.addObserver(forName: NSControl.textDidBeginEditingNotification, object: nil, queue: nil) { [weak self] notification in
+                self?.onMain { $0.nameEdit(notification, began: true) }
+            },
+            NotificationCenter.default.addObserver(forName: NSControl.textDidEndEditingNotification, object: nil, queue: nil) { [weak self] notification in
+                self?.onMain { $0.nameEdit(notification, began: false) }
+            },
+        ]
         let header: [NSKeyValueObservation] = [
             controller.observe(\.name) { [weak self] _, _ in self?.onMain { $0.updateHeader() } },
             controller.observe(\.host) { [weak self] _, _ in self?.onMain { $0.updateHeader() } },
@@ -1186,6 +1206,39 @@ private final class SAClaudePanelForm {
     private var currentForm: SAClaudePanelForm? {
         guard let controller else { return nil }
         return forms.first { $0.type.rawValue == controller.type }
+    }
+
+    // MARK: - Name editing keys
+
+    private func isTitleNameField(_ control: NSControl) -> Bool {
+        forms.contains { $0.nameField != nil && $0.nameField === control }
+    }
+
+    /// Remembers the name when the title's name field starts changing (its edit's first change), for Escape;
+    /// forgets it when the edit ends.
+    private func nameEdit(_ notification: Notification, began: Bool) {
+        guard let field = notification.object as? NSTextField, isTitleNameField(field) else { return }
+        nameAtEditStart = began ? (controller?.name ?? field.stringValue) : nil
+    }
+
+    private func handleNameCommand(_ selector: Selector, in control: NSControl) -> Bool {
+        guard let field = control as? NSTextField, isTitleNameField(field), let command = SAClaudeInlineNameCommand(selector) else { return false }
+        if command == .cancel, let original = nameAtEditStart, let editor = field.currentEditor() as? NSTextView {
+            // Through the field editor, so ending the edit pushes it to the binding and the controller's own
+            // end-of-editing handling runs as for a typed name.
+            editor.string = original
+        }
+        nameAtEditStart = nil
+        endNameEditing(field)
+        return true
+    }
+
+    /// Ends the name edit, handing the keyboard to the page's cards (the window when there are none).
+    private func endNameEditing(_ field: NSTextField) {
+        guard let window = field.window else { return }
+        let target = leadingKeyViews().last { $0.window === window && !$0.isHiddenOrHasHiddenAncestor }
+        if let target, window.makeFirstResponder(target) { return }
+        window.makeFirstResponder(nil)
     }
 
     /// The pencil (and Rename): edit the name, all of it selected. A type that keeps its XIB form edits its own

@@ -445,8 +445,8 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
 
     // MARK: - Renaming a folder
 
-    /// Shows an inline name field over the folder's header, `name` selected; Return or leaving the field commits
-    /// (`onRenameFolder`), Escape cancels.
+    /// Shows an inline name field over the folder's header, `name` selected; Return, ✓ or leaving the field commits
+    /// (`onRenameFolder`), Escape or ✕ cancels.
     func beginRenamingFolder(_ id: String, name: String) {
         guard foldersByID[id] != nil, let window else { return }
         endRenamingFolder(cancel: true)
@@ -529,16 +529,18 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         return button
     }
 
-    /// Saves the name: ending the edit commits it (`controlTextDidEndEditing`).
     @objc private func saveFolderName(_ sender: Any?) {
-        guard let field = folderNameField else { return }
-        if field.currentEditor() != nil {
-            window?.makeFirstResponder(self)
-        } else if let id = folderNameFieldID {
-            let name = field.stringValue
-            endRenamingFolder(cancel: false)
-            onRenameFolder?(id, name)
-        }
+        commitFolderName()
+    }
+
+    /// Saves the name as it stands and hands the keyboard back to the cards (Return, ✓).
+    private func commitFolderName() {
+        guard let field = folderNameField, let id = folderNameFieldID else { return }
+        let name = field.stringValue
+        // The delegate goes first, so ending the edit here doesn't commit a second time (`controlTextDidEndEditing`).
+        endRenamingFolder(cancel: false)
+        window?.makeFirstResponder(self)
+        onRenameFolder?(id, name)
     }
 
     @objc private func cancelFolderName(_ sender: Any?) {
@@ -558,13 +560,21 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
         needsDisplay = true
     }
 
+    /// The name field takes Return / Enter (save) and Escape (cancel) itself. Left to the field, Return would end the
+    /// edit as a Return movement, and a text field with no action of its own then hands the key to the window's
+    /// default button — the connection panel's Connect (an "Insufficient connection details" alert, or a connection).
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         guard control === folderNameField else { return false }
-        if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+        switch SAClaudeInlineNameCommand(commandSelector) {
+        case .commit:
+            commitFolderName()
+            return true
+        case .cancel:
             endRenamingFolder(cancel: true)
             return true
+        case nil:
+            return false
         }
-        return false
     }
 
     func controlTextDidEndEditing(_ notification: Notification) {

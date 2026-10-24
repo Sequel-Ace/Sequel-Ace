@@ -1975,7 +1975,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     SPTreeNode *selectedNode = [self selectedFavoriteNode];
 
-    SPTreeNode *parent = ([selectedNode isGroup] && selectedNode != quickConnectItem) ? selectedNode : (SPTreeNode *)[selectedNode parentNode];
+    // Beside the selection in the classic sidebar; always top-level on the Claude connection page, whose cards show
+    // no tree (rule pinned in SAFavoriteNewFolderPlacement).
+    SAFavoriteNewFolderParent placement = [SAFavoriteNewFolderPlacement parentForSelectionIsFolder:[selectedNode isGroup]
+                                                                           selectionIsQuickConnect:(selectedNode == quickConnectItem)
+                                                                                      hasSelection:(selectedNode != nil)
+                                                                             favouritesShowAsCards:[SAClaudeConnectionPageStyler showsCardsIn:connectionDetailsScrollView]];
+    SPTreeNode *parent = nil;
+    if (placement == SAFavoriteNewFolderParentSelectedNode) parent = selectedNode;
+    else if (placement == SAFavoriteNewFolderParentSelectedNodeParent) parent = (SPTreeNode *)[selectedNode parentNode];
 
     // Ensure the parent is expanded
     [favoritesOutlineView expandItem:parent];
@@ -5333,6 +5341,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
 {
+    // Claude look: the panel title's name field is an inline rename — Return saves the name, Escape restores it;
+    // neither reaches the window's default button (Connect).
+    if ([SAClaudeConnectionPanelStyler handleNameCommand:commandSelector inControl:control container:connectionResizeContainer]) return YES;
+
     // NSComboBox routes keyboard popup requests through moveDown: on its text
     // delegate. Let the Swift control defer that first popup until preparation.
     if (control == awsRegionComboBox && commandSelector == @selector(moveDown:)
