@@ -203,6 +203,8 @@ import Darwin
                 // The server has the request already. Reporting a failure instead - which is
                 // what sending nothing used to amount to - would have the caller close the
                 // query's socket, ending the session and rolling back a transaction open in it.
+                // The stop still reaches what began waiting while the server ends the query.
+                recordStopAgainstPendingOperations()
                 return SACancellationHold(query: query, session: socketGeneration, serverThread: 0,
                                           holdsTheQuery: true, killWasAlreadyAccepted: true)
             }

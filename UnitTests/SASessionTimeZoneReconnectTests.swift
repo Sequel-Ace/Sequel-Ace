@@ -974,6 +974,44 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         XCTAssertEqual(outcome, "cancelled", "the second stop reached the operation waiting behind the first's request")
     }
 
+    /// A second stop for a query the server is already ending reaches an operation that began
+    /// waiting for the session in the meantime, although nothing is sent for it again.
+    func testASecondStopAfterAnAcceptedKillReachesAnOperationThatBeganWaitingMeanwhile() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
+        let first = access.reserveCancellation()
+        XCTAssertTrue(first.holdsTheQuery)
+        access.completeCancellation(first, killAccepted: true)
+
+        // The server is still ending the query when the next operation begins waiting.
+        let waiting = DispatchSemaphore(value: 0)
+        let operationReturned = expectation(description: "operation returned")
+        var outcome = ""
+        Thread.detachNewThread {
+            waiting.signal()
+            outcome = access.performQuery {
+                let sends = access.beginNativeQuery()
+                access.endNativeQuery()
+                return sends ? "sent" : "cancelled"
+            } as? String ?? "nothing"
+            operationReturned.fulfill()
+        }
+        XCTAssertEqual(waiting.wait(timeout: .now() + 5), .success)
+        // Give the operation a moment to reach its wait behind the query that is ending.
+        Thread.sleep(forTimeInterval: 0.1)
+
+        let second = access.reserveCancellation()
+        XCTAssertTrue(second.killWasAlreadyAccepted, "nothing is sent again")
+
+        access.endNativeQuery()
+        wait(for: [operationReturned], timeout: 5)
+        XCTAssertEqual(outcome, "cancelled", "the second stop reached the operation that waited behind the query being ended")
+    }
+
     /// A second stop for a query whose request is on its way does not hold it, and once the
     /// server accepted a request the next stop is told so rather than sending another.
     func testASecondStopSharesTheFirstsRequestRatherThanActingOnItsOwn() throws {

@@ -516,6 +516,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			theSqlstate = databaseAssertionError.sqlState;
 		}
 
+		// A stop can land while the statement's bytes were being built, or while the database was
+		// being asserted - both after the lease was told of the query, and for a large statement
+		// the first takes a while. Asked once more at the last moment before anything is sent: a
+		// statement the user stopped must not go out because the stop came while its bytes were
+		// being built. The error is settled after the attempts, from the same record.
+		if (!queryStatus && self.sessionAccess.currentQueryWasCancelled) {
+			queryStatus = 1;
+		}
+
 		if (!queryStatus) {
 			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
 		}

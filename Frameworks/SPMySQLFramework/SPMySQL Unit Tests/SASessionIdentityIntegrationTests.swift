@@ -50,6 +50,34 @@ private final class SASwitchingConnection: SPMySQLConnection {
     }
 }
 
+/// A statement whose serialisation waits for the test: the window a stop can land in once the
+/// lease has been told of the query. The first serialisation - the size estimate made before the
+/// session is taken - runs through; the one inside the attempt, for the session that is held, waits.
+private final class SASlowlySerialisedStatement: NSString {
+    private var text: NSString = ""
+    private var serialisationsSoFar = 0
+    let serialising = DispatchSemaphore(value: 0)
+    let letItFinish = DispatchSemaphore(value: 0)
+
+    convenience init(statement: String) {
+        self.init()
+        text = statement as NSString
+    }
+
+    override var length: Int { text.length }
+
+    override func character(at index: Int) -> unichar { text.character(at: index) }
+
+    override func data(using encoding: UInt, allowLossyConversion lossy: Bool) -> Data? {
+        serialisationsSoFar += 1
+        if serialisationsSoFar == 2 {
+            serialising.signal()
+            _ = letItFinish.wait(timeout: .now() + 10)
+        }
+        return text.data(using: encoding, allowLossyConversion: lossy)
+    }
+}
+
 /// The session identity against a real server: a stop reaches a statement before its first send,
 /// a statement is serialised and a value escaped for the session that sends it, and a session
 /// marked to be replaced is replaced - unless a transaction is open in it, which keeps it until
@@ -133,6 +161,38 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.queryErrored())
         XCTAssertFalse(connection.lastQueryWasCancelled)
         XCTAssertEqual(rowCount(observer), 1)
+    }
+
+    /// A stop that lands while the statement's bytes are being built - after the lease was told of
+    /// the query, and for a large statement a while before anything is sent - keeps the statement
+    /// from the server.
+    func testAStopWhileTheStatementIsBeingSerialisedKeepsItFromTheServer() throws {
+        let connection = try connected(SPMySQLConnection())
+        let observer = try connected(SPMySQLConnection())
+        defer {
+            dropTheDatabase(observer)
+            connection.disconnect()
+            observer.disconnect()
+        }
+        try prepare(connection)
+
+        let statement = SASlowlySerialisedStatement(statement: "INSERT INTO t (v) VALUES ('written')")
+        let returned = expectation(description: "the statement returned")
+        var result: SPMySQLResult?
+        Thread.detachNewThread {
+            result = connection.queryString(statement as String)
+            returned.fulfill()
+        }
+        XCTAssertEqual(statement.serialising.wait(timeout: .now() + 5), .success, "the statement is being serialised for the session it holds")
+
+        connection.cancelCurrentQuery()
+        statement.letItFinish.signal()
+        wait(for: [returned], timeout: 10)
+
+        XCTAssertNil(result)
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertEqual(rowCount(observer), 0, "the write never reached the server")
     }
 
     // MARK: - Serialised for the session that sends it
