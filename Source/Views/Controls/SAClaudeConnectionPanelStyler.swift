@@ -541,7 +541,8 @@ private final class SAClaudePanelForm {
         var rows: [SAClaudePanelRow] = []
         for (key, view) in keyed where key != "requestServerPublicKey" {
             guard let place = placement(key) else { continue }
-            var kind: SAClaudeConnectionRowKind = view is NSButton ? .checkbox : .field
+            // A pop-up is an NSButton too, but a field row (label, field height): the AWS profile picker.
+            var kind: SAClaudeConnectionRowKind = view is NSButton && !(view is NSPopUpButton) ? .checkbox : .field
             var condition: SAClaudePanelRow.Condition = .always
             var accessory: NSButton?
             switch key {
@@ -1580,6 +1581,15 @@ private final class SAClaudePanelForm {
                     if pair.twin.isHidden != twinHidden { pair.twin.isHidden = twinHidden }
                     if shown, secure.isHidden != revealed { secure.isHidden = revealed }
                 }
+            }
+            // A text field's outline is the panel's own view: the controller's bindings only hide the field. A row
+            // without a slot (its condition unmet, e.g. AWS Region before ~/.aws is authorised) hides it, or it would
+            // stay at the field's XIB frame, an empty box over other rows.
+            // (The title's name field shows its outline only while editing: `updateFocus`.)
+            if row.section != .header, let field = row.control as? NSTextField, let outline = fieldFrames[ObjectIdentifier(field)],
+               form.reveal.values.allSatisfy({ $0.twin !== field }) {
+                let hidden = frame == nil || (row.section == .advanced && !open)
+                if outline.isHidden != hidden { outline.isHidden = hidden }
             }
             guard let frame, let superview = row.control.superview else { continue }
             if let label = row.label {
