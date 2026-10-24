@@ -131,7 +131,7 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	NSString *transportCharacterSet = encodingUsesLatin1Transport
 		? @"latin1"
 		: (sqlInputEncoding ?: encoding);
-	BOOL sessionIsBeingReplaced = [SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:(SASessionReplacementMark)sessionReplacement
+	BOOL sessionIsBeingReplaced = [SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
 	                                                                            openTransaction:[self sessionHasOpenTransaction]];
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength

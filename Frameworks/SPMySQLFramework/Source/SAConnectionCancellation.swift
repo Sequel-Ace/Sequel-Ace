@@ -27,19 +27,6 @@ public protocol SAConnectionCancellationHost: AnyObject {
     @objc func markRunningQueryCancelled()
 }
 
-/// How a session is to be replaced before its next use. One word, so that a reader sees the whole
-/// mark or none of it - never half of a mark somebody is still publishing.
-@objc(SASessionReplacementMark)
-public enum SASessionReplacementMark: Int {
-    /// The session is in step with what the connection knows of it.
-    case notMarked = 0
-    /// Replaced before its next use, once nothing is open in it.
-    case whenNothingIsOpen = 1
-    /// Replaced before its next use whatever is open in it: an answer nobody read may still be on
-    /// its way, and the next statement would read it as its own result.
-    case regardless = 2
-}
-
 /// How a connection stops the query it is running, or the operation still waiting to run one.
 ///
 /// Stopping takes three steps, in this order. The request is recorded at once, under the lease's

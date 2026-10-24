@@ -30,6 +30,20 @@
 
 @class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
+/**
+ * How a session is to be replaced before its next use. One word, so that a reader sees the whole
+ * mark or none of it - never half of a mark somebody is still publishing.
+ */
+typedef NS_ENUM(NSInteger, SASessionReplacementMark) {
+	/// The session is in step with what the connection knows of it.
+	SASessionReplacementMarkNotMarked = 0,
+	/// Replaced before its next use, once nothing is open in it.
+	SASessionReplacementMarkWhenNothingIsOpen = 1,
+	/// Replaced before its next use whatever is open in it: an answer nobody read may still be on
+	/// its way, and the next statement would read it as its own result.
+	SASessionReplacementMarkRegardless = 2,
+};
+
 @interface SPMySQLConnection : NSObject {
 
 	// Delegate
@@ -104,7 +118,9 @@
 	// How the session is to be replaced before its next use - a SASessionReplacementMark: not at
 	// all; once nothing is open in it; or regardless, because a ping cut off before its answer
 	// came may still get that answer, which the next statement would read as its own result. One
-	// word, written and read in one go, so a reader never sees half of a mark being published.
+	// word, so a reader never sees half of a mark being published, and only ever touched through
+	// -sessionReplacementMark and -markSessionReplacement:, which read and write it atomically:
+	// the keepalive writes it from its own thread, and escaping reads it without the connection lock.
 	NSInteger sessionReplacement;
 
 	// Timeout and keep-alive

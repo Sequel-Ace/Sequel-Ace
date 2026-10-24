@@ -169,11 +169,21 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 }
 
 /**
- * How the session is to be replaced before its next use. One word, read once.
+ * How the session is to be replaced before its next use. One word, read once and atomically: the
+ * keepalive writes it from its own thread, and escaping reads it without the connection lock.
  */
 - (SASessionReplacementMark)sessionReplacementMark
 {
-	return (SASessionReplacementMark)sessionReplacement;
+	return (SASessionReplacementMark)__atomic_load_n(&sessionReplacement, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * Marks how the session is to be replaced before its next use, atomically, so that every reader
+ * sees the whole mark or the one before it.
+ */
+- (void)markSessionReplacement:(SASessionReplacementMark)mark
+{
+	__atomic_store_n(&sessionReplacement, (NSInteger)mark, __ATOMIC_SEQ_CST);
 }
 
 /**
@@ -927,7 +937,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
 	// A new session is in step with the record it was connected with, and nothing is on its way to it.
-	sessionReplacement = SASessionReplacementMarkNotMarked;
+	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
 	// What the new session reports is recorded for the escaper, which escapes from this rather
 	// than from the connection's own handle.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
