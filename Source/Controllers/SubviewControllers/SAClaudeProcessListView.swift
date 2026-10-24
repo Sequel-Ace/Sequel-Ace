@@ -183,7 +183,7 @@ import SwiftUI
                 guard let action = item.action, let name = SAClaudeMenuGlyphs.symbol(forAction: NSStringFromSelector(action), title: item.title),
                       let image = SAClaudeMenuGlyphPass.uniformImage(named: name) else { continue }
                 item.image = image
-                if #available(macOS 27.0, *) { item.preferredImageVisibility = .visible }
+                SAMenuItemImageVisibility.forceVisible(item)
             }
         }
         tableView.dataSource = self

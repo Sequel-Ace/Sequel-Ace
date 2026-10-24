@@ -219,7 +219,7 @@ enum SAClaudeMenuGlyphs {
     /// macOS 27 hides menu item images unless the system's setting shows them (`.automatic`); a glyph of this map
     /// is shown regardless, as the Claude look asks.
     private static func show(_ item: NSMenuItem) {
-        if #available(macOS 27.0, *) { item.preferredImageVisibility = .visible }
+        SAMenuItemImageVisibility.forceVisible(item)
     }
 
     /// Whether the item's image is the one AppKit gives its action by itself (a fresh item with the same title and
@@ -234,5 +234,30 @@ enum SAClaudeMenuGlyphs {
         var top = menu
         while let supermenu = top.supermenu { top = supermenu }
         return top
+    }
+}
+
+/// `NSMenuItem.preferredImageVisibility` (macOS 27) set by key, so the code builds with older SDKs (upstream CI uses
+/// Xcode 26) and still shows the image on macOS 27 whichever SDK built it. Raw values: 0 automatic, 1 visible.
+enum SAMenuItemImageVisibility {
+    static let key = "preferredImageVisibility"
+    static let automatic = 0
+    static let visible = 1
+
+    /// Whether this macOS has the setting (macOS 27 and later).
+    static func isSupported(_ item: NSMenuItem) -> Bool {
+        item.responds(to: NSSelectorFromString("setPreferredImageVisibility:"))
+    }
+
+    /// Shows the item's image even when the system's menu-icon setting hides images; no-op before macOS 27.
+    static func forceVisible(_ item: NSMenuItem) {
+        guard isSupported(item) else { return }
+        item.setValue(NSNumber(value: visible), forKey: key)
+    }
+
+    /// The item's setting, or nil before macOS 27.
+    static func value(of item: NSMenuItem) -> Int? {
+        guard isSupported(item) else { return nil }
+        return (item.value(forKey: key) as? NSNumber)?.intValue
     }
 }

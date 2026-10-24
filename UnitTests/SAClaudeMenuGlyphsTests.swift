@@ -120,13 +120,11 @@ final class SAClaudeMenuGlyphsTests: XCTestCase {
     }
 
     private func isVisible(_ item: NSMenuItem) -> Bool {
-        if #available(macOS 27.0, *) { return item.preferredImageVisibility == .visible }
-        return true
+        SAMenuItemImageVisibility.value(of: item).map { $0 == SAMenuItemImageVisibility.visible } ?? true
     }
 
     private func isAutomatic(_ item: NSMenuItem) -> Bool {
-        if #available(macOS 27.0, *) { return item.preferredImageVisibility == .automatic }
-        return true
+        SAMenuItemImageVisibility.value(of: item).map { $0 == SAMenuItemImageVisibility.automatic } ?? true
     }
 
     // MARK: Map
