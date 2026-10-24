@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */; };
+		EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
+		7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
+		55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */; };
+		5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
 		07B880FE95D9F64B77BAF768 /* SASSHTunnelAuthMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B79304760D900BCE2B9 /* SASSHTunnelAuthMessage.swift */; };
@@ -904,6 +908,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePopUpButton.swift; sourceTree = "<group>"; };
+		6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePicker.swift; sourceTree = "<group>"; };
+		4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePickerModelTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
 		01F157CAED03AA780923D362 /* SAKeychainStoreCharacterizationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainStoreCharacterizationTests.swift; sourceTree = "<group>"; };
 		044613B398560D94749D8B23 /* SAScriptStatementLocatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAScriptStatementLocatorTests.swift; sourceTree = "<group>"; };
@@ -2517,6 +2524,8 @@
 				17DC8828126B332F00E9AAEC /* Accessory Views */,
 				51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */,
 				5A1EC0A12FF0000100000012 /* SARecordView.swift */,
+				6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */,
+				D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3023,6 +3032,7 @@
 				B138F78DC06D7838CF975508 /* SAScriptConsoleModelTests.swift */,
 				21CD9E2C6AD84A05A062775B /* SAScriptConsoleAppearanceTests.swift */,
 				C00E49BB9079010898BE8BAA /* SAScriptRunnerTests.swift */,
+				4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3892,6 +3902,8 @@
 				E9316E47F49563A3415BA59E /* SAScriptRunner.swift in Sources */,
 				03825021A8D18113B907BBDB /* SAScriptRunnerTests.swift in Sources */,
 				AD162E31FB7300DB273BAFDD /* SAQueryAdmission.swift in Sources */,
+				7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */,
+				55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4264,6 +4276,8 @@
 				174C30F93D55F38CA6DC8A84 /* SAScriptStatementSplitter.swift in Sources */,
 				3C65C7519731B0BC8E835C73 /* SAScriptRunner+SPMySQL.swift in Sources */,
 				1320794935F5A2F109C879C4 /* SAQueryAdmission.swift in Sources */,
+				EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */,
+				5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4467,7 +4481,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20115;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -4788,7 +4802,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20115;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -5127,7 +5141,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20115;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -5210,7 +5224,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20115;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

@@ -1,3 +1,64 @@
+## [6.1.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.1.0+%28*%29%22&expanded=true)
+
+### Added
+- Add missing English strings for the key and certificate chooser alerts ([b4824c605](https://github.com/Sequel-Ace/Sequel-Ace/commit/b4824c605ae8f3ead8b99f785118ef607def98ac), [#2763](https://github.com/Sequel-Ace/Sequel-Ace/pull/2763))
+
+### Fixed
+- Fix connection buttons alignment ([21e53c832](https://github.com/Sequel-Ace/Sequel-Ace/commit/21e53c832c4f8d700f2a50b39edd9133bf0275b9), [#2751](https://github.com/Sequel-Ace/Sequel-Ace/pull/2751))
+- Prevent crash when a lost connection is closed ([d529c5bf7](https://github.com/Sequel-Ace/Sequel-Ace/commit/d529c5bf7be2959a4347c4f97a5a55e026fee7e4), [#2753](https://github.com/Sequel-Ace/Sequel-Ace/pull/2753))
+
+### Changed
+- Bound connection-loss detection and recovery checks ([1b0bb5b94](https://github.com/Sequel-Ace/Sequel-Ace/commit/1b0bb5b94e7359859160556f742c9ae28ea706b7), [#2723](https://github.com/Sequel-Ace/Sequel-Ace/pull/2723))
+- Only show INET column types for compatible MariaDB version ([215d63bc3](https://github.com/Sequel-Ace/Sequel-Ace/commit/215d63bc31a99d73fd29ebdf582142ed05494a95), [#2772](https://github.com/Sequel-Ace/Sequel-Ace/pull/2772))
+- Searchable database selector ([424e86ad7](https://github.com/Sequel-Ace/Sequel-Ace/commit/424e86ad7b978372f4e21030bd2133c003487e07), [#2762](https://github.com/Sequel-Ace/Sequel-Ace/pull/2762))
+- Restore Sphinx queries with no selected database ([c4cd337f4](https://github.com/Sequel-Ace/Sequel-Ace/commit/c4cd337f4dfa2b81984f47e3a8e8b2aad0fd5d6b), [#2768](https://github.com/Sequel-Ace/Sequel-Ace/pull/2768))
+- New Crowdin updates ([a82ae6c30](https://github.com/Sequel-Ace/Sequel-Ace/commit/a82ae6c3059e1c0df3ae767602f25e7e823d666b), [#2766](https://github.com/Sequel-Ace/Sequel-Ace/pull/2766))
+- Stop the filter drop zone's endless layout passes while tables load ([02c910932](https://github.com/Sequel-Ace/Sequel-Ace/commit/02c91093279f8369da6d82fe62762de7ae078840), [#2750](https://github.com/Sequel-Ace/Sequel-Ace/pull/2750))
+- Tahoe layout improvements ([7c8232586](https://github.com/Sequel-Ace/Sequel-Ace/commit/7c8232586f9d6c979b30d1bf22f7f271f11e7392), [#2754](https://github.com/Sequel-Ace/Sequel-Ace/pull/2754))
+- Validate automatic Cloud tag triggers before releasing ([1f2798da9](https://github.com/Sequel-Ace/Sequel-Ace/commit/1f2798da98d7cd8eef5cb5be97ce23de06733202), [#2748](https://github.com/Sequel-Ace/Sequel-Ace/pull/2748))
+
+### Removed
+
+
+### Infra
+- Bump actions/create-github-app-token from 3.2.0 to 3.3.0 ([8f7a08869](https://github.com/Sequel-Ace/Sequel-Ace/commit/8f7a088698ac900fcca93d9787d07ae2fcec81c0), [#2769](https://github.com/Sequel-Ace/Sequel-Ace/pull/2769))
+- Bump jekyll-relative-links from 0.6.1 to 0.9.1 in /docs ([9a0d6c9b6](https://github.com/Sequel-Ace/Sequel-Ace/commit/9a0d6c9b6ced20fab8bb015d1652a67dd338fb4d), [#2770](https://github.com/Sequel-Ace/Sequel-Ace/pull/2770))
+- Bump ruby/setup-ruby from 1.328.0 to 1.329.0 ([c606ccd13](https://github.com/Sequel-Ace/Sequel-Ace/commit/c606ccd1340617c0372a252d7fd769ab27c7e858), [#2771](https://github.com/Sequel-Ace/Sequel-Ace/pull/2771))
+- Bump jekyll-default-layout from 0.1.5 to 0.2.1 in /docs ([76035d743](https://github.com/Sequel-Ace/Sequel-Ace/commit/76035d743c6774ac319b0a6b6d95de92804fc256), [#2761](https://github.com/Sequel-Ace/Sequel-Ace/pull/2761))
+- Bump jekyll-optional-front-matter from 0.3.2 to 0.3.4 in /docs ([cf32ac176](https://github.com/Sequel-Ace/Sequel-Ace/commit/cf32ac176699ad661fabdfa3faa8a63218af6f72), [#2760](https://github.com/Sequel-Ace/Sequel-Ace/pull/2760))
+- Bump jekyll-readme-index from 0.3.0 to 0.5.1 in /docs ([2d0f5f1ce](https://github.com/Sequel-Ace/Sequel-Ace/commit/2d0f5f1ced398330322d6c03f2bc76daa7c91019), [#2758](https://github.com/Sequel-Ace/Sequel-Ace/pull/2758))
+- Bump jekyll-titles-from-headings from 0.5.3 to 0.5.7 in /docs ([dcca600ca](https://github.com/Sequel-Ace/Sequel-Ace/commit/dcca600ca861a495fbcaf32215e5cec09f3b4a9d), [#2756](https://github.com/Sequel-Ace/Sequel-Ace/pull/2756))
+- Bump ruby/setup-ruby from 1.327.0 to 1.328.0 ([92e5b625b](https://github.com/Sequel-Ace/Sequel-Ace/commit/92e5b625b1b43f0e643b2bfc56e0e2b02f2a4a53), [#2757](https://github.com/Sequel-Ace/Sequel-Ace/pull/2757))
+- Bump actions/upload-artifact from 7.0.1 to 7.0.2 ([8dd642c9b](https://github.com/Sequel-Ace/Sequel-Ace/commit/8dd642c9bfb93e75c2e3ae39efb8eb31238dc926), [#2755](https://github.com/Sequel-Ace/Sequel-Ace/pull/2755))
+
+## [6.0.3](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.3+%28*%29%22&expanded=true)
+
+### Added
+
+
+### Fixed
+- Resolve AWS SSO credentials off the UI thread ([e9450a477](https://github.com/Sequel-Ace/Sequel-Ace/commit/e9450a4778e02341d35e6b2310d9294f9a150dc0), [#2722](https://github.com/Sequel-Ace/Sequel-Ace/pull/2722))
+
+### Changed
+- Escape values from the session's reported state, not from its handle ([e82208236](https://github.com/Sequel-Ace/Sequel-Ace/commit/e82208236297de9dd814438fff00e7de59eab69c), [#2726](https://github.com/Sequel-Ace/Sequel-Ace/pull/2726))
+- Restore English source entry for connection question ([547368da2](https://github.com/Sequel-Ace/Sequel-Ace/commit/547368da234d47200c50bafb415f7072fa2513ed), [#2746](https://github.com/Sequel-Ace/Sequel-Ace/pull/2746))
+- New Crowdin updates ([daf9a6e95](https://github.com/Sequel-Ace/Sequel-Ace/commit/daf9a6e953be3d12ae37aed9733d852a533a3160), [#2745](https://github.com/Sequel-Ace/Sequel-Ace/pull/2745))
+- Don't let an open question and a main-thread caller wait for each other ([e4dbbca7d](https://github.com/Sequel-Ace/Sequel-Ace/commit/e4dbbca7dbbac4ec33a8d93897a70e6f1164c63d), [#2738](https://github.com/Sequel-Ace/Sequel-Ace/pull/2738))
+- Rename Database reads only its own grants, and a filter set aside stays set aside ([49ebe052b](https://github.com/Sequel-Ace/Sequel-Ace/commit/49ebe052bf071e7ab04e6eb1079b4bc6d34c9a63), [#2739](https://github.com/Sequel-Ace/Sequel-Ace/pull/2739))
+- New Crowdin updates ([22a2582b4](https://github.com/Sequel-Ace/Sequel-Ace/commit/22a2582b49ddc5927deb98c62e8f134fd6139a12), [#2741](https://github.com/Sequel-Ace/Sequel-Ace/pull/2741))
+- New Crowdin updates ([688353da1](https://github.com/Sequel-Ace/Sequel-Ace/commit/688353da1c78e321fd5e7b3d51a8f4f6b1687c8b), [#2737](https://github.com/Sequel-Ace/Sequel-Ace/pull/2737))
+- SSH tunnel: read the assistant's signing identifier instead of hardcoding it ([266eba35b](https://github.com/Sequel-Ace/Sequel-Ace/commit/266eba35b2990148b9dc87965956af714b65b047), [#2709](https://github.com/Sequel-Ace/Sequel-Ace/pull/2709))
+- Keep empty-string predicates when adding filter rules or groups ([dbf34f976](https://github.com/Sequel-Ace/Sequel-Ace/commit/dbf34f9768591cf549ca605e14d6745a33f908cb), [#2728](https://github.com/Sequel-Ace/Sequel-Ace/pull/2728))
+- Preserve mode-dependent MCP queries when limiting results ([9b2547df1](https://github.com/Sequel-Ace/Sequel-Ace/commit/9b2547df1a0e7ce4856bbafcb2328e36e773ae98), [#2727](https://github.com/Sequel-Ace/Sequel-Ace/pull/2727))
+- Reject incomplete NULL placeholders when committing BIT edits ([c8012fc8b](https://github.com/Sequel-Ace/Sequel-Ace/commit/c8012fc8b82443465bd5ed0aa0942c4c6da4439f), [#2729](https://github.com/Sequel-Ace/Sequel-Ace/pull/2729))
+- Ignore Xcode archive and result bundles ([e51ec23a7](https://github.com/Sequel-Ace/Sequel-Ace/commit/e51ec23a79782f911eb77af790d0e250f6b55b2f), [#2736](https://github.com/Sequel-Ace/Sequel-Ace/pull/2736))
+
+### Removed
+- Remove vulnerable rubyzip from Pages dependencies ([7d3490687](https://github.com/Sequel-Ace/Sequel-Ace/commit/7d34906872b19aed850f452b7b66fe923fe40033), [#2743](https://github.com/Sequel-Ace/Sequel-Ace/pull/2743))
+
+### Infra
+
+
 ## [6.0.2](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.2+%28*%29%22&expanded=true)
 
 ### Added

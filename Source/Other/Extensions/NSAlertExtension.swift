@@ -73,6 +73,30 @@ enum SABookmarkPathNormalizer {
 }
 
 @objc extension NSAlert {
+    /// Use the standard alert layout, with a scrollable fallback for lengthy diagnostics.
+    @objc(setScrollableInformativeText:)
+    func setScrollableInformativeText(_ text: String) {
+        informativeText = text
+        layout()
+        let maximumHeight = min(600, (NSScreen.main?.visibleFrame.height ?? 800) * 0.7)
+        guard window.frame.height > maximumHeight else { return }
+
+        informativeText = ""
+        let scrollView = NSTextView.scrollableTextView()
+        scrollView.frame = NSRect(x: 0, y: 0, width: 400, height: 160)
+        scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
+        scrollView.autohidesScrollers = true
+        if let textView = scrollView.documentView as? NSTextView {
+            textView.string = text
+            textView.font = .preferredFont(forTextStyle: .body)
+            textView.textColor = .labelColor
+            textView.isEditable = false
+            textView.drawsBackground = false
+        }
+        accessoryView = scrollView
+    }
+
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message.
 	/// - Parameters:
 	///   - title: String for title of the alert
