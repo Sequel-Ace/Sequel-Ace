@@ -749,6 +749,19 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)checkConnectionIfNecessary
 {
+	// A session marked to go is not spoken on - a ping would read an answer still on its way as
+	// its own - and so is not pinged to find out whether it is alive: it goes here, before any
+	// other use, and is restored like a session lost in the background. It is closed under the
+	// connection lock, so nothing is using its handle meanwhile; a session something is using
+	// right now is left to the statement that next takes the connection, which replaces it then.
+	if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+	                                                 openTransaction:[self sessionHasOpenTransaction]]
+	    && [self _tryLockConnection]) {
+		[self _closeSessionMarkedForReplacement];
+		[self _unlockConnection];
+		return [self _reconnectAllowingRetries:YES];
+	}
+
 	// If the connection has been dropped in the background, trigger a
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {

@@ -11,7 +11,8 @@ import XCTest
 @testable import SPMySQL
 
 /// A connection whose connection check waits for the test before it answers, so that a stop can
-/// land while a statement is still waiting for the check - before anything was sent.
+/// land while a statement is still waiting for the check - before anything was sent. While the
+/// check is held the connection is in the state a check that reconnects puts it in.
 private final class SACheckedConnection: SPMySQLConnection {
     let checkStarted = DispatchSemaphore(value: 0)
     let letTheCheckAnswer = DispatchSemaphore(value: 0)
@@ -20,10 +21,38 @@ private final class SACheckedConnection: SPMySQLConnection {
     override func checkIfNecessary() -> Bool {
         if holdsTheNextCheck {
             holdsTheNextCheck = false
+            setValue(SPMySQLConnecting.rawValue, forKey: "state")
             checkStarted.signal()
             _ = letTheCheckAnswer.wait(timeout: .now() + 10)
+            setValue(SPMySQLConnected.rawValue, forKey: "state")
         }
         return super.checkIfNecessary()
+    }
+}
+
+/// A connection on which the replacement mark lands right after a connection check - a keepalive
+/// that gives up at that moment - so the check could not act on it, and whoever made the check
+/// goes on with a session that is marked.
+private final class SAMarkedAfterTheCheckConnection: SPMySQLConnection {
+    var markAfterTheNextCheck: SASessionReplacementMark?
+
+    override func checkIfNecessary() -> Bool {
+        let usable = super.checkIfNecessary()
+        if let mark = markAfterTheNextCheck {
+            markAfterTheNextCheck = nil
+            setValue(mark.rawValue, forKey: "sessionReplacement")
+        }
+        return usable
+    }
+}
+
+/// A connection that records whether its session was pinged.
+private final class SAPingWatchingConnection: SPMySQLConnection {
+    private(set) var pingedTheSession = false
+
+    override func check() -> Bool {
+        pingedTheSession = true
+        return super.check()
     }
 }
 
@@ -120,8 +149,9 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
 
     // MARK: - Stop before the first send
 
-    /// A stop that lands while the statement is still waiting for the connection check keeps that
-    /// statement from the server: nothing is written, and the caller is told it was cancelled.
+    /// A stop that lands while the statement is still waiting for the connection check - with the
+    /// connection in the state a reconnecting check puts it in - keeps that statement from the
+    /// server: nothing is written, and the caller is told it was cancelled.
     func testAStopDuringTheConnectionCheckKeepsTheStatementFromTheServer() throws {
         let connection = try connected(SACheckedConnection())
         let observer = try connected(SPMySQLConnection())
@@ -291,6 +321,24 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "which starts unmarked")
     }
 
+    /// A session marked to go is replaced by the connection check itself, and not pinged first: a
+    /// ping would speak on a session whose protocol cannot be trusted, and read an answer still on
+    /// its way as its own.
+    func testTheCheckReplacesASessionMarkedToGoWithoutSpeakingOnIt() throws {
+        let connection = try connected(SAPingWatchingConnection())
+        defer { connection.disconnect() }
+        let theMarkedSession = connection.mysqlConnectionThreadId
+
+        // Idle long enough for a check to be necessary, and marked regardless of what is open.
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+
+        XCTAssertTrue(connection.checkIfNecessary())
+        XCTAssertFalse(connection.pingedTheSession, "a session whose protocol cannot be trusted is not spoken on")
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, theMarkedSession, "it was replaced")
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "and the new session starts unmarked")
+    }
+
     /// A marked session with a transaction open is kept until that transaction is over: closing it
     /// would roll back work somebody is still doing. Once the transaction is committed, the next
     /// statement runs on a new session, and the work is there.
@@ -352,7 +400,7 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
     /// a mode set in a session does not outlive, and there `a\b` is `a` followed by a backspace. A
     /// VARBINARY column keeps whichever arrived.
     func testAValueEscapedWhileTheSessionIsMarkedIsEscapedForTheSessionThatSendsIt() throws {
-        let connection = try connected(SPMySQLConnection())
+        let connection = try connected(SAMarkedAfterTheCheckConnection())
         defer {
             dropTheDatabase(connection)
             connection.disconnect()
@@ -364,8 +412,11 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.escape(value, includingQuotes: false), "a\\b", "the escaper follows the session it has: the backslash stays")
         let theOutgoingSession = connection.mysqlConnectionThreadId
 
-        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+        // The mark lands after the check escaping makes, so the check cannot replace the session
+        // first; the value's mode has to come from the mark.
+        connection.markAfterTheNextCheck = .regardless
         let escaped = try XCTUnwrap(connection.escapeAndQuoteString(value))
+        XCTAssertNil(connection.markAfterTheNextCheck, "the mark landed")
         XCTAssertEqual(connection.mysqlConnectionThreadId, theOutgoingSession, "escaping sends nothing, so the marked session is still the one there is")
 
         connection.queryString("INSERT INTO t (v) VALUES (\(escaped))")

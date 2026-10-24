@@ -807,8 +807,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 - (void)cancelCurrentQuery
 {
     SPLog(@"cancelCurrentQuery");
-	// If not connected, no action is required
-	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
+	// Recorded in every state. A stop while the connection is being set up or restored - which
+	// is exactly when a statement waits for the session - has nothing native to kill and is
+	// recorded against the operations waiting. Turned away in those states, as it used to be, it
+	// reached nothing, and the statement went out once the session was back.
 
 	// Recorded with the lease first, the server asked, the socket shut down after a grace period
 	// if the server does not answer: the cancellation logic holds that sequence. The request is
@@ -839,6 +841,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		mySQLConnection = NULL;
 	}
 	state = SPMySQLConnectionLostInBackground;
+	// The mark was about this session, which is gone.
+	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
 
 	// Until the next session connects, values follow the record, which its handshake uses.
 	[valueEscaper forgetSession];
