@@ -2058,6 +2058,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     NSPasteboard *pboard = [info draggingPasteboard];
 
     if ([[pboard types] containsObject:SAPinnedTableGroupsController.pinnedTableType]) {
+        // Only the name is on the pasteboard, so a row from another window's list would be pinned here.
+        if ([info draggingSource] != aTableView) return NO;
         SAPinnedDropTarget *target = [SAPinnedTableGroupsController dropTargetForRow:row isDropOn:(operation == NSTableViewDropOn) titles:filteredTables types:filteredTableTypes pinnedHeader:NSLocalizedString(@"PINNED", @"header for pinned tables")];
         if (!target) return NO;
         return [_pinnedGroupsController acceptDropOfPasteboard:pboard groupName:target.groupName connectionIdentifier:[self _pinnedTablesConnectionIdentifier] databaseName:[tableDocumentInstance database] ?: @""];
@@ -2083,6 +2085,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (NSDragOperation)tableView:(NSTableView *)aTableView validateDrop:(id < NSDraggingInfo >)info proposedRow:(NSInteger)row proposedDropOperation:(NSTableViewDropOperation)operation
 {
     if ([[[info draggingPasteboard] types] containsObject:SAPinnedTableGroupsController.pinnedTableType]) {
+        if ([info draggingSource] != aTableView) return NSDragOperationNone;
         SAPinnedDropTarget *target = [SAPinnedTableGroupsController dropTargetForRow:row isDropOn:(operation == NSTableViewDropOn) titles:filteredTables types:filteredTableTypes pinnedHeader:NSLocalizedString(@"PINNED", @"header for pinned tables")];
         if (!target) return NSDragOperationNone;
         [tablesListView setDropRow:target.headerRow dropOperation:NSTableViewDropOn];

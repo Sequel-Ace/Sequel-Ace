@@ -85,7 +85,8 @@ enum SAPinnedTableGroupPlanner {
     /// followed by its tables unless collapsed, then the regular tables.
     ///
     /// The type of a pinned table is looked up among the regular tables only, never among
-    /// the headers, so a real table named like a header keeps its own type.
+    /// the headers, so a real table named like a header keeps its own type. When a table and a
+    /// routine share a name, the first one in the list (the table) wins.
     ///
     /// - Parameters:
     ///   - tables: The regular tables, in list order.
@@ -97,7 +98,9 @@ enum SAPinnedTableGroupPlanner {
     static func rows(tables: [String], types: [Int], headerType: Int, sections: [(groupName: String, tableNames: [String], isCollapsed: Bool)], pinnedHeader: String) -> (titles: [String], types: [Int], pinned: [String]) {
         var typesByName: [String: Int] = [:]
         for (name, type) in zip(tables, types) {
-            typesByName[name] = type
+            if typesByName[name] == nil {
+                typesByName[name] = type
+            }
         }
         var titles: [String] = []
         var rowTypes: [Int] = []

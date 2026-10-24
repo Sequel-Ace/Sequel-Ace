@@ -819,6 +819,20 @@ final class SAPinnedTableGroupPlannerTests: XCTestCase {
         XCTAssertEqual(rows.pinned, ["orders", "PINNED — A"])
     }
 
+    /// A table and a routine with the same name: the pinned row keeps the first type, the table's.
+    func testRowsKeepTheFirstTypeForDuplicateNames() {
+        let rows = SAPinnedTableGroupPlanner.rows(
+            tables: ["report", "orders", "report"],
+            types: [1, 1, 3],
+            headerType: 0,
+            sections: [("", ["report"], false)],
+            pinnedHeader: "PINNED"
+        )
+        XCTAssertEqual(rows.titles, ["PINNED", "report", "report", "orders", "report"])
+        XCTAssertEqual(rows.types, [0, 1, 1, 1, 3])
+        XCTAssertEqual(rows.pinned, ["report"])
+    }
+
     func testRowsOmitTablesOfCollapsedGroupsAndMissingTables() {
         let rows = SAPinnedTableGroupPlanner.rows(
             tables: ["orders"],
