@@ -195,6 +195,17 @@ end_cleanup:
 		return NO;
 	}
 
+	// Asked again with the connection held: a ping that waited behind another, which was cut
+	// off and marked the session, must not speak on it - the answer to that other ping may still
+	// be on its way. The session goes here, under the lock, and this ping reports it as gone; the
+	// next use restores it.
+	if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+	                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
+		[self _closeSessionMarkedForReplacement];
+		[self _unlockConnection];
+		return NO;
+	}
+
 	volatile BOOL keepAliveLastPingSuccess = NO;
 	keepAliveLastPingBlocked = NO;
 	keepAlivePingThreadActive = YES;

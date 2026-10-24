@@ -57,6 +57,8 @@
 - (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
 /** Whether the session last reported an open transaction; a plain value, no handle is read. */
 - (BOOL)sessionHasOpenTransaction;
+- (BOOL)sessionReportsOpenTransaction;
+- (SAEscapingSession)sessionForEscaping;
 - (SASessionReplacementMark)sessionReplacementMark;
 - (void)markSessionReplacement:(SASessionReplacementMark)mark;
 

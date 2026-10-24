@@ -100,7 +100,7 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	// so the two answers agree. A session marked to go once nothing is open in it, while another
 	// statement runs, is the one case nobody can answer yet; the value is refused rather than
 	// escaped for a guess, since the two escaping modes are not interchangeable.
-	SAEscapingSession sessionForEscaping = [SASessionGate sessionForEscapingOnHost:self];
+	SAEscapingSession sessionForEscaping = [self sessionForEscaping];
 	if (sessionForEscaping == SAEscapingSessionUndecidable) {
 		SPLog(@"[escapeString:includingQuotes]: the value is refused - whether the session is replaced before the next statement cannot be told while another statement runs");
 		return nil;

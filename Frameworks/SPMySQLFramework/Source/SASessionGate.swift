@@ -42,18 +42,6 @@ public protocol SASessionGateHost: AnyObject {
     @objc(checkConnectionForGate) func checkIfNecessary() -> Bool
 }
 
-/// Which session a value escaped now is escaped for.
-@objc(SAEscapingSession)
-public enum SAEscapingSession: Int {
-    /// The session the connection has.
-    case theSessionThere = 0
-    /// The session that replaces it before the next statement.
-    case theReplacement = 1
-    /// Cannot be told: the session goes unless something is open in it, and a statement running
-    /// right now may open something. The value is refused rather than escaped for a guess.
-    case undecidable = 2
-}
-
 /// The gate a statement passes to take the session: on the way out the connection is held with a
 /// session that can be used, or released with none.
 @objc(SASessionGate)

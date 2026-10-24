@@ -185,6 +185,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 }
 
 /**
+ * Which session a value escaped now is escaped for, asked of the gate. Asked here, where this
+ * connection is known to be the gate's host.
+ */
+- (SAEscapingSession)sessionForEscaping
+{
+	return [SASessionGate sessionForEscapingOnHost:self];
+}
+
+/**
  * Closes a session marked to be replaced, for the gate, while the connection is held.
  */
 - (void)closeMarkedSessionForGate

@@ -44,6 +44,19 @@ typedef NS_ENUM(NSInteger, SASessionReplacementMark) {
 	SASessionReplacementMarkRegardless = 2,
 };
 
+/**
+ * Which session a value escaped now is escaped for.
+ */
+typedef NS_ENUM(NSInteger, SAEscapingSession) {
+	/// The session the connection has.
+	SAEscapingSessionTheSessionThere = 0,
+	/// The session that replaces it before the next statement.
+	SAEscapingSessionTheReplacement = 1,
+	/// Cannot be told: the session goes unless something is open in it, and a statement running
+	/// right now may open something. The value is refused rather than escaped for a guess.
+	SAEscapingSessionUndecidable = 2,
+};
+
 @interface SPMySQLConnection : NSObject {
 
 	// Delegate

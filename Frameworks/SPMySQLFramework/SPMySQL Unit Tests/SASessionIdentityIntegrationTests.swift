@@ -361,6 +361,23 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "and the new session starts unmarked")
     }
 
+    /// The ping itself asks the mark again once it holds the connection: a ping that waited behind
+    /// another, which was cut off and marked the session, must not speak on it. The session goes
+    /// and is restored instead - so a check that reaches the ping with the mark set comes back on
+    /// a new session, never with an answer from the marked one.
+    func testAPingDoesNotSpeakOnASessionMarkedToGo() throws {
+        let connection = try connected(SPMySQLConnection())
+        defer { connection.disconnect() }
+        let theMarkedSession = connection.mysqlConnectionThreadId
+
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+        XCTAssertTrue(connection.check(), "the connection is usable afterwards")
+
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, theMarkedSession, "the marked session was not pinged but replaced")
+        XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 1") as? String, "1")
+    }
+
     /// The check keeps a marked session with a transaction open in it, deciding from the session's
     /// own answer with the connection held: closing it would roll back work somebody is still
     /// doing. The transaction's row is still there afterwards, and the mark stands.
