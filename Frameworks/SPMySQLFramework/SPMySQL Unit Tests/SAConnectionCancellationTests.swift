@@ -226,6 +226,21 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(waitForTheSocketToBeShutDown(within: 0.5), "and an accepted kill leaves the socket alone")
     }
 
+    /// A refusal overtaken by an acceptance does not shut the socket down: a second stop whose
+    /// kill the server accepted leaves the query to the server, and the first stop's grace period,
+    /// when it ends, finds the lease's books saying so.
+    func testALaterAcceptedKillOutranksAnEarlierRefusal() {
+        host.sessionAccess.beginNativeQuery()
+        host.killAnswer = .refused
+        cancellation.requestCancellation(synchronously: true)
+        host.killAnswer = .accepted
+        cancellation.requestCancellation(synchronously: true)
+        XCTAssertEqual(host.recordedCalls(), ["marked", "kill 42", "marked", "kill 42"])
+
+        XCTAssertFalse(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 1),
+                       "the server is ending the query; the first stop's grace period must not cut it off")
+    }
+
     /// A query that finished before the grace period ran out is not cut off, and neither is the
     /// query that took its place.
     func testAQueryThatFinishedBeforeTheGraceIsNotCutOffAndNeitherIsItsSuccessor() {

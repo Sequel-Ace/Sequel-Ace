@@ -251,6 +251,7 @@ import Darwin
     /// another taken the session since the stop was asked for, and a reconnect can have put a new
     /// session in place; ending either would take a session nobody asked about, and roll back a
     /// transaction open in it.
+    /// A query the server has accepted a kill for is not cut off, whichever stop asks.
     /// - Parameters:
     ///   - query: The native query the stop was about, from its hold.
     ///   - session: The session it was running in, from the same hold.
@@ -261,6 +262,13 @@ import Darwin
         socketLock.withLock {
             guard query != 0, activeNativeQuery == query, socketGeneration == session,
                   cancellationSocket >= 0 else {
+                return false
+            }
+            // A query the server has accepted a kill for is the server's to end, whoever asks -
+            // a stop whose own request was refused included: its grace period ends after a later
+            // stop's request was accepted, and shutting the socket down then would end a session
+            // the server is about to leave intact, and roll back whatever is open in it.
+            guard queryWithAcceptedKill != query else {
                 return false
             }
             _ = Darwin.shutdown(cancellationSocket, SHUT_RDWR)
