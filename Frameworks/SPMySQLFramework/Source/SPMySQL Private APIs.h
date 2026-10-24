@@ -123,6 +123,9 @@
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
 
+/** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
+- (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
+
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding
     withResultType:(SPMySQLResultType)theReturnType

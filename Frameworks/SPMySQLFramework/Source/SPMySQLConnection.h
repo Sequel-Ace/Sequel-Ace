@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
 @interface SPMySQLConnection : NSObject {
 
@@ -98,6 +98,9 @@
 	// The deadline on the statements that set the session up, or restore it, while they run: a
 	// statement that loses the session under it fails the attempt rather than starting another.
 	SAConnectionSetupDeadline *activeSetupDeadline;
+	// How a query is stopped: recorded first, the server asked, the socket shut down after a
+	// grace period. The lease keeps the books; this holds the policy.
+	SAConnectionCancellation *connectionCancellation;
 
 	// Timeout and keep-alive
 	NSUInteger timeout;

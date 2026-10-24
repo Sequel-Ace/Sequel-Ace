@@ -39,6 +39,9 @@
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
+@interface SPMySQLConnection () <SAConnectionCancellationHost>
+@end
+
 @interface SPMySQLConnection ()
 
 @property (readwrite, copy) NSString *timeZoneIdentifier;
@@ -123,6 +126,35 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		if (cancelled) [self.sessionAccess recordQueryCancellation];
 		lastQueryWasCancelled = cancelled;
 	}
+}
+
+#pragma mark -
+#pragma mark What the cancellation logic asks of the connection
+
+/**
+ * Asks the server over a second connection to kill the query in this server session.
+ */
+- (BOOL)killQueryOnServerThread:(NSUInteger)serverThread
+{
+	return [self _killQueryOverSideConnectionOnServerThread:serverThread];
+}
+
+/**
+ * Whether the session last reported an open transaction. A plain value: no handle is read, which
+ * the query's own thread may be using or closing.
+ */
+- (BOOL)sessionHasOpenTransaction
+{
+	return [valueEscaper sessionReportedOpenTransaction];
+}
+
+/**
+ * Marks the query that holds the connection as cancelled, where callers look for it. The record
+ * alone: recording the stop with the lease is the cancellation logic's own first step.
+ */
+- (void)markRunningQueryCancelled
+{
+	lastQueryWasCancelled = YES;
 }
 
 - (void)addClientFlags:(SPMySQLClientFlags)opts
@@ -399,6 +431,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		delegateDecisionLock = [[NSLock alloc] init];
 		delegateDecisionGate = [[SAConnectionLostDecisionGate alloc] init];
 		valueEscaper = [[SAConnectionEscaper alloc] init];
+		connectionCancellation = [[SAConnectionCancellation alloc] initWithHost:self];
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];

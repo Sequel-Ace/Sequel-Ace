@@ -670,7 +670,14 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         defer { sockets.forEach { Darwin.close($0) } }
         try access.trackSocket(sockets[0], serverThreadID: 42)
         access.beginNativeQuery()
-        access.cancelQuery { _ in false }
+        // The lease reserves and reports; closing the socket when the server does not answer is
+        // the caller's, after its grace period, through the lease's own duplicate - the division
+        // settled on #2676. These three calls stand for the caller.
+        let hold = access.reserveCancellation()
+        XCTAssertTrue(hold.holdsTheQuery)
+        XCTAssertEqual(hold.serverThread, 42)
+        access.completeCancellation(hold, killAccepted: false)
+        XCTAssertTrue(access.shutDownSocket(ofQuery: hold.query, onSession: hold.session))
         var byte: UInt8 = 0
         XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
         let recovered = DispatchSemaphore(value: 0)
@@ -693,7 +700,9 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         defer { sockets.forEach { Darwin.close($0) } }
         try access.trackSocket(sockets[0], serverThreadID: 42)
         access.beginNativeQuery()
-        access.cancelQuery { _ in false }
+        let hold = access.reserveCancellation()
+        access.completeCancellation(hold, killAccepted: false)
+        XCTAssertTrue(access.shutDownSocket(ofQuery: hold.query, onSession: hold.session))
         access.endNativeQuery()
         _ = access.performQuery({
             XCTAssertTrue(access.currentQueryWasCancelled)
@@ -780,7 +789,12 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         access.beginNativeQuery()
         Darwin.close(sockets[0])
         sockets[0] = -1
-        access.cancelQuery { _ in false }
+        // The handle is a duplicate, so the original going does not retire it: the cancellation
+        // still names the session to kill, and the lease can still end the read on it.
+        let hold = access.reserveCancellation()
+        XCTAssertEqual(hold.serverThread, 42)
+        access.completeCancellation(hold, killAccepted: false)
+        XCTAssertTrue(access.shutDownSocket(ofQuery: hold.query, onSession: hold.session))
         var byte: UInt8 = 0
         XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
         access.endNativeQuery()
@@ -797,19 +811,26 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         defer { for socket in old + replacement where socket >= 0 { Darwin.close(socket) } }
         try access.trackSocket(old[0], serverThreadID: 41)
         access.beginNativeQuery()
-        access.cancelQuery { thread in
-            XCTAssertEqual(thread, 41)
-            access.endNativeQuery()
-            access.clearSocket()
-            try? access.trackSocket(replacement[0], serverThreadID: 42)
-            XCTAssertFalse(access.cancellationIsCurrent)
-            return false
-        }
+        // While the request is on its way, the query ends and a reconnect puts a new session in
+        // place. The caller's shutdown afterwards names the query and session it was about, and
+        // the lease finds neither.
+        let retired = access.reserveCancellation()
+        XCTAssertEqual(retired.serverThread, 41)
+        access.endNativeQuery()
+        access.clearSocket()
+        try access.trackSocket(replacement[0], serverThreadID: 42)
+        XCTAssertFalse(access.cancellationIsCurrent)
+        access.completeCancellation(retired, killAccepted: false)
+        XCTAssertFalse(access.shutDownSocket(ofQuery: retired.query, onSession: retired.session),
+                       "the query and the session the stop was about are gone")
         var byte: UInt8 = 0
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), -1)
         XCTAssertEqual(errno, EAGAIN)
         access.beginNativeQuery()
-        access.cancelQuery { thread in XCTAssertEqual(thread, 42); return false }
+        let current = access.reserveCancellation()
+        XCTAssertEqual(current.serverThread, 42)
+        access.completeCancellation(current, killAccepted: false)
+        XCTAssertTrue(access.shutDownSocket(ofQuery: current.query, onSession: current.session))
         access.endNativeQuery()
         XCTAssertEqual(recv(replacement[1], &byte, 1, MSG_DONTWAIT), 0)
     }
@@ -827,6 +848,125 @@ final class SAConnectionSessionAccessTests: XCTestCase {
         access.cancelQuery { thread in XCTAssertEqual(thread, 42); return true }
         access.endNativeQuery()
         XCTAssertEqual(access.performQuery { "next" } as? String, "next")
+    }
+
+    /// A stop asked for while an operation still waits for the session - behind a reconnect
+    /// another thread runs - reaches that operation: its statement is never sent.
+    ///
+    /// The operation has its identity from the moment it enters, not from the moment it gets
+    /// the session; a stop in between used to find nothing to record itself against, and the
+    /// statement went out once the session was free.
+    func testAStopReachesAnOperationStillWaitingForTheSession() {
+        let access = SAConnectionSessionAccess()
+        let owned = DispatchSemaphore(value: 0)
+        let release = DispatchSemaphore(value: 0)
+        let waiting = DispatchSemaphore(value: 0)
+        let reconnected = expectation(description: "reconnect completed")
+        let operationReturned = expectation(description: "operation returned")
+        var outcome = ""
+
+        Thread.detachNewThread {
+            _ = access.reconnect(allowingRetries: false) {
+                owned.signal()
+                XCTAssertEqual(release.wait(timeout: .now() + 5), .success)
+                return true
+            }
+            reconnected.fulfill()
+        }
+        XCTAssertEqual(owned.wait(timeout: .now() + 5), .success)
+        Thread.detachNewThread {
+            waiting.signal()
+            outcome = access.performQuery {
+                let sends = access.beginNativeQuery()
+                access.endNativeQuery()
+                return sends ? "sent" : "cancelled"
+            } as? String ?? "nothing"
+            operationReturned.fulfill()
+        }
+        XCTAssertEqual(waiting.wait(timeout: .now() + 5), .success)
+        // Give the operation a moment to reach its wait for the session.
+        Thread.sleep(forTimeInterval: 0.1)
+
+        access.cancelQuery { _ in XCTFail("Nothing native is running to be killed"); return true }
+
+        release.signal()
+        wait(for: [reconnected, operationReturned], timeout: 5)
+        XCTAssertEqual(outcome, "cancelled", "the statement of a stopped operation is never sent")
+    }
+
+    /// A stop asked for before an operation begins does not reach it.
+    func testAStopDoesNotReachAnOperationBegunAfterIt() {
+        let access = SAConnectionSessionAccess()
+        access.cancelQuery { _ in XCTFail("Nothing native is running to be killed"); return true }
+        access.recordQueryCancellation()
+
+        XCTAssertEqual(access.performQuery {
+            let sends = access.beginNativeQuery()
+            access.endNativeQuery()
+            return sends ? "sent" : "cancelled"
+        } as? String, "sent")
+    }
+
+    /// The socket is shut down only for the query and the session the stop was about.
+    func testTheSocketIsShutDownOnlyForTheQueryAndSessionTheStopWasAbout() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+
+        access.beginNativeQuery()
+        let first = access.reserveCancellation()
+        access.completeCancellation(first, killAccepted: false)
+        access.endNativeQuery()
+        access.beginNativeQuery()
+
+        XCTAssertFalse(access.shutDownSocket(ofQuery: first.query, onSession: first.session),
+                       "the query the stop was about has finished")
+        var byte: UInt8 = 0
+        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), -1, "the query that followed is untouched")
+        XCTAssertEqual(errno, EAGAIN)
+
+        let second = access.reserveCancellation()
+        access.completeCancellation(second, killAccepted: false)
+        XCTAssertTrue(access.shutDownSocket(ofQuery: second.query, onSession: second.session))
+        XCTAssertEqual(recv(sockets[1], &byte, 1, MSG_DONTWAIT), 0)
+        access.endNativeQuery()
+    }
+
+    /// A second stop for a query whose request is on its way does not hold it, and once the
+    /// server accepted a request the next stop is told so rather than sending another.
+    func testASecondStopSharesTheFirstsRequestRatherThanActingOnItsOwn() throws {
+        let access = SAConnectionSessionAccess()
+        var sockets = [Int32](repeating: -1, count: 2)
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+        defer { sockets.forEach { Darwin.close($0) } }
+        try access.trackSocket(sockets[0], serverThreadID: 42)
+        access.beginNativeQuery()
+
+        let first = access.reserveCancellation()
+        XCTAssertTrue(first.holdsTheQuery)
+        XCTAssertEqual(first.serverThread, 42)
+
+        let meanwhile = access.reserveCancellation()
+        XCTAssertFalse(meanwhile.holdsTheQuery, "the first request is still on its way")
+        XCTAssertEqual(meanwhile.serverThread, 0)
+
+        access.completeCancellation(first, killAccepted: true)
+        let afterwards = access.reserveCancellation()
+        XCTAssertTrue(afterwards.holdsTheQuery)
+        XCTAssertTrue(afterwards.killWasAlreadyAccepted, "the server has the request already")
+        XCTAssertEqual(afterwards.serverThread, 0, "so nothing is sent again")
+        XCTAssertEqual(afterwards.query, first.query)
+
+        // The next query starts afresh.
+        access.endNativeQuery()
+        access.beginNativeQuery()
+        let next = access.reserveCancellation()
+        XCTAssertFalse(next.killWasAlreadyAccepted)
+        XCTAssertEqual(next.serverThread, 42)
+        access.completeCancellation(next, killAccepted: false)
+        access.endNativeQuery()
     }
 
     func testReconnectCanRunSetupQueriesAndNestedReconnects() {
