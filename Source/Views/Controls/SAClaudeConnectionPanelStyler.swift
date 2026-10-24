@@ -305,7 +305,10 @@ private final class SAClaudePanelForm {
 
     private var defaultsObserver: NSObjectProtocol?
     private var nameEditObservers: [NSObjectProtocol] = []
-    private var nameAtEditStart: String?
+    /// The name when the title's name edit made its first change (`.some(nil)`: there was none); `nil` until then.
+    private var nameAtEditStart: String??
+    /// Whether the controller was already editing the connection then (Escape returns a clean favourite to clean).
+    private var editingAtNameEditStart = false
     private var scrollFrameObserver: NSObjectProtocol?
 
     // MARK: Page (set by `SAClaudeConnectionPageStyler` when the connection page owns the layout)
@@ -377,11 +380,12 @@ private final class SAClaudePanelForm {
     }
 
     /// The controller's `control(_:textView:doCommandBy:)`: the title's name field takes Return (save) and Escape
-    /// (restore the name the edit started with) itself, so neither reaches the default button (Connect). `false` for
-    /// any other control or command.
+    /// (restore the name the edit started with) itself, so neither reaches the default button (Connect).
+    /// `.notHandled` for any other control or command; `.cancelledToClean` when Escape undid the only edit of a
+    /// connection that wasn't being edited before — the controller then ends its editing state.
     @objc(handleNameCommand:inControl:container:)
-    static func handleNameCommand(_ selector: Selector, in control: NSControl, container: NSView) -> Bool {
-        styler(for: container)?.handleNameCommand(selector, in: control) ?? false
+    static func handleNameCommand(_ selector: Selector, in control: NSControl, container: NSView) -> SAClaudeNameCommandResult {
+        styler(for: container)?.handleNameCommand(selector, in: control) ?? .notHandled
     }
 
     static func styler(for container: NSView) -> SAClaudeConnectionPanelStyler? {
@@ -1223,23 +1227,37 @@ private final class SAClaudePanelForm {
         forms.contains { $0.nameField != nil && $0.nameField === control }
     }
 
-    /// Remembers the name when the title's name field starts changing (its edit's first change), for Escape;
-    /// forgets it when the edit ends.
+    /// Remembers the name and the controller's editing state when the title's name field starts changing (its
+    /// edit's first change, before the controller's `controlTextDidChange:` marks the connection edited), for
+    /// Escape; forgets them when the edit ends.
     private func nameEdit(_ notification: Notification, began: Bool) {
         guard let field = notification.object as? NSTextField, isTitleNameField(field) else { return }
-        nameAtEditStart = began ? (controller?.name ?? field.stringValue) : nil
+        if began {
+            nameAtEditStart = .some(controller?.name)
+            editingAtNameEditStart = controller?.isEditingConnection ?? false
+        } else {
+            nameAtEditStart = nil
+        }
     }
 
-    private func handleNameCommand(_ selector: Selector, in control: NSControl) -> Bool {
-        guard let field = control as? NSTextField, isTitleNameField(field), let command = SAClaudeInlineNameCommand(selector) else { return false }
-        if command == .cancel, let original = nameAtEditStart, let editor = field.currentEditor() as? NSTextView {
-            // Through the field editor, so ending the edit pushes it to the binding and the controller's own
-            // end-of-editing handling runs as for a typed name.
-            editor.string = original
+    private func handleNameCommand(_ selector: Selector, in control: NSControl) -> SAClaudeNameCommandResult {
+        guard let field = control as? NSTextField, isTitleNameField(field), let command = SAClaudeInlineNameCommand(selector) else {
+            return .notHandled
         }
+        let start = nameAtEditStart
         nameAtEditStart = nil
+        guard command == .cancel, case .some(let original) = start, let editor = field.currentEditor() as? NSTextView else {
+            endNameEditing(field)
+            return .handled
+        }
+        // Through the field editor, so ending the edit pushes it to the binding and the controller's own
+        // end-of-editing handling runs as for a typed name.
+        editor.string = original ?? ""
         endNameEditing(field)
-        return true
+        // Exactly the name it was: the binding turns an empty field into no name (nil), and Quick connect starts with
+        // an empty one ("") — or the other way round.
+        if let controller, controller.name != original { controller.name = original }
+        return editingAtNameEditStart ? .handled : .cancelledToClean
     }
 
     /// Ends the name edit, handing the keyboard to the page's cards (the window when there are none).

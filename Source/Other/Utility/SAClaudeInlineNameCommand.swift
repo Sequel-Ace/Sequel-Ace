@@ -10,6 +10,16 @@
 
 import Foundation
 
+/// What the connection panel did with a key in its title's name field (the controller's `doCommandBy` hook).
+@objc enum SAClaudeNameCommandResult: Int {
+    /// Not the title's name field, or not Return / Escape: the controller handles it as before.
+    case notHandled
+    /// Saved (Return) or cancelled (Escape) the name.
+    case handled
+    /// Escape undid the only edit of a connection that wasn't being edited: the controller ends its editing state.
+    case cancelledToClean
+}
+
 enum SAClaudeInlineNameCommand: Equatable {
     case commit
     case cancel

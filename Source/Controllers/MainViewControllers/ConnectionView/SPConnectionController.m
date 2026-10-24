@@ -4334,6 +4334,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     [self _startEditingConnection];
 
+    // Claude look: re-read ~/.aws on each visit to the AWS IAM tab (a folder created meanwhile replaces the note).
+    if (selectedTabView == SPAWSIAMConnection) [self _syncAWSIAMAndSSLInterfaceState];
+
     [self resizeTabViewToConnectionType:selectedTabView animating:YES];
 
 
@@ -5351,7 +5354,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     // Claude look: the panel title's name field is an inline rename — Return saves the name, Escape restores it;
     // neither reaches the window's default button (Connect).
-    if ([SAClaudeConnectionPanelStyler handleNameCommand:commandSelector inControl:control container:connectionResizeContainer]) return YES;
+    SAClaudeNameCommandResult nameCommand = [SAClaudeConnectionPanelStyler handleNameCommand:commandSelector inControl:control container:connectionResizeContainer];
+    if (nameCommand == SAClaudeNameCommandResultCancelledToClean) [self _stopEditingConnection];
+    if (nameCommand != SAClaudeNameCommandResultNotHandled) return YES;
 
     // NSComboBox routes keyboard popup requests through moveDown: on its text
     // delegate. Let the Swift control defer that first popup until preparation.

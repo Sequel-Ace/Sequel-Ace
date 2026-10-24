@@ -3993,6 +3993,9 @@
 /* AWS authorization required title */
 "AWS Authorization Required" = "AWS Authorization Required";
 
+/* AWS IAM : note in place of the profile picker when a private build finds no ~/.aws folder */
+"No ~/.aws folder found. Set up a profile with the AWS CLI (aws configure, or aws sso login) to connect with AWS IAM." = "No ~/.aws folder found. Set up a profile with the AWS CLI (aws configure, or aws sso login) to connect with AWS IAM.";
+
 /* IAM auth error */
 "AWS credentials are invalid" = "AWS credentials are invalid";
 

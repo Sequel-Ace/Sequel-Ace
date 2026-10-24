@@ -537,9 +537,9 @@ final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldD
     private func commitFolderName() {
         guard let field = folderNameField, let id = folderNameFieldID else { return }
         let name = field.stringValue
-        // The delegate goes first, so ending the edit here doesn't commit a second time (`controlTextDidEndEditing`).
+        // The delegate goes first, so ending the edit here doesn't commit a second time (`controlTextDidEndEditing`);
+        // ending it hands the keyboard back to the cards.
         endRenamingFolder(cancel: false)
-        window?.makeFirstResponder(self)
         onRenameFolder?(id, name)
     }
 

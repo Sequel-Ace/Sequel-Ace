@@ -97,7 +97,8 @@ import OSLog
 
     /// A private build without ~/.aws: the connection panel shows a note in place of the profile picker.
     var showsMissingAWSDirectoryNote: Bool {
-        directoryAccess == .missing
+        // Short-circuits so the sandboxed build never resolves bookmarks for it (`.missing` is private-build only).
+        Self.isPrivateBuild && !Self.awsFilesExist
     }
 
     /// ~/.aws, or the credentials / config file the loader reads (`AWS_SHARED_CREDENTIALS_FILE`, `AWS_CONFIG_FILE`
