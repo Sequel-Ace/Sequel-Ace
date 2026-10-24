@@ -345,4 +345,14 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.replacesSessionAfterPing(cutOff: false, pingSucceeded: false))
         XCTAssertFalse(SAConnectionCancellation.replacesSessionAfterPing(cutOff: false, pingSucceeded: true))
     }
+
+    /// The handle of a session being closed goes with it, unless a cut-off ping left it in the
+    /// middle of a read, or its transport or buffer is already gone: such a handle is left behind
+    /// rather than closed, as the connection's own disconnect has always done.
+    func testAHandleLeftMidReadByACutOffPingIsLeftBehindNotClosed() {
+        XCTAssertTrue(SAConnectionCancellation.closedSessionHandleIsClosed(readingOrWriting: false, hasTransport: true, hasBuffer: true))
+        XCTAssertFalse(SAConnectionCancellation.closedSessionHandleIsClosed(readingOrWriting: true, hasTransport: true, hasBuffer: true), "mid-read")
+        XCTAssertFalse(SAConnectionCancellation.closedSessionHandleIsClosed(readingOrWriting: false, hasTransport: false, hasBuffer: true), "transport gone")
+        XCTAssertFalse(SAConnectionCancellation.closedSessionHandleIsClosed(readingOrWriting: false, hasTransport: true, hasBuffer: false), "buffer gone")
+    }
 }

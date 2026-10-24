@@ -850,10 +850,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// other disconnect here follows. Left behind, it would still name a server session that no
 	// longer exists, and whose number the server is free to give to another client.
 	[self.sessionAccess clearSocket];
-	if (mySQLConnection) {
+	// A handle a cut-off ping left in the middle of a read is not closed but left behind, as the
+	// connection's disconnect does: closing it has crashed before. The session is gone either way.
+	if (mySQLConnection && [SAConnectionCancellation closedSessionHandleIsClosedWhenReadingOrWriting:(mySQLConnection->net.reading_or_writing != 0)
+	                                                                                      hasTransport:(mySQLConnection->net.vio != NULL)
+	                                                                                         hasBuffer:(mySQLConnection->net.buff != NULL)]) {
 		mysql_close(mySQLConnection);
-		mySQLConnection = NULL;
 	}
+	mySQLConnection = NULL;
 	state = SPMySQLConnectionLostInBackground;
 	// Only the MySQL session goes; a tunnel under it stays as it is, and the reconnect that
 	// follows connects through it rather than waiting for it to go idle, which a connected

@@ -186,6 +186,23 @@ public final class SAConnectionCancellation: NSObject {
     public static func replacesSessionAfterPing(cutOff pingWasCutOff: Bool, pingSucceeded: Bool) -> Bool {
         return pingWasCutOff && !pingSucceeded
     }
+
+    /// Whether the handle of a session being closed is closed with it, or left behind.
+    ///
+    /// Closing a handle sends the server a goodbye over it and frees its transport. A handle a
+    /// cut-off ping left in the middle of a read - the ping's thread was stopped while it waited
+    /// inside the client library - may be in no state for either, and closing it has crashed
+    /// before; such a handle is left behind, a small leak, as the connection's own disconnect has
+    /// always done. So is one whose transport or buffer is already gone.
+    /// - Parameters:
+    ///   - readingOrWriting: Whether the handle's net layer reports a read or write in progress.
+    ///   - hasTransport: Whether the handle still has its transport (`vio`).
+    ///   - hasBuffer: Whether the handle still has its net buffer.
+    /// - Returns: Whether to call `mysql_close` on the handle.
+    @objc(closedSessionHandleIsClosedWhenReadingOrWriting:hasTransport:hasBuffer:)
+    public static func closedSessionHandleIsClosed(readingOrWriting: Bool, hasTransport: Bool, hasBuffer: Bool) -> Bool {
+        return !readingOrWriting && hasTransport && hasBuffer
+    }
 }
 
 /// One request to kill a query: whether the server has answered it, and which of two moments
