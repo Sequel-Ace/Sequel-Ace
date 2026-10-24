@@ -145,9 +145,11 @@ final class SAClaudeFavoriteCardGridScrollView: NSScrollView {
         syncSelection()
     }
 
-    /// The grid's visible height at `width`: its content height, capped at three card rows.
-    @objc func preferredHeight(forWidth width: CGFloat) -> CGFloat {
-        SAClaudeFavoriteCardLayout.visibleHeight(contentHeight: SAClaudeFavoriteCardLayout.items(for: model, width: width).contentHeight)
+    /// The grid's visible height at `width` with `available` points to spare on the page: all the cards when they
+    /// fit, else a height ending on a row end (`SAClaudeFavoriteCardLayout.visibleHeight`).
+    @objc func preferredHeight(forWidth width: CGFloat, available: CGFloat) -> CGFloat {
+        let layout = SAClaudeFavoriteCardLayout.items(for: model, width: width)
+        return SAClaudeFavoriteCardLayout.visibleHeight(items: layout.items, contentHeight: layout.contentHeight, available: available)
     }
 
     /// Lays the cards out for a content width (the scroll view's frame changes also lay out on their own).

@@ -37,11 +37,60 @@ final class SAClaudeFavoriteCardLayoutTests: XCTestCase {
         XCTAssertEqual(L.columns(for: 5000), 4)
     }
 
-    func testVisibleHeightCap() {
-        XCTAssertEqual(L.visibleHeight(contentHeight: 172), 172)
-        XCTAssertEqual(L.visibleHeight(contentHeight: 236), 236)
-        XCTAssertEqual(L.visibleHeight(contentHeight: 900), 3 * 64 + 2 * 10 + 24)
-        XCTAssertEqual(L.visibleHeight(contentHeight: 0), 0)
+    /// Quick connect + `topLevel` favourites, then folders of `folderSizes` cards each.
+    private func model(topLevel: Int, folderSizes: [Int]) -> Model {
+        Model(topLevel: [card("qc", quick: true)] + (0..<topLevel).map { card("t\($0)") },
+              folders: folderSizes.enumerated().map { index, size in
+                  SAClaudeFavoriteFolder(id: "f\(index)", title: "F\(index)", cards: (0..<size).map { card("f\(index)c\($0)", folder: "f\(index)") })
+              })
+    }
+
+    private func visibleHeight(_ model: Model, width: CGFloat = 960, available: CGFloat) -> CGFloat {
+        let layout = L.items(for: model, width: width)
+        return L.visibleHeight(items: layout.items, contentHeight: layout.contentHeight, available: available)
+    }
+
+    func testEverythingShowsWhenItFits() {
+        // Kunal's page: 4 favourites + Quick connect (two rows at 4 columns), Shop with 3 cards: 246pt, which the
+        // old three-row cap (236pt) cut through the Shop cards.
+        let shop = model(topLevel: 4, folderSizes: [3])
+        XCTAssertEqual(L.items(for: shop, width: 960).contentHeight, 246)
+        XCTAssertEqual(visibleHeight(shop, available: 246), 246)
+        XCTAssertEqual(visibleHeight(shop, available: 900), 246)
+        XCTAssertEqual(visibleHeight(model(topLevel: 0, folderSizes: []), available: 10), 64)
+    }
+
+    func testThreeCardRowsShowEvenWhenTheWindowIsShort() {
+        // Three card rows end at 64, 138 and 246 (the Shop header between them is no place to end).
+        let shop = model(topLevel: 4, folderSizes: [3])
+        XCTAssertEqual(visibleHeight(shop, available: 200), 246)
+        XCTAssertEqual(visibleHeight(shop, available: 0), 246)
+    }
+
+    func testTallContentEndsOnTheLastRowThatFits() {
+        // 13 top-level cards: rows end at 64, 138, 212, 286; the folder header at 296–320, its cards end at 394.
+        let many = model(topLevel: 12, folderSizes: [3])
+        XCTAssertEqual(L.items(for: many, width: 960).contentHeight, 394)
+        XCTAssertEqual(visibleHeight(many, available: 394), 394)
+        XCTAssertEqual(visibleHeight(many, available: 393), 286)
+        XCTAssertEqual(visibleHeight(many, available: 330), 286)
+        XCTAssertEqual(visibleHeight(many, available: 285), 212)
+        // Never fewer than three card rows.
+        XCTAssertEqual(visibleHeight(many, available: 100), 212)
+    }
+
+    func testAFolderHeaderEndsTheGridOnlyWhenNoCardsFollowIt() {
+        // 13 cards (rows end 64…286), then an empty folder (header 296–320) and a folder of 2 (header 330–354,
+        // cards 364–428).
+        let folders = model(topLevel: 12, folderSizes: [0, 2])
+        let ends = L.rowEnds(items: L.items(for: folders, width: 960).items)
+        XCTAssertEqual(ends.cardRows, [64, 138, 212, 286, 428])
+        XCTAssertEqual(ends.all, [64, 138, 212, 286, 320, 428])
+        XCTAssertEqual(visibleHeight(folders, available: 360), 320)
+    }
+
+    func testNoCardsNoHeight() {
+        XCTAssertEqual(L.visibleHeight(items: [], contentHeight: 0, available: 500), 0)
     }
 
     // MARK: Item frames

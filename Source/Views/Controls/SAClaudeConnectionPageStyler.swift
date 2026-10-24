@@ -536,7 +536,6 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
             panel.layOut()
         }
 
-        let gridHeight = grid.preferredHeight(forWidth: column)
         let panelShown = !container.isHidden
         // The panel's own size: while the controller resizes the form it briefly sets the container to its XIB
         // height, and a page laid out with that would clamp the scroll position for nothing.
@@ -548,6 +547,10 @@ private final class SAClaudePageFavoritesOutlineView: SPFavoritesOutlineView {
         // Offsets from the page's top.
         let topBarTop = Self.topMargin
         let gridTop = topBarTop + Self.topBarHeight + Self.sectionGap
+        // The cards take the height the window leaves under the top bar and over the panel (at its own height):
+        // all of them on a tall window, the panel right under them; otherwise they scroll, ending on a row.
+        let below = Self.sectionGap + (panelShown ? panelSize.height : instructionHeight) + Self.bottomMargin
+        let gridHeight = grid.preferredHeight(forWidth: column, available: clip.bounds.height - gridTop - below)
         let panelTop = gridTop + gridHeight + Self.sectionGap
         let total = panelShown ? panelTop + panelSize.height + Self.bottomMargin : panelTop + instructionHeight + Self.bottomMargin
         let instructionTop = panelTop

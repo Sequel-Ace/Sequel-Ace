@@ -155,6 +155,7 @@ enum SAClaudeFavoriteCardLayout {
     static let maxColumns = 4
     static let folderHeaderHeight: CGFloat = 24
     static let radius: CGFloat = 10
+    /// The fewest card rows the grid shows when they exist (it scrolls past them), whatever the window's height.
     static let visibleCardRows = 3
 
     // MARK: Card content
@@ -224,9 +225,37 @@ enum SAClaudeFavoriteCardLayout {
         return (items, y)
     }
 
-    static func visibleHeight(contentHeight: CGFloat) -> CGFloat {
-        let cap = CGFloat(visibleCardRows) * cardHeight + CGFloat(visibleCardRows - 1) * gap + folderHeaderHeight
-        return min(contentHeight, cap)
+    /// Where the grid may end without cutting anything in half, top-down: the bottom of each card row, and of each
+    /// folder header with no cards under it (a header whose cards follow would be left alone at the edge).
+    static func rowEnds(items: [Item]) -> (all: [CGFloat], cardRows: [CGFloat]) {
+        var cardRows = Set<CGFloat>()
+        var headers = Set<CGFloat>()
+        for item in items {
+            switch item.kind {
+            case .card:
+                cardRows.insert(item.frame.maxY)
+            case .folderHeader:
+                let cardsFollow = items.contains { other in
+                    if case .card = other.kind { return abs(other.frame.minY - (item.frame.maxY + gap)) < 0.5 }
+                    return false
+                }
+                if !cardsFollow { headers.insert(item.frame.maxY) }
+            }
+        }
+        return (cardRows.union(headers).sorted(), cardRows.sorted())
+    }
+
+    /// The grid's visible height: all of it when it fits in `available` (the page's height left after the top bar,
+    /// the panel at its own height and the margins); otherwise it scrolls, and ends on the last row end that fits —
+    /// never inside a card or folder header — but never above the end of the `visibleCardRows`-th card row (the
+    /// page scrolls on a window too short for that).
+    static func visibleHeight(items: [Item], contentHeight: CGFloat, available: CGFloat) -> CGFloat {
+        guard contentHeight > 0 else { return 0 }
+        if contentHeight <= available + 0.5 { return contentHeight }
+        let ends = rowEnds(items: items)
+        let minimum = ends.cardRows.count >= visibleCardRows ? ends.cardRows[visibleCardRows - 1] : contentHeight
+        let fitting = ends.all.last { $0 <= available + 0.5 } ?? 0
+        return min(contentHeight, max(fitting, minimum))
     }
 
     // MARK: Drop targets
