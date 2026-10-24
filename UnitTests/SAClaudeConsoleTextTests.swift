@@ -30,7 +30,7 @@ final class SAClaudeConsoleTextTests: XCTestCase {
         XCTAssertEqual(colour(q, at: 12), .purple)                       // 42
         XCTAssertEqual(colour(q, at: 20), .red)                          // `t`
         XCTAssertEqual(colour(q, at: 6), .white)                         // plain text
-        let meta = SAClaudeConsoleText.attributed("beato", column: .database, isError: false, style: style)
+        let meta = SAClaudeConsoleText.attributed("shop", column: .database, isError: false, style: style)
         XCTAssertEqual(colour(meta, at: 0), .gray)
     }
 

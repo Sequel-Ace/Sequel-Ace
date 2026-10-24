@@ -304,11 +304,11 @@ final class SADatabaseListManagerTests: XCTestCase {
     // MARK: - Dropped database
 
     func testSelectionOfADroppedDatabaseIsCleared() {
-        XCTAssertTrue(SADatabaseListManager.isDroppedSelection("test_again", popupTitles: ["Choose Database...", "beato"], isWorking: false))
+        XCTAssertTrue(SADatabaseListManager.isDroppedSelection("test_again", popupTitles: ["Choose Database...", "shop"], isWorking: false))
     }
 
     func testSelectionStillListedIsKept() {
-        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("beato", popupTitles: ["Choose Database...", "beato"], isWorking: false))
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("shop", popupTitles: ["Choose Database...", "shop"], isWorking: false))
     }
 
     func testNoSelectionIsKept() {

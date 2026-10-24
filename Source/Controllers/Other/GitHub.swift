@@ -22,11 +22,11 @@ enum SAAppStoreReceiptPolicy {
     }
 }
 
-/// A private build — a personally signed build of a fork, stamped by Scripts/claude-package.sh — carries
+/// A private build — a personally signed build of a fork, stamped at packaging time — carries
 /// `SAPrivateBuild = YES` in its Info.plist. It is not an upstream release, so like an App Store install it
 /// never uses the upstream GitHub updater: no "Check for Updates…" item and no automatic check.
 enum SAPrivateBuildPolicy {
-    /// Keep in sync with Scripts/claude-package.sh.
+    /// Keep in sync with the packaging step that stamps it.
     static let infoPlistKey = "SAPrivateBuild"
 
     static func isPrivateBuild(infoDictionary: [String: Any]?) -> Bool {
