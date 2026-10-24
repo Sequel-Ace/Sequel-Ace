@@ -106,7 +106,10 @@ enum SAClaudeTooltipHTML {
     /// A monospaced system UI font name (`NSFont.monospacedSystemFont`), which NSFont may not resolve by name.
     private static func isMonospacedName(_ name: String) -> Bool {
         let lower = name.lowercased()
+        // SF Mono by name too: it isn't a registered system font everywhere (CI machines), and its fallback must still
+        // be monospaced.
         return lower.contains("monospaced") || lower == "ui-monospace" || lower.hasPrefix(".sfnsmono") || lower.hasPrefix("sfnsmono")
+            || lower.hasPrefix("sfmono") || lower.hasPrefix("sf mono")
     }
 
     private static func fontSize(_ value: Any?) -> Int? {
