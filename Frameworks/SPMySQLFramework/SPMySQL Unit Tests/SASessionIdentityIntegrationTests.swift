@@ -339,6 +339,47 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(connection.value(forKey: "sessionReplacement") as? Int, SASessionReplacementMark.notMarked.rawValue, "and the new session starts unmarked")
     }
 
+    /// A session marked to go while something holds the connection - the keepalive marks it while
+    /// it holds the lock - is not pinged by the check either: the check neither waits for the lock
+    /// to speak on the session nor replaces it under somebody's feet. It answers at once and
+    /// leaves the session to the statement that next takes the connection, which replaces it.
+    func testTheCheckLeavesAMarkedSessionSomethingIsUsingToTheNextStatement() throws {
+        let connection = try connected(SAPingWatchingConnection())
+        defer { connection.disconnect() }
+        let theMarkedSession = connection.mysqlConnectionThreadId
+
+        // Another thread holds the connection, as the keepalive does while it marks.
+        let lockHeld = DispatchSemaphore(value: 0)
+        let letGoOfTheLock = DispatchSemaphore(value: 0)
+        let lockReleased = expectation(description: "the lock was released")
+        Thread.detachNewThread {
+            _ = connection.perform(NSSelectorFromString("_lockConnection"))
+            lockHeld.signal()
+            _ = letGoOfTheLock.wait(timeout: .now() + 10)
+            _ = connection.perform(NSSelectorFromString("_unlockConnection"))
+            lockReleased.fulfill()
+        }
+        XCTAssertEqual(lockHeld.wait(timeout: .now() + 5), .success)
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+
+        let checked = expectation(description: "the check returned")
+        var usable = false
+        Thread.detachNewThread {
+            usable = connection.checkIfNecessary()
+            checked.fulfill()
+        }
+        wait(for: [checked], timeout: 3)
+        XCTAssertTrue(usable)
+        XCTAssertFalse(connection.pingedTheSession, "nothing spoke on the session")
+        XCTAssertEqual(connection.mysqlConnectionThreadId, theMarkedSession, "and nothing replaced it under the holder's feet")
+
+        letGoOfTheLock.signal()
+        wait(for: [lockReleased], timeout: 5)
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 1") as? String, "1")
+        XCTAssertNotEqual(connection.mysqlConnectionThreadId, theMarkedSession, "the next statement replaced it")
+    }
+
     /// A marked session with a transaction open is kept until that transaction is over: closing it
     /// would roll back work somebody is still doing. Once the transaction is committed, the next
     /// statement runs on a new session, and the work is there.

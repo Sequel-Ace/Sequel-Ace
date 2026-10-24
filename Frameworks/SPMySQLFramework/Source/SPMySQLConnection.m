@@ -752,11 +752,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// A session marked to go is not spoken on - a ping would read an answer still on its way as
 	// its own - and so is not pinged to find out whether it is alive: it goes here, before any
 	// other use, and is restored like a session lost in the background. It is closed under the
-	// connection lock, so nothing is using its handle meanwhile; a session something is using
-	// right now is left to the statement that next takes the connection, which replaces it then.
+	// connection lock, so nothing is using its handle meanwhile. A session something is using
+	// right now - the keepalive that has just marked it, or a statement - is not pinged on top
+	// of that either, which waiting for the lock and checking would do: it is left to the
+	// statement that next takes the connection, which replaces it then.
 	if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
-	                                                 openTransaction:[self sessionHasOpenTransaction]]
-	    && [self _tryLockConnection]) {
+	                                                 openTransaction:[self sessionHasOpenTransaction]]) {
+		if (![self _tryLockConnection]) {
+			return YES;
+		}
 		[self _closeSessionMarkedForReplacement];
 		[self _unlockConnection];
 		return [self _reconnectAllowingRetries:YES];
