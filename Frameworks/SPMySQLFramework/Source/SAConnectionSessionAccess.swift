@@ -170,19 +170,24 @@ import Darwin
     /// in, that nothing else gets the session while a request is on its way, and whether the
     /// server has already accepted a request for that query. What to do when the server cannot
     /// be reached is the caller's - it holds the grace period the query is given before its
-    /// socket is closed, and it knows whether the server accepted the kill for a session with a
-    /// transaction open, which is left to end its own statement rather than have its session
-    /// taken away.
+    /// socket is closed, and it leaves a query whose kill the server accepted to the server.
     ///
     /// A caller can stop during connection setup, or while an operation still waits for the
-    /// session, before there is a native statement to KILL. That stop is recorded against the
-    /// operations pending now, outermost query included, and reaches nothing that begins later.
+    /// session, before there is a native statement to KILL. Every stop is recorded against the
+    /// operations pending now, outermost query included, and reaches nothing that begins later -
+    /// also a stop asked for while another's request is still on its way, since an operation can
+    /// have begun waiting for the session in between.
     /// - Returns: What this cancellation was given. A hold that does not hold the query belongs
     ///   to another cancellation already under way for it, whose request may yet be accepted;
     ///   the caller then leaves that query's socket alone.
     @objc public func reserveCancellation() -> SACancellationHold {
         socketLock.withLock {
             guard cancellingQuery == nil else {
+                // A request for the query is already on its way, and no second one is sent. The
+                // stop still reaches whatever is pending: an operation that began waiting for the
+                // session after the first stop, which that stop could not know of, must not send
+                // its statement once the request is answered and the session is free.
+                recordStopAgainstPendingOperations()
                 return SACancellationHold(query: 0, session: 0, serverThread: 0,
                                           holdsTheQuery: false, killWasAlreadyAccepted: false)
             }
@@ -190,10 +195,7 @@ import Darwin
                   cancellationSocket >= 0, serverThreadID != 0 else {
                 // A caller can stop during connection setup, before there is a
                 // native statement to KILL. Keep that stop on the outer query.
-                if pendingOperations > 0
-                    && !nativeOnlyCancellationThreads.contains(ObjectIdentifier(Thread.current)) {
-                    queryCancellationGeneration &+= 1
-                }
+                recordStopAgainstPendingOperations()
                 return SACancellationHold(query: 0, session: 0, serverThread: 0,
                                           holdsTheQuery: true, killWasAlreadyAccepted: false)
             }
@@ -209,6 +211,17 @@ import Darwin
             queryCancellationGeneration &+= 1
             return SACancellationHold(query: query, session: socketGeneration, serverThread: serverThreadID,
                                       holdsTheQuery: true, killWasAlreadyAccepted: false)
+        }
+    }
+
+    /// Records a stop against the operations pending now, so that none of them sends its statement
+    /// once it has the session. Called under the socket lock. A thread cancelling a native read of
+    /// its own - a reconnect's teardown - is not stopping the caller it works for, and records
+    /// nothing here.
+    private func recordStopAgainstPendingOperations() {
+        if pendingOperations > 0
+            && !nativeOnlyCancellationThreads.contains(ObjectIdentifier(Thread.current)) {
+            queryCancellationGeneration &+= 1
         }
     }
 

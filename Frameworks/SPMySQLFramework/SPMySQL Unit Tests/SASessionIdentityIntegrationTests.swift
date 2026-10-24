@@ -161,6 +161,37 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         XCTAssertEqual(stored, "E9", "serialised for the latin1 session that sent it, not the utf8mb4 one the call was made under")
     }
 
+    /// A statement that fit the session it was measured for, and not the one the send lands on,
+    /// is refused with the server's own error rather than sent: the server would refuse it and
+    /// close the connection over it.
+    ///
+    /// The limit is a megabyte for the span of this test. 700 000 `é` are 700 KB in latin1, which
+    /// the statement is measured in, and 1.4 MB in utf8mb4, which the session reads by the time
+    /// the statement takes it.
+    func testAStatementTheSessionCannotTakeAfterTheSwitchIsRefusedNotSent() throws {
+        let observer = try connected(SPMySQLConnection())
+        defer { observer.disconnect() }
+        let limitBefore = try XCTUnwrap(observer.getFirstField(fromQuery: "SELECT @@global.max_allowed_packet") as? String)
+        observer.queryString("SET GLOBAL max_allowed_packet = 1048576")
+        try XCTSkipIf(observer.queryErrored(), "Cannot set the global packet limit for the regression.")
+        defer { observer.queryString("SET GLOBAL max_allowed_packet = \(limitBefore)") }
+
+        // Connected after the limit was set, so it is the limit this connection knows.
+        let connection = try connected(SASwitchingConnection())
+        defer { connection.disconnect() }
+        XCTAssertTrue(connection.setEncoding("latin1"))
+        let theSession = connection.getFirstField(fromQuery: "SELECT CONNECTION_ID()") as? String
+        XCTAssertNotNil(theSession)
+
+        connection.characterSetToSwitchToBeforeTheNextStatement = "utf8mb4"
+        connection.queryString("SELECT LENGTH('\(String(repeating: "\u{00E9}", count: 700_000))')")
+        XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorID(), 1153, "refused with the packet-size error")
+        XCTAssertNil(connection.characterSetToSwitchToBeforeTheNextStatement, "the switch happened at the take")
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT CONNECTION_ID()") as? String, theSession,
+                       "nothing was sent, so the session is still there")
+    }
+
     /// An encoding a caller names is the caller's, whatever the session is in: the import sends
     /// a file's statements in the file's encoding.
     func testAnEncodingTheCallerNamesIsKept() throws {

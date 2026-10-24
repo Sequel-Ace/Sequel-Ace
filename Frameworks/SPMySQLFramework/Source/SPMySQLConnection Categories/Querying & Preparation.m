@@ -480,6 +480,19 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			queryBytes = [queryData bytes];
 		}
 
+		// Measured again for the bytes that go out: a session a retry lands on can read statements
+		// in a character set that needs more bytes for the same text, and the check before the
+		// loop measured the one in force then. A statement this session cannot take is refused
+		// here, with the error the server would give, rather than sent for the server to refuse
+		// and close the connection over.
+		if (!queryWasCancelled && queryBytesLength > maxQuerySize) {
+			queryStatus = 1;
+			theErrorID = 1153; // ER_NET_PACKET_TOO_LARGE
+			theErrorMessage = [NSString stringWithFormat:NSLocalizedString(@"The query length of %lu bytes is larger than max_allowed_packet size (%lu).", @"error message if max_allowed_packet < query size"), (unsigned long)queryBytesLength, (unsigned long)maxQuerySize];
+			theSqlstate = @"08S01";
+			break;
+		}
+
 		// While recording the overall execution time (including network lag!), run
 		// the raw query. If the caller supplied an expected database, assert it
 		// under the same lock as the query so another thread cannot interleave a

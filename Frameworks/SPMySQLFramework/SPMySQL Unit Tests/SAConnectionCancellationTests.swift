@@ -19,13 +19,14 @@ private enum SAKillAnswer {
     case refused
     /// No answer until the test lets it come - a side connection over a route that has gone.
     case blockedThenAccepted
+    /// No answer until the test lets it come, and then a refusal.
+    case blockedThenRefused
 }
 
 /// A connection stand-in with a real lease over a local socket pair, recording what the
 /// cancellation logic asks of it.
 private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
     let sessionAccess = SAConnectionSessionAccess()
-    var sessionHasOpenTransaction = false
     var killAnswer: SAKillAnswer = .accepted
     let letTheKillReturn = DispatchSemaphore(value: 0)
     let killWasAsked = DispatchSemaphore(value: 0)
@@ -56,6 +57,9 @@ private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
         case .blockedThenAccepted:
             letTheKillReturn.wait()
             return true
+        case .blockedThenRefused:
+            letTheKillReturn.wait()
+            return false
         }
     }
 
@@ -145,7 +149,6 @@ final class SAConnectionCancellationTests: XCTestCase {
     /// leaves the socket to the server.
     func testALaterStopForAQueryTheServerIsEndingSendsNothingMore() {
         host.sessionAccess.beginNativeQuery()
-        host.sessionHasOpenTransaction = true
         cancellation.requestCancellation(synchronously: true)
         XCTAssertEqual(host.recordedCalls(), ["marked", "kill 42"])
 
@@ -174,30 +177,33 @@ final class SAConnectionCancellationTests: XCTestCase {
                        "the query is marked again as its read ends, in case it was not waiting any more when first marked")
     }
 
-    /// The grace period runs from the moment stopping was asked for, not from the server's answer.
+    /// The grace period runs from the moment stopping was asked for, and a refusal that comes
+    /// after it acts at once - not a grace period later.
     ///
     /// Reaching the server over a route that has gone takes the side connection's own timeouts.
-    /// If the grace period only started afterwards, the query's socket would stay open for all of
-    /// that and two seconds more - the wait this is meant to bound.
-    func testTheGracePeriodDoesNotWaitForTheServer() {
+    /// Until the server has answered, nothing is shut down: the answer may yet be that the server
+    /// accepted the kill, and the session must then be left to it. If the grace period only
+    /// started with the answer, the query's socket would stay open for two seconds more.
+    func testTheGracePeriodRunsFromTheRequestAndALateRefusalActsAtOnce() {
         host.sessionAccess.beginNativeQuery()
-        host.killAnswer = .blockedThenAccepted
+        host.killAnswer = .blockedThenRefused
 
         DispatchQueue.global().async {
             self.cancellation.requestCancellation(synchronously: true)
         }
         XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success)
 
-        XCTAssertTrue(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 2),
-                      "the socket is shut down while the request is still out there")
+        XCTAssertFalse(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 0.5),
+                       "the decision waits for the server's answer")
         host.letTheKillReturn.signal()
+        XCTAssertTrue(waitForTheSocketToBeShutDown(within: 0.5), "a refusal after the grace period acts at once")
     }
 
-    /// A session with a transaction open is left to a server that accepted the kill: the server
-    /// ends the statement on its own time, and shutting the socket down would roll the transaction back.
-    func testAnAcceptedKillLeavesASessionWithATransactionOpenToTheServer() {
+    /// A query whose kill the server accepted is left to the server, which ends the statement on
+    /// its own time: the statement may itself have opened a transaction nothing here can see yet,
+    /// and shutting the socket down would roll that back.
+    func testAnAcceptedKillLeavesTheSessionToTheServer() {
         host.sessionAccess.beginNativeQuery()
-        host.sessionHasOpenTransaction = true
         host.killAnswer = .accepted
 
         cancellation.requestCancellation(synchronously: true)
@@ -205,22 +211,9 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 1))
     }
 
-    /// Without a transaction, a query still waiting after the grace period has its socket shut
-    /// down whatever the server said: there is nothing to lose, and nothing to wait for.
-    func testWithoutATransactionTheGracePeriodEndsTheWaitWhateverTheServerSaid() {
+    /// An acceptance that comes after the grace period leaves the socket alone as well.
+    func testALateAcceptanceLeavesTheSocketAlone() {
         host.sessionAccess.beginNativeQuery()
-        host.killAnswer = .accepted
-
-        cancellation.requestCancellation(synchronously: true)
-
-        XCTAssertTrue(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 2))
-    }
-
-    /// With a transaction open, an answer that comes after the grace period decides when it comes:
-    /// a refused request shuts the socket down, an accepted one does not.
-    func testWithATransactionOpenALateAnswerDecides() {
-        host.sessionAccess.beginNativeQuery()
-        host.sessionHasOpenTransaction = true
         host.killAnswer = .blockedThenAccepted
         DispatchQueue.global().async {
             self.cancellation.requestCancellation(synchronously: true)
@@ -228,7 +221,7 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success)
 
         XCTAssertFalse(waitForTheSocketToBeShutDown(within: SAConnectionCancellation.shutdownGrace + 0.5),
-                       "the decision waits for the server while a transaction is open")
+                       "the decision waits for the server")
         host.letTheKillReturn.signal()
         XCTAssertFalse(waitForTheSocketToBeShutDown(within: 0.5), "and an accepted kill leaves the socket alone")
     }
@@ -250,33 +243,18 @@ final class SAConnectionCancellationTests: XCTestCase {
 
     // MARK: - The decisions on their own
 
-    /// A session with an open transaction keeps its socket once the server accepted the kill.
-    func testAnAcceptedKillLeavesASessionWithAnOpenTransactionAlone() {
-        XCTAssertFalse(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: true, sessionHasOpenTransaction: true))
-        XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: true, sessionHasOpenTransaction: false))
-        XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: false, sessionHasOpenTransaction: true))
-        XCTAssertTrue(SAConnectionCancellation.closesSocketAfterGrace(killAccepted: false, sessionHasOpenTransaction: false))
-    }
-
     /// An answer that comes before the grace period ends leaves the decision to the grace period.
     func testAnEarlyAnswerIsDecidedWhenTheGracePeriodEnds() {
         let attempt = SAKillAttempt()
         XCTAssertFalse(attempt.finish(accepted: true))
-        XCTAssertEqual(attempt.endGrace(waitingForAnswer: true), true)
+        XCTAssertEqual(attempt.endGrace(), true)
     }
 
-    /// With a transaction open, an answer that comes after the grace period ended decides when it comes.
-    func testALateAnswerDecidesWhenItIsWaitedFor() {
+    /// An answer that comes after the grace period ended decides when it comes.
+    func testALateAnswerDecidesWhenItComes() {
         let attempt = SAKillAttempt()
-        XCTAssertNil(attempt.endGrace(waitingForAnswer: true))
+        XCTAssertNil(attempt.endGrace())
         XCTAssertTrue(attempt.finish(accepted: false))
-    }
-
-    /// Without a transaction the grace period decides on its own, and a late answer changes nothing.
-    func testTheGracePeriodDecidesAloneWhenNoAnswerIsWaitedFor() {
-        let attempt = SAKillAttempt()
-        XCTAssertEqual(attempt.endGrace(waitingForAnswer: false), false)
-        XCTAssertFalse(attempt.finish(accepted: true))
     }
 
     /// A mark acted on later does not close a session something else has opened a transaction in -

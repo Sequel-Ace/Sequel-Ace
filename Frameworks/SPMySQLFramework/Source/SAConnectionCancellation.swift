@@ -23,9 +23,6 @@ public protocol SAConnectionCancellationHost: AnyObject {
     @objc(killQueryOnServerThread:)
     func killQuery(onServerThread serverThread: UInt) -> Bool
 
-    /// Whether the session last reported an open transaction.
-    @objc var sessionHasOpenTransaction: Bool { get }
-
     /// Marks the query that holds the connection as cancelled, where callers look for it.
     @objc func markRunningQueryCancelled()
 }
@@ -36,9 +33,11 @@ public protocol SAConnectionCancellationHost: AnyObject {
 /// lock and without waiting on anything, so that an operation still waiting for the session never
 /// sends its statement and a query losing its connection meanwhile does not reconnect and run its
 /// statement a second time. The server is asked to kill the query, over a connection of its own,
-/// which a server that is still there answers in milliseconds. And if the query is still waiting
-/// once a grace period is over, its socket is shut down, because a server that has gone away
-/// answers neither the query nor the request to kill it.
+/// which a server that is still there answers in milliseconds. And once a grace period is over
+/// and the server has not accepted the request - refused it, or could not be reached - the
+/// query's socket is shut down, because a server that has gone away answers neither the query
+/// nor the request to kill it. A server that accepted the request ends the statement on its own
+/// time, and the session is left to it, whatever the statement had open in it.
 ///
 /// The lease keeps the books - which query, which session, whether another request is already on
 /// its way or was accepted - and every step names the query and the session it is about, so a
@@ -93,15 +92,16 @@ public final class SAConnectionCancellation: NSObject {
         }
 
         // Once the grace period is over, the socket is shut down unless the server accepted the
-        // kill for a session with an open transaction. Reaching the server can take longer than
-        // the grace period on a slow link. With a transaction open the decision then waits for
-        // the answer; without one the answer changes nothing, and a route that has gone would
-        // only make the socket stay open for as long as the kill takes to give up.
+        // kill - and not before the server has answered, however long that takes; the side
+        // connection's own limits bound it. An accepted kill is left to the server whatever the
+        // session has open: the statement being stopped may itself have opened a transaction,
+        // which nothing here can see until the statement has ended and the session reported
+        // again. Reaching the server can take longer than the grace period on a slow link, and
+        // a kill accepted late still ends the statement; shutting the socket down meanwhile
+        // would end the session, and with it work the server was about to keep.
         let attempt = SAKillAttempt()
         let decideAfterGrace: (_ killAccepted: Bool) -> Void = { [weak host] killAccepted in
-            guard let host,
-                  Self.closesSocketAfterGrace(killAccepted: killAccepted,
-                                              sessionHasOpenTransaction: host.sessionHasOpenTransaction) else {
+            guard let host, !killAccepted else {
                 return
             }
             // The lease checks that it is still that query on that session; the read on it then
@@ -121,9 +121,8 @@ public final class SAConnectionCancellation: NSObject {
         // longer than the grace period and a synchronous request is waited for here. Counting from
         // the answer instead would keep the query's socket open for the side connection's own
         // timeouts and the grace period on top, which is exactly the wait this is meant to bound.
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) { [weak host] in
-            let waitsForAnswer = host?.sessionHasOpenTransaction ?? false
-            if let accepted = attempt.endGrace(waitingForAnswer: waitsForAnswer) {
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.shutdownGrace) {
+            if let accepted = attempt.endGrace() {
                 decideAfterGrace(accepted)
             }
         }
@@ -133,20 +132,6 @@ public final class SAConnectionCancellation: NSObject {
         } else {
             DispatchQueue.global(qos: .userInitiated).async(execute: askServer)
         }
-    }
-
-    /// Whether a query still waiting once the grace period is over has its socket shut down.
-    ///
-    /// Shutting the socket down ends the session, and with it a transaction the session has open.
-    /// A server that accepted the kill ends the statement on its own - rolling back a large one
-    /// can take a while - so such a session is left to it. Without an accepted kill the route is
-    /// presumed gone, and the socket is shut down.
-    /// - Parameters:
-    ///   - killAccepted: Whether the server accepted the request to kill the query.
-    ///   - sessionHasOpenTransaction: Whether the session last reported an open transaction.
-    /// - Returns: Whether to shut the socket down.
-    static func closesSocketAfterGrace(killAccepted: Bool, sessionHasOpenTransaction: Bool) -> Bool {
-        return !(killAccepted && sessionHasOpenTransaction)
     }
 
     /// Whether the session a replacement mark names is closed now, or kept because something is
@@ -188,45 +173,31 @@ public final class SAConnectionCancellation: NSObject {
     }
 }
 
-/// One request to kill a query: whether the server has answered it, and who decides what happens
-/// to the query's socket - the end of the grace period, or an answer that comes after it. Exactly
-/// one of them decides.
+/// One request to kill a query: whether the server has answered it, and which of two moments
+/// decides what happens to the query's socket - the end of the grace period, or the answer. The
+/// later of the two decides, and it decides with the answer; exactly one of them does.
 final class SAKillAttempt {
     private let lock = NSLock()
     private var answer: Bool?
-    private var answerDecides = false
-    private var decided = false
+    private var graceIsOver = false
 
     /// Records the server's answer.
     /// - Parameter accepted: Whether the server accepted the request.
-    /// - Returns: Whether this answer decides now, because the grace period ended waiting for it.
+    /// - Returns: Whether this answer decides now, because the grace period is already over.
     func finish(accepted: Bool) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         answer = accepted
-        guard answerDecides, !decided else {
-            return false
-        }
-        decided = true
-        return true
+        return graceIsOver
     }
 
     /// Records that the grace period is over.
-    /// - Parameter waitingForAnswer: Whether an answer that has not come yet is to be waited for.
-    /// - Returns: What to decide with now - the answer if it has come, "not accepted" if it is not
-    ///   waited for - or nil if the answer decides when it comes.
-    func endGrace(waitingForAnswer: Bool) -> Bool? {
+    /// - Returns: The answer, if it has come - it decides now - or nil when the answer decides
+    ///   once it comes.
+    func endGrace() -> Bool? {
         lock.lock()
         defer { lock.unlock() }
-        if let answer {
-            decided = true
-            return answer
-        }
-        if waitingForAnswer {
-            answerDecides = true
-            return nil
-        }
-        decided = true
-        return false
+        graceIsOver = true
+        return answer
     }
 }
