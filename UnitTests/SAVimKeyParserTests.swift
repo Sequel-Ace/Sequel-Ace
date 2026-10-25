@@ -308,7 +308,30 @@ final class SAVimKeyParserTests: XCTestCase {
     }
 
     func testOptionOnlyKeysAreConsumedInNormalMode() {
-        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "e", keyCode: 14, option: true)), .rejected)
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: nil,
+                                                    layoutCharacter: nil,
+                                                    keyCode: 14,
+                                                    option: true)), .rejected)
+    }
+
+    func testOptionLayoutCharactersWorkInNormalMode() {
+        XCTAssertEqual(type("f"), .pending(display: "f"))
+        let stroke = SAVimKeyStroke(charactersIgnoringModifiers: "2",
+                                    producedCharacters: "@",
+                                    keyCode: 19,
+                                    option: true)
+        XCTAssertEqual(parser.handle(stroke), .command(.move(.findChar("@", forward: true, till: false), count: 1)))
+    }
+
+    func testSearchKeepsOptionLayoutCharacters() {
+        type("/")
+        let stroke = SAVimKeyStroke(charactersIgnoringModifiers: "2",
+                                    producedCharacters: "@",
+                                    keyCode: 19,
+                                    option: true)
+        XCTAssertEqual(parser.handle(stroke), .pending(display: "/@"))
+        XCTAssertEqual(press(keyCode: SAVimKeyStroke.returnKeyCode),
+                       .command(.search(pattern: "@", forward: true)))
     }
 
     func testSearchLeavesRunQueryAndNavigationKeysAlone() {

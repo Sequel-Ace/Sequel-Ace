@@ -339,12 +339,17 @@ final class SAVimKeyParser {
             return handleSearchKey(stroke)
         }
 
-        if stroke.option {
-            return reject()
-        }
-
         if let awaiting {
             return handleAwaited(awaiting, stroke)
+        }
+
+        if stroke.option {
+            guard let produced = stroke.layoutCharacter,
+                  produced.isASCII,
+                  !produced.isControlCharacter else {
+                return reject()
+            }
+            return handleNormalOrVisual(produced)
         }
 
         guard let character = stroke.character else {
@@ -628,7 +633,11 @@ final class SAVimKeyParser {
 
     /// Keys that must keep working while a `/` or `?` pattern is being typed.
     private func searchShouldPassthrough(_ stroke: SAVimKeyStroke) -> Bool {
-        if stroke.command || stroke.control || stroke.option {
+        if stroke.command || stroke.control {
+            return true
+        }
+        // Dead-key Option chords have no produced character; let the text view handle them.
+        if stroke.option, stroke.layoutCharacter == nil {
             return true
         }
         if stroke.keyCode == SAVimKeyStroke.keypadEnterKeyCode {

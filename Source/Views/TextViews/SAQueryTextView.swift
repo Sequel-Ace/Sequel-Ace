@@ -50,6 +50,7 @@ import AppKit
 
     private var insertUndoGroupIsOpen = false
     private var undoManagerGroupsByEvent = true
+    private var insertUndoObserver: NSObjectProtocol?
 
     // MARK: - Lifecycle
 
@@ -71,11 +72,13 @@ import AppKit
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         leaveInsertMode()
+        removeInsertUndoObserver()
         modeBadge.remove()
         super.viewWillMove(toWindow: newWindow)
     }
 
     deinit {
+        removeInsertUndoObserver()
         endInsertUndoGroup()
     }
 
@@ -491,6 +494,15 @@ import AppKit
         manager.groupsByEvent = false
         manager.beginUndoGrouping()
         insertUndoGroupIsOpen = true
+
+        removeInsertUndoObserver()
+        insertUndoObserver = NotificationCenter.default.addObserver(
+            forName: .NSUndoManagerWillUndoChange,
+            object: manager,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleInsertSessionUndo()
+        }
     }
 
     private func endInsertUndoGroup() {
@@ -499,12 +511,33 @@ import AppKit
         // nothing left to close, and retrying would leave grouping switched
         // off for good.
         insertUndoGroupIsOpen = false
+        removeInsertUndoObserver()
 
         guard let manager = undoManager else { return }
 
         breakUndoCoalescing()
-        manager.endUndoGrouping()
+        // `undo()` closes a level-1 group itself; ending it again raises.
+        if manager.groupingLevel > 0 {
+            manager.endUndoGrouping()
+        }
         manager.groupsByEvent = undoManagerGroupsByEvent
+    }
+
+    private func removeInsertUndoObserver() {
+        if let insertUndoObserver {
+            NotificationCenter.default.removeObserver(insertUndoObserver)
+            self.insertUndoObserver = nil
+        }
+    }
+
+    /// Cmd-Z and Edit ▸ Undo reach the undo manager while insert grouping is open.
+    private func handleInsertSessionUndo() {
+        leaveInsertMode()
+        if isVimActive, parser.mode == .insert {
+            parser.setMode(.normal)
+            refreshBadge()
+            refreshInsertionPoint()
+        }
     }
 
     override func resignFirstResponder() -> Bool {

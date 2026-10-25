@@ -527,10 +527,19 @@ enum SAVimTextEngine {
 
         case .delete:
             let register = SAVimRegister(text: text.substring(with: clamped), isLinewise: linewise)
+            var removed = clamped
+            if linewise, NSMaxRange(removed) == text.length, removed.location > 0,
+               isNewline(text.character(at: removed.location - 1)) {
+                var start = removed.location - 1
+                if start > 0, text.character(at: start) == 0x0A, text.character(at: start - 1) == 0x0D {
+                    start -= 1
+                }
+                removed = NSRange(location: start, length: NSMaxRange(removed) - start)
+            }
             let caret = linewise
                 ? firstNonBlankAfterLineDeletion(at: clamped.location, removing: clamped, in: text)
                 : clamped.location
-            return SAVimOutcome(edit: SAVimEdit(range: clamped, text: ""),
+            return SAVimOutcome(edit: SAVimEdit(range: removed, text: ""),
                                 caret: caret,
                                 selection: NSRange(location: caret, length: 0),
                                 register: register,

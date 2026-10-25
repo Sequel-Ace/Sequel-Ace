@@ -127,18 +127,24 @@ final class SAVimTextEngineTests: XCTestCase {
 
     func testDeleteSeveralLines() {
         let outcome = run(.operate(.delete, .wholeLines, count: 2), sql, caret: 17)
-        XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name\n")
+        XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name")
     }
 
     func testDeleteLineCountBeyondTheBufferStopsAtTheEnd() {
         let outcome = run(.operate(.delete, .wholeLines, count: 99), sql, caret: 17)
-        XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name\n")
+        XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name")
     }
 
     func testDeletingTheLastLinePutsTheCaretOnThePreviousOne() {
         let outcome = run(.operate(.delete, .wholeLines, count: 1), sql, caret: 30)
-        XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name\nFROM users\n")
+        XCTAssertEqual(applied(outcome, to: sql), "SELECT id, name\nFROM users")
         XCTAssertEqual(outcome.caret, 16)
+    }
+
+    func testLinewiseDeleteOfTheLastLineRemovesThePrecedingNewline() {
+        let twoLines = "a\nb"
+        let outcome = run(.operate(.delete, .wholeLines, count: 1), twoLines, caret: 2)
+        XCTAssertEqual(applied(outcome, to: twoLines), "a")
     }
 
     func testChangeLineKeepsTheIndentationAndTheLine() {
