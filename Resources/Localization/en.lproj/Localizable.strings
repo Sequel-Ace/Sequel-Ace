@@ -4442,3 +4442,18 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* Preferences > Query Editor: section title for choosing editor themes per light/dark appearance */
+"Theme Appearance" = "Theme Appearance";
+
+/* Preferences > Query Editor > Theme Appearance: checkbox making the editor theme follow light/dark mode */
+"Match system appearance" = "Match system appearance";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in light mode */
+"Light theme" = "Light theme";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in dark mode */
+"Dark theme" = "Dark theme";
+
+/* Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists */
+"%@ (missing)" = "%@ (missing)";
