@@ -81,6 +81,17 @@ enum SAAlertPresentation {
     static var willPresent: ((NSAlert) -> Void)?
 }
 
+/// The text view of a long alert message. It declines to be a key view only while its window is not yet
+/// on screen, so it is never the alert's initial key view: the focus system scrolls that view into view,
+/// which centres a text view much taller than its scroll view and opens the message part-way down.
+/// Once the alert is showing it is an ordinary key view, so Tab, Full Keyboard Access and
+/// click-to-select work as usual.
+final class SAAlertDetailTextView: NSTextView {
+    override var canBecomeKeyView: Bool {
+        (window?.isVisible ?? false) && super.canBecomeKeyView
+    }
+}
+
 @objc extension NSAlert {
     /// Use the standard alert layout, with a scrollable fallback for lengthy diagnostics.
     @objc(setScrollableInformativeText:)
@@ -100,7 +111,7 @@ enum SAAlertPresentation {
         guard measure.window.frame.height > maximumHeight else { return }
 
         informativeText = ""
-        let scrollView = NSTextView.scrollableTextView()
+        let scrollView = SAAlertDetailTextView.scrollableTextView()
         scrollView.frame = NSRect(x: 0, y: 0, width: 400, height: 160)
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
