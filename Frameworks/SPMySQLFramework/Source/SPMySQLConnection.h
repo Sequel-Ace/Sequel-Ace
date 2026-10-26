@@ -28,7 +28,34 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+
+/**
+ * How a session is to be replaced before its next use. One word, so that a reader sees the whole
+ * mark or none of it - never half of a mark somebody is still publishing.
+ */
+typedef NS_ENUM(NSInteger, SASessionReplacementMark) {
+	/// The session is in step with what the connection knows of it.
+	SASessionReplacementMarkNotMarked = 0,
+	/// Replaced before its next use, once nothing is open in it.
+	SASessionReplacementMarkWhenNothingIsOpen = 1,
+	/// Replaced before its next use whatever is open in it: an answer nobody read may still be on
+	/// its way, and the next statement would read it as its own result.
+	SASessionReplacementMarkRegardless = 2,
+};
+
+/**
+ * Which session a value escaped now is escaped for.
+ */
+typedef NS_ENUM(NSInteger, SAEscapingSession) {
+	/// The session the connection has.
+	SAEscapingSessionTheSessionThere = 0,
+	/// The session that replaces it before the next statement.
+	SAEscapingSessionTheReplacement = 1,
+	/// Cannot be told: the session goes unless something is open in it, and a statement running
+	/// right now may open something. The value is refused rather than escaped for a guess.
+	SAEscapingSessionUndecidable = 2,
+};
 
 @interface SPMySQLConnection : NSObject {
 
@@ -75,6 +102,9 @@
 	NSObject <SPMySQLConnectionProxy> *proxy;
 	SPMySQLConnectionProxyState previousProxyState;
 	BOOL proxyStateChangeNotificationsIgnored;
+	// Set when a marked session was closed over a proxy that was left as it was, so the
+	// reconnect that follows connects through it instead of waiting for it to go idle.
+	BOOL proxyUntouchedBySessionReplacement;
 
 	// Connection lock to prevent non-thread-safe query misuse
 	NSConditionLock *connectionLock;
@@ -98,6 +128,16 @@
 	// The deadline on the statements that set the session up, or restore it, while they run: a
 	// statement that loses the session under it fails the attempt rather than starting another.
 	SAConnectionSetupDeadline *activeSetupDeadline;
+	// How a query is stopped: recorded first, the server asked, the socket shut down after a
+	// grace period. The lease keeps the books; this holds the policy.
+	SAConnectionCancellation *connectionCancellation;
+	// How the session is to be replaced before its next use - a SASessionReplacementMark: not at
+	// all; once nothing is open in it; or regardless, because a ping cut off before its answer
+	// came may still get that answer, which the next statement would read as its own result. One
+	// word, so a reader never sees half of a mark being published, and only ever touched through
+	// -sessionReplacementMark and -markSessionReplacement:, which read and write it atomically:
+	// the keepalive writes it from its own thread, and escaping reads it without the connection lock.
+	NSInteger sessionReplacement;
 
 	// Timeout and keep-alive
 	NSUInteger timeout;
