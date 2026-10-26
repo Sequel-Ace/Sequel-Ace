@@ -20,6 +20,7 @@
 		0EFB3862D086C3F4C5716B85 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		0F2381A80270EFDE50D73890 /* SAParserUtilsTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD5C55FC47FCBFA6D183688 /* SAParserUtilsTestSupport.swift */; };
 		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
+		5A5C011000000000000000A1 /* SAScrollableAlertTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5C011000000000000000A2 /* SAScrollableAlertTextTests.swift */; };
 		10E61D41B1CA258A66686820 /* SAAsyncResultBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1196D9FED5B52DE6CD6B0C76 /* SASSHTunnelAuthSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */; };
@@ -1353,6 +1354,7 @@
 		52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainNaming.swift; sourceTree = "<group>"; };
 		54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAConnectionInfo+ConnectionString.swift"; sourceTree = "<group>"; };
 		5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAStaleBookmarkAlertContentTests.swift; sourceTree = "<group>"; };
+		5A5C011000000000000000A2 /* SAScrollableAlertTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAScrollableAlertTextTests.swift; sourceTree = "<group>"; };
 		55DC09E6A57ECBC54B00BDDD /* SACompletionWindowLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACompletionWindowLayoutTests.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
@@ -2962,6 +2964,7 @@
 				5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */,
 				5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */,
 				5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */,
+				5A5C011000000000000000A2 /* SAScrollableAlertTextTests.swift */,
 				5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */,
 				5AF0C2000000000000000031 /* SAFavoriteItemTests.swift */,
 				5147B00E2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift */,
@@ -3769,6 +3772,7 @@
 				5147B1032F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */,
 				5147B1052F8C000100C4C14A /* SAWindowTitlebarTintTests.swift in Sources */,
 				0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */,
+				5A5C011000000000000000A1 /* SAScrollableAlertTextTests.swift in Sources */,
 				5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */,
 				510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */,
