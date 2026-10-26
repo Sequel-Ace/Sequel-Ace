@@ -8,6 +8,18 @@
 | `lib/libssl.3.dylib`, `lib/libcrypto.3.dylib` | `build-openssl.sh` | the OpenSSL release tarball |
 | `lib/libmysqlclient.24.dylib`, `include/`, `lib/mysqlplugins/` (auth plugins + the bundled libfido2 the WebAuthn plugin loads) | `build-libmysqlclient.sh` | the MySQL source tarball |
 
+One of those plugins is not Oracle's to give. MySQL compiles
+`plugin/auth/dialog.cc` only as a `TEST_ONLY` module and names it after its
+plugin directory entry (`auth`), while the client loader opens
+`<plugin name>.so` — so a community build ships no loadable `dialog` plugin
+even though every server asking for PAM authentication wants one. The recipe
+compiles that same source client-only under the name the loader looks for,
+with the flags `MYSQL_ADD_PLUGIN`'s `SERVER_AND_CLIENT` path uses. The plugin
+asks its questions through `mysql_authentication_dialog_ask`, which it finds
+with `dlsym(RTLD_DEFAULT, …)`; `SADialogAuthPrompt.swift` exports that symbol
+from the app, so the questions become an alert instead of the `fgets(stdin)`
+the plugin falls back to.
+
 Both scripts are self-contained and **use nothing from Homebrew**. Every
 dependency is either bundled in the MySQL tarball (zlib, zstd, lz4, ICU,
 protobuf, libfido2, editline, libevent), part of the macOS SDK (SASL), or
@@ -49,15 +61,31 @@ version and the checksum together. The OpenSSL build sets
 `SOURCE_DATE_EPOCH`, so re-running it on the same toolchain reproduces the
 committed bytes exactly.
 
+## The compile-time prefix
+
+`CMAKE_INSTALL_PREFIX` is baked into the client as its plugin, share, etc and
+data directories, so it is fixed at MySQL's conventional `/usr/local/mysql`
+and `DESTDIR` redirects the install into the work directory. `__FILE__` from
+`assert`/`DBUG` macros is mapped with `-ffile-prefix-map` for the same reason.
+Without both, whatever directory the recipe happened to run in ships inside
+the dylib and is what a user reads out of a plugin-loading error — which is
+how a build scratch directory came to be quoted in #2773. The verification
+step fails the build if either leaks back in, so a rebuild anywhere
+reproduces the same strings.
+
 ## Layout inside the framework
 
 `SPMySQL.framework/Versions/A` holds `SPMySQL` next to the three dylibs, all
 referring to each other as `@loader_path/<name>`. `SPMySQLConnection` sets
 `MYSQL_PLUGIN_DIR` to the framework's `PlugIns` directory, one level below,
 which is why the plugins reference the OpenSSL pair as
-`@loader_path/../lib*.dylib`. Packaging the plugins into that directory is
-not wired up yet (see #2590); the built plugins are kept in
-`lib/mysqlplugins/` ready for it.
+`@loader_path/../lib*.dylib`. The framework target copies them there from
+`lib/mysqlplugins/` ("Copy MySQL Client Plugins", code-signed on copy) and
+then links `PlugIns` at the bundle's top level: `NSBundle` resolves
+`builtInPlugInsPath` to `<bundle>/PlugIns`, never to
+`Versions/Current/PlugIns`, so a versioned framework needs that symlink the
+same way it needs one for `Resources`, or the plugins are invisible at
+runtime.
 
 ## While a bundled `.dylib` is modified in the working tree
 

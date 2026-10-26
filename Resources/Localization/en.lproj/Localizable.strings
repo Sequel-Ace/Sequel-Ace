@@ -3067,6 +3067,9 @@
 /* error deleting trigger informative message */
 "The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
 
+/* dialog authentication prompt : fallback message when the server sends no prompt text */
+"The server is asking for additional authentication." = "The server is asking for additional authentication.";
+
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
 
@@ -3890,6 +3893,9 @@
 
 /* MFA authenticate button */
 "Authenticate" = "Authenticate";
+
+/* dialog authentication prompt : alert title */
+"Authentication Required" = "Authentication Required";
 
 /* AWS authorization failed alert title */
 "Authorization Failed" = "Authorization Failed";
