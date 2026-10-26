@@ -255,6 +255,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)storeCurrentDetailsForRestoration;
 - (void)clearDetailsToRestore;
 - (void)setActiveFilterToRestore:(SPTableContentFilterSource)filter;
+- (BOOL)showTable:(NSString *)tableName withSerializedFilter:(NSDictionary *)filterSettings;
 - (SPTableContentFilterSource)activeFilter;
 - (void)setFilterTableData:(NSData *)arcData;
 - (NSData *)filterTableData;

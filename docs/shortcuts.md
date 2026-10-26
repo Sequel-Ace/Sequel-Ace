@@ -54,6 +54,7 @@ Get the most out of Sequel Ace by remembering the following keyboard shortcuts.
 | `⇧ ⌘ V`           | Show Server Variables                      |
 | `⌥ ⌘ P`           | Show Server Processes                      |
 | `⌃ ⌘ R`           | Refresh Tables                             |
+| `⌥ ⇧ ⌘ F`         | Search in All Tables                       |
 | `⇧ ⌘ F`           | Flush Privileges                           |
 | `⌘ U`             | User Accounts                              |
 | `⌘ C`             | Copy selection / Copy selected row(s)      |
