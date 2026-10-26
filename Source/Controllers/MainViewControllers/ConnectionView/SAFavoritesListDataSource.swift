@@ -312,6 +312,12 @@ extension SAFavoritesListDataSource: NSOutlineViewDelegate {
         return node.parent?.parent == nil
     }
 
+    /// Field-editor commands while a favorite or folder name is being edited inline
+    /// (NSControlTextEditingDelegate, forwarded by the outline view). Without this Escape only beeps.
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        return SAFavoritesListKeys.handleEditingCommand(commandSelector, in: control)
+    }
+
     func outlineViewSelectionIsChanging(_ notification: Notification) {
         // Notify delegate to stop editing during selection change (prevents visual glitches)
         delegate?.favoritesListEditingStateChanged?(isEditing: false)

@@ -30,6 +30,7 @@
 
 #import "SPFavoritesOutlineView.h"
 #import "SPConnectionController.h"
+#import "sequel-ace-Swift.h"
 
 @interface SPFavoritesOutlineView ()
 
@@ -85,12 +86,18 @@
 - (void)keyDown:(NSEvent *)event
 {
 	// Enter or Return initiates a connection to the selected favorite, which is the same as double-clicking
-	// one, so call the same selector.
-	if (([self numberOfSelectedRows] == 1) && (([event keyCode] == 36) || ([event keyCode] == 76))) {
-		[self setItemForDoubleAction:[self itemAtRow:[self selectedRow]]];
-		[NSApp sendAction:[self doubleAction] to:[self target] from:self];
-		[self setItemForDoubleAction:nil];
-		return;
+	// one, so call the same selector. An auto-repeat of the press is swallowed: it follows a rename the same
+	// press just committed and must not connect.
+	switch ([SAFavoritesListKeys returnKeyActionWithKeyCode:[event keyCode] isARepeat:[event isARepeat] selectedRowCount:[self numberOfSelectedRows]]) {
+		case SAFavoritesReturnKeyActionConnect:
+			[self setItemForDoubleAction:[self itemAtRow:[self selectedRow]]];
+			[NSApp sendAction:[self doubleAction] to:[self target] from:self];
+			[self setItemForDoubleAction:nil];
+			return;
+		case SAFavoritesReturnKeyActionIgnore:
+			return;
+		case SAFavoritesReturnKeyActionPassThrough:
+			break;
 	}
 	// If the Tab key is used, change focus rather than entering edit mode.
 	if ([[event characters] length] && [[event characters] characterAtIndex:0] == NSTabCharacter) {
