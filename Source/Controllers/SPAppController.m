@@ -278,11 +278,18 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         SPWindowController *newWindowController = [self.tabManager replaceTabServiceWithInitialWindow];
 
         if (spfDict) {
-            [newWindowController.databaseDocument setState:spfDict];
+            // Launch arguments come from whoever started the app: like a session file, they may
+            // not connect through an SSH agent by themselves. Decided on the connection as set up.
+            BOOL wantsAutoConnect = [[spfDict objectForKey:@"auto_connect"] respondsToSelector:@selector(boolValue)]
+                                 && [[spfDict objectForKey:@"auto_connect"] boolValue];
+            NSMutableDictionary *withoutAutoConnect = [spfDict mutableCopy];
+            [withoutAutoConnect removeObjectForKey:@"auto_connect"];
+            [newWindowController.databaseDocument setState:withoutAutoConnect];
+            if (wantsAutoConnect) [newWindowController.databaseDocument connectUnlessUsingSSHAgent];
         }
-
-        // Set autoconnection if appropriate
-        if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
+        // Set autoconnection if appropriate. Not when launch arguments supplied the connection:
+        // the window then holds theirs, not the default favorite, and that was decided above.
+        else if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
             [newWindowController.databaseDocument connect];
         }
     }
@@ -337,8 +344,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if ([MAMP_SPFVersion isEqualToString:@"1"]) {
         NSDictionary *spfStructure = [userInfo objectForKey:@"spfData"];
         if (spfStructure) {
+            // Another app may open a connection, but not connect it through an SSH agent
+            // by itself; that is decided on the connection as set up, not on what was sent.
+            BOOL wantsAutoConnect = [[spfStructure objectForKey:@"auto_connect"] respondsToSelector:@selector(boolValue)]
+                                 && [[spfStructure objectForKey:@"auto_connect"] boolValue];
+            NSMutableDictionary *withoutAutoConnect = [spfStructure mutableCopy];
+            [withoutAutoConnect removeObjectForKey:@"auto_connect"];
             SPWindowController *windowController = [self.tabManager newWindowForWindow];
-            [windowController.databaseDocument setState:spfStructure];
+            [windowController.databaseDocument setState:withoutAutoConnect];
+            if (wantsAutoConnect) [windowController.databaseDocument connectUnlessUsingSSHAgent];
         }
     }
 }
@@ -1472,7 +1486,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
-    if ([sender keyWindow] != nil && [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationPromptOnQuit]) {
+    // Relaunching after an SSH agent helper install was asked for a moment ago; don't ask again.
+    if ([sender keyWindow] != nil && [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationPromptOnQuit] && ![SASSHAgentPreferences isRelaunching]) {
         BOOL answer = [self dialogOKCancelWithQuestion:NSLocalizedString(@"Close the app?", @"quitting app informal alert title") text:NSLocalizedString(@"Are you sure you want to quit the app?", @"quitting app informal alert body")];
         if (answer == NO) {
             return NSTerminateCancel;
