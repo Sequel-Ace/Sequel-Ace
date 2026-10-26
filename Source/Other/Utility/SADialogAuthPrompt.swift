@@ -16,8 +16,8 @@ import AppKit
 /// The plugin looks its asker up once, by symbol, with
 /// `dlsym(RTLD_DEFAULT, "mysql_authentication_dialog_ask")`; when it finds
 /// nothing it falls back to reading the answer from `stdin` with `fgets`,
-/// which in a GUI app means the connection thread blocks forever. The free
-/// function at the bottom of this file is that symbol.
+/// which in a GUI app means the connection thread blocks forever.
+/// `SADialogAuthPrompt+MySQL.swift` exports that symbol and calls in here.
 ///
 /// `NSAlert` rather than SwiftUI: the plugin calls in from whatever thread is
 /// connecting and needs an answer before it returns, and the alert may have to
@@ -32,16 +32,30 @@ enum SADialogAuthPrompt {
         type == 2
     }
 
-    /// The server writes the prompt and it is shown as-is, so a server that
-    /// sends nothing still gets a sentence the user can act on.
-    static func message(for prompt: String?) -> String {
+    /// The text the user is asked to answer.
+    ///
+    /// The server writes the question and it is shown as-is, so a server that
+    /// sends nothing still gets a sentence the user can act on. A password
+    /// asked over an unencrypted connection carries a warning: the dialog
+    /// protocol sends every answer in clear text, and the client only
+    /// *requires* TLS when SSL or the cleartext plugin was asked for
+    /// (`SACleartextAuthPolicy`), so a server that picks `dialog` can reach
+    /// this prompt on a plaintext connection.
+    static func message(for prompt: String?, secure: Bool, isEncrypted: Bool) -> String {
         let trimmed = prompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmed.isEmpty {
-            return trimmed
+        let question = trimmed.isEmpty
+            ? NSLocalizedString(
+                "The server is asking for additional authentication.",
+                comment: "dialog authentication prompt : fallback message when the server sends no prompt text"
+            )
+            : trimmed
+
+        guard secure, !isEncrypted else {
+            return question
         }
-        return NSLocalizedString(
-            "The server is asking for additional authentication.",
-            comment: "dialog authentication prompt : fallback message when the server sends no prompt text"
+        return question + "\n\n" + NSLocalizedString(
+            "This connection is not encrypted, so your answer will be sent to the server in clear text.",
+            comment: "dialog authentication prompt : warning shown when a password is asked for over a plaintext connection"
         )
     }
 
@@ -56,21 +70,26 @@ enum SADialogAuthPrompt {
     /// Asks on the main thread and blocks the caller until the user answers.
     /// `nil` means the user cancelled; the plugin turns that into a failed
     /// authentication.
-    static func ask(prompt: String?, secure: Bool) -> String? {
-        let message = message(for: prompt)
+    static func ask(prompt: String?, secure: Bool, isEncrypted: Bool) -> String? {
+        let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted)
+        let warning = secure && !isEncrypted
         if Thread.isMainThread {
-            return present(message: message, secure: secure)
+            return present(message: message, secure: secure, warning: warning)
         }
         return DispatchQueue.main.sync {
-            present(message: message, secure: secure)
+            present(message: message, secure: secure, warning: warning)
         }
     }
 
-    private static func present(message: String, secure: Bool) -> String? {
+    /// Runs the alert. `warning` only changes how loudly it is presented; the
+    /// user still decides, because a server without TLS support is exactly the
+    /// case this plugin was bundled for and refusing outright would leave it
+    /// unusable there.
+    private static func present(message: String, secure: Bool, warning: Bool) -> String? {
         assert(Thread.isMainThread)
 
         let alert = NSAlert()
-        alert.alertStyle = .informational
+        alert.alertStyle = warning ? .warning : .informational
         alert.messageText = NSLocalizedString(
             "Authentication Required",
             comment: "dialog authentication prompt : alert title"
@@ -94,28 +113,4 @@ enum SADialogAuthPrompt {
         }
         return field.stringValue
     }
-}
-
-/// The symbol the `dialog` client plugin looks for. Named for C, so it cannot
-/// take the Swift function's name.
-///
-/// The contract is the plugin's: return either `buffer`, filled in, or an
-/// allocation the plugin will `free()`, or `nil` to fail authentication.
-/// `mysql` and `buffer` go unused because the answer is returned on the heap.
-@_cdecl("mysql_authentication_dialog_ask")
-public func saMySQLAuthenticationDialogAsk(
-    _ mysql: UnsafeMutableRawPointer?,
-    _ type: Int32,
-    _ prompt: UnsafePointer<CChar>?,
-    _ buffer: UnsafeMutablePointer<CChar>?,
-    _ bufferLength: Int32
-) -> UnsafeMutablePointer<CChar>? {
-    let question = prompt.map { String(cString: $0) }
-    guard let answer = SADialogAuthPrompt.ask(
-        prompt: question,
-        secure: SADialogAuthPrompt.isSecure(type: type)
-    ) else {
-        return nil
-    }
-    return SADialogAuthPrompt.duplicate(answer)
 }

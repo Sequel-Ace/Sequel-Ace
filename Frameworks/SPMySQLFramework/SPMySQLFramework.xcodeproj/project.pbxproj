@@ -124,6 +124,7 @@
 		B7AC94D227A75501D3967BD6 /* SAConnectionCharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */; };
 		A3E7C91D5B284F06A1D7E340 /* SASessionStateTracking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */; };
 		6A3F8D21C94E5B70821DA463 /* SASessionStartupPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C27E54B3F18A06D7B45C2E9 /* SASessionStartupPlan.swift */; };
+		2A77D3212D7F41A00095F55A /* SADialogAuthTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */; };
 		D10000312F8C000600C4C14A /* SACleartextAuthPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */; };
 		D10000332F8C000600C4C14A /* SACleartextAuthPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */; };
 		D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386B159A6D535F0686530898 /* SADatabaseAssertion.swift */; };
@@ -294,6 +295,7 @@
 		D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSocketTimeoutsTests.swift; sourceTree = "<group>"; };
 		DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSetupDeadlineTests.swift; sourceTree = "<group>"; };
 		A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAByteStringDecoder.swift; path = Source/SAByteStringDecoder.swift; sourceTree = "<group>"; };
+		2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SADialogAuthTransport.swift; path = Source/SADialogAuthTransport.swift; sourceTree = "<group>"; };
 		D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SACleartextAuthPolicy.swift; path = Source/SACleartextAuthPolicy.swift; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionLostDecisionGate.swift; path = Source/SAConnectionLostDecisionGate.swift; sourceTree = "<group>"; };
@@ -421,6 +423,7 @@
 				0EA5700AA759774A87FC447F /* SPMySQL.modulemap */,
 				1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */,
 				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
+				2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */,
 				D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */,
 				A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */,
 				464127511C53496503FB21A6 /* SAConnectionCheckBudget.swift */,
@@ -902,6 +905,7 @@
 				583C734E17B0778A0056B284 /* Data Conversion.m in Sources */,
 				D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */,
 				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
+				2A77D3212D7F41A00095F55A /* SADialogAuthTransport.swift in Sources */,
 				D10000312F8C000600C4C14A /* SACleartextAuthPolicy.swift in Sources */,
 				444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */,
 				93CCE91DFD96B5F2C96DCAA3 /* SAConnectionCheckBudget.swift in Sources */,

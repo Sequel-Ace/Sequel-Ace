@@ -3070,6 +3070,9 @@
 /* dialog authentication prompt : fallback message when the server sends no prompt text */
 "The server is asking for additional authentication." = "The server is asking for additional authentication.";
 
+
+/* dialog authentication prompt : warning shown when a password is asked for over a plaintext connection */
+"This connection is not encrypted, so your answer will be sent to the server in clear text." = "This connection is not encrypted, so your answer will be sent to the server in clear text.";
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
 

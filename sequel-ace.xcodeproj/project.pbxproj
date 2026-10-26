@@ -296,6 +296,7 @@
 		516E068F308F3B01007B81AA /* SADialogAuthPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */; };
 		516E0690308F3B01007B81AA /* SADialogAuthPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */; };
 		516E0695308F3B24007B81AA /* SADialogAuthPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E0694308F3B24007B81AA /* SADialogAuthPromptTests.swift */; };
+		516E073A308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E0738308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift */; };
 		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
 		517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */; };
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
@@ -1245,6 +1246,7 @@
 		516A76C52653B4E800DC6501 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADialogAuthPrompt.swift; sourceTree = "<group>"; };
 		516E0694308F3B24007B81AA /* SADialogAuthPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADialogAuthPromptTests.swift; sourceTree = "<group>"; };
+		516E0738308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SADialogAuthPrompt+MySQL.swift"; sourceTree = "<group>"; };
 		51731E7B27DFB99A00D81B98 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionServiceTests.swift; sourceTree = "<group>"; };
@@ -2897,6 +2899,7 @@
 				F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */,
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
 				516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */,
+				516E0738308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3911,6 +3914,7 @@
 				1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */,
 				50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */,
 				AA000001000000000000001B /* SAAboutView.swift in Sources */,
+				516E073A308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift in Sources */,
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,

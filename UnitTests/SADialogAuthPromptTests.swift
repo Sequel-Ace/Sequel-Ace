@@ -23,23 +23,55 @@ final class SADialogAuthPromptTests: XCTestCase {
 
     // MARK: - Prompt text
 
+    private func message(_ prompt: String?, secure: Bool = false, isEncrypted: Bool = true) -> String {
+        SADialogAuthPrompt.message(for: prompt, secure: secure, isEncrypted: isEncrypted)
+    }
+
     func testServerPromptIsShownAsSent() {
-        XCTAssertEqual(SADialogAuthPrompt.message(for: "Password, please:"), "Password, please:")
+        XCTAssertEqual(message("Password, please:"), "Password, please:")
     }
 
     func testPromptIsTrimmed() {
-        XCTAssertEqual(SADialogAuthPrompt.message(for: "  Enter PIN \n"), "Enter PIN")
+        XCTAssertEqual(message("  Enter PIN \n"), "Enter PIN")
     }
 
     func testEmptyOrMissingPromptFallsBackToAFullSentence() {
-        let fallback = SADialogAuthPrompt.message(for: nil)
+        let fallback = message(nil)
         XCTAssertFalse(fallback.isEmpty)
-        XCTAssertEqual(SADialogAuthPrompt.message(for: ""), fallback)
-        XCTAssertEqual(SADialogAuthPrompt.message(for: "   \n "), fallback)
+        XCTAssertEqual(message(""), fallback)
+        XCTAssertEqual(message("   \n "), fallback)
     }
 
     func testNonASCIIPromptSurvives() {
-        XCTAssertEqual(SADialogAuthPrompt.message(for: "Contraseña:"), "Contraseña:")
+        XCTAssertEqual(message("Contraseña:"), "Contraseña:")
+    }
+
+    // MARK: - Plaintext warning
+
+    /// The dialog protocol sends every answer in clear text, and the client
+    /// only requires TLS when SSL or the cleartext plugin was asked for, so a
+    /// password question can arrive on a plaintext connection.
+    func testPasswordOverPlaintextCarriesAWarning() {
+        let warned = message("Password:", secure: true, isEncrypted: false)
+        XCTAssertTrue(warned.hasPrefix("Password:"))
+        XCTAssertGreaterThan(warned.count, "Password:".count)
+        XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
+    }
+
+    func testPasswordOverTLSIsNotWarnedAbout() {
+        XCTAssertEqual(message("Password:", secure: true, isEncrypted: true), "Password:")
+    }
+
+    func testOrdinaryQuestionOverPlaintextIsNotWarnedAbout() {
+        // Only a secret is worth interrupting for; the server asks ordinary
+        // questions (a username, a one-time code prompt) over the same channel.
+        XCTAssertEqual(message("Are you sure?", secure: false, isEncrypted: false), "Are you sure?")
+    }
+
+    func testFallbackPromptStillCarriesTheWarning() {
+        let warned = message(nil, secure: true, isEncrypted: false)
+        XCTAssertTrue(warned.hasPrefix(message(nil)))
+        XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
     }
 
     // MARK: - Handing the answer to the plugin
